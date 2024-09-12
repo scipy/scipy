@@ -14,7 +14,6 @@ namespace detail {
     template <typename Generator>
     using generator_result_t = typename std::decay<typename std::invoke_result<Generator>::type>::type;
 
-
     /* Used to deduce the type of the numerator/denominator of a fraction. */
     template <typename Pair>
     struct pair_traits;
@@ -55,8 +54,8 @@ namespace detail {
 
     // Series evaluators.
     template <typename Generator, typename T = generator_result_t<Generator>>
-    XSF_HOST_DEVICE T series_eval(Generator &g, T init_val, real_type_t<T> tol, std::uint64_t max_terms,
-                                      const char *func_name) {
+    XSF_HOST_DEVICE T
+    series_eval(Generator &g, T init_val, real_type_t<T> tol, std::uint64_t max_terms, const char *func_name) {
         /* Sum an infinite series to a given precision.
          *
          * g : a generator of terms for the series.
@@ -108,7 +107,7 @@ namespace detail {
 
     /* Performs one step of Kahan summation. */
     template <typename T>
-    XSF_HOST_DEVICE void kahan_step(T& sum, T& comp, T x) {
+    XSF_HOST_DEVICE void kahan_step(T &sum, T &comp, T x) {
         T y = x - comp;
         T t = sum + y;
         comp = (t - sum) - y;
@@ -154,8 +153,8 @@ namespace detail {
      * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
      */
     template <typename Generator, typename T = generator_result_t<Generator>>
-    XSF_HOST_DEVICE std::pair<T, std::uint64_t> series_eval_kahan(
-        Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
+    XSF_HOST_DEVICE std::pair<T, std::uint64_t>
+    series_eval_kahan(Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
 
         using std::abs;
         T sum = init_val;
@@ -230,10 +229,8 @@ namespace detail {
     template <typename Generator, typename T = pair_value_t<generator_result_t<Generator>>>
     class ContinuedFractionSeriesGenerator {
 
-    public:
-        XSF_HOST_DEVICE explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) {
-            init();
-        }
+      public:
+        XSF_HOST_DEVICE explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) { init(); }
 
         XSF_HOST_DEVICE T operator()() {
             T v = v_;
@@ -241,7 +238,7 @@ namespace detail {
             return v;
         }
 
-    private:
+      private:
         XSF_HOST_DEVICE void init() {
             auto [num, denom] = cf_();
             T a = num;
@@ -262,7 +259,7 @@ namespace detail {
             b_ = b;
         }
 
-        Generator& cf_; // reference to continued fraction generator
+        Generator &cf_; // reference to continued fraction generator
         T v_;           // v[n] == f[n] - f[n-1], n >= 1
         T r_;           // r[1] = 0, r[n] = v[n]/v[n-1], n >= 2
         T b_;           // last denominator, i.e. b[n-1]
@@ -274,9 +271,156 @@ namespace detail {
      * See ContinuedFractionSeriesGenerator for details.
      */
     template <typename Generator, typename T = pair_value_t<generator_result_t<Generator>>>
-    XSF_HOST_DEVICE ContinuedFractionSeriesGenerator<Generator, T>
-    continued_fraction_series(Generator &cf) {
+    XSF_HOST_DEVICE ContinuedFractionSeriesGenerator<Generator, T> continued_fraction_series(Generator &cf) {
         return ContinuedFractionSeriesGenerator<Generator, T>(cf);
+    }
+
+    /* Find initial bracket for a bracketing scalar root finder. A valid bracket is a pair of points a < b for
+     * which the signs of f(a) and f(b) differ. If f(x0) = 0, where x0 is the initial guess, this bracket finder
+     * will return the bracket (x0, x0). It is expected that the rootfinder will check if the bracket
+     * endpoints are roots.
+     *
+     * This is a private function intended specifically for the situation where
+     * the goal is to invert a CDF function F for a parametrized family of distributions with respect to one
+     * parameter, when the other parameters are known, and where F is monotonic with respect to the unknown parameter.
+     */
+    template <typename Function>
+    XSF_HOST_DEVICE inline std::tuple<double, double, double, double, int> bracket_root_for_cdf_inversion(
+        Function func, double x0, double xmin, double xmax, double step0_left,
+        double step0_right, double factor_left, double factor_right, bool increasing, std::uint64_t maxiter
+    ) {
+        double y0 = func(x0);
+
+        if (y0 == 0) {
+            // Initial guess is correct.
+            return {x0, x0, y0, y0, 0};
+        }
+
+        double y0_sgn = std::signbit(y0);
+
+        bool search_left;
+        /* The frontier is the new leading endpoint of the expanding bracket. The
+         * interior endpoint trails behind the frontier. In each step, the old frontier
+         * endpoint becomes the new interior endpoint. */
+        double interior, frontier, y_interior, y_frontier, y_interior_sgn, y_frontier_sgn, boundary, factor;
+        if ((increasing && y0 < 0) || (!increasing && y0 > 0)) {
+            /* If func is increasing  and func(x_right) < 0 or if func is decreasing and
+             *  f(y_right) > 0, we should expand the bracket to the right. */
+            interior = x0, y_interior = y0;
+            frontier = x0 + step0_right;
+            y_interior_sgn = y0_sgn;
+            search_left = false;
+            boundary = xmax;
+            factor = factor_right;
+        } else {
+            /* Otherwise we move and expand the bracket to the left. */
+            interior = x0, y_interior = y0;
+            frontier = x0 + step0_left;
+            y_interior_sgn = y0_sgn;
+            search_left = true;
+            boundary = xmin;
+            factor = factor_left;
+        }
+
+        bool reached_boundary = false;
+        for (std::uint64_t i = 0; i < maxiter; i++) {
+            y_frontier = func(frontier);
+            y_frontier_sgn = std::signbit(y_frontier);
+            if (y_frontier_sgn != y_interior_sgn || (y_frontier == 0.0)) {
+                /* Stopping condition, func evaluated at endpoints of bracket has opposing signs,
+                 * meeting requirement for bracketing root finder. (Or endpoint has reached a
+                 * zero.) */
+                if (search_left) {
+                    /* Ensure we return an interval (a, b) with a < b. */
+                    std::swap(interior, frontier);
+                    std::swap(y_interior, y_frontier);
+                }
+		return {interior, frontier, y_interior, y_frontier, 0};
+            }
+            if (reached_boundary) {
+                /* We've reached a boundary point without finding a root . */
+                return {
+                    std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
+                    std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
+                    search_left ? 1 : 2
+                };
+            }
+            double step = (frontier - interior) * factor;
+            interior = frontier;
+            y_interior = y_frontier;
+            y_interior_sgn = y_frontier_sgn;
+            frontier += step;
+            if ((search_left && frontier <= boundary) || (!search_left && frontier >= boundary)) {
+                /* If the frontier has reached the boundary, set a flag so the algorithm will know
+                 * not to search beyond this point. */
+                frontier = boundary;
+                reached_boundary = true;
+            }
+        }
+        /* Failed to converge within maxiter iterations. If maxiter is sufficiently high and
+         * factor_left and factor_right are set appropriately, this should only happen due to
+         * a bug in this function. Limiting the number of iterations is a defensive programming measure. */
+	return {
+            std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
+            std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), 3
+        };
+    }
+
+    /* Find root of a scalar function using Chandrupatla's algorithm */
+    template <typename Function>
+    XSF_HOST_DEVICE inline std::pair<double, int> find_root_chandrupatla(
+        Function func, double x1, double x2, double f1, double f2, double rtol,
+        double atol, std::uint64_t maxiter
+    ) {
+        if (f1 == 0) {
+            return {x1, 0};
+        }
+        if (f2 == 0) {
+            return {x2, 0};
+        }
+        double t = 0.5, x3, f3;
+        for (uint64_t i = 0; i < maxiter; i++) {
+            double x = x1 + t * (x2 - x1);
+            double f = func(x);
+            if (std::signbit(f) == std::signbit(f1)) {
+                x3 = x1;
+                x1 = x;
+                f3 = f1;
+                f1 = f;
+            } else {
+                x3 = x2;
+                x2 = x1;
+                x1 = x;
+                f3 = f2;
+                f2 = f1;
+                f1 = f;
+            }
+            double xm, fm;
+            if (std::abs(f2) < std::abs(f1)) {
+                xm = x2;
+                fm = f2;
+            } else {
+                xm = x1;
+                fm = f1;
+            }
+            double tol = 2.0 * rtol * std::abs(xm) + 0.5 * atol;
+            double tl = tol / std::abs(x2 - x1);
+            if (tl > 0.5 || fm == 0) {
+                return {xm, 0};
+            }
+            double xi = (x1 - x2) / (x3 - x2);
+            double phi = (f1 - f2) / (f3 - f2);
+            double fl = 1.0 - std::sqrt(1.0 - xi);
+            double fh = std::sqrt(xi);
+
+            if ((fl < phi) && (phi < fh)) {
+                t = (f1 / (f2 - f1)) * (f3 / (f2 - f3)) + (f1 / (f3 - f1)) * (f2 / (f3 - f2)) * ((x3 - x1) / (x2 - x1));
+            } else {
+                t = 0.5;
+            }
+            t = std::fmin(std::fmax(t, tl), 1.0 - tl);
+        }
+        return {std::numeric_limits<double>::quiet_NaN(), 1};
     }
 
 } // namespace detail

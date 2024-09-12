@@ -317,6 +317,7 @@ double xsf_fdtrc(double a, double b, double x);
 double xsf_fdtri(double a, double b, double y);
 double xsf_gdtr(double a, double b, double x);
 double xsf_gdtrc(double a, double b, double x);
+double xsf_gdtrib(double a, double p, double x);
 double xsf_kolmogorov(double x);
 double xsf_kolmogc(double x);
 double xsf_kolmogi(double x);

@@ -5,6 +5,7 @@
 #include "xsf/bessel.h"
 #include "xsf/beta.h"
 #include "xsf/binom.h"
+#include "xsf/cdflib.h"
 #include "xsf/digamma.h"
 #include "xsf/ellip.h"
 #include "xsf/expint.h"
@@ -574,6 +575,8 @@ double xsf_fdtri(double a, double b, double y) { return xsf::fdtri(a, b, y); }
 double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
 
 double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }
+
+double xsf_gdtrib(double a, double p, double x) {return xsf::gdtrib(a, p, x); }
 
 double xsf_kolmogorov(double x) { return xsf::kolmogorov(x); }
 

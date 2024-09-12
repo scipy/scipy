@@ -304,6 +304,7 @@ xsf_sources = [
   'xsf/hyp2f1.h',
   'xsf/tools.h',
   'xsf/iv_ratio.h',
+  'xsf/cdflib.h',
   'xsf/sici.h',
   'xsf/expint.h'
 ]
@@ -344,11 +345,11 @@ xsf_cephes_sources = [
   'xsf/cephes/ellik.h',
   'xsf/cephes/ellpe.h',
   'xsf/cephes/ellpk.h',
+  'xsf/cephes/igam_asymp_coeff.h',
   'xsf/cephes/sici.h',
   'xsf/cephes/shichi.h',
   'xsf/cephes/sindg.h',
   'xsf/cephes/tandg.h'
-  
 ]
 
 py3.install_sources(xsf_sources, subdir: 'scipy/special/xsf')

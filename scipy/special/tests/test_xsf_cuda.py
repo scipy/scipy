@@ -25,6 +25,7 @@ def get_test_cases():
         (sc._ufuncs._lambertw, "lambertw.h", "out0 = xsf::lambertw(in0, in1, in2)"),
         (sc.ellipkinc, "cephes/ellik.h", "out0 = xsf::cephes::ellik(in0, in1)"),
         (sc.ellipeinc, "cephes/ellie.h", "out0 = xsf::cephes::ellie(in0, in1)"),
+        (sc.gdtrib, "cdflib.h", "out0 = xsf::gdtrib(in0, in1, in2)"),
         (sc.sici, "sici.h", "xsf::sici(in0, &out0, &out1)"),
         (sc.shichi, "sici.h", "xsf::shichi(in0, &out0, &out1)"),
     ]

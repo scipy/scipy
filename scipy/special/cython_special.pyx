@@ -1123,6 +1123,7 @@ cdef extern from r"xsf_wrappers.h":
     double special_beip(double) nogil
     double special_ber(double) nogil
     double special_berp(double) nogil
+    double xsf_gdtrib(double, double, double) nogil
     npy_double special_kei(npy_double) nogil
     npy_double special_keip(npy_double) nogil
     void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
@@ -1630,10 +1631,6 @@ cdef extern from r"_ufuncs_defs.h":
 from ._cdflib_wrappers cimport gdtria as _func_gdtria
 ctypedef double _proto_gdtria_t(double, double, double) noexcept nogil
 cdef _proto_gdtria_t *_proto_gdtria_t_var = &_func_gdtria
-
-from ._cdflib_wrappers cimport gdtrib as _func_gdtrib
-ctypedef double _proto_gdtrib_t(double, double, double) noexcept nogil
-cdef _proto_gdtrib_t *_proto_gdtrib_t_var = &_func_gdtrib
 
 from ._cdflib_wrappers cimport gdtrix as _func_gdtrix
 ctypedef double _proto_gdtrix_t(double, double, double) noexcept nogil
@@ -2635,7 +2632,7 @@ cpdef double gdtria(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double gdtrib(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrib"""
-    return _func_gdtrib(x0, x1, x2)
+    return xsf_gdtrib(x0, x1, x2)
 
 cpdef double gdtrix(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrix"""
