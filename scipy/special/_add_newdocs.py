@@ -901,7 +901,8 @@ add_newdoc(
     function by multiplying the result of ``betainc(a, b, x)`` by
     ``beta(a, b)``.
 
-    This function wraps the ``ibeta`` routine from the C++ Boost library [2]_.
+    This function wraps the ``ibeta`` routine from the
+    Boost Math C++ library [2]_.
 
     References
     ----------
@@ -991,7 +992,8 @@ add_newdoc(
     -----
     .. versionadded:: 1.11.0
 
-    This function wraps the ``ibetac`` routine from the C++ Boost library [2]_.
+    This function wraps the ``ibetac`` routine from the
+    Boost Math C++ library [2]_.
 
     References
     ----------
@@ -1054,7 +1056,8 @@ add_newdoc(
 
     Notes
     -----
-    This function wraps the ``ibeta_inv`` routine from the C++ Boost library [2]_.
+    This function wraps the ``ibeta_inv`` routine from the
+    Boost Math C++ library [2]_.
 
     References
     ----------
@@ -1122,7 +1125,8 @@ add_newdoc(
     -----
     .. versionadded:: 1.11.0
 
-    This function wraps the ``ibetac_inv`` routine from the C++ Boost library [2]_.
+    This function wraps the ``ibetac_inv`` routine from the
+    Boost Math C++ library [2]_.
 
     References
     ----------
@@ -2614,7 +2618,8 @@ add_newdoc(
 
     Notes
     -----
-    This function wraps the ``erf_inv`` routine from the C++ Boost library [1]_.
+    This function wraps the ``erf_inv`` routine from the
+    Boost Math C++ library [1]_.
 
     References
     ----------
@@ -7932,7 +7937,8 @@ add_newdoc("powm1", """
     * ``powm1(1, y)`` returns 0 for any ``y``, including ``nan``
       and ``inf``.
 
-    This function wraps the ``powm1`` routine from the C++ Boost library [1]_.
+    This function wraps the ``powm1`` routine from the
+    Boost Math C++ library [1]_.
 
     References
     ----------
