@@ -681,7 +681,7 @@ class Test(Task):
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
     $ python dev.py test -s cluster -m full --durations 20
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
-    $ python dev.py test -b numpy -b pytorch -s cluster
+    $ python dev.py test -b numpy -b torch -s cluster
     ```
     """
     ctx = CONTEXT
@@ -718,7 +718,7 @@ class Test(Task):
         multiple=True,
         help=(
             "Array API backend "
-            "('all', 'numpy', 'pytorch', 'cupy', 'array_api_strict', 'jax.numpy')."
+            "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', 'jax.numpy')."
         )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`

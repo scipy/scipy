@@ -31,6 +31,7 @@ Univariate interpolation
    CubicSpline
    PPoly
    BPoly
+   FloaterHormannInterpolator
 
 
 Multivariate interpolation
@@ -80,6 +81,9 @@ Tensor product polynomials:
    make_interp_spline
    make_lsq_spline
    make_smoothing_spline
+   generate_knots
+   make_splrep
+   make_splprep
 
 Functional interface to FITPACK routines:
 
@@ -189,6 +193,7 @@ from ._cubic import *
 from ._ndgriddata import *
 
 from ._bsplines import *
+from ._fitpack_repro import generate_knots, make_splrep, make_splprep
 
 from ._pade import *
 

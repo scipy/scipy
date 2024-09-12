@@ -26,5 +26,7 @@ cdef inline double hyperu(double a, double b, double x) noexcept nogil:
         else:
             # DLMF 13.2.14-15 and 13.2.19-21
             return cephes_poch_wrap(1.0 - b + a, -a)
-
+    if b == 1 and x < 1 and -0.25 < a < 0.3:
+        # DLMF 13.3.7. Fixes gh-15650
+        return (x + 1 + 2*a)*hypU_wrap(a + 1, 1, x) - (a + 1)**2 * hypU_wrap(a + 2, 1, x)
     return hypU_wrap(a, b, x)
