@@ -65,6 +65,7 @@ class _spbase:
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
+    _allow_nd = (2,)
 
     @property
     def ndim(self) -> int:
@@ -157,8 +158,8 @@ class _spbase:
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
-        is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_1d=is_array)
+        # Don't restrict ndim on this first call. That happens in constructor
+        shape = check_shape(args, self.shape, allow_nd=range(1, 65))
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
             if copy:

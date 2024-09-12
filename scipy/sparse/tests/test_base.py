@@ -68,7 +68,7 @@ def sparse_may_share_memory(A, B):
 
         arrays = []
         for a in x.__dict__.values():
-            if isinstance(a, (np.ndarray, np.generic)):
+            if isinstance(a, np.ndarray | np.generic):
                 arrays.append(a)
         return arrays
 
@@ -343,7 +343,7 @@ class _TestCommon:
             assert_array_equal_dtype(dat == np.nan,
                                      (datsp == np.nan).toarray())
 
-        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+        if not isinstance(self, TestBSR | TestCSC | TestCSR):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -382,7 +382,7 @@ class _TestCommon:
             assert_array_equal_dtype(dat != np.nan,
                                      (datsp != np.nan).toarray())
 
-        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+        if not isinstance(self, TestBSR | TestCSC | TestCSR):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -445,7 +445,7 @@ class _TestCommon:
             # dense rhs
             assert_array_equal_dtype(dat < datsp2, datsp < dat2)
 
-        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+        if not isinstance(self, TestBSR | TestCSC | TestCSR):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -507,7 +507,7 @@ class _TestCommon:
             # dense rhs
             assert_array_equal_dtype(dat > datsp2, datsp > dat2)
 
-        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+        if not isinstance(self, TestBSR | TestCSC | TestCSR):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -565,7 +565,7 @@ class _TestCommon:
             # dense rhs
             assert_array_equal_dtype(dat <= datsp2, datsp <= dat2)
 
-        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+        if not isinstance(self, TestBSR | TestCSC | TestCSR):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -623,7 +623,7 @@ class _TestCommon:
             # dense rhs
             assert_array_equal_dtype(dat >= datsp2, datsp >= dat2)
 
-        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+        if not isinstance(self, TestBSR | TestCSC | TestCSR):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -1732,10 +1732,10 @@ class _TestCommon:
         class Custom:
             def __init__(self, scalar):
                 self.scalar = scalar
-                
+
             def __rmul__(self, other):
                 return other * self.scalar
-        
+
         scalar = 2
         A = self.spcreator([[1],[2],[3]])
         c = Custom(scalar)
@@ -4689,7 +4689,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         expected = m.toarray()
         assert_array_equal(m.tocsc().toarray(), expected)
         assert_array_equal(m.tocsr().toarray(), expected)
-    
+
     def test_tocoo_gh10050(self):
         # regression test for gh-10050
         m = dia_matrix([[1, 2], [3, 4]]).tocoo()
@@ -5201,7 +5201,7 @@ class Test64Bit:
 
     def _compare_index_dtype(self, m, dtype):
         dtype = np.dtype(dtype)
-        if isinstance(m, (csc_matrix, csr_matrix, bsr_matrix)):
+        if isinstance(m, csc_matrix | csr_matrix | bsr_matrix):
             return (m.indices.dtype == dtype) and (m.indptr.dtype == dtype)
         elif isinstance(m, coo_matrix):
             return (m.row.dtype == dtype) and (m.col.dtype == dtype)

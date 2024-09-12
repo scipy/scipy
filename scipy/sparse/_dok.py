@@ -17,13 +17,13 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
 
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
+    _allow_nd = (1, 2)
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _spbase.__init__(self, arg1, maxprint=maxprint)
 
-        is_array = isinstance(self, sparray)
-        if isinstance(arg1, tuple) and isshape(arg1, allow_1d=is_array):
-            self._shape = check_shape(arg1, allow_1d=is_array)
+        if isinstance(arg1, tuple) and isshape(arg1, allow_nd=self._allow_nd):
+            self._shape = check_shape(arg1, allow_nd=self._allow_nd)
             self._dict = {}
             self.dtype = getdtype(dtype, default=float)
         elif issparse(arg1):  # Sparse ctor
@@ -36,7 +36,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 arg1 = arg1.astype(dtype, copy=False)
 
             self._dict = arg1._dict
-            self._shape = check_shape(arg1.shape, allow_1d=is_array)
+            self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
             self.dtype = getdtype(arg1.dtype)
         else:  # Dense ctor
             try:
@@ -56,7 +56,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 d = self._coo_container(arg1, shape=shape, dtype=dtype).todok()
                 self._dict = d._dict
                 self.dtype = getdtype(d.dtype)
-            self._shape = check_shape(arg1.shape, allow_1d=is_array)
+            self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
     def update(self, val):
         # Prevent direct usage of update
@@ -491,8 +491,7 @@ class _dok_base(_spbase, IndexMixin, dict):
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def resize(self, *shape):
-        is_array = isinstance(self, sparray)
-        shape = check_shape(shape, allow_1d=is_array)
+        shape = check_shape(shape, allow_nd=self._allow_nd)
         if len(shape) != len(self.shape):
             # TODO implement resize across dimensions
             raise NotImplementedError

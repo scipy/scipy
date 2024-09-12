@@ -113,6 +113,47 @@ void coo_todense(const I n_row,
 
 
 /*
+ * Input Arguments:
+ *   I  strides[num_dims]   - strides array
+ *   npy_int64  nnz         - number of nonzeros in A
+ *   npy_int64  num_dims    - number of dimensions of A
+ *   I  Aijk[nnz(A)]        - coords for nonzeros in A
+ *   T  Ax[nnz(A)]          - nonzeros in A
+ *   T  Bx[]                - dense array
+ *
+ */
+template <class I, class T>
+void coo_todense_nd(const I strides[],
+                    const npy_int64 nnz,
+                    const npy_int64 num_dims,
+                    const I Aijk[],
+                    const T Ax[],
+                          T Bx[],
+                    const int fortran)
+{
+
+    if (!fortran) {
+        for(npy_int64 n = 0; n < nnz; n++) {
+            npy_intp index = 0;
+            for(npy_int64 d = num_dims - 1; d >= 0; d--) {
+                index += Aijk[d * nnz + n] * strides[d];
+            }
+            Bx[index] += Ax[n];
+        }
+    }
+    else {
+        for(npy_int64 n = 0; n < nnz; n++) {
+            npy_intp index = 0;
+            for(npy_int64 d = 0; d < num_dims; d++) {
+                index += Aijk[d * nnz + n] * strides[d];
+            }
+            Bx[index] += Ax[n];
+        }
+    }
+}
+
+
+/*
  * Compute Y += A*X for COO matrix A and dense vectors X,Y
  *
  *
@@ -142,6 +183,38 @@ void coo_matvec(const npy_int64 nnz,
 {
     for(npy_int64 n = 0; n < nnz; n++){
         Yx[Ai[n]] += Ax[n] * Xx[Aj[n]];
+    }
+}
+
+
+/*
+ * Input Arguments:
+ *   npy_int64  nnz         - number of nonzeros in A
+ *   npy_int64 num_dims     - number of dimensions
+ *   I  strides[num_dims-1] - strides array
+ *   I  Aijk[nnz * num_dims]- coords for nonzeros in A
+ *   T  Ax[nnz]             - nonzero values in A
+ *   T  Xx[n_col]           - input vector
+ *
+ * Output Arguments:
+ *   T  Yx[n_row]     - output vector
+ * 
+ */
+template <class I, class T>
+void coo_matvec_nd(const npy_int64 nnz,
+                const npy_int64 num_dims,
+                const I strides[],
+                const I Aijk[],
+                const T Ax[],
+                const T Xx[],
+                      T Yx[])
+{
+    for(npy_int64 n = 0; n < nnz; n++){
+        npy_intp index = 0;
+        for(npy_int64 d = num_dims - 2; d >= 0; d--) {
+            index += Aijk[d * nnz + n] * strides[d];
+        }
+        Yx[index] += Ax[n] * Xx[Aijk[nnz * (num_dims - 1) + n]];
     }
 }
 
