@@ -8,7 +8,7 @@ import pytest
 from scipy.fft import fft
 from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-    firwin, firwin2, freqz, remez, firls, minimum_phase
+    firwin, firwin2, freqz, remez, remezord, firls, minimum_phase
 
 
 def test_kaiser_beta():
@@ -480,6 +480,70 @@ class TestRemez:
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             remez(11, .1, 1, fs=np.array([10, 20]))
+
+
+class TestRemezord:
+    """
+    Test examples taken from:
+    http://www.ece.northwestern.edu/local-apps/matlabhelp/toolbox/signal/remezord.html
+
+    with reference values computed in MATLAB.
+    https://github.com/scipy/scipy/pull/20983#discussion_r1649341010
+    """
+
+    def test_bad_args(self):
+        freqs = np.array([0.1, 0.2, 0.3, 0.4])
+        amps = np.array([40, 50, 60])
+        rips = np.array([3, 4, 5])
+        # Nonexistent algorithm
+        with assert_raises(ValueError):
+            remezord(freqs, amps, rips, alg="no_alg")
+        # Freq greater than 0.5
+        with assert_raises(ValueError):
+            remezord(freqs+1, amps, rips)
+        # Negative freqs
+        with assert_raises(ValueError):
+            remezord(freqs-1, amps, rips)
+        # Negative rips
+        with assert_raises(ValueError):
+            remezord(freqs, amps, -rips)
+        # Amps length different than rips
+        with assert_raises(ValueError):
+            remezord(freqs, amps, rips[:2])
+        # Band edges different than 2*len(amps)-1
+        with assert_raises(ValueError):
+            remezord(freqs[:3], amps, rips)
+
+    @pytest.mark.parametrize('alg, numtaps', [["ichige", 27],
+                                              ["herrmann", 25],
+                                              ["kaiser", 23]])
+    def test_remezord_example1(self, alg, numtaps):
+        fs = 2000
+        freqs = [500, 600]
+        amps = [1, 0]
+        rp, rs = 3, 40
+        rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]
+
+        numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs,
+                                                    alg=alg)
+
+        assert numtaps == numtaps
+        assert_allclose(bands, [0, 0.25, 0.3, 0.5])
+        assert_allclose(desired, [1., 0.])
+        assert_allclose(weights, [1., 17.09973573])
+
+
+    def test_remezord_example2(self):
+        fs = 8000
+        freqs = np.array([1500, 2000])
+        amps = np.array([1, 0])
+        rips = [0.01, 0.1]
+        numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs)
+        assert numtaps == 24
+        assert_allclose(bands, [0, 0.1875, 0.25, 0.5])
+        assert_allclose(desired, [1., 0.])
+        assert_allclose(weights, [10, 1])
+
 
 class TestFirls:
 
