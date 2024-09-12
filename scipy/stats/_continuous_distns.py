@@ -9505,7 +9505,7 @@ class skewnorm_gen(rv_continuous):
     (`norm`). `rvs` implements the method of [1]_.
 
     This distribution uses routines from the Boost C++ library for
-    the computation of ``cdf``, ``ppf`` and ``isf`` methods. [1]_
+    the computation of ``cdf``, ``ppf`` and ``isf`` methods. [2]_
 
     %(after_notes)s
 
