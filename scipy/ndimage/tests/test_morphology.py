@@ -2274,13 +2274,14 @@ class TestNdimageMorphology:
                   [1, 1, 1],
                   [0, 1, 0]]
 
-        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+        data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 1, 1, 0, 1, 0],
                            [0, 1, 0, 1, 1, 0, 1],
                            [0, 1, 1, 1, 1, 1, 0],
                            [0, 0, 1, 1, 0, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0]], xp.bool)
+                           [0, 0, 0, 1, 0, 0, 0]], bool)
+        data = xp.asarray(data)
         if func == ndimage.binary_hit_or_miss:
             kwargs = dict(origin1=origin, origin2=origin)
         else:
@@ -2302,7 +2303,7 @@ class TestNdimageMorphology:
         # filter all axes except expand_axis
         axes = [0, 1, 2]
         axes.remove(expand_axis)
-        out = xp.zeros(data.shape, xp.bool)
+        out = xp.asarray(np.zeros(data.shape, bool))
         func(data, struct, output=out, axes=axes, **kwargs)
         assert_array_almost_equal(out, expected)
 
