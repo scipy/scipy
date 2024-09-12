@@ -50,6 +50,27 @@ XSF_HOST_DEVICE inline double gdtrib(double a, double p, double x) {
     };
     double lower_bound = std::numeric_limits<double>::min();
     double upper_bound = std::numeric_limits<double>::max();
+    /* To explain the magic constants used below:
+     * 1.0 is the initial guess for the root. -0.875 is the initial step size
+     * for the leading bracket endpoint if the bracket search will proceed to the
+     * left, likewise 7.0 is the initial step size when the bracket search will
+     * proceed to the right. 0.125 is the scale factor for a left moving bracket
+     * search and 8.0 the scale factor for a right moving bracket search. These
+     * constants are chosen so that:
+     *
+     * 1. The scale factor and bracket endpoints remain powers of 2, allowing for
+     *    exact arithmetic, preventing roundoff error from causing numerical catastrophe
+     *    which could lead to unexpected results.
+     * 2. The bracket sizes remain constant in a relative sense. Each candidate bracket
+     *    will contain roughly the same number of floating point values. This means that
+     *    the number of necessary function evaluations in the worst case scenario for
+     *    Chandrupatla's algorithm will remain constant.
+     *
+     * false specifies that the function is not decreasing. 342 is equal to
+     * max(ceil(log_8(DBL_MAX)), ceil(log_(1/8)(DBL_MIN))). An upper bound for the
+     * number of iterations needed in this bracket search to check all normalized
+     * floating point values.
+     */
     auto [xl, xr, f_xl, f_xr, bracket_status] = detail::bracket_root_for_cdf_inversion(
         func, 1.0, lower_bound, upper_bound, -0.875, 7.0, 0.125, 8, false, 342
     );
