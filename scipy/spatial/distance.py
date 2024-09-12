@@ -110,7 +110,7 @@ import warnings
 import numpy as np
 import dataclasses
 
-from typing import Optional, Callable
+from collections.abc import Callable
 
 from functools import partial
 from scipy._lib._util import _asarray_validated
@@ -1644,7 +1644,6 @@ _convert_to_bool = partial(_convert_to_type, out_type=bool)
 _distance_wrap.pdist_correlation_double_wrap = _correlation_pdist_wrap
 _distance_wrap.cdist_correlation_double_wrap = _correlation_cdist_wrap
 
-
 @dataclasses.dataclass(frozen=True)
 class CDistMetricWrapper:
     metric_name: str
@@ -1711,7 +1710,7 @@ class MetricInfo:
     pdist_func: Callable
     # function that checks kwargs and computes default values:
     # f(X, m, n, **kwargs)
-    validator: Optional[Callable] = None
+    validator: Callable | None = None
     # list of supported types:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
@@ -1754,15 +1753,15 @@ _METRIC_INFOS = [
         canonical_name='correlation',
         aka={'correlation', 'co'},
         dist_func=correlation,
-        cdist_func=CDistMetricWrapper('correlation'),
-        pdist_func=PDistMetricWrapper('correlation'),
+        cdist_func=_distance_pybind.cdist_correlation,
+        pdist_func=_distance_pybind.pdist_correlation,
     ),
     MetricInfo(
         canonical_name='cosine',
         aka={'cosine', 'cos'},
         dist_func=cosine,
-        cdist_func=CDistMetricWrapper('cosine'),
-        pdist_func=PDistMetricWrapper('cosine'),
+        cdist_func=_distance_pybind.cdist_cosine,
+        pdist_func=_distance_pybind.pdist_cosine,
     ),
     MetricInfo(
         canonical_name='dice',
@@ -1800,8 +1799,8 @@ _METRIC_INFOS = [
         canonical_name='jensenshannon',
         aka={'jensenshannon', 'js'},
         dist_func=jensenshannon,
-        cdist_func=CDistMetricWrapper('jensenshannon'),
-        pdist_func=PDistMetricWrapper('jensenshannon'),
+        cdist_func=_distance_pybind.cdist_jensenshannon,
+        pdist_func=_distance_pybind.pdist_jensenshannon,
     ),
     MetricInfo(
         canonical_name='kulczynski1',
@@ -1816,8 +1815,8 @@ _METRIC_INFOS = [
         aka={'mahalanobis', 'mahal', 'mah'},
         validator=_validate_mahalanobis_kwargs,
         dist_func=mahalanobis,
-        cdist_func=CDistMetricWrapper('mahalanobis'),
-        pdist_func=PDistMetricWrapper('mahalanobis'),
+        cdist_func=_distance_pybind.cdist_mahalanobis,
+        pdist_func=_distance_pybind.pdist_mahalanobis,
     ),
     MetricInfo(
         canonical_name='minkowski',
@@ -1848,8 +1847,8 @@ _METRIC_INFOS = [
         aka={'seuclidean', 'se', 's'},
         validator=_validate_seuclidean_kwargs,
         dist_func=seuclidean,
-        cdist_func=CDistMetricWrapper('seuclidean'),
-        pdist_func=PDistMetricWrapper('seuclidean'),
+        cdist_func=_distance_pybind.cdist_seuclidean,
+        pdist_func=_distance_pybind.pdist_seuclidean,
     ),
     MetricInfo(
         canonical_name='sokalmichener',
@@ -2590,7 +2589,7 @@ def num_obs_dm(d):
     --------
     Find the number of original observations corresponding
     to a square redundant distance matrix d.
-    
+
     >>> from scipy.spatial.distance import num_obs_dm
     >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
     >>> num_obs_dm(d)
@@ -2620,7 +2619,7 @@ def num_obs_y(Y):
     --------
     Find the number of original observations corresponding to a
     condensed distance matrix Y.
-    
+
     >>> from scipy.spatial.distance import num_obs_y
     >>> Y = [1, 2, 3.5, 7, 10, 4]
     >>> num_obs_y(Y)
