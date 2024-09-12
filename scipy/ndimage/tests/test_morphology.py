@@ -2274,13 +2274,13 @@ class TestNdimageMorphology:
                   [1, 1, 1],
                   [0, 1, 0]]
 
-        data = xp.array([[0, 0, 0, 1, 0, 0, 0],
-                         [0, 0, 0, 1, 0, 0, 0],
-                         [0, 0, 1, 1, 0, 1, 0],
-                         [0, 1, 0, 1, 1, 0, 1],
-                         [0, 1, 1, 1, 1, 1, 0],
-                         [0, 0, 1, 1, 0, 0, 0],
-                         [0, 0, 0, 1, 0, 0, 0]], xp.bool)
+        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+                           [0, 0, 0, 1, 0, 0, 0],
+                           [0, 0, 1, 1, 0, 1, 0],
+                           [0, 1, 0, 1, 1, 0, 1],
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 0, 1, 1, 0, 0, 0],
+                           [0, 0, 0, 1, 0, 0, 0]], xp.bool)
         if func == ndimage.binary_hit_or_miss:
             kwargs = dict(origin1=origin, origin2=origin)
         else:
@@ -2665,18 +2665,18 @@ class TestNdimageMorphology:
     def test_grey_axes(self, xp, func, expand_axis, origin, footprint_mode,
                        mode):
 
-        data = xp.array([[0, 0, 0, 1, 0, 0, 0],
-                         [0, 0, 0, 4, 0, 0, 0],
-                         [0, 0, 2, 1, 0, 2, 0],
-                         [0, 3, 0, 6, 5, 0, 1],
-                         [0, 4, 5, 3, 3, 4, 0],
-                         [0, 0, 9, 3, 0, 0, 0],
-                         [0, 0, 0, 2, 0, 0, 0]])
+        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+                           [0, 0, 0, 4, 0, 0, 0],
+                           [0, 0, 2, 1, 0, 2, 0],
+                           [0, 3, 0, 6, 5, 0, 1],
+                           [0, 4, 5, 3, 3, 4, 0],
+                           [0, 0, 9, 3, 0, 0, 0],
+                           [0, 0, 0, 2, 0, 0, 0]])
         kwargs = dict(origin=origin, mode=mode)
         if footprint_mode == 'size':
             kwargs['size'] = (2, 3)
         else:
-            kwargs['footprint'] = xp.array([[1, 0, 1], [1, 1, 0]])
+            kwargs['footprint'] = xp.asarray([[1, 0, 1], [1, 1, 0]])
         if footprint_mode == 'structure':
             kwargs['structure'] = xp.ones_like(kwargs['footprint'])
         expected = func(data, **kwargs)
