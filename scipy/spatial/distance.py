@@ -888,7 +888,7 @@ def jaccard(u, v, w=None):
         nonzero = w * nonzero
     a = np.float64(unequal.sum())
     b = np.float64(nonzero.sum())
-    return (a / b) if b != 0 else 0
+    return (a / b) if b != 0 else np.float64(0)
 
 
 def kulczynski1(u, v, *, w=None):
