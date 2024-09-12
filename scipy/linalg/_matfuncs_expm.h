@@ -99,21 +99,29 @@ pick_pade_structure(PyObject *dummy, PyObject *args) {
     switch (PyArray_TYPE(ap_Am))
     {
         case (NPY_FLOAT32):
+        {
             float* Ams = (float*)PyArray_DATA(ap_Am);
             pick_pade_structure_s(Ams, n, &m, &s);
             break;
+        }
         case (NPY_FLOAT64):
+        {
             double* Amd = (double*)PyArray_DATA(ap_Am);
             pick_pade_structure_d(Amd, n, &m, &s);
             break;
+        }
         case (NPY_COMPLEX64):
+        {
             EXPM_C* Amc = (EXPM_C*)PyArray_DATA(ap_Am);
             pick_pade_structure_c(Amc, n, &m, &s);
             break;
+        }
         case (NPY_COMPLEX128):
+        {
             EXPM_Z* Amz = (EXPM_Z*)PyArray_DATA(ap_Am);
             pick_pade_structure_z(Amz, n, &m, &s);
             break;
+        }
     }
 
     return Py_BuildValue("ii", m, s);
@@ -145,21 +153,29 @@ pade_UV_calc(PyObject *dummy, PyObject *args) {
     switch (PyArray_TYPE(ap_Am))
     {
         case (NPY_FLOAT32):
+        {
             float* Ams = (float*)PyArray_DATA(ap_Am);
             pade_UV_calc_s(Ams, n, m, &info);
             break;
+        }
         case (NPY_FLOAT64):
+        {
             double* Amd = (double*)PyArray_DATA(ap_Am);
             pade_UV_calc_d(Amd, n, m, &info);
             break;
+        }
         case (NPY_COMPLEX64):
+        {
             EXPM_C* Amc = (EXPM_C*)PyArray_DATA(ap_Am);
             pade_UV_calc_c(Amc, n, m, &info);
             break;
+        }
         case (NPY_COMPLEX128):
+        {
             EXPM_Z* Amz = (EXPM_Z*)PyArray_DATA(ap_Am);
             pade_UV_calc_z(Amz, n, m, &info);
             break;
+        }
     }
 
     return Py_BuildValue("i", info);
