@@ -5,7 +5,7 @@ from numpy.testing import (assert_equal,
 )
 
 from scipy._lib._array_api import (
-    assert_almost_equal, assert_array_almost_equal, xp_assert_close, xp_assert_equal
+    assert_almost_equal, assert_array_almost_equal, xp_assert_close
 )
 
 from scipy.ndimage import convolve1d   # type: ignore[attr-defined]

@@ -1,7 +1,6 @@
 import numpy as np
 from scipy._lib._array_api import (
-    assert_array_almost_equal, assert_almost_equal,
-    xp_assert_equal, xp_assert_close
+    assert_array_almost_equal, assert_almost_equal, xp_assert_close
 )
 
 import pytest

@@ -720,7 +720,8 @@ class TestFindPeaks:
         peaks_calc, properties = find_peaks(x, prominence=interval)
         xp_assert_equal(peaks_calc, peaks_true[keep])
         xp_assert_equal(properties['prominences'], prominences[keep])
-        xp_assert_equal(properties['left_bases'], np.zeros_like(properties['left_bases']))
+        xp_assert_equal(properties['left_bases'],
+                        np.zeros_like(properties['left_bases']))
         xp_assert_equal(properties['right_bases'], peaks_true[keep] + 1)
 
     def test_width_condition(self):

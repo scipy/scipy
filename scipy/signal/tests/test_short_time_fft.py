@@ -684,7 +684,8 @@ def test_roundtrip_windows(window, n: int, nperseg: int, noverlap: int):
     x = 10 * np.random.randn(n)
     Sx = SFT.stft(x)
     x1 = SFT.istft(Sx, k1=len(z))
-    xp_assert_close(x.astype(np.complex128), x1, err_msg="Roundtrip for float values failed")
+    xp_assert_close(x.astype(np.complex128), x1,
+                    err_msg="Roundtrip for float values failed")
 
     x32 = x.astype(np.float32)
     Sx32 = SFT.stft(x32)
