@@ -2301,10 +2301,14 @@ class TestNdimageMorphology:
         data = xp.stack([data] * n_reps, axis=expand_axis)
 
         # filter all axes except expand_axis
-        axes = [0, 1, 2]
+        axes = [0, 1, 2]W
         axes.remove(expand_axis)
-        out = xp.asarray(np.zeros(data.shape, bool))
-        func(data, struct, output=out, axes=axes, **kwargs)
+        if is_numpy(xp) or is_cupy(xp):
+            out = xp.asarray(np.zeros(data.shape, bool))
+            func(data, struct, output=out, axes=axes, **kwargs)
+        else:
+            # inplace output= is unsupported by JAX
+            out = func(data, struct, axes=axes, **kwargs)
         assert_array_almost_equal(out, expected)
 
     def test_grey_erosion01(self, xp):
@@ -2690,8 +2694,13 @@ class TestNdimageMorphology:
         # filter all axes except expand_axis
         axes = [0, 1, 2]
         axes.remove(expand_axis)
-        out = xp.zeros(expected.shape, dtype=expected.dtype)
-        func(data, output=out, axes=axes, **kwargs)
+
+        if is_numpy(xp) or is_cupy(xp):
+            out = xp.zeros(expected.shape, dtype=expected.dtype)
+            func(data, output=out, axes=axes, **kwargs)
+        else:
+            # inplace output= is unsupported by JAX
+            out = func(data, axes=axes, **kwargs)
         assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('dtype', types)
