@@ -13,7 +13,7 @@ orphan: true
 ---
 
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/linalg_batch.ipynb
+.. jupyterlite:: ../_contents/linalg_batch.ipynb
    :new_tab: True
 ```
 
