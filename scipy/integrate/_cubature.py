@@ -58,15 +58,19 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     ----------
     f : callable
         Function to integrate. `f` must have the signature::
-            f(x : ndarray, \*args) -> ndarray
+
+            f(x : ndarray, *args) -> ndarray
 
         `f` should accept arrays ``x`` of shape::
+
             (npoints, ndim)
 
         and output arrays of shape::
+
             (npoints, output_dim_1, ..., output_dim_n)
 
         In this case, `cubature` will return arrays of shape::
+
             (output_dim_1, ..., output_dim_n)
     a, b : array_like
         Lower and upper limits of integration as 1D arrays specifying the left and right
@@ -136,6 +140,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
             0.16666667, 0.14285714, 0.125     , 0.11111111, 0.1       ])
 
     A 7D integral with arbitrary-shaped array output. Here::
+
         f(x) = cos(2*pi*r + alphas @ x)
 
     for some ``r`` and ``alphas``, and the integral is performed over the unit
@@ -188,6 +193,13 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     Notes
     -----
+    The algorithm uses a similar algorithm to `quad_vec`, which itself is based on the
+    implementation of QUADPACK's DQAG* algorithms, implementing global error control and
+    adaptive subdivision.
+
+    The source of the nodes and weights used for Gauss-Kronrod quadrature can be found
+    in [1]_, and the algorithm for calculating the nodes and weights in Genz-Malik
+    cubature can be found in [2]_.
 
     The rules currently supported via the `rule` argument are:
 
@@ -202,6 +214,16 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     Genz-Malik is typically less accurate than Gauss-Kronrod but has much fewer nodes,
     so in this situation using "genz-malik" might be preferable.
+
+    References
+    ----------
+    .. [1] R. Piessens, E. de Doncker, Quadpack: A Subroutine Package for Automatic
+        Integration, files: dqk21.f, dqk15.f (1983).
+
+    .. [2] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+        numerical integration over an N-dimensional rectangular region, Journal of
+        Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
+        ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
     """
 
     # It is also possible to use a custom rule, but this is not yet part of the public

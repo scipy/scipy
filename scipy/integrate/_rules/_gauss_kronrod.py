@@ -34,7 +34,8 @@ class GaussKronrodQuadrature(NestedFixedRule):
 
     References
     ----------
-    [1] R. Piessens, E. de Doncker, QUADPACK, files: dqk21.f, dqk15.f (1983).
+    .. [1] R. Piessens, E. de Doncker, Quadpack: A Subroutine Package for Automatic
+        Integration, files: dqk21.f, dqk15.f (1983).
 
     Examples
     --------
@@ -86,6 +87,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
 
     @cached_property
     def nodes_and_weights(self):
+        # These values are from QUADPACK's `dqk21.f` and `dqk15.f` (1983).
         if self.npoints == 21:
             nodes = np.array([
                 0.995657163025808080735527280689003,
