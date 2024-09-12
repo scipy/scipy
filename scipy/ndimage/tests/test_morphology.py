@@ -2301,7 +2301,7 @@ class TestNdimageMorphology:
         data = xp.stack([data] * n_reps, axis=expand_axis)
 
         # filter all axes except expand_axis
-        axes = [0, 1, 2]W
+        axes = [0, 1, 2]
         axes.remove(expand_axis)
         if is_numpy(xp) or is_cupy(xp):
             out = xp.asarray(np.zeros(data.shape, bool))
