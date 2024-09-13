@@ -175,7 +175,7 @@ class TestDistributions:
         with np.errstate(invalid='ignore', divide='ignore'):
             check_support(dist)
             check_moment_funcs(dist, result_shape)  # this needs to get split up
-            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape)
+            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('family', families)
@@ -240,7 +240,7 @@ class TestDistributions:
         assert ax == plt.gca()
 
 
-def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape):
+def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
     full_shape = sample_shape + result_shape
     if fname == 'sample':
         sample_method = dist.sample
@@ -250,7 +250,7 @@ def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape):
         methods.add('formula')
 
     for method in methods:
-        res = sample_method(sample_shape, method=method)
+        res = sample_method(sample_shape, method=method, rng=rng)
         valid_parameters = np.broadcast_to(get_valid_parameters(dist),
                                            res.shape)
         assert_equal(res.shape, full_shape)
@@ -265,10 +265,8 @@ def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape):
         assert np.all(np.isfinite(res[valid_parameters]))
         assert_equal(res[~valid_parameters], np.nan)
 
-        dist.rng = np.random.default_rng(42)
-        sample1 = sample_method(sample_shape, method=method)
-        dist.rng = np.random.default_rng(42)
-        sample2 = sample_method(sample_shape, method=method)
+        sample1 = sample_method(sample_shape, method=method, rng=42)
+        sample2 = sample_method(sample_shape, method=method, rng=42)
         assert not np.any(np.equal(res, sample1))
         assert_equal(sample1, sample2)
 
@@ -615,8 +613,7 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname):
     if fname == 'sample':
         sample_method = dist.sample
 
-    dist.rng = rng
-    x = sample_method(sample_size)
+    x = sample_method(sample_size, rng=rng)
     assert x.shape == sample_array_shape
 
     # probably should give `axis` argument to ks_1samp, review that separately
@@ -725,11 +722,6 @@ def test_input_validation():
     with pytest.raises(ValueError, match=message):
         Test().moment(2, kind='coconut')
 
-    message = ("Argument `rng` passed to the `Test` distribution family is of "
-               "type `<class 'int'>`, but it must be a NumPy `Generator`.")
-    with pytest.raises(ValueError, match=message):
-        Test(rng=1)
-
     class Test2(ContinuousDistribution):
         _p1 = _RealParameter('c', domain=_RealDomain())
         _p2 = _RealParameter('d', domain=_RealDomain())
@@ -769,32 +761,19 @@ def test_input_validation():
 
 def test_rng_deepcopy_pickle():
     # test behavior of `rng` attribute and copy behavior
-    def _check_copies(dist1, comparison):
-        dist2 = deepcopy(dist1)
-        dist3 = pickle.loads(pickle.dumps(dist1))
-        res1, res2, res3 = dist1.sample(), dist2.sample(), dist3.sample()
-        assert np.all(comparison(res2, res1))
-        assert np.all(comparison(res3, res1))
-
     kwargs = dict(a=[-1, 2], b=10)
-    dist1 = _Uniform(**kwargs, rng=np.random.default_rng(23434924629239023))
-    assert isinstance(dist1.rng, np.random.Generator)
-    _check_copies(dist1, np.equal)
-
-    dist1.rng = np.random.default_rng(23434924629239024)
-    assert isinstance(dist1.rng, np.random.Generator)
-    _check_copies(dist1, np.equal)
-
-    # # If not provided, we generate a new `default_rng()` every time it is needed.
-    # # This saves time during initialization and prevents gotchas associated with
-    # # copying an unseeded `ContinuousDistribution` instance.
-    dist1.rng = None
-    assert dist1.rng is None
-    _check_copies(dist1, np.not_equal)
-
     dist1 = _Uniform(**kwargs)
-    assert dist1.rng is None
-    _check_copies(dist1, np.not_equal)
+    dist2 = deepcopy(dist1)
+    dist3 = pickle.loads(pickle.dumps(dist1))
+
+    res1, res2, res3 = dist1.sample(), dist2.sample(), dist3.sample()
+    assert np.all(res2 != res1)
+    assert np.all(res3 != res1)
+
+    res1, res2, res3 = dist1.sample(rng=42), dist2.sample(rng=42), dist3.sample(rng=42)
+    assert np.all(res2 == res1)
+    assert np.all(res3 == res1)
+
 
 class TestAttributes:
     def test_cache_policy(self):

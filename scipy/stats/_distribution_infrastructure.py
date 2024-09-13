@@ -29,7 +29,7 @@ __all__ = ['ContinuousDistribution']
 # Could add other policies for broadcasting and edge/out-of-bounds case handling
 # For instance, when edge case handling is known not to be needed, it's much
 # faster to turn it off, but it might still be nice to have array conversion
-# and shaping done so the user doesn't need to be so carefuly.
+# and shaping done so the user doesn't need to be so careful.
 _SKIP_ALL = "skip_all"
 # Other cache policies would be useful, too.
 _NO_CACHE = "no_cache"
@@ -78,7 +78,6 @@ _NO_CACHE = "no_cache"
 #   it should depend on the accuracy setting.
 #  in tests, check reference value against that produced using np.vectorize?
 #  add `axis` to `ks_1samp`
-#  Getting `default_rng` takes forever! OK to do it only when support is called?
 #  User tips for faster execution:
 #  - pass NumPy arrays
 #  - pass inputs of floating point type (not integers)
@@ -427,7 +426,7 @@ class _RealDomain(_SimpleDomain):
             The Generator used for drawing random values.
 
         """
-        rng = rng or np.random.default_rng()
+        rng = np.random.default_rng(rng)
 
         # get copies of min and max with no nans so that uniform doesn't fail
         min_nn, max_nn = min.copy(), max.copy()
@@ -1309,7 +1308,6 @@ def _generate_example(dist_family):
     p = 0.32
     x = round(X.icdf(p), 2)
     y = round(X.icdf(2 * p), 2)
-    X.rng = rng
 
     example = f"""
     To use the distribution class, it must be instantiated using keyword
@@ -1391,9 +1389,8 @@ def _generate_example(dist_family):
     Pseudo-random samples can be drawn from
     the underlying distribution using ``sample``.
 
-    >>> X.rng = np.random.default_rng(2354873452)
     >>> X.sample(shape=(4,))
-    {repr(X.sample(shape=(4,)))}
+    {repr(X.sample(shape=(4,)))}  # may vary
     """
     # remove the indentation due to use of block quote within function;
     # eliminate blank first line
@@ -1425,9 +1422,6 @@ class ContinuousDistribution:
         support, moments, etc.) are cached to improve performance of future
         calculations. Pass ``'no_cache'`` to reduce memory reserved by the class
         instance.
-    rng : numpy.random.Generator
-        Random number generator to be used by any methods that require
-        pseudo-random numbers (e.g. `sample`).
 
     Attributes
     ----------
@@ -1493,11 +1487,10 @@ class ContinuousDistribution:
     ### Initialization
 
     def __init__(self, *, tol=_null, validation_policy=None, cache_policy=None,
-                 rng=None, **parameters):
+                 **parameters):
         self.tol = tol
         self.validation_policy = validation_policy
         self.cache_policy = cache_policy
-        self.rng = rng
         self._not_implemented = (
             f"`{self.__class__.__name__}` does not provide an accurate "
             "implementation of the required method. Consider leaving "
@@ -1781,20 +1774,6 @@ class ContinuousDistribution:
             raise ValueError(message)
         self._validation_policy = validation_policy
 
-    @property
-    def rng(self):
-        r"""numpy.random.Generator
-        Random number generator to be used by any methods that require
-        pseudo-random numbers (e.g. `sample`).
-        """
-        return self._rng
-
-    @rng.setter
-    def rng(self, rng):
-        rng = self._validate_rng(rng)
-        self._rng = rng
-
-
     def __getattr__(self, item):
         # This override allows distribution parameters to be accessed as
         # attributes. See Question 1 at the top.
@@ -1869,25 +1848,6 @@ class ContinuousDistribution:
 
     ## Input validation
 
-    def _validate_rng(self, rng):
-        # Yet another RNG validating function. Unlike others in SciPy, if `rng
-        # is None`, this returns `None`. This reduces overhead (~.030 ms on my
-        # machine) of distribution initialization by delaying a call to
-        # `default_rng()` until the RNG will actually be used, and it prevents
-        # unseeded Generators from being stored.
-        # It also raises a distribution-specific error message to facilitate
-        #  identification of the source of the error.
-        if self.validation_policy == _SKIP_ALL:
-            return rng
-
-        if rng is not None and not isinstance(rng, np.random.Generator):
-            message = (
-                f"Argument `rng` passed to the `{self.__class__.__name__}` "
-                f"distribution family is of type `{type(rng)}`, but it must "
-                "be a NumPy `Generator`.")
-            raise ValueError(message)
-        return rng
-
     def _validate_order_kind(self, order, kind, kinds):
         # Yet another integer validating function. Unlike others in SciPy, it
         # Is quite flexible about what is allowed as an integer, and it
@@ -1931,7 +1891,7 @@ class ContinuousDistribution:
 
         See _Parameterization.draw for documentation details.
         """
-        rng = rng or np.random.default_rng()
+        rng = np.random.default_rng(rng)
         if len(cls._parameterizations) == 0:
             return cls()
         if i_parameterization is None:
@@ -4170,7 +4130,7 @@ class ContinuousDistribution:
     # See the note corresponding with the "Distribution Parameters" for more
     # information.
 
-    def sample(self, shape=(), *, method=None):
+    def sample(self, shape=(), *, method=None, rng=None):
         """Random sample from the distribution.
 
         Parameters
@@ -4191,6 +4151,11 @@ class ContinuousDistribution:
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a `NotImplementedError``
             will be raised.
+        rng : `numpy.random.Generator`, optional
+            Pseudorandom number generator state. When `rng` is None, a new
+            `numpy.random.Generator` is created using entropy from the
+            operating system. Types other than `numpy.random.Generator` are
+            passed to `numpy.random.default_rng` to instantiate a `Generator`.
 
         References
         ----------
@@ -4224,7 +4189,7 @@ class ContinuousDistribution:
         # dtype and shape
         sample_shape = (shape,) if not np.iterable(shape) else tuple(shape)
         full_shape = sample_shape + self._shape
-        rng = self.rng or np.random.default_rng()
+        rng = np.random.default_rng(rng)
         res = self._sample_dispatch(sample_shape, full_shape, method=method,
                                     rng=rng, **self._parameters)
 
@@ -4817,8 +4782,8 @@ class ContinuousDistribution:
 
         # make plot
         ax.plot(x, y)
-        ax.set_xlabel(x_name)
-        ax.set_ylabel(y_name)
+        ax.set_xlabel(f"${x_name}$")
+        ax.set_ylabel(f"${y_name}$")
         ax.set_title(str(self))
 
         # only need a legend if distribution has parameters
@@ -4829,7 +4794,7 @@ class ContinuousDistribution:
             param_arrays = [np.atleast_1d(self._parameters[pname])
                             for pname in param_names]
             for param_vals in zip(*param_arrays):
-                assignments = [f"{parameters[name].symbol} = {val:.4g}"
+                assignments = [f"${parameters[name].symbol}$ = {val:.4g}"
                                for name, val in zip(param_names, param_vals)]
                 label.append(", ".join(assignments))
             ax.legend(label)
