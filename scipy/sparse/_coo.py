@@ -1083,6 +1083,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
 
     def broadcast_to(self, new_shape):
+        if new_shape == self.shape:
+            return self
+        
         old_shape = self.shape
 
         # Check if the new shape is compatible for broadcasting
