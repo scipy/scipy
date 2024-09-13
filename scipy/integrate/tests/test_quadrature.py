@@ -341,6 +341,18 @@ class TestTrapezoid:
         xm = np.ma.array(x, mask=mask)
         assert_allclose(trapezoid(y, xm), r)
 
+    @skip_xp_backends(np_only=True,
+                      reasons=['array-likes only supported for NumPy backend'])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_array_like(self, xp):
+        x = list(range(5))
+        y = [t * t for t in x]
+        xarr = xp.asarray(x, dtype=xp.float64)
+        yarr = xp.asarray(y, dtype=xp.float64)
+        res = trapezoid(y, x)
+        resarr = trapezoid(yarr, xarr)
+        xp_assert_close(res, resarr)
+
 
 class TestQMCQuad:
     def test_input_validation(self):
