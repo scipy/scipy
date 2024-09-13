@@ -1897,7 +1897,7 @@ def _qr_reduce_py(a_p, y, startrow=1):
 
     # convert to packed
     offs = list(range(R.shape[0]))
-    R_p = PackedMatrix(R, np.array(offs), nc)
+    R_p = PackedMatrix(R, np.array(offs, dtype=np.int64), nc)
 
     return R_p, y1
 
@@ -1961,7 +1961,7 @@ class TestGivensQR:
         assert nc == t.shape[0] - k - 1
 
         offset = a_csr.indices[::(k+1)]
-        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        offset = np.ascontiguousarray(offset, dtype=np.int64)
         A = a_csr.data.reshape(m, k+1)
 
         R = PackedMatrix(A, offset, nc)
@@ -1990,7 +1990,7 @@ class TestGivensQR:
         assert nc == t.shape[0] - k - 1
 
         offset = a_csr.indices[::(k+1)]
-        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        offset = np.ascontiguousarray(offset, dtype=np.int64)
         A = a_csr.data.reshape(m, k+1)
 
         R = PackedMatrix(A, offset, nc)
@@ -2017,10 +2017,10 @@ class TestGivensQR:
         a_csr = BSpline.design_matrix(x, t, k)
         a_w = (a_csr * w[:, None]).tocsr()
         A_ = a_w.data.reshape((m, k+1))
-        offset_ = a_w.indices[::(k+1)]
+        offset_ = a_w.indices[::(k+1)].astype(np.int64)
 
         xp_assert_close(A, A_, atol=1e-15)
-        xp_assert_equal(offset, offset_, check_dtype=False)
+        xp_assert_equal(offset, offset_)
         assert nc == t.shape[0] - k - 1
 
     def test_fpback(self):
