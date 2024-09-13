@@ -20,7 +20,7 @@
  *
  *  sort of mimic checks cython does for `double[::1] obj`
  */
-int
+static int
 check_array(PyObject *obj, npy_intp ndim, int typenum) {
 
     int cond = (PyArray_CheckExact(obj) &&
