@@ -128,7 +128,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         tmp = xp.exp(a - a_max)
 
     # suppress warnings about log of zero
-    with np.errstate(divide='ignore'):
+    with np.errstate(divide='ignore', invalid='ignore'):
         s = xp.sum(tmp, axis=axis, keepdims=keepdims, dtype=tmp.dtype)
         if return_sign:
             # For complex, use the numpy>=2.0 convention for sign.
