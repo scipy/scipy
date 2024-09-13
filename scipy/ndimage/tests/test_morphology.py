@@ -2270,9 +2270,10 @@ class TestNdimageMorphology:
                                       ndimage.binary_propagation,
                                       ndimage.binary_fill_holes])
     def test_binary_axes(self, xp, func, expand_axis, origin, border_value):
-        struct = [[0, 1, 0],
-                  [1, 1, 1],
-                  [0, 1, 0]]
+        struct = np.asarray([[0, 1, 0],
+                             [1, 1, 1],
+                             [0, 1, 0]], bool)
+        struct = xp.asarray(struct)
 
         data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0],
