@@ -1039,47 +1039,47 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return prod_arr
 
 
-    def _matmul_sparse(A, B):
+    def _matmul_sparse(self, other):
         """
         Perform sparse-sparse matrix multiplication for two n-D COO arrays.
-        The method converts A and B n-D arrays to 2-D block array format,
+        The method converts input n-D arrays to 2-D block array format,
         uses csr_matmat to multiply them, and then converts the
         result back to n-D COO array.
         
         Parameters:
-        A (COO): The first n-D sparse array in COO format.
-        B (COO): The second n-D sparse array in COO format.
+        self (COO): The first n-D sparse array in COO format.
+        other (COO): The second n-D sparse array in COO format.
         
         Returns:
-        C (COO): The resulting n-D sparse array after multiplication.
+        prod (COO): The resulting n-D sparse array after multiplication.
         """
-        if A.ndim < 3 and B.ndim < 3:
-            return _spbase._matmul_sparse(A, B)
+        if self.ndim < 3 and other.ndim < 3:
+            return _spbase._matmul_sparse(self, other)
 
-        # Get the shapes of A and B
-        shape_A = A.shape
-        shape_B = B.shape
+        # Get the shapes of self and other
+        self_shape = self.shape
+        other_shape = other.shape
         
-        # Determine the new shape to broadcast A and B
-        broadcast_shape = np.broadcast_shapes(shape_A[:-2], shape_B[:-2])
-        new_shape_A = tuple(broadcast_shape) + shape_A[-2:]
-        new_shape_B = tuple(broadcast_shape) + shape_B[-2:]
+        # Determine the new shape to broadcast self and other
+        broadcast_shape = np.broadcast_shapes(self_shape[:-2], other_shape[:-2])
+        self_new_shape = tuple(broadcast_shape) + self_shape[-2:]
+        other_new_shape = tuple(broadcast_shape) + other_shape[-2:]
 
-        A_broadcasted = A.broadcast_to(new_shape_A)
-        B_broadcasted = B.broadcast_to(new_shape_B)
+        self_broadcasted = self.broadcast_to(self_new_shape)
+        other_broadcasted = other.broadcast_to(other_new_shape)
         
         # Convert n-D COO arrays to 2-D block diagonal arrays
-        A_block_diag = _block_diag(A_broadcasted)
-        B_block_diag = _block_diag(B_broadcasted)
+        self_block_diag = _block_diag(self_broadcasted)
+        other_block_diag = _block_diag(other_broadcasted)
         
         # Use csr_matmat to perform sparse matrix multiplication
-        C_block_diag = (A_block_diag @ B_block_diag).tocoo()
+        prod_block_diag = (self_block_diag @ other_block_diag).tocoo()
         
         # Convert the 2-D block diagonal array back to n-D
-        C = _extract_block_diag(C_block_diag, shape=(*broadcast_shape,
-                                                     A.shape[-2], B.shape[-1]))
+        prod = _extract_block_diag(prod_block_diag, shape=(*broadcast_shape,
+                                                     self.shape[-2], other.shape[-1]))
         
-        return C
+        return prod
 
 
     def broadcast_to(self, new_shape):
