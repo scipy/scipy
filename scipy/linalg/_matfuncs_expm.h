@@ -76,7 +76,7 @@ static char doc_pps[] = "[m, s] = pick_pade_structure(Am)";
 
 static PyObject*
 pick_pade_structure(PyObject *dummy, PyObject *args) {
-    Py_ssize_t n;
+    Py_ssize_t n, n1;
     int m = 0, s = 0;
     PyArrayObject *ap_Am=NULL;
 
@@ -90,11 +90,17 @@ pick_pade_structure(PyObject *dummy, PyObject *args) {
         (PyArray_NDIM(ap_Am) != 3)
         )
     {
-        PYERR(expm_error, "Am must be a 3D C-contiguous array with size (5, n, n) "
-                          " that of type float32, float64, complex64, or complex128.");
+        PYERR(expm_error, "Input must be a 3D C-contiguous array with size"
+                          " (5, n, n) that is of type float32, float64,"
+                          " complex64, or complex128.");
     }
 
     n = PyArray_DIMS(ap_Am)[2];
+    n1 = PyArray_DIMS(ap_Am)[1];
+    if (n != n1)
+    {
+        PYERR(expm_error, "Last two dimensions of the input must be the same.");
+    }
     // Make the call based on dtype
     switch (PyArray_TYPE(ap_Am))
     {
@@ -132,8 +138,8 @@ static char doc_puv[] = "info = pade_UV_calc(Am, m)";
 
 static PyObject*
 pade_UV_calc(PyObject *dummy, PyObject *args) {
+    Py_ssize_t n, n1;
     int m = 0, info = 0;
-    Py_ssize_t n;
     PyArrayObject *ap_Am=NULL;
 
     if (!PyArg_ParseTuple(args, ("O!i"), &PyArray_Type, (PyObject **)&ap_Am, &m)) return NULL;
@@ -145,10 +151,17 @@ pade_UV_calc(PyObject *dummy, PyObject *args) {
         (PyArray_NDIM(ap_Am) != 3)
         )
     {
-        PYERR(expm_error, "Am must be a 3D C-contiguous array with size (5, n, n) "
-                          " that of type float32, float64, complex64, or complex128.");
+        PYERR(expm_error, "Input must be a 3D C-contiguous array with size"
+                          " (5, n, n) that is of type float32, float64,"
+                          " complex64, or complex128.");
     }
+
     n = PyArray_DIMS(ap_Am)[2];
+    n1 = PyArray_DIMS(ap_Am)[1];
+    if (n != n1)
+    {
+        PYERR(expm_error, "Last two dimensions of the input must be the same.");
+    }
     // Make the call based on dtype
     switch (PyArray_TYPE(ap_Am))
     {
