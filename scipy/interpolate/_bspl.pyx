@@ -16,10 +16,10 @@ cnp.import_array()
 cdef extern from "src/__fitpack.h" namespace "fitpack":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result
     ) noexcept nogil
-    ssize_t _find_interval(const double* tptr, ssize_t len_t,
+    npy_int64 _find_interval(const double* tptr, npy_int64 len_t,
                            int k,
                            double xval,
-                           ssize_t prev_l,
+                           npy_int64 prev_l,
                            int extrapolate
     ) noexcept nogil
 

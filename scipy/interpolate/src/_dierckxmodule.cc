@@ -6,14 +6,6 @@
 #include "numpy/arrayobject.h"
 #include "__fitpack.h"
 
-/*
- XXX:
-   1. how to check for refleaks / refcounting errors?
-   2. goto fail & crosses initialization errors: a better pattern or copy-paste?
-   3. npy_intp vs Py_ssize_t : interchangeable or not?
-   4. python int -> C int, robust pattern?
- */
-
 
 /*
  * Check obj to be an ndim C contiguous array of specified typenum
@@ -30,7 +22,9 @@ check_array(PyObject *obj, npy_intp ndim, int typenum) {
     );
 
     if(!cond) {
-        std::string msg = "Expected a " + std::to_string(ndim) + "-dim C contiguous array";
+        std::string msg = ("Expected a " + std::to_string(ndim) + "-dim C contiguous array " +
+                           " of dtype = " + std::to_string(typenum) + "( got " +
+                           std::to_string(PyArray_TYPE((PyArrayObject*)obj)) +" )\n");
         // XXX: name the dtype from typenum? Also type of arg if not array
         PyErr_SetString(PyExc_ValueError, msg.c_str());
         return 0;
@@ -79,7 +73,6 @@ py_fpknot(PyObject* self, PyObject *args)
     PyArrayObject *a_t = (PyArrayObject *)py_t;
     PyArrayObject *a_residuals = (PyArrayObject *)py_residuals;
 
-    // XXX: npy_intp vs Py_ssize_t vs ssize_t (== ptrdiff_t)?
     npy_intp len_x = PyArray_DIM(a_x, 0);
     npy_intp len_r = PyArray_DIM(a_residuals, 0);
 
@@ -116,7 +109,6 @@ py_fpback(PyObject* self, PyObject *args)
 {
     PyObject *py_R=NULL, *py_y=NULL;
     Py_ssize_t nc;
-   // XXX: ssize_t in C++, is "n" a correct format? interchangeable with Py_ssize_t?
 
     if(!PyArg_ParseTuple(args, "OnO", &py_R, &nc, &py_y)) {
         return NULL;
@@ -193,7 +185,7 @@ py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
     }
 
     if (!(check_array(py_a, 2, NPY_DOUBLE) &&
-          check_array(py_offs, 1, NPY_INTP) && // XXX: typecode for ssize_t (==ptrdiff_t)?
+          check_array(py_offs, 1, NPY_INT64) &&
           check_array(py_y, 2, NPY_DOUBLE))) {
         return NULL;
     }
@@ -208,7 +200,7 @@ py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
             // a(m, nz), packed
             static_cast<double *>(PyArray_DATA(a_a)), PyArray_DIM(a_a, 0), PyArray_DIM(a_a, 1),
             // offset(m)
-            static_cast<ssize_t *>(PyArray_DATA(a_offs)),
+            static_cast<fitpack::d_ssize_t *>(PyArray_DATA(a_offs)),
             // if a were dense, it would have been a(m, nc)
             nc,
             // y(m, ydim2)
@@ -236,7 +228,7 @@ static PyObject*
 py_data_matrix(PyObject *self, PyObject *args)
 {
     PyObject *py_x=NULL, *py_t=NULL, *py_w=NULL;
-    npy_intp nc;
+    fitpack::d_ssize_t nc;
     int k;   // NB: declare as npy_intp, and it's garbage
 
     if(!PyArg_ParseTuple(args, "OOiO", &py_x, &py_t, &k, &py_w)) {
@@ -266,7 +258,7 @@ py_data_matrix(PyObject *self, PyObject *args)
     npy_intp dims[2] = {m, k+1};
     PyArrayObject *a_A = (PyArrayObject*)PyArray_EMPTY(2, dims, NPY_DOUBLE, 0);
     // np.zeros(m, dtype=np.intp)
-    PyArrayObject *a_offs = (PyArrayObject*)PyArray_ZEROS(1, dims, NPY_INTP, 0);
+    PyArrayObject *a_offs = (PyArrayObject*)PyArray_ZEROS(1, dims, NPY_INT64, 0);
 
     unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
 
@@ -286,7 +278,7 @@ py_data_matrix(PyObject *self, PyObject *args)
             k,
             static_cast<const double *>(PyArray_DATA(a_w)),
             static_cast<double *>(PyArray_DATA(a_A)),     // output: (A, offset, nc)
-            static_cast<npy_intp*>(PyArray_DATA(a_offs)),   // XXX: callee expects ssize_t*
+            static_cast<fitpack::d_ssize_t*>(PyArray_DATA(a_offs)),
             &nc,
             wrk.get()
         );
