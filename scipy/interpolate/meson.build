@@ -123,7 +123,7 @@ py3.extension_module('_rgi_cython',
 
 __fitpack_lib = static_library('__fitpack',
     ['src/__fitpack.h', 'src/__fitpack.cc'],
-    dependencies:[lapack, np_dep, py3_dep]
+    dependencies:[lapack, np_dep, py3_dep],
 )
 
 __fitpack_dep = declare_dependency(
@@ -145,6 +145,7 @@ py3.extension_module('_dierckx',
     ['src/_dierckxmodule.cc'],
     include_directories: 'src/',
     dependencies: [py3_dep, np_dep, __fitpack_dep],
+    link_args: version_link_args,
     install: true,
     subdir: 'scipy/interpolate'
 )

@@ -1,4 +1,4 @@
-#include <cstring>
+#include <string>
 #include "__fitpack.h"
 
 namespace fitpack{
