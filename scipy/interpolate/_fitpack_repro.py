@@ -21,10 +21,10 @@ import warnings
 import operator
 import numpy as np
 
-from scipy.interpolate._bsplines import (
+from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr
 )
-from scipy.interpolate import _dierckx
+from . import _dierckx      # type: ignore[attr-defined]
 
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
