@@ -230,8 +230,9 @@ snorm1est(float* A, int n)
     float est, dbl1 = 1.0, dbl0 = 0.0;
     char* opA;
     float* work_arr = PyMem_RawMalloc(3*n*sizeof(float));
+    if (!work_arr) { return -100; }
     int* iwork_arr = PyMem_RawMalloc(n*sizeof(int));
-
+    if (!iwork_arr) { PyMem_RawFree(work_arr);return -101; }
     // 1-norm estimator by reverse communication
     // dlacon( n, v, x, isgn, est, kase )
     slacon_(&n, work_arr, &work_arr[n], iwork_arr, &est, &kase);
@@ -260,8 +261,9 @@ dnorm1est(double* A, int n)
     double est, dbl1 = 1.0, dbl0 = 0.0;
     char* opA;
     double* work_arr = PyMem_RawMalloc(3*n*sizeof(double));
+    if (!work_arr) { return -100; }
     int* iwork_arr = PyMem_RawMalloc(n*sizeof(int));
-
+    if (!iwork_arr) { PyMem_RawFree(work_arr);return -101; }
     // 1-norm estimator by reverse communication
     // dlacon( n, v, x, isgn, est, kase )
     dlacon_(&n, work_arr, &work_arr[n], iwork_arr, &est, &kase);
@@ -291,6 +293,7 @@ cnorm1est(EXPM_C* A, int n)
     EXPM_C dbl1 = CPLX_C(1.0, 0.0), dbl0 = CPLX_C(0.0, 0.0);
     char* opA;
     EXPM_C* work_arr = PyMem_RawMalloc(3*n*sizeof(EXPM_C));
+    if (!work_arr) { return -100; }
     // clacon( n, v, x, est, kase )
     clacon_(&n, work_arr, &work_arr[n], &est, &kase);
 
@@ -318,6 +321,7 @@ znorm1est(EXPM_Z* A, int n)
     EXPM_Z dbl1 = CPLX_Z(1.0, 0.0), dbl0 = CPLX_Z(0.0, 0.0);
     char* opA;
     EXPM_Z* work_arr = PyMem_RawMalloc(3*n*sizeof(EXPM_Z));
+    if (!work_arr) { return -100; }
     // zlacon( n, v, x, est, kase )
     zlacon_(&n, work_arr, &work_arr[n], &est, &kase);
 
@@ -348,11 +352,7 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     Py_ssize_t dims[2];
     int lm = 0, int1 = 1, n = (int)size_n;
     float normA, dbl1 = 1.0, dbl0 = 0.0;
-    float d4, d6, d8, d10;
-    float eta0, eta1, eta2, eta3, eta4;
-    float u = powf(2.0, -24);
-    float two_pow_s;
-    float temp;
+    float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
     // work_arr is two n cols that will be used multiplying absA, alternating.
@@ -368,11 +368,11 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     theta[2] = 9.504178996162932e-001;
     theta[3] = 2.097847961257068e+000;
     theta[4] = 4.250000000000000e+000;
-    coeff[0] = u*100800.0;
-    coeff[1] = u*10059033600.0;
-    coeff[2] = u*4487938430976000.0;
-    coeff[3] = u*5914384781877411840000.0;
-    coeff[4] = u*113250775606021113483283660800000000.0;
+    coeff[0] = 6.0081481933593750e-03;
+    coeff[1] = 5.9956512451171875e+02;
+    coeff[2] = 2.6750196800000000e+08;
+    coeff[3] = 3.5252480874905600e+14;
+    coeff[4] = 6.7502722515508048e+27;
 
     // Initialize the first n part of work_arr
     for (i = 0; i < n; i++) { work_arr[i] = 1.0; }
@@ -449,7 +449,10 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
         sgemm_("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
         d8 = powf(snorm1(&Am[4*n*n], work_arr, n), 0.125);
     } else {
-        d8 = powf(snorm1est(&Am[0], 8), 0.125);
+        test = snorm1est(&Am[0], 8);
+        // If memory error in s1normest
+        if (test <= -100.0) { *m = -3; goto FREE_EXIT; }
+        d8 = powf(test, 0.125);
     }
 
     eta2 = fmaxf(d6, d8);
@@ -503,7 +506,10 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
         sgemm_("N", "N", &n, &n, &n, &dbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
         d10 = powf(snorm1(&Am[4*n*n], work_arr, n), 0.1);
     } else {
-        d10 = powf(snorm1est(&Am[0], 10), 0.1);
+        test = snorm1est(&Am[0], 10);
+        // If memory error in s1normest
+        if (test <= -100.0) { *m = -4; goto FREE_EXIT; }
+        d10 = powf(test, 0.1);
     }
 
     eta3 = fmaxf(d8, d10);
@@ -535,6 +541,24 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     *s += (lm < 0 ? 0 : lm );
     *m = 13;
 
+    if (*s != 0)
+    {
+        float s0 = powf(2.0, -*s);
+        float s1 = powf(4.0, -*s);
+        float s2 = powf(16.0, -*s);
+        float s3 = powf(64.0, -*s);
+        for (i = 0; i < n; i++)
+        {
+            for (j = 0; j < n; j++)
+            {
+                Am[        n*i + j] *= s0;
+                Am[  n*n + n*i + j] *= s1;
+                Am[2*n*n + n*i + j] *= s2;
+                Am[3*n*n + n*i + j] *= s3;
+            }
+        }
+    }
+
 FREE_EXIT:
     PyMem_RawFree(absA);
     PyMem_RawFree(work_arr);
@@ -549,11 +573,7 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     Py_ssize_t dims[2];
     int lm = 0, int1 = 1, n = (int)size_n;
     double normA, dbl1 = 1.0, dbl0 = 0.0;
-    double d4, d6, d8, d10;
-    double eta0, eta1, eta2, eta3, eta4;
-    double u = pow(2.0, -53);
-    double two_pow_s;
-    double temp;
+    double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
     // work_arr is two n cols that will be used multiplying absA, alternating.
@@ -569,11 +589,11 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     theta[2] = 9.504178996162932e-001;
     theta[3] = 2.097847961257068e+000;
     theta[4] = 4.250000000000000e+000;
-    coeff[0] = u*100800.0;
-    coeff[1] = u*10059033600.0;
-    coeff[2] = u*4487938430976000.0;
-    coeff[3] = u*5914384781877411840000.0;
-    coeff[4] = u*113250775606021113483283660800000000.0;
+    coeff[0] = 1.1191048088221578e-11;
+    coeff[1] = 1.1167770708198077e-06;
+    coeff[2] = 4.9826124310493469e-01;
+    coeff[3] = 6.5662862500000000e+05;
+    coeff[4] = 1.2573361865339437e+19;
 
     // Initialize the first n part of work_arr
     for (i = 0; i < n; i++) { work_arr[i] = 1.0; }
@@ -650,7 +670,10 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
         dgemm_("N", "N", &n, &n, &n, &dbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
         d8 = pow(dnorm1(&Am[4*n*n], work_arr, n), 0.125);
     } else {
-        d8 = pow(dnorm1est(&Am[0], 8), 0.125);
+        test = dnorm1est(&Am[0], 8);
+        // If memory error in d1normest
+        if (test <= -100.0) { *m = -3; goto FREE_EXIT; }
+        d8 = pow(test, 0.125);
     }
 
     eta2 = fmax(d6, d8);
@@ -704,7 +727,10 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
         dgemm_("N", "N", &n, &n, &n, &dbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &dbl0, &Am[4*n*n], &n);
         d10 = pow(dnorm1(&Am[4*n*n], work_arr, n), 0.1);
     } else {
-        d10 = pow(dnorm1est(&Am[0], 10), 0.1);
+        test = dnorm1est(&Am[0], 10);
+        // If memory error in d1normest
+        if (test <= -100.0) { *m = -4; goto FREE_EXIT; }
+        d10 = pow(test, 0.1);
     }
 
     eta3 = fmax(d8, d10);
@@ -736,6 +762,24 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     *s += (lm < 0 ? 0 : lm );
     *m = 13;
 
+    if (*s != 0)
+    {
+        double s0 = pow(2.0, -*s);
+        double s1 = pow(4.0, -*s);
+        double s2 = pow(16.0, -*s);
+        double s3 = pow(64.0, -*s);
+        for (i = 0; i < n; i++)
+        {
+            for (j = 0; j < n; j++)
+            {
+                Am[        n*i + j] *= s0;
+                Am[  n*n + n*i + j] *= s1;
+                Am[2*n*n + n*i + j] *= s2;
+                Am[3*n*n + n*i + j] *= s3;
+            }
+        }
+    }
+
 FREE_EXIT:
     PyMem_RawFree(absA);
     PyMem_RawFree(work_arr);
@@ -752,11 +796,7 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
     float normA;
     float dbl1 = 1.0, dbl0 = 0.0;
     EXPM_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0);
-    float d4, d6, d8, d10;
-    float eta0, eta1, eta2, eta3, eta4;
-    float u = powf(2.0, -24);
-    float two_pow_s;
-    float temp;
+    float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
     // work_arr is two n cols that will be used multiplying absA, alternating.
@@ -772,11 +812,11 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
     theta[2] = 9.504178996162932e-001;
     theta[3] = 2.097847961257068e+000;
     theta[4] = 4.250000000000000e+000;
-    coeff[0] = u*100800.0;
-    coeff[1] = u*10059033600.0;
-    coeff[2] = u*4487938430976000.0;
-    coeff[3] = u*5914384781877411840000.0;
-    coeff[4] = u*113250775606021113483283660800000000.0;
+    coeff[0] = 6.0081481933593750e-03;
+    coeff[1] = 5.9956512451171875e+02;
+    coeff[2] = 2.6750196800000000e+08;
+    coeff[3] = 3.5252480874905600e+14;
+    coeff[4] = 6.7502722515508048e+27;
 
     // Initialize the first n part of work_arr
     for (i = 0; i < n; i++) { work_arr[i] = 1.0; }
@@ -853,7 +893,10 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
         cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
         d8 = powf(cnorm1(&Am[4*n*n], work_arr, n), 0.125);
     } else {
-        d8 = powf(cnorm1est(&Am[0], 8), 0.125);
+        test = cnorm1est(&Am[0], 8);
+        // If memory error in c1normest
+        if (test <= -100.0) { *m = -3; goto FREE_EXIT; }
+        d8 = powf(test, 0.125);
     }
 
     eta2 = fmaxf(d6, d8);
@@ -907,7 +950,10 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
         cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
         d10 = powf(cnorm1(&Am[4*n*n], work_arr, n), 0.1);
     } else {
-        d10 = powf(cnorm1est(&Am[0], 10), 0.1);
+        test = cnorm1est(&Am[0], 10);
+        // If memory error in c1normest
+        if (test <= -100.0) { *m = -4; goto FREE_EXIT; }
+        d10 = powf(test, 0.1);
     }
 
     eta3 = fmaxf(d8, d10);
@@ -939,6 +985,31 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
     *s += (lm < 0 ? 0 : lm );
     *m = 13;
 
+    if (*s != 0)
+    {
+        float s0 = powf(2.0, -*s);
+        float s1 = powf(4.0, -*s);
+        float s2 = powf(16.0, -*s);
+        float s3 = powf(64.0, -*s);
+        for (i = 0; i < n; i++)
+        {
+            for (j = 0; j < n; j++)
+            {
+#if defined(_MSC_VER)
+                Am[        n*i + j] = _FCmulcr(Am[        n*i + j], s0);
+                Am[  n*n + n*i + j] = _FCmulcr(Am[  n*n + n*i + j], s1);
+                Am[2*n*n + n*i + j] = _FCmulcr(Am[2*n*n + n*i + j], s2);
+                Am[3*n*n + n*i + j] = _FCmulcr(Am[3*n*n + n*i + j], s3);
+#else
+                Am[        n*i + j] *= s0;
+                Am[  n*n + n*i + j] *= s1;
+                Am[2*n*n + n*i + j] *= s2;
+                Am[3*n*n + n*i + j] *= s3;
+#endif
+            }
+        }
+    }
+
 FREE_EXIT:
     PyMem_RawFree(absA);
     PyMem_RawFree(work_arr);
@@ -955,11 +1026,7 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     double normA;
     double dbl1 = 1.0, dbl0 = 0.0;
     EXPM_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0);
-    double d4, d6, d8, d10;
-    double eta0, eta1, eta2, eta3, eta4;
-    double u = pow(2.0, -53);
-    double two_pow_s;
-    double temp;
+    double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
     // work_arr is two n cols that will be used multiplying absA, alternating.
@@ -975,11 +1042,11 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     theta[2] = 9.504178996162932e-001;
     theta[3] = 2.097847961257068e+000;
     theta[4] = 4.250000000000000e+000;
-    coeff[0] = u*100800.0;
-    coeff[1] = u*10059033600.0;
-    coeff[2] = u*4487938430976000.0;
-    coeff[3] = u*5914384781877411840000.0;
-    coeff[4] = u*113250775606021113483283660800000000.0;
+    coeff[0] = 1.1191048088221578e-11;
+    coeff[1] = 1.1167770708198077e-06;
+    coeff[2] = 4.9826124310493469e-01;
+    coeff[3] = 6.5662862500000000e+05;
+    coeff[4] = 1.2573361865339437e+19;
 
     // Initialize the first n part of work_arr
     for (i = 0; i < n; i++) { work_arr[i] = 1.0; }
@@ -1056,7 +1123,10 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
         zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[2*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
         d8 = pow(znorm1(&Am[4*n*n], work_arr, n), 0.125);
     } else {
-        d8 = pow(znorm1est(&Am[0], 8), 0.125);
+        test = znorm1est(&Am[0], 8);
+        // If memory error in z1normest
+        if (test <= -100.0) { *m = -3; goto FREE_EXIT; }
+        d8 = pow(test, 0.125);
     }
 
     eta2 = fmax(d6, d8);
@@ -1112,7 +1182,10 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
         zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[3*n*n], &n, &Am[2*n*n], &n, &cdbl0, &Am[4*n*n], &n);
         d10 = pow(znorm1(&Am[4*n*n], work_arr, n), 0.1);
     } else {
-        d10 = pow(znorm1est(&Am[0], 10), 0.1);
+        test = znorm1est(&Am[0], 10);
+        // If memory error in z1normest
+        if (test <= -100.0) { *m = -4; goto FREE_EXIT; }
+        d10 = pow(test, 0.1);
     }
 
     eta3 = fmax(d8, d10);
@@ -1144,6 +1217,31 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     *s += (lm < 0 ? 0 : lm );
     *m = 13;
 
+    if (*s != 0)
+    {
+        double s0 = pow(2.0, -*s);
+        double s1 = pow(4.0, -*s);
+        double s2 = pow(16.0, -*s);
+        double s3 = pow(64.0, -*s);
+        for (i = 0; i < n; i++)
+        {
+            for (j = 0; j < n; j++)
+            {
+#if defined(_MSC_VER)
+                Am[        n*i + j] = _Cmulcr(Am[        n*i + j], s0);
+                Am[  n*n + n*i + j] = _Cmulcr(Am[  n*n + n*i + j], s1);
+                Am[2*n*n + n*i + j] = _Cmulcr(Am[2*n*n + n*i + j], s2);
+                Am[3*n*n + n*i + j] = _Cmulcr(Am[3*n*n + n*i + j], s3);
+#else
+                Am[        n*i + j] *= s0;
+                Am[  n*n + n*i + j] *= s1;
+                Am[2*n*n + n*i + j] *= s2;
+                Am[3*n*n + n*i + j] *= s3;
+#endif
+            }
+        }
+    }
+
 FREE_EXIT:
     PyMem_RawFree(absA);
     PyMem_RawFree(work_arr);
@@ -1158,17 +1256,19 @@ FREE_EXIT:
 void
 pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
 {
-    float b[13];
-    int int1 = 1, n = (int)size_n;
-    float two = 2.0, dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
-    int n2 = n*n, i, j;
-    int* ipiv = PyMem_RawMalloc(n*sizeof(int));
-    if (!ipiv) { *info = -1; return; }
-
     // U, V computation.
-    // We utilize the unused powers of Am as scratch memory depending on m
-    // Final U is stored Am[3], final V is stored Am[1]
-    // For all m b[m] = 1.0
+    // We utilize the unused powers of Am as scratch memory depending on m value.
+    // Final U is stored Am[3], final V is stored Am[1] for all m.
+    // b[m] = 1.0 for all m.
+
+    int int1 = 1, n = (int)size_n;
+    int n2 = n*n, i, j;
+    float b[13];
+    float two = 2.0, dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
+
+    int* ipiv = PyMem_RawMalloc(n*sizeof(int));
+    if (!ipiv) { *info = -11; return; }
+
     if (m == 3)
     {
         // Am[2], Am[3] and Am[4] are free
@@ -1176,17 +1276,12 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
         b[1] = 60.0;
         b[2] = 12.0;
 
-        // U = Am[0] @ Am[1] + 60.*Am[0]
-        // V = 12.*Am[1] + 120*I_n
-
-         // Am[3] = Am[0]
+        // U = Am[0] @ Am[1] + b[1]*Am[0]
         scopy_(&n2, Am, &int1, &Am[3*n2], &int1);
-        // Am[3] = Am[0] @ Am[1] + 60*Am[0]
         sgemm_("N", "N", &n, &n, &n, &dbl1, &Am[n2], &n, Am, &n, &b[1], &Am[3*n2], &n);
 
-        // 12*Am[1]
+        // V = b[2]*Am[1] + b[0]*I_n
         sscal_(&n2, &b[2], &Am[n2], &int1);
-        // 12*Am[1] + 120*I
         for (i = 0; i < n; i++) { Am[n2 + n*i + i] += b[0]; }
 
     } else if (m == 5) {
@@ -1328,7 +1423,7 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
         // P = Am[3], Q = Am[4], R = Am[1]
 
         float* work = PyMem_RawMalloc(n2*sizeof(float));
-        if (!work) { *info = -2; return; }
+        if (!work) { *info = -12; return; }
         float temp1, temp2, temp3;
         for (i = 0; i < n; i++)
         {
@@ -1381,17 +1476,19 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
 void
 pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
 {
-    double b[13];
-    int int1 = 1, n = (int)size_n;
-    double two = 2.0, dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
-    int n2 = n*n, i, j;
-    int* ipiv = PyMem_RawMalloc(n*sizeof(int));
-    if (!ipiv) { *info = -1; return; }
-
     // U, V computation.
-    // We utilize the unused powers of Am as scratch memory depending on m
-    // Final U is stored Am[3], final V is stored Am[1]
-    // For all m b[m] = 1.0
+    // We utilize the unused powers of Am as scratch memory depending on m value.
+    // Final U is stored Am[3], final V is stored Am[1] for all m.
+    // b[m] = 1.0 for all m.
+
+    int int1 = 1, n = (int)size_n;
+    int n2 = n*n, i, j;
+    double b[13];
+    double two = 2.0, dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
+
+    int* ipiv = PyMem_RawMalloc(n*sizeof(int));
+    if (!ipiv) { *info = -11; return; }
+
     if (m == 3)
     {
         // Am[2], Am[3] and Am[4] are free
@@ -1402,14 +1499,12 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
         // U = Am[0] @ Am[1] + 60.*Am[0]
         // V = 12.*Am[1] + 120*I_n
 
-         // Am[3] = Am[0]
+        // U = Am[0] @ Am[1] + b[1]*Am[0]
         dcopy_(&n2, Am, &int1, &Am[3*n2], &int1);
-        // Am[3] = Am[0] @ Am[1] + 60*Am[0]
         dgemm_("N", "N", &n, &n, &n, &dbl1, &Am[n2], &n, Am, &n, &b[1], &Am[3*n2], &n);
 
-        // 12*Am[1]
+        // V = b[2]*Am[1] + b[0]*I_n
         dscal_(&n2, &b[2], &Am[n2], &int1);
-        // 12*Am[1] + 120*I
         for (i = 0; i < n; i++) { Am[n2 + n*i + i] += b[0]; }
 
     } else if (m == 5) {
@@ -1425,6 +1520,7 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
 
         // Am[4] = Am[1]
         dcopy_(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
+
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
@@ -1551,7 +1647,7 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
         // P = Am[3], Q = Am[4], R = Am[1]
 
         double* work = PyMem_RawMalloc(n2*sizeof(double));
-        if (!work) { *info = -2; return; }
+        if (!work) { *info = -12; return; }
         double temp1, temp2, temp3;
         for (i = 0; i < n; i++)
         {
@@ -1604,13 +1700,16 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
 void
 pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
 {
+    // U, V computation.
+    // We utilize the unused powers of Am as scratch memory depending on m value.
+    // Final U is stored Am[3], final V is stored Am[1] for all m.
+    // b[m] = 1.0 for all m.
+
     int int1 = 1, n = (int)size_n;
     int n2 = n*n, i, j;
     float b[13];
     float two = 2.0;
-
-    EXPM_C cb[13];
-    EXPM_C temp1, temp2, temp3;
+    EXPM_C temp1, temp2, temp3, cb1;
     EXPM_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0), cdblm1 = CPLX_C(-1.0, 0.0);
 
 #if defined(_MSC_VER)
@@ -1618,32 +1717,25 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
 #endif
 
     int* ipiv = PyMem_RawMalloc(n*sizeof(int));
-    if (!ipiv) { *info = -1; return; }
+    if (!ipiv) { *info = -11; return; }
 
-    // U, V computation.
-    // We utilize the unused powers of Am as scratch memory depending on m
-    // Final U is stored Am[3], final V is stored Am[1]
-    // For all m b[m] = 1.0
     if (m == 3)
     {
         // Am[2], Am[3] and Am[4] are free
         b[0] = 120.0;
         b[1] = 60.0;
         b[2] = 12.0;
-        cb[0] = CPLX_C(120.0, 0.0);
-        cb[1] = CPLX_C(60.0, 0.0);
+        cb1 = CPLX_C(b[1], 0.0);
 
         // U = Am[0] @ Am[1] + 60.*Am[0]
         // V = 12.*Am[1] + 120*I_n
 
-         // Am[3] = Am[0]
+        // U = Am[0] @ Am[1] + b[1]*Am[0]
         ccopy_(&n2, Am, &int1, &Am[3*n2], &int1);
-        // Am[3] = Am[0] @ Am[1] + 60*Am[0]
-        cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[n2], &n, Am, &n, &cb[1], &Am[3*n2], &n);
+        cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[n2], &n, Am, &n, &cb1, &Am[3*n2], &n);
 
-        // 12*Am[1]
+        // V = b[2]*Am[1] + b[0]*I_n
         csscal_(&n2, &b[2], &Am[n2], &int1);
-        // 12*Am[1] + 120*I
 #if defined(_MSC_VER)
             for (i = 0; i < n; i++) {
                 Am[n2 + n*i + i] = CPLX_C(crealf(Am[n2 + n*i + i]) + b[0], cimagf(Am[n2 + n*i + i]));
@@ -1666,56 +1758,41 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
         // Am[4] = Am[1]
         ccopy_(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
 
-#if defined(_MSC_VER)
-        EXPM_C inter1, inter2;
-
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 inter1 = _FCmulcr(Am[n2 + n*i + j], b[3]);
                 inter2 = Am[2*n2 + n*i + j];
                 Am[4*n2 + n*i + j] =  CPLX_C(crealf(inter1) + crealf(inter2), cimagf(inter1)+ cimagf(inter2));
                 if (i == j) { Am[4*n2 + n*i + j] = CPLX_C(crealf(Am[4*n2 + n*i + j]) + b[1], cimagf(Am[4*n2 + n*i + j])); }
-            }
-        }
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 Am[4*n2 + n*i + j] = Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
                 if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+#endif
             }
         }
-#endif
 
         // Am[0] @ (1.0*Am[2] + 420*Am[1] + 15120*I)
         cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
 
         // V
-
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 inter1 = _FCmulcr(Am[n2 + n*i + j], b[2]);
                 inter2 = _FCmulcr(Am[2*n2 + n*i + j], b[4]);
                 Am[n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2), cimagf(inter1)+ cimagf(inter2));
                 if (i == j) { Am[n2 + n*i + j] = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j])); }
-            }
-        }
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 Am[n2 + n*i + j] = b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] = b[0]; }
+                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+#endif
             }
         }
-#endif
 
     } else if (m == 7) {
         // Am[4] is free
@@ -1733,57 +1810,44 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
         // Am[4] = Am[1]
         ccopy_(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
 
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 inter1 = _FCmulcr(Am[n2 + n*i + j], b[3]);
                 inter2 = _FCmulcr(Am[2*n2 + n*i + j], b[5]);
                 inter3 = Am[3*n2 + n*i + j];
                 Am[4*n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
                                             cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
                 if (i == j) { Am[4*n2 + n*i + j]  = CPLX_C(crealf(Am[4*n2 + n*i + j]) + b[1], cimagf(Am[4*n2 + n*i + j])); }
-            }
-        }
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 Am[4*n2 + n*i + j] = Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
                 if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+#endif
             }
         }
-#endif
 
         // Defer the Am[0] multiplication since we still need Am[3] for V
-
         // V
 
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 inter1 = _FCmulcr(Am[n2 + n*i + j], b[2]);
                 inter2 = _FCmulcr(Am[2*n2 + n*i + j], b[4]);
                 inter3 = _FCmulcr(Am[3*n2 + n*i + j], b[6]);
                 Am[4*n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
                                             cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
                 if (i == j) { Am[n2 + n*i + j]  = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j])); }
-            }
-        }
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 Am[n2 + n*i + j] = b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
                 if (i == j) { Am[n2 + n*i + j] += b[0]; }
+#endif
             }
         }
-#endif
 
         // Now overwrite Am[3] with U
         cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
@@ -1806,11 +1870,11 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
         // We form U and V together since all powers are used simultaneously.
         // U in Am[4] before matmul and V in Am[1]
 
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 temp1 = Am[4*n2 + n*i + j];
                 temp2 = Am[n2 + n*i + j];
 
@@ -1833,14 +1897,7 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
                     Am[4*n2 + n*i + j] = CPLX_C(crealf(Am[4*n2 + n*i + j]) + b[1], cimagf(Am[4*n2 + n*i + j]));
                     Am[n2 + n*i + j] = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j]));
                 }
-            }
-        }
-
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 temp1 = Am[4*n2 + n*i + j];
                 temp2 = Am[n2 + n*i + j];
                 Am[4*n2 + n*i + j] = temp1 + b[7]*Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*temp2;
@@ -1850,9 +1907,10 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
                     Am[4*n2 + n*i + j] += b[1];
                     Am[n2 + n*i + j] += b[0];
                 }
+#endif
             }
         }
-#endif
+
         // Now overwrite Am[3] with U
         cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
 
@@ -1886,13 +1944,13 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
         // P = Am[3], Q = Am[4], R = Am[1]
 
         EXPM_C* work = PyMem_RawMalloc(n2*sizeof(EXPM_C));
-        if (!work) { *info = -2; return; }
+        if (!work) { *info = -12; return; }
 
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 temp1 = Am[1*n2 + n*i + j];
                 temp2 = Am[2*n2 + n*i + j];
                 temp3 = Am[3*n2 + n*i + j];
@@ -1929,14 +1987,7 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
                     Am[2*n2 + n*i + j] = CPLX_C(crealf(Am[2*n2 + n*i + j]) + b[1], cimagf(Am[2*n2 + n*i + j]));
                     Am[1*n2 + n*i + j] = CPLX_C(crealf(Am[1*n2 + n*i + j]) + b[0], cimagf(Am[1*n2 + n*i + j]));
                 }
-            }
-        }
-
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 temp1 = Am[1*n2 + n*i + j];
                 temp2 = Am[2*n2 + n*i + j];
                 temp3 = Am[3*n2 + n*i + j];
@@ -1950,9 +2001,9 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
                     Am[2*n2 + n*i + j] += b[1];
                     Am[1*n2 + n*i + j] += b[0];
                 }
+#endif
             }
         }
-#endif
 
         // V = P @ Q + R
         cgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, &Am[3*n2], &n, &cdbl1, &Am[1*n2], &n);
@@ -1991,13 +2042,16 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
 void
 pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
 {
+    // U, V computation.
+    // We utilize the unused powers of Am as scratch memory depending on m value.
+    // Final U is stored Am[3], final V is stored Am[1] for all m.
+    // b[m] = 1.0 for all m.
+
     int int1 = 1, n = (int)size_n;
     int n2 = n*n, i, j;
     double b[13];
     double two = 2.0;
-
-    EXPM_Z cb[13];
-    EXPM_Z temp1, temp2, temp3;
+    EXPM_Z temp1, temp2, temp3, cb1;
     EXPM_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0), cdblm1 = CPLX_Z(-1.0, 0.0);
 
 #if defined(_MSC_VER)
@@ -2005,36 +2059,26 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
 #endif
 
     int* ipiv = PyMem_RawMalloc(n*sizeof(int));
-    if (!ipiv) { *info = -1; return; }
+    if (!ipiv) { *info = -11; return; }
 
-    // U, V computation.
-    // We utilize the unused powers of Am as scratch memory depending on m
-    // Final U is stored Am[3], final V is stored Am[1]
-    // For all m b[m] = 1.0
     if (m == 3)
     {
         // Am[2], Am[3] and Am[4] are free
         b[0] = 120.0;
         b[1] = 60.0;
         b[2] = 12.0;
-        cb[0] = CPLX_Z(120.0, 0.0);
-        cb[1] = CPLX_Z(60.0, 0.0);
+        cb1 = CPLX_Z(b[1], 0.0);
 
-        // U = Am[0] @ Am[1] + 60.*Am[0]
-        // V = 12.*Am[1] + 120*I_n
-
-         // Am[3] = Am[0]
+        // U = Am[0] @ Am[1] + b[1]*Am[0]
         zcopy_(&n2, Am, &int1, &Am[3*n2], &int1);
-        // Am[3] = Am[0] @ Am[1] + 60*Am[0]
-        zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[n2], &n, Am, &n, &cb[1], &Am[3*n2], &n);
+        zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[n2], &n, Am, &n, &cb1, &Am[3*n2], &n);
 
-        // 12*Am[1]
+        // V = b[2]*Am[1] + b[0]*I_n
         zdscal_(&n2, &b[2], &Am[n2], &int1);
-        // 12*Am[1] + 120*I
 #if defined(_MSC_VER)
-            for (i = 0; i < n; i++) { Am[n2 + n*i + i] = CPLX_Z(creal(Am[n2 + n*i + i]) + b[0], cimag(Am[n2 + n*i + i])); }
+        for (i = 0; i < n; i++) { Am[n2 + n*i + i] = CPLX_Z(creal(Am[n2 + n*i + i]) + b[0], cimag(Am[n2 + n*i + i])); }
 #else
-            for (i = 0; i < n; i++) { Am[n2 + n*i + i] += b[0]; }
+        for (i = 0; i < n; i++) { Am[n2 + n*i + i] += b[0]; }
 #endif
 
     } else if (m == 5) {
@@ -2051,55 +2095,40 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
         // Am[4] = Am[1]
         zcopy_(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
 
-#if defined(_MSC_VER)
-
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 inter1 = _Cmulcr(Am[n2 + n*i + j], b[3]);
                 inter2 = Am[2*n2 + n*i + j];
                 Am[4*n2 + n*i + j] =  CPLX_Z(creal(inter1) + creal(inter2), cimag(inter1)+ cimag(inter2));
                 if (i == j) { Am[4*n2 + n*i + j] = CPLX_Z(creal(Am[4*n2 + n*i + j]) + b[1], cimag(Am[4*n2 + n*i + j])); }
-            }
-        }
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 Am[4*n2 + n*i + j] = Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
                 if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+#endif
             }
         }
-#endif
-
         // Am[0] @ (1.0*Am[2] + 420*Am[1] + 15120*I)
         zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
 
         // V
-
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 inter1 = _Cmulcr(Am[n2 + n*i + j], b[2]);
                 inter2 = _Cmulcr(Am[2*n2 + n*i + j], b[4]);
                 Am[n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2), cimag(inter1)+ cimag(inter2));
                 if (i == j) { Am[n2 + n*i + j] = CPLX_Z(creal(Am[n2 + n*i + j]) + b[0], cimag(Am[n2 + n*i + j])); }
-            }
-        }
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 Am[n2 + n*i + j] = b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
-                if (i == j) { Am[n2 + n*i + j] = b[0]; }
+                if (i == j) { Am[n2 + n*i + j] += b[0]; }
+#endif
             }
         }
-#endif
 
     } else if (m == 7) {
         // Am[4] is free
@@ -2117,56 +2146,44 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
         // Am[4] = Am[1]
         zcopy_(&n2, &Am[n2], &int1, &Am[4*n2], &int1);
 
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 inter1 = _Cmulcr(Am[n2 + n*i + j], b[3]);
                 inter2 = _Cmulcr(Am[2*n2 + n*i + j], b[5]);
                 inter3 = Am[3*n2 + n*i + j];
                 Am[4*n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
                                             cimag(inter1) + cimag(inter2) + cimag(inter3));
                 if (i == j) { Am[4*n2 + n*i + j]  = CPLX_Z(creal(Am[4*n2 + n*i + j]) + b[1], cimag(Am[4*n2 + n*i + j])); }
-            }
-        }
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 Am[4*n2 + n*i + j] = Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*Am[n2 + n*i + j];
                 if (i == j) { Am[4*n2 + n*i + j] += b[1]; }
+#endif
             }
         }
-#endif
 
         // Defer the Am[0] multiplication since we still need Am[3] for V
         // V
 
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 inter1 = _Cmulcr(Am[n2 + n*i + j], b[2]);
                 inter2 = _Cmulcr(Am[2*n2 + n*i + j], b[4]);
                 inter3 = _Cmulcr(Am[3*n2 + n*i + j], b[6]);
                 Am[4*n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
                                             cimag(inter1) + cimag(inter2) + cimag(inter3));
                 if (i == j) { Am[n2 + n*i + j]  = CPLX_Z(creal(Am[n2 + n*i + j]) + b[0], cimag(Am[n2 + n*i + j])); }
-            }
-        }
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 Am[n2 + n*i + j] = b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
                 if (i == j) { Am[n2 + n*i + j] += b[0]; }
+#endif
             }
         }
-#endif
 
         // Now overwrite Am[3] with U
         zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
@@ -2189,11 +2206,11 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
         // We form U and V together since all powers are used simultaneously.
         // U in Am[4] before matmul and V in Am[1]
 
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 temp1 = Am[4*n2 + n*i + j];
                 temp2 = Am[n2 + n*i + j];
 
@@ -2216,14 +2233,7 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
                     Am[4*n2 + n*i + j] = CPLX_Z(creal(Am[4*n2 + n*i + j]) + b[1], cimag(Am[4*n2 + n*i + j]));
                     Am[n2 + n*i + j] = CPLX_Z(creal(Am[n2 + n*i + j]) + b[0], cimag(Am[n2 + n*i + j]));
                 }
-            }
-        }
-
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 temp1 = Am[4*n2 + n*i + j];
                 temp2 = Am[n2 + n*i + j];
                 Am[4*n2 + n*i + j] = temp1 + b[7]*Am[3*n2 + n*i + j] + b[5]*Am[2*n2 + n*i + j] + b[3]*temp2;
@@ -2233,9 +2243,10 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
                     Am[4*n2 + n*i + j] += b[1];
                     Am[n2 + n*i + j] += b[0];
                 }
+#endif
             }
         }
-#endif
+
         // Now overwrite Am[3] with U
         zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, Am, &n, &cdbl0, &Am[3*n2], &n);
 
@@ -2269,13 +2280,13 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
         // P = Am[3], Q = Am[4], R = Am[1]
 
         EXPM_Z* work = PyMem_RawMalloc(n2*sizeof(EXPM_Z));
-        if (!work) { *info = -2; return; }
+        if (!work) { *info = -12; return; }
 
-#if defined(_MSC_VER)
         for (i = 0; i < n; i++)
         {
             for (j = 0; j < n; j++)
             {
+#if defined(_MSC_VER)
                 temp1 = Am[1*n2 + n*i + j];
                 temp2 = Am[2*n2 + n*i + j];
                 temp3 = Am[3*n2 + n*i + j];
@@ -2312,14 +2323,7 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
                     Am[2*n2 + n*i + j] = CPLX_Z(creal(Am[2*n2 + n*i + j]) + b[1], cimag(Am[2*n2 + n*i + j]));
                     Am[1*n2 + n*i + j] = CPLX_Z(creal(Am[1*n2 + n*i + j]) + b[0], cimag(Am[1*n2 + n*i + j]));
                 }
-            }
-        }
-
 #else
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
                 temp1 = Am[1*n2 + n*i + j];
                 temp2 = Am[2*n2 + n*i + j];
                 temp3 = Am[3*n2 + n*i + j];
@@ -2333,9 +2337,9 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
                     Am[2*n2 + n*i + j] += b[1];
                     Am[1*n2 + n*i + j] += b[0];
                 }
+#endif
             }
         }
-#endif
 
         // V = P @ Q + R
         zgemm_("N", "N", &n, &n, &n, &cdbl1, &Am[4*n2], &n, &Am[3*n2], &n, &cdbl1, &Am[1*n2], &n);
@@ -2355,6 +2359,7 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
 
     zgetrf_(&n, &n, &Am[n2], &n, ipiv, info);
     zgetrs_("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
+    PyMem_RawFree(ipiv);
     zdscal_(&n2, &two, &Am[2*n2], &int1);
 
 #if defined(_MSC_VER)
@@ -2365,7 +2370,6 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
 
     swap_cf_z(&Am[2*n2], &Am[0], n, n, n);
 
-    PyMem_RawFree(ipiv);
     return;
 }
 
