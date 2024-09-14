@@ -112,6 +112,7 @@ py3.install_sources([
     '_censored_data.py',
     '_common.py',
     '_constants.py',
+    '_continued_fraction.py',
     '_continuous_distns.py',
     '_covariance.py',
     '_crosstab.py',
