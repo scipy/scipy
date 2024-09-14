@@ -5281,16 +5281,28 @@ class TestCOONonCanonicalMatrix(TestCOONonCanonical, TestCOOMatrix):
     pass
 
 
+#Todo: Revisit 64bit tests: avoid rerun of all tests for each version of get_index_dtype
 def cases_64bit(sp_api):
+    """Yield all tests for all formats that use get_index_dtype
+
+    This is more than testing get_index_dtype. It allows checking whether upcasting
+    or downcasting the index dtypes affects test results. The approach used here
+    does not try to figure out which tests might fail due to 32/64-bit issues.
+    We just run them all.
+    So, each test method in that uses cases_64bit reruns most of the test suite!
+    """
     if sp_api == "sparray":
         TEST_CLASSES = [TestBSR, TestCOO, TestCSC, TestCSR, TestDIA,
-                         # lil/dok->other conversion operations have get_index_dtype
+                         # lil/dok->other conversion operations use get_index_dtype
+                         # so we include lil & dok test suite even though they do not
+                         # use get_index_dtype within the class. That means many of
+                         # these tests are superfluous, but it's hard to pick which
                          TestDOK, TestLIL
                         ]
     elif sp_api == "spmatrix":
         TEST_CLASSES = [TestBSRMatrix, TestCOOMatrix, TestCSCMatrix,
                          TestCSRMatrix, TestDIAMatrix,
-                         # lil/dok->other conversion operations have get_index_dtype
+                         # lil/dok->other conversion operations use get_index_dtype
                          TestDOKMatrix, TestLILMatrix
                         ]
     else:
@@ -5328,6 +5340,7 @@ def cases_64bit(sp_api):
 
 
 class Test64Bit:
+    # classes that use get_index_dtype
     MAT_CLASSES = [
         bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix,
         bsr_array, coo_array, csc_array, csr_array, dia_array,
