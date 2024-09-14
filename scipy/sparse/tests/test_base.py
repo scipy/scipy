@@ -1683,12 +1683,13 @@ class _TestCommon:
         A = array([[1, 0, 2, 0], [0, 3, 4, 0], [0, 5, 0, 0], [0, 6, 7, 8]])
         B = self.spcreator(A)
 
-        if self.is_array_test:
-            # Todo: Add test of B**(1+3j) when np1.24 is no longer supported.
-            #    Complex exponents of 0 changed for numpy-1.25
-            #    from `(nan+nanj)` to `0`. Old value makes our result dense
-            #    and is hard to check for without any `isnan` method.
-            # So, while untested here, complex exponents work with np>=1.25.
+        if self.is_array_test:  # sparrays use element-wise power
+            # Todo: Add 1+3j to tested exponent list when np1.24 is no longer supported
+            #    Complex exponents of 0 (our implicit fill value) change in numpy-1.25
+            #    from `(nan+nanj)` to `0`. Old value makes array element-wise result
+            #    dense and is hard to check for without any `isnan` method.
+            # So while untested here, element-wise complex exponents work with np>=1.25.
+            # for exponent in [1, 2, 2.2, 3, 1+3j]:
             for exponent in [1, 2, 2.2, 3]:
                 ret_sp = B**exponent
                 ret_np = A**exponent
@@ -1702,7 +1703,7 @@ class _TestCommon:
             # nonsquare matrix
             B = self.spcreator(A[:3,:])
             assert_equal((B**1).toarray(), B.toarray())
-        else:  # test sparse matrix
+        else:  # test sparse matrix. spmatrices use matrix multiplicative power
             for exponent in [0,1,2,3]:
                 ret_sp = B**exponent
                 ret_np = np.linalg.matrix_power(A, exponent)
