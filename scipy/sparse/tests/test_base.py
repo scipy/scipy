@@ -2266,7 +2266,7 @@ class _TestCommon:
                                          [2, 0],
                                          [0, 0]])
 
-        if self.is_array_test and S.format in ["csc", "coo", "csr"]:
+        if self.is_array_test and S.format in ["coo", "csr"]:
             S.resize(1)
         else:
             assert_raises((ValueError, NotImplementedError, IndexError), S.resize, 1)
