@@ -721,7 +721,9 @@ class TestFwind1:
         center = hsize[0] // 2
         for i in range(hsize[0]):
             for j in range(hsize[1]):
-                xp_assert_close(taps[i, j], taps[center - (i - center), center - (j - center)], rtol=1e-5)
+                xp_assert_close(taps[i, j], 
+                                taps[center - (i - center), center - (j - center)], 
+                                rtol=1e-5)
 
     def test_edge_case_circular(self):
         hsize = (3, 3)
