@@ -50,10 +50,14 @@ def binary_dilation_signature(
 binary_erosion_signature = binary_dilation_signature
 
 
-def binary_fill_holes_signature(input, structure=None, output=None, origin=0):
+def binary_fill_holes_signature(
+    input, structure=None, output=None, origin=0, *args, **kwargs
+):
     return array_namespace(input, structure, _skip_if_dtype(output))
 
-label_signature = binary_fill_holes_signature
+
+def label_signature(input, structure=None, output=None, origin=0):
+    return array_namespace(input, structure, _skip_if_dtype(output))
 
 
 def binary_hit_or_miss_signature(
