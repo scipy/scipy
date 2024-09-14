@@ -2262,14 +2262,14 @@ class TestNdimageMorphology:
     @pytest.mark.parametrize('border_value',[0, 1])
     @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
     @pytest.mark.parametrize('expand_axis', [0, 1, 2])
-    @pytest.mark.parametrize('func', [ndimage.binary_erosion,
-                                      ndimage.binary_dilation,
-                                      ndimage.binary_opening,
-                                      ndimage.binary_closing,
-                                      ndimage.binary_hit_or_miss,
-                                      ndimage.binary_propagation,
-                                      ndimage.binary_fill_holes])
-    def test_binary_axes(self, xp, func, expand_axis, origin, border_value):
+    @pytest.mark.parametrize('func_name', ["binary_erosion",
+                                           "binary_dilation",
+                                           "binary_opening",
+                                           "binary_closing",
+                                           "binary_hit_or_miss",
+                                           "binary_propagation",
+                                           "binary_fill_holes"])
+    def test_binary_axes(self, xp, func_name, expand_axis, origin, border_value):
         struct = np.asarray([[0, 1, 0],
                              [1, 1, 1],
                              [0, 1, 0]], bool)
@@ -2293,7 +2293,7 @@ class TestNdimageMorphology:
             kwargs['border_value'] = border_value
         elif border_value != 0:
             pytest.skip('border_value !=0 unsupported by this function')
-
+        func = getattr(ndimage, func_name)
         expected = func(data, struct, **kwargs)
 
         # replicate data and expected result along a new axis
@@ -2660,15 +2660,15 @@ class TestNdimageMorphology:
                                       'mirror', 'wrap'])
     @pytest.mark.parametrize('footprint_mode', ['size', 'footprint',
                                                 'structure'])
-    @pytest.mark.parametrize('func', [ndimage.grey_erosion,
-                                      ndimage.grey_dilation,
-                                      ndimage.grey_opening,
-                                      ndimage.grey_closing,
-                                      ndimage.morphological_laplace,
-                                      ndimage.morphological_gradient,
-                                      ndimage.white_tophat,
-                                      ndimage.black_tophat])
-    def test_grey_axes(self, xp, func, expand_axis, origin, footprint_mode,
+    @pytest.mark.parametrize('func_name', ["grey_erosion",
+                                           "grey_dilation",
+                                           "grey_opening",
+                                           "grey_closing",
+                                           "morphological_laplace",
+                                           "morphological_gradient",
+                                           "white_tophat",
+                                           "black_tophat"])
+    def test_grey_axes(self, xp, func_name, expand_axis, origin, footprint_mode,
                        mode):
 
         data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
@@ -2685,6 +2685,7 @@ class TestNdimageMorphology:
             kwargs['footprint'] = xp.asarray([[1, 0, 1], [1, 1, 0]])
         if footprint_mode == 'structure':
             kwargs['structure'] = xp.ones_like(kwargs['footprint'])
+        func = getattr(ndimage, func_name)
         expected = func(data, **kwargs)
 
         # replicate data and expected result along a new axis
