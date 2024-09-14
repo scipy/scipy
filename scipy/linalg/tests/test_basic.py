@@ -2045,3 +2045,22 @@ class TestMatrix_Balance:
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
 
+@pytest.mark.fail_slow(90)
+def test_gh8208():
+    import numpy as np
+    from scipy.linalg import lstsq
+    # requires scikit-learn >= 0.19
+    from sklearn.tests.test_multioutput import generate_multilabel_dataset_with_correlations  # noqa: E501
+
+    def test_investigate_linear_regression_indeterminacy():
+        # Is scipy.linalg.lstsq deterministic?
+        X, Y = generate_multilabel_dataset_with_correlations()
+        y = Y[:, 1].astype(np.float64)
+        X -= X.mean(axis=0)
+        y -= y.mean()
+        ref = lstsq(X, y)[0]
+        for i in range(1000):
+            coef = lstsq(X, y)[0]
+            np.testing.assert_array_equal(ref, coef)
+
+    test_investigate_linear_regression_indeterminacy()

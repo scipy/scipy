@@ -65,13 +65,13 @@ jobs:
     - name: Install Python packages
       if: matrix.python-version == '3.10'
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis scikit-learn
 
     - name: Install Python packages from repositories
       if: matrix.python-version == '3.13-dev' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
-        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3"
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis  scikit-learn "setuptools<67.3"
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install git+https://github.com/mesonbuild/meson.git
 
@@ -226,7 +226,7 @@ jobs:
       - name: Testing SciPy
         run: |
           cd doc
-          python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch hypothesis
+          python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch hypothesis scikit-learn
           python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
 
   #################################################################################
@@ -271,7 +271,7 @@ jobs:
       - name: Install test dependencies
         run: |
           # Downgrade numpy to oldest supported version
-          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.23.5"
+          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.23.5" scikit-learn
 
       - name: Run tests
         run: |
@@ -321,7 +321,7 @@ jobs:
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
-        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
+        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib scikit-learn
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
@@ -398,7 +398,7 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis scikit-learn && \
         python -c 'import numpy as np; np.show_config()' && \
         python dev.py build --with-scipy-openblas && \
         python dev.py --no-build test"
@@ -479,7 +479,7 @@ jobs:
       run: |
         pip install git+https://github.com/serge-sans-paille/pythran
         pip install ninja meson-python pybind11 click rich_click pydevtool
-        pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis
+        pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis scikit-learn
         pip install -r requirements/openblas.txt
     - name: Build and run tests
       env:

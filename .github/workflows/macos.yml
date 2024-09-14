@@ -178,7 +178,7 @@ jobs:
         pip install -r requirements/openblas.txt
         python dev.py build --with-scipy-openblas
 
-        pip install pooch pytest hypothesis
+        pip install pooch pytest hypothesis scikit-learn
         python dev.py -n test 
 
 
@@ -222,5 +222,5 @@ jobs:
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
         python dev.py build --with-accelerate
 
-        pip install pooch pytest hypothesis
+        pip install pooch pytest hypothesis scikit-learn
         python dev.py -n test
