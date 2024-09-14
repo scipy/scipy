@@ -15,9 +15,11 @@ import pytest
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-                          expm, expm_frechet, expm_cond, norm, khatri_rao)
+                          expm, expm_frechet, expm_cond, norm, khatri_rao,
+                          cosm, sinm, tanm, coshm, sinhm, tanhm)
 from scipy.linalg import _matfuncs_inv_ssq
 from scipy.linalg._matfuncs import pick_pade_structure
+from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
 import scipy.linalg._expm_frechet
 
 from scipy.optimize import minimize
@@ -248,6 +250,15 @@ class TestLogM:
 
         assert log_a.shape == (0, 0)
         assert log_a.dtype == log_a0.dtype
+
+    @pytest.mark.parametrize('dtype', [int, float, np.float32, complex, np.complex64])
+    def test_no_ZeroDivisionError(self, dtype):
+        # gh-17136 reported inconsistent behavior in `logm` depending on input dtype:
+        # sometimes it raised an error, and sometimes it printed a warning message.
+        # check that this is resolved and that the warning is emitted properly.
+        with (pytest.warns(RuntimeWarning, match="logm result may be inaccurate"),
+              pytest.warns(LogmExactlySingularWarning)):
+            logm(np.zeros((2, 2), dtype=dtype))
 
 
 class TestSqrtM:
@@ -706,13 +717,18 @@ class TestExpM:
         elt = expm(1)
         assert_allclose(elt, np.array([[np.e]]))
 
-    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-    def test_empty_matrix_input(self, dt):
-        # handle gh-11082
-        A = np.zeros((0, 0), dtype=dt)
-        result = expm(A)
-        assert result.size == 0
-        assert result.dtype == A.dtype
+    @pytest.mark.parametrize('func', [expm, cosm, sinm, tanm, coshm, sinhm, tanhm])
+    @pytest.mark.parametrize('dt',[int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('shape', [(0, 0), (1, 1)])
+    def test_small_empty_matrix_input(self, func, dt, shape):
+        # regression test for gh-11082 / gh-20372 - test behavior of expm
+        # and related functions for small and zero-sized arrays.
+        A = np.zeros(shape, dtype=dt)
+        A0 = np.zeros((10, 10), dtype=dt)
+        result = func(A)
+        result0 = func(A0)
+        assert result.shape == shape
+        assert result.dtype == result0.dtype
 
     def test_2x2_input(self):
         E = np.e

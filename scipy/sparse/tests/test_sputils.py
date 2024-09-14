@@ -73,13 +73,13 @@ class TestSparseUtils:
         assert_equal(sputils.isshape((-1, 2), nonneg=True),False)
         assert_equal(sputils.isshape((2, -1), nonneg=True),False)
 
-        assert_equal(sputils.isshape((1.5, 2), allow_1d=True), False)
-        assert_equal(sputils.isshape(([2], 2), allow_1d=True), False)
-        assert_equal(sputils.isshape((2, 2, -2), nonneg=True, allow_1d=True),
+        assert_equal(sputils.isshape((1.5, 2), allow_nd=(1, 2)), False)
+        assert_equal(sputils.isshape(([2], 2), allow_nd=(1, 2)), False)
+        assert_equal(sputils.isshape((2, 2, -2), nonneg=True, allow_nd=(1, 2)),
                      False)
-        assert_equal(sputils.isshape((2,), allow_1d=True), True)
-        assert_equal(sputils.isshape((2, 2,), allow_1d=True), True)
-        assert_equal(sputils.isshape((2, 2, 2), allow_1d=True), False)
+        assert_equal(sputils.isshape((2,), allow_nd=(1, 2)), True)
+        assert_equal(sputils.isshape((2, 2,), allow_nd=(1, 2)), True)
+        assert_equal(sputils.isshape((2, 2, 2), allow_nd=(1, 2)), False)
 
     def test_issequence(self):
         assert_equal(sputils.issequence((1,)), True)

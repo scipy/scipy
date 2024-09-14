@@ -119,10 +119,10 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     >>> from scipy.sparse import diags_array
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
     >>> diags_array(diagonals, offsets=[0, -1, 2]).toarray()
-    array([[1, 0, 1, 0],
-           [1, 2, 0, 2],
-           [0, 2, 3, 0],
-           [0, 0, 3, 4]])
+    array([[1., 0., 1., 0.],
+           [1., 2., 0., 2.],
+           [0., 2., 3., 0.],
+           [0., 0., 3., 4.]])
 
     Broadcasting of scalars is supported (but shape needs to be
     specified):
@@ -252,10 +252,10 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     >>> from scipy.sparse import diags
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
     >>> diags(diagonals, [0, -1, 2]).toarray()
-    array([[1, 0, 1, 0],
-           [1, 2, 0, 2],
-           [0, 2, 3, 0],
-           [0, 0, 3, 4]])
+    array([[1., 0., 1., 0.],
+           [1., 2., 0., 2.],
+           [0., 2., 3., 0.],
+           [0., 0., 3., 4.]])
 
     Broadcasting of scalars is supported (but shape needs to be
     specified):
@@ -1051,7 +1051,7 @@ def block_diag(mats, format=None, dtype=None):
     r_idx = 0
     c_idx = 0
     for a in mats:
-        if isinstance(a, (list, numbers.Number)):
+        if isinstance(a, (list | numbers.Number)):
             a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()

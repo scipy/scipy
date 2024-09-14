@@ -1783,10 +1783,10 @@ class _TestCommon:
         class Custom:
             def __init__(self, scalar):
                 self.scalar = scalar
-                
+
             def __rmul__(self, other):
                 return other * self.scalar
-        
+
         scalar = 2
         A = self.spcreator([[1],[2],[3]])
         c = Custom(scalar)
@@ -4788,7 +4788,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         expected = m.toarray()
         assert_array_equal(m.tocsc().toarray(), expected)
         assert_array_equal(m.tocsr().toarray(), expected)
-    
+
     def test_tocoo_gh10050(self):
         # regression test for gh-10050
         m = self.dia_container([[1, 2], [3, 4]]).tocoo()

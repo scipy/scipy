@@ -2,7 +2,7 @@ import pytest
 
 import scipy.constants as sc
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from numpy.testing import assert_allclose
 
 

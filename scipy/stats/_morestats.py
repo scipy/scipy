@@ -856,15 +856,21 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
 
 def _log_mean(logx):
     # compute log of mean of x from log(x)
-    return special.logsumexp(logx, axis=0) - np.log(len(logx))
+    res = special.logsumexp(logx, axis=0) - math.log(logx.shape[0])
+    return res
 
 
-def _log_var(logx):
+def _log_var(logx, xp):
     # compute log of variance of x from log(x)
     logmean = _log_mean(logx)
-    pij = np.full_like(logx, np.pi * 1j, dtype=np.complex128)
-    logxmu = special.logsumexp([logx, logmean + pij], axis=0)
-    return np.real(special.logsumexp(2 * logxmu, axis=0)) - np.log(len(logx))
+    # get complex dtype with component dtypes same as `logx` dtype;
+    # see data-apis/array-api#841
+    dtype = xp.result_type(logx.dtype, xp.complex64)
+    pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
+    logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
+    res = (xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=0)))
+           - math.log(logx.shape[0]))
+    return res
 
 
 def boxcox_llf(lmb, data):
@@ -969,10 +975,7 @@ def boxcox_llf(lmb, data):
         # lead to loss of precision.
         # Division by lmb can be factored out to enhance numerical stability.
         logx = lmb * logdata
-        # convert to `np` for `special.logsumexp`
-        logx = np.asarray(logx)
-        logvar = _log_var(logx) - 2 * np.log(abs(lmb))
-        logvar = xp.asarray(logvar)
+        logvar = _log_var(logx, xp) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
     res = xp.astype(res, dt)

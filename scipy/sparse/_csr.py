@@ -17,6 +17,7 @@ from ._compressed import _cs_matrix
 
 class _csr_base(_cs_matrix):
     _format = 'csr'
+    _allow_nd = (1, 2)
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):

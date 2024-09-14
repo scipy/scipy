@@ -3263,6 +3263,29 @@ class TestInvgauss:
         assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
 
 
+class TestLandau:
+    @pytest.mark.parametrize('name', ['pdf', 'cdf', 'sf', 'ppf', 'isf'])
+    def test_landau_levy_agreement(self, name):
+        # Test PDF to confirm that this is the Landau distribution
+        # Test other methods with tighter tolerance than generic tests
+        # Levy entropy is slow and inaccurate, and RVS is tested generically
+        if name in {'ppf', 'isf'}:
+            x = np.linspace(0.1, 0.9, 5),
+        else:
+            x = np.linspace(-2, 5, 10),
+
+        landau_method = getattr(stats.landau, name)
+        levy_method = getattr(stats.levy_stable, name)
+        res = landau_method(*x)
+        ref = levy_method(*x, 1, 1)
+        assert_allclose(res, ref, rtol=1e-14)
+
+    def test_moments(self):
+        # I would test these against Levy above, but Levy says variance is infinite.
+        assert_equal(stats.landau.stats(moments='mvsk'), (np.nan,)*4)
+        assert_equal(stats.landau.moment(5), np.nan)
+
+
 class TestLaplace:
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
@@ -8915,7 +8938,7 @@ def test_docstrings():
     badones = [r',\s*,', r'\(\s*,', r'^\s*:']
     for distname in stats.__all__:
         dist = getattr(stats, distname)
-        if isinstance(dist, (stats.rv_discrete, stats.rv_continuous)):
+        if isinstance(dist, (stats.rv_discrete | stats.rv_continuous)):
             for regex in badones:
                 assert_(re.search(regex, dist.__doc__) is None)
 
@@ -9134,16 +9157,13 @@ def test_ncf_cdf_spotcheck():
     assert_allclose(check_val, np.round(scipy_val, decimals=6))
 
 
-@pytest.mark.skipif(sys.maxsize <= 2**32,
-                    reason="On some 32-bit the warning is not raised")
 def test_ncf_ppf_issue_17026():
     # Regression test for gh-17026
     x = np.linspace(0, 1, 600)
     x[0] = 1e-16
     par = (0.1, 2, 5, 0, 1)
-    with pytest.warns(RuntimeWarning):
-        q = stats.ncf.ppf(x, *par)
-        q0 = [stats.ncf.ppf(xi, *par) for xi in x]
+    q = stats.ncf.ppf(x, *par)
+    q0 = [stats.ncf.ppf(xi, *par) for xi in x]
     assert_allclose(q, q0)
 
 
@@ -9931,7 +9951,7 @@ class TestIrwinHall:
         # IH(1) PDF is by definition U(0,1)
         # we should be too, but differences in floating point eval order happen
         # it's unclear if we can get down to the single ulp for doubles unless
-        # quads are used we're within 6-10 ulps otherwise (across sf/cdf/pdf) 
+        # quads are used we're within 6-10 ulps otherwise (across sf/cdf/pdf)
         # which is pretty good
 
         pts = np.linspace(0, 1, 100)

@@ -25,7 +25,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-           'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
+           'sosfreqz', 'freqz_sos', 'iirnotch', 'iirpeak', 'bilinear_zpk',
            'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
            'gammatone', 'iircomb']
 
@@ -339,7 +339,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     See Also
     --------
     freqz_zpk
-    sosfreqz
+    freqz_sos
 
     Notes
     -----
@@ -366,21 +366,23 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     --------
     >>> from scipy import signal
     >>> import numpy as np
-    >>> b = signal.firwin(80, 0.5, window=('kaiser', 8))
+    >>> taps, f_c = 80, 1.0  # number of taps and cut-off frequency
+    >>> b = signal.firwin(taps, f_c, window=('kaiser', 8), fs=2*np.pi)
     >>> w, h = signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, ax1 = plt.subplots()
-    >>> ax1.set_title('Digital filter frequency response')
-
-    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
-    >>> ax1.set_ylabel('Amplitude [dB]', color='b')
-    >>> ax1.set_xlabel('Frequency [rad/sample]')
+    >>> fig, ax1 = plt.subplots(tight_layout=True)
+    >>> ax1.set_title(f"Frequency Response of {taps} tap FIR Filter" +
+    ...               f"($f_c={f_c}$ rad/sample)")
+    >>> ax1.axvline(f_c, color='black', linestyle=':', linewidth=0.8)
+    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'C0')
+    >>> ax1.set_ylabel("Amplitude in dB", color='C0')
+    >>> ax1.set(xlabel="Frequency in rad/sample", xlim=(0, np.pi))
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
-    >>> ax2.plot(w, angles, 'g')
-    >>> ax2.set_ylabel('Angle (radians)', color='g')
+    >>> ax2.plot(w, angles, 'C1')
+    >>> ax2.set_ylabel('Angle (radians)', color='C1')
     >>> ax2.grid(True)
     >>> ax2.axis('tight')
     >>> plt.show()
@@ -736,7 +738,7 @@ def _validate_sos(sos):
     return sos, n_sections
 
 
-def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
+def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     r"""
     Compute the frequency response of a digital filter in SOS format.
 
@@ -802,7 +804,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
 
     Compute the frequency response at 1500 points from DC to Nyquist.
 
-    >>> w, h = signal.sosfreqz(sos, worN=1500)
+    >>> w, h = signal.freqz_sos(sos, worN=1500)
 
     Plot the response.
 
@@ -858,6 +860,17 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
         w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole, fs=fs)
         h *= rowh
     return w, h
+
+
+def sosfreqz(*args, **kwargs):
+    """
+    Compute the frequency response of a digital filter in SOS format.
+
+    .. warning:: This function is an alias, provided for backward
+                 compatibility. New code should use the function
+                 :func:`scipy.signal.freqz_sos`.
+    """
+    return freqz_sos(*args, **kwargs)
 
 
 def _cplxreal(z, tol=None):
@@ -2547,7 +2560,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
     ...                        analog=False, ftype='cheby2', fs=2000,
     ...                        output='sos')
-    >>> w, h = signal.sosfreqz(sos, 2000, fs=2000)
+    >>> w, h = signal.freqz_sos(sos, 2000, fs=2000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(1, 1, 1)
     >>> ax.semilogx(w, 20 * np.log10(np.maximum(abs(h), 1e-5)))

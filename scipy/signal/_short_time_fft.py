@@ -20,9 +20,9 @@
 # Provides typing union operator ``|`` in Python 3.9:
 from __future__ import annotations
 # Linter does not allow to import ``Generator`` from ``typing`` module:
-from collections.abc import Generator
+from collections.abc import Generator, Callable
 from functools import cache, lru_cache, partial
-from typing import Callable, get_args, Literal
+from typing import get_args, Literal
 
 import numpy as np
 
