@@ -1,6 +1,10 @@
 Probability distributions
 -------------------------
 
+_SciPy has two distribution infrastructures. This tutorial is for the (much)
+older one, which has many more pre-defined distributions, but some structural
+disadvantages. For the new infrastructure, see :doc:`distribution_infrastructure`._
+
 There are two general distribution classes that have been implemented
 for encapsulating :ref:`continuous random variables
 <continuous-random-variables>` and :ref:`discrete random variables
