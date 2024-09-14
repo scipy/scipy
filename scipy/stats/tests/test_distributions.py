@@ -6112,6 +6112,47 @@ class TestLevyStable:
             expected,
         )
 
+    def test_frozen_parameterization_gh20821(self):
+        # gh-20821 reported that frozen distributions ignore the parameterization.
+        # Check that this is resolved and that the frozen distribution's
+        # parameterization can be changed independently of stats.levy_stable
+        rng = np.random.default_rng
+        shapes = dict(alpha=1.9, beta=0.1, loc=0.0, scale=1.0)
+        unfrozen = stats.levy_stable
+        frozen = stats.levy_stable(**shapes)
+
+        unfrozen.parameterization = "S0"
+        frozen.parameterization = "S1"
+        unfrozen_a = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+        frozen_a = frozen.rvs(size=10, random_state=rng(329823498))
+        assert not np.any(frozen_a == unfrozen_a)
+
+        unfrozen.parameterization = "S1"
+        frozen.parameterization = "S0"
+        unfrozen_b = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+        frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
+        assert_equal(frozen_b, unfrozen_a)
+        assert_equal(unfrozen_b, frozen_a)
+
+    def test_frozen_parameterization_gh20821b(self):
+        # Check that the parameterization of the frozen distribution is that of
+        # the unfrozen distribution at the time of freezing
+        rng = np.random.default_rng
+        shapes = dict(alpha=1.9, beta=0.1, loc=0.0, scale=1.0)
+        unfrozen = stats.levy_stable
+
+        unfrozen.parameterization = "S0"
+        frozen = stats.levy_stable(**shapes)
+        unfrozen_a = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+        frozen_a = frozen.rvs(size=10, random_state=rng(329823498))
+        assert_equal(frozen_a, unfrozen_a)
+
+        unfrozen.parameterization = "S1"
+        frozen = stats.levy_stable(**shapes)
+        unfrozen_b = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+        frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
+        assert_equal(frozen_b, unfrozen_b)
+
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
