@@ -227,6 +227,7 @@ float
 snorm1est(float* A, int n)
 {
     int from = 2*n, to = n, kase = 0, tempint, int1 = 1;
+    int isave[3];
     float est, dbl1 = 1.0, dbl0 = 0.0;
     char* opA;
     float* work_arr = PyMem_RawMalloc(3*n*sizeof(float));
@@ -235,7 +236,7 @@ snorm1est(float* A, int n)
     if (!iwork_arr) { PyMem_RawFree(work_arr);return -101; }
     // 1-norm estimator by reverse communication
     // dlacon( n, v, x, isgn, est, kase )
-    slacon_(&n, work_arr, &work_arr[n], iwork_arr, &est, &kase);
+    slacn2_(&n, work_arr, &work_arr[n], iwork_arr, &est, &kase, isave);
 
     while (kase)
     {
@@ -244,7 +245,7 @@ snorm1est(float* A, int n)
         from = to;
         to = tempint;
         sgemv_(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
-        slacon_(&n, work_arr, &work_arr[to], iwork_arr, &est, &kase);
+        slacn2_(&n, work_arr, &work_arr[to], iwork_arr, &est, &kase, isave);
     }
 
     PyMem_RawFree(work_arr);
@@ -258,6 +259,7 @@ double
 dnorm1est(double* A, int n)
 {
     int from = 2*n, to = n, kase = 0, tempint, int1 = 1;
+    int isave[3];
     double est, dbl1 = 1.0, dbl0 = 0.0;
     char* opA;
     double* work_arr = PyMem_RawMalloc(3*n*sizeof(double));
@@ -266,7 +268,7 @@ dnorm1est(double* A, int n)
     if (!iwork_arr) { PyMem_RawFree(work_arr);return -101; }
     // 1-norm estimator by reverse communication
     // dlacon( n, v, x, isgn, est, kase )
-    dlacon_(&n, work_arr, &work_arr[n], iwork_arr, &est, &kase);
+    dlacn2_(&n, work_arr, &work_arr[n], iwork_arr, &est, &kase, isave);
 
     while (kase)
     {
@@ -275,7 +277,7 @@ dnorm1est(double* A, int n)
         from = to;
         to = tempint;
         dgemv_(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
-        dlacon_(&n, work_arr, &work_arr[to], iwork_arr, &est, &kase);
+        dlacn2_(&n, work_arr, &work_arr[to], iwork_arr, &est, &kase, isave);
     }
 
     PyMem_RawFree(work_arr);
@@ -289,13 +291,14 @@ float
 cnorm1est(EXPM_C* A, int n)
 {
     int from = 2*n, to = n, kase = 0, tempint, int1 = 1;
+    int isave[3];
     float est;
     EXPM_C dbl1 = CPLX_C(1.0, 0.0), dbl0 = CPLX_C(0.0, 0.0);
     char* opA;
     EXPM_C* work_arr = PyMem_RawMalloc(3*n*sizeof(EXPM_C));
     if (!work_arr) { return -100; }
     // clacon( n, v, x, est, kase )
-    clacon_(&n, work_arr, &work_arr[n], &est, &kase);
+    clacn2_(&n, work_arr, &work_arr[n], &est, &kase, isave);
 
     while (kase)
     {
@@ -304,7 +307,7 @@ cnorm1est(EXPM_C* A, int n)
         from = to;
         to = tempint;
         cgemv_(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
-        clacon_(&n, work_arr, &work_arr[to], &est, &kase);
+        clacn2_(&n, work_arr, &work_arr[to], &est, &kase, isave);
     }
 
     PyMem_RawFree(work_arr);
@@ -317,13 +320,14 @@ double
 znorm1est(EXPM_Z* A, int n)
 {
     int from = 2*n, to = n, kase = 0, tempint, int1 = 1;
+    int isave[3];
     double est;
     EXPM_Z dbl1 = CPLX_Z(1.0, 0.0), dbl0 = CPLX_Z(0.0, 0.0);
     char* opA;
     EXPM_Z* work_arr = PyMem_RawMalloc(3*n*sizeof(EXPM_Z));
     if (!work_arr) { return -100; }
     // zlacon( n, v, x, est, kase )
-    zlacon_(&n, work_arr, &work_arr[n], &est, &kase);
+    zlacn2_(&n, work_arr, &work_arr[n], &est, &kase, isave);
 
     while (kase)
     {
@@ -332,7 +336,7 @@ znorm1est(EXPM_Z* A, int n)
         from = to;
         to = tempint;
         zgemv_(opA, &n, &n, &dbl1, A, &n, &work_arr[from], &int1, &dbl0, &work_arr[to], &int1);
-        zlacon_(&n, work_arr, &work_arr[to], &est, &kase);
+        zlacn2_(&n, work_arr, &work_arr[to], &est, &kase, isave);
     }
 
     PyMem_RawFree(work_arr);
