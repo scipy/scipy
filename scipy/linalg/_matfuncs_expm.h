@@ -26,7 +26,7 @@ void sgemm_(char* transa, char* transb, int* m, int* n, int* k, float* alpha, fl
 void sgemv_(char* trans, int* m, int* n, float* alpha, float* a, int* lda, float* x, int* incx, float* beta, float* y, int* incy);
 void sgetrf_(int* m, int* n, float* a, int* lda, int* ipiv, int* info);
 void sgetrs_(char* trans, int* n, int* nrhs, float* a, int* lda, int* ipiv, float* b, int* ldb, int* info);
-void slacon_(int* n, float* v, float* x, int* isgn, float* est, int* kase);
+void slacn2_(int* n, float* v, float* x, int* isgn, float* est, int* kase, int* isave);
 void sscal_(int* n, float* sa, float* sx, int* incx);
 
 void daxpy_(int* n, double* sa, double* sx, int* incx, double* sy, int* incy);
@@ -35,7 +35,7 @@ void dgemm_(char* transa, char* transb, int* m, int* n, int* k, double* alpha, d
 void dgemv_(char* trans, int* m, int* n, double* alpha, double* a, int* lda, double* x, int* incx, double* beta, double* y, int* incy);
 void dgetrf_(int* m, int* n, double* a, int* lda, int* ipiv, int* info);
 void dgetrs_(char* trans, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b, int* ldb, int* info);
-void dlacon_(int* n, double* v, double* x, int* isgn, double* est, int* kase);
+void dlacn2_(int* n, double* v, double* x, int* isgn, double* est, int* kase, int* isave);
 void dscal_(int* n, double* sa, double* sx, int* incx);
 
 void caxpy_(int* n, EXPM_C* sa, EXPM_C* sx, int* incx, EXPM_C* sy, int* incy);
@@ -44,7 +44,7 @@ void cgemm_(char* transa, char* transb, int* m, int* n, int* k, EXPM_C* alpha, E
 void cgemv_(char* trans, int* m, int* n, EXPM_C* alpha, EXPM_C* a, int* lda, EXPM_C* x, int* incx, EXPM_C* beta, EXPM_C* y, int* incy);
 void cgetrf_(int* m, int* n, EXPM_C* a, int* lda, int* ipiv, int* info);
 void cgetrs_(char* trans, int* n, int* nrhs, EXPM_C* a, int* lda, int* ipiv, EXPM_C* b, int* ldb, int* info);
-void clacon_(int* n, EXPM_C* v, EXPM_C* x, float* est, int* kase);
+void clacn2_(int* n, EXPM_C* v, EXPM_C* x, float* est, int* kase, int* isave);
 void csscal_(int* n, float* sa, EXPM_C* sx, int* incx);
 
 void zaxpy_(int* n, EXPM_Z* sa, EXPM_Z* sx, int* incx, EXPM_Z* sy, int* incy);
@@ -53,7 +53,7 @@ void zgemm_(char* transa, char* transb, int* m, int* n, int* k, EXPM_Z* alpha, E
 void zgemv_(char* trans, int* m, int* n, EXPM_Z* alpha, EXPM_Z* a, int* lda, EXPM_Z* x, int* incx, EXPM_Z* beta, EXPM_Z* y, int* incy);
 void zgetrf_(int* m, int* n, EXPM_Z* a, int* lda, int* ipiv, int* info);
 void zgetrs_(char* trans, int* n, int* nrhs, EXPM_Z* a, int* lda, int* ipiv, EXPM_Z* b, int* ldb, int* info);
-void zlacon_(int* n, EXPM_Z* v, EXPM_Z* x, double* est, int* kase);
+void zlacn2_(int* n, EXPM_Z* v, EXPM_Z* x, double* est, int* kase, int* isave);
 void zdscal_(int* n, double* sa, EXPM_Z* sx, int* incx);
 
 
