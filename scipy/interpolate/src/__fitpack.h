@@ -122,7 +122,6 @@ _find_interval(const double* tptr, d_ssize_t len_t,
                int extrapolate);
 
 
-
 /*
  * Fill the (m, k+1) matrix of non-zero b-splines.
  */
@@ -132,6 +131,7 @@ data_matrix(/* inputs */
             const double *tptr, d_ssize_t len_t,  // t, shape (len_t,)
             int k,
             const double *wptr,                 // weights, shape (m,) // NB: len(w) == len(x), not checked
+            int extrapolate,
             /* outputs */
             double *Aptr,                       // A, shape(m, k+1)
             d_ssize_t *offset_ptr,                // offset, shape (m,)

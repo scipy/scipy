@@ -24,76 +24,9 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
     ) noexcept nogil
 
 
-ctypedef fused int32_or_int64:
-    cnp.npy_int32
-    cnp.npy_int64
-
 #------------------------------------------------------------------------------
 # B-splines
 #------------------------------------------------------------------------------
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-def _make_design_matrix(const double[::1] x,
-                        const double[::1] t,
-                        int k,
-                        bint extrapolate,
-                        int32_or_int64[::1] indices):
-    """
-    Returns a design matrix in CSR format.
-
-    Note that only indices is passed, but not indptr because indptr is already
-    precomputed in the calling Python function design_matrix.
-
-    Parameters
-    ----------
-    x : array_like, shape (n,)
-        Points to evaluate the spline at.
-    t : array_like, shape (nt,)
-        Sorted 1D array of knots.
-    k : int
-        B-spline degree.
-    extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points.
-    indices : ndarray, shape (n * (k + 1),)
-        Preallocated indices of the final CSR array.
-
-    Returns
-    -------
-    data
-        The data array of a CSR array of the b-spline design matrix.
-        In each row all the basis elements are evaluated at the certain point
-        (first row - x[0], ..., last row - x[-1]).
-
-    indices
-        The indices array of a CSR array of the b-spline design matrix.
-    """
-    cdef:
-        cnp.npy_intp i, j, m, ind
-        cnp.npy_intp n = x.shape[0]
-        double[::1] work = np.empty(2*k+2, dtype=float)
-        double[::1] data = np.zeros(n * (k + 1), dtype=float)
-        double xval
-    ind = k
-    for i in range(n):
-        xval = x[i]
-
-        # Find correct interval. Note that interval >= 0 always as
-        # extrapolate=False and out of bound values are already dealt with in
-        # design_matrix
-        ind = _find_interval(&t[0], t.shape[0], k, xval, ind, extrapolate)
-        _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
-
-        # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
-        # indices[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1)
-        for j in range(k + 1):
-            m = (k + 1) * i + j
-            data[m] = work[j]
-            indices[m] = ind - k + j
-
-    return np.asarray(data), np.asarray(indices)
-
-
 
 @cython.wraparound(False)
 @cython.boundscheck(False)

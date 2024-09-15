@@ -7,7 +7,6 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
                           solve, solve_banded)
 from scipy.optimize import minimize_scalar
-from . import _bspl
 from . import _dierckx
 from . import _fitpack_impl
 from scipy.sparse import csr_array
@@ -451,14 +450,22 @@ class BSpline:
             int_dtype = np.int32
         else:
             int_dtype = np.int64
-        # Preallocate indptr and indices
-        indices = np.empty(n * (k + 1), dtype=int_dtype)
+
+        # Get the non-zero elements of the design matrix and per-row `offsets`:
+        # In row `i`, k+1 nonzero elements are consecutive, and start from `offset[i]`
+        data, offsets, _ = _dierckx.data_matrix(x, t, k, np.ones_like(x), extrapolate)
+        data = data.ravel()
+
+        if offsets.dtype != int_dtype:
+            offsets = offsets.astype(int_dtype)
+
+        # Convert from per-row offsets to the CSR indices/indptr format
+        indices = np.repeat(offsets, k+1).reshape(-1, k+1)
+        indices = indices + np.arange(k+1, dtype=int_dtype)
+        indices = indices.ravel()
+
         indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
 
-        # indptr is not passed to Cython as it is already fully computed
-        data, indices = _bspl._make_design_matrix(
-            x, t, k, extrapolate, indices
-        )
         return csr_array(
             (data, indices, indptr),
             shape=(x.shape[0], t.shape[0] - k - 1)
