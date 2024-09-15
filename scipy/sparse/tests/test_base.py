@@ -5455,21 +5455,12 @@ class RunAll64Bit:
         check(cls, method_name)
 
 
-@pytest.mark.slow
 class Test64BitArray(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
    def test_resiliency_limit_10(self, cls, method_name):
        self._check_resiliency(cls, method_name, maxval_limit=10)
-
-   @pytest.mark.fail_slow(2)
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_random(self, cls, method_name):
-       # bsr_array.eliminate_zeros relies on csr_array constructor
-       # not making copies of index arrays --- this is not
-       # necessarily true when we pick the index data type randomly
-       self._check_resiliency(cls, method_name, random=True)
 
    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
    def test_resiliency_all_32(self, cls, method_name):
@@ -5479,6 +5470,15 @@ class Test64BitArray(RunAll64Bit):
    def test_resiliency_all_64(self, cls, method_name):
        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
+   @pytest.mark.xslow
+   @pytest.mark.fail_slow(2)
+   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+   def test_resiliency_random(self, cls, method_name):
+       # bsr_array.eliminate_zeros relies on csr_array constructor
+       # not making copies of index arrays --- this is not
+       # necessarily true when we pick the index data type randomly
+       self._check_resiliency(cls, method_name, random=True)
+
 
 class Test64BitMatrix(RunAll64Bit):
     # assert_32bit=True only for spmatrix cuz sparray does not check index content
@@ -5487,6 +5487,9 @@ class Test64BitMatrix(RunAll64Bit):
     def test_no_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, assert_32bit=True)
 
+
+@pytest.mark.xslow
+class Test64BitMatrixXSlow(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
     @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
