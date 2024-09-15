@@ -20,6 +20,29 @@ typedef int64_t d_ssize_t;
 
 
 /*
+ * LAPACK Givens rotation
+ */
+extern "C" {
+void BLAS_FUNC(dlartg)(double *f, double *g, double *cs, double *sn, double *r);
+}
+
+
+/*
+ * Apply a Givens transform.
+ */
+template<typename T>
+inline
+std::tuple<T, T>
+fprota(T c, T s, T a, T b)
+{
+    return std::make_tuple(
+        c*a + s*b,
+       -s*a + c*b
+    );
+}
+
+
+/*
  * 1D and 2D array wrappers, with and without boundschecking
  */
 
@@ -79,28 +102,6 @@ typedef Array1D<double, BOUNDS_CHECK> RealArray1D;
 typedef Array1D<const double, BOUNDS_CHECK> ConstRealArray1D;
 typedef Array2D<const double, BOUNDS_CHECK> ConstRealArray2D;
 
-
-/*
- * LAPACK Givens rotation
- */
-extern "C" {
-void DLARTG(double *f, double *g, double *cs, double *sn, double *r);
-}
-
-
-/*
- * Apply a Givens transform.
- */
-template<typename T>
-inline
-std::tuple<T, T>
-fprota(T c, T s, T a, T b)
-{
-    return std::make_tuple(
-        c*a + s*b,
-       -s*a + c*b
-    );
-}
 
 
 /*
