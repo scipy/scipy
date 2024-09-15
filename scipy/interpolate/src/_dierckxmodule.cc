@@ -222,7 +222,8 @@ py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
  * def _data_matrix(const double[::1] x,
  *                  const double[::1] t,
  *                  int k,
- *                  const double[::1] w):
+ *                  const double[::1] w,
+ *                  bint extrapolate=False):
  */
 static PyObject*
 py_data_matrix(PyObject *self, PyObject *args)
@@ -230,8 +231,9 @@ py_data_matrix(PyObject *self, PyObject *args)
     PyObject *py_x=NULL, *py_t=NULL, *py_w=NULL;
     fitpack::d_ssize_t nc;
     int k;   // NB: declare as npy_intp, and it's garbage
+    int extrapolate=0;   // default is False
 
-    if(!PyArg_ParseTuple(args, "OOiO", &py_x, &py_t, &k, &py_w)) {
+    if(!PyArg_ParseTuple(args, "OOiO|p", &py_x, &py_t, &k, &py_w, &extrapolate)) {
         return NULL;
     }
 
@@ -277,6 +279,7 @@ py_data_matrix(PyObject *self, PyObject *args)
             static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 0),
             k,
             static_cast<const double *>(PyArray_DATA(a_w)),
+            extrapolate,
             static_cast<double *>(PyArray_DATA(a_A)),     // output: (A, offset, nc)
             static_cast<fitpack::d_ssize_t*>(PyArray_DATA(a_offs)),
             &nc,

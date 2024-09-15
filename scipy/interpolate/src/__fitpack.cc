@@ -132,6 +132,7 @@ data_matrix( /* inputs */
             const double *tptr, d_ssize_t len_t,  // t, shape (len_t,)
             int k,
             const double *wptr,                 // weights, shape (m,) // NB: len(w) == len(x), not checked
+            int extrapolate,
             /* outputs */
             double *Aptr,                       // A, shape(m, k+1)
             d_ssize_t *offset_ptr,                // offset, shape (m,)
@@ -150,8 +151,8 @@ data_matrix( /* inputs */
         double xval = x(i);
 
         // find the interval
-        ind = _find_interval(t.data, len_t, k, xval, ind, 0);
-        if (ind < 0){
+        ind = _find_interval(t.data, len_t, k, xval, ind, extrapolate);
+        if (!extrapolate && (ind < 0)){
             // should not happen here, validation is expected on the python side
             throw std::runtime_error("find_interval: out of bounds with x = " + std::to_string(xval));
         }
