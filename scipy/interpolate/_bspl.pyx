@@ -386,8 +386,7 @@ def _make_design_matrix(const double[::1] x,
                         const double[::1] t,
                         int k,
                         bint extrapolate,
-                        int32_or_int64[::1] indices,
-                        int nu=0):
+                        int32_or_int64[::1] indices):
     """
     Returns a design matrix in CSR format.
 
@@ -431,7 +430,7 @@ def _make_design_matrix(const double[::1] x,
         # extrapolate=False and out of bound values are already dealt with in
         # design_matrix
         ind = find_interval(t, k, xval, ind, extrapolate)
-        _deBoor_D(&t[0], xval, k, ind, nu, &work[0])
+        _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
 
         # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
         # indices[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1)
