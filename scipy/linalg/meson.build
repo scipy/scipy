@@ -234,6 +234,7 @@ python_sources = [
   '_decomp_svd.py',
   '_expm_frechet.py',
   '_matfuncs.py',
+  '_matfuncs_expm.pyi',
   '_matfuncs_inv_ssq.py',
   '_matfuncs_sqrtm.py',
   '_misc.py',
