@@ -2283,12 +2283,12 @@ class TestNdimageMorphology:
                            [0, 0, 1, 1, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0]], bool)
         data = xp.asarray(data)
-        if func == ndimage.binary_hit_or_miss:
+        if func_name == "binary_hit_or_miss":
             kwargs = dict(origin1=origin, origin2=origin)
         else:
             kwargs = dict(origin=origin)
-        border_supported = func not in [ndimage.binary_hit_or_miss,
-                                        ndimage.binary_fill_holes]
+        border_supported = func_name not in ["binary_hit_or_miss",
+                                             "binary_fill_holes"]
         if border_supported:
             kwargs['border_value'] = border_value
         elif border_value != 0:
