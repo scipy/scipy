@@ -13,6 +13,8 @@ from scipy.optimize import milp, Bounds, LinearConstraint
 from scipy import sparse
 
 
+_IS_32BIT = (sys.maxsize < 2**32)
+
 def test_milp_iv():
 
     message = "`c` must be a dense array"
@@ -399,8 +401,7 @@ def test_large_numbers_gh20116():
     assert np.all(A @ res.x < b)
 
 
-@pytest.mark.xfail(
-    condition=sys.maxsize < 2**32,
+@pytest.mark.skipif(_IS_32BIT,
     reason="Fails on 32 bit.",
 )
 def test_presolve_gh18907():
