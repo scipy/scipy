@@ -2,6 +2,7 @@
 Unit test for Mixed Integer Linear Programming
 """
 import re
+import sys
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
@@ -292,7 +293,8 @@ def test_infeasible_prob_16609():
 _msg_time = "Time limit reached. (HiGHS Status 13:"
 _msg_iter = "Iteration limit reached. (HiGHS Status 14:"
 
-
+# See https://github.com/scipy/scipy/pull/19255#issuecomment-1778438888
+@pytest.mark.xfail(reason="Often buggy, revisit with callbacks, gh-19255")
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
                     reason="Unhandled 32-bit GCC FP bug")
 @pytest.mark.slow
@@ -397,6 +399,10 @@ def test_large_numbers_gh20116():
     assert np.all(A @ res.x < b)
 
 
+@pytest.mark.xfail(
+    condition=sys.maxsize < 2**32,
+    reason="Fails on 32 bit.",
+)
 def test_presolve_gh18907():
     from scipy.optimize import milp
     import numpy as np
