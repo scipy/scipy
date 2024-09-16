@@ -17,7 +17,7 @@ import inspect
 import numpy as np
 from ._optimize import OptimizeWarning, OptimizeResult
 from warnings import warn
-from ._highs._highs_wrapper import _highs_wrapper
+from ._highspy._highs_wrapper import _highs_wrapper
 from ._highspy._core import(
     kHighsInf,
     HighsDebugLevel,
@@ -57,7 +57,7 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
     scipy_status, scipy_message = (
         scipy_statuses_messages.get(highs_status, unrecognized))
     scipy_message = (f"{scipy_message}"
-                     f"(HiGHS Status {highs_status}: {highs_message})")
+                     f"(HiGHS Status {int(highs_status) if highs_status != None else None}: {highs_message})")
     return scipy_status, scipy_message
 
 
@@ -381,7 +381,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     status, message = _highs_to_scipy_status_message(highs_status,
                                                      highs_message)
 
-    x = np.array(res['x']) if 'x' in res else None
+    x = res['x'] # is None if not set
+    print(x, "After call")
     sol = {'x': x,
            'slack': slack,
            'con': con,
@@ -403,7 +404,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             }),
            'fun': res.get('fun'),
            'status': status,
-           'success': res['status'] == MODEL_STATUS_OPTIMAL,
+           'success': res['status'] == HighsModelStatus.kOptimal,
            'message': message,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
