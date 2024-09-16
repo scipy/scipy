@@ -923,7 +923,9 @@ class TestNdimageFilters:
         xp_assert_close(output, expected)
 
     @skip_xp_backends("cupy",
-                      reasons=["these filters do not yet have axes support"])
+                      reasons=["these filters do not yet have axes support"],
+                      cpu_only=True,
+                      exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize(('filter_func', 'kwargs'),
                              [(ndimage.laplace, {}),
                               (ndimage.gaussian_gradient_magnitude,
@@ -964,7 +966,9 @@ class TestNdimageFilters:
         xp_assert_close(output, expected)
 
     @skip_xp_backends("cupy",
-                      reasons=["generic_filter does not yet have axes support"])
+                      reasons=["generic_filter does not yet have axes support"],
+                      cpu_only=True,
+                      exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize(
         'axes',
         tuple(itertools.combinations(range(-3, 3), 1))
@@ -986,7 +990,9 @@ class TestNdimageFilters:
         xp_assert_close(output, expected)
 
     @skip_xp_backends("cupy",
-                      reasons=["https://github.com/cupy/cupy/pull/8339"])
+                      reasons=["https://github.com/cupy/cupy/pull/8339"],
+                      cpu_only=True,
+                      exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize('func', [ndimage.correlate, ndimage.convolve])
     @pytest.mark.parametrize(
         'dtype', [np.float32, np.float64, np.complex64, np.complex128]
