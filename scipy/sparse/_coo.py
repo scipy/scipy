@@ -849,8 +849,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         
         # Prepare the tensors for dot operation
         # Ravel non-reduced axes coordinates
-        self_raveled_coords = _ravel_non_reduced_axes(self.coords, self.shape, [self.ndim-1])
-        other_raveled_coords = _ravel_non_reduced_axes(other.coords, other.shape, [other.ndim-2])
+        self_raveled_coords = _ravel_non_reduced_axes(self.coords,
+                                                      self.shape, [self.ndim-1])
+        other_raveled_coords = _ravel_non_reduced_axes(other.coords,
+                                                       other.shape, [other.ndim-2])
 
         # Get the shape of the non-reduced axes
         og_shape_self = self.shape[:-1]
@@ -874,8 +876,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         combined_shape = og_shape_self + og_shape_other
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-        unraveled_coords_self = np.unravel_index(np.array(prod.coords[0]), og_shape_self)
-        unraveled_coords_other = np.unravel_index(np.array(prod.coords[1]), og_shape_other)
+        unraveled_coords_self = np.unravel_index(np.array(prod.coords[0]),
+                                                 og_shape_self)
+        unraveled_coords_other = np.unravel_index(np.array(prod.coords[1]),
+                                                  og_shape_other)
 
         nd_coords_a = np.array(unraveled_coords_self)
         nd_coords_b = np.array(unraveled_coords_other)
@@ -906,10 +910,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
             other_is_1d = True
 
         if self.shape[-1] != other.shape[-2]:
-                raise ValueError(f"shapes {a.shape} and {b.shape}"
+                raise ValueError(f"shapes {self.shape} and {other.shape}"
                                  " are not aligned for n-D dot")
 
-        new_shape_self = self.shape[:-1] + (1,) * (len(other.shape) - 1) + self.shape[-1:]
+        new_shape_self = self.shape[:-1] + (1,) * (len(other.shape) - 1) \
+            + self.shape[-1:]
         new_shape_other = (1,) * (len(self.shape) - 1) + other.shape
 
         result_shape = self.shape[:-1] + other.shape[:-2] + other.shape[-1:]
@@ -947,7 +952,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         axes_other = [axis + other.ndim if axis < 0 else axis for axis in axes_other]
 
         # Check for shape compatibility along specified axes
-        if any(self.shape[ax] != other.shape[bx] for ax, bx in zip(axes_self, axes_other)):
+        if any(self.shape[ax] != other.shape[bx]
+               for ax, bx in zip(axes_self, axes_other)):
             raise ValueError("sizes of the corresponding axes must match")
         
         if isdense(other):
@@ -962,15 +968,20 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # Prepare the tensors for tensordot operation       
         # Ravel non-reduced axes coordinates
-        self_non_red_coords = _ravel_non_reduced_axes(self.coords, self.shape, axes_self)
+        self_non_red_coords = _ravel_non_reduced_axes(self.coords, self.shape,
+                                                      axes_self)
         self_reduced_coords = np.ravel_multi_index(np.array(self.coords)[axes_self, :],
                                                 [self.shape[ax] for ax in axes_self])
-        other_non_red_coords = _ravel_non_reduced_axes(other.coords, other.shape, axes_other)
-        other_reduced_coords = np.ravel_multi_index(np.array(other.coords)[axes_other, :],
-                                                    tuple([other.shape[ax] for ax in axes_other]))
+        other_non_red_coords = _ravel_non_reduced_axes(other.coords, other.shape,
+                                                       axes_other)
+        other_reduced_coords = np.ravel_multi_index(
+            np.array(other.coords)[axes_other, :],
+            tuple([other.shape[ax] for ax in axes_other]))
         # Get the shape of the non-reduced axes
-        og_shape_self = tuple(self.shape[ax] for ax in range(ndim_self) if ax not in axes_self)
-        og_shape_other = tuple(other.shape[ax] for ax in range(ndim_other) if ax not in axes_other)
+        og_shape_self = tuple(self.shape[ax] for ax in range(ndim_self)
+                              if ax not in axes_self)
+        og_shape_other = tuple(other.shape[ax] for ax in range(ndim_other)
+                               if ax not in axes_other)
         
         # Create 2D coords arrays
         ravel_coords_shape_self = (math.prod(og_shape_self),
@@ -994,7 +1005,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if og_shape_self:
             unraveled_coords_self = np.array(np.unravel_index(prod.row, og_shape_self))
         if og_shape_other:
-            unraveled_coords_other = np.array(np.unravel_index(prod.col, og_shape_other))
+            unraveled_coords_other = np.array(np.unravel_index(prod.col,
+                                                               og_shape_other))
 
         if og_shape_self and og_shape_other:
             coords = np.concatenate((unraveled_coords_self, unraveled_coords_other))
@@ -1022,12 +1034,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
         reduced_shape_self = [self.shape[s] for s in axes_self]
         non_reduced_shape_self = [self.shape[s] for s in non_reduced_axes_self]
 
-        non_reduced_axes_other = [ax for ax in range(ndim_other) if ax not in axes_other]
+        non_reduced_axes_other = [ax for ax in range(ndim_other)
+                                  if ax not in axes_other]
         reduced_shape_other = [other.shape[s] for s in axes_other]
         non_reduced_shape_other = [other.shape[s] for s in non_reduced_axes_other]
 
         permute_self = non_reduced_axes_self + axes_self
-        permute_other = non_reduced_axes_other[:-1] + axes_other + non_reduced_axes_other[-1:]
+        permute_other = non_reduced_axes_other[:-1] + axes_other \
+            + non_reduced_axes_other[-1:]
         self = np.transpose(self, permute_self)
         other = np.transpose(other, permute_other)
 
