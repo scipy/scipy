@@ -382,7 +382,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                                                      highs_message)
 
     x = res['x'] # is None if not set
-    print(x, "After call")
     sol = {'x': x,
            'slack': slack,
            'con': con,
