@@ -5462,14 +5462,6 @@ class Test64BitArray(RunAll64Bit):
    def test_resiliency_limit_10(self, cls, method_name):
        self._check_resiliency(cls, method_name, maxval_limit=10)
 
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_all_32(self, cls, method_name):
-       self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
-
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_all_64(self, cls, method_name):
-       self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
-
    @pytest.mark.xslow
    @pytest.mark.fail_slow(2)
    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
@@ -5478,6 +5470,14 @@ class Test64BitArray(RunAll64Bit):
        # not making copies of index arrays --- this is not
        # necessarily true when we pick the index data type randomly
        self._check_resiliency(cls, method_name, random=True)
+
+   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+   def test_resiliency_all_32(self, cls, method_name):
+       self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
+
+   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+   def test_resiliency_all_64(self, cls, method_name):
+       self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
 
 class Test64BitMatrix(RunAll64Bit):

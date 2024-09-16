@@ -16,6 +16,7 @@
 #include <numpy/npy_3kcompat.h>
 #include <numpy/ufuncobject.h>
 
+#include "dual.h"
 #include "sf_error.h"
 #include "third_party/kokkos/mdspan.hpp"
 
@@ -55,6 +56,62 @@ namespace numpy {
     using cdouble_3d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 3>, std::layout_stride>;
     using cdouble_4d = std::mdspan<cdouble, std::dextents<ptrdiff_t, 4>, std::layout_stride>;
 
+    using autodiff0_float = dual<float, 0>;
+    using autodiff0_double = dual<double, 0>;
+    using autodiff0_cfloat = dual<cfloat, 0>;
+    using autodiff0_cdouble = dual<cdouble, 0>;
+    using autodiff0_float_1d = std::mdspan<autodiff0_float, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff0_double_1d = std::mdspan<autodiff0_double, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff0_cfloat_1d = std::mdspan<autodiff0_cfloat, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff0_cdouble_1d = std::mdspan<autodiff0_cdouble, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff0_float_2d = std::mdspan<autodiff0_float, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff0_double_2d = std::mdspan<autodiff0_double, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff0_cfloat_2d = std::mdspan<autodiff0_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff0_cdouble_2d = std::mdspan<autodiff0_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff1_float = dual<float, 1>;
+    using autodiff1_double = dual<double, 1>;
+    using autodiff1_cfloat = dual<cfloat, 1>;
+    using autodiff1_cdouble = dual<cdouble, 1>;
+    using autodiff1_float_1d = std::mdspan<autodiff1_float, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff1_double_1d = std::mdspan<autodiff1_double, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff1_cfloat_1d = std::mdspan<autodiff1_cfloat, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff1_cdouble_1d = std::mdspan<autodiff1_cdouble, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff1_float_2d = std::mdspan<autodiff1_float, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff1_double_2d = std::mdspan<autodiff1_double, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff1_cfloat_2d = std::mdspan<autodiff1_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff1_cdouble_2d = std::mdspan<autodiff1_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff2_float = dual<float, 2>;
+    using autodiff2_double = dual<double, 2>;
+    using autodiff2_cfloat = dual<cfloat, 2>;
+    using autodiff2_cdouble = dual<cdouble, 2>;
+    using autodiff2_float_1d = std::mdspan<autodiff2_float, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff2_double_1d = std::mdspan<autodiff2_double, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff2_cfloat_1d = std::mdspan<autodiff2_cfloat, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff2_cdouble_1d = std::mdspan<autodiff2_cdouble, std::dextents<ptrdiff_t, 1>, std::layout_stride>;
+    using autodiff2_float_2d = std::mdspan<autodiff2_float, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff2_double_2d = std::mdspan<autodiff2_double, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff2_cfloat_2d = std::mdspan<autodiff2_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff2_cdouble_2d = std::mdspan<autodiff2_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+
+    using autodiff00_float = dual<float, 0, 0>;
+    using autodiff00_double = dual<double, 0, 0>;
+    using autodiff00_cfloat = dual<cfloat, 0, 0>;
+    using autodiff00_cdouble = dual<cdouble, 0, 0>;
+    using autodiff00_cfloat_2d = std::mdspan<autodiff00_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff00_cdouble_2d = std::mdspan<autodiff00_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff11_float = dual<float, 1, 1>;
+    using autodiff11_double = dual<double, 1, 1>;
+    using autodiff11_cfloat = dual<cfloat, 1, 1>;
+    using autodiff11_cdouble = dual<cdouble, 1, 1>;
+    using autodiff11_cfloat_2d = std::mdspan<autodiff11_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff11_cdouble_2d = std::mdspan<autodiff11_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff22_float = dual<float, 2, 2>;
+    using autodiff22_double = dual<double, 2, 2>;
+    using autodiff22_cfloat = dual<cfloat, 2, 2>;
+    using autodiff22_cdouble = dual<cdouble, 2, 2>;
+    using autodiff22_cfloat_2d = std::mdspan<autodiff22_cfloat, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+    using autodiff22_cdouble_2d = std::mdspan<autodiff22_cdouble, std::dextents<ptrdiff_t, 2>, std::layout_stride>;
+
     // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 
     // 1 input, 1 output
@@ -62,6 +119,33 @@ namespace numpy {
     using d_d = double (*)(double);
     using F_F = cfloat (*)(cfloat);
     using D_D = cdouble (*)(cdouble);
+
+    // autodiff, 1 input, 1 output
+    using autodiff0_f_f1 = void (*)(autodiff0_float, autodiff0_float_1d);
+    using autodiff0_d_d1 = void (*)(autodiff0_double, autodiff0_double_1d);
+    using autodiff0_F_F1 = void (*)(autodiff0_cfloat, autodiff0_cfloat_1d);
+    using autodiff0_D_D1 = void (*)(autodiff0_cdouble, autodiff0_cdouble_1d);
+    using autodiff1_f_f1 = void (*)(autodiff1_float, autodiff1_float_1d);
+    using autodiff1_d_d1 = void (*)(autodiff1_double, autodiff1_double_1d);
+    using autodiff1_F_F1 = void (*)(autodiff1_cfloat, autodiff1_cfloat_1d);
+    using autodiff1_D_D1 = void (*)(autodiff1_cdouble, autodiff1_cdouble_1d);
+    using autodiff2_f_f1 = void (*)(autodiff2_float, autodiff2_float_1d);
+    using autodiff2_d_d1 = void (*)(autodiff2_double, autodiff2_double_1d);
+    using autodiff2_F_F1 = void (*)(autodiff2_cfloat, autodiff2_cfloat_1d);
+    using autodiff2_D_D1 = void (*)(autodiff2_cdouble, autodiff2_cdouble_1d);
+
+    using autodiff0_f_f2 = void (*)(autodiff0_float, autodiff0_float_2d);
+    using autodiff0_d_d2 = void (*)(autodiff0_double, autodiff0_double_2d);
+    using autodiff0_F_F2 = void (*)(autodiff0_cfloat, autodiff0_cfloat_2d);
+    using autodiff0_D_D2 = void (*)(autodiff0_cdouble, autodiff0_cdouble_2d);
+    using autodiff1_f_f2 = void (*)(autodiff1_float, autodiff1_float_2d);
+    using autodiff1_d_d2 = void (*)(autodiff1_double, autodiff1_double_2d);
+    using autodiff1_F_F2 = void (*)(autodiff1_cfloat, autodiff1_cfloat_2d);
+    using autodiff1_D_D2 = void (*)(autodiff1_cdouble, autodiff1_cdouble_2d);
+    using autodiff2_f_f2 = void (*)(autodiff2_float, autodiff2_float_2d);
+    using autodiff2_d_d2 = void (*)(autodiff2_double, autodiff2_double_2d);
+    using autodiff2_F_F2 = void (*)(autodiff2_cfloat, autodiff2_cfloat_2d);
+    using autodiff2_D_D2 = void (*)(autodiff2_cdouble, autodiff2_cdouble_2d);
 
     // 1 input, 2 outputs
     using f_ff = void (*)(float, float &, float &);
@@ -92,6 +176,14 @@ namespace numpy {
     using ld_d = double (*)(long int, double);
     using lF_F = cfloat (*)(long int, cfloat);
     using lD_D = cdouble (*)(long int, cdouble);
+
+    // autodiff, 2 inputs, 1 output
+    using autodiff0_if_f = autodiff0_float (*)(int, autodiff0_float);
+    using autodiff0_id_d = autodiff0_double (*)(int, autodiff0_double);
+    using autodiff1_if_f = autodiff1_float (*)(int, autodiff1_float);
+    using autodiff1_id_d = autodiff1_double (*)(int, autodiff1_double);
+    using autodiff2_if_f = autodiff2_float (*)(int, autodiff2_float);
+    using autodiff2_id_d = autodiff2_double (*)(int, autodiff2_double);
 
     // 2 inputs, 2 outputs
     using qf_ff = void (*)(long long int, float, float &, float &);
@@ -129,6 +221,14 @@ namespace numpy {
     using qqf_f = float (*)(long long int, long long int, float);
     using qqd_d = double (*)(long long int, long long int, double);
 
+    // autodiff, 3 inputs, 1 ouput
+    using autodiff0_iif_f = autodiff0_float (*)(int, int, autodiff0_float);
+    using autodiff0_iid_d = autodiff0_double (*)(int, int, autodiff0_double);
+    using autodiff1_iif_f = autodiff1_float (*)(int, int, autodiff1_float);
+    using autodiff1_iid_d = autodiff1_double (*)(int, int, autodiff1_double);
+    using autodiff2_iif_f = autodiff2_float (*)(int, int, autodiff2_float);
+    using autodiff2_iid_d = autodiff2_double (*)(int, int, autodiff2_double);
+
     // 3 inputs, 2 outputs
     using qqf_ff = void (*)(long long int, long long int, float, float &, float &);
     using qqd_dd = void (*)(long long int, long long int, double, double &, double &);
@@ -137,7 +237,7 @@ namespace numpy {
     using qqf_fff = void (*)(long long int, long long int, float, float &, float &, float &);
     using qqd_ddd = void (*)(long long int, long long int, double, double &, double &, double &);
 
-    // 4 inputs, 1 outputs
+    // 4 inputs, 1 output
     using qqqF_F = cfloat (*)(long long int, long long int, long long int, cfloat);
     using qqqD_D = cdouble (*)(long long int, long long int, long long int, cdouble);
     using qqff_F = cfloat (*)(long long int, long long int, float, float);
@@ -149,6 +249,14 @@ namespace numpy {
     using ffff_F = cfloat (*)(float, float, float, float);
     using dddd_D = cdouble (*)(double, double, double, double);
 
+    // autodiff, 4 inputs, 1 output
+    using autodiff00_iiff_F = autodiff00_cfloat (*)(int, int, autodiff00_float, autodiff00_float);
+    using autodiff00_iidd_D = autodiff00_cdouble (*)(int, int, autodiff00_double, autodiff00_double);
+    using autodiff11_iiff_F = autodiff11_cfloat (*)(int, int, autodiff11_float, autodiff11_float);
+    using autodiff11_iidd_D = autodiff11_cdouble (*)(int, int, autodiff11_double, autodiff11_double);
+    using autodiff22_iiff_F = autodiff22_cfloat (*)(int, int, autodiff22_float, autodiff22_float);
+    using autodiff22_iidd_D = autodiff22_cdouble (*)(int, int, autodiff22_double, autodiff22_double);
+
     // 4 inputs, 2 outputs
     using qqqf_ff = void (*)(long long int, long long int, long long int, float, float &, float &);
     using ffff_ff = void (*)(float, float, float, float, float &, float &);
@@ -158,8 +266,6 @@ namespace numpy {
     using qqqD_DD = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &);
     using qqff_FF = void (*)(long long int, long long int, float, float, cfloat &, cfloat &);
     using qqdd_DD = void (*)(long long int, long long int, double, double, cdouble &, cdouble &);
-    using qqff_FF2_old = void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2]);
-    using qqdd_DD2_old = void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2]);
 
     // 4 inputs, 3 outputs
     using qqqf_fff = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
@@ -168,10 +274,6 @@ namespace numpy {
     using qqqD_DDD = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &, cdouble &);
     using qqff_FFF = void (*)(long long int, long long int, float, float, cfloat &, cfloat &, cfloat &);
     using qqdd_DDD = void (*)(long long int, long long int, double, double, cdouble &, cdouble &, cdouble &);
-    using qqff_FF2F22_old =
-        void (*)(long long int, long long int, float, float, cfloat &, cfloat (&)[2], cfloat (&)[2][2]);
-    using qqdd_DD2D22_old =
-        void (*)(long long int, long long int, double, double, cdouble &, cdouble (&)[2], cdouble (&)[2][2]);
 
     // 5 inputs, 2 outputs
     using fffff_ff = void (*)(float, float, float, float, float, float &, float &);
@@ -216,6 +318,13 @@ namespace numpy {
     using dd_D2 = void (*)(double, double, cdouble_2d);
     using qF_F2 = void (*)(long long int, cfloat, cfloat_2d);
     using qD_D2 = void (*)(long long int, cdouble, cdouble_2d);
+
+    using autodiff00_ff_F2 = void (*)(autodiff00_float, autodiff00_float, autodiff00_cfloat_2d);
+    using autodiff00_dd_D2 = void (*)(autodiff00_double, autodiff00_double, autodiff00_cdouble_2d);
+    using autodiff11_ff_F2 = void (*)(autodiff11_float, autodiff11_float, autodiff11_cfloat_2d);
+    using autodiff11_dd_D2 = void (*)(autodiff11_double, autodiff11_double, autodiff11_cdouble_2d);
+    using autodiff22_ff_F2 = void (*)(autodiff22_float, autodiff22_float, autodiff22_cfloat_2d);
+    using autodiff22_dd_D2 = void (*)(autodiff22_double, autodiff22_double, autodiff22_cdouble_2d);
 
     // 2 inputs, 2 outputs
     using qF_F2F2 = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d);
@@ -298,7 +407,12 @@ namespace numpy {
 
     template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
     struct rank_of<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
-        static constexpr size_t value = Extents::rank();
+        static constexpr size_t value = Extents::rank() + rank_of<T>::value;
+    };
+
+    template <typename T, size_t... Orders>
+    struct rank_of<dual<T, Orders...>> {
+        static constexpr size_t value = sizeof...(Orders);
     };
 
     template <typename T>
@@ -512,6 +626,11 @@ namespace numpy {
         static constexpr NPY_TYPES value = npy_typenum<T>::value;
     };
 
+    template <typename T, size_t... Orders>
+    struct npy_typenum<dual<T, Orders...>> {
+        static constexpr NPY_TYPES value = npy_typenum<T>::value;
+    };
+
     template <typename T>
     inline constexpr NPY_TYPES npy_typenum_v = npy_typenum<T>::value;
 
@@ -580,7 +699,8 @@ namespace numpy {
     struct npy_traits<std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>> {
         static std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>
         get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
-            static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+            //            static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument
+            //            type");
 
             std::array<ptrdiff_t, Extents::rank()> strides;
             for (npy_uintp i = 0; i < strides.size(); ++i) {
@@ -596,11 +716,23 @@ namespace numpy {
         }
     };
 
+    template <typename T, size_t... Orders>
+    struct npy_traits<dual<T, Orders...>> {
+        static dual<T, Orders...> get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+            return *reinterpret_cast<dual<T, Orders...> *>(src);
+        }
+
+        static void set(char *dst, const dual<T, Orders...> &src) {
+            *reinterpret_cast<dual<T, Orders...> *>(dst) = src;
+        }
+    };
+
     using map_dims_type = void (*)(const npy_intp *, npy_intp *);
 
     struct base_ufunc_data {
         const char *name;
         map_dims_type map_dims;
+        int flags;
     };
 
     template <typename Func>
@@ -681,29 +813,55 @@ namespace numpy {
         }
     };
 
-    class SpecFun_UFunc {
+    namespace detail {
+
+        template <typename Func, typename Tr>
+        decltype(auto) compose(Func func, Tr tr) {
+            return tr(func);
+        }
+
+        template <typename Func, typename Tr0, typename Tr1, typename... Trs>
+        decltype(auto) compose(Func func, Tr0 tr0, Tr1 tr1, Trs... trs) {
+            return compose(tr0(func), tr1, trs...);
+        }
+
+    } // namespace detail
+
+    template <typename... Trs>
+    class compose {
+        std::tuple<Trs...> m_trs;
+
+      public:
+        compose(Trs... trs) : m_trs(trs...) {}
+
+        template <typename Func>
+        decltype(auto) operator()(Func func) const {
+            return std::apply([func](auto... trs) { return detail::compose(func, trs...); }, m_trs);
+        }
+    };
+
+    struct ufunc_wraps {
+        bool has_return;
+        int nin_and_nout;
+        PyUFuncGenericFunction func;
+        void *data;
+        void (*data_deleter)(void *);
+        const char *types;
+
+        template <typename Func>
+        ufunc_wraps(Func func)
+            : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
+              func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
+              data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
+              types(ufunc_traits<Func>::types) {}
+    };
+
+    class ufunc_overloads {
       public:
         using data_handle_type = void *;
         using data_deleter_type = void (*)(void *);
 
       private:
-        // This is an internal class designed only to help construction from an initializer list of functions
-        struct SpecFun_Func {
-            bool has_return;
-            int nin_and_nout;
-            PyUFuncGenericFunction func;
-            data_handle_type data;
-            data_deleter_type data_deleter;
-            const char *types;
-
-            template <typename Func>
-            SpecFun_Func(Func func)
-                : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
-                  func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
-                  data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
-                  types(ufunc_traits<Func>::types) {}
-        };
-
         int m_ntypes;
         bool m_has_return;
         int m_nin_and_nout;
@@ -713,11 +871,14 @@ namespace numpy {
         std::unique_ptr<char[]> m_types;
 
       public:
-        SpecFun_UFunc(std::initializer_list<SpecFun_Func> func)
-            : m_ntypes(func.size()), m_has_return(func.begin()->has_return), m_nin_and_nout(func.begin()->nin_and_nout),
-              m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new data_handle_type[m_ntypes]),
-              m_data_deleters(new data_deleter_type[m_ntypes]), m_types(new char[m_ntypes * m_nin_and_nout]) {
-            for (auto it = func.begin(); it != func.end(); ++it) {
+        template <typename Func0, typename... Funcs>
+        ufunc_overloads(Func0 func0, Funcs... funcs)
+            : m_ntypes(sizeof...(Funcs) + 1), m_has_return(has_return_v<Func0>),
+              m_nin_and_nout(arity_of_v<Func0> + m_has_return), m_func(new PyUFuncGenericFunction[m_ntypes]),
+              m_data(new data_handle_type[m_ntypes]), m_data_deleters(new data_deleter_type[m_ntypes]),
+              m_types(new char[m_ntypes * m_nin_and_nout]) {
+            ufunc_wraps func[sizeof...(Funcs) + 1] = {func0, funcs...};
+            for (auto it = std::begin(func); it != std::end(func); ++it) {
                 if (it->nin_and_nout != m_nin_and_nout) {
                     PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
                 }
@@ -725,7 +886,7 @@ namespace numpy {
                     PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
                 }
 
-                size_t i = it - func.begin();
+                size_t i = it - std::begin(func);
                 m_func[i] = it->func;
                 m_data[i] = it->data;
                 m_data_deleters[i] = it->data_deleter;
@@ -733,9 +894,12 @@ namespace numpy {
             }
         }
 
-        SpecFun_UFunc(SpecFun_UFunc &&other) = default;
+        template <typename... Trs, typename... Funcs>
+        ufunc_overloads(compose<Trs...> trs, Funcs... funcs) : ufunc_overloads(trs(funcs)...) {}
 
-        ~SpecFun_UFunc() {
+        ufunc_overloads(ufunc_overloads &&other) = default;
+
+        ~ufunc_overloads() {
             if (m_data) {
                 for (int i = 0; i < m_ntypes; ++i) {
                     data_deleter_type data_deleter = m_data_deleters[i];
@@ -769,14 +933,14 @@ namespace numpy {
         }
     };
 
-    PyObject *ufunc(SpecFun_UFunc func, int nout, const char *name, const char *doc) {
-        static std::vector<SpecFun_UFunc> ufuncs;
+    PyObject *ufunc(ufunc_overloads func, int nout, const char *name, const char *doc) {
+        static std::vector<ufunc_overloads> ufuncs;
 
         if (PyErr_Occurred()) {
             return nullptr;
         }
 
-        SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
+        ufunc_overloads &ufunc = ufuncs.emplace_back(std::move(func));
         ufunc.set_name(name);
         ufunc.set_map_dims([](const npy_intp *dims, npy_intp *new_dims) {});
 
@@ -786,22 +950,23 @@ namespace numpy {
         );
     }
 
-    PyObject *ufunc(SpecFun_UFunc func, const char *name, const char *doc) {
-        int nout = func.has_return();
+    PyObject *ufunc(ufunc_overloads overloads, const char *name, const char *doc) {
+        int nout = overloads.has_return();
 
-        return ufunc(std::move(func), nout, name, doc);
+        return ufunc(std::move(overloads), nout, name, doc);
     }
 
     PyObject *gufunc(
-        SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature, map_dims_type map_dims
+        ufunc_overloads overloads, int nout, const char *name, const char *doc, const char *signature,
+        map_dims_type map_dims
     ) {
-        static std::vector<SpecFun_UFunc> ufuncs;
+        static std::vector<ufunc_overloads> ufuncs;
 
         if (PyErr_Occurred()) {
             return nullptr;
         }
 
-        SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
+        ufunc_overloads &ufunc = ufuncs.emplace_back(std::move(overloads));
         ufunc.set_name(name);
         ufunc.set_map_dims(map_dims);
 
@@ -811,12 +976,78 @@ namespace numpy {
         );
     }
 
-    PyObject *
-    gufunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature, map_dims_type map_dims) {
-        int nout = func.has_return();
+    PyObject *gufunc(
+        ufunc_overloads overloads, const char *name, const char *doc, const char *signature, map_dims_type map_dims
+    ) {
+        int nout = overloads.has_return();
 
-        return gufunc(std::move(func), nout, name, doc, signature, map_dims);
+        return gufunc(std::move(overloads), nout, name, doc, signature, map_dims);
     }
+
+    // rename to autodiff_var?
+    template <typename T>
+    struct autodiff_traits {
+        static T to_var(T arg, size_t i) { return arg; }
+    };
+
+    template <typename T, size_t... Orders>
+    struct autodiff_traits<dual<T, Orders...>> {
+        static dual<T, Orders...> to_var(T arg, size_t i) { return dual_var<Orders...>(arg, i); }
+    };
+
+    template <
+        typename Func, typename Signature = signature_of_t<Func>,
+        typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
+    struct autodiff_wrapper;
+
+    template <typename Func, typename Res, typename... Args, size_t... I>
+    struct autodiff_wrapper<Func, Res(Args...), std::index_sequence<I...>> {
+        Func func;
+
+        Res operator()(remove_dual_t<Args>... args) {
+            return func(autodiff_traits<Args>::to_var(args, I - i_scan[I])...);
+        }
+
+        static constexpr size_t is_autodiff[sizeof...(Args)] = {std::is_same_v<Args, remove_dual_t<Args>>...};
+
+        static constexpr size_t i_scan[sizeof...(Args)] = {
+            detail::initializer_accumulate(is_autodiff, is_autodiff + I, 0)...,
+        };
+    };
+
+    template <typename Func>
+    autodiff_wrapper(Func func) -> autodiff_wrapper<Func>;
+
+    struct autodiff {
+        template <typename Func>
+        decltype(auto) operator()(Func f) {
+            return autodiff_wrapper{f};
+        }
+    };
+
+    template <typename Func, typename Signature = signature_of_t<Func>>
+    struct use_long_long_int_wrapper;
+
+    template <typename Func, typename Res, typename... Args>
+    struct use_long_long_int_wrapper<Func, Res(Args...)> {
+        Func func;
+
+        Res operator()(
+            std::conditional_t<std::is_integral_v<Args> && !std::is_same_v<Args, bool>, long long int, Args>... args
+        ) {
+            return func(args...);
+        }
+    };
+
+    template <typename Func>
+    use_long_long_int_wrapper(Func func) -> use_long_long_int_wrapper<Func>;
+
+    struct use_long_long_int {
+        template <typename Func>
+        decltype(auto) operator()(Func f) {
+            return use_long_long_int_wrapper{f};
+        }
+    };
 
 } // namespace numpy
 } // namespace xsf
