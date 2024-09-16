@@ -5,6 +5,24 @@
 
 namespace xsf {
 
+namespace detail {
+    template <typename T>
+    constexpr T small_binom_coefs[3][3] = {
+        {T(1.0), T(0.0), T(0.0)}, {T(1.0), T(1.0), T(0.0)}, {T(1.0), T(2.0), T(1.0)}
+    };
+
+    /* Since we only compute derivatives up to order 2, we only need
+     * Binomial coefficients with n <= 2 for use in the General
+     * Leibniz rule. This is an optimized way to get them. */
+    template <typename T>
+    T dumb_binom(size_t n, size_t k) {
+        if ((n <= 2) && (k <= 2)) {
+            return small_binom_coefs<T>[n][k];
+        }
+        return T(0);
+    }
+} // namespace detail
+
 template <typename T, size_t Order0, size_t... Orders>
 class dual;
 
@@ -82,11 +100,9 @@ class dual<T, Order> {
     dual &operator*=(const dual &other) {
         for (size_t i = Order + 1; i-- > 0;) {
             data[i] *= other.data[0];
-
-            T coef = 1; // binomial coefficient
+            // General Leibniz Rule
             for (size_t j = 0; j < i; ++j) {
-                data[i] += coef * data[j] * other.data[i - j];
-                coef *= T(i - j) / T(j + 1);
+                data[i] += detail::dumb_binom<T>(i, j) * data[j] * other.data[i - j];
             }
         }
 
@@ -103,10 +119,9 @@ class dual<T, Order> {
 
     dual &operator/=(const dual &other) {
         for (size_t i = 0; i <= Order; ++i) {
-            T coef = 1; // binomial coefficient
+            // General Leibniz Rule
             for (size_t j = 1; j <= i; ++j) {
-                data[i] -= coef * other.data[j] * data[i - j];
-                coef *= T(i - j) / T(j + 1);
+                data[i] -= detail::dumb_binom<T>(i, j) * other.data[j] * data[i - j];
             }
 
             data[i] /= other.data[0];
@@ -215,11 +230,9 @@ class dual<T, Order0, Order1, Orders...> {
     dual &operator*=(const dual &other) {
         for (size_t i = Order0 + 1; i-- > 0;) {
             data[i] *= other.data[0];
-
-            T coef = 1; // binomial coefficient
+            // General Leibniz Rule
             for (size_t j = 0; j < i; ++j) {
-                data[i] += coef * data[j] * other.data[i - j];
-                coef *= T(i - j) / T(j + 1);
+                data[i] += detail::dumb_binom<T>(i, j) * data[j] * other.data[i - j];
             }
         }
 
@@ -236,7 +249,7 @@ class dual<T, Order0, Order1, Orders...> {
 
     dual &operator/=(const dual &other) {
         for (size_t i = 0; i <= Order0; ++i) {
-	    // General Leibniz Rule
+            // General Leibniz Rule
             for (size_t j = 1; j <= i; ++j) {
                 data[i] -= detail::dumb_binom<T>(i, j) * other.data[j] * data[i - j];
             }
@@ -448,6 +461,24 @@ template <typename T, size_t... Orders>
 bool operator>=(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
     return lhs.value() >= rhs.value();
 }
+
+template <typename T>
+struct dual_value_type {
+    using type = T;
+};
+
+template <typename T, size_t... Orders>
+struct dual_value_type<dual<T, Orders...>> {
+    using type = T;
+};
+
+template <typename T, size_t Order0, size_t Order1, size_t... Orders>
+struct dual_value_type<dual<T, Order0, Order1, Orders...>> {
+    using type = T;
+};
+
+template <typename T>
+using dual_value_type_t = typename dual_value_type<T>::type;
 
 template <size_t Order, typename T>
 dual<T, Order> dual_var(T value, size_t dim = 0) {
