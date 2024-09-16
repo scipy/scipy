@@ -14,6 +14,7 @@ from scipy._lib._util import _asarray_validated
 from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
 from ._decomp_schur import schur, rsf2csf
+from ._basic import _ensure_dtype_cdsz
 
 
 
@@ -166,8 +167,7 @@ def sqrtm(A, disp=True, blocksize=64):
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
-    if A.dtype == np.float16:  # float16 should upcast to float32
-        A = A.astype(np.float32, copy=False)
+    A, = _ensure_dtype_cdsz(A)
     keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
