@@ -2258,7 +2258,9 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     @skip_xp_backends("cupy",
-                      reasons=["these filters do not yet have axes support"])
+                      reasons=["these filters do not yet have axes support"],
+                      cpu_only=True,
+                      exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize('border_value',[0, 1])
     @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
     @pytest.mark.parametrize('expand_axis', [0, 1, 2])
@@ -2653,7 +2655,9 @@ class TestNdimageMorphology:
         ndimage.black_tophat(array, structure=structure, output=output)
 
     @skip_xp_backends("cupy",
-                      reasons=["these filters do not yet have axes support"])
+                      reasons=["these filters do not yet have axes support"],
+                      cpu_only=True,
+                      exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
     @pytest.mark.parametrize('expand_axis', [0, 1, 2])
     @pytest.mark.parametrize('mode', ['reflect', 'constant', 'nearest',
