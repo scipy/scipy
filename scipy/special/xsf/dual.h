@@ -236,10 +236,9 @@ class dual<T, Order0, Order1, Orders...> {
 
     dual &operator/=(const dual &other) {
         for (size_t i = 0; i <= Order0; ++i) {
-            T coef = 1; // binomial coefficient
+	    // General Leibniz Rule
             for (size_t j = 1; j <= i; ++j) {
-                data[i] -= coef * other.data[j] * data[i - j];
-                coef *= T(i - j) / T(j + 1);
+                data[i] -= detail::dumb_binom<T>(i, j) * other.data[j] * data[i - j];
             }
 
             data[i] /= other.data[0];
