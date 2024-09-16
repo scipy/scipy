@@ -33,6 +33,7 @@ from scipy._lib._util import VisibleDeprecationWarning
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
+pytestmark = pytest.mark.parallel_threads(1)
 
 
 def mlarr(*args, **kwargs):
@@ -765,6 +766,7 @@ def test_to_writeable():
                  np.array([(2,)], dtype=[('f', '|O8')]))
 
 
+@pytest.mark.parallel_threads(1)
 def test_recarray():
     # check roundtrip of structured array
     dt = [('f1', 'f8'),
@@ -792,6 +794,7 @@ def test_recarray():
     assert_equal(a21['f2'], 'not perl')
 
 
+@pytest.mark.parallel_threads(1)
 def test_save_object():
     class C:
         pass
