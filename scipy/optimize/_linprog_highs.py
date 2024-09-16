@@ -56,8 +56,9 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
     unrecognized = (4, "The HiGHS status code was not recognized. ")
     scipy_status, scipy_message = (
         scipy_statuses_messages.get(highs_status, unrecognized))
+    hstat = int(highs_status) if highs_status is not None else None
     scipy_message = (f"{scipy_message}"
-                     f"(HiGHS Status {int(highs_status) if highs_status != None else None}: {highs_message})")
+                     f"(HiGHS Status {hstat}: {highs_message})")
     return scipy_status, scipy_message
 
 
