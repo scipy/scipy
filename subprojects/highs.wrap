@@ -1,0 +1,7 @@
+[wrap-git]
+directory=highs
+url=https://github.com/HaoZeke/highs.git
+revision=aa02e57
+
+[provide]
+highs=git
