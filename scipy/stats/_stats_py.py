@@ -441,7 +441,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-    if not isinstance(p, (int | float)):
+    if not isinstance(p, (int, float)):
         raise ValueError("Power mean only defined for exponent of type int or "
                          "float.")
     if p == 0:

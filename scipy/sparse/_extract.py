@@ -129,7 +129,7 @@ def triu(A, k=0, format=None):
 
     Returns
     -------
-    L : sparse array or matrix 
+    L : sparse array or matrix
         Upper triangular portion of A in sparse format.
         Sparse array if A is a sparse array, otherwise matrix.
 

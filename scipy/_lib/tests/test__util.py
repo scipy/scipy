@@ -445,7 +445,7 @@ class TestLazywhere:
             ref2 = ref2.reshape(result_shape)
             ref3 = ref3.reshape(result_shape)
 
-        xp_assert_close(res1, ref1, rtol=2e-16, allow_0d=True)
-        xp_assert_equal(res2, ref2, allow_0d=True)
+        xp_assert_close(res1, ref1, rtol=2e-16)
+        xp_assert_equal(res2, ref2)
         if not is_array_api_strict(xp):
-            xp_assert_equal(res3, ref3, allow_0d=True)
+            xp_assert_equal(res3, ref3)

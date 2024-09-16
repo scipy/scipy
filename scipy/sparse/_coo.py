@@ -11,28 +11,29 @@ import numpy as np
 
 from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
-from ._sparsetools import coo_tocsr, coo_todense, coo_matvec, coo_matmat_dense
+from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
+                           coo_matvec, coo_matvec_nd, coo_matmat_dense)
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
-                       check_shape, check_reshape_kwargs)
+                       check_shape, check_reshape_kwargs, isscalarlike)
 
 import operator
 
 
 class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
+    _allow_nd = range(1, 65)
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
-        is_array = isinstance(self, sparray)
         if not copy:
             copy = copy_if_needed
 
         if isinstance(arg1, tuple):
-            if isshape(arg1, allow_1d=is_array):
-                self._shape = check_shape(arg1, allow_1d=is_array)
+            if isshape(arg1, allow_nd=self._allow_nd):
+                self._shape = check_shape(arg1, allow_nd=self._allow_nd)
                 idx_dtype = self._get_index_dtype(maxval=max(self._shape))
                 data_dtype = getdtype(dtype, default=float)
                 self.coords = tuple(np.array([], dtype=idx_dtype)
@@ -51,8 +52,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                          'sized index arrays')
                     shape = tuple(operator.index(np.max(idx)) + 1
                                   for idx in coords)
-                self._shape = check_shape(shape, allow_1d=is_array)
-
+                self._shape = check_shape(shape, allow_nd=self._allow_nd)
                 idx_dtype = self._get_index_dtype(coords,
                                                   maxval=max(self.shape),
                                                   check_contents=True)
@@ -65,33 +65,37 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if arg1.format == self.format and copy:
                     self.coords = tuple(idx.copy() for idx in arg1.coords)
                     self.data = arg1.data.copy()
-                    self._shape = check_shape(arg1.shape, allow_1d=is_array)
+                    self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
                     self.has_canonical_format = arg1.has_canonical_format
                 else:
                     coo = arg1.tocoo()
                     self.coords = tuple(coo.coords)
                     self.data = coo.data
-                    self._shape = check_shape(coo.shape, allow_1d=is_array)
+                    self._shape = check_shape(coo.shape, allow_nd=self._allow_nd)
                     self.has_canonical_format = False
             else:
                 # dense argument
                 M = np.asarray(arg1)
-                if not is_array:
+                if not isinstance(self, sparray):
                     M = np.atleast_2d(M)
                     if M.ndim != 2:
                         raise TypeError(f'expected 2D array or matrix, not {M.ndim}D')
 
-                self._shape = check_shape(M.shape, allow_1d=is_array)
+                self._shape = check_shape(M.shape, allow_nd=self._allow_nd)
                 if shape is not None:
-                    if check_shape(shape, allow_1d=is_array) != self._shape:
+                    if check_shape(shape, allow_nd=self._allow_nd) != self._shape:
                         message = f'inconsistent shapes: {shape} != {self._shape}'
                         raise ValueError(message)
+
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
                 coords = M.nonzero()
                 self.coords = tuple(idx.astype(index_dtype, copy=False)
                                      for idx in coords)
                 self.data = M[coords]
                 self.has_canonical_format = True
+
+        if len(self._shape) > 2:
+            self.coords = tuple(idx.astype(np.int64, copy=False) for idx in self.coords)
 
         if dtype is not None:
             newdtype = getdtype(dtype)
@@ -125,8 +129,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         self.coords = self.coords[:-1] + (new_col,)
 
     def reshape(self, *args, **kwargs):
-        is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_1d=is_array)
+        shape = check_shape(args, self.shape, allow_nd=self._allow_nd)
         order, copy = check_reshape_kwargs(kwargs)
 
         # Return early if reshape is not required
@@ -167,7 +170,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                  'same length')
 
             if self.data.ndim != 1 or any(idx.ndim != 1 for idx in self.coords):
-                raise ValueError('row, column, and data arrays must be 1-D')
+                raise ValueError('coordinates and data arrays must be 1-D')
 
             return int(nnz)
 
@@ -175,9 +178,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             axis += self.ndim
         if axis >= self.ndim:
             raise ValueError('axis out of bounds')
-        if self.ndim > 2:
-            raise NotImplementedError('per-axis nnz for COO arrays with >2 '
-                                      'dimensions is not supported')
+
         return np.bincount(downcast_intp_index(self.coords[1 - axis]),
                            minlength=self.shape[1 - axis])
 
@@ -244,9 +245,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
     transpose.__doc__ = _spbase.transpose.__doc__
 
     def resize(self, *shape) -> None:
-        is_array = isinstance(self, sparray)
-        shape = check_shape(shape, allow_1d=is_array)
-
+        shape = check_shape(shape, allow_nd=self._allow_nd)
+        if self.ndim > 2:
+            raise ValueError("only 1-D or 2-D input accepted")
+        if len(shape) > 2:
+            raise ValueError("shape argument must be 1-D or 2-D")
         # Check for added dimensions.
         if len(shape) > self.ndim:
             flat_coords = _ravel_coords(self.coords, self.shape)
@@ -286,13 +289,23 @@ class _coo_base(_data_matrix, _minmax_mixin):
         fortran = int(B.flags.f_contiguous)
         if not fortran and not B.flags.c_contiguous:
             raise ValueError("Output array must be C or F contiguous")
-        if self.ndim > 2:
-            raise ValueError("Cannot densify higher-rank sparse array")
         # This handles both 0D and 1D cases correctly regardless of the
         # original shape.
-        M, N = self._shape_as_2d
-        coo_todense(M, N, self.nnz, self.row, self.col, self.data,
-                    B.ravel('A'), fortran)
+        if self.ndim == 1:
+            coo_todense_nd(np.array([1]), self.nnz, self.ndim,
+                           self.coords[0], self.data, B.ravel('A'), fortran)
+        elif self.ndim == 2:
+            M, N = self.shape
+            coo_todense(M, N, self.nnz, self.row, self.col, self.data,
+                        B.ravel('A'), fortran)
+        else:
+            if fortran:
+                strides = np.append(1, np.cumprod(self.shape[:-1]))
+            else:
+                strides = np.append(np.cumprod(self.shape[1:][::-1])[::-1], 1)
+            coords = np.concatenate(self.coords)
+            coo_todense_nd(strides, self.nnz, self.ndim,
+                           coords, self.data, B.ravel('A'), fortran)
         # Note: reshape() doesn't copy here, but does return a new array (view).
         return B.reshape(self.shape)
 
@@ -319,7 +332,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         """
         if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to csc format")
+            raise ValueError(f'Cannot convert. CSC format must be 2D. Got {self.ndim}D')
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
@@ -351,6 +364,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
+        if self.ndim > 2:
+            raise ValueError(f'Cannot convert. CSR must be 1D or 2D. Got {self.ndim}D')
         if self.nnz == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
@@ -400,7 +415,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def todia(self, copy=False):
         if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to dia format")
+            raise ValueError(f'Cannot convert. DIA format must be 2D. Got {self.ndim}D')
         self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
         diags, diag_idx = np.unique(ks, return_inverse=True)
@@ -423,6 +438,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
     todia.__doc__ = _spbase.todia.__doc__
 
     def todok(self, copy=False):
+        if self.ndim > 2:
+            raise ValueError(f'Cannot convert. DOK must be 1D or 2D. Got {self.ndim}D')
         self.sum_duplicates()
         dok = self._dok_container(self.shape, dtype=self.dtype)
         # ensure that 1d coordinates are not tuples
@@ -556,16 +573,67 @@ class _coo_base(_data_matrix, _minmax_mixin):
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
-        M, N = self._shape_as_2d
-        coo_todense(M, N, self.nnz, self.row, self.col, self.data,
-                    result.ravel('A'), fortran)
+        if self.ndim == 1:
+            coo_todense_nd(np.array([1]), self.nnz, self.ndim,
+                           self.coords[0], self.data, result.ravel('A'), fortran)
+        elif self.ndim == 2:
+            M, N = self._shape_as_2d
+            coo_todense(M, N, self.nnz, self.row, self.col, self.data,
+                        result.ravel('A'), fortran)
+        else:
+            if fortran:
+                strides = np.append(1, np.cumprod(self.shape[:-1]))
+            else:
+                strides = np.append(np.cumprod(self.shape[1:][::-1])[::-1], 1)
+            coords = np.concatenate(self.coords)
+            coo_todense_nd(strides, self.nnz, self.ndim,
+                           coords, self.data, result.ravel('A'), fortran)
         return self._container(result, copy=False)
 
+
+    def _add_sparse(self, other):
+        if self.ndim < 3:
+            return self.tocsr()._add_sparse(other)
+
+        if other.shape != self.shape:
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+        other = self.__class__(other)
+        new_data = np.concatenate((self.data, other.data))
+        new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
+        A = self.__class__((new_data, new_coords), shape=self.shape)
+        return A
+
+
+    def _sub_sparse(self, other):
+        if self.ndim < 3:
+            return self.tocsr()._sub_sparse(other)
+
+        if other.shape != self.shape:
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+        other = self.__class__(other)
+        new_data = np.concatenate((self.data, -other.data))
+        new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
+        A = coo_array((new_data, new_coords), shape=self.shape)
+        return A
+
+
     def _matmul_vector(self, other):
+        if self.ndim > 2:
+            result = np.zeros(math.prod(self.shape[:-1]),
+                              dtype=upcast_char(self.dtype.char, other.dtype.char))
+            shape = np.array(self.shape)
+            strides = np.append(np.cumprod(shape[:-1][::-1])[::-1][1:], 1)
+            coords = np.concatenate(self.coords)
+            coo_matvec_nd(self.nnz, len(self.shape), strides, coords, self.data,
+                          other, result)
+
+            result = result.reshape(self.shape[:-1])
+            return result
+
+        # self.ndim <= 2
         result_shape = self.shape[0] if self.ndim > 1 else 1
         result = np.zeros(result_shape,
                           dtype=upcast_char(self.dtype.char, other.dtype.char))
-
         if self.ndim == 2:
             col = self.col
             row = self.row
@@ -582,6 +650,68 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return result[0]
         return result
 
+
+    def _matmul_dispatch(self, other):
+        if self.ndim < 3:
+            return _spbase._matmul_dispatch(self, other)
+
+        N = self.shape[-1]
+        err_prefix = "matmul: dimension mismatch with signature"
+        if other.__class__ is np.ndarray:
+            if other.shape == (N,):
+                return self._matmul_vector(other)
+            if other.shape == (N, 1):
+                result = self._matmul_vector(other.ravel())
+                return result.reshape(*self.shape[:-1], 1)
+            if other.ndim == 1:
+                msg = f"{err_prefix} (n,k={N}),(k={other.shape[0]},)->(n,)"
+                raise ValueError(msg)
+            msg = "n-D matrix-matrix multiplication not implemented for ndim>2"
+            raise NotImplementedError(msg)
+
+        if isscalarlike(other):
+            # scalar value
+            return self._mul_scalar(other)
+
+        if issparse(other):
+            raise NotImplementedError("sparse-sparse matmul not implemented for ndim>2")
+
+        # If it's a list or whatever, treat it like an array
+        other_a = np.asanyarray(other)
+
+        if other_a.ndim == 0 and other_a.dtype == np.object_:
+            # Not interpretable as an array; return NotImplemented so that
+            # other's __rmatmul__ can kick in if that's implemented.
+            return NotImplemented
+
+        try:
+            other.shape
+        except AttributeError:
+            other = other_a
+
+        if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
+            # dense row or column vector
+            if other.shape[0] != N:
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},1?)->(n,1?)"
+                )
+
+            result = self._matmul_vector(np.ravel(other))
+
+            if isinstance(other, np.matrix):
+                result = self._ascontainer(result)
+
+            if other.ndim == 2 and other.shape[1] == 1:
+                # If 'other' was an (nx1) column vector, reshape the result
+                result = result.reshape((*self.shape[:-1], 1))
+
+            return result
+
+        else:
+            # dense nD array or matrix ("multivector") not implemented
+            return NotImplemented
+
+
     def _matmul_multivector(self, other):
         result_dtype = upcast_char(self.dtype.char, other.dtype.char)
         if self.ndim == 2:
@@ -595,12 +725,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             raise NotImplementedError(
                 f"coo_matmat_dense not implemented for ndim={self.ndim}")
-  
+
         result = np.zeros(result_shape, dtype=result_dtype)
         coo_matmat_dense(self.nnz, other.shape[-1], row, col,
                          self.data, other.ravel('C'), result)
         return result.view(type=type(other))
-    
+
 
 def _ravel_coords(coords, shape, order='C'):
     """Like np.ravel_multi_index, but avoids some overflow issues."""
