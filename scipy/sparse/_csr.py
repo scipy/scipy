@@ -146,7 +146,7 @@ class _csr_base(_cs_matrix):
             return self.__class__(shape, dtype=self.dtype, copy=False)
         
         self.sum_duplicates()
-        if old_shape[0] == 1 and old_shape[1] == 1:
+        if all(s == 1 for s in old_shape):
             # Broadcast a single element to the entire shape
             data = np.full(shape[0] * shape[1], self.data[0])
             indices = np.tile(np.arange(shape[1]), shape[0])
