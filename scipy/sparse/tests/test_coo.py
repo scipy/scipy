@@ -655,6 +655,10 @@ def test_nd_matmul(mat_shape1, mat_shape2):
     res = sp_x @ list(den_y)
     assert_equal(res, exp)
 
+    # dense-sparse
+    res = den_x @ sp_y
+    assert_equal(res, exp)
+
 
 def test_nd_matmul_sparse_with_inconsistent_arrays():
     rng = np.random.default_rng(23409823)
