@@ -350,7 +350,7 @@ helped during the development phase:
   some inspiration taken from
   `scikit-learn <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/utils/_array_api.py>`__.
 * `PR <https://github.com/scikit-learn/scikit-learn/issues/22352>`__ adding Array
-  API surpport to scikit-learn
+  API support to scikit-learn
 * Some other relevant scikit-learn PRs:
   `#22554 <https://github.com/scikit-learn/scikit-learn/pull/22554>`__ and
   `#25956 <https://github.com/scikit-learn/scikit-learn/pull/25956>`__
