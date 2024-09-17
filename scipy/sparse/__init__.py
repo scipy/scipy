@@ -18,7 +18,7 @@ SciPy 2-D sparse array package for numeric data.
 
    This package is switching to an array interface, compatible with
    NumPy arrays, from the older matrix interface.  We recommend that
-   you use the array objects (``bsr_array``, ``coo_array``, etc.) for
+   you use the array objects (`bsr_array`, `coo_array`, etc.) for
    all new work.
 
    When using the array interface, please note that:
@@ -33,8 +33,8 @@ SciPy 2-D sparse array package for numeric data.
      1D, or 2D sparse arrays. If you need 2D results, use an appropriate index.
      E.g. ``A[:, i, None]`` or ``A[:, [i]]``.
 
-   The construction utilities (``eye``, ``kron``, ``random``, ``diags``, etc.)
-   have appropriate replacement :ref:`sparse-construction-functions`.
+   The construction utilities (`eye`, `kron`, `random`, `diags`, etc.)
+   have appropriate replacements (see :ref:`sparse-construction-functions`).
 
    For more information see
    :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
@@ -183,8 +183,8 @@ There are seven available sparse array types:
     6. coo_array: COOrdinate format (aka IJV, triplet format)
     7. dia_array: DIAgonal format
 
-To construct an array efficiently, use any of ``coo_array``,
-``dok_array`` or ``lil_array``. ``dok_array`` and ``lil_array``
+To construct an array efficiently, use any of `coo_array`,
+`dok_array` or `lil_array`. `dok_array` and `lil_array`
 support basic slicing and fancy indexing with a similar syntax
 to NumPy arrays. The COO format does not support indexing (yet)
 but can also be used to efficiently construct arrays using coord
@@ -196,14 +196,14 @@ treats them as generic Python objects rather than arrays, leading to
 unexpected (and incorrect) results. If you do want to apply a NumPy
 function to these arrays, first check if SciPy has its own implementation
 for the given sparse array class, or **convert the sparse array to
-a NumPy array** (e.g., using the ``toarray`` method of the class)
+a NumPy array** (e.g., using the `toarray` method of the class)
 before applying the method.
 
 All conversions among the CSR, CSC, and COO formats are efficient,
 linear-time operations.
 
 To perform manipulations such as multiplication or inversion, first
-convert the array to either CSC or CSR format. The ``lil_array``
+convert the array to either CSC or CSR format. The `lil_array`
 format is row-based, so conversion to CSR is efficient, whereas
 conversion to CSC is less so.
 
