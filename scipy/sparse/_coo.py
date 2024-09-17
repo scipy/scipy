@@ -1239,27 +1239,6 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     return raveled_coords
 
 
-def _ravel_non_reduced_axes(coords, shape, axes):
-
-    ndim = len(shape)
-    non_reduced_axes = [ax for ax in range(ndim) if ax not in axes]
-
-    if not non_reduced_axes:
-        return np.zeros((1, len(coords[0])), dtype=int)  # Return an array with one row
-    
-    # Extract the shape of the non-reduced axes
-    non_reduced_shape = [shape[ax] for ax in non_reduced_axes]
-    
-    # Extract the coordinates of the non-reduced axes
-    coords = np.array(coords)
-    non_reduced_coords = coords[non_reduced_axes, :]
-    
-    # Ravel the coordinates into 1D
-    raveled_coords = np.ravel_multi_index(non_reduced_coords, non_reduced_shape)
-    
-    return raveled_coords
-
-
 def _ravel_coords(coords, shape, order='C'):
     """Like np.ravel_multi_index, but avoids some overflow issues."""
     if len(coords) == 1:
