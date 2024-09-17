@@ -41,6 +41,7 @@ from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
 from scipy._lib._util import np_long, np_ulong
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
 
 from scipy.special._basic import (
     _FACTORIALK_LIMITS_64BITS, _FACTORIALK_LIMITS_32BITS, _is_subdtype
@@ -2100,26 +2101,6 @@ class TestExp:
         assert_array_almost_equal(ex1,exrl1,8)
 
 
-def assert_really_equal(x, y, rtol=None):
-    """
-    Sharper assertion function that is stricter about matching types, not just values
-
-    This is useful/necessary in some cases:
-      * 0-dim arrays vs. scalars (see numpy/numpy#24050)
-      * dtypes for arrays that have the same _values_ (e.g. element 1.0 vs 1)
-
-    We still want to be able to allow a relative tolerance for the values though.
-    """
-    def assert_func(x, y):
-        assert_equal(x, y) if rtol is None else assert_allclose(x, y, rtol=rtol)
-
-    assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
-    if isinstance(x, np.ndarray):
-        # assert_equal does not compare (all) types, only values
-        assert x.dtype == y.dtype
-    assert_func(x, y)
-
-
 class TestFactorialFunctions:
     @pytest.mark.parametrize("exact", [True, False])
     def test_factorialx_scalar_return_type(self, exact):
@@ -2143,9 +2124,9 @@ class TestFactorialFunctions:
         n = [-5, -4, 0, 1]
         # Consistent output for n < 0
         expected = np.array([0, 0, 1, 1], dtype=np.int64 if exact else np.float64)
-        assert_really_equal(special.factorial(n, **kw), expected, rtol=rtol)
-        assert_really_equal(special.factorial2(n, **kw), expected, rtol=rtol)
-        assert_really_equal(special.factorialk(n, k=3, **kw), expected, rtol=rtol)
+        xp_assert_close(special.factorial(n, **kw), expected, rtol=rtol)
+        xp_assert_close(special.factorial2(n, **kw), expected, rtol=rtol)
+        xp_assert_close(special.factorialk(n, k=3, **kw), expected, rtol=rtol)
 
     @pytest.mark.parametrize("boxed", [True, False])
     @pytest.mark.parametrize("n", [np.nan, None, np.datetime64('nat')],
@@ -2300,8 +2281,10 @@ class TestFactorialFunctions:
                              [[], [1], [1.1], [np.nan], [np.nan, 1]],
                              ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
     def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
+        if dtype is object and SCIPY_ARRAY_API:
+            pytest.skip("object arrays unsupported in array API mode")
         # get dtype without calling array constructor (that might fail or mutate)
-        if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
+        if dtype is np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
 
         kw = {"exact": exact}
@@ -2331,7 +2314,7 @@ class TestFactorialFunctions:
             if n.size:
                 dtype = np.int64 if exact else np.float64
             expected = np.array(ref, ndmin=dim, dtype=dtype)
-            assert_really_equal(result, expected)
+            xp_assert_equal(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
