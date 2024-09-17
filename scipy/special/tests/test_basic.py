@@ -2273,10 +2273,10 @@ class TestFactorialFunctions:
                              [[], [1], [1.1], [np.nan], [np.nan, 1]],
                              ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
     def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
-        if dtype == object and SCIPY_ARRAY_API:
+        if dtype is object and SCIPY_ARRAY_API:
             pytest.skip("object arrays unsupported in array API mode")
         # get dtype without calling array constructor (that might fail or mutate)
-        if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
+        if dtype is np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
 
         kw = {"exact": exact}
