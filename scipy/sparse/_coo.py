@@ -681,7 +681,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         
 
     def _matmul_dispatch(self, other):
-        if not (issparse(other) or isdense(other) or isscalarlike(other)):
+        if isscalarlike(other):
+            return self * other
+        
+        if not (issparse(other) or isdense(other)):
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
 
@@ -695,7 +698,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             except AttributeError:
                 other = other_a
 
-        if self.ndim < 3 and (np.isscalar(other) or other.ndim < 3):
+        if self.ndim < 3 and other.ndim < 3:
             return _spbase._matmul_dispatch(self, other)
 
         N = self.shape[-1]
