@@ -755,7 +755,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             self_shape = broadcast_shape + self.shape[-2:]
             other_shape = broadcast_shape + other.shape[-2:]
             
-            self = self.broadcast_to(self_shape)
+            self = self._broadcast_to(self_shape)
             other = np.broadcast_to(other, other_shape)
             result_shape = broadcast_shape + self.shape[-2:-1] + other.shape[-1:]
             result = np.zeros(result_shape, dtype=result_dtype)
@@ -1078,8 +1078,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         self_new_shape = tuple(broadcast_shape) + self_shape[-2:]
         other_new_shape = tuple(broadcast_shape) + other_shape[-2:]
 
-        self_broadcasted = self.broadcast_to(self_new_shape)
-        other_broadcasted = other.broadcast_to(other_new_shape)
+        self_broadcasted = self._broadcast_to(self_new_shape)
+        other_broadcasted = other._broadcast_to(other_new_shape)
         
         # Convert n-D COO arrays to 2-D block diagonal arrays
         self_block_diag = _block_diag(self_broadcasted)
@@ -1095,7 +1095,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return prod
 
 
-    def broadcast_to(self, new_shape):
+    def _broadcast_to(self, new_shape):
         if new_shape == self.shape:
             return self
         
