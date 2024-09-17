@@ -55,7 +55,7 @@ def _fpknot(const double[::1] x,
 static PyObject*
 py_fpknot(PyObject* self, PyObject *args)
 {
-    PyObject *py_x=NULL, *py_t=NULL, *py_residuals=NULL;
+    PyObject *py_x = NULL, *py_t = NULL, *py_residuals = NULL;
     int k;
 
     if(!PyArg_ParseTuple(args, "OOiO", &py_x, &py_t, &k, &py_residuals)) {
@@ -107,7 +107,7 @@ py_fpknot(PyObject* self, PyObject *args)
 static PyObject*
 py_fpback(PyObject* self, PyObject *args)
 {
-    PyObject *py_R=NULL, *py_y=NULL;
+    PyObject *py_R = NULL, *py_y = NULL;
     Py_ssize_t nc;
 
     if(!PyArg_ParseTuple(args, "OnO", &py_R, &nc, &py_y)) {
@@ -172,7 +172,7 @@ py_fpback(PyObject* self, PyObject *args)
 static PyObject*
 py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *py_a=NULL, *py_offs=NULL, *py_y=NULL;
+    PyObject *py_a = NULL, *py_offs = NULL, *py_y = NULL;
     Py_ssize_t nc;
     Py_ssize_t startrow=1; // The default is one (start from the 2nd row)
 
@@ -228,10 +228,10 @@ py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
 static PyObject*
 py_data_matrix(PyObject *self, PyObject *args)
 {
-    PyObject *py_x=NULL, *py_t=NULL, *py_w=NULL;
+    PyObject *py_x = NULL, *py_t = NULL, *py_w = NULL;
     int64_t nc;
-    int k;   // NB: declare as npy_intp, and it's garbage
-    int extrapolate=0;   // default is False
+    int k;
+    int extrapolate = 0;   // default is False
 
     if(!PyArg_ParseTuple(args, "OOiO|p", &py_x, &py_t, &k, &py_w, &extrapolate)) {
         return NULL;
@@ -343,8 +343,8 @@ static char doc_coloc[] =
 static PyObject*
 py_coloc(PyObject *self, PyObject *args)
 {
-    PyObject *py_x=NULL, *py_t=NULL, *py_abT=NULL;
-    int k, offset=0;
+    PyObject *py_x = NULL, *py_t = NULL, *py_abT = NULL;
+    int k, offset = 0;
 
     if(!PyArg_ParseTuple(args, "OOiOi", &py_x, &py_t, &k, &py_abT, &offset)) {
         return NULL;
@@ -431,7 +431,7 @@ static char doc_norm_eq_lsq[] =
 static PyObject*
 py_norm_eq_lsq(PyObject *self, PyObject *args)
 {
-    PyObject *py_x=NULL, *py_t=NULL, *py_y=NULL, *py_w=NULL, *py_abT=NULL, *py_rhs=NULL;
+    PyObject *py_x = NULL, *py_t = NULL, *py_y = NULL, *py_w = NULL, *py_abT = NULL, *py_rhs = NULL;
     int k;
 
     if(!PyArg_ParseTuple(args, "OOiOOOO", &py_x, &py_t, &k, &py_y, &py_w, &py_abT, &py_rhs)) {
@@ -510,7 +510,7 @@ static char doc_evaluate_spline[] =
 static PyObject*
 py_evaluate_spline(PyObject *self, PyObject *args)
 {
-    PyObject *py_t=NULL, *py_c=NULL, *py_xp=NULL, *py_out=NULL;
+    PyObject *py_t = NULL, *py_c = NULL, *py_xp = NULL, *py_out = NULL;
     int k, nu, i_extrap;
 
     if(!PyArg_ParseTuple(args, "OOiOipO", &py_t, &py_c, &k, &py_xp, &nu, &i_extrap, &py_out)) {
@@ -628,8 +628,9 @@ static char doc_evaluate_all_bspl[] =
 static PyObject*
 py_evaluate_all_bspl(PyObject* self, PyObject* args)
 {
-    PyObject *py_t=NULL;
-    int k, m, nu=0;
+    PyObject *py_t = NULL;
+    int k, m;
+    int nu = 0;
     double xval;
 
     if(!PyArg_ParseTuple(args, "Oidi|i", &py_t, &k, &xval, &m, &nu)) {
