@@ -780,7 +780,7 @@ def test_broadcast_to(actual_shape, broadcast_shape):
     rng = np.random.default_rng(23409823)
     
     arr = random_array(actual_shape, density=0.6, random_state=rng, dtype=int)
-    res = arr.broadcast_to(broadcast_shape)
+    res = arr._broadcast_to(broadcast_shape)
     exp = np.broadcast_to(arr.toarray(), broadcast_shape)
     assert_equal(res.toarray(), exp)
 
