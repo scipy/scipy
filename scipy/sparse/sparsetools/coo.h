@@ -272,6 +272,7 @@ void coo_matmat_dense_nd(const npy_int64 nnz,
 {
     npy_int64 strides_B[n_dim];
     npy_int64 strides_Y[n_dim];
+
     strides_B[n_dim - 1] = 1;
     strides_Y[n_dim - 1] = 1;
     for (npy_int64 i = n_dim - 2; i >= 0; --i) {
