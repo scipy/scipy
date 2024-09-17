@@ -4144,12 +4144,12 @@ class TestCSR(sparse_test_class()):
         d = np.array([[7]])
         e = np.array([[0]])
         f = np.array([[0,0,0,0]])
-        res_a = csr_matrix(a).broadcast_to((2,3))
-        res_b = csr_matrix(b).broadcast_to((3,4))
-        res_c = csr_matrix(c).broadcast_to((2,3))
-        res_d = csr_matrix(d).broadcast_to((4,4))
-        res_e = csr_matrix(e).broadcast_to((5,6))
-        res_f = csr_matrix(f).broadcast_to((2,4))
+        res_a = csr_matrix(a)._broadcast_to((2,3))
+        res_b = csr_matrix(b)._broadcast_to((3,4))
+        res_c = csr_matrix(c)._broadcast_to((2,3))
+        res_d = csr_matrix(d)._broadcast_to((4,4))
+        res_e = csr_matrix(e)._broadcast_to((5,6))
+        res_f = csr_matrix(f)._broadcast_to((2,4))
         assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
         assert_array_equal(res_b.toarray(), np.broadcast_to(b, (3,4)))
         assert_array_equal(res_c.toarray(), c)
@@ -4158,10 +4158,10 @@ class TestCSR(sparse_test_class()):
         assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
         
         with pytest.raises(ValueError, match="cannot be broadcast"):
-            csr_matrix([[1, 2, 0], [3, 0, 1]]).broadcast_to(shape=(2, 1))
+            csr_matrix([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
 
         with pytest.raises(ValueError, match="cannot be broadcast"):
-            csr_matrix([[0, 1, 2]]).broadcast_to(shape=(3, 2))
+            csr_matrix([[0, 1, 2]])._broadcast_to(shape=(3, 2))
 
 TestCSR.init_class()
 
