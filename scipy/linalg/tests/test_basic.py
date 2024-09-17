@@ -537,6 +537,7 @@ class TestSolve:
     def setup_method(self):
         np.random.seed(1234)
 
+    @pytest.mark.parallel_threads(1)
     def test_20Feb04_bug(self):
         a = [[1, 1], [1.0, 0]]  # ok
         x0 = solve(a, [1, 0j])
@@ -772,6 +773,7 @@ class TestSolve:
         b = np.arange(9)[:, None]
         assert_raises(LinAlgError, solve, a, b)
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.parametrize('structure',
                              ('diagonal', 'tridiagonal', 'lower triangular',
                               'upper triangular', 'symmetric', 'hermitian',
@@ -1903,9 +1905,9 @@ class TestSolveCirculant:
 
     def test_random_b_and_c(self):
         # Random b and c
-        np.random.seed(54321)
-        c = np.random.randn(50)
-        b = np.random.randn(50)
+        rng = np.random.RandomState(54321)
+        c = rng.randn(50)
+        b = rng.randn(50)
         x = solve_circulant(c, b)
         y = solve(circulant(c), b)
         assert_allclose(x, y)

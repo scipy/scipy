@@ -202,6 +202,7 @@ class TestLogM:
                 A_logm, info = logm(A, disp=False)
                 assert_(np.issubdtype(A_logm.dtype, np.complexfloating))
 
+    @pytest.mark.parallel_threads(1)
     def test_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
         B = np.asarray([[1, 1], [0, 0]])
@@ -211,6 +212,7 @@ class TestLogM:
             E = expm(L)
             assert_allclose(E, M, atol=1e-14)
 
+    @pytest.mark.parallel_threads(1)
     def test_nearly_singular(self):
         M = np.array([[1e-100]])
         expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
@@ -762,6 +764,7 @@ class TestExpM:
         a.flags.writeable = False
         expm(a)
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.fail_slow(5)
     def test_gh18086(self):
         A = np.zeros((400, 400), dtype=float)
@@ -953,12 +956,12 @@ class TestExpmConditionNumber:
 
     @pytest.mark.slow
     def test_expm_cond_fuzz(self):
-        np.random.seed(12345)
+        rng = np.random.RandomState(12345)
         eps = 1e-5
         nsamples = 10
         for i in range(nsamples):
-            n = np.random.randint(2, 5)
-            A = np.random.randn(n, n)
+            n = rng.randint(2, 5)
+            A = rng.randn(n, n)
             A_norm = scipy.linalg.norm(A)
             X = expm(A)
             X_norm = scipy.linalg.norm(X)
@@ -979,7 +982,7 @@ class TestExpmConditionNumber:
             # Check that the identified perturbation indeed gives greater
             # relative error than random perturbations with similar norms.
             for j in range(5):
-                p_rand = eps * _normalized_like(np.random.randn(*A.shape), A)
+                p_rand = eps * _normalized_like(rng.randn(*A.shape), A)
                 assert_allclose(norm(p_best), norm(p_rand))
                 p_rand_relerr = _relative_error(expm, A, p_rand)
                 assert_array_less(p_rand_relerr, p_best_relerr)
