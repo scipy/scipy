@@ -4264,7 +4264,7 @@ class TestSkewNorm:
         # MoM fits variance and skewness
         a5, loc5, scale5 = stats.skewnorm.fit(rvs2, method='mm')
         assert np.isinf(a5)
-        # distribution infrastruction doesn't allow infinite shape parameters
+        # distribution infrastructure doesn't allow infinite shape parameters
         # into _stats; it just bypasses it and produces NaNs. Calculate
         # moments manually.
         m, v = np.mean(rvs2), np.var(rvs2)
@@ -6762,7 +6762,7 @@ class TestExpect:
         assert_almost_equal(res1, res2, decimal=14)
 
     def test_rice_overflow(self):
-        # rice.pdf(999, 0.74) was inf since special.i0 silentyly overflows
+        # rice.pdf(999, 0.74) was inf since special.i0 silently overflows
         # check that using i0e fixes it
         assert_(np.isfinite(stats.rice.pdf(999, 0.74)))
 
