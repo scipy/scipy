@@ -200,7 +200,7 @@ py_qr_reduce(PyObject* self, PyObject *args, PyObject *kwargs)
             // a(m, nz), packed
             static_cast<double *>(PyArray_DATA(a_a)), PyArray_DIM(a_a, 0), PyArray_DIM(a_a, 1),
             // offset(m)
-            static_cast<fitpack::d_ssize_t *>(PyArray_DATA(a_offs)),
+            static_cast<int64_t *>(PyArray_DATA(a_offs)),
             // if a were dense, it would have been a(m, nc)
             nc,
             // y(m, ydim2)
@@ -229,7 +229,7 @@ static PyObject*
 py_data_matrix(PyObject *self, PyObject *args)
 {
     PyObject *py_x=NULL, *py_t=NULL, *py_w=NULL;
-    fitpack::d_ssize_t nc;
+    int64_t nc;
     int k;   // NB: declare as npy_intp, and it's garbage
     int extrapolate=0;   // default is False
 
@@ -281,7 +281,7 @@ py_data_matrix(PyObject *self, PyObject *args)
             static_cast<const double *>(PyArray_DATA(a_w)),
             extrapolate,
             static_cast<double *>(PyArray_DATA(a_A)),     // output: (A, offset, nc)
-            static_cast<fitpack::d_ssize_t*>(PyArray_DATA(a_offs)),
+            static_cast<int64_t*>(PyArray_DATA(a_offs)),
             &nc,
             wrk.get()
         );
