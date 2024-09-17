@@ -881,10 +881,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         unraveled_coords_other = np.unravel_index(np.array(prod.coords[1]),
                                                   og_shape_other)
 
-        nd_coords_a = np.array(unraveled_coords_self)
-        nd_coords_b = np.array(unraveled_coords_other)
-
-        prod_coords = np.concatenate((nd_coords_a, nd_coords_b))
+        prod_coords = unraveled_coords_self + unraveled_coords_other
 
         prod_arr = coo_array((prod.data, prod_coords), combined_shape)
         
