@@ -652,6 +652,34 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return result
 
 
+    def _rmatmul_dispatch(self, other):
+        if isscalarlike(other):
+            return self._mul_scalar(other)
+        else:
+            # Don't use asarray unless we have to
+            try:
+                o_ndim = other.ndim
+                perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
+                tr = other.transpose(perm)
+            except AttributeError:
+                o_arr = np.asarray(other)
+                o_ndim = o_arr.ndim
+                perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
+                tr = o_arr.transpose(perm)
+            
+            s_ndim = self.ndim
+            perm = tuple(range(s_ndim)[:-2]) + tuple(range(s_ndim)[-2:][::-1])
+            ret = self.transpose(perm)._matmul_dispatch(tr)
+            if ret is NotImplemented:
+                return NotImplemented
+            
+            if s_ndim == 1 or o_ndim == 1:
+                perm = range(ret.ndim)
+            else:
+                perm = tuple(range(ret.ndim)[:-2]) + tuple(range(ret.ndim)[-2:][::-1])
+            return ret.transpose(perm)
+        
+
     def _matmul_dispatch(self, other):
         if not (issparse(other) or isdense(other) or isscalarlike(other)):
             # If it's a list or whatever, treat it like an array
