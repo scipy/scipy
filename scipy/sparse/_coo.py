@@ -1137,7 +1137,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError("New shape must have at least as many dimensions"
                              " as the current shape")
         
-        # Add leading ones to the old shape if necessary
+        # Add leading ones to shape to ensure same length as `new_shape` 
         shape = (1,) * (len(new_shape) - len(old_shape)) + tuple(old_shape)
         
         # Ensure the old shape can be broadcast to the new shape
