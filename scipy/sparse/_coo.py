@@ -1231,8 +1231,7 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     non_reduced_shape = [shape[ax] for ax in non_reduced_axes]
     
     # Extract the coordinates of the non-reduced axes
-    coords = np.array(coords)
-    non_reduced_coords = coords[non_reduced_axes, :]
+    non_reduced_coords = tuple(coords[idx] for idx in non_reduced_axes)
     
     # Ravel the coordinates into 1D
     raveled_coords = np.ravel_multi_index(non_reduced_coords, non_reduced_shape)
