@@ -722,7 +722,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
             
                 return self._matmul_multivector(other)
             else:
-                raise ValueError('could not interpret dimensions')
+                raise ValueError(
+                    f"{err_prefix} (n,..,k={N}),(k={other.shape[-2]},..,m)->(n,..,m)"
+                )
         
             
         if isscalarlike(other):
