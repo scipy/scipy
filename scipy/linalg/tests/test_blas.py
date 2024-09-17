@@ -4,6 +4,7 @@
 
 import math
 import pytest
+import threading
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose)
@@ -212,6 +213,7 @@ class TestFBLAS1Simple:
     # XXX: need tests for rot,rotm,rotg,rotmg
 
 
+@pytest.mark.parallel_threads(1)
 class TestFBLAS2Simple:
 
     def test_gemv(self):
