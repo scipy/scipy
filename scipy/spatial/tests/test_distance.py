@@ -445,14 +445,11 @@ class TestCdist:
             with maybe_deprecated(metric):
                 cdist(X1, X2, metric="test_" + metric, **kwargs)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric=metric, *args)
+            cdist(X1, X2, metric=metric, *args)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric=eval(metric), *args)
+            cdist(X1, X2, metric=eval(metric), *args)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric="test_" + metric, *args)
+            cdist(X1, X2, metric="test_" + metric, *args)
 
     def test_cdist_extra_args_custom(self):
         # Tests that args and kwargs are correctly handled
@@ -753,14 +750,11 @@ class TestPdist:
             with maybe_deprecated(metric):
                 pdist(X1, metric="test_" + metric, **kwargs)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                pdist(X1, metric=metric, *args)
+            pdist(X1, metric=metric, *args)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                pdist(X1, metric=eval(metric), *args)
+            pdist(X1, metric=eval(metric), *args)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                pdist(X1, metric="test_" + metric, *args)
+            pdist(X1, metric="test_" + metric, *args)
 
     def test_pdist_extra_args_custom(self):
         # Tests that args and kwargs are correctly handled
@@ -2090,12 +2084,10 @@ def test_Xdist_deprecated_args(metric):
                      [22.2, 23.3, 44.4]])
 
     with pytest.raises(TypeError):
-        with maybe_deprecated(metric):
-            cdist(X1, X1, metric, 2.)
+        cdist(X1, X1, metric, 2.)
 
     with pytest.raises(TypeError):
-        with maybe_deprecated(metric):
-            pdist(X1, metric, 2.)
+        pdist(X1, metric, 2.)
 
     for arg in ["p", "V", "VI"]:
         kwargs = {arg: "foo"}
