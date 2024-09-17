@@ -1117,7 +1117,7 @@ class Halton(QMCEngine):
     The Halton sequence has severe striping artifacts for even modestly
     large dimensions. These can be ameliorated by scrambling. Scrambling
     also supports replication-based error estimates and extends
-    applicabiltiy to unbounded integrands.
+    applicability to unbounded integrands.
 
     References
     ----------

@@ -635,7 +635,7 @@ class TestMannWhitneyU:
         stats.mannwhitneyu(y, x, method='exact')
         assert shape == _mwu_state.configurations.shape  # same when sizes are reversed
 
-        # Also, we weren't exploiting the symmmetry of the null distribution
+        # Also, we weren't exploiting the symmetry of the null distribution
         # to its full potential. Ensure that the null distribution is not
         # evaluated explicitly for `k > m*n/2`.
         _mwu_state.reset()  # reset cache
@@ -1732,7 +1732,7 @@ class TestPoissonMeansTest:
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=-1)
 
-        # test invalid alternatvie
+        # test invalid alternative
         message = 'Alternative must be one of ...'
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(1, 2, 1, 2, alternative='error')
