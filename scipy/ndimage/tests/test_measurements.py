@@ -165,7 +165,7 @@ def test_label02(xp):
 
 
 def test_label03(xp):
-    data = xp.ones([1])
+    data = xp.ones([1], dtype=xp.int64)
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, xp.asarray([1]))
     assert n == 1
@@ -823,7 +823,7 @@ def test_maximum04(xp):
 def test_maximum05(xp):
     # Regression test for ticket #501 (Trac)
     x = xp.asarray([-3, -2, -1])
-    assert ndimage.maximum(x) == -1 
+    assert ndimage.maximum(x) == -1
 
 
 def test_median01(xp):
