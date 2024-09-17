@@ -837,14 +837,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if isdense(other):
             return self._dense_dot(other)
         else:
-            if not (isinstance(self, (coo_array, coo_matrix)) or np.isscalar(self)):
-                raise TypeError("array must be in COO format")
-            if not (isinstance(other, (coo_array, coo_matrix)) or np.isscalar(other)):
-                raise TypeError("input must be a COO matrix/array or a scalar")
-
             # Handle scalar multiplication
             if np.isscalar(other):
                 return self * other
+            
+            if other.format != "coo":
+                raise TypeError("input must be a COO matrix/array")
 
             # Handle inner product of vectors (1-D arrays)
             if self.ndim == 1 and other.ndim == 1:
