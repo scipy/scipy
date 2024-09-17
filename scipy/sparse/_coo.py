@@ -1124,9 +1124,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return prod
 
 
-    def _broadcast_to(self, new_shape):
-        if new_shape == self.shape:
-            return self
+    def _broadcast_to(self, new_shape, copy=False):
+        if self.shape == new_shape:
+            return self.copy() if copy else self
         
         old_shape = self.shape
 
