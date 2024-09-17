@@ -10,7 +10,7 @@ from ._matrix import spmatrix
 from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix, csr_sample_values)
-from ._sputils import upcast
+from ._sputils import upcast, check_shape
 
 from ._compressed import _cs_matrix
 
@@ -124,14 +124,18 @@ class _csr_base(_cs_matrix):
 
 
     def _broadcast_to(self, shape, copy=False):
-
         old_shape = self.shape
         
         if old_shape == shape:
             return self.copy() if copy else self
         
+        shape = check_shape(shape)
+
         if len(shape) != 2:
             raise ValueError("Target shape must be a tuple of length 2.")
+
+        if len(old_shape) != len(shape):
+            raise ValueError("Original shape and target shape must be equal.")
 
         # Ensure the old shape can be broadcast to the new shape
         if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
@@ -139,7 +143,7 @@ class _csr_base(_cs_matrix):
                              f' broadcast to new shape {shape}')
         
         if self.nnz == 0: # array has no non zero elements
-            return self.__class__(np.zeros(shape, dtype=self.dtype), copy=False)
+            return self.__class__(shape, dtype=self.dtype, copy=False)
         
         self.sum_duplicates()
         if old_shape[0] == 1 and old_shape[1] == 1:
