@@ -111,7 +111,7 @@ import numpy as np
 import dataclasses
 
 from collections.abc import Callable
-from functools import partial
+from functools import partial, wraps
 from scipy._lib._util import _asarray_validated
 
 from . import _distance_wrap
@@ -890,9 +890,23 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else np.float64(0)
 
 
+def _deprecate_kulczynski1(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        warnings.warn(
+            "The kulczynski1 metric is deprecated since Scipy 1.15.0 and will "
+            "be removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=2)
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+@_deprecate_kulczynski1
 def kulczynski1(u, v, *, w=None):
     """
-    Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
+    (Deprecated) Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
+
+    .. deprecated:: 1.15.0
+       This function is deprecated and will be removed in SciPy 1.17.0
 
     The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
     of length ``n``, is defined as
@@ -949,6 +963,10 @@ def kulczynski1(u, v, *, w=None):
     -3.0
 
     """
+    warnings.warn(
+        "This function is deprecated and will be removed in SciPy 1.17.0.",
+        DeprecationWarning, stacklevel=2)
+
     u = _validate_vector(u)
     v = _validate_vector(v)
     if w is not None:
@@ -1855,8 +1873,8 @@ _METRIC_INFOS = [
         aka={'kulczynski1'},
         types=['bool'],
         dist_func=kulczynski1,
-        cdist_func=_distance_pybind.cdist_kulczynski1,
-        pdist_func=_distance_pybind.pdist_kulczynski1,
+        cdist_func=_deprecate_kulczynski1(_distance_pybind.cdist_kulczynski1),
+        pdist_func=_deprecate_kulczynski1(_distance_pybind.pdist_kulczynski1),
     ),
     MetricInfo(
         canonical_name='mahalanobis',
