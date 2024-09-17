@@ -863,8 +863,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         ravel_coords_shape_other = (other.shape[-2], math.prod(og_shape_other))
         
-        
-        self_2d_coords = np.vstack((self_raveled_coords, self.coords[-1]))
+        self_2d_coords = self_raveled_coords + (self.coords[-1],)
         other_2d_coords = np.vstack((other.coords[-2], other_raveled_coords))
 
         self_2d = coo_array((self.data, self_2d_coords), ravel_coords_shape_self)
