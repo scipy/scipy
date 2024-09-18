@@ -324,13 +324,26 @@ def expm(A):
 
         # Generic/triangular case; copy the slice into scratch and send.
         # Am will be mutated by pick_pade_structure
+        # If s != 0, scaled Am will be returned from pick_pade_structure.
         Am[0, :, :] = aw
         m, s = pick_pade_structure(Am)
-
-        if s != 0:  # scaling needed
-            Am[:4] *= [[[2**(-s)]], [[4**(-s)]], [[16**(-s)]], [[64**(-s)]]]
-
-        pade_UV_calc(Am, n, m)
+        if (m < 0):
+            raise MemoryError("scipy.linalg.expm could not allocate sufficient"
+                              " memory while trying to compute the Pade "
+                              f"structure (error code {m}).")
+        info = pade_UV_calc(Am, m)
+        if info != 0:
+            if info <= -11:
+                # We raise it from failed mallocs; negative LAPACK codes > -7
+                raise MemoryError("scipy.linalg.expm could not allocate "
+                              "sufficient memory while trying to compute the "
+                              f"exponential (error code {info}).")
+            else:
+                # LAPACK wrong argument error or exact singularity.
+                # Neither should happen.
+                raise RuntimeError("scipy.linalg.expm got an internal LAPACK "
+                                   "error during the exponential computation "
+                                   f"(error code {info})")
         eAw = Am[0]
 
         if s != 0:  # squaring needed

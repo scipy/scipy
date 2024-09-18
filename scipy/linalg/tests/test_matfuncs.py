@@ -4,7 +4,6 @@
 """ Test functions for linalg.matfuncs module
 
 """
-import random
 import functools
 
 import numpy as np
@@ -571,18 +570,18 @@ class TestFractionalMatrixPower:
     def test_random_matrices_and_powers(self):
         # Each independent iteration of this fuzz test picks random parameters.
         # It tries to hit some edge cases.
-        np.random.seed(1234)
+        rng = np.random.default_rng(1726500458620605)
         nsamples = 20
         for i in range(nsamples):
             # Sample a matrix size and a random real power.
-            n = random.randrange(1, 5)
-            p = np.random.randn()
+            n = rng.integers(1, 5)
+            p = rng.random()
 
             # Sample a random real or complex matrix.
-            matrix_scale = np.exp(random.randrange(-4, 5))
-            A = np.random.randn(n, n)
-            if random.choice((True, False)):
-                A = A + 1j * np.random.randn(n, n)
+            matrix_scale = np.exp(rng.integers(-4, 5))
+            A = rng.random(size=[n, n])
+            if [True, False][rng.choice(2)]:
+                A = A + 1j * rng.random(size=[n, n])
             A = A * matrix_scale
 
             # Check a couple of analytically equivalent ways
@@ -848,6 +847,7 @@ class TestExpmFrechet:
             assert_allclose(expected_frechet, observed_frechet)
 
     def test_fuzz(self):
+        rng = np.random.default_rng(1726500908359153)
         # try a bunch of crazy inputs
         rfuncs = (
                 np.random.uniform,
@@ -856,9 +856,9 @@ class TestExpmFrechet:
                 np.random.exponential)
         ntests = 100
         for i in range(ntests):
-            rfunc = random.choice(rfuncs)
-            target_norm_1 = random.expovariate(1.0)
-            n = random.randrange(2, 16)
+            rfunc = rfuncs[rng.choice(4)]
+            target_norm_1 = rng.exponential()
+            n = rng.integers(2, 16)
             A_original = rfunc(size=(n,n))
             E_original = rfunc(size=(n,n))
             A_original_norm_1 = scipy.linalg.norm(A_original, 1)
