@@ -217,8 +217,6 @@ def test_broadcast_to():
     res_c = csr_array(b)._broadcast_to((2,4))
     res_d = csr_array(b)._broadcast_to((1,))
     res_e = csr_array(e)._broadcast_to((4,0))
-
-    res_f = csr_matrix(f)._broadcast_to((2,4))
     assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
     assert_array_equal(res_b.toarray(), np.broadcast_to(b, (4,)))
     assert_array_equal(res_c.toarray(), np.broadcast_to(b, (2,4)))
