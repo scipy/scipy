@@ -1030,25 +1030,25 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
         if og_shape_self:
-            unraveled_coords_self = np.array(np.unravel_index(prod.row, og_shape_self))
+            unraveled_coords_self = np.unravel_index(prod.row, og_shape_self)
         if og_shape_other:
-            unraveled_coords_other = np.array(np.unravel_index(prod.col,
-                                                               og_shape_other))
+            unraveled_coords_other = np.unravel_index(prod.col, og_shape_other)
 
         if og_shape_self and og_shape_other:
-            coords = np.concatenate((unraveled_coords_self, unraveled_coords_other))
+            coords = unraveled_coords_self + unraveled_coords_other
         elif og_shape_self:
             coords = unraveled_coords_self
         elif og_shape_other:
             coords = unraveled_coords_other
         else:
-            coords = np.array([])
+            coords = ()
 
-        if coords.shape == (0,):  # if result is scalar
-            return prod.data[0]
+        if coords == ():  # if result is scalar
+            return sum(prod.data)
+            
 
         # Construct the resulting COO array with combined coordinates and shape
-        prod_arr = coo_array((prod.data, tuple(coords)), shape=combined_shape)
+        prod_arr = coo_array((prod.data, coords), shape=combined_shape)
 
         return prod_arr
 
@@ -1069,7 +1069,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         permute_self = non_reduced_axes_self + axes_self
         permute_other = non_reduced_axes_other[:-1] + axes_other \
             + non_reduced_axes_other[-1:]
-        self = np.transpose(self, permute_self)
+        self = self.transpose(permute_self)
         other = np.transpose(other, permute_other)
 
         reshape_self = (*non_reduced_shape_self, math.prod(reduced_shape_self))
