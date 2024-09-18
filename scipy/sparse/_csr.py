@@ -129,8 +129,7 @@ class _csr_base(_cs_matrix):
         
         shape = check_shape(shape, allow_nd=(self._allow_nd))
 
-        both_are_1d = len(self.shape) == 1 and len(shape) == 1
-        if both_are_1d:
+        if len(self.shape) == 1 and len(shape) == 1:
             if self.shape != (1,):
                 raise ValueError(f'current shape {self.shape} cannot be'
                              f' broadcast to new shape {shape}')
