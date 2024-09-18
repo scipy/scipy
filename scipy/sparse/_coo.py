@@ -682,7 +682,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _matmul_dispatch(self, other):
         if isscalarlike(other):
-            return self * other
+            return self.multiply(other)
         
         if not (issparse(other) or isdense(other)):
             # If it's a list or whatever, treat it like an array
