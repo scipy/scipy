@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_
+from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
 import pytest
@@ -188,3 +188,48 @@ def test_mixed_index_dtype_int_indexing(cls):
             mtx[:, [1, 2]].toarray(),
             base_mtx[:, [1, 2]].toarray()
         )
+
+def test_broadcast_to():
+        a = np.array([[1, 0, 2]])
+        b = np.array([[1], [0], [2]])
+        c = np.array([[1, 0, 2], [0, 3, 0]])
+        d = np.array([[7]])
+        e = np.array([[0]])
+        f = np.array([[0,0,0,0]])
+        res_a = csr_matrix(a)._broadcast_to((2,3))
+        res_b = csr_matrix(b)._broadcast_to((3,4))
+        res_c = csr_matrix(c)._broadcast_to((2,3))
+        res_d = csr_matrix(d)._broadcast_to((4,4))
+        res_e = csr_matrix(e)._broadcast_to((5,6))
+        res_f = csr_matrix(f)._broadcast_to((2,4))
+        assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
+        assert_array_equal(res_b.toarray(), np.broadcast_to(b, (3,4)))
+        assert_array_equal(res_c.toarray(), c)
+        assert_array_equal(res_d.toarray(), np.broadcast_to(d, (4,4)))
+        assert_array_equal(res_e.toarray(), np.broadcast_to(e, (5,6)))
+        assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
+
+        a = np.array([1, 0, 2])
+        b = np.array([3])
+        e = np.zeros((0,))
+        res_a = csr_array(a)._broadcast_to((2,3))
+        res_b = csr_array(b)._broadcast_to((4,))
+        res_c = csr_array(b)._broadcast_to((2,4))
+        res_d = csr_array(b)._broadcast_to((1,))
+        res_e = csr_array(e)._broadcast_to((4,0))
+
+        res_f = csr_matrix(f)._broadcast_to((2,4))
+        assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
+        assert_array_equal(res_b.toarray(), np.broadcast_to(b, (4,)))
+        assert_array_equal(res_c.toarray(), np.broadcast_to(b, (2,4)))
+        assert_array_equal(res_d.toarray(), np.broadcast_to(b, (1,)))
+        assert_array_equal(res_e.toarray(), np.broadcast_to(e, (4,0)))
+        
+        with pytest.raises(ValueError, match="cannot be broadcast"):
+            csr_matrix([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
+
+        with pytest.raises(ValueError, match="cannot be broadcast"):
+            csr_matrix([[0, 1, 2]])._broadcast_to(shape=(3, 2))
+
+        with pytest.raises(ValueError, match="cannot be broadcast"):
+            csr_array([0, 1, 2])._broadcast_to(shape=(3, 2))
