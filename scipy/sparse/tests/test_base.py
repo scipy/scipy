@@ -32,7 +32,7 @@ from numpy.testing import (assert_equal, assert_array_equal,
 import scipy.linalg
 
 import scipy.sparse as sparse
-from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
+from scipy.sparse import (csc_matrix, csr_matrix, csr_array, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         eye, issparse, SparseEfficiencyWarning, sparray)
 from scipy.sparse._base import _formats
@@ -4156,12 +4156,31 @@ class TestCSR(sparse_test_class()):
         assert_array_equal(res_d.toarray(), np.broadcast_to(d, (4,4)))
         assert_array_equal(res_e.toarray(), np.broadcast_to(e, (5,6)))
         assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
+
+        a = np.array([1, 0, 2])
+        b = np.array([3])
+        e = np.zeros((0,))
+        res_a = csr_array(a)._broadcast_to((2,3))
+        res_b = csr_array(b)._broadcast_to((4,))
+        res_c = csr_array(b)._broadcast_to((2,4))
+        res_d = csr_array(b)._broadcast_to((1,))
+        res_e = csr_array(e)._broadcast_to((4,0))
+
+        res_f = csr_matrix(f)._broadcast_to((2,4))
+        assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
+        assert_array_equal(res_b.toarray(), np.broadcast_to(b, (4,)))
+        assert_array_equal(res_c.toarray(), np.broadcast_to(b, (2,4)))
+        assert_array_equal(res_d.toarray(), np.broadcast_to(b, (1,)))
+        assert_array_equal(res_e.toarray(), np.broadcast_to(e, (4,0)))
         
         with pytest.raises(ValueError, match="cannot be broadcast"):
             csr_matrix([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
 
         with pytest.raises(ValueError, match="cannot be broadcast"):
             csr_matrix([[0, 1, 2]])._broadcast_to(shape=(3, 2))
+
+        with pytest.raises(ValueError, match="cannot be broadcast"):
+            csr_array([0, 1, 2])._broadcast_to(shape=(3, 2))
 
 TestCSR.init_class()
 

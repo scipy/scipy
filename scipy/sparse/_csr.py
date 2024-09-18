@@ -123,24 +123,42 @@ class _csr_base(_cs_matrix):
     tobsr.__doc__ = _spbase.tobsr.__doc__
 
 
-    def _broadcast_to(self, shape, copy=False):
-        old_shape = self.shape
-        
-        if old_shape == shape:
+    def _broadcast_to(self, shape, copy=False):        
+        if self.shape == shape:
             return self.copy() if copy else self
         
-        shape = check_shape(shape)
+        shape = check_shape(shape, allow_nd=(self._allow_nd))
 
+        both_are_1d = len(self.shape) == 1 and len(shape) == 1
+        if both_are_1d:
+            if self.shape != (1,):
+                raise ValueError(f'current shape {self.shape} cannot be'
+                             f' broadcast to new shape {shape}')
+
+            self.sum_duplicates()
+            if self.nnz == 0: # array has no non zero elements
+                return self.__class__(shape, dtype=self.dtype, copy=False)
+            
+            N = shape[0]
+            data = np.full(N, self.data[0])
+            indices = np.arange(0,N)
+            indptr = np.array([0, N])
+            return self.__class__((data, indices, indptr), shape=shape, copy=False)
+
+        if len(self.shape) == 1:
+            self = self.__class__(self.reshape(self._shape_as_2d)) # as reshape routes via COO
+
+        old_shape = self.shape
+            
         if len(shape) != 2:
-            raise ValueError("Target shape must be a tuple of length 2.")
+            raise ValueError('Target shape must be a tuple of length 2')
 
         if len(old_shape) != len(shape):
-            raise ValueError("Original shape and target shape must be equal.")
+            raise ValueError('Original shape and target shape must have the same length')
 
         # Ensure the old shape can be broadcast to the new shape
         if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
-            raise ValueError(f'current shape {old_shape} cannot be'
-                             f' broadcast to new shape {shape}')
+            raise ValueError(f'current shape cannot be broadcast to new shape {shape}')
         
         if self.nnz == 0: # array has no non zero elements
             return self.__class__(shape, dtype=self.dtype, copy=False)
