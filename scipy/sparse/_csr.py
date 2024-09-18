@@ -144,10 +144,8 @@ class _csr_base(_cs_matrix):
             indptr = np.array([0, N])
             return self.__class__((data, indices, indptr), shape=shape, copy=False)
 
-        if len(self.shape) == 1:
-            self = self.__class__(self.reshape(self._shape_as_2d))
-
-        old_shape = self.shape
+        # treat 1D as a 2D row
+        old_shape = self._shape_as_2d
             
         if len(shape) != 2:
             raise ValueError('Target shape must be a tuple of length 2')
