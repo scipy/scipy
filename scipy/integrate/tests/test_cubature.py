@@ -4,6 +4,8 @@ import itertools
 
 import pytest
 
+import numpy as np  # TODO: remove
+
 from scipy._lib._array_api import array_namespace, xp_assert_close, xp_size, np_compat
 from scipy.conftest import array_api_compatible
 
@@ -288,6 +290,75 @@ def genz_malik_1980_f_5_random_args(rng, shape, xp):
     return alphas, betas
 
 
+def f_gaussian(x, alphas):
+    r"""
+    .. math::
+
+        f(\mathbf x) = \exp\left(-\sum^n_{i = 1} (\alpha_i x_i)^2 \right)
+    """
+    npoints, ndim = x.shape[0], x.shape[-1]
+    alphas_reshaped = alphas[np.newaxis, :]
+    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+
+    return np.exp(
+        -np.sum((alphas_reshaped * x_reshaped)**2, axis=-1)
+    )
+
+
+def f_gaussian_exact(a, b, alphas):
+    # Exact only when `a` and `b` are one of:
+    #   (-oo, oo), or
+    #   (0, oo), or
+    #   (-oo, 0)
+    # `alphas` can be arbitrary.
+
+    ndim = len(a)
+    double_infinite_count = 0
+    semi_infinite_count = 0
+
+    for i in range(len(a)):
+        if np.isinf(a[i]) and np.isinf(b[i]):   # doubly-infinite
+            double_infinite_count += 1
+        elif np.isinf(a[i]) != np.isinf(b[i]):  # exclusive or, so semi-infinite
+            semi_infinite_count += 1
+
+    return (math.sqrt(np.pi) ** ndim) / (
+        2**semi_infinite_count * np.prod(alphas, axis=-1)
+    )
+
+
+def f_gaussian_random_args(shape):
+    np.random.seed(12)
+
+    alphas = np.random.rand(*shape)
+
+    # If alphas are very close to 0 this makes the problem very difficult due to large
+    # values of ``f``.
+    alphas *= 100
+
+    return alphas
+
+
+def f_modified_gaussian(x_arr, n):
+    r"""
+    .. math::
+
+        f(x, y, z, w) = x^n \sqrt{y} \exp(-y-z^2-w^2)
+    """
+    x, y, z, w = x_arr[:, 0], x_arr[:, 1], x_arr[:, 2], x_arr[:, 3]
+    res = (x ** n[:, np.newaxis]) * np.sqrt(y) * np.exp(-y-z**2-w**2)
+
+    return res.T
+
+
+def f_modified_gaussian_exact(a, b, n):
+    # Exact only for the limits
+    #   a = (0, 0, -oo, -oo)
+    #   b = (1, oo, oo, oo)
+    # but defined here as a function to match the format of the other integrands.
+    return 1/(2 + 2*n) * math.pi ** (3/2)
+
+
 @array_api_compatible
 class TestCubature:
     """
@@ -358,6 +429,26 @@ class TestCubature:
 
         with pytest.raises(Exception, match="`a` and `b` must be 1D arrays"):
             cubature(basic_1d_integrand, a, b, args=(xp,))
+
+    def test_limits_other_way_around(self, xp):
+        n = xp.arange(5)
+
+        a = xp.asarray([2])
+        b = xp.asarray([0])
+
+        res = cubature(
+            basic_1d_integrand,
+            a,
+            b,
+            args=(n, xp),
+        )
+
+        np.testing.assert_allclose(
+            res.estimate,
+            -basic_1d_integrand_exact(n, xp),
+            rtol=1e-1,
+            atol=0,
+        )
 
 
 @pytest.mark.parametrize("rtol", [1e-4])
@@ -709,6 +800,317 @@ class TestCubatureProblems:
         assert res.status == "converged", err_msg
 
         assert res.estimate.shape == shape[:-1]
+
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate
+            lambda x: x,
+
+            # Exact value
+            50,
+
+            # Coordinates of `a`
+            np.array([0]),
+
+            # Coordinates of `b`
+            np.array([10]),
+
+            # Points by which to split up the initial region
+            None,
+        ),
+        (
+            lambda x: np.sin(x)/x,
+            scipy.special.sici(1)[0] + scipy.special.sici(2)[0],
+            np.array([-1]),
+            np.array([2]),
+            [np.array([0])],
+        ),
+        (
+            lambda x: np.ones(len(x)),
+            1,
+            np.array([0, 0, 0]),
+            np.array([1, 1, 1]),
+            [
+                np.array([0.5, 0.5, 0.5]),
+            ],
+        ),
+        (
+            lambda x: np.ones(len(x)),
+            1,
+            np.array([0, 0, 0]),
+            np.array([1, 1, 1]),
+            [
+                np.array([0.25, 0.25, 0.25]),
+                np.array([0.5, 0.5, 0.5]),
+            ],
+        ),
+        (
+            lambda x: np.ones(len(x)),
+            1,
+            np.array([0, 0, 0]),
+            np.array([1, 1, 1]),
+            [
+                np.array([0.1, 0.25, 0.5]),
+                np.array([0.25, 0.25, 0.25]),
+                np.array([0.5, 0.5, 0.5]),
+            ],
+        )
+    ])
+    def test_break_points(self, problem, rule, rtol, atol):
+        f, exact, a, b, points = problem
+        ndim = a.size
+
+        if rule == "genz-malik" and ndim < 2:
+            pytest.skip("Genz-Malik cubature does not support 1D integrals")
+
+        if rule == "genz-malik" and ndim >= 5:
+            pytest.mark.slow("Gauss-Kronrod is slow in >= 5 dim")
+
+        res = cubature(
+            f,
+            a,
+            b,
+            rule,
+            rtol,
+            atol,
+            points=points,
+        )
+
+        np.testing.assert_allclose(
+            res.estimate,
+            exact,
+            rtol=rtol,
+            atol=atol,
+            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}"
+        )
+
+        err_msg = (f"estimate_error={res.error}, "
+                   f"subdivisions= {res.subdivisions}, "
+                   f"true_error={np.abs(res.estimate - exact)}")
+        assert res.status == "converged", err_msg
+
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate
+            f_gaussian,
+
+            # Exact solution
+            f_gaussian_exact,
+
+            # Arguments passed to f
+            f_gaussian_random_args((1, 1)),
+
+            # Limits, have to match the shape of the arguments
+            np.array([-np.inf]),  # a
+            np.array([np.inf]),   # b
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args((1, 1),),
+            np.array([0]),
+            np.array([np.inf]),
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            (f_gaussian_random_args((1, 1)),),
+            np.array([-np.inf]),
+            np.array([0]),
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            (f_gaussian_random_args((1, 4)),),
+            np.array([0, 0, -np.inf, -np.inf]),
+            np.array([np.inf, np.inf, np.inf, np.inf]),
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            (f_gaussian_random_args((1, 4)),),
+            np.array([-np.inf, -np.inf, -np.inf, -np.inf]),
+            np.array([0, 0, np.inf, np.inf]),
+        ),
+
+        # This particular problem can be slow
+        pytest.param(
+            (
+                # f(x, y, z, w) = x^n * sqrt(y) * exp(-y-z**2-w**2) for n in [0,1,2,3]
+                f_modified_gaussian,
+
+                # This exact solution is for the below limits, not in general
+                f_modified_gaussian_exact,
+
+                (np.arange(4),),
+                np.array([0, 0, -np.inf, -np.inf]),
+                np.array([1, np.inf, np.inf, np.inf])
+            ),
+
+            marks=pytest.mark.slow,
+        )
+    ])
+    def test_infinite_limits(self, problem, rule, rtol, atol):
+        f, exact, args, a, b = problem
+
+        ndim = a.size
+
+        if rule == "genz-malik" and ndim < 2:
+            pytest.skip("Genz-Malik cubature does not support 1D integrals")
+
+        if rule == "genz-malik" and ndim >= 4:
+            pytest.mark.slow("Gauss-Kronrod is slow in >= 5 dim")
+
+        res = cubature(
+            f,
+            a,
+            b,
+            rule,
+            rtol,
+            atol,
+            args=args,
+        )
+
+        assert res.status == "converged"
+
+        np.testing.assert_allclose(
+            res.estimate,
+            exact(a, b, *args),
+            rtol=rtol,
+            atol=atol,
+            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
+        )
+
+    @pytest.mark.parametrize("problem", [
+        (
+            # Integrate
+            #   f(x_1, x_2, x_3) = x_1
+            # with limits
+            #   a = [0, 0, 0]
+            #   b = [1, 1, 1]
+
+            # f
+            lambda x: x[:, 0],
+
+            # exact solution
+            0.5,
+
+            # args
+            (),
+
+            # a & b
+            np.array([0, 0]),
+            np.array([1, 1]),
+
+            # region, here just constants
+            # [
+            lambda x: (
+                np.array([np.zeros(x.shape[0])]),
+                np.array([np.ones(x.shape[0])]),
+            ),
+            # ],
+        ),
+        (
+            # Integrate
+            #   f(x_1, x_2, x_3) = 1
+            # with limits
+            #   a = [0, 0, 0]
+            #   b = [1, 1, x_1 * x_2]
+
+            lambda x: np.ones(x.shape[0]),
+            0.25,
+            (),
+            np.array([0, 0]),
+            np.array([1, 1]),
+            # [
+            lambda x: (
+                np.array([np.zeros(x.shape[0])]),
+                np.array([x[:, 0] * x[:, 1]]),
+            ),
+            # ],
+        ),
+        (
+            # Integrate
+            #   f(x_1, ..., x_n) = 1
+            # with limits
+            #   a = [-1, -sqrt(1 - x_1**2)]
+            #   b = [1, sqrt(1 - x_1**2)]
+
+            lambda x: np.ones(x.shape[0]),
+            np.pi,
+            (),
+            np.array([-1]),
+            np.array([1]),
+            # [
+            lambda x: (
+                np.array([-np.sqrt(1 - x[:, 0]**2)]),
+                np.array([np.sqrt(1 - x[:, 0]**2)]),
+            ),
+            # ],
+        ),
+        (
+            # Integrate
+            #   f(x_1, x_2) = 1
+            # with limits
+            #   a = [-inf, -exp(-x_1**2)]
+            #   b = [inf, exp(x_1**2)]
+
+            lambda x: np.ones(x.shape[0]),
+            2*math.sqrt(np.pi),
+            (),
+            np.array([-np.inf]),
+            np.array([np.inf]),
+            # [
+            lambda x: (
+                np.array([-np.exp(-x[:, 0]**2)]),
+                np.array([np.exp(-x[:, 0]**2)]),
+            ),
+            # ],
+        ),
+        (
+            # Integrate
+            #   f(x_1, x_2) = n
+            # with limits
+            #   a = [-inf, -exp(-x_1**2)]
+            #   b = [inf, exp(x_1**2)]
+            # for n = range(5)
+
+            lambda x, n: np.tile(n, (x.shape[0], 1)),
+            np.arange(5) * 2*math.sqrt(np.pi),
+            (np.arange(5),),
+            np.array([-np.inf]),
+            np.array([np.inf]),
+            # [
+            lambda x: (
+                np.array([-np.exp(-x[:, 0]**2)]),
+                np.array([np.exp(-x[:, 0]**2)]),
+            ),
+            # ],
+        )
+    ])
+    def test_cub_func_limits(self, problem, rule, rtol, atol):
+        f, exact, args, a_outer, b_outer, region = problem
+
+        res = cubature(
+            f,
+            a_outer,
+            b_outer,
+            rule,
+            rtol,
+            atol,
+            args=args,
+            region=region,
+        )
+
+        assert res.status == "converged"
+
+        np.testing.assert_allclose(
+            res.estimate,
+            exact,
+            rtol=rtol,
+            atol=atol,
+            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
+        )
 
 
 @array_api_compatible

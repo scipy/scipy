@@ -1,6 +1,8 @@
 import heapq
 import itertools
 
+import numpy as np  # TODO: remove
+
 from dataclasses import dataclass
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
@@ -54,7 +56,7 @@ class CubatureResult:
 
 
 def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
-             args=(), workers=1):
+             args=(), workers=1, points=None, region=None):
     r"""
     Adaptive cubature of multidimensional array-valued function.
 
@@ -241,6 +243,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     xp = array_namespace(a, b)
     max_subdivisions = float("inf") if max_subdivisions is None else max_subdivisions
+    points = [] if points is None else points
 
     # Convert a and b to arrays
     a = xp.asarray(a, dtype=xp.float64)
@@ -248,6 +251,35 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     if a.ndim != 1 or b.ndim != 1:
         raise ValueError("`a` and `b` must be 1D arrays")
+
+    # If `region` is specified, apply a transformation to reduce to integration over
+    # a rectangular region.
+    if region is not None:
+        f = _FuncLimitsTransform(f, a, b, region)
+        a, b = f.limits
+
+    # If any of limits are the wrong way around (a > b), flip them and keep track of
+    # the sign.
+    sign = (-1) ** np.sum(a > b)
+    a_flipped = np.min(np.array([a, b]), axis=0)
+    b_flipped = np.max(np.array([a, b]), axis=0)
+
+    a, b = a_flipped, b_flipped
+
+    # If any of the limits are infinite, apply a transformation to handle these
+    if np.any(np.isinf(a_flipped)) or np.any(np.isinf(b_flipped)):
+        f = _InfiniteLimitsTransform(f, a_flipped, b_flipped)
+        a, b = f.limits
+        points.extend(f.points)
+
+    # If any problematic points are specified, divide the initial region so that
+    # these points lie on the edge of a subregion.
+    # This means ``f`` won't be evaluated there, if the rule being used has no
+    # evaluation points on the boundary.
+    if points == []:
+        initial_regions = [(a, b)]
+    else:
+        initial_regions = _split_at_points(a, b, points)
 
     # If the rule is a string, convert to a corresponding product rule
     if isinstance(rule, str):
@@ -271,10 +303,22 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
             rule = ProductNestedFixed([base_rule] * ndim)
 
-    est = rule.estimate(f, a, b, args)
-    err = rule.estimate_error(f, a, b, args)
+    regions = []
+    est = 0.0
+    err = 0.0
 
-    regions = [CubatureRegion(est, err, a, b, xp)]
+    # Compute an estimate over each of the initial regions
+    for a_k, b_k in initial_regions:
+        # If any of the initial regions have zero width in one dimension, we can
+        # ignore this as the integral will be 0 there.
+        if not np.any(a_k == b_k):
+            est_k = rule.estimate(f, a_k, b_k, args)
+            err_k = rule.estimate_error(f, a_k, b_k, args)
+            regions.append(CubatureRegion(est_k, err_k, a_k, b_k, xp))
+
+            est += est_k
+            err += err_k
+
     subdivisions = 0
     success = True
 
@@ -328,6 +372,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
         status = "converged" if success else "not_converged"
 
+        # Apply sign change if any of the limits were initially flipped
+        est = sign * est
+
         return CubatureResult(
             estimate=est,
             error=err,
@@ -347,3 +394,268 @@ def _process_subregion(data):
     err_sub = rule.estimate_error(f, a_k_sub, b_k_sub, args)
 
     return a_k_sub, b_k_sub, est_sub, err_sub
+
+
+def _is_strictly_in_region(point, a, b):
+    if (point == a).all() or (point == b).all():
+        return False
+
+    return (a <= point).all() and (point <= b).all()
+
+
+def _split_at_points(a, b, points):
+    """
+    Given the integration limits `a` and `b` describing a rectangular region and a list
+    of `points`, find the list of ``[(a_1, b_1), ..., (a_l, b_l)]`` which breaks up the
+    initial region into smaller subregions such that no `points` lie strictly inside
+    any of the subregions.
+    """
+
+    points = np.sort(points)
+    regions = [(a, b)]
+
+    for point in points:
+        new_regions = []
+
+        for a_k, b_k in regions:
+            if _is_strictly_in_region(point, a_k, b_k):
+                subregions = _subregion_coordinates(a_k, b_k, point)
+                new_regions.extend(subregions)
+            else:
+                new_regions.append((a_k, b_k))
+
+        regions = new_regions
+
+    return regions
+
+
+class _VariableTransform:
+    @property
+    def limits(self):
+        """
+        New limits after applying the transformation.
+        """
+
+        raise NotImplementedError
+
+    @property
+    def points(self):
+        """
+        Any problematic points introduced by the transformation to avoid evaluating.
+        """
+
+        return []
+
+    def __call__(self, t, *args, **kwargs):
+        """
+        `f` after the transformation.
+        """
+
+        raise NotImplementedError
+
+
+class _InfiniteLimitsTransform(_VariableTransform):
+    r"""
+    Given ``f`` and the limits ``a`` and ``b``, apply a transformation to ``f`` to map
+    any infinite limits to a finite interval.
+
+    `math:`[-\infty, \infty]` is mapped to `math:`(-1, 1)` using the transformation
+   `math:`x = (1-|t|)/t`.
+
+    `math:`[a, \infty]` is mapped to `math:`(0, 1)` using the transformation
+    `math:`x = a + (1-t)/t`.
+
+    `math:`[-\infty, b]` is mapped to `math:`(0, 1)` using the transformation
+    `math:`x = a - (1+t)/t`.
+    """
+
+    def __init__(self, f, a, b):
+        self._f = f
+        self._orig_a = a
+        self._orig_b = b
+
+        self._negate_pos = []
+        self._semi_inf_pos = []
+        self._double_inf_pos = []
+
+        for i in range(len(a)):
+            if a[i] == -np.inf and b[i] == np.inf:
+                # (-oo, oo) will be mapped to (-1, 1).
+                self._double_inf_pos.append(i)
+
+            elif a[i] != -np.inf and b[i] == np.inf:
+                # (start, oo) will be mapped to (0, 1).
+                self._semi_inf_pos.append(i)
+
+            elif a[i] == -np.inf and b[i] != np.inf:
+                # (-oo, end) will be mapped to (0, 1).
+                #
+                # This is handled by making the transformation t = -x and reducing it to
+                # the other semi-infinite case.
+                self._negate_pos.append(i)
+                self._semi_inf_pos.append(i)
+
+                # Since we flip the limits, we don't need to separately multiply the
+                # integrand by -1.
+                self._orig_a[i] = -b[i]
+                self._orig_b[i] = -a[i]
+
+        self._semi_inf_pos = np.array(self._semi_inf_pos)
+        self._double_inf_pos = np.array(self._double_inf_pos)
+        self._negate_pos = np.array(self._negate_pos)
+
+    @property
+    def limits(self):
+        a, b = np.copy(self._orig_a), np.copy(self._orig_b)
+
+        for index in self._double_inf_pos:
+            a[index] = -1
+            b[index] = 1
+
+        for index in self._semi_inf_pos:
+            a[index] = 0
+            b[index] = 1
+
+        return a, b
+
+    @property
+    def points(self):
+        # If there are infinite limits, then the origin becomes a problematic point
+        # due to a division by zero there.
+        if self._double_inf_pos.size != 0 or self._semi_inf_pos.size != 0:
+            return [np.zeros(self._orig_a.shape)]
+        else:
+            return []
+
+    def __call__(self, t, *args, **kwargs):
+        x = np.copy(t)
+
+        if self._negate_pos.size != 0:
+            x[..., self._negate_pos] *= -1
+
+        if self._double_inf_pos.size != 0:
+            # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
+
+            x[..., self._double_inf_pos] = (
+                1 - np.abs(t[..., self._double_inf_pos])
+            ) / t[..., self._double_inf_pos]
+
+        if self._semi_inf_pos.size != 0:
+            # For (start, oo) -> (0, 1), use the transformation x = start + (1 - t)/t.
+
+            # Need to expand start so it is broadcastable, and transpose to flip the
+            # axis order.
+            start = self._orig_a[self._semi_inf_pos][:, np.newaxis].T
+
+            x[..., self._semi_inf_pos] = start + (
+                1 - t[..., self._semi_inf_pos]
+            ) / t[..., self._semi_inf_pos]
+
+        f_x = self._f(x, *args, **kwargs)
+        jacobian = 1
+
+        if self._double_inf_pos.size != 0:
+            jacobian *= 1/np.prod(
+                t[..., self._double_inf_pos] ** 2,
+                axis=-1,
+            )
+
+        if self._semi_inf_pos.size != 0:
+            jacobian *= 1/np.prod(
+                t[..., self._semi_inf_pos] ** 2,
+                axis=-1,
+            )
+
+        jacobian = jacobian.reshape(-1, *([1]*(len(f_x.shape)-1)))
+
+        return f_x * jacobian
+
+
+class _FuncLimitsTransform(_VariableTransform):
+    r"""
+    Transform an integral with functions as limits to an integral with constant limits.
+
+    Given an integral of the form:
+
+    ..math ::
+
+        \int^{b_1}_{a_1}
+        \cdots
+        \int^{b_n}_{a_n}
+        \int^{B_1(x_1, \ldots, x_n)}_{A_0(x_1, \ldots, x_n)}
+        \cdots
+        \int^{B_m(x_1, \ldots, x_{n+m})}_{A_m(x_1, \ldots, x_{n+m})}
+        f(x_1, \ldots, x_{n+m})
+        dx_{n+m} \cdots dx_1
+
+    an integral with :math:`n` outer non-function limits, and :math:`m` inner function
+    limits, this will transform it into an integral over
+
+    ..math::
+
+        \int^{b_1}_{a_1}
+        \cdots
+        \int^{b_n}_{a_n}
+        \int^{1}_{-1}
+        \cdots
+        \int^{1}_{-1}
+        g(x_1, \ldots, x_n, y_1, \cdots, y_m)
+        dy_m \cdots dy_1 dx_n \cdots dx_1
+
+    Which is an integral over the original outer non-function limits and where a
+    transformation has been applied so that the original function limits become [-1, 1].
+    """
+
+    def __init__(self, f, a, b, region):
+        self._f = f
+        self._a_outer = a
+        self._b_outer = b
+
+        self._region = region
+
+        # The "outer dimension" here is the number of the outer non-function limits.
+        self._outer_ndim = len(self._a_outer)
+
+        # Without evaluating `region`` at least once, it's impossible to know the
+        # number of inner variables, which is required to return new limits.
+        a_inner, _ = region(self._a_outer.reshape(1, -1))
+        self._inner_ndim = np.array(a_inner).shape[-1]
+
+    @property
+    def limits(self):
+        return (
+            np.concatenate([self._a_outer, -np.ones(self._inner_ndim)]),
+            np.concatenate([self._b_outer,  np.ones(self._inner_ndim)]),
+        )
+
+    def __call__(self, y, *args, **kwargs):
+        a_inner, b_inner = self._region(y[:, :self._outer_ndim])
+
+        # Allow returning `a_inner` and `b_inner` as array_like rather than as ndarrays
+        # since `a` and `b` can also be array_like.
+        a_inner = np.array(a_inner)
+        b_inner = np.array(b_inner)
+
+        npoints = y.shape[0]
+
+        x = np.concatenate(
+            [
+                y[:, :self._outer_ndim],
+                np.zeros((npoints, self._inner_ndim)),
+            ],
+            axis=-1,
+        )
+
+        for i in range(self._inner_ndim):
+            a_i = a_inner[:, i]
+            b_i = b_inner[:, i]
+
+            x[:, self._outer_ndim + i] = (
+                (b_i + a_i)/2 + (b_i - a_i)/2 * y[:, self._outer_ndim + i]
+            )
+
+        f_x = self._f(x, *args, **kwargs)
+        jacobian = np.prod(b_inner - a_inner, axis=0) / 2**self._inner_ndim
+        jacobian = jacobian.reshape(-1, *([1]*(len(f_x.shape) - 1)))
+
+        return f_x * jacobian

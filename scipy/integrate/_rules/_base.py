@@ -444,22 +444,24 @@ def _cartesian_product(arrays):
     return result
 
 
-def _subregion_coordinates(a, b):
+def _subregion_coordinates(a, b, split_at=None):
     """
     Given the coordinates of a region like a=[0, 0] and b=[1, 1], yield the coordinates
-    of all subregions, which in this case would be::
+    of all subregions split at a specific point (by default the midpoint). For a=[0, 0]
+    and b=[1, 1], this would be::
 
         ([0, 0], [1/2, 1/2]),
         ([0, 1/2], [1/2, 1]),
         ([1/2, 0], [1, 1/2]),
         ([1/2, 1/2], [1, 1])
     """
-
     xp = array_namespace(a, b)
-    m = (a + b) * 0.5
 
-    left = [xp.asarray([a[i], m[i]]) for i in range(a.shape[0])]
-    right = [xp.asarray([m[i], b[i]]) for i in range(b.shape[0])]
+    if split_at is None:
+        split_at = (a + b) / 2
+
+    left = [xp.asarray([a[i], split_at[i]]) for i in range(a.shape[0])]
+    right = [xp.asarray([split_at[i], b[i]]) for i in range(b.shape[0])]
 
     a_sub = _cartesian_product(left)
     b_sub = _cartesian_product(right)
