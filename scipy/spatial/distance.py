@@ -1352,33 +1352,64 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
 
 
 def yule(u, v, w=None):
-    """
-    Compute the Yule dissimilarity between two boolean 1-D arrays.
+    r"""
+    Compute the Yule dissimilarity between two boolean vectors.
 
-    The Yule dissimilarity is defined as
+    Given boolean vectors :math:`u \equiv (u_1, \cdots, u_n)`
+    and :math:`v \equiv (v_1, \cdots, v_n)`, their *Yule dissimilarity*
+    is defined as
 
     .. math::
 
-         \\frac{R}{c_{TT} * c_{FF} + \\frac{R}{2}}
+       d_\textrm{yule}(u, v) := 1 - \frac{c_{11}c_{00} - c_{10}c_{01}}
+                                         {c_{11}c_{00} + c_{10}c_{01}}
 
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n` and :math:`R = 2.0 * c_{TF} * c_{FT}`.
+    if the denominator is not zero, where
+
+    .. math::
+
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
+
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero, the Yule
+    dissimilarity is defined to be zero.
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Yule dissimilarity* is defined similarly
+    but with :math:`c_{ij}` replaced by
+
+    .. math::
+
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+    u : (N,) array_like of bools
+        Input vector.
+    v : (N,) array_like of bools
+        Input vector.
+    w : (N,) array_like of floats, optional
+        Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
+        which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    yule : double
-        The Yule dissimilarity between vectors `u` and `v`.
+    yule : float
+        The Yule dissimilarity between vectors `u` and `v`, optionally
+        weighted by `w`.
+
+    Notes
+    -----
+    *Yule's coefficient of association* [1]_, or *Yule's Q* [2]_, is equal to
+    one minus the Yule dissimilarity.
+
+    References
+    ----------
+    .. [1] Yule, G. U. (1900). "On the Association of Attributes in Statistics:
+       With Illustrations from the Material of the Childhood Society."
+       *Philosophical Transactions of the Royal Society of London: Series A*,
+       194:257–319. :doi:`10.1098/rsta.1900.0019`
+
+    .. [2] https://en.wikipedia.org/wiki/Goodman_and_Kruskal%27s_gamma#Yule's_Q
 
     Examples
     --------
