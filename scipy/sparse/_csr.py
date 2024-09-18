@@ -146,7 +146,7 @@ class _csr_base(_cs_matrix):
             return self.__class__((data, indices, indptr), shape=shape, copy=False)
 
         if len(self.shape) == 1:
-            self = self.__class__(self.reshape(self._shape_as_2d)) # as reshape routes via COO
+            self = self.__class__(self.reshape(self._shape_as_2d))
 
         old_shape = self.shape
             
@@ -154,7 +154,8 @@ class _csr_base(_cs_matrix):
             raise ValueError('Target shape must be a tuple of length 2')
 
         if len(old_shape) != len(shape):
-            raise ValueError('Original shape and target shape must have the same length')
+            raise ValueError('Original shape and target shape must have the'
+                             ' same length')
 
         # Ensure the old shape can be broadcast to the new shape
         if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
