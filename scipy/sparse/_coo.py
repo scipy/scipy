@@ -1145,7 +1145,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Reshape the COO array to match the new dimensions
         self = self.reshape(shape)
 
-        coords = np.array(self.coords)
+        coords = self.coords
         new_data = np.array(self.data) # copy data array
         new_coords = coords[-1:]  # Copy last coordinate to start
         cum_repeat = 1 # Cumulative repeat factor for broadcasting
@@ -1155,7 +1155,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             cum_repeat *= repeat_count
             new_data = np.tile(new_data, repeat_count)
             new_dim = np.repeat(np.arange(0, repeat_count), self.nnz)
-            new_coords = np.array([new_dim])
+            new_coords = (new_dim,)
         
         for i in range(-2, -(len(shape)+1), -1):
             if shape[i] != new_shape[i]:
@@ -1165,15 +1165,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
                 # Tile data and coordinates to match the new repeat count
                 new_data = np.tile(new_data, repeat_count)
-                new_coords = np.tile(new_coords[i+1:], repeat_count)
+                new_coords = tuple(np.tile(new_coords[i+1:], repeat_count))
 
                 # Create new dimensions and stack them
                 new_dim = np.repeat(np.arange(0, repeat_count), nnz)
-                new_coords = np.vstack((new_dim, new_coords))
+                new_coords = (new_dim,) + new_coords
             else:
                 # If no broadcasting needed, tile the coordinates
                 new_dim = np.tile(coords[i], cum_repeat)
-                new_coords = np.vstack((new_dim, new_coords))
+                new_coords = (new_dim,) + new_coords
                 
         return coo_array((new_data, new_coords), new_shape)
         
