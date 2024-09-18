@@ -270,8 +270,8 @@ void coo_matmat_dense_nd(const npy_int64 nnz,
                          const T Bx[],
                          T Yx[])
 {
-    npy_int64 strides_B[n_dim];
-    npy_int64 strides_Y[n_dim];
+    std::vector<npy_int64> strides_B(n_dim);
+    std::vector<npy_int64> strides_Y(n_dim);
 
     strides_B[n_dim - 1] = 1;
     strides_Y[n_dim - 1] = 1;
