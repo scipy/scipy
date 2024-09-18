@@ -738,7 +738,7 @@ tensordot_shapes_and_axes = [
     ((2,3,4), (2,3,4), ([0, 1, 2], [0, 1, 2])),
 ]
 @pytest.mark.parametrize(('a_shape', 'b_shape', 'axes'), tensordot_shapes_and_axes)
-def test_tensordot_sparse_dense(a_shape, b_shape, axes): 
+def test_tensordot(a_shape, b_shape, axes): 
     rng = np.random.default_rng(23409823)
     
     arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
