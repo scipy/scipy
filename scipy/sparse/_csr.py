@@ -153,10 +153,6 @@ class _csr_base(_cs_matrix):
         if len(shape) != 2:
             raise ValueError('Target shape must be a tuple of length 2')
 
-        if len(old_shape) != len(shape):
-            raise ValueError('Original shape and target shape must have the'
-                             ' same length')
-
         # Ensure the old shape can be broadcast to the new shape
         if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
             raise ValueError(f'current shape cannot be broadcast to new shape {shape}')
