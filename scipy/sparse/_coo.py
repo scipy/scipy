@@ -895,7 +895,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         
         
         self_2d_coords = (self_raveled_coords, self.coords[-1])
-        other_2d_coords = np.vstack((other.coords[-2], other_raveled_coords))
+        other_2d_coords = (other.coords[-2], other_raveled_coords)
 
         self_2d = coo_array((self.data, self_2d_coords), ravel_coords_shape_self)
         other_2d = coo_array((other.data, other_2d_coords), ravel_coords_shape_other)
@@ -1016,8 +1016,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         ravel_coords_shape_other = (math.prod([other.shape[ax] for ax in axes_other]),
                                     math.prod(og_shape_other))
 
-        self_2d_coords = np.vstack((self_non_red_coords, self_reduced_coords))
-        other_2d_coords = np.vstack((other_reduced_coords, other_non_red_coords))
+        self_2d_coords = (self_non_red_coords, self_reduced_coords)
+        other_2d_coords = (other_reduced_coords, other_non_red_coords)
 
         self_2d = coo_array((self.data, self_2d_coords), ravel_coords_shape_self)
         other_2d = coo_array((other.data, other_2d_coords), ravel_coords_shape_other)
@@ -1253,7 +1253,7 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     non_reduced_axes = [ax for ax in range(ndim) if ax not in axes]
 
     if not non_reduced_axes:
-        return np.zeros((1, len(coords[0])), dtype=int)  # Return an array with one row
+        return np.zeros((len(coords[0])), dtype=int)  # Return an array with one row
     
     # Extract the shape of the non-reduced axes
     non_reduced_shape = [shape[ax] for ax in non_reduced_axes]
