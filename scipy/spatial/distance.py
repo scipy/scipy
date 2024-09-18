@@ -1407,7 +1407,7 @@ def yule(u, v, w=None):
     .. [1] Yule, G. U. (1900). "On the Association of Attributes in Statistics:
        With Illustrations from the Material of the Childhood Society."
        *Philosophical Transactions of the Royal Society of London: Series A*,
-       194:257–319. :doi:`10.1098/rsta.1900.0019`
+       194:257-319. :doi:`10.1098/rsta.1900.0019`
 
     .. [2] https://en.wikipedia.org/wiki/Goodman_and_Kruskal%27s_gamma#Yule's_Q
 
