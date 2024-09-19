@@ -882,12 +882,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                                        other.shape, [other.ndim-2])
 
         # Get the shape of the non-reduced axes
-        og_shape_self = self.shape[:-1]
-        og_shape_other = other.shape[:-2] + other.shape[-1:]
+        self_nonreduced_shape = self.shape[:-1]
+        other_nonreduced_shape = other.shape[:-2] + other.shape[-1:]
         
         # Create 2D coords arrays
-        ravel_coords_shape_self = (math.prod(og_shape_self), self.shape[-1])
-        ravel_coords_shape_other = (other.shape[-2], math.prod(og_shape_other))
+        ravel_coords_shape_self = (math.prod(self_nonreduced_shape), self.shape[-1])
+        ravel_coords_shape_other = (other.shape[-2], math.prod(other_nonreduced_shape))
         
         self_2d_coords = (self_raveled_coords, self.coords[-1])
         other_2d_coords = (other.coords[-2], other_raveled_coords)
@@ -898,10 +898,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         prod = (self_2d @ other_2d).tocoo() # routes via 2-D CSR
 
         # Combine the shapes of the non-reduced axes
-        combined_shape = og_shape_self + og_shape_other
+        combined_shape = self_nonreduced_shape + other_nonreduced_shape
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-        shapes = (og_shape_self, og_shape_other)
+        shapes = (self_nonreduced_shape, other_nonreduced_shape)
         iter_cs = zip(prod.coords, shapes)
         prod_coords = sum((np.unravel_index(c, s) for c, s in iter_cs), start=())
 
@@ -994,16 +994,16 @@ class _coo_base(_data_matrix, _minmax_mixin):
             [other.coords[a] for a in axes_other], [other.shape[a] for a in axes_other]
         )
         # Get the shape of the non-reduced axes
-        og_shape_self = tuple(self.shape[ax] for ax in range(ndim_self)
+        self_nonreduced_shape = tuple(self.shape[ax] for ax in range(ndim_self)
                               if ax not in axes_self)
-        og_shape_other = tuple(other.shape[ax] for ax in range(ndim_other)
+        other_nonreduced_shape = tuple(other.shape[ax] for ax in range(ndim_other)
                                if ax not in axes_other)
         
         # Create 2D coords arrays
-        ravel_coords_shape_self = (math.prod(og_shape_self),
+        ravel_coords_shape_self = (math.prod(self_nonreduced_shape),
                                 math.prod([self.shape[ax] for ax in axes_self]))
         ravel_coords_shape_other = (math.prod([other.shape[ax] for ax in axes_other]),
-                                    math.prod(og_shape_other))
+                                    math.prod(other_nonreduced_shape))
 
         self_2d_coords = (self_non_red_coords, self_reduced_coords)
         other_2d_coords = (other_reduced_coords, other_non_red_coords)
@@ -1015,10 +1015,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         prod = (self_2d @ other_2d).tocoo()
 
         # Combine the shapes of the non-contracted axes
-        combined_shape = og_shape_self + og_shape_other
+        combined_shape = self_nonreduced_shape + other_nonreduced_shape
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-        iter_cs = zip(prod.coords, (og_shape_self, og_shape_other))
+        iter_cs = zip(prod.coords, (self_nonreduced_shape, other_nonreduced_shape))
         coords = sum((np.unravel_index(c, s) for c, s in iter_cs if s), start=())
  
 
