@@ -997,7 +997,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Ravel non-reduced axes coordinates
         self_non_red_coords = _ravel_non_reduced_axes(self.coords, self.shape,
                                                       axes_self)
-        self_reduced_coords = np.ravel_multi_index(np.array(self.coords)[axes_self, :],
+        self_reduced_coords = np.ravel_multi_index([self.coords[ax] for ax in axes_self],
                                                 [self.shape[ax] for ax in axes_self])
         other_non_red_coords = _ravel_non_reduced_axes(other.coords, other.shape,
                                                        axes_other)
