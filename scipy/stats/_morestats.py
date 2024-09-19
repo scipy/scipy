@@ -1225,9 +1225,10 @@ def boxcox_normmax(
         The unconstrained optimal transform parameter may cause Box-Cox
         transformed data to have extreme magnitude or even overflow.
         This parameter constrains MLE optimization such that the magnitude
-        of the transformed `x` does not exceed `ymax`. The default is
-        the maximum value of the input dtype. If set to infinity,
-        `boxcox_normmax` returns the unconstrained optimal lambda.
+        of the transformed `x` does not exceed `ymax`. The default value is 
+        calculated based on the input array's data type, or dtype. It is 
+        determined by dividing the dtype's maximum value by 10,000. If set 
+        to infinity, `boxcox_normmax` returns the unconstrained optimal lambda.
         Ignored when ``method='pearsonr'``.
 
     Returns
