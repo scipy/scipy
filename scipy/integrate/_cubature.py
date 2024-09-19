@@ -243,7 +243,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     xp = array_namespace(a, b)
     max_subdivisions = float("inf") if max_subdivisions is None else max_subdivisions
-    points = [] if points is None else points
+    points = [] if points is None else [xp.asarray(p, dtype=xp.float64) for p in points]
 
     # Convert a and b to arrays
     a = xp.asarray(a, dtype=xp.float64)
@@ -260,9 +260,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     # If any of limits are the wrong way around (a > b), flip them and keep track of
     # the sign.
-    sign = (-1) ** np.sum(a > b)
-    a_flipped = np.min(np.array([a, b]), axis=0)
-    b_flipped = np.max(np.array([a, b]), axis=0)
+    sign = (-1.0) ** xp.sum(xp.astype(a > b, xp.float64))
+    a_flipped = xp.min(xp.asarray([a, b]), axis=0)
+    b_flipped = xp.max(xp.asarray([a, b]), axis=0)
 
     a, b = a_flipped, b_flipped
 
@@ -397,10 +397,12 @@ def _process_subregion(data):
 
 
 def _is_strictly_in_region(point, a, b):
-    if (point == a).all() or (point == b).all():
+    xp = array_namespace(point, a, b)
+
+    if xp.all(point == a) or xp.all(point == b):
         return False
 
-    return (a <= point).all() and (point <= b).all()
+    return xp.all(a <= point) and xp.all(point <= b)
 
 
 def _split_at_points(a, b, points):
@@ -411,7 +413,6 @@ def _split_at_points(a, b, points):
     any of the subregions.
     """
 
-    points = np.sort(points)
     regions = [(a, b)]
 
     for point in points:

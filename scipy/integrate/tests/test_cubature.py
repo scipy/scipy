@@ -804,61 +804,71 @@ class TestCubatureProblems:
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
-            lambda x: x,
+            lambda x, xp: x,
 
             # Exact value
-            50,
+            [50.0],
 
             # Coordinates of `a`
-            np.array([0]),
+            [0],
 
             # Coordinates of `b`
-            np.array([10]),
+            [10],
 
             # Points by which to split up the initial region
             None,
         ),
         (
-            lambda x: np.sin(x)/x,
-            scipy.special.sici(1)[0] + scipy.special.sici(2)[0],
-            np.array([-1]),
-            np.array([2]),
-            [np.array([0])],
-        ),
-        (
-            lambda x: np.ones(len(x)),
-            1,
-            np.array([0, 0, 0]),
-            np.array([1, 1, 1]),
+            lambda x, xp: xp.sin(x)/x,
+            [2.551496047169878],  # si(1) + si(2),
+            [-1],
+            [2],
             [
-                np.array([0.5, 0.5, 0.5]),
+                [0.0],
             ],
         ),
         (
-            lambda x: np.ones(len(x)),
-            1,
-            np.array([0, 0, 0]),
-            np.array([1, 1, 1]),
+            lambda x, xp: xp.ones((x.shape[0], 1)),
+            [1.0],
+            [0, 0, 0],
+            [1, 1, 1],
             [
-                np.array([0.25, 0.25, 0.25]),
-                np.array([0.5, 0.5, 0.5]),
+                [0.5, 0.5, 0.5],
             ],
         ),
         (
-            lambda x: np.ones(len(x)),
-            1,
-            np.array([0, 0, 0]),
-            np.array([1, 1, 1]),
+            lambda x, xp: xp.ones((x.shape[0], 1)),
+            [1.0],
+            [0, 0, 0],
+            [1, 1, 1],
             [
-                np.array([0.1, 0.25, 0.5]),
-                np.array([0.25, 0.25, 0.25]),
-                np.array([0.5, 0.5, 0.5]),
+                [0.25, 0.25, 0.25],
+                [0.5, 0.5, 0.5],
+            ],
+        ),
+        (
+            lambda x, xp: xp.ones((x.shape[0], 1)),
+            [1.0],
+            [0, 0, 0],
+            [1, 1, 1],
+            [
+                [0.1, 0.25, 0.5],
+                [0.25, 0.25, 0.25],
+                [0.5, 0.5, 0.5],
             ],
         )
     ])
-    def test_break_points(self, problem, rule, rtol, atol):
+    def test_break_points(self, problem, rule, rtol, atol, xp):
         f, exact, a, b, points = problem
-        ndim = a.size
+
+        a = xp.asarray(a, dtype=xp.float64)
+        b = xp.asarray(b, dtype=xp.float64)
+        exact = xp.asarray(exact, dtype=xp.float64)
+
+        if points is not None:
+            points = [xp.asarray(point, dtype=xp.float64) for point in points]
+
+        ndim = xp_size(a)
 
         if rule == "genz-malik" and ndim < 2:
             pytest.skip("Genz-Malik cubature does not support 1D integrals")
@@ -874,14 +884,15 @@ class TestCubatureProblems:
             rtol,
             atol,
             points=points,
+            args=(xp,),
         )
 
-        np.testing.assert_allclose(
+        xp_assert_close(
             res.estimate,
             exact,
             rtol=rtol,
             atol=atol,
-            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}"
+            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
         err_msg = (f"estimate_error={res.error}, "
