@@ -1470,7 +1470,7 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
     sgetrs_("T", &n, &n, &Am[n2], &n, ipiv, &Am[2*n2], &n, info);
     PyMem_RawFree(ipiv);
     sscal_(&n2, &two, &Am[2*n2], &int1);
-    for (i = 0; i < n; i++) { Am[n2 + n*i + i] += 1.0; }
+    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += 1.0; }
 
     swap_cf_s(&Am[2*n2], Am, n, n, n);
 
@@ -2032,9 +2032,9 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
     csscal_(&n2, &two, &Am[2*n2], &int1);
 
 #if defined(_MSC_VER)
-    for (i = 0; i < n; i++) { Am[n2 + n*i + i] = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j])); }
+    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j])); }
 #else
-    for (i = 0; i < n; i++) { Am[n2 + n*i + i] += cdbl1; }
+    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += cdbl1; }
 #endif
 
     swap_cf_c(&Am[2*n2], Am, n, n, n);
