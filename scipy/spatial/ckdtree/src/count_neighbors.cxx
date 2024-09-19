@@ -23,7 +23,7 @@ struct WeightedTree {
 struct CNBParams
 {
     double *r;
-    void * results; /* will be casted inside */
+    void * results; /* will be cast inside */
     WeightedTree self, other;
     int cumulative;
 };
