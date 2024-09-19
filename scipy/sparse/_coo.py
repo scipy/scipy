@@ -890,9 +890,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         
         # Create 2D coords arrays
         ravel_coords_shape_self = (math.prod(og_shape_self), self.shape[-1])
-
         ravel_coords_shape_other = (other.shape[-2], math.prod(og_shape_other))
-        
         
         self_2d_coords = (self_raveled_coords, self.coords[-1])
         other_2d_coords = (other.coords[-2], other_raveled_coords)
