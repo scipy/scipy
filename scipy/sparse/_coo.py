@@ -1144,7 +1144,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         self = self.reshape(shape)
 
         coords = self.coords
-        new_data = np.array(self.data) # copy data array
+        new_data = self.data
         new_coords = coords[-1:]  # Copy last coordinate to start
         cum_repeat = 1 # Cumulative repeat factor for broadcasting
         
