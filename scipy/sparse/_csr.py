@@ -129,11 +129,10 @@ class _csr_base(_cs_matrix):
         
         shape = check_shape(shape, allow_nd=(self._allow_nd))
 
+        if np.broadcast_shapes(self.shape, shape) != shape:
+            raise ValueError("cannot be broadcast")
+        
         if len(self.shape) == 1 and len(shape) == 1:
-            if self.shape != (1,):
-                raise ValueError(f'current shape {self.shape} cannot be'
-                             f' broadcast to new shape {shape}')
-
             self.sum_duplicates()
             if self.nnz == 0: # array has no non zero elements
                 return self.__class__(shape, dtype=self.dtype, copy=False)
@@ -149,10 +148,6 @@ class _csr_base(_cs_matrix):
             
         if len(shape) != 2:
             raise ValueError('Target shape must be a tuple of length 2')
-
-        # Ensure the old shape can be broadcast to the new shape
-        if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
-            raise ValueError(f'current shape cannot be broadcast to new shape {shape}')
         
         if self.nnz == 0: # array has no non zero elements
             return self.__class__(shape, dtype=self.dtype, copy=False)
