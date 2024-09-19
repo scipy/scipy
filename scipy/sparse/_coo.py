@@ -904,12 +904,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         combined_shape = og_shape_self + og_shape_other
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-        unraveled_coords_self = np.unravel_index(np.array(prod.coords[0]),
-                                                 og_shape_self)
-        unraveled_coords_other = np.unravel_index(np.array(prod.coords[1]),
-                                                  og_shape_other)
-
-        prod_coords = unraveled_coords_self + unraveled_coords_other
+        shapes = (og_shape_self, og_shape.other)
+        prod_coords = sum(np.unravel_index(c, s) for c, s in zip(prod.coords, shapes), start=())
 
         prod_arr = coo_array((prod.data, prod_coords), combined_shape)
         
