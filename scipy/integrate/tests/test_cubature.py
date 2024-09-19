@@ -981,113 +981,250 @@ class TestCubatureProblems:
             err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
         )
 
-    @pytest.mark.parametrize("problem", [
-        (
-            # Integrate
-            #   f(x_1, x_2, x_3) = x_1
-            # with limits
-            #   a = [0, 0, 0]
-            #   b = [1, 1, 1]
-
-            # f
-            lambda x: x[:, 0],
-
-            # exact solution
-            0.5,
-
-            # args
-            (),
-
-            # a & b
-            np.array([0, 0]),
-            np.array([1, 1]),
-
-            # region, here just constants
-            # [
-            lambda x: (
-                np.array([np.zeros(x.shape[0])]),
-                np.array([np.ones(x.shape[0])]),
+    @pytest.mark.parametrize(
+        "problem",
+        [
+            (
+                # Integrate
+                #   f(x_1, x_2, x_3) = x_1
+                # with limits
+                #   a = [0, 0, 0]
+                #   b = [1, 1, 1]
+                # f
+                lambda x: x[:, 0],
+                # exact solution
+                0.5,
+                # args
+                (),
+                # a & b
+                np.array([0, 0]),
+                np.array([1, 1]),
+                # region, here just constants
+                [
+                    lambda x: (
+                        np.zeros(x.shape[0]).reshape(-1, 1),
+                        np.ones(x.shape[0]).reshape(-1, 1),
+                    ),
+                ],
             ),
-            # ],
-        ),
-        (
-            # Integrate
-            #   f(x_1, x_2, x_3) = 1
-            # with limits
-            #   a = [0, 0, 0]
-            #   b = [1, 1, x_1 * x_2]
-
-            lambda x: np.ones(x.shape[0]),
-            0.25,
-            (),
-            np.array([0, 0]),
-            np.array([1, 1]),
-            # [
-            lambda x: (
-                np.array([np.zeros(x.shape[0])]),
-                np.array([x[:, 0] * x[:, 1]]),
+            (
+                # Integrate
+                #   f(x_1, x_2, x_3) = 1
+                # with limits
+                #   a = [0, 0, 0]
+                #   b = [1, 1, x_1 * x_2]
+                lambda x: np.ones(x.shape[0]),
+                0.25,
+                (),
+                np.array([0, 0]),
+                np.array([1, 1]),
+                [
+                    lambda x: (
+                        np.zeros(x.shape[0]).reshape(-1, 1),
+                        (x[:, 0] * x[:, 1]).reshape(-1, 1),
+                    ),
+                ],
             ),
-            # ],
-        ),
-        (
-            # Integrate
-            #   f(x_1, ..., x_n) = 1
-            # with limits
-            #   a = [-1, -sqrt(1 - x_1**2)]
-            #   b = [1, sqrt(1 - x_1**2)]
-
-            lambda x: np.ones(x.shape[0]),
-            np.pi,
-            (),
-            np.array([-1]),
-            np.array([1]),
-            # [
-            lambda x: (
-                np.array([-np.sqrt(1 - x[:, 0]**2)]),
-                np.array([np.sqrt(1 - x[:, 0]**2)]),
+            (
+                # Integrate
+                #   f(x_1, ..., x_n) = 1
+                # with limits
+                #   a = [-1, -sqrt(1 - x_1**2)]
+                #   b = [1, sqrt(1 - x_1**2)]
+                lambda x: np.ones(x.shape[0]),
+                np.pi,
+                (),
+                np.array([-1]),
+                np.array([1]),
+                [
+                    lambda x: (
+                        -np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                        np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                    ),
+                ],
             ),
-            # ],
-        ),
-        (
-            # Integrate
-            #   f(x_1, x_2) = 1
-            # with limits
-            #   a = [-inf, -exp(-x_1**2)]
-            #   b = [inf, exp(x_1**2)]
-
-            lambda x: np.ones(x.shape[0]),
-            2*math.sqrt(np.pi),
-            (),
-            np.array([-np.inf]),
-            np.array([np.inf]),
-            # [
-            lambda x: (
-                np.array([-np.exp(-x[:, 0]**2)]),
-                np.array([np.exp(-x[:, 0]**2)]),
+            (
+                # Integrate
+                #   f(x_1, x_2) = 1
+                # with limits
+                #   a = [-inf, -exp(-x_1**2)]
+                #   b = [inf, exp(x_1**2)]
+                lambda x: np.ones(x.shape[0]),
+                2 * math.sqrt(np.pi),
+                (),
+                np.array([-np.inf]),
+                np.array([np.inf]),
+                [
+                    lambda x: (
+                        -np.exp(-x[:, 0] ** 2).reshape(-1, 1),
+                        np.exp(-x[:, 0] ** 2).reshape(-1, 1),
+                    ),
+                ],
             ),
-            # ],
-        ),
-        (
-            # Integrate
-            #   f(x_1, x_2) = n
-            # with limits
-            #   a = [-inf, -exp(-x_1**2)]
-            #   b = [inf, exp(x_1**2)]
-            # for n = range(5)
-
-            lambda x, n: np.tile(n, (x.shape[0], 1)),
-            np.arange(5) * 2*math.sqrt(np.pi),
-            (np.arange(5),),
-            np.array([-np.inf]),
-            np.array([np.inf]),
-            # [
-            lambda x: (
-                np.array([-np.exp(-x[:, 0]**2)]),
-                np.array([np.exp(-x[:, 0]**2)]),
+            (
+                # Integrate
+                #   f(x_1, x_2) = n
+                # with limits
+                #   a = [-inf, -exp(-x_1**2)]
+                #   b = [inf, exp(x_1**2)]
+                # for n = range(5)
+                lambda x, n: np.tile(n, (x.shape[0], 1)),
+                np.arange(5) * 2 * math.sqrt(np.pi),
+                (np.arange(5),),
+                np.array([-np.inf]),
+                np.array([np.inf]),
+                [
+                    lambda x: (
+                        -np.exp(-x[:, 0] ** 2).reshape(-1, 1),
+                        np.exp(-x[:, 0] ** 2).reshape(-1, 1),
+                    ),
+                ],
             ),
-            # ],
-        )
-    ])
+            (
+                # Integrate
+                #   f(x, y, z) = n
+                # with limits
+                #   a = [-1, -sqrt(1-x^2), -sqrt(1-x^2-y^2)],
+                #   b = [1, sqrt(1-x^2), sqrt(1-x^2-y^2)]
+                # for n = range(5)
+                # i.e. integrate a unit ball with densities 0, 1, 2, 3, 4
+                lambda x, n: np.tile(n, (x.shape[0], 1)),
+                4 / 3 * math.pi * np.arange(5),
+                (np.arange(5),),
+                np.array([-1]),
+                np.array([1]),
+                [
+                    lambda x: (
+                        -np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                        np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                    ),
+                    lambda x: (
+                        -np.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2).reshape(-1, 1),
+                        np.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2).reshape(-1, 1),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x, y, z, w) = n
+                # with limits
+                #   a = [-1, -1, -sqrt(1-x^2), -sqrt(1-x^2)],
+                #   b = [1, 1, sqrt(1-x^2), sqrt(1-x^2)]
+                # for n = range(5)
+                lambda x, n: np.tile(n, (x.shape[0], 1)),
+                32 / 3 * np.arange(5),
+                (np.arange(5),),
+                np.array([-1, -1]),
+                np.array([1, 1]),
+                [
+                    lambda x: (
+                        -np.repeat(np.sqrt(1 - x[:, 0] ** 2), 2).reshape(-1, 2),
+                        np.repeat(np.sqrt(1 - x[:, 0] ** 2), 2).reshape(-1, 2),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x, y, z, w) = n
+                # with limits
+                #   a = [0, 0, 0, 0],
+                #   b = [1, x, x, x]
+                # for n = range(5)
+                lambda x, n: np.tile(n, (x.shape[0], 1)),
+                1 / 4 * np.arange(5),
+                (np.arange(5),),
+                np.array([0]),
+                np.array([1]),
+                [
+                    lambda x: (
+                        np.zeros((x.shape[0], 3)),
+                        np.repeat(x[:, 0], 3).reshape(-1, 3),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x, y, z, w, p) = n
+                # with limits
+                #   a = [0, 0, 0, 0, 0],
+                #   b = [1, x, x, xy, xy]
+                # for n = range(5)
+                lambda x, n: np.tile(n, (x.shape[0], 1)),
+                1 / 21 * np.arange(5),
+                (np.arange(5),),
+                np.array([0]),
+                np.array([1]),
+                [
+                    lambda x: (
+                        np.zeros((x.shape[0], 2)),
+                        np.repeat(x[:, 0], 2).reshape(-1, 2),
+                    ),
+                    lambda x: (
+                        np.zeros((x.shape[0], 2)),
+                        np.repeat(x[:, 0] * x[:, 1], 2).reshape(-1, 2),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x, y) = n
+                # with limits
+                #   a = [0, -sqrt(1-x^2)],
+                #   b = [1, sqrt(1-x^2)]
+                # for n = range(5)
+                lambda x, n: np.tile(n, (x.shape[0], 1)),
+                math.pi * np.arange(5),
+                (np.arange(5),),
+                np.array([]),  # Here the initial limits are empty
+                np.array([]),
+                [
+                    lambda x: (
+                        -np.ones((x.shape[0], 1)),
+                        np.ones((x.shape[0], 1)),
+                    ),
+                    lambda x: (
+                        -np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                        np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                    ),
+                ],
+            ),
+            pytest.param(
+                (
+                    # Integrate
+                    #   f(x, y, z, w) = n
+                    # with limits
+                    #   a = [-1, -sqrt(1-x^2), -sqrt(1-x^2-y^2), -sqrt(1-x^2-y^2-z^2)],
+                    #   b = [1, sqrt(1-x^2), sqrt(1-x^2-y^2), sqrt(1-x^2-y^2-z^2)]
+                    # for n = range(5)
+                    # i.e. integration over a hypersphere
+                    lambda x, n: np.tile(n, (x.shape[0], 1)),
+                    math.pi**2 / 2 * np.arange(5),
+                    (np.arange(5),),
+                    np.array([-1]),
+                    np.array([1]),
+                    [
+                        lambda x: (
+                            -np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                            np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                        ),
+                        lambda x: (
+                            -np.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2).reshape(-1, 1),
+                            np.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2).reshape(-1, 1),
+                        ),
+                        lambda x: (
+                            -np.sqrt(
+                                1 - x[:, 0] ** 2 - x[:, 1] ** 2 - x[:, 2] ** 2
+                            ).reshape(-1, 1),
+                            np.sqrt(
+                                1 - x[:, 0] ** 2 - x[:, 1] ** 2 - x[:, 2] ** 2
+                            ).reshape(-1, 1),
+                        ),
+                    ],
+                ),
+                marks=pytest.mark.slow,
+            ),
+        ],
+    )
     def test_cub_func_limits(self, problem, rule, rtol, atol):
         f, exact, args, a_outer, b_outer, region = problem
 

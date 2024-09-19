@@ -582,7 +582,7 @@ class _FuncLimitsTransform(_VariableTransform):
         \int^{b_1}_{a_1}
         \cdots
         \int^{b_n}_{a_n}
-        \int^{B_1(x_1, \ldots, x_n)}_{A_0(x_1, \ldots, x_n)}
+        \int^{B_1(x_1, \ldots, x_n)}_{A_1(x_1, \ldots, x_n)}
         \cdots
         \int^{B_m(x_1, \ldots, x_{n+m})}_{A_m(x_1, \ldots, x_{n+m})}
         f(x_1, \ldots, x_{n+m})
@@ -616,10 +616,40 @@ class _FuncLimitsTransform(_VariableTransform):
         # The "outer dimension" here is the number of the outer non-function limits.
         self._outer_ndim = len(self._a_outer)
 
-        # Without evaluating `region`` at least once, it's impossible to know the
+        # Without evaluating `region` at least once, it's impossible to know the
         # number of inner variables, which is required to return new limits.
-        a_inner, _ = region(self._a_outer.reshape(1, -1))
-        self._inner_ndim = np.array(a_inner).shape[-1]
+        # TODO: don't evaluate at boundary
+        limits = self._a_outer.reshape(1, -1)
+
+        for region_func in self._region:
+            limits = np.concat([limits, region_func(limits)[0]], axis=-1)
+
+        self._inner_ndim = np.array(limits).shape[-1] - len(self._a_outer)
+
+    # TODO: rename
+    def _get_inner_limits(self, x_and_t):
+        x = x_and_t[:, :self._outer_ndim]
+        t = x_and_t[:, self._outer_ndim:]
+
+        a_inner, b_inner = np.empty((x.shape[0], 0)), np.empty((x.shape[0], 0))
+
+        A_i, B_i = None, None
+        x_and_y = x
+        y_i = np.array([])
+
+        for i, region_func in enumerate(self._region):
+            A_i, B_i = region_func(x_and_y)
+
+            outer_ndim = a_inner.shape[-1]
+            inner_ndim = A_i.shape[-1]
+
+            y_i = (B_i + A_i)/2 + t[:, outer_ndim:outer_ndim+inner_ndim] * (B_i - A_i)/2
+
+            x_and_y = np.concat([x_and_y, y_i], axis=-1)
+            a_inner = np.concat([a_inner, A_i], axis=-1)
+            b_inner = np.concat([b_inner, B_i], axis=-1)
+
+        return a_inner, b_inner
 
     @property
     def limits(self):
@@ -628,19 +658,25 @@ class _FuncLimitsTransform(_VariableTransform):
             np.concatenate([self._b_outer,  np.ones(self._inner_ndim)]),
         )
 
-    def __call__(self, y, *args, **kwargs):
-        a_inner, b_inner = self._region(y[:, :self._outer_ndim])
+    def __call__(self, x_and_t, *args, **kwargs):
+        # x_and_t consists of the outer variables x_1, ... x_n, which don't need
+        # changing, and then inner variables t_1, ..., t_n which are in the range
+        # [-1, 1].
+
+        a_inner, b_inner = self._get_inner_limits(x_and_t)
 
         # Allow returning `a_inner` and `b_inner` as array_like rather than as ndarrays
         # since `a` and `b` can also be array_like.
         a_inner = np.array(a_inner)
         b_inner = np.array(b_inner)
 
-        npoints = y.shape[0]
+        npoints = x_and_t.shape[0]
 
-        x = np.concatenate(
+        # x_and_y should be the input to the original integrand f.
+        # No change needed to x, but we need to map the t section of x_and_t back to y.
+        x_and_y = np.concatenate(
             [
-                y[:, :self._outer_ndim],
+                x_and_t[:, :self._outer_ndim],
                 np.zeros((npoints, self._inner_ndim)),
             ],
             axis=-1,
@@ -650,12 +686,12 @@ class _FuncLimitsTransform(_VariableTransform):
             a_i = a_inner[:, i]
             b_i = b_inner[:, i]
 
-            x[:, self._outer_ndim + i] = (
-                (b_i + a_i)/2 + (b_i - a_i)/2 * y[:, self._outer_ndim + i]
+            x_and_y[:, self._outer_ndim + i] = (
+                (b_i + a_i)/2 + (b_i - a_i)/2 * x_and_t[:, self._outer_ndim + i]
             )
 
-        f_x = self._f(x, *args, **kwargs)
-        jacobian = np.prod(b_inner - a_inner, axis=0) / 2**self._inner_ndim
+        f_x = self._f(x_and_y, *args, **kwargs)
+        jacobian = np.prod(b_inner - a_inner, axis=-1) / 2**self._inner_ndim
         jacobian = jacobian.reshape(-1, *([1]*(len(f_x.shape) - 1)))
 
         return f_x * jacobian
