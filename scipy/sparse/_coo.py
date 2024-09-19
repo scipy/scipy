@@ -1002,8 +1002,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         other_non_red_coords = _ravel_non_reduced_axes(other.coords, other.shape,
                                                        axes_other)
         other_reduced_coords = np.ravel_multi_index(
-            np.array(other.coords)[axes_other, :],
-            tuple([other.shape[ax] for ax in axes_other]))
+            [other.coords[a] for a in axes_other], [other.shape[a] for a in axes_other]
+        )
         # Get the shape of the non-reduced axes
         og_shape_self = tuple(self.shape[ax] for ax in range(ndim_self)
                               if ax not in axes_self)
