@@ -901,8 +901,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         combined_shape = og_shape_self + og_shape_other
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-        shapes = (og_shape_self, og_shape.other)
-        prod_coords = sum(np.unravel_index(c, s) for c, s in zip(prod.coords, shapes), start=())
+        shapes = (og_shape_self, og_shape_other)
+        iter_cs = zip(prod.coords, shapes)
+        prod_coords = sum((np.unravel_index(c, s) for c, s in iter_cs), start=())
 
         prod_arr = coo_array((prod.data, prod_coords), combined_shape)
         
@@ -985,8 +986,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Ravel non-reduced axes coordinates
         self_non_red_coords = _ravel_non_reduced_axes(self.coords, self.shape,
                                                       axes_self)
-        self_reduced_coords = np.ravel_multi_index([self.coords[ax] for ax in axes_self],
-                                                [self.shape[ax] for ax in axes_self])
+        self_reduced_coords = np.ravel_multi_index(
+            [self.coords[ax] for ax in axes_self], [self.shape[ax] for ax in axes_self])
         other_non_red_coords = _ravel_non_reduced_axes(other.coords, other.shape,
                                                        axes_other)
         other_reduced_coords = np.ravel_multi_index(
@@ -1017,19 +1018,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         combined_shape = og_shape_self + og_shape_other
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-        if og_shape_self:
-            unraveled_coords_self = np.unravel_index(prod.row, og_shape_self)
-        if og_shape_other:
-            unraveled_coords_other = np.unravel_index(prod.col, og_shape_other)
-
-        if og_shape_self and og_shape_other:
-            coords = unraveled_coords_self + unraveled_coords_other
-        elif og_shape_self:
-            coords = unraveled_coords_self
-        elif og_shape_other:
-            coords = unraveled_coords_other
-        else:
-            coords = ()
+        iter_cs = zip(prod.coords, (og_shape_self, og_shape_other))
+        coords = sum((np.unravel_index(c, s) for c, s in iter_cs if s), start=())
+ 
 
         if coords == ():  # if result is scalar
             return sum(prod.data)
