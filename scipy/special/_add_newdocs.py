@@ -9988,7 +9988,7 @@ add_newdoc(
     """
     _ncf_isf(x, v1, v2, l)
 
-    Inverse surivial function of noncentral F-distribution.
+    Inverse survival function of noncentral F-distribution.
 
     Parameters
     ----------
@@ -10169,7 +10169,7 @@ add_newdoc(
     """
     _nct_isf(x, v, l)
 
-    Inverse surivial function of noncentral t-distribution.
+    Inverse survival function of noncentral t-distribution.
 
     Parameters
     ----------
@@ -10319,7 +10319,7 @@ add_newdoc(
     """
     _skewnorm_isf(x, l, sc, sh)
 
-    Inverse surivial function of skewnorm distribution.
+    Inverse survival function of skewnorm distribution.
 
     Parameters
     ----------
