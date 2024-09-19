@@ -918,17 +918,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return prod_arr
     
     def _dense_dot(self, other):
-        self_is_1d = False
-        other_is_1d = False
+        self_is_1d = self.ndim == 1
+        other_is_1d = other.ndim == 1
 
         # reshape to 2-D if self or other is 1-D
-        if self.ndim == 1:
-            self = self.reshape((1, self.shape[0])) # prepend 1 to shape
-            self_is_1d = True
-
-        if other.ndim == 1:
-            other = other.reshape((other.shape[0], 1)) # append 1 to shape
-            other_is_1d = True
+        if self_is_1d:
+            self = self.reshape(self._shape_as_2d)  # prepend 1 to shape
+        if other_is_1d:
+            other = other.reshape((other.shape[0], 1))  # append 1 to shape
 
         if self.shape[-1] != other.shape[-2]:
                 raise ValueError(f"shapes {self.shape} and {other.shape}"
