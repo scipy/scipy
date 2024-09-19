@@ -1037,11 +1037,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if coords == ():  # if result is scalar
             return sum(prod.data)
             
-
         # Construct the resulting COO array with combined coordinates and shape
-        prod_arr = coo_array((prod.data, coords), shape=combined_shape)
-
-        return prod_arr
+        return coo_array((prod.data, coords), shape=combined_shape)
 
 
     def _dense_tensordot(self, other, axes_self, axes_other):
