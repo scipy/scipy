@@ -4,8 +4,6 @@ import itertools
 
 import pytest
 
-import numpy as np  # TODO: remove
-
 from scipy._lib._array_api import array_namespace, xp_assert_close, xp_size, np_compat
 from scipy.conftest import array_api_compatible
 
@@ -911,7 +909,7 @@ class TestCubatureProblems:
 
         err_msg = (f"estimate_error={res.error}, "
                    f"subdivisions= {res.subdivisions}, "
-                   f"true_error={np.abs(res.estimate - exact)}")
+                   f"true_error={xp.abs(res.estimate - exact)}")
         assert res.status == "converged", err_msg
 
     @pytest.mark.parametrize("problem", [
@@ -1052,20 +1050,27 @@ class TestCubatureProblems:
                 # with limits
                 #   a = [0, 0, 0]
                 #   b = [1, 1, 1]
+
                 # f
-                lambda x: x[:, 0],
+                lambda x, xp: x[:, 0],
+
                 # exact solution
                 0.5,
+
                 # args
                 (),
+
                 # a & b
-                np.array([0, 0]),
-                np.array([1, 1]),
-                # region, here just constants
-                [
+                [0, 0],
+                [1, 1],
+
+                # region
+                # Wrapped in a function so that each region_func has access
+                # to the array namespace
+                lambda xp: [
                     lambda x: (
-                        np.zeros(x.shape[0]).reshape(-1, 1),
-                        np.ones(x.shape[0]).reshape(-1, 1),
+                        xp.reshape(xp.zeros(x.shape[0]), (-1, 1)),
+                        xp.reshape(xp.ones(x.shape[0]), (-1, 1)),
                     ),
                 ],
             ),
@@ -1075,15 +1080,15 @@ class TestCubatureProblems:
                 # with limits
                 #   a = [0, 0, 0]
                 #   b = [1, 1, x_1 * x_2]
-                lambda x: np.ones(x.shape[0]),
+                lambda x, xp: xp.ones(x.shape[0]),
                 0.25,
                 (),
-                np.array([0, 0]),
-                np.array([1, 1]),
-                [
+                [0, 0],
+                [1, 1],
+                lambda xp: [
                     lambda x: (
-                        np.zeros(x.shape[0]).reshape(-1, 1),
-                        (x[:, 0] * x[:, 1]).reshape(-1, 1),
+                        xp.reshape(xp.zeros(x.shape[0]), (-1, 1)),
+                        xp.reshape((x[:, 0] * x[:, 1]), (-1, 1)),
                     ),
                 ],
             ),
@@ -1093,15 +1098,15 @@ class TestCubatureProblems:
                 # with limits
                 #   a = [-1, -sqrt(1 - x_1**2)]
                 #   b = [1, sqrt(1 - x_1**2)]
-                lambda x: np.ones(x.shape[0]),
-                np.pi,
+                lambda x, xp: xp.ones(x.shape[0]),
+                math.pi,
                 (),
-                np.array([-1]),
-                np.array([1]),
-                [
+                [-1],
+                [1],
+                lambda xp: [
                     lambda x: (
-                        -np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
-                        np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                        xp.reshape(-xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                        xp.reshape(xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
                     ),
                 ],
             ),
@@ -1111,15 +1116,15 @@ class TestCubatureProblems:
                 # with limits
                 #   a = [-inf, -exp(-x_1**2)]
                 #   b = [inf, exp(x_1**2)]
-                lambda x: np.ones(x.shape[0]),
-                2 * math.sqrt(np.pi),
+                lambda x, xp: xp.ones(x.shape[0]),
+                2 * math.sqrt(math.pi),
                 (),
-                np.array([-np.inf]),
-                np.array([np.inf]),
-                [
+                [-math.inf],
+                [math.inf],
+                lambda xp: [
                     lambda x: (
-                        -np.exp(-x[:, 0] ** 2).reshape(-1, 1),
-                        np.exp(-x[:, 0] ** 2).reshape(-1, 1),
+                        xp.reshape(-xp.exp(-x[:, 0] ** 2), (-1, 1)),
+                        xp.reshape(xp.exp(-x[:, 0] ** 2), (-1, 1)),
                     ),
                 ],
             ),
@@ -1130,39 +1135,15 @@ class TestCubatureProblems:
                 #   a = [-inf, -exp(-x_1**2)]
                 #   b = [inf, exp(x_1**2)]
                 # for n = range(5)
-                lambda x, n: np.tile(n, (x.shape[0], 1)),
-                np.arange(5) * 2 * math.sqrt(np.pi),
-                (np.arange(5),),
-                np.array([-np.inf]),
-                np.array([np.inf]),
-                [
+                lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                [2 * math.sqrt(math.pi) * i for i in range(5)],
+                ([0, 1, 2, 3, 4],),
+                [-math.inf],
+                [math.inf],
+                lambda xp: [
                     lambda x: (
-                        -np.exp(-x[:, 0] ** 2).reshape(-1, 1),
-                        np.exp(-x[:, 0] ** 2).reshape(-1, 1),
-                    ),
-                ],
-            ),
-            (
-                # Integrate
-                #   f(x, y, z) = n
-                # with limits
-                #   a = [-1, -sqrt(1-x^2), -sqrt(1-x^2-y^2)],
-                #   b = [1, sqrt(1-x^2), sqrt(1-x^2-y^2)]
-                # for n = range(5)
-                # i.e. integrate a unit ball with densities 0, 1, 2, 3, 4
-                lambda x, n: np.tile(n, (x.shape[0], 1)),
-                4 / 3 * math.pi * np.arange(5),
-                (np.arange(5),),
-                np.array([-1]),
-                np.array([1]),
-                [
-                    lambda x: (
-                        -np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
-                        np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
-                    ),
-                    lambda x: (
-                        -np.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2).reshape(-1, 1),
-                        np.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2).reshape(-1, 1),
+                        xp.reshape(-xp.exp(-x[:, 0] ** 2), (-1, 1)),
+                        xp.reshape(xp.exp(-x[:, 0] ** 2), (-1, 1)),
                     ),
                 ],
             ),
@@ -1173,15 +1154,15 @@ class TestCubatureProblems:
                 #   a = [-1, -1, -sqrt(1-x^2), -sqrt(1-x^2)],
                 #   b = [1, 1, sqrt(1-x^2), sqrt(1-x^2)]
                 # for n = range(5)
-                lambda x, n: np.tile(n, (x.shape[0], 1)),
-                32 / 3 * np.arange(5),
-                (np.arange(5),),
-                np.array([-1, -1]),
-                np.array([1, 1]),
-                [
+                lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                [32 / 3 * i for i in range(5)],
+                ([0, 1, 2, 3, 4],),
+                [-1, -1],
+                [1, 1],
+                lambda xp: [
                     lambda x: (
-                        -np.repeat(np.sqrt(1 - x[:, 0] ** 2), 2).reshape(-1, 2),
-                        np.repeat(np.sqrt(1 - x[:, 0] ** 2), 2).reshape(-1, 2),
+                        xp.reshape(-xp.repeat(xp.sqrt(1 - x[:, 0] ** 2), 2), (-1, 2)),
+                        xp.reshape(xp.repeat(xp.sqrt(1 - x[:, 0] ** 2), 2), (-1, 2)),
                     ),
                 ],
             ),
@@ -1192,63 +1173,77 @@ class TestCubatureProblems:
                 #   a = [0, 0, 0, 0],
                 #   b = [1, x, x, x]
                 # for n = range(5)
-                lambda x, n: np.tile(n, (x.shape[0], 1)),
-                1 / 4 * np.arange(5),
-                (np.arange(5),),
-                np.array([0]),
-                np.array([1]),
-                [
+                lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                [i / 4 for i in range(5)],
+                ([0, 1, 2, 3, 4],),
+                [0],
+                [1],
+                lambda xp: [
                     lambda x: (
-                        np.zeros((x.shape[0], 3)),
-                        np.repeat(x[:, 0], 3).reshape(-1, 3),
+                        xp.zeros((x.shape[0], 3)),
+                        xp.reshape(xp.repeat(x[:, 0], 3), (-1, 3)),
                     ),
                 ],
             ),
-            (
-                # Integrate
-                #   f(x, y, z, w, p) = n
-                # with limits
-                #   a = [0, 0, 0, 0, 0],
-                #   b = [1, x, x, xy, xy]
-                # for n = range(5)
-                lambda x, n: np.tile(n, (x.shape[0], 1)),
-                1 / 21 * np.arange(5),
-                (np.arange(5),),
-                np.array([0]),
-                np.array([1]),
-                [
-                    lambda x: (
-                        np.zeros((x.shape[0], 2)),
-                        np.repeat(x[:, 0], 2).reshape(-1, 2),
-                    ),
-                    lambda x: (
-                        np.zeros((x.shape[0], 2)),
-                        np.repeat(x[:, 0] * x[:, 1], 2).reshape(-1, 2),
-                    ),
-                ],
+
+            pytest.param(
+                (
+                    # Integrate
+                    #   f(x, y, z, w, p) = n
+                    # with limits
+                    #   a = [0, 0, 0, 0, 0],
+                    #   b = [1, x, x, xy, xy]
+                    # for n = range(5)
+                    lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                    [i / 21 for i in range(5)],
+                    ([0, 1, 2, 3, 4],),
+                    [0],
+                    [1],
+                    lambda xp: [
+                        lambda x: (
+                            xp.zeros((x.shape[0], 2)),
+                            xp.reshape(xp.repeat(x[:, 0], 2), (-1, 2)),
+                        ),
+                        lambda x: (
+                            xp.zeros((x.shape[0], 2)),
+                            xp.reshape(xp.repeat(x[:, 0] * x[:, 1], 2), (-1, 2)),
+                        ),
+                    ],
+                ),
+                marks=pytest.mark.slow,
             ),
-            (
-                # Integrate
-                #   f(x, y) = n
-                # with limits
-                #   a = [0, -sqrt(1-x^2)],
-                #   b = [1, sqrt(1-x^2)]
-                # for n = range(5)
-                lambda x, n: np.tile(n, (x.shape[0], 1)),
-                math.pi * np.arange(5),
-                (np.arange(5),),
-                np.array([]),  # Here the initial limits are empty
-                np.array([]),
-                [
-                    lambda x: (
-                        -np.ones((x.shape[0], 1)),
-                        np.ones((x.shape[0], 1)),
-                    ),
-                    lambda x: (
-                        -np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
-                        np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
-                    ),
-                ],
+            pytest.param(
+                (
+                    # Integrate
+                    #   f(x, y, z) = n
+                    # with limits
+                    #   a = [-1, -sqrt(1-x^2), -sqrt(1-x^2-y^2)],
+                    #   b = [1, sqrt(1-x^2), sqrt(1-x^2-y^2)]
+                    # for n = range(5)
+                    # i.e. integrate a unit ball with densities 0, 1, 2, 3, 4
+                    lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                    [4 / 3 * math.pi * i for i in range(5)],
+                    ([0, 1, 2, 3, 4],),
+                    [-1],
+                    [1],
+                    lambda xp: [
+                        lambda x: (
+                            xp.reshape(-xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                            xp.reshape(xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                        ),
+                        lambda x: (
+                            xp.reshape(
+                                -xp.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2),
+                                (-1, 1),
+                            ),
+                            xp.reshape(
+                                xp.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2),
+                                (-1, 1),
+                            ),
+                        ),
+                    ],
+                ),
+                marks=pytest.mark.slow,
             ),
             pytest.param(
                 (
@@ -1259,27 +1254,39 @@ class TestCubatureProblems:
                     #   b = [1, sqrt(1-x^2), sqrt(1-x^2-y^2), sqrt(1-x^2-y^2-z^2)]
                     # for n = range(5)
                     # i.e. integration over a hypersphere
-                    lambda x, n: np.tile(n, (x.shape[0], 1)),
-                    math.pi**2 / 2 * np.arange(5),
-                    (np.arange(5),),
-                    np.array([-1]),
-                    np.array([1]),
-                    [
+                    lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                    [math.pi**2 / 2 * i for i in range(5)],
+                    ([0, 1, 2, 3, 4],),
+                    [-1],
+                    [1],
+                    lambda xp: [
                         lambda x: (
-                            -np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
-                            np.sqrt(1 - x[:, 0] ** 2).reshape(-1, 1),
+                            xp.reshape(-xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                            xp.reshape(xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
                         ),
                         lambda x: (
-                            -np.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2).reshape(-1, 1),
-                            np.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2).reshape(-1, 1),
+                            xp.reshape(
+                                -xp.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2),
+                                (-1, 1),
+                            ),
+                            xp.reshape(
+                                xp.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2),
+                                (-1, 1),
+                            ),
                         ),
                         lambda x: (
-                            -np.sqrt(
-                                1 - x[:, 0] ** 2 - x[:, 1] ** 2 - x[:, 2] ** 2
-                            ).reshape(-1, 1),
-                            np.sqrt(
-                                1 - x[:, 0] ** 2 - x[:, 1] ** 2 - x[:, 2] ** 2
-                            ).reshape(-1, 1),
+                            xp.reshape(
+                                -xp.sqrt(
+                                    1 - x[:, 0] ** 2 - x[:, 1] ** 2 - x[:, 2] ** 2
+                                ),
+                                (-1, 1),
+                            ),
+                            xp.reshape(
+                                xp.sqrt(
+                                    1 - x[:, 0] ** 2 - x[:, 1] ** 2 - x[:, 2] ** 2
+                                ),
+                                (-1, 1),
+                            )
                         ),
                     ],
                 ),
@@ -1287,8 +1294,13 @@ class TestCubatureProblems:
             ),
         ],
     )
-    def test_func_limits(self, problem, rule, rtol, atol):
+    def test_func_limits(self, problem, rule, rtol, atol, xp):
         f, exact, args, a_outer, b_outer, region = problem
+
+        a_outer = xp.asarray(a_outer, dtype=xp.float64)
+        b_outer = xp.asarray(b_outer, dtype=xp.float64)
+        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
+        exact = xp.asarray(exact, dtype=xp.float64)
 
         res = cubature(
             f,
@@ -1297,18 +1309,19 @@ class TestCubatureProblems:
             rule,
             rtol,
             atol,
-            args=args,
-            region=region,
+            args=(*args, xp),
+            region=region(xp),
         )
 
         assert res.status == "converged"
 
-        np.testing.assert_allclose(
+        xp_assert_close(
             res.estimate,
             exact,
             rtol=rtol,
             atol=atol,
-            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
+            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}",
+            check_0d=False,
         )
 
 

@@ -2,8 +2,6 @@ import math
 import heapq
 import itertools
 
-import numpy as np  # TODO: remove
-
 from dataclasses import dataclass
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
@@ -598,6 +596,8 @@ class _FuncLimitsTransform(_VariableTransform):
     """
 
     def __init__(self, f, a, b, region):
+        self._xp = array_namespace(a, b)
+
         self._f = f
         self._a_outer = a
         self._b_outer = b
@@ -605,28 +605,29 @@ class _FuncLimitsTransform(_VariableTransform):
         self._region = region
 
         # The "outer dimension" here is the number of the outer non-function limits.
-        self._outer_ndim = len(self._a_outer)
+        self._outer_ndim = self._a_outer.size
 
         # Without evaluating `region` at least once, it's impossible to know the
         # number of inner variables, which is required to return new limits.
         # TODO: don't evaluate at boundary
-        limits = self._a_outer.reshape(1, -1)
+        limits = self._xp.reshape(self._a_outer, (1, -1))
 
         for region_func in self._region:
-            limits = np.concat([limits, region_func(limits)[0]], axis=-1)
+            limits = self._xp.concat([limits, region_func(limits)[0]], axis=-1)
 
-        self._inner_ndim = np.array(limits).shape[-1] - len(self._a_outer)
+        self._inner_ndim = limits.shape[-1] - self._a_outer.size
 
     # TODO: rename
     def _get_inner_limits(self, x_and_t):
         x = x_and_t[:, :self._outer_ndim]
         t = x_and_t[:, self._outer_ndim:]
 
-        a_inner, b_inner = np.empty((x.shape[0], 0)), np.empty((x.shape[0], 0))
+        a_inner = self._xp.empty((x.shape[0], 0))
+        b_inner = self._xp.empty((x.shape[0], 0))
 
         A_i, B_i = None, None
         x_and_y = x
-        y_i = np.array([])
+        y_i = self._xp.asarray([])
 
         for i, region_func in enumerate(self._region):
             A_i, B_i = region_func(x_and_y)
@@ -636,17 +637,17 @@ class _FuncLimitsTransform(_VariableTransform):
 
             y_i = (B_i + A_i)/2 + t[:, outer_ndim:outer_ndim+inner_ndim] * (B_i - A_i)/2
 
-            x_and_y = np.concat([x_and_y, y_i], axis=-1)
-            a_inner = np.concat([a_inner, A_i], axis=-1)
-            b_inner = np.concat([b_inner, B_i], axis=-1)
+            x_and_y = self._xp.concat([x_and_y, y_i], axis=-1)
+            a_inner = self._xp.concat([a_inner, A_i], axis=-1)
+            b_inner = self._xp.concat([b_inner, B_i], axis=-1)
 
         return a_inner, b_inner
 
     @property
     def limits(self):
         return (
-            np.concatenate([self._a_outer, -np.ones(self._inner_ndim)]),
-            np.concatenate([self._b_outer,  np.ones(self._inner_ndim)]),
+            self._xp.concat([self._a_outer, -self._xp.ones(self._inner_ndim)]),
+            self._xp.concat([self._b_outer,  self._xp.ones(self._inner_ndim)]),
         )
 
     def __call__(self, x_and_t, *args, **kwargs):
@@ -658,17 +659,17 @@ class _FuncLimitsTransform(_VariableTransform):
 
         # Allow returning `a_inner` and `b_inner` as array_like rather than as ndarrays
         # since `a` and `b` can also be array_like.
-        a_inner = np.array(a_inner)
-        b_inner = np.array(b_inner)
+        a_inner = self._xp.asarray(a_inner)
+        b_inner = self._xp.asarray(b_inner)
 
         npoints = x_and_t.shape[0]
 
         # x_and_y should be the input to the original integrand f.
         # No change needed to x, but we need to map the t section of x_and_t back to y.
-        x_and_y = np.concatenate(
+        x_and_y = self._xp.concat(
             [
                 x_and_t[:, :self._outer_ndim],
-                np.zeros((npoints, self._inner_ndim)),
+                self._xp.zeros((npoints, self._inner_ndim)),
             ],
             axis=-1,
         )
@@ -682,7 +683,7 @@ class _FuncLimitsTransform(_VariableTransform):
             )
 
         f_x = self._f(x_and_y, *args, **kwargs)
-        jacobian = np.prod(b_inner - a_inner, axis=-1) / 2**self._inner_ndim
-        jacobian = jacobian.reshape(-1, *([1]*(len(f_x.shape) - 1)))
+        jacobian = self._xp.prod(b_inner - a_inner, axis=-1) / 2**self._inner_ndim
+        jacobian = self._xp.reshape(jacobian, (-1, *([1]*(len(f_x.shape) - 1))))
 
         return f_x * jacobian
