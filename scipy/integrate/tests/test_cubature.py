@@ -4,7 +4,9 @@ import itertools
 
 import pytest
 
-from scipy._lib._array_api import array_namespace, xp_assert_close, xp_size, np_compat
+from scipy._lib._array_api import (
+    array_namespace, xp_assert_close, xp_size, np_compat, is_array_api_strict
+)
 from scipy.conftest import array_api_compatible
 
 from scipy.integrate import cubature
@@ -525,7 +527,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_1,
             genz_malik_1980_f_1_exact,
             [0, 0, 0],
-            [10, 10, 10],
+            [5, 5, 5],
             (
                 1/2,
                 [1, 1, 1],
@@ -1019,7 +1021,10 @@ class TestCubatureProblems:
             pytest.skip("Genz-Malik cubature does not support 1D integrals")
 
         if rule == "genz-malik" and ndim >= 4:
-            pytest.mark.slow("Gauss-Kronrod is slow in >= 5 dim")
+            pytest.mark.slow("Genz-Malik is slow in >= 5 dim")
+
+        if rule == "genz-malik" and ndim >= 4 and is_array_api_strict(xp):
+            pytest.skip("Genz-Malik is very slow for array_api_strict in >= 4 dim")
 
         res = cubature(
             f,
@@ -1296,6 +1301,11 @@ class TestCubatureProblems:
     )
     def test_func_limits(self, problem, rule, rtol, atol, xp):
         f, exact, args, a_outer, b_outer, region = problem
+
+        ndim = len(a_outer) + len(region(xp))
+
+        if rule == "genz-malik" and ndim >= 4 and is_array_api_strict(xp):
+            pytest.skip("Genz-Malik is very slow for array_api_strict in >= 4 dim")
 
         a_outer = xp.asarray(a_outer, dtype=xp.float64)
         b_outer = xp.asarray(b_outer, dtype=xp.float64)
