@@ -4764,14 +4764,14 @@ const char *mathieu_cem_doc = R"(
 
     Notes
     -----
-    Even Mathieu functions are the solutions to Mathieu's differential equation
+    The even Mathieu functions are the solutions to Mathieu's differential equation
 
     .. math::
 
         \frac{d^2y}{dx^2} + (a_m - 2q \cos(2x))y = 0
 
     for which the characteristic number :math:`a_m` results in an even, periodic
-    solution :math:`y(x)`` with period 180 degrees (for even :math:`m`) or
+    solution :math:`y(x)` with period 180 degrees (for even :math:`m`) or
     360 degrees (for odd :math:`m`).
 
     References
@@ -4781,7 +4781,7 @@ const char *mathieu_cem_doc = R"(
 
     Examples
     --------
-    Plot Mathieu functions of orders ``2`` and ``4``.
+    Plot even Mathieu functions of orders ``2`` and ``4``.
 
     >>> import numpy as np
     >>> from scipy import special
@@ -4795,7 +4795,7 @@ const char *mathieu_cem_doc = R"(
     >>> plt.ylabel('y')
     >>> plt.legend(('m = 2', 'm = 4'))
 
-    Note that the functions are even. Also, because the orders ``2`` and
+    Because the orders ``2`` and
     ``4`` are even, the period of each function is 180 degrees.
 
     )";
@@ -4972,7 +4972,7 @@ const char *mathieu_sem_doc = R"(
         \frac{d^2y}{dx^2} + (a_m - 2q \cos(2x))y = 0
 
     for which the characteristic number :math:`a_m` results in an odd, periodic
-    solution :math:`y(x)`` with period 180 degrees (for even :math:`m`) or
+    solution :math:`y(x)` with period 180 degrees (for even :math:`m`) or
     360 degrees (for odd :math:`m`).
 
     References
@@ -4982,7 +4982,7 @@ const char *mathieu_sem_doc = R"(
 
     Examples
     --------
-    Plot Mathieu functions of orders ``2`` and ``4``.
+    Plot odd Mathieu functions of orders ``2`` and ``4``.
 
     >>> import numpy as np
     >>> from scipy import special
@@ -4996,7 +4996,7 @@ const char *mathieu_sem_doc = R"(
     >>> plt.ylabel('y')
     >>> plt.legend(('m = 2', 'm = 4'))
 
-    Note that the functions are even. Also, because the orders ``2`` and
+    Because the orders ``2`` and
     ``4`` are even, the period of each function is 180 degrees.
 
     )";
