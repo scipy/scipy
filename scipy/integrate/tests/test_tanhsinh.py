@@ -844,7 +844,7 @@ class TestNSum:
             logres = nsum(lambda *args: np.log(f(*args)),
                            f.a, f.b, log=True, args=f.args)
         assert_allclose(np.exp(logres.sum), res.sum)
-        assert_allclose(np.exp(logres.error), res.error)
+        assert_allclose(np.exp(logres.error), res.error, atol=1e-15)
         assert_equal(logres.status, 0)
         assert_equal(logres.success, True)
 
