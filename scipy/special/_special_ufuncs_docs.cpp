@@ -4776,8 +4776,8 @@ const char *mathieu_cem_doc = R"(
 
     References
     ----------
-    'Mathieu function'. *Wikipedia*.
-    https://en.wikipedia.org/wiki/Mathieu_function
+    .. [1] 'Mathieu function'. *Wikipedia*.
+           https://en.wikipedia.org/wiki/Mathieu_function
 
     Examples
     --------
@@ -4977,8 +4977,8 @@ const char *mathieu_sem_doc = R"(
 
     References
     ----------
-    'Mathieu function'. *Wikipedia*.
-    https://en.wikipedia.org/wiki/Mathieu_function
+    .. [1] 'Mathieu function'. *Wikipedia*.
+           https://en.wikipedia.org/wiki/Mathieu_function
 
     Examples
     --------
