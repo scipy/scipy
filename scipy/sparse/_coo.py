@@ -620,8 +620,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
         other = self.__class__(other)
         bshape = np.broadcast_shapes(self.shape, other.shape)
-        self = self.broadcast_to(bshape)
-        other = other.broadcast_to(bshape)
+        self = self._broadcast_to(bshape)
+        other = other._broadcast_to(bshape)
         new_data = np.concatenate((self.data, other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
         A = self.__class__((new_data, new_coords), shape=self.shape)
@@ -640,8 +640,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
         other = self.__class__(other)
         bshape = np.broadcast_shapes(self.shape, other.shape)
-        self = self.broadcast_to(bshape)
-        other = other.broadcast_to(bshape)
+        self = self._broadcast_to(bshape)
+        other = other._broadcast_to(bshape)
         new_data = np.concatenate((self.data, -other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
         A = coo_array((new_data, new_coords), shape=self.shape)
@@ -1213,11 +1213,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 # Broadcasting the arrays if they have different shapes
                 # that are compatible for broadcasting
                 broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
-                self = self.broadcast_to(broadcast_shape)
+                self = self._broadcast_to(broadcast_shape)
                 if isdense(other):
                     other = np.broadcast_to(other, broadcast_shape)
                 else:
-                    other = other.broadcast_to(broadcast_shape)
+                    other = other._broadcast_to(broadcast_shape)
 
             result_shape = self.shape
 
@@ -1312,8 +1312,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 return result
             
             # different but broadcastable shapes
-            self = self.broadcast_to(bshape)
-            other = other.broadcast_to(bshape)
+            self = self._broadcast_to(bshape)
+            other = other._broadcast_to(bshape)
             # reshape to 2-D
             self = self.reshape(1, -1)
             other = other.reshape(1, -1)
@@ -1370,7 +1370,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return result
         
         # different but broadcastable shapes
-        self = self.broadcast_to(bshape)
+        self = self._broadcast_to(bshape)
         other = np.broadcast_to(other, bshape)
         self = self.reshape(1, -1)
         other = other.reshape(1, -1)
@@ -1591,11 +1591,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 # Broadcasting the arrays if they have different shapes
                 # that are compatible for broadcasting
                 broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
-                self = self.broadcast_to(broadcast_shape)
+                self = self._broadcast_to(broadcast_shape)
                 if isdense(other):
                     other = np.broadcast_to(other, broadcast_shape)
                 else:
-                    other = other.broadcast_to(broadcast_shape)
+                    other = other._broadcast_to(broadcast_shape)
 
             result_shape = self.shape
 
@@ -1618,7 +1618,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             return NotImplemented
 
-    def _find_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis):
+    def _find_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis, explicit):
         zero = self.dtype.type(0)
         
         if axis is None:
@@ -1656,7 +1656,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
 
         self = coo_array((self.data, coords_2d), shape_2d)
-        res = (self._min_or_max(1, out, _max_or_min_axis))
+        res = (self._min_or_max(1, out, _max_or_min_axis, explicit))
         unraveled_coords = np.concatenate(np.unravel_index(res.coords, result_shape))
         
         return (coo_array((res.data, unraveled_coords), result_shape))
@@ -1665,27 +1665,27 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def max(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.max(self, axis, out, explicit=explicit)
-        return self._find_max_or_min(axis, out, np.max, np.maximum)
+        return self._find_max_or_min(axis, out, np.max, np.maximum, explicit)
     
     def min(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.min(self, axis, out, explicit=explicit)
-        return self._find_max_or_min(axis, out, np.min, np.minimum)
+        return self._find_max_or_min(axis, out, np.min, np.minimum, explicit)
     
     def nanmax(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.nanmax(self, axis, out, explicit=explicit)
-        return self._find_max_or_min(axis, out, np.nanmax, np.fmax)
+        return self._find_max_or_min(axis, out, np.nanmax, np.fmax, explicit)
 
     def nanmin(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.nanmin(self, axis, out, explicit=explicit)
-        return self._find_max_or_min(axis, out, np.nanmin, np.fmin)
+        return self._find_max_or_min(axis, out, np.nanmin, np.fmin, explicit)
 
-    def _find_arg_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis):
+    def _find_arg_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis, explicit):
         if axis == None:
             flat = self.reshape(-1)
-            return flat._arg_min_or_max(0, out, _max_or_min, _max_or_min_axis)
+            return flat._arg_min_or_max(0, out, _max_or_min, _max_or_min_axis, explicit)
 
         if not isinstance(axis, int):
             raise ValueError("'axis' should be int or None")
@@ -1710,19 +1710,19 @@ class _coo_base(_data_matrix, _minmax_mixin):
         shape_2d = (math.prod(result_shape), self.shape[axis])
 
         self = coo_array((self.data, coords_2d), shape_2d)
-        res_flattened = self._arg_min_or_max(1, out, _max_or_min, _max_or_min_axis)
+        res_flattened = self._arg_min_or_max(1, out, _max_or_min, _max_or_min_axis, explicit)
         res = res_flattened.reshape(result_shape)      
         return res
     
     def argmax(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.argmax(self, axis, out, explicit=explicit)
-        return self._find_arg_max_or_min(axis, out, np.argmax, np.greater)
+        return self._find_arg_max_or_min(axis, out, np.argmax, np.greater, explicit)
     
     def argmin(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.argmin(self, axis, out, explicit=explicit)
-        return self._find_arg_max_or_min(axis, out, np.argmin, np.less)
+        return self._find_arg_max_or_min(axis, out, np.argmin, np.less, explicit)
 
     def maximum(self, other):
         """Element-wise maximum between this and another array/matrix."""

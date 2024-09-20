@@ -500,8 +500,8 @@ class _spbase:
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
     
-    def broadcast_to(self, shape):
-        res = self.tocsr().broadcast_to(shape)
+    def _broadcast_to(self, shape):
+        res = self.tocsr()._broadcast_to(shape)
         return self.__class__(res)
 
     def _broadcast_to(self, shape, copy=False):
@@ -572,7 +572,7 @@ class _spbase:
                 except ValueError:
                     raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
                 bshape = np.broadcast_shapes(self.shape, other.shape)
-                self = self.broadcast_to(bshape)
+                self = self._broadcast_to(bshape)
                 other = np.broadcast_to(other, bshape)
             return self._add_dense(other)
         else:
@@ -602,7 +602,7 @@ class _spbase:
                 except ValueError:
                     raise ValueError("inconsistent shapes")
                 bshape = np.broadcast_shapes(self.shape, other.shape)
-                self = self.broadcast_to(bshape)
+                self = self._broadcast_to(bshape)
                 other = np.broadcast_to(other, bshape)
             return self._sub_dense(other)
         else:

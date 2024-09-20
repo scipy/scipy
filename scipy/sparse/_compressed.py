@@ -257,7 +257,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
             
             bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self.broadcast_to(bshape)
+            self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
             return self.todense() == other
         # Pydata sparse other.
@@ -313,7 +313,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
             
             bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self.broadcast_to(bshape)
+            self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
             return self.todense() != other
         # Pydata sparse other.
@@ -358,7 +358,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
             
             bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self.broadcast_to(bshape)
+            self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
             return op(self.todense(), other)
         # Sparse other.
@@ -1428,8 +1428,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             other = other.reshape(oM, oN).tocsr()
         
             bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self.broadcast_to(bshape)
-            other = other.broadcast_to(bshape)
+            self = self._broadcast_to(bshape)
+            other = other._broadcast_to(bshape)
 
         other = self.__class__(other)
 
@@ -1481,8 +1481,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
 
             bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self.broadcast_to(bshape)
-            other  = other.broadcast_to(bshape)
+            self = self._broadcast_to(bshape)
+            other  = other._broadcast_to(bshape)
             r = self._binopt(other, '_eldiv_')
 
         if np.issubdtype(r.dtype, np.inexact):

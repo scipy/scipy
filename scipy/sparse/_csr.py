@@ -123,7 +123,7 @@ class _csr_base(_cs_matrix):
     tobsr.__doc__ = _spbase.tobsr.__doc__
 
 
-    def broadcast_to(self, shape, copy=False):
+    def _broadcast_to(self, shape, copy=False):
 
         old_shape = self.shape
         
