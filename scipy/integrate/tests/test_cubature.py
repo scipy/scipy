@@ -36,6 +36,7 @@ def basic_1d_integrand(x, n, xp):
 
 
 def basic_1d_integrand_exact(n, xp):
+    # Exact only for integration over interval [0, 2].
     return xp.reshape(2**(n+1)/(n+1), (-1, 1))
 
 
@@ -44,6 +45,7 @@ def basic_nd_integrand(x, n, xp):
 
 
 def basic_nd_integrand_exact(n, xp):
+    # Exact only for integration over interval [0, 2]^n.
     return (-2**(3+n) + 4**(2+n))/((1+n)*(2+n))
 
 
@@ -290,68 +292,64 @@ def genz_malik_1980_f_5_random_args(rng, shape, xp):
     return alphas, betas
 
 
-def f_gaussian(x, alphas):
+def f_gaussian(x, alphas, xp):
     r"""
     .. math::
 
         f(\mathbf x) = \exp\left(-\sum^n_{i = 1} (\alpha_i x_i)^2 \right)
     """
     npoints, ndim = x.shape[0], x.shape[-1]
-    alphas_reshaped = alphas[np.newaxis, :]
-    x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    alphas_reshaped = alphas[None, ...]
+    x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
 
-    return np.exp(
-        -np.sum((alphas_reshaped * x_reshaped)**2, axis=-1)
-    )
+    return xp.exp(-xp.sum((alphas_reshaped * x_reshaped)**2, axis=-1))
 
 
-def f_gaussian_exact(a, b, alphas):
+def f_gaussian_exact(a, b, alphas, xp):
     # Exact only when `a` and `b` are one of:
     #   (-oo, oo), or
     #   (0, oo), or
     #   (-oo, 0)
     # `alphas` can be arbitrary.
 
-    ndim = len(a)
+    ndim = xp_size(a)
     double_infinite_count = 0
     semi_infinite_count = 0
 
-    for i in range(len(a)):
-        if np.isinf(a[i]) and np.isinf(b[i]):   # doubly-infinite
+    for i in range(ndim):
+        if xp.isinf(a[i]) and xp.isinf(b[i]):   # doubly-infinite
             double_infinite_count += 1
-        elif np.isinf(a[i]) != np.isinf(b[i]):  # exclusive or, so semi-infinite
+        elif xp.isinf(a[i]) != xp.isinf(b[i]):  # exclusive or, so semi-infinite
             semi_infinite_count += 1
 
-    return (math.sqrt(np.pi) ** ndim) / (
-        2**semi_infinite_count * np.prod(alphas, axis=-1)
+    return (math.sqrt(math.pi) ** ndim) / (
+        2**semi_infinite_count * xp.prod(alphas, axis=-1)
     )
 
 
-def f_gaussian_random_args(shape):
-    np.random.seed(12)
-
-    alphas = np.random.rand(*shape)
+def f_gaussian_random_args(rng, shape, xp):
+    alphas = xp.asarray(rng.random(shape))
 
     # If alphas are very close to 0 this makes the problem very difficult due to large
     # values of ``f``.
     alphas *= 100
 
-    return alphas
+    return (alphas,)
 
 
-def f_modified_gaussian(x_arr, n):
+def f_modified_gaussian(x_arr, n, xp):
     r"""
     .. math::
 
         f(x, y, z, w) = x^n \sqrt{y} \exp(-y-z^2-w^2)
     """
     x, y, z, w = x_arr[:, 0], x_arr[:, 1], x_arr[:, 2], x_arr[:, 3]
-    res = (x ** n[:, np.newaxis]) * np.sqrt(y) * np.exp(-y-z**2-w**2)
+    res = (x ** n[:, None]) * xp.sqrt(y) * xp.exp(-y-z**2-w**2)
 
     return res.T
 
 
-def f_modified_gaussian_exact(a, b, n):
+def f_modified_gaussian_exact(a, b, n, xp):
     # Exact only for the limits
     #   a = (0, 0, -oo, -oo)
     #   b = (1, oo, oo, oo)
@@ -431,10 +429,10 @@ class TestCubature:
             cubature(basic_1d_integrand, a, b, args=(xp,))
 
     def test_limits_other_way_around(self, xp):
-        n = xp.arange(5)
+        n = xp.arange(5, dtype=xp.float64)
 
-        a = xp.asarray([2])
-        b = xp.asarray([0])
+        a = xp.asarray([2], dtype=xp.float64)
+        b = xp.asarray([0], dtype=xp.float64)
 
         res = cubature(
             basic_1d_integrand,
@@ -443,9 +441,29 @@ class TestCubature:
             args=(n, xp),
         )
 
-        np.testing.assert_allclose(
+        xp_assert_close(
             res.estimate,
             -basic_1d_integrand_exact(n, xp),
+            rtol=1e-1,
+            atol=0,
+        )
+
+    def test_zero_width_limits(self, xp):
+        n = xp.arange(5, dtype=xp.float64)
+
+        a = xp.asarray([0], dtype=xp.float64)
+        b = xp.asarray([0], dtype=xp.float64)
+
+        res = cubature(
+            basic_1d_integrand,
+            a,
+            b,
+            args=(n, xp),
+        )
+
+        xp_assert_close(
+            res.estimate,
+            xp.asarray([[0], [0], [0], [0], [0]], dtype=xp.float64),
             rtol=1e-1,
             atol=0,
         )
@@ -464,7 +482,7 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
-    problems_scalar_output = [
+    @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
             # Function to integrate, like `f(x, *args)`
@@ -531,7 +549,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
 
-            [10, 50],
+            [0, 0],
             [10, 50],
             (
                 [-3, 3],
@@ -674,42 +692,7 @@ class TestCubatureProblems:
                 [1, 1, 1],
             ),
         ),
-    ]
-
-    problem_array_output = [
-        (
-            # Function to integrate, like `f(x, *args)`
-            genz_malik_1980_f_1,
-
-            # Exact solution, like `exact(a, b, *args)`
-            genz_malik_1980_f_1_exact,
-
-            # Function that generates random args of a certain shape.
-            genz_malik_1980_f_1_random_args,
-        ),
-        (
-            genz_malik_1980_f_2,
-            genz_malik_1980_f_2_exact,
-            genz_malik_1980_f_2_random_args,
-        ),
-        (
-            genz_malik_1980_f_3,
-            genz_malik_1980_f_3_exact,
-            genz_malik_1980_f_3_random_args
-        ),
-        (
-            genz_malik_1980_f_4,
-            genz_malik_1980_f_4_exact,
-            genz_malik_1980_f_4_random_args
-        ),
-        (
-            genz_malik_1980_f_5,
-            genz_malik_1980_f_5_exact,
-            genz_malik_1980_f_5_random_args,
-        ),
-    ]
-
-    @pytest.mark.parametrize("problem", problems_scalar_output)
+    ])
     def test_scalar_output(self, problem, rule, rtol, atol, xp):
         f, exact, a, b, args = problem
 
@@ -745,7 +728,38 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
-    @pytest.mark.parametrize("problem", problem_array_output)
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate, like `f(x, *args)`
+            genz_malik_1980_f_1,
+
+            # Exact solution, like `exact(a, b, *args)`
+            genz_malik_1980_f_1_exact,
+
+            # Function that generates random args of a certain shape.
+            genz_malik_1980_f_1_random_args,
+        ),
+        (
+            genz_malik_1980_f_2,
+            genz_malik_1980_f_2_exact,
+            genz_malik_1980_f_2_random_args,
+        ),
+        (
+            genz_malik_1980_f_3,
+            genz_malik_1980_f_3_exact,
+            genz_malik_1980_f_3_random_args
+        ),
+        (
+            genz_malik_1980_f_4,
+            genz_malik_1980_f_4_exact,
+            genz_malik_1980_f_4_random_args
+        ),
+        (
+            genz_malik_1980_f_5,
+            genz_malik_1980_f_5_exact,
+            genz_malik_1980_f_5_random_args,
+        ),
+    ])
     @pytest.mark.parametrize("shape", [
         (2,),
         (3,),
@@ -909,39 +923,68 @@ class TestCubatureProblems:
             f_gaussian_exact,
 
             # Arguments passed to f
-            f_gaussian_random_args((1, 1)),
+            f_gaussian_random_args,
+            (1, 1),
 
             # Limits, have to match the shape of the arguments
-            np.array([-np.inf]),  # a
-            np.array([np.inf]),   # b
+            [-math.inf],  # a
+            [math.inf],   # b
         ),
         (
             f_gaussian,
             f_gaussian_exact,
-            f_gaussian_random_args((1, 1),),
-            np.array([0]),
-            np.array([np.inf]),
+            f_gaussian_random_args,
+            (2, 2),
+            [-math.inf, -math.inf],
+            [math.inf, math.inf],
         ),
         (
             f_gaussian,
             f_gaussian_exact,
-            (f_gaussian_random_args((1, 1)),),
-            np.array([-np.inf]),
-            np.array([0]),
+            f_gaussian_random_args,
+            (1, 1),
+            [0],
+            [math.inf],
         ),
         (
             f_gaussian,
             f_gaussian_exact,
-            (f_gaussian_random_args((1, 4)),),
-            np.array([0, 0, -np.inf, -np.inf]),
-            np.array([np.inf, np.inf, np.inf, np.inf]),
+            f_gaussian_random_args,
+            (1, 1),
+            [-math.inf],
+            [0],
         ),
         (
             f_gaussian,
             f_gaussian_exact,
-            (f_gaussian_random_args((1, 4)),),
-            np.array([-np.inf, -np.inf, -np.inf, -np.inf]),
-            np.array([0, 0, np.inf, np.inf]),
+            f_gaussian_random_args,
+            (2, 2),
+            [0, 0],
+            [math.inf, math.inf],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (2, 2),
+            [0, -math.inf],
+            [math.inf, math.inf],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (1, 4),
+            [0, 0, -math.inf, -math.inf],
+            [math.inf, math.inf, math.inf, math.inf],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (1, 4),
+            [-math.inf, -math.inf, -math.inf, -math.inf],
+            [0, 0, math.inf, math.inf],
         ),
 
         # This particular problem can be slow
@@ -953,18 +996,26 @@ class TestCubatureProblems:
                 # This exact solution is for the below limits, not in general
                 f_modified_gaussian_exact,
 
-                (np.arange(4),),
-                np.array([0, 0, -np.inf, -np.inf]),
-                np.array([1, np.inf, np.inf, np.inf])
+                # Constant arguments
+                lambda rng, shape, xp: (xp.asarray([0, 1, 2, 3, 4], dtype=xp.float64),),
+                tuple(),
+
+                [0, 0, -math.inf, -math.inf],
+                [1, math.inf, math.inf, math.inf]
             ),
 
             marks=pytest.mark.slow,
-        )
+        ),
     ])
-    def test_infinite_limits(self, problem, rule, rtol, atol):
-        f, exact, args, a, b = problem
+    def test_infinite_limits(self, problem, rule, rtol, atol, xp):
+        rng = np_compat.random.default_rng(1)
+        f, exact, random_args_func, random_args_shape, a, b = problem
 
-        ndim = a.size
+        a = xp.asarray(a, dtype=xp.float64)
+        b = xp.asarray(b, dtype=xp.float64)
+        args = random_args_func(rng, random_args_shape, xp)
+
+        ndim = xp_size(a)
 
         if rule == "genz-malik" and ndim < 2:
             pytest.skip("Genz-Malik cubature does not support 1D integrals")
@@ -979,14 +1030,14 @@ class TestCubatureProblems:
             rule,
             rtol,
             atol,
-            args=args,
+            args=(*args, xp),
         )
 
         assert res.status == "converged"
 
-        np.testing.assert_allclose(
+        xp_assert_close(
             res.estimate,
-            exact(a, b, *args),
+            exact(a, b, *args, xp),
             rtol=rtol,
             atol=atol,
             err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
@@ -1236,7 +1287,7 @@ class TestCubatureProblems:
             ),
         ],
     )
-    def test_cub_func_limits(self, problem, rule, rtol, atol):
+    def test_func_limits(self, problem, rule, rtol, atol):
         f, exact, args, a_outer, b_outer, region = problem
 
         res = cubature(

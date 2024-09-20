@@ -1,3 +1,4 @@
+import math
 import heapq
 import itertools
 
@@ -7,7 +8,7 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
 
-from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib._array_api import array_namespace, xp_size, xp_copy
 from scipy._lib._util import MapWrapper
 
 from scipy.integrate._rules import (
@@ -267,7 +268,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     a, b = a_flipped, b_flipped
 
     # If any of the limits are infinite, apply a transformation to handle these
-    if np.any(np.isinf(a_flipped)) or np.any(np.isinf(b_flipped)):
+    if xp.any(xp.isinf(a_flipped)) or xp.any(xp.isinf(b_flipped)):
         f = _InfiniteLimitsTransform(f, a_flipped, b_flipped)
         a, b = f.limits
         points.extend(f.points)
@@ -276,6 +277,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     # these points lie on the edge of a subregion.
     # This means ``f`` won't be evaluated there, if the rule being used has no
     # evaluation points on the boundary.
+
     if points == []:
         initial_regions = [(a, b)]
     else:
@@ -307,17 +309,15 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     est = 0.0
     err = 0.0
 
-    # Compute an estimate over each of the initial regions
     for a_k, b_k in initial_regions:
         # If any of the initial regions have zero width in one dimension, we can
         # ignore this as the integral will be 0 there.
-        if not np.any(a_k == b_k):
-            est_k = rule.estimate(f, a_k, b_k, args)
-            err_k = rule.estimate_error(f, a_k, b_k, args)
-            regions.append(CubatureRegion(est_k, err_k, a_k, b_k, xp))
+        est_k = rule.estimate(f, a_k, b_k, args)
+        err_k = rule.estimate_error(f, a_k, b_k, args)
+        regions.append(CubatureRegion(est_k, err_k, a_k, b_k, xp))
 
-            est += est_k
-            err += err_k
+        est += est_k
+        err += err_k
 
     subdivisions = 0
     success = True
@@ -413,6 +413,7 @@ def _split_at_points(a, b, points):
     any of the subregions.
     """
 
+    xp = array_namespace(a, b)
     regions = [(a, b)]
 
     for point in points:
@@ -421,7 +422,16 @@ def _split_at_points(a, b, points):
         for a_k, b_k in regions:
             if _is_strictly_in_region(point, a_k, b_k):
                 subregions = _subregion_coordinates(a_k, b_k, point)
+
+                for left, right in subregions:
+                    # Skip any zero-width regions.
+                    if xp.any(left == right):
+                        continue
+                    else:
+                        new_regions.append((left, right))
+
                 new_regions.extend(subregions)
+
             else:
                 new_regions.append((a_k, b_k))
 
@@ -471,6 +481,8 @@ class _InfiniteLimitsTransform(_VariableTransform):
     """
 
     def __init__(self, f, a, b):
+        self._xp = array_namespace(a, b)
+
         self._f = f
         self._orig_a = a
         self._orig_b = b
@@ -479,16 +491,18 @@ class _InfiniteLimitsTransform(_VariableTransform):
         self._semi_inf_pos = []
         self._double_inf_pos = []
 
-        for i in range(len(a)):
-            if a[i] == -np.inf and b[i] == np.inf:
+        ndim = xp_size(a)
+
+        for i in range(ndim):
+            if a[i] == -math.inf and b[i] == math.inf:
                 # (-oo, oo) will be mapped to (-1, 1).
                 self._double_inf_pos.append(i)
 
-            elif a[i] != -np.inf and b[i] == np.inf:
+            elif a[i] != -math.inf and b[i] == math.inf:
                 # (start, oo) will be mapped to (0, 1).
                 self._semi_inf_pos.append(i)
 
-            elif a[i] == -np.inf and b[i] != np.inf:
+            elif a[i] == -math.inf and b[i] != math.inf:
                 # (-oo, end) will be mapped to (0, 1).
                 #
                 # This is handled by making the transformation t = -x and reducing it to
@@ -501,13 +515,9 @@ class _InfiniteLimitsTransform(_VariableTransform):
                 self._orig_a[i] = -b[i]
                 self._orig_b[i] = -a[i]
 
-        self._semi_inf_pos = np.array(self._semi_inf_pos)
-        self._double_inf_pos = np.array(self._double_inf_pos)
-        self._negate_pos = np.array(self._negate_pos)
-
     @property
     def limits(self):
-        a, b = np.copy(self._orig_a), np.copy(self._orig_b)
+        a, b = xp_copy(self._orig_a), xp_copy(self._orig_b)
 
         for index in self._double_inf_pos:
             a[index] = -1
@@ -523,51 +533,31 @@ class _InfiniteLimitsTransform(_VariableTransform):
     def points(self):
         # If there are infinite limits, then the origin becomes a problematic point
         # due to a division by zero there.
-        if self._double_inf_pos.size != 0 or self._semi_inf_pos.size != 0:
-            return [np.zeros(self._orig_a.shape)]
+        if len(self._double_inf_pos) != 0 or len(self._semi_inf_pos) != 0:
+            return [self._xp.zeros(self._orig_a.shape)]
         else:
             return []
 
     def __call__(self, t, *args, **kwargs):
-        x = np.copy(t)
+        x = xp_copy(t)
+        jacobian = 1.0
 
-        if self._negate_pos.size != 0:
-            x[..., self._negate_pos] *= -1
+        for i in self._negate_pos:
+            x[..., i] *= -1
 
-        if self._double_inf_pos.size != 0:
+        for i in self._double_inf_pos:
             # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
+            x[..., i] = (1 - self._xp.abs(t[..., i])) / t[..., i]
+            jacobian *= 1/(t[..., i] ** 2)
 
-            x[..., self._double_inf_pos] = (
-                1 - np.abs(t[..., self._double_inf_pos])
-            ) / t[..., self._double_inf_pos]
-
-        if self._semi_inf_pos.size != 0:
+        for i in self._semi_inf_pos:
             # For (start, oo) -> (0, 1), use the transformation x = start + (1 - t)/t.
-
-            # Need to expand start so it is broadcastable, and transpose to flip the
-            # axis order.
-            start = self._orig_a[self._semi_inf_pos][:, np.newaxis].T
-
-            x[..., self._semi_inf_pos] = start + (
-                1 - t[..., self._semi_inf_pos]
-            ) / t[..., self._semi_inf_pos]
+            x[..., i] = self._orig_a[i] + (1 - t[..., i]) / t[..., i]
+            jacobian *= 1/(t[..., i] ** 2)
 
         f_x = self._f(x, *args, **kwargs)
-        jacobian = 1
 
-        if self._double_inf_pos.size != 0:
-            jacobian *= 1/np.prod(
-                t[..., self._double_inf_pos] ** 2,
-                axis=-1,
-            )
-
-        if self._semi_inf_pos.size != 0:
-            jacobian *= 1/np.prod(
-                t[..., self._semi_inf_pos] ** 2,
-                axis=-1,
-            )
-
-        jacobian = jacobian.reshape(-1, *([1]*(len(f_x.shape)-1)))
+        jacobian = self._xp.reshape(jacobian, (-1, *([1]*(len(f_x.shape)-1))))
 
         return f_x * jacobian
 
