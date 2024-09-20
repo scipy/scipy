@@ -272,12 +272,15 @@ void coo_matmat_dense_nd(const npy_int64 nnz,
 {
     std::vector<npy_int64> strides_B(n_dim);
     std::vector<npy_int64> strides_Y(n_dim);
+    std::vector<npy_int64> dim_nnz(n_dim);
 
     strides_B[n_dim - 1] = 1;
     strides_Y[n_dim - 1] = 1;
+    dim_nnz[n_dim - 1] = (n_dim - 1) * nnz;
     for (npy_int64 i = n_dim - 2; i >= 0; --i) {
         strides_B[i] = strides_B[i + 1] * shape_B[i + 1];
         strides_Y[i] = strides_Y[i + 1] * shape_Y[i + 1];
+        dim_nnz[i] = i * nnz;
     }
     
     // Iterate over all non-zero elements
@@ -288,12 +291,12 @@ void coo_matmat_dense_nd(const npy_int64 nnz,
             npy_int64 src_offset = 0;
             npy_int64 dst_offset = 0;
             for (npy_int64 dim = 0; dim < n_dim-2; ++dim) {
-                src_offset += A_coords[dim * nnz + n] * strides_B[dim];
-                dst_offset += A_coords[dim * nnz + n] * strides_Y[dim];
+                src_offset += A_coords[dim_nnz[dim] + n] * strides_B[dim];
+                dst_offset += A_coords[dim_nnz[dim] + n] * strides_Y[dim];
             }
            
-            dst_offset += n_col_B * A_coords[(n_dim-2) * nnz + n];
-            src_offset += n_col_B * A_coords[(n_dim-1) * nnz + n];
+            dst_offset += n_col_B * A_coords[dim_nnz[n_dim - 2] + n];
+            src_offset += n_col_B * A_coords[dim_nnz[n_dim - 1] + n];
             
             // Multiply and accumulate in the output tensor Y
             for (npy_int64 i = 0; i < n_col_B; ++i) {
