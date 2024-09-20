@@ -4770,9 +4770,9 @@ const char *mathieu_cem_doc = R"(
 
         \frac{d^2y}{dx^2} + (a_m - 2q \cos(2x))y = 0
 
-    for which the characteristic number :math:`a_m` results in an even, periodic
-    solution :math:`y(x)` with period 180 degrees (for even :math:`m`) or
-    360 degrees (for odd :math:`m`).
+    for which the characteristic number :math:`a_m` (calculated with `mathieu_a`)
+    results in an odd, periodic solution :math:`y(x)` with period 180 degrees
+    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
 
     References
     ----------
@@ -4969,11 +4969,11 @@ const char *mathieu_sem_doc = R"(
 
     .. math::
 
-        \frac{d^2y}{dx^2} + (a_m - 2q \cos(2x))y = 0
+        \frac{d^2y}{dx^2} + (b_m - 2q \cos(2x))y = 0
 
-    for which the characteristic number :math:`a_m` results in an odd, periodic
-    solution :math:`y(x)` with period 180 degrees (for even :math:`m`) or
-    360 degrees (for odd :math:`m`).
+    for which the characteristic number :math:`b_m` (calculated with `mathieu_b`)
+    results in an odd, periodic solution :math:`y(x)` with period 180 degrees
+    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
 
     References
     ----------
