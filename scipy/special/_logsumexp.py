@@ -105,13 +105,13 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     a, b = xp_broadcast_promote(a, b, ensure_writeable=True, force_floating=True, xp=xp)
     a = xp_atleast_nd(a, ndim=1)
     b = xp_atleast_nd(b, ndim=1) if b is not None else b
+    axis = tuple(range(a.ndim)) if axis is None else axis
 
     if xp_size(a) != 0:
         with np.errstate(divide='ignore', invalid='ignore'):  # log of zero is OK
             out, sgn = _logsumexp(a, b, axis=axis, return_sign=return_sign, xp=xp)
     else:
         shape = np.asarray(a.shape)  # NumPy is convenient for shape manipulation
-        axis = tuple(range(a.ndim)) if axis is None else axis
         shape[axis] = 1
         out = xp.full(tuple(shape), -xp.inf, dtype=a.dtype)
         sgn = xp.sign(out)
