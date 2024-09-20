@@ -147,7 +147,7 @@ class _csr_base(_cs_matrix):
         old_shape = self._shape_as_2d
             
         if len(shape) != 2:
-            raise ValueError('Target shape must be a tuple of length 2')
+            raise ValueError(f'CSR broadcast_to cannot have shape >2D. Got {ndim}D')```
         
         if self.nnz == 0: # array has no non zero elements
             return self.__class__(shape, dtype=self.dtype, copy=False)
