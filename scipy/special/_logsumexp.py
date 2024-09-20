@@ -5,6 +5,8 @@ from scipy._lib._array_api import (
     xp_size,
     xp_broadcast_promote,
     xp_atleast_nd,
+    xp_real,
+    xp_copy,
 )
 
 __all__ = ["logsumexp", "softmax", "log_softmax"]
@@ -104,15 +106,15 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     a = xp_atleast_nd(a, ndim=1)
     b = xp_atleast_nd(b, ndim=1) if b is not None else b
 
-    if xp_size(a) == 0:
+    if xp_size(a) != 0:
+        with np.errstate(divide='ignore', invalid='ignore'):  # log of zero is OK
+            out, sgn = _logsumexp(a, b, axis=axis, return_sign=return_sign, xp=xp)
+    else:
         shape = np.asarray(a.shape)  # NumPy is convenient for shape manipulation
         axis = tuple(range(a.ndim)) if axis is None else axis
         shape[axis] = 1
         out = xp.full(tuple(shape), -xp.inf, dtype=a.dtype)
         sgn = xp.sign(out)
-    else:
-        with np.errstate(divide='ignore', invalid='ignore'):  # log of zero is OK
-            out, sgn = _logsumexp(a, b, axis=axis, return_sign=return_sign, xp=xp)
 
     # Deal with shape details - reducing dimensions and convert 0-D to scalar for NumPy
     out = xp.squeeze(out, axis=axis) if not keepdims else out
@@ -124,17 +126,21 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
 
 def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
-    # We need *an* element with the maximum real part.
-    # If the array is complex, we need to choose *one* of the complex values,
-    # not all values with the same real part.
+    # This is an array-API compatible `max` function that works something
+    # like `np.max` for complex input. The important part is that it finds
+    # the element with maximum real part. When there are multiple complex values
+    # with this real part, it doesn't matter which we choose.
     # We could use `argmax` on real component, but array API doesn't yet have
     # `take_along_axis`, and even if it did, we would have problems with axis tuples.
+    # Feel free to rewrite! It's ugly, but it's not the purpose of the PR, and
+    # it gets the job done.
     xp = array_namespace(a) if xp is None else xp
 
     if xp.isdtype(a.dtype, "complex floating"):
         # select all elements with max real part.
-        max = xp.max(xp.real(a), axis=axis, keepdims=True)
-        mask = xp.real(a) == max
+        real_a = xp.real(a)
+        max = xp.max(real_a, axis=axis, keepdims=True)
+        mask = real_a == max
 
         # Of those, choose one arbitrarily. This is a reasonably
         # simple, array-API compatible way of doing so that doesn't
@@ -143,7 +149,9 @@ def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
         i[~mask] = -1
         max_i = xp.max(i, axis=axis, keepdims=True)
         mask = i == max_i
-        max = xp.reshape(a[mask], max_i.shape)
+        a = xp_copy(a)
+        a[~mask] = 0
+        max = xp.sum(a, axis=axis, dtype=a.dtype, keepdims=True)
     else:
         max = xp.max(a, axis=axis, keepdims=True)
         mask = a == max
@@ -204,8 +212,7 @@ def _logsumexp(a, b, axis, return_sign, xp):
     out = xp.log1p(s) + xp.log(m) + a_max
 
     # Sigh... imagine a world in which we could just take the real part of a real array
-    out = (xp.real(out) if return_sign and xp.isdtype(s.dtype, "complex floating")
-           else out)
+    out = xp_real(out) if return_sign else out
 
     return out, sgn
 
