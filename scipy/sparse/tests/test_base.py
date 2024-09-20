@@ -4137,6 +4137,7 @@ class TestCSR(sparse_test_class()):
         assert (a + b).nnz == 2
         assert a.multiply(b).nnz == 1
 
+
 TestCSR.init_class()
 
 
