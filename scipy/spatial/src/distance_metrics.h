@@ -692,7 +692,8 @@ struct SokalsneathDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (2 * acc.ndiff + acc.ntt);
+            T denom = 2 * acc.ndiff + acc.ntt;
+            return (2 * acc.ndiff) / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -711,7 +712,8 @@ struct SokalsneathDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (2 * acc.ndiff + acc.ntt);
+            T denom = 2 * acc.ndiff + acc.ntt;
+            return (2 * acc.ndiff) / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
