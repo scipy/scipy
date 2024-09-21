@@ -1437,6 +1437,11 @@ def dice(u, v, w=None):
     Dice similarity index, convert one to the other with similarity =
     1 - dissimilarity.
 
+    .. versionchanged:: 1.15.0
+       Previously, if all (positively weighted) elements in `u` and `v` are
+       zero, the function would return ``nan``.  This was changed to return
+       ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
