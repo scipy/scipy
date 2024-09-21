@@ -763,8 +763,13 @@ def hamming(u, v, w=None):
         w = _validate_weights(w)
         if w.shape != u.shape:
             raise ValueError("'w' should have the same length as 'u' and 'v'.")
-        w = w / w.sum()
+        w_sum = w.sum()
+        if w_sum == 0:
+            return 0.0
+        w = w / w_sum
         return np.dot(u_ne_v, w)
+    if len(u_ne_v) == 0:
+        return 0.0
     return np.mean(u_ne_v)
 
 
