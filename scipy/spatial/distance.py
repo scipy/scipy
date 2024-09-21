@@ -1520,6 +1520,8 @@ def rogerstanimoto(u, v, w=None):
     if w is not None:
         w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
+    if ntf + nft == 0:
+        return 0.0
     return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
 
 
