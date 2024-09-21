@@ -1,7 +1,7 @@
 import numpy as np
 from scipy._lib._array_api import (
     is_cupy, is_numpy, is_torch, array_namespace,
-    xp_assert_equal, assert_array_almost_equal
+    xp_assert_close, xp_assert_equal, assert_array_almost_equal
 )
 import pytest
 from pytest import raises as assert_raises
@@ -2312,7 +2312,7 @@ class TestNdimageMorphology:
         else:
             # inplace output= is unsupported by JAX
             out = func(data, struct, axes=axes, **kwargs)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected)
 
     def test_grey_erosion01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2707,7 +2707,7 @@ class TestNdimageMorphology:
         else:
             # inplace output= is unsupported by JAX
             out = func(data, axes=axes, **kwargs)
-        assert_array_almost_equal(out, expected)
+        xp_assert_close(out, expected)
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss01(self, dtype, xp):
