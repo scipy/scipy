@@ -508,9 +508,10 @@ class TestFFTShift:
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
-@skip_xp_backends("cupy", "jax.numpy",
-                  reasons=["CuPy has not implemented the `device` param",
-                           "JAX has not implemented the `device` param"])
+@skip_xp_backends("cupy",
+                  reasons=["CuPy has not implemented the `device` param"])
+@skip_xp_backends("jax.numpy",
+                  reasons=["JAX has not implemented the `device` param"])
 class TestFFTFreq:
 
     def test_definition(self, xp):
@@ -540,9 +541,10 @@ class TestFFTFreq:
             assert xp_device(y) == xp_device(x)
 
 
-@skip_xp_backends("cupy", "jax.numpy",
-                  reasons=["CuPy has not implemented the `device` param",
-                           "JAX has not implemented the `device` param"])
+@skip_xp_backends("cupy",
+                  reasons=["CuPy has not implemented the `device` param"])
+@skip_xp_backends("jax.numpy",
+                  reasons=["JAX has not implemented the `device` param"])
 class TestRFFTFreq:
 
     def test_definition(self, xp):

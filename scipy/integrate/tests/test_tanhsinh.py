@@ -46,10 +46,13 @@ def _vectorize(xp):
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends(
-    'array_api_strict', 'jax.numpy', 'cupy',
-    reasons=['Currently uses fancy indexing assignment.',
-             'JAX arrays do not support item assignment.',
-             'cupy/cupy#8391',],
+    'array_api_strict', reasons=['Currently uses fancy indexing assignment.']
+)
+@pytest.mark.skip_xp_backends(
+    'jax.numpy', reasons=['JAX arrays do not support item assignment.']
+)
+@pytest.mark.skip_xp_backends(
+    'cupy', reasons=['cupy/cupy#8391']
 )
 class TestTanhSinh:
 
@@ -497,12 +500,7 @@ class TestTanhSinh:
         assert res.success
         assert res.status == 0
 
-    @pytest.mark.skip_xp_backends(
-        'array_api_strict', 'jax.numpy', 'cupy', 'torch',
-        reasons=[
-            'Currently uses fancy indexing assignment.',
-            'JAX arrays do not support item assignment.',
-            'cupy/cupy#8391',
+    @pytest.mark.skip_xp_backends('torch', reasons=[
             'https://github.com/scipy/scipy/pull/21149#issuecomment-2330477359',
         ],
     )

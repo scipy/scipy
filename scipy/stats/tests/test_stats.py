@@ -74,10 +74,12 @@ ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
 @array_api_compatible
-@skip_xp_backends('array_api_strict', 'jax.numpy',
+@skip_xp_backends('jax.numpy', reasons=["JAX doesn't allow item assignment."])
+@skip_xp_backends('array_api_strict',
                   reasons=["`array_api_strict.where` `fillvalue` doesn't "
                            "accept Python floats. See data-apis/array-api#807.",
-                           "JAX doesn't allow item assignment."])
+                          ]
+)
 @pytest.mark.usefixtures("skip_xp_backends")
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
@@ -129,11 +131,8 @@ class TestTrimmedStats:
         y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
 
-    @skip_xp_backends('array_api_strict', 'jax.numpy', 'cupy',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python floats. See data-apis/array-api#807.",
-                               "JAX doesn't allow item assignment.",
-                               "cupy/cupy#8391",])
+    @skip_xp_backends('cupy',
+                      reasons=["cupy/cupy#8391"])
     def test_tvar(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
         xp_test = array_namespace(x)  # need array-api-compat var for `correction`
@@ -390,8 +389,7 @@ class TestPearsonr:
         assert_equal(res.correlation, res.statistic)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     def test_r_almost_exactly_pos1(self, xp):
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, a)
@@ -402,8 +400,7 @@ class TestPearsonr:
         xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     def test_r_almost_exactly_neg1(self, xp):
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, -a)
@@ -414,8 +411,7 @@ class TestPearsonr:
         xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     def test_basic(self, xp):
         # A basic test, with a correlation coefficient
         # that is not 1 or -1.
@@ -427,7 +423,7 @@ class TestPearsonr:
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      )
     def test_constant_input(self, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
@@ -441,7 +437,7 @@ class TestPearsonr:
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      )
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_near_constant_input(self, xp, dtype):
         npdtype = getattr(np, dtype)
@@ -457,7 +453,7 @@ class TestPearsonr:
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      )
     def test_very_small_input_values(self, xp):
         # Very small values in an input.  A naive implementation will
         # suffer from underflow.
@@ -475,7 +471,7 @@ class TestPearsonr:
 
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      )
     def test_very_large_input_values(self, xp):
         # Very large values in an input.  A naive implementation will
         # suffer from overflow.
@@ -491,8 +487,7 @@ class TestPearsonr:
         xp_assert_close(p, xp.asarray(0.011724811003954638, dtype=xp.float64))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     def test_extremely_large_input_values(self, xp):
         # Extremely large values in x and y.  These values would cause the
         # product sigma_x * sigma_y to overflow if the two factors were
@@ -559,8 +554,7 @@ class TestPearsonr:
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     def test_negative_correlation_pvalue_gh17795(self, xp):
         x = xp.arange(10.)
         y = -x
@@ -570,8 +564,7 @@ class TestPearsonr:
         xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     def test_length3_r_exactly_negative_one(self, xp):
         x = xp.asarray([1., 2., 3.])
         y = xp.asarray([5., -4., -13.])
@@ -702,8 +695,7 @@ class TestPearsonr:
                 stats.pearsonr(x, x, method=stats.PermutationMethod())
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
         x0 = xp.asarray(rng.random((3, 5)))
@@ -742,8 +734,7 @@ class TestPearsonr:
         xp_assert_close(ci.high, ones)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     @pytest.mark.parametrize('axis', [0, 1, None])
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_array_api(self, xp, axis, alternative):
@@ -2893,8 +2884,7 @@ class TestZmapZscore:
         xp_assert_close(z[0, :], z0_expected)
         xp_assert_close(z[1, :], z1_expected)
 
-    @skip_xp_backends('cupy', 'jax.numpy',
-                      reasons=["cupy/cupy#8391", "JAX can't do item assignment"])
+    @skip_xp_backends('cupy', reasons=["cupy/cupy#8391"])
     def test_zscore_nan_propagate(self, xp):
         x = xp.asarray([1, 2, np.nan, 4, 5])
         z = stats.zscore(x, nan_policy='propagate')
@@ -2925,8 +2915,7 @@ class TestZmapZscore:
         with pytest.raises(ValueError, match="The input contains nan..."):
             stats.zscore(x, nan_policy='raise')
 
-    @skip_xp_backends('cupy', 'jax.numpy',
-                      reasons=["cupy/cupy#8391", "JAX can't do item assignment"])
+    @skip_xp_backends('cupy', reasons=["cupy/cupy#8391"])
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
@@ -2981,8 +2970,7 @@ class TestZmapZscore:
         xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                                        [-1.0, -1.0, 1.0, 1.0]]))
 
-    @skip_xp_backends('cupy', 'jax.numpy',
-                      reasons=["cupy/cupy#8391", "JAX can't do item assignment"])
+    @skip_xp_backends('cupy', reasons=["cupy/cupy#8391"])
     def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
         y = xp.full((2, 3), xp.nan)

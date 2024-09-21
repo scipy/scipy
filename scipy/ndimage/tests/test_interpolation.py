@@ -34,8 +34,7 @@ ndimage_to_numpy_mode = {
 
 class TestBoundaries:
 
-    @skip_xp_backends("cupy", ["CuPy does not have geometric_transform"],
-                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+    @skip_xp_backends("cupy", reasons=["CuPy does not have geometric_transform"])
     @pytest.mark.parametrize(
         'mode, expected_value',
         [('nearest', [1.5, 2.5, 3.5, 4, 4, 4, 4]),
@@ -56,8 +55,7 @@ class TestBoundaries:
                                         output_shape=(7,), order=1),
             xp.asarray(expected_value))
 
-    @skip_xp_backends("cupy", ["CuPy does not have geometric_transform"],
-                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+    @skip_xp_backends("cupy", reasons=["CuPy does not have geometric_transform"])
     @pytest.mark.parametrize(
         'mode, expected_value',
         [('nearest', [1, 1, 2, 3]),
@@ -147,8 +145,7 @@ class TestSpline:
         assert_array_almost_equal(out, expected)
 
 
-@skip_xp_backends("cupy", ["CuPy does not have geometric_transform"],
-                  cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+@skip_xp_backends("cupy", reasons=["CuPy does not have geometric_transform"])
 @pytest.mark.parametrize('order', range(0, 6))
 class TestGeometricTransform:
 
@@ -420,8 +417,7 @@ class TestGeometricTransform:
         assert_array_almost_equal(out, [5, 7])
 
 
-@skip_xp_backends("cupy", ["CuPy does not have geometric_transform"],
-                  cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+@skip_xp_backends("cupy", reasons=["CuPy does not have geometric_transform"])
 class TestGeometricTransformExtra:
 
     def test_geometric_transform_grid_constant_order1(self, xp):
@@ -544,8 +540,7 @@ class TestMapCoordinates:
         out2 = ndimage.map_coordinates(data, idx, order=order)
         assert_array_almost_equal(out1, out2)
 
-    @skip_xp_backends("jax.numpy", reasons=["`order` is required in jax"],
-                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+    @skip_xp_backends("jax.numpy", reasons=["`order` is required in jax"])
     def test_map_coordinates03(self, xp):
         data = _asarray([[4, 1, 3, 2],
                          [7, 6, 8, 5],
