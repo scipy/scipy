@@ -2092,7 +2092,7 @@ class wishart_gen(multi_rv_generic):
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -2697,7 +2697,7 @@ class invwishart_gen(wishart_gen):
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -2959,7 +2959,7 @@ class invwishart_gen(wishart_gen):
         df : int
             Degrees of freedom
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
         %(_doc_random_state)s
 
         Notes

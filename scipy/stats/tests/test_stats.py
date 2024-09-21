@@ -826,7 +826,7 @@ class TestFisherExact:
                                            verbose=True)
 
     def test_gh4130(self):
-        # Previously, a fudge factor used to distinguish between theoeretically
+        # Previously, a fudge factor used to distinguish between theoretically
         # and numerically different probability masses was 1e-4; it has been
         # tightened to fix gh4130. Accuracy checked against R fisher.test.
         # options(digits=16)
@@ -2176,7 +2176,7 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # This test used to use 'assert_array_almost_equal' but its
-        # formualtion got confusing since LinregressResult became
+        # formulation got confusing since LinregressResult became
         # _lib._bunch._make_tuple_bunch instead of namedtuple
         # (for backwards compatibility, see PR #12983)
         def assert_ae(x, y):
@@ -2198,7 +2198,7 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Make sure propagated numerical errors
-        # did not bring rvalue below -1 (or were coersced)
+        # did not bring rvalue below -1 (or were coerced)
         assert_(result.rvalue >= -1)
         assert_almost_equal(result.rvalue, -1)
 

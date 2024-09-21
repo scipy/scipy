@@ -4264,7 +4264,7 @@ class TestSkewNorm:
         # MoM fits variance and skewness
         a5, loc5, scale5 = stats.skewnorm.fit(rvs2, method='mm')
         assert np.isinf(a5)
-        # distribution infrastruction doesn't allow infinite shape parameters
+        # distribution infrastructure doesn't allow infinite shape parameters
         # into _stats; it just bypasses it and produces NaNs. Calculate
         # moments manually.
         m, v = np.mean(rvs2), np.var(rvs2)
@@ -6112,6 +6112,47 @@ class TestLevyStable:
             expected,
         )
 
+    def test_frozen_parameterization_gh20821(self):
+        # gh-20821 reported that frozen distributions ignore the parameterization.
+        # Check that this is resolved and that the frozen distribution's
+        # parameterization can be changed independently of stats.levy_stable
+        rng = np.random.default_rng
+        shapes = dict(alpha=1.9, beta=0.1, loc=0.0, scale=1.0)
+        unfrozen = stats.levy_stable
+        frozen = stats.levy_stable(**shapes)
+
+        unfrozen.parameterization = "S0"
+        frozen.parameterization = "S1"
+        unfrozen_a = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+        frozen_a = frozen.rvs(size=10, random_state=rng(329823498))
+        assert not np.any(frozen_a == unfrozen_a)
+
+        unfrozen.parameterization = "S1"
+        frozen.parameterization = "S0"
+        unfrozen_b = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+        frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
+        assert_equal(frozen_b, unfrozen_a)
+        assert_equal(unfrozen_b, frozen_a)
+
+    def test_frozen_parameterization_gh20821b(self):
+        # Check that the parameterization of the frozen distribution is that of
+        # the unfrozen distribution at the time of freezing
+        rng = np.random.default_rng
+        shapes = dict(alpha=1.9, beta=0.1, loc=0.0, scale=1.0)
+        unfrozen = stats.levy_stable
+
+        unfrozen.parameterization = "S0"
+        frozen = stats.levy_stable(**shapes)
+        unfrozen_a = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+        frozen_a = frozen.rvs(size=10, random_state=rng(329823498))
+        assert_equal(frozen_a, unfrozen_a)
+
+        unfrozen.parameterization = "S1"
+        frozen = stats.levy_stable(**shapes)
+        unfrozen_b = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+        frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
+        assert_equal(frozen_b, unfrozen_b)
+
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
@@ -6721,7 +6762,7 @@ class TestExpect:
         assert_almost_equal(res1, res2, decimal=14)
 
     def test_rice_overflow(self):
-        # rice.pdf(999, 0.74) was inf since special.i0 silentyly overflows
+        # rice.pdf(999, 0.74) was inf since special.i0 silently overflows
         # check that using i0e fixes it
         assert_(np.isfinite(stats.rice.pdf(999, 0.74)))
 

@@ -251,6 +251,32 @@ using cuda::std::uint64_t;
 
 namespace xsf {
 
+// basic
+using std::abs;
+
+// exponential
+using std::exp;
+
+// power
+using std::sqrt;
+
+// trigonometric
+using std::cos;
+using std::sin;
+
+// floating-point manipulation
+using std::copysign;
+
+// classification and comparison
+using std::isfinite;
+using std::isinf;
+using std::isnan;
+using std::signbit;
+
+// complex
+using std::imag;
+using std::real;
+
 template <typename T>
 struct remove_complex {
     using type = T;
@@ -263,5 +289,16 @@ struct remove_complex<std::complex<T>> {
 
 template <typename T>
 using remove_complex_t = typename remove_complex<T>::type;
+
+template <typename T>
+struct complex_type {
+    using type = std::complex<T>;
+};
+
+template <typename T>
+using complex_type_t = typename complex_type<T>::type;
+
+template <typename T>
+using complex = complex_type_t<T>;
 
 } // namespace xsf

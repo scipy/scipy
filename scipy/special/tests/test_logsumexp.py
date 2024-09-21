@@ -195,6 +195,12 @@ class TestLogSumExp:
         desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=desired_dtype)
         xp_assert_close(logsumexp(a, b=b), desired)
 
+    def test_gh18295(self, xp):
+        a = xp.asarray([0.0, -40.0])
+        res = logsumexp(a)
+        ref = xp.logaddexp(a[0], a[1])
+        xp_assert_close(res, ref)
+
 
 class TestSoftmax:
     def test_softmax_fixtures(self):

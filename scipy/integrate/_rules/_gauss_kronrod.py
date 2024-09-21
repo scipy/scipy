@@ -1,4 +1,4 @@
-import numpy as np
+from scipy._lib._array_api import np_compat, array_namespace
 
 from functools import cached_property
 
@@ -26,6 +26,10 @@ class GaussKronrodQuadrature(NestedFixedRule):
     ----------
     npoints : int
         Number of nodes for the higher-order rule.
+
+    xp : array_namespace, optional
+        The namespace for the node and weight arrays. Default is None, where NumPy is
+        used.
 
     Attributes
     ----------
@@ -75,7 +79,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
      np.float64(2.220446049250313e-16)
     """
 
-    def __init__(self, npoints):
+    def __init__(self, npoints, xp=None):
         # TODO: nodes and weights are currently hard-coded for values 15 and 21, but in
         # the future it would be best to compute the Kronrod extension of the lower rule
         if npoints != 15 and npoints != 21:
@@ -83,13 +87,19 @@ class GaussKronrodQuadrature(NestedFixedRule):
                                       "supported for 15 or 21 nodes")
 
         self.npoints = npoints
-        self.gauss = GaussLegendreQuadrature(npoints//2)
+
+        if xp is None:
+            xp = np_compat
+
+        self.xp = array_namespace(xp.empty(0))
+
+        self.gauss = GaussLegendreQuadrature(npoints//2, xp=self.xp)
 
     @cached_property
     def nodes_and_weights(self):
         # These values are from QUADPACK's `dqk21.f` and `dqk15.f` (1983).
         if self.npoints == 21:
-            nodes = np.array([
+            nodes = self.xp.asarray([
                 0.995657163025808080735527280689003,
                 0.973906528517171720077964012084452,
                 0.930157491355708226001207180059508,
@@ -113,7 +123,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
                 -0.995657163025808080735527280689003,
             ])
 
-            weights = np.array([
+            weights = self.xp.asarray([
                 0.011694638867371874278064396062192,
                 0.032558162307964727478818972459390,
                 0.054755896574351996031381300244580,
@@ -137,7 +147,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
                 0.011694638867371874278064396062192,
             ])
         elif self.npoints == 15:
-            nodes = np.array([
+            nodes = self.xp.asarray([
                 0.991455371120812639206854697526329,
                 0.949107912342758524526189684047851,
                 0.864864423359769072789712788640926,
@@ -155,7 +165,7 @@ class GaussKronrodQuadrature(NestedFixedRule):
                 -0.991455371120812639206854697526329,
             ])
 
-            weights = np.array([
+            weights = self.xp.asarray([
                 0.022935322010529224963732008058970,
                 0.063092092629978553290700663189204,
                 0.104790010322250183839876322541518,

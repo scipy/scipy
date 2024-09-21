@@ -596,7 +596,7 @@ Bivariate spline fitting of data on a grid
 For gridded 2D data, fitting a smoothing tensor product spline can be done
 using the `RectBivariateSpline` class. It has the interface similar to that of
 `SmoothBivariateSpline`, the main difference is that the 1D input arrays ``x``
-and ``y`` are understood as definifing a 2D grid (as their outer product),
+and ``y`` are understood as defining a 2D grid (as their outer product),
 and the ``z`` array is 2D with the shape of ``len(x)`` by  ``len(y)``.
 
 The spline orders in the ``x`` and ``y`` directions are controlled by the optional

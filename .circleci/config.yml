@@ -116,7 +116,7 @@ jobs:
           no_output_timeout: 25m
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
-            python dev.py --no-build doc 2>&1 | tee sphinx_log.txt
+            python dev.py --no-build doc -j2 2>&1 | tee sphinx_log.txt
 
       - run:
           name: Check sphinx log for warnings (which are treated as errors)
