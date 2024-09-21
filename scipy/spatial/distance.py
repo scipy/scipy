@@ -1575,6 +1575,13 @@ def russellrao(u, v, w=None):
     russellrao : double
         The Russell-Rao dissimilarity between vectors `u` and `v`.
 
+    Notes
+    -----
+    .. versionchanged:: 1.15.0
+       Previously, if `u` and `v` are empty (or the total weight is zero),
+       the function would raise ``ZeroDivisionError`` (or return ``nan``).
+       This was changed to return ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
