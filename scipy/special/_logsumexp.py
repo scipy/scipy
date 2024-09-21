@@ -211,7 +211,6 @@ def _logsumexp(a, b, axis, return_sign, xp):
     # Take log and undo shift
     out = xp.log1p(s) + xp.log(m) + a_max
 
-    # Sigh... imagine a world in which we could just take the real part of a real array
     out = xp_real(out) if return_sign else out
 
     return out, sgn
