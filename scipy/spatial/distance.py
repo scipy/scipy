@@ -1591,8 +1591,20 @@ def russellrao(u, v, w=None):
     return float(n - ntt) / n
 
 
+def _deprecate_sokalmichener(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        warnings.warn(
+            "The sokalmichener metric is deprecated since Scipy 1.15.0 and will "
+            "be removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=2)
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+@_deprecate_sokalmichener
 def sokalmichener(u, v, w=None):
     """
+    (Deprecated)
     Compute the Sokal-Michener dissimilarity between two boolean 1-D arrays.
 
     The Sokal-Michener dissimilarity between boolean 1-D arrays `u` and `v`,
@@ -1921,8 +1933,8 @@ _METRIC_INFOS = [
         aka={'sokalmichener'},
         types=['bool'],
         dist_func=sokalmichener,
-        cdist_func=_distance_pybind.cdist_sokalmichener,
-        pdist_func=_distance_pybind.pdist_sokalmichener,
+        cdist_func=_deprecate_sokalmichener(_distance_pybind.cdist_sokalmichener),
+        pdist_func=_deprecate_sokalmichener(_distance_pybind.pdist_sokalmichener),
     ),
     MetricInfo(
         canonical_name='sokalsneath',

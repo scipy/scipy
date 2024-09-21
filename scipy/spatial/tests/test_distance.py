@@ -385,7 +385,7 @@ class DummyContextManager:
 
 
 def maybe_deprecated(metric: str):
-    if metric == 'kulczynski1':
+    if metric in ('kulczynski1', 'sokalmichener'):
         return pytest.deprecated_call()
     else:
         return DummyContextManager()
@@ -2034,8 +2034,10 @@ def test_sokalmichener():
     q = [True, False, True]
     x = [int(b) for b in p]
     y = [int(b) for b in q]
-    dist1 = sokalmichener(p, q)
-    dist2 = sokalmichener(x, y)
+    with pytest.deprecated_call():
+        dist1 = sokalmichener(p, q)
+    with pytest.deprecated_call():
+        dist2 = sokalmichener(x, y)
     # These should be exactly the same.
     assert_equal(dist1, dist2)
 
@@ -2050,7 +2052,8 @@ def test_sokalmichener_with_weight():
     nff = 0 * 1 + 0 * 0.2
     expected = 2 * (nft + ntf) / (ntt + nff + 2 * (nft + ntf))
     assert_almost_equal(expected, 0.2857143)
-    actual = sokalmichener([1, 0], [1, 1], w=[1, 0.2])
+    with pytest.deprecated_call():
+        actual = sokalmichener([1, 0], [1, 1], w=[1, 0.2])
     assert_almost_equal(expected, actual)
 
     a1 = [False, False, True, True, True, False, False, True, True, True, True,
@@ -2059,7 +2062,8 @@ def test_sokalmichener_with_weight():
           True, True, True, True, False, False, False, True, True, True]
 
     for w in [0.05, 0.1, 1.0, 20.0]:
-        assert_almost_equal(sokalmichener(a2, a1, [w]), 0.6666666666666666)
+        with pytest.deprecated_call():
+            assert_almost_equal(sokalmichener(a2, a1, [w]), 0.6666666666666666)
 
 
 def test_modifies_input(metric):
