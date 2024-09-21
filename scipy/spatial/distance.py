@@ -741,6 +741,13 @@ def hamming(u, v, w=None):
     hamming : double
         The Hamming distance between vectors `u` and `v`.
 
+    Notes
+    -----
+    .. versionchanged:: 1.15.0
+       Previously, if `u` and `v` are empty or the total weight is zero,
+       the function would return ``nan``.  This was changed to return
+       ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
