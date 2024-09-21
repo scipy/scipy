@@ -1463,6 +1463,8 @@ def dice(u, v, w=None):
         else:
             ntt = (u * v * w).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
+    if ntf + nft == 0:
+        return 0.0
     return float((ntf + nft) / np.array(2.0 * ntt + ntf + nft))
 
 
