@@ -3575,7 +3575,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=True,
       execution time).
 
     - The default, ``method='auto'``, selects between the two: when
-      ``len(d) <= 50`` and there are no zeros, the exact method is used;
+      ``len(d) <= 50`` and there are no zeros and no ties, the exact method
+      is used; if ``len(d) <= 50`` and there are zeros or ties, the
+      p-value is computed using `permutation_test`;
       otherwise, the approximate method is used.
 
     The presence of "ties" (i.e. not all elements of ``d`` are unique) or
@@ -3681,7 +3683,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=True,
     """
     # replace approx by asymptotic to ensure backwards compatability
     if method == "approx":
-        depr_msg = ("The method `approx` has been renamed to `aymptotic`. "
+        depr_msg = ("The method `approx` has been renamed to `asymptotic`. "
                     "`approx` will be removed in SciPy 1.17.")
         warnings.warn(depr_msg, DeprecationWarning, stacklevel=2)
         method = "asymptotic"

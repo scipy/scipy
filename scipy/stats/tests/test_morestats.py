@@ -1684,12 +1684,23 @@ class TestWilcoxon:
         pm = stats.PermutationMethod()
         d = np.arange(0, 13)
         w, p = stats.wilcoxon(d)
-        assert_equal(stats.wilcoxon(d, method=pm), (w, p))
+        # rerunning the test gives the same results since n_resamples
+        # is large enough to get deterministic results if n <= 13
+        # so we do not need to use a seed
+        assert_equal((w, p), stats.wilcoxon(d, method=pm))
+
+        # for larger vectors, also run permutation test but warn user
+        # that value is not deterministic
+        d = np.arange(0, 14)
+        with pytest.warns(UserWarning, match="not deterministic"):
+            w, p = stats.wilcoxon(d)
+        # we should reject null since d >=0 ...
+        assert_(p < 0.05)
 
         # n <= 50: if there are ties in d = x-y, use PermutationMethod
         d = np.array([1, 2, 2, 7, 5, -6, 9, -4])
         w, p = stats.wilcoxon(d)
-        assert_equal(stats.wilcoxon(d, method=pm), (w, p))
+        assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
         # use approximation for samples > 50
         d = np.arange(1, 52)
