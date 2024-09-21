@@ -502,7 +502,8 @@ struct RogerstanimotoDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (acc.n + acc.ndiff);
+            T denom = acc.n + acc.ndiff;
+            return (2 * acc.ndiff) / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -521,7 +522,8 @@ struct RogerstanimotoDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (acc.n + acc.ndiff);
+            T denom = acc.n + acc.ndiff;
+            return (2 * acc.ndiff) / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
