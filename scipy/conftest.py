@@ -42,11 +42,11 @@ def pytest_configure(config):
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
     config.addinivalue_line("markers",
-        "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False, "
+        "skip_xp_backends(*backends, reason=None, np_only=False, cpu_only=False, "
         "exceptions=None): "
         "mark the desired skip configuration for the `skip_xp_backends` fixture.")
     config.addinivalue_line("markers",
-        "xfail_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False, "
+        "xfail_xp_backends(*backends, reason=None, np_only=False, cpu_only=False, "
         "exceptions=None): "
         "mark the desired xfail configuration for the `xfail_xp_backends` fixture.")
 
@@ -220,14 +220,6 @@ def skip_xp_backends(xp, request):
     backends, kwargs = _backends_kwargs_from_request(request, skip_or_xfail='skip')
     skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip')
 
-    # TODO:
-    #
-    #       3. document
-    #       4. API: reasons= as a list; require either string_backend, reason=string, or
-    #          tuple of backend stings, list/tuple of reasons?
-
-   # kwargs = request.keywords["skip_xp_backends"].kwargs
-
 
 @pytest.fixture
 def xfail_xp_backends(xp, request):
@@ -247,20 +239,18 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
     Parameters
     ----------
     *backends : tuple
-        Backends to skip, e.g. ``("array_api_strict", "torch")``.
+        Backends to skip, e.g. ``("array_api_strict", "numpy")``.
         These are overriden when ``np_only`` is ``True``, and are not
         necessary to provide for non-CPU backends when ``cpu_only`` is ``True``.
-    reasons : list, optional
-        A list of reasons for each skip. When ``np_only`` is ``True``,
-        this should be a singleton list. Otherwise, this should be a list
-        of reasons, one for each corresponding backend in ``backends``.
-        If unprovided, default reasons are used. Note that it is not possible
+    reason : str, optional
+        A reason for the skip.
+        If unprovided, default reason is used. Note that it is not possible
         to specify a custom reason with ``cpu_only``. Default: ``None``.
     np_only : bool, optional
         When ``True``, the test is skipped for all backends other
         than the default NumPy backend. There is no need to provide
         any ``backends`` in this case. To specify a reason, pass a
-        singleton list to ``reasons``. Default: ``False``.
+        value to ``reason``. Default: ``False``.
     cpu_only : bool, optional
         When ``True``, the test is skipped/x-failed on non-CPU devices.
         There is no need to provide any ``backends`` in this case,
@@ -276,6 +266,9 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
     cpu_only = kwargs.get("cpu_only", False)
     exceptions = kwargs.get("exceptions", [])
     
+    if reasons := kwargs.get("reasons"):
+        raise ValueError(f"provide a single `reason=` kwarg; got {reasons=} instead")
+
     # input validation
     if np_only and cpu_only:
         # raise ValueError("at most one of `np_only` and `cpu_only` should be provided")
@@ -285,11 +278,10 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
         raise ValueError("`exceptions` is only valid alongside `cpu_only` or `np_only`")
 
     if np_only:
-        reasons = kwargs.get("reasons", ["do not run with non-NumPy backends."])
-        if len(reasons) > 1:
-            raise ValueError("please provide a singleton list to `reasons` "
+        reason = kwargs.get("reason", "do not run with non-NumPy backends.")
+        if not isinstance(reason, str) and len(reason) > 1:
+            raise ValueError("please provide a singleton `reason` "
                              "when using `np_only`")
-        reason = reasons[0]
         if xp.__name__ != 'numpy' and xp.__name__ not in exceptions:
             skip_or_xfail(reason=reason)
         return
@@ -311,10 +303,8 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
     if backends is not None:
         for i, backend in enumerate(backends):
             if xp.__name__ == backend:
-                reasons = kwargs[backend].get('reasons')
-                if reasons:
-                    reason = reasons[0]    # XXX
-                else:
+                reason = kwargs[backend].get('reason')
+                if not reason:
                     reason = f"do not run with array API backend: {backend}"
 
                 skip_or_xfail(reason=reason)
