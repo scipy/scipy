@@ -198,10 +198,13 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             kwargs['exceptions'] = marker.kwargs.get('exceptions', [])
         elif marker.kwargs.get('cpu_only'):
             if not kwargs.get('np_only'):
+                # if np_only is given, it is certainly cpu only
                 kwargs['cpu_only'] = True
                 kwargs['exceptions'] = marker.kwargs.get('exceptions', [])
-        else:
-            backend = marker.args[0]  # was ('numpy',)
+
+        # add backends, if any
+        if len(marker.args) > 0:
+            backend = marker.args[0]  # was a tuple, ('numpy',) etc
             backends.append(backend)
             kwargs.update(**{backend: marker.kwargs})
 

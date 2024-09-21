@@ -324,8 +324,7 @@ class TestKMean:
         kmeans2(data, 2)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['jax arrays do not support item assignment'])
     def test_kmeans2_init(self, xp):
         np.random.seed(12345)
         data = xp.asarray(TESTDATA_2D)
@@ -375,8 +374,7 @@ class TestKMean:
         xp_assert_close(res[1], xp.asarray(2.3999999999999999, dtype=xp.float64)[()])
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['jax arrays do not support item assignment'])
     def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
         prev_res = xp.asarray([[-1.95266667, 0.898],
@@ -386,8 +384,7 @@ class TestKMean:
         xp_assert_close(res, prev_res)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['jax arrays do not support item assignment'])
     def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
         n_dim = 100
@@ -412,8 +409,7 @@ class TestKMean:
         xp_assert_close(res[1], xp.asarray(1.0666666666666667, dtype=xp.float64)[()])
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['jax arrays do not support item assignment'])
     def test_kmeans_and_kmeans2_random_seed(self, xp):
 
         seed_list = [
