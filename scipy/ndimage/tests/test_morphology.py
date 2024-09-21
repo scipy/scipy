@@ -21,7 +21,7 @@ pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
 class TestNdimageMorphology:
 
     @xfail_xp_backends('cupy',
-                      reasons=['CuPy does not have distance_transform_bf.']
+                      reason='CuPy does not have distance_transform_bf.'
     )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf01(self, dtype, xp):
@@ -73,7 +73,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(ft, expected)
 
     @xfail_xp_backends('cupy',
-                      reasons=['CuPy does not have distance_transform_bf.']
+                      reason='CuPy does not have distance_transform_bf.'
     )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf02(self, dtype, xp):
@@ -125,7 +125,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(expected, ft)
 
     @xfail_xp_backends('cupy',
-                      reasons=['CuPy does not have distance_transform_bf.']
+                      reason='CuPy does not have distance_transform_bf.'
     )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf03(self, dtype, xp):
@@ -177,7 +177,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(ft, expected)
 
     @skip_xp_backends(np_only=True,
-        reasons=['inplace distances= arrays are numpy-specific']
+        reason='inplace distances= arrays are numpy-specific'
     )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf04(self, dtype, xp):
@@ -231,7 +231,7 @@ class TestNdimageMorphology:
             assert_array_almost_equal(tft, ft)
 
     @xfail_xp_backends('cupy',
-                      reasons=['CuPy does not have distance_transform_bf.']
+                      reason='CuPy does not have distance_transform_bf.'
     )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf05(self, dtype, xp):
@@ -282,7 +282,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(ft, expected)
 
     @xfail_xp_backends('cupy',
-                      reasons=['CuPy does not have distance_transform_bf.']
+                      reason='CuPy does not have distance_transform_bf.'
     )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf06(self, dtype, xp):
@@ -435,7 +435,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(ft, expected)
 
     @skip_xp_backends(np_only=True,
-                      reasons=['inplace indices= arrays are numpy-specific'])
+                      reason='inplace indices= arrays are numpy-specific')
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt03(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -487,7 +487,7 @@ class TestNdimageMorphology:
             assert_array_almost_equal(tft, ft)
 
     @skip_xp_backends(
-        np_only=True, reasons=['XXX: does not raise unless indices is a numpy array']
+        np_only=True, reason='XXX: does not raise unless indices is a numpy array'
     )
     def test_distance_transform_cdt04(self, xp):
         # test input validation per discussion on PR #13302
@@ -563,7 +563,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(bf, dt)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace distances= are numpy-specific']
+        np_only=True, reason='inplace distances= are numpy-specific'
     )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt02(self, dtype, xp):
@@ -670,7 +670,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, [0.])
 
     @skip_xp_backends(
-        np_only=True, reasons=['XXX: does not raise unless indices is a numpy array']
+        np_only=True, reason='XXX: does not raise unless indices is a numpy array'
     )
     def test_distance_transform_edt6(self, xp):
         # test input validation per discussion on PR #13302
@@ -1077,7 +1077,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+        np_only=True, reason='inplace out= arguments are numpy-specific'
     )
     def test_binary_erosion28(self, xp):
         struct = [[0, 1, 0],
@@ -1136,7 +1136,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+        np_only=True, reason='inplace out= arguments are numpy-specific'
     )
     def test_binary_erosion30(self, xp):
         if is_cupy(xp):
@@ -1175,7 +1175,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(data, expected)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+        np_only=True, reason='inplace out= arguments are numpy-specific'
     )
     def test_binary_erosion31(self, xp):
         struct = [[0, 1, 0],
@@ -1303,7 +1303,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+        np_only=True, reason='inplace out= arguments are numpy-specific'
     )
     def test_binary_erosion35(self, xp):
         struct = [[0, 1, 0],
@@ -1391,7 +1391,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+        np_only=True, reason='inplace out= arguments are numpy-specific'
     )
     def test_binary_erosion37(self, xp):
         a = np.asarray([[1, 0, 1],
@@ -1417,7 +1417,7 @@ class TestNdimageMorphology:
             _ = ndimage.binary_erosion(data, iterations=iterations)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+        np_only=True, reason='inplace out= arguments are numpy-specific'
     )
     def test_binary_erosion39(self, xp):
         iterations = np.int32(3)
@@ -1449,7 +1449,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace out= arguments are numpy-specific']
+        np_only=True, reason='inplace out= arguments are numpy-specific'
     )
     def test_binary_erosion40(self, xp):
         iterations = np.int64(3)
@@ -1832,7 +1832,7 @@ class TestNdimageMorphology:
         out = ndimage.binary_dilation(data, struct, iterations=2)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(np_only=True, reasons=['output= arrays are numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='output= arrays are numpy-specific')
     def test_binary_dilation30(self, xp):
         if is_cupy(xp):
             pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
@@ -1878,7 +1878,7 @@ class TestNdimageMorphology:
         out = ndimage.binary_dilation(data, struct, iterations=3)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(np_only=True, reasons=['output= arrays are numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='output= arrays are numpy-specific')
     def test_binary_dilation32(self, xp):
         if is_cupy(xp):
             pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
@@ -1943,7 +1943,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, expected)
 
     @skip_xp_backends(
-        np_only=True, reasons=['inplace output= arrays are numpy-specific'],
+        np_only=True, reason='inplace output= arrays are numpy-specific',
     )
     def test_binary_dilation34(self, xp):
         if is_cupy(xp):
@@ -2273,8 +2273,8 @@ class TestNdimageMorphology:
                                               [2, 3, 1, 3, 1],
                                               [5, 5, 3, 3, 1]]))
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."])
-    @xfail_xp_backends("cupy", reasons=["https://github.com/cupy/cupy/issues/8398"])
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8398")
     def test_grey_erosion01_overlap(self, xp):
 
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2404,7 +2404,7 @@ class TestNdimageMorphology:
                                       structure=structure)
         assert_array_almost_equal(expected, output)
 
-    @skip_xp_backends(np_only=True, reasons=['output= arrays are numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='output= arrays are numpy-specific')
     def test_morphological_gradient01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2436,7 +2436,7 @@ class TestNdimageMorphology:
                                                 structure=structure)
         assert_array_almost_equal(expected, output)
 
-    @skip_xp_backends(np_only=True, reasons=['output= arrays are numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='output= arrays are numpy-specific')
     def test_morphological_laplace01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2468,7 +2468,7 @@ class TestNdimageMorphology:
                                                structure=structure)
         assert_array_almost_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."])
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_white_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2496,7 +2496,7 @@ class TestNdimageMorphology:
                                       structure=structure)
         assert_array_almost_equal(expected, output)
 
-    @xfail_xp_backends('cupy', reasons=["cupy#8399"])
+    @xfail_xp_backends('cupy', reason="cupy#8399")
     def test_white_tophat03(self, xp):
 
         array = np.asarray([[1, 0, 0, 0, 0, 0, 0],
@@ -2521,7 +2521,7 @@ class TestNdimageMorphology:
         output = ndimage.white_tophat(array, structure=structure)
         xp_assert_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."])
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_white_tophat04(self, xp):
         array = np.eye(5, dtype=bool)
         structure = np.ones((3, 3), dtype=bool)
@@ -2533,7 +2533,7 @@ class TestNdimageMorphology:
         output = xp.empty_like(array, dtype=xp.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."])
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_black_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2561,7 +2561,7 @@ class TestNdimageMorphology:
                                       structure=structure)
         assert_array_almost_equal(expected, output)
 
-    @xfail_xp_backends('cupy', reasons=["cupy/cupy#8399"])
+    @xfail_xp_backends('cupy', reason="cupy/cupy#8399")
     def test_black_tophat03(self, xp):
 
         array = np.asarray([[1, 0, 0, 0, 0, 0, 0],
@@ -2586,7 +2586,7 @@ class TestNdimageMorphology:
         output = ndimage.black_tophat(array, structure=structure)
         xp_assert_equal(expected, output)
 
-    @skip_xp_backends("jax.numpy", reasons=["output array is read-only."])
+    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_black_tophat04(self, xp):
         array = xp.asarray(np.eye(5, dtype=bool))
         structure = xp.asarray(np.ones((3, 3), dtype=bool))

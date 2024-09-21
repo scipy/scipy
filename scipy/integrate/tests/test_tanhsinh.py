@@ -46,13 +46,13 @@ def _vectorize(xp):
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends(
-    'array_api_strict', reasons=['Currently uses fancy indexing assignment.']
+    'array_api_strict', reason='Currently uses fancy indexing assignment.'
 )
 @pytest.mark.skip_xp_backends(
-    'jax.numpy', reasons=['JAX arrays do not support item assignment.']
+    'jax.numpy', reason='JAX arrays do not support item assignment.'
 )
 @pytest.mark.skip_xp_backends(
-    'cupy', reasons=['cupy/cupy#8391']
+    'cupy', reason='cupy/cupy#8391'
 )
 class TestTanhSinh:
 
@@ -244,7 +244,7 @@ class TestTanhSinh:
 
     # 15 skipped intentionally; it's very difficult numerically
     @pytest.mark.skip_xp_backends(np_only=True,
-                                  reasons=['Cumbersome to convert everything.'])
+                                  reason='Cumbersome to convert everything.')
     @pytest.mark.parametrize('f_number', range(1, 15))
     def test_basic(self, f_number, xp):
         f = getattr(self, f"f{f_number}")
@@ -262,7 +262,7 @@ class TestTanhSinh:
         assert res.status == 0
 
     @pytest.mark.skip_xp_backends(np_only=True,
-                                  reasons=["Distributions aren't xp-compatible."])
+                                  reason="Distributions aren't xp-compatible.")
     @pytest.mark.parametrize('ref', (0.5, [0.4, 0.6]))
     @pytest.mark.parametrize('case', stats._distr_params.distcont)
     def test_accuracy(self, ref, case, xp):
@@ -500,9 +500,8 @@ class TestTanhSinh:
         assert res.success
         assert res.status == 0
 
-    @pytest.mark.skip_xp_backends('torch', reasons=[
+    @pytest.mark.skip_xp_backends('torch', reason=
             'https://github.com/scipy/scipy/pull/21149#issuecomment-2330477359',
-        ],
     )
     @pytest.mark.parametrize('rtol', [1e-4, 1e-14])
     def test_log(self, rtol, xp):

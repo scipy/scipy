@@ -16,11 +16,11 @@ from scipy.differentiate._differentiate import _EERRORINCREASE
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('array_api_strict',
-                              reasons=['Currently uses fancy indexing assignment.'])
+                              reason='Currently uses fancy indexing assignment.')
 @pytest.mark.skip_xp_backends('jax.numpy',
-                              reasons=['JAX arrays do not support item assignment.'])
+                              reason='JAX arrays do not support item assignment.')
 @pytest.mark.skip_xp_backends('cupy',
-                              reasons=['cupy/cupy#8391'])
+                              reason='cupy/cupy#8391')
 class TestDifferentiate:
 
     def f(self, x):
