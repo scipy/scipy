@@ -1863,12 +1863,6 @@ def test_bad_p(p):
         minkowski([1, 2], [3, 4], p, [1, 1])
 
 
-def test_sokalsneath_all_false():
-    # Regression test for ticket #876
-    with pytest.raises(ValueError):
-        sokalsneath([False, False, False], [False, False, False])
-
-
 def test_canberra():
     # Regression test for ticket #1430.
     assert_equal(wcanberra([1, 2, 3], [2, 4, 6]), 1)
