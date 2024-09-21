@@ -1598,6 +1598,8 @@ def russellrao(u, v, w=None):
         w = _validate_weights(w)
         ntt = (u * v * w).sum()
         n = w.sum()
+    if n == 0:
+        return 0.0
     return float(n - ntt) / n
 
 
