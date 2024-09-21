@@ -1716,8 +1716,7 @@ def sokalsneath(u, v, w=None):
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
     denom = np.array(ntt + 2.0 * (ntf + nft))
     if not denom.any():
-        raise ValueError('Sokal-Sneath dissimilarity is not defined for '
-                         'vectors that are entirely false.')
+        return 0.0
     return float(2.0 * (ntf + nft)) / denom
 
 
