@@ -1691,6 +1691,13 @@ def sokalsneath(u, v, w=None):
     sokalsneath : double
         The Sokal-Sneath dissimilarity between vectors `u` and `v`.
 
+    Notes
+    -----
+    .. versionchanged:: 1.15.0
+       Previously, if all (positively weighted) elements in `u` and `v` are
+       zero, the function would raise ``ValueError``.  This was changed to
+       return ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
