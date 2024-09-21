@@ -4,10 +4,10 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_broadcast_promote,
-    xp_atleast_nd,
     xp_real,
     xp_copy,
 )
+from scipy._lib import array_api_extra as xpx
 
 __all__ = ["logsumexp", "softmax", "log_softmax"]
 
@@ -103,8 +103,8 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """
     xp = array_namespace(a, b)
     a, b = xp_broadcast_promote(a, b, ensure_writeable=True, force_floating=True, xp=xp)
-    a = xp_atleast_nd(a, ndim=1)
-    b = xp_atleast_nd(b, ndim=1) if b is not None else b
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
+    b = xpx.atleast_nd(b, ndim=1, xp=xp) if b is not None else b
     axis = tuple(range(a.ndim)) if axis is None else axis
 
     if xp_size(a) != 0:
