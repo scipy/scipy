@@ -180,22 +180,57 @@ skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
               'that are not valid input when `SCIPY_ARRAY_API` is used.'))
 
 
+def _backends_kwargs_from_request(request, skip_or_xfail):
+    """A helper for {skip,xfail}_xp_backends"""
+    # do not allow multiple backends
+    args_ = request.keywords[f'{skip_or_xfail}_xp_backends'].args
+    if len(args_) > 1:
+        # np_only / cpu_only has args=(), otherwise it's ('numpy',)
+        # and we do not allow ('numpy', 'cupy')
+        raise ValueError(f"multiple backends: {args_}")
+
+    markers = list(request.node.iter_markers(f'{skip_or_xfail}_xp_backends'))
+    backends = []
+    kwargs = {}
+    for marker in markers:
+        if marker.kwargs.get('np_only'):
+            kwargs['np_only'] = True
+            kwargs['exceptions'] = marker.kwargs.get('exceptions', [])
+        elif marker.kwargs.get('cpu_only'):
+            kwargs['cpu_only'] = True
+            kwargs['exceptions'] = marker.kwargs.get('exceptions', [])
+        else:
+            backend = marker.args[0]  # was ('numpy',)
+            backends.append(backend)
+            kwargs.update(**{backend: marker.kwargs})
+
+    return backends, kwargs
+
+
 @pytest.fixture
 def skip_xp_backends(xp, request):
     """See the `skip_or_xfail_xp_backends` docstring."""
     if "skip_xp_backends" not in request.keywords:
         return
-    backends = request.keywords["skip_xp_backends"].args
-    kwargs = request.keywords["skip_xp_backends"].kwargs
+
+    backends, kwargs = _backends_kwargs_from_request(request, skip_or_xfail='skip')
     skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip')
+
+    # TODO:
+    #
+    #       3. document
+    #       4. API: reasons= as a list; require either string_backend, reason=string, or
+    #          tuple of backend stings, list/tuple of reasons?
+
+   # kwargs = request.keywords["skip_xp_backends"].kwargs
+
 
 @pytest.fixture
 def xfail_xp_backends(xp, request):
     """See the `skip_or_xfail_xp_backends` docstring."""
     if "xfail_xp_backends" not in request.keywords:
         return
-    backends = request.keywords["xfail_xp_backends"].args
-    kwargs = request.keywords["xfail_xp_backends"].kwargs
+    backends, kwargs = _backends_kwargs_from_request(request, skip_or_xfail='xfail')
     skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='xfail')
     
 
@@ -233,14 +268,15 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
         but not all, non-CPU/non-NumPy backends.
     """
     skip_or_xfail = getattr(pytest, skip_or_xfail)
-
     np_only = kwargs.get("np_only", False)
     cpu_only = kwargs.get("cpu_only", False)
     exceptions = kwargs.get("exceptions", [])
     
     # input validation
     if np_only and cpu_only:
-        raise ValueError("at most one of `np_only` and `cpu_only` should be provided")
+        # raise ValueError("at most one of `np_only` and `cpu_only` should be provided")
+        # np_only is a stricter subset of cpu_only
+        cpu_only = False
     if exceptions and not (cpu_only or np_only):
         raise ValueError("`exceptions` is only valid alongside `cpu_only` or `np_only`")
 
@@ -269,13 +305,14 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
                         skip_or_xfail(reason=reason)
 
     if backends is not None:
-        reasons = kwargs.get("reasons", False)
         for i, backend in enumerate(backends):
             if xp.__name__ == backend:
-                if not reasons:
-                    reason = f"do not run with array API backend: {backend}"
+                reasons = kwargs[backend].get('reasons')
+                if reasons:
+                    reason = reasons[0]    # XXX
                 else:
-                    reason = reasons[i]
+                    reason = f"do not run with array API backend: {backend}"
+
                 skip_or_xfail(reason=reason)
 
 
