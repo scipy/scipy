@@ -596,7 +596,7 @@ struct RussellRaoDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (acc.n - acc.ntt) / acc.n;
+            return (acc.n - acc.ntt) / (acc.n + (acc.n == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -615,7 +615,7 @@ struct RussellRaoDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (acc.n - acc.ntt) / acc.n;
+            return (acc.n - acc.ntt) / (acc.n + (acc.n == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
