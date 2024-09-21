@@ -408,7 +408,8 @@ struct DiceDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.nonmatches / (2*acc.tt_matches + acc.nonmatches);
+            T denom = 2*acc.tt_matches + acc.nonmatches;
+            return acc.nonmatches / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -427,7 +428,8 @@ struct DiceDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.nonmatches / (2*acc.tt_matches + acc.nonmatches);
+            T denom = 2*acc.tt_matches + acc.nonmatches;
+            return acc.nonmatches / (denom + (denom == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
