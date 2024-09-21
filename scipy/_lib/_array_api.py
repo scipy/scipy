@@ -9,7 +9,6 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 from __future__ import annotations
 
 import os
-import warnings
 
 from types import ModuleType
 from typing import Any, Literal, TYPE_CHECKING
@@ -31,7 +30,7 @@ __all__ = [
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_atleast_nd', 'xp_copy', 'xp_copysign', 'xp_device',
+    'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
     'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
     'xp_create_diagonal'
@@ -193,17 +192,6 @@ def _asarray(
         _check_finite(array, xp)
 
     return array
-
-
-def xp_atleast_nd(x: Array, *, ndim: int, xp: ModuleType | None = None) -> Array:
-    """Recursively expand the dimension to have at least `ndim`."""
-    if xp is None:
-        xp = array_namespace(x)
-    x = xp.asarray(x)
-    if x.ndim < ndim:
-        x = xp.expand_dims(x, axis=0)
-        x = xp_atleast_nd(x, ndim=ndim, xp=xp)
-    return x
 
 
 def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
@@ -395,34 +383,6 @@ def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
     return xp_assert_close(actual, desired,
                            atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
                            *args, **kwds)
-
-
-def xp_cov(x: Array, *, xp: ModuleType | None = None) -> Array:
-    if xp is None:
-        xp = array_namespace(x)
-
-    X = xp_copy(x, xp=xp)
-    dtype = xp.result_type(X, xp.float64)
-
-    X = xp_atleast_nd(X, ndim=2, xp=xp)
-    X = xp.asarray(X, dtype=dtype)
-
-    avg = xp.mean(X, axis=1)
-    fact = X.shape[1] - 1
-
-    if fact <= 0:
-        warnings.warn("Degrees of freedom <= 0 for slice",
-                      RuntimeWarning, stacklevel=2)
-        fact = 0.0
-
-    X -= avg[:, None]
-    X_T = X.T
-    if xp.isdtype(X_T.dtype, 'complex floating'):
-        X_T = xp.conj(X_T)
-    c = X @ X_T
-    c /= fact
-    axes = tuple(axis for axis, length in enumerate(c.shape) if length == 1)
-    return xp.squeeze(c, axis=axes)
 
 
 def xp_unsupported_param_msg(param: Any) -> str:
