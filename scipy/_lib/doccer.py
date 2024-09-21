@@ -1,7 +1,7 @@
 """Utilities to allow inserting docstring fragments for common
 parameters into function and method docstrings."""
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any, ParamSpec, TypeAlias, TypeVar
 import sys
 
@@ -23,7 +23,7 @@ R = TypeVar("R")
 Decorator: TypeAlias = Callable[[Callable[..., R]], Callable[..., R]]
 
 
-def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
+def docformat(docstring: str, docdict: Mapping[str, str] | None = None) -> str:
     """Fill a function docstring from variables in dictionary.
 
     Adapt the indent of the inserted docs
@@ -265,7 +265,7 @@ def indentcount_lines(lines: Iterable[str]) -> int:
     return indentno
 
 
-def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[R]:
+def filldoc(docdict: Mapping[str, str], unindent_params: bool = True) -> Decorator[R]:
     """Return docstring decorator using docdict variable dictionary.
 
     Parameters
@@ -294,7 +294,7 @@ def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[
     return decorate
 
 
-def unindent_dict(docdict: dict[str, str]) -> dict[str, str]:
+def unindent_dict(docdict: Mapping[str, str]) -> dict[str, str]:
     """Unindent all strings in a docdict.
 
     Parameters
