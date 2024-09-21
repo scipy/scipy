@@ -2,7 +2,7 @@
 parameters into function and method docstrings."""
 
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, ParamSpec, TypeAlias, TypeVar
+from typing import ParamSpec, TypeAlias, TypeVar
 import sys
 
 __all__ = [
@@ -83,7 +83,7 @@ def docformat(docstring: str, docdict: Mapping[str, str] | None = None) -> str:
 
 
 def inherit_docstring_from(
-    cls: type[Any] | Any,
+    cls: object,
 ) -> Decorator[R]:
     """This decorator modifies the decorated function's docstring by
     replacing occurrences of '%(super)s' with the docstring of the
@@ -141,7 +141,7 @@ def inherit_docstring_from(
     return _doc
 
 
-def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[R]:
+def extend_notes_in_docstring(cls: object, notes: str) -> Decorator[R]:
     """This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It extends the 'Notes' section of that docstring to include
@@ -182,7 +182,7 @@ def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[R]:
     return _doc
 
 
-def replace_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[R]:
+def replace_notes_in_docstring(cls: object, notes: str) -> Decorator[R]:
     """This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It replaces the 'Notes' section of that docstring with
@@ -340,7 +340,7 @@ def unindent_string(docstring: str) -> str:
     return "\n".join([line[icount:] for line in lines])
 
 
-def doc_replace(obj: type[Any] | Any, oldval: str, newval: str) -> Decorator[R]:
+def doc_replace(obj: object, oldval: str, newval: str) -> Decorator[R]:
     """Decorator to take the docstring from obj, with oldval replaced by newval
 
     Equivalent to ``func.__doc__ = obj.__doc__.replace(oldval, newval)``
