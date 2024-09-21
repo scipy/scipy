@@ -2,7 +2,7 @@
 parameters into function and method docstrings."""
 
 from collections.abc import Callable, Iterable, Mapping
-from typing import ParamSpec, TypeAlias, TypeVar
+from typing import Protocol, TypeVar
 import sys
 
 __all__ = [
@@ -17,10 +17,11 @@ __all__ = [
     "doc_replace",
 ]
 
-P = ParamSpec("P")
-R = TypeVar("R")
+_F = TypeVar("_F", bound=Callable[..., object])
 
-Decorator: TypeAlias = Callable[[Callable[..., R]], Callable[..., R]]
+
+class Decorator(Protocol):
+    def __call__(self, func: _F, /) -> _F: ...
 
 
 def docformat(docstring: str, docdict: Mapping[str, str] | None = None) -> str:
@@ -84,7 +85,7 @@ def docformat(docstring: str, docdict: Mapping[str, str] | None = None) -> str:
 
 def inherit_docstring_from(
     cls: object,
-) -> Decorator[R]:
+) -> Decorator:
     """This decorator modifies the decorated function's docstring by
     replacing occurrences of '%(super)s' with the docstring of the
     method of the same name from the class `cls`.
@@ -128,7 +129,7 @@ def inherit_docstring_from(
     'Do something useful.\n        Do it fast.\n        '
     """
 
-    def _doc(func: Callable[P, R]) -> Callable[P, R]:
+    def _doc(func: _F) -> _F:
         cls_docstring = getattr(cls, func.__name__).__doc__
         func_docstring = func.__doc__
         if func_docstring is None:
@@ -141,7 +142,7 @@ def inherit_docstring_from(
     return _doc
 
 
-def extend_notes_in_docstring(cls: object, notes: str) -> Decorator[R]:
+def extend_notes_in_docstring(cls: object, notes: str) -> Decorator:
     """This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It extends the 'Notes' section of that docstring to include
@@ -163,7 +164,7 @@ def extend_notes_in_docstring(cls: object, notes: str) -> Decorator[R]:
         of its argument.
     """
 
-    def _doc(func: Callable[P, R]) -> Callable[P, R]:
+    def _doc(func: _F) -> _F:
         cls_docstring = getattr(cls, func.__name__).__doc__
         # If python is called with -OO option,
         # there is no docstring
@@ -182,7 +183,7 @@ def extend_notes_in_docstring(cls: object, notes: str) -> Decorator[R]:
     return _doc
 
 
-def replace_notes_in_docstring(cls: object, notes: str) -> Decorator[R]:
+def replace_notes_in_docstring(cls: object, notes: str) -> Decorator:
     """This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It replaces the 'Notes' section of that docstring with
@@ -204,7 +205,7 @@ def replace_notes_in_docstring(cls: object, notes: str) -> Decorator[R]:
         of its argument.
     """
 
-    def _doc(func: Callable[P, R]) -> Callable[P, R]:
+    def _doc(func: _F) -> _F:
         cls_docstring = getattr(cls, func.__name__).__doc__
         notes_header = "        Notes\n        -----\n"
         # If python is called with -OO option,
@@ -265,7 +266,7 @@ def indentcount_lines(lines: Iterable[str]) -> int:
     return indentno
 
 
-def filldoc(docdict: Mapping[str, str], unindent_params: bool = True) -> Decorator[R]:
+def filldoc(docdict: Mapping[str, str], unindent_params: bool = True) -> Decorator:
     """Return docstring decorator using docdict variable dictionary.
 
     Parameters
@@ -285,7 +286,7 @@ def filldoc(docdict: Mapping[str, str], unindent_params: bool = True) -> Decorat
     if unindent_params:
         docdict = unindent_dict(docdict)
 
-    def decorate(func: Callable[P, R]) -> Callable[P, R]:
+    def decorate(func: _F) -> _F:
         # __doc__ may be None for optimized Python (-OO)
         doc = func.__doc__ or ""
         func.__doc__ = docformat(doc, docdict)
@@ -340,7 +341,7 @@ def unindent_string(docstring: str) -> str:
     return "\n".join([line[icount:] for line in lines])
 
 
-def doc_replace(obj: object, oldval: str, newval: str) -> Decorator[R]:
+def doc_replace(obj: object, oldval: str, newval: str) -> Decorator:
     """Decorator to take the docstring from obj, with oldval replaced by newval
 
     Equivalent to ``func.__doc__ = obj.__doc__.replace(oldval, newval)``
@@ -364,7 +365,7 @@ def doc_replace(obj: object, oldval: str, newval: str) -> Decorator[R]:
     # __doc__ may be None for optimized Python (-OO)
     doc = (obj.__doc__ or "").replace(oldval, newval)
 
-    def inner(func: Callable[P, R]) -> Callable[P, R]:
+    def inner(func: _F) -> _F:
         func.__doc__ = doc
         return func
 
