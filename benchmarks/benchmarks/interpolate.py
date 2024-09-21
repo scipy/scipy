@@ -11,6 +11,7 @@ with safe_import():
 with safe_import():
     from scipy.sparse import csr_matrix
 
+
 class Leaks(Benchmark):
     unit = "relative increase with repeats"
 
@@ -492,3 +493,15 @@ class CloughTocherInterpolatorSubclass(Benchmark):
     def time_clough_tocher(self, n_samples):
             self.interp(self.z)
 
+
+class AAA(Benchmark):
+    def setup(self):
+        self.z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
+        self.pts = np.linspace(-1, 1, num=1000)
+
+    def time_AAA(self):
+        r = interpolate.AAA(self.z, np.tan(np.pi*self.z/2))
+        r(self.pts)
+        r.poles()
+        r.residues()
+        r.roots()

@@ -9,7 +9,7 @@ __all__ = [  # noqa: F822
     'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
     'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
     'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
-    'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
+    'unique_roots', 'invres', 'invresz', 'residue',
     'residuez', 'resample', 'resample_poly', 'detrend',
     'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
     'filtfilt', 'decimate', 'vectorstrength',

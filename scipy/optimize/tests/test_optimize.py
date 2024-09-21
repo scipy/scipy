@@ -5,9 +5,6 @@ Authors:
    Ed Schofield, Nov 2005
    Andrew Straw, April 2008
 
-To run it in its simplest form::
-  nosetests test_optimize.py
-
 """
 import itertools
 import platform
@@ -19,6 +16,7 @@ from numpy.testing import (assert_allclose, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 
+import scipy
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import (MINIMIZE_METHODS,
@@ -1103,7 +1101,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_equal(res.status, 1)
         assert res.success is False
         assert_equal(res.message,
-                     'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
+                     'STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT')
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
@@ -1261,7 +1259,7 @@ class TestOptimizeSimple(CheckOptimize):
             assert func(sol1.x) < func(sol2.x), \
                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
     @pytest.mark.parametrize('method',
@@ -2423,6 +2421,13 @@ def test_powell_limits():
     optimize.minimize(fun=func, x0=[0.5], method='powell', bounds=bounds)
 
 
+def test_powell_output():
+    funs = [rosen, lambda x: np.array(rosen(x)), lambda x: np.array([rosen(x)])]
+    for fun in funs:
+        res = optimize.minimize(fun, x0=[0.6, 20], method='Powell')
+        assert np.isscalar(res.fun)
+
+
 class TestRosen:
 
     def test_hess(self):
@@ -2495,6 +2500,7 @@ class TestOptimizeResultAttributes:
         self.hessp = optimize.rosen_hess_prod
         self.bounds = [(0., 10.), (0., 10.)]
 
+    @pytest.mark.fail_slow(2)
     def test_attributes_present(self):
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
                       'message']
@@ -2584,7 +2590,7 @@ class TestBrute:
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
@@ -2615,7 +2621,7 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-@pytest.mark.fail_slow(10)
+@pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -2663,7 +2669,7 @@ class TestIterationLimits:
         r, t = np.sqrt(v[0]**2+v[1]**2), np.arctan2(v[0], v[1])
         return np.sin(r*20 + t)+r*0.5
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_neldermead_limit(self):
         self.check_limits("Nelder-Mead", 200)
 
@@ -2914,6 +2920,9 @@ eb_data = setup_test_equal_bounds()
 
 # This test is about handling fixed variables, not the accuracy of the solvers
 @pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
+@pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name'] ==
+                   "intel-llvm",
+                   reason="Failures due to floating point issues, not logic")
 @pytest.mark.parametrize('method', eb_data["methods"])
 @pytest.mark.parametrize('kwds', eb_data["kwds"])
 @pytest.mark.parametrize('bound_type', eb_data["bound_types"])

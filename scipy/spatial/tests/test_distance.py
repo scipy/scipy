@@ -209,7 +209,7 @@ def _freq_weights(weights):
         return weights
     int_weights = weights.astype(int)
     if (weights != int_weights).any():
-        raise ValueError("frequency (integer count-type) weights required %s" % weights)
+        raise ValueError(f"frequency (integer count-type) weights required {weights}")
     return int_weights
 
 
@@ -256,7 +256,10 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
     return arrays, weights
 
 
-def _rough_check(a, b, compare_assert=partial(assert_allclose, atol=1e-5),
+assert_allclose_forgiving = partial(assert_allclose, atol=1e-5)
+
+
+def _rough_check(a, b, compare_assert=assert_allclose_forgiving,
                   key=lambda x: x, w=None):
     check_a = key(a)
     check_b = key(b)
@@ -277,7 +280,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
                     ones_test=True, const_test=True, dup_test=True,
                     split_test=True, dud_test=True, ma_safe=False, ma_very_safe=False,
                     nan_safe=False, split_per=1.0, seed=0,
-                    compare_assert=partial(assert_allclose, atol=1e-5)):
+                    compare_assert=assert_allclose_forgiving):
     """runs fn on its arguments 2 or 3 ways, checks that the results are the same,
        then returns the same thing it would have returned before"""
     @wraps(fn)
@@ -1150,53 +1153,6 @@ class TestPdist:
         Y_test2 = wpdist(X, 'test_hamming')
         assert_allclose(Y_test2, Y_right, rtol=eps)
 
-    def test_pdist_jaccard_random(self):
-        eps = 1e-8
-        X = eo['pdist-boolean-inp']
-        Y_right = eo['pdist-jaccard']
-        Y_test1 = wpdist(X, 'jaccard')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_jaccard_random_float32(self):
-        eps = 1e-8
-        X = np.float32(eo['pdist-boolean-inp'])
-        Y_right = eo['pdist-jaccard']
-        Y_test1 = wpdist(X, 'jaccard')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_jaccard_random_nonC(self):
-        eps = 1e-8
-        X = eo['pdist-boolean-inp']
-        Y_right = eo['pdist-jaccard']
-        Y_test2 = wpdist(X, 'test_jaccard')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
-    def test_pdist_djaccard_random(self):
-        eps = 1e-8
-        X = np.float64(eo['pdist-boolean-inp'])
-        Y_right = eo['pdist-jaccard']
-        Y_test1 = wpdist(X, 'jaccard')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_djaccard_random_float32(self):
-        eps = 1e-8
-        X = np.float32(eo['pdist-boolean-inp'])
-        Y_right = eo['pdist-jaccard']
-        Y_test1 = wpdist(X, 'jaccard')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_djaccard_allzeros(self):
-        eps = 1e-15
-        Y = pdist(np.zeros((5, 3)), 'jaccard')
-        assert_allclose(np.zeros(10), Y, rtol=eps)
-
-    def test_pdist_djaccard_random_nonC(self):
-        eps = 1e-8
-        X = np.float64(eo['pdist-boolean-inp'])
-        Y_right = eo['pdist-jaccard']
-        Y_test2 = wpdist(X, 'test_jaccard')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
     def test_pdist_jensenshannon_random(self):
         eps = 1e-11
         X = eo['pdist-double-inp']
@@ -1244,53 +1200,6 @@ class TestPdist:
         Y_test2 = pdist(X, 'test_jensenshannon')
         assert_allclose(Y_test2, Y_right, rtol=eps)
 
-    def test_pdist_djaccard_allzeros_nonC(self):
-        eps = 1e-15
-        Y = pdist(np.zeros((5, 3)), 'test_jaccard')
-        assert_allclose(np.zeros(10), Y, rtol=eps)
-
-    def test_pdist_chebyshev_random(self):
-        eps = 1e-8
-        X = eo['pdist-double-inp']
-        Y_right = eo['pdist-chebyshev']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_random_float32(self):
-        eps = 1e-7
-        X = np.float32(eo['pdist-double-inp'])
-        Y_right = eo['pdist-chebyshev']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
-
-    def test_pdist_chebyshev_random_nonC(self):
-        eps = 1e-8
-        X = eo['pdist-double-inp']
-        Y_right = eo['pdist-chebyshev']
-        Y_test2 = pdist(X, 'test_chebyshev')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_iris(self):
-        eps = 1e-14
-        X = eo['iris']
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_iris_float32(self):
-        eps = 1e-5
-        X = np.float32(eo['iris'])
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
-
-    def test_pdist_chebyshev_iris_nonC(self):
-        eps = 1e-14
-        X = eo['iris']
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test2 = pdist(X, 'test_chebyshev')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
     def test_pdist_matching_mtica1(self):
         # Test matching(*,*) with mtica example #1 (nums).
         m = wmatching(np.array([1, 0, 1, 1, 0]),
@@ -1305,22 +1214,6 @@ class TestPdist:
         m = wmatching(np.array([1, 0, 1]),
                      np.array([1, 1, 0]))
         m2 = wmatching(np.array([1, 0, 1], dtype=bool),
-                      np.array([1, 1, 0], dtype=bool))
-        assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
-        assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
-
-    def test_pdist_jaccard_mtica1(self):
-        m = wjaccard(np.array([1, 0, 1, 1, 0]),
-                     np.array([1, 1, 0, 1, 1]))
-        m2 = wjaccard(np.array([1, 0, 1, 1, 0], dtype=bool),
-                      np.array([1, 1, 0, 1, 1], dtype=bool))
-        assert_allclose(m, 0.6, rtol=0, atol=1e-10)
-        assert_allclose(m2, 0.6, rtol=0, atol=1e-10)
-
-    def test_pdist_jaccard_mtica2(self):
-        m = wjaccard(np.array([1, 0, 1]),
-                     np.array([1, 1, 0]))
-        m2 = wjaccard(np.array([1, 0, 1], dtype=bool),
                       np.array([1, 1, 0], dtype=bool))
         assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
         assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
@@ -1649,6 +1542,14 @@ class TestSomeDistanceFunctions:
                       1., 1., -1., 1., -1., -1., -1., -1., -1., -1., 1.])
         dist = correlation(x, y)
         assert 0 <= dist <= 10 * np.finfo(np.float64).eps
+
+    @pytest.mark.filterwarnings('ignore:Casting complex')
+    @pytest.mark.parametrize("func", [correlation, cosine])
+    def test_corr_dep_complex(self, func):
+        x = [1+0j, 2+0j]
+        y = [3+0j, 4+0j]
+        with pytest.deprecated_call(match="Complex `u` and `v` are deprecated"):
+            func(x, y)
 
     def test_mahalanobis(self):
         x = np.array([1.0, 2.0, 3.0])
@@ -2265,3 +2166,148 @@ def test_immutable_input(metric):
     x = np.arange(10, dtype=np.float64)
     x.setflags(write=False)
     getattr(scipy.spatial.distance, metric)(x, x, w=x)
+
+
+class TestJaccard:
+
+    def test_pdist_jaccard_random(self):
+        eps = 1e-8
+        X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_jaccard_random_float32(self):
+        eps = 1e-8
+        X = np.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_jaccard_random_nonC(self):
+        eps = 1e-8
+        X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-jaccard']
+        Y_test2 = wpdist(X, 'test_jaccard')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_random(self):
+        eps = 1e-8
+        X = np.float64(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_random_float32(self):
+        eps = 1e-8
+        X = np.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_allzeros(self):
+        eps = 1e-15
+        Y = pdist(np.zeros((5, 3)), 'jaccard')
+        assert_allclose(np.zeros(10), Y, rtol=eps)
+
+    def test_pdist_djaccard_random_nonC(self):
+        eps = 1e-8
+        X = np.float64(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test2 = wpdist(X, 'test_jaccard')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_allzeros_nonC(self):
+        eps = 1e-15
+        Y = pdist(np.zeros((5, 3)), 'test_jaccard')
+        assert_allclose(np.zeros(10), Y, rtol=eps)
+
+    def test_pdist_jaccard_mtica1(self):
+        m = wjaccard(np.array([1, 0, 1, 1, 0]),
+                     np.array([1, 1, 0, 1, 1]))
+        m2 = wjaccard(np.array([1, 0, 1, 1, 0], dtype=bool),
+                      np.array([1, 1, 0, 1, 1], dtype=bool))
+        assert_allclose(m, 0.6, rtol=0, atol=1e-10)
+        assert_allclose(m2, 0.6, rtol=0, atol=1e-10)
+
+    def test_pdist_jaccard_mtica2(self):
+        m = wjaccard(np.array([1, 0, 1]),
+                     np.array([1, 1, 0]))
+        m2 = wjaccard(np.array([1, 0, 1], dtype=bool),
+                      np.array([1, 1, 0], dtype=bool))
+        assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
+
+    def test_non_01_input(self):
+        # Non-0/1 numeric input should be cast to bool before computation.
+        # See gh-21176.
+        x = np.array([-10, 2.5, 0])  # [True, True, False]
+        y = np.array([ 2,   -5, 2])  # [True, True, True]
+        eps = np.finfo(float).eps
+        assert_allclose(jaccard(x, y), 1/3, rtol=eps)
+        assert_allclose(cdist([x], [y], 'jaccard'), [[1/3]])
+        assert_allclose(pdist([x, y], 'jaccard'), [1/3])
+
+
+class TestChebyshev:
+
+    def test_pdist_chebyshev_random(self):
+        eps = 1e-8
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-chebyshev']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-chebyshev']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+
+    def test_pdist_chebyshev_random_nonC(self):
+        eps = 1e-8
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-chebyshev']
+        Y_test2 = pdist(X, 'test_chebyshev')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_iris(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_iris_float32(self):
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+
+    def test_pdist_chebyshev_iris_nonC(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test2 = pdist(X, 'test_chebyshev')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_weighted(self):
+        # Basic test for weighted Chebyshev.  Only components with non-zero
+        # weight participate in the 'max'.
+        x = [1, 2, 3]
+        y = [6, 5, 4]
+        w = [0, 1, 5]
+        assert_equal(chebyshev(x, y, w), 3)
+        assert_equal(pdist([x, y], 'chebyshev', w=w), [3])
+        assert_equal(cdist([x], [y], 'chebyshev', w=w), [[3]])
+
+    def test_zero_weight(self):
+        # If the weight is identically zero, the distance should be zero.
+        x = [1, 2, 3]
+        y = [6, 5, 4]
+        w = [0, 0, 0]
+        assert_equal(chebyshev(x, y, w), 0)
+        assert_equal(pdist([x, y], 'chebyshev', w=w), [0])
+        assert_equal(cdist([x], [y], 'chebyshev', w=w), [[0]])

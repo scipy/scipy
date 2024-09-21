@@ -31,7 +31,7 @@ __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
-           'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
+           'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
            'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
            'filtfilt', 'decimate', 'vectorstrength']
@@ -91,6 +91,22 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
                          "as large as the other in every dimension")
 
     return not ok1
+
+
+def _reject_objects(arr, name):
+    """Warn if arr.dtype is object or longdouble.
+    """
+    dt = np.asarray(arr).dtype
+    if not (np.issubdtype(dt, np.integer)
+            or dt in [np.bool_, np.float16, np.float32, np.float64,
+                      np.complex64, np.complex128]
+    ):
+        msg = (
+            f"dtype={dt} is not supported by {name} and will raise an error in "
+            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, `np.float16`,"
+            f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
+        )
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
 
 
 def correlate(in1, in2, mode='full', method='auto'):
@@ -229,6 +245,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
+    _reject_objects(in1, 'correlate')
+    _reject_objects(in1, 'correlate')
 
     if in1.ndim == in2.ndim == 0:
         return in1 * in2.conj()
@@ -1009,7 +1027,7 @@ def _numeric_arrays(arrays, kinds='buifc'):
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
     """
-    if type(arrays) == np.ndarray:
+    if isinstance(arrays, np.ndarray):
         return arrays.dtype.kind in kinds
     for array_ in arrays:
         if array_.dtype.kind not in kinds:
@@ -1273,6 +1291,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
 
+    _reject_objects(in1, 'choose_conv_method')
+    _reject_objects(in1, 'choose_conv_method')
+
     if measure:
         times = {}
         for method in ['fft', 'direct']:
@@ -1371,7 +1392,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     `choose_conv_method` to choose the fastest method using pre-computed
     values (`choose_conv_method` can also measure real-world timing with a
     keyword argument). Because `fftconvolve` relies on floating point numbers,
-    there are certain constraints that may force `method=direct` (more detail
+    there are certain constraints that may force ``method='direct'`` (more detail
     in `choose_conv_method` docstring).
 
     Examples
@@ -1401,6 +1422,9 @@ def convolve(in1, in2, mode='full', method='auto'):
     """
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
+
+    _reject_objects(volume, 'correlate')
+    _reject_objects(kernel, 'correlate')
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
@@ -1480,17 +1504,17 @@ def order_filter(a, domain, rank):
            [15, 16, 17, 18, 19],
            [20, 21, 22, 23, 24]])
     >>> signal.order_filter(x, domain, 0)
-    array([[  0.,   0.,   0.,   0.,   0.],
-           [  0.,   0.,   1.,   2.,   0.],
-           [  0.,   5.,   6.,   7.,   0.],
-           [  0.,  10.,  11.,  12.,   0.],
-           [  0.,   0.,   0.,   0.,   0.]])
+    array([[  0,   0,   0,   0,   0],
+           [  0,   0,   1,   2,   0],
+           [  0,   5,   6,   7,   0],
+           [  0,  10,  11,  12,   0],
+           [  0,   0,   0,   0,   0]])
     >>> signal.order_filter(x, domain, 2)
-    array([[  6.,   7.,   8.,   9.,   4.],
-           [ 11.,  12.,  13.,  14.,   9.],
-           [ 16.,  17.,  18.,  19.,  14.],
-           [ 21.,  22.,  23.,  24.,  19.],
-           [ 20.,  21.,  22.,  23.,  24.]])
+    array([[  6,   7,   8,   9,   4],
+           [ 11,  12,  13,  14,   9],
+           [ 16,  17,  18,  19,  14],
+           [ 21,  22,  23,  24,  19],
+           [ 20,  21,  22,  23,  24]])
 
     """
     domain = np.asarray(domain)
@@ -2077,6 +2101,11 @@ def lfilter(b, a, x, axis=-1, zi=None):
     """
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
+
+    _reject_objects(x, 'lfilter')
+    _reject_objects(a, 'lfilter')
+    _reject_objects(b, 'lfilter')
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
@@ -2117,7 +2146,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError("input type '%s' not supported" % dtype)
+            raise NotImplementedError(f"input type '{dtype}' not supported")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)
@@ -2450,18 +2479,6 @@ def hilbert2(x, N=None):
         k -= 1
     x = sp_fft.ifft2(Xf * h, axes=(0, 1))
     return x
-
-
-_msg_cplx_sort="""cmplx_sort was deprecated in SciPy 1.12 and will be removed
-in SciPy 1.15. The exact equivalent for a numpy array argument is
->>> def cmplx_sort(p):
-...    idx = np.argsort(abs(p))
-...    return np.take(p, idx, 0), idx
-"""
-
-def cmplx_sort(p):
-    warnings.warn(_msg_cplx_sort, DeprecationWarning, stacklevel=2)
-    return _cmplx_sort(p)
 
 
 def _cmplx_sort(p):
@@ -3096,9 +3113,12 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     If `t` is not None, then it is used solely to calculate the resampled
     positions `resampled_t`
 
-    As noted, `resample` uses FFT transformations, which can be very
-    slow if the number of input or output samples is large and prime;
-    see `scipy.fft.fft`.
+    As noted, `resample` uses FFT transformations, which can be very 
+    slow if the number of input or output samples is large and prime; 
+    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
+    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
+    ``n//num`` before using `resample`. Note that this approach changes the 
+    characteristics of the antialiasing filter.
 
     Examples
     --------
@@ -3117,6 +3137,22 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
+
+    Consider the following signal  ``y`` where ``len(y)`` is a large  prime number:
+
+    >>> N = 55949
+    >>> freq = 100
+    >>> x = np.linspace(0, 1, N)
+    >>> y = np.cos(2 * np.pi * freq * x)
+
+    Due to ``N`` being prime, 
+
+    >>> num = 5000  
+    >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
+
+    runs significantly faster than
+
+    >>> f = signal.resample(y, num)
     """
 
     if domain not in ('time', 'freq'):
@@ -3369,7 +3405,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
-    if isinstance(window, (list, np.ndarray)):
+    if isinstance(window, (list | np.ndarray)):
         window = np.array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
@@ -3539,7 +3575,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     Notes
     -----
-    Detrending can be interpreted as substracting a least squares fit polyonimial:
+    Detrending can be interpreted as subtracting a least squares fit polyonimial:
     Setting the parameter `type` to 'constant' corresponds to fitting a zeroth degree
     polynomial, 'linear' to a first degree polynomial. Consult the example below.
 
@@ -3684,7 +3720,7 @@ def lfilter_zi(b, a):
         A = scipy.linalg.companion(a).T
         B = b[1:] - a[1:]*b[0]
 
-    assuming `a[0]` is 1.0; if `a[0]` is not 1, `a` and `b` are first
+    assuming ``a[0]`` is 1.0; if ``a[0]`` is not 1, `a` and `b` are first
     divided by a[0].
 
     Examples
@@ -3712,7 +3748,7 @@ def lfilter_zi(b, a):
         0.44399389,  0.35505241])
 
     Note that the `zi` argument to `lfilter` was computed using
-    `lfilter_zi` and scaled by `x[0]`.  Then the output `y` has no
+    `lfilter_zi` and scaled by ``x[0]``.  Then the output `y` has no
     transient until the input drops from 0.5 to 0.0.
 
     """
@@ -3849,7 +3885,7 @@ def sosfilt_zi(sos):
 def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     """Forward-backward IIR filter that uses Gustafsson's method.
 
-    Apply the IIR filter defined by `(b,a)` to `x` twice, first forward
+    Apply the IIR filter defined by ``(b,a)`` to `x` twice, first forward
     then backward, using Gustafsson's initial conditions [1]_.
 
     Let ``y_fb`` be the result of filtering first forward and then backward,
@@ -4230,9 +4266,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 def _validate_pad(padtype, padlen, x, axis, ntaps):
     """Helper to validate padding for filtfilt"""
     if padtype not in ['even', 'odd', 'constant', None]:
-        raise ValueError(("Unknown value '%s' given to padtype.  padtype "
-                          "must be 'even', 'odd', 'constant', or None.") %
-                         padtype)
+        raise ValueError(f"Unknown value '{padtype}' given to padtype. "
+                         "padtype must be 'even', 'odd', 'constant', or None.")
 
     if padtype is None:
         padlen = 0
@@ -4309,7 +4344,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See Also
     --------
-    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, sosfreqz
+    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, freqz_sos
 
     Notes
     -----
@@ -4349,7 +4384,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         inputs.append(np.asarray(zi))
     dtype = np.result_type(*inputs)
     if dtype.char not in 'fdgFDGO':
-        raise NotImplementedError("input type '%s' not supported" % dtype)
+        raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
         zi = np.array(zi, dtype)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:
@@ -4426,7 +4461,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    filtfilt, sosfilt, sosfilt_zi, sosfreqz
+    filtfilt, sosfilt, sosfilt_zi, freqz_sos
 
     Notes
     -----

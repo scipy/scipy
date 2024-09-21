@@ -433,7 +433,6 @@ Gamma and related functions
    digamma      -- psi(x[, out]).
    poch         -- Rising factorial (z)_m.
 
-
 Error function and Fresnel integrals
 ------------------------------------
 
@@ -470,17 +469,28 @@ Legendre functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated Legendre function of integer order and real degree.
-   sph_harm -- Compute spherical harmonics.
+   legendre_p                 -- Legendre polynomials of the first kind.
+   legendre_p_all             -- All Legendre polynomials of the first kind up to a specified order.
+   assoc_legendre_p           -- Associated Legendre polynomials of the first kind.
+   assoc_legendre_p_all       -- All associated Legendre polynomials of the first kind up to a specified order and degree.
+   sph_legendre_p             -- Spherical Legendre polynomials of the first kind.
+   sph_legendre_p_all         -- All spherical Legendre polynomials of the first kind up to a specified order and degree.
+   sph_harm_y                 -- Spherical harmonics.
+   sph_harm_y_all             -- All spherical harmonics up to a specified order and degree.
+
+The following functions are in the process of being deprecated in favor of the above,
+which provide a more flexible and consistent interface.
 
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- Associated Legendre function of the first kind for complex arguments.
-   lpn   -- Legendre function of the first kind.
-   lqn   -- Legendre function of the second kind.
-   lpmn  -- Sequence of associated Legendre functions of the first kind.
-   lqmn  -- Sequence of associated Legendre functions of the second kind.
+   lpmv                       -- Associated Legendre function of integer order and real degree.
+   sph_harm                   -- Compute spherical harmonics.
+   clpmn                      -- Associated Legendre function of the first kind for complex arguments.
+   lpn                        -- Legendre function of the first kind.
+   lqn                        -- Legendre function of the second kind.
+   lpmn                       -- Sequence of associated Legendre functions of the first kind.
+   lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal harmonics
 ---------------------
@@ -531,7 +541,7 @@ orthogonal polynomials:
    roots_jacobi      -- Gauss-Jacobi quadrature.
    roots_laguerre    -- Gauss-Laguerre quadrature.
    roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
-   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermite     -- Gauss-Hermite (physicist's) quadrature.
    roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
    roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
    roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.
@@ -810,12 +820,16 @@ from ._ufuncs import *
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_alternative_backends import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy, chdtrc)
+    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
+    chdtr, chdtrc, betainc, betaincc, stdtr)
 
 from . import _basic
 from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
+
+from . import _multiufuncs
+from ._multiufuncs import *
 
 from . import _orthogonal
 from ._orthogonal import *
@@ -840,7 +854,7 @@ from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
 # so there is no need to consider _support_alternative_backends.__all__ here.
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
 __all__ += [
     'SpecialFunctionWarning',
     'SpecialFunctionError',

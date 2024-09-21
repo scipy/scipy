@@ -106,6 +106,7 @@ Continuous distributions
    ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
    kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
    kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
+   landau            -- Landau
    laplace           -- Laplace
    laplace_asymmetric    -- Asymmetric Laplace
    levy              -- Levy
@@ -521,14 +522,6 @@ Sampling
 
    stats.sampling
 
-Random variate generation / CDF Inversion
------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   rvs_ratio_uniforms
-
 Fitting / Survival Analysis
 ---------------------------
 
@@ -625,7 +618,6 @@ from ._resampling import (bootstrap, monte_carlo_test, permutation_test, power,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._bws_test import bws_test

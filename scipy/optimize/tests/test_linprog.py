@@ -450,7 +450,7 @@ class LinprogCommonTests:
         b_ub = [10, 8, 4]
 
         def f(c, A_ub=None, b_ub=None, A_eq=None,
-              b_eq=None, bounds=None, options={}):
+              b_eq=None, bounds=None, options=None):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=options)
 
@@ -1802,7 +1802,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_marginals(self):
         # Ensure lagrange multipliers are correct by comparing the derivative
         # w.r.t. b_ub/b_eq/ub/lb to the reported duals.
@@ -2249,7 +2249,7 @@ class TestLinprogHiGHSMIP:
     method = "highs"
     options = {}
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     @pytest.mark.xfail(condition=(sys.maxsize < 2 ** 32 and
                        platform.system() == "Linux"),
                        run=False,

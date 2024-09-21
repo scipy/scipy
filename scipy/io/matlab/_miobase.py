@@ -319,8 +319,7 @@ def matdims(arr, oned_as='column'):
         elif oned_as == 'row':
             return (1,) + shape
         else:
-            raise ValueError('1-D option "%s" is strange'
-                             % oned_as)
+            raise ValueError(f'1-D option "{oned_as}" is strange')
     return shape
 
 

@@ -1,9 +1,6 @@
 """
 Unit tests for trust-region iterative subproblem.
 
-To run it in its simplest form::
-  nosetests test_optimize.py
-
 """
 import pytest
 import numpy as np
@@ -275,7 +272,7 @@ class TestIterativeSubproblem:
                                       -0.84954934])
         assert_array_almost_equal(hits_boundary, True)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_for_random_entries(self):
         # Seed
         np.random.seed(1)

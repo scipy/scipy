@@ -221,8 +221,7 @@ ArrayDescriptor get_descriptor(const py::array& arr) {
     const auto arr_shape = arr.shape();
     desc.shape.assign(arr_shape, arr_shape + ndim);
 
-    // TODO: Replace the following with `arr.itemsize()` this is a temporary workaround:
-    desc.element_size = PyArray_ITEMSIZE(reinterpret_cast<PyArrayObject *>(arr.ptr()));
+    desc.element_size = arr.itemsize();
     const auto arr_strides = arr.strides();
     desc.strides.assign(arr_strides, arr_strides + ndim);
     for (intptr_t i = 0; i < ndim; ++i) {
@@ -548,7 +547,7 @@ py::array cdist(const py::object& out_obj, const py::object& x_obj,
     return out;
 }
 
-PYBIND11_MODULE(_distance_pybind, m) {
+PYBIND11_MODULE(_distance_pybind, m, py::mod_gil_not_used()) {
     if (_import_array() != 0) {
         throw py::error_already_set();
     }

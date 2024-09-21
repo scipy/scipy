@@ -34,7 +34,7 @@ SciPy, dependencies will likely have upper bounds. Each upper bound has
 comments above it; packagers are free to remove or loosen those upper bound in
 most cases (except for ``numpy``). E.g.::
 
-    # The upper bound on pybind11 is pre-emptive only
+    # The upper bound on pybind11 is preemptive only
     "pybind11>=2.12.0,<2.13.0",
 
     #   ...

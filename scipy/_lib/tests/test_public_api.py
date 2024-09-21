@@ -35,6 +35,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "cluster.hierarchy",
     "constants",
     "datasets",
+    "differentiate",
     "fft",
     "fftpack",
     "integrate",
@@ -53,6 +54,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "ndimage",
     "odr",
     "optimize",
+    "optimize.elementwise",
     "signal",
     "signal.windows",
     "sparse",
@@ -231,11 +233,9 @@ def test_all_modules_are_expected():
         # with the installed NumPy version, there can be errors on importing
         # `array_api_compat`. This should only raise if SciPy is configured with
         # that library as an available backend.
-        backends = {'cupy': 'cupy',
-                    'pytorch': 'torch',
-                    'dask.array': 'dask.array'}
-        for backend, dir_name in backends.items():
-            path = f'array_api_compat.{dir_name}'
+        backends = {'cupy', 'torch', 'dask.array'}
+        for backend in backends:
+            path = f'array_api_compat.{backend}'
             if path in name and backend not in xp_available_backends:
                 return
         raise
@@ -489,7 +489,7 @@ def test_misc_doccer_deprecation():
             getattr(module, attr_name)
 
     # Attributes that were not in `scipy.misc.doccer` get an error
-    # notifying the user that the attribute is not in `scipy.misc.doccer` 
+    # notifying the user that the attribute is not in `scipy.misc.doccer`
     # and that `scipy.misc.doccer` is deprecated.
     message = "`scipy.misc.doccer` is deprecated..."
     with pytest.raises(AttributeError, match=message):

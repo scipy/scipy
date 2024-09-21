@@ -705,7 +705,7 @@ def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
     seq = "".join(seq_tuple)
     if intrinsic:
         # Extrinsic rotation (wrt to global world) at lower case
-        # intrinsinc (WRT the object itself) lower case.
+        # intrinsic (WRT the object itself) lower case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
     angles_quat = rotation.as_euler(seq)
@@ -846,7 +846,7 @@ def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
     # Rotation of the form A/B/A are rotation around symmetric axes
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
-        # Extrinsinc rotation (wrt to global world) at lower case
+        # Extrinsic rotation (wrt to global world) at lower case
         # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
 
@@ -1026,7 +1026,7 @@ def test_reduction_no_indices():
 
 def test_reduction_none_indices():
     result = Rotation.identity().reduce(return_indices=True)
-    assert type(result) == tuple
+    assert type(result) is tuple
     assert len(result) == 3
 
     reduced, left_best, right_best = result

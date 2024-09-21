@@ -183,9 +183,9 @@ _prefilter_doc = (
 """prefilter : bool, optional
     Determines if the input array is prefiltered with `spline_filter`
     before interpolation. The default is True, which will create a
-    temporary `float64` array of filtered values if `order > 1`. If
+    temporary `float64` array of filtered values if ``order > 1``. If
     setting this to False, the output will be slightly blurred if
-    `order > 1`, unless the input is prefiltered, i.e. it is the result
+    ``order > 1``, unless the input is prefiltered, i.e. it is the result
     of calling `spline_filter` on the original input.""")
 
 docdict = {

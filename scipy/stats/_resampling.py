@@ -8,8 +8,7 @@ from dataclasses import dataclass
 import inspect
 
 from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
-from scipy._lib._array_api import (array_namespace, is_numpy, xp_minimum,
-                                   xp_clip, xp_moveaxis_to_end)
+from scipy._lib._array_api import array_namespace, is_numpy, xp_moveaxis_to_end
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -185,9 +184,23 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
+    message = ("Ignoring the dimension specified by `axis`, arrays in `data` do not "
+               "have the same shape. Beginning in SciPy 1.16.0, `bootstrap` will "
+               "explicitly broadcast elements of `data` to the same shape (ignoring "
+               "`axis`) before performing the calculation. To avoid this warning in "
+               "the meantime, ensure that all samples have the same shape (except "
+               "potentially along `axis`).")
+    data = [np.atleast_1d(sample) for sample in data]
+    reduced_shapes = set()
+    for sample in data:
+        reduced_shape = list(sample.shape)
+        reduced_shape.pop(axis)
+        reduced_shapes.add(tuple(reduced_shape))
+    if len(reduced_shapes) != 1:
+        warnings.warn(message, FutureWarning, stacklevel=3)
+
     data_iv = []
     for sample in data:
-        sample = np.atleast_1d(sample)
         if sample.shape[axis_int] <= 1:
             raise ValueError("each sample in `data` must contain two or more "
                              "observations along `axis`.")
@@ -315,7 +328,18 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     Parameters
     ----------
     data : sequence of array-like
-         Each element of data is a sample from an underlying distribution.
+         Each element of `data` is a sample containing scalar observations from an
+         underlying distribution. Elements of `data` must be broadcastable to the
+         same shape (with the possible exception of the dimension specified by `axis`).
+
+         .. versionchanged:: 1.14.0
+             `bootstrap` will now emit a ``FutureWarning`` if the shapes of the
+             elements of `data` are not the same (with the exception of the dimension
+             specified by `axis`).
+             Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast the
+             elements to the same shape (except along `axis`) before performing
+             the calculation.
+
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
@@ -971,7 +995,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     def two_sided(null_distribution, observed):
         pvalues_less = less(null_distribution, observed)
         pvalues_greater = greater(null_distribution, observed)
-        pvalues = xp_minimum(pvalues_less, pvalues_greater) * 2
+        pvalues = xp.minimum(pvalues_less, pvalues_greater) * 2
         return pvalues
 
     compare = {"less": less,
@@ -979,7 +1003,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
-    pvalues = xp_clip(pvalues, 0., 1., xp=xp)
+    pvalues = xp.clip(pvalues, 0., 1.)
 
     return MonteCarloTestResult(observed, pvalues, null_distribution)
 
@@ -1478,7 +1502,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
         exact_test = True
         n_permutations = n_max
         batch = batch or int(n_permutations)
-        # cartesian product of the sets of all permutations of indices
+        # Cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
         batched_perm_generator = _batch_generator(perm_generator, batch=batch)

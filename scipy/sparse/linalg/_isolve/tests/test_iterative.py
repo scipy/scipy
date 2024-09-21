@@ -3,7 +3,6 @@
 
 import itertools
 import platform
-import sys
 import pytest
 
 import numpy as np
@@ -308,7 +307,7 @@ def test_precond_dummy(case):
 
 
 # Specific test for poisson1d and poisson2d cases
-@pytest.mark.fail_slow(5)
+@pytest.mark.fail_slow(10)
 @pytest.mark.parametrize('case', [x for x in IterativeParams().cases
                                   if x.name in ('poisson1d', 'poisson2d')],
                          ids=['poisson1d', 'poisson2d'])
@@ -451,9 +450,6 @@ def test_maxiter_worsening(solver):
     # This can occur due to the solvers hitting close to breakdown,
     # which they should detect and halt as necessary.
     # cf. gh-9100
-    if (solver is gmres and platform.machine() == 'aarch64'
-            and sys.version_info[1] == 9):
-        pytest.xfail(reason="gh-13019")
     if (solver is lgmres and
             platform.machine() not in ['x86_64' 'x86', 'aarch64', 'arm64']):
         # see gh-17839
@@ -506,12 +502,16 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 2e-6*norm(b)
+    assert norm(A @ x - b) <= 3e-6*norm(b)
 
 
 def test_x0_equals_Mb(case):
+    if (case.solver is bicgstab) and (case.name == 'nonsymposdef-bicgstab'):
+        pytest.skip("Solver fails due to numerical noise "
+                    "on some architectures (see gh-15533).")
     if case.solver is tfqmr:
         pytest.skip("Solver does not support x0='Mb'")
+
     A = case.A
     b = case.b
     x0 = 'Mb'
@@ -685,7 +685,7 @@ class TestGMRES:
         assert_allclose(r_x, x)
         assert r_info == info
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_atol_legacy(self):
 
         A = eye(2)

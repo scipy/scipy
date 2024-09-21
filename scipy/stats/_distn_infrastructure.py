@@ -464,7 +464,7 @@ def _fit_determine_optimizer(optimizer):
         try:
             optimizer = getattr(optimize, optimizer)
         except AttributeError as e:
-            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+            raise ValueError(f"{optimizer} is not a valid optimizer") from e
     return optimizer
 
 def _isintegral(x):
@@ -826,7 +826,7 @@ class rv_generic:
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join('%.3g' % val for val in shapes_vals)
+        vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
         tempdict['vals'] = vals
 
         tempdict['shapes_'] = self.shapes or ''
@@ -1616,8 +1616,8 @@ class _ShapeInfo:
 
 def _get_fixed_fit_value(kwds, names):
     """
-    Given names such as `['f0', 'fa', 'fix_a']`, check that there is
-    at most one non-None value in `kwds` associaed with those names.
+    Given names such as ``['f0', 'fa', 'fix_a']``, check that there is
+    at most one non-None value in `kwds` associated with those names.
     Return that value, or None if none of the names occur in `kwds`.
     As a side effect, all occurrences of those names in `kwds` are
     removed.
@@ -2712,7 +2712,7 @@ class rv_continuous(rv_generic):
         optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+            raise TypeError(f"Unknown arguments: {kwds}.")
 
         # In some cases, method of moments can be done with fsolve/root
         # instead of an optimizer, but sometimes no solution exists,
@@ -3369,7 +3369,8 @@ class rv_discrete(rv_generic):
         return self._cdf(k, *args) - self._cdf(k-1, *args)
 
     def _logpmf(self, k, *args):
-        return log(self._pmf(k, *args))
+        with np.errstate(divide='ignore'):
+            return log(self._pmf(k, *args))
 
     def _logpxf(self, k, *args):
         # continuous distributions have PDF, discrete have PMF, but sometimes
@@ -3392,7 +3393,7 @@ class rv_discrete(rv_generic):
         return np.sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
-        k = floor(x)
+        k = floor(x).astype(np.float64)
         return self._cdfvec(k, *args)
 
     # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
@@ -3925,7 +3926,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     if inc == 0:
         raise ValueError('Cannot increment by zero.')
     if chunksize <= 0:
-        raise ValueError('Chunk size must be positive; got %s.' % chunksize)
+        raise ValueError(f'Chunk size must be positive; got {chunksize}.')
 
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)
