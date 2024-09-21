@@ -362,7 +362,7 @@ struct HammingDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.nonmatches / acc.total;
+            return acc.nonmatches / (acc.total + (acc.total == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
@@ -381,7 +381,7 @@ struct HammingDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.nonmatches / acc.total;
+            return acc.nonmatches / (acc.total + (acc.total == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
