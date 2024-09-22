@@ -1617,7 +1617,7 @@ def gegenbauer(n, alpha, monic=False):
 
     """
     base = jacobi(n, alpha - 0.5, alpha - 0.5, monic=monic)
-    if monic:
+    if monic or n == 0:
         return base
     #  Abrahmowitz and Stegan 22.5.20
     factor = (_gam(2*alpha + n) * _gam(alpha + 0.5) /
