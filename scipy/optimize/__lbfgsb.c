@@ -102,8 +102,6 @@
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-
-
 #include "__lbfgsb.h"
 
 
@@ -1589,7 +1587,7 @@ cauchy(int n, double* x, double* l, double* u,
             for (j = 0; j < col; j++) {
                 p[j] = p[j] + wy[i + n*pointr]*neggi;
                 p[col + j] = p[col + j] + ws[i + n*pointr]*neggi;
-                pointr = (pointr % m) + 1;
+                pointr = (pointr + 1) % m;
             }
             // 40
             if ((nbd[i] <= 2) && (nbd[i] != 0) && (neggi < 0.0))
@@ -1737,7 +1735,7 @@ cauchy(int n, double* x, double* l, double* u,
             for (j = 0; j < col; j++) {
                 wbp[j] = wy[ibp + n*pointr];
                 wbp[col + j] = theta * ws[ibp + n*pointr];
-                pointr = (pointr % m) + 1;
+                pointr = (pointr + 1) % m;
             }
             // 70
 
@@ -1851,7 +1849,7 @@ cmprlb(int n, int m, double* x, double* g,
                 r[i] = r[i] + wy[k + n*pointr]*a1 + ws[k + n*pointr]*a2;
             }
             // 32
-            pointr = (pointr % m) + 1;
+            pointr = (pointr + 1) % m;
         }
         // 34
     }
@@ -2110,7 +2108,7 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
             wn1[iy + 2*m*jy] = temp1;
             wn1[is + 2*m*js] = temp2;
             wn1[is + 2*m*jy] = temp3;
-            jpntr = (jpntr % m) + 1;
+            jpntr = (jpntr + 1) % m;
         }
         // 20
 
@@ -2131,7 +2129,7 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
                 temp3 = temp3 + ws[k1 + n*ipntr]*wy[k1 + n*jpntr];
             }
             // 25
-            ipntr = (ipntr % m) + 1;
+            ipntr = (ipntr + 1) % m;
             wn1[is + 2*m*jy] = temp3;
         }
         // 30
@@ -2173,11 +2171,11 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
 
             wn1[iy + 2*m*jy] = wn1[iy + 2*m*jy] + temp1 - temp3;
             wn1[is + 2*m*js] = wn1[is + 2*m*js] - temp2 + temp4;
-            jpntr = (jpntr % m) + 1;
+            jpntr = (jpntr + 1) % m;
         }
         // 40
 
-        ipntr = (ipntr % m) + 1;
+        ipntr = (ipntr + 1) % m;
     }
     // 45
 
@@ -2208,10 +2206,10 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
             } else {
                 wn1[is + 2*m*jy] = wn1[is + 2*m*jy] - temp1 + temp3;
             }
-            jpntr = (jpntr % m) + 1;
+            jpntr = (jpntr + 1) % m;
         }
         // 55
-        ipntr = (ipntr % m) + 1;
+        ipntr = (ipntr + 1) % m;
     }
     // 60
 
@@ -2586,16 +2584,11 @@ lnsrlb(int n, double* l, double* u, int* nbd, double* x,
     //       to perform the line search.  Subroutine dscrch is safeguarded so
     //       that all trial points lie within the feasible region.
     //
-    //     Be mindful that the dcsrch subroutine being called is a copy in
-    //       this file (lbfgsb.f) and NOT in the Minpack2 copy distributed
-    //       by scipy.
-    //
     //     Subprograms called:
     //
     //       Minpack2 Library ... dcsrch.
     //
     //       Linpack ... dtrsl, ddot.
-    //
     //
     //                           *  *  *
     //
@@ -2753,8 +2746,8 @@ matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
         *col = iupdat;
         *itail = (*head + iupdat - 1) % m;
     } else {
-        *itail = (*itail % m);
-        *head = (*head % m);
+        *itail = (*itail + 1) % m;
+        *head = (*head + 1) % m;
     }
 
     // Update matrices WS and WY.
@@ -2783,7 +2776,7 @@ matupd(int n, int m, double* ws, double *wy, double* sy, double* ss,
     {
         sy[*col - 1 + m*j] = ddot_(&n, d, &one_int, &wy[pointr*n], &one_int);
         ss[j + m*(*col - 1)] = ddot_(&n, &ws[pointr*n], &one_int, &d[0], &one_int);
-        pointr = (pointr % m) + 1;
+        pointr = (pointr + 1) % m;
     }
     // 51
 
@@ -3051,7 +3044,7 @@ void subsm(int n, int m, int nsub, int* ind,
         }
         wv[i] = temp1;
         wv[col + i] = theta*temp2;
-        pointr = (pointr % m) + 1;
+        pointr = (pointr + 1) % m;
     }
 
     // Compute wv:=K^(-1)wv.
@@ -3080,7 +3073,7 @@ void subsm(int n, int m, int nsub, int* ind,
                           (ws[k + n*pointr] * wv[js]);
         }
         // 30
-        pointr = (pointr % m) + 1;
+        pointr = (pointr + 1) % m;
     }
     // 40
 

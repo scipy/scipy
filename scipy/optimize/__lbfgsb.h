@@ -9,8 +9,6 @@ extern "C"
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
-#include "../_build_utils/src/npy_cblas.h"
-#include "../_build_utils/src/fortran_defs.h"
 #include <math.h>
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
