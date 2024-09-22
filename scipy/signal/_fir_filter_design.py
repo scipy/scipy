@@ -1302,7 +1302,7 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
         Desired window to use for each 1D filter or a single window type 
         for creating circularly symmetric 2-D windows. Each element should be
         a string or tuple of string and parameter values. See
-        `~scipy.signal.get_window` for a list of windows and required
+        '~scipy.signal.get_window' for a list of windows and required
         parameters.
     fc : float or 1-D array_like, optional
         Cutoff frequency of filter (expressed in the same units as `fs`).
@@ -1328,7 +1328,7 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
 
     See Also
     --------
-    ~scipy.signal.firwin, ~scipy.signal.get_window
+    '~scipy.signal.firwin', '~scipy.signal.get_window'
 
     Examples
     --------
