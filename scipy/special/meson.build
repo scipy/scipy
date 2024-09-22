@@ -362,6 +362,7 @@ python_sources = [
   '_ellip_harm.py',
   '_input_validation.py',
   '_lambertw.py',
+  '_lebedev.py',
   '_logsumexp.py',
   '_mptestutils.py',
   '_multiufuncs.py',

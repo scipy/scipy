@@ -841,6 +841,7 @@ from ._ellip_harm import (
     ellip_normal
 )
 from ._lambertw import lambertw
+from ._lebedev import roots_lebedev
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
