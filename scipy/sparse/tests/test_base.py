@@ -1873,7 +1873,7 @@ class _TestCommon:
         assert_array_almost_equal(a @ bsp, a @ b)
         assert_array_almost_equal(a2 @ bsp, a @ b)
 
-        # Now try performing cross-type multplication:
+        # Now try performing cross-type multiplication:
         csp = bsp.tocsc()
         c = b
         want = a @ c
