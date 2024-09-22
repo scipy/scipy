@@ -116,7 +116,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
 
 
 @skip_xp_backends(np_only=True,
-                   reason='`overwrite_x` only supported for NumPy backend.')
+                  reason='`overwrite_x` only supported for NumPy backend.')
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",

@@ -20,9 +20,7 @@ pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
 
 class TestNdimageMorphology:
 
-    @xfail_xp_backends('cupy',
-                      reason='CuPy does not have distance_transform_bf.'
-    )
+    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf01(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -72,9 +70,7 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
-    @xfail_xp_backends('cupy',
-                      reason='CuPy does not have distance_transform_bf.'
-    )
+    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf02(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -124,9 +120,7 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
         assert_array_almost_equal(expected, ft)
 
-    @xfail_xp_backends('cupy',
-                      reason='CuPy does not have distance_transform_bf.'
-    )
+    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf03(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -176,8 +170,8 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
-    @skip_xp_backends(np_only=True,
-        reason='inplace distances= arrays are numpy-specific'
+    @skip_xp_backends(
+        np_only=True, reason='inplace distances= arrays are numpy-specific'
     )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf04(self, dtype, xp):
@@ -230,9 +224,7 @@ class TestNdimageMorphology:
         for ft in fts:
             assert_array_almost_equal(tft, ft)
 
-    @xfail_xp_backends('cupy',
-                      reason='CuPy does not have distance_transform_bf.'
-    )
+    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf05(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -281,9 +273,7 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
-    @xfail_xp_backends('cupy',
-                      reason='CuPy does not have distance_transform_bf.'
-    )
+    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf06(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -434,8 +424,9 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
-    @skip_xp_backends(np_only=True,
-                      reason='inplace indices= arrays are numpy-specific')
+    @skip_xp_backends(
+        np_only=True, reason='inplace indices= arrays are numpy-specific'
+    )
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt03(self, dtype, xp):
         dtype = getattr(xp, dtype)

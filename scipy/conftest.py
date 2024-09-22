@@ -271,7 +271,6 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
 
     # input validation
     if np_only and cpu_only:
-        # raise ValueError("at most one of `np_only` and `cpu_only` should be provided")
         # np_only is a stricter subset of cpu_only
         cpu_only = False
     if exceptions and not (cpu_only or np_only):
