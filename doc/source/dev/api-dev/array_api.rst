@@ -301,12 +301,9 @@ for compiled code::
   # array-api-strict and CuPy will always be skipped, for the given reasons.
   # All libraries using a non-CPU device will also be skipped, apart from
   # JAX, for which delegation is implemented (hence non-CPU execution is supported).
-  @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1',
-                                cpu_only=True,
-                                exceptions=['jax.numpy'],)
-  @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2',
-                                cpu_only=True,
-                                exceptions=['jax.numpy'],)
+  @pytest.mark.skip_xp_backends(cp_only, exceptions=['jax.numpy'])
+  @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
+  @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto(self, xp):
