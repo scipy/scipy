@@ -21,6 +21,8 @@ _F = TypeVar("_F", bound=Callable[..., object])
 
 
 class Decorator(Protocol):
+    """A decorator of a function."""
+
     def __call__(self, func: _F, /) -> _F: ...
 
 
