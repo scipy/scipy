@@ -1,8 +1,10 @@
+import pytest
+from pytest import raises as assert_raises
+
 import numpy as np
 from numpy import array, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
-from pytest import raises as assert_raises
 
 from scipy import integrate
 import scipy.special as sc
@@ -97,6 +99,16 @@ class TestGegenbauer:
         # gh-8888 reported that gegenbauer(0, 0) returns NaN polynomial
         Ca0 = orth.gegenbauer(0, 0)
         assert_equal(Ca0.c, np.asarray([1.]))
+
+    def test_valid_alpha(self):
+        # Check input validation of `alpha`
+        message = '`alpha` must be a finite number greater...'
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(0, np.nan)
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(1, -0.5)
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(2, -np.inf)
 
 
 class TestHermite:
