@@ -238,8 +238,8 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
 
     Parameters
     ----------
-    *backends : tuple
-        Backends to skip, e.g. ``("array_api_strict", "numpy")``.
+    backends : tuple
+        Backends to skip, e.g. ``("array_api_strict", "torch")``.
         These are overriden when ``np_only`` is ``True``, and are not
         necessary to provide for non-CPU backends when ``cpu_only`` is ``True``.
     reason : str, optional
