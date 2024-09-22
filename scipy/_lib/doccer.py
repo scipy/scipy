@@ -83,9 +83,7 @@ def docformat(docstring: str, docdict: Mapping[str, str] | None = None) -> str:
     return docstring % indented
 
 
-def inherit_docstring_from(
-    cls: object,
-) -> Decorator:
+def inherit_docstring_from(cls: object) -> Decorator:
     """This decorator modifies the decorated function's docstring by
     replacing occurrences of '%(super)s' with the docstring of the
     method of the same name from the class `cls`.
