@@ -7,7 +7,6 @@ from typing import Literal
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
-from scipy.signal.windows import get_window
 from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
@@ -1303,7 +1302,7 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
         Desired window to use for each 1D filter or a single window type 
         for creating circularly symmetric 2-D windows. Each element should be
         a string or tuple of string and parameter values. See
-        `scipy.signal.get_window` for a list of windows and required
+        `~scipy.signal.get_window` for a list of windows and required
         parameters.
     fc : float or 1-D array_like, optional
         Cutoff frequency of filter (expressed in the same units as `fs`).
@@ -1329,7 +1328,7 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
 
     See Also
     --------
-    scipy.signal.firwin, scipy.signal.get_window
+    ~scipy.signal.firwin, ~scipy.signal.get_window
 
     Examples
     --------
@@ -1358,16 +1357,34 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
            [0.08566336, 0.99716832, 0.08      , 0.99716832, 0.08566336],
            [0.08566336, 0.71034579, 0.99716832, 0.71034579, 0.08566336],
            [0.08566336, 0.08566336, 0.08566336, 0.08566336, 0.08566336]])
+
+    Plotting the generated 2D filters (optional).
+
+    >>> import matplotlib.pyplot as plt
+    >>> hsize, fc = (50, 50), 0.05
+    >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
+    >>> filter0_2d = fwind1(hsize, window, fc)
+    >>> filter1_2d = fwind1((50, 50), 'hamming', circular=True)
+
+    >>> fg, (ax0, ax1) = plt.subplots(1, 2, tight_layout=True, figsize=(6.5, 3.5))
+    >>> ax0.set_title("Product of 2 Windows")
+    >>> im0 = ax0.imshow(filter0_2d, cmap='viridis', origin='lower', aspect='equal')
+    >>> fg.colorbar(im0, ax=ax0, shrink=0.7)
+    >>> ax1.set_title("Circular Window")
+    >>> im1 = ax1.imshow(filter1_2d, cmap='plasma', origin='lower', aspect='equal')
+    >>> fg.colorbar(im1, ax=ax1, shrink=0.7)
+    >>> plt.show()
     """
     if len(hsize) != 2:
         raise ValueError("hsize must be a 2-element tuple or list")
 
     if circular:
-        n_r = max(hsize[0], hsize[1]) * 8   # oversample 1d window by factor 8 
-        win_r = get_window(window, n_r)
+        n_r = max(hsize[0], hsize[1]) * 8
+        
+        win_r = firwin(n_r, cutoff=fc, window=window, fs=fs)
 
         f1, f2 = np.meshgrid(np.linspace(-1, 1, hsize[0]), np.linspace(-1, 1, hsize[1]))
-        r = np.sqrt(f1**2 + f2**2) 
+        r = np.sqrt(f1**2 + f2**2)
 
         win_2d = np.interp(r, np.linspace(0, 1, n_r), win_r)
         return win_2d
