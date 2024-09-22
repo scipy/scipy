@@ -2047,6 +2047,7 @@ def find(sub: str | None = None, disp: bool = False) -> Any:
 
     >>> find('radius')
     ['Bohr radius',
+     'alpha particle rms charge radius',
      'classical electron radius',
      'deuteron rms charge radius',
      'proton rms charge radius']
