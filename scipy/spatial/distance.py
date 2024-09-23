@@ -2177,6 +2177,11 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the kulczynski1 distance between each pair of
         boolean vectors. (see kulczynski1 function documentation)
 
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``pdist(X, 'kulczynski1')`` with
+           ``1 / pdist(X, 'jaccard') - 1``.
+
     19. ``Y = pdist(X, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between each pair of
@@ -2191,6 +2196,11 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         Computes the Sokal-Michener distance between each pair of
         boolean vectors. (see sokalmichener function documentation)
+
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``pdist(X, 'sokalmichener')`` with
+           ``pdist(X, 'rogerstanimoto')``.
 
     22. ``Y = pdist(X, 'sokalsneath')``
 
@@ -2959,6 +2969,11 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         Computes the kulczynski distance between the boolean
         vectors. (see `kulczynski1` function documentation)
 
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``cdist(XA, XB, 'kulczynski1')`` with
+           ``1 / cdist(XA, XB, 'jaccard') - 1``.
+
     19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between the boolean
@@ -2973,6 +2988,11 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
 
         Computes the Sokal-Michener distance between the boolean
         vectors. (see `sokalmichener` function documentation)
+
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``cdist(XA, XB, 'sokalmichener')`` with
+           ``cdist(XA, XB, 'rogerstanimoto')``.
 
     22. ``Y = cdist(XA, XB, 'sokalsneath')``
 
