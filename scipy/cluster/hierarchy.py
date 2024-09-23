@@ -4157,7 +4157,7 @@ def leaders(Z, T):
     if T.shape[0] != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
 
-    n_clusters = int(xp.unique_values(T).shape[0])
+    n_clusters = int(np.asarray(xp.unique_values(T)).shape[0])
     n_obs = int(Z.shape[0] + 1)
     L = np.zeros(n_clusters, dtype=np.int32)
     M = np.zeros(n_clusters, dtype=np.int32)
