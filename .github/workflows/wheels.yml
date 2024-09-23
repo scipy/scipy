@@ -42,7 +42,7 @@ jobs:
       message: ${{ steps.commit_message.outputs.message }}
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -98,11 +98,11 @@ jobs:
 
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           submodules: true
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
           python-version: 3.11
 
@@ -206,7 +206,7 @@ jobs:
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV" 
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.20.0
+        uses: pypa/cibuildwheel@d4a2945fcc8d13f20a1b99d461b8e844d5fc6e23 # v2.21.1
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
@@ -221,14 +221,14 @@ jobs:
             mv ./wheelhouse/*.whl $(find ./wheelhouse -type f -name '*.whl' | sed 's/13_0/14_0/')
           fi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           path: ./wheelhouse/*.whl
           name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
             ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
             ${{ matrix.buildplat[4] }}
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
         with:
           # for installation of anaconda-client, required for upload to
           # anaconda.org

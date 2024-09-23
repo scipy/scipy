@@ -2397,7 +2397,7 @@ def roots_legendre(n, mu=False):
 
     with inverse::
 
-        t = (b - a)/2 * x + (a + 2)/2
+        t = (b - a)/2 * x + (a + b)/2
 
     Then::
 

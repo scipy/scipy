@@ -316,7 +316,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         return new
 
     def __radd__(self, other):
-        return self + other  # addition is comutative
+        return self + other  # addition is commutative
 
     def __neg__(self):
         if self.dtype.kind == 'b':

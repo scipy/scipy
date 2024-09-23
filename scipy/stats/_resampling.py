@@ -1502,7 +1502,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
         exact_test = True
         n_permutations = n_max
         batch = batch or int(n_permutations)
-        # cartesian product of the sets of all permutations of indices
+        # Cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
         batched_perm_generator = _batch_generator(perm_generator, batch=batch)

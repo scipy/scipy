@@ -521,7 +521,7 @@ class Sakurai(LinearOperator):
 
     Constructs the "Sakurai" matrix motivated by reference [1]_:
     square real symmetric positive definite and 5-diagonal
-    with the main digonal ``[5, 6, 6, ..., 6, 6, 5], the ``+1`` and ``-1``
+    with the main diagonal ``[5, 6, 6, ..., 6, 6, 5], the ``+1`` and ``-1``
     diagonals filled with ``-4``, and the ``+2`` and ``-2`` diagonals
     made of ``1``. Its eigenvalues are analytically known to be
     ``16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4)``.

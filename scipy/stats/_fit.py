@@ -433,7 +433,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         The object has the following method:
 
         nllf(params=None, data=None)
-            By default, the negative log-likehood function at the fitted
+            By default, the negative log-likelihood function at the fitted
             `params` for the given `data`. Accepts a tuple containing
             alternative shapes, location, and scale of the distribution and
             an array of alternative data.

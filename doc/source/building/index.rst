@@ -352,7 +352,7 @@ virtual environments:
         ::
 
           python -m venv venv
-          .\venv\Scripts\activate
+          venv\Scripts\Activate.ps1
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::

@@ -2,9 +2,11 @@ import heapq
 import itertools
 
 from dataclasses import dataclass
-from scipy._lib._util import MapWrapper
+from types import ModuleType
+from typing import Any, TYPE_CHECKING
 
-import numpy as np
+from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib._util import MapWrapper
 
 from scipy.integrate._rules import (
     ProductNestedFixed,
@@ -13,29 +15,37 @@ from scipy.integrate._rules import (
 )
 from scipy.integrate._rules._base import _subregion_coordinates
 
-
 __all__ = ['cubature']
+
+if TYPE_CHECKING:
+    Array = Any  # To be changed to a Protocol later (see array-api#589)
+else:
+    Array = object
 
 
 @dataclass
 class CubatureRegion:
-    estimate: np.ndarray
-    error: np.ndarray
-    a: np.ndarray
-    b: np.ndarray
+    estimate: Array
+    error: Array
+    a: Array
+    b: Array
+    _xp: ModuleType
 
     def __lt__(self, other):
         # Consider regions with higher error estimates as being "less than" regions with
         # lower order estimates, so that regions with high error estimates are placed at
         # the top of the heap.
 
-        return np.max(np.abs(self.error)) > np.max(np.abs(other.error))
+        this_err = self._xp.max(self._xp.abs(self.error))
+        other_err = self._xp.max(self._xp.abs(other.error))
+
+        return this_err > other_err
 
 
 @dataclass
 class CubatureResult:
-    estimate: np.ndarray
-    error: np.ndarray
+    estimate: Array
+    error: Array
     status: str
     regions: list[CubatureRegion]
     subdivisions: int
@@ -229,28 +239,29 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     # It is also possible to use a custom rule, but this is not yet part of the public
     # API. An example of this can be found in the class scipy.integrate._rules.Rule.
 
-    max_subdivisions = np.inf if max_subdivisions is None else max_subdivisions
+    xp = array_namespace(a, b)
+    max_subdivisions = float("inf") if max_subdivisions is None else max_subdivisions
 
-    # Convert a and b to arrays of at least 1D
-    a = np.array(a)
-    b = np.array(b)
+    # Convert a and b to arrays
+    a = xp.asarray(a, dtype=xp.float64)
+    b = xp.asarray(b, dtype=xp.float64)
 
     if a.ndim != 1 or b.ndim != 1:
         raise ValueError("`a` and `b` must be 1D arrays")
 
     # If the rule is a string, convert to a corresponding product rule
     if isinstance(rule, str):
-        ndim = len(a)
+        ndim = xp_size(a)
 
         if rule == "genz-malik":
-            rule = GenzMalikCubature(ndim)
+            rule = GenzMalikCubature(ndim, xp=xp)
         else:
             quadratues = {
-                "gauss-kronrod": GaussKronrodQuadrature(21),
+                "gauss-kronrod": GaussKronrodQuadrature(21, xp=xp),
 
                 # Also allow names quad_vec uses:
-                "gk21": GaussKronrodQuadrature(21),
-                "gk15": GaussKronrodQuadrature(15),
+                "gk21": GaussKronrodQuadrature(21, xp=xp),
+                "gk15": GaussKronrodQuadrature(15, xp=xp),
             }
 
             base_rule = quadratues.get(rule)
@@ -263,12 +274,12 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     est = rule.estimate(f, a, b, args)
     err = rule.estimate_error(f, a, b, args)
 
-    regions = [CubatureRegion(est, err, a, b)]
+    regions = [CubatureRegion(est, err, a, b, xp)]
     subdivisions = 0
     success = True
 
     with MapWrapper(workers) as mapwrapper:
-        while np.any(err > atol + rtol * np.abs(est)):
+        while xp.any(err > atol + rtol * xp.abs(est)):
             # region_k is the region with highest estimated error
             region_k = heapq.heappop(regions)
 
@@ -305,7 +316,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
                 est += est_sub
                 err += err_sub
 
-                new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub)
+                new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub, xp)
 
                 heapq.heappush(regions, new_region)
 
