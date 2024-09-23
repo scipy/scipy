@@ -15,11 +15,11 @@ from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
                            coo_matvec, coo_matvec_nd, coo_matmat_dense,
                            coo_matmat_dense_nd)
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
-from ._data import _data_matrix, _minmax_mixin, _find_missing_index
+from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
-                       check_shape, check_reshape_kwargs, isdense,
-                       is_pydata_spmatrix, isscalarlike)
+                       check_shape, check_reshape_kwargs, isscalarlike, isdense,
+                       is_pydata_spmatrix)
 
 import operator
 
@@ -456,7 +456,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError("diagonal requires two dimensions")
         rows, cols = self.shape
         if k <= -rows or k >= cols:
-            return coo_array(np.empty(0, dtype=self.data.dtype))
+            return np.empty(0, dtype=self.data.dtype)
         diag = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
                         dtype=self.dtype)
         diag_mask = (self.row + k) == self.col
@@ -597,7 +597,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
             coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                         result.ravel('A'), fortran)
         else:
-
             result_shape = self.shape
             self = self.reshape(1, -1)
             other = other.reshape(1, -1)
@@ -611,17 +610,17 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
                               or (not issparse(other) and len(np.asarray(other).shape) < 3)):
             return self.tocsr()._add_sparse(other)
-
+        
+        other = self.__class__(other)
         if other.shape != self.shape:
             try:
                 # This will raise an error if the shapes are not broadcastable
-                np.broadcast_shapes(self.shape, other.shape)
+                bshape = np.broadcast_shapes(self.shape, other.shape)
             except ValueError:
                 raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
-        other = self.__class__(other)
-        bshape = np.broadcast_shapes(self.shape, other.shape)
-        self = self._broadcast_to(bshape)
-        other = other._broadcast_to(bshape)
+            self = self._broadcast_to(bshape)
+            other = other._broadcast_to(bshape)
+
         new_data = np.concatenate((self.data, other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
         A = self.__class__((new_data, new_coords), shape=self.shape)
@@ -632,16 +631,16 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.ndim < 3 and other.ndim < 3:
             return self.tocsr()._sub_sparse(other)
 
+        other = self.__class__(other)
         if other.shape != self.shape:
             try:
                 # This will raise an error if the shapes are not broadcastable
-                np.broadcast_shapes(self.shape, other.shape)
+                bshape = np.broadcast_shapes(self.shape, other.shape)
             except ValueError:
                 raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
-        other = self.__class__(other)
-        bshape = np.broadcast_shapes(self.shape, other.shape)
-        self = self._broadcast_to(bshape)
-        other = other._broadcast_to(bshape)
+            self = self._broadcast_to(bshape)
+            other = other._broadcast_to(bshape)
+
         new_data = np.concatenate((self.data, -other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
         A = coo_array((new_data, new_coords), shape=self.shape)
@@ -852,8 +851,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
             o_array = np.asanyarray(other)
 
             if o_array.ndim == 0 and o_array.dtype == np.object_:
-                # Not interpretable as an array; return NotImplemented so that
-                # other's __rmatmul__ can kick in if that's implemented.
                 return NotImplemented
 
             try:
@@ -981,8 +978,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
             other_array = np.asanyarray(other)
 
             if other_array.ndim == 0 and other_array.dtype == np.object_:
-                # Not interpretable as an array; return NotImplemented so that
-                # other's __rmatmul__ can kick in if that's implemented.
                 return NotImplemented
 
             try:
@@ -1187,8 +1182,20 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def _process_arrays_for_comparison(self, other, op_name):
         if is_pydata_spmatrix(other):
             return NotImplemented
-        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) or \
-                    (not issparse(other) and len(np.asanyarray(other).shape) < 3)):
+        
+        if not (issparse(other) or isdense(other) or isscalarlike(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and (isscalarlike(other) or other.ndim < 3):
             return getattr(_data_matrix, op_name)(self.tocsr(), other)
         
         # Scalar other.
@@ -1206,13 +1213,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
             if self.shape != other.shape:
                 try:
                     # This will raise an error if the shapes are not broadcastable
-                    np.broadcast_shapes(self.shape, other.shape)
+                    broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
                 except ValueError:
                     raise ValueError("inconsistent shapes for comparison")
                 
                 # Broadcasting the arrays if they have different shapes
                 # that are compatible for broadcasting
-                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
                 self = self._broadcast_to(broadcast_shape)
                 if isdense(other):
                     other = np.broadcast_to(other, broadcast_shape)
@@ -1236,7 +1242,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 result = result.reshape(result_shape)
 
             return result
-        
         else:
             return NotImplemented
 
@@ -1261,17 +1266,27 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def multiply(self, other):
         """Point-wise multiplication by another array/matrix."""
 
-        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
-                          or (not issparse(other) and len(np.asarray(other).shape) < 3)):
+        if isscalarlike(other):
+            return self._mul_scalar(other)
+        
+        if not (issparse(other) or isdense(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and other.ndim < 3:
             result = _data_matrix.multiply(self.tocsr(), other)
             if isinstance(result, sparray):
                 result = result.tocoo()
             return result
             
-        
-        if isscalarlike(other):
-            return self._mul_scalar(other)
-        
         if issparse(other):
             if self.shape == other.shape: # no broadcasting required
                 result_shape = self.shape
@@ -1296,11 +1311,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
             
             try:
             # This will raise an error if the shapes are not broadcastable
-                np.broadcast_shapes(self.shape, other.shape)
+                bshape = np.broadcast_shapes(self.shape, other.shape)
             except ValueError:
                 raise ValueError("inconsistent shapes")
-            
-            bshape = np.broadcast_shapes(self.shape, other.shape)
             
             # single element
             if math.prod(other.shape) == 1:
@@ -1328,16 +1341,46 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 result = result.reshape(bshape)
 
             return result
-
-        # Assume other is a dense matrix/array, which produces a single-item
-        # object array if other isn't convertible to ndarray.
-        other = np.asarray(other)
-
+        
+        else: # if other is dense
         # no broadcasting required if same shapes,
         # just reshape to 2-D, route via CSR, convert to COO,
         # and reshape back
-        if self.shape == other.shape:
-            result_shape = self.shape
+            if self.shape == other.shape:
+                result_shape = self.shape
+                self = self.reshape(1, -1)
+                other = other.reshape(1, -1)
+                result = _data_matrix.multiply(self.tocsr(), other)
+                # convert to COO
+                if isinstance(result, sparray):
+                    result = result.tocoo()
+                # reshape back to n-D
+                if isinstance(result, (np.ndarray, sparray)):
+                    result = result.reshape(result_shape)
+                return result
+            
+            try:
+            # This will raise an error if the shapes are not broadcastable
+                bshape = np.broadcast_shapes(self.shape, other.shape)
+            except ValueError:
+                raise ValueError("inconsistent shapes")
+
+            # single element
+            if math.prod(other.shape) == 1:
+                result = self._mul_scalar(other.ravel()[0])
+                result = result.reshape(bshape)
+                return result
+            
+            # if self is a single element and other is dense,
+            # use np.multiply and reshape
+            if math.prod(self.shape) == 1:
+                result = np.multiply(self.toarray().ravel()[0], other)
+                result = result.reshape(bshape)
+                return result
+            
+            # different but broadcastable shapes
+            self = self._broadcast_to(bshape)
+            other = np.broadcast_to(other, bshape)
             self = self.reshape(1, -1)
             other = other.reshape(1, -1)
             result = _data_matrix.multiply(self.tocsr(), other)
@@ -1346,53 +1389,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 result = result.tocoo()
             # reshape back to n-D
             if isinstance(result, (np.ndarray, sparray)):
-                result = result.reshape(result_shape)
+                result = result.reshape(bshape)
             return result
-        try:
-        # This will raise an error if the shapes are not broadcastable
-            np.broadcast_shapes(self.shape, other.shape)
-        except ValueError:
-            raise ValueError("inconsistent shapes")
-        
-        bshape = np.broadcast_shapes(self.shape, other.shape)
-
-        # single element
-        if math.prod(other.shape) == 1:
-            result = self._mul_scalar(other.ravel()[0])
-            result = result.reshape(bshape)
-            return result
-        
-        # if self is a single element and other is dense,
-        # use np.multiply and reshape
-        if math.prod(self.shape) == 1:
-            result = np.multiply(self.toarray().ravel()[0], other)
-            result = result.reshape(bshape)
-            return result
-        
-        # different but broadcastable shapes
-        self = self._broadcast_to(bshape)
-        other = np.broadcast_to(other, bshape)
-        self = self.reshape(1, -1)
-        other = other.reshape(1, -1)
-        result = _data_matrix.multiply(self.tocsr(), other)
-        # convert to COO
-        if isinstance(result, sparray):
-            result = result.tocoo()
-        # reshape back to n-D
-        if isinstance(result, (np.ndarray, sparray)):
-            result = result.reshape(bshape)
-        return result
     
     def _divide(self, other, true_divide=False, rdivide=False):
         """Point-wise division by another array/matrix."""
-
-        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
-                          or (not issparse(other) and len(np.asarray(other).shape) < 3)):
-            result = _data_matrix._divide(self.tocsr(), other, true_divide, rdivide)
-            # if isinstance(result, sparray):
-            #     result = result.tocoo()
-            return result
-        
         # Scalar other.
         if isscalarlike(other):
             if rdivide:
@@ -1403,6 +1404,21 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
             if true_divide and np.can_cast(self.dtype, np.float64):
                 return self.astype(np.float64)._mul_scalar(1./other)
+            
+        if not (issparse(other) or isdense(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and other.ndim < 3:
+            return _data_matrix._divide(self.tocsr(), other, true_divide, rdivide)
 
         else:
             return NotImplemented
@@ -1416,30 +1432,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return result
         zero = self.dtype.type(0)
 
-        if axis is not None:
-            if not isinstance(axis, (int, tuple)):
-                raise ValueError("'axis' should be int/tuple of ints")
-            
-            if type(axis) is int:
-                axis = [axis]
-                
-            if len(axis)>self.ndim:
-                raise ValueError("axis tuple has too many elements")
-            
-            if any(ax >= self.ndim or ax < -self.ndim for ax in axis):
-                raise ValueError("axis out of range")
-            
-            axis = [ax if ax>=0 else ax+self.ndim for ax in axis]
-
-            if any(self.shape[d] == 0 for d in axis):
-                raise ValueError("zero-size array to reduction operation")
-
-            # Check for duplicates
-            if len(axis) != len(set(axis)):
-                raise ValueError("duplicate value in 'axis'")
-
-            if len(axis) == self.ndim:
-                axis = None
+        axis = _validateaxes(axis, self.ndim, self.shape)
         
         if out is not None:
             out_shape = out.shape
@@ -1479,16 +1472,16 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
             if out is not None:
                 out = out.reshape(math.prod(result_shape))
-                print(out)
 
             self = coo_array((self.data, coords_2d), shape_2d)
             ret_flattened = _spbase.mean(self, axis=1, dtype=dtype, out=out)
             ret = ret_flattened.reshape(result_shape)      
-            print(ret_flattened)
             if out is not None:
                 out = out.reshape(result_shape) 
 
         return ret
+
+
     def sum(self, axis=None, dtype=None, out=None):
         if axis == ():
             ret = self.todense()
@@ -1504,30 +1497,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         
         zero = self.dtype.type(0)
 
-        if axis is not None:
-            if not isinstance(axis, (int, tuple)):
-                raise ValueError("'axis' should be int/tuple of ints")
-            
-            if type(axis) is int:
-                axis = [axis]
-                
-            if len(axis)>self.ndim:
-                raise ValueError("axis tuple has too many elements")
-            
-            if any(ax >= self.ndim or ax < -self.ndim for ax in axis):
-                raise ValueError("axis out of range")
-            
-            axis = [ax if ax>=0 else ax+self.ndim for ax in axis]
-
-            if any(self.shape[d] == 0 for d in axis):
-                raise ValueError("zero-size array to reduction operation")
-
-            # Check for duplicates
-            if len(axis) != len(set(axis)):
-                raise ValueError("duplicate value in 'axis'")
-
-            if len(axis) == self.ndim:
-                axis = None
+        axis = _validateaxes(axis, self.ndim, self.shape)
         
         if out is not None:
             out_shape = out.shape
@@ -1563,8 +1533,19 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
 
     def _maximum_minimum_coo(self, other, op_name):
-        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
-                          or (not issparse(other) and len(np.asarray(other).shape) < 3)):
+        if not (issparse(other) or isdense(other) or isscalarlike(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and (isscalarlike(other) or other.ndim < 3):
             return  getattr(_data_matrix, op_name)(self.tocsr(), other)
         
          # Scalar other
@@ -1665,21 +1646,25 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def max(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.max(self, axis, out, explicit=explicit)
+        
         return self._find_max_or_min(axis, out, np.max, np.maximum, explicit)
     
     def min(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.min(self, axis, out, explicit=explicit)
+        
         return self._find_max_or_min(axis, out, np.min, np.minimum, explicit)
     
     def nanmax(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.nanmax(self, axis, out, explicit=explicit)
+        
         return self._find_max_or_min(axis, out, np.nanmax, np.fmax, explicit)
 
     def nanmin(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:
             return _minmax_mixin.nanmin(self, axis, out, explicit=explicit)
+        
         return self._find_max_or_min(axis, out, np.nanmin, np.fmin, explicit)
 
     def _find_arg_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis, explicit):
@@ -1701,7 +1686,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
         non_axis_coords = np.ravel_multi_index(np.array(self.coords)[non_reduced_axes, :],
                                                non_reduced_shape)
         
-        print((np.array(self.coords)[axis, :], (self.shape[axis])))
         axis_coords = np.ravel_multi_index(tuple([np.array(self.coords)[axis, :]]),
                                            tuple([self.shape[axis]]))
         coords_2d = np.vstack((non_axis_coords, axis_coords))
@@ -1732,129 +1716,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def minimum(self, other):
         """Element-wise minimum between this and another array/matrix."""
         return self._maximum_minimum_coo(other, 'minimum')
-
-
-def vstack(arrays):
-    # Ensure the input is a tuple of COO arrays
-    if not isinstance(arrays, tuple):
-        raise TypeError("Input must be a tuple of COO arrays/matrices.")
-    if not all(isinstance(a, (coo_array, coo_matrix)) for a in arrays):
-        raise TypeError("All elements of the tuple must be in COO format")
-
-    # Ensure there is at least one array
-    if len(arrays) == 0:
-        raise ValueError("Input tuple must contain at least one array.")
-    
-    # Get the shape of the first array
-    first_shape = arrays[0].shape
-    
-    # Ensure all arrays have the same shape along all but the first axis
-    for a in arrays:
-        if a.shape[1:] != first_shape[1:]:
-            raise ValueError("All arrays must have the same shape along all but the first axis.")
-
-    # Concatenate data from all arrays
-    data = np.concatenate([a.data for a in arrays])
-    
-    # Concatenating coordinates
-    coords = np.concatenate([a.coords for a in arrays], axis=1)
-    first_dim_sizes = [a.shape[0] for a in arrays]
-    first_dim_offsets = np.cumsum([0] + first_dim_sizes[:-1])
-    
-    # Adjust the first coordinate
-    coords[0] += np.repeat(first_dim_offsets, [a.nnz for a in arrays])
-
-    # New shape after stacking
-    new_shape = (sum(first_dim_sizes),) + first_shape[1:]
-
-    return coo_array((data, coords), shape=new_shape)
-
-
-def hstack(arrays):
-    # Ensure the input is a tuple of COO arrays
-    if not isinstance(arrays, tuple):
-        raise TypeError("Input must be a tuple of COO arrays/matrices.")
-    if not all(isinstance(a, (coo_array, coo_matrix)) for a in arrays):
-        raise TypeError("All elements of the tuple must be in COO format")
-
-    # Ensure there is at least one array
-    if len(arrays) == 0:
-        raise ValueError("Input tuple must contain at least one array.")
-
-    # Get the shape of the first array
-    first_shape = arrays[0].shape
-
-    # Ensure all arrays have the same shape along all but the second axis
-    for a in arrays:
-        if a.shape[0] != first_shape[0] or a.shape[2:] != first_shape[2:]:
-            raise ValueError("All arrays must have the same shape along all but the second axis.")
-    
-    # Concatenate data from all arrays
-    data = np.concatenate([a.data for a in arrays])
-
-    # Concatenating coordinates
-    coords = np.concatenate([a.coords for a in arrays], axis=1)
-    second_dim_sizes = [a.shape[1] for a in arrays]
-    second_dim_offsets = np.cumsum([0] + second_dim_sizes[:-1])
-
-    # Adjust the second coordinate
-    coords[1] += np.repeat(second_dim_offsets, [a.nnz for a in arrays])
-
-    # New shape after stacking
-    new_shape = (first_shape[0], sum(second_dim_sizes)) + first_shape[2:]
-
-    return coo_array((data, coords), shape=new_shape)
-
-
-def block_diag(arrays):
-    # Ensure the input is a tuple of COO arrays
-    if not isinstance(arrays, tuple):
-        raise TypeError("Input must be a tuple of COO arrays/matrices.")
-    if not all(isinstance(a, (coo_array, coo_matrix)) for a in arrays):
-        raise TypeError("All elements of the tuple must be in COO format")
-    
-    # Ensure there is at least one array
-    if len(arrays) == 0:
-        raise ValueError("Input tuple must contain at least one array.")
-    
-    # Get the number of dimensions from the first array
-    num_dims = arrays[0].ndim
-    
-    # Ensure all arrays have the same number of dimensions
-    for a in arrays:
-        if a.ndim != num_dims:
-            raise ValueError("All arrays must have the same number of dimensions.")
-    
-    # Calculate the total nnz and result shape
-    total_nnz = sum(a.nnz for a in arrays)
-    result_shape = np.zeros(num_dims, dtype=int)
-
-    for a in arrays:
-        result_shape += np.array(a.shape)
-    
-    # Preallocate arrays for data and coordinates
-    result_data = np.empty(total_nnz, dtype=arrays[0].data.dtype)
-    result_coords = np.empty((num_dims, total_nnz), dtype=int)
-    
-    # Offset trackers for each dimension
-    dim_offsets = np.zeros(num_dims, dtype=int)
-    current_nnz = 0
-    
-    for a in arrays:
-        nnz = a.nnz
-        # Populate the result array
-        result_data[current_nnz:current_nnz + nnz] = a.data
-        
-        # Calculate new coordinates with offsets
-        for dim in range(num_dims):
-            result_coords[dim, current_nnz:current_nnz + nnz] = a.coords[dim] + dim_offsets[dim]
-        
-        # Update offsets
-        dim_offsets += np.array(a.shape)
-        current_nnz += nnz
-    
-    # Return the block diagonal coo_array
-    return coo_array((result_data, tuple(result_coords)), shape=tuple(result_shape))
 
 
 def _block_diag(self):
@@ -1945,6 +1806,33 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     
     return raveled_coords
 
+
+def _validateaxes(axis, ndim, shape):
+    if axis is not None:
+        if not isinstance(axis, (int, tuple)):
+            raise ValueError("'axis' should be int/tuple of ints")
+        
+        if type(axis) is int:
+            axis = [axis]
+            
+        if len(axis)>ndim:
+            raise ValueError("axis tuple has too many elements")
+        
+        if any(ax >= ndim or ax < -ndim for ax in axis):
+            raise ValueError("axis out of range")
+        
+        axis = [ax if ax>=0 else ax+ndim for ax in axis]
+
+        if any(shape[d] == 0 for d in axis):
+            raise ValueError("zero-size array to reduction operation")
+
+        # Check for duplicates
+        if len(axis) != len(set(axis)):
+            raise ValueError("duplicate value in 'axis'")
+
+        if len(axis) == ndim:
+            axis = None
+        return axis
 
 def _ravel_coords(coords, shape, order='C'):
     """Like np.ravel_multi_index, but avoids some overflow issues."""

@@ -10,7 +10,7 @@ from ._matrix import spmatrix
 from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix, csr_sample_values)
-from ._sputils import upcast
+from ._sputils import upcast, check_shape
 
 from ._compressed import _cs_matrix
 
@@ -123,26 +123,38 @@ class _csr_base(_cs_matrix):
     tobsr.__doc__ = _spbase.tobsr.__doc__
 
 
-    def _broadcast_to(self, shape, copy=False):
-
-        old_shape = self.shape
-        
-        if old_shape == shape:
+    def _broadcast_to(self, shape, copy=False):        
+        if self.shape == shape:
             return self.copy() if copy else self
         
-        if len(shape) != 2:
-            raise ValueError("Target shape must be a tuple of length 2.")
+        shape = check_shape(shape, allow_nd=(self._allow_nd))
 
-        # Ensure the old shape can be broadcast to the new shape
-        if any((o != 1 and o != n) for o, n in zip(old_shape, shape)):
-            raise ValueError(f'current shape {old_shape} cannot be'
-                             f' broadcast to new shape {shape}')
+        if np.broadcast_shapes(self.shape, shape) != shape:
+            raise ValueError("cannot be broadcast")
+        
+        if len(self.shape) == 1 and len(shape) == 1:
+            self.sum_duplicates()
+            if self.nnz == 0: # array has no non zero elements
+                return self.__class__(shape, dtype=self.dtype, copy=False)
+            
+            N = shape[0]
+            data = np.full(N, self.data[0])
+            indices = np.arange(0,N)
+            indptr = np.array([0, N])
+            return self.__class__((data, indices, indptr), shape=shape, copy=False)
+
+        # treat 1D as a 2D row
+        old_shape = self._shape_as_2d
+            
+        if len(shape) != 2:
+            ndim = len(shape)
+            raise ValueError(f'CSR broadcast_to cannot have shape >2D. Got {ndim}D')
         
         if self.nnz == 0: # array has no non zero elements
-            return self.__class__(np.zeros(shape, dtype=self.dtype), copy=False)
+            return self.__class__(shape, dtype=self.dtype, copy=False)
         
         self.sum_duplicates()
-        if old_shape[0] == 1 and old_shape[1] == 1:
+        if all(s == 1 for s in old_shape):
             # Broadcast a single element to the entire shape
             data = np.full(shape[0] * shape[1], self.data[0])
             indices = np.tile(np.arange(shape[1]), shape[0])
@@ -161,7 +173,7 @@ class _csr_base(_cs_matrix):
             indptr = self.indptr * shape[1]
 
         return self.__class__((data, indices, indptr), shape=shape, copy=False)
-    
+
 
     # these functions are used by the parent class (_cs_matrix)
     # to remove redundancy between csc_matrix and csr_array

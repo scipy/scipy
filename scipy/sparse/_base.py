@@ -558,20 +558,18 @@ class _spbase:
             raise NotImplementedError('adding a nonzero scalar to a '
                                       'sparse array is not supported')
         elif issparse(other):
-            # if other.shape != self.shape:
-            #     raise ValueError("inconsistent shapes")
-            try:
+            try: 
                 np.broadcast_shapes(self.shape, other.shape)
             except ValueError:
                 raise ValueError("inconsistent shapes")
             return self._add_sparse(other)
+
         elif isdense(other):
             if self.shape != other.shape:
                 try:
-                    np.broadcast_shapes(self.shape, other.shape)
+                    bshape = np.broadcast_shapes(self.shape, other.shape)
                 except ValueError:
                     raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
-                bshape = np.broadcast_shapes(self.shape, other.shape)
                 self = self._broadcast_to(bshape)
                 other = np.broadcast_to(other, bshape)
             return self._add_dense(other)
@@ -588,20 +586,18 @@ class _spbase:
             raise NotImplementedError('subtracting a nonzero scalar from a '
                                       'sparse array is not supported')
         elif issparse(other):
-            # if other.shape != self.shape:
-            #     raise ValueError("inconsistent shapes")
             try:
                 np.broadcast_shapes(self.shape, other.shape)
             except ValueError:
                 raise ValueError("inconsistent shapes")
             return self._sub_sparse(other)
+
         elif isdense(other):
             if self.shape != other.shape:
                 try:
-                    np.broadcast_shapes(self.shape, other.shape)
+                    bshape = np.broadcast_shapes(self.shape, other.shape)
                 except ValueError:
                     raise ValueError("inconsistent shapes")
-                bshape = np.broadcast_shapes(self.shape, other.shape)
                 self = self._broadcast_to(bshape)
                 other = np.broadcast_to(other, bshape)
             return self._sub_dense(other)
@@ -1159,7 +1155,13 @@ class _spbase:
 
         """
         if axis == ():
-            return self.toarray()
+            ret = self.todense()
+            if out is not None:
+                if out.shape != self.shape:
+                    raise ValueError("dimensions do not match")
+                out[...] = ret
+            return ret
+        
         validateaxis(axis)
 
         # Mimic numpy's casting.
@@ -1182,16 +1184,16 @@ class _spbase:
         # We use multiplication by a matrix of ones to achieve this.
         # For some sparse array formats more efficient methods are
         # possible -- these should override this function.
+
         # if 2-d and axis is tuple
-        if self.ndim == 2 and type(axis) is tuple:
-            if len(axis) == 2:
-                # adjust axes
-                axis = [ax if ax>=0 else ax+2 for ax in axis]
-                # check for duplicates
-                if len(axis) != len(set(axis)):
-                    raise ValueError("duplicate value in 'axis'")
-                # if no duplicates
-                axis = None
+        if self.ndim == 2 and type(axis) is tuple and len(axis) == 2:
+            # adjust axes
+            axis = [ax if ax>=0 else ax+2 for ax in axis]
+            # check for duplicates
+            if len(axis) != len(set(axis)):
+                raise ValueError("duplicate value in 'axis'")
+            # if no duplicates
+            axis = None
             
         M, N = self.shape
 
@@ -1264,7 +1266,13 @@ class _spbase:
 
         """
         if axis == ():
-            return self.toarray()
+            ret = self.todense()
+            if out is not None:
+                if out.shape != self.shape:
+                    raise ValueError("dimensions do not match")
+                out[...] = ret
+            return ret
+        
         validateaxis(axis)
 
         res_dtype = self.dtype.type
