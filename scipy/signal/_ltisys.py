@@ -2299,7 +2299,7 @@ class Bunch:
 
 def _valid_inputs(A, B, poles, method, rtol, maxiter):
     """
-    Check the poles come in complex conjugage pairs
+    Check the poles come in complex conjugate pairs
     Check shapes of A, B and poles are compatible.
     Check the method chosen is compatible with provided poles
     Return update method to use and ordered poles
@@ -2380,7 +2380,7 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     # Remove xj form the base
     transfer_matrix_not_j = np.delete(transfer_matrix, j, axis=1)
     # If we QR this matrix in full mode Q=Q0|Q1
-    # then Q1 will be a single column orthogonnal to
+    # then Q1 will be a single column orthogonal to
     # Q0, that's what we are looking for !
 
     # After merge of gh-4249 great speed improvements could be achieved
@@ -2722,7 +2722,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 are as close as possible to the requested poles.
             computed_poles : 1-D ndarray
                 The poles corresponding to ``A-BK`` sorted as first the real
-                poles in increasing order, then the complex congugates in
+                poles in increasing order, then the complex conjugates in
                 lexicographic order.
             requested_poles : 1-D ndarray
                 The poles the algorithm was asked to place sorted as above,
@@ -2931,7 +2931,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
             # after QR Q=Q0|Q1
             # only Q0 is used to reconstruct  the qr'ed (dot Q, R) matrix.
-            # Q1 is orthogonnal to Q0 and will be multiplied by the zeros in
+            # Q1 is orthogonal to Q0 and will be multiplied by the zeros in
             # R when using mode "complete". In default mode Q1 and the zeros
             # in R are not computed
 
