@@ -55,7 +55,7 @@ class TestArrayAPI:
         array_namespace(1)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_copy(self, xp):

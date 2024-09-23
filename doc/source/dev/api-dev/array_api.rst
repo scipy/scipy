@@ -240,11 +240,16 @@ The following pytest markers are available:
 
 * ``array_api_compatible -> xp``: use a parametrisation to run a test on
   multiple array backends.
-* ``skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False, exceptions=None)``:
-  skip certain backends and/or devices.
+* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+  skip certain backends or categories of backends.
   ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
-  marker for the skipping to apply. See the fixture's docstring in ``scipy.conftest``
+  marker for the skips to apply. See the fixture's docstring in ``scipy.conftest``
   for information on how use this marker to skip tests.
+* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+  xfail certain backends or categories of backends.
+  ``@pytest.mark.usefixtures("xfail_xp_backends")`` must be used alongside this
+  marker for the xfails to apply. See the fixture's docstring in ``scipy.conftest``
+  for information on how use this marker to xfail tests.
 * ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
   are invalid when ``SCIPY_ARRAY_API`` is enabled. For instance, some tests of
   `scipy.stats` functions pass masked arrays to the function being tested, but
@@ -266,7 +271,7 @@ The following examples demonstrate how to use the markers::
   from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
   from scipy._lib._array_api import xp_assert_close
   ...
-  @pytest.mark.skip_xp_backends(np_only=True, reasons=['skip reason'])
+  @pytest.mark.skip_xp_backends(np_only=True, reason='skip reason')
   @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto1(self, xp):
@@ -274,9 +279,10 @@ The following examples demonstrate how to use the markers::
       b = xp.asarray([0, 2, 5])
       xp_assert_close(toto(a, b), a)
   ...
-  @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
-                                reasons=['skip reason 1',
-                                         'skip reason 2',],)
+  @pytest.mark.skip_xp_backends('array_api_strict',
+                                reason='skip reason 1')
+  @pytest.mark.skip_xp_backends('cupy',
+                                reason='skip reason 2')
   @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto2(self, xp):
@@ -287,7 +293,7 @@ The following examples demonstrate how to use the markers::
   def test_toto_masked_array(self):
       ...
 
-Passing a custom reason to ``reasons`` when ``cpu_only=True`` is unsupported
+Passing a custom reason to ``reason`` when ``cpu_only=True`` is unsupported
 since ``cpu_only=True`` can be used alongside passing ``backends``. Also,
 the reason for using ``cpu_only`` is likely just that compiled code is used
 in the function(s) being tested.
@@ -300,11 +306,9 @@ for compiled code::
   # array-api-strict and CuPy will always be skipped, for the given reasons.
   # All libraries using a non-CPU device will also be skipped, apart from
   # JAX, for which delegation is implemented (hence non-CPU execution is supported).
-  @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
-                                reasons=['skip reason 1',
-                                         'skip reason 2',],
-                                cpu_only=True,
-                                exceptions=['jax.numpy'],)
+  @pytest.mark.skip_xp_backends(cpu_only, exceptions=['jax.numpy'])
+  @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
+  @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto(self, xp):
@@ -319,7 +323,7 @@ markers to every test function using ``pytestmark``::
     pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
     skip_xp_backends = pytest.mark.skip_xp_backends
     ...
-    @skip_xp_backends(np_only=True, reasons=['skip reason'])
+    @skip_xp_backends(np_only=True, reason='skip reason')
     def test_toto1(self, xp):
         ...
 

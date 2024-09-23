@@ -52,13 +52,13 @@ class TestConvertTemperature:
                                                'rankine', 'kelvin'),
                         xp.asarray([273.15, 0.], dtype=xp.float64), rtol=0., atol=1e-13)
 
-    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
+    @skip_xp_backends(np_only=True, reason='Python list input uses NumPy backend')
     def test_convert_temperature_array_like(self):
         assert_allclose(sc.convert_temperature([491.67, 0.], 'rankine', 'kelvin'),
                         [273.15, 0.], rtol=0., atol=1e-13)
 
 
-    @skip_xp_backends(np_only=True, reasons=['Python int input uses NumPy backend'])
+    @skip_xp_backends(np_only=True, reason='Python int input uses NumPy backend')
     def test_convert_temperature_errors(self, xp):
         with pytest.raises(NotImplementedError, match="old_scale="):
             sc.convert_temperature(1, old_scale="cheddar", new_scale="kelvin")
@@ -72,7 +72,7 @@ class TestLambdaToNu:
                         xp.asarray([1, sc.speed_of_light]))
 
 
-    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
+    @skip_xp_backends(np_only=True, reason='Python list input uses NumPy backend')
     def test_lambda_to_nu_array_like(self, xp):
         assert_allclose(sc.lambda2nu([sc.speed_of_light, 1]),
                         [1, sc.speed_of_light])
@@ -83,7 +83,7 @@ class TestNuToLambda:
         xp_assert_equal(sc.nu2lambda(xp.asarray([sc.speed_of_light, 1])),
                         xp.asarray([1, sc.speed_of_light]))
 
-    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
+    @skip_xp_backends(np_only=True, reason='Python list input uses NumPy backend')
     def test_nu_to_lambda_array_like(self, xp):
         assert_allclose(sc.nu2lambda([sc.speed_of_light, 1]),
                         [1, sc.speed_of_light])

@@ -17,7 +17,7 @@ integral_dtypes = ['int32', 'int64']
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('jax.numpy',
-                              reasons=["JAX arrays do not support item assignment"])
+                              reason="JAX arrays do not support item assignment")
 class TestLogSumExp:
     def test_logsumexp(self, xp):
         # Test with zero-size array
@@ -159,7 +159,7 @@ class TestLogSumExp:
         assert logsumexp(arg) == logsumexp(np.asarray(np.atleast_1d(arg)))
 
     @pytest.mark.skip_xp_backends(np_only=True,
-                                  reasons=["Lists correspond with NumPy backend"])
+                                  reason="Lists correspond with NumPy backend")
     def test_list(self, xp):
         a = [1000, 1000]
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=np.float64)

@@ -170,7 +170,7 @@ def test_fht_exact(n, xp):
     xp_assert_close(A, At)
 
 @skip_xp_backends(np_only=True,
-                  reasons=['array-likes only supported for NumPy backend'])
+                  reason='array-likes only supported for NumPy backend')
 @pytest.mark.parametrize("op", [fht, ifht])
 def test_array_like(xp, op):
     x = [[[1.0, 1.0], [1.0, 1.0]],
