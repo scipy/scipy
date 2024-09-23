@@ -240,12 +240,12 @@ The following pytest markers are available:
 
 * ``array_api_compatible -> xp``: use a parametrisation to run a test on
   multiple array backends.
-* ``skip_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)``:
+* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
   skip certain backends or categories of backends.
   ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
   marker for the skips to apply. See the fixture's docstring in ``scipy.conftest``
   for information on how use this marker to skip tests.
-* ``xfail_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)``:
+* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
   xfail certain backends or categories of backends.
   ``@pytest.mark.usefixtures("xfail_xp_backends")`` must be used alongside this
   marker for the xfails to apply. See the fixture's docstring in ``scipy.conftest``

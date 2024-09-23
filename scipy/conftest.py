@@ -213,7 +213,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
 @pytest.fixture
 def skip_xp_backends(xp, request):
-    """skip_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)
+    """skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)
 
     Skip a decorated test for the provided backend, or skip a category of backends.
 
@@ -231,7 +231,7 @@ def skip_xp_backends(xp, request):
 
 @pytest.fixture
 def xfail_xp_backends(xp, request):
-    """xfail_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)
+    """xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)
 
     xfail a decorated test for the provided backend, or xfail a category of backends.
 
