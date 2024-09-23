@@ -317,8 +317,9 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
         # recalc code_book as centroids of associated obs
         obs = np.asarray(obs)
         obs_code = np.asarray(obs_code)
+        code_book_len = np.asarray(code_book).shape[0]
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
-                                                          code_book.shape[0])
+                                                          code_book_len)
         obs = xp.asarray(obs)
         obs_code = xp.asarray(obs_code)
         code_book = xp.asarray(code_book)

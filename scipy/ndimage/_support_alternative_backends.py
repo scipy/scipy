@@ -50,12 +50,13 @@ def delegate_xp(delegator, module_name):
                 elif result is None:
                     # inplace operations
                     return result
-                else:
-                    # lists/tuples
+                elif isinstance(result, (list, tuple)):
                     return type(result)(
                         xp.asarray(x) if isinstance(x, np.ndarray) else x
                         for x in result
                     )
+                else:
+                    return result
         return wrapper
     return inner
 
