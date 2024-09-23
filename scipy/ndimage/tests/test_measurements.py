@@ -5,7 +5,6 @@ import numpy as np
 from numpy.testing import suppress_warnings
 
 from scipy._lib._array_api import (
-    is_jax,
     is_torch,
     array_namespace,
     xp_assert_equal,
@@ -23,6 +22,7 @@ from . import types
 
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
               skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
 
@@ -366,10 +366,9 @@ def test_label_output_dtype(xp):
         assert output.dtype == t
 
 
+@xfail_xp_backends('dask.array', reason='Dask does not raise')
+@xfail_xp_backends('jax.numpy', reason='JAX does not raise')
 def test_label_output_wrong_size(xp):
-    if is_jax(xp):
-        pytest.xfail("JAX does not raise")
-
     data = xp.ones([5])
     for t in types:
         dtype = getattr(xp, t)
@@ -773,6 +772,7 @@ def test_minimum03(xp):
         assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
+@skip_xp_backends('dask.array', reason="no argsort in Dask")
 def test_minimum04(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
@@ -812,6 +812,7 @@ def test_maximum03(xp):
         assert_almost_equal(output, xp.asarray(4.0), check_0d=False)
 
 
+@skip_xp_backends('dask.array', reason="no argsort in Dask")
 def test_maximum04(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
@@ -1060,6 +1061,7 @@ def test_minimum_position06(xp):
         assert output == (0, 1)
 
 
+@skip_xp_backends('dask.array', reason="no argsort in Dask")
 def test_minimum_position07(xp):
     labels = xp.asarray([1, 2, 3, 4])
     for type in types:
@@ -1125,6 +1127,7 @@ def test_maximum_position05(xp):
         assert output == (0, 0)
 
 
+@skip_xp_backends('dask.array', reason="no argsort in Dask")
 def test_maximum_position06(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
@@ -1189,6 +1192,7 @@ def test_extrema02(xp):
         assert output1 == (output2, output3, output4, output5)
 
 
+@skip_xp_backends('dask.array', reason="no argsort in Dask")
 def test_extrema03(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
@@ -1217,6 +1221,7 @@ def test_extrema03(xp):
         assert output1[3] == output5
 
 
+@skip_xp_backends('dask.array', reason="no argsort in Dask")
 def test_extrema04(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
@@ -1590,7 +1595,8 @@ class TestWatershedIft:
     @skip_xp_backends("cupy", reason="no watershed_ift on CuPy"	)
     def test_watershed_ift09(self, xp):
         # Test large cost. See gh-19575
-        data = xp.asarray([[xp.iinfo(xp.uint16).max, 0],
+        xp_test = array_namespace(xp.empty(0))  # dask.array needs iinfo
+        data = xp.asarray([[xp_test.iinfo(xp.uint16).max, 0],
                            [0, 0]], dtype=xp.uint16)
         markers = xp.asarray([[1, 0],
                               [0, 0]], dtype=xp.int8)

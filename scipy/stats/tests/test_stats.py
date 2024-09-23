@@ -3719,8 +3719,8 @@ class TestSkew(SkewKurtosisTest):
             a[:, 0] = 1.01
             stats.skew(a)
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
+    @skip_xp_backends('jax.numpy', reason="JAX arrays do not support item assignment")
+    @skip_xp_backends('dask.array', reason='boolean index assignment')
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
@@ -3819,8 +3819,8 @@ class TestKurtosis(SkewKurtosisTest):
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
+    @skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
+    @skip_xp_backends('dask.array', reason='boolean index assignment')
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
@@ -8223,6 +8223,8 @@ class TestCombinePvalues:
 
     methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
 
+    @skip_xp_backends('dask.array', reason='no sorting in Dask',
+                      cpu_only=True, exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize("variant", ["single", "all", "random"])
     @pytest.mark.parametrize("method", methods)
     def test_monotonicity(self, variant, method, xp):
@@ -9545,7 +9547,9 @@ class TestXP_Mean:
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 @skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
+@skip_xp_backends('dask.array', reason='boolean index assignment')
 class TestXP_Var:
+
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('correction', [0, 1])
@@ -9624,7 +9628,8 @@ class TestXP_Var:
         xp_assert_equal(res, ref)
 
     def test_dtype(self, xp):
-        max = xp.finfo(xp.float32).max
+        xp_test = array_namespace(xp) # dask.array needs finfo
+        max = xp_test.finfo(xp.float32).max
         x_np = np.asarray([max, max/2], dtype=np.float32)
         x_xp = xp.asarray(x_np)
 

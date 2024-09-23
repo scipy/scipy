@@ -165,6 +165,7 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/cupy/__init__.py',
     'array_api_compat/array_api_compat/cupy/_aliases.py',
+    'array_api_compat/array_api_compat/cupy/_info.py',
     'array_api_compat/array_api_compat/cupy/_typing.py',
     'array_api_compat/array_api_compat/cupy/_info.py',
     'array_api_compat/array_api_compat/cupy/fft.py',
@@ -195,6 +196,7 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/numpy/__init__.py',
     'array_api_compat/array_api_compat/numpy/_aliases.py',
+    'array_api_compat/array_api_compat/numpy/_info.py',
     'array_api_compat/array_api_compat/numpy/_typing.py',
     'array_api_compat/array_api_compat/numpy/_info.py',
     'array_api_compat/array_api_compat/numpy/fft.py',

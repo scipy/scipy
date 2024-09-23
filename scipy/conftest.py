@@ -12,7 +12,7 @@ import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
-from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
+from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE, xp_device
 from scipy._lib import _pep440
 
 try:
@@ -162,6 +162,12 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         xp_available_backends.update({'jax.numpy': jax.numpy})
         jax.config.update("jax_enable_x64", True)
         jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
+    except ImportError:
+        pass
+
+    try:
+        import dask.array  # type: ignore[import-not-found]
+        xp_available_backends.update({'dask.array': dask.array})
     except ImportError:
         pass
 
@@ -378,6 +384,9 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
                 for d in xp.empty(0).devices():
                     if 'cpu' not in d.device_kind:
                         skip_or_xfail(reason=reason)
+            elif xp.__name__ == 'dask.array':
+                if xp_device(xp.empty(0)) != 'cpu':
+                    skip_or_xfail(reason=reason)
 
 
 # Following the approach of NumPy's conftest.py...
