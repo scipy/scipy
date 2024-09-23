@@ -95,7 +95,7 @@ def inherit_docstring_from(cls: object) -> Decorator:
 
     Parameters
     ----------
-    cls : type | object
+    cls : type or object
         A class with a method with the same name as the decorated method.
         The docstring of the method in this class replaces '%(super)s' in the
         docstring of the decorated method.
@@ -150,7 +150,7 @@ def extend_notes_in_docstring(cls: object, notes: str) -> Decorator:
 
     Parameters
     ----------
-    cls : type | object
+    cls : type or object
         A class with a method with the same name as the decorated method.
         The docstring of the method in this class replaces the docstring of the
         decorated method.
@@ -191,7 +191,7 @@ def replace_notes_in_docstring(cls: object, notes: str) -> Decorator:
 
     Parameters
     ----------
-    cls : type | object
+    cls : type or object
         A class with a method with the same name as the decorated method.
         The docstring of the method in this class replaces the docstring of the
         decorated method.
