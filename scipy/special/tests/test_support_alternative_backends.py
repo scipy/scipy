@@ -5,7 +5,7 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
 from scipy.conftest import array_api_compatible
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE
+from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE, is_dask
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -64,6 +64,9 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
                     f"and cannot delegate to PyTorch.")
+        
+    if is_dask(xp) and f_name == 'rel_entr':
+        pytest.skip("boolean index assignment")
 
     shapes = shapes[:n_args]
     f = getattr(special, f_name)
