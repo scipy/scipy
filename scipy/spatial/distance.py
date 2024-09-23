@@ -111,7 +111,7 @@ import numpy as np
 import dataclasses
 
 from collections.abc import Callable
-from functools import partial, wraps
+from functools import partial
 from scipy._lib._util import _asarray_validated
 from scipy._lib.deprecation import _deprecated
 
