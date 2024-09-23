@@ -248,6 +248,9 @@ def is_torch(xp: ModuleType) -> bool:
 def is_jax(xp):
     return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
 
+def is_dask(xp):
+    return xp.__name__ in ('dask.array', 'scipy._lib.array_api_compat.dask.array')
+
 
 def is_array_api_strict(xp):
     return xp.__name__ == 'array_api_strict'
@@ -276,6 +279,9 @@ def _strict_check(actual, desired, xp, *,
         assert actual.dtype == desired.dtype, _msg
 
     if check_shape:
+        if is_dask(xp):
+            actual.compute_chunk_sizes()
+            desired.compute_chunk_sizes()
         _msg = f"Shapes do not match.\nActual: {actual.shape}\nDesired: {desired.shape}"
         assert actual.shape == desired.shape, _msg
 
