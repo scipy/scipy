@@ -5,7 +5,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['find', 'tril', 'triu']
 
-import numpy as np
+
 from ._coo import coo_matrix, coo_array
 from ._base import sparray
 
@@ -40,8 +40,7 @@ def find(A):
     A.sum_duplicates()
     # remove explicit zeros
     nz_mask = A.data != 0
-    ret_coords = tuple(np.array(A.coords)[:, nz_mask])
-    return *ret_coords, A.data[nz_mask]
+    return A.row[nz_mask], A.col[nz_mask], A.data[nz_mask]
 
 
 def tril(A, k=0, format=None):
@@ -103,17 +102,12 @@ def tril(A, k=0, format=None):
     # convert to COOrdinate format where things are easy
     A = coo_sparse(A, copy=False)
     mask = A.row + k >= A.col
-    if A.ndim<3:
-        row = A.row[mask]
-        col = A.col[mask]
-        data = A.data[mask]
-        new_coo = coo_sparse((data, (row, col)), shape=A.shape, dtype=A.dtype)
-        return new_coo.asformat(format)
-    else:
-        coords = tuple(np.array(A.coords)[:, mask])
-        data = A.data[mask]
-        new_coo = coo_sparse((data, coords), shape=A.shape, dtype=A.dtype)
-        return new_coo.asformat(format)
+
+    row = A.row[mask]
+    col = A.col[mask]
+    data = A.data[mask]
+    new_coo = coo_sparse((data, (row, col)), shape=A.shape, dtype=A.dtype)
+    return new_coo.asformat(format)
 
 
 def triu(A, k=0, format=None):
@@ -176,14 +170,9 @@ def triu(A, k=0, format=None):
     # convert to COOrdinate format where things are easy
     A = coo_sparse(A, copy=False)
     mask = A.row + k <= A.col
-    if A.ndim<3:
-        row = A.row[mask]
-        col = A.col[mask]
-        data = A.data[mask]
-        new_coo = coo_sparse((data, (row, col)), shape=A.shape, dtype=A.dtype)
-        return new_coo.asformat(format)
-    else:
-        coords = tuple(np.array(A.coords)[:, mask])
-        data = A.data[mask]
-        new_coo = coo_sparse((data, coords), shape=A.shape, dtype=A.dtype)
-        return new_coo.asformat(format)
+
+    row = A.row[mask]
+    col = A.col[mask]
+    data = A.data[mask]
+    new_coo = coo_sparse((data, (row, col)), shape=A.shape, dtype=A.dtype)
+    return new_coo.asformat(format)
