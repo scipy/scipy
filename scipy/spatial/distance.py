@@ -113,6 +113,7 @@ import dataclasses
 from collections.abc import Callable
 from functools import partial, wraps
 from scipy._lib._util import _asarray_validated
+from scipy._lib.deprecation import _deprecated
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -890,23 +891,19 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else np.float64(0)
 
 
-def _deprecate_kulczynski1(fn):
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        warnings.warn(
-            "The kulczynski1 metric is deprecated since Scipy 1.15.0 and will "
-            "be removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=2)
-        return fn(*args, **kwargs)
-    return wrapper
+_deprecated_kulczynski1 = _deprecated(
+    "The kulczynski1 metric is deprecated since SciPy 1.15.0 and will be "
+    "removed in SciPy 1.17.0."
+)
 
 
-@_deprecate_kulczynski1
+@_deprecated_kulczynski1
 def kulczynski1(u, v, *, w=None):
     """
-    (Deprecated) Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
+    Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
 
     .. deprecated:: 1.15.0
-       This function is deprecated and will be removed in SciPy 1.17.0
+       This function is deprecated and will be removed in SciPy 1.17.0.
 
     The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
     of length ``n``, is defined as
@@ -963,10 +960,6 @@ def kulczynski1(u, v, *, w=None):
     -3.0
 
     """
-    warnings.warn(
-        "This function is deprecated and will be removed in SciPy 1.17.0.",
-        DeprecationWarning, stacklevel=2)
-
     u = _validate_vector(u)
     v = _validate_vector(v)
     if w is not None:
@@ -1591,21 +1584,19 @@ def russellrao(u, v, w=None):
     return float(n - ntt) / n
 
 
-def _deprecate_sokalmichener(fn):
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        warnings.warn(
-            "The sokalmichener metric is deprecated since Scipy 1.15.0 and will "
-            "be removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=2)
-        return fn(*args, **kwargs)
-    return wrapper
+_deprecated_sokalmichener = _deprecated(
+    "The sokalmichener metric is deprecated since SciPy 1.15.0 and will be "
+    " removed in SciPy 1.17.0."
+)
 
 
-@_deprecate_sokalmichener
+@_deprecated_sokalmichener
 def sokalmichener(u, v, w=None):
     """
-    (Deprecated)
     Compute the Sokal-Michener dissimilarity between two boolean 1-D arrays.
+
+    .. deprecated:: 1.15.0
+       This function is deprecated and will be removed in SciPy 1.17.0.
 
     The Sokal-Michener dissimilarity between boolean 1-D arrays `u` and `v`,
     is defined as
@@ -1885,8 +1876,8 @@ _METRIC_INFOS = [
         aka={'kulczynski1'},
         types=['bool'],
         dist_func=kulczynski1,
-        cdist_func=_deprecate_kulczynski1(_distance_pybind.cdist_kulczynski1),
-        pdist_func=_deprecate_kulczynski1(_distance_pybind.pdist_kulczynski1),
+        cdist_func=_deprecated_kulczynski1(_distance_pybind.cdist_kulczynski1),
+        pdist_func=_deprecated_kulczynski1(_distance_pybind.pdist_kulczynski1),
     ),
     MetricInfo(
         canonical_name='mahalanobis',
@@ -1933,8 +1924,8 @@ _METRIC_INFOS = [
         aka={'sokalmichener'},
         types=['bool'],
         dist_func=sokalmichener,
-        cdist_func=_deprecate_sokalmichener(_distance_pybind.cdist_sokalmichener),
-        pdist_func=_deprecate_sokalmichener(_distance_pybind.pdist_sokalmichener),
+        cdist_func=_deprecated_sokalmichener(_distance_pybind.cdist_sokalmichener),
+        pdist_func=_deprecated_sokalmichener(_distance_pybind.pdist_sokalmichener),
     ),
     MetricInfo(
         canonical_name='sokalsneath',
