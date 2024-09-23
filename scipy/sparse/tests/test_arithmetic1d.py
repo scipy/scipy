@@ -307,11 +307,11 @@ class TestArithmetic1D:
         # Test basic matrix arithmetic with shapes like 0, (1, 0), (0, 3), etc.
         mat = np.array([])
         a = mat.reshape(0)
-        d = mat.reshape((1, 0))
+        #d = mat.reshape((1, 0))
         f = np.ones([5, 5])
 
         asp = spcreator(a)
-        dsp = spcreator(d)
+        #dsp = spcreator(d)
         # bad shape for addition
         # with pytest.raises(ValueError, match='inconsistent shapes'):
         #     asp.__add__(dsp)

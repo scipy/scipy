@@ -474,7 +474,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def diagonalnd(self, axis1=0, axis2=1, offset=0):
         x, y = self.shape[axis1], self.shape[axis2]
         diag_size = min(x, y)
-        diag_shape = [*(self.shape[i] for i in range(len(self.shape)) if i!=axis1 and i!=axis2), diag_size]
+        diag_shape = [*(self.shape[i] for i in range(len(self.shape))
+                        if i!=axis1 and i!=axis2), diag_size]
         if offset <= -x or offset >= y:
             diag_shape[-1] = 0
             return coo_array(np.empty(tuple(diag_shape), dtype=self.data.dtype))
@@ -488,8 +489,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             ax = axis1
         else:
             ax = axis2
-        inds = tuple(inds[i] for i in range(len(self.shape)) if i!=axis2 and i!=axis1) + \
-                    tuple(inds[ax:ax+1])
+        inds = tuple(inds[i] for i in range(len(self.shape))
+                     if i!=axis2 and i!=axis1) + tuple(inds[ax:ax+1])
         
         diag = coo_array((new_data, inds), diag_shape)
         return diag
@@ -607,8 +608,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
 
     def _add_sparse(self, other):
-        if self.ndim < 3 and ((issparse(other) and other.ndim < 3) \
-                              or (not issparse(other) and len(np.asarray(other).shape) < 3)):
+        if self.ndim < 3 and other.ndim < 3:
             return self.tocsr()._add_sparse(other)
         
         other = self.__class__(other)
@@ -617,7 +617,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 # This will raise an error if the shapes are not broadcastable
                 bshape = np.broadcast_shapes(self.shape, other.shape)
             except ValueError:
-                raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
+                raise ValueError('inconsistent shapes')
             self = self._broadcast_to(bshape)
             other = other._broadcast_to(bshape)
 
@@ -637,7 +637,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 # This will raise an error if the shapes are not broadcastable
                 bshape = np.broadcast_shapes(self.shape, other.shape)
             except ValueError:
-                raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
+                raise ValueError('inconsistent shapes')
             self = self._broadcast_to(bshape)
             other = other._broadcast_to(bshape)
 
@@ -1430,7 +1430,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.ndim < 3:
             result = _spbase.mean(self, axis, dtype, out) 
             return result
-        zero = self.dtype.type(0)
 
         axis = _validateaxes(axis, self.ndim, self.shape)
         
@@ -1458,17 +1457,20 @@ class _coo_base(_data_matrix, _minmax_mixin):
             ret = (inter_self / math.prod(self.shape)).sum(dtype=res_dtype, out=out)
             result_shape = ret.shape
         else:
-            result_shape = tuple(self.shape[ax] for ax in range(self.ndim) if ax not in axis)
+            result_shape = tuple(self.shape[ax] for ax in range(self.ndim)
+                                 if ax not in axis)
 
         if out is not None and out_shape != result_shape:
             raise ValueError("dimensions do not match")
         
         if axis is not None:
             non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
-            axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :], [self.shape[ax] for ax in axis])
+            axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :],
+                                               [self.shape[ax] for ax in axis])
             coords_2d = np.vstack((non_axis_coords, axis_coords))
 
-            shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
+            shape_2d = (math.prod(result_shape), math.prod([self.shape[ax]
+                                                            for ax in axis]))
 
             if out is not None:
                 out = out.reshape(math.prod(result_shape))
@@ -1494,8 +1496,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.ndim < 3:
             result = _spbase.sum(self, axis, dtype, out)
             return result
-        
-        zero = self.dtype.type(0)
 
         axis = _validateaxes(axis, self.ndim, self.shape)
         
@@ -1507,17 +1507,20 @@ class _coo_base(_data_matrix, _minmax_mixin):
             ret = _spbase.sum(self, axis, dtype, out)
             result_shape = ret.shape
         else:
-            result_shape = tuple(self.shape[ax] for ax in range(self.ndim) if ax not in axis)
+            result_shape = tuple(self.shape[ax] for ax in range(self.ndim)
+                                 if ax not in axis)
 
         if out is not None and out_shape != result_shape:
             raise ValueError("dimensions do not match")
         
         if axis is not None:
             non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
-            axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :], [self.shape[ax] for ax in axis])
+            axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :],
+                                               [self.shape[ax] for ax in axis])
             coords_2d = np.vstack((non_axis_coords, axis_coords))
 
-            shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
+            shape_2d = (math.prod(result_shape), math.prod([self.shape[ax]
+                                                            for ax in axis]))
             
             if out is not None:
                 out = out.reshape(math.prod(result_shape))
@@ -1630,10 +1633,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return _max_or_min((*self.data, zero))
         
         non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
-        axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :], [self.shape[ax] for ax in axis])
+        axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :],
+                                           [self.shape[ax] for ax in axis])
         coords_2d = np.vstack((non_axis_coords, axis_coords))
 
-        result_shape = tuple(self.shape[ax] for ax in range(self.ndim) if ax not in axis)
+        result_shape = tuple(self.shape[ax] for ax in range(self.ndim)
+                             if ax not in axis)
         shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
 
         self = coo_array((self.data, coords_2d), shape_2d)
@@ -1668,7 +1673,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return self._find_max_or_min(axis, out, np.nanmin, np.fmin, explicit)
 
     def _find_arg_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis, explicit):
-        if axis == None:
+        if axis is None:
             flat = self.reshape(-1)
             return flat._arg_min_or_max(0, out, _max_or_min, _max_or_min_axis, explicit)
 
@@ -1683,8 +1688,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         non_reduced_axes = [ax for ax in range(self.ndim) if ax != axis]
         non_reduced_shape = [self.shape[ax] for ax in non_reduced_axes]
         
-        non_axis_coords = np.ravel_multi_index(np.array(self.coords)[non_reduced_axes, :],
-                                               non_reduced_shape)
+        non_axis_coords = np.ravel_multi_index(
+            np.array(self.coords)[non_reduced_axes, :], non_reduced_shape)
         
         axis_coords = np.ravel_multi_index(tuple([np.array(self.coords)[axis, :]]),
                                            tuple([self.shape[axis]]))
@@ -1694,7 +1699,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         shape_2d = (math.prod(result_shape), self.shape[axis])
 
         self = coo_array((self.data, coords_2d), shape_2d)
-        res_flattened = self._arg_min_or_max(1, out, _max_or_min, _max_or_min_axis, explicit)
+        res_flattened = self._arg_min_or_max(1, out, _max_or_min, _max_or_min_axis,
+                                             explicit)
         res = res_flattened.reshape(result_shape)      
         return res
     

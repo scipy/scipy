@@ -5,7 +5,6 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import coo_array, random_array, SparseEfficiencyWarning
 from .._coo import _block_diag, _extract_block_diag
-from .._base import sparray
 
 def test_shape_constructor():
     empty1d = coo_array((3,))
@@ -905,7 +904,6 @@ def test_minimum(a_shape, b_shape):
     
 
 def test_maximum_with_scalar():
-    rng = np.random.default_rng(23409823)
     sup = suppress_warnings()
     sup.filter(SparseEfficiencyWarning)
     a = coo_array([0,1,6])
@@ -918,7 +916,6 @@ def test_maximum_with_scalar():
         assert_equal(c.maximum(5).toarray(), np.maximum(c.toarray(), 5))
 
 def test_minimum_with_scalar():
-    rng = np.random.default_rng(23409823)
     sup = suppress_warnings()
     sup.filter(SparseEfficiencyWarning)
     a = coo_array([0,1,6])

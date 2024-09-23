@@ -280,8 +280,10 @@ def validateaxis(axis) -> None:
         return
     axis_type = type(axis)
 
-    if not isinstance(axis, tuple) and not np.issubdtype(np.dtype(axis_type), np.integer):
-        raise TypeError(f"axis must be an integer/tuple of ints, not {axis_type.__name__}")
+    if not isinstance(axis, tuple) and not np.issubdtype(np.dtype(axis_type),
+                                                         np.integer):
+        raise TypeError('axis must be an integer/tuple of ints,'
+                        f'not {axis_type.__name__}')
 
     if type(axis) is not tuple:
         axis = [axis]

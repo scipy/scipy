@@ -569,7 +569,7 @@ class _spbase:
                 try:
                     bshape = np.broadcast_shapes(self.shape, other.shape)
                 except ValueError:
-                    raise ValueError(f'inconsistent shapes ({self.shape} and {other.shape})')
+                    raise ValueError("inconsistent shapes")
                 self = self._broadcast_to(bshape)
                 other = np.broadcast_to(other, bshape)
             return self._add_dense(other)
