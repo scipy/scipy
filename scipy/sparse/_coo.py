@@ -470,30 +470,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
         diag[row + min(k, 0)] = data
 
         return diag
-    
-    def diagonalnd(self, axis1=0, axis2=1, offset=0):
-        x, y = self.shape[axis1], self.shape[axis2]
-        diag_size = min(x, y)
-        diag_shape = [*(self.shape[i] for i in range(len(self.shape))
-                        if i!=axis1 and i!=axis2), diag_size]
-        if offset <= -x or offset >= y:
-            diag_shape[-1] = 0
-            return coo_array(np.empty(tuple(diag_shape), dtype=self.data.dtype))
-        diag_shape[-1] = min(x + min(offset, 0), y - max(offset, 0)) 
-        # diag = np.zeros(diag_shape, dtype=self.dtype)
-        diag_mask = (self.coords[axis1] + offset) == self.coords[axis2]
-        new_data = self.data[diag_mask]
-        inds = [idx[diag_mask] for idx in self.coords]
-        # min shape out of both axes
-        if offset>=0:
-            ax = axis1
-        else:
-            ax = axis2
-        inds = tuple(inds[i] for i in range(len(self.shape))
-                     if i!=axis2 and i!=axis1) + tuple(inds[ax:ax+1])
-        
-        diag = coo_array((new_data, inds), diag_shape)
-        return diag
 
     diagonal.__doc__ = _data_matrix.diagonal.__doc__
 

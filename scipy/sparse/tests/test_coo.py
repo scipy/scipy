@@ -822,19 +822,6 @@ def test_extract_block_diag(shape):
     assert_equal(res.toarray(), sp_x.toarray())
 
 
-@pytest.mark.parametrize(('shape', 'ax1', 'ax2', 'offset'),
-                         [((3,2,4,6,5), 0, 1, 0), ((3,2,4,6,5), 1, 4, 2),
-                          ((3,2,4,6,5), 4, 1, 2), ((6,4,8,1), 2, 3, 0),
-                          ((5, 4, 9), 0, 2, 2),  ((2,4,3,4,5), 4, 0, 1),
-                          ((2,4,3,4,5), 0, 4, 1), ((2,4,3,4,5), 2, 1, 2),])
-def test_nd_diagonal(shape, ax1, ax2, offset):
-    rng = np.random.default_rng(23409823)
-    arr = random_array(shape, density=0.6, random_state=rng, dtype=int)
-    a = arr.diagonalnd(axis1=ax1, axis2=ax2, offset=offset)
-    b = np.diagonal(arr.toarray(), axis1=ax1, axis2=ax2, offset=offset)
-    assert_equal(a.toarray(), b)
-
-
 bitwise_op_and_compare_shapes = [
     ((3,4), (3,4)), ((1,4), (2,1)), ((3,5), (1,)), ((1,), (7,8)),
     ((3,4,6), (3,4,6)), ((4,3), (2,1,3)), ((2,1,3), (4,3)),
