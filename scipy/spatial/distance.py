@@ -893,7 +893,8 @@ def jaccard(u, v, w=None):
 
 _deprecated_kulczynski1 = _deprecated(
     "The kulczynski1 metric is deprecated since SciPy 1.15.0 and will be "
-    "removed in SciPy 1.17.0."
+    "removed in SciPy 1.17.0.  Replace usage of 'kulczynski1(u, v)' with "
+    "'1/jaccard(u, v) - 1'."
 )
 
 
@@ -904,6 +905,7 @@ def kulczynski1(u, v, *, w=None):
 
     .. deprecated:: 1.15.0
        This function is deprecated and will be removed in SciPy 1.17.0.
+       Replace usage of ``kulczynski1(u, v)`` with ``1/jaccard(u, v) - 1``.
 
     The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
     of length ``n``, is defined as
@@ -1586,7 +1588,8 @@ def russellrao(u, v, w=None):
 
 _deprecated_sokalmichener = _deprecated(
     "The sokalmichener metric is deprecated since SciPy 1.15.0 and will be "
-    " removed in SciPy 1.17.0."
+    "removed in SciPy 1.17.0.  Replace usage of 'sokalmichener(u, v)' with "
+    "'rogerstanimoto(u, v)'."
 )
 
 
@@ -1597,6 +1600,7 @@ def sokalmichener(u, v, w=None):
 
     .. deprecated:: 1.15.0
        This function is deprecated and will be removed in SciPy 1.17.0.
+       Replace usage of ``sokalmichener(u, v)`` with ``rogerstanimoto(u, v)``.
 
     The Sokal-Michener dissimilarity between boolean 1-D arrays `u` and `v`,
     is defined as
