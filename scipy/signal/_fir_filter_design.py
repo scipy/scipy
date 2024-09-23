@@ -1321,6 +1321,7 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
     ------
     ValueError
         If `hsize` and `window` are not 2-element tuples or lists.
+        If `cutoff` is None when `circular` is True.
         If `cutoff` is outside the range [0, fs / 2] and `circular` is False.
         If any of the elements in `window` are not recognized.
     RuntimeError
@@ -1376,10 +1377,14 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
     >>> plt.show()
     """
     if len(hsize) != 2:
-        raise ValueError("hsize must be a 2-element tuple or list")
+            raise ValueError("hsize must be a 2-element tuple or list")
 
     if circular:
-        n_r = max(hsize[0], hsize[1]) * 8
+        if fc is None:
+            raise ValueError("Cutoff frequency `fc` must be "
+                            "provided when `circular` is True")
+        
+        n_r = max(hsize[0], hsize[1]) * 8  # oversample 1d window by factor 8
         
         win_r = firwin(n_r, cutoff=fc, window=window, fs=fs)
 
