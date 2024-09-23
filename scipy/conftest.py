@@ -42,11 +42,11 @@ def pytest_configure(config):
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
     config.addinivalue_line("markers",
-        "skip_xp_backends(*backends, reason=None, np_only=False, cpu_only=False, "
+        "skip_xp_backends(backends, reason=None, np_only=False, cpu_only=False, "
         "exceptions=None): "
         "mark the desired skip configuration for the `skip_xp_backends` fixture.")
     config.addinivalue_line("markers",
-        "xfail_xp_backends(*backends, reason=None, np_only=False, cpu_only=False, "
+        "xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, "
         "exceptions=None): "
         "mark the desired xfail configuration for the `xfail_xp_backends` fixture.")
 
@@ -213,7 +213,15 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
 @pytest.fixture
 def skip_xp_backends(xp, request):
-    """See the `skip_or_xfail_xp_backends` docstring."""
+    """skip_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)
+
+    Skip a decorated test for the provided backend.
+
+    See `skip_or_xfail_backends` docstring for details. Note that, contrary to
+    `skip_or_xfail_backends`, the ``backend`` argument here is a single string: this
+    function only skips a single backend at a time. To skip multiple backends,
+    provide multiple decorators.
+    """  # noqa: E501
     if "skip_xp_backends" not in request.keywords:
         return
 
@@ -223,7 +231,15 @@ def skip_xp_backends(xp, request):
 
 @pytest.fixture
 def xfail_xp_backends(xp, request):
-    """See the `skip_or_xfail_xp_backends` docstring."""
+    """xfail_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)
+
+    xfail a decorated test for the provided backend.
+
+    See `skip_or_xfail_backends` docstring for details. Note that, contrary to
+    `skip_or_xfail_backends`, the ``backend`` argument here is a single string: this
+    function only xfails a single backend at a time. To xfail multiple backends,
+    provide multiple decorators.
+    """  # noqa: E501
     if "xfail_xp_backends" not in request.keywords:
         return
     backends, kwargs = _backends_kwargs_from_request(request, skip_or_xfail='xfail')
