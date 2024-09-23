@@ -34,8 +34,7 @@ ndimage_to_numpy_mode = {
 
 class TestBoundaries:
 
-    @skip_xp_backends("cupy", ["CuPy does not have geometric_transform"],
-                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+    @skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
     @pytest.mark.parametrize(
         'mode, expected_value',
         [('nearest', [1.5, 2.5, 3.5, 4, 4, 4, 4]),
@@ -56,8 +55,7 @@ class TestBoundaries:
                                         output_shape=(7,), order=1),
             xp.asarray(expected_value))
 
-    @skip_xp_backends("cupy", ["CuPy does not have geometric_transform"],
-                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+    @skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
     @pytest.mark.parametrize(
         'mode, expected_value',
         [('nearest', [1, 1, 2, 3]),
@@ -123,7 +121,7 @@ class TestSpline:
         out = ndimage.spline_filter(data, order=order)
         assert_array_almost_equal(out, xp.asarray([1]))
 
-    @skip_xp_backends(np_only=True, reasons=['output=dtype is numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     def test_spline03(self, dtype, order, xp):
         dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
@@ -147,8 +145,7 @@ class TestSpline:
         assert_array_almost_equal(out, expected)
 
 
-@skip_xp_backends("cupy", ["CuPy does not have geometric_transform"],
-                  cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+@skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
 @pytest.mark.parametrize('order', range(0, 6))
 class TestGeometricTransform:
 
@@ -420,8 +417,7 @@ class TestGeometricTransform:
         assert_array_almost_equal(out, [5, 7])
 
 
-@skip_xp_backends("cupy", ["CuPy does not have geometric_transform"],
-                  cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+@skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
 class TestGeometricTransformExtra:
 
     def test_geometric_transform_grid_constant_order1(self, xp):
@@ -470,7 +466,7 @@ class TestGeometricTransformExtra:
             rtol=1e-7,
         )
 
-    @skip_xp_backends(np_only=True, reasons=['endianness is numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='endianness is numpy-specific')
     def test_geometric_transform_endianness_with_output_parameter(self, xp):
         # geometric transform given output ndarray or dtype with
         # non-native endianness. see issue #4127
@@ -487,7 +483,7 @@ class TestGeometricTransformExtra:
             result = out if returned is None else returned
             assert_array_almost_equal(result, [1])
 
-    @skip_xp_backends(np_only=True, reasons=['string `output` is numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='string `output` is numpy-specific')
     def test_geometric_transform_with_string_output(self, xp):
         data = xp.asarray([1])
 
@@ -544,8 +540,7 @@ class TestMapCoordinates:
         out2 = ndimage.map_coordinates(data, idx, order=order)
         assert_array_almost_equal(out1, out2)
 
-    @skip_xp_backends("jax.numpy", reasons=["`order` is required in jax"],
-                      cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+    @skip_xp_backends("jax.numpy", reason="`order` is required in jax")
     def test_map_coordinates03(self, xp):
         data = _asarray([[4, 1, 3, 2],
                          [7, 6, 8, 5],
@@ -592,7 +587,7 @@ class TestMapCoordinates:
             result = out if returned is None else returned
             assert_array_almost_equal(result, expected)
 
-    @skip_xp_backends(np_only=True, reasons=['string `output` is numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='string `output` is numpy-specific')
     def test_map_coordinates_with_string_output(self, xp):
         data = xp.asarray([[1]])
         idx = np.indices(data.shape)
@@ -912,7 +907,7 @@ class TestAffineTransform:
 
         assert_raises(ValueError, ndimage.affine_transform, data, tform_h2)
 
-    @skip_xp_backends(np_only=True, reasons=['byteorder is numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='byteorder is numpy-specific')
     def test_affine_transform_1d_endianness_with_output_parameter(self, xp):
         # 1d affine transform given output ndarray or dtype with
         # either endianness. see issue #7388
@@ -929,7 +924,7 @@ class TestAffineTransform:
             result = out if returned is None else returned
             assert_array_almost_equal(result, xp.asarray([[1, 1], [1, 1]]))
 
-    @skip_xp_backends(np_only=True, reasons=['byteorder is numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='byteorder is numpy-specific')
     def test_affine_transform_multi_d_endianness_with_output_parameter(self, xp):
         # affine transform given output ndarray or dtype with either endianness
         # see issue #4127
@@ -943,7 +938,7 @@ class TestAffineTransform:
             assert_array_almost_equal(result, np.asarray([1]))
 
     @skip_xp_backends(np_only=True,
-        reasons=['`out` of a different size is numpy-specific']
+        reason='`out` of a different size is numpy-specific'
     )
     def test_affine_transform_output_shape(self, xp):
         # don't require output_shape when out of a different size is given
@@ -958,7 +953,7 @@ class TestAffineTransform:
             ndimage.affine_transform(
                 data, [[1]], output=out, output_shape=(12,))
 
-    @skip_xp_backends(np_only=True, reasons=['string `output` is numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='string `output` is numpy-specific')
     def test_affine_transform_with_string_output(self, xp):
         data = xp.asarray([1])
         out = ndimage.affine_transform(data, xp.asarray([[1]]), output='f')
@@ -1318,7 +1313,7 @@ class TestZoom:
                           match="It is recommended to use mode"):
             ndimage.zoom(x, 2, mode=mode, grid_mode=True),
 
-    @skip_xp_backends(np_only=True, reasons=['inplace output= is numpy-specific'])
+    @skip_xp_backends(np_only=True, reason='inplace output= is numpy-specific')
     def test_zoom_output_shape(self, xp):
         """Ticket #643"""
         x = xp.reshape(xp.arange(12), (3, 4))

@@ -315,7 +315,7 @@ class TestCubature:
         )
 
     @skip_xp_backends(np_only=True,
-                      reasons=['array-likes only supported for NumPy backend'])
+                      reason='array-likes only supported for NumPy backend')
     def test_pass_array_like_not_array(self, xp):
         n = np_compat.arange(5, dtype=np_compat.float64)
         a = [0]
