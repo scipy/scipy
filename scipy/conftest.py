@@ -215,12 +215,12 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 def skip_xp_backends(xp, request):
     """skip_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)
 
-    Skip a decorated test for the provided backend.
+    Skip a decorated test for the provided backend, or skip a category of backends.
 
-    See `skip_or_xfail_backends` docstring for details. Note that, contrary to
-    `skip_or_xfail_backends`, the ``backend`` argument here is a single string: this
-    function only skips a single backend at a time. To skip multiple backends,
-    provide multiple decorators.
+    See ``skip_or_xfail_backends`` docstring for details. Note that, contrary to
+    ``skip_or_xfail_backends``, the ``backend`` and ``reason`` arguments are optional
+    single strings: this function only skips a single backend at a time.
+    To skip multiple backends, provide multiple decorators.
     """  # noqa: E501
     if "skip_xp_backends" not in request.keywords:
         return
@@ -233,12 +233,12 @@ def skip_xp_backends(xp, request):
 def xfail_xp_backends(xp, request):
     """xfail_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)
 
-    xfail a decorated test for the provided backend.
+    xfail a decorated test for the provided backend, or xfail a category of backends.
 
-    See `skip_or_xfail_backends` docstring for details. Note that, contrary to
-    `skip_or_xfail_backends`, the ``backend`` argument here is a single string: this
-    function only xfails a single backend at a time. To xfail multiple backends,
-    provide multiple decorators.
+    See ``skip_or_xfail_backends`` docstring for details. Note that, contrary to
+    ``skip_or_xfail_backends``, the ``backend`` and ``reason`` arguments are optional
+    single strings: this function only xfails a single backend at a time.
+    To xfail multiple backends, provide multiple decorators.
     """  # noqa: E501
     if "xfail_xp_backends" not in request.keywords:
         return
@@ -255,27 +255,31 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
     Parameters
     ----------
     backends : tuple
-        Backends to skip, e.g. ``("array_api_strict", "torch")``.
+        Backends to skip/xfail, e.g. ``("array_api_strict", "torch")``.
         These are overriden when ``np_only`` is ``True``, and are not
         necessary to provide for non-CPU backends when ``cpu_only`` is ``True``.
+        For a custom reason to apply, you should pass a dict ``{'reason': '...'}``
+        to a keyword matching the name of the backend.
     reason : str, optional
-        A reason for the skip.
-        If unprovided, default reason is used. Note that it is not possible
-        to specify a custom reason with ``cpu_only``. Default: ``None``.
+        A reason for the skip/xfail in the case of ``np_only=True``.
+        If unprovided, a default reason is used. Note that it is not possible
+        to specify a custom reason with ``cpu_only``.
     np_only : bool, optional
-        When ``True``, the test is skipped for all backends other
+        When ``True``, the test is skipped/xfailed for all backends other
         than the default NumPy backend. There is no need to provide
         any ``backends`` in this case. To specify a reason, pass a
         value to ``reason``. Default: ``False``.
     cpu_only : bool, optional
-        When ``True``, the test is skipped/x-failed on non-CPU devices.
+        When ``True``, the test is skipped/xfailed on non-CPU devices.
         There is no need to provide any ``backends`` in this case,
         but any ``backends`` will also be skipped on the CPU.
         Default: ``False``.
     exceptions : list, optional
-        A list of exceptions for use with `cpu_only` or `np_only`.
+        A list of exceptions for use with ``cpu_only`` or ``np_only``.
         This should be provided when delegation is implemented for some,
         but not all, non-CPU/non-NumPy backends.
+    skip_or_xfail : str
+        ``'skip'`` to skip, ``'xfail'`` to xfail.
     """
     skip_or_xfail = getattr(pytest, skip_or_xfail)
     np_only = kwargs.get("np_only", False)

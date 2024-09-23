@@ -240,11 +240,16 @@ The following pytest markers are available:
 
 * ``array_api_compatible -> xp``: use a parametrisation to run a test on
   multiple array backends.
-* ``skip_xp_backends(*backends, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
-  skip certain backends and/or devices.
+* ``skip_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)``:
+  skip certain backends or categories of backends.
   ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
-  marker for the skipping to apply. See the fixture's docstring in ``scipy.conftest``
+  marker for the skips to apply. See the fixture's docstring in ``scipy.conftest``
   for information on how use this marker to skip tests.
+* ``xfail_xp_backends(backend, reason, np_only=False, cpu_only=False, exceptions=None)``:
+  xfail certain backends or categories of backends.
+  ``@pytest.mark.usefixtures("xfail_xp_backends")`` must be used alongside this
+  marker for the xfails to apply. See the fixture's docstring in ``scipy.conftest``
+  for information on how use this marker to xfail tests.
 * ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
   are invalid when ``SCIPY_ARRAY_API`` is enabled. For instance, some tests of
   `scipy.stats` functions pass masked arrays to the function being tested, but
@@ -301,7 +306,7 @@ for compiled code::
   # array-api-strict and CuPy will always be skipped, for the given reasons.
   # All libraries using a non-CPU device will also be skipped, apart from
   # JAX, for which delegation is implemented (hence non-CPU execution is supported).
-  @pytest.mark.skip_xp_backends(cp_only, exceptions=['jax.numpy'])
+  @pytest.mark.skip_xp_backends(cpu_only, exceptions=['jax.numpy'])
   @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
   @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   @pytest.mark.usefixtures("skip_xp_backends")
