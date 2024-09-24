@@ -772,23 +772,23 @@ def jaccard(u, v, w=None):
     r"""
     Compute the Jaccard dissimilarity between two boolean vectors.
 
-    Given boolean vectors :math:`u \equiv (u_1, \cdots, u_n)`
-    and :math:`v \equiv (v_1, \cdots, v_n)` that are not both zero,
-    their *Jaccard dissimilarity* is defined as ([1]_, p. 26)
+    The *Jaccard dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
+    is defined as ([1]_, p. 26)
 
     .. math::
 
        d_\textrm{jaccard}(u, v) := \frac{c_{10} + c_{01}}
                                         {c_{11} + c_{10} + c_{01}}
 
-    where
+    if the denominator is not zero, where
 
     .. math::
 
-       c_{ij} := \sum_{1 \le k \le n, u_k=i, v_k=j} 1
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
 
-    for :math:`i, j \in \{ 0, 1\}`.  If :math:`u` and :math:`v` are both zero,
-    their Jaccard dissimilarity is defined to be zero. [2]_
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Jaccard dissimilarity is defined to be zero. [2]_
 
     If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
     is supplied, the *weighted Jaccard dissimilarity* is defined similarly
@@ -796,7 +796,7 @@ def jaccard(u, v, w=None):
 
     .. math::
 
-       \tilde{c}_{ij} := \sum_{1 \le k \le n, u_k=i, v_k=j} w_k
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
@@ -812,7 +812,7 @@ def jaccard(u, v, w=None):
     -------
     jaccard : float
         The Jaccard dissimilarity between vectors `u` and `v`, optionally
-        weighted by `w` if supplied.
+        weighted by `w`.
 
     Notes
     -----
@@ -1355,8 +1355,8 @@ def yule(u, v, w=None):
     r"""
     Compute the Yule dissimilarity between two boolean vectors.
 
-    Given boolean vectors :math:`u \equiv (u_1, \cdots, u_n)`
-    and :math:`v \equiv (v_1, \cdots, v_n)`, their *Yule dissimilarity*
+    The *Yule dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
     is defined as
 
     .. math::
@@ -1370,8 +1370,8 @@ def yule(u, v, w=None):
 
        c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
 
-    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero, the Yule
-    dissimilarity is defined to be zero.
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Yule dissimilarity is defined to be zero.
 
     If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
     is supplied, the *weighted Yule dissimilarity* is defined similarly
