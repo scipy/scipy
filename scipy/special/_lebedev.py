@@ -5394,14 +5394,14 @@ def roots_lebedev(n):
 
     References
     ----------
-    [1] V.I. Lebedev, and D.N. Laikov. "A quadrature formula for the sphere of
-        the 131st algebraic order of accuracy". Doklady Mathematics, Vol. 59,
-        No. 3, 1999, pp. 477-481.
-    [2] R. Parrish. ``getLebedevSphere``. Matlab Central File Exchange.
-        https://www.mathworks.com/matlabcentral/fileexchange/27097-getlebedevsphere.
-    [3] Bellet, Jean-Baptiste, Matthieu Brachet, and Jean-Pierre Croisille.
-        "Quadrature and symmetry on the Cubed Sphere." Journal of Computational and
-        Applied Mathematics 409 (2022): 114142. :doi:`10.1016/j.cam.2022.114142`.
+    .. [1] V.I. Lebedev, and D.N. Laikov. "A quadrature formula for the sphere of
+           the 131st algebraic order of accuracy". Doklady Mathematics, Vol. 59,
+           No. 3, 1999, pp. 477-481.
+    .. [2] R. Parrish. ``getLebedevSphere``. Matlab Central File Exchange.
+           https://www.mathworks.com/matlabcentral/fileexchange/27097-getlebedevsphere.
+    .. [3] Bellet, Jean-Baptiste, Matthieu Brachet, and Jean-Pierre Croisille.
+           "Quadrature and symmetry on the Cubed Sphere." Journal of Computational and
+           Applied Mathematics 409 (2022): 114142. :doi:`10.1016/j.cam.2022.114142`.
 
     Examples
     --------
