@@ -105,10 +105,77 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     return NULL;
 }
 
+
+static PyObject *SuperLU_rinvnormest(SuperLUObject * self, PyObject * args,
+                               PyObject * kwds)
+{
+    volatile int info;
+    volatile double rcond;
+    const char* volatile norm = "1";
+    char norm_c;
+    volatile SuperLUStat_t stat = { 0 };
+    static char *kwlist[] = { "norm", NULL };
+    volatile jmp_buf *jmpbuf_ptr;
+    SLU_BEGIN_THREADS_DEF;
+
+    if (!CHECK_SLU_TYPE(self->type)) {
+        PyErr_SetString(PyExc_ValueError, "unsupported data type");
+        return NULL;
+    }
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s", kwlist,
+                                     &PyArray_Type, &norm))
+        return NULL;
+
+    // norm should be a single-character string
+    int singlechar = (norm[0] != 0 || norm[1] == 0);
+    if (singlechar && (norm[0] == '0' || norm[0] == '1')){
+        norm_c = '1';
+    } else if (singlechar && norm[0] == 'I'){
+        norm_c = 'I';
+    } else {
+        PyErr_SetString(PyExc_ValueError, "norm must be \"0\", \"1\", or \"I\"");
+        return NULL;
+    }
+
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
+        goto fail;
+    }
+
+    StatInit((SuperLUStat_t *)&stat);
+
+
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+    SLU_BEGIN_THREADS;
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
+        SLU_END_THREADS;
+        goto fail;
+    }
+    gscon(self->type,
+          (char *)&norm_c, &self->L, &self->U, 1.0,
+          (double *)&rcond, (SuperLUStat_t *)&stat, (int *)&info);
+    SLU_END_THREADS;
+
+    if (info) {
+        PyErr_SetString(PyExc_SystemError,
+                        "gscon was called with invalid arguments");
+        goto fail;
+    }
+
+    StatFree((SuperLUStat_t *)&stat);
+    return PyFloat_FromDouble(rcond);
+
+  fail:
+    XStatFree((SuperLUStat_t *)&stat);
+    return NULL;
+}
+
 /** table of object methods
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"rinvnormest", (PyCFunction) SuperLU_rinvnormest, METH_VARARGS | METH_KEYWORDS, NULL},
     {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
         "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
