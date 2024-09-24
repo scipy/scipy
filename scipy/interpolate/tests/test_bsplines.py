@@ -1584,13 +1584,8 @@ class TestInterp:
                     d[i, :j] = np.diagonal(a, offset=j)
                 else:
                     d[i, j:] = np.diagonal(a, offset=j)
-<<<<<<< HEAD
-            b = np.random.random(n)
-            xp_assert_close(_woodbury_algorithm(d, ur, ll, b, k),
-=======
             b = rng.random(n)
-            assert_allclose(_woodbury_algorithm(d, ur, ll, b, k),
->>>>>>> 006da0af8 (ENH: scipy.interpolate tests are now passing under concurrent loads)
+            xp_assert_close(_woodbury_algorithm(d, ur, ll, b, k),
                             np.linalg.solve(a, b), atol=1e-14)
 
 
@@ -1706,29 +1701,18 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_multiple_rhs(self, method):
         x, t, k, n = self.x, self.t, self.k, self.n
-<<<<<<< HEAD
-        y = np.random.random(size=(n, 5, 6, 7))
-        b = make_lsq_spline(x, y, t, k, method=method)
-        assert b.c.shape == (t.size-k-1, 5, 6, 7)
-=======
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
-        b = make_lsq_spline(x, y, t, k)
-        assert_equal(b.c.shape, (t.size-k-1, 5, 6, 7))
->>>>>>> 006da0af8 (ENH: scipy.interpolate tests are now passing under concurrent loads)
+        b = make_lsq_spline(x, y, t, k, method=method)
+        assert b.c.shape == (t.size-k-1, 5, 6, 7)
 
     @parametrize_lsq_methods
     def test_multiple_rhs_2(self, method):
         x, t, k, n = self.x, self.t, self.k, self.n
         nrhs = 3
-<<<<<<< HEAD
-        y = np.random.random(size=(n, nrhs))
-        b = make_lsq_spline(x, y, t, k, method=method)
-=======
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
-        b = make_lsq_spline(x, y, t, k)
->>>>>>> 006da0af8 (ENH: scipy.interpolate tests are now passing under concurrent loads)
+        b = make_lsq_spline(x, y, t, k, method=method)
 
         bb = [make_lsq_spline(x, y[:, i], t, k, method=method)
               for i in range(nrhs)]
