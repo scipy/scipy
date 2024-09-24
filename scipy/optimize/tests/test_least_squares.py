@@ -77,7 +77,7 @@ def fun_bvp(x):
 
 class BroydenTridiagonal:
     def __init__(self, n=100, mode='sparse'):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
 
         self.n = n
 
@@ -85,10 +85,10 @@ class BroydenTridiagonal:
         self.lb = np.linspace(-2, -1.5, n)
         self.ub = np.linspace(-0.8, 0.0, n)
 
-        self.lb += 0.1 * np.random.randn(n)
-        self.ub += 0.1 * np.random.randn(n)
+        self.lb += 0.1 * rng.randn(n)
+        self.ub += 0.1 * rng.randn(n)
 
-        self.x0 += 0.1 * np.random.randn(n)
+        self.x0 += 0.1 * rng.randn(n)
         self.x0 = make_strictly_feasible(self.x0, self.lb, self.ub)
 
         if mode == 'sparse':
@@ -132,7 +132,7 @@ class ExponentialFittingProblem:
 
     def __init__(self, a, b, noise, n_outliers=1, x_range=(-1, 1),
                  n_points=11, random_seed=None):
-        np.random.seed(random_seed)
+        rng = np.random.RandomState(random_seed)
         self.m = n_points
         self.n = 2
 
@@ -140,10 +140,10 @@ class ExponentialFittingProblem:
         self.x = np.linspace(x_range[0], x_range[1], n_points)
 
         self.y = a + np.exp(b * self.x)
-        self.y += noise * np.random.randn(self.m)
+        self.y += noise * rng.randn(self.m)
 
-        outliers = np.random.randint(0, self.m, n_outliers)
-        self.y[outliers] += 50 * noise * np.random.rand(n_outliers)
+        outliers = rng.randint(0, self.m, n_outliers)
+        self.y[outliers] += 50 * noise * rng.rand(n_outliers)
 
         self.p_opt = np.array([a, b])
 
@@ -798,10 +798,10 @@ def test_small_tolerances_for_lm():
 def test_fp32_gh12991():
     # checks that smaller FP sizes can be used in least_squares
     # this is the minimum working example reported for gh12991
-    np.random.seed(1)
+    rng = np.random.RandomState(1)
 
     x = np.linspace(0, 1, 100).astype("float32")
-    y = np.random.random(100).astype("float32")
+    y = rng.random(100).astype("float32")
 
     def func(p, x):
         return p[0] + p[1] * x

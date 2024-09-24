@@ -61,9 +61,9 @@ class TestCobyla:
         )
 
     def test_minimize_constraint_violation(self):
-        np.random.seed(1234)
-        pb = np.random.rand(10, 10)
-        spread = np.random.rand(10)
+        rng = np.random.RandomState(1234)
+        pb = rng.rand(10, 10)
+        spread = rng.rand(10)
 
         def p(w):
             return pb.dot(w)
