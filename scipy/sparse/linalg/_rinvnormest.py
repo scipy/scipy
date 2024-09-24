@@ -78,9 +78,9 @@ def cond1est(A):
     array([[ 1.,  0.,  0.],
            [ 5.,  8.,  2.],
            [ 0., -1.,  0.]])
-    >>> cond1est(A,norm="1")
-    0.022222222222222223
-    >>> 1./np.linalg.cond(A.toarray(), p=1)
-    0.022222222222222223
+    >>> cond1est(A)
+    45.0
+    >>> np.linalg.cond(A.toarray(), p=1)
+    45.0
     """
-    return rinvnormest(A)/onenormest(A)
+    return onenormest(A)/rinvnormest(A)
