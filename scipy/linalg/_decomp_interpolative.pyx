@@ -184,7 +184,7 @@ def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: fl
     n2 = idd_poweroftwo(m)
 
     # This part is the initialization that is done via idd_frmi
-    # for a Subsampled Randomized Fourier Transfmrom (SRFT).
+    # for a Subsampled Randomized Fourier Transform (SRFT).
 
     # Draw (nsteps x m x 2) arrays from [-1, 1) uniformly and scale
     # each 2-element row to unity norm
@@ -1168,7 +1168,7 @@ def idz_estrank(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps:
 
     n2 = idd_poweroftwo(m)
     # This part is the initialization that is done via idz_frmi
-    # for a Subsampled Randomized Fourier Transfmrom (SRFT).
+    # for a Subsampled Randomized Fourier Transform (SRFT).
 
     # Draw (nsteps x m x 4) array from [0, 2)*pi uniformly for
     # random points on complex unit circle and unitary rotations
@@ -1705,7 +1705,7 @@ def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int kra
 
     n2 = idd_poweroftwo(m)
     # This part is the initialization that is done via idz_frmi
-    # for a Subsampled Randomized Fourier Transfmrom (SRFT).
+    # for a Subsampled Randomized Fourier Transform (SRFT).
 
     # Draw (nsteps x m x 4) array from [0, 2)*pi uniformly for
     # random points on complex unit circle and unitary rotations
