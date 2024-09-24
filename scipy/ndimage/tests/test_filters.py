@@ -2358,7 +2358,7 @@ def test_bad_convolve_and_correlate_origins(xp):
                   reason="https://github.com/cupy/cupy/pull/8430",
 )
 def test_multiple_modes(xp):
-    # Test that the filters with multiple mode cababilities for different
+    # Test that the filters with multiple mode capabilities for different
     # dimensions give the same result as applying a single mode.
     arr = xp.asarray([[1., 0., 0.],
                       [1., 1., 0.],
@@ -2390,7 +2390,7 @@ def test_multiple_modes(xp):
 @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8430")
 @skip_xp_backends("jax.numpy", reason="output array is read-only.")
 def test_multiple_modes_sequentially(xp):
-    # Test that the filters with multiple mode cababilities for different
+    # Test that the filters with multiple mode capabilities for different
     # dimensions give the same result as applying the filters with
     # different modes sequentially
     arr = xp.asarray([[1., 0., 0.],
