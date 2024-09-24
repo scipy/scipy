@@ -22,5 +22,17 @@ class TestRinvnormest:
         est_rinvnorm = scipy.sparse.linalg.rinvnormest(A, norm="1" if norm==1 else "I")
         assert_allclose(est_rinvnorm, true_rinvnorm)
 
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
+    def test_cond1normest(self, dtype):
+        n = 5
+        rng = np.random.default_rng(789002319)
+        rvs = rng.random
+        A = scipy.sparse.random(n, n, density=0.3, format="lil", dtype=dtype,
+            random_state=rng, data_rvs=rvs)
+        A = A + scipy.sparse.eye(n, format="lil") # make it likely invertible
+        A = A.tocsc()
+        true_cond1norm = np.linalg.cond(A.toarray(), p=1)
+        est_cond1norm = scipy.sparse.linalg.cond1est(A)
+        assert_allclose(est_cond1norm, true_cond1norm)
 
 
