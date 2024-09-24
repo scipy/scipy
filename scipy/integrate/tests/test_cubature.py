@@ -428,6 +428,13 @@ class TestCubature:
         with pytest.raises(Exception, match="`a` and `b` must be 1D arrays"):
             cubature(basic_1d_integrand, a, b, args=(xp,))
 
+    def test_a_and_b_must_be_nonempty(self, xp):
+        a = xp.asarray([])
+        b = xp.asarray([])
+
+        with pytest.raises(Exception, match="`a` and `b` must be nonempty"):
+            cubature(basic_1d_integrand, a, b, args=(xp,))
+
     def test_limits_other_way_around(self, xp):
         n = xp.arange(5, dtype=xp.float64)
 
@@ -986,6 +993,19 @@ class TestCubatureProblems:
             [-math.inf, -math.inf, -math.inf, -math.inf],
             [0, 0, math.inf, math.inf],
         ),
+        (
+            lambda x, xp: 1/xp.prod(x, axis=-1)**2,
+
+            # Exact only for the below limits, not for general `a` and `b`.
+            lambda a, b, xp: xp.asarray(1/6, dtype=xp.float64),
+
+            # Arguments
+            lambda rng, shape, xp: tuple(),
+            tuple(),
+
+            [1, -math.inf, 3],
+            [math.inf, -2, math.inf],
+        ),
 
         # This particular problem can be slow
         pytest.param(
@@ -1043,7 +1063,8 @@ class TestCubatureProblems:
             exact(a, b, *args, xp),
             rtol=rtol,
             atol=atol,
-            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}"
+            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}",
+            check_0d=False,
         )
 
     @pytest.mark.parametrize(
@@ -1070,8 +1091,8 @@ class TestCubatureProblems:
                 [1, 1],
 
                 # region
-                # Wrapped in a function so that each region_func has access
-                # to the array namespace
+                # Wrapped in a function so that each region_func has access to the array
+                # namespace specified by the test.
                 lambda xp: [
                     lambda x: (
                         xp.reshape(xp.zeros(x.shape[0]), (-1, 1)),
