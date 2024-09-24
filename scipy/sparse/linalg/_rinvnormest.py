@@ -12,7 +12,8 @@ def rinvnormest(A, norm="1"):
     Parameters
     ----------
     A : ndarray or other linear operator
-        A sparse matrix for which an LU matrix can be computed.
+        A sparse matrix for which an LU matrix can be computed. CSC would
+        be most efficient.
     norm : string, optional
         "1"/"0" [default] computes the 1-norm, "I" computes the inf-norm.
 
@@ -53,12 +54,19 @@ def cond1est(A):
     Parameters
     ----------
     A : ndarray or other linear operator
-        A sparse matrix for which an LU matrix can be computed.
+        A sparse matrix for which an LU matrix can be computed. CSC would
+        be most efficient.
 
     Returns
     -------
     cond : float
         An estimate of the 1-norm condition number of A.
+
+    Notes
+    -----
+    Computes an LU decomposition and runs the gscon procedure from SuperLU.
+    Use scipy.sparse.linalg.SuperLU.rinvnormest if you already have an LU 
+    decomposition.
 
     Examples
     --------
