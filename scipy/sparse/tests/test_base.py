@@ -2769,16 +2769,54 @@ class _TestSlicing:
         assert_array_equal(a[...].toarray(), b[...])
         assert_array_equal(a[...,].toarray(), b[...,])
 
-        assert_array_equal(a[1, ...].toarray(), b[1, ...])
-        assert_array_equal(a[..., 1].toarray(), b[..., 1])
+        assert_array_equal(a[4, ...].toarray(), b[4, ...])
+        assert_array_equal(a[..., 4].toarray(), b[..., 4])
+        assert_array_equal(a[..., 5].toarray(), b[..., 5])
+        with pytest.raises(IndexError, match='index .5. out of range'):
+            assert_array_equal(a[5, ...].toarray(), b[5, ...])
+        with pytest.raises(IndexError, match='index .10. out of range'):
+            assert_array_equal(a[..., 10].toarray(), b[..., 10])
+
         assert_array_equal(a[1:, ...].toarray(), b[1:, ...])
         assert_array_equal(a[..., 1:].toarray(), b[..., 1:])
+        assert_array_equal(a[:2, ...].toarray(), b[:2, ...])
+        assert_array_equal(a[..., :2].toarray(), b[..., :2])
 
+        # check slice limit outside range
+        assert_array_equal(a[:5, ...].toarray(), b[:5, ...])
+        assert_array_equal(a[..., :5].toarray(), b[..., :5])
+        assert_array_equal(a[5:, ...].toarray(), b[5:, ...])
+        assert_array_equal(a[..., 5:].toarray(), b[..., 5:])
+        assert_array_equal(a[10:, ...].toarray(), b[10:, ...])
+        assert_array_equal(a[..., 10:].toarray(), b[..., 10:])
+
+        # ellipsis should be ignored
         assert_array_equal(a[1:, 1, ...].toarray(), b[1:, 1, ...])
         assert_array_equal(a[1, ..., 1:].toarray(), b[1, ..., 1:])
+        assert_array_equal(a[..., 1, 1:].toarray(), b[1, ..., 1:])
+        assert_array_equal(a[:2, 1, ...].toarray(), b[:2, 1, ...])
+        assert_array_equal(a[1, ..., :2].toarray(), b[1, ..., :2])
+        assert_array_equal(a[..., 1, :2].toarray(), b[1, ..., :2])
         # These return ints
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
+
+    def test_ellipsis_fancy_slicing(self):
+        b = arange(50).reshape(5,10)
+        a = self.spcreator(b)
+
+        assert_array_equal(a[[4], ...].toarray(), b[[4], ...])
+        assert_array_equal(a[[2, 4], ...].toarray(), b[[2, 4], ...])
+        assert_array_equal(a[..., [4]].toarray(), b[..., [4]])
+        assert_array_equal(a[..., [2, 4]].toarray(), b[..., [2, 4]])
+
+        assert_array_equal(a[[4], 1, ...].toarray(), b[[4], 1, ...])
+        assert_array_equal(a[[2, 4], 1, ...].toarray(), b[[2, 4], 1, ...])
+        assert_array_equal(a[[4], ..., 1].toarray(), b[[4], ..., 1])
+        assert_array_equal(a[..., [4], 1].toarray(), b[..., [4], 1])
+        # fancy index gives dense
+        assert_array_equal(a[[2, 4], ..., [2, 4]], b[[2, 4], ..., [2, 4]])
+        assert_array_equal(a[..., [2, 4], [2, 4]], b[..., [2, 4], [2, 4]])
 
     def test_multiple_ellipsis_slicing(self):
         a = self.spcreator(arange(6).reshape(3, 2))
