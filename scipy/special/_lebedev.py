@@ -5364,24 +5364,21 @@ def roots_lebedev(n):
     Parameters
     ----------
     n : int
-        Quadrature order. Integer orders within the following ranges
-        are available:
-
-        - ``range(3, 32, 2)``
-        - ``range(35, 132, 2)``
+        Quadrature order. See Notes for supported values.
 
     Returns
     -------
     x : ndarray of shape ``(3, m)``
         Sample points on the unit sphere in Cartesian coordinates.
         ``m`` is the "degree" corresponding with the specified order; see Notes.
-    w : ndarray
+    w : ndarray of shape ``(m,)``
         Weights
 
     Notes
     -----
-    Implemented by translating the Matlab code of [2]_ to Python. The available
-    orders (argument `n`) are::
+    Implemented by translating the Matlab code of [2]_ to Python.
+
+    The available orders (argument `n`) are::
 
         3, 5, 7, 9, 11, 13, 15, 17,
         19, 21, 23, 25, 27, 29, 31, 35,
@@ -5439,13 +5436,13 @@ def roots_lebedev(n):
               3890, 4334, 4802, 5294, 5810]
     order = [3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 35, 41, 47,
              53, 59, 65, 71, 77, 83, 89, 95, 101, 107, 113, 119, 125, 131]
-    map = dict(zip(order, degree))
+    order_degree_map = dict(zip(order, degree))
 
-    if n not in map:
+    if n not in order_degree_map:
         message = f"Order {n=} not available. Available orders are {order}."
         raise NotImplementedError(message)
 
-    degree = map.get(n, None)
+    degree = order_degree_map[n]
     res = get_lebedev_sphere(degree)
     x = np.stack((res.x, res.y, res.z))
     w = res.w

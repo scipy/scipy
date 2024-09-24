@@ -548,6 +548,7 @@ orthogonal polynomials:
    roots_sh_chebyt   -- Gauss-Chebyshev (first kind, shifted) quadrature.
    roots_sh_chebyu   -- Gauss-Chebyshev (second kind, shifted) quadrature.
    roots_sh_jacobi   -- Gauss-Jacobi (shifted) quadrature.
+   roots_lebedev     -- Lebedev quadrature.
 
 The functions below, in turn, return the polynomial coefficients in
 ``orthopoly1d`` objects, which function similarly as `numpy.poly1d`.
