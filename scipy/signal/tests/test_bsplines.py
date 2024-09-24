@@ -18,12 +18,11 @@ class TestBSplines:
     expressions (cf. Unser, Aldroubi, Eden, IEEE TSP 1993, Table 1)."""
 
     def test_spline_filter(self):
-        np.random.seed(12457)
+        rng = np.random.RandomState(12457)
         # Test the type-error branch
         raises(TypeError, bsp.spline_filter, np.asarray([0]), 0)
         # Test the real branch
-        np.random.seed(12457)
-        data_array_real = np.random.rand(12, 12)
+        data_array_real = rng.rand(12, 12)
         # make the magnitude exceed 1, and make some negative
         data_array_real = 10*(1-2*data_array_real)
         result_array_real = np.asarray(
@@ -67,8 +66,8 @@ class TestBSplines:
                         result_array_real)
 
     def test_spline_filter_complex(self):
-        np.random.seed(12457)
-        data_array_complex = np.random.rand(7, 7) + np.random.rand(7, 7)*1j
+        rng = np.random.RandomState(12457)
+        data_array_complex = rng.rand(7, 7) + rng.rand(7, 7)*1j
         # make the magnitude exceed 1, and make some negative
         data_array_complex = 10*(1+1j-2*data_array_complex)
         result_array_complex = np.asarray(
@@ -120,6 +119,7 @@ class TestBSplines:
                             np.asarray([0.15418033, 0.6909883, 0.15418033])
         )
 
+    @pytest.mark.parallel_threads(1)
     def test_cspline1d(self):
         np.random.seed(12462)
         xp_assert_equal(bsp.cspline1d(np.asarray([0])), [0.])
