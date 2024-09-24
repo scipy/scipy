@@ -18,6 +18,11 @@ from scipy.integrate._rules import (
     GenzMalikCubature,
 )
 
+from scipy.integrate._cubature import (
+    _InfiniteLimitsTransform,
+    _FuncLimitsTransform,
+)
+
 pytestmark = [pytest.mark.usefixtures("skip_xp_backends"),]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -1490,6 +1495,30 @@ class TestRulesCubature:
     def test_genz_malik_1d_raises_error(self, xp):
         with pytest.raises(Exception, match="only defined for ndim >= 2"):
             GenzMalikCubature(1, xp=xp)
+
+
+@array_api_compatible
+class TestTransformations:
+    def test_infinite_limits_x_to_t(self, xp):
+        f_transformed = _InfiniteLimitsTransform(
+            lambda x: None,  # Not called
+            xp.asarray([0, 1, -math.inf], dtype=xp.float64),
+            xp.asarray([1, math.inf, math.inf], dtype=xp.float64),
+        )
+
+        point = xp.asarray([[1, 1, 1]], dtype=xp.float64)
+        actual = f_transformed.x_to_t(point)
+
+        expecting = xp.asarray([[1, 1, 0.5]], dtype=xp.float64)
+
+        xp_assert_close(
+            actual,
+            expecting,
+        )
+
+    def test_func_limits_x_to_t(self, xp):
+        # TODO
+        assert False
 
 
 class BadErrorRule(Rule):

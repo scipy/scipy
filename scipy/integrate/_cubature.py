@@ -573,6 +573,10 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         f = _FuncLimitsTransform(f, a, b, region)
         a, b = f.transformed_limits
 
+        # Map break points specified in original coordinates to the new coordinates
+        points = [f.x_to_t(point) for point in points]
+        points.extend(f.points)
+
     # If any of limits are the wrong way around (a > b), flip them and keep track of
     # the sign.
     sign = (-1.0) ** xp.sum(xp.astype(a > b, xp.float64))
@@ -585,6 +589,11 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     if xp.any(xp.isinf(a_flipped)) or xp.any(xp.isinf(b_flipped)):
         f = _InfiniteLimitsTransform(f, a_flipped, b_flipped)
         a, b = f.transformed_limits
+
+        # TODO: also need to map break points specified in the original coordinates
+        # to the new coordinates too
+        # points = [f.x_to_t(point) for point in points]
+
         points.extend(f.points)
 
     # If any problematic points are specified, divide the initial region so that these
@@ -732,6 +741,13 @@ def _split_at_points(a, b, points):
     regions = [(a, b)]
 
     for point in points:
+        if xp.any(xp.isinf(point)):
+            # If a point is specified at infinity, ignore.
+            #
+            # This case occurs when points are given by the user to avoid, but after
+            # applying a transformation, they are removed.
+            continue
+
         new_regions = []
 
         for a_k, b_k in regions:
@@ -756,10 +772,14 @@ def _split_at_points(a, b, points):
 
 
 class _VariableTransform:
+    """
+    A transformation that can be applied to an integral.
+    """
+
     @property
     def transformed_limits(self):
         """
-        New limits after applying the transformation.
+        New limits of integration after applying the transformation.
         """
 
         raise NotImplementedError
@@ -768,69 +788,69 @@ class _VariableTransform:
     def points(self):
         """
         Any problematic points introduced by the transformation to avoid evaluating.
+
+        These should be specified as points where ``self.__call__(self, point)`` would
+        be problematic.
+
+        For example, if the transformation ``x = 1/((1-t)(1+t))`` is applied to a
+        univariate integral, then points would return ``[ [1], [-1] ]``.
         """
 
         return []
 
+    def x_to_t(self):
+        """
+        Map points ``x`` to ``t`` such that if ``f`` is the original function, then::
+
+            g = _VariableTransform(f)
+            f(x) == g(x_to_t(x))
+        """
+
+        # TODO: the above is not quite true because of the jacobian
+
+    def t_to_x(self):
+        """
+        Map points ``x`` to ``t`` such that if ``f`` is the original function, then::
+
+            g = _VariableTransform(f)
+            g(t) == f(t_to_x(t))
+        """
+
+        # TODO: the above is not quite true because of the jacobian
+
     def __call__(self, t, *args, **kwargs):
         """
-        `f` after the transformation.
+        Apply the transformation to ``f`` and multiply by the Jacobian.
+        This function should be the new integrand.
         """
+
+        # TODO: clarify about jacobian?
 
         raise NotImplementedError
 
 
 class _InfiniteLimitsTransform(_VariableTransform):
     r"""
-    If the original integral has the form
+    Transformation for handling infinite limits.
 
-    .. math::
+    Infinite limits are handeled with an appropriate variable transformation. Assuming
+    ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
 
-        \int^{b_1}_{a_1}
-        \cdots
-        \int^{b_n}_{a_n}
-        \int^{B_1(x_1, \ldots, x_n)}_{A_1(x_1, \ldots, x_n)}
-        \cdots
-        \int^{B_m(x_1, \ldots, x_n, y_1, \ldots, y_{m-1})}_{A_m(x_1, \ldots, x_n, y_1, \ldots, y_{m-1})}
-        f(x_1, \ldots, x_n, y_1, \ldots, y_m)
-        dy_m \cdots dy_1 dx_n \cdots dx_1
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in [-\infty, \infty]`, the i-th
+    integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
+    :math:`t \in (-1, 1)`.
 
-    it will be transformed into the integral
+    If :math:`a_i` and `:math:`b_i` range over :math:`x \in [a_i, \infty]`, the i-th
+    integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
+    :math:`t \in (0, 1)`.
 
-    .. math::
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in [-\infty, b_i]`, the i-th
+    integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
+    :math:`t \in (0, 1)`.
 
-        \int^{b_1}_{a_1}
-        \cdots
-        \int^{b_n}_{a_n}
-        \int^{1}_{-1}
-        \cdots
-        \int^{1}_{-1}
-        g(x_1, \ldots, x_n, t_1, \ldots, t_m)
-        dt_m \cdots dt_1 dx_n \cdots dx_1
-
-    where each :math:`y_i` is mapped using the transformation:
-
-    .. math::
-
-        y_i = \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-          + A_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-        }{2} + t_i \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-          - A_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-        }{2}
-
-    This transformation has Jacobian
-
-    .. math::
-
-        J(x_1, \ldots, x_n, y_1, \ldots, y_m)
-        =
-        \prod^m_{i = 1} \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-            - A_i(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-        }{2}
-    """  # noqa: E501
+    In all three of these cases, the Jacobian of the transformation is
+    :math:`J(t) = t^{-2}`.
+    """
 
     def __init__(self, f, a, b):
         self._xp = array_namespace(a, b)
@@ -890,6 +910,34 @@ class _InfiniteLimitsTransform(_VariableTransform):
         else:
             return []
 
+    def t_to_x(self, t):
+        x = xp_copy(t)
+
+        for i in self._negate_pos:
+            x[..., i] *= -1
+
+        for i in self._double_inf_pos:
+            # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
+            x[..., i] = (1 - self._xp.abs(t[..., i])) / t[..., i]
+
+        for i in self._semi_inf_pos:
+            # For (start, oo) -> (0, 1), use the transformation x = start + (1 - t)/t.
+            x[..., i] = self._orig_a[i] + (1 - t[..., i]) / t[..., i]
+
+    def x_to_t(self, x):
+        t = xp_copy(x)
+
+        for i in self._negate_pos:
+            t[..., i] *= -1
+
+        for i in self._double_inf_pos:
+            t[..., i] = 1/(x[..., i] + self._xp.sign(x[..., i]))
+
+        for i in self._semi_inf_pos:
+            t[..., i] = 1/(x[..., i] - self._orig_a[i] + 1)
+
+        return t
+
     def __call__(self, t, *args, **kwargs):
         x = xp_copy(t)
         jacobian = 1.0
@@ -916,25 +964,22 @@ class _InfiniteLimitsTransform(_VariableTransform):
 
 class _FuncLimitsTransform(_VariableTransform):
     r"""
-    Transform an integral with functions as limits to an integral with constant limits.
+    If the original integral has the form
 
-    Given an integral of the form:
-
-    ..math ::
+    .. math::
 
         \int^{b_1}_{a_1}
         \cdots
         \int^{b_n}_{a_n}
         \int^{B_1(x_1, \ldots, x_n)}_{A_1(x_1, \ldots, x_n)}
         \cdots
-        \int^{B_m(x_1, \ldots, x_{n+m})}_{A_m(x_1, \ldots, x_{n+m})}
-        f(x_1, \ldots, x_{n+m})
-        dx_{n+m} \cdots dx_1
+        \int^{B_m(x_1, \ldots, x_n, y_1, \ldots, y_{m-1})}_{A_m(x_1, \ldots, x_n, y_1, \ldots, y_{m-1})}
+        f(x_1, \ldots, x_n, y_1, \ldots, y_m)
+        dy_m \cdots dy_1 dx_n \cdots dx_1
 
-    an integral with :math:`n` outer non-function limits, and :math:`m` inner function
-    limits, this will transform it into an integral over
+    it will be transformed into the integral
 
-    ..math::
+    .. math::
 
         \int^{b_1}_{a_1}
         \cdots
@@ -942,12 +987,32 @@ class _FuncLimitsTransform(_VariableTransform):
         \int^{1}_{-1}
         \cdots
         \int^{1}_{-1}
-        g(x_1, \ldots, x_n, y_1, \cdots, y_m)
-        dy_m \cdots dy_1 dx_n \cdots dx_1
+        g(x_1, \ldots, x_n, t_1, \ldots, t_m)
+        dt_m \cdots dt_1 dx_n \cdots dx_1
 
-    Which is an integral over the original outer non-function limits and where a
-    transformation has been applied so that the original function limits become [-1, 1].
-    """
+    where each :math:`y_i` is mapped using the transformation:
+
+    .. math::
+
+        y_i = \frac{
+            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+          + A_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+        }{2} + t_i \frac{
+            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+          - A_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+        }{2}
+
+    This transformation has Jacobian
+
+    .. math::
+
+        J(x_1, \ldots, x_n, y_1, \ldots, y_m)
+        =
+        \prod^m_{i = 1} \frac{
+            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+            - A_i(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+        }{2}
+    """  # noqa: E501
 
     def __init__(self, f, a, b, region):
         self._xp = array_namespace(a, b)
