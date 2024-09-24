@@ -512,7 +512,7 @@ class TestPeakWidths:
             # empty x with peaks supplied
             peak_widths([], [1, 2])
         with raises(TypeError, match='cannot safely cast'):
-            # peak cannot be safely casted to intp
+            # peak cannot be safely cast to intp
             peak_widths(np.arange(10), [1.1, 2.3])
         with raises(ValueError, match='rel_height'):
             # rel_height is < 0
