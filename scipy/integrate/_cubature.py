@@ -830,7 +830,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
             B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
             - A_i(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
         }{2}
-    """
+    """  # noqa: E501
 
     def __init__(self, f, a, b):
         self._xp = array_namespace(a, b)
