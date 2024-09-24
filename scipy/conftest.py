@@ -49,6 +49,13 @@ def pytest_configure(config):
         "xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, "
         "exceptions=None): "
         "mark the desired xfail configuration for the `xfail_xp_backends` fixture.")
+    try:
+        import pytest_run_parallel
+    except Exception:
+        config.addinivalue_line(
+            'markers',
+            'parallel_threads(n): run the given test function in parallel '
+            'using `n` threads.')
 
 
 def pytest_runtest_setup(item):
@@ -244,12 +251,12 @@ def xfail_xp_backends(xp, request):
         return
     backends, kwargs = _backends_kwargs_from_request(request, skip_or_xfail='xfail')
     skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='xfail')
-    
+
 
 def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
     """
     Skip based on the ``skip_xp_backends`` or ``xfail_xp_backends`` marker.
-    
+
     See the "Support for the array API standard" docs page for usage examples.
 
     Parameters
@@ -285,7 +292,7 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
     np_only = kwargs.get("np_only", False)
     cpu_only = kwargs.get("cpu_only", False)
     exceptions = kwargs.get("exceptions", [])
-    
+
     if reasons := kwargs.get("reasons"):
         raise ValueError(f"provide a single `reason=` kwarg; got {reasons=} instead")
 
