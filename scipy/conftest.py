@@ -21,6 +21,12 @@ try:
 except ModuleNotFoundError:
     HAVE_SCPDT = False
 
+try:
+    import pytest_run_parallel
+    PARALLEL_RUN_AVAILABLE = True
+except Exception:
+    PARALLEL_RUN_AVAILABLE = False
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers",
@@ -49,9 +55,7 @@ def pytest_configure(config):
         "xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, "
         "exceptions=None): "
         "mark the desired xfail configuration for the `xfail_xp_backends` fixture.")
-    try:
-        import pytest_run_parallel
-    except Exception:
+    if not PARALLEL_RUN_AVAILABLE:
         config.addinivalue_line(
             'markers',
             'parallel_threads(n): run the given test function in parallel '
@@ -120,6 +124,12 @@ def check_fpu_mode(request):
         warnings.warn(f"FPU mode changed from {old_mode:#x} to {new_mode:#x} during "
                       "the test",
                       category=FPUModeChangeWarning, stacklevel=0)
+
+
+if not PARALLEL_RUN_AVAILABLE:
+    @pytest.fixture
+    def num_parallel_threads():
+        return 1
 
 
 # Array API backend handling
