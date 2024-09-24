@@ -998,33 +998,21 @@ def test_min_max(shape, axis):
     rng = np.random.default_rng(23409823)
     a = random_array(shape, density=0.6, random_state=rng, dtype=int)
 
-    res = a.min(axis=axis)
-    exp = np.min(a.toarray(), axis=axis)
-    if type(res) is np.int64:
-        assert_equal(res, exp)
-    else:
-        assert_equal(res.toarray(), exp)
+    res_min = a.min(axis=axis)
+    exp_min = np.min(a.toarray(), axis=axis)
+    res_max = a.max(axis=axis)
+    exp_max = np.max(a.toarray(), axis=axis)
+    res_nanmin = a.nanmin(axis=axis)
+    exp_nanmin = np.nanmin(a.toarray(), axis=axis)
+    res_nanmax = a.nanmax(axis=axis)
+    exp_nanmax = np.nanmax(a.toarray(), axis=axis)
 
-    res = a.max(axis=axis)
-    exp = np.max(a.toarray(), axis=axis)
-    if type(res) is np.int64:
-        assert_equal(res, exp)
-    else:
-        assert_equal(res.toarray(), exp)
-
-    res = a.nanmin(axis=axis)
-    exp = np.nanmin(a.toarray(), axis=axis)
-    if type(res) is np.int64:
-        assert_equal(res, exp)
-    else:
-        assert_equal(res.toarray(), exp)
-
-    res = a.nanmax(axis=axis)
-    exp = np.nanmax(a.toarray(), axis=axis)
-    if type(res) is np.int64:
-        assert_equal(res, exp)
-    else:
-        assert_equal(res.toarray(), exp)
+    for res, exp in [(res_min, exp_min), (res_max, exp_max),
+                     (res_nanmin, exp_nanmin), (res_nanmax, exp_nanmax)]:
+        if np.issubdtype(type(res), np.number):
+            assert_equal(res, exp)
+        else:
+            assert_equal(res.toarray(), exp)
 
 
 sum_mean_params = [
