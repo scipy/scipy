@@ -1599,7 +1599,7 @@ class poisson_binom_gen(rv_discrete):
         size = (p.shape if size is None else
                 (size, 1) if np.isscalar(size) else tuple(size) + (1,))
         size = np.broadcast_shapes(p.shape, size)
-        return bernoulli.rvs(p, size=size, random_state=random_state).sum(axis=-1)
+        return bernoulli._rvs(p, size=size, random_state=random_state).sum(axis=-1)
 
     def _get_support(self, *args):
         return 0, len(args)
