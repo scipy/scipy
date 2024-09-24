@@ -354,7 +354,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
     Py_ssize_t dims[2];
-    int lm = 0, int1 = 1, n = (int)size_n;
+    int int1 = 1, n = (int)size_n;
+    float lm;
     float normA, dbl1 = 1.0, dbl0 = 0.0;
     float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
@@ -418,8 +419,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[0])/6);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceilf(log2f(temp/normA/coeff[0])/6);
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
     if ((eta0 < theta[0]) && lm == 0)
     {
         *m = 3;
@@ -437,8 +438,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[1])/10);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceilf(log2f(temp/normA/coeff[1])/10);
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
 
     if ((eta1 < theta[1]) && lm == 0)
     {
@@ -470,8 +471,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[2])/14);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceilf(log2f(temp/normA/coeff[2])/14);
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
 
     if ((eta2 < theta[2]) && lm == 0)
     {
@@ -490,8 +491,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[3])/18);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceilf(log2f(temp/normA/coeff[3])/18);
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
 
     if ((eta2 < theta[3]) && lm == 0)
     {
@@ -518,8 +519,9 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
 
     eta3 = fmaxf(d8, d10);
     eta4 = fminf(eta2, eta3);
-    *s = (int)ceilf(log2f(eta4 / theta[4]));
-    *s = (*s < 0 ? 0 : *s);
+    lm = ceilf(log2f(eta4 / theta[4]));
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
+    *s = (int)lm;
 
     if (*s != 0)
     {
@@ -541,8 +543,8 @@ pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[4])/26.0);
-    *s += (lm < 0 ? 0 : lm );
+    lm = ceilf(log2f(temp/normA/coeff[4])/26.0);
+    *s += (int)(isnanf(lm) || lm < 0 ? 0 : lm);
     *m = 13;
 
     if (*s != 0)
@@ -575,7 +577,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
     Py_ssize_t dims[2];
-    int lm = 0, int1 = 1, n = (int)size_n;
+    int int1 = 1, n = (int)size_n;
+    double lm;
     double normA, dbl1 = 1.0, dbl0 = 0.0;
     double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
@@ -639,8 +642,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[0])/6);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceil(log2(temp/normA/coeff[0])/6);
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
     if ((eta0 < theta[0]) && lm == 0)
     {
         *m = 3;
@@ -658,8 +661,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[1])/10);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceil(log2(temp/normA/coeff[1])/10);
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
 
     if ((eta1 < theta[1]) && lm == 0)
     {
@@ -691,8 +694,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[2])/14);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceil(log2(temp/normA/coeff[2])/14);
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
 
     if ((eta2 < theta[2]) && lm == 0)
     {
@@ -711,8 +714,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[3])/18);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceil(log2(temp/normA/coeff[3])/18);
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
 
     if ((eta2 < theta[3]) && lm == 0)
     {
@@ -739,8 +742,9 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 
     eta3 = fmax(d8, d10);
     eta4 = fmin(eta2, eta3);
-    *s = (int)ceil(log2(eta4 / theta[4]));
-    *s = (*s < 0 ? 0 : *s);
+    lm = ceil(log2(eta4 / theta[4]));
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
+    *s = (int)lm;
 
     if (*s != 0)
     {
@@ -762,8 +766,8 @@ pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[4])/26.0);
-    *s += (lm < 0 ? 0 : lm );
+    lm = ceil(log2(temp/normA/coeff[4])/26.0);
+    *s += (int)(isnan(lm) || lm < 0 ? 0 : lm);
     *m = 13;
 
     if (*s != 0)
@@ -796,7 +800,8 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
     Py_ssize_t dims[2];
-    int lm = 0, int1 = 1, n = (int)size_n;
+    int int1 = 1, n = (int)size_n;
+    float lm;
     float normA;
     float dbl1 = 1.0, dbl0 = 0.0;
     EXPM_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0);
@@ -862,8 +867,8 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[0])/6);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceilf(log2f(temp/normA/coeff[0])/6);
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
     if ((eta0 < theta[0]) && lm == 0)
     {
         *m = 3;
@@ -881,8 +886,8 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[1])/10);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceilf(log2f(temp/normA/coeff[1])/10);
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
 
     if ((eta1 < theta[1]) && lm == 0)
     {
@@ -914,8 +919,8 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[2])/14);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceilf(log2f(temp/normA/coeff[2])/14);
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
 
     if ((eta2 < theta[2]) && lm == 0)
     {
@@ -934,8 +939,8 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[3])/18);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceilf(log2f(temp/normA/coeff[3])/18);
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
 
     if ((eta2 < theta[3]) && lm == 0)
     {
@@ -962,8 +967,9 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
 
     eta3 = fmaxf(d8, d10);
     eta4 = fminf(eta2, eta3);
-    *s = (int)ceilf(log2f(eta4 / theta[4]));
-    *s = (*s < 0 ? 0 : *s);
+    lm = ceilf(log2f(eta4 / theta[4]));
+    lm = (isnanf(lm) || lm < 0 ? 0 : lm);
+    *s = (int)lm;
 
     if (*s != 0)
     {
@@ -985,8 +991,8 @@ pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceilf(log2f(temp/normA/coeff[4])/26.0);
-    *s += (lm < 0 ? 0 : lm );
+    lm = ceilf(log2f(temp/normA/coeff[4])/26.0);
+    *s += (int)(isnanf(lm) || lm < 0 ? 0 : lm );
     *m = 13;
 
     if (*s != 0)
@@ -1026,7 +1032,8 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
     Py_ssize_t dims[2];
-    int lm = 0, int1 = 1, n = (int)size_n;
+    int int1 = 1, n = (int)size_n;
+    double lm;
     double normA;
     double dbl1 = 1.0, dbl0 = 0.0;
     EXPM_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0);
@@ -1092,8 +1099,8 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[0])/6);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceil(log2(temp/normA/coeff[0])/6);
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
     if ((eta0 < theta[0]) && lm == 0)
     {
         *m = 3;
@@ -1111,8 +1118,8 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[1])/10);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceil(log2(temp/normA/coeff[1])/10);
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
 
     if ((eta1 < theta[1]) && lm == 0)
     {
@@ -1144,8 +1151,8 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[2])/14);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceil(log2(temp/normA/coeff[2])/14);
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
 
     if ((eta2 < theta[2]) && lm == 0)
     {
@@ -1164,8 +1171,8 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[3])/18);
-    lm = (lm < 0 ? 0 : lm);
+    lm = ceil(log2(temp/normA/coeff[3])/18);
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
 
     if ((eta2 < theta[3]) && lm == 0)
     {
@@ -1194,8 +1201,9 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
 
     eta3 = fmax(d8, d10);
     eta4 = fmin(eta2, eta3);
-    *s = (int)ceil(log2(eta4 / theta[4]));
-    *s = (*s < 0 ? 0 : *s);
+    lm = ceil(log2(eta4 / theta[4]));
+    lm = (isnan(lm) || lm < 0 ? 0 : lm);
+    *s = (int)lm;
 
     if (*s != 0)
     {
@@ -1217,8 +1225,8 @@ pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
     temp = 0.0;
     for (i = 0; i < n; i++)  { if (work_arr[n+i] > temp) { temp = work_arr[n+i]; } }
 
-    lm = (int)ceil(log2(temp/normA/coeff[4])/26.0);
-    *s += (lm < 0 ? 0 : lm );
+    lm = ceil(log2(temp/normA/coeff[4])/26.0);
+    *s += (int)(isnan(lm) || lm < 0 ? 0 : lm);
     *m = 13;
 
     if (*s != 0)
