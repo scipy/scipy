@@ -269,17 +269,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # TODO sparse broadcasting
             if self.format != other.format:
                 other = other.asformat(self.format)
-            
-            if self.shape == other.shape:
-                res = self._binopt(other, '_ne_')
-                all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
-                return all_true - res
-
-            try:
-                np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
-            
+          
             res = self._binopt(other, '_ne_')
             all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
@@ -319,16 +309,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Sparse other.
         elif issparse(other):
             if self.format != other.format:
-                other = other.asformat(self.format)
-            if self.shape == other.shape:
-                res = self._binopt(other, '_ne_')
-                return res
-            # if different shapes, check if they are broadcastable
-            try:
-                np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
-        
+                other = other.asformat(self.format)        
             res = self._binopt(other, '_ne_')
             return res
         else:
@@ -361,11 +342,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif issparse(other):
             if self.format != other.format:
                 other = other.asformat(self.format)
-        
-            try:
-                np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
 
             if op_name not in ('_ge_', '_le_'):
                 return self._binopt(other, op_name)
@@ -410,7 +386,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+            try:
+                # This will raise an error if the shapes are not broadcastable
+                bshape = np.broadcast_shapes(self.shape, other.shape)
+            except ValueError:
+                raise ValueError('inconsistent shapes')
+            self = self._broadcast_to(bshape)
+            other = np.broadcast_to(other, bshape)
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         order = self._swap('CF')[0]
         result = np.array(other, dtype=dtype, order=order, copy=True)
@@ -666,12 +648,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return mat
         elif isdense(other):
             return npop(self.todense(), other)
-        elif issparse(other):
-            try:
-                np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
-            
+        elif issparse(other):       
             return self._binopt(other, op_name) 
         else:
             raise ValueError("Operands not compatible.")
@@ -1388,12 +1365,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                   shape=self.shape, dtype=data.dtype)
 
     def _binopt(self, other, op):
-        """apply the binary operation fn to two sparse matrices."""
+        """apply the binary operation fn to two sparse matrices."""        
         different_shapes = self.shape != other.shape
         if different_shapes: # we need to broadcast
-            # convert to CSR because we only have CSR broadcasting
-            self = self.tocsr()
-            other = other.tocsr()
+            try:
+                # This will raise an error if the shapes are not broadcastable
+                np.broadcast_shapes(self.shape, other.shape)
+            except ValueError:
+                raise ValueError('inconsistent shapes')
+            
             both_are_1d = self.ndim == 1 and other.ndim == 1
             result_shape_if_1d = self.shape[0]
             self = self.reshape(self._shape_as_2d).tocsr()
@@ -1441,18 +1421,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _divide_sparse(self, other):
         """
         Divide this matrix by a second sparse matrix.
-        """
-        if self.shape == other.shape:
-            r = self._binopt(other, '_eldiv_')
-        else:
-            try:
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
-
-            self = self._broadcast_to(bshape)
-            other  = other._broadcast_to(bshape)
-            r = self._binopt(other, '_eldiv_')
+        """ 
+        r = self._binopt(other, '_eldiv_')
 
         if np.issubdtype(r.dtype, np.inexact):
             # Eldiv leaves entries outside the combined sparsity

@@ -566,6 +566,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
     #######################
 
     def _add_dense(self, other):
+        if self.shape != other.shape:
+            try:
+                bshape = np.broadcast_shapes(self.shape, other.shape)
+            except ValueError:
+                raise ValueError("inconsistent shapes")
+            self = self._broadcast_to(bshape)
+            other = np.broadcast_to(other, bshape)
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
@@ -577,7 +584,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result_shape = self.shape
             self = self.reshape(1, -1)
             other = other.reshape(1, -1)
-            result = _data_matrix._add_dense(self.tocsr(), other)
+            result = _spbase._add_dense(self, other)
             # reshape back to n-D
             result = result.reshape(result_shape)
         return self._container(result, copy=False)
@@ -602,6 +609,16 @@ class _coo_base(_data_matrix, _minmax_mixin):
         A = self.__class__((new_data, new_coords), shape=self.shape)
         return A
 
+    def _sub_dense(self, other):
+        if self.shape != other.shape:
+            try:
+                bshape = np.broadcast_shapes(self.shape, other.shape)
+            except ValueError:
+                raise ValueError("inconsistent shapes")
+            self = self._broadcast_to(bshape)
+            other = np.broadcast_to(other, bshape)
+
+        return self.todense() - other
 
     def _sub_sparse(self, other):
         if self.ndim < 3 and other.ndim < 3:
