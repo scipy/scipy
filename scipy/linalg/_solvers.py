@@ -80,7 +80,7 @@ def solve_sylvester(a, b, q):
     True
 
     """
-    # Accomodate empty a
+    # Accommodate empty a
     if a.size == 0 or b.size == 0:
         tdict = {'s': np.float32, 'd': np.float64,
                  'c': np.complex64, 'z': np.complex128}
@@ -178,7 +178,7 @@ def solve_continuous_lyapunov(a, q):
     if a.shape != q.shape:
         raise ValueError("Matrix a and q should have the same shape.")
 
-    # Accomodate empty array
+    # Accommodate empty array
     if a.size == 0:
         tdict = {'s': np.float32, 'd': np.float64,
                  'c': np.complex64, 'z': np.complex128}
