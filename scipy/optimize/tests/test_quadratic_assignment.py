@@ -163,6 +163,7 @@ class QAPCommonTests:
         assert_equal(res.nit, 0)
         assert_equal(res.fun, 0)
 
+    @pytest.mark.parallel_threads(1)
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
 
@@ -264,6 +265,7 @@ class TestFAQ(QAPCommonTests):
 class Test2opt(QAPCommonTests):
     method = "2opt"
 
+    @pytest.mark.parallel_threads(1)
     def test_deterministic(self):
         n = 20
         rng = default_rng(51982908)
