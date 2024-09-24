@@ -500,8 +500,11 @@ class _spbase:
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
     
-    def _broadcast_to(self, shape):
-        res = self.tocsr()._broadcast_to(shape)
+    def _broadcast_to(self, shape, copy=False):
+        if self.shape == shape:
+            return self.copy() if copy else self
+        else:
+            return self.tocsr()._broadcast_to(shape)
         return self.__class__(res)
 
     def _broadcast_to(self, shape, copy=False):
