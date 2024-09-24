@@ -558,10 +558,11 @@ class _spbase:
             raise NotImplementedError('adding a nonzero scalar to a '
                                       'sparse array is not supported')
         elif issparse(other):
-            try: 
-                np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            if self.shape != other.shape:
+                try: 
+                    np.broadcast_shapes(self.shape, other.shape)
+                except ValueError:
+                    raise ValueError("inconsistent shapes")
             return self._add_sparse(other)
 
         elif isdense(other):
@@ -586,10 +587,11 @@ class _spbase:
             raise NotImplementedError('subtracting a nonzero scalar from a '
                                       'sparse array is not supported')
         elif issparse(other):
-            try:
-                np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            if self.shape != other.shape:
+                try: 
+                    np.broadcast_shapes(self.shape, other.shape)
+                except ValueError:
+                    raise ValueError("inconsistent shapes")
             return self._sub_sparse(other)
 
         elif isdense(other):
