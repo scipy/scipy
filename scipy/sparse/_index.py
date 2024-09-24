@@ -83,6 +83,8 @@ class IndexMixin:
         else:
             if isinstance(col, INT_TYPES):
                 res = self._get_arrayXint(row, col)
+                if row.ndim > 1:
+                    res = res.reshape(row.shape)
             elif isinstance(col, slice):
                 res = self._get_arrayXslice(row, col)
             # arrayXarray preprocess
