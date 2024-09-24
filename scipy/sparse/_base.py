@@ -504,8 +504,7 @@ class _spbase:
         if self.shape == shape:
             return self.copy() if copy else self
         else:
-            return self.tocsr()._broadcast_to(shape)
-        return self.__class__(res)
+            return self.tocsr()._broadcast_to(shape, copy)
 
     def _broadcast_to(self, shape, copy=False):
         if self.shape == shape:
