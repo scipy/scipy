@@ -123,8 +123,7 @@ static PyObject *SuperLU_rinvnormest(SuperLUObject * self, PyObject * args,
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s", kwlist,
-                                     &PyArray_Type, &norm))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s", kwlist, &norm))
         return NULL;
 
     // norm should be a single-character string
