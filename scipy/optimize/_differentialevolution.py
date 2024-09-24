@@ -1220,7 +1220,8 @@ class DifferentialEvolutionSolver:
                                   UserWarning, stacklevel=2)
             if self.disp:
                 print(f"Polishing solution with '{polish_method}'")
-            result = minimize(self.func,
+            result = minimize(lambda x:
+                                list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
                               np.copy(DE_result.x),
                               method=polish_method,
                               bounds=self.limits.T,
