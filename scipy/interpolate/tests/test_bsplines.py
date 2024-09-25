@@ -1091,7 +1091,7 @@ class TestInterop:
 
             for n in [1, 2, 3]:
                 bd = splder(b)
-                tck_d = _impl.splder((b.t, b.c, b.k))
+                tck_d = _impl.splder((b.t.copy(), b.c, b.k))
                 xp_assert_close(bd.t, tck_d[0], atol=1e-15)
                 xp_assert_close(bd.c, tck_d[1], atol=1e-15)
                 assert bd.k == tck_d[2]
@@ -1107,7 +1107,7 @@ class TestInterop:
 
             for n in [1, 2, 3]:
                 bd = splantider(b)
-                tck_d = _impl.splantider((b.t, b.c, b.k))
+                tck_d = _impl.splantider((b.t.copy(), b.c, b.k))
                 xp_assert_close(bd.t, tck_d[0], atol=1e-15)
                 xp_assert_close(bd.c, tck_d[1], atol=1e-15)
                 assert bd.k == tck_d[2]
@@ -3240,6 +3240,7 @@ index 1afb1900f1..d817e51ad8 100644
 
         xp_assert_close(tt, t, atol=1e-15)
 
+    @pytest.mark.parallel_threads(1)
     def test_s_too_small(self):
         n = 14
         x = np.arange(n)
@@ -3470,6 +3471,7 @@ class TestMakeSplrep:
 
         xp_assert_close(spl.c, spl_i.c, atol=1e-15)
 
+    @pytest.mark.parallel_threads(1)
     def test_s_too_small(self):
         # both splrep and make_splrep warn that "s too small": ier=2
         n = 14
