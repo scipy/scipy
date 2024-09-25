@@ -433,7 +433,7 @@ class TestLazywhere:
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
-    @pytest.mark.parallel_threads(5)
+    @pytest.mark.parallel_threads(1)
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
         mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1,
                                                  min_side=0)

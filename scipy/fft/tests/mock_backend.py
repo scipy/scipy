@@ -4,17 +4,16 @@ import threading
 
 class _MockFunction:
     def __init__(self, return_value = None):
-        self.number_calls = {}
+        self.number_calls = threading.local()
         self.return_value = return_value
-        self.last_args = {}
+        self.last_args = threading.local()
 
     def __call__(self, *args, **kwargs):
-        tid = threading.get_native_id()
-        if tid not in self.number_calls:
-            self.number_calls[tid] = 0
+        if not hasattr(self.number_calls, 'c'):
+            self.number_calls.c = 0
 
-        self.number_calls[tid] += 1
-        self.last_args[tid] = (args, kwargs)
+        self.number_calls.c += 1
+        self.last_args.l = (args, kwargs)
         return self.return_value
 
 

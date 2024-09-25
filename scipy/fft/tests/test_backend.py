@@ -56,16 +56,15 @@ mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
 
 @pytest.mark.parametrize("func, np_func, mock", zip(funcs, np_funcs, mocks))
 def test_backend_call(func, np_func, mock):
-    tid = threading.get_native_id()
     x = np.arange(20).reshape((10,2))
     answer = np_func(x.astype(np.float64))
     assert_allclose(func(x), answer, atol=1e-10)
 
     with set_backend(mock_backend, only=True):
-        # mock.number_calls = {}
+        mock.number_calls.c = 0
         y = func(x)
         assert_equal(y, mock.return_value)
-        assert_equal(mock.number_calls[tid], 1)
+        assert_equal(mock.number_calls.c, 1)
 
     assert_allclose(func(x), answer, atol=1e-10)
 
@@ -87,14 +86,14 @@ plan_mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
 
 @pytest.mark.parametrize("func, mock", zip(plan_funcs, plan_mocks))
 def test_backend_plan(func, mock):
-    tid = threading.get_native_id()
     x = np.arange(20).reshape((10, 2))
 
     with pytest.raises(NotImplementedError, match='precomputed plan'):
         func(x, plan='foo')
 
     with set_backend(mock_backend, only=True):
+        mock.number_calls.c = 0
         y = func(x, plan='foo')
         assert_equal(y, mock.return_value)
-        assert_equal(mock.number_calls[tid], 1)
-        assert_equal(mock.last_args[tid][1]['plan'], 'foo')
+        assert_equal(mock.number_calls.c, 1)
+        assert_equal(mock.last_args.l[1]['plan'], 'foo')
