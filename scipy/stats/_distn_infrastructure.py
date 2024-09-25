@@ -13,7 +13,7 @@ from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _lazywhere
 
 from scipy.special import comb, entr
 
@@ -1999,7 +1999,21 @@ class rv_continuous(rv_generic):
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
 
-    # generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
+    def _logcdf(self, x, *args):
+        median = self._ppf(0.5, *args)
+        with np.errstate(divide='ignore'):
+            return _lazywhere(x < median, (x,) + args,
+                              f=lambda x, *args: np.log(self._cdf(x, *args)),
+                              f2=lambda x, *args: np.log1p(-self._sf(x, *args)))
+
+    def _logsf(self, x, *args):
+        median = self._ppf(0.5, *args)
+        with np.errstate(divide='ignore'):
+            return _lazywhere(x > median, (x,) + args,
+                              f=lambda x, *args: np.log(self._sf(x, *args)),
+                              f2=lambda x, *args: np.log1p(-self._cdf(x, *args)))
+
+    # generic _argcheck, _sf, _ppf, _isf, _rvs are defined
     # in rv_generic
 
     def pdf(self, x, *args, **kwds):
