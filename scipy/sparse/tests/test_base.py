@@ -2773,9 +2773,11 @@ class _TestSlicing:
         assert_array_equal(a[..., 4].toarray(), b[..., 4])
         assert_array_equal(a[..., 5].toarray(), b[..., 5])
         with pytest.raises(IndexError, match='index .5. out of range'):
-            assert_array_equal(a[5, ...].toarray(), b[5, ...])
+            a[5, ...]
         with pytest.raises(IndexError, match='index .10. out of range'):
-            assert_array_equal(a[..., 10].toarray(), b[..., 10])
+            a[..., 10]
+        with pytest.raises(IndexError, match='index .5. out of range'):
+            a.T[..., 5]
 
         assert_array_equal(a[1:, ...].toarray(), b[1:, ...])
         assert_array_equal(a[..., 1:].toarray(), b[..., 1:])
