@@ -151,9 +151,34 @@ static PyObject *SuperLU_rinvnormest(SuperLUObject * self, PyObject * args,
         SLU_END_THREADS;
         goto fail;
     }
-    gscon(self->type,
-          (char *)&norm_c, &self->L, &self->U, 1.0,
-          (double *)&rcond, (SuperLUStat_t *)&stat, (int *)&info);
+    float rcond_float;
+    switch(self->type) {
+        case NPY_FLOAT:
+            sgscon(
+                (char *)&norm_c, &self->L, &self->U, 1.0f,
+                (float *)&rcond_float, (SuperLUStat_t *)&stat, (int *)&info);
+                rcond = rcond_float;
+            break;
+        case NPY_DOUBLE:
+            dgscon(
+                (char *)&norm_c, &self->L, &self->U, 1.0,
+                (double *)&rcond, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        case NPY_CFLOAT:
+            cgscon(
+                (char *)&norm_c, &self->L, &self->U, 1.0f,
+                (float *)&rcond_float, (SuperLUStat_t *)&stat, (int *)&info);
+                rcond = rcond_float;
+            break;
+        case NPY_CDOUBLE:
+            zgscon(
+                (char *)&norm_c, &self->L, &self->U, 1.0,
+                (double *)&rcond, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        default: 
+            PyErr_SetString(PyExc_ValueError, "unsupported data type");
+            return NULL;
+    }
     SLU_END_THREADS;
 
     if (info) {
