@@ -400,6 +400,7 @@ class TestKMean:
             res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++')
             xp_assert_close(res, prev_res)
 
+    @pytest.mark.parallel_threads(1)
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_high_dim(self, xp, kmeans_lock):
@@ -409,12 +410,11 @@ class TestKMean:
         centers = np.vstack([5 * np.ones(n_dim),
                              -5 * np.ones(n_dim)])
 
-        with kmeans_lock:
-            np.random.seed(42)
-            data = np.vstack([
-                np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
-                np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
-            ])
+        np.random.seed(42)
+        data = np.vstack([
+            np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
+            np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
+        ])
 
         data = xp.asarray(data)
         res, _ = kmeans2(data, 2, minit='++')
