@@ -637,7 +637,7 @@ def argsreduce(cond, *args):
 
     # np.atleast_1d returns an array if only one argument, or a list of arrays
     # if more than one argument.
-    if not isinstance(newargs, (list, tuple)):
+    if not isinstance(newargs, (list | tuple)):
         newargs = (newargs,)
 
     if np.all(cond):
@@ -826,7 +826,10 @@ class rv_generic:
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
+        try:
+            vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
+        except TypeError:
+            vals = ', '.join(f'{val}' for val in shapes_vals)
         tempdict['vals'] = vals
 
         tempdict['shapes_'] = self.shapes or ''
@@ -3041,7 +3044,7 @@ def _drv2_moment(self, n, *args):
         return np.power(x, n) * self._pmf(x, *args)
 
     _a, _b = self._get_support(*args)
-    return _expect(fun, _a, _b, self.ppf(0.5, *args), self.inc)
+    return _expect(fun, _a, _b, self._ppf(0.5, *args), self.inc)
 
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
@@ -3762,8 +3765,8 @@ class rv_discrete(rv_generic):
             return stats.entropy(self.pk)
         else:
             _a, _b = self._get_support(*args)
-            return _expect(lambda x: entr(self.pmf(x, *args)),
-                           _a, _b, self.ppf(0.5, *args), self.inc)
+            return _expect(lambda x: entr(self._pmf(x, *args)),
+                           _a, _b, self._ppf(0.5, *args), self.inc)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
                conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
@@ -3819,6 +3822,10 @@ class rv_discrete(rv_generic):
         The function is not vectorized.
 
         """
+        # Although `args` is just the shape parameters, `poisson_binom` needs this
+        # to split the vector-valued shape into a tuple of separate shapes
+        args, _, _ = self._parse_args(*args)
+
         if func is None:
             def fun(x):
                 # loc and args from outer scope
@@ -3850,7 +3857,7 @@ class rv_discrete(rv_generic):
             return res / invfac
 
         # iterate over the support, starting from the median
-        x0 = self.ppf(0.5, *args)
+        x0 = self._ppf(0.5, *args)
         res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
         return res / invfac
 
@@ -3931,7 +3938,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)
 
-    x = x0
+    x = np.copy(x0)
     while (x - x1) * inc < 0:
         delta = min(stepsize, abs(x - x1))
         step = delta * s
