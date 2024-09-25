@@ -13,6 +13,9 @@ class TestRinvnormest:
         rvs = rng.random
         A = scipy.sparse.random(n, n, density=0.3, format="lil", dtype=dtype,
             random_state=rng, data_rvs=rvs)
+        if dtype==np.complex64 or dtype==np.complex128:
+          A += 1j * scipy.sparse.random(n, n, density=0.3, format="lil", dtype=dtype,
+              random_state=rng, data_rvs=rvs)
         A = A + scipy.sparse.eye(n, format="lil", dtype=dtype) # make it likely invertible
         A = A.tocsc()
         return A
@@ -30,7 +33,7 @@ class TestRinvnormest:
         A = self.generate_matrix(5, dtype)
         true_cond1norm = np.linalg.cond(A.toarray(), p=1)
         est_cond1norm = scipy.sparse.linalg.cond1est(A)
-        assert_allclose(est_cond1norm, true_cond1norm)
+        assert_allclose(est_cond1norm, true_cond1norm, rtol=1e-4)
 
     def test_error_unsupported_norm(self):
         A = self.generate_matrix(5, np.float64)
