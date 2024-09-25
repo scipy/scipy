@@ -249,4 +249,3 @@ class TestAlgorithm_2_2:
 
             # Compute the 1-norm bounds.
             g, ind = _algorithm_2_2(A, A.T, t)
-
