@@ -145,10 +145,10 @@ jmp_buf *superlu_python_jmpbuf(void);
     SuperLUStat_t *h, int *i
 #define gssv_ARGS_REF a,b,c,d,e,f,g,h,i
 
-#define gscon_ARGS                                               \
-    char *a, SuperMatrix *b, SuperMatrix *c,                 \
-    double d, double *e, SuperLUStat_t *f, int *g 
-#define gscon_ARGS_REF a,b,c,d,e,f,g
+void sgscon(char*, SuperMatrix*, SuperMatrix*, float, float*, SuperLUStat_t*, int*);
+void dgscon(char*, SuperMatrix*, SuperMatrix*, double, double*, SuperLUStat_t*, int*);
+void cgscon(char*, SuperMatrix*, SuperMatrix*, float, float*, SuperLUStat_t*, int*);
+void zgscon(char*, SuperMatrix*, SuperMatrix*, double, double*, SuperLUStat_t*, int*);
 
 #define Create_Dense_Matrix_ARGS                               \
     SuperMatrix *a, int b, int c, void *d, int e,              \
@@ -175,7 +175,6 @@ TYPE_GENERIC_FUNC(gstrf, void);
 TYPE_GENERIC_FUNC(gsitrf, void);
 TYPE_GENERIC_FUNC(gstrs, void);
 TYPE_GENERIC_FUNC(gssv, void);
-TYPE_GENERIC_FUNC(gscon, void);
 TYPE_GENERIC_FUNC(Create_Dense_Matrix, void);
 TYPE_GENERIC_FUNC(Create_CompRow_Matrix, void);
 TYPE_GENERIC_FUNC(Create_CompCol_Matrix, void);
