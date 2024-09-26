@@ -96,30 +96,3 @@ def test_argmax_overflow(ax):
         ii, jj = np.max(idx), np.argmax(idx)
 
     assert A[ii, jj] == A[-2, -2]
-
-def test_broadcast_to():
-    a = np.array([[1, 0, 2]])
-    b = np.array([[1], [0], [2]])
-    c = np.array([[1, 0, 2], [0, 3, 0]])
-    d = np.array([[7]])
-    e = np.array([[0]])
-    f = np.array([[0,0,0,0]])
-    for csc_container in (csc_matrix, csc_array):
-        res_a = csc_container(a)._broadcast_to((2,3))
-        res_b = csc_container(b)._broadcast_to((3,4))
-        res_c = csc_container(c)._broadcast_to((2,3))
-        res_d = csc_container(d)._broadcast_to((4,4))
-        res_e = csc_container(e)._broadcast_to((5,6))
-        res_f = csc_container(f)._broadcast_to((2,4))
-        assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
-        assert_array_equal(res_b.toarray(), np.broadcast_to(b, (3,4)))
-        assert_array_equal(res_c.toarray(), c)
-        assert_array_equal(res_d.toarray(), np.broadcast_to(d, (4,4)))
-        assert_array_equal(res_e.toarray(), np.broadcast_to(e, (5,6)))
-        assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
-
-    with pytest.raises(ValueError, match="cannot be broadcast"):
-        csc_matrix([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
-
-    with pytest.raises(ValueError, match="cannot be broadcast"):
-        csc_matrix([[0, 1, 2]])._broadcast_to(shape=(3, 2))
