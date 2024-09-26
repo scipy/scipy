@@ -1539,7 +1539,7 @@ class TestTransformations:
         )
 
         for point in points:
-            transformed_point = f_transformed.x_to_t(xp.reshape(point, (1, -1)))
+            transformed_point = f_transformed.inv(xp.reshape(point, (1, -1)))
 
             with pytest.raises(Exception, match="called with a problematic point"):
                 f_transformed(transformed_point)
@@ -1622,7 +1622,7 @@ class TestTransformations:
         )
 
         for point in points:
-            transformed_point = f_transformed.x_to_t(xp.reshape(point, (1, -1)))
+            transformed_point = f_transformed.inv(xp.reshape(point, (1, -1)))
 
             with pytest.raises(Exception, match="called with a problematic point"):
                 f_transformed(transformed_point)

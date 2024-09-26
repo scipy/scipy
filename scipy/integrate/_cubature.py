@@ -61,7 +61,8 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     Given an arbitrary integration rule, this function returns an estimate of the
     integral to the requested tolerance over the region defined by the arrays `a` and
-    `b` specifying the corners of a hypercube.
+    `b` specifying the corners of a hypercube, or over a more complex region specified
+    with `region`.
 
     Convergence is not guaranteed for all integrals.
 
@@ -85,25 +86,24 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
             (output_dim_1, ..., output_dim_n)
     a, b : array_like
         Lower and upper limits of integration as 1D arrays specifying the left and right
-        endpoints of the intervals being integrated over. Can be infinite.
+        endpoints of the intervals being integrated over. Can specify infinite limits.
     rule : str, optional
         Rule used to estimate the integral. If passing a string, the options are
         "gauss-kronrod" (21 node), or "genz-malik" (degree 7). If a rule like
         "gauss-kronrod" is specified for an ``n``-dim integrand, the corresponding
-        Cartesian product rule is used. See Notes.
-
-        "gk21", "gk15" are also supported for compatibility with `quad_vec`.
+        Cartesian product rule is used. "gk21", "gk15" are also supported for
+        compatibility with `quad_vec`. See Notes.
     rtol, atol : float, optional
         Relative and absolute tolerances. Iterations are performed until the error is
         estimated to be less than ``atol + rtol * abs(est)``. Here `rtol` controls
         relative accuracy (number of correct digits), while `atol` controls absolute
         accuracy (number of correct decimal places). To achieve the desired `rtol`, set
         `atol` to be smaller than the smallest value that can be expected from
-        ``rtol * abs(y)`` so that rtol dominates the allowable error. If `atol` is
+        ``rtol * abs(y)`` so that `rtol` dominates the allowable error. If `atol` is
         larger than ``rtol * abs(y)`` the number of correct digits is not guaranteed.
-        Conversely, to achieve the desired `atol` set `rtol` such that ``rtol * abs(y)``
-        is always smaller than `atol`. Default values are 1e-8 for `rtol` and 0 for
-        `atol`.
+        Conversely, to achieve the desired `atol`, set `rtol` such that
+        ``rtol * abs(y)`` is always smaller than `atol`. Default values are 1e-8 for
+        `rtol` and 0 for `atol`.
     max_subdivisions : int, optional
         Upper bound on the number of subdivisions to perform to improve the estimate
         over a subregion. Default is 10,000.
@@ -120,8 +120,8 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         List of points by which to split up the initial region of integration. If the
         rule being used does not evaluate `f` on the boundary of a region (which is the
         case for all Genz-Malik and Gauss-Kronrod rules) then `f` will not be evaluated
-        at these points. This should be a list of array_like where each element has size
-        ndim. Default is empty. See Examples.
+        at these points. This should be a list of array-likes where each element has
+        length ``ndim``. Default is empty. See Examples.
     region : list of callable, optional
         List of callables parameterising a potentially non-rectangular region of
         integration.
@@ -153,23 +153,23 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         where each ``region_func_i`` is a function which calculates::
 
             region_func_i = lambda x: (
-                # Upper limits given x_1, ..., x_i
+                # Upper limits given x_1, ..., x_{i-1}
                 [ A_i(x[:, 0], ..., x[:, i-1]) ],
 
-                # Lower limits given x_1, ..., x_i
+                # Lower limits given x_1, ..., x_{i-1}
                 [ B_i(x[:, 0], ..., x[:, i-1]) ],
             )
 
-        Each ``region_func_i`` should accept arrays of shape ``(npoints, n+i-dim)`` and
-        return tuples of arrays of shape ``(npoints, 1)``.
-
-        It is also possible to return arrays of shape ``(npoints, k)`` and return the
-        values of multiple variables at once.
+        Each ``region_func_i`` should accept arrays of shape
+        ``(npoints, num_preceding variables)`` and
+        return a tuple of two arrays with shape ``(npoints, num_new_variables)``. In the
+        above case ``num_new_variables`` is 1, but it is also possible to return the
+        limits for multiple variables at once. See Examples.
 
         `a` and `b` may contain infinite limits, but none of the functions in ``region``
         can return infinity.
 
-        More details can be found in the Notes and Examples sections.
+        More details can be found in the Notes section.
 
     Returns
     -------
@@ -195,7 +195,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         Each object in ``regions`` has the following attributes:
 
             a, b : ndarray
-                Points describing the corners of the region.
+                Points describing the corners of the region. If the original integral
+                contained infinite limits or was over a region described by `region`,
+                then `a` and `b` are in the transformed coordinates.
             estimate : ndarray
                 Estimate of the value of the integral over this region.
             error : ndarray
@@ -205,7 +207,11 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     --------
     **1D integral with vector output**:
 
-    Here ``f(x) = x^n`` is integrated over the interval ``[0, 1]``. Since no rule is
+    .. math::
+
+        \int^1_0 \mathbf f(x) \text dx
+
+    Where ``f(x) = x^n`` and ``n = np.arange(10)`` is a vector. Since no rule is
     specified, the default "gk21" is used, which corresponds to Gauss-Kronrod
     integration with 21 nodes.
 
@@ -259,7 +265,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
      array([[-0.79812452,  0.35246913, -0.52273628],
             [ 0.88392779,  0.59139899,  0.41895111]])
 
-    **Parallel computation with `workers` argument**:
+    **Parallel computation with** `workers`:
 
     >>> from concurrent.futures import ThreadPoolExecutor
     >>> with ThreadPoolExecutor() as executor:
@@ -295,7 +301,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     >>> res.estimate
      3.1415926
 
-    **1D integral with singularities avoided using `points`**:
+    **1D integral with singularities avoided using** `points`:
 
     .. math::
 
@@ -311,18 +317,16 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     >>> res.estimate
      1.8921661
 
-    **2D integral over a circle with `region`**: Calculate the mass of a series of discs
-    with different densities:
+    **2D integral over a circle using** `region`:
+
+    Calculate the mass of a series of discs with different densities:
 
     .. math::
 
         \int^{ 1 }_{ -1 }
         \int^{ \sqrt{1-x^2} }_{ -\sqrt{1-x^2} }
-          \rho(x_1, x_2)
+          \mathbf \rho(x_1, x_2)
         \text dx_2 \text dx_1
-
-    Here ``x_0`` is refered to as the "outer variable", and ``x_1`` is referred to as
-    the "inner variable".
 
     >>> def density(x_arr):
     ...     x_0, x_1 = x_arr[:, 0], x_arr[:, 1]
@@ -359,7 +363,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     >>> res.estimate
      array([1.57079633, 0.78539816, 0.52359878, 0.39269908])
 
-    **3D integral over a sphere with `region`**:
+    **3D integral over a sphere with** `region`:
 
     .. math::
 
@@ -390,11 +394,11 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     >>> res.estimate
      4.188792
 
-    **Returning multiple limits at once using `region`**:
+    **Returning multiple limits at once using** `region`:
 
-    In every use of `region` so far, each function in the list has returned an array
-    of shape ``(npoints, 1)``. In the previous example, it is **not** possible to
-    combine these two functions into one:
+    In the above uses of `region`, each function in the list has returned an array of
+    shape ``(npoints, 1)``. In the previous example, it is **not** possible to combine
+    these two functions into one:
 
     >>> res = cubature(
     ...     lambda x_arr: np.ones(x_arr.shape[0]),
@@ -416,8 +420,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     ... ) # doctest: +SKIP
 
     This is because the expression ``np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2)`` depends
-    on the value of ``x[:, 1]`` which will not be known when this function is called
-    as the limits for ``x[:, 1]`` have not been determined.
+    on the value of ``x[:, 1]`` which will not be known when this function is called.
+    This is because the limits for ``x[:, 1]`` cannot be determined without calling
+    this function.
 
     If you have an integral where a group of limits do not depend on one another, you
     can return them together. For example:
@@ -426,10 +431,10 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
         \int^{ 1 }_{ 0 }
         \int^{ x_0 }_{ 0 }
-        \int^{ x_0 }_{ 1 } \text dx_2 \text dx_1 \text dx_0
+        \int^{ x_0 }_{ 0 } \text dx_2 \text dx_1 \text dx_0
 
-    Here the limits for :math:`x_2` do not depend on :math:`x_1`. This means it is valid
-    to specify `region` like so:
+    Here the limits for :math:`x_1` and :math:`x_2` depend only on :math:`x_0`. This
+    means it is possible to specify `region` like so:
 
     >>> res = cubature(
     ...     lambda x_arr: np.ones(x_arr.shape[0]),
@@ -471,15 +476,15 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     Infinite limits are handeled with an appropriate variable transformation. Assuming
     ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in [-\infty, \infty]`, the i-th
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, \infty)`, the i-th
     integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
     :math:`t \in (-1, 1)`.
 
-    If :math:`a_i` and `:math:`b_i` range over :math:`x \in [a_i, \infty]`, the i-th
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in [a_i, \infty)`, the i-th
     integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
     :math:`t \in (0, 1)`.
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in [-\infty, b_i]`, the i-th
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, b_i]`, the i-th
     integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
     :math:`t \in (0, 1)`.
 
@@ -494,13 +499,41 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         \int^{b_1}_{a_1}
         \cdots
         \int^{b_n}_{a_n}
-        \int^{B_1(x_1, \ldots, x_n)}_{A_1(x_1, \ldots, x_n)}
+        \int^{B_{n+1}(x_1, \ldots, x_n)}_{A_{n+1}(x_1, \ldots, x_n)}
         \cdots
-        \int^{B_m(x_1, \ldots, x_n, y_1, \ldots, y_{m-1})}_{A_m(x_1, \ldots, x_n, y_1, \ldots, y_{m-1})}
-        f(x_1, \ldots, x_n, y_1, \ldots, y_m)
-        dy_m \cdots dy_1 dx_n \cdots dx_1
+        \int^{B_{n+m}(x_1, \ldots, x_{n+m-1})}_{A_{n+m}(x_1, \ldots, x_{n+m-1})}
+            f(x_1, \ldots, x_{n+m})
+        dx_{n+m} \cdots dx_1
 
-    it will be transformed into the integral
+    :math:`x_1, \ldots, x_n` are referred to as the "outer variables" and their limits
+    are specified by the constant intervals :math:`(a_i, b_i)` for
+    :math:`1 \le i \le n`.
+
+    :math:`x_{n+1}, \ldots, x_{n+m}` are referred to as the "inner variables" and their
+    limits given the values of the preceding variables range over the interval
+    :math:`(A_i(x_1, \ldots, x_{i-1}), B_i(x_1, \ldots, x_{i-1})`.
+
+    The limits are specified as two arrays, ``a`` and ``b``, and a list of callables
+    ``region``. ``a`` and ``b`` contain the values of the constant limits::
+
+        a = [a_1, ..., a_n]
+        b = [b_1, ..., b_n]
+
+    ``region`` contains a list of callables::
+
+        region = [
+            region_func_1,
+            ...,
+            region_func_k,
+        ]
+
+    where each ``region_func_i`` accepts arrays of shape
+    ``(npoints, num_preceding_variables)`` and returns a tuple of two arrays, one for
+    the next set of lower limits given the values of the preceding variables, and one
+    for the next set of upper limits given the values of the preceding variables. Both
+    of the returned arrays should have shape ``(npoints, num_new_variables)``.
+
+    Integrals of this form will be transformed into an integral over constant limits:
 
     .. math::
 
@@ -510,31 +543,30 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         \int^{1}_{-1}
         \cdots
         \int^{1}_{-1}
-        g(x_1, \ldots, x_n, t_1, \ldots, t_m)
-        dt_m \cdots dt_1 dx_n \cdots dx_1
+            g(t_1, \ldots, t_{n+m})
+        dt_{n+m} \cdots dt_1
 
-    where each :math:`y_i` is mapped using the transformation:
+    The outer variables are unchanged, :math:`x_i = t_i` for :math:`1 \le x_i \le t_i`.
+
+    The inner variables are mapped via the transformation:
 
     .. math::
 
-        y_i = \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-          + A_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+        x_i = \frac{
+            B_{i}(x_1, \ldots, x_{i-1}) + A_{i}(x_1, \ldots, x_{i-1})
         }{2} + t_i \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-          - A_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+            B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})
         }{2}
 
-    This transformation has Jacobian
+    for :math:`i > n`. This transformation has Jacobian determinant:
 
     .. math::
 
-        J(x_1, \ldots, x_n, y_1, \ldots, y_m)
+        J(x_1, \ldots, x_{n+m})
         =
-        \prod^m_{i = 1} \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-            - A_i(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-        }{2}
+        \prod^{n+m}_{i = n+1}
+        \frac{B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})}{2}
+
 
     References
     ----------
@@ -548,7 +580,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     .. [3] Philip J. Davis, Philip Rabinowitz, Methods of Numerical Integration,
         Second Edition, Academic Press, Section 5.4 (1984).
-    """  # noqa: E501
+    """
 
     # It is also possible to use a custom rule, but this is not yet part of the public
     # API. An example of this can be found in the class scipy.integrate._rules.Rule.
@@ -574,7 +606,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         a, b = f.transformed_limits
 
         # Map break points specified in original coordinates to the new coordinates
-        points = [f.x_to_t(point) for point in points]
+        points = [f.inv(point) for point in points]
+
+        # Add any new problematic points introduced by the transformation
         points.extend(f.points)
 
     # If any of limits are the wrong way around (a > b), flip them and keep track of
@@ -590,7 +624,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         f = _InfiniteLimitsTransform(f, a_flipped, b_flipped)
         a, b = f.transformed_limits
 
-        points = [f.x_to_t(point) for point in points]
+        points = [f.inv(point) for point in points]
         points.extend(f.points)
 
     # If any problematic points are specified, divide the initial region so that these
@@ -774,7 +808,7 @@ class _VariableTransform:
     """
 
     @property
-    def transformed_limits(self):
+    def transformed_limits(self, a, b):
         """
         New limits of integration after applying the transformation.
         """
@@ -784,48 +818,40 @@ class _VariableTransform:
     @property
     def points(self):
         """
-        Any problematic points introduced by the transformation to avoid evaluating.
+        Any problematic points introduced by the transformation.
 
-        These should be specified as points where ``self.__call__(self, point)`` would
-        be problematic.
+        These should be specified as points where ``_VariableTransform(f)(self, point)``
+        would be problematic.
 
         For example, if the transformation ``x = 1/((1-t)(1+t))`` is applied to a
-        univariate integral, then points would return ``[ [1], [-1] ]``.
+        univariate integral, then points should return ``[ [1], [-1] ]``.
         """
 
         return []
 
-    def x_to_t(self, x):
+    def inv(self, x):
         """
-        Map points ``x`` to ``t`` such that if ``f`` is the original function, then::
+        Map points ``x`` to ``t`` such that if ``f`` is the original function and ``g``
+        is the function after the transformation is applied, then::
 
-            g = _VariableTransform(f)
-            f(x) == g(x_to_t(x))
+            f(x) = g(self.inv(x))
         """
-
-        # TODO: the above is not quite true because of the jacobian
-
-        raise NotImplementedError
-
-    def t_to_x(self, t):
-        """
-        Map points ``x`` to ``t`` such that if ``f`` is the original function, then::
-
-            g = _VariableTransform(f)
-            g(t) == f(t_to_x(t))
-        """
-
-        # TODO: the above is not quite true because of the jacobian
 
         raise NotImplementedError
 
     def __call__(self, t, *args, **kwargs):
         """
-        Apply the transformation to ``f`` and multiply by the Jacobian.
-        This function should be the new integrand.
-        """
+        Apply the transformation to ``f`` and multiply by the Jacobian determinant.
+        This should be the new integrand after the transformation has been applied so
+        that the following is satisfied::
 
-        # TODO: clarify about jacobian?
+            f_transformed = _VariableTransform(f)
+
+            cubature(f, a, b) == cubature(
+                f_transformed,
+                *f_transformed.transformed_limits(a, b),
+            )
+        """
 
         raise NotImplementedError
 
@@ -834,18 +860,17 @@ class _InfiniteLimitsTransform(_VariableTransform):
     r"""
     Transformation for handling infinite limits.
 
-    Infinite limits are handeled with an appropriate variable transformation. Assuming
-    ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
+    Assuming ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in [-\infty, \infty]`, the i-th
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, \infty)`, the i-th
     integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
     :math:`t \in (-1, 1)`.
 
-    If :math:`a_i` and `:math:`b_i` range over :math:`x \in [a_i, \infty]`, the i-th
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in [a_i, \infty)`, the i-th
     integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
     :math:`t \in (0, 1)`.
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in [-\infty, b_i]`, the i-th
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, b_i]`, the i-th
     integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
     :math:`t \in (0, 1)`.
 
@@ -912,23 +937,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
         else:
             return []
 
-    def t_to_x(self, t):
-        x = xp_copy(t)
-
-        for i in self._negate_pos:
-            x[..., i] *= -1
-
-        for i in self._double_inf_pos:
-            # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
-            x[..., i] = (1 - self._xp.abs(t[..., i])) / t[..., i]
-
-        for i in self._semi_inf_pos:
-            # For (start, oo) -> (0, 1), use the transformation x = start + (1 - t)/t.
-            x[..., i] = self._orig_a[i] + (1 - t[..., i]) / t[..., i]
-
-        return x
-
-    def x_to_t(self, x):
+    def inv(self, x):
         t = xp_copy(x)
 
         for i in self._negate_pos:
@@ -943,19 +952,23 @@ class _InfiniteLimitsTransform(_VariableTransform):
         return t
 
     def __call__(self, t, *args, **kwargs):
-        x = self.t_to_x(t)
+        x = xp_copy(t)
         jacobian = 1.0
+
+        for i in self._negate_pos:
+            x[..., i] *= -1
 
         for i in self._double_inf_pos:
             # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
+            x[..., i] = (1 - self._xp.abs(t[..., i])) / t[..., i]
             jacobian *= 1/(t[..., i] ** 2)
 
         for i in self._semi_inf_pos:
-            # For (start, oo) -> (0, 1), use the transformation x = start + (1 - t)/t.
+            # For (start, oo) -> (0, 1), use the transformation x = start + (1-t)/t.
+            x[..., i] = self._orig_a[i] + (1 - t[..., i]) / t[..., i]
             jacobian *= 1/(t[..., i] ** 2)
 
         f_x = self._f(x, *args, **kwargs)
-
         jacobian = self._xp.reshape(jacobian, (-1, *([1]*(len(f_x.shape)-1))))
 
         return f_x * jacobian
@@ -963,20 +976,48 @@ class _InfiniteLimitsTransform(_VariableTransform):
 
 class _FuncLimitsTransform(_VariableTransform):
     r"""
-    If the original integral has the form
+    This transformation handles integrals of the form:
 
     .. math::
 
         \int^{b_1}_{a_1}
         \cdots
         \int^{b_n}_{a_n}
-        \int^{B_1(x_1, \ldots, x_n)}_{A_1(x_1, \ldots, x_n)}
+        \int^{B_{n+1}(x_1, \ldots, x_n)}_{A_{n+1}(x_1, \ldots, x_n)}
         \cdots
-        \int^{B_m(x_1, \ldots, x_n, y_1, \ldots, y_{m-1})}_{A_m(x_1, \ldots, x_n, y_1, \ldots, y_{m-1})}
-        f(x_1, \ldots, x_n, y_1, \ldots, y_m)
-        dy_m \cdots dy_1 dx_n \cdots dx_1
+        \int^{B_{n+m}(x_1, \ldots, x_{n+m-1})}_{A_{n+m}(x_1, \ldots, x_{n+m-1})}
+            f(x_1, \ldots, x_{n+m})
+        dx_{n+m} \cdots dx_1
 
-    it will be transformed into the integral
+    :math:`x_1, \ldots, x_n` are referred to as the "outer variables" and their limits
+    are specified by the constant intervals :math:`(a_i, b_i)` for
+    :math:`1 \le i \le n`.
+
+    :math:`x_{n+1}, \ldots, x_{n+m}` are referred to as the "inner variables" and their
+    limits given the values of the preceding variables range over the interval
+    :math:`(A_i(x_1, \ldots, x_{i-1}), B_i(x_1, \ldots, x_{i-1})`.
+
+    The limits are specified as two arrays, ``a`` and ``b``, and a list of callables
+    ``region``. ``a`` and ``b`` contain the values of the constant limits::
+
+        a = [a_1, ..., a_n]
+        b = [b_1, ..., b_n]
+
+    ``region`` contains a list of callables::
+
+        region = [
+            region_func_1,
+            ...,
+            region_func_k,
+        ]
+
+    where each ``region_func_i`` accepts arrays of shape
+    ``(npoints, num_preceding_variables)`` and returns a tuple of two arrays, one for
+    the next set of lower limits given the values of the preceding variables, and one
+    for the next set of upper limits given the values of the preceding variables. Both
+    of the returned arrays should have shape ``(npoints, num_new_variables)``.
+
+    Integrals of this form will be transformed into an integral over constant limits:
 
     .. math::
 
@@ -986,32 +1027,30 @@ class _FuncLimitsTransform(_VariableTransform):
         \int^{1}_{-1}
         \cdots
         \int^{1}_{-1}
-        g(x_1, \ldots, x_n, t_1, \ldots, t_m)
-        dt_m \cdots dt_1 dx_n \cdots dx_1
+            g(t_1, \ldots, t_{n+m})
+        dt_{n+m} \cdots dt_1
 
-    where each :math:`y_i` is mapped using the transformation:
+    The outer variables are unchanged, :math:`x_i = t_i` for :math:`1 \le x_i \le t_i`.
+
+    The inner variables are mapped via the transformation:
 
     .. math::
 
-        y_i = \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-          + A_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+        x_i = \frac{
+            B_{i}(x_1, \ldots, x_{i-1}) + A_{i}(x_1, \ldots, x_{i-1})
         }{2} + t_i \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-          - A_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
+            B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})
         }{2}
 
-    This transformation has Jacobian
+    for :math:`i > n`. This transformation has Jacobian determinant:
 
     .. math::
 
-        J(x_1, \ldots, x_n, y_1, \ldots, y_m)
+        J(x_1, \ldots, x_{n+m})
         =
-        \prod^m_{i = 1} \frac{
-            B_{i}(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-            - A_i(x_1, \ldots, x_n, y_1, \ldots, y_{i-1})
-        }{2}
-    """  # noqa: E501
+        \prod^{n+m}_{i = n+1}
+        \frac{B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})}{2}
+    """
 
     def __init__(self, f, a, b, region):
         self._xp = array_namespace(a, b)
@@ -1082,7 +1121,7 @@ class _FuncLimitsTransform(_VariableTransform):
             self._xp.concat([self._b_outer,  self._xp.ones(self._inner_ndim)]),
         )
 
-    def x_to_t(self, x_and_y):
+    def inv(self, x_and_y):
         x_and_t = xp_copy(x_and_y)
 
         outer_ndim = self._outer_ndim
