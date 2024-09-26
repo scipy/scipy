@@ -271,12 +271,12 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         Cutoff frequency of filter (expressed in the same units as `fs`)
         OR an array of cutoff frequencies (that is, band edges). In the 
         former case, as a float, the cutoff frequency should correspond 
-        with the half-amplitude point. In the latter case, the frequencies 
-        in `cutoff` should be positive and monotonically increasing 
-        between 0 and `fs/2`. The values 0 and `fs/2` must not be included
-        in `cutoff`. It should be noted that this is different than the
-        behavior of `scipy.signal.iirdesign`, where the cutoff is the
-        half-power point.
+        with the half-amplitude point, where the attenuation will be -6dB. 
+        In the latter case, the frequencies in `cutoff` should be positive 
+        and monotonically increasing between 0 and `fs/2`. The values 0 
+        and `fs/2` must not be included in `cutoff`. It should be noted 
+        that this is different than the behavior of `scipy.signal.iirdesign`, 
+        where the cutoff is the half-power point (-3dB).
     width : float or None, optional
         If `width` is not None, then assume it is the approximate width
         of the transition region (expressed in the same units as `fs`)
