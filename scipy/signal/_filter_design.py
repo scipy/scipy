@@ -2357,7 +2357,6 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     -----
     The ``'sos'`` output parameter was added in 0.16.0.
 
-
     Examples
     --------
     >>> import numpy as np
