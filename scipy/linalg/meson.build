@@ -180,18 +180,12 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
-# _matfuncs_expm:
-_matfuncs_expm_pyx = custom_target('_matfuncs_expm',
-  output: '_matfuncs_expm.pyx',
-  input: '_matfuncs_expm.pyx.in',
-  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_matfuncs_expm',
-  linalg_cython_gen.process(_matfuncs_expm_pyx),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
+  [
+    '_matfuncs_expm.h',
+    '_matfuncs_expm.c',
+  ],
+  dependencies: [np_dep, lapack_dep, blas_dep],
   install: true,
   subdir: 'scipy/linalg'
 )

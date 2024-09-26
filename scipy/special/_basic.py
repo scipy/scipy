@@ -1337,9 +1337,10 @@ def riccati_jn(n, x):
 def riccati_yn(n, x):
     """Compute Ricatti-Bessel function of the second kind and its derivative.
 
-    The Ricatti-Bessel function of the second kind is defined as :math:`x
+    The Ricatti-Bessel function of the second kind is defined here as :math:`+x
     y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
-    kind of order :math:`n`.
+    kind of order :math:`n`. *Note that this is in contrast to a common convention
+    that includes a minus sign in the definition.*
 
     This function computes the value and first derivative of the function for
     all orders up to and including `n`.

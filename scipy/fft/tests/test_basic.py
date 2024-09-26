@@ -51,7 +51,7 @@ class TestFFT:
             xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i])
             xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
     
-    @skip_xp_backends(np_only=True, reasons=['significant overhead for some backends'])
+    @skip_xp_backends(np_only=True, reason='significant overhead for some backends')
     def test_identity_extensive(self, xp):
         maxlen = 512
         x = xp.asarray(random(maxlen) + 1j*random(maxlen))
@@ -70,7 +70,7 @@ class TestFFT:
                         expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),)
         xp_assert_close(fft.fft(x, norm="forward"), expect / 30)
 
-    @skip_xp_backends(np_only=True, reasons=['some backends allow `n=0`'])
+    @skip_xp_backends(np_only=True, reason='some backends allow `n=0`')
     def test_fft_n(self, xp):
         x = xp.asarray([1, 2, 3], dtype=xp.complex128)
         assert_raises(ValueError, fft.fft, x, 0)
@@ -340,7 +340,7 @@ class TestFFT:
         xp_assert_close(res_fft, x)
 
     @skip_xp_backends(np_only=True,
-                      reasons=['array-likes only supported for NumPy backend'])
+                      reason='array-likes only supported for NumPy backend')
     @pytest.mark.parametrize("op", [fft.fft, fft.ifft,
                                     fft.fft2, fft.ifft2,
                                     fft.fftn, fft.ifftn,

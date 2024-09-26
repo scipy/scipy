@@ -1101,7 +1101,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_equal(res.status, 1)
         assert res.success is False
         assert_equal(res.message,
-                     'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
+                     'STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT')
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method

@@ -974,6 +974,15 @@ def _moment_result_object(*args):
         return args[0]
     return np.asarray(args)
 
+
+# When `order` is array-like with size > 1, moment produces an *array*
+# rather than a tuple, but the zeroth dimension is to be treated like
+# separate outputs. It is important to make the distinction between
+# separate outputs when adding the reduced axes back (`keepdims=True`).
+def _moment_tuple(x, n_out):
+    return tuple(x) if n_out > 1 else (x,)
+
+
 # `moment` fits into the `_axis_nan_policy` pattern, but it is a bit unusual
 # because the number of outputs is variable. Specifically,
 # `result_to_tuple=lambda x: (x,)` may be surprising for a function that
@@ -993,13 +1002,13 @@ def _moment_result_object(*args):
 # - If there are multiple outputs, and therefore multiple elements in the list,
 #   `_moment_result_object` converts the list of arrays to a single array and
 #   returns it.
-# Currently this leads to a slight inconsistency: when the input array is
+# Currently, this leads to a slight inconsistency: when the input array is
 # empty, there is no distinction between the `moment` function being called
 # with parameter `order=1` and `order=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
 @_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
-    _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
+    _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=_moment_outputs
 )
 def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
@@ -6230,7 +6239,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
           * 'omit': performs the calculations ignoring nan values
 
         The 'omit' option is not currently available for permutation tests or
-        one-sided asympyotic tests.
+        one-sided asymptotic tests.
 
     permutations : non-negative int, np.inf, or None (default), optional
         If 0 or None (default), use the t-distribution to calculate p-values.
@@ -7926,7 +7935,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
                           stacklevel=3)
 
     if mode == 'asymp':
-        # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
+        # The product n1*n2 is large.  Use Smirnov's asymptotic formula.
         # Ensure float to avoid overflow in multiplication
         # sorted because the one-sided formula is not symmetric in n1, n2
         m, n = sorted([float(n1), float(n2)], reverse=True)
@@ -9320,7 +9329,7 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     where :math:`\Gamma (u, v)` is the set of (probability) distributions on
     :math:`\mathbb{R}^n \times \mathbb{R}^n` whose marginals are :math:`u` and
     :math:`v` on the first and second factors respectively. For a given value
-    :math:`x`, :math:`u(x)` gives the probabilty of :math:`u` at position
+    :math:`x`, :math:`u(x)` gives the probability of :math:`u` at position
     :math:`x`, and the same for :math:`v(x)`.
 
     This is also called the optimal transport problem or the Monge problem.
@@ -9343,7 +9352,7 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     The :math:`\text{vec}()` function denotes the Vectorization function
     that transforms a matrix into a column vector by vertically stacking
     the columns of the matrix.
-    The tranport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
+    The transport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
     which :math:`\gamma_{ij}` is a positive value representing the amount of
     probability mass transported from :math:`u(x_i)` to :math:`v(y_i)`.
     Summing over the rows of :math:`\Gamma` should give the source distribution
@@ -9524,7 +9533,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     where :math:`\Gamma (u, v)` is the set of (probability) distributions on
     :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
     :math:`v` on the first and second factors respectively. For a given value
-    :math:`x`, :math:`u(x)` gives the probabilty of :math:`u` at position
+    :math:`x`, :math:`u(x)` gives the probability of :math:`u` at position
     :math:`x`, and the same for :math:`v(x)`.
 
     If :math:`U` and :math:`V` are the respective CDFs of :math:`u` and

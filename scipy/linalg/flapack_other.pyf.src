@@ -150,7 +150,7 @@ subroutine <prefix2>trsen(job,wantq,select,n,t,ldt,q,ldq,wr,wi,m,s,sep,work,lwor
     <ftype2> intent(out) :: s
     <ftype2> intent(out) :: sep
     <ftype2> intent(hide),dimension(MAX(lwork,1)) :: work
-    ! These lwork and liwork values are bare minimum estiamates only for the case job == "N".
+    ! These lwork and liwork values are bare minimum estimates only for the case job == "N".
     ! A separate lwork query is a prerequisite due to m dependence.
     ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
     ! possible to give a minimal value without a potential excessive memory waste.
@@ -208,7 +208,7 @@ subroutine <prefix2c>trsen(job,wantq,select,n,t,ldt,q,ldq,w,m,s,sep,work,lwork,i
     <ftype2> intent(out) :: s
     <ftype2> intent(out) :: sep
     <ftype2c> intent(hide),dimension(MAX(lwork,1)) :: work
-    ! This lwork values is a bare minimum estiamate only for the case job == "N".
+    ! This lwork values is a bare minimum estimate only for the case job == "N".
     ! A separate lwork query is a prerequisite due to m dependence.
     ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
     ! possible to give a minimal value without a potential excessive memory waste.
@@ -269,7 +269,7 @@ subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,be
     <ftype2> intent(out) :: pr
     <ftype2> intent(out),dimension(2) :: dif
     <ftype2> intent(hide),dimension(MAX(lwork,1)) :: work
-    ! these lwork and liwork values are bare minimum estiamates only for cases ijob == 1,2,4
+    ! these lwork and liwork values are bare minimum estimates only for cases ijob == 1,2,4
     ! a separate lwork query is a prerequisite due to m dependence.
     ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
     ! possible to give a minimal value without a potential excessive memory waste
@@ -340,7 +340,7 @@ subroutine <prefix2c>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alpha,beta,q,ld
     <ftype2> intent(out) :: pr
     <ftype2> intent(out),dimension(2) :: dif
     <ftype2c> intent(hide),dimension(MAX(lwork,1)) :: work
-    ! these lwork and liwork values are bare minimum estiamates only for cases ijob ==0,1,2,4
+    ! these lwork and liwork values are bare minimum estimates only for cases ijob ==0,1,2,4
     ! a separate lwork query is a prerequisite due to m dependence.
     ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
     ! possible to give a minimal value without a potential excessive memory waste
@@ -1356,7 +1356,7 @@ subroutine <prefix2c>hbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,rwork
 
     integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
     integer intent(hide),depend(ab) :: n=shape(ab,1)
-    ! case n=0 is omitted in calculaton of lwork, lrwork, liwork
+    ! case n=0 is omitted in calculation of lwork, lrwork, liwork
     ! so we forbid it
     check( n>0 ) n
     integer intent(hide),depend(ab) :: kd=shape(ab,0)-1

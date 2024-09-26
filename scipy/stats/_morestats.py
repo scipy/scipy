@@ -1474,7 +1474,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     lmbdas : ndarray
         The ``lmbda`` values for which a Box-Cox transform was done.
     ppcc : ndarray
-        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        Probability Plot Correlation Coefficient, as obtained from `probplot`
         when fitting the Box-Cox transformed input `x` against a normal
         distribution.
 
@@ -1849,7 +1849,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     lmbdas : ndarray
         The ``lmbda`` values for which a Yeo-Johnson transform was done.
     ppcc : ndarray
-        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        Probability Plot Correlation Coefficient, as obtained from `probplot`
         when fitting the Box-Cox transformed input `x` against a normal
         distribution.
 
@@ -2147,7 +2147,7 @@ def anderson(x, dist='norm'):
 
     For `weibull_min`, maximum likelihood estimation is known to be
     challenging. If the test returns successfully, then the first order
-    conditions for a maximum likehood estimate have been verified and
+    conditions for a maximum likelihood estimate have been verified and
     the critical values correspond relatively well to the significance levels,
     provided that the sample is sufficiently large (>10 observations [7]).
     However, for some data - especially data with no left tail - `anderson`

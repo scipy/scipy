@@ -541,7 +541,7 @@ orthogonal polynomials:
    roots_jacobi      -- Gauss-Jacobi quadrature.
    roots_laguerre    -- Gauss-Laguerre quadrature.
    roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
-   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermite     -- Gauss-Hermite (physicist's) quadrature.
    roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
    roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
    roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.

@@ -533,6 +533,7 @@ class TestSolveHBanded:
         assert x.shape == (0, 0)
         assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
+
 class TestSolve:
     def setup_method(self):
         np.random.seed(1234)
@@ -1089,13 +1090,13 @@ class TestDet:
         a = np.array([[[[1]]]], dtype='f')
         deta = det(a)
         assert deta.dtype.char == 'd'
-        assert np.isscalar(deta)
-        assert deta == 1.
+        assert deta.shape == (1, 1)
+        assert_equal(deta, [[1.0]])
         a = np.array([[[1 + 3.j]]], dtype=np.complex64)
         deta = det(a)
         assert deta.dtype.char == 'D'
-        assert np.isscalar(deta)
-        assert deta == 1.+3.j
+        assert deta.shape == (1,)
+        assert_equal(deta, [1.+3.j])
 
     def test_1by1_stacked_input_output(self):
         a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
@@ -1536,6 +1537,7 @@ class TestLstsq:
         dt_nonempty = lstsq(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b))[0].dtype
         assert x.dtype == dt_nonempty
 
+
 class TestPinv:
     def setup_method(self):
         np.random.seed(1234)
@@ -1661,7 +1663,7 @@ class TestPinvSymmetric:
     def test_zero_eigenvalue(self):
         # https://github.com/scipy/scipy/issues/12515
         # the SYEVR eigh driver may give the zero eigenvalue > eps
-        a = np.array([[1,-1, 0], [-1, 2, -1], [0, -1, 1]])
+        a = np.array([[1, -1, 0], [-1, 2, -1], [0, -1, 1]])
         p = pinvh(a)
         assert_allclose(p @ a @ p, p, atol=1e-15)
         assert_allclose(a @ p @ a, a, atol=1e-15)
@@ -2034,7 +2036,6 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert t.dtype == t_n.dtype
 
-
         b, (scale, perm) = matrix_balance(a, separate=True)
         assert b.size == 0
         assert scale.size == 0
@@ -2044,4 +2045,3 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
-

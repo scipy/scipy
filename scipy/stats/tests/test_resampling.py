@@ -288,7 +288,7 @@ def test_multisample_BCa_against_R():
 def test_BCa_acceleration_against_reference():
     # Compare the (deterministic) acceleration parameter for a multi-sample
     # problem against a reference value. The example is from [1], but Efron's
-    # value seems inaccurate. Straightorward code for computing the
+    # value seems inaccurate. Straightforward code for computing the
     # reference acceleration (0.011008228344026734) is available at:
     # https://github.com/scipy/scipy/pull/16455#issuecomment-1193400981
 
