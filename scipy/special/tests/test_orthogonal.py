@@ -95,10 +95,11 @@ class TestGegenbauer:
         assert_array_almost_equal(Ca5.c,array([4*sc.poch(a,5),0,-20*sc.poch(a,4),
                                                0,15*sc.poch(a,3),0])/15.0,11)
 
-    def test_n_zero_gh8888(self):
+    @pytest.mark.parametrize('a', [0, 1])
+    def test_n_zero_gh8888(self, a):
         # gh-8888 reported that gegenbauer(0, 0) returns NaN polynomial
-        Ca0 = orth.gegenbauer(0, 0)
-        assert_equal(Ca0.c, np.asarray([1.]))
+        Cn0 = orth.gegenbauer(0, a)
+        assert_equal(Cn0.c, np.asarray([1.]))
 
     def test_valid_alpha(self):
         # Check input validation of `alpha`
