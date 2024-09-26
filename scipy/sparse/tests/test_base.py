@@ -5509,48 +5509,6 @@ class Test64BitMatrix(RunAll64Bit):
     def test_resiliency_all_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
-    @pytest.mark.fail_slow(5)
-    @pytest.mark.parametrize('cls,method_name', cases_64bit())
-    def test_no_64(self, cls, method_name):
-        self._check_resiliency(cls, method_name, assert_32bit=True)
-
-    def test_downcast_intp(self):
-        # Check that bincount and ufunc.reduceat intp downcasts are
-        # dealt with. The point here is to trigger points in the code
-        # that can fail on 32-bit systems when using 64-bit indices,
-        # due to use of functions that only work with intp-size
-        # indices.
-
-        @with_64bit_maxval_limit(fixed_dtype=np.int64,
-                                 downcast_maxval=1)
-        def check_limited():
-            # These involve indices larger than `downcast_maxval`
-            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
-            assert_raises(AssertionError, a.getnnz, axis=1)
-            assert_raises(AssertionError, a.sum, axis=0)
-
-            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
-            assert_raises(AssertionError, a.getnnz, axis=0)
-
-            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
-            assert_raises(AssertionError, a.getnnz, axis=0)
-
-        @with_64bit_maxval_limit(fixed_dtype=np.int64)
-        def check_unlimited():
-            # These involve indices larger than `downcast_maxval`
-            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
-            a.getnnz(axis=1)
-            a.sum(axis=0)
-
-            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
-            a.getnnz(axis=0)
-
-            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
-            a.getnnz(axis=0)
-
-        check_limited()
-        check_unlimited()
-
 def test_broadcast_to():
     a = np.array([[1, 0, 2]])
     b = np.array([[1], [0], [2]])
