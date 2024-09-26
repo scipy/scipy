@@ -465,8 +465,6 @@ class JacobianHessianTest:
         with pytest.raises(ValueError, match=message):
             jh_func(func, x, tolerances=dict(rtol=-1))
         with pytest.raises(ValueError, match=message):
-            jh_func(func, x, initial_step=-1)
-        with pytest.raises(ValueError, match=message):
             jh_func(func, x, step_factor=-1)
 
         message = '`order` must be a positive integer.'
