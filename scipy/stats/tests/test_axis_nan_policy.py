@@ -568,33 +568,29 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 
 
 # Test keepdims for:
-#     - single-output and multi-output functions (gmean and mannwhitneyu)
 #     - Axis negative, positive, None, and tuple
 #     - 1D with no NaNs
 #     - 1D with NaN propagation
 #     - Zero-sized output
-@pytest.mark.filterwarnings('ignore:All axis-slices of one...')
-@pytest.mark.filterwarnings('ignore:After omitting NaNs...')
-# These were added in gh-20734 for `ttest_1samp`; they should be addressed and removed
-@pytest.mark.filterwarnings('ignore:divide by zero encountered...')
-@pytest.mark.filterwarnings('ignore:invalid value encountered...')
+# We're working on making `stats` quieter, but that's not what this test
+# is about. For now, we expect all sorts of warnings here due to small samples.
+@pytest.mark.filterwarnings('ignore::UserWarning')
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize("nan_policy", ("omit", "propagate"))
-@pytest.mark.parametrize(
-    ("hypotest", "args", "kwds", "n_samples", "unpacker"),
-    ((stats.gmean, tuple(), dict(), 1, lambda x: (x,)),
-     (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, None),
-     (stats.ttest_1samp, (0,), dict(), 1, unpack_ttest_result),
-     (xp_mean_1samp, tuple(), dict(), 1, lambda x: (x,)),
-     (xp_mean_2samp, tuple(), dict(), 2, lambda x: (x,))),
-)
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
+                          "paired", "unpacker"), axis_nan_policy_cases)
 @pytest.mark.parametrize(
     ("sample_shape", "axis_cases"),
     (((2, 3, 3, 4), (None, 0, -1, (0, 2), (1, -1), (3, 1, 2, 0))),
      ((10, ), (0, -1)),
      ((20, 0), (0, 1)))
 )
-def test_keepdims(hypotest, args, kwds, n_samples, unpacker,
+def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                   sample_shape, axis_cases, nan_policy):
+    small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
+                           stats.differential_entropy}
+    if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
+        pytest.skip("Sample too small; test raises error.")
     # test if keepdims parameter works correctly
     if not unpacker:
         def unpacker(res):
@@ -630,10 +626,11 @@ def test_keepdims(hypotest, args, kwds, n_samples, unpacker,
                                           nan_res_base):
             assert r.shape == expected_shape
             r = np.squeeze(r, axis=axis)
-            assert_equal(r, r_base)
+            assert_allclose(r, r_base, atol=1e-16)
             assert rn.shape == expected_shape
             rn = np.squeeze(rn, axis=axis)
-            assert_equal(rn, rn_base)
+            # ideally assert_equal, but `combine_pvalues` failed on 32-bit build
+            assert_allclose(rn, rn_base, atol=1e-16)
 
 
 @pytest.mark.parametrize(("fun", "nsamp"),
