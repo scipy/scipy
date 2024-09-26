@@ -203,6 +203,135 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
             error : ndarray
                 Estimate of the error of the approximation over this region.
 
+    Notes
+    -----
+    The algorithm uses a similar algorithm to `quad_vec`, which itself is based on the
+    implementation of QUADPACK's DQAG* algorithms, implementing global error control and
+    adaptive subdivision.
+
+    The source of the nodes and weights used for Gauss-Kronrod quadrature can be found
+    in [1]_, and the algorithm for calculating the nodes and weights in Genz-Malik
+    cubature can be found in [2]_.
+
+    The rules currently supported via the `rule` argument are:
+
+    - "gauss-kronrod", 21-node Gauss-Kronrod
+    - "genz-malik", ``n``-node Genz-Malik
+
+    If using Gauss-Kronrod for an ``n``-dim integrand where ``n > 2``, then the
+    corresponding Cartesian product rule will be found by taking the Cartesian product
+    of the nodes in the 1D case. This means that the number of nodes scales
+    exponentially as ``21^n`` in the Gauss-Kronrod case, which may be problematic in a
+    moderate number of dimensions. Although Genz-Malik is typically less accurate than
+    Gauss-Kronrod it has much fewer nodes, so in this situation using "genz-malik" might
+    be preferable.
+
+    Infinite limits are handeled with an appropriate variable transformation. Assuming
+    ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, \infty)`, the i-th
+    integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
+    :math:`t \in (-1, 1)`.
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in [a_i, \infty)`, the i-th
+    integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
+    :math:`t \in (0, 1)`.
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, b_i]`, the i-th
+    integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
+    :math:`t \in (0, 1)`.
+
+    In all three of these cases, the Jacobian of the transformation is
+    :math:`J(t) = t^{-2}`.
+
+    When `region` is specified, the variable transformation described in [3]_ is used.
+    If the original integral has the form
+
+    .. math::
+
+        \int^{b_1}_{a_1}
+        \cdots
+        \int^{b_n}_{a_n}
+        \int^{B_{n+1}(x_1, \ldots, x_n)}_{A_{n+1}(x_1, \ldots, x_n)}
+        \cdots
+        \int^{B_{n+m}(x_1, \ldots, x_{n+m-1})}_{A_{n+m}(x_1, \ldots, x_{n+m-1})}
+            f(x_1, \ldots, x_{n+m})
+        dx_{n+m} \cdots dx_1
+
+    :math:`x_1, \ldots, x_n` are referred to as the "outer variables" and their limits
+    are specified by the constant intervals :math:`(a_i, b_i)` for
+    :math:`1 \le i \le n`.
+
+    :math:`x_{n+1}, \ldots, x_{n+m}` are referred to as the "inner variables" and their
+    limits given the values of the preceding variables range over the interval
+    :math:`(A_i(x_1, \ldots, x_{i-1}), B_i(x_1, \ldots, x_{i-1})`.
+
+    Integrals of this form will be transformed into an integral over constant limits:
+
+    .. math::
+
+        \int^{b_1}_{a_1}
+        \cdots
+        \int^{b_n}_{a_n}
+        \int^{1}_{-1}
+        \cdots
+        \int^{1}_{-1}
+            g(t_1, \ldots, t_{n+m})
+        dt_{n+m} \cdots dt_1
+
+    The outer variables are unchanged, :math:`x_i = t_i` for :math:`1 \le x_i \le t_i`.
+
+    The inner variables are mapped via the transformation:
+
+    .. math::
+
+        x_i = \frac{
+            B_{i}(x_1, \ldots, x_{i-1}) + A_{i}(x_1, \ldots, x_{i-1})
+        }{2} + t_i \frac{
+            B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})
+        }{2}
+
+    for :math:`i > n`. This transformation has Jacobian determinant:
+
+    .. math::
+
+        J(x_1, \ldots, x_{n+m})
+        =
+        \prod^{n+m}_{i = n+1}
+        \frac{B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})}{2}
+
+    To specify this type of integral programatically, the limits should be specified as
+    two arrays, ``a`` and ``b`` for the constant limits, and a list of callables
+    ``region`` describing the function limits.
+
+        a = [a_1, ..., a_n]
+        b = [b_1, ..., b_n]
+
+        region = [
+            region_func_1,
+            ...,
+            region_func_k,
+        ]
+
+    Each ``region_func_i`` should accepts arrays of shape
+    ``(npoints, num_preceding_variables)`` and return a tuple of two arrays, one for
+    the next set of lower limits given the values of the preceding variables, and one
+    for the next set of upper limits given the values of the preceding variables. Both
+    of the returned arrays should have shape ``(npoints, num_new_variables)``.
+
+    References
+    ----------
+    .. [1] R. Piessens, E. de Doncker, Quadpack: A Subroutine Package for Automatic
+        Integration, files: dqk21.f, dqk15.f (1983).
+
+    .. [2] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+        numerical integration over an N-dimensional rectangular region, Journal of
+        Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
+        ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
+
+    .. [3] Philip J. Davis, Philip Rabinowitz, Methods of Numerical Integration,
+        Second Edition, Academic Press, Section 5.4 (1984).
+
     Examples
     --------
     **1D integral with vector output**:
@@ -218,16 +347,13 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> def f(x, n):
-    ...    return x.reshape(-1, 1)**n  # Make sure x and n are broadcastable
+    ...    # Make sure x and n are broadcastable
+    ...    return x[:, np.newaxis]**n[np.newaxis, :]
     >>> res = cubature(
     ...     f,
     ...     a=[0],
     ...     b=[1],
-    ...     args=(
-    ...         # Since f accepts arrays of shape (npoints, ndim) we need to
-    ...         # make sure n is the right shape
-    ...         np.arange(10).reshape(1, -1),
-    ...     )
+    ...     args=(np.arange(10),),
     ... )
     >>> res.estimate
      array([1.        , 0.5       , 0.33333333, 0.25      , 0.2       ,
@@ -245,12 +371,12 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     >>> import numpy as np
     >>> from scipy.integrate import cubature
     >>> def f(x, r, alphas):
-    ...     # f(x) = cos(2*pi*r + alpha @ x)
+    ...     # f(x) = cos(2*pi*r + alphas @ x)
     ...     # Need to allow r and alphas to be arbitrary shape
     ...     npoints, ndim = x.shape[0], x.shape[-1]
-    ...     alphas_reshaped = alphas[np.newaxis, :]
-    ...     x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
-    ...     return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
+    ...     alphas = alphas[np.newaxis, ...]
+    ...     x = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    ...     return np.cos(2*np.pi*r + np.sum(alphas * x, axis=-1))
     >>> rng = np.random.default_rng()
     >>> r, alphas = rng.random((2, 3)), rng.random((2, 3, 7))
     >>> res = cubature(
@@ -331,7 +457,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     >>> def density(x_arr):
     ...     x_0, x_1 = x_arr[:, 0], x_arr[:, 1]
     ...     # For example, 4 different densities:
-    ...     return (x_0**2 + x_1**2).reshape(-1, 1) / np.arange(1, 5).reshape(1, -1)
+    ...     return (x_0**2 + x_1**2)[:, np.newaxis] / np.arange(1, 5)[np.newaxis, :]
     >>> # density takes arrays of shape (npoints, 2) and returns arrays of shape
     >>> # (npoints, 4)
     >>> density(np.array([[-0.5, 0.5], [1, 1]]))
@@ -355,8 +481,8 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     ...           # shape (npoints, num_outer) and it needs to return a tuple of arrays
     ...           # of shape (npoints, num_inner).
     ...           lambda x_arr: (
-    ...               -np.sqrt(1-x_arr[:, 0]**2).reshape(-1, 1),
-    ...                np.sqrt(1-x_arr[:, 0]**2).reshape(-1, 1),
+    ...               -np.sqrt(1-x_arr[:, 0]**2)[:, np.newaxis],
+    ...                np.sqrt(1-x_arr[:, 0]**2)[:, np.newaxis],
     ...           ),
     ...     ],
     ... )
@@ -382,16 +508,16 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     ...     rtol=1e-5,  # Reduce tolerance, can be slow otherwise
     ...     region=[
     ...         lambda x_arr: (
-    ...             -np.sqrt(1-x_arr[:, 0]**2).reshape(-1, 1),
-    ...              np.sqrt(1-x_arr[:, 0]**2).reshape(-1, 1),
+    ...             -np.sqrt(1-x_arr[:, 0]**2)[:, np.newaxis],
+    ...              np.sqrt(1-x_arr[:, 0]**2)[:, np.newaxis],
     ...         ),
     ...         lambda x_arr: (
-    ...             -np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2).reshape(-1, 1),
-    ...              np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2).reshape(-1, 1),
+    ...             -np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2)[:, np.newaxis],
+    ...              np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2)[:, np.newaxis],
     ...         ),
     ...     ],
     ... )
-    >>> res.estimate
+    >>> res.estimate  # True value 4*pi/3
      4.188792
 
     **Returning multiple limits at once using** `region`:
@@ -400,6 +526,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     shape ``(npoints, 1)``. In the previous example, it is **not** possible to combine
     these two functions into one:
 
+    >>> # Won't work:
     >>> res = cubature(
     ...     lambda x_arr: np.ones(x_arr.shape[0]),
     ...     a=[-1],
@@ -410,14 +537,21 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     ...             [
     ...                 -np.sqrt(1-x_arr[:, 0]**2),
     ...                 -np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2),
+    ...                 #                         ^^^^^^^^^^^
+    ...                 # This will cause an error since x_arr[:, 1] depends on the
+    ...                 # value of the previous limit, which has not yet been returned.
     ...             ],
     ...             [
-    ...                  np.sqrt(1-x_arr[:, 0]**2),
-    ...                  np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2),
+    ...                 np.sqrt(1-x_arr[:, 0]**2),
+    ...                 np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2),
+    ...                 # Also a problem here:   ^^^^^^^^^^^
     ...             ],
     ...         ),
     ...     ],
     ... ) # doctest: +SKIP
+     Traceback (most recent call last):
+      ...
+     IndexError: index 1 is out of bounds for axis 1 with size 1
 
     This is because the expression ``np.sqrt(1-x_arr[:, 0]**2-x_arr[:, 1]**2)`` depends
     on the value of ``x[:, 1]`` which will not be known when this function is called.
@@ -449,137 +583,6 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     ... )
     >>> res.estimate
      0.666666
-
-    Notes
-    -----
-    The algorithm uses a similar algorithm to `quad_vec`, which itself is based on the
-    implementation of QUADPACK's DQAG* algorithms, implementing global error control and
-    adaptive subdivision.
-
-    The source of the nodes and weights used for Gauss-Kronrod quadrature can be found
-    in [1]_, and the algorithm for calculating the nodes and weights in Genz-Malik
-    cubature can be found in [2]_.
-
-    The rules currently supported via the `rule` argument are:
-
-    - "gauss-kronrod", 21-node Gauss-Kronrod
-    - "genz-malik", ``n``-node Genz-Malik
-
-    If using Gauss-Kronrod for an ``n``-dim integrand where ``n > 2``, then the
-    corresponding Cartesian product rule will be found by taking the Cartesian product
-    of the nodes in the 1D case. This means that the number of nodes scales
-    exponentially as ``21^n`` in the Gauss-Kronrod case, which may be problematic in a
-    moderate number of dimensions. Although Genz-Malik is typically less accurate than
-    Gauss-Kronrod it has much fewer nodes, so in this situation using "genz-malik" might
-    be preferable.
-
-    Infinite limits are handeled with an appropriate variable transformation. Assuming
-    ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
-
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, \infty)`, the i-th
-    integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
-    :math:`t \in (-1, 1)`.
-
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in [a_i, \infty)`, the i-th
-    integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
-    :math:`t \in (0, 1)`.
-
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, b_i]`, the i-th
-    integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
-    :math:`t \in (0, 1)`.
-
-    In all three of these cases, the Jacobian of the transformation is
-    :math:`J(t) = t^{-2}`.
-
-    When `region` is specified, the variable transformation described in [3]_ is used.
-    If the original integral has the form
-
-    .. math::
-
-        \int^{b_1}_{a_1}
-        \cdots
-        \int^{b_n}_{a_n}
-        \int^{B_{n+1}(x_1, \ldots, x_n)}_{A_{n+1}(x_1, \ldots, x_n)}
-        \cdots
-        \int^{B_{n+m}(x_1, \ldots, x_{n+m-1})}_{A_{n+m}(x_1, \ldots, x_{n+m-1})}
-            f(x_1, \ldots, x_{n+m})
-        dx_{n+m} \cdots dx_1
-
-    :math:`x_1, \ldots, x_n` are referred to as the "outer variables" and their limits
-    are specified by the constant intervals :math:`(a_i, b_i)` for
-    :math:`1 \le i \le n`.
-
-    :math:`x_{n+1}, \ldots, x_{n+m}` are referred to as the "inner variables" and their
-    limits given the values of the preceding variables range over the interval
-    :math:`(A_i(x_1, \ldots, x_{i-1}), B_i(x_1, \ldots, x_{i-1})`.
-
-    The limits are specified as two arrays, ``a`` and ``b``, and a list of callables
-    ``region``. ``a`` and ``b`` contain the values of the constant limits::
-
-        a = [a_1, ..., a_n]
-        b = [b_1, ..., b_n]
-
-    ``region`` contains a list of callables::
-
-        region = [
-            region_func_1,
-            ...,
-            region_func_k,
-        ]
-
-    where each ``region_func_i`` accepts arrays of shape
-    ``(npoints, num_preceding_variables)`` and returns a tuple of two arrays, one for
-    the next set of lower limits given the values of the preceding variables, and one
-    for the next set of upper limits given the values of the preceding variables. Both
-    of the returned arrays should have shape ``(npoints, num_new_variables)``.
-
-    Integrals of this form will be transformed into an integral over constant limits:
-
-    .. math::
-
-        \int^{b_1}_{a_1}
-        \cdots
-        \int^{b_n}_{a_n}
-        \int^{1}_{-1}
-        \cdots
-        \int^{1}_{-1}
-            g(t_1, \ldots, t_{n+m})
-        dt_{n+m} \cdots dt_1
-
-    The outer variables are unchanged, :math:`x_i = t_i` for :math:`1 \le x_i \le t_i`.
-
-    The inner variables are mapped via the transformation:
-
-    .. math::
-
-        x_i = \frac{
-            B_{i}(x_1, \ldots, x_{i-1}) + A_{i}(x_1, \ldots, x_{i-1})
-        }{2} + t_i \frac{
-            B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})
-        }{2}
-
-    for :math:`i > n`. This transformation has Jacobian determinant:
-
-    .. math::
-
-        J(x_1, \ldots, x_{n+m})
-        =
-        \prod^{n+m}_{i = n+1}
-        \frac{B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})}{2}
-
-
-    References
-    ----------
-    .. [1] R. Piessens, E. de Doncker, Quadpack: A Subroutine Package for Automatic
-        Integration, files: dqk21.f, dqk15.f (1983).
-
-    .. [2] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
-        numerical integration over an N-dimensional rectangular region, Journal of
-        Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
-        ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
-
-    .. [3] Philip J. Davis, Philip Rabinowitz, Methods of Numerical Integration,
-        Second Edition, Academic Press, Section 5.4 (1984).
     """
 
     # It is also possible to use a custom rule, but this is not yet part of the public
@@ -997,26 +1000,6 @@ class _FuncLimitsTransform(_VariableTransform):
     limits given the values of the preceding variables range over the interval
     :math:`(A_i(x_1, \ldots, x_{i-1}), B_i(x_1, \ldots, x_{i-1})`.
 
-    The limits are specified as two arrays, ``a`` and ``b``, and a list of callables
-    ``region``. ``a`` and ``b`` contain the values of the constant limits::
-
-        a = [a_1, ..., a_n]
-        b = [b_1, ..., b_n]
-
-    ``region`` contains a list of callables::
-
-        region = [
-            region_func_1,
-            ...,
-            region_func_k,
-        ]
-
-    where each ``region_func_i`` accepts arrays of shape
-    ``(npoints, num_preceding_variables)`` and returns a tuple of two arrays, one for
-    the next set of lower limits given the values of the preceding variables, and one
-    for the next set of upper limits given the values of the preceding variables. Both
-    of the returned arrays should have shape ``(npoints, num_new_variables)``.
-
     Integrals of this form will be transformed into an integral over constant limits:
 
     .. math::
@@ -1050,6 +1033,25 @@ class _FuncLimitsTransform(_VariableTransform):
         =
         \prod^{n+m}_{i = n+1}
         \frac{B_{i}(x_1, \ldots, x_{i-1}) - A_{i}(x_1, \ldots, x_{i-1})}{2}
+
+    To specify this type of integral programatically, the limits should be specified as
+    two arrays, ``a`` and ``b`` for the constant limits, and a list of callables
+    ``region`` describing the function limits.
+
+        a = [a_1, ..., a_n]
+        b = [b_1, ..., b_n]
+
+        region = [
+            region_func_1,
+            ...,
+            region_func_k,
+        ]
+
+    Each ``region_func_i`` should accepts arrays of shape
+    ``(npoints, num_preceding_variables)`` and return a tuple of two arrays, one for
+    the next set of lower limits given the values of the preceding variables, and one
+    for the next set of upper limits given the values of the preceding variables. Both
+    of the returned arrays should have shape ``(npoints, num_new_variables)``.
     """
 
     def __init__(self, f, a, b, region):
