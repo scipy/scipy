@@ -590,10 +590,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         f = _InfiniteLimitsTransform(f, a_flipped, b_flipped)
         a, b = f.transformed_limits
 
-        # TODO: also need to map break points specified in the original coordinates
-        # to the new coordinates too
-        # points = [f.x_to_t(point) for point in points]
-
+        points = [f.x_to_t(point) for point in points]
         points.extend(f.points)
 
     # If any problematic points are specified, divide the initial region so that these
@@ -798,7 +795,7 @@ class _VariableTransform:
 
         return []
 
-    def x_to_t(self):
+    def x_to_t(self, x):
         """
         Map points ``x`` to ``t`` such that if ``f`` is the original function, then::
 
@@ -808,7 +805,9 @@ class _VariableTransform:
 
         # TODO: the above is not quite true because of the jacobian
 
-    def t_to_x(self):
+        raise NotImplementedError
+
+    def t_to_x(self, t):
         """
         Map points ``x`` to ``t`` such that if ``f`` is the original function, then::
 
@@ -817,6 +816,8 @@ class _VariableTransform:
         """
 
         # TODO: the above is not quite true because of the jacobian
+
+        raise NotImplementedError
 
     def __call__(self, t, *args, **kwargs):
         """
@@ -889,7 +890,8 @@ class _InfiniteLimitsTransform(_VariableTransform):
 
     @property
     def transformed_limits(self):
-        a, b = xp_copy(self._orig_a), xp_copy(self._orig_b)
+        a = xp_copy(self._orig_a)
+        b = xp_copy(self._orig_b)
 
         for index in self._double_inf_pos:
             a[index] = -1
@@ -924,6 +926,8 @@ class _InfiniteLimitsTransform(_VariableTransform):
             # For (start, oo) -> (0, 1), use the transformation x = start + (1 - t)/t.
             x[..., i] = self._orig_a[i] + (1 - t[..., i]) / t[..., i]
 
+        return x
+
     def x_to_t(self, x):
         t = xp_copy(x)
 
@@ -939,20 +943,15 @@ class _InfiniteLimitsTransform(_VariableTransform):
         return t
 
     def __call__(self, t, *args, **kwargs):
-        x = xp_copy(t)
+        x = self.t_to_x(t)
         jacobian = 1.0
-
-        for i in self._negate_pos:
-            x[..., i] *= -1
 
         for i in self._double_inf_pos:
             # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
-            x[..., i] = (1 - self._xp.abs(t[..., i])) / t[..., i]
             jacobian *= 1/(t[..., i] ** 2)
 
         for i in self._semi_inf_pos:
             # For (start, oo) -> (0, 1), use the transformation x = start + (1 - t)/t.
-            x[..., i] = self._orig_a[i] + (1 - t[..., i]) / t[..., i]
             jacobian *= 1/(t[..., i] ** 2)
 
         f_x = self._f(x, *args, **kwargs)
@@ -1061,9 +1060,8 @@ class _FuncLimitsTransform(_VariableTransform):
 
         A_i, B_i = None, None
         x_and_y = x
-        y_i = self._xp.asarray([])
 
-        for i, region_func in enumerate(self._region):
+        for region_func in self._region:
             A_i, B_i = region_func(x_and_y)
 
             outer_ndim = a_inner.shape[-1]
@@ -1083,6 +1081,26 @@ class _FuncLimitsTransform(_VariableTransform):
             self._xp.concat([self._a_outer, -self._xp.ones(self._inner_ndim)]),
             self._xp.concat([self._b_outer,  self._xp.ones(self._inner_ndim)]),
         )
+
+    def x_to_t(self, x_and_y):
+        x_and_t = xp_copy(x_and_y)
+
+        outer_ndim = self._outer_ndim
+
+        for region_func in self._region:
+            A_i, B_i = region_func(x_and_y[..., :outer_ndim])
+
+            inner_ndim = A_i.shape[-1]
+
+            y_i = x_and_y[..., outer_ndim:outer_ndim+inner_ndim]
+
+            x_and_t[..., outer_ndim:outer_ndim+inner_ndim] = (
+                (2*y_i - B_i - A_i)/(B_i - A_i)
+            )
+
+            outer_ndim += inner_ndim
+
+        return x_and_t
 
     def __call__(self, x_and_t, *args, **kwargs):
         # x_and_t consists of the outer variables x_1, ... x_n, which don't need

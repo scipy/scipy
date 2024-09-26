@@ -362,6 +362,20 @@ def f_modified_gaussian_exact(a, b, n, xp):
     return 1/(2 + 2*n) * math.pi ** (3/2)
 
 
+def f_with_problematic_points(x_arr, points, xp):
+    """
+    This emulates a function with a list of singularities given by `points`.
+
+    If no `x_arr` are one of the `points`, then this function returns 1.
+    """
+
+    for point in points:
+        if xp.any(x_arr == point):
+            raise ValueError("called with a problematic point")
+
+    return xp.ones(x_arr.shape[0])
+
+
 @array_api_compatible
 class TestCubature:
     """
@@ -1499,26 +1513,119 @@ class TestRulesCubature:
 
 @array_api_compatible
 class TestTransformations:
-    def test_infinite_limits_x_to_t(self, xp):
+    @pytest.mark.parametrize(("a", "b", "points"), [
+        (
+            [0, 1, -math.inf],
+            [1, math.inf, math.inf],
+            [
+                [1, 1, 1],
+                [0.5, 10, 10],
+            ]
+        )
+    ])
+    def test_infinite_limits_maintains_points(self, a, b, points, xp):
+        """
+        Test that break points are correctly mapped under the _InfiniteLimitsTransform
+        transformation.
+        """
+
+        points = [xp.asarray(p, dtype=xp.float64) for p in points]
+
         f_transformed = _InfiniteLimitsTransform(
-            lambda x: None,  # Not called
-            xp.asarray([0, 1, -math.inf], dtype=xp.float64),
-            xp.asarray([1, math.inf, math.inf], dtype=xp.float64),
+            # Bind `points` and `xp` argument in f
+            lambda x: f_with_problematic_points(x, points, xp),
+            xp.asarray(a, dtype=xp.float64),
+            xp.asarray(b, dtype=xp.float64),
         )
 
-        point = xp.asarray([[1, 1, 1]], dtype=xp.float64)
-        actual = f_transformed.x_to_t(point)
+        for point in points:
+            transformed_point = f_transformed.x_to_t(xp.reshape(point, (1, -1)))
 
-        expecting = xp.asarray([[1, 1, 0.5]], dtype=xp.float64)
+            with pytest.raises(Exception, match="called with a problematic point"):
+                f_transformed(transformed_point)
 
-        xp_assert_close(
-            actual,
-            expecting,
+    @pytest.mark.parametrize(("region", "points"), [
+        (
+            lambda xp: [
+                lambda x: (
+                    xp.reshape(-xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                    xp.reshape(xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                ),
+            ],
+            [
+                [0.5, 0.5],
+                [0, 0],
+                [0, 0.5],
+            ],
+        ),
+        (
+            lambda xp: [
+                lambda x: (
+                    xp.reshape(-2*xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                    xp.reshape(2*xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                ),
+            ],
+            [
+                [0, 1.5],
+            ],
+        ),
+        (
+            lambda xp: [
+                lambda x: (
+                    xp.reshape(-xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                    xp.reshape(xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                ),
+                lambda x: (
+                    xp.reshape(-2*xp.sqrt(1-x[:, 0]**2-x[:, 1]**2), (-1, 1)),
+                    xp.reshape(2*xp.sqrt(1-x[:, 0]**2-x[:, 1]**2), (-1, 1)),
+                ),
+            ],
+            [
+                [0, 0.5, 1.5],
+            ],
+        ),
+        (
+            lambda xp: [
+                lambda x: (
+                    xp.zeros((x.shape[0], 2)),
+                    xp.reshape(xp.repeat(x[:, 0], 2), (-1, 2)),
+                ),
+                lambda x: (
+                    xp.zeros((x.shape[0], 2)),
+                    xp.reshape(xp.repeat(x[:, 0] * x[:, 1], 2), (-1, 2)),
+                ),
+            ],
+            [
+                [1, 1, 1, 1, 1],
+            ]
+        )
+    ])
+    def test_func_limits_maintains_points(self, region, points, xp):
+        """
+        Test that break points are correctly mapped under the _FuncLimitsTransform
+        transformation.
+        """
+
+        points = [xp.asarray(p, dtype=xp.float64) for p in points]
+
+        # Pass xp to each region_func so they have access to the correct array
+        # namespace, as there is no `args` argument for region.
+        region = region(xp)
+
+        f_transformed = _FuncLimitsTransform(
+            # Bind `points` and `xp` argument in f
+            lambda x: f_with_problematic_points(x, points, xp),
+            a=xp.asarray([-1], dtype=xp.float64),
+            b=xp.asarray([1], dtype=xp.float64),
+
+            region=region,
         )
 
-    def test_func_limits_x_to_t(self, xp):
-        # TODO
-        assert False
+        for point in points:
+            transformed_point = f_transformed.x_to_t(xp.reshape(point, (1, -1)))
+
+            with pytest.raises(Exception, match="called with a problematic point"):
+                f_transformed(transformed_point)
 
 
 class BadErrorRule(Rule):
