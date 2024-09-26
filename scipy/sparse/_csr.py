@@ -141,7 +141,7 @@ class _csr_base(_cs_matrix):
             data = np.full(N, self.data[0])
             indices = np.arange(0,N)
             indptr = np.array([0, N])
-            return self.__class__((data, indices, indptr), shape=shape, copy=False)
+            return self._csr_container((data, indices, indptr), shape=shape, copy=False)
 
         # treat 1D as a 2D row
         old_shape = self._shape_as_2d
