@@ -1537,35 +1537,64 @@ def dice(u, v, w=None):
 
 
 def rogerstanimoto(u, v, w=None):
-    """
-    Compute the Rogers-Tanimoto dissimilarity between two boolean 1-D arrays.
+    r"""
+    Compute the Rogers-Tanimoto dissimilarity between two boolean vectors.
 
-    The Rogers-Tanimoto dissimilarity between two boolean 1-D arrays
-    `u` and `v`, is defined as
+    The *Rogers-Tanimoto dissimilarity* between boolean vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and :math:`v \equiv (v_1, \cdots, v_n)`
+    is defined as ([1]_, p. 24)
 
     .. math::
-       \\frac{R}
-            {c_{TT} + c_{FF} + R}
 
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n` and :math:`R = 2(c_{TF} + c_{FT})`.
+       d_\textrm{rogerstanimoto}(u, v) := \frac{2(c_{10} + c_{01})}
+                                               {c_{11}+2(c_{10}+c_{01})+c_{00}}
+
+    if the denominator is not zero, where
+
+    .. math::
+
+       c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
+
+    for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
+    the Rogers-Tanimoto dissimilarity is defined to be zero.
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Rogers-Tanimoto dissimilarity* is defined
+    similarly but with :math:`c_{ij}` replaced by
+
+    .. math::
+
+       \tilde{c}_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j} w_k
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+    u : (N,) array_like of bools
+        Input vector.
+    v : (N,) array_like of bools
+        Input vector.
+    w : (N,) array_like of floats, optional
+        Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
+        which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    rogerstanimoto : double
-        The Rogers-Tanimoto dissimilarity between vectors
-        `u` and `v`.
+    rogerstanimoto : float
+        The Rogers-Tanimoto dissimilarity between vectors `u` and `v`,
+        optionally weighted by `w`.
+
+    Notes
+    -----
+    The Rogers-Tanimoto dissimilarity satisfies the triangle inequality and is
+    qualified as a metric ([2]_, Theorem 9).
+
+    References
+    ----------
+    .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
+           An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
+           :doi:`10.1002/9780470316801`
+    .. [2] Gower, J. C. and Legendre, P. (1986). "Metric and Euclidean
+           properties of dissimilarity coefficients."
+           *Journal of Classification*, 3:5-48. :doi:`10.1007/BF01896809`
 
     Examples
     --------
@@ -1574,8 +1603,8 @@ def rogerstanimoto(u, v, w=None):
     0.8
     >>> distance.rogerstanimoto([1, 0, 0], [1, 1, 0])
     0.5
-    >>> distance.rogerstanimoto([1, 0, 0], [2, 0, 0])
-    -1.0
+    >>> distance.rogerstanimoto([1, 0, 0], [1, 0, 0])
+    0.0
 
     """
     u = _validate_vector(u)
