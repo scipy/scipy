@@ -10,7 +10,7 @@ from ._matrix import spmatrix
 from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix, csr_sample_values)
-from ._sputils import upcast, check_shape
+from ._sputils import upcast
 
 from ._compressed import _cs_matrix
 
