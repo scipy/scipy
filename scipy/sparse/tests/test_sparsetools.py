@@ -7,11 +7,18 @@ import numpy as np
 from numpy.testing import assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
-from scipy.sparse.sputils import supported_dtypes, matrix
+from scipy.sparse._sputils import supported_dtypes
 from scipy._lib._testutils import check_free_memory
 
 import pytest
 from pytest import raises as assert_raises
+
+
+def int_to_int8(n):
+    """
+    Wrap an integer to the interval [-128, 127].
+    """
+    return (n + 128) % 256 - 128
 
 
 def test_exception():
@@ -53,17 +60,17 @@ def test_regression_std_vector_dtypes():
     # Regression test for gh-3780, checking the std::vector typemaps
     # in sparsetools.cxx are complete.
     for dtype in supported_dtypes:
-        ad = matrix([[1, 2], [3, 4]]).astype(dtype)
+        ad = np.array([[1, 2], [3, 4]]).astype(dtype)
         a = csr_matrix(ad, dtype=dtype)
 
         # getcol is one function using std::vector typemaps, and should not fail
-        assert_equal(a.getcol(0).todense(), ad[:,0])
+        assert_equal(a.getcol(0).toarray(), ad[:, :1])
 
 
 @pytest.mark.slow
 @pytest.mark.xfail_on_32bit("Can't create large array for test")
 def test_nnz_overflow():
-    # Regression test for gh-7230 / gh-7871, checking that coo_todense
+    # Regression test for gh-7230 / gh-7871, checking that coo_toarray
     # with nnz > int32max doesn't overflow.
     nnz = np.iinfo(np.int32).max + 1
     # Ensure ~20 GB of RAM is free to run this test.
@@ -81,8 +88,10 @@ def test_nnz_overflow():
     assert_allclose(d, [[4]])
 
 
-@pytest.mark.skipif(not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
-                    reason="test requires 64-bit Linux")
+@pytest.mark.skipif(
+    not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
+    reason="test requires 64-bit Linux"
+)
 class TestInt32Overflow:
     """
     Some of the sparsetools routines use dense 2D matrices whose
@@ -157,7 +166,7 @@ class TestInt32Overflow:
         m = dia_matrix((data, offsets), shape=(n, n))
         v = np.ones(m.shape[1], dtype=np.int8)
         r = m.dot(v)
-        assert_equal(r[0], np.int8(n))
+        assert_equal(r[0], int_to_int8(n))
         del data, offsets, m, v, r
         gc.collect()
 
@@ -213,23 +222,23 @@ class TestInt32Overflow:
         finally:
             gc.collect()
 
-    def _check_bsr_matvecs(self, m):
+    def _check_bsr_matvecs(self, m):  # skip name check
         m = m()
         n = self.n
 
         # _matvecs
         r = m.dot(np.ones((n, 2), dtype=np.int8))
-        assert_equal(r[0,0], np.int8(n))
+        assert_equal(r[0, 0], int_to_int8(n))
 
-    def _check_bsr_matvec(self, m):
+    def _check_bsr_matvec(self, m):  # skip name check
         m = m()
         n = self.n
 
         # _matvec
         r = m.dot(np.ones((n,), dtype=np.int8))
-        assert_equal(r[0], np.int8(n))
+        assert_equal(r[0], int_to_int8(n))
 
-    def _check_bsr_diagonal(self, m):
+    def _check_bsr_diagonal(self, m):  # skip name check
         m = m()
         n = self.n
 
@@ -237,17 +246,17 @@ class TestInt32Overflow:
         r = m.diagonal()
         assert_equal(r, np.ones(n))
 
-    def _check_bsr_sort_indices(self, m):
+    def _check_bsr_sort_indices(self, m):  # skip name check
         # _sort_indices
         m = m()
         m.sort_indices()
 
-    def _check_bsr_transpose(self, m):
+    def _check_bsr_transpose(self, m):  # skip name check
         # _transpose
         m = m()
         m.transpose()
 
-    def _check_bsr_matmat(self, m):
+    def _check_bsr_matmat(self, m):  # skip name check
         m = m()
         n = self.n
 
@@ -285,7 +294,7 @@ def test_upcast():
 
     for a_dtype in supported_dtypes:
         for b_dtype in supported_dtypes:
-            msg = "(%r, %r)" % (a_dtype, b_dtype)
+            msg = f"({a_dtype!r}, {b_dtype!r})"
 
             if np.issubdtype(a_dtype, np.complexfloating):
                 a = a0.copy().astype(a_dtype)
@@ -295,7 +304,10 @@ def test_upcast():
             if np.issubdtype(b_dtype, np.complexfloating):
                 b = b0.copy().astype(b_dtype)
             else:
-                b = b0.real.copy().astype(b_dtype)
+                with np.errstate(invalid="ignore"):
+                    # Casting a large value (2**32) to int8 causes a warning in
+                    # numpy >1.23
+                    b = b0.real.copy().astype(b_dtype)
 
             if not (a_dtype == np.bool_ and b_dtype == np.bool_):
                 c = np.zeros((2,), dtype=np.bool_)

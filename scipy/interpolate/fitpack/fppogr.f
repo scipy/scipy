@@ -1,7 +1,8 @@
-      subroutine fppogr(iopt,ider,u,mu,v,mv,z,mz,z0,r,s,nuest,nvest,
-     * tol,maxit,nc,nu,tu,nv,tv,c,fp,fp0,fpold,reducu,reducv,fpintu,
-     * fpintv,dz,step,lastdi,nplusu,nplusv,lasttu,nru,nrv,nrdatu,
-     * nrdatv,wrk,lwrk,ier)
+      recursive subroutine fppogr(iopt,ider,u,mu,v,mv,z,mz,z0,r,s,
+     * nuest,nvest,tol,maxit,nc,nu,tu,nv,tv,c,fp,fp0,fpold,reducu,
+     * reducv,fpintu,fpintv,dz,step,lastdi,nplusu,nplusv,lasttu,nru,
+     * nrv,nrdatu,nrdatv,wrk,lwrk,ier)
+      implicit none
 c  ..
 c  ..scalar arguments..
       integer mu,mv,mz,nuest,nvest,maxit,nc,nu,nv,lastdi,nplusu,nplusv,

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy import (abs, asarray, cos, exp, floor, pi, sign, sin, sqrt, sum,
                    size, tril, isnan, atleast_2d, repeat)
@@ -214,7 +213,7 @@ class Cola(Benchmark):
         yj = repeat(yi, size(yi, 1), axis=0)
         yi = yi.T
 
-        inner = (sqrt(((xi - xj) ** 2 + (yi - yj) ** 2)) - self.d) ** 2
+        inner = (sqrt((xi - xj) ** 2 + (yi - yj) ** 2) - self.d) ** 2
         inner = tril(inner, -1)
         return sum(sum(inner, axis=1))
 
@@ -327,7 +326,7 @@ class CosineMixture(Benchmark):
     .. math::
 
         f_{\text{CosineMixture}}(x) = -0.1 \sum_{i=1}^n \cos(5 \pi x_i)
-        - \sum_{i=1}^n x_i^2
+        + \sum_{i=1}^n x_i^2
 
 
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in
@@ -336,28 +335,24 @@ class CosineMixture(Benchmark):
     *Global optimum*: :math:`f(x) = -0.1N` for :math:`x_i = 0` for
     :math:`i = 1, ..., N`
 
-    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
-    For Global Optimization Problems Int. Journal of Mathematical Modelling
-    and Numerical Optimisation, 2013, 4, 150-194.
-
-    TODO, Jamil #38 has wrong minimum and wrong fglob. I plotted it.
-    -(x**2) term is always negative if x is negative.
-     cos(5 * pi * x) is equal to -1 for x=-1.
+    .. [1] Ali, M.M, Khompatraporn, C. , Zabinski, B.  A Numerical Evaluation
+    of Several Stochastic Algorithms on Selected Continuous Global
+    Optimization Test Problems, Journal of Global Optimization, 2005, 31, 635
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
         self.change_dimensionality = True
-        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
+        self._bounds = [(-1.0, 1.0)] * self.N
 
-        self.global_optimum = [[-1. for _ in range(self.N)]]
-        self.fglob = -0.9 * self.N
+        self.global_optimum = [[0. for _ in range(self.N)]]
+        self.fglob = -0.1 * self.N
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        return -0.1 * sum(cos(5.0 * pi * x)) - sum(x ** 2.0)
+        return -0.1 * sum(cos(5.0 * pi * x)) + sum(x ** 2.0)
 
 
 class CrossInTray(Benchmark):
@@ -552,7 +547,8 @@ class Cube(Benchmark):
         f_{\text{Cube}}(x) = 100(x_2 - x_1^3)^2 + (1 - x1)^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10, 10]` for :math:`i=1,...,N`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10, 10]`
+    for :math:`i=1,...,N`.
 
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`x = [1, 1]`
 

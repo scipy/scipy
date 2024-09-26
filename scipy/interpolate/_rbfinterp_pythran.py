@@ -164,16 +164,17 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     return lhs, rhs, shift, scale
 
 
-# pythran export _evaluate(float[:, :],
+# pythran export _build_evaluation_coefficients(float[:, :],
 #                          float[:, :],
 #                          str,
 #                          float,
 #                          int[:, :],
 #                          float[:],
-#                          float[:],
-#                          float[:, :])
-def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
-    """Evaluate the RBF interpolant at `x`.
+#                          float[:])
+def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
+                                   shift, scale):
+    """Construct the coefficients needed to evaluate
+    the RBF.
 
     Parameters
     ----------
@@ -191,35 +192,25 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
         Shifts the polynomial domain for numerical stability.
     scale : (N,) float ndarray
         Scales the polynomial domain for numerical stability.
-    coeffs : (P + R, S) float ndarray
-        Coefficients for each RBF and monomial.
 
     Returns
     -------
-    (Q, S) float ndarray
+    (Q, P + R) float ndarray
 
     """
     q = x.shape[0]
     p = y.shape[0]
     r = powers.shape[0]
-    s = coeffs.shape[1]
     kernel_func = NAME_TO_FUNC[kernel]
 
     yeps = y*epsilon
     xeps = x*epsilon
     xhat = (x - shift)/scale
 
-    out = np.zeros((q, s), dtype=float)
-    vec = np.empty((p + r,), dtype=float)
+    vec = np.empty((q, p + r), dtype=float)
     for i in range(q):
-        kernel_vector(xeps[i], yeps, kernel_func, vec[:p])
-        polynomial_vector(xhat[i], powers, vec[p:])
-        # Compute the dot product between coeffs and vec. Do not use np.dot
-        # because that introduces build complications with BLAS (see
-        # https://github.com/serge-sans-paille/pythran/issues/1346)
-        for j in range(s):
-            for k in range(p + r):
-                out[i, j] += coeffs[k, j]*vec[k]
+        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p])
+        polynomial_vector(xhat[i], powers, vec[i, p:])
 
-    return out
+    return vec
 

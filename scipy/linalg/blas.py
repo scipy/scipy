@@ -207,7 +207,7 @@ BLAS Level 3 functions
 
 __all__ = ['get_blas_funcs', 'find_best_blas_type']
 
-import numpy as _np
+import numpy as np
 import functools
 
 from scipy.linalg import _fblas
@@ -225,7 +225,7 @@ except ImportError:
 
 # Expose all functions (only fblas --- cblas is an implementation detail)
 empty_module = None
-from scipy.linalg._fblas import *
+from scipy.linalg._fblas import *  # noqa: E402, F403
 del empty_module
 
 # all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to
@@ -243,10 +243,10 @@ _type_score.update({x: 2 for x in 'iIlLqQd'})
 _type_score.update({'F': 3, 'D': 4, 'g': 2, 'G': 4})
 
 # Final mapping to the actual prefixes and dtypes
-_type_conv = {1: ('s', _np.dtype('float32')),
-              2: ('d', _np.dtype('float64')),
-              3: ('c', _np.dtype('complex64')),
-              4: ('z', _np.dtype('complex128'))}
+_type_conv = {1: ('s', np.dtype('float32')),
+              2: ('d', np.dtype('float64')),
+              3: ('c', np.dtype('complex64')),
+              4: ('z', np.dtype('complex128'))}
 
 # some convenience alias for complex functions
 _blas_alias = {'cnrm2': 'scnrm2', 'znrm2': 'dznrm2',
@@ -281,6 +281,7 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg.blas as bla
     >>> rng = np.random.default_rng()
     >>> a = rng.random((10,15))
@@ -293,7 +294,7 @@ def find_best_blas_type(arrays=(), dtype=None):
     ('d', dtype('float64'), True)
 
     """
-    dtype = _np.dtype(dtype)
+    dtype = np.dtype(dtype)
     max_score = _type_score.get(dtype.char, 5)
     prefer_fortran = False
 
@@ -317,7 +318,7 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     # Get the LAPACK prefix and the corresponding dtype if not fall back
     # to 'd' and double precision float.
-    prefix, dtype = _type_conv.get(max_score, ('d', _np.dtype('float64')))
+    prefix, dtype = _type_conv.get(max_score, ('d', np.dtype('float64')))
 
     return prefix, dtype, prefer_fortran
 
@@ -334,7 +335,7 @@ def _get_funcs(names, arrays, dtype,
 
     funcs = []
     unpack = False
-    dtype = _np.dtype(dtype)
+    dtype = np.dtype(dtype)
     module1 = (cmodule, cmodule_name)
     module2 = (fmodule, fmodule_name)
 
@@ -357,13 +358,13 @@ def _get_funcs(names, arrays, dtype,
             module_name = module2[1]
         if func is None:
             raise ValueError(
-                '%s function %s could not be found' % (lib_name, func_name))
+                f'{lib_name} function {func_name} could not be found')
         func.module_name, func.typecode = module_name, prefix
         func.dtype = dtype
         if not ilp64:
-            func.int_dtype = _np.dtype(_np.intc)
+            func.int_dtype = np.dtype(np.intc)
         else:
-            func.int_dtype = _np.dtype(_np.int64)
+            func.int_dtype = np.dtype(np.int64)
         func.prefix = prefix  # Backward compatibility
         funcs.append(func)
 
@@ -452,6 +453,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
     >>> a = rng.random((3,2))

@@ -1,5 +1,3 @@
-:orphan:
-
 .. _reviewing-prs:
 
 =======================
@@ -47,9 +45,6 @@ Github as appropriate:
 
 This allows automatically tracking which PRs are in need of attention.
 
-The review status is listed at: https://pav.iki.fi/scipy-needs-work/
-The page can also be generated using https://github.com/pv/github-needs-work
-
 Some of the information is also visible on Github directly, although
 (as of Aug 2019) Github does not show which pull requests have been
 updated since the last review.
@@ -61,35 +56,26 @@ Code from pull request
 When you review a pull request created by someone else, it's helpful to have a
 copy of their code on your own machine so that you can play with it locally.
 
-One way to do this is to navigate to the SciPy root directory in the terminal
-and enter::
+One way to install `the GitHub CLI <https://cli.github.com/>`__, then navigate
+to the SciPy root directory in the terminal and enter::
 
-   git fetch upstream pull/PULL_REQUEST_ID/head:NEW_BRANCH_NAME
+   gh pr checkout PULL_REQUEST_ID
 
 where ``PULL_REQUEST_ID`` is the five digit number corresponding with the
-pull request (e.g. ``10286`` for `PR #10286`_) and ``NEW_BRANCH_NAME`` is
-whatever name you'd like to use to refer to the author's code (e.g.
-``review_10286``).
-
-Now you can check out the branch::
-
-   git checkout NEW_BRANCH_NAME
-
-which converts the code in your local repository to match the author's modified
-version of SciPy.
+pull request (e.g. ``10286`` for `PR #10286`_). This immediately checks out
+the pull request into a branch with a name matching the one the PR author used.
 
 Assuming you set up your development environment according to
-:ref:`quickstart-mac` or :ref:`quickstart-ubuntu`, you you can now activate your development environment::
+:ref:`building-from-source`, you can now activate your development environment::
 
-   conda activate scipydev
+   conda activate scipy-dev
 
 build the code and test it::
 
-   python setup.py build_ext --inplace
-   python runtests.py -v
+   python dev.py test -v
 
-and if you ``import`` SciPy from Python, you'll be importing the
-author's modified version of SciPy.
+and if you ``import`` SciPy from within IPython (start it with ``python dev.py
+ipython``), you'll be importing the author's modified version of SciPy.
 
 If you want to collaborate with the author on their PR, you might instead
 want to set up a new remote to the author's fork of SciPy::
@@ -109,7 +95,7 @@ and create your own branch based on one of them::
 
 where ``BRANCH_NAME`` is the name of the branch you want to start from. This
 creates a copy of this branch (with the same name) in your local repository.
-If make changes to this branch and push to your GitHub repository
+If you make changes to this branch and push to your GitHub repository
 (``origin``), you can then create a pull request to merge your changes with the
 author's repository.
 

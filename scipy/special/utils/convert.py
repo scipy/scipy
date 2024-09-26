@@ -33,7 +33,6 @@ IGNORE_PATTERNS = [
 
     # Data files not needed by scipy special tests.
     "ibeta_derivative_",
-    r"ellint_r[cdfjg]_[^d]",
     r"ellint_d2?_",
     "jacobi_",
     "heuman_lambda_",
@@ -58,7 +57,7 @@ def _raw_data(line):
 
 def parse_ipp_file(filename):
     print(filename)
-    with open(filename, 'r') as a:
+    with open(filename) as a:
         lines = a.readlines()
     data = {}
     i = 0
@@ -97,14 +96,14 @@ def dump_dataset(filename, data):
     fid = open(filename, 'w')
     try:
         for line in data:
-            fid.write("%s\n" % " ".join(line))
+            fid.write(f"{' '.join(line)}\n")
     finally:
         fid.close()
 
 
 def dump_datasets(filename):
     base, ext = os.path.splitext(os.path.basename(filename))
-    base += '_%s' % ext[1:]
+    base += f'_{ext[1:]}'
     datadir = os.path.join(DATA_DIR, base)
     os.makedirs(datadir)
     datasets = parse_ipp_file(filename)

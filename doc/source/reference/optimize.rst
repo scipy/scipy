@@ -2,10 +2,3 @@
    :no-members:
    :no-inherited-members:
    :no-special-members:
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-
-   optimize.nonlin
-   optimize.cython_optimize

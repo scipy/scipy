@@ -4,7 +4,7 @@ except ImportError:
     pass
 
 try:
-    from sympy.abc import x  # type: ignore[import]
+    from sympy.abc import x
 except ImportError:
     pass
 
@@ -26,7 +26,7 @@ def lagrange_inversion(a):
 
     """
     n = len(a)
-    f = sum(a[i]*x**i for i in range(len(a)))
+    f = sum(a[i]*x**i for i in range(n))
     h = (x/f).series(x, 0, n).removeO()
     hpower = [h**0]
     for k in range(n):

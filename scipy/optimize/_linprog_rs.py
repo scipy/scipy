@@ -18,14 +18,14 @@ References
 # Author: Matt Haberland
 
 import numpy as np
+from numpy.linalg import LinAlgError
+
 from scipy.linalg import solve
-from .optimize import _check_unknown_options
+from ._optimize import _check_unknown_options
 from ._bglu_dense import LU
 from ._bglu_dense import BGLU as BGLU
-from scipy.linalg import LinAlgError
-from numpy.linalg.linalg import LinAlgError as LinAlgError2
 from ._linprog_util import _postsolve
-from .optimize import OptimizeResult
+from ._optimize import OptimizeResult
 
 
 def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
@@ -87,7 +87,7 @@ def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
                 keep_rows[pertinent_row] = False
             else:
                 basis[basis == basis_column] = new_basis_column
-        except (LinAlgError, LinAlgError2):
+        except LinAlgError:
             status = 4
 
     # form solution to original problem
@@ -148,7 +148,7 @@ def _generate_auxiliary_problem(A, b, x0, tol):
     except for the artificial variables, which are set equal to the
     corresponding element of the right hand side `b`.
 
-    Runnning the simplex method on this auxiliary problem drives all of the
+    Running the simplex method on this auxiliary problem drives all of the
     artificial variables - and thus the cost - to zero if the original problem
     is feasible. The original problem is declared infeasible otherwise.
 
@@ -244,12 +244,12 @@ def _select_singleton_columns(A, b):
     located. For each of these rows, returns the indices of the one singleton
     column and its corresponding row.
     """
-    # find indices of all singleton columns and corresponding row indicies
+    # find indices of all singleton columns and corresponding row indices
     column_indices = np.nonzero(np.sum(np.abs(A) != 0, axis=0) == 1)[0]
     columns = A[:, column_indices]          # array of singleton columns
     row_indices = np.zeros(len(column_indices), dtype=int)
     nonzero_rows, nonzero_columns = np.nonzero(columns)
-    row_indices[nonzero_columns] = nonzero_rows   # corresponding row indicies
+    row_indices[nonzero_columns] = nonzero_rows   # corresponding row indices
 
     # keep only singletons with entries that have same sign as RHS
     # this is necessary because all elements of BFS must be non-negative
