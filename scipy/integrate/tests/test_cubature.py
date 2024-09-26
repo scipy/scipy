@@ -1063,7 +1063,7 @@ class TestCubatureProblems:
             pytest.mark.slow("Genz-Malik is slow in >= 5 dim")
 
         if rule == "genz-malik" and ndim >= 4 and is_array_api_strict(xp):
-            pytest.skip("Genz-Malik is very slow for array_api_strict in >= 4 dim")
+            pytest.mark.xslow("Genz-Malik very slow for array_api_strict in >= 4 dim")
 
         res = cubature(
             f,
