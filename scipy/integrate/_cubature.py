@@ -1092,30 +1092,6 @@ class _FuncLimitsTransform(_VariableTransform):
 
         self._inner_ndim = full_limits.shape[-1] - self._a_outer.size
 
-    def _inner_limits(self, x_and_t):
-        x = x_and_t[:, :self._outer_ndim]
-        t = x_and_t[:, self._outer_ndim:]
-
-        a_inner = self._xp.empty((x.shape[0], 0))
-        b_inner = self._xp.empty((x.shape[0], 0))
-
-        A_i, B_i = None, None
-        x_and_y = x
-
-        for region_func in self._region:
-            A_i, B_i = region_func(x_and_y)
-
-            outer_ndim = a_inner.shape[-1]
-            inner_ndim = A_i.shape[-1]
-
-            y_i = (B_i + A_i)/2 + t[:, outer_ndim:outer_ndim+inner_ndim] * (B_i - A_i)/2
-
-            x_and_y = self._xp.concat([x_and_y, y_i], axis=-1)
-            a_inner = self._xp.concat([a_inner, A_i], axis=-1)
-            b_inner = self._xp.concat([b_inner, B_i], axis=-1)
-
-        return a_inner, b_inner
-
     @property
     def transformed_limits(self):
         return (
@@ -1123,59 +1099,95 @@ class _FuncLimitsTransform(_VariableTransform):
             self._xp.concat([self._b_outer,  self._xp.ones(self._inner_ndim)]),
         )
 
-    def inv(self, x_and_y):
-        x_and_t = xp_copy(x_and_y)
+    def _inner_limits(self, t):
+        # Given this value of `t`, calculate the values of the functions describing the
+        # inner limits.
+        x = xp_copy(t)
 
-        outer_ndim = self._outer_ndim
+        a_inner = []
+        b_inner = []
+
+        # Each region_func depends on the values of variables preceding it, this keeps
+        # track of which variables need to be sent to the next region_func to return
+        # a new group of limits.
+        num_preceding_vars = self._outer_ndim
 
         for region_func in self._region:
-            A_i, B_i = region_func(x_and_y[..., :outer_ndim])
+            # region_func will return a tuple (A_group, B_group), where A_group and
+            # B_group are arrays of shape (npoints, num_new_vars) specifying the limits
+            # for the next group of variables.
 
-            inner_ndim = A_i.shape[-1]
+            A_group, B_group = region_func(x[..., :num_preceding_vars])
+            num_new_vars = A_group.shape[-1]
 
-            y_i = x_and_y[..., outer_ndim:outer_ndim+inner_ndim]
+            t_group = t[:, num_preceding_vars:num_preceding_vars+num_new_vars]
 
-            x_and_t[..., outer_ndim:outer_ndim+inner_ndim] = (
-                (2*y_i - B_i - A_i)/(B_i - A_i)
+            # Apply transformation to this group of variables.
+            x[..., num_preceding_vars:num_preceding_vars+num_new_vars] = (
+                (B_group + A_group)/2 + t_group * (B_group - A_group)/2
             )
 
-            outer_ndim += inner_ndim
+            a_inner.append(A_group)
+            b_inner.append(B_group)
 
-        return x_and_t
+            # The next region_func will need to know the value of the variables that
+            # have just been returned.
+            num_preceding_vars += num_new_vars
 
-    def __call__(self, x_and_t, *args, **kwargs):
-        # x_and_t consists of the outer variables x_1, ... x_n, which don't need
-        # changing, and then inner variables t_1, ..., t_n which are in the range
-        # [-1, 1].
+        return self._xp.concat(a_inner, axis=-1), self._xp.concat(b_inner, axis=-1)
 
-        a_inner, b_inner = self._inner_limits(x_and_t)
+    def inv(self, x):
+        t = xp_copy(x)
+
+        # Each region_func depends on the values of variables preceding it, this keeps
+        # track of which variables need to be sent to the next region_func to return
+        # a new group of limits.
+        num_preceding_vars = self._outer_ndim
+
+        for region_func in self._region:
+            # region_func will return a tuple (A_group, B_group), where A_group and
+            # B_group are arrays of shape (npoints, num_new_vars) specifying the limits
+            # for the next group of variables.
+
+            A_group, B_group = region_func(x[..., :num_preceding_vars])
+            num_new_vars = A_group.shape[-1]
+
+            x_group = x[..., num_preceding_vars:num_preceding_vars+num_new_vars]
+
+            # Apply inverse transformation to this group of variables.
+            t[..., num_preceding_vars:num_preceding_vars+num_new_vars] = (
+                (2*x_group - B_group - A_group)/(B_group - A_group)
+            )
+
+            # The next region_func will need to know the value of the variables that
+            # have just been returned.
+            num_preceding_vars += num_new_vars
+
+        return t
+
+    def __call__(self, t, *args, **kwargs):
+        # Inner limits are the values of the function limits given this value of `t`.
+        a_inner, b_inner = self._inner_limits(t)
 
         # Allow returning `a_inner` and `b_inner` as array_like rather than as ndarrays
         # since `a` and `b` can also be array_like.
         a_inner = self._xp.asarray(a_inner)
         b_inner = self._xp.asarray(b_inner)
 
-        npoints = x_and_t.shape[0]
-
-        # x_and_y should be the input to the original integrand f.
-        # No change needed to x, but we need to map the t section of x_and_t back to y.
-        x_and_y = self._xp.concat(
-            [
-                x_and_t[:, :self._outer_ndim],
-                self._xp.zeros((npoints, self._inner_ndim)),
-            ],
-            axis=-1,
-        )
+        # Prepare the input to the original integrand f.
+        # `x[i] = t[i]` where `i <= self._inner_ndim`, but we need to map but for the
+        # rest, use the transformation described in the class-level docstring.
+        x = xp_copy(t)
 
         for i in range(self._inner_ndim):
             a_i = a_inner[:, i]
             b_i = b_inner[:, i]
 
-            x_and_y[:, self._outer_ndim + i] = (
-                (b_i + a_i)/2 + (b_i - a_i)/2 * x_and_t[:, self._outer_ndim + i]
+            x[:, self._outer_ndim + i] = (
+                (b_i + a_i)/2 + (b_i - a_i)/2 * t[:, self._outer_ndim + i]
             )
 
-        f_x = self._f(x_and_y, *args, **kwargs)
+        f_x = self._f(x, *args, **kwargs)
         jacobian = self._xp.prod(b_inner - a_inner, axis=-1) / 2**self._inner_ndim
         jacobian = self._xp.reshape(jacobian, (-1, *([1]*(len(f_x.shape) - 1))))
 
