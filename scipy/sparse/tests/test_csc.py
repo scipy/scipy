@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
-from scipy.sparse import csr_matrix, csc_matrix, lil_matrix, csc_array
+from numpy.testing import assert_array_almost_equal, assert_
+from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 import pytest
 
