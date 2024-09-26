@@ -106,6 +106,7 @@ Continuous distributions
    ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
    kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
    kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
+   landau            -- Landau
    laplace           -- Laplace
    laplace_asymmetric    -- Asymmetric Laplace
    levy              -- Levy
@@ -221,6 +222,7 @@ Discrete distributions
    nhypergeom               -- Negative Hypergeometric
    planck                   -- Planck (Discrete Exponential)
    poisson                  -- Poisson
+   poisson_binom            -- Poisson Binomial
    randint                  -- Discrete Uniform
    skellam                  -- Skellam
    yulesimon                -- Yule-Simon

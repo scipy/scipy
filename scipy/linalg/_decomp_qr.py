@@ -51,8 +51,11 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
-        ``A[:, P] = Q @ R`` as above, but where P is chosen such that the 
-        diagonal of R is non-increasing.
+        ``A[:, P] = Q @ R`` as above, but where P is chosen such that the
+        diagonal of R is non-increasing. Equivalently, albeit less efficiently,
+        an explicit P matrix may be formed explicitly by permuting the rows or columns
+        (depending on the side of the equation on which it is to be used) of
+        an identity matrix. See Examples.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -110,12 +113,20 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     True
     >>> np.allclose(a[:, p4], np.dot(q4, r4))
     True
+    >>> P = np.eye(p4.size)[p4]
+    >>> np.allclose(a, np.dot(q4, r4) @ P)
+    True
+    >>> np.allclose(a @ P.T, np.dot(q4, r4))
+    True
     >>> q4.shape, r4.shape, p4.shape
     ((9, 9), (9, 6), (6,))
 
     >>> q5, r5, p5 = linalg.qr(a, mode='economic', pivoting=True)
     >>> q5.shape, r5.shape, p5.shape
     ((9, 6), (6, 6), (6,))
+    >>> P = np.eye(6)[:, p5]
+    >>> np.allclose(a @ P, np.dot(q5, r5))
+    True
 
     """
     # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor

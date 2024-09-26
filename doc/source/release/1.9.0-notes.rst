@@ -103,12 +103,12 @@ New features
 
 `scipy.sparse` improvements
 ===========================
-- Add a ``copy`` parameter to `scipy.sparce.csgraph.laplacian`. Using inplace
+- Add a ``copy`` parameter to `scipy.sparse.csgraph.laplacian`. Using inplace
   computation with ``copy=False`` reduces the memory footprint.
-- Add a ``dtype`` parameter to `scipy.sparce.csgraph.laplacian` for type casting.
-- Add a ``symmetrized`` parameter to `scipy.sparce.csgraph.laplacian` to produce
+- Add a ``dtype`` parameter to `scipy.sparse.csgraph.laplacian` for type casting.
+- Add a ``symmetrized`` parameter to `scipy.sparse.csgraph.laplacian` to produce
   symmetric Laplacian for directed graphs.
-- Add a ``form`` parameter to `scipy.sparce.csgraph.laplacian` taking one of the
+- Add a ``form`` parameter to `scipy.sparse.csgraph.laplacian` taking one of the
   three values: ``array``, or ``function``, or ``lo`` determining the format of
   the output Laplacian:
   * ``array`` is a numpy array (backward compatible default);

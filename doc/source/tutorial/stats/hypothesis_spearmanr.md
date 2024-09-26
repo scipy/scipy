@@ -157,7 +157,7 @@ res.pvalue
 
 Note that the t-distribution provides an asymptotic approximation of the null
 distribution; it is only accurate for samples with many observations. For small
-samples, it may be more appropriate to perform a permutation test: Under the
+samples, it may be more appropriate to perform a permutation test [^4]: Under the
 null hypothesis that total collagen and free proline are independent, each of
 the free proline measurements were equally likely to have been observed with any
 of the total collagen measurements. Therefore, we can form an *exact* null
@@ -175,7 +175,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 plot(ax)
 ax.hist(ref.null_distribution, np.linspace(-5, 5, 26),
         density=True)
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            f'exact \n({len(ref.null_distribution)} permutations)'])
 plt.show()
 ```

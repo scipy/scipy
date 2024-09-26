@@ -407,7 +407,7 @@ def _mgc_stat(distx, disty):
 
     n, m = stat_mgc_map.shape
     if m == 1 or n == 1:
-        # the global scale at is the statistic calculated at maximial nearest
+        # the global scale at is the statistic calculated at maximal nearest
         # neighbors. There is not enough local scale to search over, so
         # default to global scale
         stat = stat_mgc_map[m - 1][n - 1]
@@ -453,7 +453,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     threshold = samp_size * (samp_size - 3)/4 - 1/2  # Beta approximation
     threshold = distributions.beta.ppf(per_sig, threshold, threshold) * 2 - 1
 
-    # the global scale at is the statistic calculated at maximial nearest
+    # the global scale at is the statistic calculated at maximal nearest
     # neighbors. Threshold is the maximum on the global and local scales
     threshold = max(threshold, stat_mgc_map[m - 1][n - 1])
 
@@ -495,7 +495,7 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
     """
     m, n = stat_mgc_map.shape
 
-    # the global scale at is the statistic calculated at maximial nearest
+    # the global scale at is the statistic calculated at maximal nearest
     # neighbors. By default, statistic and optimal scale are global.
     stat = stat_mgc_map[m - 1][n - 1]
     opt_scale = [m, n]

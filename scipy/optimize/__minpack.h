@@ -7,6 +7,7 @@
   {"_lmder", minpack_lmder, METH_VARARGS, doc_lmder},
   {"_chkder", minpack_chkder, METH_VARARGS, doc_chkder},
  */
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "ccallback.h"
@@ -859,6 +860,10 @@ PyInit__minpack(void)
     if (PyDict_SetItemString(mdict, "error", minpack_error)) {
         return NULL;
     }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     return module;
 }

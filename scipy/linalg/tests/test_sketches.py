@@ -55,15 +55,14 @@ class TestClarksonWoodruffTransform:
                 assert_(sketch.shape == (self.n_sketch_rows, self.n_cols))
 
     def test_seed_returns_identical_transform_matrix(self):
-        for A in self.test_matrices:
-            for seed in self.seeds:
-                S1 = cwt_matrix(
-                    self.n_sketch_rows, self.n_rows, seed=seed
-                ).toarray()
-                S2 = cwt_matrix(
-                    self.n_sketch_rows, self.n_rows, seed=seed
-                ).toarray()
-                assert_equal(S1, S2)
+        for seed in self.seeds:
+            S1 = cwt_matrix(
+                self.n_sketch_rows, self.n_rows, seed=seed
+            ).toarray()
+            S2 = cwt_matrix(
+                self.n_sketch_rows, self.n_rows, seed=seed
+            ).toarray()
+            assert_equal(S1, S2)
 
     def test_seed_returns_identically(self):
         for A in self.test_matrices:

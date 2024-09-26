@@ -9,7 +9,7 @@ from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    array_namespace, size, xp_assert_close, xp_assert_equal
+    array_namespace, xp_size, xp_assert_close, xp_assert_equal
 )
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
@@ -40,7 +40,7 @@ def fft1(x):
     phase = np.arange(L).reshape(-1, 1) * phase
     return np.sum(x*np.exp(phase), axis=1)
 
-class TestFFT1D:
+class TestFFT:
 
     def test_identity(self, xp):
         maxlen = 512
@@ -51,7 +51,7 @@ class TestFFT1D:
             xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i])
             xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
     
-    @skip_xp_backends(np_only=True, reasons=['significant overhead for some backends'])
+    @skip_xp_backends(np_only=True, reason='significant overhead for some backends')
     def test_identity_extensive(self, xp):
         maxlen = 512
         x = xp.asarray(random(maxlen) + 1j*random(maxlen))
@@ -70,7 +70,7 @@ class TestFFT1D:
                         expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),)
         xp_assert_close(fft.fft(x, norm="forward"), expect / 30)
 
-    @skip_xp_backends(np_only=True, reasons=['some backends allow `n=0`'])
+    @skip_xp_backends(np_only=True, reason='some backends allow `n=0`')
     def test_fft_n(self, xp):
         x = xp.asarray([1, 2, 3], dtype=xp.complex128)
         assert_raises(ValueError, fft.fft, x, 0)
@@ -123,7 +123,7 @@ class TestFFT1D:
 
     def test_rfft(self, xp):
         x = xp.asarray(random(29), dtype=xp.float64)
-        for n in [size(x), 2*size(x)]:
+        for n in [xp_size(x), 2*xp_size(x)]:
             for norm in [None, "backward", "ortho", "forward"]:
                 xp_assert_close(fft.rfft(x, n=n, norm=norm),
                                 fft.fft(xp.asarray(x, dtype=xp.complex128),
@@ -285,7 +285,7 @@ class TestFFT1D:
         x = xp.asarray(random(30), dtype=xp.float64)
         xp_test = array_namespace(x)
         x_norm = xp_test.linalg.vector_norm(x)
-        n = size(x) * 2
+        n = xp_size(x) * 2
         func_pairs = [(fft.rfft, fft.irfft),
                       # hfft: order so the first function takes x.size samples
                       #       (necessary for comparison to x_norm above)
@@ -297,7 +297,7 @@ class TestFFT1D:
             if forw == fft.fft:
                 x = xp.asarray(x, dtype=xp.complex128)
                 x_norm = xp_test.linalg.vector_norm(x)
-            for n in [size(x), 2*size(x)]:
+            for n in [xp_size(x), 2*xp_size(x)]:
                 for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
                     tmp = back(tmp, n=n, norm=norm)
@@ -338,6 +338,24 @@ class TestFFT1D:
         res_fft = fft.ifft(fft.fft(x))
         # Check both numerical results and exact dtype matches
         xp_assert_close(res_fft, x)
+
+    @skip_xp_backends(np_only=True,
+                      reason='array-likes only supported for NumPy backend')
+    @pytest.mark.parametrize("op", [fft.fft, fft.ifft,
+                                    fft.fft2, fft.ifft2,
+                                    fft.fftn, fft.ifftn,
+                                    fft.rfft, fft.irfft,
+                                    fft.rfft2, fft.irfft2,
+                                    fft.rfftn, fft.irfftn,
+                                    fft.hfft, fft.ihfft,
+                                    fft.hfft2, fft.ihfft2,
+                                    fft.hfftn, fft.ihfftn,])
+    def test_array_like(self, xp, op):
+        x = [[[1.0, 1.0], [1.0, 1.0]],
+             [[1.0, 1.0], [1.0, 1.0]],
+             [[1.0, 1.0], [1.0, 1.0]]]
+        xp_assert_close(op(x), op(xp.asarray(x)))
+
 
 @skip_xp_backends(np_only=True)
 @pytest.mark.parametrize(
@@ -471,3 +489,13 @@ def test_non_standard_params(func, xp):
         assert_raises(ValueError, func, x, workers=2)
         # `plan` param is not tested since SciPy does not use it currently
         # but should be tested if it comes into use
+
+
+@pytest.mark.parametrize("dtype", ['float32', 'float64'])
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.irfft,
+                                  fft.fftn, fft.ifftn,
+                                  fft.irfftn, fft.hfft,])
+def test_real_input(func, dtype, xp):
+    x = xp.asarray([1, 2, 3], dtype=getattr(xp, dtype))
+    # func(x) should not raise an exception
+    func(x)

@@ -8,7 +8,6 @@ import sys
 from functools import partial
 
 import numpy as np
-import numpy.testing
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
@@ -27,9 +26,8 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (
-    array_namespace,
-    is_numpy,
+from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
     xp_assert_less,
@@ -764,7 +762,7 @@ class TestBartlett:
 
     @pytest.mark.skip_xp_backends(
         "jax.numpy", cpu_only=True,
-        reasons=['`var` incorrect when `correction > n` (google/jax#21330)'])
+        reason='`var` incorrect when `correction > n` (google/jax#21330)')
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
@@ -782,6 +780,13 @@ class TestBartlett:
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
+
+    def test_negative_pvalue_gh21152(self, xp):
+        a = xp.asarray([10.1, 10.2, 10.3, 10.4], dtype=xp.float32)
+        b = xp.asarray([10.15, 10.25, 10.35, 10.45], dtype=xp.float32)
+        c = xp.asarray([10.05, 10.15, 10.25, 10.35], dtype=xp.float32)
+        res = stats.bartlett(a, b, c)
+        assert xp.all(res.statistic >= 0)
 
 
 class TestLevene:
@@ -1804,7 +1809,7 @@ class TestKstatVar:
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
     @skip_xp_backends(np_only=True,
-                      reasons=['input validation of `n` does not depend on backend'])
+                      reason='input validation of `n` does not depend on backend')
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_bad_arg(self):
         # Raise ValueError is n is not 1 or 2.
@@ -1924,8 +1929,8 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@skip_xp_backends('jax.numpy', reason="JAX arrays do not support item assignment")
 @pytest.mark.usefixtures("skip_xp_backends")
-@skip_xp_backends(cpu_only=True)
 @array_api_compatible
 class TestBoxcox_llf:
 
@@ -1939,7 +1944,7 @@ class TestBoxcox_llf:
         xp_assert_close(llf, xp.asarray(llf_expected, dtype=dt))
 
     @skip_xp_backends(np_only=True,
-                      reasons=['array-likes only accepted for NumPy backend.'])
+                      reason='array-likes only accepted for NumPy backend.')
     def test_array_like(self, xp):
         x = stats.norm.rvs(size=100, loc=10, random_state=54321)
         lmbda = 1
@@ -2681,6 +2686,7 @@ class TestCircFuncs:
         x = xp.asarray([355, 5, 2, 359, 10, 350, np.nan])
         xp_assert_equal(test_func(x, high=360), xp.asarray(xp.nan))
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean,
                                {None: np.nan, 0: 355.66582264, 1: 0.28725053}),
@@ -3043,7 +3049,7 @@ class TestDirectionalStats:
         dirstats = stats.directional_stats(full_array, axis=2)
         xp_assert_close(dirstats.mean_direction, expected)
 
-    @skip_xp_backends(np_only=True, reasons=['checking array-like input'])
+    @skip_xp_backends(np_only=True, reason='checking array-like input')
     def test_directional_stats_list_ndarray_input(self, xp):
         # test that list and numpy array inputs yield same results
         data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
