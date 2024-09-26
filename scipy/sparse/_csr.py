@@ -122,59 +122,6 @@ class _csr_base(_cs_matrix):
 
     tobsr.__doc__ = _spbase.tobsr.__doc__
 
-
-    def _broadcast_to(self, shape, copy=False):        
-        if self.shape == shape:
-            return self.copy() if copy else self
-        
-        shape = check_shape(shape, allow_nd=(self._allow_nd))
-
-        if np.broadcast_shapes(self.shape, shape) != shape:
-            raise ValueError("cannot be broadcast")
-        
-        if len(self.shape) == 1 and len(shape) == 1:
-            self.sum_duplicates()
-            if self.nnz == 0: # array has no non zero elements
-                return self.__class__(shape, dtype=self.dtype, copy=False)
-            
-            N = shape[0]
-            data = np.full(N, self.data[0])
-            indices = np.arange(0,N)
-            indptr = np.array([0, N])
-            return self._csr_container((data, indices, indptr), shape=shape, copy=False)
-
-        # treat 1D as a 2D row
-        old_shape = self._shape_as_2d
-            
-        if len(shape) != 2:
-            ndim = len(shape)
-            raise ValueError(f'CSR broadcast_to cannot have shape >2D. Got {ndim}D')
-        
-        if self.nnz == 0: # array has no non zero elements
-            return self.__class__(shape, dtype=self.dtype, copy=False)
-        
-        self.sum_duplicates()
-        if all(s == 1 for s in old_shape):
-            # Broadcast a single element to the entire shape
-            data = np.full(shape[0] * shape[1], self.data[0])
-            indices = np.tile(np.arange(shape[1]), shape[0])
-            indptr = np.arange(0, len(data) + 1, shape[1])
-        
-        elif old_shape[0] == 1 and old_shape[1] == shape[1]:
-            # Broadcast row-wise
-            data = np.tile(self.data, shape[0])
-            indices = np.tile(self.indices, shape[0])
-            indptr = np.arange(0, len(data) + 1, len(self.data))
-
-        elif old_shape[1] == 1 and old_shape[0] == shape[0]:
-            # Broadcast column-wise
-            data = np.repeat(self.data, shape[1])
-            indices = np.tile(np.arange(shape[1]), len(self.data))
-            indptr = self.indptr * shape[1]
-
-        return self.__class__((data, indices, indptr), shape=shape, copy=False)
-
-
     # these functions are used by the parent class (_cs_matrix)
     # to remove redundancy between csc_matrix and csr_array
     @staticmethod
