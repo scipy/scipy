@@ -843,9 +843,12 @@ def jaccard(u, v, w=None):
     ----------
     .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
            An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
+           :doi:`10.1002/9780470316801`
     .. [2] Kosub, S.  (2019).  "A note on the triangle inequality for the
            Jaccard distance."  *Pattern Recognition Letters*, 120:36-38.
-    .. [3] https://en.wikipedia.org/wiki/Jaccard_index
+           :doi:`10.1016/j.patrec.2018.12.007`
+    .. [3] `Jaccard index <https://en.wikipedia.org/wiki/Jaccard_index>`_.
+           Wikipedia.
 
     Examples
     --------
@@ -1371,7 +1374,7 @@ def yule(u, v, w=None):
        c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
 
     for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
-    the Yule dissimilarity is defined to be zero.
+    the Yule dissimilarity is defined to be zero. [2]_
 
     If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
     is supplied, the *weighted Yule dissimilarity* is defined similarly
@@ -1399,17 +1402,19 @@ def yule(u, v, w=None):
 
     Notes
     -----
-    *Yule's coefficient of association* [1]_, or *Yule's Q* [2]_, is equal to
+    *Yule's coefficient of association* [1]_, or *Yule's Q* [3]_, is equal to
     one minus the Yule dissimilarity.
 
     References
     ----------
     .. [1] Yule, G. U. (1900). "On the Association of Attributes in Statistics:
-       With Illustrations from the Material of the Childhood Society."
-       *Philosophical Transactions of the Royal Society of London: Series A*,
-       194:257-319. :doi:`10.1098/rsta.1900.0019`
-
-    .. [2] https://en.wikipedia.org/wiki/Goodman_and_Kruskal%27s_gamma#Yule's_Q
+           With Illustrations from the Material of the Childhood Society."
+           *Philosophical Transactions of the Royal Society of London:
+           Series A*, 194:257-319. :doi:`10.1098/rsta.1900.0019`
+    .. [2] Batagelj, V. and Bren, M. (1995). "Comparing resemblance measures."
+           *Journal of Classification*, 12:73-90. :doi:`10.1007/BF01202268`
+    .. [3] `Yule's Q <https://en.wikipedia.org/wiki/Goodman_and_Kruskal%27s_gamma#Yule's_Q>`_.
+           Wikipedia.
 
     Examples
     --------
@@ -1452,7 +1457,7 @@ def dice(u, v, w=None):
        c_{ij} := \sum_{k=1}^n 1_{u_k=i, v_k=j}
 
     for :math:`i, j \in \{ 0, 1\}`.  If the denominator is zero,
-    the Dice dissimilarity is defined to be zero.
+    the Dice dissimilarity is defined to be zero. [2]_
 
     If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
     is supplied, the *weighted Dice dissimilarity* is defined similarly
@@ -1480,7 +1485,7 @@ def dice(u, v, w=None):
 
     Notes
     -----
-    The *Dice coincidence index* [2]_, or *Dice-Sørensen coefficient* [3]_,
+    The *Dice coincidence index* [3]_, or *Dice-Sørensen coefficient* [4]_,
     is equal to one minus the Dice dissimilarity.
 
     The Dice dissimilarity is related to the Jaccard dissimilarity by
@@ -1491,10 +1496,12 @@ def dice(u, v, w=None):
     .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
            An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
            :doi:`10.1002/9780470316801`
-    .. [2] Dice, L. R.  (1945).  "Measures of the Amount of Ecologic
+    .. [2] Batagelj, V. and Bren, M. (1995). "Comparing resemblance measures."
+           *Journal of Classification*, 12:73-90. :doi:`10.1007/BF01202268`
+    .. [3] Dice, L. R.  (1945).  "Measures of the Amount of Ecologic
            Association Between Species."  *Ecology*, 26(3):297-302.
            :doi:`10.2307/1932409`
-    .. [3] "`Dice-Sørensen coefficient <https://en.wikipedia.org/wiki/Dice-Sørensen_coefficient>`_."
+    .. [4] `Dice-Sørensen coefficient <https://en.wikipedia.org/wiki/Dice-Sørensen_coefficient>`_.
            Wikipedia.
 
     Examples
@@ -1736,7 +1743,7 @@ def sokalsneath(u, v, w=None):
     Notes
     -----
     The Sokal-Sneath dissimilarity satisfies the triangle inequality and is
-    qualified as a metric. ([3]_, Theorem 10)
+    qualified as a metric ([3]_, Theorem 10).
 
     The Sokal-Sneath dissimilarity is related to the Jaccard dissimilarity by
     :math:`d_\textrm{sokalsneath} \equiv 2d_\textrm{jaccard}/(1+d_\textrm{jaccard})`.
@@ -1759,7 +1766,7 @@ def sokalsneath(u, v, w=None):
     1.0
     >>> distance.sokalsneath([1, 0, 0], [1, 1, 0])
     0.6666666666666666
-    >>> distance.sokalsneath([1, 0, 0], [2, 1, 0])
+    >>> distance.sokalsneath([1, 0, 0], [1, 0, 0])
     0.0
 
     """
