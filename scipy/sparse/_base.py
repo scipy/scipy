@@ -1280,11 +1280,11 @@ class _spbase:
             res = inter_self / self.shape[-1]
             return res.sum(dtype=res_dtype, out=out)
 
-        # if 2-d and axis is tuple
-        if self.ndim == 2 and type(axis) is tuple:
+        # if axis is tuple of all dimensions then same as axis=None
+        if type(axis) is tuple:
             # adjust axes
-            axis = [ax if ax>=0 else ax+2 for ax in axis]
-            if len(axis) == 2:
+            axis = [ax if ax >= 0 else ax + self.ndim for ax in axis]
+            if len(axis) == self.ndim:
                 # check for duplicates
                 if len(axis) != len(set(axis)):
                     raise ValueError("duplicate value in 'axis'")
