@@ -792,7 +792,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
     Notes
     -----
     Suppose we wish to evaluate the Jacobian of a function
-    :math:`f: \mathbf{R^m} \rightarrow \mathbf{R^n}`, and assign to variables
+    :math:`f: \mathbf{R}^m \rightarrow \mathbf{R}^n`, and assign to variables
     ``m`` and ``n`` the positive integer values of :math:`m` and :math:`n`,
     respectively. If we wish to evaluate the Jacobian at a single point,
     then:
@@ -988,7 +988,7 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     Notes
     -----
     Suppose we wish to evaluate the Hessian of a function
-    :math:`f: \mathbf{R^m} \rightarrow \mathbf{R}`, and we assign to variable
+    :math:`f: \mathbf{R}^m \rightarrow \mathbf{R}`, and we assign to variable
     ``m`` the positive integer value of :math:`m`. If we wish to evaluate
     the Hessian at a single point, then:
 
@@ -1024,7 +1024,7 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
 
     Examples
     --------
-    The Rosenbrock function maps from :math:`\mathbf{R}^m \righarrow \mathbf{R}`;
+    The Rosenbrock function maps from :math:`\mathbf{R}^m \rightarrow \mathbf{R}`;
     the SciPy implementation `scipy.optimize.rosen` is vectorized to accept an
     array of shape ``(m, ...)`` and return an array of shape ``...``. Suppose we
     wish to evaluate the Hessian at ``[0.5, 0.5, 0.5]``.
@@ -1077,7 +1077,7 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     def df(x):
         tolerances = dict(rtol=rtol/100, atol=atol)
         temp = jacobian(f, x, tolerances=tolerances, **kwargs)
-        nfev.append(temp.nfev if len(nfev)==0 else temp.nfev.sum(axis=-1))
+        nfev.append(temp.nfev if len(nfev) == 0 else temp.nfev.sum(axis=-1))
         return temp.df
 
     nfev = []  # track inner function evaluations

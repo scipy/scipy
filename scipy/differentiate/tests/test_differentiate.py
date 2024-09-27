@@ -455,7 +455,7 @@ class JacobianHessianTest:
         with pytest.raises(ValueError, match=message):
             jh_func(np.sin, 1, tolerances=dict(atol=-1))
 
-        # Confirm that other parameters are being passed to `_derivative`,
+        # Confirm that other parameters are being passed to `differentiate`,
         # which raises an appropriate error message.
         x = np.ones(3)
         func = optimize.rosen
