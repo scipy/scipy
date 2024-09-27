@@ -14,7 +14,7 @@ from scipy.integrate._rules import (
     GaussKronrodQuadrature,
     GenzMalikCubature,
 )
-from scipy.integrate._rules._base import _subregion_coordinates
+from scipy.integrate._rules._base import _split_patch
 
 __all__ = ['cubature']
 
@@ -25,7 +25,7 @@ else:
 
 
 @dataclass
-class CubatureRegion:
+class CubaturePatch:
     estimate: Array
     error: Array
     a: Array
@@ -33,8 +33,8 @@ class CubatureRegion:
     _xp: ModuleType = field(repr=False)
 
     def __lt__(self, other):
-        # Consider regions with higher error estimates as being "less than" regions with
-        # lower order estimates, so that regions with high error estimates are placed at
+        # Consider patches with higher error estimates as being "less than" patches with
+        # lower order estimates, so that patches with high error estimates are placed at
         # the top of the heap.
 
         this_err = self._xp.max(self._xp.abs(self.error))
@@ -48,7 +48,7 @@ class CubatureResult:
     estimate: Array
     error: Array
     status: str
-    regions: list[CubatureRegion]
+    patches: list[CubaturePatch]
     subdivisions: int
     atol: float
     rtol: float
@@ -105,8 +105,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         ``rtol * abs(y)`` is always smaller than `atol`. Default values are 1e-8 for
         `rtol` and 0 for `atol`.
     max_subdivisions : int, optional
-        Upper bound on the number of subdivisions to perform to improve the estimate
-        over a subregion. Default is 10,000.
+        Upper bound on the number of subdivisions to perform. Default is 10,000.
     args : tuple, optional
         Additional positional args passed to `f`, if any.
     workers : int or map-like callable, optional
@@ -178,9 +177,10 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         attributes:
 
             estimate : ndarray
-                Estimate of the value of the integral over the region specified.
+                Estimate of the value of the integral over the overall region specified.
             error : ndarray
-                Estimate of the error of the approximation over the region specified.
+                Estimate of the error of the approximation over the overall region
+                specified.
             status : str
                 Whether the estimation was successful. Can be either: "converged",
                 "not_converged".
@@ -188,20 +188,20 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
                 Number of subdivisions performed.
             atol, rtol : float
                 Requested tolerances for the approximation.
-            regions : list of object
+            patches: list of object
                 List of objects containing the estimates of the integral over smaller
-                subregions.
+                patches of the domain.
 
-        Each object in ``regions`` has the following attributes:
+        Each object in ``patches`` has the following attributes:
 
             a, b : ndarray
-                Points describing the corners of the region. If the original integral
+                Points describing the corners of the patch. If the original integral
                 contained infinite limits or was over a region described by `region`,
                 then `a` and `b` are in the transformed coordinates.
             estimate : ndarray
-                Estimate of the value of the integral over this region.
+                Estimate of the value of the integral over this patch.
             error : ndarray
-                Estimate of the error of the approximation over this region.
+                Estimate of the error of the approximation over this patch.
 
     Notes
     -----
@@ -630,16 +630,16 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         points = [f.inv(point) for point in points]
         points.extend(f.points)
 
-    # If any problematic points are specified, divide the initial region so that these
-    # points lie on the edge of a subregion.
+    # If any problematic points are specified, divide the initial patch so that these
+    # points lie on the edge of a subpatch.
     #
     # This means ``f`` won't be evaluated there if the rule being used has no evaluation
     # points on the boundary.
 
     if points == []:
-        initial_regions = [(a, b)]
+        initial_patch = [(a, b)]
     else:
-        initial_regions = _split_at_points(a, b, points)
+        initial_patch = _split_patch_at_points(a, b, points)
 
     # If the rule is a string, convert to a corresponding product rule
     if isinstance(rule, str):
@@ -663,16 +663,16 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
             rule = ProductNestedFixed([base_rule] * ndim)
 
-    regions = []
+    patches = []
     est = 0.0
     err = 0.0
 
-    for a_k, b_k in initial_regions:
-        # If any of the initial regions have zero width in one dimension, we can
+    for a_k, b_k in initial_patch:
+        # If any of the initial patches have zero width in one dimension, we can
         # ignore this as the integral will be 0 there.
         est_k = rule.estimate(f, a_k, b_k, args)
         err_k = rule.estimate_error(f, a_k, b_k, args)
-        regions.append(CubatureRegion(est_k, err_k, a_k, b_k, xp))
+        patches.append(CubaturePatch(est_k, err_k, a_k, b_k, xp))
 
         est += est_k
         err += err_k
@@ -682,45 +682,45 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     with MapWrapper(workers) as mapwrapper:
         while xp.any(err > atol + rtol * xp.abs(est)):
-            # region_k is the region with highest estimated error.
-            region_k = heapq.heappop(regions)
+            # patch_k is the patch with highest estimated error.
+            patch_k = heapq.heappop(patches)
 
-            est_k = region_k.estimate
-            err_k = region_k.error
+            est_k = patch_k.estimate
+            err_k = patch_k.error
 
-            a_k, b_k = region_k.a, region_k.b
+            a_k, b_k = patch_k.a, patch_k.b
 
-            # Subtract the estimate of the integral and its error over this region from
+            # Subtract the estimate of the integral and its error over this patch from
             # the current global estimates, since these will be refined in the loop over
-            # all subregions.
+            # all subpatches.
             est -= est_k
             err -= err_k
 
-            # Find all 2^ndim subregions formed by splitting region_k along each axis,
+            # Find all 2^ndim subpatches formed by splitting patch_k along each axis,
             # e.g. for 1D integrals this splits an estimate over an interval into an
             # estimate over two subintervals, for 3D integrals this splits an estimate
             # over a cube into 8 subcubes.
             #
-            # For each of the new subregions, calculate an estimate for the integral and
-            # the error there, and push these regions onto the heap for potential
+            # For each of the new subpatches, calculate an estimate for the integral and
+            # the error there, and push these patches onto the heap for potential
             # further subdividing.
 
             executor_args = zip(
                 itertools.repeat(f),
                 itertools.repeat(rule),
                 itertools.repeat(args),
-                _subregion_coordinates(a_k, b_k),
+                _split_patch(a_k, b_k),
             )
 
-            for subdivision_result in mapwrapper(_process_subregion, executor_args):
+            for subdivision_result in mapwrapper(_process_subpatch, executor_args):
                 a_k_sub, b_k_sub, est_sub, err_sub = subdivision_result
 
                 est += est_sub
                 err += err_sub
 
-                new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub, xp)
+                new_patch = CubaturePatch(est_sub, err_sub, a_k_sub, b_k_sub, xp)
 
-                heapq.heappush(regions, new_region)
+                heapq.heappush(patches, new_patch)
 
             subdivisions += 1
 
@@ -738,13 +738,13 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
             error=err,
             status=status,
             subdivisions=subdivisions,
-            regions=regions,
+            patches=patches,
             atol=atol,
             rtol=rtol,
         )
 
 
-def _process_subregion(data):
+def _process_subpatch(data):
     f, rule, args, coord = data
     a_k_sub, b_k_sub = coord
 
@@ -754,7 +754,7 @@ def _process_subregion(data):
     return a_k_sub, b_k_sub, est_sub, err_sub
 
 
-def _is_strictly_in_region(point, a, b):
+def _is_strictly_in_patch(point, a, b):
     xp = array_namespace(point, a, b)
 
     if xp.all(point == a) or xp.all(point == b):
@@ -763,16 +763,16 @@ def _is_strictly_in_region(point, a, b):
     return xp.all(a <= point) and xp.all(point <= b)
 
 
-def _split_at_points(a, b, points):
+def _split_patch_at_points(a, b, points):
     """
-    Given the integration limits `a` and `b` describing a rectangular region and a list
+    Given the integration limits `a` and `b` describing a rectangular patch and a list
     of `points`, find the list of ``[(a_1, b_1), ..., (a_l, b_l)]`` which breaks up the
-    initial region into smaller subregions such that no `points` lie strictly inside
-    any of the subregions.
+    initial patch into smaller subpatches such that no `points` lie strictly inside
+    any of the subpatches.
     """
 
     xp = array_namespace(a, b)
-    regions = [(a, b)]
+    patches = [(a, b)]
 
     for point in points:
         if xp.any(xp.isinf(point)):
@@ -782,27 +782,27 @@ def _split_at_points(a, b, points):
             # applying a transformation, they are removed.
             continue
 
-        new_regions = []
+        new_subpatches = []
 
-        for a_k, b_k in regions:
-            if _is_strictly_in_region(point, a_k, b_k):
-                subregions = _subregion_coordinates(a_k, b_k, point)
+        for a_k, b_k in patches:
+            if _is_strictly_in_patch(point, a_k, b_k):
+                subpatches = _split_patch(a_k, b_k, point)
 
-                for left, right in subregions:
-                    # Skip any zero-width regions.
+                for left, right in subpatches:
+                    # Skip any zero-width patches.
                     if xp.any(left == right):
                         continue
                     else:
-                        new_regions.append((left, right))
+                        new_subpatches.append((left, right))
 
-                new_regions.extend(subregions)
+                new_subpatches.extend(subpatches)
 
             else:
-                new_regions.append((a_k, b_k))
+                new_subpatches.append((a_k, b_k))
 
-        regions = new_regions
+        patches = new_subpatches
 
-    return regions
+    return patches
 
 
 class _VariableTransform:

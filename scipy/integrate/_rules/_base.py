@@ -147,7 +147,7 @@ class Rule:
         est = self.estimate(f, a, b, args)
         refined_est = 0
 
-        for a_k, b_k in _subregion_coordinates(a, b):
+        for a_k, b_k in _split_patch(a, b):
             refined_est += self.estimate(f, a_k, b_k, args)
 
         return self.xp.abs(est - refined_est)
@@ -444,10 +444,10 @@ def _cartesian_product(arrays):
     return result
 
 
-def _subregion_coordinates(a, b, split_at=None):
+def _split_patch(a, b, split_at=None):
     """
-    Given the coordinates of a region like a=[0, 0] and b=[1, 1], yield the coordinates
-    of all subregions split at a specific point (by default the midpoint). For a=[0, 0]
+    Given the coordinates of a patch like a=[0, 0] and b=[1, 1], yield the coordinates
+    of all subpatch split at a specific point (by default the midpoint). For a=[0, 0]
     and b=[1, 1], this would be::
 
         ([0, 0], [1/2, 1/2]),
