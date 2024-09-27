@@ -811,7 +811,7 @@ class _VariableTransform:
     """
 
     @property
-    def transformed_limits(self, a, b):
+    def transformed_limits(self):
         """
         New limits of integration after applying the transformation.
         """
