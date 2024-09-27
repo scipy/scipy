@@ -344,7 +344,7 @@ def kron(a, b):
            [3, 3, 3, 4, 4, 4]])
 
     """
-    msg = ("`kron` has been deprecated infavour of `numpy.kron` in SciPy"
+    msg = ("`kron` has been deprecated in favour of `numpy.kron` in SciPy"
            " 1.15.0 and will be removed in SciPy 1.17.0.")
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
     # accommodate empty arrays
