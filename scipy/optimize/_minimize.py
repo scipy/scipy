@@ -474,7 +474,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [16] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
         An interior point algorithm for large-scale nonlinear  programming.
         SIAM Journal on Optimization 9.4: 877-900.
-    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
+    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. 1998. On the
         implementation of an algorithm for large-scale equality constrained
         optimization. SIAM Journal on Optimization 8.3: 682-706.
     .. [18] Ragonneau, T. M. *Model-Based Derivative-Free Optimization Methods

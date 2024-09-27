@@ -2934,7 +2934,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     The algorithm attempts to find three strictly ordered points (i.e.
     :math:`x_a < x_b < x_c` or :math:`x_c < x_b < x_a`) satisfying
     :math:`f(x_b) ≤ f(x_a)` and :math:`f(x_b) ≤ f(x_c)`, where one of the
-    inequalities must be satistfied strictly and all :math:`x_i` must be
+    inequalities must be satisfied strictly and all :math:`x_i` must be
     finite.
 
     Examples
