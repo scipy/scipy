@@ -309,7 +309,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Sparse other.
         elif issparse(other):
             if self.format != other.format:
-                other = other.asformat(self.format)        
+                other = other.asformat(self.format)
             res = self._binopt(other, '_ne_')
             return res
         else:
@@ -406,7 +406,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _sub_sparse(self, other):
         return self._binopt(other, '_minus_')
-
 
     def multiply(self, other):
         """Point-wise multiplication by array/matrix, vector, or scalar."""
@@ -648,8 +647,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return mat
         elif isdense(other):
             return npop(self.todense(), other)
-        elif issparse(other):       
-            return self._binopt(other, op_name) 
+        elif issparse(other):
+            return self._binopt(other, op_name)
         else:
             raise ValueError("Operands not compatible.")
 
@@ -1365,7 +1364,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                   shape=self.shape, dtype=data.dtype)
 
     def _binopt(self, other, op):
-        """apply the binary operation fn to two sparse matrices."""        
+        """apply the binary operation fn to two sparse matrices.""" 
         different_shapes = self.shape != other.shape
         if different_shapes: # we need to broadcast
             try:
@@ -1443,7 +1442,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             out = r
             return out
 
-    def _broadcast_to(self, shape, copy=False):        
+    def _broadcast_to(self, shape, copy=False):
         if self.shape == shape:
             return self.copy() if copy else self
         
