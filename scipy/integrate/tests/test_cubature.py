@@ -1529,8 +1529,8 @@ class TestRulesCubature:
 
 @array_api_compatible
 @skip_xp_backends(
-    'jax',
-    reasons=['transforms make use of boolean indexing assignment'],
+    "jax.numpy",
+    reasons=["transforms make use of indexing assignment"],
 )
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
