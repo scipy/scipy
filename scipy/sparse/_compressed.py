@@ -251,10 +251,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._scalar_binopt(other, operator.eq)
         # Dense other.
         elif isdense(other):
-            try:
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            bshape = np.broadcast_shapes(self.shape, other.shape)
 
             self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
@@ -295,10 +292,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._scalar_binopt(other, operator.ne)
         # Dense other.
         elif isdense(other):
-            try:
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            bshape = np.broadcast_shapes(self.shape, other.shape)
             
             self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
@@ -330,10 +324,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._scalar_binopt(other, op)
         # Dense other.
         elif isdense(other):
-            try:
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            bshape = np.broadcast_shapes(self.shape, other.shape)
 
             self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
@@ -386,11 +377,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            try:
-                # This will raise an error if the shapes are not broadcastable
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError('inconsistent shapes')
+            # This will raise an error if the shapes are not broadcastable
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            
             self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
         dtype = upcast_char(self.dtype.char, other.dtype.char)
@@ -456,7 +445,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if sN == 1 and sM == oM:
                 new_self = _make_diagonal_csr(self.toarray().ravel(), is_array)
                 return new_self._matmul_sparse(other)
-            raise ValueError("inconsistent shapes")
+            raise ValueError("cannot be broadcast")
 
         # Assume other is a dense matrix/array, which produces a single-item
         # object array if other isn't convertible to ndarray.
@@ -492,7 +481,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif other2d.shape[1] == self.shape[-1]:  # Dense 2d matrix.
                 data = np.multiply(ret.data, other2d[:, ret.col])
             else:
-                raise ValueError("inconsistent shapes")
+                raise ValueError("cannot be broadcast")
             row = np.repeat(np.arange(other2d.shape[0]), ret.nnz)
             col = np.tile(ret.col, other2d.shape[0])
             return self._coo_container(
@@ -507,7 +496,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif other2d.shape[0] == self.shape[0]:  # Dense 2d array.
                 data = np.multiply(ret.data[:, None], other2d[ret.row])
             else:
-                raise ValueError("inconsistent shapes")
+                raise ValueError("cannot be broadcast")
             row = np.repeat(ret.row, other2d.shape[1])
             col = np.tile(np.arange(other2d.shape[1]), len(ret.col))
             return self._coo_container(
@@ -522,7 +511,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif other2d.shape[1] == 1 and self.shape[0] == other2d.shape[0]:
             data = np.multiply(ret.data, other2d[ret.row].ravel())
         else:
-            raise ValueError("inconsistent shapes")
+            raise ValueError("cannot be broadcast")
         ret.data = data.view(np.ndarray).ravel()
         return ret
 
@@ -1367,11 +1356,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """apply the binary operation fn to two sparse matrices.""" 
         different_shapes = self.shape != other.shape
         if different_shapes: # we need to broadcast
-            try:
-                # This will raise an error if the shapes are not broadcastable
-                np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError('inconsistent shapes')
+            bshape = np.broadcast_shapes(self.shape, other.shape)
             
             both_are_1d = self.ndim == 1 and other.ndim == 1
             result_shape_if_1d = self.shape[0]

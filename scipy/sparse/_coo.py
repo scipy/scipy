@@ -567,10 +567,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _add_dense(self, other):
         if self.shape != other.shape:
-            try:
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            bshape = np.broadcast_shapes(self.shape, other.shape)
             self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
         dtype = upcast_char(self.dtype.char, other.dtype.char)
@@ -596,11 +593,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
         
         other = self.__class__(other)
         if other.shape != self.shape:
-            try:
-                # This will raise an error if the shapes are not broadcastable
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError('inconsistent shapes')
+            # This will raise an error if the shapes are not broadcastable
+            bshape = np.broadcast_shapes(self.shape, other.shape)
             self = self._broadcast_to(bshape)
             other = other._broadcast_to(bshape)
 
@@ -611,10 +605,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _sub_dense(self, other):
         if self.shape != other.shape:
-            try:
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            bshape = np.broadcast_shapes(self.shape, other.shape)
             self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
 
@@ -626,11 +617,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         other = self.__class__(other)
         if other.shape != self.shape:
-            try:
-                # This will raise an error if the shapes are not broadcastable
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError('inconsistent shapes')
+            # This will raise an error if the shapes are not broadcastable
+            bshape = np.broadcast_shapes(self.shape, other.shape)
             self = self._broadcast_to(bshape)
             other = other._broadcast_to(bshape)
 
@@ -1204,12 +1192,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         elif isdense(other) or issparse(other):
             if self.shape != other.shape:
-                try:
-                    # This will raise an error if the shapes are not broadcastable
-                    broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
-                except ValueError:
-                    raise ValueError("inconsistent shapes for comparison")
-                
+                # This will raise an error if the shapes are not broadcastable
+                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
                 # Broadcasting the arrays if they have different shapes
                 # that are compatible for broadcasting
                 self = self._broadcast_to(broadcast_shape)
@@ -1302,11 +1286,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
                 return result
             
-            try:
-            # This will raise an error if the shapes are not broadcastable
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            bshape = np.broadcast_shapes(self.shape, other.shape)
             
             # single element
             if math.prod(other.shape) == 1:
@@ -1352,11 +1332,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     result = result.reshape(result_shape)
                 return result
             
-            try:
             # This will raise an error if the shapes are not broadcastable
-                bshape = np.broadcast_shapes(self.shape, other.shape)
-            except ValueError:
-                raise ValueError("inconsistent shapes")
+            bshape = np.broadcast_shapes(self.shape, other.shape)
 
             # single element
             if math.prod(other.shape) == 1:
@@ -1559,15 +1536,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         elif isdense(other) or issparse(other):
             if self.shape != other.shape:
-                try:
-                    # This will raise an error if the shapes are not broadcastable
-                    np.broadcast_shapes(self.shape, other.shape)
-                except ValueError:
-                    raise ValueError("inconsistent shapes")
+                # This will raise an error if the shapes are not broadcastable
+                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
                 
                 # Broadcasting the arrays if they have different shapes
                 # that are compatible for broadcasting
-                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
                 self = self._broadcast_to(broadcast_shape)
                 if isdense(other):
                     other = np.broadcast_to(other, broadcast_shape)

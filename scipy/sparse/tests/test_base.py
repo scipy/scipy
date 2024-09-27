@@ -2329,7 +2329,7 @@ class _TestInplaceArithmetic:
             # Elementwise multiply from sparray.__rmul__
             x = a.copy()
             y = a.copy()
-            with assert_raises(ValueError, match="inconsistent shapes"):
+            with assert_raises(ValueError, match="cannot be broadcast"):
                 x *= b.T
             x = x * a
             y *= b
