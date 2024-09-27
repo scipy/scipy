@@ -176,32 +176,34 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         Object containing the results of the estimation. It has the following
         attributes:
 
-            estimate : ndarray
-                Estimate of the value of the integral over the overall region specified.
-            error : ndarray
-                Estimate of the error of the approximation over the overall region
-                specified.
-            status : str
-                Whether the estimation was successful. Can be either: "converged",
-                "not_converged".
-            subdivisions : int
-                Number of subdivisions performed.
-            atol, rtol : float
-                Requested tolerances for the approximation.
-            patches: list of object
-                List of objects containing the estimates of the integral over smaller
-                patches of the domain.
+        estimate : ndarray
+            Estimate of the value of the integral over the overall region specified.
+        error : ndarray
+            Estimate of the error of the approximation over the overall region
+            specified.
+        status : str
+            Whether the estimation was successful. Can be either: "converged",
+            "not_converged".
+        subdivisions : int
+            Number of subdivisions performed.
+        atol, rtol : float
+            Requested tolerances for the approximation.
+        patches: list of object
+            List of objects containing the estimates of the integral over smaller
+            patches of the domain.
+
 
         Each object in ``patches`` has the following attributes:
 
-            a, b : ndarray
-                Points describing the corners of the patch. If the original integral
-                contained infinite limits or was over a region described by `region`,
-                then `a` and `b` are in the transformed coordinates.
-            estimate : ndarray
-                Estimate of the value of the integral over this patch.
-            error : ndarray
-                Estimate of the error of the approximation over this patch.
+        a, b : ndarray
+            Points describing the corners of the patch. If the original integral
+            contained infinite limits or was over a region described by `region`,
+            then `a` and `b` are in the transformed coordinates.
+        estimate : ndarray
+            Estimate of the value of the integral over this patch.
+        error : ndarray
+            Estimate of the error of the approximation over this patch.
+
 
     Notes
     -----
@@ -302,7 +304,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     To specify this type of integral programatically, the limits should be specified as
     two arrays, ``a`` and ``b`` for the constant limits, and a list of callables
-    ``region`` describing the function limits.
+    ``region`` describing the function limits::
 
         a = [a_1, ..., a_n]
         b = [b_1, ..., b_n]
@@ -1037,7 +1039,7 @@ class _FuncLimitsTransform(_VariableTransform):
 
     To specify this type of integral programatically, the limits should be specified as
     two arrays, ``a`` and ``b`` for the constant limits, and a list of callables
-    ``region`` describing the function limits.
+    ``region`` describing the function limits::
 
         a = [a_1, ..., a_n]
         b = [b_1, ..., b_n]
