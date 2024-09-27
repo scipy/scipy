@@ -66,10 +66,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         is a tuple of the fixed parameters needed to completely
         specify the function.
 
-        Suppose the callable has signature ``f0(x, *args, **kwargs)``, where ``args``
-        and ``kwargs`` are required positional and keyword arguments. Rather than
-        passing ``f0`` as the callable, consider wrapping it to accept only ``x``;
-        e.g., pass ``fun=lambda x: f0(x, *args, **kwargs)`` as the callable.
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
         where ``n`` is the number of independent variables.
@@ -790,10 +792,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         Objective function.
         Scalar function, must return a scalar.
 
-        Suppose the callable has signature ``f0(x, *args, **kwargs)``, where ``args``
-        and ``kwargs`` are required positional and keyword arguments. Rather than
-        passing ``f0`` as the callable, consider wrapping it to accept only ``x``;
-        e.g., pass ``fun=lambda x: f0(x, *args, **kwargs)`` as the callable.
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
 
     bracket : sequence, optional
         For methods 'brent' and 'golden', `bracket` defines the bracketing
