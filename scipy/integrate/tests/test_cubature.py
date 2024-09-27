@@ -1047,7 +1047,7 @@ class TestCubatureProblems:
                 [1, math.inf, math.inf, math.inf]
             ),
 
-            marks=pytest.mark.slow,
+            marks=pytest.mark.xslow,
         ),
     ])
     def test_infinite_limits(self, problem, rule, rtol, atol, xp):
@@ -1343,7 +1343,7 @@ class TestCubatureProblems:
                         ),
                     ],
                 ),
-                marks=pytest.mark.slow,
+                marks=pytest.mark.xslow,
             ),
         ],
     )
