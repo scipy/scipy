@@ -472,7 +472,7 @@ class TestShgoSimplicialTestFunctions:
 
     @pytest.mark.fail_slow(10)
     def test_f5_3_cons_symmetry(self):
-        """Assymmetrically constrained test function"""
+        """Asymmetrically constrained test function"""
         options = {'symmetry': [0, 0, 0, 3],
                    'disp': True}
 

@@ -40,7 +40,7 @@ def _vectorize(xp):
 # `_chandrupatla`/`_chandrupatla_minimize` from `_chandrupatla.py`, we import
 # `find_root`/`find_minimum` from `optimize.elementwise` and wrap those
 # functions to conform to the private interface. This may look a little strange,
-# since it effectly just inverts the interface transformation done within the
+# since it effectively just inverts the interface transformation done within the
 # `find_root`/`find_minimum` functions, but it allows us to run the original,
 # unmodified tests on the public interfaces, simplifying the PR that adds
 # the public interfaces. We'll refactor this when we want to @parametrize the
@@ -567,7 +567,7 @@ class TestChandrupatla(TestScalarRootFinders):
 
     @pytest.mark.parametrize('p', [0.6, np.linspace(-0.05, 1.05, 10)])
     def test_basic(self, p, xp):
-        # Invert distribution CDF and compare against distrtibution `ppf`
+        # Invert distribution CDF and compare against distribution `ppf`
         a, b = xp.asarray(-5.), xp.asarray(5.)
         res = _chandrupatla_root(self.f, a, b, args=(xp.asarray(p),))
         ref = xp.asarray(stats.norm().ppf(p), dtype=xp.asarray(p).dtype)

@@ -677,7 +677,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
         .. versionadded:: 0.18
     full_output : boolean, optional
-        If True, this function returns additioal information: `infodict`,
+        If True, this function returns additional information: `infodict`,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9

@@ -15,7 +15,7 @@ from scipy import stats
 # `_bracket_root`/`_bracket_minimum` from `_bracket.py`, we import
 # `bracket_root`/`bracket_minimum` from `optimize.elementwise` and wrap those
 # functions to conform to the private interface. This may look a little strange,
-# since it effectly just inverts the interface transformation done within the
+# since it effectively just inverts the interface transformation done within the
 # `bracket_root`/`bracket_minimum` functions, but it allows us to run the original,
 # unmodified tests on the public interfaces, simplifying the PR that adds
 # the public interfaces. We'll refactor this when we want to @parametrize the
@@ -525,7 +525,7 @@ class TestBracketMinimum:
     @pytest.mark.parametrize("xm0", (0.05, 0.1, 0.15))
     @pytest.mark.parametrize("xr0", (0.2, 0.4, 0.6, None))
     # Minimum is ``a`` for each tuple ``(a, b)`` below. Tests cases where minimum
-    # is within, or at varying disances to the left or right of the initial
+    # is within, or at varying distances to the left or right of the initial
     # bracket.
     @pytest.mark.parametrize(
         "args",
