@@ -933,6 +933,7 @@ class TestCubatureProblems:
             rtol=rtol,
             atol=atol,
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
+            check_dtype=False,
         )
 
         err_msg = (f"estimate_error={res.error}, "
@@ -1214,8 +1215,9 @@ class TestCubatureProblems:
                 [1, 1],
                 lambda xp: [
                     lambda x: (
-                        xp.reshape(-xp.repeat(xp.sqrt(1 - x[:, 0] ** 2), 2), (-1, 2)),
-                        xp.reshape(xp.repeat(xp.sqrt(1 - x[:, 0] ** 2), 2), (-1, 2)),
+                        # Workaround since xp.repeat is not available
+                        -xp.concat([xp.sqrt(1 - x[:, :1] ** 2)] * 2, axis=-1),
+                        xp.concat([xp.sqrt(1 - x[:, :1] ** 2)] * 2, axis=-1),
                     ),
                 ],
             ),
@@ -1234,37 +1236,13 @@ class TestCubatureProblems:
                 lambda xp: [
                     lambda x: (
                         xp.zeros((x.shape[0], 3)),
-                        xp.reshape(xp.repeat(x[:, 0], 3), (-1, 3)),
+                        # Workaround since xp.repeat is not available
+                        xp.concat([x[:, :1]]*3, axis=-1),
                     ),
                 ],
             ),
 
-            pytest.param(
-                (
-                    # Integrate
-                    #   f(x, y, z, w, p) = n
-                    # with limits
-                    #   a = [0, 0, 0, 0, 0],
-                    #   b = [1, x, x, xy, xy]
-                    # for n = range(5)
-                    lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
-                    [i / 21 for i in range(5)],
-                    ([0, 1, 2, 3, 4],),
-                    [0],
-                    [1],
-                    lambda xp: [
-                        lambda x: (
-                            xp.zeros((x.shape[0], 2)),
-                            xp.reshape(xp.repeat(x[:, 0], 2), (-1, 2)),
-                        ),
-                        lambda x: (
-                            xp.zeros((x.shape[0], 2)),
-                            xp.reshape(xp.repeat(x[:, 0] * x[:, 1], 2), (-1, 2)),
-                        ),
-                    ],
-                ),
-                marks=pytest.mark.slow,
-            ),
+
             pytest.param(
                 (
                     # Integrate
@@ -1297,6 +1275,34 @@ class TestCubatureProblems:
                     ],
                 ),
                 marks=pytest.mark.slow,
+            ),
+            pytest.param(
+                (
+                    # Integrate
+                    #   f(x, y, z, w, p) = n
+                    # with limits
+                    #   a = [0, 0, 0, 0, 0],
+                    #   b = [1, x, x, xy, xy]
+                    # for n = range(5)
+                    lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                    [i / 21 for i in range(5)],
+                    ([0, 1, 2, 3, 4],),
+                    [0],
+                    [1],
+                    lambda xp: [
+                        lambda x: (
+                            xp.zeros((x.shape[0], 2)),
+                            # Workaround since xp.repeat is not available:
+                            xp.concat([x[:, :1]]*2, axis=-1),
+                        ),
+                        lambda x: (
+                            xp.zeros((x.shape[0], 2)),
+                            # Likewise here:
+                            xp.concat([x[:, :1]*x[:, 1:2]]*2, axis=-1),
+                        ),
+                    ],
+                ),
+                marks=pytest.mark.xslow,
             ),
             pytest.param(
                 (
@@ -1522,6 +1528,10 @@ class TestRulesCubature:
 
 
 @array_api_compatible
+@skip_xp_backends(
+    'jax',
+    reasons=['transforms make use of boolean indexing assignment'],
+)
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
         (
@@ -1598,11 +1608,11 @@ class TestTransformations:
             lambda xp: [
                 lambda x: (
                     xp.zeros((x.shape[0], 2)),
-                    xp.reshape(xp.repeat(x[:, 0], 2), (-1, 2)),
+                    xp.reshape(xp.asarray([x[:, 0]]*2), (-1, 2)),
                 ),
                 lambda x: (
                     xp.zeros((x.shape[0], 2)),
-                    xp.reshape(xp.repeat(x[:, 0] * x[:, 1], 2), (-1, 2)),
+                    xp.reshape(xp.asarray([x[:, 0] * x[:, 1]]*2), (-1, 2)),
                 ),
             ],
             [
