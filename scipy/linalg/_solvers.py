@@ -19,7 +19,7 @@ from ._decomp_lu import lu
 from ._decomp_qr import qr
 from ._decomp_qz import ordqz
 from ._decomp import _asarray_validated
-from ._special_matrices import kron, block_diag
+from ._special_matrices import block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
@@ -223,7 +223,7 @@ def _solve_discrete_lyapunov_direct(a, q):
     `method=direct`. It is not supposed to be called directly.
     """
 
-    lhs = kron(a, a.conj())
+    lhs = np.kron(a, a.conj())
     lhs = np.eye(lhs.shape[0]) - lhs
     x = solve(lhs, q.flatten())
 
