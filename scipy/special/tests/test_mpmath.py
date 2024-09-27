@@ -2239,8 +2239,9 @@ class TestSystematic:
 
     def test_spherical_kn(self):
         def mp_spherical_kn(n, z):
-            out = (mpmath.besselk(n + mpmath.mpf(1)/2, z) *
-                   mpmath.sqrt(mpmath.pi/(2*mpmath.mpmathify(z))))
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
             if mpmath.mpmathify(z).imag == 0:
                 return out.real
             else:
