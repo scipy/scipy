@@ -940,6 +940,10 @@ class TestCubatureProblems:
                    f"true_error={xp.abs(res.estimate - exact)}")
         assert res.status == "converged", err_msg
 
+    @skip_xp_backends(
+        "jax.numpy",
+        reasons=["transforms make use of indexing assignment"],
+    )
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
@@ -1086,6 +1090,10 @@ class TestCubatureProblems:
             check_0d=False,
         )
 
+    @skip_xp_backends(
+        "jax.numpy",
+        reasons=["transforms make use of indexing assignment"],
+    )
     @pytest.mark.parametrize(
         "problem",
         [
@@ -1352,6 +1360,8 @@ class TestCubatureProblems:
         args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
         exact = xp.asarray(exact, dtype=xp.float64)
 
+        xp_compat = array_namespace(xp.empty(0))
+
         res = cubature(
             f,
             a_outer,
@@ -1359,8 +1369,8 @@ class TestCubatureProblems:
             rule,
             rtol,
             atol,
-            args=(*args, xp),
-            region=region(xp),
+            args=(*args, xp_compat),
+            region=region(xp_compat),
         )
 
         assert res.status == "converged"

@@ -596,7 +596,7 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     a = xp.asarray(a, dtype=xp.float64)
     b = xp.asarray(b, dtype=xp.float64)
 
-    if a.size == 0 or b.size == 0:
+    if xp_size(a) == 0 or xp_size(b) == 0:
         raise ValueError("`a` and `b` must be nonempty")
 
     if a.ndim != 1 or b.ndim != 1:
@@ -617,14 +617,15 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     # If any of limits are the wrong way around (a > b), flip them and keep track of
     # the sign.
     sign = (-1.0) ** xp.sum(xp.astype(a > b, xp.float64))
-    a_flipped = xp.min(xp.asarray([a, b]), axis=0)
-    b_flipped = xp.max(xp.asarray([a, b]), axis=0)
+
+    a_flipped = xp.min(xp.stack([a, b]), axis=0)
+    b_flipped = xp.max(xp.stack([a, b]), axis=0)
 
     a, b = a_flipped, b_flipped
 
     # If any of the limits are infinite, apply a transformation
-    if xp.any(xp.isinf(a_flipped)) or xp.any(xp.isinf(b_flipped)):
-        f = _InfiniteLimitsTransform(f, a_flipped, b_flipped)
+    if xp.any(xp.isinf(a)) or xp.any(xp.isinf(b)):
+        f = _InfiniteLimitsTransform(f, a, b)
         a, b = f.transformed_limits
 
         points = [f.inv(point) for point in points]
@@ -1064,7 +1065,7 @@ class _FuncLimitsTransform(_VariableTransform):
         self._region = region
 
         # The "outer dimension" here is the number of non-function limits.
-        self._outer_ndim = self._a_outer.size
+        self._outer_ndim = xp_size(self._a_outer)
 
         # The "inner dimension" here is the number of limits returned by the functions
         # in `region`.
@@ -1090,7 +1091,7 @@ class _FuncLimitsTransform(_VariableTransform):
                 axis=-1,
             )
 
-        self._inner_ndim = full_limits.shape[-1] - self._a_outer.size
+        self._inner_ndim = full_limits.shape[-1] - xp_size(self._a_outer)
 
     @property
     def transformed_limits(self):
