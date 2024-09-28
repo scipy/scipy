@@ -956,6 +956,13 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
         function is an ndarray of shape (n,) (never a scalar even if n=1).
         It must return a 1-D array_like of shape (m,) or a scalar.
 
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
+
         .. versionchanged:: 1.9.0
             `f` is now able to return a 1-D array-like, with the :math:`(m, n)`
             Jacobian being estimated.
