@@ -170,8 +170,16 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
                 msg = f"'--array-api-backend' must be in {xp_available_backends.keys()}"
                 raise ValueError(msg)
 
+
 if 'cupy' in xp_available_backends:
     SCIPY_DEVICE = 'cuda'
+
+    # this is annoying in CuPy 13.x
+    warnings.filterwarnings(
+        'ignore', 'cupyx.jit.rawkernel is experimental', category=FutureWarning
+    )
+    from cupyx.scipy import signal
+    del signal
 
 array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
 
