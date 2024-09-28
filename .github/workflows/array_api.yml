@@ -29,6 +29,7 @@ env:
     -t scipy.optimize.tests.test_chandrupatla
     -t scipy.stats
     -t scipy.ndimage
+    -t scipy/signal/tests/test_signaltools.py
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -109,3 +110,4 @@ jobs:
         export OMP_NUM_THREADS=2
         # expand as more modules are supported by adding to `XP_TESTS` above
         python dev.py --no-build test -b all $XP_TESTS -- --durations 3 --timeout=60
+
