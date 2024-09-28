@@ -47,19 +47,6 @@ Finally, many individual functions can be optimized for performance.
 requested in this respect.
 
 
-Statistics enhancements
------------------------
-
-The following `scipy.stats` enhancements and those listed in the
-:ref:`scipy-roadmap-detailed` are of particularly high importance to the
-project.
-
-- Overhaul the univariate distribution infrastructure to address longstanding
-  issues (e.g. see `gh-15928 <https://github.com/scipy/scipy/issues/15928>`_.)
-- Consistently handle ``nan_policy``, ``axis`` arguments, and masked
-  arrays in ``stats`` functions (where appropriate).
-
-
 Support for more hardware platforms
 -----------------------------------
 
