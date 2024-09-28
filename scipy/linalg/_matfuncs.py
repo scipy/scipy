@@ -819,10 +819,6 @@ def khatri_rao(a, b):
     c:  (n*m, k) ndarray
         Khatri-rao product of `a` and `b`.
 
-    See Also
-    --------
-    kron : Kronecker product
-
     Notes
     -----
     The mathematical definition of the Khatri-Rao product is:
