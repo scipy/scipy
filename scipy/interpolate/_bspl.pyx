@@ -449,8 +449,8 @@ def _make_design_matrix(const double[::1] x,
 @cython.nonecheck(False)
 def evaluate_ndbspline(const double[:, ::1] xi,
                        const double[:, ::1] t,
-                       const long[::1] len_t,
-                       long[::1] k,
+                       const npy_int32[::1] len_t,
+                       const npy_int32[::1] k,
                        int[::1] nu,
                        bint extrapolate,
                        const double[::1] c1r,
@@ -642,7 +642,12 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 @cython.wraparound(False)
 @cython.nonecheck(False)
 @cython.boundscheck(False)
-def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1] k):
+def _colloc_nd(const double[:, ::1] xvals,
+               const double[:, ::1] _t,
+               const npy_int32[::1] len_t,
+               const npy_int32[::1] k,
+               const npy_intp[:, ::1] _indices_k1d,
+               const npy_intp[::1] _cstrides):
     """Construct the N-D tensor product collocation matrix as a CSR array.
 
     In the dense representation, each row of the collocation matrix corresponds
@@ -703,11 +708,9 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
 
         npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
         npy_intp volume   # the number of non-zero terms
-        npy_intp[:, ::1] _indices_k1d    # tabulated np.unravel_index
 
         # shifted indices into the data array
         npy_intp[::1] idx_c = np.ones(ndim, dtype=np.intp) * (-101)  # any sentinel would do, really
-        npy_intp[::1] cstrides
         npy_intp idx_cflat
 
         npy_intp[::1] nu = np.zeros(ndim, dtype=np.intp)
@@ -723,26 +726,9 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
         int j, d
 
     # the number of non-zero b-splines for each data point.
-    k1_shape = tuple(kd + 1 for kd in k)
     volume = 1
     for d in range(ndim):
         volume *= k[d] + 1
-
-    # Precompute the shape and strides of the coefficients array.
-    # This would have been the NdBSpline coefficients; in the present context
-    # this is a helper to compute the indices into the collocation matrix.
-    c_shape = tuple(len(t[d]) - k1_shape[d] for d in range(ndim))
-
-    # The computation is equivalent to
-    # >>> x = np.empty(c_shape)
-    # >>> cstrides = [s // 8 for s in x.strides]
-    cs = c_shape[1:] + (1,)
-    cstrides = np.cumprod(cs[::-1], dtype=np.intp)[::-1].copy()
-
-    # tabulate flat indices for iterating over the (k+1)**ndim subarray of
-    # non-zero b-spline elements
-    indices = np.unravel_index(np.arange(volume), k1_shape)
-    _indices_k1d = np.asarray(indices, dtype=np.intp).T.copy()
 
     # Allocate the collocation matrix in the CSR format.
     # If dense, this would have been
@@ -758,7 +744,7 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
         # For each point, iterate over the dimensions
         out_of_bounds = 0
         for d in range(ndim):
-            td = t[d]
+            td = _t[d, :len_t[d]]
             xd = xv[d]
             kd = k[d]
 
@@ -788,7 +774,7 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
             for d in range(ndim):
                 factor *= b[d, idx_b[d]]
                 idx_c[d] = idx_b[d] + i[d] - k[d]
-                idx_cflat += idx_c[d] * cstrides[d]
+                idx_cflat += idx_c[d] * _cstrides[d]
 
             # The `idx_cflat` computation above is an unrolled version of
             # idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
