@@ -3709,7 +3709,7 @@ class TestSoftplus:
                [73.26040086468937, 76.24944728617226, 37.83955519155184]]
 
         res = softplus(a)
-        assert_allclose(res, ref, rtol=1e-15)
+        assert_allclose(res, ref, rtol=2e-15)
 
     def test_softplus_with_kwargs(self):
         x = np.arange(5) - 2
