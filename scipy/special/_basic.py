@@ -3416,7 +3416,7 @@ def zeta(x, q=None, out=None):
         return _ufuncs._zeta(x, q, out)
 
       
-def softplus(x, **kwargs):
+def softplus(x, *, out=None, where=True, **kwargs):
     r"""
     Compute the softplus function element-wise.
 
@@ -3427,28 +3427,26 @@ def softplus(x, **kwargs):
     ----------
     x : array_like
         Input value.
-    **kwargs :
-        out : ndarray, None, or tuple of ndarray and None, optional
-            A location into which the result is stored. If provided, it must have
-            a shape that the inputs broadcast to. If not provided or None,
-            a freshly-allocated array is returned. A tuple (possible only as a
-            keyword argument) must have length equal to the number of outputs.
-        where : array_like, optional
-            This condition is broadcast over the input. At locations where the
-            condition is True, the `out` array will be set to the ufunc result.
-            Elsewhere, the `out` array will retain its original value.
-            Note that if an uninitialized `out` array is created via the default
-            ``out=None``, locations within it where the condition is False will
-            remain uninitialized.
-        kwargs 
-            For other keyword-only arguments, see 
-            `Ufunc Docs <https://numpy.org/doc/stable/reference/ufuncs.html>`_.
+    out : ndarray, None, or tuple of ndarray and None, optional
+        A location into which the result is stored. If provided, it must have
+        a shape that the inputs broadcast to. If not provided or None,
+        a freshly-allocated array is returned. A tuple (possible only as a
+        keyword argument) must have length equal to the number of outputs.
+    where : array_like, optional
+        This condition is broadcast over the input. At locations where the
+        condition is True, the `out` array will be set to the ufunc result.
+        Elsewhere, the `out` array will retain its original value.
+        Note that if an uninitialized `out` array is created via the default
+        ``out=None``, locations within it where the condition is False will
+        remain uninitialized.
+    **kwargs
+        For other keyword-only arguments, see the
+        `ufunc docs <https://numpy.org/doc/stable/reference/ufuncs.html>`_.
 
     Returns
     -------
     softplus : ndarray
         Logarithm of ``exp(0) + exp(x)``.
-        
 
     Examples
     --------
@@ -3460,4 +3458,4 @@ def softplus(x, **kwargs):
     >>> special.softplus([-1, 0, 1])
     array([0.31326169, 0.69314718, 1.31326169])
     """
-    return np.logaddexp(0, x, **kwargs)
+    return np.logaddexp(0, x, out=out, where=where, **kwargs)

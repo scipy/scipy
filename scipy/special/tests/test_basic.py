@@ -3682,29 +3682,45 @@ class TestRiccati:
 
 
 class TestSoftplus:
-    @pytest.mark.parametrize("value, expected",[
-        (0, 0.6931471805599453),
-        ([-1, 0, 1], np.array([0.31326169, 0.69314718, 1.31326169])),
-        (100, 100.0),
-        (-5, 0.006715348489118068),
-        (-100, 3.720075976020836e-44),
-        (10000, 10000.0)
-    ])
-    def test_softplus(self, value, expected):
-        
-        # Test cases for the softplus function.
-        # Note : ``value`` is selected based on the intervals provided in Eq.(10) of the the following paper:
-        # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision Floating-Point Reliable.
-        # Retrieved from https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
-        result = softplus(value)
-        assert_allclose(result, expected)
+    def test_softplus(self):
+        # Test cases for the softplus function. Selected based on Eq.(10) of:
+        # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision
+        # Floating-Point Reliable. Retrieved from:
+        # https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
+        # Reference values computed with `mpmath`
+        import numpy as np
+        rng = np.random.default_rng(3298432985245)
+        n = 3
+        a1 = rng.uniform(-100, -37, size=n)
+        a2 = rng.uniform(-37, 18, size=n)
+        a3 = rng.uniform(18, 33.3, size=n)
+        a4 = rng.uniform(33.33, 100, size=n)
+        a = np.stack([a1, a2, a3, a4])
+
+        # from mpmath import mp
+        # mp.dps = 100
+        # @np.vectorize
+        # def softplus(x):
+        #     return float(mp.log(mp.one + mp.exp(x)))
+        # softplus(a).tolist()
+        ref = [[1.692721323272333e-42, 7.42673911145206e-41, 8.504608846033205e-35],
+               [1.8425343736349797, 9.488245799395577e-15, 7.225195764021444e-08],
+               [31.253760266045106, 27.758244090327832, 29.995959179643634],
+               [73.26040086468937, 76.24944728617226, 37.83955519155184]]
+
+        res = softplus(a)
+        assert_allclose(res, ref, rtol=1e-15)
 
     def test_softplus_with_kwargs(self):
         x = np.arange(5) - 2
         out = np.ones(5)
-        where = x>0
+        ref = out.copy()
+        where = x > 0
+
         softplus(x, out=out, where=where)
-        assert_allclose(out, np.array([1., 1., 1., 1.31326169, 2.12692801]))
+        ref[where] = softplus(x[where])
+        assert_allclose(out, ref)
+
 
 class TestRound:
     def test_round(self):
