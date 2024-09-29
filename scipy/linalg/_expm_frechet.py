@@ -75,7 +75,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     >>> expm_A.shape, expm_frechet_AE.shape
     ((3, 3), (3, 3))
 
-    Create a 6x6 matrix containg [[A, E], [0, A]]:
+    Create a 6x6 matrix containing [[A, E], [0, A]]:
 
     >>> M = np.zeros((6, 6))
     >>> M[:3, :3] = A
@@ -108,7 +108,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     elif method == 'blockEnlarge':
         expm_A, expm_frechet_AE = expm_frechet_block_enlarge(A, E)
     else:
-        raise ValueError('Unknown implementation %s' % method)
+        raise ValueError(f'Unknown implementation {method}')
     if compute_expm:
         return expm_A, expm_frechet_AE
     else:

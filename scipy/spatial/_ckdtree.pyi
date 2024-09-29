@@ -1,15 +1,9 @@
-import sys
+from __future__ import annotations
 from typing import (
     Any,
-    Dict,
     Generic,
-    List,
-    Optional,
     overload,
-    Set,
-    Tuple,
     TypeVar,
-    Union,
 )
 
 import numpy as np
@@ -23,19 +17,9 @@ _BoxType = TypeVar("_BoxType", None, npt.NDArray[np.float64])
 
 # Copied from `numpy.typing._scalar_like._ScalarLike`
 # TODO: Expand with 0D arrays once we have shape support
-_ArrayLike0D = Union[
-    bool,
-    int,
-    float,
-    complex,
-    str,
-    bytes,
-    np.generic,
-]
-_WeightType = Union[
-    npt.ArrayLike,
-    Tuple[Optional[npt.ArrayLike], Optional[npt.ArrayLike]],
-]
+_ArrayLike0D = bool | int | float | complex | str | bytes | np.generic
+
+_WeightType = npt.ArrayLike | tuple[npt.ArrayLike | None, npt.ArrayLike | None]
 
 class cKDTreeNode:
     @property
@@ -57,9 +41,9 @@ class cKDTreeNode:
     @property
     def split(self) -> float: ...
     @property
-    def lesser(self) -> Optional[cKDTreeNode]: ...
+    def lesser(self) -> cKDTreeNode | None: ...
     @property
-    def greater(self) -> Optional[cKDTreeNode]: ...
+    def greater(self) -> cKDTreeNode | None: ...
 
 class cKDTree(Generic[_BoxType]):
     @property
@@ -89,7 +73,7 @@ class cKDTree(Generic[_BoxType]):
     # The latter gives us more flexibility in setting the generic parameter
     # though.
     @overload
-    def __new__(  # type: ignore[misc]
+    def __new__(  # type: ignore[overload-overlap]
         cls,
         data: npt.ArrayLike,
         leafsize: int = ...,
@@ -118,8 +102,8 @@ class cKDTree(Generic[_BoxType]):
         eps: float = ...,
         p: float = ...,
         distance_upper_bound: float = ...,
-        workers: Optional[int] = ...,
-    ) -> Tuple[Any, Any]: ...
+        workers: int | None = ...,
+    ) -> tuple[Any, Any]: ...
 
     # TODO: returns a list scalars if `x.ndim <= 1`,
     # returns an object array of lists otherwise
@@ -127,10 +111,10 @@ class cKDTree(Generic[_BoxType]):
         self,
         x: npt.ArrayLike,
         r: npt.ArrayLike,
-        p: float,
+        p: float = ...,
         eps: float = ...,
-        workers: Optional[int] = ...,
-        return_sorted: Optional[bool] = ...,
+        workers: int | None = ...,
+        return_sorted: bool | None = ...,
         return_length: bool = ...
     ) -> Any: ...
 
@@ -140,16 +124,16 @@ class cKDTree(Generic[_BoxType]):
         r: float,
         p: float,
         eps: float = ...,
-    ) -> List[List[int]]: ...
+    ) -> list[list[int]]: ...
 
     @overload
-    def query_pairs(  # type: ignore[misc]
+    def query_pairs(  # type: ignore[overload-overlap]
         self,
         r: float,
         p: float = ...,
         eps: float = ...,
         output_type: Literal["set"] = ...,
-    ) -> Set[Tuple[int, int]]: ...
+    ) -> set[tuple[int, int]]: ...
     @overload
     def query_pairs(
         self,
@@ -160,16 +144,16 @@ class cKDTree(Generic[_BoxType]):
     ) -> npt.NDArray[np.intp]: ...
 
     @overload
-    def count_neighbors(  # type: ignore[misc]
+    def count_neighbors(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         r: _ArrayLike0D,
         p: float = ...,
-        weights: None | Tuple[None, None] = ...,
+        weights: None | tuple[None, None] = ...,
         cumulative: bool = ...,
     ) -> int: ...
     @overload
-    def count_neighbors(  # type: ignore[misc]
+    def count_neighbors(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         r: _ArrayLike0D,
@@ -178,12 +162,12 @@ class cKDTree(Generic[_BoxType]):
         cumulative: bool = ...,
     ) -> np.float64: ...
     @overload
-    def count_neighbors(  # type: ignore[misc]
+    def count_neighbors(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         r: npt.ArrayLike,
         p: float = ...,
-        weights: None | Tuple[None, None] = ...,
+        weights: None | tuple[None, None] = ...,
         cumulative: bool = ...,
     ) -> npt.NDArray[np.intp]: ...
     @overload
@@ -197,7 +181,7 @@ class cKDTree(Generic[_BoxType]):
     ) -> npt.NDArray[np.float64]: ...
 
     @overload
-    def sparse_distance_matrix(  # type: ignore[misc]
+    def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         max_distance: float,
@@ -205,7 +189,7 @@ class cKDTree(Generic[_BoxType]):
         output_type: Literal["dok_matrix"] = ...,
     ) -> dok_matrix: ...
     @overload
-    def sparse_distance_matrix(  # type: ignore[misc]
+    def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         max_distance: float,
@@ -213,13 +197,13 @@ class cKDTree(Generic[_BoxType]):
         output_type: Literal["coo_matrix"] = ...,
     ) -> coo_matrix: ...
     @overload
-    def sparse_distance_matrix(  # type: ignore[misc]
+    def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
         other: cKDTree,
         max_distance: float,
         p: float = ...,
         output_type: Literal["dict"] = ...,
-    ) -> Dict[Tuple[int, int], float]: ...
+    ) -> dict[tuple[int, int], float]: ...
     @overload
     def sparse_distance_matrix(
         self,

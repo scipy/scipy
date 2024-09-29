@@ -1,0 +1,38 @@
+# This file contains regexes for automatically adding labels based on issue/PR titles,
+# for use with https://github.com/github/issue-labeler.
+
+array types:
+  - 'array types'
+
+Benchmarks:
+  - 'BENCH'
+
+Build issues:
+  - 'BLD'
+
+CI:
+  - 'CI'
+
+defect:
+  - '(BUG|FIX)'
+
+deprecated:
+  - 'DEP'
+
+Documentation:
+  - 'DOC'
+
+DX:
+  - 'DEV'
+
+enhancement:
+  - 'ENH'
+
+maintenance:
+  - '(MAINT|TST)'
+
+query:
+  - '(Q|q)uery'
+
+RFC:
+  - 'RFC'

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 ====================================================
 Quasi-Monte Carlo submodule (:mod:`scipy.stats.qmc`)
@@ -34,6 +33,7 @@ Helpers
    :toctree: generated/
 
    discrepancy
+   geometric_discrepancy
    update_discrepancy
    scale
 
@@ -232,4 +232,5 @@ References
    30, no. 5: 2635-2654, 2008.
 
 """
-from ._qmc import *
+from ._qmc import *  # noqa: F403
+from ._qmc import __all__  # noqa: F401

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="343.9" height="204.21" version="1.1" viewBox="0 0 85.974 51.052" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs>
+<linearGradient id="y" x1="87.758" x2="101.25" y1="108.88" y2="108.88" gradientTransform="matrix(.72207 0 0 1.0286 -156.52 -2.9891)" gradientUnits="userSpaceOnUse">
+<stop stop-color="#fff" offset="0"/>
+<stop stop-color="#fff" stop-opacity="0" offset="1"/>
+</linearGradient>
+</defs>
+<g transform="translate(-7.1806 -87.037)">
+<rect x="7.3103" y="87.167" width="85.565" height="50.792" ry="0" fill="#fff" stroke="#fff" stroke-width=".25938"/>
+</g>
+<g transform="translate(-7.1806 -87.037)">
+<use transform="translate(-10,5)" xlink:href="#d"/>
+<rect x="12.5" y="112.49" width="30.011" height="5.0212" fill="#fff" fill-opacity=".75203" stroke="#fff" stroke-opacity=".74797" stroke-width=".25057"/>
+<use id="h" transform="translate(5)" xlink:href="#m"/>
+<text x="84.14257" y="128.4707" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="84.14257" y="128.4707" fill="#0000ff" stroke-width=".25">7</tspan></text>
+<use transform="translate(5)" xlink:href="#h"/>
+<text transform="rotate(-19.855)" x="47.1394" y="116.2155" font-family="sans-serif" font-size="7.2054px" stroke-width=".67551" style="line-height:1.25" xml:space="preserve"><tspan x="47.1394" y="116.2155" font-weight="bold" stroke-width=".67551">...</tspan></text>
+<rect x="47.5" y="87.654" width="45" height="42.346" fill="#00f" fill-opacity=".17073"/>
+<text x="89.156242" y="128.47202" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="89.156242" y="128.47202" fill="#0000ff" stroke-width=".25">8</tspan></text>
+<text x="18.689445" y="128.4707" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="18.689445" y="128.4707" fill="#0000ff" stroke-width=".25">-6</tspan></text>
+<text x="49.15234" y="128.4707" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="49.15234" y="128.4707" fill="#0000ff" stroke-width=".25">0</tspan></text>
+<text x="54.12825" y="128.47202" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="54.12825" y="128.47202" fill="#0000ff" stroke-width=".25">1</tspan></text>
+<text x="59.187496" y="128.48959" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="59.187496" y="128.48959" fill="#0000ff" stroke-width=".25">2</tspan></text>
+<text x="64.156898" y="128.4707" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="64.156898" y="128.4707" fill="#0000ff" stroke-width=".25">3</tspan></text>
+<text x="69.161453" y="128.47202" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="69.161453" y="128.47202" fill="#0000ff" stroke-width=".25">4</tspan></text>
+<text x="74.165359" y="128.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="74.165359" y="128.45312" fill="#0000ff" stroke-width=".25">5</tspan></text>
+<text x="43.728508" y="128.47202" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="43.728508" y="128.47202" fill="#0000ff" stroke-width=".25">-1</tspan></text>
+<text x="38.738926" y="128.48959" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="38.738926" y="128.48959" fill="#0000ff" stroke-width=".25">-2</tspan></text>
+<text x="33.712234" y="128.4707" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="33.712234" y="128.4707" fill="#0000ff" stroke-width=".25">-3</tspan></text>
+<text x="28.680332" y="128.47202" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="28.680332" y="128.47202" fill="#0000ff" stroke-width=".25">-4</tspan></text>
+<text x="23.721998" y="128.45312" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="23.721998" y="128.45312" fill="#0000ff" stroke-width=".25">-5</tspan></text>
+<text x="13.719395" y="128.47202" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="13.719395" y="128.47202" fill="#0000ff" stroke-width=".25">-7</tspan></text>
+<rect id="a" x="17.5" y="125" width="5" height="5" fill="none" stroke="#00f" stroke-width=".25"/>
+<use id="x" transform="translate(5)" xlink:href="#a"/>
+<use id="w" transform="translate(5)" xlink:href="#x"/>
+<use transform="translate(-5)" xlink:href="#a"/>
+<use id="v" transform="translate(5)" xlink:href="#w"/>
+<use id="u" transform="translate(5)" xlink:href="#v"/>
+<use id="t" transform="translate(5)" xlink:href="#u"/>
+<use id="s" transform="translate(5)" xlink:href="#t"/>
+<use id="r" transform="translate(5)" xlink:href="#s"/>
+<use id="q" transform="translate(5)" xlink:href="#r"/>
+<use id="p" transform="translate(5)" xlink:href="#q"/>
+<use id="o" transform="translate(5)" xlink:href="#p"/>
+<use id="n" transform="translate(5)" xlink:href="#o"/>
+<use id="m" transform="translate(5)" xlink:href="#n"/>
+<text x="79.14257" y="128.4707" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="79.14257" y="128.4707" fill="#0000ff" stroke-width=".25">6</tspan></text>
+<g>
+<path d="m12.5 120v-29.806" color="#000000" stroke-width=".25px" style="-inkscape-stroke:none"/>
+<path d="m12.375 90.193v29.807h0.25v-29.807z" color="#000000" style="-inkscape-stroke:none"/>
+<path d="m12.5 90.194 0.625 0.625-0.625-2.1875-0.625 2.1875z" fill-rule="evenodd" stroke-width=".125"/>
+</g>
+<path id="l" d="m11.25 110h2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<use id="k" transform="translate(0,5)" xlink:href="#l"/>
+<use id="j" transform="translate(0,-10)" xlink:href="#k"/>
+<use id="i" transform="translate(0,-5)" xlink:href="#j"/>
+<use transform="translate(0,-5)" xlink:href="#i"/>
+<text x="8.1523399" y="105.97071" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="8.1523399" y="105.97071" stroke-width=".25">0</tspan></text>
+<text x="7.7285099" y="110.97201" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="7.7285099" y="110.97201" stroke-width=".25">-1</tspan></text>
+<text x="7.7389259" y="115.98959" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="7.7389259" y="115.98959" stroke-width=".25">-2</tspan></text>
+<text x="8.1282511" y="100.97201" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="8.1282511" y="100.97201" stroke-width=".25">1</tspan></text>
+<text x="8.1874962" y="95.989586" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="8.1874962" y="95.989586" stroke-width=".25">2</tspan></text>
+<text x="9.1373653" y="128.51303" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="9.1373653" y="128.51303" fill="#0000ff" stroke-width=".25"><tspan font-style="italic">k</tspan></tspan></text>
+<text x="10.034031" y="89.167137" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="10.034031" y="89.167137" font-style="italic" stroke-width=".25">p</tspan></text>
+<path d="m24.875 131.5v2.5h0.25v-2.5z" color="#000000" fill="#00f" style="-inkscape-stroke:none"/>
+<g fill="#00f" fill-rule="evenodd">
+<path d="m25 130.75c0.125 0.375 0.375 0.875 0.625 1.125 0 0-0.5 0-0.625-0.25-0.125 0.25-0.625 0.25-0.625 0.25 0.25-0.25 0.5-0.75 0.625-1.125z" color="#000000" stroke-width=".125pt" style="-inkscape-stroke:none"/>
+<path d="m25 130.49-0.07813 0.23828c-0.12149 0.36446-0.37511 0.86144-0.60547 1.0918l-0.14258 0.14257h0.20118s0.13237 3.2e-4 0.2832-0.0332c0.12395-0.0275 0.24818-0.10895 0.3418-0.2168 0.09361 0.10785 0.21785 0.18926 0.3418 0.2168 0.15083 0.0335 0.2832 0.0332 0.2832 0.0332h0.20117l-0.14258-0.14257c-0.23036-0.23036-0.48398-0.72734-0.60547-1.0918zm0 0.42969c0.11535 0.30251 0.28301 0.6151 0.47656 0.85742-0.04136-4e-3 -0.04724-8e-5 -0.09961-0.0117-0.13042-0.029-0.26011-0.0886-0.30273-0.17383l-0.074218-0.14846-0.07422 0.14844c-0.04262 0.0853-0.17232 0.14485-0.30273 0.17383-0.05237 0.0116-0.05825 7e-3 -0.09961 0.0117 0.19355-0.24232 0.36122-0.55491 0.47656-0.85742z" color="#000000" style="-inkscape-stroke:none"/>
+</g>
+<text x="23.824343" y="136.84584" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="23.824343" y="136.84584" fill="#0000ff" stroke-width=".25"><tspan font-style="italic">k</tspan><tspan baseline-shift="sub" font-size="65%">min</tspan></tspan></text>
+<g id="c" transform="translate(-7.5,17.5)">
+<rect x="40" y="85" width="30" height="5" fill="#fff" fill-opacity=".63821" stroke="#000" stroke-width=".25"/>
+<path id="b" d="m45 90v-5" fill="none" stroke="#ccc" stroke-width=".25px"/>
+<use id="g" transform="translate(10)" xlink:href="#b"/>
+<use id="f" transform="translate(5)" xlink:href="#g"/>
+<use transform="translate(5)" xlink:href="#f"/>
+<use transform="translate(5)" xlink:href="#b"/>
+<rect x="55" y="85" width="5" height="5" fill="#ccc" fill-opacity=".63821"/>
+<text x="55.613281" y="88.245605" fill="#666666" font-family="sans-serif" font-size="2px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="55.613281" y="88.245605" fill="#666666" font-size="2px" stroke-width=".25">mid</tspan></text>
+</g>
+<use id="e" transform="translate(10,-5)" xlink:href="#c"/>
+<use transform="translate(10,-5)" xlink:href="#e"/>
+<use id="d" transform="translate(-10,5)" xlink:href="#c"/>
+<rect transform="scale(-1,1)" x="-93.155" y="87.276" width="9.7416" height="43.448" fill="url(#y)"/>
+<text x="15.228508" y="110.50891" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="15.228508" y="110.50891" stroke-width=".25"><tspan font-style="italic">p</tspan><tspan baseline-shift="sub" font-size="65%">min</tspan> </tspan></text>
+<text x="15.228508" y="95.467812" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="15.228508" y="95.467812" font-style="italic" stroke-width=".25"><tspan>p</tspan><tspan baseline-shift="sub" font-size="65%">lb</tspan> </tspan></text>
+<path d="m74.875 131.76v2.5h0.25v-2.5z" color="#000000" fill="#00f"/>
+<g fill="#00f" fill-rule="evenodd">
+<path d="m75 131.01c0.125 0.375 0.375 0.875 0.625 1.125 0 0-0.5 0-0.625-0.25-0.125 0.25-0.625 0.25-0.625 0.25 0.25-0.25 0.5-0.75 0.625-1.125z" color="#000000" stroke-width=".125pt"/>
+<path d="m75 130.74-0.07813 0.23633c-0.12149 0.36446-0.37511 0.86144-0.60547 1.0918l-0.14258 0.14257h0.20118s0.13237 3.2e-4 0.2832-0.0332c0.12389-0.0275 0.24818-0.1071 0.3418-0.21484 0.09362 0.10774 0.2179 0.18731 0.3418 0.21484 0.15083 0.0335 0.2832 0.0332 0.2832 0.0332h0.20117l-0.14258-0.14257c-0.23036-0.23036-0.48398-0.72734-0.60547-1.0918zm0 0.42969c0.11535 0.30251 0.28301 0.6151 0.47656 0.85742-0.04136-4e-3 -0.04724-8e-5 -0.09961-0.0117-0.13042-0.029-0.26011-0.0905-0.30273-0.17578l-0.074218-0.14846-0.07422 0.14844c-0.04262 0.0853-0.17232 0.1468-0.30273 0.17578-0.05237 0.0116-0.05825 7e-3 -0.09961 0.0117 0.19355-0.24232 0.36122-0.55491 0.47656-0.85742z" color="#000000"/>
+</g>
+<text x="73.39006" y="136.83357" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="73.39006" y="136.83357" fill="#0000ff" font-style="italic" stroke-width=".25"><tspan>k</tspan><tspan baseline-shift="sub" font-size="65%">lb</tspan> </tspan></text>
+<path d="m50 121.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m60 121.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m70 121.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m40 121.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m30 121.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m20 121.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<path d="m80 121.25v-2.5" fill="none" stroke="#000" stroke-width=".25px"/>
+<g transform="translate(5)" font-family="sans-serif" font-size="2.6667px" stroke-width=".25">
+<text x="44.15234" y="123.77424" style="line-height:1.25" xml:space="preserve"><tspan x="44.15234" y="123.77424" stroke-width=".25">0</tspan></text>
+<text x="54.12825" y="123.812" style="line-height:1.25" xml:space="preserve"><tspan x="54.12825" y="123.812" stroke-width=".25">2</tspan></text>
+<text x="64.187492" y="123.812" style="line-height:1.25" xml:space="preserve"><tspan x="64.187492" y="123.812" stroke-width=".25">4</tspan></text>
+<text x="74.156898" y="123.77424" style="line-height:1.25" xml:space="preserve"><tspan x="74.156898" y="123.77424" stroke-width=".25">6</tspan></text>
+<text x="33.204582" y="123.812" style="line-height:1.25" xml:space="preserve"><tspan x="33.204582" y="123.812" stroke-width=".25">-2</tspan></text>
+<text x="23.215" y="123.812" style="line-height:1.25" xml:space="preserve"><tspan x="23.215" y="123.812" stroke-width=".25">-4</tspan></text>
+<text x="13.188301" y="123.77424" style="line-height:1.25" xml:space="preserve"><tspan x="13.188301" y="123.77424" stroke-width=".25">-6</tspan></text>
+</g>
+<text x="91.308411" y="122.86592" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="91.308411" y="122.86592" stroke-width=".25"><tspan font-style="italic">t</tspan> </tspan></text>
+<g>
+<path d="m12.5 120h77.5" color="#000000" stroke-width=".25px" style="-inkscape-stroke:none"/>
+<path d="m12.5 119.88v0.25h77.5v-0.25z" color="#000000" style="-inkscape-stroke:none"/>
+<path d="m90 120-0.625 0.625 2.1875-0.625-2.1875-0.625z" fill-rule="evenodd" stroke-width=".125"/>
+</g>
+<text transform="scale(.25)" font-family="sans-serif" font-size="10.667px" style="line-height:1.25;shape-inside:url(#rect12253);white-space:pre" xml:space="preserve"/>
+<text x="48.624836" y="90.210648" fill="#0000ff" font-family="sans-serif" font-size="2.6667px" stroke-width=".25" style="line-height:1.25" xml:space="preserve"><tspan x="48.624836" y="90.210648" fill="#0000ff" stroke-width=".25">Signal <tspan fill="#0000ff" font-family="sans-serif" font-style="italic">x[k]</tspan> →</tspan></text>
+</g>
+</svg>

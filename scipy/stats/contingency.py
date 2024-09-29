@@ -192,6 +192,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     scipy.stats.power_divergence
     scipy.stats.barnard_exact
     scipy.stats.boschloo_exact
+    :ref:`hypothesis_chi2_contingency` : Extended example
 
     Notes
     -----
@@ -277,6 +278,8 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     8.7584514426741897
     >>> res.pvalue
     0.64417725029295503
+
+    For a more detailed example, see :ref:`hypothesis_chi2_contingency`.
     """
     observed = np.asarray(observed)
     if np.any(observed < 0):
@@ -290,7 +293,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         # the exception message.
         zeropos = list(zip(*np.nonzero(expected == 0)))[0]
         raise ValueError("The internally computed table of expected "
-                         "frequencies has a zero element at %s." % (zeropos,))
+                         f"frequencies has a zero element at {zeropos}.")
 
     # The degrees of freedom
     dof = expected.size - sum(expected.shape) + expected.ndim - 1
@@ -381,6 +384,7 @@ def association(observed, method="cramer", correction=False, lambda_=None):
     >>> obs4x2 = np.array([[100, 150], [203, 322], [420, 700], [320, 210]])
 
     Pearson's contingency coefficient
+
     >>> association(obs4x2, method="pearson")
     0.18303298140595667
 

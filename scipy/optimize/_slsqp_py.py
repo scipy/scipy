@@ -17,13 +17,14 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np
 from scipy.optimize._slsqp import slsqp
-from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
+from numpy import (zeros, array, linalg, append, concatenate, finfo,
                    sqrt, vstack, isfinite, atleast_1d)
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
+from scipy._lib._array_api import xp_atleast_nd, array_namespace
 
 
 __docformat__ = "restructuredtext en"
@@ -102,15 +103,15 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         A list of tuples specifying the lower and upper bound
         for each independent variable [(xl0, xu0),(xl1, xu1),...]
         Infinite values will be interpreted as large floating values.
-    fprime : callable `f(x,*args)`, optional
+    fprime : callable ``f(x,*args)``, optional
         A function that evaluates the partial derivatives of func.
-    fprime_eqcons : callable `f(x,*args)`, optional
-        A function of the form `f(x, *args)` that returns the m by n
+    fprime_eqcons : callable ``f(x,*args)``, optional
+        A function of the form ``f(x, *args)`` that returns the m by n
         array of equality constraint normals. If not provided,
         the normals will be approximated. The array returned by
         fprime_eqcons should be sized as ( len(eqcons), len(x0) ).
-    fprime_ieqcons : callable `f(x,*args)`, optional
-        A function of the form `f(x, *args)` that returns the m by n
+    fprime_ieqcons : callable ``f(x,*args)``, optional
+        A function of the form ``f(x, *args)`` that returns the m by n
         array of inequality constraint normals. If not provided,
         the normals will be approximated. The array returned by
         fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).
@@ -158,19 +159,19 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
 
     Notes
     -----
-    Exit modes are defined as follows ::
+    Exit modes are defined as follows:
 
-        -1 : Gradient evaluation required (g & a)
-         0 : Optimization terminated successfully
-         1 : Function evaluation required (f & c)
-         2 : More equality constraints than independent variables
-         3 : More than 3*n iterations in LSQ subproblem
-         4 : Inequality constraints incompatible
-         5 : Singular matrix E in LSQ subproblem
-         6 : Singular matrix C in LSQ subproblem
-         7 : Rank-deficient equality constraint subproblem HFTI
-         8 : Positive directional derivative for linesearch
-         9 : Iteration limit reached
+    - ``-1`` : Gradient evaluation required (g & a)
+    - ``0`` : Optimization terminated successfully
+    - ``1`` : Function evaluation required (f & c)
+    - ``2`` : More equality constraints than independent variables
+    - ``3`` : More than 3*n iterations in LSQ subproblem
+    - ``4`` : Inequality constraints incompatible
+    - ``5`` : Singular matrix E in LSQ subproblem
+    - ``6`` : Singular matrix C in LSQ subproblem
+    - ``7`` : Rank-deficient equality constraint subproblem HFTI
+    - ``8`` : Positive directional derivative for linesearch
+    - ``9`` : Iteration limit reached
 
     Examples
     --------
@@ -232,7 +233,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     maxiter : int
         Maximum number of iterations.
     finite_diff_rel_step : None or array_like, optional
-        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of `jac`. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
@@ -248,7 +249,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         iprint = 0
 
     # Transform x0 into an array.
-    x = asfarray(x0).flatten()
+    xp = array_namespace(x0)
+    x0 = xp_atleast_nd(x0, ndim=1, xp=xp)
+    dtype = xp.float64
+    if xp.isdtype(x0.dtype, "real floating"):
+        dtype = x0.dtype
+    x = xp.reshape(xp.astype(x0, dtype), -1)
 
     # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
     # ScalarFunction
@@ -278,7 +284,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype not in ['eq', 'ineq']:
-                raise ValueError("Unknown constraint type '%s'." % con['type'])
+                raise ValueError(f"Unknown constraint type '{con['type']}'.")
 
         # check function
         if 'fun' not in con:
@@ -361,8 +367,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             bnderr = bnds[:, 0] > bnds[:, 1]
 
         if bnderr.any():
-            raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
-                             ', '.join(str(b) for b in bnderr))
+            raise ValueError("SLSQP Error: lb > ub in bounds "
+                             f"{', '.join(str(b) for b in bnderr)}.")
         xl, xu = bnds[:, 0], bnds[:, 1]
 
         # Mark infinite bounds with nans; the Fortran code understands this

@@ -9,13 +9,18 @@ py3.install_sources([
     'test__root.py',
     'test__shgo.py',
     'test__spectral.py',
+    'test_bracket.py',
+    'test_chandrupatla.py',
     'test_cobyla.py',
+    'test_cobyqa.py',
     'test_constraint_conversion.py',
     'test_constraints.py',
     'test_cython_optimize.py',
     'test_differentiable_functions.py',
     'test_direct.py',
+    'test_extending.py',
     'test_hessian_update_strategy.py',
+    'test_isotonic_regression.py',
     'test_lbfgsb_hessinv.py',
     'test_lbfgsb_setulb.py',
     'test_least_squares.py',
@@ -39,5 +44,12 @@ py3.install_sources([
     'test_trustregion_krylov.py',
     'test_zeros.py'
   ],
-  subdir: 'scipy/optimize/tests'
+  subdir: 'scipy/optimize/tests',
+  install_tag: 'tests'
+)
+
+py3.install_sources(
+  ['_cython_examples/extending.pyx', '_cython_examples/meson.build'],
+  subdir: 'scipy/optimize/tests/_cython_examples',
+  install_tag: 'tests'
 )

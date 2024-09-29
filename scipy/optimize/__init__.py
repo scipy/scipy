@@ -5,10 +5,15 @@ Optimization and root finding (:mod:`scipy.optimize`)
 
 .. currentmodule:: scipy.optimize
 
+.. toctree::
+   :hidden:
+
+   optimize.cython_optimize
+
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
-optimization algorithms), linear programing, constrained
+optimization algorithms), linear programming, constrained
 and nonlinear least-squares, root finding, and curve fitting.
 
 Common functions and objects, shared across different solvers, are:
@@ -60,6 +65,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-lbfgsb
    optimize.minimize-tnc
    optimize.minimize-cobyla
+   optimize.minimize-cobyqa
    optimize.minimize-slsqp
    optimize.minimize-trustconstr
    optimize.minimize-dogleg
@@ -95,6 +101,8 @@ quasi-Newton methods implementing this interface are:
    BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
    SR1 - Symmetric-rank-1 Hessian update strategy.
 
+.. _global_optimization:
+
 Global optimization
 -------------------
 
@@ -128,6 +136,7 @@ Linear least-squares
 
    nnls - Linear least-squares problem with non-negativity constraint.
    lsq_linear - Linear least-squares problem with bound constraints.
+   isotonic_regression - Least squares problem of isotonic regression via PAVA.
 
 Curve fitting
 -------------
@@ -200,7 +209,7 @@ functions defined on (a subset of) the complex plane.
 
 .. seealso::
 
-   `scipy.optimize.cython_optimize` -- Typed Cython versions of zeros functions
+   `scipy.optimize.cython_optimize` -- Typed Cython versions of root finding functions
 
 Fixed point finding:
 
@@ -231,6 +240,14 @@ The `root` function supports the following methods:
    optimize.root-excitingmixing
    optimize.root-krylov
    optimize.root-dfsane
+   
+Elementwise Minimization and Root Finding
+=========================================
+
+.. toctree::
+   :maxdepth: 3
+
+   optimize.elementwise
 
 Linear programming / MILP
 =========================
@@ -334,7 +351,7 @@ General-purpose multivariate methods:
    :toctree: generated/
 
    fmin - Nelder-Mead Simplex algorithm.
-   fmin_powell - Powell's (modified) level set method.
+   fmin_powell - Powell's (modified) conjugate direction method.
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm.
    fmin_bfgs - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno).
    fmin_ncg - Line-search Newton Conjugate Gradient.
@@ -377,6 +394,7 @@ General nonlinear solvers:
    fsolve - Non-linear multivariable equation solver.
    broyden1 - Broyden's first method.
    broyden2 - Broyden's second method.
+   NoConvergence -  Exception raised when nonlinear solver does not converge.
 
 Large-scale nonlinear solvers:
 
@@ -399,7 +417,7 @@ Simple iteration solvers:
    linearmixing
    diagbroyden
 
-"""
+"""  # noqa: E501
 
 from ._optimize import *
 from ._minimize import *
@@ -418,6 +436,7 @@ from ._linprog import linprog, linprog_verbose_callback
 from ._lsap import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
+from ._isotonic import isotonic_regression
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)

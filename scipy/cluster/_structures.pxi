@@ -42,15 +42,15 @@ cdef class Heap:
         for i in reversed(range(self.size / 2)):
             self.sift_down(i)
 
-    cpdef Pair get_min(self):
+    cpdef Pair get_min(self) noexcept:
         return Pair(self.key_by_index[0], self.values[0])
 
-    cpdef void remove_min(self):
+    cpdef void remove_min(self) noexcept:
         self.swap(0, self.size - 1)
         self.size -= 1
         self.sift_down(0)
 
-    cpdef void change_value(self, int key, double value):
+    cpdef void change_value(self, int key, double value) noexcept:
         cdef int index = self.index_by_key[key]
         cdef double old_value = self.values[index]
         self.values[index] = value
@@ -59,14 +59,14 @@ cdef class Heap:
         else:
             self.sift_down(index)
 
-    cdef void sift_up(self, int index):
+    cdef void sift_up(self, int index) noexcept:
         cdef int parent = Heap.parent(index)
         while index > 0 and self.values[parent] > self.values[index]:
             self.swap(index, parent)
             index = parent
             parent = Heap.parent(index)
 
-    cdef void sift_down(self, int index):
+    cdef void sift_down(self, int index) noexcept:
         cdef int child = Heap.left_child(index)
         while child < self.size:
             if (child + 1 < self.size and
@@ -81,14 +81,14 @@ cdef class Heap:
                 break
 
     @staticmethod
-    cdef inline int left_child(int parent):
+    cdef inline int left_child(int parent) noexcept:
         return (parent << 1) + 1
 
     @staticmethod
-    cdef inline int parent(int child):
+    cdef inline int parent(int child) noexcept:
         return (child - 1) >> 1
 
-    cdef void swap(self, int i, int j):
+    cdef void swap(self, int i, int j) noexcept:
         self.values[i], self.values[j] = self.values[j], self.values[i]
         cdef int key_i = self.key_by_index[i]
         cdef int key_j = self.key_by_index[j]

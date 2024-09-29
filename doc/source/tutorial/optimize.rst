@@ -15,9 +15,8 @@ The :mod:`scipy.optimize` package provides several commonly used
 optimization algorithms. A detailed listing is available:
 :mod:`scipy.optimize` (can also be found by ``help(scipy.optimize)``).
 
-
-Unconstrained minimization of multivariate scalar functions (:func:`minimize`)
-------------------------------------------------------------------------------
+Local minimization of multivariate scalar functions (:func:`minimize`)
+----------------------------------------------------------------------
 
 The :func:`minimize` function provides a common interface to unconstrained
 and constrained minimization algorithms for multivariate scalar functions
@@ -40,8 +39,11 @@ and must return a float value. The exact calling signature must be
 ``f(x, *args)`` where ``x`` represents a numpy array and ``args``
 a tuple of additional arguments supplied to the objective function.
 
+Unconstrained minimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Nelder-Mead Simplex algorithm (``method='Nelder-Mead'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 In the example below, the :func:`minimize` routine is used
 with the *Nelder-Mead* simplex algorithm (selected through the ``method``
@@ -83,7 +85,7 @@ and an offset `b`:
     f\left(\mathbf{x}, a, b\right)=\sum_{i=1}^{N-1}a\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2} + b.
 
 Again using the :func:`minimize` routine this can be solved by the following
-code block for the example parameters `a=0.5` and `b=1`.
+code block for the example parameters ``a=0.5`` and ``b=1``.
 
     >>> def rosen_with_args(x, a, b):
     ...     """The Rosenbrock function with additional arguments"""
@@ -91,17 +93,41 @@ code block for the example parameters `a=0.5` and `b=1`.
 
     >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
     >>> res = minimize(rosen_with_args, x0, method='nelder-mead',
-    ...		       args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
+    ...	               args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 1.000000
-             Iterations: 319
-             Function evaluations: 525
+             Iterations: 319 # may vary
+             Function evaluations: 525 # may vary
 
     >>> print(res.x)
     [1.         1.         1.         1.         0.99999999]
 
+As an alternative to using the ``args`` parameter of :func:`minimize`, simply
+wrap the objective function in a new function that accepts only ``x``. This
+approach is also useful when it is necessary to pass additional parameters to
+the objective function as keyword arguments.
+
+    >>> def rosen_with_args(x, a, *, b):  # b is a keyword-only argument
+    ...     return sum(a*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0) + b
+    >>> def wrapped_rosen_without_args(x):
+    ...     return rosen_with_args(x, 0.5, b=1.)  # pass in `a` and `b`
+    >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    >>> res = minimize(wrapped_rosen_without_args, x0, method='nelder-mead',
+    ...                options={'xatol': 1e-8,})
+    >>> print(res.x)
+    [1.         1.         1.         1.         0.99999999]
+
+Another alternative is to use :py:func:`functools.partial`.
+
+    >>> from functools import partial
+    >>> partial_rosen = partial(rosen_with_args, a=0.5, b=1.)
+    >>> res = minimize(partial_rosen, x0, method='nelder-mead',
+    ...                options={'xatol': 1e-8,})
+    >>> print(res.x)
+    [1.         1.         1.         1.         0.99999999]
+
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 In order to converge more quickly to the solution, this routine uses
 the gradient of the objective function. If the gradient is not given
@@ -153,36 +179,73 @@ through the ``jac`` parameter as illustrated below.
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Another way to supply gradient information is to write a single
-function which returns both the objective and the gradient: this is
-indicated by setting ``jac=True``. In this case, the Python function
-to be optimized must return a tuple whose first value is the objective
-and whose second value represents the gradient. For this example, the
-objective can be specified in the following way:
+**Avoiding Redundant Calculation**
 
-    >>> def rosen_and_der(x):
-    ...	    objective = sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
-    ...     xm = x[1:-1]
-    ...     xm_m1 = x[:-2]
-    ...     xm_p1 = x[2:]
-    ...     der = np.zeros_like(x)
-    ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
-    ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
-    ...     der[-1] = 200*(x[-1]-x[-2]**2)
-    ...     return objective, der
+It is common for the objective function and its gradient to share parts of the
+calculation. For instance, consider the following problem.
 
-    >>> res = minimize(rosen_and_der, x0, method='BFGS', jac=True,
-    ...                options={'disp': True})
-             Current function value: 0.000000
-             Iterations: 25                     # may vary
-             Function evaluations: 30
-             Gradient evaluations: 30
+    >>> def f(x):
+    ...    return -expensive(x[0])**2
+    >>>
+    >>> def df(x):
+    ...     return -2 * expensive(x[0]) * dexpensive(x[0])
+    >>>
+    >>> def expensive(x):
+    ...     # this function is computationally expensive!
+    ...     expensive.count += 1  # let's keep track of how many times it runs
+    ...     return np.sin(x)
+    >>> expensive.count = 0
+    >>>
+    >>> def dexpensive(x):
+    ...     return np.cos(x)
+    >>>
+    >>> res = minimize(f, 0.5, jac=df)
+    >>> res.fun
+    -0.9999999999999174
+    >>> res.nfev, res.njev
+    6, 6
+    >>> expensive.count
+    12
 
-Supplying objective and gradient in a single function can help to avoid
-redundant computations and therefore speed up the optimization significantly.
+Here, ``expensive`` is called 12 times: six times in the objective function and
+six times from the gradient. One way of reducing redundant calculations is to
+create a single function that returns both the objective function and the
+gradient.
+
+    >>> def f_and_df(x):
+    ...     expensive_value = expensive(x[0])
+    ...     return (-expensive_value**2,  # objective function
+    ...             -2*expensive_value*dexpensive(x[0]))  # gradient
+    >>>
+    >>> expensive.count = 0  # reset the counter
+    >>> res = minimize(f_and_df, 0.5, jac=True)
+    >>> res.fun
+    -0.9999999999999174
+    >>> expensive.count
+    6
+
+When we call minimize, we specify ``jac==True`` to indicate that the provided
+function returns both the objective function and its gradient. While
+convenient, not all :mod:`scipy.optimize` functions support this feature,
+and moreover, it is only for sharing calculations between the function and its
+gradient, whereas in some problems we will want to share calculations with the
+Hessian (second derivative of the objective function) and constraints. A more
+general approach is to memoize the expensive parts of the calculation. In
+simple situations, this can be accomplished with the
+:func:`functools.lru_cache` wrapper.
+
+    >>> from functools import lru_cache
+    >>> expensive.count = 0  # reset the counter
+    >>> expensive = lru_cache(expensive)
+    >>> res = minimize(f, 0.5, jac=df)
+    >>> res.fun
+    -0.9999999999999174
+    >>> expensive.count
+    6
+
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Newton-Conjugate Gradient algorithm is a modified Newton's
 method and uses a conjugate gradient algorithm to (approximately) invert
@@ -213,8 +276,7 @@ or a function to compute the product of the Hessian with an arbitrary
 vector.
 
 
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
 The Hessian of the Rosenbrock function is
 
@@ -234,7 +296,7 @@ For example, the Hessian when :math:`N=5` is
 
 .. math::
 
-    \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{bmatrix}.
+    \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}+2\mkern-2em\\&1200x_{1}^{2}+202\mkern-2em\\&&1200x_{1}^{2}+202\mkern-2em\\&&&1200x_{3}^{2}+202\mkern-1em\\&&&&200\end{bmatrix}-400\begin{bmatrix} x_1 & x_0 \\ x_0 & x_2 & x_1 \\ & x_1 & x_3 & x_2\\ & & x_2 & x_4 & x_3 \\ & & & x_3 & 0\end{bmatrix}.
 
 The code which computes this Hessian along with the code to minimize
 the function using Newton-CG method is shown in the following example:
@@ -262,8 +324,7 @@ the function using Newton-CG method is shown in the following example:
     array([1.,  1.,  1.,  1.,  1.])
 
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
 For larger minimization problems, storing the entire Hessian matrix can
 consume considerable time and memory. The Newton-CG algorithm only needs
@@ -316,7 +377,7 @@ according to the authors, deals more effectively with this problematic situation
 and will be described next.
 
 Trust-Region Newton-Conjugate-Gradient Algorithm (``method='trust-ncg'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 The ``Newton-CG`` method is a line search method: it finds a direction
 of search minimizing a quadratic approximation of the function and then uses
@@ -339,9 +400,7 @@ model with the real function. This family of methods is known as trust-region me
 The ``trust-ncg`` algorithm is a trust-region method that uses a conjugate gradient algorithm
 to solve the trust-region subproblem [NW]_.
 
-
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
     ...                jac=rosen_der, hess=rosen_hess,
@@ -355,8 +414,7 @@ Full Hessian example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
     ...                jac=rosen_der, hessp=rosen_hess_p,
@@ -371,7 +429,7 @@ Hessian product example:
     array([1., 1., 1., 1., 1.])
 
 Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``method='trust-krylov'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
 suitable for large-scale problems as it uses the hessian only as linear
@@ -393,8 +451,7 @@ For indefinite problems it is usually better to use this method as it reduces
 the number of nonlinear iterations at the expense of few more matrix-vector
 products per subproblem solve in comparison to the ``trust-ncg`` method.
 
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
     ...                jac=rosen_der, hess=rosen_hess,
@@ -408,8 +465,7 @@ Full Hessian example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
     ...                jac=rosen_der, hessp=rosen_hess_p,
@@ -434,7 +490,7 @@ Hessian product example:
 
 
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
 large-scale problems (problems with thousands of variables). That is because the conjugate
@@ -475,15 +531,15 @@ example using the Rosenbrock function follows:
 
 .. _tutorial-sqlsp:
 
-Constrained minimization of multivariate scalar functions (:func:`minimize`)
-----------------------------------------------------------------------------
+Constrained minimization
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :func:`minimize` function provides algorithms for constrained minimization,
-namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
-to be defined using slightly different structures. The method ``'trust-constr'`` requires
+The :func:`minimize` function provides several algorithms for constrained minimization,
+namely ``'trust-constr'`` ,  ``'SLSQP'``, ``'COBYLA'``, and ``'COBYQA'``. They require the constraints
+to be defined using slightly different structures. The methods ``'trust-constr'`` and ``'COBYQA'`` require
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
 :func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
-require constraints to be defined  as a sequence of dictionaries, with keys
+require constraints to be defined as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 
 As an example let us consider the constrained minimization of the Rosenbrock function:
@@ -504,7 +560,7 @@ for which only the first and fourth constraints are active.
 
 
 Trust-Region Constrained Algorithm (``method='trust-constr'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 The trust-region constrained method deals with constrained minimization problems of the form:
 
@@ -523,9 +579,7 @@ The implementation is based on [EQSQP]_ for equality-constraint problems and on 
 for problems with inequality constraints. Both are trust-region type algorithms suitable
 for large-scale problems.
 
-
-Defining Bounds Constraints:
-""""""""""""""""""""""""""""
+**Defining Bounds Constraints**
 
 The bound constraints  :math:`0 \leq  x_0  \leq 1` and :math:`-0.5 \leq  x_1  \leq 2.0`
 are defined using a :func:`Bounds` object.
@@ -533,8 +587,7 @@ are defined using a :func:`Bounds` object.
     >>> from scipy.optimize import Bounds
     >>> bounds = Bounds([0, -0.5], [1.0, 2.0])
 
-Defining Linear Constraints:
-""""""""""""""""""""""""""""
+**Defining Linear Constraints**
 
 The constraints :math:`x_0 + 2 x_1 \leq 1`
 and :math:`2 x_0 + x_1 = 1` can be written in the linear constraint standard format:
@@ -552,8 +605,7 @@ and defined using a :func:`LinearConstraint` object.
     >>> from scipy.optimize import LinearConstraint
     >>> linear_constraint = LinearConstraint([[1, 2], [2, 1]], [-np.inf, 1], [1, 1])
 
-Defining Nonlinear Constraints:
-"""""""""""""""""""""""""""""""
+**Defining Nonlinear Constraints**
 The nonlinear constraint:
 
 .. math::
@@ -629,9 +681,7 @@ be provided by the user or defined using :class:`HessianUpdateStrategy`.
 
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac='2-point', hess=BFGS())
 
-
-Solving the Optimization Problem:
-"""""""""""""""""""""""""""""""""
+**Solving the Optimization Problem**
 The optimization problem is solved using:
 
     >>> x0 = np.array([0.5, 0])
@@ -670,7 +720,6 @@ or a Hessian-vector product through the parameter ``hessp``.
     >>> print(res.x)
     [0.41494531 0.17010937]
 
-
 Alternatively, the first and second derivatives of the objective function can be approximated.
 For instance,  the Hessian can be approximated with :func:`SR1` quasi-Newton approximation
 and the gradient with finite differences.
@@ -694,7 +743,7 @@ and the gradient with finite differences.
     optimization. SIAM Journal on Optimization 8.3: 682-706.
 
 Sequential Least SQuares Programming (SLSQP) Algorithm (``method='SLSQP'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 The SLSQP method deals with constrained minimization problems of the form:
 
 .. math::
@@ -740,6 +789,108 @@ And the optimization problem is solved with:
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
 
+Local minimization solver comparison
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Find a solver that meets your requirements using the table below.
+If there are multiple candidates, try several and see which ones best
+meet your needs (e.g. execution time, objective function value).
+
+.. list-table::
+   :widths: 15 20 20 15 15 15
+   :header-rows: 1
+
+   * - Solver
+     - Bounds Constraints
+     - Nonlinear Constraints
+     - Uses Gradient
+     - Uses Hessian
+     - Utilizes Sparsity
+   * - CG
+     -
+     -
+     - ✓
+     -
+     -
+   * - BFGS
+     -
+     -
+     - ✓
+     -
+     -
+   * - dogleg
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-ncg
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-krylov
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-exact
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - Newton-CG
+     -
+     -
+     - ✓
+     - ✓
+     - ✓
+   * - Nelder-Mead
+     - ✓
+     -
+     -
+     -
+     -
+   * - Powell
+     - ✓
+     -
+     -
+     -
+     -
+   * - L-BFGS-B
+     - ✓
+     -
+     - ✓
+     -
+     -
+   * - TNC
+     - ✓
+     -
+     - ✓
+     -
+     -
+   * - COBYLA
+     - ✓
+     - ✓
+     -
+     -
+     -
+   * - SLSQP
+     - ✓
+     - ✓
+     - ✓
+     -
+     -
+   * - trust-constr
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+
 Global optimization
 -------------------
 
@@ -776,7 +927,7 @@ This function looks like an egg carton::
    >>> plt.show()
 
 .. plot:: tutorial/examples/optimize_global_2.py
-   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernable from this view and it's not possible to see all the local peaks and valleys from this view."
+   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernible from this view and it's not possible to see all the local peaks and valleys from this view."
    :align: center
    :include-source: 0
 
@@ -854,6 +1005,50 @@ We'll now plot all found minima on a heatmap of the function::
    :align: center
    :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
+
+Comparison of Global Optimizers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Find a solver that meets your requirements using the table below.
+If there are multiple candidates, try several and see which ones best
+meet your needs (e.g. execution time, objective function value).
+
+.. list-table::
+   :widths: 20 15 15 20 20
+   :header-rows: 1
+
+   * - Solver
+     - Bounds Constraints
+     - Nonlinear Constraints
+     - Uses Gradient
+     - Uses Hessian
+   * - basinhopping
+     -
+     -
+     - (✓)
+     - (✓)
+   * - direct
+     - ✓
+     -
+     -
+     -
+   * - dual_annealing
+     - ✓
+     -
+     - (✓)
+     - (✓)
+   * - differential_evolution
+     - ✓
+     - ✓
+     -
+     -
+   * - shgo
+     - ✓
+     - ✓
+     - (✓)
+     - (✓)
+
+(✓) = Depending on the chosen local minimizer
 
 Least-squares minimization (:func:`least_squares`)
 --------------------------------------------------
@@ -1043,6 +1238,7 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
     >>> res = minimize_scalar(j1, bounds=(4, 7), method='bounded')
     >>> res.x
     5.33144184241
+
 
 
 Custom minimizers

@@ -64,8 +64,9 @@ dPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
     SCformat *Lstore;
     NCformat *Ustore;
     double  *Aval, *Lval, *Uval;
-    int      fsupc, nsupr, luptr, nz_in_U;
-    int      i, j, k, oldcol;
+    int      fsupc, nsupr;
+    int_t    luptr, nz_in_U;
+    int_t    i, j, k, oldcol;
     int      *inv_perm_c;
     double   rpg, maxaj, maxuj;
     double   smlnum;

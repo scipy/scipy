@@ -3,8 +3,12 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import (assert_allclose, assert_equal, assert_warns,
-                           assert_array_almost_equal, assert_array_equal)
+from numpy.testing import assert_warns
+from scipy._lib._array_api import (
+    xp_assert_equal, xp_assert_close, assert_array_almost_equal
+)
+from scipy.conftest import skip_xp_invalid_arg
+
 from pytest import raises as assert_raises
 
 from scipy.interpolate import (RegularGridInterpolator, interpn,
@@ -12,9 +16,12 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
                                NearestNDInterpolator, LinearNDInterpolator)
 
 from scipy.sparse._sputils import matrix
+from scipy._lib._util import ComplexWarning
+from scipy._lib._testutils import _run_concurrent_barrier
+
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
-    "method", ['linear', 'nearest', 'slinear', 'cubic', 'quintic', 'pchip']
+    "method", RegularGridInterpolator._ALL_METHODS
 )
 
 class TestRegularGridInterpolator:
@@ -77,7 +84,7 @@ class TestRegularGridInterpolator:
                                          values,
                                          method=method)
         v2 = interp(sample)
-        assert_allclose(v1, v2)
+        xp_assert_close(v1, v2)
 
     @pytest.mark.parametrize('method', ['cubic', 'quintic', 'pchip'])
     def test_spline_dim_error(self, method):
@@ -115,10 +122,32 @@ class TestRegularGridInterpolator:
         v1 = interp(sample)
         interp = RegularGridInterpolator(points, values, method="slinear")
         v2 = interp(sample)
-        assert_allclose(v1, v2)
+        xp_assert_close(v1, v2)
+
+    def test_derivatives(self):
+        points, values = self._get_sample_4d()
+        sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
+                           [0.2 , 0.1 , 0.45, 0.8 ],
+                           [0.5 , 0.5 , 0.5 , 0.5 ]])
+        interp = RegularGridInterpolator(points, values, method="slinear")
+
+        with assert_raises(ValueError):
+            # wrong number of derivatives (need 4)
+            interp(sample, nu=1)
+
+        xp_assert_close(interp(sample, nu=(1, 0, 0, 0)),
+                        np.asarray([1.0, 1, 1]), atol=1e-15)
+        xp_assert_close(interp(sample, nu=(0, 1, 0, 0)),
+                        np.asarray([10.0, 10, 10]), atol=1e-15)
+
+        # 2nd derivatives of a linear function are zero
+        xp_assert_close(interp(sample, nu=(0, 1, 1, 0)),
+                        np.asarray([0.0, 0, 0]), atol=2e-12)
 
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
+        if method == "pchip":
+            pytest.skip("pchip does not make sense for complex data")
         points, values = self._get_sample_4d_3()
         values = values - 2j*values
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
@@ -130,7 +159,7 @@ class TestRegularGridInterpolator:
 
         v1 = interp(sample)
         v2 = rinterp(sample) + 1j*iinterp(sample)
-        assert_allclose(v1, v2)
+        xp_assert_close(v1, v2)
 
     def test_cubic_vs_pchip(self):
         x, y = [1, 2, 3, 4], [1, 2, 3, 4]
@@ -148,7 +177,7 @@ class TestRegularGridInterpolator:
         points, values = self._get_sample_4d_2()
         interp = RegularGridInterpolator(points, values)
         sample = np.asarray([0.1, 0.1, 10., 9.])
-        wanted = 1001.1
+        wanted = np.asarray([1001.1])
         assert_array_almost_equal(interp(sample), wanted)
 
     def test_linear_xi3d(self):
@@ -172,6 +201,7 @@ class TestRegularGridInterpolator:
     def test_nearest(self, sample, wanted):
         points, values = self._get_sample_4d()
         interp = RegularGridInterpolator(points, values, method="nearest")
+        wanted = np.asarray([wanted])
         assert_array_almost_equal(interp(sample), wanted)
 
     def test_linear_edges(self):
@@ -281,7 +311,7 @@ class TestRegularGridInterpolator:
 
         interp = RegularGridInterpolator((x, y), values._v, method=method)
         v2 = interp([0.4, 0.7])
-        assert_allclose(v1, v2)
+        xp_assert_close(v1, v2, check_dtype=False)
 
     def test_invalid_fill_value(self):
         np.random.seed(1234)
@@ -318,33 +348,34 @@ class TestRegularGridInterpolator:
                                          bounds_error=False, fill_value=101)
 
         # check values at the grid
-        assert_allclose(interp(np.array([[1, 1], [1, 5], [1, 10]])),
-                        [2, 6, 11],
+        xp_assert_close(interp(np.array([[1, 1], [1, 5], [1, 10]])),
+                        np.asarray([2.0, 6, 11]),
                         atol=1e-14)
 
         # check off-grid interpolation is indeed linear
-        assert_allclose(interp(np.array([[1, 1.4], [1, 5.3], [1, 10]])),
+        xp_assert_close(interp(np.array([[1, 1.4], [1, 5.3], [1, 10]])),
                         [2.4, 6.3, 11],
                         atol=1e-14)
 
         # check exrapolation w/ fill_value
-        assert_allclose(interp(np.array([1.1, 2.4])),
+        xp_assert_close(interp(np.array([1.1, 2.4])),
                         interp.fill_value,
+                        check_dtype=False, check_shape=False, check_0d=False,
                         atol=1e-14)
 
         # check extrapolation: linear along the `y` axis, const along `x`
         interp.fill_value = None
-        assert_allclose(interp([[1, 0.3], [1, 11.5]]),
+        xp_assert_close(interp([[1, 0.3], [1, 11.5]]),
                         [1.3, 12.5], atol=1e-15)
 
-        assert_allclose(interp([[1.5, 0.3], [1.9, 11.5]]),
+        xp_assert_close(interp([[1.5, 0.3], [1.9, 11.5]]),
                         [1.3, 12.5], atol=1e-15)
 
         # extrapolation with method='nearest'
         interp = RegularGridInterpolator((x, y), data, method="nearest",
                                          bounds_error=False, fill_value=None)
-        assert_allclose(interp([[1.5, 1.8], [-4, 5.1]]),
-                        [3, 6],
+        xp_assert_close(interp([[1.5, 1.8], [-4, 5.1]]),
+                        np.asarray([3.0, 6]),
                         atol=1e-15)
 
     @pytest.mark.parametrize("fill_value", [None, np.nan, np.pi])
@@ -365,15 +396,15 @@ class TestRegularGridInterpolator:
         # evaluated at provided y-value, fb should behave exactly as fa
         y1b = np.zeros(100)
         zb = fb(np.vstack([x1a, y1b]).T)
-        assert_allclose(zb, za)
+        xp_assert_close(zb, za)
 
         # evaluated at a different y-value, fb should return fill value
         y1b = np.ones(100)
         zb = fb(np.vstack([x1a, y1b]).T)
         if fill_value is None:
-            assert_allclose(zb, za)
+            xp_assert_close(zb, za)
         else:
-            assert_allclose(zb, fill_value)
+            xp_assert_close(zb, np.full_like(zb, fill_value))
 
     @pytest.mark.parametrize("method", ['nearest', 'linear'])
     def test_nan_x_1d(self, method):
@@ -394,8 +425,8 @@ class TestRegularGridInterpolator:
             # input) and we simply filter them out.
             res = f(x)
 
-        assert_equal(res[i], np.nan)
-        assert_equal(res[~i], f(x[~i]))
+        assert np.isnan(res[i]).all()
+        xp_assert_equal(res[~i], f(x[~i]))
 
         # also test the length-one axis f(nan)
         x = [1, 2, 3]
@@ -403,8 +434,8 @@ class TestRegularGridInterpolator:
         data = np.ones((3, 1))
         f = RegularGridInterpolator((x, y), data, fill_value=1,
                                     bounds_error=False, method=method)
-        assert np.isnan(f([np.nan, 1]))
-        assert np.isnan(f([1, np.nan]))
+        assert np.all(np.isnan(f([np.nan, 1])))
+        assert np.all(np.isnan(f([1, np.nan])))
 
     @pytest.mark.parametrize("method", ['nearest', 'linear'])
     def test_nan_x_2d(self, method):
@@ -420,7 +451,7 @@ class TestRegularGridInterpolator:
 
         with np.errstate(invalid='ignore'):
             res = interp([[1.5, np.nan], [1, 1]])
-        assert_allclose(res[1], 2, atol=1e-14)
+        xp_assert_close(res[1], 2.0, atol=1e-14)
         assert np.isnan(res[0])
 
         # test arbitrary nan pattern
@@ -440,38 +471,49 @@ class TestRegularGridInterpolator:
             # input) and we simply filter them out.
             res = interp(z)
 
-        assert_equal(res[i], np.nan)
-        assert_equal(res[~i], interp(z[~i]))
+        assert np.isnan(res[i]).all()
+        xp_assert_equal(res[~i], interp(z[~i]), check_dtype=False)
 
+    @pytest.mark.fail_slow(10)
     @parametrize_rgi_interp_methods
-    def test_descending_points(self, method):
-        def val_func_3d(x, y, z):
-            return 2 * x ** 3 + 3 * y ** 2 - z
+    @pytest.mark.parametrize(("ndims", "func"), [
+        (2, lambda x, y: 2 * x ** 3 + 3 * y ** 2),
+        (3, lambda x, y, z: 2 * x ** 3 + 3 * y ** 2 - z),
+        (4, lambda x, y, z, a: 2 * x ** 3 + 3 * y ** 2 - z + a),
+        (5, lambda x, y, z, a, b: 2 * x ** 3 + 3 * y ** 2 - z + a * b),
+    ])
+    def test_descending_points_nd(self, method, ndims, func):
 
-        x = np.linspace(1, 4, 11)
-        y = np.linspace(4, 7, 22)
-        z = np.linspace(7, 9, 33)
-        points = (x, y, z)
-        values = val_func_3d(
-            *np.meshgrid(*points, indexing='ij', sparse=True))
-        my_interpolating_function = RegularGridInterpolator(points,
-                                                            values,
-                                                            method=method)
-        pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
-        correct_result = my_interpolating_function(pts)
+        if ndims >= 4 and method in {"cubic", "quintic"}:
+            pytest.skip("too slow; OOM (quintic); or nearly so (cubic)")
 
-        # descending data
-        x_descending = x[::-1]
-        y_descending = y[::-1]
-        z_descending = z[::-1]
-        points_shuffled = (x_descending, y_descending, z_descending)
-        values_shuffled = val_func_3d(
-            *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
-        my_interpolating_function = RegularGridInterpolator(
-            points_shuffled, values_shuffled, method=method)
-        test_result = my_interpolating_function(pts)
+        rng = np.random.default_rng(42)
+        sample_low = 1
+        sample_high = 5
+        test_points = rng.uniform(sample_low, sample_high, size=(2, ndims))
 
-        assert_array_equal(correct_result, test_result)
+        ascending_points = [np.linspace(sample_low, sample_high, 12)
+                            for _ in range(ndims)]
+
+        ascending_values = func(*np.meshgrid(*ascending_points,
+                                             indexing="ij",
+                                             sparse=True))
+
+        ascending_interp = RegularGridInterpolator(ascending_points,
+                                                   ascending_values,
+                                                   method=method)
+        ascending_result = ascending_interp(test_points)
+
+        descending_points = [xi[::-1] for xi in ascending_points]
+        descending_values = func(*np.meshgrid(*descending_points,
+                                              indexing="ij",
+                                              sparse=True))
+        descending_interp = RegularGridInterpolator(descending_points,
+                                                    descending_values,
+                                                    method=method)
+        descending_result = descending_interp(test_points)
+
+        xp_assert_equal(ascending_result, descending_result)
 
     def test_invalid_points_order(self):
         def val_func_2d(x, y):
@@ -492,8 +534,13 @@ class TestRegularGridInterpolator:
                                          method=method, bounds_error=False)
         assert np.isnan(interp([10]))
 
+    @pytest.mark.fail_slow(5)
     @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
+
+        if method == "quintic":
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also works
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
             (0.0, 5.0, 10.0, 15.0, 20, 25.0)
@@ -506,7 +553,7 @@ class TestRegularGridInterpolator:
         interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=False)
         v = interp(sample)
-        assert_equal(v.shape, (7, 3, 8), err_msg=method)
+        assert v.shape == (7, 3, 8), method
 
         vs = []
         for j in range(8):
@@ -516,11 +563,15 @@ class TestRegularGridInterpolator:
             vs.append(interp(sample))
         v2 = np.array(vs).transpose(1, 2, 0)
 
-        assert_allclose(v, v2, atol=1e-14, err_msg=method)
+        xp_assert_close(v, v2, atol=1e-14, err_msg=method)
 
     @parametrize_rgi_interp_methods
     @pytest.mark.parametrize("flip_points", [False, True])
     def test_nonscalar_values_2(self, method, flip_points):
+
+        if method in {"cubic", "quintic"}:
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -547,15 +598,15 @@ class TestRegularGridInterpolator:
         assert v.shape == (1, *trailing_points)
 
         # check the values, too : manually loop over the trailing dimensions
-        vs = np.empty((values.shape[-2:]))
+        vs = np.empty(values.shape[-2:])
         for i in range(values.shape[-2]):
             for j in range(values.shape[-1]):
                 interp = RegularGridInterpolator(points, values[..., i, j],
                                                  method=method,
                                                  bounds_error=False)
-                vs[i, j] = interp(sample)
+                vs[i, j] = interp(sample).item()
         v2 = np.expand_dims(vs, axis=0)
-        assert_allclose(v, v2, atol=1e-14, err_msg=method)
+        xp_assert_close(v, v2, atol=1e-14, err_msg=method)
 
     def test_nonscalar_values_linear_2D(self):
         # Verify that non-scalar values work in the 2D fast path
@@ -578,15 +629,92 @@ class TestRegularGridInterpolator:
         assert v.shape == (1, *trailing_points)
 
         # check the values, too : manually loop over the trailing dimensions
-        vs = np.empty((values.shape[-2:]))
+        vs = np.empty(values.shape[-2:])
         for i in range(values.shape[-2]):
             for j in range(values.shape[-1]):
                 interp = RegularGridInterpolator(points, values[..., i, j],
                                                  method=method,
                                                  bounds_error=False)
-                vs[i, j] = interp(sample)
+                vs[i, j] = interp(sample).item()
         v2 = np.expand_dims(vs, axis=0)
-        assert_allclose(v, v2, atol=1e-14, err_msg=method)
+        xp_assert_close(v, v2, atol=1e-14, err_msg=method)
+
+    @pytest.mark.parametrize(
+        "dtype",
+        [np.float32, np.float64, np.complex64, np.complex128]
+    )
+    @pytest.mark.parametrize("xi_dtype", [np.float32, np.float64])
+    def test_float32_values(self, dtype, xi_dtype):
+        # regression test for gh-17718: values.dtype=float32 fails
+        def f(x, y):
+            return 2 * x**3 + 3 * y**2
+
+        x = np.linspace(1, 4, 11)
+        y = np.linspace(4, 7, 22)
+
+        xg, yg = np.meshgrid(x, y, indexing='ij', sparse=True)
+        data = f(xg, yg)
+
+        data = data.astype(dtype)
+
+        interp = RegularGridInterpolator((x, y), data)
+
+        pts = np.array([[2.1, 6.2],
+                        [3.3, 5.2]], dtype=xi_dtype)
+
+        # the values here are just what the call returns; the test checks that
+        # that the call succeeds at all, instead of failing with cython not
+        # having a float32 kernel
+        xp_assert_close(interp(pts), [134.10469388, 153.40069388],
+                        atol=1e-7, rtol=1e-7, check_dtype=False)
+
+    def test_bad_solver(self):
+        x = np.linspace(0, 3, 7)
+        y = np.linspace(0, 3, 7)
+        xg, yg = np.meshgrid(x, y, indexing='ij', sparse=True)
+        data = xg + yg
+
+        # default method 'linear' does not accept 'solver'
+        with assert_raises(ValueError):
+            RegularGridInterpolator((x, y), data, solver=lambda x: x)
+
+        with assert_raises(TypeError):
+            # wrong solver interface
+            RegularGridInterpolator(
+                (x, y), data, method='slinear', solver=lambda x: x
+            )
+
+        with assert_raises(TypeError):
+            # unknown argument
+            RegularGridInterpolator(
+                (x, y), data, method='slinear', solver=lambda x: x, woof='woof'
+            )
+
+        with assert_raises(TypeError):
+            # unknown argument
+            RegularGridInterpolator(
+                (x, y), data, method='slinear',  solver_args={'woof': 42}
+            )
+
+    def test_concurrency(self):
+        points, values = self._get_sample_4d()
+        sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
+                           [0.2 , 0.1 , 0.45, 0.8 ],
+                           [0.5 , 0.5 , 0.5 , 0.5 ],
+                           [0.3 , 0.1 , 0.2 , 0.4 ]])
+        interp = RegularGridInterpolator(points, values, method="slinear")
+
+        # A call to RGI with a method different from the one specified on the
+        # constructor, should not mutate it.
+        methods = ['slinear', 'nearest']
+        def worker_fn(tid, interp):
+            spline = interp._spline
+            method = methods[tid % 2]
+            interp(sample, method=method)
+            assert interp._spline is spline
+
+        _run_concurrent_barrier(10, worker_fn, interp)
+
 
 class MyValue:
     """
@@ -604,7 +732,7 @@ class MyValue:
     def __array_interface__(self):
         return None
 
-    def __array__(self):
+    def __array__(self, dtype=None, copy=None):
         raise RuntimeError("No array representation")
 
 
@@ -638,12 +766,11 @@ class TestInterpN:
         x, y, z = self._sample_2d_data()
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-
         v1 = interpn((x, y), z, xi, method=method)
         v2 = interpn(
             (x.tolist(), y.tolist()), z.tolist(), xi.tolist(), method=method
         )
-        assert_allclose(v1, v2, err_msg=method)
+        xp_assert_close(v1, v2, err_msg=method)
 
     def test_spline_2d_outofbounds(self):
         x = np.array([.5, 2., 3., 4., 5.5])
@@ -686,7 +813,7 @@ class TestInterpN:
         # create a 4-D grid of 3 points in each dimension
         points, values = self._sample_4d_data()
         sample = np.asarray([[0.1, -0.1, 10.1, 9.]])
-        wanted = 999.99
+        wanted = np.asarray([999.99])
         actual = interpn(points, values, sample, method="linear",
                          bounds_error=False, fill_value=999.99)
         assert_array_almost_equal(actual, wanted)
@@ -703,7 +830,7 @@ class TestInterpN:
         # create a 4-D grid of 3 points in each dimension
         points, values = self._sample_4d_data()
         sample = np.asarray([[0.1, -0.1, 10.1, 9.]])
-        wanted = 999.99
+        wanted = np.asarray([999.99])
         actual = interpn(points, values, sample, method="nearest",
                          bounds_error=False, fill_value=999.99)
         assert_array_almost_equal(actual, wanted)
@@ -714,7 +841,7 @@ class TestInterpN:
         sample = np.asarray([0.1, 0.1, 10., 9.])
         v1 = interpn(points, values, sample, bounds_error=False)
         v2 = interpn(points, values, sample[None,:], bounds_error=False)
-        assert_allclose(v1, v2)
+        xp_assert_close(v1, v2)
 
     def test_xi_nd(self):
         # verify that higher-d xi works as expected
@@ -725,11 +852,11 @@ class TestInterpN:
 
         v1 = interpn(points, values, sample, method='nearest',
                      bounds_error=False)
-        assert_equal(v1.shape, (2, 3))
+        assert v1.shape == (2, 3)
 
         v2 = interpn(points, values, sample.reshape(-1, 4),
                      method='nearest', bounds_error=False)
-        assert_allclose(v1, v2.reshape(v1.shape))
+        xp_assert_close(v1, v2.reshape(v1.shape))
 
     @parametrize_rgi_interp_methods
     def test_xi_broadcast(self, method):
@@ -742,17 +869,22 @@ class TestInterpN:
 
         sample = (xi[:, None], yi[None, :])
         v1 = interpn(points, values, sample, method=method, bounds_error=False)
-        assert_equal(v1.shape, (2, 3))
+        assert v1.shape == (2, 3)
 
         xx, yy = np.meshgrid(xi, yi)
         sample = np.c_[xx.T.ravel(), yy.T.ravel()]
 
         v2 = interpn(points, values, sample,
                      method=method, bounds_error=False)
-        assert_allclose(v1, v2.reshape(v1.shape))
+        xp_assert_close(v1, v2.reshape(v1.shape))
 
+    @pytest.mark.fail_slow(5)
     @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
+
+        if method == "quintic":
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also works
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
             (0.0, 5.0, 10.0, 15.0, 20, 25.0)
@@ -764,16 +896,20 @@ class TestInterpN:
 
         v = interpn(points, values, sample, method=method,
                     bounds_error=False)
-        assert_equal(v.shape, (7, 3, 8), err_msg=method)
+        assert v.shape == (7, 3, 8), method
 
         vs = [interpn(points, values[..., j], sample, method=method,
                       bounds_error=False) for j in range(8)]
         v2 = np.array(vs).transpose(1, 2, 0)
 
-        assert_allclose(v, v2, atol=1e-14, err_msg=method)
+        xp_assert_close(v, v2, atol=1e-14, err_msg=method)
 
     @parametrize_rgi_interp_methods
     def test_nonscalar_values_2(self, method):
+
+        if method in {"cubic", "quintic"}:
+            pytest.skip("Way too slow.")
+
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -799,7 +935,7 @@ class TestInterpN:
                         bounds_error=False) for i in range(values.shape[-2])
               ] for j in range(values.shape[-1])]
 
-        assert_allclose(v, np.asarray(vs).T, atol=1e-14, err_msg=method)
+        xp_assert_close(v, np.asarray(vs).T, atol=1e-14, err_msg=method)
 
     def test_non_scalar_values_splinef2d(self):
         # Vector-valued splines supported with fitpack
@@ -813,6 +949,9 @@ class TestInterpN:
 
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
+        if method == "pchip":
+            pytest.skip("pchip does not make sense for complex data")
+
         x, y, values = self._sample_2d_data()
         points = (x, y)
         values = values - 2j*values
@@ -824,7 +963,19 @@ class TestInterpN:
         v2r = interpn(points, values.real, sample, method=method)
         v2i = interpn(points, values.imag, sample, method=method)
         v2 = v2r + 1j*v2i
-        assert_allclose(v1, v2)
+
+        xp_assert_close(v1, v2)
+
+    def test_complex_pchip(self):
+        # Complex-valued data deprecated for pchip
+        x, y, values = self._sample_2d_data()
+        points = (x, y)
+        values = values - 2j*values
+
+        sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                           [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+        with pytest.raises(ValueError, match='real'):
+            interpn(points, values, sample, method='pchip')
 
     def test_complex_spline2fd(self):
         # Complex-valued data not supported by spline2fd
@@ -834,7 +985,7 @@ class TestInterpN:
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        with assert_warns(np.ComplexWarning):
+        with assert_warns(ComplexWarning):
             interpn(points, values, sample, method='splinef2d')
 
     @pytest.mark.parametrize(
@@ -849,10 +1000,12 @@ class TestInterpN:
 
         v1 = interpn((x, y), values, [0.4, 0.7], method=method)
         v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
-        assert_allclose(v1, v2)
+        xp_assert_close(v1, v2, check_dtype=False)
 
+    @skip_xp_invalid_arg
     @parametrize_rgi_interp_methods
     def test_matrix_input(self, method):
+        """np.matrix inputs are allowed for backwards compatibility"""
         x = np.linspace(0, 2, 6)
         y = np.linspace(0, 1, 7)
 
@@ -862,7 +1015,11 @@ class TestInterpN:
 
         v1 = interpn((x, y), values, sample, method=method)
         v2 = interpn((x, y), np.asarray(values), sample, method=method)
-        assert_allclose(v1, v2)
+        if method == "quintic":
+            # https://github.com/scipy/scipy/issues/20472
+            xp_assert_close(v1, v2, atol=5e-5, rtol=2e-6)
+        else:
+            xp_assert_close(v1, v2)
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
@@ -877,14 +1034,14 @@ class TestInterpN:
                   9*0.2 + 1,       # on [3, 4] it's 9*(x-3) + 1
                   9*0.8 + 1]
 
-        assert_allclose(res, wanted, atol=1e-15)
+        xp_assert_close(res, wanted, atol=1e-15)
 
         # check extrapolation
         xi = np.array([[1.1, 2.2], [1.5, 3.2], [-2.3, 3.8]])
         res = interpn(([1], [2, 3, 4]), values, xi,
                       bounds_error=False, fill_value=None)
 
-        assert_allclose(res, wanted, atol=1e-15)
+        xp_assert_close(res, wanted, atol=1e-15)
 
     def test_descending_points(self):
         def value_func_4d(x, y, z, a):
@@ -910,7 +1067,7 @@ class TestInterpN:
             *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
         test_result = interpn(points_shuffled, values_shuffled, pts)
 
-        assert_array_equal(correct_result, test_result)
+        xp_assert_equal(correct_result, test_result)
 
     def test_invalid_points_order(self):
         x = np.array([.5, 2., 0., 4., 5.5])  # not ascending or descending
@@ -933,3 +1090,58 @@ class TestInterpN:
                "RegularGridInterpolator has dimension 1")
         with assert_raises(ValueError, match=msg):
             interpn(points, values, xi)
+
+    def test_readonly_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 5, 6)
+        z = np.linspace(0, 6, 7)
+        points = (x, y, z)
+        values = np.ones((5, 6, 7))
+        point = np.array([2.21, 3.12, 1.15])
+        for d in points:
+            d.flags.writeable = False
+        values.flags.writeable = False
+        point.flags.writeable = False
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    def test_2d_readonly_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        # test special 2d case
+        x = np.linspace(0, 4, 5)
+        y = np.linspace(0, 5, 6)
+        points = (x, y)
+        values = np.ones((5, 6))
+        point = np.array([2.21, 3.12])
+        for d in points:
+            d.flags.writeable = False
+        values.flags.writeable = False
+        point.flags.writeable = False
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    def test_non_c_contiguous_grid(self):
+        # https://github.com/scipy/scipy/issues/17716
+        x = np.linspace(0, 4, 5)
+        x = np.vstack((x, np.empty_like(x))).T.copy()[:, 0]
+        assert not x.flags.c_contiguous
+        y = np.linspace(0, 5, 6)
+        z = np.linspace(0, 6, 7)
+        points = (x, y, z)
+        values = np.ones((5, 6, 7))
+        point = np.array([2.21, 3.12, 1.15])
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)
+
+    @pytest.mark.parametrize("dtype", ['>f8', '<f8'])
+    def test_endianness(self, dtype):
+        # https://github.com/scipy/scipy/issues/17716
+        # test special 2d case
+        x = np.linspace(0, 4, 5, dtype=dtype)
+        y = np.linspace(0, 5, 6, dtype=dtype)
+        points = (x, y)
+        values = np.ones((5, 6), dtype=dtype)
+        point = np.array([2.21, 3.12], dtype=dtype)
+        interpn(points, values, point)
+        RegularGridInterpolator(points, values)(point)

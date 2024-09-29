@@ -13,7 +13,7 @@ Functions
 """
 from warnings import warn
 
-from scipy.optimize import _minpack2 as minpack2
+from ._dcsrch import DCSRCH
 import numpy as np
 
 __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
@@ -22,6 +22,12 @@ __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
 
 class LineSearchWarning(RuntimeWarning):
     pass
+
+
+def _check_c1_c2(c1, c2):
+    if not (0 < c1 < c2 < 1):
+        raise ValueError("'c1' and 'c2' do not satisfy"
+                         "'0 < c1 < c2 < 1'.")
 
 
 #------------------------------------------------------------------------------
@@ -45,7 +51,6 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         Current point
     pk : array_like
         Search direction
-
     gfk : array_like, optional
         Gradient of `f` at point `xk`
     old_fval : float, optional
@@ -61,6 +66,10 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         As in `line_search_wolfe1`
     gval : array
         Gradient of `f` at the final point
+
+    Notes
+    -----
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     """
     if gfk is None:
@@ -129,8 +138,19 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     Notes
     -----
     Uses routine DCSRCH from MINPACK.
+    
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1`` as described in [1]_.
+
+    References
+    ----------
+    
+    .. [1] Nocedal, J., & Wright, S. J. (2006). Numerical optimization.
+       In Springer Series in Operations Research and Financial Engineering.
+       (Springer Series in Operations Research and Financial Engineering).
+       Springer Nature.
 
     """
+    _check_c1_c2(c1, c2)
 
     if phi0 is None:
         phi0 = phi(0.)
@@ -144,29 +164,12 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     else:
         alpha1 = 1.0
 
-    phi1 = phi0
-    derphi1 = derphi0
-    isave = np.zeros((2,), np.intc)
-    dsave = np.zeros((13,), float)
-    task = b'START'
-
     maxiter = 100
-    for i in range(maxiter):
-        stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
-                                                   c1, c2, xtol, task,
-                                                   amin, amax, isave, dsave)
-        if task[:2] == b'FG':
-            alpha1 = stp
-            phi1 = phi(stp)
-            derphi1 = derphi(stp)
-        else:
-            break
-    else:
-        # maxiter reached, the line search did not converge
-        stp = None
 
-    if task[:5] == b'ERROR' or task[:4] == b'WARN':
-        stp = None  # failed
+    dcsrch = DCSRCH(phi, derphi, c1, c2, xtol, amin, amax)
+    stp, phi1, phi0, task = dcsrch(
+        alpha1, phi0=phi0, derphi0=derphi0, maxiter=maxiter
+    )
 
     return stp, phi1, phi0
 
@@ -177,6 +180,8 @@ line_search = line_search_wolfe1
 #------------------------------------------------------------------------------
 # Pure-Python Wolfe line and scalar searches
 #------------------------------------------------------------------------------
+
+# Note: `line_search_wolfe2` is the public `scipy.optimize.line_search`
 
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
@@ -192,7 +197,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     xk : ndarray
         Starting point.
     pk : ndarray
-        Search direction.
+        Search direction. The search direction must be a descent direction
+        for the algorithm to converge.
     gfk : ndarray, optional
         Gradient value for x=xk (xk being the current parameter
         estimate). Will be recomputed if omitted.
@@ -245,6 +251,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
     1999, pp. 59-61.
+
+    The search direction `pk` must be a descent direction (e.g.
+    ``-myfprime(xk)``) to find a step length that satisfies the strong Wolfe
+    conditions. If the search direction is not a descent direction (e.g.
+    ``myfprime(xk)``), then `alpha`, `new_fval`, and `new_slope` will be None.
 
     Examples
     --------
@@ -303,7 +314,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
             extra_condition2, maxiter=maxiter)
 
     if derphi_star is None:
-        warn('The line search algorithm did not converge', LineSearchWarning)
+        warn('The line search algorithm did not converge',
+             LineSearchWarning, stacklevel=2)
     else:
         # derphi_star is a number (derphi) -- so use the most recently
         # calculated gradient used in computing it derphi = gfk*pk
@@ -370,6 +382,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     1999, pp. 59-61.
 
     """
+    _check_c1_c2(c1, c2)
 
     if phi0 is None:
         phi0 = phi(0.)
@@ -396,10 +409,11 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     derphi_a0 = derphi0
 
     if extra_condition is None:
-        extra_condition = lambda alpha, phi: True
+        def extra_condition(alpha, phi):
+            return True
 
     for i in range(maxiter):
-        if alpha1 == 0 or (amax is not None and alpha0 == amax):
+        if alpha1 == 0 or (amax is not None and alpha0 > amax):
             # alpha1 == 0: This shouldn't happen. Perhaps the increment has
             # slipped below machine precision?
             alpha_star = None
@@ -411,9 +425,9 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
                 msg = 'Rounding errors prevent the line search from converging'
             else:
                 msg = "The line search algorithm could not find a solution " + \
-                      "less than or equal to amax: %s" % amax
+                      f"less than or equal to amax: {amax}"
 
-            warn(msg, LineSearchWarning)
+            warn(msg, LineSearchWarning, stacklevel=2)
             break
 
         not_first_iteration = i > 0
@@ -454,7 +468,8 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         alpha_star = alpha1
         phi_star = phi_a1
         derphi_star = None
-        warn('The line search algorithm did not converge', LineSearchWarning)
+        warn('The line search algorithm did not converge',
+             LineSearchWarning, stacklevel=2)
 
     return alpha_star, phi_star, phi0, derphi_star
 
@@ -517,9 +532,9 @@ def _quadmin(a, fa, fpa, b, fb):
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
           phi, derphi, phi0, derphi0, c1, c2, extra_condition):
     """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
-    
+
     Part of the optimization algorithm in `scalar_search_wolfe2`.
-    
+
     Notes
     -----
     Implements Algorithm 3.6 (zoom) in Wright and Nocedal,

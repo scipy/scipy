@@ -1,8 +1,9 @@
 #ifndef RCONT_H
 #define RCONT_H
 
-#include <numpy/random/distributions.h>
 #include <stdint.h>
+
+#include "distributions.h"
 
 typedef int64_t tab_t;
 

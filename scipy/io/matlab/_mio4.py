@@ -2,6 +2,8 @@
 '''
 import sys
 import warnings
+import math
+from operator import mul
 
 import numpy as np
 
@@ -81,6 +83,9 @@ mclass_info = {
     }
 
 
+_MAX_INTP = np.iinfo(np.intp).max
+
+
 class VarHeader4:
     # Mat4 variables never logical or global
     is_logical = False
@@ -117,9 +122,9 @@ class VarReader4:
             raise ValueError('Mat 4 mopt wrong format, byteswapping problem?')
         M, rest = divmod(data['mopt'], 1000)  # order code
         if M not in (0, 1):
-            warnings.warn("We do not support byte ordering '%s'; returned "
-                          "data may be corrupt" % order_codes[M],
-                          UserWarning)
+            warnings.warn(f"We do not support byte ordering '{order_codes[M]}';"
+                          " returned data may be corrupt",
+                          UserWarning, stacklevel=3)
         O, rest = divmod(rest, 100)  # unused, should be 0
         if O != 0:
             raise ValueError('O in MOPT integer should be 0, wrong format?')
@@ -147,7 +152,7 @@ class VarReader4:
             # no current processing (below) makes sense for sparse
             return self.read_sparse_array(hdr)
         else:
-            raise TypeError('No reader for class code %s' % mclass)
+            raise TypeError(f'No reader for class code {mclass}')
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
@@ -170,17 +175,20 @@ class VarReader4:
             of dtype given by `hdr` ``dtype`` and shape given by `hdr` ``dims``
         '''
         dt = hdr.dtype
-        dims = hdr.dims
-        num_bytes = dt.itemsize
-        for d in dims:
-            num_bytes *= d
-        buffer = self.mat_stream.read(int(num_bytes))
+        # Fast product for large (>2GB) arrays.
+        num_bytes = reduce(mul, hdr.dims, np.int64(dt.itemsize))
+        if num_bytes > _MAX_INTP:
+            raise ValueError(
+                f"Variable '{hdr.name.decode('latin1')}' has byte length "
+                f"longer than largest possible NumPy array on this platform.")
+        buffer = self.mat_stream.read(num_bytes)
         if len(buffer) != num_bytes:
-            raise ValueError("Not enough bytes to read matrix '%s'; is this "
-                             "a badly-formed file? Consider listing matrices "
-                             "with `whosmat` and loading named matrices with "
-                             "`variable_names` kwarg to `loadmat`" % hdr.name)
-        arr = np.ndarray(shape=dims,
+            raise ValueError(
+                f"Not enough bytes to read matrix "
+                f"'{hdr.name.decode('latin1')}'; is this a badly-formed file? "
+                f"Consider listing matrices with `whosmat` and loading named "
+                f"matrices with `variable_names` kwarg to `loadmat`")
+        arr = np.ndarray(shape=hdr.dims,
                          dtype=dt,
                          buffer=buffer,
                          order='F')
@@ -298,7 +306,7 @@ class VarReader4:
 
             shape = (int(rows), int(cols))
         else:
-            raise TypeError('No reader for class code %s' % mclass)
+            raise TypeError(f'No reader for class code {mclass}')
 
         if self.squeeze_me:
             shape = tuple([x for x in shape if x != 1])
@@ -353,8 +361,8 @@ class MatFile4Reader(MatFileReader):
            position in stream of next variable
         '''
         hdr = self._matrix_reader.read_header()
-        n = reduce(lambda x, y: x*y, hdr.dims, 1)  # fast product
-        remaining_bytes = hdr.dtype.itemsize * n
+        # Fast product for large (>2GB) arrays.
+        remaining_bytes = reduce(mul, hdr.dims, np.int64(hdr.dtype.itemsize))
         if hdr.is_complex and not hdr.mclass == mxSPARSE_CLASS:
             remaining_bytes *= 2
         next_position = self.mat_stream.tell() + remaining_bytes
@@ -518,7 +526,7 @@ class VarWriter4:
             raise TypeError('Cannot save object arrays in Mat4')
         elif dtt is np.void:
             raise TypeError('Cannot save void type arrays')
-        elif dtt in (np.unicode_, np.string_):
+        elif dtt in (np.str_, np.bytes_):
             self.write_char(arr, name)
             return
         self.write_numeric(arr, name)
@@ -546,7 +554,8 @@ class VarWriter4:
             self.write_bytes(arr)
 
     def write_char(self, arr, name):
-        arr = arr_to_chars(arr)
+        if arr.dtype.type == np.str_ and arr.dtype.itemsize != np.dtype('U1').itemsize:
+            arr = arr_to_chars(arr)
         arr = arr_to_2d(arr, self.oned_as)
         dims = arr.shape
         self.write_header(
@@ -556,7 +565,7 @@ class VarWriter4:
             T=mxCHAR_CLASS)
         if arr.dtype.kind == 'U':
             # Recode unicode to latin1
-            n_chars = np.prod(dims)
+            n_chars = math.prod(dims)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)

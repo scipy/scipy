@@ -8,6 +8,10 @@ PYTHON = python3
 SPHINXOPTS    =
 SPHINXBUILD   = LANG=C $(PYTHON) -msphinx
 
+# Environment variables needed for notebooks (see gh-17322):
+export SQLALCHEMY_SILENCE_UBER_WARNING?=1
+export JUPYTER_PLATFORM_DIRS?=1
+
 FILES=
 
 # Internal variables.
@@ -31,7 +35,7 @@ help:
 	@echo "  show      to show the HTML output"
 
 clean:
-	-rm -rf build/* source/reference/generated
+	-rm -rf build/* source/reference/generated source/.jupyterlite.doit.db
 
 
 #------------------------------------------------------------------------------
@@ -48,9 +52,10 @@ clean:
 
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
+# `set -o pipefail` is specific to bash
+SHELL = /bin/bash
 SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
-GITVER ?= $(shell cd ../tools; $(PYTHON) -c "from version_utils import git_version; \
-				print(git_version('..')[0][:10])")
+GITVER ?= $(shell (cd ..; set -o pipefail && git rev-parse HEAD 2>/dev/null | cut -c1-10) || echo Unknown)
 
 version-check:
 ifeq "$(GITVER)" "Unknown"
@@ -71,7 +76,7 @@ dist:
 	install -d build
 	rm -rf build/env
 	$(PYTHON) -mvenv --system-site-packages build/env
-	$(CURDIR)/build/env/bin/python -mpip install -r ../doc_requirements.txt
+	$(CURDIR)/build/env/bin/python -mpip install -r ../requirements/doc.txt
 	$(CURDIR)/build/env/bin/python -mpip install ..
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
@@ -104,10 +109,19 @@ upload:
 # Basic Sphinx generation rules for different formats
 #------------------------------------------------------------------------------
 
-html: version-check html-build
+html: version-check convert-notebooks html-build
 html-build:
 	mkdir -p build/html build/doctrees
 	$(SPHINXBUILD) -WT --keep-going $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html $(FILES)
+
+convert-notebooks:
+	mkdir -p source/_contents
+	for file in source/tutorial/stats/*.md; do \
+		basename=$$(basename $$file .md); \
+		output_name="source/_contents/$${basename}.ipynb"; \
+		$(PYTHON) -m jupytext --output "$$output_name"  $$file; \
+	done
+
 
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees

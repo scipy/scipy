@@ -3,9 +3,9 @@ import shutil
 from ._registry import method_files_map
 
 try:
-    import appdirs
+    import platformdirs
 except ImportError:
-    appdirs = None
+    platformdirs = None  # type: ignore[assignment]
 
 
 def _clear_cache(datasets, cache_dir=None, method_map=None):
@@ -14,12 +14,12 @@ def _clear_cache(datasets, cache_dir=None, method_map=None):
         method_map = method_files_map
     if cache_dir is None:
         # Use default cache_dir path
-        if appdirs is None:
-            # appdirs is pooch dependency
+        if platformdirs is None:
+            # platformdirs is pooch dependency
             raise ImportError("Missing optional dependency 'pooch' required "
                               "for scipy.datasets module. Please use pip or "
                               "conda to install 'pooch'.")
-        cache_dir = appdirs.user_cache_dir("scipy-data")
+        cache_dir = platformdirs.user_cache_dir("scipy-data")
 
     if not os.path.exists(cache_dir):
         print(f"Cache Directory {cache_dir} doesn't exist. Nothing to clear.")

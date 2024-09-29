@@ -12,6 +12,7 @@ from scipy.optimize import linprog, OptimizeWarning
 from scipy.optimize._numdiff import approx_derivative
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
+from scipy._lib._util import VisibleDeprecationWarning
 import scipy.sparse
 import pytest
 
@@ -23,8 +24,8 @@ except ImportError:
 
 has_cholmod = True
 try:
-    import sksparse
-    from sksparse.cholmod import cholesky as cholmod
+    import sksparse  # noqa: F401
+    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
 except ImportError:
     has_cholmod = False
 
@@ -51,7 +52,7 @@ def _assert_unable_to_find_basic_feasible_sol(res):
     # res: linprog result object
 
     # The status may be either 2 or 4 depending on why the feasible solution
-    # could not be found. If the undelying problem is expected to not have a
+    # could not be found. If the underlying problem is expected to not have a
     # feasible solution, _assert_infeasible should be used.
     assert_(not res.success, "incorrectly reported success")
     assert_(res.status in (2, 4), "failed to report optimization failure")
@@ -63,8 +64,7 @@ def _assert_success(res, desired_fun=None, desired_x=None,
     # desired_fun: desired objective function value or None
     # desired_x: desired solution or None
     if not res.success:
-        msg = "linprog status {0}, message: {1}".format(res.status,
-                                                        res.message)
+        msg = f"linprog status {res.status}, message: {res.message}"
         raise AssertionError(msg)
 
     assert_equal(res.status, 0)
@@ -276,7 +276,8 @@ def test_unknown_solvers_and_options():
                   c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
     assert_raises(ValueError, linprog,
                   c, A_ub=A_ub, b_ub=b_ub, method='highs-ekki')
-    with pytest.warns(OptimizeWarning, match="Unknown solver options:"):
+    message = "Unrecognized options detected: {'rr_method': 'ekki-ekki-ekki'}"
+    with pytest.warns(OptimizeWarning, match=message):
         linprog(c, A_ub=A_ub, b_ub=b_ub,
                 options={"rr_method": 'ekki-ekki-ekki'})
 
@@ -449,7 +450,7 @@ class LinprogCommonTests:
         b_ub = [10, 8, 4]
 
         def f(c, A_ub=None, b_ub=None, A_eq=None,
-              b_eq=None, bounds=None, options={}):
+              b_eq=None, bounds=None, options=None):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=options)
 
@@ -485,7 +486,9 @@ class LinprogCommonTests:
 
         # Test ill-formatted bounds
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
-        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+            assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
 
         # Test other invalid inputs
@@ -513,10 +516,10 @@ class LinprogCommonTests:
         m = 100
         n = 150
         A_eq = scipy.sparse.rand(m, n, 0.5)
-        x_valid = np.random.randn((n))
-        c = np.random.randn((n))
-        ub = x_valid + np.random.rand((n))
-        lb = x_valid - np.random.rand((n))
+        x_valid = np.random.randn(n)
+        c = np.random.randn(n)
+        ub = x_valid + np.random.rand(n)
+        lb = x_valid - np.random.rand(n)
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq * x_valid
 
@@ -600,7 +603,8 @@ class LinprogCommonTests:
         if do_presolve:
             assert_equal(res.nit, 0)
 
-        res = linprog([1, 2, 3], bounds=[(5, 0), (1, 2), (3, 4)], method=self.method, options=self.options)
+        res = linprog([1, 2, 3], bounds=[(5, 0), (1, 2), (3, 4)],
+                      method=self.method, options=self.options)
         _assert_infeasible(res)
         if do_presolve:
             assert_equal(res.nit, 0)
@@ -623,7 +627,8 @@ class LinprogCommonTests:
 
         if simplex_without_presolve:
             def g(c, bounds):
-                res = linprog(c, bounds=bounds, method=self.method, options=self.options)
+                res = linprog(c, bounds=bounds,
+                              method=self.method, options=self.options)
                 return res
 
             with pytest.warns(RuntimeWarning):
@@ -634,11 +639,13 @@ class LinprogCommonTests:
                 with pytest.raises(IndexError):
                     g(c, bounds=bounds_2)
         else:
-            res = linprog(c=c, bounds=bounds_1, method=self.method, options=self.options)
+            res = linprog(c=c, bounds=bounds_1,
+                          method=self.method, options=self.options)
             _assert_infeasible(res)
             if do_presolve:
                 assert_equal(res.nit, 0)
-            res = linprog(c=c, bounds=bounds_2, method=self.method, options=self.options)
+            res = linprog(c=c, bounds=bounds_2,
+                          method=self.method, options=self.options)
             _assert_infeasible(res)
             if do_presolve:
                 assert_equal(res.nit, 0)
@@ -1207,7 +1214,13 @@ class LinprogCommonTests:
         m = 50
         c = -np.ones(m)
         tmp = 2 * np.pi * np.arange(m) / (m + 1)
-        A_eq = np.vstack((np.cos(tmp) - 1, np.sin(tmp)))
+        # This test relies on `cos(0) -1 == sin(0)`, so ensure that's true
+        # (SIMD code or -ffast-math may cause spurious failures otherwise)
+        row0 = np.cos(tmp) - 1
+        row0[0] = 0.0
+        row1 = np.sin(tmp)
+        row1[0] = 0.0
+        A_eq = np.vstack((row0, row1))
         b_eq = [0, 0]
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
@@ -1689,6 +1702,21 @@ class LinprogCommonTests:
                           method=self.method, options=o)
         assert_allclose(res.fun, -8589934560)
 
+    def test_bug_20584(self):
+        """
+        Test that when integrality is a list of all zeros, linprog gives the
+        same result as when it is an array of all zeros / integrality=None
+        """
+        c = [1, 1]
+        A_ub = [[-1, 0]]
+        b_ub = [-2.5]
+        res1 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=[0, 0])
+        res2 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=np.asarray([0, 0]))
+        res3 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=None)
+        assert_equal(res1.x, res2.x)
+        assert_equal(res1.x, res3.x)
+
+
 #########################
 # Method-specific Tests #
 #########################
@@ -1740,7 +1768,8 @@ class LinprogRSTests(LinprogCommonTests):
 class LinprogHiGHSTests(LinprogCommonTests):
     def test_callback(self):
         # this is the problem from test_callback
-        cb = lambda res: None
+        def cb(res):
+            return None
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
@@ -1773,6 +1802,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
 
+    @pytest.mark.fail_slow(10)
     def test_marginals(self):
         # Ensure lagrange multipliers are correct by comparing the derivative
         # w.r.t. b_ub/b_eq/ub/lb to the reported duals.
@@ -1939,6 +1969,13 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
 class TestLinprogIPDense(LinprogIPTests):
     options = {"sparse": False}
 
+    # see https://github.com/scipy/scipy/issues/20216 for skip reason
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on some macOS builds for reason not relevant to test"
+    )
+    def test_bug_6139(self):
+        super().test_bug_6139()
 
 if has_cholmod:
     class TestLinprogIPSparseCholmod(LinprogIPTests):
@@ -1956,6 +1993,10 @@ if has_umfpack:
 class TestLinprogIPSparse(LinprogIPTests):
     options = {"sparse": True, "cholesky": False, "sym_pos": False}
 
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on macOS x86 Accelerate builds (gh-20510)"
+    )
     @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
@@ -2006,6 +2047,10 @@ class TestLinprogIPSparse(LinprogIPTests):
 class TestLinprogIPSparsePresolve(LinprogIPTests):
     options = {"sparse": True, "_sparse_presolve": True}
 
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on macOS x86 Accelerate builds (gh-20510)"
+    )
     @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
@@ -2200,10 +2245,11 @@ class TestLinprogHiGHSIPM(LinprogHiGHSTests):
 ###################################
 
 
-class TestLinprogHiGHSMIP():
+class TestLinprogHiGHSMIP:
     method = "highs"
     options = {}
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.xfail(condition=(sys.maxsize < 2 ** 32 and
                        platform.system() == "Linux"),
                        run=False,
@@ -2362,6 +2408,21 @@ class TestLinprogHiGHSMIP():
         gap_diffs = np.diff(np.flip(sol_mip_gaps))
         assert np.all(gap_diffs >= 0)
         assert not np.all(gap_diffs == 0)
+
+    def test_semi_continuous(self):
+        # See issue #18106. This tests whether the solution is being
+        # checked correctly (status is 0) when integrality > 1:
+        # values are allowed to be 0 even if 0 is out of bounds.
+
+        c = np.array([1., 1., -1, -1])
+        bounds = np.array([[0.5, 1.5], [0.5, 1.5], [0.5, 1.5], [0.5, 1.5]])
+        integrality = np.array([2, 3, 2, 3])
+
+        res = linprog(c, bounds=bounds,
+                      integrality=integrality, method='highs')
+
+        np.testing.assert_allclose(res.x, [0, 0, 1.5, 1])
+        assert res.status == 0
 
 
 ###########################

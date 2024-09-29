@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from scipy.special import ndtri
@@ -269,7 +268,7 @@ class OddsRatioResult:
         .. [2] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
                Methods, Techniques, and Applications, CRC Press LLC, Boca
                Raton, Florida.
-        .. [3] Alan Agresti, An Introduction to Categorical Data Analyis
+        .. [3] Alan Agresti, An Introduction to Categorical Data Analysis
                (second edition), Wiley, Hoboken, NJ, USA (2007).
         """
         if alternative not in ['two-sided', 'less', 'greater']:
@@ -357,6 +356,7 @@ def odds_ratio(table, *, kind='conditional'):
     --------
     scipy.stats.fisher_exact
     relative_risk
+    :ref:`hypothesis_odds_ratio` : Extended example
 
     Notes
     -----
@@ -382,7 +382,7 @@ def odds_ratio(table, *, kind='conditional'):
     In epidemiology, individuals are classified as "exposed" or
     "unexposed" to some factor or treatment. If the occurrence of some
     illness is under study, those who have the illness are often
-    classifed as "cases", and those without it are "noncases".  The
+    classified as "cases", and those without it are "noncases".  The
     counts of the occurrences of these classes gives a contingency
     table::
 
@@ -398,18 +398,17 @@ def odds_ratio(table, *, kind='conditional'):
     between being exposed and being a case.
 
     Interchanging the rows or columns of the contingency table inverts
-    the odds ratio, so it is import to understand the meaning of labels
+    the odds ratio, so it is important to understand the meaning of labels
     given to the rows and columns of the table when interpreting the
     odds ratio.
 
-    Consider a hypothetical example where it is hypothesized that
-    exposure to a certain chemical is assocated with increased occurrence
-    of a certain disease.  Suppose we have the following table for a
-    collection of 410 people::
+    Consider a hypothetical example where it is hypothesized that exposure to a
+    certain chemical is associated with increased occurrence of a certain
+    disease. Suppose we have the following table for a collection of 410 people::
 
-                  exposed   unexposed
-        cases         7         15
-        noncases     58        472
+                exposed unexposed
+        cases        7       15
+        noncases    58      472
 
     The question we ask is "Is exposure to the chemical associated with
     increased risk of the disease?"
@@ -421,17 +420,19 @@ def odds_ratio(table, *, kind='conditional'):
     >>> res.statistic
     3.7836687705553493
 
-    For this sample, the odds of getting the disease for those who have
-    been exposed to the chemical are almost 3.8 times that of those who
-    have not been exposed.
+    For this sample, the odds of getting the disease for those who have been
+    exposed to the chemical are almost 3.8 times that of those who have not been
+    exposed.
 
     We can compute the 95% confidence interval for the odds ratio:
 
     >>> res.confidence_interval(confidence_level=0.95)
     ConfidenceInterval(low=1.2514829132266785, high=10.363493716701269)
 
-    The 95% confidence interval for the conditional odds ratio is
-    approximately (1.25, 10.4).
+    The 95% confidence interval for the conditional odds ratio is approximately
+    (1.25, 10.4).
+
+    For a more detailed example, see :ref:`hypothesis_odds_ratio`.
     """
     if kind not in ['conditional', 'sample']:
         raise ValueError("`kind` must be 'conditional' or 'sample'.")
