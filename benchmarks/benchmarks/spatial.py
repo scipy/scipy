@@ -27,12 +27,12 @@ class Build(Benchmark):
         self.cls = KDTree if cls_name == 'KDTree' else cKDTree
         m, n, r = mnr
 
-        np.random.seed(1234)
-        self.data = np.concatenate((np.random.randn(n//2,m),
-                                    np.random.randn(n-n//2,m)+np.ones(m)))
+        rng = np.random.default_rng(1234)
+        self.data = np.concatenate((rng.standard_normal((n//2,m)),
+                                    rng.standard_normal((n-n//2,m))+np.ones(m)))
 
-        self.queries = np.concatenate((np.random.randn(r//2,m),
-                                       np.random.randn(r-r//2,m)+np.ones(m)))
+        self.queries = np.concatenate((rng.standard_normal((r//2,m)),
+                                       rng.standard_normal((r-r//2,m))+np.ones(m)))
 
     def time_build(self, mnr, cls_name):
         """
@@ -59,15 +59,15 @@ class PresortedDataSetup(Benchmark):
     def setup(self, mnr, balanced, order, radius):
         m, n, r = mnr
 
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         self.data = {
-            'random': np.random.uniform(size=(n, m)),
+            'random': rng.uniform(size=(n, m)),
             'sorted': np.repeat(np.arange(n, 0, -1)[:, np.newaxis],
                                 m,
                                 axis=1) / n
         }
 
-        self.queries = np.random.uniform(size=(r, m))
+        self.queries = rng.uniform(size=(r, m))
         self.T = cKDTree(self.data.get(order), balanced_tree=balanced)
 
 
@@ -120,10 +120,10 @@ class Query(LimitedParamBenchmark):
     def do_setup(self, mnr, p, boxsize, leafsize):
         m, n, r = mnr
 
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
-        self.data = np.random.uniform(size=(n, m))
-        self.queries = np.random.uniform(size=(r, m))
+        self.data = rng.uniform(size=(n, m))
+        self.queries = rng.uniform(size=(r, m))
 
         self.T = cKDTree(self.data, leafsize=leafsize, boxsize=boxsize)
 
@@ -139,7 +139,9 @@ class Query(LimitedParamBenchmark):
         self.T.query(self.queries, p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_query.version = "327bc0627d5387347e9cdcf4c52a550c813bb80a859eeb0f3e5bfe6650a8a1db"
+    time_query.version = (
+        "327bc0627d5387347e9cdcf4c52a550c813bb80a859eeb0f3e5bfe6650a8a1db"
+    )
 
 
 class Radius(LimitedParamBenchmark):
@@ -184,8 +186,12 @@ class Radius(LimitedParamBenchmark):
         self.T.query_pairs(probe_radius, p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_query_ball_point.version = "e0c2074b35db7e5fca01a43b0fba8ab33a15ed73d8573871ea6feb57b3df4168"
-    time_query_pairs.version = "cf669f7d619e81e4a09b28bb3fceaefbdd316d30faf01524ab33d41661a53f56"
+    time_query_ball_point.version = (
+        "e0c2074b35db7e5fca01a43b0fba8ab33a15ed73d8573871ea6feb57b3df4168"
+    )
+    time_query_pairs.version = (
+        "cf669f7d619e81e4a09b28bb3fceaefbdd316d30faf01524ab33d41661a53f56"
+    )
 
 
 class Neighbors(LimitedParamBenchmark):
@@ -202,7 +208,8 @@ class Neighbors(LimitedParamBenchmark):
     num_param_combinations = 17
 
     def setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
-        LimitedParamBenchmark.setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls)
+        LimitedParamBenchmark.setup(self, mn1n2, p, probe_radius,
+                                    boxsize, leafsize, cls)
 
         m, n1, n2 = mn1n2
 
@@ -215,7 +222,8 @@ class Neighbors(LimitedParamBenchmark):
         self.T1 = cKDTree(self.data1, boxsize=boxsize, leafsize=leafsize)
         self.T2 = cKDTree(self.data2, boxsize=boxsize, leafsize=leafsize)
 
-    def time_sparse_distance_matrix(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
+    def time_sparse_distance_matrix(self, mn1n2, p, probe_radius,
+                                    boxsize, leafsize, cls):
         self.T1.sparse_distance_matrix(self.T2, probe_radius, p=p)
 
     def time_count_neighbors(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
@@ -227,11 +235,16 @@ class Neighbors(LimitedParamBenchmark):
         if cls != 'cKDTree_weighted':
             self.T1.count_neighbors(self.T2, probe_radius, p=p)
         else:
-            self.T1.count_neighbors(self.T2, probe_radius, weights=(self.w1, self.w2), p=p)
+            self.T1.count_neighbors(self.T2, probe_radius,
+                                    weights=(self.w1, self.w2), p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_sparse_distance_matrix.version = "9aa921dce6da78394ab29d949be27953484613dcf9c9632c01ae3973d4b29596"
-    time_count_neighbors.version = "830287f1cf51fa6ba21854a60b03b2a6c70b2f2485c3cdcfb19a360e0a7e2ca2"
+    time_sparse_distance_matrix.version = (
+        "9aa921dce6da78394ab29d949be27953484613dcf9c9632c01ae3973d4b29596"
+    )
+    time_count_neighbors.version = (
+        "830287f1cf51fa6ba21854a60b03b2a6c70b2f2485c3cdcfb19a360e0a7e2ca2"
+    )
 
 
 class CNeighbors(Benchmark):
@@ -276,10 +289,21 @@ class CNeighbors(Benchmark):
 def generate_spherical_points(num_points):
     # generate uniform points on sphere
     # see: https://stackoverflow.com/a/23785326
-    np.random.seed(123)
-    points = np.random.normal(size=(num_points, 3))
+    rng = np.random.default_rng(123)
+    points = rng.normal(size=(num_points, 3))
     points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
     return points
+
+
+def generate_circle_points(num_points):
+    # try to avoid full circle degeneracy
+    # at 2 * pi
+    angles = np.linspace(0, 1.9999 * np.pi, num_points)
+    points = np.empty(shape=(num_points, 2))
+    points[..., 0] = np.cos(angles)
+    points[..., 1] = np.sin(angles)
+    return points
+
 
 class SphericalVor(Benchmark):
     params = [10, 100, 1000, 5000, 10000]
@@ -311,38 +335,43 @@ class SphericalVorSort(Benchmark):
 
 
 class SphericalVorAreas(Benchmark):
-    params = [10, 100, 1000, 5000, 10000]
-    param_names = ['num_points']
+    params = ([10, 100, 1000, 5000, 10000],
+              [2, 3])
+    param_names = ['num_points', 'ndim']
 
-    def setup(self, num_points):
-        self.points = generate_spherical_points(num_points)
+    def setup(self, num_points, ndim):
+        if ndim == 2:
+            center = np.zeros(2)
+            self.points = generate_circle_points(num_points)
+        else:
+            center = np.zeros(3)
+            self.points = generate_spherical_points(num_points)
         self.sv = SphericalVoronoi(self.points, radius=1,
-                                   center=np.zeros(3))
+                                   center=center)
 
-    def time_spherical_polygon_area_calculation(self, num_points):
+    def time_spherical_polygon_area_calculation(self, num_points, ndim):
         """Time the area calculation in the Spherical Voronoi code."""
         self.sv.calculate_areas()
 
 
 class Xdist(Benchmark):
-    params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
-    'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
-    'jensenshannon', 'chebyshev', 'canberra', 'braycurtis', 'mahalanobis',
-    'yule', 'dice', 'kulsinski', 'rogerstanimoto', 'russellrao',
-    'sokalmichener', 'sokalsneath', 'wminkowski', 'minkowski-P3'])
+    params = ([10, 100, 1000],
+              ['euclidean', 'minkowski', 'cityblock',
+               'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
+               'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
+               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulczynski1',
+               'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
+               'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
-        np.random.seed(123)
-        self.points = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points = rng.random((num_points, 3))
         self.metric = metric
         if metric == 'minkowski-P3':
             # p=2 is just the euclidean metric, try another p value as well
             self.kwargs = {'p': 3.0}
             self.metric = 'minkowski'
-        elif metric == 'wminkowski':
-            # use an equal weight vector since weights are required
-            self.kwargs = {'w': np.ones(3)}
         else:
             self.kwargs = {}
 
@@ -359,18 +388,50 @@ class Xdist(Benchmark):
         distance.pdist(self.points, self.metric, **self.kwargs)
 
 
+class SingleDist(Benchmark):
+    params = (['euclidean', 'minkowski', 'cityblock',
+               'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
+               'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
+               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulczynski1',
+               'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
+               'minkowski-P3'])
+    param_names = ['metric']
+
+    def setup(self, metric):
+        rng = np.random.default_rng(123)
+        self.points = rng.random((2, 3))
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0}
+            self.metric = 'minkowski'
+        elif metric == 'mahalanobis':
+            self.kwargs = {'VI': [[1, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 0.5, 1]]}
+        elif metric == 'seuclidean':
+            self.kwargs = {'V': [1, 0.1, 0.1]}
+        else:
+            self.kwargs = {}
+
+    def time_dist(self, metric):
+        """Time distance metrics individually (without batching with
+        cdist or pdist).
+        """
+        getattr(distance, self.metric)(self.points[0], self.points[1],
+                                       **self.kwargs)
+
+
 class XdistWeighted(Benchmark):
     params = (
         [10, 20, 100],
         ['euclidean', 'minkowski', 'cityblock', 'sqeuclidean', 'cosine',
          'correlation', 'hamming', 'jaccard', 'chebyshev', 'canberra',
-         'braycurtis', 'yule', 'dice', 'kulsinski', 'rogerstanimoto',
+         'braycurtis', 'yule', 'dice', 'kulczynski1', 'rogerstanimoto',
          'russellrao', 'sokalmichener', 'sokalsneath', 'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
-        np.random.seed(123)
-        self.points = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points = rng.random((num_points, 3))
         self.metric = metric
         if metric == 'minkowski-P3':
             # p=2 is just the euclidean metric, try another p value as well
@@ -390,13 +451,39 @@ class XdistWeighted(Benchmark):
         distance.pdist(self.points, self.metric, w=self.weights, **self.kwargs)
 
 
+class SingleDistWeighted(Benchmark):
+    params = (['euclidean', 'minkowski', 'cityblock', 'sqeuclidean', 'cosine',
+               'correlation', 'hamming', 'jaccard', 'chebyshev', 'canberra',
+               'braycurtis', 'yule', 'dice', 'kulczynski1', 'rogerstanimoto',
+               'russellrao', 'sokalmichener', 'sokalsneath', 'minkowski-P3'])
+    param_names = ['metric']
+
+    def setup(self, metric):
+        rng = np.random.default_rng(123)
+        self.points = rng.random((2, 3))
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0, 'w': np.ones(3)}
+            self.metric = 'minkowski'
+        else:
+            self.kwargs = {'w': np.ones(3)}
+
+    def time_dist_weighted(self, metric):
+        """Time weighted distance metrics individually (without batching
+        with cdist or pdist).
+        """
+        getattr(distance, self.metric)(self.points[0], self.points[1],
+                                       **self.kwargs)
+
+
 class ConvexHullBench(Benchmark):
     params = ([10, 100, 1000, 5000], [True, False])
     param_names = ['num_points', 'incremental']
 
     def setup(self, num_points, incremental):
-        np.random.seed(123)
-        self.points = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points = rng.random((num_points, 3))
 
     def time_convex_hull(self, num_points, incremental):
         """Time scipy.spatial.ConvexHull over a range of input data sizes
@@ -410,8 +497,8 @@ class VoronoiBench(Benchmark):
     param_names = ['num_points', 'furthest_site']
 
     def setup(self, num_points, furthest_site):
-        np.random.seed(123)
-        self.points = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points = rng.random((num_points, 3))
 
     def time_voronoi_calculation(self, num_points, furthest_site):
         """Time conventional Voronoi diagram calculation."""
@@ -422,10 +509,9 @@ class Hausdorff(Benchmark):
     param_names = ['num_points']
 
     def setup(self, num_points):
-        np.random.seed(123)
-        self.points1 = np.random.random_sample((num_points, 3))
-        np.random.seed(71890)
-        self.points2 = np.random.random_sample((num_points, 3))
+        rng = np.random.default_rng(123)
+        self.points1 = rng.random((num_points, 3))
+        self.points2 = rng.random((num_points, 3))
 
     def time_directed_hausdorff(self, num_points):
         # time directed_hausdorff code in 3 D
@@ -454,8 +540,8 @@ class RotationBench(Benchmark):
     param_names = ['num_rotations']
 
     def setup(self, num_rotations):
-        np.random.seed(1234)
-        self.rotations = Rotation.random(num_rotations)
+        rng = np.random.default_rng(1234)
+        self.rotations = Rotation.random(num_rotations, random_state=rng)
 
     def time_matrix_conversion(self, num_rotations):
         '''Time converting rotation from and to matrices'''

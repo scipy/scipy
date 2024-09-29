@@ -19,7 +19,8 @@ class TestOldToNew:
     method = "trust-constr"
 
     def test_constraint_dictionary_1(self):
-        fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
+        def fun(x):
+            return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2
         cons = ({'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
                 {'type': 'ineq', 'fun': lambda x: -x[0] - 2 * x[1] + 6},
                 {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2})
@@ -32,7 +33,8 @@ class TestOldToNew:
         assert_allclose(res.fun, 0.8, rtol=1e-4)
 
     def test_constraint_dictionary_2(self):
-        fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
+        def fun(x):
+            return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2
         cons = {'type': 'eq',
                 'fun': lambda x, p1, p2: p1*x[0] - p2*x[1],
                 'args': (1, 1.1),
@@ -45,7 +47,8 @@ class TestOldToNew:
         assert_allclose(res.fun, 1.3857466063348418)
 
     def test_constraint_dictionary_3(self):
-        fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
+        def fun(x):
+            return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2
         cons = [{'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
                 NonlinearConstraint(lambda x: x[0] - x[1], 0, 0)]
 
@@ -58,12 +61,13 @@ class TestOldToNew:
 
 
 class TestNewToOld:
-
+    @pytest.mark.fail_slow(2)
     def test_multiple_constraint_objects(self):
-        fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2 + (x[2] - 0.75)**2
+        def fun(x):
+            return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2 + (x[2] - 0.75) ** 2
         x0 = [2, 0, 1]
         coni = []  # only inequality constraints (can use cobyla)
-        methods = ["slsqp", "cobyla", "trust-constr"]
+        methods = ["slsqp", "cobyla", "cobyqa", "trust-constr"]
 
         # mixed old and new
         coni.append([{'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
@@ -84,14 +88,17 @@ class TestNewToOld:
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-4)
             assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-4)
+            assert_allclose(funs['cobyqa'], funs['trust-constr'], rtol=1e-4)
 
+    @pytest.mark.fail_slow(20)
     def test_individual_constraint_objects(self):
-        fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2 + (x[2] - 0.75)**2
+        def fun(x):
+            return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2 + (x[2] - 0.75) ** 2
         x0 = [2, 0, 1]
 
         cone = []  # with equality constraints (can't use cobyla)
         coni = []  # only inequality constraints (can use cobyla)
-        methods = ["slsqp", "cobyla", "trust-constr"]
+        methods = ["slsqp", "cobyla", "cobyqa", "trust-constr"]
 
         # nonstandard data types for constraint equality bounds
         cone.append(NonlinearConstraint(lambda x: x[0] - x[1], 1, 1))
@@ -151,15 +158,17 @@ class TestNewToOld:
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
             assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-3)
+            assert_allclose(funs['cobyqa'], funs['trust-constr'], rtol=1e-3)
 
         for con in cone:
             funs = {}
-            for method in methods[::2]:  # skip cobyla
+            for method in [method for method in methods if method != 'cobyla']:
                 with suppress_warnings() as sup:
                     sup.filter(UserWarning)
                     result = minimize(fun, x0, method=method, constraints=con)
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
+            assert_allclose(funs['cobyqa'], funs['trust-constr'], rtol=1e-3)
 
 
 class TestNewToOldSLSQP:
@@ -193,7 +202,8 @@ class TestNewToOldSLSQP:
 
     def test_warn_mixed_constraints(self):
         # warns about inefficiency of mixed equality/inequality constraints
-        fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2 + (x[2] - 0.75)**2
+        def fun(x):
+            return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2 + (x[2] - 0.75) ** 2
         cons = NonlinearConstraint(lambda x: [x[0]**2 - x[1], x[1] - x[2]],
                                    [1.1, .8], [1.1, 1.4])
         bnds = ((0, None), (0, None), (0, None))
@@ -204,7 +214,8 @@ class TestNewToOldSLSQP:
 
     def test_warn_ignored_options(self):
         # warns about constraint options being ignored
-        fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2 + (x[2] - 0.75)**2
+        def fun(x):
+            return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2 + (x[2] - 0.75) ** 2
         x0 = (2, 0, 1)
 
         if self.method == "slsqp":

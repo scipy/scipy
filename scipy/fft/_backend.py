@@ -1,5 +1,7 @@
 import scipy._lib.uarray as ua
-from . import _pocketfft
+from . import _basic_backend
+from . import _realtransforms_backend
+from . import _fftlog_backend
 
 
 class _ScipyBackend:
@@ -7,17 +9,20 @@ class _ScipyBackend:
 
     Notes
     -----
-    We use the domain ``numpy.scipy`` rather than ``scipy`` because in the
-    future, ``uarray`` will treat the domain as a hierarchy. This means the user
-    can install a single backend for ``numpy`` and have it implement
-    ``numpy.scipy.fft`` as well.
+    We use the domain ``numpy.scipy`` rather than ``scipy`` because ``uarray``
+    treats the domain as a hierarchy. This means the user can install a single
+    backend for ``numpy`` and have it implement ``numpy.scipy.fft`` as well.
     """
     __ua_domain__ = "numpy.scipy.fft"
 
     @staticmethod
     def __ua_function__(method, args, kwargs):
-        fn = getattr(_pocketfft, method.__name__, None)
 
+        fn = getattr(_basic_backend, method.__name__, None)
+        if fn is None:
+            fn = getattr(_realtransforms_backend, method.__name__, None)
+        if fn is None:
+            fn = getattr(_fftlog_backend, method.__name__, None)
         if fn is None:
             return NotImplemented
         return fn(*args, **kwargs)
@@ -35,7 +40,7 @@ def _backend_from_arg(backend):
         try:
             backend = _named_backends[backend]
         except KeyError as e:
-            raise ValueError('Unknown backend {}'.format(backend)) from e
+            raise ValueError(f'Unknown backend {backend}') from e
 
     if backend.__ua_domain__ != 'numpy.scipy.fft':
         raise ValueError('Backend does not implement "numpy.scipy.fft"')
@@ -43,11 +48,13 @@ def _backend_from_arg(backend):
     return backend
 
 
-def set_global_backend(backend):
+def set_global_backend(backend, coerce=False, only=False, try_last=False):
     """Sets the global fft backend
 
-    The global backend has higher priority than registered backends, but lower
-    priority than context-specific backends set with `set_backend`.
+    This utility method replaces the default backend for permanent use. It
+    will be tried in the list of backends automatically, unless the
+    ``only`` flag is set on a backend. This will be the first tried
+    backend outside the :obj:`set_backend` context manager.
 
     Parameters
     ----------
@@ -55,6 +62,13 @@ def set_global_backend(backend):
         The backend to use.
         Can either be a ``str`` containing the name of a known backend
         {'scipy'} or an object that implements the uarray protocol.
+    coerce : bool
+        Whether to coerce input types when trying this backend.
+    only : bool
+        If ``True``, no more backends will be tried if this fails.
+        Implied by ``coerce=True``.
+    try_last : bool
+        If ``True``, the global backend is tried after registered backends.
 
     Raises
     ------
@@ -70,12 +84,12 @@ def set_global_backend(backend):
     We can set the global fft backend:
 
     >>> from scipy.fft import fft, set_global_backend
-    >>> set_global_backend("scipy")  # Sets global backend. "scipy" is the default backend.
+    >>> set_global_backend("scipy")  # Sets global backend (default is "scipy").
     >>> fft([1])  # Calls the global backend
     array([1.+0.j])
     """
     backend = _backend_from_arg(backend)
-    ua.set_global_backend(backend)
+    ua.set_global_backend(backend, coerce=coerce, only=only, try_last=try_last)
 
 
 def register_backend(backend):
@@ -107,7 +121,9 @@ def register_backend(backend):
     ...          return NotImplemented
     >>> set_global_backend(NoopBackend())  # Set the invalid backend as global
     >>> register_backend("scipy")  # Register a new backend
-    >>> fft([1])  # The registered backend is called because the global backend returns `NotImplemented`
+    # The registered backend is called because
+    # the global backend returns `NotImplemented`
+    >>> fft([1])
     array([1.+0.j])
     >>> set_global_backend("scipy")  # Restore global backend to default
 
@@ -177,4 +193,4 @@ def skip_backend(backend):
     return ua.skip_backend(backend)
 
 
-set_global_backend('scipy')
+set_global_backend('scipy', try_last=True)

@@ -1,11 +1,5 @@
+from collections import namedtuple
 
-from dataclasses import dataclass
 
-
-@dataclass
-class ConfidenceInterval:
-    """
-    Class for confidence intervals.
-    """
-    low: float
-    high: float
+ConfidenceInterval = namedtuple("ConfidenceInterval", ["low", "high"])
+ConfidenceInterval. __doc__ = "Class for confidence intervals."

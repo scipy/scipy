@@ -39,8 +39,10 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
 
-int solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc, double* input_cost,
+int solve_rectangular_linear_sum_assignment(intptr_t nr, intptr_t nc,
+                                            double* input_cost, bool maximize,
                                             int64_t* a, int64_t* b);
 
 #ifdef __cplusplus

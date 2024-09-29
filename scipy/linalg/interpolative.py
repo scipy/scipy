@@ -1,4 +1,4 @@
-#******************************************************************************
+#  ******************************************************************************
 #   Copyright (C) 2013 Kenneth L. Ho
 #
 #   Redistribution and use in source and binary forms, with or without
@@ -25,18 +25,18 @@
 #   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
-#******************************************************************************
-
-# Python module for interfacing with `id_dist`.
+#  ******************************************************************************
 
 r"""
 ======================================================================
 Interpolative matrix decomposition (:mod:`scipy.linalg.interpolative`)
 ======================================================================
 
-.. moduleauthor:: Kenneth L. Ho <klho@stanford.edu>
-
 .. versionadded:: 0.13
+
+.. versionchanged:: 1.15.0
+    The underlying algorithms have been ported to Python from the original Fortran77
+    code. See references below for more details.
 
 .. currentmodule:: scipy.linalg.interpolative
 
@@ -94,7 +94,7 @@ Main functionality:
    estimate_spectral_norm_diff
    estimate_rank
 
-Support functions:
+Following support functions are deprecated and will be removed in SciPy 1.17.0:
 
 .. autosummary::
    :toctree: generated/
@@ -106,16 +106,13 @@ Support functions:
 References
 ==========
 
-This module uses the ID software package [1]_ by Martinsson, Rokhlin,
-Shkolnisky, and Tygert, which is a Fortran library for computing IDs
-using various algorithms, including the rank-revealing QR approach of
-[2]_ and the more recent randomized methods described in [3]_, [4]_,
-and [5]_. This module exposes its functionality in a way convenient
-for Python users. Note that this module does not add any functionality
-beyond that of organizing a simpler and more consistent interface.
+This module uses the algorithms found in ID software package [1]_ by Martinsson,
+Rokhlin, Shkolnisky, and Tygert, which is a Fortran library for computing IDs using
+various algorithms, including the rank-revealing QR approach of [2]_ and the more
+recent randomized methods described in [3]_, [4]_, and [5]_.
 
-We advise the user to consult also the `documentation for the ID package
-<http://tygert.com/id_doc.4.pdf>`_.
+We advise the user to consult also the documentation for the `ID package
+<http://tygert.com/software.html>`_.
 
 .. [1] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. "ID: a
     software package for low-rank approximation of matrices via interpolative
@@ -163,8 +160,8 @@ We can also do this explicitly via:
 >>> n = 1000
 >>> A = np.empty((n, n), order='F')
 >>> for j in range(n):
->>>     for i in range(m):
->>>         A[i,j] = 1. / (i + j + 1)
+...     for i in range(n):
+...         A[i,j] = 1. / (i + j + 1)
 
 Note the use of the flag ``order='F'`` in :func:`numpy.empty`. This
 instantiates the matrix in Fortran-contiguous order and is important for
@@ -207,6 +204,7 @@ We first consider a matrix given in terms of its entries.
 
 To compute an ID to a fixed precision, type:
 
+>>> eps = 1e-3
 >>> k, idx, proj = sli.interp_decomp(A, eps)
 
 where ``eps < 1`` is the desired precision.
@@ -283,7 +281,7 @@ An ID can be converted to an SVD via the command:
 
 The SVD approximation is then:
 
->>> C = np.dot(U, np.dot(np.diag(S), np.dot(V.conj().T)))
+>>> approx = U @ np.diag(S) @ V.conj().T
 
 The SVD can also be computed "fresh" by combining both the ID and conversion
 steps into one command. Following the various ID algorithms above, there are
@@ -302,7 +300,7 @@ To compute an SVD to a fixed rank, use:
 
 >>> U, S, V = sli.svd(A, k)
 
-Both algorithms use random sampling; for the determinstic versions, issue the
+Both algorithms use random sampling; for the deterministic versions, issue the
 keyword ``rand=False`` as above.
 
 From matrix action
@@ -337,6 +335,7 @@ as a :class:`numpy.ndarray`, in which case it is trivially converted using
 The same algorithm can also estimate the spectral norm of the difference of two
 matrices ``A1`` and ``A2`` as follows:
 
+>>> A1, A2 = A**2, A
 >>> diff = sli.estimate_spectral_norm_diff(A1, A2)
 
 This is often useful for checking the accuracy of a matrix approximation.
@@ -354,24 +353,8 @@ depending on the representation. The parameter ``eps`` controls the definition
 of the numerical rank.
 
 Finally, the random number generation required for all randomized routines can
-be controlled via :func:`scipy.linalg.interpolative.seed`. To reset the seed
-values to their original values, use:
-
->>> sli.seed('default')
-
-To specify the seed values, use:
-
->>> sli.seed(s)
-
-where ``s`` must be an integer or array of 55 floats. If an integer, the array
-of floats is obtained by using ``numpy.random.rand`` with the given integer
-seed.
-
-To simply generate some random numbers, type:
-
->>> sli.rand(n)
-
-where ``n`` is the number of random numbers to generate.
+be controlled via providing NumPy pseudo-random generators with a fixed seed. See
+:class:`numpy.random.Generator` and :func:`numpy.random.default_rng` for more details.
 
 Remarks
 -------
@@ -382,11 +365,38 @@ backend routine.
 
 """
 
-import scipy.linalg._interpolative_backend as backend
+import scipy.linalg._decomp_interpolative as _backend
 import numpy as np
+import warnings
+
+__all__ = [
+    'estimate_rank',
+    'estimate_spectral_norm',
+    'estimate_spectral_norm_diff',
+    'id_to_svd',
+    'interp_decomp',
+    'rand',
+    'reconstruct_interp_matrix',
+    'reconstruct_matrix_from_id',
+    'reconstruct_skel_matrix',
+    'seed',
+    'svd',
+]
 
 _DTYPE_ERROR = ValueError("invalid input dtype (input must be float64 or complex128)")
 _TYPE_ERROR = TypeError("invalid input type (must be array or LinearOperator)")
+
+
+def _C_contiguous_copy(A):
+    """
+    Same as np.ascontiguousarray, but ensure a copy
+    """
+    A = np.asarray(A)
+    if A.flags.c_contiguous:
+        A = A.copy()
+    else:
+        A = np.ascontiguousarray(A)
+    return A
 
 
 def _is_real(A):
@@ -403,65 +413,43 @@ def _is_real(A):
 
 def seed(seed=None):
     """
-    Seed the internal random number generator used in this ID package.
+    This function, historically, used to set the seed of the randomization algorithms
+    used in the `scipy.linalg.interpolative` functions written in Fortran77.
 
-    The generator is a lagged Fibonacci method with 55-element internal state.
-
-    Parameters
-    ----------
-    seed : int, sequence, 'default', optional
-        If 'default', the random seed is reset to a default value.
-
-        If `seed` is a sequence containing 55 floating-point numbers
-        in range [0,1], these are used to set the internal state of
-        the generator.
-
-        If the value is an integer, the internal state is obtained
-        from `numpy.random.RandomState` (MT19937) with the integer
-        used as the initial seed.
-
-        If `seed` is omitted (None), ``numpy.random.rand`` is used to
-        initialize the generator.
-
+    The library has been ported to Python and now the functions use the native NumPy
+    generators and this function has no content and returns None. Thus this function
+    should not be used and will be removed in SciPy version 1.17.0.
     """
-    # For details, see :func:`backend.id_srand`, :func:`backend.id_srandi`,
-    # and :func:`backend.id_srando`.
-
-    if isinstance(seed, str) and seed == 'default':
-        backend.id_srando()
-    elif hasattr(seed, '__len__'):
-        state = np.asfortranarray(seed, dtype=float)
-        if state.shape != (55,):
-            raise ValueError("invalid input size")
-        elif state.min() < 0 or state.max() > 1:
-            raise ValueError("values not in range [0,1]")
-        backend.id_srandi(state)
-    elif seed is None:
-        backend.id_srandi(np.random.rand(55))
-    else:
-        rnd = np.random.RandomState(seed)
-        backend.id_srandi(rnd.rand(55))
+    warnings.warn("`scipy.linalg.interpolative.seed` is deprecated and will be "
+                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=3)
 
 
 def rand(*shape):
     """
-    Generate standard uniform pseudorandom numbers via a very efficient lagged
-    Fibonacci method.
+    This function, historically, used to generate uniformly distributed random number
+    for the randomization algorithms used in the `scipy.linalg.interpolative` functions
+    written in Fortran77.
 
-    This routine is used for all random number generation in this package and
-    can affect ID and SVD results.
+    The library has been ported to Python and now the functions use the native NumPy
+    generators. Thus this function should not be used and will be removed in the
+    SciPy version 1.17.0.
+
+    If pseudo-random numbers are needed, NumPy pseudo-random generators should be used
+    instead.
 
     Parameters
     ----------
-    shape
+    *shape
         Shape of output array
 
     """
-    # For details, see :func:`backend.id_srand`, and :func:`backend.id_srando`.
-    return backend.id_srand(np.prod(shape)).reshape(shape)
+    warnings.warn("`scipy.linalg.interpolative.rand` is deprecated and will be "
+                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=3)
+    rng = np.random.default_rng()
+    return rng.uniform(low=0., high=1.0, size=shape)
 
 
-def interp_decomp(A, eps_or_k, rand=True):
+def interp_decomp(A, eps_or_k, rand=True, rng=None):
     """
     Compute ID of a matrix.
 
@@ -507,83 +495,86 @@ def interp_decomp(A, eps_or_k, rand=True):
 
     ..  This function automatically detects the form of the input parameters
         and passes them to the appropriate backend. For details, see
-        :func:`backend.iddp_id`, :func:`backend.iddp_aid`,
-        :func:`backend.iddp_rid`, :func:`backend.iddr_id`,
-        :func:`backend.iddr_aid`, :func:`backend.iddr_rid`,
-        :func:`backend.idzp_id`, :func:`backend.idzp_aid`,
-        :func:`backend.idzp_rid`, :func:`backend.idzr_id`,
-        :func:`backend.idzr_aid`, and :func:`backend.idzr_rid`.
+        :func:`_backend.iddp_id`, :func:`_backend.iddp_aid`,
+        :func:`_backend.iddp_rid`, :func:`_backend.iddr_id`,
+        :func:`_backend.iddr_aid`, :func:`_backend.iddr_rid`,
+        :func:`_backend.idzp_id`, :func:`_backend.idzp_aid`,
+        :func:`_backend.idzp_rid`, :func:`_backend.idzr_id`,
+        :func:`_backend.idzr_aid`, and :func:`_backend.idzr_rid`.
 
     Parameters
     ----------
     A : :class:`numpy.ndarray` or :class:`scipy.sparse.linalg.LinearOperator` with `rmatvec`
         Matrix to be factored
     eps_or_k : float or int
-        Relative error (if `eps_or_k < 1`) or rank (if `eps_or_k >= 1`) of
+        Relative error (if ``eps_or_k < 1``) or rank (if ``eps_or_k >= 1``) of
         approximation.
     rand : bool, optional
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm. If ``rand`` is
+        ``False``, the argument is ignored.
 
     Returns
     -------
     k : int
         Rank required to achieve specified relative precision if
-        `eps_or_k < 1`.
+        ``eps_or_k < 1``.
     idx : :class:`numpy.ndarray`
         Column index array.
     proj : :class:`numpy.ndarray`
         Interpolation coefficients.
-    """
+    """  # numpy/numpydoc#87  # noqa: E501
     from scipy.sparse.linalg import LinearOperator
 
     real = _is_real(A)
 
     if isinstance(A, np.ndarray):
+        A = _C_contiguous_copy(A)
         if eps_or_k < 1:
             eps = eps_or_k
             if rand:
                 if real:
-                    k, idx, proj = backend.iddp_aid(eps, A)
+                    k, idx, proj = _backend.iddp_aid(A, eps, rng=rng)
                 else:
-                    k, idx, proj = backend.idzp_aid(eps, A)
+                    k, idx, proj = _backend.idzp_aid(A, eps, rng=rng)
             else:
                 if real:
-                    k, idx, proj = backend.iddp_id(eps, A)
+                    k, idx, proj = _backend.iddp_id(A, eps)
                 else:
-                    k, idx, proj = backend.idzp_id(eps, A)
-            return k, idx - 1, proj
+                    k, idx, proj = _backend.idzp_id(A, eps)
+            return k, idx, proj
         else:
             k = int(eps_or_k)
             if rand:
                 if real:
-                    idx, proj = backend.iddr_aid(A, k)
+                    idx, proj = _backend.iddr_aid(A, k, rng=rng)
                 else:
-                    idx, proj = backend.idzr_aid(A, k)
+                    idx, proj = _backend.idzr_aid(A, k, rng=rng)
             else:
                 if real:
-                    idx, proj = backend.iddr_id(A, k)
+                    idx, proj = _backend.iddr_id(A, k)
                 else:
-                    idx, proj = backend.idzr_id(A, k)
-            return idx - 1, proj
+                    idx, proj = _backend.idzr_id(A, k)
+            return idx, proj
     elif isinstance(A, LinearOperator):
-        m, n = A.shape
-        matveca = A.rmatvec
+
         if eps_or_k < 1:
             eps = eps_or_k
             if real:
-                k, idx, proj = backend.iddp_rid(eps, m, n, matveca)
+                k, idx, proj = _backend.iddp_rid(A, eps, rng=rng)
             else:
-                k, idx, proj = backend.idzp_rid(eps, m, n, matveca)
-            return k, idx - 1, proj
+                k, idx, proj = _backend.idzp_rid(A, eps, rng=rng)
+            return k, idx, proj
         else:
             k = int(eps_or_k)
             if real:
-                idx, proj = backend.iddr_rid(m, n, matveca, k)
+                idx, proj = _backend.iddr_rid(A, k, rng=rng)
             else:
-                idx, proj = backend.idzr_rid(m, n, matveca, k)
-            return idx - 1, proj
+                idx, proj = _backend.idzr_rid(A, k, rng=rng)
+            return idx, proj
     else:
         raise _TYPE_ERROR
 
@@ -601,8 +592,8 @@ def reconstruct_matrix_from_id(B, idx, proj):
     :func:`reconstruct_skel_matrix`.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_reconid` and
-        :func:`backend.idz_reconid`.
+        appropriate backend. For details, see :func:`_backend.idd_reconid` and
+        :func:`_backend.idz_reconid`.
 
     Parameters
     ----------
@@ -619,9 +610,9 @@ def reconstruct_matrix_from_id(B, idx, proj):
         Reconstructed matrix.
     """
     if _is_real(B):
-        return backend.idd_reconid(B, idx + 1, proj)
+        return _backend.idd_reconid(B, idx, proj)
     else:
-        return backend.idz_reconid(B, idx + 1, proj)
+        return _backend.idz_reconid(B, idx, proj)
 
 
 def reconstruct_interp_matrix(idx, proj):
@@ -633,22 +624,20 @@ def reconstruct_interp_matrix(idx, proj):
 
         P = numpy.hstack([numpy.eye(proj.shape[0]), proj])[:,numpy.argsort(idx)]
 
-    The original matrix can then be reconstructed from its skeleton matrix `B`
-    via::
-
-        numpy.dot(B, P)
+    The original matrix can then be reconstructed from its skeleton matrix ``B``
+    via ``A = B @ P``
 
     See also :func:`reconstruct_matrix_from_id` and
     :func:`reconstruct_skel_matrix`.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_reconint` and
-        :func:`backend.idz_reconint`.
+        appropriate backend. For details, see :func:`_backend.idd_reconint` and
+        :func:`_backend.idz_reconint`.
 
     Parameters
     ----------
     idx : :class:`numpy.ndarray`
-        Column index array.
+        1D column index array.
     proj : :class:`numpy.ndarray`
         Interpolation coefficients.
 
@@ -657,10 +646,17 @@ def reconstruct_interp_matrix(idx, proj):
     :class:`numpy.ndarray`
         Interpolation matrix.
     """
+    n, krank = len(idx), proj.shape[0]
     if _is_real(proj):
-        return backend.idd_reconint(idx + 1, proj)
+        p = np.zeros([krank, n], dtype=np.float64)
     else:
-        return backend.idz_reconint(idx + 1, proj)
+        p = np.zeros([krank, n], dtype=np.complex128)
+
+    for ci in range(krank):
+        p[ci, idx[ci]] = 1.0
+    p[:, idx[krank:]] = proj[:, :]
+
+    return p
 
 
 def reconstruct_skel_matrix(A, k, idx):
@@ -680,8 +676,8 @@ def reconstruct_skel_matrix(A, k, idx):
     :func:`reconstruct_interp_matrix`.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_copycols` and
-        :func:`backend.idz_copycols`.
+        appropriate backend. For details, see :func:`_backend.idd_copycols` and
+        :func:`_backend.idz_copycols`.
 
     Parameters
     ----------
@@ -697,10 +693,7 @@ def reconstruct_skel_matrix(A, k, idx):
     :class:`numpy.ndarray`
         Skeleton matrix.
     """
-    if _is_real(A):
-        return backend.idd_copycols(A, k, idx + 1)
-    else:
-        return backend.idz_copycols(A, k, idx + 1)
+    return A[:, idx[:k]]
 
 
 def id_to_svd(B, idx, proj):
@@ -716,15 +709,15 @@ def id_to_svd(B, idx, proj):
     See also :func:`svd`.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_id2svd` and
-        :func:`backend.idz_id2svd`.
+        appropriate backend. For details, see :func:`_backend.idd_id2svd` and
+        :func:`_backend.idz_id2svd`.
 
     Parameters
     ----------
     B : :class:`numpy.ndarray`
         Skeleton matrix.
     idx : :class:`numpy.ndarray`
-        Column index array.
+        1D column index array.
     proj : :class:`numpy.ndarray`
         Interpolation coefficients.
 
@@ -737,20 +730,22 @@ def id_to_svd(B, idx, proj):
     V : :class:`numpy.ndarray`
         Right singular vectors.
     """
+    B = _C_contiguous_copy(B)
     if _is_real(B):
-        U, V, S = backend.idd_id2svd(B, idx + 1, proj)
+        U, S, V = _backend.idd_id2svd(B, idx, proj)
     else:
-        U, V, S = backend.idz_id2svd(B, idx + 1, proj)
+        U, S, V = _backend.idz_id2svd(B, idx, proj)
+
     return U, S, V
 
 
-def estimate_spectral_norm(A, its=20):
+def estimate_spectral_norm(A, its=20, rng=None):
     """
     Estimate spectral norm of a matrix by the randomized power method.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_snorm` and
-        :func:`backend.idz_snorm`.
+        appropriate backend. For details, see :func:`_backend.idd_snorm` and
+        :func:`_backend.idz_snorm`.
 
     Parameters
     ----------
@@ -759,6 +754,8 @@ def estimate_spectral_norm(A, its=20):
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
     its : int, optional
         Number of power method iterations.
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm.
 
     Returns
     -------
@@ -767,23 +764,21 @@ def estimate_spectral_norm(A, its=20):
     """
     from scipy.sparse.linalg import aslinearoperator
     A = aslinearoperator(A)
-    m, n = A.shape
-    matvec = lambda x: A. matvec(x)
-    matveca = lambda x: A.rmatvec(x)
+
     if _is_real(A):
-        return backend.idd_snorm(m, n, matveca, matvec, its=its)
+        return _backend.idd_snorm(A, its=its, rng=rng)
     else:
-        return backend.idz_snorm(m, n, matveca, matvec, its=its)
+        return _backend.idz_snorm(A, its=its, rng=rng)
 
 
-def estimate_spectral_norm_diff(A, B, its=20):
+def estimate_spectral_norm_diff(A, B, its=20, rng=None):
     """
     Estimate spectral norm of the difference of two matrices by the randomized
     power method.
 
     ..  This function automatically detects the matrix data type and calls the
-        appropriate backend. For details, see :func:`backend.idd_diffsnorm` and
-        :func:`backend.idz_diffsnorm`.
+        appropriate backend. For details, see :func:`_backend.idd_diffsnorm` and
+        :func:`_backend.idz_diffsnorm`.
 
     Parameters
     ----------
@@ -795,6 +790,8 @@ def estimate_spectral_norm_diff(A, B, its=20):
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
     its : int, optional
         Number of power method iterations.
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm.
 
     Returns
     -------
@@ -804,26 +801,20 @@ def estimate_spectral_norm_diff(A, B, its=20):
     from scipy.sparse.linalg import aslinearoperator
     A = aslinearoperator(A)
     B = aslinearoperator(B)
-    m, n = A.shape
-    matvec1 = lambda x: A. matvec(x)
-    matveca1 = lambda x: A.rmatvec(x)
-    matvec2 = lambda x: B. matvec(x)
-    matveca2 = lambda x: B.rmatvec(x)
+
     if _is_real(A):
-        return backend.idd_diffsnorm(
-            m, n, matveca1, matveca2, matvec1, matvec2, its=its)
+        return _backend.idd_diffsnorm(A, B, its=its, rng=rng)
     else:
-        return backend.idz_diffsnorm(
-            m, n, matveca1, matveca2, matvec1, matvec2, its=its)
+        return _backend.idz_diffsnorm(A, B, its=its, rng=rng)
 
 
-def svd(A, eps_or_k, rand=True):
+def svd(A, eps_or_k, rand=True, rng=None):
     """
     Compute SVD of a matrix via an ID.
 
     An SVD of a matrix `A` is a factorization::
 
-        A = numpy.dot(U, numpy.dot(numpy.diag(S), V.conj().T))
+        A = U @ np.diag(S) @ V.conj().T
 
     where `U` and `V` have orthonormal columns and `S` is nonnegative.
 
@@ -834,12 +825,12 @@ def svd(A, eps_or_k, rand=True):
 
     ..  This function automatically detects the form of the input parameters and
         passes them to the appropriate backend. For details, see
-        :func:`backend.iddp_svd`, :func:`backend.iddp_asvd`,
-        :func:`backend.iddp_rsvd`, :func:`backend.iddr_svd`,
-        :func:`backend.iddr_asvd`, :func:`backend.iddr_rsvd`,
-        :func:`backend.idzp_svd`, :func:`backend.idzp_asvd`,
-        :func:`backend.idzp_rsvd`, :func:`backend.idzr_svd`,
-        :func:`backend.idzr_asvd`, and :func:`backend.idzr_rsvd`.
+        :func:`_backend.iddp_svd`, :func:`_backend.iddp_asvd`,
+        :func:`_backend.iddp_rsvd`, :func:`_backend.iddr_svd`,
+        :func:`_backend.iddr_asvd`, :func:`_backend.iddr_rsvd`,
+        :func:`_backend.idzp_svd`, :func:`_backend.idzp_asvd`,
+        :func:`_backend.idzp_rsvd`, :func:`_backend.idzr_svd`,
+        :func:`_backend.idzr_asvd`, and :func:`_backend.idzr_rsvd`.
 
     Parameters
     ----------
@@ -848,76 +839,81 @@ def svd(A, eps_or_k, rand=True):
         :class:`scipy.sparse.linalg.LinearOperator` with the `matvec` and
         `rmatvec` methods (to apply the matrix and its adjoint).
     eps_or_k : float or int
-        Relative error (if `eps_or_k < 1`) or rank (if `eps_or_k >= 1`) of
+        Relative error (if ``eps_or_k < 1``) or rank (if ``eps_or_k >= 1``) of
         approximation.
     rand : bool, optional
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm. If ``rand`` is
+        ``False``, the argument is ignored.
 
     Returns
     -------
     U : :class:`numpy.ndarray`
-        Left singular vectors.
+        2D array of left singular vectors.
     S : :class:`numpy.ndarray`
-        Singular values.
+        1D array of singular values.
     V : :class:`numpy.ndarray`
-        Right singular vectors.
+        2D array right singular vectors.
     """
     from scipy.sparse.linalg import LinearOperator
 
     real = _is_real(A)
 
     if isinstance(A, np.ndarray):
+        A = _C_contiguous_copy(A)
         if eps_or_k < 1:
             eps = eps_or_k
             if rand:
                 if real:
-                    U, V, S = backend.iddp_asvd(eps, A)
+                    U, S, V = _backend.iddp_asvd(A, eps, rng=rng)
                 else:
-                    U, V, S = backend.idzp_asvd(eps, A)
+                    U, S, V = _backend.idzp_asvd(A, eps, rng=rng)
             else:
                 if real:
-                    U, V, S = backend.iddp_svd(eps, A)
+                    U, S, V = _backend.iddp_svd(A, eps)
+                    V = V.T.conj()
                 else:
-                    U, V, S = backend.idzp_svd(eps, A)
+                    U, S, V = _backend.idzp_svd(A, eps)
+                    V = V.T.conj()
         else:
             k = int(eps_or_k)
             if k > min(A.shape):
-                raise ValueError("Approximation rank %s exceeds min(A.shape) = "
-                                 " %s " % (k, min(A.shape)))
+                raise ValueError(f"Approximation rank {k} exceeds min(A.shape) = "
+                                 f" {min(A.shape)} ")
             if rand:
                 if real:
-                    U, V, S = backend.iddr_asvd(A, k)
+                    U, S, V = _backend.iddr_asvd(A, k, rng=rng)
                 else:
-                    U, V, S = backend.idzr_asvd(A, k)
+                    U, S, V = _backend.idzr_asvd(A, k, rng=rng)
             else:
                 if real:
-                    U, V, S = backend.iddr_svd(A, k)
+                    U, S, V = _backend.iddr_svd(A, k)
+                    V = V.T.conj()
                 else:
-                    U, V, S = backend.idzr_svd(A, k)
+                    U, S, V = _backend.idzr_svd(A, k)
+                    V = V.T.conj()
     elif isinstance(A, LinearOperator):
-        m, n = A.shape
-        matvec = lambda x: A.matvec(x)
-        matveca = lambda x: A.rmatvec(x)
         if eps_or_k < 1:
             eps = eps_or_k
             if real:
-                U, V, S = backend.iddp_rsvd(eps, m, n, matveca, matvec)
+                U, S, V = _backend.iddp_rsvd(A, eps, rng=rng)
             else:
-                U, V, S = backend.idzp_rsvd(eps, m, n, matveca, matvec)
+                U, S, V = _backend.idzp_rsvd(A, eps, rng=rng)
         else:
             k = int(eps_or_k)
             if real:
-                U, V, S = backend.iddr_rsvd(m, n, matveca, matvec, k)
+                U, S, V = _backend.iddr_rsvd(A, k, rng=rng)
             else:
-                U, V, S = backend.idzr_rsvd(m, n, matveca, matvec, k)
+                U, S, V = _backend.idzr_rsvd(A, k, rng=rng)
     else:
         raise _TYPE_ERROR
     return U, S, V
 
 
-def estimate_rank(A, eps):
+def estimate_rank(A, eps, rng=None):
     """
     Estimate matrix rank to a specified relative precision using randomized
     methods.
@@ -929,8 +925,8 @@ def estimate_rank(A, eps):
 
     ..  This function automatically detects the form of the input parameters and
         passes them to the appropriate backend. For details,
-        see :func:`backend.idd_estrank`, :func:`backend.idd_findrank`,
-        :func:`backend.idz_estrank`, and :func:`backend.idz_findrank`.
+        see :func:`_backend.idd_estrank`, :func:`_backend.idd_findrank`,
+        :func:`_backend.idz_estrank`, and :func:`_backend.idz_findrank`.
 
     Parameters
     ----------
@@ -940,6 +936,8 @@ def estimate_rank(A, eps):
         with the `rmatvec` method (to apply the matrix adjoint).
     eps : float
         Relative error for numerical rank definition.
+    rng : :class:`numpy.random.Generator`
+        NumPy generator for the randomization steps in the algorithm.
 
     Returns
     -------
@@ -951,20 +949,19 @@ def estimate_rank(A, eps):
     real = _is_real(A)
 
     if isinstance(A, np.ndarray):
+        A = _C_contiguous_copy(A)
         if real:
-            rank = backend.idd_estrank(eps, A)
+            rank, _ = _backend.idd_estrank(A, eps, rng=rng)
         else:
-            rank = backend.idz_estrank(eps, A)
+            rank, _ = _backend.idz_estrank(A, eps, rng=rng)
         if rank == 0:
             # special return value for nearly full rank
             rank = min(A.shape)
         return rank
     elif isinstance(A, LinearOperator):
-        m, n = A.shape
-        matveca = A.rmatvec
         if real:
-            return backend.idd_findrank(eps, m, n, matveca)
+            return _backend.idd_findrank(A, eps, rng=rng)[0]
         else:
-            return backend.idz_findrank(eps, m, n, matveca)
+            return _backend.idz_findrank(A, eps, rng=rng)[0]
     else:
         raise _TYPE_ERROR

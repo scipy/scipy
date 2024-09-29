@@ -11,6 +11,7 @@ def generate_random_token():
     tokens += list(np.arange(k, dtype=float))
     tokens += list(string.ascii_letters)
     tokens += [None for i in range(k)]
+    tokens = np.array(tokens, dtype=object)
     rng = np.random.RandomState(seed=0)
 
     while 1:
@@ -188,6 +189,7 @@ def test_subsets(n):
         y = elements[j]
 
         expected = {element for element in dis if {dis[element]} == {dis[x]}}
+        assert dis.subset_size(x) == len(dis.subset(x))
         assert expected == dis.subset(x)
 
         expected = {dis[element]: set() for element in dis}

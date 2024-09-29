@@ -16,16 +16,16 @@ except ImportError:
 else:
     from scipy._lib._pep440 import Version as _Version
 
-    _has_uarray = _Version(_uarray.__version__) >= _Version("0.5")
+    _has_uarray = _Version(_uarray.__version__) >= _Version("0.8")
     del _uarray
     del _Version
 
 
 if _has_uarray:
-    from uarray import *
+    from uarray import *  # noqa: F403
     from uarray import _Function
 else:
-    from ._uarray import *
-    from ._uarray import _Function
+    from ._uarray import *  # noqa: F403
+    from ._uarray import _Function  # noqa: F401
 
 del _has_uarray

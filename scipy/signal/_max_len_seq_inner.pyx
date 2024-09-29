@@ -5,12 +5,13 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+np.import_array()
 
 # Fast inner loop of max_len_seq.
 @cython.cdivision(True)  # faster modulo
 @cython.boundscheck(False)  # designed to stay within bounds
 @cython.wraparound(False)  # we don't use negative indexing
-def _max_len_seq_inner(Py_ssize_t[::1] taps,
+def _max_len_seq_inner(const Py_ssize_t[::1] taps,
                        np.int8_t[::1] state,
                        Py_ssize_t nbits, Py_ssize_t length,
                        np.int8_t[::1] seq):

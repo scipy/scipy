@@ -19,13 +19,15 @@ and Tukey [CT65]_. Press et al. [NR07]_ provide an accessible introduction to
 Fourier analysis and its applications.
 
 
+.. _tutorial_FFT:
+
 Fast Fourier transforms
 -----------------------
 
 1-D discrete Fourier transforms
 ___________________________________________
 
-The FFT `y[k]` of length :math:`N` of the length-:math:`N` sequence `x[n]` is
+The FFT ``y[k]`` of length :math:`N` of the length-:math:`N` sequence ``x[n]`` is
 defined as
 
 .. math::
@@ -42,6 +44,7 @@ These transforms can be calculated by means of :func:`fft` and :func:`ifft`,
 respectively, as shown in the following example.
 
 >>> from scipy.fft import fft, ifft
+>>> import numpy as np
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> y = fft(x)
 >>> y
@@ -80,8 +83,10 @@ corresponding to positive frequencies is plotted.
 The example plots the FFT of the sum of two sines.
 
 .. plot::
+    :alt: "This code generates an X-Y plot showing amplitude on the Y axis vs frequency on the X axis. A single blue trace has an amplitude of zero all the way across with the exception of two peaks. The taller first peak is at 50 Hz with a second peak at 80 Hz."
 
     >>> from scipy.fft import fft, fftfreq
+    >>> import numpy as np
     >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
@@ -107,8 +112,10 @@ and shows the effect of windowing (the zero component of the FFT has been
 truncated for illustrative purposes).
 
 .. plot::
+    :alt: "This code generates an X-Y log-linear plot with amplitude on the Y axis vs frequency on the X axis. The first trace is the FFT with two peaks at 50 and 80 Hz and a noise floor around an amplitude of 1e-2. The second trace is the windowed FFT and has the same two peaks but the noise floor is much lower around an amplitude of 1e-7 due to the window function."
 
     >>> from scipy.fft import fft, fftfreq
+    >>> import numpy as np
     >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
@@ -116,7 +123,7 @@ truncated for illustrative purposes).
     >>> x = np.linspace(0.0, N*T, N, endpoint=False)
     >>> y = np.sin(50.0 * 2.0*np.pi*x) + 0.5*np.sin(80.0 * 2.0*np.pi*x)
     >>> yf = fft(y)
-    >>> from scipy.signal import blackman
+    >>> from scipy.signal.windows import blackman
     >>> w = blackman(N)
     >>> ywf = fft(y*w)
     >>> xf = fftfreq(N, T)[:N//2]
@@ -151,8 +158,10 @@ The example below plots the FFT of two complex exponentials; note the
 asymmetric spectrum.
 
 .. plot::
+    :alt: "This code generates an X-Y plot with amplitude on the Y axis vs frequency on the X axis. The trace is zero-valued across the plot except for two sharp peaks at -80 and 50 Hz. The 50 Hz peak on the right is twice as tall."
 
     >>> from scipy.fft import fft, fftfreq, fftshift
+    >>> import numpy as np
     >>> # number of signal points
     >>> N = 400
     >>> # sample spacing
@@ -232,10 +241,12 @@ The example below demonstrates a 2-D IFFT and plots the resulting
 (2-D) time-domain signals.
 
 .. plot::
+    :alt: "This code generates six heatmaps arranged in a 2x3 grid. The top row shows mostly blank canvases with the exception of two tiny red peaks on each image. The bottom row shows the real-part of the inverse FFT of each image above it. The first column has two dots arranged horizontally in the top image and in the bottom image a smooth grayscale plot of 5 black vertical stripes representing the 2-D time domain signal. The second column has two dots arranged vertically in the top image and in the bottom image a smooth grayscale plot of 5 horizontal black stripes representing the 2-D time domain signal. In the last column the top image has two dots diagonally located; the corresponding image below has perhaps 20 black stripes at a 60 degree angle."
 
     >>> from scipy.fft import ifftn
     >>> import matplotlib.pyplot as plt
     >>> import matplotlib.cm as cm
+    >>> import numpy as np
     >>> N = 30
     >>> f, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, sharex='col', sharey='row')
     >>> xf = np.zeros((N,N))
@@ -358,7 +369,7 @@ ____________
 
 
 The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up to a
-factor of `2N`. The orthonormalized DCT-III is exactly the inverse of the
+factor of ``2N``. The orthonormalized DCT-III is exactly the inverse of the
 orthonormalized DCT- II. The function :func:`idct` performs the mappings between
 the DCT and IDCT types, as well as the correct normalization.
 
@@ -427,6 +438,7 @@ provides a five-fold compression rate.
 
 
 .. plot::
+    :alt: "This code generates an X-Y plot showing amplitude on the Y axis and time on the X axis. The first blue trace is the original signal and starts at amplitude 1 and oscillates down to 0 amplitude over the duration of the plot resembling a frequency chirp. The second red trace is the x_20 reconstruction using the DCT and closely follows the original signal in the high amplitude region but it is unclear to the right side of the plot. The third green trace is the x_15 reconstruction using the DCT and is less precise than the x_20 reconstruction but still similar to x."
 
     >>> from scipy.fft import dct, idct
     >>> import matplotlib.pyplot as plt
@@ -473,7 +485,7 @@ definition of the unnormalized DST-I (``norm=None``):
     \right), \qquad 0 \le k < N.
 
 Note also that the DST-I is only supported for input size > 1. The
-(unnormalized) DST-I is its own inverse, up to a factor of `2(N+1)`.
+(unnormalized) DST-I is its own inverse, up to a factor of ``2(N+1)``.
 
 Type II DST
 ___________
@@ -567,6 +579,39 @@ array([ 10.,  20.,  10., -10.,  15.])
 >>> idst(dst(x, type=4), type=4)
 array([ 1. ,  2. ,  1. , -1. ,  1.5])
 
+
+Fast Hankel Transform
+---------------------
+
+SciPy provides the functions ``fht`` and ``ifht`` to perform the Fast
+Hankel Transform (FHT) and its inverse (IFHT) on logarithmically-spaced input
+arrays.
+
+The FHT is the discretised version of the continuous Hankel transform defined
+by [Ham00]_
+
+.. math::
+
+    A(k) = \int_{0}^{\infty} \! a(r) \, J_{\mu}(kr) \, k \, dr \;,
+
+with :math:`J_{\mu}` the Bessel function of order :math:`\mu`. Under a change
+of variables :math:`r \to \log r`, :math:`k \to \log k`, this becomes
+
+.. math::
+
+    A(e^{\log k})
+    = \int_{0}^{\infty} \! a(e^{\log r}) \, J_{\mu}(e^{\log k + \log r})
+                                        \, e^{\log k + \log r} \, d{\log r}
+
+which is a convolution in logarithmic space. The FHT algorithm uses the FFT
+to perform this convolution on discrete input data.
+
+Care must be taken to minimise numerical ringing due to the circular nature
+of FFT convolution. To ensure that the low-ringing condition [Ham00]_ holds,
+the output array can be slightly shifted by an offset computed using the
+``fhtoffset`` function.
+
+
 References
 ----------
 
@@ -581,6 +626,9 @@ References
 .. [Mak] J. Makhoul, 1980, 'A Fast Cosine Transform in One and Two Dimensions',
        `IEEE Transactions on acoustics, speech and signal processing`
        vol. 28(1), pp. 27-34, :doi:`10.1109/TASSP.1980.1163351`
+
+.. [Ham00] A. J. S. Hamilton, 2000, "Uncorrelated modes of the non-linear power
+       spectrum", *MNRAS*, 312, 257. :doi:`10.1046/j.1365-8711.2000.03071.x`
 
 .. [WPW] https://en.wikipedia.org/wiki/Window_function
 

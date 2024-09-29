@@ -130,7 +130,7 @@ template<typename MinMaxDist>
         /* internally we represent all distances as distance ** p */
         if (CKDTREE_LIKELY(p == 2.0))
             upper_bound = _upper_bound * _upper_bound;
-        else if ((!ckdtree_isinf(p)) && (!isinf(_upper_bound)))
+        else if ((!std::isinf(p)) && (!std::isinf(_upper_bound)))
             upper_bound = std::pow(_upper_bound,p);
         else
             upper_bound = _upper_bound;
@@ -142,7 +142,7 @@ template<typename MinMaxDist>
         }
         else if (eps == 0.)
             epsfac = 1.;
-        else if (ckdtree_isinf(p))
+        else if (std::isinf(p))
             epsfac = 1. / (1. + eps);
         else
             epsfac = 1. / std::pow((1. + eps), p);
@@ -153,7 +153,7 @@ template<typename MinMaxDist>
 
         /* Compute initial min and max distances */
         MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
-        if(ckdtree_isinf(max_distance)) {
+        if(std::isinf(max_distance)) {
             const char *msg = "Encountering floating point overflow. "
                               "The value of p too large for this dataset; "
                               "For such large p, consider using the special case p=np.inf . ";

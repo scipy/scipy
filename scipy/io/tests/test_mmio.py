@@ -1,4 +1,4 @@
-from tempfile import mkdtemp, mktemp
+from tempfile import mkdtemp
 import os
 import io
 import shutil
@@ -12,10 +12,23 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
-from scipy.io.mmio import mminfo, mmread, mmwrite
+import scipy.io._mmio
+import scipy.io._fast_matrix_market as fmm
+
 
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
+
+
+# Run the entire test suite on both _mmio and _fast_matrix_market implementations
+@pytest.fixture(scope='module', params=(scipy.io._mmio, fmm), autouse=True)
+def implementations(request):
+    global mminfo
+    global mmread
+    global mmwrite
+    mminfo = request.param.mminfo
+    mmread = request.param.mmread
+    mmwrite = request.param.mmwrite
 
 
 class TestMMIOArray:
@@ -50,7 +63,7 @@ class TestMMIOArray:
 
     def test_64bit_integer(self):
         a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=np.int64)
-        if (np.intp(0).itemsize < 8):
+        if (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite:
             assert_raises(OverflowError, mmwrite, self.fn, a)
         else:
             self.check_exact(a, (2, 2, 4, 'array', 'integer', 'general'))
@@ -114,6 +127,7 @@ class TestMMIOArray:
         a = np.random.random(sz)
         self.check(a, (20, 15, 300, 'array', 'real', 'general'))
 
+    @pytest.mark.fail_slow(10)
     def test_bad_number_of_array_header_fields(self):
         s = """\
             %%MatrixMarket matrix array real general
@@ -153,13 +167,13 @@ class TestMMIOSparseCSR(TestMMIOArray):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
-        assert_array_almost_equal(a.todense(), b.todense())
+        assert_array_almost_equal(a.toarray(), b.toarray())
 
     def check_exact(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
-        assert_equal(a.todense(), b.todense())
+        assert_equal(a.toarray(), b.toarray())
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_integer(self, typeval, dtype):
@@ -176,7 +190,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
         a = scipy.sparse.csr_matrix(array([[2**32+1, 2**32+1],
                                            [-2**63+2, 2**63-2]],
                                           dtype=np.int64))
-        if (np.intp(0).itemsize < 8):
+        if (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite:
             assert_raises(OverflowError, mmwrite, self.fn, a)
         else:
             self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
@@ -252,13 +266,13 @@ class TestMMIOSparseCSR(TestMMIOArray):
 
     def test_simple_pattern(self):
         a = scipy.sparse.csr_matrix([[0, 1.5], [3.0, 2.5]])
-        p = np.zeros_like(a.todense())
-        p[a.todense() > 0] = 1
+        p = np.zeros_like(a.toarray())
+        p[a.toarray() > 0] = 1
         info = (2, 2, 3, 'coordinate', 'pattern', 'general')
         mmwrite(self.fn, a, field='pattern')
         assert_equal(mminfo(self.fn), info)
         b = mmread(self.fn)
-        assert_array_almost_equal(p, b.todense())
+        assert_array_almost_equal(p, b.toarray())
 
     def test_gh13634_non_skew_symmetric_int(self):
         a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=np.int32)
@@ -347,12 +361,13 @@ class TestMMIOReadLargeIntegers:
         with open(self.fn, 'w') as f:
             f.write(example)
         assert_equal(mminfo(self.fn), info)
-        if (over32 and (np.intp(0).itemsize < 8)) or over64:
+        if ((over32 and (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite)
+            or over64):
             assert_raises(OverflowError, mmread, self.fn)
         else:
             b = mmread(self.fn)
             if not dense:
-                b = b.todense()
+                b = b.toarray()
             assert_equal(a, b)
 
     def test_read_32bit_integer_dense(self):
@@ -546,7 +561,7 @@ class TestMMIOCoordinate:
         f.write(example)
         f.close()
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn).todense()
+        b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
     def test_read_general(self):
@@ -611,8 +626,8 @@ class TestMMIOCoordinate:
 
         assert_equal(mminfo(self.fn),
                      (10, 10, 0, 'coordinate', 'real', 'symmetric'))
-        a = b.todense()
-        b = mmread(self.fn).todense()
+        a = b.toarray()
+        b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
     def test_bzip2_py3(self):
@@ -630,14 +645,14 @@ class TestMMIOCoordinate:
 
         mmwrite(self.fn, b)
 
-        fn_bzip2 = "%s.bz2" % self.fn
+        fn_bzip2 = f"{self.fn}.bz2"
         with open(self.fn, 'rb') as f_in:
             f_out = bz2.BZ2File(fn_bzip2, 'wb')
             f_out.write(f_in.read())
             f_out.close()
 
-        a = mmread(fn_bzip2).todense()
-        assert_array_almost_equal(a, b.todense())
+        a = mmread(fn_bzip2).toarray()
+        assert_array_almost_equal(a, b.toarray())
 
     def test_gzip_py3(self):
         # test if fix for #2152 works
@@ -654,14 +669,14 @@ class TestMMIOCoordinate:
 
         mmwrite(self.fn, b)
 
-        fn_gzip = "%s.gz" % self.fn
+        fn_gzip = f"{self.fn}.gz"
         with open(self.fn, 'rb') as f_in:
             f_out = gzip.open(fn_gzip, 'wb')
             f_out.write(f_in.read())
             f_out.close()
 
-        a = mmread(fn_gzip).todense()
-        assert_array_almost_equal(a, b.todense())
+        a = mmread(fn_gzip).toarray()
+        assert_array_almost_equal(a, b.toarray())
 
     def test_real_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
@@ -674,8 +689,8 @@ class TestMMIOCoordinate:
 
         assert_equal(mminfo(self.fn),
                      (5, 5, 8, 'coordinate', 'real', 'general'))
-        a = b.todense()
-        b = mmread(self.fn).todense()
+        a = b.toarray()
+        b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
     def test_complex_write_read(self):
@@ -690,13 +705,16 @@ class TestMMIOCoordinate:
 
         assert_equal(mminfo(self.fn),
                      (5, 5, 8, 'coordinate', 'complex', 'general'))
-        a = b.todense()
-        b = mmread(self.fn).todense()
+        a = b.toarray()
+        b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
-    def test_sparse_formats(self):
-        mats = []
+    def test_sparse_formats(self, tmp_path):
+        # Note: `tmp_path` is a pytest fixture, it handles cleanup
+        tmpdir = tmp_path / 'sparse_formats'
+        tmpdir.mkdir()
 
+        mats = []
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
 
@@ -708,12 +726,11 @@ class TestMMIOCoordinate:
         mats.append(scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5)))
 
         for mat in mats:
-            expected = mat.todense()
+            expected = mat.toarray()
             for fmt in ['csr', 'csc', 'coo']:
-                fn = mktemp(dir=self.tmpdir)  # safe, we own tmpdir
-                mmwrite(fn, mat.asformat(fmt))
-
-                result = mmread(fn).todense()
+                fname = tmpdir / (fmt + '.mtx')
+                mmwrite(fname, mat.asformat(fmt))
+                result = mmread(fname).toarray()
                 assert_array_almost_equal(result, expected)
 
     def test_precision(self):
@@ -755,3 +772,32 @@ def test_gh11389():
     mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
                        " 1 1 1\n"
                        "1 1 -2.1846000000000e+02  0.0000000000000e+00"))
+
+
+def test_gh18123(tmp_path):
+    lines = [" %%MatrixMarket matrix coordinate real general\n",
+             "5 5 3\n",
+             "2 3 1.0\n",
+             "3 4 2.0\n",
+             "3 5 3.0\n"]
+    test_file = tmp_path / "test.mtx"
+    with open(test_file, "w") as f:
+        f.writelines(lines)
+    mmread(test_file)
+
+
+def test_threadpoolctl():
+    try:
+        import threadpoolctl
+        if not hasattr(threadpoolctl, "register"):
+            pytest.skip("threadpoolctl too old")
+            return
+    except ImportError:
+        pytest.skip("no threadpoolctl")
+        return
+
+    with threadpoolctl.threadpool_limits(limits=4):
+        assert_equal(fmm.PARALLELISM, 4)
+
+    with threadpoolctl.threadpool_limits(limits=2, user_api='scipy'):
+        assert_equal(fmm.PARALLELISM, 2)
