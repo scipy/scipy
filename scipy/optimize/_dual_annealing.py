@@ -172,8 +172,7 @@ class EnergyState:
             self.current_energy = func_wrapper.fun(self.current_location)
             if self.current_energy is None:
                 raise ValueError('Objective function is returning None')
-            if (not np.isfinite(self.current_energy) or np.isnan(
-                    self.current_energy)):
+            if not np.isfinite(self.current_energy):
                 if reinit_counter >= EnergyState.MAX_REINIT_COUNT:
                     init_error = False
                     message = (
@@ -395,6 +394,9 @@ class LocalSearchWrapper:
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
         self.jac = self.kwargs.get('jac', None)
+        self.hess = self.kwargs.get('hess', None)
+        self.hessp = self.kwargs.get('hessp', None)
+        self.kwargs.pop("args", None)
         self.minimizer = minimize
         bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
@@ -411,10 +413,19 @@ class LocalSearchWrapper:
                 'maxiter': ls_max_iter,
             }
             self.kwargs['bounds'] = list(zip(self.lower, self.upper))
-        elif callable(self.jac):
-            def wrapped_jac(x):
-                return self.jac(x, *args)
-            self.kwargs['jac'] = wrapped_jac
+        else:
+            if callable(self.jac):
+                def wrapped_jac(x):
+                    return self.jac(x, *args)
+                self.kwargs['jac'] = wrapped_jac
+            if callable(self.hess):
+                def wrapped_hess(x):
+                    return self.hess(x, *args)
+                self.kwargs['hess'] = wrapped_hess
+            if callable(self.hessp):
+                def wrapped_hessp(x, p):
+                    return self.hessp(x, p, *args)
+                self.kwargs['hessp'] = wrapped_hessp
 
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e
@@ -464,10 +475,15 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     maxiter : int, optional
         The maximum number of global search iterations. Default value is 1000.
     minimizer_kwargs : dict, optional
-        Extra keyword arguments to be passed to the local minimizer
-        (`minimize`). Some important options could be:
-        ``method`` for the minimizer method to use and ``args`` for
-        objective function additional arguments.
+        Keyword arguments to be passed to the local minimizer
+        (`minimize`). An important option could be ``method`` for the minimizer
+        method to use.
+        If no keyword arguments are provided, the local minimizer defaults to
+        'L-BFGS-B' and uses the already supplied bounds. If `minimizer_kwargs`
+        is specified, then the dict must contain all parameters required to
+        control the local minimization. `args` is ignored in this dict, as it is
+        passed automatically. `bounds` is not automatically passed on to the
+        local minimizer as the method may not support them.
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
         search of the energy landscape, allowing dual_annealing to escape
@@ -509,12 +525,12 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         A callback function with signature ``callback(x, f, context)``,
         which will be called for all minima found.
         ``x`` and ``f`` are the coordinates and function value of the
-        latest minimum found, and ``context`` has value in [0, 1, 2], with the
-        following meaning:
+        latest minimum found, and ``context`` has one of the following
+        values:
 
-            - 0: minimum detected in the annealing process.
-            - 1: detection occurred in the local search process.
-            - 2: detection done in the dual annealing process.
+        - ``0``: minimum detected in the annealing process.
+        - ``1``: detection occurred in the local search process.
+        - ``2``: detection done in the dual annealing process.
 
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional
@@ -621,7 +637,6 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     if isinstance(bounds, Bounds):
         bounds = new_bounds_to_old(bounds.lb, bounds.ub, len(bounds.lb))
 
-    # noqa: E501
     if x0 is not None and not len(x0) == len(bounds):
         raise ValueError('Bounds size does not match x0')
 

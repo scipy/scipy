@@ -565,7 +565,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
         On exit fp is unchanged.
 
     dp is a double precision variable.
-        On entry dp is the the derivative of the function at stp.
+        On entry dp is the derivative of the function at stp.
         On exit dp is unchanged.
 
     brackt is an logical variable.

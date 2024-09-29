@@ -3,15 +3,12 @@
 #
 import math
 import numpy as np
-from numpy import asarray_chkfinite, asarray
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
 from scipy._lib._util import check_random_state, _lazywhere
-from scipy.linalg.blas import drot
-from scipy.linalg._misc import LinAlgError
-from scipy.linalg.lapack import get_lapack_funcs
+from scipy.linalg.blas import drot, get_blas_funcs
 from ._continuous_distns import norm
 from ._discrete_distns import binom
 from . import _mvn, _covariance, _rcont
@@ -301,7 +298,7 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)  # noqa
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, lower_limit=None)
         Cumulative distribution function.
     logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
         Log of the cumulative distribution function.
@@ -386,7 +383,7 @@ class multivariate_normal_gen(multi_rv_generic):
     >>> ax2 = fig2.add_subplot(111)
     >>> ax2.contourf(x, y, rv.pdf(pos))
 
-    """
+    """  # noqa: E501
 
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -481,7 +478,7 @@ class multivariate_normal_gen(multi_rv_generic):
             rows, cols = cov.shape
             if rows != cols:
                 msg = ("Array 'cov' must be square if it is two dimensional,"
-                       " but cov.shape = %s." % str(cov.shape))
+                       f" but cov.shape = {str(cov.shape)}.")
             else:
                 msg = ("Dimension mismatch: array 'cov' is of shape %s,"
                        " but 'mean' is a vector of length %d.")
@@ -656,7 +653,7 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_default_callparams)s
         maxpts : integer, optional
             The maximum number of points to use for integration
-            (default `1000000*dim`)
+            (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance (default 1e-5)
         releps : float, optional
@@ -701,7 +698,7 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_default_callparams)s
         maxpts : integer, optional
             The maximum number of points to use for integration
-            (default `1000000*dim`)
+            (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance (default 1e-5)
         releps : float, optional
@@ -801,7 +798,7 @@ class multivariate_normal_gen(multi_rv_generic):
         fix_mean : ndarray(n, )
             Fixed mean vector. Must have length `n`.
         fix_cov: ndarray (n, n)
-            Fixed covariance matrix. Must have shape `(n, n)`.
+            Fixed covariance matrix. Must have shape ``(n, n)``.
 
         Returns
         -------
@@ -880,7 +877,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             then that instance is used.
         maxpts : integer, optional
             The maximum number of points to use for integration of the
-            cumulative distribution function (default `1000000*dim`)
+            cumulative distribution function (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance for the cumulative distribution function
             (default 1e-5)
@@ -900,7 +897,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         >>> r.cov
         array([[1.]])
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         self._dist = multivariate_normal_gen(seed)
         self.dim, self.mean, self.cov_object = (
             self._dist._process_parameters(mean, cov, allow_singular))
@@ -971,15 +968,15 @@ _matnorm_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default: `None`)
 rowcov : array_like, optional
-    Among-row covariance matrix of the distribution (default: `1`)
+    Among-row covariance matrix of the distribution (default: ``1``)
 colcov : array_like, optional
-    Among-column covariance matrix of the distribution (default: `1`)
+    Among-column covariance matrix of the distribution (default: ``1``)
 """
 
 _matnorm_doc_callparams_note = """\
 If `mean` is set to `None` then a matrix of zeros is used for the mean.
 The dimensions of this matrix are inferred from the shape of `rowcov` and
-`colcov`, if these are provided, or set to `1` if ambiguous.
+`colcov`, if these are provided, or set to ``1`` if ambiguous.
 
 `rowcov` and `colcov` can be two-dimensional array_likes specifying the
 covariance matrices directly. Alternatively, a one-dimensional array will
@@ -1332,9 +1329,9 @@ class matrix_normal_gen(multi_rv_generic):
         Parameters
         ----------
         rowcov : array_like, optional
-            Among-row covariance matrix of the distribution (default: `1`)
+            Among-row covariance matrix of the distribution (default: ``1``)
         colcov : array_like, optional
-            Among-column covariance matrix of the distribution (default: `1`)
+            Among-column covariance matrix of the distribution (default: ``1``)
 
         Returns
         -------
@@ -1457,7 +1454,7 @@ def _dirichlet_check_parameters(alpha):
         raise ValueError("All parameters must be greater than 0")
     elif alpha.ndim != 1:
         raise ValueError("Parameter vector 'a' must be one dimensional, "
-                         "but a.shape = {}.".format(alpha.shape))
+                         f"but a.shape = {alpha.shape}.")
     return alpha
 
 
@@ -1467,8 +1464,8 @@ def _dirichlet_check_input(alpha, x):
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
         raise ValueError("Vector 'x' must have either the same number "
                          "of entries as, or one entry fewer than, "
-                         "parameter vector 'a', but alpha.shape = {} "
-                         "and x.shape = {}.".format(alpha.shape, x.shape))
+                         f"parameter vector 'a', but alpha.shape = {alpha.shape} "
+                         f"and x.shape = {x.shape}.")
 
     if x.shape[0] != alpha.shape[0]:
         xk = np.array([1 - np.sum(x, 0)])
@@ -1500,7 +1497,7 @@ def _dirichlet_check_input(alpha, x):
 
     if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).any():
         raise ValueError("The input vector 'x' must lie within the normal "
-                         "simplex. but np.sum(x, 0) = %s." % np.sum(x, 0))
+                         f"simplex. but np.sum(x, 0) = {np.sum(x, 0)}.")
 
     return x
 
@@ -2009,9 +2006,8 @@ class wishart_gen(multi_rv_generic):
         elif scale.ndim == 1:
             scale = np.diag(scale)
         elif scale.ndim == 2 and not scale.shape[0] == scale.shape[1]:
-            raise ValueError("Array 'scale' must be square if it is two"
-                             " dimensional, but scale.scale = %s."
-                             % str(scale.shape))
+            raise ValueError("Array 'scale' must be square if it is two dimensional,"
+                             f" but scale.scale = {str(scale.shape)}.")
         elif scale.ndim > 2:
             raise ValueError("Array 'scale' must be at most two-dimensional,"
                              " but scale.ndim = %d" % scale.ndim)
@@ -2044,15 +2040,15 @@ class wishart_gen(multi_rv_generic):
                 x = np.diag(x)[:, :, np.newaxis]
         elif x.ndim == 2:
             if not x.shape[0] == x.shape[1]:
-                raise ValueError("Quantiles must be square if they are two"
-                                 " dimensional, but x.shape = %s."
-                                 % str(x.shape))
+                raise ValueError(
+                    "Quantiles must be square if they are two dimensional,"
+                    f" but x.shape = {str(x.shape)}.")
             x = x[:, :, np.newaxis]
         elif x.ndim == 3:
             if not x.shape[0] == x.shape[1]:
-                raise ValueError("Quantiles must be square in the first two"
-                                 " dimensions if they are three dimensional"
-                                 ", but x.shape = %s." % str(x.shape))
+                raise ValueError(
+                    "Quantiles must be square in the first two dimensions "
+                    f"if they are three dimensional, but x.shape = {str(x.shape)}.")
         elif x.ndim > 3:
             raise ValueError("Quantiles must be at most two-dimensional with"
                              " an additional dimension for multiple"
@@ -2061,7 +2057,7 @@ class wishart_gen(multi_rv_generic):
         # Now we have 3-dim array; should have shape [dim, dim, *]
         if not x.shape[0:2] == (dim, dim):
             raise ValueError('Quantiles have incompatible dimensions: should'
-                             ' be {}, got {}.'.format((dim, dim), x.shape[0:2]))
+                             f' be {(dim, dim)}, got {x.shape[0:2]}.')
 
         return x
 
@@ -2072,8 +2068,8 @@ class wishart_gen(multi_rv_generic):
             size = size[np.newaxis]
         elif size.ndim > 1:
             raise ValueError('Size must be an integer or tuple of integers;'
-                             ' thus must have dimension <= 1.'
-                             ' Got size.ndim = %s' % str(tuple(size)))
+                 ' thus must have dimension <= 1.'
+                 f' Got size.ndim = {str(tuple(size))}')
         n = size.prod()
         shape = tuple(size)
 
@@ -2096,7 +2092,7 @@ class wishart_gen(multi_rv_generic):
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -2558,69 +2554,6 @@ for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs', 'entropy']:
     method.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_params)
 
 
-def _cho_inv_batch(a, check_finite=True):
-    """
-    Invert the matrices a_i, using a Cholesky factorization of A, where
-    a_i resides in the last two dimensions of a and the other indices describe
-    the index i.
-
-    Overwrites the data in a.
-
-    Parameters
-    ----------
-    a : array
-        Array of matrices to invert, where the matrices themselves are stored
-        in the last two dimensions.
-    check_finite : bool, optional
-        Whether to check that the input matrices contain only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-
-    Returns
-    -------
-    x : array
-        Array of inverses of the matrices ``a_i``.
-
-    See Also
-    --------
-    scipy.linalg.cholesky : Cholesky factorization of a matrix
-
-    """
-    if check_finite:
-        a1 = asarray_chkfinite(a)
-    else:
-        a1 = asarray(a)
-    if len(a1.shape) < 2 or a1.shape[-2] != a1.shape[-1]:
-        raise ValueError('expected square matrix in last two dimensions')
-
-    potrf, potri = get_lapack_funcs(('potrf', 'potri'), (a1,))
-
-    triu_rows, triu_cols = np.triu_indices(a.shape[-2], k=1)
-    for index in np.ndindex(a1.shape[:-2]):
-
-        # Cholesky decomposition
-        a1[index], info = potrf(a1[index], lower=True, overwrite_a=False,
-                                clean=False)
-        if info > 0:
-            raise LinAlgError("%d-th leading minor not positive definite"
-                              % info)
-        if info < 0:
-            raise ValueError('illegal value in %d-th argument of internal'
-                             ' potrf' % -info)
-        # Inversion
-        a1[index], info = potri(a1[index], lower=True, overwrite_c=False)
-        if info > 0:
-            raise LinAlgError("the inverse could not be computed")
-        if info < 0:
-            raise ValueError('illegal value in %d-th argument of internal'
-                             ' potrf' % -info)
-
-        # Make symmetric (dpotri only fills in the lower triangle)
-        a1[index][triu_rows, triu_cols] = a1[index][triu_cols, triu_rows]
-
-    return a1
-
-
 class invwishart_gen(wishart_gen):
     r"""An inverse Wishart random variable.
 
@@ -2690,6 +2623,10 @@ class invwishart_gen(wishart_gen):
     inverse Gamma distribution with parameters shape = :math:`\frac{\nu}{2}`
     and scale = :math:`\frac{1}{2}`.
 
+    Instead of inverting a randomly generated Wishart matrix as described in [2],
+    here the algorithm in [4] is used to directly generate a random inverse-Wishart
+    matrix without inversion.
+
     .. versionadded:: 0.16.0
 
     References
@@ -2702,6 +2639,8 @@ class invwishart_gen(wishart_gen):
     .. [3] Gupta, M. and Srivastava, S. "Parametric Bayesian Estimation of
            Differential Entropy and Relative Entropy". Entropy 12, 818 - 843.
            2010.
+    .. [4] S.D. Axen, "Efficiently generating inverse-Wishart matrices and
+           their Cholesky factors", :arXiv:`2310.15884v1`. 2023.
 
     Examples
     --------
@@ -2743,7 +2682,7 @@ class invwishart_gen(wishart_gen):
         """
         return invwishart_frozen(df, scale, seed)
 
-    def _logpdf(self, x, dim, df, scale, log_det_scale):
+    def _logpdf(self, x, dim, df, log_det_scale, C):
         """Log of the inverse Wishart probability density function.
 
         Parameters
@@ -2755,10 +2694,10 @@ class invwishart_gen(wishart_gen):
             Dimension of the scale matrix
         df : int
             Degrees of freedom
-        scale : ndarray
-            Scale matrix
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
+        C : ndarray
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -2766,20 +2705,18 @@ class invwishart_gen(wishart_gen):
         called directly; use 'logpdf' instead.
 
         """
+        # Retrieve tr(scale x^{-1})
         log_det_x = np.empty(x.shape[-1])
-        x_inv = np.copy(x).T
-        if dim > 1:
-            _cho_inv_batch(x_inv)  # works in-place
-        else:
-            x_inv = 1./x_inv
         tr_scale_x_inv = np.empty(x.shape[-1])
-
-        for i in range(x.shape[-1]):
-            C, lower = scipy.linalg.cho_factor(x[:, :, i], lower=True)
-
-            log_det_x[i] = 2 * np.sum(np.log(C.diagonal()))
-
-            tr_scale_x_inv[i] = np.dot(scale, x_inv[i]).trace()
+        trsm = get_blas_funcs(('trsm'), (x,))
+        if dim > 1:
+            for i in range(x.shape[-1]):
+                Cx, log_det_x[i] = self._cholesky_logdet(x[:, :, i])
+                A = trsm(1., Cx, C, side=0, lower=True)
+                tr_scale_x_inv[i] = np.linalg.norm(A)**2
+        else:
+            log_det_x[:] = np.log(x[0, 0])
+            tr_scale_x_inv[:] = C[0, 0]**2 / x[0, 0]
 
         # Log PDF
         out = ((0.5 * df * log_det_scale - 0.5 * tr_scale_x_inv) -
@@ -2810,8 +2747,8 @@ class invwishart_gen(wishart_gen):
         """
         dim, df, scale = self._process_parameters(df, scale)
         x = self._process_quantiles(x, dim)
-        _, log_det_scale = self._cholesky_logdet(scale)
-        out = self._logpdf(x, dim, df, scale, log_det_scale)
+        C, log_det_scale = self._cholesky_logdet(scale)
+        out = self._logpdf(x, dim, df, log_det_scale, C)
         return _squeeze_output(out)
 
     def pdf(self, x, df, scale):
@@ -2954,6 +2891,60 @@ class invwishart_gen(wishart_gen):
         out = self._var(dim, df, scale)
         return _squeeze_output(out) if out is not None else out
 
+    def _inv_standard_rvs(self, n, shape, dim, df, random_state):
+        """
+        Parameters
+        ----------
+        n : integer
+            Number of variates to generate
+        shape : iterable
+            Shape of the variates to generate
+        dim : int
+            Dimension of the scale matrix
+        df : int
+            Degrees of freedom
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Returns
+        -------
+        A : ndarray
+            Random variates of shape (`shape`) + (``dim``, ``dim``).
+            Each slice `A[..., :, :]` is lower-triangular, and its
+            inverse is the lower Cholesky factor of a draw from
+            `invwishart(df, np.eye(dim))`.
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'rvs' instead.
+
+        """
+        A = np.zeros(shape + (dim, dim))
+
+        # Random normal variates for off-diagonal elements
+        tri_rows, tri_cols = np.tril_indices(dim, k=-1)
+        n_tril = dim * (dim-1) // 2
+        A[..., tri_rows, tri_cols] = random_state.normal(
+            size=(*shape, n_tril),
+        )
+
+        # Random chi variates for diagonal elements
+        rows = np.arange(dim)
+        chi_dfs = (df - dim + 1) + rows
+        A[..., rows, rows] = random_state.chisquare(
+            df=chi_dfs, size=(*shape, dim),
+        )**0.5
+
+        return A
+
     def _rvs(self, n, shape, dim, df, C, random_state):
         """Draw random samples from an inverse Wishart distribution.
 
@@ -2968,7 +2959,7 @@ class invwishart_gen(wishart_gen):
         df : int
             Degrees of freedom
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
         %(_doc_random_state)s
 
         Notes
@@ -2978,29 +2969,23 @@ class invwishart_gen(wishart_gen):
 
         """
         random_state = self._get_random_state(random_state)
-        # Get random draws A such that A ~ W(df, I)
-        A = super()._standard_rvs(n, shape, dim, df, random_state)
+        # Get random draws A such that inv(A) ~ iW(df, I)
+        A = self._inv_standard_rvs(n, shape, dim, df, random_state)
 
         # Calculate SA = (CA)'^{-1} (CA)^{-1} ~ iW(df, scale)
-        eye = np.eye(dim)
-        trtrs = get_lapack_funcs(('trtrs'), (A,))
+        trsm = get_blas_funcs(('trsm'), (A,))
+        trmm = get_blas_funcs(('trmm'), (A,))
 
         for index in np.ndindex(A.shape[:-2]):
-            # Calculate CA
-            CA = np.dot(C, A[index])
-            # Get (C A)^{-1} via triangular solver
             if dim > 1:
-                CA, info = trtrs(CA, eye, lower=True)
-                if info > 0:
-                    raise LinAlgError("Singular matrix.")
-                if info < 0:
-                    raise ValueError('Illegal value in %d-th argument of'
-                                     ' internal trtrs' % -info)
+                # Calculate CA
+                # Get CA = C A^{-1} via triangular solver
+                CA = trsm(1., A[index], C, side=1, lower=True)
+                # get SA
+                A[index] = trmm(1., CA, CA, side=1, lower=True, trans_a=True)
             else:
-                CA = 1. / CA
-            # Get SA
-            A[index] = np.dot(CA.T, CA)
-
+                A[index][0, 0] = (C[0, 0] / A[index][0, 0])**2
+                
         return A
 
     def rvs(self, df, scale, size=1, random_state=None):
@@ -3027,12 +3012,8 @@ class invwishart_gen(wishart_gen):
         n, shape = self._process_size(size)
         dim, df, scale = self._process_parameters(df, scale)
 
-        # Invert the scale
-        eye = np.eye(dim)
-        L, lower = scipy.linalg.cho_factor(scale, lower=True)
-        inv_scale = scipy.linalg.cho_solve((L, lower), eye)
-        # Cholesky decomposition of inverted scale
-        C = scipy.linalg.cholesky(inv_scale, lower=True)
+        # Cholesky decomposition of scale
+        C = scipy.linalg.cholesky(scale, lower=True)
 
         out = self._rvs(n, shape, dim, df, C, random_state)
 
@@ -3080,20 +3061,13 @@ class invwishart_frozen(multi_rv_frozen):
         )
 
         # Get the determinant via Cholesky factorization
-        C, lower = scipy.linalg.cho_factor(self.scale, lower=True)
-        self.log_det_scale = 2 * np.sum(np.log(C.diagonal()))
-
-        # Get the inverse using the Cholesky factorization
-        eye = np.eye(self.dim)
-        self.inv_scale = scipy.linalg.cho_solve((C, lower), eye)
-
-        # Get the Cholesky factorization of the inverse scale
-        self.C = scipy.linalg.cholesky(self.inv_scale, lower=True)
+        self.C = scipy.linalg.cholesky(self.scale, lower=True)
+        self.log_det_scale = 2 * np.sum(np.log(self.C.diagonal()))
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
-        out = self._dist._logpdf(x, self.dim, self.df, self.scale,
-                                 self.log_det_scale)
+        out = self._dist._logpdf(x, self.dim, self.df,
+                                 self.log_det_scale, self.C)
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -3267,7 +3241,7 @@ class multinomial_gen(multi_rv_generic):
     numpy.random.Generator.multinomial : Sampling from the multinomial distribution.
     scipy.stats.multivariate_hypergeom :
         The multivariate hypergeometric distribution.
-    """  # noqa: E501
+    """
 
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -3740,7 +3714,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
         >>> g = special_ortho_group(5)
         >>> x = g.rvs()
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         self._dist = special_ortho_group_gen(seed)
         self.dim = self._dist._process_parameters(dim)
 
@@ -3893,7 +3867,7 @@ class ortho_group_frozen(multi_rv_frozen):
         >>> g = ortho_group(5)
         >>> x = g.rvs()
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         self._dist = ortho_group_gen(seed)
         self.dim = self._dist._process_parameters(dim)
 
@@ -4156,7 +4130,7 @@ class random_correlation_frozen(multi_rv_frozen):
         rvs : ndarray or scalar
             Random size N-dimensional matrices, dimension (size, dim, dim),
             each having eigenvalues eigs.
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
 
         self._dist = random_correlation_gen(seed)
         self.tol = tol
@@ -4183,7 +4157,7 @@ class unitary_group_gen(multi_rv_generic):
     Parameters
     ----------
     dim : scalar
-        Dimension of matrices
+        Dimension of matrices, must be greater than 1.
     seed : {None, int, np.random.RandomState, np.random.Generator}, optional
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
@@ -4211,7 +4185,7 @@ class unitary_group_gen(multi_rv_generic):
     >>> np.dot(x, x.conj().T)
     array([[  1.00000000e+00,   1.13231364e-17,  -2.86852790e-16],
            [  1.13231364e-17,   1.00000000e+00,  -1.46845020e-16],
-           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])
+           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])  # may vary
 
     This generates one random matrix from U(3). The dot product confirms that
     it is unitary up to machine precision.
@@ -4306,7 +4280,7 @@ class unitary_group_frozen(multi_rv_frozen):
         >>> x = unitary_group(3)
         >>> x.rvs()
 
-        """
+        """ # numpy/numpydoc#87  # noqa: E501
         self._dist = unitary_group_gen(seed)
         self.dim = self._dist._process_parameters(dim)
 
@@ -4797,7 +4771,7 @@ class multivariate_t_gen(multi_rv_generic):
             rows, cols = shape.shape
             if rows != cols:
                 msg = ("Array 'cov' must be square if it is two dimensional,"
-                       " but cov.shape = %s." % str(shape.shape))
+                       f" but cov.shape = {str(shape.shape)}.")
             else:
                 msg = ("Dimension mismatch: array 'cov' is of shape %s,"
                        " but 'loc' is a vector of length %d.")
@@ -5034,7 +5008,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            http://www.randomservices.org/random/urn/MultiHypergeometric.html
     .. [2] Thomas J. Sargent and John Stachurski, 2020,
            Multivariate Hypergeometric Distribution
-           https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
+           https://python.quantecon.org/multi_hyper.html
     """
     def __init__(self, seed=None):
         super().__init__(seed)
@@ -5434,8 +5408,8 @@ class random_table_gen(multi_rv_generic):
 
     >>> dist = random_table(row, col)
     >>> dist.rvs(random_state=123)
-    array([[1., 0., 0.],
-           [1., 3., 1.]])
+    array([[1, 0, 0],
+           [1, 3, 1]])
 
     References
     ----------
@@ -6000,12 +5974,12 @@ _dirichlet_mn_doc_frozen_callparams_note = """\
 See class definition for a detailed description of parameters."""
 
 dirichlet_mn_docdict_params = {
-    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_default_callparams,  # noqa
+    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_default_callparams,
     '_doc_random_state': _doc_random_state
 }
 
 dirichlet_mn_docdict_noparams = {
-    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_frozen_callparams, # noqa
+    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_frozen_callparams,
     '_doc_random_state': _doc_random_state
 }
 

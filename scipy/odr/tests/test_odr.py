@@ -1,3 +1,4 @@
+import pickle
 import tempfile
 import shutil
 import os
@@ -385,8 +386,9 @@ class TestODR:
             -0.03750469, -0.03198903, 0.01642066, 0.01293648, -0.05627085]])
 
         beta_solution = np.array([
-            2.62920235756665876536e+00, -1.26608484996299608838e+02, 1.29703572775403074502e+02,
-            -1.88560985401185465804e+00, 7.83834160771274923718e+01, -7.64124076838087091801e+01])
+            2.62920235756665876536e+00, -1.26608484996299608838e+02,
+            1.29703572775403074502e+02, -1.88560985401185465804e+00,
+            7.83834160771274923718e+01, -7.64124076838087091801e+01])
 
         # model's function and Jacobians
         def func(beta, x):
@@ -562,3 +564,43 @@ class TestODR:
             odr_obj.set_job(fit_type=0, del_init=1)
             # Just make sure that it runs without raising an exception.
             odr_obj.run()
+
+    def test_pickling_data(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = Data(x, y)
+
+        obj_pickle = pickle.dumps(data)
+        del data
+        pickle.loads(obj_pickle)
+
+    def test_pickling_real_data(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = RealData(x, y)
+
+        obj_pickle = pickle.dumps(data)
+        del data
+        pickle.loads(obj_pickle)
+
+    def test_pickling_model(self):
+        obj_pickle = pickle.dumps(unilinear)
+        pickle.loads(obj_pickle)
+
+    def test_pickling_odr(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        odr_obj = ODR(Data(x, y), unilinear)
+
+        obj_pickle = pickle.dumps(odr_obj)
+        del odr_obj
+        pickle.loads(obj_pickle)
+
+    def test_pickling_output(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        output = ODR(Data(x, y), unilinear).run
+
+        obj_pickle = pickle.dumps(output)
+        del output
+        pickle.loads(obj_pickle)

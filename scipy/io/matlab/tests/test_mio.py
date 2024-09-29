@@ -1,8 +1,3 @@
-''' Nose test generators
-
-Need function load / save / roundtrip tests
-
-'''
 import os
 from collections import OrderedDict
 from os.path import join as pjoin, dirname
@@ -260,19 +255,15 @@ def _check_level(label, expected, actual):
         return
     # Check types are as expected
     assert_(types_compatible(expected, actual),
-            "Expected type %s, got %s at %s" %
-            (type(expected), type(actual), label))
+            f"Expected type {type(expected)}, got {type(actual)} at {label}")
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
-    if not isinstance(expected,
-                      (np.void, np.ndarray, MatlabObject)):
+    if not isinstance(expected, np.void | np.ndarray | MatlabObject):
         assert_equal(expected, actual)
         return
     # This is an ndarray-like thing
     assert_(expected.shape == actual.shape,
-            msg='Expected shape {}, got {} at {}'.format(expected.shape,
-                                                     actual.shape,
-                                                     label))
+            msg=f'Expected shape {expected.shape}, got {actual.shape} at {label}')
     ex_dtype = expected.dtype
     if ex_dtype.hasobject:  # array of objects
         if isinstance(expected, MatlabObject):
@@ -302,7 +293,7 @@ def _load_check_case(name, files, case):
         label = f"test {name}; file {file_name}"
         for k, expected in case.items():
             k_label = f"{label}, variable {k}"
-            assert_(k in matdict, "Missing key at %s" % k_label)
+            assert_(k in matdict, f"Missing key at {k_label}")
             _check_level(k_label, expected, matdict[k])
 
 
@@ -1242,7 +1233,7 @@ def test_save_unicode_field(tmpdir):
 
 def test_save_custom_array_type(tmpdir):
     class CustomArray:
-        def __array__(self):
+        def __array__(self, dtype=None, copy=None):
             return np.arange(6.0).reshape(2, 3)
     a = CustomArray()
     filename = os.path.join(str(tmpdir), 'test.mat')
@@ -1276,7 +1267,7 @@ def test_simplify_cells():
     (1, '8*_*', None),
 ])
 def test_matfile_version(version, filt, regex):
-    use_filt = pjoin(test_data_path, 'test*%s.mat' % filt)
+    use_filt = pjoin(test_data_path, f'test*{filt}.mat')
     files = glob(use_filt)
     if regex is not None:
         files = [file for file in files if re.match(regex, file) is not None]
@@ -1304,11 +1295,11 @@ def test_deprecation():
     """Test that access to previous attributes still works."""
     # This should be accessible immediately from scipy.io import
     with assert_warns(DeprecationWarning):
-        scipy.io.matlab.mio5_params.MatlabOpaque  # noqa
+        scipy.io.matlab.mio5_params.MatlabOpaque
 
     # These should be importable but warn as well
     with assert_warns(DeprecationWarning):
-        from scipy.io.matlab.miobase import MatReadError  # noqa
+        from scipy.io.matlab.miobase import MatReadError  # noqa: F401
 
 
 def test_gh_17992(tmp_path):
@@ -1330,3 +1321,29 @@ def test_gh_17992(tmp_path):
             new_dict)
     assert_allclose(new_dict["data"][0][0], array_one)
     assert_allclose(new_dict["data"][0][1], array_two)
+
+
+def test_gh_19659(tmp_path):
+    d = {
+        "char_array": np.array([list("char"), list("char")], dtype="U1"),
+        "string_array": np.array(["string", "string"]),
+        }
+    outfile = tmp_path / "tmp.mat"
+    # should not error:
+    savemat(outfile, d, format="4")
+
+
+def test_large_m4():
+    # Test we can read a Matlab 4 file with array > 2GB.
+    # (In fact, test we get the correct error from reading a truncated
+    # version).
+    # See https://github.com/scipy/scipy/issues/21256
+    # Data file is first 1024 bytes of:
+    # >>> a = np.zeros((134217728, 3))
+    # >>> siom.savemat('big_m4.mat', {'a': a}, format='4')
+    truncated_mat = pjoin(test_data_path, 'debigged_m4.mat')
+    match = ("Not enough bytes to read matrix 'a';"
+             if np.intp == np.int64 else
+             "Variable 'a' has byte length longer than largest possible")
+    with pytest.raises(ValueError, match=match):
+        loadmat(truncated_mat)

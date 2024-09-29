@@ -20,9 +20,9 @@
 # Provides typing union operator ``|`` in Python 3.9:
 from __future__ import annotations
 # Linter does not allow to import ``Generator`` from ``typing`` module:
-from collections.abc import Generator
+from collections.abc import Generator, Callable
 from functools import cache, lru_cache, partial
-from typing import Callable, get_args, Literal, Union
+from typing import get_args, Literal
 
 import numpy as np
 
@@ -357,7 +357,7 @@ class ShortTimeFFT:
                    phase_shift=phase_shift)
 
     @classmethod
-    def from_window(cls, win_param: Union[str, tuple, float],
+    def from_window(cls, win_param: str | tuple | float,
                     fs: float, nperseg: int, noverlap: int, *,
                     symmetric_win: bool = False,
                     fft_mode: FFT_MODE_TYPE = 'onesided',
@@ -529,14 +529,14 @@ class ShortTimeFFT:
 
         'twosided':
             Two-sided FFT, where values for the negative frequencies are in
-            upper half of the array. Corresponds to :func:`scipy.fft.fft()`.
+            upper half of the array. Corresponds to :func:`~scipy.fft.fft()`.
         'centered':
             Two-sided FFT with the values being ordered along monotonically
             increasing frequencies. Corresponds to applying
-            :func:`scipy.fft.fftshift()` to :func:`scipy.fft.fft()`.
+            :func:`~scipy.fft.fftshift()` to :func:`~scipy.fft.fft()`.
         'onesided':
             Calculates only values for non-negative frequency values.
-            Corresponds to :func:`scipy.fft.rfft()`.
+            Corresponds to :func:`~scipy.fft.rfft()`.
         'onesided2X':
             Like `onesided`, but the non-zero frequencies are doubled if
             `scaling` is set to 'magnitude' or multiplied by ``sqrt(2)`` if
@@ -545,8 +545,10 @@ class ShortTimeFFT:
             If the FFT length `mfft` is even, the last FFT value is not paired,
             and thus it is not scaled.
 
-        Note that the frequency values can be obtained by reading the `f`
-        property, and the number of samples by accessing the `f_pts` property.
+        Note that `onesided` and `onesided2X` do not work for complex-valued signals or
+        complex-valued windows. Furthermore, the frequency values can be obtained by
+        reading the `f` property, and the number of samples by accessing the `f_pts`
+        property.
 
         See Also
         --------
@@ -613,8 +615,8 @@ class ShortTimeFFT:
         If not ``None``, the FFTs can be either interpreted as a magnitude or
         a power spectral density spectrum.
 
-        The window function can be scaled by calling the `scale_to()` method,
-        or it is set by the initializer parameter `scale_to`.
+        The window function can be scaled by calling the `scale_to` method,
+        or it is set by the initializer parameter ``scale_to``.
 
         See Also
         --------
@@ -750,7 +752,8 @@ class ShortTimeFFT:
         Parameters
         ----------
         x
-            The input signal as real or complex valued array.
+            The input signal as real or complex valued array. For complex values, the
+            property `fft_mode` must be set to 'twosided' or 'centered'.
         p0
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -796,8 +799,7 @@ class ShortTimeFFT:
                                  padding=padding, axis=axis)
 
     def stft_detrend(self, x: np.ndarray,
-                     detr: Union[Callable[[np.ndarray], np.ndarray],
-                                 Literal['linear', 'constant'], None],
+                     detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None,  # noqa: E501
                      p0: int | None = None, p1: int | None = None, *,
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
@@ -822,6 +824,9 @@ class ShortTimeFFT:
                                    (without detrending).
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
+        if self.onesided_fft and np.iscomplexobj(x):
+            raise ValueError(f"Complex-valued `x` not allowed for {self.fft_mode=}'! "
+                             "Set property `fft_mode` to 'twosided' or 'centered'.")
         if isinstance(detr, str):
             detr = partial(detrend, type=detr)
         elif not (detr is None or callable(detr)):
@@ -848,19 +853,19 @@ class ShortTimeFFT:
         return S
 
     def spectrogram(self, x: np.ndarray, y: np.ndarray | None = None,
-                    detr: Union[Callable[[np.ndarray], np.ndarray],
-                                Literal['linear', 'constant'], None] = None, *,
+                    detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None = None,  # noqa: E501
+                    *,
                     p0: int | None = None, p1: int | None = None,
                     k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                     axis: int = -1) \
             -> np.ndarray:
         r"""Calculate spectrogram or cross-spectrogram.
 
-        The spectrogram is the absolute square of the STFT, i.e, it is
+        The spectrogram is the absolute square of the STFT, i.e., it is
         ``abs(S[q,p])**2`` for given ``S[q,p]``  and thus is always
         non-negative.
         For two STFTs ``Sx[q,p], Sy[q,p]``, the cross-spectrogram is defined
-        as ``Sx[q,p] * np.conj(Sx[q,p])`` and is complex-valued.
+        as ``Sx[q,p] * np.conj(Sy[q,p])`` and is complex-valued.
         This is a convenience function for calling `~ShortTimeFFT.stft` /
         `stft_detrend`, hence all parameters are discussed there. If `y` is not
         ``None`` it needs to have the same shape as `x`.
@@ -881,7 +886,7 @@ class ShortTimeFFT:
         >>> f_i = 5e-3*(t_x - t_x[N // 3])**2 + 1  # varying frequency
         >>> x = square(2*np.pi*np.cumsum(f_i)*T_x)  # the signal
 
-        The utitlized Gaussian window is 50 samples or 2.5 s long. The
+        The utilized Gaussian window is 50 samples or 2.5 s long. The
         parameter ``mfft=800`` (oversampling factor 16) and the `hop` interval
         of 2 in `ShortTimeFFT` was chosen to produce a sufficient number of
         points:
@@ -1444,8 +1449,6 @@ class ShortTimeFFT:
         ----------
         n
             Number of sample of the input signal.
-        x
-            The input signal as real or complex valued array.
         p0
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -1579,7 +1582,7 @@ class ShortTimeFFT:
         if self.fft_mode == 'twosided':
             return fft_lib.fft(x, n=self.mfft, axis=-1)
         if self.fft_mode == 'centered':
-            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1))
+            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1), axes=-1)
         if self.fft_mode == 'onesided':
             return fft_lib.rfft(x, n=self.mfft, axis=-1)
         if self.fft_mode == 'onesided2X':
@@ -1604,7 +1607,7 @@ class ShortTimeFFT:
         if self.fft_mode == 'twosided':
             x = fft_lib.ifft(X, n=self.mfft, axis=-1)
         elif self.fft_mode == 'centered':
-            x = fft_lib.ifft(fft_lib.ifftshift(X), n=self.mfft, axis=-1)
+            x = fft_lib.ifft(fft_lib.ifftshift(X, axes=-1), n=self.mfft, axis=-1)
         elif self.fft_mode == 'onesided':
             x = fft_lib.irfft(X, n=self.mfft, axis=-1)
         elif self.fft_mode == 'onesided2X':
@@ -1629,7 +1632,7 @@ class ShortTimeFFT:
         """Return minimum and maximum values time-frequency values.
 
         A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
-        ``(f0, f1, t0, t1)`` for 'ft') is returned describing the corners
+        ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
         of the time-frequency domain of the `~ShortTimeFFT.stft`.
         That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
         with the same name.

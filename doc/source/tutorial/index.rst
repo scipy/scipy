@@ -25,7 +25,9 @@ Subpackage          Description
 ==================  ======================================================
 `cluster`           Clustering algorithms
 `constants`         Physical and mathematical constants
-`fftpack`           Fast Fourier Transform routines
+`differentiate`     Finite difference differentiation tools
+`fft`               Discrete Fourier transforms
+`fftpack`           Fast Fourier Transform routines (legacy)
 `integrate`         Integration and ordinary differential equation solvers
 `interpolate`       Interpolation and smoothing splines
 `io`                Input and Output
@@ -40,9 +42,7 @@ Subpackage          Description
 `stats`             Statistical distributions and functions
 ==================  ======================================================
 
-SciPy subpackages need to be imported separately, for example::
-
-    >>> from scipy import linalg, optimize
+For guidance on organizing and importing functions from SciPy subpackages, refer to the `Guidelines for Importing Functions from SciPy <https://scipy.github.io/devdocs/reference/index.html#guidelines-for-importing-functions-from-scipy>`_.
 
 Below, you can find the complete user guide organized by subpackages.
 
@@ -68,23 +68,6 @@ Below, you can find the complete user guide organized by subpackages.
    stats
    ndimage
    io
-
-
-.. _executable-tutorials:
-
-Executable tutorials
---------------------
-
-Below you can also find tutorials in
-`MyST Markdown <https://jupyterbook.org/en/stable/content/myst.html>`_ format.
-These can be opened as Jupyter Notebooks with the help of the
-`Jupytext <https://jupytext.readthedocs.io/en/latest/index.html>`_ extension.
-
-.. toctree::
-   :caption: Executable tutorials
-   :maxdepth: 1
-   
-   ../notebooks/interp_transition_guide
 
 .. raw:: latex
 

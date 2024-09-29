@@ -76,29 +76,30 @@ Bessel functions
 .. autosummary::
    :toctree: generated/
 
-   jv            -- Bessel function of the first kind of real order and \
-                    complex argument.
-   jve           -- Exponentially scaled Bessel function of order `v`.
-   yn            -- Bessel function of the second kind of integer order and \
-                    real argument.
-   yv            -- Bessel function of the second kind of real order and \
-                    complex argument.
-   yve           -- Exponentially scaled Bessel function of the second kind \
-                    of real order.
-   kn            -- Modified Bessel function of the second kind of integer \
-                    order `n`
-   kv            -- Modified Bessel function of the second kind of real order \
-                    `v`
-   kve           -- Exponentially scaled modified Bessel function of the \
-                    second kind.
-   iv            -- Modified Bessel function of the first kind of real order.
-   ive           -- Exponentially scaled modified Bessel function of the \
-                    first kind.
-   hankel1       -- Hankel function of the first kind.
-   hankel1e      -- Exponentially scaled Hankel function of the first kind.
-   hankel2       -- Hankel function of the second kind.
-   hankel2e      -- Exponentially scaled Hankel function of the second kind.
-   wright_bessel -- Wright's generalized Bessel function.
+   jv                -- Bessel function of the first kind of real order and \
+                        complex argument.
+   jve               -- Exponentially scaled Bessel function of order `v`.
+   yn                -- Bessel function of the second kind of integer order and \
+                        real argument.
+   yv                -- Bessel function of the second kind of real order and \
+                        complex argument.
+   yve               -- Exponentially scaled Bessel function of the second kind \
+                        of real order.
+   kn                -- Modified Bessel function of the second kind of integer \
+                        order `n`
+   kv                -- Modified Bessel function of the second kind of real order \
+                        `v`
+   kve               -- Exponentially scaled modified Bessel function of the \
+                        second kind.
+   iv                -- Modified Bessel function of the first kind of real order.
+   ive               -- Exponentially scaled modified Bessel function of the \
+                        first kind.
+   hankel1           -- Hankel function of the first kind.
+   hankel1e          -- Exponentially scaled Hankel function of the first kind.
+   hankel2           -- Hankel function of the second kind.
+   hankel2e          -- Exponentially scaled Hankel function of the second kind.
+   wright_bessel     -- Wright's generalized Bessel function.
+   log_wright_bessel -- Logarithm of Wright's generalized Bessel function.
 
 The following function does not accept NumPy arrays (it is not a
 universal function):
@@ -432,7 +433,6 @@ Gamma and related functions
    digamma      -- psi(x[, out]).
    poch         -- Rising factorial (z)_m.
 
-
 Error function and Fresnel integrals
 ------------------------------------
 
@@ -469,20 +469,28 @@ Legendre functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated Legendre function of integer order and real degree.
-   sph_harm -- Compute spherical harmonics.
+   legendre_p                 -- Legendre polynomials of the first kind.
+   legendre_p_all             -- All Legendre polynomials of the first kind up to a specified order.
+   assoc_legendre_p           -- Associated Legendre polynomials of the first kind.
+   assoc_legendre_p_all       -- All associated Legendre polynomials of the first kind up to a specified order and degree.
+   sph_legendre_p             -- Spherical Legendre polynomials of the first kind.
+   sph_legendre_p_all         -- All spherical Legendre polynomials of the first kind up to a specified order and degree.
+   sph_harm_y                 -- Spherical harmonics.
+   sph_harm_y_all             -- All spherical harmonics up to a specified order and degree.
 
-The following functions do not accept NumPy arrays (they are not
-universal functions):
+The following functions are in the process of being deprecated in favor of the above,
+which provide a more flexible and consistent interface.
 
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- Associated Legendre function of the first kind for complex arguments.
-   lpn   -- Legendre function of the first kind.
-   lqn   -- Legendre function of the second kind.
-   lpmn  -- Sequence of associated Legendre functions of the first kind.
-   lqmn  -- Sequence of associated Legendre functions of the second kind.
+   lpmv                       -- Associated Legendre function of integer order and real degree.
+   sph_harm                   -- Compute spherical harmonics.
+   clpmn                      -- Associated Legendre function of the first kind for complex arguments.
+   lpn                        -- Legendre function of the first kind.
+   lqn                        -- Legendre function of the second kind.
+   lpmn                       -- Sequence of associated Legendre functions of the first kind.
+   lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal harmonics
 ---------------------
@@ -533,7 +541,7 @@ orthogonal polynomials:
    roots_jacobi      -- Gauss-Jacobi quadrature.
    roots_laguerre    -- Gauss-Laguerre quadrature.
    roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
-   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermite     -- Gauss-Hermite (physicist's) quadrature.
    roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
    roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
    roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.
@@ -646,7 +654,7 @@ Spheroidal wave functions
 
    pro_ang1   -- Prolate spheroidal angular function of the first kind and its derivative.
    pro_rad1   -- Prolate spheroidal radial function of the first kind and its derivative.
-   pro_rad2   -- Prolate spheroidal radial function of the secon kind and its derivative.
+   pro_rad2   -- Prolate spheroidal radial function of the second kind and its derivative.
    obl_ang1   -- Oblate spheroidal angular function of the first kind and its derivative.
    obl_rad1   -- Oblate spheroidal radial function of the first kind and its derivative.
    obl_rad2   -- Oblate spheroidal radial function of the second kind and its derivative.
@@ -769,9 +777,41 @@ Convenience functions
    exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
    sinc      -- Return the sinc function.
 
-"""
+"""  # noqa: E501
 
+import os
 import warnings
+
+
+def _load_libsf_error_state():
+    """Load libsf_error_state.dll shared library on Windows
+
+    libsf_error_state manages shared state used by
+    ``scipy.special.seterr`` and ``scipy.special.geterr`` so that these
+    can work consistently between special functions provided by different
+    extension modules. This shared library is installed in scipy/special
+    alongside this __init__.py file. Due to lack of rpath support, Windows
+    cannot find shared libraries installed within wheels. To circumvent this,
+    we pre-load ``lib_sf_error_state.dll`` when on Windows.
+
+    The logic for this function was borrowed from the function ``make_init``
+    in `scipy/tools/openblas_support.py`:
+    https://github.com/scipy/scipy/blob/bb92c8014e21052e7dde67a76b28214dd1dcb94a/tools/openblas_support.py#L239-L274
+    """  # noqa: E501
+    if os.name == "nt":
+        try:
+            from ctypes import WinDLL
+            basedir = os.path.dirname(__file__)
+        except:  # noqa: E722
+            pass
+        else:
+            dll_path = os.path.join(basedir, "libsf_error_state.dll")
+            if os.path.exists(dll_path):
+                WinDLL(dll_path)
+
+
+_load_libsf_error_state()
+
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
@@ -780,13 +820,17 @@ from ._ufuncs import *
 
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,  # noqa
-    gammaln, gammainc, gammaincc, logit, expit)  # noqa
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
+    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
+    chdtr, chdtrc, betainc, betaincc, stdtr)
 
 from . import _basic
 from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
+
+from . import _multiufuncs
+from ._multiufuncs import *
 
 from . import _orthogonal
 from ._orthogonal import *
@@ -811,7 +855,7 @@ from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
 # so there is no need to consider _support_alternative_backends.__all__ here.
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
 __all__ += [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
@@ -853,3 +897,13 @@ def btdtri(*args, **kwargs):  # type: ignore [no-redef]
 
 
 btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
+
+
+def _get_include():
+    """This function is for development purposes only.
+
+    This function could disappear or its behavior could change at any time.
+    """
+    import os
+    return os.path.dirname(__file__)
+

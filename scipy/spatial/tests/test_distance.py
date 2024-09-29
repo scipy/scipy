@@ -47,6 +47,8 @@ from numpy.testing import (verbose, assert_,
                            break_cycles, IS_PYPY)
 import pytest
 
+import scipy.spatial.distance
+
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
     _validate_vector, _METRICS_NAMES)
@@ -207,7 +209,7 @@ def _freq_weights(weights):
         return weights
     int_weights = weights.astype(int)
     if (weights != int_weights).any():
-        raise ValueError("frequency (integer count-type) weights required %s" % weights)
+        raise ValueError(f"frequency (integer count-type) weights required {weights}")
     return int_weights
 
 
@@ -241,7 +243,8 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
                                for i in range(a.ndim)])
 
     n_obs = arrays[0].shape[axis]
-    assert all(a.shape[axis] == n_obs for a in arrays), "data must be aligned on sample axis"
+    assert all(a.shape[axis] == n_obs for a in arrays), \
+           "data must be aligned on sample axis"
     for i in range(int(split_per) * n_obs):
         split_ix = seeded_rand.randint(n_obs + i)
         prev_w = weights[split_ix]
@@ -253,7 +256,10 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
     return arrays, weights
 
 
-def _rough_check(a, b, compare_assert=partial(assert_allclose, atol=1e-5),
+assert_allclose_forgiving = partial(assert_allclose, atol=1e-5)
+
+
+def _rough_check(a, b, compare_assert=assert_allclose_forgiving,
                   key=lambda x: x, w=None):
     check_a = key(a)
     check_b = key(b)
@@ -272,8 +278,9 @@ def _rough_check(a, b, compare_assert=partial(assert_allclose, atol=1e-5),
 def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg='w',
                     squeeze=True, silent=False,
                     ones_test=True, const_test=True, dup_test=True,
-                    split_test=True, dud_test=True, ma_safe=False, ma_very_safe=False, nan_safe=False,
-                    split_per=1.0, seed=0, compare_assert=partial(assert_allclose, atol=1e-5)):
+                    split_test=True, dud_test=True, ma_safe=False, ma_very_safe=False,
+                    nan_safe=False, split_per=1.0, seed=0,
+                    compare_assert=assert_allclose_forgiving):
     """runs fn on its arguments 2 or 3 ways, checks that the results are the same,
        then returns the same thing it would have returned before"""
     @wraps(fn)
@@ -285,7 +292,8 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
         weights = kwargs.get(weight_arg, None)
         axis = kwargs.get('axis', default_axis)
 
-        chked = _chk_weights(arrays, weights=weights, axis=axis, force_weights=True, mask_screen=True)
+        chked = _chk_weights(arrays, weights=weights, axis=axis,
+                             force_weights=True, mask_screen=True)
         arrays, weights, axis = chked[:-2], chked[-2], chked[-1]
         if squeeze:
             arrays = [np.atleast_1d(a.squeeze()) for a in arrays]
@@ -308,8 +316,9 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             # WEIGHTS CHECK 2: ADDL 0-WEIGHTED OBS
             if dud_test:
                 # add randomly resampled rows, weighted at 0
-                dud_arrays, dud_weights = _rand_split(arrays, weights, axis, split_per=split_per, seed=seed)
-                dud_weights[:weights.size] = weights  # not exactly 1 because of masked arrays
+                dud_arrays, dud_weights = _rand_split(arrays, weights, axis,
+                                                      split_per=split_per, seed=seed)
+                dud_weights[:weights.size] = weights # not exactly 1 because of masked arrays  # noqa: E501
                 dud_weights[weights.size:] = 0
                 dud_args = tuple(dud_arrays) + rest
                 kwargs[weight_arg] = dud_weights
@@ -352,7 +361,9 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
 
             # WEIGHT CHECK 3: RANDOM SPLITTING
             if split_test and split_per > 0:
-                split_arrays, split_weights = _rand_split(arrays, weights, axis, split_per=split_per, seed=seed)
+                split = _rand_split(arrays, weights, axis,
+                                    split_per=split_per, seed=seed)
+                split_arrays, split_weights = split
                 split_args = tuple(split_arrays) + rest
                 kwargs[weight_arg] = split_weights
                 _rough_check(result, fn(*split_args, **kwargs), key=key)
@@ -360,15 +371,18 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             # when some combination of arguments makes weighting impossible,
             #  this is the desired response
             if not silent:
-                warnings.warn(f"{fn.__name__} NotImplemented weights: {e}")
+                warnings.warn(f"{fn.__name__} NotImplemented weights: {e}",
+                              stacklevel=3)
         return result
     return wrapped
 
 
 wcdist = _weight_checked(cdist, default_axis=1, squeeze=False)
-wcdist_no_const = _weight_checked(cdist, default_axis=1, squeeze=False, const_test=False)
+wcdist_no_const = _weight_checked(cdist, default_axis=1,
+                                  squeeze=False, const_test=False)
 wpdist = _weight_checked(pdist, default_axis=1, squeeze=False, n_args=1)
-wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False, const_test=False, n_args=1)
+wpdist_no_const = _weight_checked(pdist, default_axis=1, squeeze=False,
+                                  const_test=False, n_args=1)
 wrogerstanimoto = _weight_checked(rogerstanimoto)
 wmatching = whamming = _weight_checked(hamming, dud_test=False)
 wyule = _weight_checked(yule)
@@ -1139,53 +1153,6 @@ class TestPdist:
         Y_test2 = wpdist(X, 'test_hamming')
         assert_allclose(Y_test2, Y_right, rtol=eps)
 
-    def test_pdist_jaccard_random(self):
-        eps = 1e-8
-        X = eo['pdist-boolean-inp']
-        Y_right = eo['pdist-jaccard']
-        Y_test1 = wpdist(X, 'jaccard')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_jaccard_random_float32(self):
-        eps = 1e-8
-        X = np.float32(eo['pdist-boolean-inp'])
-        Y_right = eo['pdist-jaccard']
-        Y_test1 = wpdist(X, 'jaccard')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_jaccard_random_nonC(self):
-        eps = 1e-8
-        X = eo['pdist-boolean-inp']
-        Y_right = eo['pdist-jaccard']
-        Y_test2 = wpdist(X, 'test_jaccard')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
-    def test_pdist_djaccard_random(self):
-        eps = 1e-8
-        X = np.float64(eo['pdist-boolean-inp'])
-        Y_right = eo['pdist-jaccard']
-        Y_test1 = wpdist(X, 'jaccard')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_djaccard_random_float32(self):
-        eps = 1e-8
-        X = np.float32(eo['pdist-boolean-inp'])
-        Y_right = eo['pdist-jaccard']
-        Y_test1 = wpdist(X, 'jaccard')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_djaccard_allzeros(self):
-        eps = 1e-15
-        Y = pdist(np.zeros((5, 3)), 'jaccard')
-        assert_allclose(np.zeros(10), Y, rtol=eps)
-
-    def test_pdist_djaccard_random_nonC(self):
-        eps = 1e-8
-        X = np.float64(eo['pdist-boolean-inp'])
-        Y_right = eo['pdist-jaccard']
-        Y_test2 = wpdist(X, 'test_jaccard')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
     def test_pdist_jensenshannon_random(self):
         eps = 1e-11
         X = eo['pdist-double-inp']
@@ -1233,53 +1200,6 @@ class TestPdist:
         Y_test2 = pdist(X, 'test_jensenshannon')
         assert_allclose(Y_test2, Y_right, rtol=eps)
 
-    def test_pdist_djaccard_allzeros_nonC(self):
-        eps = 1e-15
-        Y = pdist(np.zeros((5, 3)), 'test_jaccard')
-        assert_allclose(np.zeros(10), Y, rtol=eps)
-
-    def test_pdist_chebyshev_random(self):
-        eps = 1e-8
-        X = eo['pdist-double-inp']
-        Y_right = eo['pdist-chebyshev']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_random_float32(self):
-        eps = 1e-7
-        X = np.float32(eo['pdist-double-inp'])
-        Y_right = eo['pdist-chebyshev']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
-
-    def test_pdist_chebyshev_random_nonC(self):
-        eps = 1e-8
-        X = eo['pdist-double-inp']
-        Y_right = eo['pdist-chebyshev']
-        Y_test2 = pdist(X, 'test_chebyshev')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_iris(self):
-        eps = 1e-14
-        X = eo['iris']
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps)
-
-    def test_pdist_chebyshev_iris_float32(self):
-        eps = 1e-5
-        X = np.float32(eo['iris'])
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test1 = pdist(X, 'chebyshev')
-        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
-
-    def test_pdist_chebyshev_iris_nonC(self):
-        eps = 1e-14
-        X = eo['iris']
-        Y_right = eo['pdist-chebyshev-iris']
-        Y_test2 = pdist(X, 'test_chebyshev')
-        assert_allclose(Y_test2, Y_right, rtol=eps)
-
     def test_pdist_matching_mtica1(self):
         # Test matching(*,*) with mtica example #1 (nums).
         m = wmatching(np.array([1, 0, 1, 1, 0]),
@@ -1294,22 +1214,6 @@ class TestPdist:
         m = wmatching(np.array([1, 0, 1]),
                      np.array([1, 1, 0]))
         m2 = wmatching(np.array([1, 0, 1], dtype=bool),
-                      np.array([1, 1, 0], dtype=bool))
-        assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
-        assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
-
-    def test_pdist_jaccard_mtica1(self):
-        m = wjaccard(np.array([1, 0, 1, 1, 0]),
-                     np.array([1, 1, 0, 1, 1]))
-        m2 = wjaccard(np.array([1, 0, 1, 1, 0], dtype=bool),
-                      np.array([1, 1, 0, 1, 1], dtype=bool))
-        assert_allclose(m, 0.6, rtol=0, atol=1e-10)
-        assert_allclose(m2, 0.6, rtol=0, atol=1e-10)
-
-    def test_pdist_jaccard_mtica2(self):
-        m = wjaccard(np.array([1, 0, 1]),
-                     np.array([1, 1, 0]))
-        m2 = wjaccard(np.array([1, 0, 1], dtype=bool),
                       np.array([1, 1, 0], dtype=bool))
         assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
         assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
@@ -1616,6 +1520,11 @@ class TestSomeDistanceFunctions:
             dist = wcosine(x, y)
             assert_almost_equal(dist, 1.0 - 18.0 / (np.sqrt(14) * np.sqrt(27)))
 
+    def test_cosine_output_dtype(self):
+        # Regression test for gh-19541
+        assert isinstance(wcorrelation([1, 1], [1, 1], centered=False), float)
+        assert isinstance(wcosine([1, 1], [1, 1]), float)
+
     def test_correlation(self):
         xm = np.array([-1.0, 0, 1.0])
         ym = np.array([-4.0 / 3, -4.0 / 3, 5.0 - 7.0 / 3])
@@ -1633,6 +1542,14 @@ class TestSomeDistanceFunctions:
                       1., 1., -1., 1., -1., -1., -1., -1., -1., -1., 1.])
         dist = correlation(x, y)
         assert 0 <= dist <= 10 * np.finfo(np.float64).eps
+
+    @pytest.mark.filterwarnings('ignore:Casting complex')
+    @pytest.mark.parametrize("func", [correlation, cosine])
+    def test_corr_dep_complex(self, func):
+        x = [1+0j, 2+0j]
+        y = [3+0j, 4+0j]
+        with pytest.deprecated_call(match="Complex `u` and `v` are deprecated"):
+            func(x, y)
 
     def test_mahalanobis(self):
         x = np.array([1.0, 2.0, 3.0])
@@ -1808,7 +1725,7 @@ class TestIsValidDM:
     def test_is_valid_dm_improper_shape_1D_E(self):
         D = np.zeros((5,), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_improper_shape_1D_F(self):
         D = np.zeros((5,), dtype=np.float64)
@@ -1817,7 +1734,7 @@ class TestIsValidDM:
     def test_is_valid_dm_improper_shape_3D_E(self):
         D = np.zeros((3, 3, 3), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_improper_shape_3D_F(self):
         D = np.zeros((3, 3, 3), dtype=np.float64)
@@ -1829,7 +1746,7 @@ class TestIsValidDM:
         for i in range(0, 5):
             D[i, i] = 2.0
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_nonzero_diagonal_F(self):
         y = np.random.rand(10)
@@ -1843,7 +1760,7 @@ class TestIsValidDM:
         D = squareform(y)
         D[1, 3] = D[3, 1] + 1
         with pytest.raises(ValueError):
-            is_valid_dm_throw((D))
+            is_valid_dm_throw(D)
 
     def test_is_valid_dm_asymmetric_F(self):
         y = np.random.rand(10)
@@ -1888,7 +1805,7 @@ class TestIsValidY:
     def test_is_valid_y_improper_shape_2D_E(self):
         y = np.zeros((3, 3,), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_y_throw((y))
+            is_valid_y_throw(y)
 
     def test_is_valid_y_improper_shape_2D_F(self):
         y = np.zeros((3, 3,), dtype=np.float64)
@@ -1897,7 +1814,7 @@ class TestIsValidY:
     def test_is_valid_y_improper_shape_3D_E(self):
         y = np.zeros((3, 3, 3), dtype=np.float64)
         with pytest.raises(ValueError):
-            is_valid_y_throw((y))
+            is_valid_y_throw(y)
 
     def test_is_valid_y_improper_shape_3D_F(self):
         y = np.zeros((3, 3, 3), dtype=np.float64)
@@ -2241,3 +2158,156 @@ def test_gh_17703():
     actual = cdist(np.atleast_2d(arr_1),
                    np.atleast_2d(arr_2), metric='dice')
     assert_allclose(actual, expected)
+
+
+def test_immutable_input(metric):
+    if metric in ("jensenshannon", "mahalanobis", "seuclidean"):
+        pytest.skip("not applicable")
+    x = np.arange(10, dtype=np.float64)
+    x.setflags(write=False)
+    getattr(scipy.spatial.distance, metric)(x, x, w=x)
+
+
+class TestJaccard:
+
+    def test_pdist_jaccard_random(self):
+        eps = 1e-8
+        X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_jaccard_random_float32(self):
+        eps = 1e-8
+        X = np.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_jaccard_random_nonC(self):
+        eps = 1e-8
+        X = eo['pdist-boolean-inp']
+        Y_right = eo['pdist-jaccard']
+        Y_test2 = wpdist(X, 'test_jaccard')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_random(self):
+        eps = 1e-8
+        X = np.float64(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_random_float32(self):
+        eps = 1e-8
+        X = np.float32(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test1 = wpdist(X, 'jaccard')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_allzeros(self):
+        eps = 1e-15
+        Y = pdist(np.zeros((5, 3)), 'jaccard')
+        assert_allclose(np.zeros(10), Y, rtol=eps)
+
+    def test_pdist_djaccard_random_nonC(self):
+        eps = 1e-8
+        X = np.float64(eo['pdist-boolean-inp'])
+        Y_right = eo['pdist-jaccard']
+        Y_test2 = wpdist(X, 'test_jaccard')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_djaccard_allzeros_nonC(self):
+        eps = 1e-15
+        Y = pdist(np.zeros((5, 3)), 'test_jaccard')
+        assert_allclose(np.zeros(10), Y, rtol=eps)
+
+    def test_pdist_jaccard_mtica1(self):
+        m = wjaccard(np.array([1, 0, 1, 1, 0]),
+                     np.array([1, 1, 0, 1, 1]))
+        m2 = wjaccard(np.array([1, 0, 1, 1, 0], dtype=bool),
+                      np.array([1, 1, 0, 1, 1], dtype=bool))
+        assert_allclose(m, 0.6, rtol=0, atol=1e-10)
+        assert_allclose(m2, 0.6, rtol=0, atol=1e-10)
+
+    def test_pdist_jaccard_mtica2(self):
+        m = wjaccard(np.array([1, 0, 1]),
+                     np.array([1, 1, 0]))
+        m2 = wjaccard(np.array([1, 0, 1], dtype=bool),
+                      np.array([1, 1, 0], dtype=bool))
+        assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
+
+    def test_non_01_input(self):
+        # Non-0/1 numeric input should be cast to bool before computation.
+        # See gh-21176.
+        x = np.array([-10, 2.5, 0])  # [True, True, False]
+        y = np.array([ 2,   -5, 2])  # [True, True, True]
+        eps = np.finfo(float).eps
+        assert_allclose(jaccard(x, y), 1/3, rtol=eps)
+        assert_allclose(cdist([x], [y], 'jaccard'), [[1/3]])
+        assert_allclose(pdist([x, y], 'jaccard'), [1/3])
+
+
+class TestChebyshev:
+
+    def test_pdist_chebyshev_random(self):
+        eps = 1e-8
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-chebyshev']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_random_float32(self):
+        eps = 1e-7
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-chebyshev']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+
+    def test_pdist_chebyshev_random_nonC(self):
+        eps = 1e-8
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-chebyshev']
+        Y_test2 = pdist(X, 'test_chebyshev')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_iris(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps)
+
+    def test_pdist_chebyshev_iris_float32(self):
+        eps = 1e-5
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test1 = pdist(X, 'chebyshev')
+        assert_allclose(Y_test1, Y_right, rtol=eps, verbose=verbose > 2)
+
+    def test_pdist_chebyshev_iris_nonC(self):
+        eps = 1e-14
+        X = eo['iris']
+        Y_right = eo['pdist-chebyshev-iris']
+        Y_test2 = pdist(X, 'test_chebyshev')
+        assert_allclose(Y_test2, Y_right, rtol=eps)
+
+    def test_weighted(self):
+        # Basic test for weighted Chebyshev.  Only components with non-zero
+        # weight participate in the 'max'.
+        x = [1, 2, 3]
+        y = [6, 5, 4]
+        w = [0, 1, 5]
+        assert_equal(chebyshev(x, y, w), 3)
+        assert_equal(pdist([x, y], 'chebyshev', w=w), [3])
+        assert_equal(cdist([x], [y], 'chebyshev', w=w), [[3]])
+
+    def test_zero_weight(self):
+        # If the weight is identically zero, the distance should be zero.
+        x = [1, 2, 3]
+        y = [6, 5, 4]
+        w = [0, 0, 0]
+        assert_equal(chebyshev(x, y, w), 0)
+        assert_equal(pdist([x, y], 'chebyshev', w=w), [0])
+        assert_equal(cdist([x], [y], 'chebyshev', w=w), [[0]])

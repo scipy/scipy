@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 python generate_sparsetools.py
 
@@ -119,7 +120,10 @@ csr_has_canonical_format  i iII
 OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iilIIT*Ti
+coo_todense_nd      v IllIT*Ti
 coo_matvec          v lIITT*T
+coo_matvec_nd       v llIITT*T
+coo_matmat_dense    v llIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
@@ -175,7 +179,7 @@ static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 """
 
 METHOD_TEMPLATE = """
-NPY_VISIBILITY_HIDDEN PyObject *
+PyObject *
 %(name)s_method(PyObject *self, PyObject *args)
 {
     return call_thunk('%(ret_spec)s', "%(arg_spec)s", %(name)s_thunk, args);
@@ -203,7 +207,7 @@ def newer(source, target):
     both exist and 'target' is the same age or younger than 'source'.
     """
     if not os.path.exists(source):
-        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+        raise ValueError(f"file '{os.path.abspath(source)}' does not exist")
     if not os.path.exists(target):
         return 1
 
@@ -419,12 +423,15 @@ def main():
     # Generate code for method struct
     method_defs = ""
     for name in names:
-        method_defs += f"NPY_VISIBILITY_HIDDEN PyObject *{name}_method(PyObject *, PyObject *);\n"
+        method_defs += (f"PyObject *{name}"
+                        f"_method(PyObject *, PyObject *);\n")
 
     method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""
     for name in names:
-        method_struct += """
-        {"%(name)s", (PyCFunction)%(name)s_method, METH_VARARGS, NULL},""" % dict(name=name)
+        method_struct += ("""
+            {{"{name}", (PyCFunction){name}_method, METH_VARARGS, NULL}},"""
+            .format(**dict(name=name))
+        )
     method_struct += """
         {NULL, NULL, 0, NULL}
     };"""

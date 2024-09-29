@@ -8,6 +8,7 @@ from warnings import warn
 
 import numpy as np
 
+from scipy._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
@@ -23,15 +24,18 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
 class _bsr_base(_cs_matrix, _minmax_mixin):
     _format = 'bsr'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
-        _data_matrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False,
+                 blocksize=None, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
 
         if issparse(arg1):
             if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.tobsr(blocksize=blocksize)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         elif isinstance(arg1,tuple):
             if isshape(arg1):
@@ -43,7 +47,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     blocksize = (1,1)
                 else:
                     if not isshape(blocksize):
-                        raise ValueError('invalid blocksize=%s' % blocksize)
+                        raise ValueError(f'invalid blocksize={blocksize}')
                     blocksize = tuple(blocksize)
                 self.data = np.zeros((0,) + blocksize, getdtype(dtype, default=float))
 
@@ -59,10 +63,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
-                self._set_self(
-                    self._coo_container(arg1, dtype=dtype, shape=shape).tobsr(
-                        blocksize=blocksize
-                    )
+                coo = self._coo_container(arg1, dtype=dtype, shape=shape)
+                bsr = coo.tobsr(blocksize=blocksize)
+                self.indptr, self.indices, self.data, self._shape = (
+                    bsr.indptr, bsr.indices, bsr.data, bsr._shape
                 )
 
             elif len(arg1) == 3:
@@ -78,19 +82,23 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     maxval = max(maxval, max(blocksize))
                 idx_dtype = self._get_index_dtype((indices, indptr), maxval=maxval,
                                                   check_contents=True)
+                if not copy:
+                    copy = copy_if_needed
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = getdata(data, copy=copy, dtype=dtype)
                 if self.data.ndim != 3:
                     raise ValueError(
-                        'BSR data must be 3-dimensional, got shape={}'.format(
-                            self.data.shape,))
+                        f'BSR data must be 3-dimensional, got shape={self.data.shape}'
+                    )
                 if blocksize is not None:
                     if not isshape(blocksize):
                         raise ValueError(f'invalid blocksize={blocksize}')
                     if tuple(blocksize) != self.data.shape[1:]:
-                        raise ValueError('mismatching blocksize={} vs {}'.format(
-                            blocksize, self.data.shape[1:]))
+                        raise ValueError(
+                            f'mismatching blocksize={blocksize}'
+                            f' vs {self.data.shape[1:]}'
+                        )
             else:
                 raise ValueError('unrecognized bsr_array constructor usage')
         else:
@@ -98,12 +106,14 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format) from e
-            arg1 = self._coo_container(
-                arg1, dtype=dtype
-            ).tobsr(blocksize=blocksize)
-            self._set_self(arg1)
+                raise ValueError("unrecognized form for "
+                                 f"{self.format}_matrix constructor") from e
+            if isinstance(self, sparray) and arg1.ndim != 2:
+                raise ValueError(f"BSR arrays don't support {arg1.ndim}D input. Use 2D")
+            arg1 = self._coo_container(arg1, dtype=dtype).tobsr(blocksize=blocksize)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         if shape is not None:
             self._shape = check_shape(shape)
@@ -148,11 +158,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn("indptr array has non-integer dtype (%s)"
-                    % self.indptr.dtype.name)
+            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})",
+                 stacklevel=2)
         if self.indices.dtype.kind != 'i':
-            warn("indices array has non-integer dtype (%s)"
-                    % self.indices.dtype.name)
+            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
+                 stacklevel=2)
 
         # check array shapes
         if self.indices.ndim != 1 or self.indptr.ndim != 1:
@@ -180,7 +190,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
-                    raise ValueError("column index values must be < %d (now max %d)" % (N//C, self.indices.max()))
+                    raise ValueError("column index values must be < %d (now max %d)"
+                                     % (N//C, self.indices.max()))
                 if self.indices.min() < 0:
                     raise ValueError("column index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:
@@ -204,17 +215,28 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         if axis is not None:
             raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for BSR format")
-        R,C = self.blocksize
-        return int(self.indptr[-1] * R * C)
+        R, C = self.blocksize
+        return int(self.indptr[-1]) * R * C
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over axis is not implemented for BSR format."
+            )
+        return np.count_nonzero(self._deduped_data())
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
+
     def __repr__(self):
-        format = _formats[self.format][1]
-        return ("<%dx%d sparse matrix of type '%s'\n"
-                "\twith %d stored elements (blocksize = %dx%d) in %s format>" %
-                (self.shape + (self.dtype.type, self.nnz) + self.blocksize +
-                 (format,)))
+        _, fmt = _formats[self.format]
+        sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
+        b = 'x'.join(str(x) for x in self.blocksize)
+        return (
+            f"<{fmt} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements (blocksize={b}) and shape {self.shape}>"
+        )
 
     def diagonal(self, k=0):
         rows, cols = self.shape
@@ -247,7 +269,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     def _add_dense(self, other):
         return self.tocoo(copy=False)._add_dense(other)
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         M,N = self.shape
         R,C = self.blocksize
 
@@ -259,7 +281,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         return result
 
-    def _mul_multivector(self,other):
+    def _matmul_multivector(self,other):
         R,C = self.blocksize
         M,N = self.shape
         n_vecs = other.shape[1]  # number of column vectors
@@ -272,7 +294,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         return result
 
-    def _mul_sparse_matrix(self, other):
+    def _matmul_sparse(self, other):
         M, K1 = self.shape
         K2, N = other.shape
 
@@ -396,7 +418,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         row += np.tile(np.arange(R, dtype=idx_dtype).reshape(-1,1), (1,C))
         row = row.reshape(-1)
 
-        col = (C * self.indices).astype(idx_dtype, copy=False).repeat(R*C).reshape(-1,R,C)
+        col = ((C * self.indices).astype(idx_dtype, copy=False)
+               .repeat(R*C).reshape(-1,R,C))
         col += np.tile(np.arange(C, dtype=idx_dtype), (R,1))
         col = col.reshape(-1)
 
@@ -704,6 +727,10 @@ class bsr_array(_bsr_base, sparray):
     In canonical format, there are no duplicate blocks and indices are sorted
     per row.
 
+    **Limitations**
+
+    Block Sparse Row format sparse arrays do not support slicing.
+
     Examples
     --------
     >>> import numpy as np
@@ -810,6 +837,10 @@ class bsr_matrix(spmatrix, _bsr_base):
 
     In canonical format, there are no duplicate blocks and indices are sorted
     per row.
+
+    **Limitations**
+
+    Block Sparse Row format sparse matrices do not support slicing.
 
     Examples
     --------

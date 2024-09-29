@@ -267,9 +267,9 @@ c          = -8: Error return from trid. eigenvalue calculation;
 c                Informatinal error from LAPACK routine dsteqr .
 c          = -9: Starting vector is zero.
 c          = -10: IPARAM(7) must be 1,2,3,4,5.
-c          = -11: IPARAM(7) = 1 and BMAT = 'G' are incompatable.
+c          = -11: IPARAM(7) = 1 and BMAT = 'G' are incompatible.
 c          = -12: IPARAM(1) must be equal to 0 or 1.
-c          = -13: NEV and WHICH = 'BE' are incompatable.
+c          = -13: NEV and WHICH = 'BE' are incompatible.
 c          = -9999: Could not build an Arnoldi factorization.
 c                   IPARAM(5) returns the size of the current Arnoldi
 c                   factorization. The user is advised to check that
@@ -297,7 +297,7 @@ c     eigenvector z of the original problem is recovered by solving
 c     L`z = x  where x is a Ritz vector of OP.
 c
 c  4. At present there is no a-priori analysis to guide the selection
-c     of NCV relative to NEV.  The only formal requrement is that NCV > NEV.
+c     of NCV relative to NEV.  The only formal requirement is that NCV > NEV.
 c     However, it is recommended that NCV .ge. 2*NEV.  If many problems of
 c     the same type are to be solved, one should experiment with increasing
 c     NCV while keeping NEV fixed for a given test problem.  This will
@@ -306,7 +306,7 @@ c     also increases the work and storage required to maintain the orthogonal
 c     basis vectors.   The optimal "cross-over" with respect to CPU time
 c     is problem dependent and must be determined empirically.
 c
-c  5. If IPARAM(7) = 2 then in the Reverse commuication interface the user
+c  5. If IPARAM(7) = 2 then in the Reverse communication interface the user
 c     must do the following. When IDO = 1, Y = OP * X is to be computed.
 c     When IPARAM(7) = 2 OP = inv(B)*A. After computing A*X the user
 c     must overwrite X with A*X. Y is then the solution to the linear set
@@ -628,9 +628,9 @@ c
       if (info .eq. 2) info = 3
 c
       if (msglvl .gt. 0) then
-         call ivout (logfil, 1, mxiter, ndigit,
+         call ivout (logfil, 1, [mxiter], ndigit,
      &               '_saupd: number of update iterations taken')
-         call ivout (logfil, 1, np, ndigit,
+         call ivout (logfil, 1, [np], ndigit,
      &               '_saupd: number of "converged" Ritz values')
          call dvout  (logfil, np, workl(Ritz), ndigit,
      &               '_saupd: final Ritz values')

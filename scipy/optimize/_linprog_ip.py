@@ -29,12 +29,12 @@ has_umfpack = True
 has_cholmod = True
 try:
     import sksparse  # noqa: F401
-    from sksparse.cholmod import cholesky as cholmod
+    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
     from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
     has_cholmod = False
 try:
-    import scikits.umfpack  # test whether to use factorized
+    import scikits.umfpack  # test whether to use factorized  # noqa: F401
 except ImportError:
     has_umfpack = False
 
@@ -990,7 +990,8 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
     1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
 
-    2. ``scipy.sparse.linalg.factorized`` (if scikit-umfpack and SuiteSparse are installed)
+    2. ``scipy.sparse.linalg.factorized``
+        (if scikit-umfpack and SuiteSparse are installed)
 
     3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
 
@@ -1004,7 +1005,7 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
     ``sym_pos=False`` skips to solver 3, and ``lstsq=True`` skips
     to solver 4 for both sparse and dense problems.
 
-    Potential improvements for combatting issues associated with dense
+    Potential improvements for combating issues associated with dense
     columns in otherwise sparse problems are outlined in [4]_ Section 5.3 and
     [10]_ Section 4.1-4.2; the latter also discusses the alleviation of
     accuracy issues associated with the substitution approach to free

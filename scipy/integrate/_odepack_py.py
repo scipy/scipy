@@ -59,6 +59,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Computes the derivative of y at t.
         If the signature is ``callable(t, y, ...)``, then the argument
         `tfirst` must be set ``True``.
+        `func` must not modify the data in `y`, as it is a
+        view of the data used internally by the ODE solver.
     y0 : array
         Initial condition on y (can be a vector).
     t : array
@@ -72,6 +74,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Gradient (Jacobian) of `func`.
         If the signature is ``callable(t, y, ...)``, then the argument
         `tfirst` must be set ``True``.
+        `Dfun` must not modify the data in `y`, as it is a
+        view of the data used internally by the ODE solver.
     col_deriv : bool, optional
         True if `Dfun` defines derivatives down columns (faster),
         otherwise `Dfun` should define derivatives across rows.
@@ -245,11 +249,12 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
                              ixpr, mxstep, mxhnil, mxordn, mxords,
                              int(bool(tfirst)))
     if output[-1] < 0:
-        warning_msg = _msgs[output[-1]] + " Run with full_output = 1 to get quantitative information."
-        warnings.warn(warning_msg, ODEintWarning)
+        warning_msg = (f"{_msgs[output[-1]]} Run with full_output = 1 to "
+                       f"get quantitative information.")
+        warnings.warn(warning_msg, ODEintWarning, stacklevel=2)
     elif printmessg:
         warning_msg = _msgs[output[-1]]
-        warnings.warn(warning_msg, ODEintWarning)
+        warnings.warn(warning_msg, ODEintWarning, stacklevel=2)
 
     if full_output:
         output[1]['message'] = _msgs[output[-1]]

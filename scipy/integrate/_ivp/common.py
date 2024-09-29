@@ -36,8 +36,9 @@ def warn_extraneous(extraneous):
         Extraneous keyword arguments
     """
     if extraneous:
-        warn("The following arguments have no effect for a chosen solver: {}."
-             .format(", ".join(f"`{x}`" for x in extraneous)))
+        warn("The following arguments have no effect for a chosen solver: "
+             f"{', '.join(f'`{x}`' for x in extraneous)}.",
+             stacklevel=3)
 
 
 def validate_tol(rtol, atol, n):
@@ -45,7 +46,8 @@ def validate_tol(rtol, atol, n):
 
     if np.any(rtol < 100 * EPS):
         warn("At least one element of `rtol` is too small. "
-             f"Setting `rtol = np.maximum(rtol, {100 * EPS})`.")
+             f"Setting `rtol = np.maximum(rtol, {100 * EPS})`.",
+             stacklevel=3)
         rtol = np.maximum(rtol, 100 * EPS)
 
     atol = np.asarray(atol)
@@ -63,7 +65,8 @@ def norm(x):
     return np.linalg.norm(x) / x.size ** 0.5
 
 
-def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
+def select_initial_step(fun, t0, y0, t_bound, 
+                        max_step, f0, direction, order, rtol, atol):
     """Empirically select a good initial step.
 
     The algorithm is described in [1]_.
@@ -76,6 +79,11 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
         Initial value of the independent variable.
     y0 : ndarray, shape (n,)
         Initial value of the dependent variable.
+    t_bound : float
+        End-point of integration interval; used to ensure that t0+step<=tbound 
+        and that fun is only evaluated in the interval [t0,tbound]
+    max_step : float
+        Maximum allowable step size.
     f0 : ndarray, shape (n,)
         Initial value of the derivative, i.e., ``fun(t0, y0)``.
     direction : float
@@ -101,6 +109,10 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     if y0.size == 0:
         return np.inf
 
+    interval_length = abs(t_bound - t0)
+    if interval_length == 0.0:
+        return 0.0
+    
     scale = atol + np.abs(y0) * rtol
     d0 = norm(y0 / scale)
     d1 = norm(f0 / scale)
@@ -108,7 +120,8 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
         h0 = 1e-6
     else:
         h0 = 0.01 * d0 / d1
-
+    # Check t0+h0*direction doesn't take us beyond t_bound
+    h0 = min(h0, interval_length)
     y1 = y0 + h0 * direction * f0
     f1 = fun(t0 + h0 * direction, y1)
     d2 = norm((f1 - f0) / scale) / h0
@@ -118,7 +131,7 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     else:
         h1 = (0.01 / max(d1, d2)) ** (1 / (order + 1))
 
-    return min(100 * h0, h1)
+    return min(100 * h0, h1, interval_length, max_step)
 
 
 class OdeSolution:

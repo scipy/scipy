@@ -312,12 +312,11 @@ def _arg_wlen_as_expected(value):
         value = -1
     elif 1 < value:
         # Round up to a positive integer
-        if not np.can_cast(value, np.intp, "safe"):
+        if isinstance(value, float):
             value = math.ceil(value)
         value = np.intp(value)
     else:
-        raise ValueError('`wlen` must be larger than 1, was {}'
-                         .format(value))
+        raise ValueError(f'`wlen` must be larger than 1, was {value}')
     return value
 
 
@@ -1256,8 +1255,6 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     See Also
     --------
-    cwt
-        Continuous wavelet transform.
     find_peaks
         Find peaks inside a signal based on peak properties.
 
@@ -1293,7 +1290,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ([32], array([ 1.6]), array([ 0.9995736]))
 
     """
-    widths = np.array(widths, copy=False, ndmin=1)
+    widths = np.atleast_1d(np.asarray(widths))
 
     if gap_thresh is None:
         gap_thresh = np.ceil(widths[0])

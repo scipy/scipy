@@ -14,8 +14,8 @@
  *  The ufuncs are used by the class scipy.stats.cosine_gen.
  */
 
+#include "xsf_wrappers.h"
 #include <math.h>
-#include "cephes/polevl.h"
 
 // M_PI64 is the 64 bit floating point representation of π, e.g.
 //   >>> math.pi.hex()
@@ -101,9 +101,9 @@ double cosine_cdf_pade_approx_at_neg_pi(double x)
     h = (x + M_PI64) + 1.2246467991473532e-16;
     h2 = h*h;
     h3 = h2*h;
-    numer = h3*polevl(h2, numer_coeffs,
+    numer = h3*cephes_polevl_wrap(h2, numer_coeffs,
                       sizeof(numer_coeffs)/sizeof(numer_coeffs[0]) - 1);
-    denom = polevl(h2, denom_coeffs,
+    denom = cephes_polevl_wrap(h2, denom_coeffs,
                    sizeof(denom_coeffs)/sizeof(denom_coeffs[0]) - 1);
     return numer / denom;
 }
@@ -178,7 +178,7 @@ double _p2(double t)
                        0.5};
     double v;
 
-    v = polevl(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
+    v = cephes_polevl_wrap(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
     return v;
 }
 
@@ -193,7 +193,7 @@ double _q2(double t)
                        1.0};
     double v;
 
-    v = polevl(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
+    v = cephes_polevl_wrap(t, coeffs, sizeof(coeffs) / sizeof(coeffs[0]) - 1);
     return v;
 }
 
@@ -225,7 +225,7 @@ double _poly_approx(double s)
     // Here we include terms up to s**13.
     //
     s2 = s*s;
-    p = s*polevl(s2, coeffs, sizeof(coeffs)/sizeof(coeffs[0]) - 1);
+    p = s*cephes_polevl_wrap(s2, coeffs, sizeof(coeffs)/sizeof(coeffs[0]) - 1);
     return p;
 }
 
@@ -263,7 +263,7 @@ double cosine_invcdf(double p)
         x = y * _p2(y2) / _q2(y2);
     }
 
-    // For p < 0.0018, the asymptotic expansion at p=0 is sufficently
+    // For p < 0.0018, the asymptotic expansion at p=0 is sufficiently
     // accurate that no more work is needed.  Similarly, for p > 0.42,
     // the Pade approximant is sufficiently accurate.  In between these
     // bounds, we refine the estimate with Halley's method.

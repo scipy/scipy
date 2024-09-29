@@ -3,7 +3,6 @@ import math
 import operator
 import warnings
 
-import numpy
 import numpy as np
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    resize, pi, absolute, sqrt, tan, log10,
@@ -16,6 +15,7 @@ from numpy.polynomial.polynomial import polyvalfromroots
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
+from scipy.signal._arraytools import _validate_fs
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -25,7 +25,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-           'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
+           'sosfreqz', 'freqz_sos', 'iirnotch', 'iirpeak', 'bilinear_zpk',
            'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
            'gammatone', 'iircomb']
 
@@ -339,7 +339,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     See Also
     --------
     freqz_zpk
-    sosfreqz
+    freqz_sos
 
     Notes
     -----
@@ -366,21 +366,23 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     --------
     >>> from scipy import signal
     >>> import numpy as np
-    >>> b = signal.firwin(80, 0.5, window=('kaiser', 8))
+    >>> taps, f_c = 80, 1.0  # number of taps and cut-off frequency
+    >>> b = signal.firwin(taps, f_c, window=('kaiser', 8), fs=2*np.pi)
     >>> w, h = signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, ax1 = plt.subplots()
-    >>> ax1.set_title('Digital filter frequency response')
-
-    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
-    >>> ax1.set_ylabel('Amplitude [dB]', color='b')
-    >>> ax1.set_xlabel('Frequency [rad/sample]')
+    >>> fig, ax1 = plt.subplots(tight_layout=True)
+    >>> ax1.set_title(f"Frequency Response of {taps} tap FIR Filter" +
+    ...               f"($f_c={f_c}$ rad/sample)")
+    >>> ax1.axvline(f_c, color='black', linestyle=':', linewidth=0.8)
+    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'C0')
+    >>> ax1.set_ylabel("Amplitude in dB", color='C0')
+    >>> ax1.set(xlabel="Frequency in rad/sample", xlim=(0, np.pi))
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
-    >>> ax2.plot(w, angles, 'g')
-    >>> ax2.set_ylabel('Angle (radians)', color='g')
+    >>> ax2.plot(w, angles, 'C1')
+    >>> ax2.set_ylabel('Angle (radians)', color='C1')
     >>> ax2.grid(True)
     >>> ax2.axis('tight')
     >>> plt.show()
@@ -431,6 +433,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     b = atleast_1d(b)
     a = atleast_1d(a)
 
+    fs = _validate_fs(fs, allow_none=False)
+
     if worN is None:
         # For backwards compatibility
         worN = 512
@@ -478,7 +482,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         h = (npp_polyval(zm1, b, tensor=False) /
              npp_polyval(zm1, a, tensor=False))
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     if plot is not None:
         plot(w, h)
@@ -571,6 +575,8 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     """
     z, p = map(atleast_1d, (z, p))
 
+    fs = _validate_fs(fs, allow_none=False)
+
     if whole:
         lastpoint = 2 * pi
     else:
@@ -578,9 +584,9 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     if worN is None:
         # For backwards compatibility
-        w = numpy.linspace(0, lastpoint, 512, endpoint=False)
+        w = np.linspace(0, lastpoint, 512, endpoint=False)
     elif _is_int_type(worN):
-        w = numpy.linspace(0, lastpoint, worN, endpoint=False)
+        w = np.linspace(0, lastpoint, worN, endpoint=False)
     else:
         w = atleast_1d(worN)
         w = 2*pi*w/fs
@@ -588,7 +594,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     zm1 = exp(1j * w)
     h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     return w, h
 
@@ -646,7 +652,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     When such a case arises the warning is raised and the group delay
     is set to 0 at those frequencies.
 
-    For the details of numerical computation of the group delay refer to [1]_.
+    For the details of numerical computation of the group delay refer to [1]_ or [2]_.
 
     .. versionadded:: 0.16.0
 
@@ -654,6 +660,10 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     ----------
     .. [1] Richard G. Lyons, "Understanding Digital Signal Processing,
            3rd edition", p. 830.
+    .. [2] Julius O. Smith III, "Numerical Computation of Group Delay",
+           in "Introduction to Digital Filters with Audio Applications",
+           online book, 2007,
+           https://ccrma.stanford.edu/~jos/fp/Numerical_Computation_Group_Delay.html
 
     Examples
     --------
@@ -673,6 +683,8 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         # For backwards compatibility
         w = 512
 
+    fs = _validate_fs(fs, allow_none=False)
+
     if _is_int_type(w):
         if whole:
             w = np.linspace(0, 2 * pi, w, endpoint=False)
@@ -683,7 +695,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         w = 2*pi*w/fs
 
     b, a = map(np.atleast_1d, system)
-    c = np.convolve(b, a[::-1])
+    c = np.convolve(b, conjugate(a[::-1]))
     cr = c * np.arange(c.size)
     z = np.exp(-1j * w)
     num = np.polyval(cr[::-1], z)
@@ -695,20 +707,20 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     if np.any(singular):
         gd[singular] = 0
         warnings.warn(
-            "The group delay is singular at frequencies [{}], setting to 0".
-            format(", ".join(f"{ws:.3f}" for ws in w[singular])),
+            "The group delay is singular at frequencies "
+            f"[{', '.join(f'{ws:.3f}' for ws in w[singular])}], setting to 0",
             stacklevel=2
         )
 
     elif np.any(near_singular):
         warnings.warn(
-            "The filter's denominator is extremely small at frequencies [{}], \
-            around which a singularity may be present".
-            format(", ".join(f"{ws:.3f}" for ws in w[near_singular])),
+            "The filter's denominator is extremely small at frequencies "
+            f"[{', '.join(f'{ws:.3f}' for ws in w[near_singular])}], "
+            "around which a singularity may be present",
             stacklevel=2
         )
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     return w, gd
 
@@ -726,7 +738,7 @@ def _validate_sos(sos):
     return sos, n_sections
 
 
-def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
+def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     r"""
     Compute the frequency response of a digital filter in SOS format.
 
@@ -792,7 +804,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
 
     Compute the frequency response at 1500 points from DC to Nyquist.
 
-    >>> w, h = signal.sosfreqz(sos, worN=1500)
+    >>> w, h = signal.freqz_sos(sos, worN=1500)
 
     Plot the response.
 
@@ -838,6 +850,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=False)
 
     sos, n_sections = _validate_sos(sos)
     if n_sections == 0:
@@ -847,6 +860,17 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
         w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole, fs=fs)
         h *= rowh
     return w, h
+
+
+def sosfreqz(*args, **kwargs):
+    """
+    Compute the frequency response of a digital filter in SOS format.
+
+    .. warning:: This function is an alias, provided for backward
+                 compatibility. New code should use the function
+                 :func:`scipy.signal.freqz_sos`.
+    """
+    return freqz_sos(*args, **kwargs)
 
 
 def _cplxreal(z, tol=None):
@@ -932,9 +956,9 @@ def _cplxreal(z, tol=None):
 
     # Find runs of (approximately) the same real part
     same_real = np.diff(zp.real) <= tol * abs(zp[:-1])
-    diffs = numpy.diff(concatenate(([0], same_real, [0])))
-    run_starts = numpy.nonzero(diffs > 0)[0]
-    run_stops = numpy.nonzero(diffs < 0)[0]
+    diffs = np.diff(concatenate(([0], same_real, [0])))
+    run_starts = np.nonzero(diffs > 0)[0]
+    run_stops = np.nonzero(diffs < 0)[0]
 
     # Sort each run by their imaginary parts
     for i in range(len(run_starts)):
@@ -1159,26 +1183,24 @@ def zpk2tf(z, p, k):
         b = k * poly(z)
     a = atleast_1d(poly(p))
 
-    # Use real output if possible. Copied from numpy.poly, since
+    # Use real output if possible. Copied from np.poly, since
     # we can't depend on a specific version of numpy.
-    if issubclass(b.dtype.type, numpy.complexfloating):
+    if issubclass(b.dtype.type, np.complexfloating):
         # if complex roots are all complex conjugates, the roots are real.
-        roots = numpy.asarray(z, complex)
-        pos_roots = numpy.compress(roots.imag > 0, roots)
-        neg_roots = numpy.conjugate(numpy.compress(roots.imag < 0, roots))
+        roots = np.asarray(z, complex)
+        pos_roots = np.compress(roots.imag > 0, roots)
+        neg_roots = np.conjugate(np.compress(roots.imag < 0, roots))
         if len(pos_roots) == len(neg_roots):
-            if numpy.all(numpy.sort_complex(neg_roots) ==
-                         numpy.sort_complex(pos_roots)):
+            if np.all(np.sort_complex(neg_roots) == np.sort_complex(pos_roots)):
                 b = b.real.copy()
 
-    if issubclass(a.dtype.type, numpy.complexfloating):
+    if issubclass(a.dtype.type, np.complexfloating):
         # if complex roots are all complex conjugates, the roots are real.
-        roots = numpy.asarray(p, complex)
-        pos_roots = numpy.compress(roots.imag > 0, roots)
-        neg_roots = numpy.conjugate(numpy.compress(roots.imag < 0, roots))
+        roots = np.asarray(p, complex)
+        pos_roots = np.compress(roots.imag > 0, roots)
+        neg_roots = np.conjugate(np.compress(roots.imag < 0, roots))
         if len(pos_roots) == len(neg_roots):
-            if numpy.all(numpy.sort_complex(neg_roots) ==
-                         numpy.sort_complex(pos_roots)):
+            if np.all(np.sort_complex(neg_roots) == np.sort_complex(pos_roots)):
                 a = a.real.copy()
 
     return b, a
@@ -1544,8 +1566,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     valid_pairings = ['nearest', 'keep_odd', 'minimal']
     if pairing not in valid_pairings:
-        raise ValueError('pairing must be one of %s, not %s'
-                         % (valid_pairings, pairing))
+        raise ValueError(f'pairing must be one of {valid_pairings}, not {pairing}')
 
     if analog and pairing != 'minimal':
         raise ValueError('for analog zpk2sos conversion, '
@@ -1801,7 +1822,8 @@ def normalize(b, a):
     # Trim leading zeros of numerator
     if leading_zeros > 0:
         warnings.warn("Badly conditioned filter coefficients (numerator): the "
-                      "results may be meaningless", BadCoefficients)
+                      "results may be meaningless",
+                      BadCoefficients, stacklevel=2)
         # Make sure at least one column remains
         if leading_zeros == num.shape[1]:
             leading_zeros -= 1
@@ -1878,7 +1900,7 @@ def lp2lp(b, a, wo=1.0):
     d = len(a)
     n = len(b)
     M = max((d, n))
-    pwo = pow(wo, numpy.arange(M - 1, -1, -1))
+    pwo = pow(wo, np.arange(M - 1, -1, -1))
     start1 = max((n - d, 0))
     start2 = max((d - n, 0))
     b = b * pwo[start1] / pwo[start2:]
@@ -1952,9 +1974,9 @@ def lp2hp(b, a, wo=1.0):
     d = len(a)
     n = len(b)
     if wo != 1:
-        pwo = pow(wo, numpy.arange(max((d, n))))
+        pwo = pow(wo, np.arange(max((d, n))))
     else:
-        pwo = numpy.ones(max((d, n)), b.dtype.char)
+        pwo = np.ones(max((d, n)), b.dtype.char)
     if d >= n:
         outa = a[::-1] * pwo
         outb = resize(b, (d,))
@@ -2037,8 +2059,8 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     ma = max([N, D])
     Np = N + ma
     Dp = D + ma
-    bprime = numpy.empty(Np + 1, artype)
-    aprime = numpy.empty(Dp + 1, artype)
+    bprime = np.empty(Np + 1, artype)
+    aprime = np.empty(Dp + 1, artype)
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
@@ -2124,8 +2146,8 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     M = max([N, D])
     Np = M + M
     Dp = M + M
-    bprime = numpy.empty(Np + 1, artype)
-    aprime = numpy.empty(Dp + 1, artype)
+    bprime = np.empty(Np + 1, artype)
+    aprime = np.empty(Dp + 1, artype)
     wosq = wo * wo
     for j in range(Np + 1):
         val = 0.0
@@ -2200,7 +2222,7 @@ def bilinear(b, a, fs=1.0):
     >>> plt.ylabel('Magnitude [dB]')
     >>> plt.grid(True)
     """
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
     N = len(b) - 1
@@ -2208,8 +2230,8 @@ def bilinear(b, a, fs=1.0):
     M = max([N, D])
     Np = M
     Dp = M
-    bprime = numpy.empty(Np + 1, artype)
-    aprime = numpy.empty(Dp + 1, artype)
+    bprime = np.empty(Np + 1, artype)
+    aprime = np.empty(Dp + 1, artype)
     for j in range(Np + 1):
         val = 0.0
         for i in range(N + 1):
@@ -2370,20 +2392,21 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     try:
         ordfunc = filter_dict[ftype][1]
     except KeyError as e:
-        raise ValueError("Invalid IIR filter type: %s" % ftype) from e
+        raise ValueError(f"Invalid IIR filter type: {ftype}") from e
     except IndexError as e:
-        raise ValueError(("%s does not have order selection. Use "
-                          "iirfilter function.") % ftype) from e
+        raise ValueError(f"{ftype} does not have order selection. "
+                         "Use iirfilter function.") from e
 
     _validate_gpass_gstop(gpass, gstop)
 
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
 
+    fs = _validate_fs(fs, allow_none=True)
+
     if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
-        raise ValueError("wp and ws must have one or two elements each, and"
-                         "the same shape, got %s and %s"
-                         % (wp.shape, ws.shape))
+        raise ValueError("wp and ws must have one or two elements each, and "
+                         f"the same shape, got {wp.shape} and {ws.shape}")
 
     if any(wp <= 0) or any(ws <= 0):
         raise ValueError("Values for wp, ws must be greater than 0")
@@ -2393,14 +2416,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             if any(wp >= 1) or any(ws >= 1):
                 raise ValueError("Values for wp, ws must be less than 1")
         elif any(wp >= fs/2) or any(ws >= fs/2):
-            raise ValueError("Values for wp, ws must be less than fs/2"
-                             " (fs={} -> fs/2={})".format(fs, fs/2))
+            raise ValueError("Values for wp, ws must be less than fs/2 "
+                             f"(fs={fs} -> fs/2={fs/2})")
 
     if wp.shape[0] == 2:
         if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
                (wp[0] < ws[0] and ws[1] < wp[1])):
-            raise ValueError("Passband must lie strictly inside stopband"
-                             " or vice versa")
+            raise ValueError("Passband must lie strictly inside stopband "
+                             "or vice versa")
 
     band_type = 2 * (len(wp) - 1)
     band_type += 1
@@ -2537,7 +2560,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
     ...                        analog=False, ftype='cheby2', fs=2000,
     ...                        output='sos')
-    >>> w, h = signal.sosfreqz(sos, 2000, fs=2000)
+    >>> w, h = signal.freqz_sos(sos, 2000, fs=2000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(1, 1, 1)
     >>> ax.semilogx(w, 20 * np.log10(np.maximum(abs(h), 1e-5)))
@@ -2549,14 +2572,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
     Wn = asarray(Wn)
     if fs is not None:
         if analog:
             raise ValueError("fs cannot be specified for an analog filter")
-        Wn = 2*Wn/fs
+        Wn = Wn / (fs/2)
 
-    if numpy.any(Wn <= 0):
+    if np.any(Wn <= 0):
         raise ValueError("filter critical frequencies must be greater than 0")
 
     if Wn.size > 1 and not Wn[0] < Wn[1]:
@@ -2565,15 +2589,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     try:
         btype = band_dict[btype]
     except KeyError as e:
-        raise ValueError("'%s' is an invalid bandtype for filter." % btype) from e
+        raise ValueError(f"'{btype}' is an invalid bandtype for filter.") from e
 
     try:
         typefunc = filter_dict[ftype][0]
     except KeyError as e:
-        raise ValueError("'%s' is not a valid basic IIR filter." % ftype) from e
+        raise ValueError(f"'{ftype}' is not a valid basic IIR filter.") from e
 
     if output not in ['ba', 'zpk', 'sos']:
-        raise ValueError("'%s' is not a valid output form." % output)
+        raise ValueError(f"'{output}' is not a valid output form.")
 
     if rp is not None and rp < 0:
         raise ValueError("passband ripple (rp) must be positive")
@@ -2602,11 +2626,11 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
                              "elliptic filter.")
         z, p, k = typefunc(N, rp, rs)
     else:
-        raise NotImplementedError("'%s' not implemented in iirfilter." % ftype)
+        raise NotImplementedError(f"'{ftype}' not implemented in iirfilter.")
 
     # Pre-warp frequencies for digital filter design
     if not analog:
-        if numpy.any(Wn <= 0) or numpy.any(Wn >= 1):
+        if np.any(Wn <= 0) or np.any(Wn >= 1):
             if fs is not None:
                 raise ValueError("Digital filter critical frequencies must "
                                  f"be 0 < Wn < fs/2 (fs={fs} -> fs/2={fs/2})")
@@ -2619,7 +2643,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype in ('lowpass', 'highpass'):
-        if numpy.size(Wn) != 1:
+        if np.size(Wn) != 1:
             raise ValueError('Must specify a single critical frequency Wn '
                              'for lowpass or highpass filter')
 
@@ -2640,7 +2664,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         elif btype == 'bandstop':
             z, p, k = lp2bs_zpk(z, p, k, wo=wo, bw=bw)
     else:
-        raise NotImplementedError("'%s' not implemented in iirfilter." % btype)
+        raise NotImplementedError(f"'{btype}' not implemented in iirfilter.")
 
     # Find discrete equivalent if necessary
     if not analog:
@@ -2731,6 +2755,8 @@ def bilinear_zpk(z, p, k, fs):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
+
+    fs = _validate_fs(fs, allow_none=False)
 
     degree = _relative_degree(z, p)
 
@@ -3799,7 +3825,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         d1 = special.ellipk([arg1 ** 2, 1 - arg1 ** 2])
         n = (d0[0] * d1[1] / (d0[1] * d1[0]))
     else:
-        raise ValueError("Incorrect type: %s" % type)
+        raise ValueError(f"Incorrect type: {type}")
     return n
 
 
@@ -3949,6 +3975,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     _validate_gpass_gstop(gpass, gstop)
+    fs = _validate_fs(fs, allow_none=True)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
     nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'butter')
@@ -3964,7 +3991,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     except ZeroDivisionError:
         W0 = 1.0
         warnings.warn("Order is zero...check input parameters.",
-                      RuntimeWarning, 2)
+                      RuntimeWarning, stacklevel=2)
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
@@ -3974,20 +4001,20 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:  # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = numpy.empty(2, float)
+        WN = np.empty(2, float)
         discr = sqrt((passb[1] - passb[0]) ** 2 +
                      4 * W0 ** 2 * passb[0] * passb[1])
         WN[0] = ((passb[1] - passb[0]) + discr) / (2 * W0)
         WN[1] = ((passb[1] - passb[0]) - discr) / (2 * W0)
-        WN = numpy.sort(abs(WN))
+        WN = np.sort(abs(WN))
     elif filter_type == 4:  # pass
-        W0 = numpy.array([-W0, W0], float)
+        W0 = np.array([-W0, W0], float)
         WN = (-W0 * (passb[1] - passb[0]) / 2.0 +
               sqrt(W0 ** 2 / 4.0 * (passb[1] - passb[0]) ** 2 +
                    passb[0] * passb[1]))
-        WN = numpy.sort(abs(WN))
+        WN = np.sort(abs(WN))
     else:
-        raise ValueError("Bad type: %s" % filter_type)
+        raise ValueError(f"Bad type: {filter_type}")
 
     wn = _postprocess_wn(WN, analog, fs)
 
@@ -4070,6 +4097,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -4164,6 +4192,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -4185,13 +4214,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:
         nat = passb * new_freq
     elif filter_type == 3:
-        nat = numpy.empty(2, float)
+        nat = np.empty(2, float)
         nat[0] = (new_freq / 2.0 * (passb[0] - passb[1]) +
                   sqrt(new_freq ** 2 * (passb[1] - passb[0]) ** 2 / 4.0 +
                        passb[1] * passb[0]))
         nat[1] = passb[1] * passb[0] / nat[0]
     elif filter_type == 4:
-        nat = numpy.empty(2, float)
+        nat = np.empty(2, float)
         nat[0] = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
                   sqrt((passb[1] - passb[0]) ** 2 / (4.0 * new_freq ** 2) +
                        passb[1] * passb[0]))
@@ -4286,7 +4315,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -4315,10 +4344,10 @@ def buttap(N):
     """
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
-    z = numpy.array([])
-    m = numpy.arange(-N+1, N, 2)
+    z = np.array([])
+    m = np.arange(-N+1, N, 2)
     # Middle value is 0 to ensure an exactly real pole
-    p = -numpy.exp(1j * pi * m / (2 * N))
+    p = -np.exp(1j * pi * m / (2 * N))
     k = 1
     return z, p, k
 
@@ -4342,19 +4371,19 @@ def cheb1ap(N, rp):
     elif N == 0:
         # Avoid divide-by-zero error
         # Even order filters have DC gain of -rp dB
-        return numpy.array([]), numpy.array([]), 10**(-rp/20)
-    z = numpy.array([])
+        return np.array([]), np.array([]), 10**(-rp/20)
+    z = np.array([])
 
     # Ripple factor (epsilon)
-    eps = numpy.sqrt(10 ** (0.1 * rp) - 1.0)
+    eps = np.sqrt(10 ** (0.1 * rp) - 1.0)
     mu = 1.0 / N * arcsinh(1 / eps)
 
     # Arrange poles in an ellipse on the left half of the S-plane
-    m = numpy.arange(-N+1, N, 2)
+    m = np.arange(-N+1, N, 2)
     theta = pi * m / (2*N)
     p = -sinh(mu + 1j*theta)
 
-    k = numpy.prod(-p, axis=0).real
+    k = np.prod(-p, axis=0).real
     if N % 2 == 0:
         k = k / sqrt(1 + eps * eps)
 
@@ -4365,7 +4394,8 @@ def cheb2ap(N, rs):
     """
     Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
-    The returned filter prototype has attenuation of at least ``rs`` decibels in the stopband.
+    The returned filter prototype has attenuation of at least ``rs`` decibels
+    in the stopband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the attenuation first reaches ``rs``.
@@ -4379,27 +4409,26 @@ def cheb2ap(N, rs):
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero warning
-        return numpy.array([]), numpy.array([]), 1
+        return np.array([]), np.array([]), 1
 
     # Ripple factor (epsilon)
     de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
     mu = arcsinh(1.0 / de) / N
 
     if N % 2:
-        m = numpy.concatenate((numpy.arange(-N+1, 0, 2),
-                               numpy.arange(2, N, 2)))
+        m = np.concatenate((np.arange(-N+1, 0, 2), np.arange(2, N, 2)))
     else:
-        m = numpy.arange(-N+1, N, 2)
+        m = np.arange(-N+1, N, 2)
 
     z = -conjugate(1j / sin(m * pi / (2.0 * N)))
 
     # Poles around the unit circle like Butterworth
-    p = -exp(1j * pi * numpy.arange(-N+1, N, 2) / (2 * N))
+    p = -exp(1j * pi * np.arange(-N+1, N, 2) / (2 * N))
     # Warp into Chebyshev II
     p = sinh(mu) * p.real + 1j * cosh(mu) * p.imag
     p = 1.0 / p
 
-    k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
+    k = (np.prod(-p, axis=0) / np.prod(-z, axis=0)).real
     return z, p, k
 
 
@@ -4546,7 +4575,7 @@ def ellipap(N, rp, rs):
 
     References
     ----------
-    .. [1] Lutova, Tosic, and Evans, "Filter Design for Signal Processing",
+    .. [1] Lutovac, Tosic, and Evans, "Filter Design for Signal Processing",
            Chapters 5 and 12.
 
     .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",
@@ -4558,7 +4587,7 @@ def ellipap(N, rp, rs):
     elif N == 0:
         # Avoid divide-by-zero warning
         # Even order filters have DC gain of -rp dB
-        return numpy.array([]), numpy.array([]), 10**(-rp/20)
+        return np.array([]), np.array([]), 10**(-rp/20)
     elif N == 1:
         p = -sqrt(1.0 / _pow10m1(0.1 * rp))
         k = -p
@@ -4579,14 +4608,14 @@ def ellipap(N, rp, rs):
 
     capk = special.ellipk(m)
 
-    j = numpy.arange(1 - N % 2, N, 2)
+    j = np.arange(1 - N % 2, N, 2)
     jj = len(j)
 
-    [s, c, d, phi] = special.ellipj(j * capk / N, m * numpy.ones(jj))
-    snew = numpy.compress(abs(s) > EPSILON, s, axis=-1)
+    [s, c, d, phi] = special.ellipj(j * capk / N, m * np.ones(jj))
+    snew = np.compress(abs(s) > EPSILON, s, axis=-1)
     z = 1.0 / (sqrt(m) * snew)
     z = 1j * z
-    z = numpy.concatenate((z, conjugate(z)))
+    z = np.concatenate((z, conjugate(z)))
 
     r = _arc_jac_sc1(1. / eps, ck1_sq)
     v0 = capk * r / (N * val[0])
@@ -4595,17 +4624,17 @@ def ellipap(N, rp, rs):
     p = -(c * d * sv * cv + 1j * s * dv) / (1 - (d * sv) ** 2.0)
 
     if N % 2:
-        newp = numpy.compress(abs(p.imag) > EPSILON *
-                              numpy.sqrt(numpy.sum(p * numpy.conjugate(p),
-                                                   axis=0).real),
-                              p, axis=-1)
-        p = numpy.concatenate((p, conjugate(newp)))
+        newp = np.compress(
+            abs(p.imag) > EPSILON * np.sqrt(np.sum(p * np.conjugate(p), axis=0).real),
+            p, axis=-1
+        )
+        p = np.concatenate((p, conjugate(newp)))
     else:
-        p = numpy.concatenate((p, conjugate(p)))
+        p = np.concatenate((p, conjugate(p)))
 
-    k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
+    k = (np.prod(-p, axis=0) / np.prod(-z, axis=0)).real
     if N % 2 == 0:
-        k = k / numpy.sqrt(1 + eps_sq)
+        k = k / np.sqrt(1 + eps_sq)
 
     return z, p, k
 
@@ -5112,6 +5141,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
         Numerator (``b``) and denominator (``a``) polynomials
         of the IIR filter.
     """
+    fs = _validate_fs(fs, allow_none=False)
 
     # Guarantee that the inputs are floats
     w0 = float(w0)
@@ -5129,17 +5159,15 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     bw = bw*np.pi
     w0 = w0*np.pi
 
-    # Compute -3dB attenuation
-    gb = 1/np.sqrt(2)
-
-    if ftype == "notch":
-        # Compute beta: formula 11.3.4 (p.575) from reference [1]
-        beta = (np.sqrt(1.0-gb**2.0)/gb)*np.tan(bw/2.0)
-    elif ftype == "peak":
-        # Compute beta: formula 11.3.19 (p.579) from reference [1]
-        beta = (gb/np.sqrt(1.0-gb**2.0))*np.tan(bw/2.0)
-    else:
+    if ftype not in ("notch", "peak"):
         raise ValueError("Unknown ftype.")
+
+    # Compute beta according to Eqs. 11.3.4 (p.575) and 11.3.19 (p.579) from
+    # reference [1]. Due to assuming a -3 dB attenuation value, i.e, assuming
+    # gb = 1 / np.sqrt(2), the following terms simplify to:
+    #   (np.sqrt(1.0 - gb**2.0) / gb) = 1
+    #   (gb / np.sqrt(1.0 - gb**2.0)) = 1
+    beta = np.tan(bw/2.0)
 
     # Compute gain: formula 11.3.6 (p.575) from reference [1]
     gain = 1.0/(1.0+beta)
@@ -5295,13 +5323,13 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # Convert w0, Q, and fs to float
     w0 = float(w0)
     Q = float(Q)
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
 
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
     if not 0 < w0 < fs / 2:
-        raise ValueError("w0 must be between 0 and {}"
-                         " (nyquist), but given {}.".format(fs / 2, w0))
+        raise ValueError(f"w0 must be between 0 and {fs / 2}"
+                         f" (nyquist), but given {w0}.")
     if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
@@ -5324,11 +5352,12 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
         G0, G = 1, 0
     elif ftype == 'peak':
         G0, G = 0, 1
-    GB = 1 / np.sqrt(2)
 
-    # Compute beta
-    # Eq. 11.5.3 (p. 591) from reference [1]
-    beta = np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) * np.tan(N * w_delta / 4)
+    # Compute beta according to Eq. 11.5.3 (p. 591) from reference [1]. Due to
+    # assuming a -3 dB attenuation value, i.e, assuming GB = 1 / np.sqrt(2),
+    # the following term simplifies to:
+    #   np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) = 1
+    beta = np.tan(N * w_delta / 4)
 
     # Compute filter coefficients
     # Eq 11.5.1 (p. 590) variables a, b, c from reference [1]
@@ -5462,14 +5491,14 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     # Set sampling rate if not passed
     if fs is None:
         fs = 2
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
 
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
     filter_types = ['fir', 'iir']
     if not 0 < freq < fs / 2:
-        raise ValueError("The frequency must be between 0 and {}"
-                         " (nyquist), but given {}.".format(fs / 2, freq))
+        raise ValueError(f"The frequency must be between 0 and {fs / 2}"
+                         f" (nyquist), but given {freq}.")
     if ftype not in filter_types:
         raise ValueError('ftype must be either fir or iir.')
 
@@ -5507,9 +5536,9 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     elif ftype == 'iir':
         # Raise warning if order and/or numtaps is passed
         if order is not None:
-            warnings.warn('order is not used for IIR gammatone filter.')
+            warnings.warn('order is not used for IIR gammatone filter.', stacklevel=2)
         if numtaps is not None:
-            warnings.warn('numtaps is not used for IIR gammatone filter.')
+            warnings.warn('numtaps is not used for IIR gammatone filter.', stacklevel=2)
 
         # Gammatone impulse response settings
         T = 1./fs

@@ -156,7 +156,7 @@ def test_24_bit_odd_size_with_pad():
 def test_20_bit_extra_data():
     # 20-bit, 3 B container, 1 channel, 10 samples, 30 B data chunk
     # with extra data filling container beyond the bit depth
-    filename = 'test-8000Hz-le-1ch-10S-20bit-extra.wav'
+    filename = 'test-1234Hz-le-1ch-10S-20bit-extra.wav'
     rate, data = wavfile.read(datafile(filename), mmap=False)
 
     assert_equal(rate, 1234)
@@ -259,7 +259,7 @@ def test_64_bit_even_size():
     # 64-bit, 8 B container, 3 channels, 5 samples, 120 B data chunk
     for mmap in [False, True]:
         filename = 'test-8000Hz-le-3ch-5S-64bit.wav'
-        rate, data = wavfile.read(datafile(filename), mmap=False)
+        rate, data = wavfile.read(datafile(filename), mmap=mmap)
 
         assert_equal(rate, 8000)
         assert_(np.issubdtype(data.dtype, np.int64))
@@ -285,7 +285,7 @@ def test_unsupported_mmap():
                      'test-8000Hz-le-3ch-5S-36bit.wav',
                      'test-8000Hz-le-3ch-5S-45bit.wav',
                      'test-8000Hz-le-3ch-5S-53bit.wav',
-                     'test-8000Hz-le-1ch-10S-20bit-extra.wav'}:
+                     'test-1234Hz-le-1ch-10S-20bit-extra.wav'}:
         with raises(ValueError, match="mmap.*not compatible"):
             rate, data = wavfile.read(datafile(filename), mmap=True)
 
@@ -302,12 +302,43 @@ def test_rifx():
         assert_equal(data1, data2)
 
 
+def test_rf64():
+    # Compare equivalent RF64 and RIFF files
+    for rf64, riff in {('test-44100Hz-le-1ch-4bytes-rf64.wav',
+                        'test-44100Hz-le-1ch-4bytes.wav'),
+                       ('test-8000Hz-le-3ch-5S-24bit-rf64.wav',
+                        'test-8000Hz-le-3ch-5S-24bit.wav')}:
+        rate1, data1 = wavfile.read(datafile(rf64), mmap=False)
+        rate2, data2 = wavfile.read(datafile(riff), mmap=False)
+        assert_array_equal(rate1, rate2)
+        assert_array_equal(data1, data2)
+
+
+@pytest.mark.xslow
+def test_write_roundtrip_rf64(tmpdir):
+    dtype = np.dtype("<i8")
+    tmpfile = str(tmpdir.join('temp.wav'))
+    rate = 44100
+    data = np.random.randint(0, 127, (2**29,)).astype(dtype)
+
+    wavfile.write(tmpfile, rate, data)
+
+    rate2, data2 = wavfile.read(tmpfile, mmap=True)
+
+    assert_equal(rate, rate2)
+    msg = f"{data2.dtype} byteorder not in ('<', '=', '|')"
+    assert data2.dtype.byteorder in ('<', '=', '|'), msg
+    assert_array_equal(data, data2)
+    # also test writing (gh-12176)
+    data2[0] = 0
+
+
 def test_read_unknown_filetype_fail():
     # Not an RIFF
     for mmap in [False, True]:
         filename = 'example_1.nc'
         with open(datafile(filename), 'rb') as fp:
-            with raises(ValueError, match="CDF.*'RIFF' and 'RIFX' supported"):
+            with raises(ValueError, match="CDF.*'RIFF', 'RIFX', and 'RF64' supported"):
                 wavfile.read(fp, mmap=mmap)
 
 
@@ -414,3 +445,13 @@ def test_write_roundtrip(realfile, mmap, rate, channels, dt_str, tmpdir):
         # in PyPy; since the filename gets reused in this test, clean this up
         break_cycles()
         break_cycles()
+
+
+@pytest.mark.parametrize("dtype", [np.float16])
+def test_wavfile_dtype_unsupported(tmpdir, dtype):
+    tmpfile = str(tmpdir.join('temp.wav'))
+    rng = np.random.default_rng(1234)
+    data = rng.random((100, 5)).astype(dtype)
+    rate = 8000
+    with pytest.raises(ValueError, match="Unsupported"):
+        wavfile.write(tmpfile, rate, data)

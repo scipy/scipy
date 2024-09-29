@@ -199,9 +199,10 @@ class TestBasinHopping:
                            niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
+    @pytest.mark.fail_slow(10)
     def test_all_minimizers(self):
-        # Test 2-D minimizations with gradient. Nelder-Mead, Powell, and COBYLA
-        # don't accept jac=True, so aren't included here.
+        # Test 2-D minimizations with gradient. Nelder-Mead, Powell, COBYLA, and
+        # COBYQA don't accept jac=True, so aren't included here.
         i = 1
         methods = ['CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'SLSQP']
         minimizer_kwargs = copy.copy(self.kwargs)
@@ -212,18 +213,21 @@ class TestBasinHopping:
                                niter=self.niter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
+    @pytest.mark.fail_slow(20)
     def test_all_nograd_minimizers(self):
         # Test 2-D minimizations without gradient. Newton-CG requires jac=True,
         # so not included here.
         i = 1
         methods = ['CG', 'BFGS', 'L-BFGS-B', 'TNC', 'SLSQP',
-                   'Nelder-Mead', 'Powell', 'COBYLA']
+                   'Nelder-Mead', 'Powell', 'COBYLA', 'COBYQA']
         minimizer_kwargs = copy.copy(self.kwargs_nograd)
         for method in methods:
+            # COBYQA takes extensive amount of time on this problem
+            niter = 10 if method == 'COBYQA' else self.niter
             minimizer_kwargs["method"] = method
             res = basinhopping(func2d_nograd, self.x0[i],
                                minimizer_kwargs=minimizer_kwargs,
-                               niter=self.niter, disp=self.disp)
+                               niter=niter, disp=self.disp)
             tol = self.tol
             if method == 'COBYLA':
                 tol = 2
