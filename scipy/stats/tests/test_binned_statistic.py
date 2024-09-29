@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 from pytest import raises as assert_raises
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
@@ -8,7 +9,7 @@ from scipy._lib._util import check_random_state
 from .common_tests import check_named_results
 
 
-class TestBinnedStatistic(object):
+class TestBinnedStatistic:
 
     @classmethod
     def setup_class(cls):
@@ -35,7 +36,7 @@ class TestBinnedStatistic(object):
         # comparison
         x = self.x
         v = self.v
-        statistics = [u'mean', u'median', u'count', u'sum']
+        statistics = ['mean', 'median', 'count', 'sum']
         for statistic in statistics:
             binned_statistic(x, v, statistic, bins=10)
 
@@ -46,6 +47,16 @@ class TestBinnedStatistic(object):
         u = self.u
         stat1, edges1, bc = binned_statistic(x, u, 'std', bins=10)
         stat2, edges2, bc = binned_statistic(x, u, np.std, bins=10)
+
+        assert_allclose(stat1, stat2)
+
+    def test_empty_bins_std(self):
+        # tests that std returns gives nan for empty bins
+        x = self.x
+        u = self.u
+        print(binned_statistic(x, u, 'count', bins=1000))
+        stat1, edges1, bc = binned_statistic(x, u, 'std', bins=1000)
+        stat2, edges2, bc = binned_statistic(x, u, np.std, bins=1000)
 
         assert_allclose(stat1, stat2)
 
@@ -364,9 +375,12 @@ class TestBinnedStatistic(object):
 
         sum1, edges1, bc = binned_statistic_dd(X, v, 'sum', bins=3)
         sum2, edges2 = np.histogramdd(X, bins=3, weights=v)
+        sum3, edges3, bc = binned_statistic_dd(X, v, np.sum, bins=3)
 
         assert_allclose(sum1, sum2)
         assert_allclose(edges1, edges2)
+        assert_allclose(sum1, sum3)
+        assert_allclose(edges1, edges3)
 
     def test_dd_mean(self):
         X = self.X
@@ -437,15 +451,16 @@ class TestBinnedStatistic(object):
         v = self.v
         w = self.w
 
-        stat1v, edges1v, bc1v = binned_statistic_dd(X, v, np.std, bins=8)
-        stat1w, edges1w, bc1w = binned_statistic_dd(X, w, np.std, bins=8)
-        stat2, edges2, bc2 = binned_statistic_dd(X, [v, w], np.std, bins=8)
-
-        assert_allclose(stat2[0], stat1v)
-        assert_allclose(stat2[1], stat1w)
-        assert_allclose(edges1v, edges2)
-        assert_allclose(edges1w, edges2)
-        assert_allclose(bc1v, bc2)
+        for stat in ["count", "sum", "mean", "std", "min", "max", "median",
+                     np.std]:
+            stat1v, edges1v, bc1v = binned_statistic_dd(X, v, stat, bins=8)
+            stat1w, edges1w, bc1w = binned_statistic_dd(X, w, stat, bins=8)
+            stat2, edges2, bc2 = binned_statistic_dd(X, [v, w], stat, bins=8)
+            assert_allclose(stat2[0], stat1v)
+            assert_allclose(stat2[1], stat1w)
+            assert_allclose(edges1v, edges2)
+            assert_allclose(edges1w, edges2)
+            assert_allclose(bc1v, bc2)
 
     def test_dd_binnumbers_unraveled(self):
         X = self.X
@@ -465,7 +480,7 @@ class TestBinnedStatistic(object):
     def test_dd_binned_statistic_result(self):
         # NOTE: tests the reuse of bin_edges from previous call
         x = np.random.random((10000, 3))
-        v = np.random.random((10000))
+        v = np.random.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = (bins, bins, bins)
 
@@ -480,9 +495,74 @@ class TestBinnedStatistic(object):
 
     def test_dd_zero_dedges(self):
         x = np.random.random((10000, 3))
-        v = np.random.random((10000))
+        v = np.random.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = np.append(bins, 1)
         bins = (bins, bins, bins)
         with assert_raises(ValueError, match='difference is numerically 0'):
             binned_statistic_dd(x, v, 'mean', bins=bins)
+
+    def test_dd_range_errors(self):
+        # Test that descriptive exceptions are raised as appropriate for bad
+        # values of the `range` argument. (See gh-12996)
+        with assert_raises(ValueError,
+                           match='In range, start must be <= stop'):
+            binned_statistic_dd([self.y], self.v,
+                                range=[[1, 0]])
+        with assert_raises(
+                ValueError,
+                match='In dimension 1 of range, start must be <= stop'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[1, 0], [0, 1]])
+        with assert_raises(
+                ValueError,
+                match='In dimension 2 of range, start must be <= stop'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[0, 1], [1, 0]])
+        with assert_raises(
+                ValueError,
+                match='range given for 1 dimensions; 2 required'):
+            binned_statistic_dd([self.x, self.y], self.v,
+                                range=[[0, 1]])
+
+    def test_binned_statistic_float32(self):
+        X = np.array([0, 0.42358226], dtype=np.float32)
+        stat, _, _ = binned_statistic(X, None, 'count', bins=5)
+        assert_allclose(stat, np.array([1, 0, 0, 0, 1], dtype=np.float64))
+
+    def test_gh14332(self):
+        # Test the wrong output when the `sample` is close to bin edge
+        x = []
+        size = 20
+        for i in range(size):
+            x += [1-0.1**i]
+
+        bins = np.linspace(0,1,11)
+        sum1, edges1, bc = binned_statistic_dd(x, np.ones(len(x)),
+                                               bins=[bins], statistic='sum')
+        sum2, edges2 = np.histogram(x, bins=bins)
+
+        assert_allclose(sum1, sum2)
+        assert_allclose(edges1[0], edges2)
+
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    @pytest.mark.parametrize("statistic", [np.mean, np.median, np.sum, np.std,
+                                           np.min, np.max, 'count',
+                                           lambda x: (x**2).sum(),
+                                           lambda x: (x**2).sum() * 1j])
+    def test_dd_all(self, dtype, statistic):
+        def ref_statistic(x):
+            return len(x) if statistic == 'count' else statistic(x)
+
+        rng = np.random.default_rng(3704743126639371)
+        n = 10
+        x = rng.random(size=n)
+        i = x >= 0.5
+        v = rng.random(size=n)
+        if dtype is np.complex128:
+            v = v + rng.random(size=n)*1j
+
+        stat, _, _ = binned_statistic_dd(x, v, statistic, bins=2)
+        ref = np.array([ref_statistic(v[~i]), ref_statistic(v[i])])
+        assert_allclose(stat, ref)
+        assert stat.dtype == np.result_type(ref.dtype, np.float64)

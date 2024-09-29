@@ -10,10 +10,10 @@ from contextlib import contextmanager
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           suppress_warnings)
+                           break_cycles, suppress_warnings, IS_PYPY)
 from pytest import raises as assert_raises
 
-from scipy.io.netcdf import netcdf_file, IS_PYPY
+from scipy.io import netcdf_file
 from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
@@ -53,9 +53,9 @@ def assert_mask_matches(arr, expected_mask):
 
     Parameters
     ----------
-    arr: ndarray or MaskedArray
+    arr : ndarray or MaskedArray
         Array to test.
-    expected_mask: array_like of booleans
+    expected_mask : array_like of booleans
         A list giving the expected mask.
     '''
 
@@ -131,12 +131,14 @@ def test_read_write_files():
             check_simple(f)
             assert_equal(f.variables['app_var'][:], 42)
 
-    except:  # noqa: E722
+    finally:
+        if IS_PYPY:
+            # windows cannot remove a dead file held by a mmap
+            # that has not been collected in PyPy
+            break_cycles()
+            break_cycles()
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
-        raise
-    os.chdir(cwd)
-    shutil.rmtree(tmpdir)
 
 
 def test_read_write_sio():
@@ -242,8 +244,9 @@ def test_itemset_no_segfault_on_readonly():
 
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
     with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning,
-                   "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
+        message = ("Cannot close a netcdf_file opened with mmap=True, when "
+                   "netcdf_variables or arrays referring to its data still exist")
+        sup.filter(RuntimeWarning, message)
         with netcdf_file(filename, 'r', mmap=True) as f:
             time_var = f.variables['time']
 
@@ -282,7 +285,7 @@ def test_write_invalid_dtype():
 def test_flush_rewind():
     stream = BytesIO()
     with make_simple(stream, mode='w') as f:
-        x = f.createDimension('x',4)  # x is used in createVariable
+        f.createDimension('x',4)  # x is used in createVariable
         v = f.createVariable('v', 'i2', ['x'])
         v[:] = 1
         f.flush()
@@ -344,8 +347,9 @@ def test_mmaps_segfault():
 
     # should not crash
     with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning,
-                   "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
+        message = ("Cannot close a netcdf_file opened with mmap=True, when "
+                   "netcdf_variables or arrays referring to its data still exist")
+        sup.filter(RuntimeWarning, message)
         x = doit()
     x.sum()
 
@@ -383,7 +387,7 @@ def test_open_append():
         f._attributes['Kilroy'] = 'was here'
         f.close()
 
-        # open again in 'a', read the att and and a new one
+        # open again in 'a', read the att and a new one
         f = netcdf_file(filename, 'a')
         assert_equal(f._attributes['Kilroy'], b'was here')
         f._attributes['naughty'] = b'Zoot'
@@ -424,7 +428,8 @@ def test_append_recordDimension():
             # Read the file and check that append worked
             with netcdf_file('withRecordDimension.nc') as f:
                 assert_equal(f.variables['time'][-1], i)
-                assert_equal(f.variables['testData'][-1, :, :].copy(), np.full((dataSize, dataSize), i))
+                assert_equal(f.variables['testData'][-1, :, :].copy(),
+                             np.full((dataSize, dataSize), i))
                 assert_equal(f.variables['time'].data.shape[0], i+1)
                 assert_equal(f.variables['testData'].data.shape[0], i+1)
 

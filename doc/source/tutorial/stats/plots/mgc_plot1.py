@@ -17,9 +17,9 @@ def mgc_plot(x, y, sim_name):
     plt.show()
 
 
-np.random.seed(12345678)
+rng = np.random.default_rng()
 x = np.linspace(-1, 1, num=100)
-y = x + 0.3 * np.random.random(x.size)
+y = x + 0.3 * rng.random(x.size)
 
 
 mgc_plot(x, y, "Linear")

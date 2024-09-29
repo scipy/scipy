@@ -4,10 +4,6 @@ Low-level LAPACK functions (:mod:`scipy.linalg.lapack`)
 
 This module contains low-level functions from the LAPACK library.
 
-The `*gegv` family of routines have been removed from LAPACK 3.6.0
-and have been deprecated in SciPy 0.17.0. They will be removed in
-a future release.
-
 .. versionadded:: 0.12.0
 
 .. note::
@@ -97,11 +93,6 @@ All functions
    dgeev_lwork
    cgeev_lwork
    zgeev_lwork
-
-   sgegv
-   dgegv
-   cgegv
-   zgegv
 
    sgehrd
    dgehrd
@@ -354,6 +345,9 @@ All functions
    chetrf_lwork
    zhetrf_lwork
 
+   chetrs
+   zhetrs
+
    chfrk
    zhfrk
 
@@ -364,6 +358,11 @@ All functions
    dlange
    clange
    zlange
+
+   slantr
+   dlantr
+   clantr
+   zlantr
 
    slarf
    dlarf
@@ -487,6 +486,31 @@ All functions
    dpotrs
    cpotrs
    zpotrs
+
+   sppcon
+   dppcon
+   cppcon
+   zppcon
+
+   sppsv
+   dppsv
+   cppsv
+   zppsv
+
+   spptrf
+   dpptrf
+   cpptrf
+   zpptrf
+
+   spptri
+   dpptri
+   cpptri
+   zpptri
+
+   spptrs
+   dpptrs
+   cpptrs
+   zpptrs
 
    sptsv
    dptsv
@@ -644,6 +668,11 @@ All functions
    csytrf_lwork
    zsytrf_lwork
 
+   ssytrs
+   dsytrs
+   csytrs
+   zsytrs
+
    stbtrs
    dtbtrs
    ctbtrs
@@ -664,10 +693,23 @@ All functions
    ctfttr
    ztfttr
 
+   stgexc
+   dtgexc
+   ctgexc
+   ztgexc
+
    stgsen
    dtgsen
    ctgsen
    ztgsen
+
+   stgsen_lwork
+   dtgsen_lwork
+   ctgsen_lwork
+   ztgsen_lwork
+
+   stgsyl
+   dtgsyl
 
    stpttf
    dtpttf
@@ -678,6 +720,26 @@ All functions
    dtpttr
    ctpttr
    ztpttr
+
+   strcon
+   dtrcon
+   ctrcon
+   ztrcon
+
+   strexc
+   dtrexc
+   ctrexc
+   ztrexc
+
+   strsen
+   dtrsen
+   ctrsen
+   ztrsen
+
+   strsen_lwork
+   dtrsen_lwork
+   ctrsen_lwork
+   ztrsen_lwork
 
    strsyl
    dtrsyl
@@ -749,6 +811,11 @@ All functions
    cgttrs
    zgttrs
 
+   sgtcon
+   dgtcon
+   cgtcon
+   zgtcon
+
    stpqrt
    dtpqrt
    ctpqrt
@@ -778,7 +845,7 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-import numpy as _np
+import numpy as np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
 from re import compile as regex_compile
@@ -787,34 +854,20 @@ try:
 except ImportError:
     _clapack = None
 
-# Backward compatibility
-from scipy._lib._util import DeprecatedImport as _DeprecatedImport
-clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
-flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
+try:
+    from scipy.linalg import _flapack_64
+    HAS_ILP64 = True
+except ImportError:
+    HAS_ILP64 = False
+    _flapack_64 = None
+
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
-from scipy.linalg._flapack import *
+from scipy.linalg._flapack import *  # noqa: E402, F403
 del empty_module
 
 __all__ = ['get_lapack_funcs']
-
-_dep_message = """The `*gegv` family of routines has been deprecated in
-LAPACK 3.6.0 in favor of the `*ggev` family of routines.
-The corresponding wrappers will be removed from SciPy in
-a future release."""
-
-cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
-dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
-sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
-zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
-
-# Modify _flapack in this scope so the deprecation warnings apply to
-# functions returned by get_lapack_funcs.
-_flapack.cgegv = cgegv
-_flapack.dgegv = dgegv
-_flapack.sgegv = sgegv
-_flapack.zgegv = zgegv
 
 # some convenience alias for complex functions
 _lapack_alias = {
@@ -833,10 +886,9 @@ p2 = regex_compile(r'Default: (?P<d>.*?)\n')
 
 def backtickrepl(m):
     if m.group('s'):
-        return ('with bounds ``{}`` with ``{}`` storage\n'
-                ''.format(m.group('b'), m.group('s')))
+        return (f"with bounds ``{m.group('b')}`` with ``{m.group('s')}`` storage\n")
     else:
-        return 'with bounds ``{}``\n'.format(m.group('b'))
+        return f"with bounds ``{m.group('b')}``\n"
 
 
 for routine in [ssyevr, dsyevr, cheevr, zheevr,
@@ -852,7 +904,7 @@ del regex_compile, p1, p2, backtickrepl
 
 
 @_memoize_get_funcs
-def get_lapack_funcs(names, arrays=(), dtype=None):
+def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     """Return available LAPACK function objects from names.
 
     Arrays are used to determine the optimal prefix of LAPACK routines.
@@ -869,6 +921,11 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
 
     dtype : str or dtype, optional
         Data-type specifier. Not used if `arrays` is non-empty.
+
+    ilp64 : {True, False, 'preferred'}, optional
+        Whether to return ILP64 routine variant.
+        Choosing 'preferred' returns ILP64 routine if available, and
+        otherwise the 32-bit routine. Default: False
 
     Returns
     -------
@@ -893,8 +950,11 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     norm of an array. We pass our array in order to get the correct 'lange'
     flavor.
 
+    >>> import numpy as np
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(3,2)
+    >>> rng = np.random.default_rng()
+
+    >>> a = rng.random((3,2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
     'd'
@@ -908,21 +968,37 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     to the function which is often wrapped as a standalone function and
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
-    >>> import scipy.linalg as LA
-    >>> a = np.random.rand(1000,1000)
-    >>> b = np.random.rand(1000,1)*1j
+    >>> a = rng.random((1000, 1000))
+    >>> b = rng.random((1000, 1)) * 1j
     >>> # We pick up zsysv and zsysv_lwork due to b array
     ... xsysv, xlwork = LA.get_lapack_funcs(('sysv', 'sysv_lwork'), (a, b))
     >>> opt_lwork, _ = xlwork(a.shape[0])  # returns a complex for 'z' prefix
     >>> udut, ipiv, x, info = xsysv(a, b, lwork=int(opt_lwork.real))
 
     """
-    return _get_funcs(names, arrays, dtype,
-                      "LAPACK", _flapack, _clapack,
-                      "flapack", "clapack", _lapack_alias)
+    if isinstance(ilp64, str):
+        if ilp64 == 'preferred':
+            ilp64 = HAS_ILP64
+        else:
+            raise ValueError("Invalid value for 'ilp64'")
+
+    if not ilp64:
+        return _get_funcs(names, arrays, dtype,
+                          "LAPACK", _flapack, _clapack,
+                          "flapack", "clapack", _lapack_alias,
+                          ilp64=False)
+    else:
+        if not HAS_ILP64:
+            raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
+                               "compiled only with 32-bit BLAS")
+        return _get_funcs(names, arrays, dtype,
+                          "LAPACK", _flapack_64, None,
+                          "flapack_64", None, _lapack_alias,
+                          ilp64=True)
 
 
-_int32_max = _np.iinfo(_np.int32).max
+_int32_max = np.iinfo(np.int32).max
+_int64_max = np.iinfo(np.int64).max
 
 
 def _compute_lwork(routine, *args, **kwargs):
@@ -947,30 +1023,39 @@ def _compute_lwork(routine, *args, **kwargs):
 
     """
     dtype = getattr(routine, 'dtype', None)
+    int_dtype = getattr(routine, 'int_dtype', None)
     ret = routine(*args, **kwargs)
     if ret[-1] != 0:
         raise ValueError("Internal work array size computation failed: "
                          "%d" % (ret[-1],))
 
     if len(ret) == 2:
-        return _check_work_float(ret[0].real, dtype)
+        return _check_work_float(ret[0].real, dtype, int_dtype)
     else:
-        return tuple(_check_work_float(x.real, dtype) for x in ret[:-1])
+        return tuple(_check_work_float(x.real, dtype, int_dtype)
+                     for x in ret[:-1])
 
 
-def _check_work_float(value, dtype):
+def _check_work_float(value, dtype, int_dtype):
     """
     Convert LAPACK-returned work array size float to integer,
     carefully for single-precision types.
     """
 
-    if dtype == _np.float32 or dtype == _np.complex64:
+    if dtype == np.float32 or dtype == np.complex64:
         # Single-precision routine -- take next fp value to work
         # around possible truncation in LAPACK code
-        value = _np.nextafter(value, _np.inf, dtype=_np.float32)
+        value = np.nextafter(value, np.inf, dtype=np.float32)
 
     value = int(value)
-    if value < 0 or value > _int32_max:
-        raise ValueError("Too large work array required -- computation cannot "
-                         "be performed with standard 32-bit LAPACK.")
+    if int_dtype.itemsize == 4:
+        if value < 0 or value > _int32_max:
+            raise ValueError("Too large work array required -- computation "
+                             "cannot be performed with standard 32-bit"
+                             " LAPACK.")
+    elif int_dtype.itemsize == 8:
+        if value < 0 or value > _int64_max:
+            raise ValueError("Too large work array required -- computation"
+                             " cannot be performed with standard 64-bit"
+                             " LAPACK.")
     return value

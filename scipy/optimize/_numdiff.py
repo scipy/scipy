@@ -1,13 +1,12 @@
 """Routines for numerical differentiation."""
-
+import functools
 import numpy as np
 from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
-
-EPS = np.finfo(np.float64).eps
+from scipy._lib._array_api import xp_atleast_nd, array_namespace
 
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
@@ -89,12 +88,61 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     return h_adjusted, use_one_sided
 
 
-relative_step = {"2-point": EPS**0.5,
-                 "3-point": EPS**(1/3),
-                 "cs": EPS**0.5}
+@functools.lru_cache
+def _eps_for_method(x0_dtype, f0_dtype, method):
+    """
+    Calculates relative EPS step to use for a given data type
+    and numdiff step method.
+
+    Progressively smaller steps are used for larger floating point types.
+
+    Parameters
+    ----------
+    f0_dtype: np.dtype
+        dtype of function evaluation
+
+    x0_dtype: np.dtype
+        dtype of parameter vector
+
+    method: {'2-point', '3-point', 'cs'}
+
+    Returns
+    -------
+    EPS: float
+        relative step size. May be np.float16, np.float32, np.float64
+
+    Notes
+    -----
+    The default relative step will be np.float64. However, if x0 or f0 are
+    smaller floating point types (np.float16, np.float32), then the smallest
+    floating point type is chosen.
+    """
+    # the default EPS value
+    EPS = np.finfo(np.float64).eps
+
+    x0_is_fp = False
+    if np.issubdtype(x0_dtype, np.inexact):
+        # if you're a floating point type then over-ride the default EPS
+        EPS = np.finfo(x0_dtype).eps
+        x0_itemsize = np.dtype(x0_dtype).itemsize
+        x0_is_fp = True
+
+    if np.issubdtype(f0_dtype, np.inexact):
+        f0_itemsize = np.dtype(f0_dtype).itemsize
+        # choose the smallest itemsize between x0 and f0
+        if x0_is_fp and f0_itemsize < x0_itemsize:
+            EPS = np.finfo(f0_dtype).eps
+
+    if method in ["2-point", "cs"]:
+        return EPS**0.5
+    elif method in ["3-point"]:
+        return EPS**(1/3)
+    else:
+        raise RuntimeError("Unknown step method, should be one of "
+                           "{'2-point', '3-point', 'cs'}")
 
 
-def _compute_absolute_step(rel_step, x0, method):
+def _compute_absolute_step(rel_step, x0, f0, method):
     """
     Computes an absolute step from a relative step for finite difference
     calculation.
@@ -105,12 +153,42 @@ def _compute_absolute_step(rel_step, x0, method):
         Relative step for the finite difference calculation
     x0 : np.ndarray
         Parameter vector
+    f0 : np.ndarray or scalar
     method : {'2-point', '3-point', 'cs'}
+
+    Returns
+    -------
+    h : float
+        The absolute step size
+
+    Notes
+    -----
+    `h` will always be np.float64. However, if `x0` or `f0` are
+    smaller floating point dtypes (e.g. np.float32), then the absolute
+    step size will be calculated from the smallest floating point size.
     """
-    if rel_step is None:
-        rel_step = relative_step[method]
+    # this is used instead of np.sign(x0) because we need
+    # sign_x0 to be 1 when x0 == 0.
     sign_x0 = (x0 >= 0).astype(float) * 2 - 1
-    return rel_step * sign_x0 * np.maximum(1.0, np.abs(x0))
+
+    rstep = _eps_for_method(x0.dtype, f0.dtype, method)
+
+    if rel_step is None:
+        abs_step = rstep * sign_x0 * np.maximum(1.0, np.abs(x0))
+    else:
+        # User has requested specific relative steps.
+        # Don't multiply by max(1, abs(x0) because if x0 < 1 then their
+        # requested step is not used.
+        abs_step = rel_step * sign_x0 * np.abs(x0)
+
+        # however we don't want an abs_step of 0, which can happen if
+        # rel_step is 0, or x0 is 0. Instead, substitute a realistic step
+        dx = ((x0 + abs_step) - x0)
+        abs_step = np.where(dx == 0,
+                            rstep * sign_x0 * np.maximum(1.0, np.abs(x0)),
+                            abs_step)
+
+    return abs_step
 
 
 def _prepare_bounds(bounds, x0):
@@ -124,7 +202,7 @@ def _prepare_bounds(bounds, x0):
     >>> _prepare_bounds([(0, 1, 2), (1, 2, np.inf)], [0.5, 1.5, 2.5])
     (array([0., 1., 2.]), array([ 1.,  2., inf]))
     """
-    lb, ub = [np.asarray(b, dtype=float) for b in bounds]
+    lb, ub = (np.asarray(b, dtype=float) for b in bounds)
     if lb.ndim == 0:
         lb = np.resize(lb, x0.shape)
 
@@ -197,7 +275,7 @@ def group_columns(A, order=0):
 
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
-                      as_linear_operator=False, args=(), kwargs={}):
+                      as_linear_operator=False, args=(), kwargs=None):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -226,18 +304,19 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                      analytically continued to the complex plane. Otherwise,
                      produces bogus results.
     rel_step : None or array_like, optional
-        Relative step size to use. The absolute step size is computed as
-        ``h = rel_step * sign(x0) * max(1, abs(x0))``, possibly adjusted to
-        fit into the bounds. For ``method='3-point'`` the sign of `h` is
-        ignored. If None (default) then step is selected automatically,
-        see Notes.
+        Relative step size to use. If None (default) the absolute step size is
+        computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``, with
+        `rel_step` being selected automatically, see Notes. Otherwise
+        ``h = rel_step * sign(x0) * abs(x0)``. For ``method='3-point'`` the
+        sign of `h` is ignored. The calculated step size is possibly adjusted
+        to fit into the bounds.
     abs_step : array_like, optional
         Absolute step size to use, possibly adjusted to fit into the bounds.
         For ``method='3-point'`` the sign of `abs_step` is ignored. By default
         relative steps are used, only if ``abs_step is not None`` are absolute
         steps used.
     f0 : None or array_like, optional
-        If not None it is assumed to be equal to ``fun(x0)``, in  this case
+        If not None it is assumed to be equal to ``fun(x0)``, in this case
         the ``fun(x0)`` is not called. Default is None.
     bounds : tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
@@ -295,14 +374,15 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     Notes
     -----
-    If `rel_step` is not provided, it assigned to ``EPS**(1/s)``, where EPS is
-    machine epsilon for float64 numbers, s=2 for '2-point' method and s=3 for
-    '3-point' method. Such relative step approximately minimizes a sum of
-    truncation and round-off errors, see [1]_. Relative steps are used by
+    If `rel_step` is not provided, it assigned as ``EPS**(1/s)``, where EPS is
+    determined from the smallest floating point dtype of `x0` or `fun(x0)`,
+    ``np.finfo(x0.dtype).eps``, s=2 for '2-point' method and
+    s=3 for '3-point' method. Such relative step approximately minimizes a sum
+    of truncation and round-off errors, see [1]_. Relative steps are used by
     default. However, absolute steps are used when ``abs_step is not None``.
-    If any of the absolute steps produces an indistinguishable difference from
-    the original `x0`, ``(x0 + abs_step) - x0 == 0``, then a relative step is
-    substituted for that particular entry.
+    If any of the absolute or relative steps produces an indistinguishable
+    difference from the original `x0`, ``(x0 + dx) - x0 == 0``, then a
+    automatic step size is substituted for that particular entry.
 
     A finite difference scheme for '3-point' method is selected automatically.
     The well-known central difference scheme is used for points sufficiently
@@ -333,7 +413,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.optimize import approx_derivative
+    >>> from scipy.optimize._numdiff import approx_derivative
     >>>
     >>> def f(x, c1, c2):
     ...     return np.array([x[0] * np.sin(c1 * x[1]),
@@ -357,9 +437,17 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     array([ 2.])
     """
     if method not in ['2-point', '3-point', 'cs']:
-        raise ValueError("Unknown method '%s'. " % method)
+        raise ValueError(f"Unknown method '{method}'. ")
 
-    x0 = np.atleast_1d(x0)
+    xp = array_namespace(x0)
+    _x = xp_atleast_nd(x0, ndim=1, xp=xp)
+    _dtype = xp.float64
+    if xp.isdtype(_x.dtype, "real floating"):
+        _dtype = _x.dtype
+
+    # promotes to floating
+    x0 = xp.astype(_x, _dtype)
+
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
@@ -373,7 +461,15 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         raise ValueError("Bounds not supported when "
                          "`as_linear_operator` is True.")
 
+    if kwargs is None:
+        kwargs = {}
+
     def fun_wrapped(x):
+        # send user function same fp type as x0. (but only if cs is not being
+        # used
+        if xp.isdtype(x.dtype, "real floating"):
+            x = xp.astype(x, x0.dtype)
+
         f = np.atleast_1d(fun(x, *args, **kwargs))
         if f.ndim > 1:
             raise RuntimeError("`fun` return value has "
@@ -392,25 +488,25 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     if as_linear_operator:
         if rel_step is None:
-            rel_step = relative_step[method]
+            rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
 
         return _linear_operator_difference(fun_wrapped, x0,
                                            f0, rel_step, method)
     else:
         # by default we use rel_step
         if abs_step is None:
-            h = _compute_absolute_step(rel_step, x0, method)
+            h = _compute_absolute_step(rel_step, x0, f0, method)
         else:
             # user specifies an absolute step
             sign_x0 = (x0 >= 0).astype(float) * 2 - 1
-            h = abs_step * sign_x0
+            h = abs_step
 
             # cannot have a zero step. This might happen if x0 is very large
             # or small. In which case fall back to relative step.
             dx = ((x0 + h) - x0)
             h = np.where(dx == 0,
-                         relative_step[method] * sign_x0 *
-                         np.maximum(1.0, np.abs(x0)),
+                         _eps_for_method(x0.dtype, f0.dtype, method) *
+                         sign_x0 * np.maximum(1.0, np.abs(x0)),
                          h)
 
         if method == '2-point':
@@ -488,35 +584,39 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
     m = f0.size
     n = x0.size
     J_transposed = np.empty((n, m))
-    h_vecs = np.diag(h)
+    x1 = x0.copy()
+    x2 = x0.copy()
+    xc = x0.astype(complex, copy=True)
 
     for i in range(h.size):
         if method == '2-point':
-            x = x0 + h_vecs[i]
-            dx = x[i] - x0[i]  # Recompute dx as exactly representable number.
-            df = fun(x) - f0
+            x1[i] += h[i]
+            dx = x1[i] - x0[i]  # Recompute dx as exactly representable number.
+            df = fun(x1) - f0
         elif method == '3-point' and use_one_sided[i]:
-            x1 = x0 + h_vecs[i]
-            x2 = x0 + 2 * h_vecs[i]
+            x1[i] += h[i]
+            x2[i] += 2 * h[i]
             dx = x2[i] - x0[i]
             f1 = fun(x1)
             f2 = fun(x2)
             df = -3.0 * f0 + 4 * f1 - f2
         elif method == '3-point' and not use_one_sided[i]:
-            x1 = x0 - h_vecs[i]
-            x2 = x0 + h_vecs[i]
+            x1[i] -= h[i]
+            x2[i] += h[i]
             dx = x2[i] - x1[i]
             f1 = fun(x1)
             f2 = fun(x2)
             df = f2 - f1
         elif method == 'cs':
-            f1 = fun(x0 + h_vecs[i]*1.j)
+            xc[i] += h[i] * 1.j
+            f1 = fun(xc)
             df = f1.imag
-            dx = h_vecs[i, i]
+            dx = h[i]
         else:
             raise RuntimeError("Never be here.")
 
         J_transposed[i] = df / dx
+        x1[i] = x2[i] = xc[i] = x0[i]
 
     if m == 1:
         J_transposed = np.ravel(J_transposed)
@@ -605,7 +705,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
 
 
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
-                     kwargs={}):
+                     kwargs=None):
     """Check correctness of a function computing derivatives (Jacobian or
     gradient) by comparison with a finite difference approximation.
 
@@ -647,7 +747,7 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.optimize import check_derivative
+    >>> from scipy.optimize._numdiff import check_derivative
     >>>
     >>>
     >>> def f(x, c1, c2):
@@ -665,6 +765,8 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     >>> check_derivative(f, jac, x0, args=(1, 2))
     2.4492935982947064e-16
     """
+    if kwargs is None:
+        kwargs = {}
     J_to_test = jac(x0, *args, **kwargs)
     if issparse(J_to_test):
         J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,

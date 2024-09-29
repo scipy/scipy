@@ -4,12 +4,14 @@ Unit test for SLSQP optimization.
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal)
 from pytest import raises as assert_raises
+import pytest
 import numpy as np
+import scipy
 
-from scipy.optimize import fmin_slsqp, minimize, Bounds
+from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
 
 
-class MyCallBack(object):
+class MyCallBack:
     """pass a custom callback function
 
     This makes sure it's being used.
@@ -23,7 +25,7 @@ class MyCallBack(object):
         self.ncalls += 1
 
 
-class TestSLSQP(object):
+class TestSLSQP:
     """
     Test SLSQP algorithm using Example 14.4 from Numerical Methods for
     Engineers by Steven Chapra and Raymond Canale.
@@ -207,6 +209,24 @@ class TestSLSQP(object):
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
 
+    def test_minimize_bounded_constraint(self):
+        # when the constraint makes the solver go up against a parameter
+        # bound make sure that the numerical differentiation of the
+        # jacobian doesn't try to exceed that bound using a finite difference.
+        # gh11403
+        def c(x):
+            assert 0 <= x[0] <= 1 and 0 <= x[1] <= 1, x
+            return x[0] ** 0.5 + x[1]
+
+        def f(x):
+            assert 0 <= x[0] <= 1 and 0 <= x[1] <= 1, x
+            return -x[0] ** 2 + x[1] ** 2
+
+        cns = [NonlinearConstraint(c, 0, 1.5)]
+        x0 = np.asarray([0.9, 0.5])
+        bnd = Bounds([0., 0.], [1.0, 1.0])
+        minimize(f, x0, method='SLSQP', bounds=bnd, constraints=cns)
+
     def test_minimize_bound_equality_given2(self):
         # Minimize with method='SLSQP': bounds, eq. const., given jac. for
         # fun. and const.
@@ -312,6 +332,15 @@ class TestSLSQP(object):
         # This should not raise an exception
         fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
 
+    def test_array_bounds(self):
+        # NumPy used to treat n-dimensional 1-element arrays as scalars
+        # in some cases.  The handling of `bounds` by `fmin_slsqp` still
+        # supports this behavior.
+        bounds = [(-np.inf, np.inf), (np.array([2]), np.array([3]))]
+        x = fmin_slsqp(lambda z: np.sum(z**2 - 1), [2.5, 2.5], bounds=bounds,
+                       iprint=0)
+        assert_array_almost_equal(x, [0, 2])
+
     def test_obj_must_return_scalar(self):
         # Regression test for Github Issue #5433
         # If objective function does not return a scalar, raises ValueError
@@ -344,8 +373,10 @@ class TestSLSQP(object):
         # At x0 = [0, 1], the second constraint is clearly infeasible.
         # This triggers a call with n2==1 in the LSQ subroutine.
         x = [0, 1]
-        f1 = lambda x: x[0] + x[1] - 2
-        f2 = lambda x: x[0]**2 - 1
+        def f1(x):
+            return x[0] + x[1] - 2
+        def f2(x):
+            return x[0] ** 2 - 1
         sol = minimize(
             lambda x: x[0]**2 + x[1]**2,
             x,
@@ -459,6 +490,9 @@ class TestSLSQP(object):
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
+    @pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name']
+                       == "intel-llvm",
+                       reason="Runtime warning due to floating point issues, not logic")
     def test_inconsistent_inequalities(self):
         # gh-7618
 
@@ -484,7 +518,8 @@ class TestSLSQP(object):
         assert_(not res.success)
 
     def test_new_bounds_type(self):
-        f = lambda x: x[0]**2 + x[1]**2
+        def f(x):
+            return x[0] ** 2 + x[1] ** 2
         bounds = Bounds([1, 0], [np.inf, np.inf])
         sol = minimize(f, [0, 0], method='slsqp', bounds=bounds)
         assert_(sol.success)
@@ -492,7 +527,7 @@ class TestSLSQP(object):
 
     def test_nested_minimization(self):
 
-        class NestedProblem():
+        class NestedProblem:
 
             def __init__(self):
                 self.F_outer_count = 0
@@ -548,10 +583,30 @@ class TestSLSQP(object):
                 {'type': 'ineq', 'fun': lambda x: x[1] + x[2] - 2})
         bnds = ((-2, 2), (-2, 2), (-2, 2))
 
-        target = lambda x: 1
+        def target(x):
+            return 1
         x0 = [-1.8869783504471584, -0.640096352696244, -0.8174212253407696]
         res = minimize(target, x0, method='SLSQP', bounds=bnds, constraints=cons,
                        options={'disp':False, 'maxiter':10000})
 
         # The problem is infeasible, so it cannot succeed
         assert not res.success
+
+    def test_parameters_stay_within_bounds(self):
+        # gh11403. For some problems the SLSQP Fortran code suggests a step
+        # outside one of the lower/upper bounds. When this happens
+        # approx_derivative complains because it's being asked to evaluate
+        # a gradient outside its domain.
+        np.random.seed(1)
+        bounds = Bounds(np.array([0.1]), np.array([1.0]))
+        n_inputs = len(bounds.lb)
+        x0 = np.array(bounds.lb + (bounds.ub - bounds.lb) *
+                      np.random.random(n_inputs))
+
+        def f(x):
+            assert (x >= bounds.lb).all()
+            return np.linalg.norm(x)
+
+        with pytest.warns(RuntimeWarning, match='x were outside bounds'):
+            res = minimize(f, x0, method='SLSQP', bounds=bounds)
+            assert res.success

@@ -4,14 +4,20 @@
 Logistic (Sech-squared) Distribution
 ====================================
 
-A special case of the Generalized Logistic distribution with :math:`c=1.` Defined for :math:`x\geq0`
+A special case of the Generalized Logistic distribution with :math:`c=1`.
+The support is :math:`x \in \mathbb{R}`.
+
+This distribution function has a direct connection with the Fermi-Dirac
+distribution via its survival function. I.e. ``scipy.stats.logistic.sf`` is
+equivalent to the Fermi-Dirac distribution.
 
 .. math::
    :nowrap:
 
     \begin{eqnarray*} f\left(x\right) & = & \frac{\exp\left(-x\right)}{\left(1+\exp\left(-x\right)\right)^{2}}\\
     F\left(x\right) & = & \frac{1}{1+\exp\left(-x\right)}\\
-    G\left(q\right) & = & -\log\left(1/q-1\right)\end{eqnarray*}
+    G\left(q\right) & = & -\log\left(1/q-1\right)\\
+    S\left(x\right) & = & n_F(x)=\frac{1}{1+\exp\left(x\right)}\end{eqnarray*}
 
 .. math::
    :nowrap:

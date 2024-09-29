@@ -3,12 +3,11 @@ import threading
 import time
 
 import numpy as np
-from numpy.testing import assert_equal
 import pytest
 import scipy.interpolate
 
 
-class TestGIL(object):
+class TestGIL:
     """Check if the GIL is properly released by scipy.interpolate functions."""
 
     def setup_method(self):
@@ -28,7 +27,7 @@ class TestGIL(object):
 
         return WorkerThread()
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.xfail(reason='race conditions, may depend on system load')
     def test_rectbivariatespline(self):
         def generate_params(n_points):
@@ -55,11 +54,11 @@ class TestGIL(object):
             time.sleep(0.5)
             self.log('working')
         worker_thread.join()
-        assert_equal(self.messages, [
+        assert self.messages == [
             'interpolation started',
             'working',
             'working',
             'working',
             'interpolation complete',
-        ])
+        ]
 

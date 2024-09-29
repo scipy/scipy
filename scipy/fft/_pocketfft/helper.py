@@ -5,8 +5,14 @@ import threading
 import contextlib
 
 import numpy as np
+
+from scipy._lib._util import copy_if_needed
+
 # good_size is exposed (and used) from this import
-from .pypocketfft import good_size
+from .pypocketfft import good_size, prev_good_size
+
+
+__all__ = ['good_size', 'prev_good_size', 'set_workers', 'get_workers']
 
 _config = threading.local()
 _cpu_count = os.cpu_count()
@@ -32,8 +38,7 @@ def _iterable_of_int(x, name=None):
         x = [operator.index(a) for a in x]
     except TypeError as e:
         name = name or "value"
-        raise ValueError("{} must be a scalar or iterable of integers"
-                         .format(name)) from e
+        raise ValueError(f"{name} must be a scalar or iterable of integers") from e
 
     return x
 
@@ -72,9 +77,9 @@ def _init_nd_shape_and_axes(x, shape, axes):
 
     if any(s < 1 for s in shape):
         raise ValueError(
-            "invalid number of data points ({0}) specified".format(shape))
+            f"invalid number of data points ({shape}) specified")
 
-    return shape, axes
+    return tuple(shape), list(axes)
 
 
 def _asfarray(x):
@@ -94,7 +99,7 @@ def _asfarray(x):
     # Require native byte order
     dtype = x.dtype.newbyteorder('=')
     # Always align input
-    copy = not x.flags['ALIGNED']
+    copy = True if not x.flags['ALIGNED'] else copy_if_needed
     return np.array(x, dtype=dtype, copy=copy)
 
 def _datacopied(arr, original):
@@ -139,22 +144,23 @@ def _fix_shape(x, shape, axes):
 def _fix_shape_1d(x, n, axis):
     if n < 1:
         raise ValueError(
-            "invalid number of data points ({0}) specified".format(n))
+            f"invalid number of data points ({n}) specified")
 
     return _fix_shape(x, (n,), (axis,))
 
 
+_NORM_MAP = {None: 0, 'backward': 0, 'ortho': 1, 'forward': 2}
+
+
 def _normalization(norm, forward):
     """Returns the pypocketfft normalization mode from the norm argument"""
-
-    if norm is None:
-        return 0 if forward else 2
-
-    if norm == 'ortho':
-        return 1
-
-    raise ValueError(
-        "Invalid norm value {}, should be None or \"ortho\".".format(norm))
+    try:
+        inorm = _NORM_MAP[norm]
+        return inorm if forward else (2 - inorm)
+    except KeyError:
+        raise ValueError(
+            f'Invalid norm value {norm!r}, should '
+            'be "backward", "ortho" or "forward"') from None
 
 
 def _workers(workers):
@@ -165,8 +171,8 @@ def _workers(workers):
         if workers >= -_cpu_count:
             workers += 1 + _cpu_count
         else:
-            raise ValueError("workers value out of range; got {}, must not be"
-                             " less than {}".format(workers, -_cpu_count))
+            raise ValueError(f"workers value out of range; got {workers}, must not be"
+                             f" less than {-_cpu_count}")
     elif workers == 0:
         raise ValueError("workers must not be zero")
 
@@ -184,8 +190,10 @@ def set_workers(workers):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import fft, signal
-    >>> x = np.random.randn(128, 64)
+    >>> rng = np.random.default_rng()
+    >>> x = rng.standard_normal((128, 64))
     >>> with fft.set_workers(4):
     ...     y = signal.fftconvolve(x, x)
 

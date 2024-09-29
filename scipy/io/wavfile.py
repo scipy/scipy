@@ -8,8 +8,9 @@ Functions
 `write`: Write a NumPy array as a WAV file.
 
 """
+import io
 import sys
-import numpy
+import numpy as np
 import struct
 import warnings
 from enum import IntEnum
@@ -305,8 +306,15 @@ class WAVE_FORMAT(IntEnum):
 
 KNOWN_WAVE_FORMATS = {WAVE_FORMAT.PCM, WAVE_FORMAT.IEEE_FLOAT}
 
-# assumes file pointer is immediately
-#  after the 'fmt ' id
+
+def _raise_bad_format(format_tag):
+    try:
+        format_name = WAVE_FORMAT(format_tag).name
+    except ValueError:
+        format_name = f'{format_tag:#06x}'
+    raise ValueError(f"Unknown wave file format: {format_name}. Supported "
+                     "formats: " +
+                     ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
 
 
 def _read_fmt_chunk(fid, is_big_endian):
@@ -327,20 +335,23 @@ def _read_fmt_chunk(fid, is_big_endian):
         bytes per sample, including all channels
     bit_depth : int
         bits per sample
+
+    Notes
+    -----
+    Assumes file pointer is immediately after the 'fmt ' id
     """
     if is_big_endian:
         fmt = '>'
     else:
         fmt = '<'
 
-    size = res = struct.unpack(fmt+'I', fid.read(4))[0]
-    bytes_read = 0
+    size = struct.unpack(fmt+'I', fid.read(4))[0]
 
     if size < 16:
         raise ValueError("Binary structure of wave file is not compliant")
 
     res = struct.unpack(fmt+'HHIIHH', fid.read(16))
-    bytes_read += 16
+    bytes_read = 16
 
     format_tag, channels, fs, bytes_per_second, block_align, bit_depth = res
 
@@ -364,53 +375,125 @@ def _read_fmt_chunk(fid, is_big_endian):
             raise ValueError("Binary structure of wave file is not compliant")
 
     if format_tag not in KNOWN_WAVE_FORMATS:
-        try:
-            format_name = WAVE_FORMAT(format_tag).name
-        except ValueError:
-            format_name = f'{format_tag:#06x}'
-        raise ValueError(f"Unknown wave file format: {format_name}. Supported "
-                         "formats: " +
-                         ', '.join(x.name for x in KNOWN_WAVE_FORMATS))
+        _raise_bad_format(format_tag)
 
     # move file pointer to next chunk
-    if size > (bytes_read):
+    if size > bytes_read:
         fid.read(size - bytes_read)
+
+    # fmt should always be 16, 18 or 40, but handle it just in case
+    _handle_pad_byte(fid, size)
+
+    if format_tag == WAVE_FORMAT.PCM:
+        if bytes_per_second != fs * block_align:
+            raise ValueError("WAV header is invalid: nAvgBytesPerSec must"
+                             " equal product of nSamplesPerSec and"
+                             " nBlockAlign, but file has nSamplesPerSec ="
+                             f" {fs}, nBlockAlign = {block_align}, and"
+                             f" nAvgBytesPerSec = {bytes_per_second}")
 
     return (size, format_tag, channels, fs, bytes_per_second, block_align,
             bit_depth)
 
 
-# assumes file pointer is immediately after the 'data' id
-def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
-                     mmap=False):
+def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian, is_rf64,
+                     block_align, mmap=False):
+    """
+    Notes
+    -----
+    Assumes file pointer is immediately after the 'data' id
+
+    It's possible to not use all available bits in a container, or to store
+    samples in a container bigger than necessary, so bytes_per_sample uses
+    the actual reported container size (nBlockAlign / nChannels).  Real-world
+    examples:
+
+    Adobe Audition's "24-bit packed int (type 1, 20-bit)"
+
+        nChannels = 2, nBlockAlign = 6, wBitsPerSample = 20
+
+    http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Samples/AFsp/M1F1-int12-AFsp.wav
+    is:
+
+        nChannels = 2, nBlockAlign = 4, wBitsPerSample = 12
+
+    http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/multichaudP.pdf
+    gives an example of:
+
+        nChannels = 2, nBlockAlign = 8, wBitsPerSample = 20
+    """
     if is_big_endian:
-        fmt = '>I'
+        fmt = '>'
     else:
-        fmt = '<I'
+        fmt = '<'
 
     # Size of the data subchunk in bytes
-    size = struct.unpack(fmt, fid.read(4))[0]
+    if not is_rf64:
+        size = struct.unpack(fmt+'I', fid.read(4))[0]
+    else:
+        pos = fid.tell()
+        # chunk size is stored in global file header for RF64
+        fid.seek(28)
+        size = struct.unpack('<Q', fid.read(8))[0]
+        fid.seek(pos)
+        # skip data chunk size as it is 0xFFFFFFF
+        fid.read(4)
 
-    # Number of bytes per sample
-    bytes_per_sample = bit_depth//8
-    if bit_depth == 8:
-        dtype = 'u1'
+    # Number of bytes per sample (sample container size)
+    bytes_per_sample = block_align // channels
+    n_samples = size // bytes_per_sample
+
+    if format_tag == WAVE_FORMAT.PCM:
+        if 1 <= bit_depth <= 8:
+            dtype = 'u1'  # WAV of 8-bit integer or less are unsigned
+        elif bytes_per_sample in {3, 5, 6, 7}:
+            # No compatible dtype.  Load as raw bytes for reshaping later.
+            dtype = 'V1'
+        elif bit_depth <= 64:
+            # Remaining bit depths can map directly to signed numpy dtypes
+            dtype = f'{fmt}i{bytes_per_sample}'
+        else:
+            raise ValueError("Unsupported bit depth: the WAV file "
+                             f"has {bit_depth}-bit integer data.")
+    elif format_tag == WAVE_FORMAT.IEEE_FLOAT:
+        if bit_depth in {32, 64}:
+            dtype = f'{fmt}f{bytes_per_sample}'
+        else:
+            raise ValueError("Unsupported bit depth: the WAV file "
+                             f"has {bit_depth}-bit floating-point data.")
     else:
-        if is_big_endian:
-            dtype = '>'
-        else:
-            dtype = '<'
-        if format_tag == WAVE_FORMAT.PCM:
-            dtype += 'i%d' % bytes_per_sample
-        else:
-            dtype += 'f%d' % bytes_per_sample
+        _raise_bad_format(format_tag)
+
+    start = fid.tell()
     if not mmap:
-        data = numpy.frombuffer(fid.read(size), dtype=dtype)
+        try:
+            count = size if dtype == 'V1' else n_samples
+            data = np.fromfile(fid, dtype=dtype, count=count)
+        except io.UnsupportedOperation:  # not a C-like file
+            fid.seek(start, 0)  # just in case it seeked, though it shouldn't
+            data = np.frombuffer(fid.read(size), dtype=dtype)
+
+        if dtype == 'V1':
+            # Rearrange raw bytes into smallest compatible numpy dtype
+            dt = f'{fmt}i4' if bytes_per_sample == 3 else f'{fmt}i8'
+            a = np.zeros((len(data) // bytes_per_sample, np.dtype(dt).itemsize),
+                            dtype='V1')
+            if is_big_endian:
+                a[:, :bytes_per_sample] = data.reshape((-1, bytes_per_sample))
+            else:
+                a[:, -bytes_per_sample:] = data.reshape((-1, bytes_per_sample))
+            data = a.view(dt).reshape(a.shape[:-1])
     else:
-        start = fid.tell()
-        data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
-                            shape=(size//bytes_per_sample,))
-        fid.seek(start + size)
+        if bytes_per_sample in {1, 2, 4, 8}:
+            start = fid.tell()
+            data = np.memmap(fid, dtype=dtype, mode='c', offset=start,
+                                shape=(n_samples,))
+            fid.seek(start + size)
+        else:
+            raise ValueError("mmap=True not compatible with "
+                             f"{bytes_per_sample}-byte container size.")
+
+    _handle_pad_byte(fid, size)
 
     if channels > 1:
         data = data.reshape(-1, channels)
@@ -431,71 +514,116 @@ def _skip_unknown_chunk(fid, is_big_endian):
     if data:
         size = struct.unpack(fmt, data)[0]
         fid.seek(size, 1)
+        _handle_pad_byte(fid, size)
 
 
 def _read_riff_chunk(fid):
     str1 = fid.read(4)  # File signature
     if str1 == b'RIFF':
+        is_rf64 = False
         is_big_endian = False
         fmt = '<I'
     elif str1 == b'RIFX':
+        is_rf64 = False
         is_big_endian = True
         fmt = '>I'
+    elif str1 == b'RF64':
+        is_rf64 = True
+        is_big_endian = False
+        fmt = '<Q'
     else:
         # There are also .wav files with "FFIR" or "XFIR" signatures?
         raise ValueError(f"File format {repr(str1)} not understood. Only "
-                         "'RIFF' and 'RIFX' supported.")
-
+                         "'RIFF', 'RIFX', and 'RF64' supported.")
     # Size of entire file
-    file_size = struct.unpack(fmt, fid.read(4))[0] + 8
+    if not is_rf64:
+        file_size = struct.unpack(fmt, fid.read(4))[0] + 8
+        str2 = fid.read(4)
+    else:
+        # Skip 0xFFFFFFFF (-1) bytes
+        fid.read(4)
+        str2 = fid.read(4)
+        str3 = fid.read(4)
+        if str3 != b'ds64':
+            raise ValueError("Invalid RF64 file: ds64 chunk not found.")
+        ds64_size = struct.unpack("<I", fid.read(4))[0]
+        file_size = struct.unpack(fmt, fid.read(8))[0] + 8
+        # Ignore additional attributes of ds64 chunk like sample count, tables, etc.
+        # and just skip to the next chunk
+        fid.seek(ds64_size - 8, 1)
 
-    str2 = fid.read(4)
     if str2 != b'WAVE':
         raise ValueError(f"Not a WAV file. RIFF form type is {repr(str2)}.")
 
-    return file_size, is_big_endian
+    return file_size, is_big_endian, is_rf64
+
+
+def _handle_pad_byte(fid, size):
+    # "If the chunk size is an odd number of bytes, a pad byte with value zero
+    # is written after ckData." So we need to seek past this after each chunk.
+    if size % 2:
+        fid.seek(1, 1)
 
 
 def read(filename, mmap=False):
     """
-    Open a WAV file
+    Open a WAV file.
 
-    Return the sample rate (in samples/sec) and data from a WAV file.
+    Return the sample rate (in samples/sec) and data from an LPCM WAV file.
 
     Parameters
     ----------
     filename : string or open file handle
-        Input wav file.
+        Input WAV file.
     mmap : bool, optional
-        Whether to read data as memory-mapped.
-        Only to be used on real files (Default: False).
+        Whether to read data as memory-mapped (default: False).  Not compatible
+        with some bit depths; see Notes.  Only to be used on real files.
 
         .. versionadded:: 0.12.0
 
     Returns
     -------
     rate : int
-        Sample rate of wav file.
+        Sample rate of WAV file.
     data : numpy array
-        Data read from wav file. Data-type is determined from the file;
-        see Notes.
+        Data read from WAV file. Data-type is determined from the file;
+        see Notes.  Data is 1-D for 1-channel WAV, or 2-D of shape
+        (Nsamples, Nchannels) otherwise. If a file-like input without a
+        C-like file descriptor (e.g., :class:`python:io.BytesIO`) is
+        passed, this will not be writeable.
 
     Notes
     -----
-    This function cannot read wav files with 24-bit data.
-
     Common data types: [1]_
 
     =====================  ===========  ===========  =============
          WAV format            Min          Max       NumPy dtype
     =====================  ===========  ===========  =============
     32-bit floating-point  -1.0         +1.0         float32
-    32-bit PCM             -2147483648  +2147483647  int32
-    16-bit PCM             -32768       +32767       int16
-    8-bit PCM              0            255          uint8
+    32-bit integer PCM     -2147483648  +2147483647  int32
+    24-bit integer PCM     -2147483648  +2147483392  int32
+    16-bit integer PCM     -32768       +32767       int16
+    8-bit integer PCM      0            255          uint8
     =====================  ===========  ===========  =============
 
-    Note that 8-bit PCM is unsigned.
+    WAV files can specify arbitrary bit depth, and this function supports
+    reading any integer PCM depth from 1 to 64 bits.  Data is returned in the
+    smallest compatible numpy int type, in left-justified format.  8-bit and
+    lower is unsigned, while 9-bit and higher is signed.
+
+    For example, 24-bit data will be stored as int32, with the MSB of the
+    24-bit data stored at the MSB of the int32, and typically the least
+    significant byte is 0x00.  (However, if a file actually contains data past
+    its specified bit depth, those bits will be read and output, too. [2]_)
+
+    This bit justification and sign matches WAV's native internal format, which
+    allows memory mapping of WAV files that use 1, 2, 4, or 8 bytes per sample
+    (so 24-bit files cannot be memory-mapped, but 32-bit can).
+
+    IEEE float PCM in 32- or 64-bit format is supported, with or without mmap.
+    Values exceeding [-1, +1] are not clipped.
+
+    Non-linear PCM (mu-law, A-law) is not supported.
 
     References
     ----------
@@ -503,6 +631,8 @@ def read(filename, mmap=False):
        Interface and Data Specifications 1.0", section "Data Format of the
        Samples", August 1991
        http://www.tactilemedia.com/info/MCI_Control_Info.html
+    .. [2] Adobe Systems Incorporated, "Adobe Audition 3 User Guide", section
+       "Audio file formats: 24-bit Packed Int (type 1, 20-bit)", 2007
 
     Examples
     --------
@@ -544,12 +674,9 @@ def read(filename, mmap=False):
         fid = open(filename, 'rb')
 
     try:
-        file_size, is_big_endian = _read_riff_chunk(fid)
+        file_size, is_big_endian, is_rf64 = _read_riff_chunk(fid)
         fmt_chunk_received = False
         data_chunk_received = False
-        channels = 1
-        bit_depth = 8
-        format_tag = WAVE_FORMAT.PCM
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
@@ -558,9 +685,8 @@ def read(filename, mmap=False):
                 if data_chunk_received:
                     # End of file but data successfully read
                     warnings.warn(
-                        "Reached EOF prematurely; finished at {:d} bytes, "
-                        "expected {:d} bytes from header."
-                        .format(fid.tell(), file_size),
+                        f"Reached EOF prematurely; finished at {fid.tell():d} bytes, "
+                        f"expected {file_size:d} bytes from header.",
                         WavFileWarning, stacklevel=2)
                     break
                 else:
@@ -579,9 +705,7 @@ def read(filename, mmap=False):
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
                 format_tag, channels, fs = fmt_chunk[1:4]
                 bit_depth = fmt_chunk[6]
-                if bit_depth not in {8, 16, 32, 64, 96, 128}:
-                    raise ValueError("Unsupported bit depth: the wav file "
-                                     "has {}-bit data.".format(bit_depth))
+                block_align = fmt_chunk[5]
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id == b'data':
@@ -589,7 +713,7 @@ def read(filename, mmap=False):
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
-                                        is_big_endian, mmap)
+                                        is_big_endian, is_rf64, block_align, mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)
@@ -655,11 +779,12 @@ def write(filename, rate, data):
     Write to 16-bit PCM, Mono.
 
     >>> from scipy.io.wavfile import write
+    >>> import numpy as np
     >>> samplerate = 44100; fs = 100
     >>> t = np.linspace(0., 1., samplerate)
     >>> amplitude = np.iinfo(np.int16).max
     >>> data = amplitude * np.sin(2. * np.pi * fs * t)
-    >>> write("example.wav", samplerate, data)
+    >>> write("example.wav", samplerate, data.astype(np.int16))
 
     """
     if hasattr(filename, 'write'):
@@ -671,9 +796,10 @@ def write(filename, rate, data):
 
     try:
         dkind = data.dtype.kind
-        if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and
-                                                 data.dtype.itemsize == 1)):
-            raise ValueError("Unsupported data type '%s'" % data.dtype)
+        allowed_dtypes = ['float32', 'float64',
+                          'uint8', 'int16', 'int32', 'int64']
+        if data.dtype.name not in allowed_dtypes:
+            raise ValueError(f"Unsupported data type '{data.dtype}'")
 
         header_data = b''
 
@@ -704,30 +830,54 @@ def write(filename, rate, data):
         header_data += struct.pack('<I', len(fmt_chunk_data))
         header_data += fmt_chunk_data
 
+        # check data size (needs to be immediately before the data chunk)
+        # if too large for standard RIFF, use RF64 instead
+        resulting_file_size = len(header_data) + 4 + 4 + data.nbytes
+        is_rf64 = (resulting_file_size - 8) > 0xFFFFFFFF
+        if is_rf64:
+            header_data = b''
+            header_data += b'RF64'
+            header_data += b'\xFF\xFF\xFF\xFF'
+            header_data += b'WAVE'
+            header_data += b'ds64'
+            # size of ds64 chunk
+            header_data += struct.pack('<I', 28)
+            # will be filled later with real file size
+            header_data += struct.pack('<Q', 0)
+            header_data += struct.pack('<Q', data.nbytes)
+            header_data += struct.pack('<Q', data.shape[0])
+            # ignore 'table' field for now
+            header_data += struct.pack('<I', 0)
+            header_data += b'fmt '
+            header_data += struct.pack('<I', len(fmt_chunk_data))
+            header_data += fmt_chunk_data
+
         # fact chunk (non-PCM files)
         if not (dkind == 'i' or dkind == 'u'):
             header_data += b'fact'
             header_data += struct.pack('<II', 4, data.shape[0])
 
-        # check data size (needs to be immediately before the data chunk)
-        if ((len(header_data)-4-4) + (4+4+data.nbytes)) > 0xFFFFFFFF:
-            raise ValueError("Data exceeds wave file size limit")
-
         fid.write(header_data)
 
         # data chunk
         fid.write(b'data')
-        fid.write(struct.pack('<I', data.nbytes))
+        # write data chunk size, unless its too big in which case 0xFFFFFFFF is written
+        fid.write(struct.pack('<I', min(data.nbytes, 4294967295)))
+
         if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and
                                            sys.byteorder == 'big'):
             data = data.byteswap()
         _array_tofile(fid, data)
 
         # Determine file size and place it in correct
-        #  position at start of the file.
+        # position at start of the file or the data chunk.
         size = fid.tell()
-        fid.seek(4)
-        fid.write(struct.pack('<I', size-8))
+        if not is_rf64:
+            fid.seek(4)
+            fid.write(struct.pack('<I', size-8))
+        else:
+            fid.seek(20)
+            fid.write(struct.pack('<Q', size-8))
 
     finally:
         if not hasattr(filename, 'write'):

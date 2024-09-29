@@ -8,7 +8,7 @@ from scipy.sparse import issparse, rand
 from scipy.sparse.linalg import norm
 
 
-class TestClarksonWoodruffTransform(object):
+class TestClarksonWoodruffTransform:
     """
     Testing the Clarkson Woodruff Transform
     """
@@ -55,15 +55,14 @@ class TestClarksonWoodruffTransform(object):
                 assert_(sketch.shape == (self.n_sketch_rows, self.n_cols))
 
     def test_seed_returns_identical_transform_matrix(self):
-        for A in self.test_matrices:
-            for seed in self.seeds:
-                S1 = cwt_matrix(
-                    self.n_sketch_rows, self.n_rows, seed=seed
-                ).todense()
-                S2 = cwt_matrix(
-                    self.n_sketch_rows, self.n_rows, seed=seed
-                ).todense()
-                assert_equal(S1, S2)
+        for seed in self.seeds:
+            S1 = cwt_matrix(
+                self.n_sketch_rows, self.n_rows, seed=seed
+            ).toarray()
+            S2 = cwt_matrix(
+                self.n_sketch_rows, self.n_rows, seed=seed
+            ).toarray()
+            assert_equal(S1, S2)
 
     def test_seed_returns_identically(self):
         for A in self.test_matrices:
@@ -75,9 +74,9 @@ class TestClarksonWoodruffTransform(object):
                     A, self.n_sketch_rows, seed=seed
                 )
                 if issparse(sketch1):
-                    sketch1 = sketch1.todense()
+                    sketch1 = sketch1.toarray()
                 if issparse(sketch2):
-                    sketch2 = sketch2.todense()
+                    sketch2 = sketch2.toarray()
                 assert_equal(sketch1, sketch2)
 
     def test_sketch_preserves_frobenius_norm(self):

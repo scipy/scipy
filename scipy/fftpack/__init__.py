@@ -3,10 +3,9 @@
 Legacy discrete Fourier transforms (:mod:`scipy.fftpack`)
 =========================================================
 
-.. warning::
+.. legacy::
 
-   This submodule is now considered legacy, new code should use
-   :mod:`scipy.fft`.
+   New code should use :mod:`scipy.fft`.
 
 Fast Fourier Transforms (FFTs)
 ==============================
@@ -91,10 +90,13 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn'
            ]
 
-from .basic import *
-from .pseudo_diffs import *
-from .helper import *
-from .realtransforms import *
+from ._basic import *
+from ._pseudo_diffs import *
+from ._helper import *
+from ._realtransforms import *
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import basic, helper, pseudo_diffs, realtransforms
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

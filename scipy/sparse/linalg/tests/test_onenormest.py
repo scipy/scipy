@@ -38,7 +38,7 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
         return MatrixProductOperator(self.B.T, self.A.T)
 
 
-class TestOnenormest(object):
+class TestOnenormest:
 
     @pytest.mark.xslow
     def test_onenormest_table_3_t_2(self):
@@ -214,13 +214,13 @@ class TestOnenormest(object):
         fast_estimate = self._help_product_norm_fast(A, B)
         exact_value = self._help_product_norm_slow(A, B)
         assert_(fast_estimate <= exact_value <= 3*fast_estimate,
-                'fast: %g\nexact:%g' % (fast_estimate, exact_value))
+                f'fast: {fast_estimate:g}\nexact:{exact_value:g}')
 
     def test_returns(self):
         np.random.seed(1234)
         A = scipy.sparse.rand(50, 50, 0.1)
 
-        s0 = scipy.linalg.norm(A.todense(), 1)
+        s0 = scipy.linalg.norm(A.toarray(), 1)
         s1, v = scipy.sparse.linalg.onenormest(A, compute_v=True)
         s2, w = scipy.sparse.linalg.onenormest(A, compute_w=True)
         s3, v2, w2 = scipy.sparse.linalg.onenormest(A, compute_w=True, compute_v=True)
@@ -230,7 +230,7 @@ class TestOnenormest(object):
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
 
-class TestAlgorithm_2_2(object):
+class TestAlgorithm_2_2:
 
     def test_randn_inv(self):
         np.random.seed(1234)

@@ -1,15 +1,22 @@
-# SciPy imports.
+import pickle
+import tempfile
+import shutil
+import os
+
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
-                           assert_equal, assert_warns)
+                           assert_equal, assert_warns,
+                           assert_allclose)
+import pytest
 from pytest import raises as assert_raises
+
 from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
                        multilinear, exponential, unilinear, quadratic,
                        polynomial)
 
 
-class TestODR(object):
+class TestODR:
 
     # Bad Data for 'x'
 
@@ -122,7 +129,7 @@ class TestODR(object):
             np.array([0.1113840353364371, 0.1097673310686467, 0.0041060738314314,
                 0.0027500347539902, 0.0034962501532468]),
         )
-        assert_array_almost_equal(
+        assert_allclose(
             out.cov_beta,
             np.array([[2.1089274602333052e+00, -1.9437686411979040e+00,
                   7.0263550868344446e-02, -4.7175267373474862e-02,
@@ -139,6 +146,7 @@ class TestODR(object):
                [5.2515575927380355e-02, -5.8822307501391467e-02,
                   1.4528860663055824e-03, -1.2692942951415293e-03,
                   2.0778813389755596e-03]]),
+            rtol=1e-6, atol=2e-6,
         )
 
     # Multi-variable Example
@@ -378,8 +386,9 @@ class TestODR(object):
             -0.03750469, -0.03198903, 0.01642066, 0.01293648, -0.05627085]])
 
         beta_solution = np.array([
-            2.62920235756665876536e+00, -1.26608484996299608838e+02, 1.29703572775403074502e+02,
-            -1.88560985401185465804e+00, 7.83834160771274923718e+01, -7.64124076838087091801e+01])
+            2.62920235756665876536e+00, -1.26608484996299608838e+02,
+            1.29703572775403074502e+02, -1.88560985401185465804e+00,
+            7.83834160771274923718e+01, -7.64124076838087091801e+01])
 
         # model's function and Jacobians
         def func(beta, x):
@@ -472,3 +481,126 @@ class TestODR(object):
         output = odr_obj.run()
         assert_array_almost_equal(output.beta, [1.0, 2.0, 3.0])
 
+    def test_work_ind(self):
+
+        def func(par, x):
+            b0, b1 = par
+            return b0 + b1 * x
+
+        # generate some data
+        n_data = 4
+        x = np.arange(n_data)
+        y = np.where(x % 2, x + 0.1, x - 0.1)
+        x_err = np.full(n_data, 0.1)
+        y_err = np.full(n_data, 0.1)
+
+        # do the fitting
+        linear_model = Model(func)
+        real_data = RealData(x, y, sx=x_err, sy=y_err)
+        odr_obj = ODR(real_data, linear_model, beta0=[0.4, 0.4])
+        odr_obj.set_job(fit_type=0)
+        out = odr_obj.run()
+
+        sd_ind = out.work_ind['sd']
+        assert_array_almost_equal(out.sd_beta,
+                                  out.work[sd_ind:sd_ind + len(out.sd_beta)])
+
+    @pytest.mark.skipif(True, reason="Fortran I/O prone to crashing so better "
+                                     "not to run this test, see gh-13127")
+    def test_output_file_overwrite(self):
+        """
+        Verify fix for gh-1892
+        """
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        p = Model(func)
+        data = Data(np.arange(10), 12 * np.arange(10))
+        tmp_dir = tempfile.mkdtemp()
+        error_file_path = os.path.join(tmp_dir, "error.dat")
+        report_file_path = os.path.join(tmp_dir, "report.dat")
+        try:
+            ODR(data, p, beta0=[0.1, 13], errfile=error_file_path,
+                rptfile=report_file_path).run()
+            ODR(data, p, beta0=[0.1, 13], errfile=error_file_path,
+                rptfile=report_file_path, overwrite=True).run()
+        finally:
+            # remove output files for clean up
+            shutil.rmtree(tmp_dir)
+
+    def test_odr_model_default_meta(self):
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        p = Model(func)
+        p.set_meta(name='Sample Model Meta', ref='ODRPACK')
+        assert_equal(p.meta, {'name': 'Sample Model Meta', 'ref': 'ODRPACK'})
+
+    def test_work_array_del_init(self):
+        """
+        Verify fix for gh-18739 where del_init=1 fails.
+        """
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        # generate some data
+        n_data = 4
+        x = np.arange(n_data)
+        y = np.where(x % 2, x + 0.1, x - 0.1)
+        x_err = np.full(n_data, 0.1)
+        y_err = np.full(n_data, 0.1)
+
+        linear_model = Model(func)
+        # Try various shapes of the `we` array from various `sy` and `covy`
+        rd0 = RealData(x, y, sx=x_err, sy=y_err)
+        rd1 = RealData(x, y, sx=x_err, sy=0.1)
+        rd2 = RealData(x, y, sx=x_err, sy=[0.1])
+        rd3 = RealData(x, y, sx=x_err, sy=np.full((1, n_data), 0.1))
+        rd4 = RealData(x, y, sx=x_err, covy=[[0.01]])
+        rd5 = RealData(x, y, sx=x_err, covy=np.full((1, 1, n_data), 0.01))
+        for rd in [rd0, rd1, rd2, rd3, rd4, rd5]:
+            odr_obj = ODR(rd, linear_model, beta0=[0.4, 0.4],
+                          delta0=np.full(n_data, -0.1))
+            odr_obj.set_job(fit_type=0, del_init=1)
+            # Just make sure that it runs without raising an exception.
+            odr_obj.run()
+
+    def test_pickling_data(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = Data(x, y)
+
+        obj_pickle = pickle.dumps(data)
+        del data
+        pickle.loads(obj_pickle)
+
+    def test_pickling_real_data(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = RealData(x, y)
+
+        obj_pickle = pickle.dumps(data)
+        del data
+        pickle.loads(obj_pickle)
+
+    def test_pickling_model(self):
+        obj_pickle = pickle.dumps(unilinear)
+        pickle.loads(obj_pickle)
+
+    def test_pickling_odr(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        odr_obj = ODR(Data(x, y), unilinear)
+
+        obj_pickle = pickle.dumps(odr_obj)
+        del odr_obj
+        pickle.loads(obj_pickle)
+
+    def test_pickling_output(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        output = ODR(Data(x, y), unilinear).run
+
+        obj_pickle = pickle.dumps(output)
+        del output
+        pickle.loads(obj_pickle)

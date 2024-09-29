@@ -1,16 +1,10 @@
-from numpy.testing import suppress_warnings
-
 try:
-    import mpmath as mp  # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     pass
 
 try:
-    # Can remove when sympy #11255 is resolved; see
-    # https://github.com/sympy/sympy/issues/11255
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, "inspect.getargspec.. is deprecated")
-        from sympy.abc import x  # type: ignore[import]
+    from sympy.abc import x
 except ImportError:
     pass
 
@@ -32,7 +26,7 @@ def lagrange_inversion(a):
 
     """
     n = len(a)
-    f = sum(a[i]*x**i for i in range(len(a)))
+    f = sum(a[i]*x**i for i in range(n))
     h = (x/f).series(x, 0, n).removeO()
     hpower = [h**0]
     for k in range(n):
@@ -40,5 +34,5 @@ def lagrange_inversion(a):
     b = [mp.mpf(0)]
     for k in range(1, n):
         b.append(hpower[k].coeff(x, k - 1)/k)
-    b = map(lambda x: mp.mpf(x), b)
+    b = [mp.mpf(x) for x in b]
     return b

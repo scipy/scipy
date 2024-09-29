@@ -10,15 +10,19 @@ import numpy as np
 
 from scipy._lib._util import _asarray_validated
 
-
 # Local imports
-from .misc import norm
+from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
-from .decomp_schur import schur, rsf2csf
+from ._decomp_schur import schur, rsf2csf
+from ._basic import _ensure_dtype_cdsz
+
 
 
 class SqrtmError(np.linalg.LinAlgError):
     pass
+
+
+from ._matfuncs_sqrtm_triu import within_block_loop  # noqa: E402
 
 
 def _sqrtm_triu(T, blocksize=64):
@@ -48,9 +52,16 @@ def _sqrtm_triu(T, blocksize=64):
 
     """
     T_diag = np.diag(T)
-    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
+    keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
+
+    # Cast to complex as necessary + ensure double precision
     if not keep_it_real:
-        T_diag = T_diag.astype(complex)
+        T = np.asarray(T, dtype=np.complex128, order="C")
+        T_diag = np.asarray(T_diag, dtype=np.complex128)
+    else:
+        T = np.asarray(T, dtype=np.float64, order="C")
+        T_diag = np.asarray(T_diag, dtype=np.float64)
+
     R = np.diag(np.sqrt(T_diag))
 
     # Compute the number of blocks to use; use at least one block.
@@ -73,23 +84,13 @@ def _sqrtm_triu(T, blocksize=64):
             start_stop_pairs.append((start, start + size))
             start += size
 
-    # Within-block interactions.
-    for start, stop in start_stop_pairs:
-        for j in range(start, stop):
-            for i in range(j-1, start-1, -1):
-                s = 0
-                if j - i > 1:
-                    s = R[i, i+1:j].dot(R[i+1:j, j])
-                denom = R[i, i] + R[j, j]
-                num = T[i, j] - s
-                if denom != 0:
-                    R[i, j] = (T[i, j] - s) / denom
-                elif denom == 0 and num == 0:
-                    R[i, j] = 0
-                else:
-                    raise SqrtmError('failed to find the matrix square root')
+    # Within-block interactions (Cythonized)
+    try:
+        within_block_loop(R, T, start_stop_pairs, nblocks)
+    except RuntimeError as e:
+        raise SqrtmError(*e.args) from e
 
-    # Between-block interactions.
+    # Between-block interactions (Cython would give no significant speedup)
     for j in range(nblocks):
         jstart, jstop = start_stop_pairs[j]
         for i in range(j-1, -1, -1):
@@ -100,7 +101,7 @@ def _sqrtm_triu(T, blocksize=64):
                                                             jstart:jstop])
 
             # Invoke LAPACK.
-            # For more details, see the solve_sylvester implemention
+            # For more details, see the solve_sylvester implementation
             # and the fortran dtrsyl and ztrsyl docs.
             Rii = R[istart:istop, istart:istop]
             Rjj = R[jstart:jstop, jstart:jstop]
@@ -132,7 +133,9 @@ def sqrtm(A, disp=True, blocksize=64):
     Returns
     -------
     sqrtm : (N, N) ndarray
-        Value of the sqrt function at `A`
+        Value of the sqrt function at `A`. The dtype is float or complex.
+        The precision (data size) is determined based on the precision of
+        input `A`.
 
     errest : float
         (if disp == False)
@@ -147,6 +150,7 @@ def sqrtm(A, disp=True, blocksize=64):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import sqrtm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> r = sqrtm(a)
@@ -163,10 +167,15 @@ def sqrtm(A, disp=True, blocksize=64):
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
+    A, = _ensure_dtype_cdsz(A)
     keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
-        if not np.array_equal(T, np.triu(T)):
+        d0 = np.diagonal(T)
+        d1 = np.diagonal(T, -1)
+        eps = np.finfo(T.dtype).eps
+        needs_conversion = abs(d1) > eps * (abs(d0[1:]) + abs(d0[:-1]))
+        if needs_conversion.any():
             T, Z = rsf2csf(T, Z)
     else:
         T, Z = schur(A, output='complex')
@@ -175,6 +184,8 @@ def sqrtm(A, disp=True, blocksize=64):
         R = _sqrtm_triu(T, blocksize=blocksize)
         ZH = np.conjugate(Z).T
         X = Z.dot(R).dot(ZH)
+        dtype = np.result_type(A.dtype, 1j if np.iscomplexobj(X) else 1)
+        X = X.astype(dtype, copy=False)
     except SqrtmError:
         failflag = True
         X = np.empty_like(A)

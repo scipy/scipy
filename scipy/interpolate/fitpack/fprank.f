@@ -1,4 +1,5 @@
-      subroutine fprank(a,f,n,m,na,tol,c,sq,rank,aa,ff,h)
+      recursive subroutine fprank(a,f,n,m,na,tol,c,sq,rank,aa,ff,h)
+      implicit none
 c  subroutine fprank finds the minimum norm solution of a least-
 c  squares problem in case of rank deficiency.
 c
