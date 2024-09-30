@@ -2114,9 +2114,6 @@ for k, v in list(_aliases.items()):
     else:
         del _aliases[k]
 
-# This is not used here, but it must be defined to pass
-# scipy/_lib/tests/test_public_api.py::test_private_but_present_deprecation
-c = value('speed of light in vacuum')
 
 class ConstantWarning(DeprecationWarning):
     """Accessing a constant no longer in current CODATA data set"""
@@ -2265,3 +2262,7 @@ def find(sub: str | None = None, disp: bool = False) -> Any:
         return
     else:
         return result
+
+# This is not used here, but it must be defined to pass
+# scipy/_lib/tests/test_public_api.py::test_private_but_present_deprecation
+c = value('speed of light in vacuum')
