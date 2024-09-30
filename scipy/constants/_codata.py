@@ -55,7 +55,8 @@ from __future__ import annotations
 import warnings
 import math
 
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -1557,50 +1558,25 @@ def exact2018(exact):
 
     replace = {
         'atomic unit of action': hbar,
-        'reduced Planck constant': hbar,
         'Boltzmann constant in eV/K': k / e,
         'Boltzmann constant in Hz/K': k / h,
-        'Boltzmann constant in inverse meter per kelvin': k / (h*c),
+        'Boltzmann constant in inverse meter per kelvin': k / (h * c),
         'conductance quantum': G_0,
-        'inverse of conductance quantum': 1 / G_0,
-        'Josephson constant': K_J,
-        'Loschmidt constant (273.15 K, 100 kPa)': 100e3/273.15 * N_A/R,
-        'Loschmidt constant (273.15 K, 101.325 kPa)': 101.325e3/273.15 * N_A/R,
-        'mag. flux quantum': h / (2*e),
-        'von Klitzing constant': R_K,
-        'molar gas constant': R,
-        'molar Planck constant': h * N_A,
-        'molar volume of ideal gas (273.15 K, 100 kPa)': R * 273.15 / 100e3,
-        'molar volume of ideal gas (273.15 K, 101.325 kPa)': R * 273.15 / 101.325e3,
-
-        'Wien frequency displacement law constant': alpha_W * k / h,
-        'Wien wavelength displacement law constant': h * c / (x_W * k),
-
-        'natural unit of action': hbar,
-        'natural unit of action in eV s': hbar/e,
-        'Planck constant in eV/Hz': h/e,
-        'reduced Planck constant in eV s': hbar/e,
-        'reduced Planck constant times c in MeV fm': hbar * c / (e * 1e6 * 1e-15),
-
         'conventional value of ampere-90': A_90,
         'conventional value of coulomb-90': A_90,
-        'conventional value of farad-90': 1/ohm_90,
+        'conventional value of farad-90': 1 / ohm_90,
         'conventional value of henry-90': ohm_90,
         'conventional value of ohm-90': ohm_90,
         'conventional value of volt-90': V_90,
         'conventional value of watt-90': V_90**2 / ohm_90,
-        'elementary charge over h-bar': e / hbar,
-        'Faraday constant': e * N_A,
-        'first radiation constant': 2 * math.pi * h * c**2,
-        'first radiation constant for spectral radiance': 2 * h * c**2,
-        'second radiation constant': h * c / k,
-        'Stefan-Boltzmann constant': 2 * math.pi**5 * k**4 / (15 * h**3 * c**2),
-
-        # Unit relationships
         'electron volt-hertz relationship': e / h,
         'electron volt-inverse meter relationship': e / (h * c),
         'electron volt-kelvin relationship': e / k,
         'electron volt-kilogram relationship': e / c**2,
+        'elementary charge over h-bar': e / hbar,
+        'Faraday constant': e * N_A,
+        'first radiation constant': 2 * math.pi * h * c**2,
+        'first radiation constant for spectral radiance': 2 * h * c**2,
         'hertz-electron volt relationship': h / e,
         'hertz-inverse meter relationship': 1 / c,
         'hertz-kelvin relationship': h / k,
@@ -1609,6 +1585,8 @@ def exact2018(exact):
         'inverse meter-joule relationship': h * c,
         'inverse meter-kelvin relationship': h * c / k,
         'inverse meter-kilogram relationship': h / c,
+        'inverse of conductance quantum': 1 / G_0,
+        'Josephson constant': K_J,
         'joule-electron volt relationship': 1 / e,
         'joule-hertz relationship': 1 / h,
         'joule-inverse meter relationship': 1 / (h * c),
@@ -1623,6 +1601,24 @@ def exact2018(exact):
         'kilogram-inverse meter relationship': c / h,
         'kilogram-joule relationship': c**2,
         'kilogram-kelvin relationship': c**2 / k,
+        'Loschmidt constant (273.15 K, 100 kPa)': 100e3 / 273.15 * N_A / R,
+        'Loschmidt constant (273.15 K, 101.325 kPa)': 101.325e3 / 273.15 * N_A / R,
+        'mag. flux quantum': h / (2 * e),
+        'molar gas constant': R,
+        'molar Planck constant': h * N_A,
+        'molar volume of ideal gas (273.15 K, 100 kPa)': R * 273.15 / 100e3,
+        'molar volume of ideal gas (273.15 K, 101.325 kPa)': R * 273.15 / 101.325e3,
+        'natural unit of action': hbar,
+        'natural unit of action in eV s': hbar / e,
+        'Planck constant in eV/Hz': h / e,
+        'reduced Planck constant in eV s': hbar / e,
+        'reduced Planck constant times c in MeV fm': hbar * c / (e * 1e6 * 1e-15),
+        'reduced Planck constant': hbar,
+        'second radiation constant': h * c / k,
+        'Stefan-Boltzmann constant': 2 * math.pi**5 * k**4 / (15 * h**3 * c**2),
+        'von Klitzing constant': R_K,
+        'Wien frequency displacement law constant': alpha_W * k / h,
+        'Wien wavelength displacement law constant': h * c / (x_W * k),
     }
     return replace
 
