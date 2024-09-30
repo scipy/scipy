@@ -2115,18 +2115,6 @@ for k, v in list(_aliases.items()):
         del _aliases[k]
 
 
-# The following derived quantities are no longer included,
-# but sync values for backward compatibility
-c = physical_constants['speed of light in vacuum'][0]
-mu0 = physical_constants['vacuum mag. permeability'][0]
-epsilon0 = physical_constants['vacuum electric permittivity'][0]
-physical_constants['characteristic impedance of vacuum'] = (
-    math.sqrt(mu0 / epsilon0), 'ohm',
-    math.sqrt(mu0 / epsilon0) * 0.5 * (
-        physical_constants['vacuum mag. permeability'][2] / mu0
-        + physical_constants['vacuum electric permittivity'][2] / epsilon0))
-
-
 class ConstantWarning(DeprecationWarning):
     """Accessing a constant no longer in current CODATA data set"""
     pass

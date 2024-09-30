@@ -35,6 +35,7 @@ def test_basic_lookup():
                             _cd.unit('speed of light in vacuum')),
                  '299792458 m s^-1')
 
+
 def test_find_all():
     assert_(len(find(disp=False)) > 300)
 
