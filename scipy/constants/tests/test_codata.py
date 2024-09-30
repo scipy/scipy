@@ -1,3 +1,4 @@
+import pytest
 from scipy.constants import find, value, c, speed_of_light, precision
 from numpy.testing import assert_equal, assert_, assert_almost_equal
 import scipy.constants._codata as _cd
@@ -55,4 +56,58 @@ def test_exact_values():
     for key, val in replace.items():
         assert_equal(val, value(key))
         assert precision(key) == 0
-    
+
+
+def test_trunc_not_marked_exact_value_2002to2014():
+    exact = dict(
+        (k, v[0]) for k, v in _cd._physical_constants_2002.items()
+    )
+
+    with pytest.raises(Warning):
+        assert _cd.parse_constants_2002to2014(
+            _cd.txt2002.replace("(exact)", "0000000"), exact
+        )
+
+
+def test_trunc_not_marked_exact_value_2018to2022():
+    exact = dict(
+        (k, v[0]) for k, v in _cd._physical_constants_2018.items()
+    )
+
+    with pytest.raises(Warning):
+        assert _cd.parse_constants_2018toXXXX(
+            _cd.txt2018.replace("(exact)", "0000000"), exact
+        )
+
+
+def test_not_listed_as_exact():
+    exact = dict(
+        (k, v[0]) for k, v in _cd._physical_constants_2018.items()
+    )
+
+    with pytest.raises(Warning):
+        assert _cd.replace_exact(
+            _cd.txt2018, {"fictitious constant"}, exact
+        )
+
+
+def test_not_correctly_calculated_constant():
+    with pytest.raises(Warning):
+        assert _cd.replace_exact(
+            _cd._physical_constants_2002,
+            {"magn. constant"},
+            {"magn. constant": 0},
+        )
+
+
+def test_unmatched_exact_constants():
+    exact = dict(
+        (k, v[0]) for k, v in _cd._physical_constants_2018.items()
+    )
+
+    with pytest.raises(Warning):
+        assert _cd.replace_exact(
+            _cd._physical_constants_2018,
+            {"empty set"},
+            exact,
+        )
