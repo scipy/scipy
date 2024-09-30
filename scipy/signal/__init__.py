@@ -56,11 +56,11 @@ Filtering
 
    deconvolve    -- 1-D deconvolution using lfilter.
 
-   sosfilt       -- 1-D IIR digital linear filtering using
+   filt_sos      -- 1-D IIR digital linear filtering using
                  -- a second-order sections filter representation.
-   sosfilt_zi    -- Compute an initial state zi for the sosfilt function that
+   filt_zi_sos   -- Compute an initial state zi for the filt_sos function that
                  -- corresponds to the steady state of the step response.
-   sosfiltfilt   -- A forward-backward filter for second-order sections.
+   filtfilt_sos  -- A forward-backward filter for second-order sections.
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
 

@@ -338,11 +338,11 @@ class TestSymIIR:
         # The values in SciPy 1.14 agree with those in SciPy 1.9.1 to this
         # accuracy only. Implementation differences are twofold:
         # 1. boundary conditions are computed differently
-        # 2. the filter itself uses sosfilt instead of a hardcoded iteration
+        # 2. the filter itself uses filt_sos instead of a hardcoded iteration
         # The boundary conditions seem are tested separately (see
         # test_symiir2_initial_{fwd,bwd} above, so the difference is likely
         # due to a different way roundoff errors accumulate in the filter.
-        # In that respect, sosfilt is likely doing a better job.
+        # In that respect, filt_sos is likely doing a better job.
         xp_assert_close(res, exp_res, atol=2e-6)
 
         s = s + 1j*s

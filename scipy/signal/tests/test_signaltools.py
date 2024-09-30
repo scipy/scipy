@@ -23,9 +23,9 @@ from scipy.signal import (
     correlate, correlate2d, correlation_lags, convolve, convolve2d,
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
-    invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
-    residuez)
+    invres, invresz, vectorstrength, lfiltic, tf2sos, filt_sos, filtfilt_sos,
+    filt_zi_sos, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
+    residuez, sosfilt, sosfilt_zi, sosfiltfilt)
 from scipy.signal.windows import hann
 from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
@@ -2297,7 +2297,7 @@ class TestFiltFilt:
             return filtfilt(b, a, x, axis, padtype, padlen, method, irlen)
         elif self.filtfilt_kind == 'sos':
             sos = zpk2sos(*zpk)
-            return sosfiltfilt(sos, x, axis, padtype, padlen)
+            return filtfilt_sos(sos, x, axis, padtype, padlen)
 
     def test_basic(self):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
@@ -2387,15 +2387,22 @@ class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
 
     def test_equivalence(self):
-        """Test equivalence between sosfiltfilt and filtfilt"""
+        """Test equivalence between filtfilt_sos and filtfilt"""
         x = np.random.RandomState(0).randn(1000)
         for order in range(1, 6):
             zpk = signal.butter(order, 0.35, output='zpk')
             b, a = zpk2tf(*zpk)
             sos = zpk2sos(*zpk)
             y = filtfilt(b, a, x)
-            y_sos = sosfiltfilt(sos, x)
+            y_sos = filtfilt_sos(sos, x)
             assert_allclose(y, y_sos, atol=1e-12, err_msg=f'order={order}')
+
+    def test_backwards_compatibility(self):
+        x = np.random.RandomState(0).randn(1000)
+        sos = signal.butter(6, 0.2, output='sos')
+        y = filtfilt_sos(sos, x)
+        y_back = sosfiltfilt(sos, x)
+        assert_allclose(y, y_back)
 
 
 def filtfilt_gust_opt(b, a, x):
@@ -3368,7 +3375,7 @@ def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@pytest.mark.parametrize('func', (sosfilt, lfilter))
+@pytest.mark.parametrize('func', (filt_sos, lfilter))
 def test_nonnumeric_dtypes(func):
     x = [Decimal(1), Decimal(2), Decimal(3)]
     b = [Decimal(1), Decimal(2), Decimal(3)]
@@ -3376,8 +3383,8 @@ def test_nonnumeric_dtypes(func):
     x = np.array(x)
     assert x.dtype.kind == 'O'
     desired = lfilter(np.array(b, float), np.array(a, float), x.astype(float))
-    if func is sosfilt:
-        actual = sosfilt([b + a], x)
+    if func is filt_sos:
+        actual = filt_sos([b + a], x)
     else:
         actual = lfilter(b, a, x)
     assert all(isinstance(x, Decimal) for x in actual)
@@ -3404,22 +3411,26 @@ class TestSOSFilt:
         # Test simple IIR
         y_r = np.array([0, 2, 4, 6, 8, 10.]).astype(dt)
         sos = tf2sos(b, a)
-        assert_array_almost_equal(sosfilt(tf2sos(b, a), x), y_r)
+        assert_array_almost_equal(filt_sos(tf2sos(b, a), x), y_r)
 
         # Test simple FIR
         b = np.array([1, 1]).astype(dt)
         # NOTE: This was changed (rel. to TestLinear...) to add a pole @zero:
         a = np.array([1, 0]).astype(dt)
         y_r = np.array([0, 1, 3, 5, 7, 9.]).astype(dt)
-        assert_array_almost_equal(sosfilt(tf2sos(b, a), x), y_r)
+        assert_array_almost_equal(filt_sos(tf2sos(b, a), x), y_r)
 
         b = [1, 1, 0]
         a = [1, 0, 0]
         x = np.ones(8)
         sos = np.concatenate((b, a))
         sos.shape = (1, 6)
-        y = sosfilt(sos, x)
+        y = filt_sos(sos, x)
         assert_allclose(y, [1, 2, 2, 2, 2, 2, 2, 2])
+
+        # Test backwards compatibility
+        y_back = sosfilt(sos, x)
+        assert_allclose(y, y_back)
 
     def test_rank2(self, dt):
         shape = (4, 3)
@@ -3435,10 +3446,10 @@ class TestSOSFilt:
         y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=dt)
 
-        y = sosfilt(tf2sos(b, a), x, axis=0)
+        y = filt_sos(tf2sos(b, a), x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        y = sosfilt(tf2sos(b, a), x, axis=1)
+        y = filt_sos(tf2sos(b, a), x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
     def test_rank3(self, dt):
@@ -3449,7 +3460,7 @@ class TestSOSFilt:
         a = np.array([0.5, 0.5]).astype(dt)
 
         # Test last axis
-        y = sosfilt(tf2sos(b, a), x)
+        y = filt_sos(tf2sos(b, a), x)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
                 assert_array_almost_equal(y[i, j], lfilter(b, a, x[i, j]))
@@ -3469,31 +3480,31 @@ class TestSOSFilt:
         y_true = np.r_[y_true, lfilter(b, a, x[20:], zi=zi)[0]]
         assert_allclose_cast(y_true, lfilter(b, a, x))
 
-        y_sos, zi = sosfilt(sos, x[:20], zi=np.zeros((3, 2)))
-        y_sos = np.r_[y_sos, sosfilt(sos, x[20:], zi=zi)[0]]
+        y_sos, zi = filt_sos(sos, x[:20], zi=np.zeros((3, 2)))
+        y_sos = np.r_[y_sos, filt_sos(sos, x[20:], zi=zi)[0]]
         assert_allclose_cast(y_true, y_sos)
 
         # Use a step function
-        zi = sosfilt_zi(sos)
+        zi = filt_zi_sos(sos)
         x = np.ones(8, dt)
-        y, zf = sosfilt(sos, x, zi=zi)
+        y, zf = filt_sos(sos, x, zi=zi)
 
         assert_allclose_cast(y, np.ones(8))
         assert_allclose_cast(zf, zi)
 
         # Initial condition shape matching
         x.shape = (1, 1) + x.shape  # 3D
-        assert_raises(ValueError, sosfilt, sos, x, zi=zi)
+        assert_raises(ValueError, filt_sos, sos, x, zi=zi)
         zi_nd = zi.copy()
         zi_nd.shape = (zi.shape[0], 1, 1, zi.shape[-1])
-        assert_raises(ValueError, sosfilt, sos, x,
+        assert_raises(ValueError, filt_sos, sos, x,
                       zi=zi_nd[:, :, :, [0, 1, 1]])
-        y, zf = sosfilt(sos, x, zi=zi_nd)
+        y, zf = filt_sos(sos, x, zi=zi_nd)
         assert_allclose_cast(y[0, 0], np.ones(8))
         assert_allclose_cast(zf[:, 0, 0, :], zi)
 
     def test_initial_conditions_3d_axis1(self, dt):
-        # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
+        # Test the use of zi when filt_sos is applied to axis 1 of a 3-d input.
 
         # Input array is x.
         x = np.random.RandomState(159).randint(0, 5, size=(2, 15, 3))
@@ -3514,11 +3525,11 @@ class TestSOSFilt:
         z0 = np.zeros(shp)
 
         # Apply the filter to x.
-        yf, zf = sosfilt(sos, x, axis=axis, zi=z0)
+        yf, zf = filt_sos(sos, x, axis=axis, zi=z0)
 
         # Apply the filter to x in two stages.
-        y1, z1 = sosfilt(sos, x[:, :5, :], axis=axis, zi=z0)
-        y2, z2 = sosfilt(sos, x[:, 5:, :], axis=axis, zi=z1)
+        y1, z1 = filt_sos(sos, x[:, :5, :], axis=axis, zi=z0)
+        y2, z2 = filt_sos(sos, x[:, 5:, :], axis=axis, zi=z1)
 
         # y should equal yf, and z2 should equal zf.
         y = np.concatenate((y1, y2), axis=axis)
@@ -3526,10 +3537,10 @@ class TestSOSFilt:
         assert_allclose_cast(z2, zf, rtol=1e-10, atol=1e-13)
 
         # let's try the "step" initial condition
-        zi = sosfilt_zi(sos)
+        zi = filt_zi_sos(sos)
         zi.shape = [nsections, 1, 2, 1]
         zi = zi * x[:, 0:1, :]
-        y = sosfilt(sos, x, axis=axis, zi=zi)[0]
+        y = filt_sos(sos, x, axis=axis, zi=zi)[0]
         # check it against the TF form
         b, a = zpk2tf(*zpk)
         zi = lfilter_zi(b, a)
@@ -3545,16 +3556,20 @@ class TestSOSFilt:
         sos = np.zeros((4, 6))
         zi = np.empty((4, 3, 3, 2))  # Correct shape is (4, 3, 2, 3)
         with pytest.raises(ValueError, match='should be all ones'):
-            sosfilt(sos, x, zi=zi, axis=1)
+            filt_sos(sos, x, zi=zi, axis=1)
         sos[:, 3] = 1.
         with pytest.raises(ValueError, match='Invalid zi shape'):
-            sosfilt(sos, x, zi=zi, axis=1)
+            filt_sos(sos, x, zi=zi, axis=1)
 
-    def test_sosfilt_zi(self, dt):
+    def test_filt_zi_sos(self, dt):
         sos = signal.butter(6, 0.2, output='sos')
-        zi = sosfilt_zi(sos)
+        zi = filt_zi_sos(sos)
 
-        y, zf = sosfilt(sos, np.ones(40, dt), zi=zi)
+        # Test backwards compatibility
+        zi_back = sosfilt_zi(sos)
+        assert_allclose(zi, zi_back)
+
+        y, zf = filt_sos(sos, np.ones(40, dt), zi=zi)
         assert_allclose_cast(zf, zi, rtol=1e-13)
 
         # Expected steady state value of the step response of this filter:
@@ -3562,7 +3577,7 @@ class TestSOSFilt:
         assert_allclose_cast(y, ss, rtol=1e-13)
 
         # zi as array-like
-        _, zf = sosfilt(sos, np.ones(40, dt), zi=zi.tolist())
+        _, zf = filt_sos(sos, np.ones(40, dt), zi=zi.tolist())
         assert_allclose_cast(zf, zi, rtol=1e-13)
 
 
