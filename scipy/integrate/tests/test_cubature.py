@@ -402,7 +402,7 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
-    problems_scalar_output = [
+    @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
             # Function to integrate, like `f(x, *args)`
@@ -612,42 +612,7 @@ class TestCubatureProblems:
                 [1, 1, 1],
             ),
         ),
-    ]
-
-    problem_array_output = [
-        (
-            # Function to integrate, like `f(x, *args)`
-            genz_malik_1980_f_1,
-
-            # Exact solution, like `exact(a, b, *args)`
-            genz_malik_1980_f_1_exact,
-
-            # Function that generates random args of a certain shape.
-            genz_malik_1980_f_1_random_args,
-        ),
-        (
-            genz_malik_1980_f_2,
-            genz_malik_1980_f_2_exact,
-            genz_malik_1980_f_2_random_args,
-        ),
-        (
-            genz_malik_1980_f_3,
-            genz_malik_1980_f_3_exact,
-            genz_malik_1980_f_3_random_args
-        ),
-        (
-            genz_malik_1980_f_4,
-            genz_malik_1980_f_4_exact,
-            genz_malik_1980_f_4_random_args
-        ),
-        (
-            genz_malik_1980_f_5,
-            genz_malik_1980_f_5_exact,
-            genz_malik_1980_f_5_random_args,
-        ),
-    ]
-
-    @pytest.mark.parametrize("problem", problems_scalar_output)
+    ])
     def test_scalar_output(self, problem, rule, rtol, atol, xp):
         f, exact, a, b, args = problem
 
@@ -683,7 +648,38 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
-    @pytest.mark.parametrize("problem", problem_array_output)
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate, like `f(x, *args)`
+            genz_malik_1980_f_1,
+
+            # Exact solution, like `exact(a, b, *args)`
+            genz_malik_1980_f_1_exact,
+
+            # Function that generates random args of a certain shape.
+            genz_malik_1980_f_1_random_args,
+        ),
+        (
+            genz_malik_1980_f_2,
+            genz_malik_1980_f_2_exact,
+            genz_malik_1980_f_2_random_args,
+        ),
+        (
+            genz_malik_1980_f_3,
+            genz_malik_1980_f_3_exact,
+            genz_malik_1980_f_3_random_args
+        ),
+        (
+            genz_malik_1980_f_4,
+            genz_malik_1980_f_4_exact,
+            genz_malik_1980_f_4_random_args
+        ),
+        (
+            genz_malik_1980_f_5,
+            genz_malik_1980_f_5_exact,
+            genz_malik_1980_f_5_random_args,
+        ),
+    ])
     @pytest.mark.parametrize("shape", [
         (2,),
         (3,),
