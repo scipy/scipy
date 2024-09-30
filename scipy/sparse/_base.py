@@ -1405,6 +1405,11 @@ def issparse(x):
     bool
         True if `x` is a sparse array or a sparse matrix, False otherwise
 
+    Notes
+    -----
+    Use `isinstance(x, sp.sparse.sparray)` to check between an array or matrix.
+    Use `a.format` to check the sparse format, e.g. `a.format == 'csr'`.
+
     Examples
     --------
     >>> import numpy as np
