@@ -49,6 +49,7 @@ https://physics.nist.gov/cuu/Constants/
 # Updated to 2006 values by Vincent Davis June 2010
 # Updated to 2014 values by Joseph Booker, 2015
 # Updated to 2018 values by Jakob Jakobson, 2019
+# Updated to 2022 values by Jakob Jakobson, 2024
 
 from __future__ import annotations
 
@@ -1532,11 +1533,14 @@ W to Z mass ratio                                           0.881 53            
 
 
 def exact2018(exact):
+    # SI base constants
     c = exact['speed of light in vacuum']
     h = exact['Planck constant']
     e = exact['elementary charge']
     k = exact['Boltzmann constant']
     N_A = exact['Avogadro constant']
+
+    # Other useful constants
     R = N_A * k
     hbar = h / (2*math.pi)
     G_0 = 2 * e**2 / h
@@ -1547,6 +1551,7 @@ def exact2018(exact):
     alpha_W = 2.821439372122078893403  # 3 + lambertw(-3 * exp(-3))
     x_W = 4.965114231744276303699  # 5 + lambertw(-5 * exp(-5))
 
+    # Conventional electrical unit
     # See https://en.wikipedia.org/wiki/Conventional_electrical_unit
     K_J90 = exact['conventional value of Josephson constant']
     K_J = 2 * e / h
@@ -1601,8 +1606,8 @@ def exact2018(exact):
         'kilogram-inverse meter relationship': c / h,
         'kilogram-joule relationship': c**2,
         'kilogram-kelvin relationship': c**2 / k,
-        'Loschmidt constant (273.15 K, 100 kPa)': 100e3 / 273.15 * N_A / R,
-        'Loschmidt constant (273.15 K, 101.325 kPa)': 101.325e3 / 273.15 * N_A / R,
+        'Loschmidt constant (273.15 K, 100 kPa)': 100e3 / 273.15 / k,
+        'Loschmidt constant (273.15 K, 101.325 kPa)': 101.325e3 / 273.15 / k,
         'mag. flux quantum': h / (2 * e),
         'molar gas constant': R,
         'molar Planck constant': h * N_A,
@@ -1611,9 +1616,9 @@ def exact2018(exact):
         'natural unit of action': hbar,
         'natural unit of action in eV s': hbar / e,
         'Planck constant in eV/Hz': h / e,
+        'reduced Planck constant': hbar,
         'reduced Planck constant in eV s': hbar / e,
         'reduced Planck constant times c in MeV fm': hbar * c / (e * 1e6 * 1e-15),
-        'reduced Planck constant': hbar,
         'second radiation constant': h * c / k,
         'Stefan-Boltzmann constant': 2 * math.pi**5 * k**4 / (15 * h**3 * c**2),
         'von Klitzing constant': R_K,
@@ -1986,12 +1991,12 @@ exact2022 = exact2018
 
 # -----------------------------------------------------------------------------
 
-physical_constants: dict[str, tuple[float, str, float]] = {}
 
-
-def parse_constants_2002to2014(d: str, exact_func: Callable) -> dict[str, tuple[float, str, float]]:
-    constants = {}
-    exact = {}
+def parse_constants_2002to2014(
+    d: str, exact_func: Callable[[Any], Any]
+) -> dict[str, tuple[float, str, float]]:
+    constants: dict[str, tuple[float, str, float]] = {}
+    exact: dict[str, float] = {}
     need_replace = set()
     for line in d.split('\n'):
         name = line[:55].rstrip()
@@ -2013,9 +2018,11 @@ def parse_constants_2002to2014(d: str, exact_func: Callable) -> dict[str, tuple[
     return constants
 
 
-def parse_constants_2018toXXXX(d: str, exact_func: Callable) -> dict[str, tuple[float, str, float]]:
-    constants = {}
-    exact = {}
+def parse_constants_2018toXXXX(
+    d: str, exact_func: Callable[[Any], Any]
+) -> dict[str, tuple[float, str, float]]:
+    constants: dict[str, tuple[float, str, float]] = {}
+    exact: dict[str, float] = {}
     need_replace = set()
     for line in d.split('\n'):
         name = line[:60].rstrip()
@@ -2053,6 +2060,7 @@ _physical_constants_2014 = parse_constants_2002to2014(txt2014, exact2014)
 _physical_constants_2018 = parse_constants_2018toXXXX(txt2018, exact2018)
 _physical_constants_2022 = parse_constants_2018toXXXX(txt2022, exact2022)
 
+physical_constants: dict[str, tuple[float, str, float]] = {}
 physical_constants.update(_physical_constants_2002)
 physical_constants.update(_physical_constants_2006)
 physical_constants.update(_physical_constants_2010)
