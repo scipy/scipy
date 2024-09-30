@@ -6,7 +6,8 @@ from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import array_namespace, is_array_api_strict
-from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
+                                         xp_assert_less)
 
 from scipy.special import logsumexp, softmax
 
@@ -196,10 +197,37 @@ class TestLogSumExp:
         xp_assert_close(logsumexp(a, b=b), desired)
 
     def test_gh18295(self, xp):
+        # gh-18295 noted loss of precision when real part of one element is much
+        # larger than the rest. Check that this is resolved.
         a = xp.asarray([0.0, -40.0])
         res = logsumexp(a)
         ref = xp.logaddexp(a[0], a[1])
         xp_assert_close(res, ref)
+
+    @pytest.mark.parametrize('dtype', ['complex64', 'complex128'])
+    def test_gh21610(self, xp, dtype):
+        # gh-21610 noted that `logsumexp` could return imaginary components
+        # outside the range (-pi, pi]. Check that this is resolved.
+        # While working on this, I noticed that all other tests passed even
+        # when the imaginary component of the result was zero. This suggested
+        # the need of a stronger test with imaginary dtype.
+        rng = np.random.default_rng(324984329582349862)
+        dtype = getattr(xp, dtype)
+        shape = (10, 100)
+        x = rng.uniform(1, 40, shape) + 1.j * rng.uniform(1, 40, shape)
+        x = xp.asarray(x, dtype=dtype)
+
+        res = logsumexp(x, axis=1)
+        ref = xp.log(xp.sum(xp.exp(x), axis=1))
+        max = xp.full_like(xp.imag(res), xp.asarray(xp.pi))
+        xp_assert_less(xp.abs(xp.imag(res)), max)
+        xp_assert_close(res, ref)
+
+        out, sgn = logsumexp(x, return_sign=True, axis=1)
+        ref = xp.sum(xp.exp(x), axis=1)
+        xp_assert_less(xp.abs(xp.imag(sgn)), max)
+        xp_assert_close(out, xp.real(xp.log(ref)))
+        xp_assert_close(sgn, ref/xp.abs(ref))
 
 
 class TestSoftmax:

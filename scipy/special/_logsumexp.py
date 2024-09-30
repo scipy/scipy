@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from scipy._lib._util import _asarray_validated
 from scipy._lib._array_api import (
@@ -7,6 +8,7 @@ from scipy._lib._array_api import (
     xp_atleast_nd,
     xp_real,
     xp_copy,
+    xp_float_to_complex,
 )
 
 __all__ = ["logsumexp", "softmax", "log_softmax"]
@@ -67,6 +69,10 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     only handles two arguments. `logaddexp.reduce` is similar to this
     function, but may be less stable.
 
+    The logarithm is a multivalued function: for each :math:`x` there is an
+    infinite number of :math:`z` such that :math:`exp(z) = x`. The convention
+    is to return the :math:`z` whose imaginary part lies in :math:`(-pi, pi]`.
+
     Examples
     --------
     >>> import numpy as np
@@ -116,6 +122,16 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         out = xp.full(tuple(shape), -xp.inf, dtype=a.dtype)
         sgn = xp.sign(out)
 
+    if xp.isdtype(out.dtype, 'complex floating'):
+        if return_sign:
+            real = xp.real(sgn)
+            imag = xp_float_to_complex(_wrap_radians(xp.imag(sgn)))
+            sgn = real + imag*1j
+        else:
+            real = xp.real(out)
+            imag = xp_float_to_complex(_wrap_radians(xp.imag(out)))
+            out = real + imag*1j
+
     # Deal with shape details - reducing dimensions and convert 0-D to scalar for NumPy
     out = xp.squeeze(out, axis=axis) if not keepdims else out
     sgn = xp.squeeze(sgn, axis=axis) if (sgn is not None and not keepdims) else sgn
@@ -123,6 +139,11 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     sgn = sgn[()] if (sgn is not None and sgn.ndim == 0) else sgn
 
     return (out, sgn) if return_sign else out
+
+
+def _wrap_radians(x):
+    # Wrap radians to -pi, pi interval
+    return (x + math.pi) % (2 * math.pi) - math.pi
 
 
 def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
