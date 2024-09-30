@@ -506,12 +506,6 @@ class _spbase:
         else:
             return self.tocsr()._broadcast_to(shape, copy)
 
-    def _broadcast_to(self, shape, copy=False):
-        if self.shape == shape:
-            return self.copy() if copy else self
-        else:
-            return self.tocsr()._broadcast_to(shape, copy)
-
     def __eq__(self, other):
         return self.tocsr().__eq__(other)
 
