@@ -366,6 +366,26 @@ class TestCubature:
         with pytest.raises(Exception, match="`a` and `b` must be nonempty"):
             cubature(basic_1d_integrand, a, b, args=(xp,))
 
+    def test_zero_width_limits(self, xp):
+        n = xp.arange(5, dtype=xp.float64)
+
+        a = xp.asarray([0], dtype=xp.float64)
+        b = xp.asarray([0], dtype=xp.float64)
+
+        res = cubature(
+            basic_1d_integrand,
+            a,
+            b,
+            args=(n, xp),
+        )
+
+        xp_assert_close(
+            res.estimate,
+            xp.asarray([[0], [0], [0], [0], [0]], dtype=xp.float64),
+            rtol=1e-1,
+            atol=0,
+        )
+
 
 @pytest.mark.parametrize("rtol", [1e-4])
 @pytest.mark.parametrize("atol", [1e-5])
