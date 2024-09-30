@@ -1341,16 +1341,16 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                   shape=self.shape, dtype=data.dtype)
 
     def _binopt(self, other, op):
-        """apply the binary operation fn to two sparse matrices.""" 
+        """apply the binary operation fn to two sparse matrices."""
         different_shapes = self.shape != other.shape
         if different_shapes: # we need to broadcast
             bshape = np.broadcast_shapes(self.shape, other.shape)
-            
+
             both_are_1d = self.ndim == 1 and other.ndim == 1
             result_shape_if_1d = self.shape[0]
             self = self.reshape(self._shape_as_2d).tocsr()
             other = other.reshape(other._shape_as_2d).tocsr()
-        
+
             bshape = np.broadcast_shapes(self.shape, other.shape)
             self = self._broadcast_to(bshape)
             other = other._broadcast_to(bshape)
@@ -1393,7 +1393,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _divide_sparse(self, other):
         """
         Divide this matrix by a second sparse matrix.
-        """ 
+        """
         r = self._binopt(other, '_eldiv_')
 
         if np.issubdtype(r.dtype, np.inexact):
@@ -1418,12 +1418,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _broadcast_to(self, shape, copy=False):
         if self.shape == shape:
             return self.copy() if copy else self
-        
+
         shape = check_shape(shape, allow_nd=(self._allow_nd))
 
         if np.broadcast_shapes(self.shape, shape) != shape:
             raise ValueError("cannot be broadcast")
-        
+
         if len(self.shape) == 1 and len(shape) == 1:
             self.sum_duplicates()
             if self.nnz == 0: # array has no non zero elements
@@ -1437,14 +1437,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # treat 1D as a 2D row
         old_shape = self._shape_as_2d
-            
+
         if len(shape) != 2:
             ndim = len(shape)
             raise ValueError(f'CSR/CSC broadcast_to cannot have shape >2D. Got {ndim}D')
-        
+
         if self.nnz == 0: # array has no non zero elements
             return self.__class__(shape, dtype=self.dtype, copy=False)
-        
+
         self.sum_duplicates()
         M, N = self._swap(shape)
         oM, oN = self._swap(old_shape)

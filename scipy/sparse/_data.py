@@ -212,8 +212,6 @@ class _minmax_mixin:
         
         if axis == ():
             return self.copy()
-        
-        
 
         validateaxis(axis)
         
