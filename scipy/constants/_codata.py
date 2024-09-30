@@ -57,7 +57,7 @@ import warnings
 import math
 from scipy.special import lambertw
 
-from typing import Any
+from typing import Any, Callable
 
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
@@ -1986,7 +1986,7 @@ exact2022 = exact2018
 
 
 def parse_constants_2002to2014(
-    d: str, exact_func: callable[[Any], Any]
+    d: str, exact_func: Callable[[Any], Any]
 ) -> dict[str, tuple[float, str, float]]:
     constants: dict[str, tuple[float, str, float]] = {}
     exact: dict[str, float] = {}
@@ -2015,7 +2015,7 @@ def parse_constants_2002to2014(
 
 
 def parse_constants_2018toXXXX(
-    d: str, exact_func: callable[[Any], Any]
+    d: str, exact_func: Callable[[Any], Any]
 ) -> dict[str, tuple[float, str, float]]:
     constants: dict[str, tuple[float, str, float]] = {}
     exact: dict[str, float] = {}
@@ -2129,6 +2129,7 @@ for k, v in list(_aliases.items()):
 
 # The following derived quantities are no longer included,
 # but sync values for backward compatibility
+c = physical_constants['speed of light in vacuum'][0]
 mu0 = physical_constants['vacuum mag. permeability'][0]
 epsilon0 = physical_constants['vacuum electric permittivity'][0]
 
