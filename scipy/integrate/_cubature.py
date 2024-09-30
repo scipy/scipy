@@ -269,6 +269,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     a = xp.asarray(a, dtype=xp.float64)
     b = xp.asarray(b, dtype=xp.float64)
 
+    if xp_size(a) == 0 or xp_size(b) == 0:
+        raise ValueError("`a` and `b` must be nonempty")
+
     if a.ndim != 1 or b.ndim != 1:
         raise ValueError("`a` and `b` must be 1D arrays")
 

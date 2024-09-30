@@ -359,6 +359,13 @@ class TestCubature:
         with pytest.raises(Exception, match="`a` and `b` must be 1D arrays"):
             cubature(basic_1d_integrand, a, b, args=(xp,))
 
+    def test_a_and_b_must_be_nonempty(self, xp):
+        a = xp.asarray([])
+        b = xp.asarray([])
+
+        with pytest.raises(Exception, match="`a` and `b` must be nonempty"):
+            cubature(basic_1d_integrand, a, b, args=(xp,))
+
 
 @pytest.mark.parametrize("rtol", [1e-4])
 @pytest.mark.parametrize("atol", [1e-5])
