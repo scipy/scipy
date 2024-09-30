@@ -10,3 +10,4 @@ SpaceAfterCStyleCast: true
 ColumnLimit: 120
 InsertNewlineAtEOF: true
 AlignAfterOpenBracket: BlockIndent
+IncludeBlocks: Preserve
