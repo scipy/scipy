@@ -447,7 +447,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_1,
             genz_malik_1980_f_1_exact,
             [0, 0, 0],
-            [10, 10, 10],
+            [5, 5, 5],
             (
                 1/2,
                 [1, 1, 1],
@@ -469,7 +469,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
 
-            [10, 50],
+            [0, 0],
             [10, 50],
             (
                 [-3, 3],
