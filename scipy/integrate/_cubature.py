@@ -1,7 +1,7 @@
 import heapq
 import itertools
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
 
@@ -29,7 +29,7 @@ class CubatureRegion:
     error: Array
     a: Array
     b: Array
-    _xp: ModuleType
+    _xp: ModuleType = field(repr=False)
 
     def __lt__(self, other):
         # Consider regions with higher error estimates as being "less than" regions with
