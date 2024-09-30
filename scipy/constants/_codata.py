@@ -55,7 +55,7 @@ from __future__ import annotations
 import warnings
 import math
 
-from typing import Any
+from typing import Any, Callable
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -1992,7 +1992,7 @@ exact2022 = exact2018
 physical_constants: dict[str, tuple[float, str, float]] = {}
 
 
-def parse_constants_2002to2014(d: str, exact_func: callable) -> dict[str, tuple[float, str, float]]:
+def parse_constants_2002to2014(d: str, exact_func: Callable) -> dict[str, tuple[float, str, float]]:
     constants = {}
     exact = {}
     need_replace = set()
@@ -2016,7 +2016,7 @@ def parse_constants_2002to2014(d: str, exact_func: callable) -> dict[str, tuple[
     return constants
 
 
-def parse_constants_2018toXXXX(d: str, exact_func: callable) -> dict[str, tuple[float, str, float]]:
+def parse_constants_2018toXXXX(d: str, exact_func: Callable) -> dict[str, tuple[float, str, float]]:
     constants = {}
     exact = {}
     need_replace = set()
@@ -2042,9 +2042,9 @@ def parse_constants_2018toXXXX(d: str, exact_func: callable) -> dict[str, tuple[
 
 def replace_exact(d, to_replace, exact):
     for name in to_replace:
-        assert name in exact, 'Missing exact value: {}'.format(name)
+        assert name in exact, f'Missing exact value: {name}'
         assert abs(exact[name]/d[name][0] - 1) <= 1e-9, \
-            'Bad exact value: {}: {}, {}'.format(name, exact[name], d[name][0])
+            f'Bad exact value: {name}: { exact[name]}, {d[name][0]}'
         d[name] = (exact[name],) + d[name][1:]
     assert set(exact.keys()) == set(to_replace)
 
@@ -2112,6 +2112,7 @@ for k, v in list(_aliases.items()):
 
 # The following derived quantities are no longer included,
 # but sync values for backward compatibility
+c = physical_constants['speed of light in vacuum'][0]
 mu0 = physical_constants['vacuum mag. permeability'][0]
 epsilon0 = physical_constants['vacuum electric permittivity'][0]
 physical_constants['characteristic impedance of vacuum'] = (
