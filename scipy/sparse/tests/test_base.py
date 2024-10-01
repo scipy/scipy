@@ -2769,16 +2769,56 @@ class _TestSlicing:
         assert_array_equal(a[...].toarray(), b[...])
         assert_array_equal(a[...,].toarray(), b[...,])
 
-        assert_array_equal(a[1, ...].toarray(), b[1, ...])
-        assert_array_equal(a[..., 1].toarray(), b[..., 1])
+        assert_array_equal(a[4, ...].toarray(), b[4, ...])
+        assert_array_equal(a[..., 4].toarray(), b[..., 4])
+        assert_array_equal(a[..., 5].toarray(), b[..., 5])
+        with pytest.raises(IndexError, match='index .5. out of range'):
+            a[5, ...]
+        with pytest.raises(IndexError, match='index .10. out of range'):
+            a[..., 10]
+        with pytest.raises(IndexError, match='index .5. out of range'):
+            a.T[..., 5]
+
         assert_array_equal(a[1:, ...].toarray(), b[1:, ...])
         assert_array_equal(a[..., 1:].toarray(), b[..., 1:])
+        assert_array_equal(a[:2, ...].toarray(), b[:2, ...])
+        assert_array_equal(a[..., :2].toarray(), b[..., :2])
 
+        # check slice limit outside range
+        assert_array_equal(a[:5, ...].toarray(), b[:5, ...])
+        assert_array_equal(a[..., :5].toarray(), b[..., :5])
+        assert_array_equal(a[5:, ...].toarray(), b[5:, ...])
+        assert_array_equal(a[..., 5:].toarray(), b[..., 5:])
+        assert_array_equal(a[10:, ...].toarray(), b[10:, ...])
+        assert_array_equal(a[..., 10:].toarray(), b[..., 10:])
+
+        # ellipsis should be ignored
         assert_array_equal(a[1:, 1, ...].toarray(), b[1:, 1, ...])
         assert_array_equal(a[1, ..., 1:].toarray(), b[1, ..., 1:])
+        assert_array_equal(a[..., 1, 1:].toarray(), b[1, ..., 1:])
+        assert_array_equal(a[:2, 1, ...].toarray(), b[:2, 1, ...])
+        assert_array_equal(a[1, ..., :2].toarray(), b[1, ..., :2])
+        assert_array_equal(a[..., 1, :2].toarray(), b[1, ..., :2])
         # These return ints
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
+
+    def test_ellipsis_fancy_slicing(self):
+        b = self.asdense(arange(50).reshape(5, 10))
+        a = self.spcreator(b)
+
+        assert_array_equal(a[[4], ...].toarray(), b[[4], ...])
+        assert_array_equal(a[[2, 4], ...].toarray(), b[[2, 4], ...])
+        assert_array_equal(a[..., [4]].toarray(), b[..., [4]])
+        assert_array_equal(a[..., [2, 4]].toarray(), b[..., [2, 4]])
+
+        assert_array_equal(a[[4], 1, ...].toarray(), b[[4], 1, ...])
+        assert_array_equal(a[[2, 4], 1, ...].toarray(), b[[2, 4], 1, ...])
+        assert_array_equal(a[[4], ..., 1].toarray(), b[[4], ..., 1])
+        assert_array_equal(a[..., [4], 1].toarray(), b[..., [4], 1])
+        # fancy index gives dense
+        assert_array_equal(toarray(a[[2, 4], ..., [2, 4]]), b[[2, 4], ..., [2, 4]])
+        assert_array_equal(toarray(a[..., [2, 4], [2, 4]]), b[..., [2, 4], [2, 4]])
 
     def test_multiple_ellipsis_slicing(self):
         a = self.spcreator(arange(6).reshape(3, 2))
@@ -2962,9 +3002,11 @@ class _TestFancyIndexing:
         A = self.spcreator(B)
 
         # [i]
+        assert_equal(A[[3]].toarray(), B[[3]])
         assert_equal(A[[1, 3]].toarray(), B[[1, 3]])
 
         # [i,[1,2]]
+        assert_equal(A[3, [3]].toarray(), B[3, [3]])
         assert_equal(A[3, [1, 3]].toarray(), B[3, [1, 3]])
         assert_equal(A[-1, [2, -5]].toarray(), B[-1, [2, -5]])
         assert_equal(A[array(-1), [2, -5]].toarray(), B[-1, [2, -5]])
@@ -2978,6 +3020,7 @@ class _TestFancyIndexing:
         assert_equal(A[1:4, array([-1, -5])].toarray(), B[1:4, [-1, -5]])
 
         # [[1,2],j]
+        assert_equal(A[[3], 3].toarray(), B[[3], 3])
         assert_equal(A[[1, 3], 3].toarray(), B[[1, 3], 3])
         assert_equal(A[[2, -5], -4].toarray(), B[[2, -5], -4])
         assert_equal(A[array([2, -5]), -4].toarray(), B[[2, -5], -4])
@@ -2985,11 +3028,13 @@ class _TestFancyIndexing:
         assert_equal(A[array([2, -5]), array(-4)].toarray(), B[[2, -5], -4])
 
         # [[1,2],1:2]
+        assert_equal(A[[3], :].toarray(), B[[3], :])
         assert_equal(A[[1, 3], :].toarray(), B[[1, 3], :])
         assert_equal(A[[2, -5], 8:-1].toarray(), B[[2, -5], 8:-1])
         assert_equal(A[array([2, -5]), 8:-1].toarray(), B[[2, -5], 8:-1])
 
         # [[1,2],[1,2]]
+        assert_equal(toarray(A[[3], [4]]), B[[3], [4]])
         assert_equal(toarray(A[[1, 3], [2, 4]]), B[[1, 3], [2, 4]])
         assert_equal(toarray(A[[-1, -3], [2, -4]]), B[[-1, -3], [2, -4]])
         assert_equal(
@@ -3027,6 +3072,7 @@ class _TestFancyIndexing:
         assert_equal(A[array([-1, -3])].toarray(), B[[-1, -3]])
 
         # [[1,2],:][:,[1,2]]
+        assert_equal(A[[3], :][:, [4]].toarray(), B[[3], :][:, [4]])
         assert_equal(
             A[[1, 3], :][:, [2, 4]].toarray(), B[[1, 3], :][:, [2, 4]]
         )
@@ -3037,6 +3083,19 @@ class _TestFancyIndexing:
             A[array([-1, -3]), :][:, array([2, -4])].toarray(),
             B[[-1, -3], :][:, [2, -4]]
         )
+
+        # [1,[[1,2]]][[[1,2]],1]
+        assert_equal(
+            A[1, [[1, 3]]][[[0, 0]], 1].toarray(), B[1, [[1, 3]]][[[0, 0]], 1]
+        )
+        assert_equal(
+            A[1, [[-1, -3]]][[[0, -1]], 1].toarray(), B[1, [[-1, -3]]][[[0, -1]], 1]
+        )
+        # [:1,[[1,2]]][[[1,2]],:1]
+        with pytest.raises(IndexError, match="Only 1D or 2D arrays allowed"):
+            A[:1, [[1, 3]]]
+        with pytest.raises(IndexError, match="Only 1D or 2D arrays allowed"):
+            A[[[0, 0]], :1]
 
         # [:,[1,2]][[1,2],:]
         assert_equal(
@@ -4534,9 +4593,9 @@ class TestLIL(sparse_test_class(minmax=False)):
 
         # Ticket 1604.
         A = self.lil_container((1, 3), dtype=np.dtype('float64'))
-        B = array([0.1, 0.1, 0.1])
+        B = self.asdense([0.1, 0.1, 0.1])
         A[0, :] += B
-        assert_array_equal(A[0, :].toarray().squeeze(), B)
+        assert_array_equal(A[0, :].toarray(), B)
 
     def test_lil_iteration(self):
         row_data = [[1, 2, 3], [4, 5, 6]]
