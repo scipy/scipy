@@ -459,6 +459,7 @@ class TestBSpline:
         spl1 = BSpline(t, c[1], k)
         xp_assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
 
+    @pytest.mark.parallel_threads(1)
     def test_design_matrix_bc_types(self):
         '''
         Splines with different boundary conditions are built on different
