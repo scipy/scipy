@@ -43,9 +43,10 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for `A`.  It should approximate the
-        inverse of `A` (see Notes).
+        Preconditioner for `A`. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
+        rate of convergence, which implies that fewer iterations are needed
+        to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
         as ``callback(xk)``, where ``xk`` is the current solution vector.
@@ -69,7 +70,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     ----------
     .. [1] "Preconditioner", Wikipedia, 
            https://en.wikipedia.org/wiki/Preconditioner
-    .. [3] "Biconjugate gradient method", Wikipedia, 
+    .. [2] "Biconjugate gradient method", Wikipedia, 
            https://en.wikipedia.org/wiki/Biconjugate_gradient_method
 
     Examples
@@ -176,8 +177,10 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for `A`.  It should approximate the
-        inverse of `A` (see Notes).
+        Preconditioner for `A`. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
+        rate of convergence, which implies that fewer iterations are needed
+        to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
         as ``callback(xk)``, where ``xk`` is the current solution vector.
@@ -201,7 +204,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     ----------
     .. [1] "Preconditioner", Wikipedia, 
            https://en.wikipedia.org/wiki/Preconditioner
-    .. [3] "Biconjugate gradient stabilized method", 
+    .. [2] "Biconjugate gradient stabilized method", 
            Wikipedia, https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
 
     Examples
@@ -322,9 +325,11 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for `A`.  
-        `M` must represent a hermitian, positive definite matrix.
-        It should approximate the inverse of `A` (see Notes). 
+        Preconditioner for `A`. `M` must represent a hermitian, positive definite
+        matrix. It should approximate the inverse of `A` (see Notes).
+        Effective preconditioning dramatically improves the
+        rate of convergence, which implies that fewer iterations are needed
+        to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
         as ``callback(xk)``, where ``xk`` is the current solution vector.
@@ -439,8 +444,10 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for ``A``.  It should approximate the
-        inverse of `A` (see Notes).  
+        Preconditioner for ``A``. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
+        rate of convergence, which implies that fewer iterations are needed
+        to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
         as ``callback(xk)``, where ``xk`` is the current solution vector.
@@ -464,7 +471,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     ----------
     .. [1] "Preconditioner", Wikipedia, 
            https://en.wikipedia.org/wiki/Preconditioner
-    .. [3] "Conjugate gradient squared", Wikipedia,
+    .. [2] "Conjugate gradient squared", Wikipedia,
            https://en.wikipedia.org/wiki/Conjugate_gradient_squared_method
 
     Examples
