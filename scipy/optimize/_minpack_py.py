@@ -212,10 +212,10 @@ def _root_hybr(func, x0, args=(), jac=None,
     band : tuple
         If set to a two-sequence containing the number of sub- and
         super-diagonals within the band of the Jacobi matrix, the
-        Jacobi matrix is considered banded (only for ``fprime=None``).
+        Jacobi matrix is considered banded (only for ``jac=None``).
     eps : float
         A suitable step length for the forward-difference
-        approximation of the Jacobian (for ``fprime=None``). If
+        approximation of the Jacobian (for ``jac=None``). If
         `eps` is less than the machine precision, it is assumed
         that the relative errors in the functions are of the order of
         the machine precision.
