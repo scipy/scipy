@@ -587,7 +587,7 @@ class BSpline:
         splder, splantider
 
         """
-        c = self.c
+        c = self.c.copy()
         # pad the c array if needed
         ct = len(self.t) - len(c)
         if ct > 0:
