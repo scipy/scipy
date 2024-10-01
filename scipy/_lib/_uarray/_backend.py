@@ -175,7 +175,7 @@ def generate_multimethod(
     argument_extractor: ArgumentExtractorType,
     argument_replacer: ArgumentReplacerType,
     domain: str,
-    default: typing.Optional[typing.Callable] = None,
+    default: typing.Callable | None = None,
 ):
     """
     Generates a multimethod.

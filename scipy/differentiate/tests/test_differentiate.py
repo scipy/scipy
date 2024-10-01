@@ -12,8 +12,6 @@ from scipy import stats, optimize, special
 from scipy.differentiate import differentiate, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
 
-import threading
-
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")

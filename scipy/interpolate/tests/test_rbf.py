@@ -5,7 +5,7 @@ import numpy as np
 
 from scipy._lib._array_api import assert_array_almost_equal, assert_almost_equal
 
-from numpy import linspace, sin, cos, random, exp, allclose
+from numpy import linspace, sin, cos, exp, allclose
 from scipy.interpolate._rbf import Rbf
 from scipy._lib._testutils import _run_concurrent_barrier
 
