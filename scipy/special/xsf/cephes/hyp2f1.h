@@ -257,8 +257,8 @@ namespace cephes {
                     p = (a + d1) * (b + d1) * s / xsf::cephes::Gamma(e + 2.0); /* Poch for t=1 */
                     t = 1.0;
                     do {
-                        r = xsf::cephes::psi(1.0 + t) + xsf::cephes::psi(1.0 + t + e) -
-                            xsf::cephes::psi(a + t + d1) - xsf::cephes::psi(b + t + d1) - ax;
+                        r = xsf::cephes::psi(1.0 + t) + xsf::cephes::psi(1.0 + t + e) - xsf::cephes::psi(a + t + d1) -
+                            xsf::cephes::psi(b + t + d1) - ax;
                         q = p * r;
                         y += q;
                         p *= s * (a + t + d1) / (t + 1.0);
@@ -292,8 +292,7 @@ namespace cephes {
                     }
                 nosum:
                     p = xsf::cephes::Gamma(c);
-                    y1 *= xsf::cephes::Gamma(e) * p /
-                          (xsf::cephes::Gamma(a + d1) * xsf::cephes::Gamma(b + d1));
+                    y1 *= xsf::cephes::Gamma(e) * p / (xsf::cephes::Gamma(a + d1) * xsf::cephes::Gamma(b + d1));
 
                     y *= p / (xsf::cephes::Gamma(a + d2) * xsf::cephes::Gamma(b + d2));
                     if ((aid & 1) != 0)

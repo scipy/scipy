@@ -131,9 +131,13 @@ namespace cephes {
 
     } // namespace detail
 
-    XSF_HOST_DEVICE inline double tandg(double x) { return (detail::tancot(x, 0)); }
+    XSF_HOST_DEVICE inline double tandg(double x) {
+        return (detail::tancot(x, 0));
+    }
 
-    XSF_HOST_DEVICE inline double cotdg(double x) { return (detail::tancot(x, 1)); }
+    XSF_HOST_DEVICE inline double cotdg(double x) {
+        return (detail::tancot(x, 1));
+    }
 
 } // namespace cephes
 } // namespace xsf

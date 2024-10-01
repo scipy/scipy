@@ -71,73 +71,167 @@
 
 namespace std {
 
-XSF_HOST_DEVICE inline double abs(double num) { return cuda::std::abs(num); }
+XSF_HOST_DEVICE inline double abs(double num) {
+    return cuda::std::abs(num);
+}
 
-XSF_HOST_DEVICE inline double exp(double num) { return cuda::std::exp(num); }
+XSF_HOST_DEVICE inline double exp(double num) {
+    return cuda::std::exp(num);
+}
 
-XSF_HOST_DEVICE inline double log(double num) { return cuda::std::log(num); }
+XSF_HOST_DEVICE inline double log(double num) {
+    return cuda::std::log(num);
+}
 
-XSF_HOST_DEVICE inline double sqrt(double num) { return cuda::std::sqrt(num); }
+XSF_HOST_DEVICE inline double sqrt(double num) {
+    return cuda::std::sqrt(num);
+}
 
-XSF_HOST_DEVICE inline bool isinf(double num) { return cuda::std::isinf(num); }
+XSF_HOST_DEVICE inline bool isinf(double num) {
+    return cuda::std::isinf(num);
+}
 
-XSF_HOST_DEVICE inline bool isnan(double num) { return cuda::std::isnan(num); }
+XSF_HOST_DEVICE inline bool isnan(double num) {
+    return cuda::std::isnan(num);
+}
 
-XSF_HOST_DEVICE inline bool isfinite(double num) { return cuda::std::isfinite(num); }
+XSF_HOST_DEVICE inline bool isfinite(double num) {
+    return cuda::std::isfinite(num);
+}
 
-XSF_HOST_DEVICE inline double pow(double x, double y) { return cuda::std::pow(x, y); }
+XSF_HOST_DEVICE inline double pow(double x, double y) {
+    return cuda::std::pow(x, y);
+}
 
-XSF_HOST_DEVICE inline double sin(double x) { return cuda::std::sin(x); }
+XSF_HOST_DEVICE inline double sin(double x) {
+    return cuda::std::sin(x);
+}
 
-XSF_HOST_DEVICE inline double cos(double x) { return cuda::std::cos(x); }
+XSF_HOST_DEVICE inline double cos(double x) {
+    return cuda::std::cos(x);
+}
 
-XSF_HOST_DEVICE inline double tan(double x) { return cuda::std::tan(x); }
+XSF_HOST_DEVICE inline double tan(double x) {
+    return cuda::std::tan(x);
+}
 
-XSF_HOST_DEVICE inline double atan(double x) { return cuda::std::atan(x); }
+XSF_HOST_DEVICE inline double atan(double x) {
+    return cuda::std::atan(x);
+}
 
-XSF_HOST_DEVICE inline double acos(double x) { return cuda::std::acos(x); }
+XSF_HOST_DEVICE inline double acos(double x) {
+    return cuda::std::acos(x);
+}
 
-XSF_HOST_DEVICE inline double sinh(double x) { return cuda::std::sinh(x); }
+XSF_HOST_DEVICE inline double sinh(double x) {
+    return cuda::std::sinh(x);
+}
 
-XSF_HOST_DEVICE inline double cosh(double x) { return cuda::std::cosh(x); }
+XSF_HOST_DEVICE inline double cosh(double x) {
+    return cuda::std::cosh(x);
+}
 
-XSF_HOST_DEVICE inline double asinh(double x) { return cuda::std::asinh(x); }
+XSF_HOST_DEVICE inline double asinh(double x) {
+    return cuda::std::asinh(x);
+}
 
-XSF_HOST_DEVICE inline bool signbit(double x) { return cuda::std::signbit(x); }
+XSF_HOST_DEVICE inline bool signbit(double x) {
+    return cuda::std::signbit(x);
+}
 
 // Fallback to global namespace for functions unsupported on NVRTC
 #ifndef _LIBCUDACXX_COMPILER_NVRTC
-XSF_HOST_DEVICE inline double ceil(double x) { return cuda::std::ceil(x); }
-XSF_HOST_DEVICE inline double floor(double x) { return cuda::std::floor(x); }
-XSF_HOST_DEVICE inline double round(double x) { return cuda::std::round(x); }
-XSF_HOST_DEVICE inline double trunc(double x) { return cuda::std::trunc(x); }
-XSF_HOST_DEVICE inline double fma(double x, double y, double z) { return cuda::std::fma(x, y, z); }
-XSF_HOST_DEVICE inline double copysign(double x, double y) { return cuda::std::copysign(x, y); }
-XSF_HOST_DEVICE inline double modf(double value, double *iptr) { return cuda::std::modf(value, iptr); }
-XSF_HOST_DEVICE inline double fmax(double x, double y) { return cuda::std::fmax(x, y); }
-XSF_HOST_DEVICE inline double fmin(double x, double y) { return cuda::std::fmin(x, y); }
-XSF_HOST_DEVICE inline double log10(double num) { return cuda::std::log10(num); }
-XSF_HOST_DEVICE inline double log1p(double num) { return cuda::std::log1p(num); }
-XSF_HOST_DEVICE inline double frexp(double num, int *exp) { return cuda::std::frexp(num, exp); }
-XSF_HOST_DEVICE inline double ldexp(double num, int exp) { return cuda::std::ldexp(num, exp); }
-XSF_HOST_DEVICE inline double fmod(double x, double y) { return cuda::std::fmod(x, y); }
-XSF_HOST_DEVICE inline double nextafter(double from, double to) { return cuda::std::nextafter(from, to); }
+XSF_HOST_DEVICE inline double ceil(double x) {
+    return cuda::std::ceil(x);
+}
+XSF_HOST_DEVICE inline double floor(double x) {
+    return cuda::std::floor(x);
+}
+XSF_HOST_DEVICE inline double round(double x) {
+    return cuda::std::round(x);
+}
+XSF_HOST_DEVICE inline double trunc(double x) {
+    return cuda::std::trunc(x);
+}
+XSF_HOST_DEVICE inline double fma(double x, double y, double z) {
+    return cuda::std::fma(x, y, z);
+}
+XSF_HOST_DEVICE inline double copysign(double x, double y) {
+    return cuda::std::copysign(x, y);
+}
+XSF_HOST_DEVICE inline double modf(double value, double *iptr) {
+    return cuda::std::modf(value, iptr);
+}
+XSF_HOST_DEVICE inline double fmax(double x, double y) {
+    return cuda::std::fmax(x, y);
+}
+XSF_HOST_DEVICE inline double fmin(double x, double y) {
+    return cuda::std::fmin(x, y);
+}
+XSF_HOST_DEVICE inline double log10(double num) {
+    return cuda::std::log10(num);
+}
+XSF_HOST_DEVICE inline double log1p(double num) {
+    return cuda::std::log1p(num);
+}
+XSF_HOST_DEVICE inline double frexp(double num, int *exp) {
+    return cuda::std::frexp(num, exp);
+}
+XSF_HOST_DEVICE inline double ldexp(double num, int exp) {
+    return cuda::std::ldexp(num, exp);
+}
+XSF_HOST_DEVICE inline double fmod(double x, double y) {
+    return cuda::std::fmod(x, y);
+}
+XSF_HOST_DEVICE inline double nextafter(double from, double to) {
+    return cuda::std::nextafter(from, to);
+}
 #else
-XSF_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
-XSF_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
-XSF_HOST_DEVICE inline double round(double x) { return ::round(x); }
-XSF_HOST_DEVICE inline double trunc(double x) { return ::trunc(x); }
-XSF_HOST_DEVICE inline double fma(double x, double y, double z) { return ::fma(x, y, z); }
-XSF_HOST_DEVICE inline double copysign(double x, double y) { return ::copysign(x, y); }
-XSF_HOST_DEVICE inline double modf(double value, double *iptr) { return ::modf(value, iptr); }
-XSF_HOST_DEVICE inline double fmax(double x, double y) { return ::fmax(x, y); }
-XSF_HOST_DEVICE inline double fmin(double x, double y) { return ::fmin(x, y); }
-XSF_HOST_DEVICE inline double log10(double num) { return ::log10(num); }
-XSF_HOST_DEVICE inline double log1p(double num) { return ::log1p(num); }
-XSF_HOST_DEVICE inline double frexp(double num, int *exp) { return ::frexp(num, exp); }
-XSF_HOST_DEVICE inline double ldexp(double num, int exp) { return ::ldexp(num, exp); }
-XSF_HOST_DEVICE inline double fmod(double x, double y) { return ::fmod(x, y); }
-XSF_HOST_DEVICE inline double nextafter(double from, double to) { return ::nextafter(from, to); }
+XSF_HOST_DEVICE inline double ceil(double x) {
+    return ::ceil(x);
+}
+XSF_HOST_DEVICE inline double floor(double x) {
+    return ::floor(x);
+}
+XSF_HOST_DEVICE inline double round(double x) {
+    return ::round(x);
+}
+XSF_HOST_DEVICE inline double trunc(double x) {
+    return ::trunc(x);
+}
+XSF_HOST_DEVICE inline double fma(double x, double y, double z) {
+    return ::fma(x, y, z);
+}
+XSF_HOST_DEVICE inline double copysign(double x, double y) {
+    return ::copysign(x, y);
+}
+XSF_HOST_DEVICE inline double modf(double value, double *iptr) {
+    return ::modf(value, iptr);
+}
+XSF_HOST_DEVICE inline double fmax(double x, double y) {
+    return ::fmax(x, y);
+}
+XSF_HOST_DEVICE inline double fmin(double x, double y) {
+    return ::fmin(x, y);
+}
+XSF_HOST_DEVICE inline double log10(double num) {
+    return ::log10(num);
+}
+XSF_HOST_DEVICE inline double log1p(double num) {
+    return ::log1p(num);
+}
+XSF_HOST_DEVICE inline double frexp(double num, int *exp) {
+    return ::frexp(num, exp);
+}
+XSF_HOST_DEVICE inline double ldexp(double num, int exp) {
+    return ::ldexp(num, exp);
+}
+XSF_HOST_DEVICE inline double fmod(double x, double y) {
+    return ::fmod(x, y);
+}
+XSF_HOST_DEVICE inline double nextafter(double from, double to) {
+    return ::nextafter(from, to);
+}
 #endif
 
 template <typename T>

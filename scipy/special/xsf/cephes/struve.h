@@ -373,9 +373,13 @@ namespace cephes {
         }
     } // namespace detail
 
-    XSF_HOST_DEVICE inline double struve_h(double v, double z) { return detail::struve_hl(v, z, 1); }
+    XSF_HOST_DEVICE inline double struve_h(double v, double z) {
+        return detail::struve_hl(v, z, 1);
+    }
 
-    XSF_HOST_DEVICE inline double struve_l(double v, double z) { return detail::struve_hl(v, z, 0); }
+    XSF_HOST_DEVICE inline double struve_l(double v, double z) {
+        return detail::struve_hl(v, z, 0);
+    }
 
 } // namespace cephes
 } // namespace xsf

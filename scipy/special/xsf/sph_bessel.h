@@ -188,7 +188,9 @@ T sph_bessel_y(long n, T x) {
     return sn;
 }
 
-inline float sph_bessel_y(long n, float x) { return sph_bessel_y(n, static_cast<double>(x)); }
+inline float sph_bessel_y(long n, float x) {
+    return sph_bessel_y(n, static_cast<double>(x));
+}
 
 template <typename T>
 std::complex<T> sph_bessel_y(long n, std::complex<T> z) {
@@ -302,9 +304,8 @@ T sph_bessel_i_jac(long n, T z) {
 
     if (z == static_cast<T>(0)) {
         if (n == 1) {
-            return 1./3.;
-        }
-        else {
+            return 1. / 3.;
+        } else {
             return 0;
         }
     }

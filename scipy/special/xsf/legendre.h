@@ -490,7 +490,8 @@ struct sph_legendre_p_initializer_m_abs_m {
     T theta_sin;
 
     sph_legendre_p_initializer_m_abs_m(bool m_signbit, T theta)
-        : m_signbit(m_signbit), theta(theta), theta_sin(sin(theta)) {}
+        : m_signbit(m_signbit), theta(theta), theta_sin(sin(theta)) {
+    }
 
     void operator()(T (&res)[2]) const {
         T fac0 = T(1) / (T(2) * sqrt(T(M_PI)));
@@ -509,7 +510,8 @@ struct sph_legendre_p_recurrence_m_abs_m {
     T theta;
     T theta_sin;
 
-    sph_legendre_p_recurrence_m_abs_m(T theta) : theta(theta), theta_sin(sin(theta)) {}
+    sph_legendre_p_recurrence_m_abs_m(T theta) : theta(theta), theta_sin(sin(theta)) {
+    }
 
     void operator()(int m, T (&res)[2]) const {
         int m_abs = abs(m);
@@ -547,7 +549,8 @@ struct sph_legendre_p_initializer_n {
     T theta;
     T theta_cos;
 
-    sph_legendre_p_initializer_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)) {}
+    sph_legendre_p_initializer_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)) {
+    }
 
     void operator()(const T &res_m_abs_m, T (&res)[2]) const {
         T fac = sqrt(T(2 * abs(m) + 3));
@@ -563,7 +566,8 @@ struct sph_legendre_p_recurrence_n {
     T theta;
     T theta_cos;
 
-    sph_legendre_p_recurrence_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)) {}
+    sph_legendre_p_recurrence_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)) {
+    }
 
     void operator()(int n, T (&res)[2]) const {
         T fac0 = -sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));

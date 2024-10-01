@@ -640,7 +640,9 @@ namespace numpy {
             return *reinterpret_cast<T *>(src);
         }
 
-        static void set(char *dst, const T &src) { *reinterpret_cast<npy_type_t<T> *>(dst) = src; }
+        static void set(char *dst, const T &src) {
+            *reinterpret_cast<npy_type_t<T> *>(dst) = src;
+        }
     };
 
     template <typename T>
@@ -832,7 +834,8 @@ namespace numpy {
         std::tuple<Trs...> m_trs;
 
       public:
-        compose(Trs... trs) : m_trs(trs...) {}
+        compose(Trs... trs) : m_trs(trs...) {
+        }
 
         template <typename Func>
         decltype(auto) operator()(Func func) const {
@@ -853,7 +856,8 @@ namespace numpy {
             : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
               func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
               data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
-              types(ufunc_traits<Func>::types) {}
+              types(ufunc_traits<Func>::types) {
+        }
     };
 
     class ufunc_overloads {
@@ -895,7 +899,8 @@ namespace numpy {
         }
 
         template <typename... Trs, typename... Funcs>
-        ufunc_overloads(compose<Trs...> trs, Funcs... funcs) : ufunc_overloads(trs(funcs)...) {}
+        ufunc_overloads(compose<Trs...> trs, Funcs... funcs) : ufunc_overloads(trs(funcs)...) {
+        }
 
         ufunc_overloads(ufunc_overloads &&other) = default;
 
@@ -908,17 +913,29 @@ namespace numpy {
             }
         }
 
-        int ntypes() const { return m_ntypes; }
+        int ntypes() const {
+            return m_ntypes;
+        }
 
-        bool has_return() const { return m_has_return; }
+        bool has_return() const {
+            return m_has_return;
+        }
 
-        int nin_and_nout() const { return m_nin_and_nout; }
+        int nin_and_nout() const {
+            return m_nin_and_nout;
+        }
 
-        PyUFuncGenericFunction *func() const { return m_func.get(); }
+        PyUFuncGenericFunction *func() const {
+            return m_func.get();
+        }
 
-        data_handle_type *data() const { return m_data.get(); }
+        data_handle_type *data() const {
+            return m_data.get();
+        }
 
-        char *types() const { return m_types.get(); }
+        char *types() const {
+            return m_types.get();
+        }
 
         void set_name(const char *name) {
             for (int i = 0; i < m_ntypes; ++i) {
@@ -987,12 +1004,16 @@ namespace numpy {
     // rename to autodiff_var?
     template <typename T>
     struct autodiff_traits {
-        static T to_var(T arg, size_t i) { return arg; }
+        static T to_var(T arg, size_t i) {
+            return arg;
+        }
     };
 
     template <typename T, size_t... Orders>
     struct autodiff_traits<dual<T, Orders...>> {
-        static dual<T, Orders...> to_var(T arg, size_t i) { return dual_var<Orders...>(arg, i); }
+        static dual<T, Orders...> to_var(T arg, size_t i) {
+            return dual_var<Orders...>(arg, i);
+        }
     };
 
     template <

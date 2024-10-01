@@ -230,7 +230,9 @@ namespace detail {
     class ContinuedFractionSeriesGenerator {
 
       public:
-        XSF_HOST_DEVICE explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) { init(); }
+        XSF_HOST_DEVICE explicit ContinuedFractionSeriesGenerator(Generator &cf) : cf_(cf) {
+            init();
+        }
 
         XSF_HOST_DEVICE T operator()() {
             T v = v_;
@@ -286,8 +288,8 @@ namespace detail {
      */
     template <typename Function>
     XSF_HOST_DEVICE inline std::tuple<double, double, double, double, int> bracket_root_for_cdf_inversion(
-        Function func, double x0, double xmin, double xmax, double step0_left,
-        double step0_right, double factor_left, double factor_right, bool increasing, std::uint64_t maxiter
+        Function func, double x0, double xmin, double xmax, double step0_left, double step0_right, double factor_left,
+        double factor_right, bool increasing, std::uint64_t maxiter
     ) {
         double y0 = func(x0);
 
@@ -335,7 +337,7 @@ namespace detail {
                     std::swap(interior, frontier);
                     std::swap(y_interior, y_frontier);
                 }
-		return {interior, frontier, y_interior, y_frontier, 0};
+                return {interior, frontier, y_interior, y_frontier, 0};
             }
             if (reached_boundary) {
                 /* We've reached a boundary point without finding a root . */
@@ -360,7 +362,7 @@ namespace detail {
         /* Failed to converge within maxiter iterations. If maxiter is sufficiently high and
          * factor_left and factor_right are set appropriately, this should only happen due to
          * a bug in this function. Limiting the number of iterations is a defensive programming measure. */
-	return {
+        return {
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
             std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), 3
         };
@@ -369,8 +371,7 @@ namespace detail {
     /* Find root of a scalar function using Chandrupatla's algorithm */
     template <typename Function>
     XSF_HOST_DEVICE inline std::pair<double, int> find_root_chandrupatla(
-        Function func, double x1, double x2, double f1, double f2, double rtol,
-        double atol, std::uint64_t maxiter
+        Function func, double x1, double x2, double f1, double f2, double rtol, double atol, std::uint64_t maxiter
     ) {
         if (f1 == 0) {
             return {x1, 0};

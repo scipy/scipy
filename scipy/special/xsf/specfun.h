@@ -89,7 +89,9 @@ inline double hyp1f1(double a, double b, double x) {
     return outy;
 }
 
-inline std::complex<double> cerf(std::complex<double> z) { return specfun::cerror(z); }
+inline std::complex<double> cerf(std::complex<double> z) {
+    return specfun::cerror(z);
+}
 
 inline double pmv(double m, double v, double x) {
     int int_m;
@@ -104,4 +106,4 @@ inline double pmv(double m, double v, double x) {
     return out;
 }
 
-} // namespace special
+} // namespace xsf

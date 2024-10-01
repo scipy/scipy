@@ -306,7 +306,9 @@ namespace detail {
 
 /* Fresnel integrals of complex numbers */
 
-inline void fresnel(double z, double &fs, double &fc) { cephes::fresnl(z, &fs, &fc); }
+inline void fresnel(double z, double &fs, double &fc) {
+    cephes::fresnl(z, &fs, &fc);
+}
 
 inline void fresnel(float z, float &fs, float &fc) {
     double fs_double;

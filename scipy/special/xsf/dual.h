@@ -123,15 +123,25 @@ class dual<T, Order> {
         return *this;
     }
 
-    value_type &value() { return data[0]; }
+    value_type &value() {
+        return data[0];
+    }
 
-    const value_type &value() const { return data[0]; }
+    const value_type &value() const {
+        return data[0];
+    }
 
-    value_type &operator[](size_t i) { return data[i]; }
+    value_type &operator[](size_t i) {
+        return data[i];
+    }
 
-    const value_type &operator[](size_t i) const { return data[i]; }
+    const value_type &operator[](size_t i) const {
+        return data[i];
+    }
 
-    static constexpr size_t max_order() { return Order; }
+    static constexpr size_t max_order() {
+        return Order;
+    }
 };
 
 template <typename T, size_t Order0, size_t Order1, size_t... Orders>
@@ -268,11 +278,17 @@ class dual<T, Order0, Order1, Orders...> {
         return data0.value();
     }
 
-    dual<value_type, Order1, Orders...> &operator[](size_t i) { return data[i]; }
+    dual<value_type, Order1, Orders...> &operator[](size_t i) {
+        return data[i];
+    }
 
-    const dual<value_type, Order1, Orders...> &operator[](size_t i) const { return data[i]; }
+    const dual<value_type, Order1, Orders...> &operator[](size_t i) const {
+        return data[i];
+    }
 
-    static constexpr size_t max_order() { return std::max({Order0, Order1, Orders...}); }
+    static constexpr size_t max_order() {
+        return std::max({Order0, Order1, Orders...});
+    }
 };
 
 template <typename T, size_t Order0, size_t... Orders>

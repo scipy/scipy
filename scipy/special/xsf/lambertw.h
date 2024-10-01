@@ -143,8 +143,8 @@ XSF_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z, lon
 }
 
 XSF_HOST_DEVICE inline std::complex<float> lambertw(std::complex<float> z, long k, float tol) {
-    return static_cast<std::complex<float>>(
-        lambertw(static_cast<std::complex<double>>(z), k, static_cast<double>(tol)));
+    return static_cast<std::complex<float>>(lambertw(static_cast<std::complex<double>>(z), k, static_cast<double>(tol))
+    );
 }
 
 } // namespace xsf
