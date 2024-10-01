@@ -20,39 +20,43 @@ Mathematical constants
 
 Physical constants
 ==================
+The following physical constants are available as attributes of `scipy.constants`.
+All units are `SI <https://en.wikipedia.org/wiki/International_System_of_Units>`_.
 
-===========================  =================================================================
-``c``                        speed of light in vacuum in m s^-1
-``speed_of_light``           speed of light in vacuum in m s^-1
-``mu_0``                     the magnetic constant :math:`\mu_0` in N A^-2
-``epsilon_0``                the electric constant (vacuum permittivity), :math:`\epsilon_0` in F m^-1
-``h``                        the Planck constant :math:`h` in J Hz^-1
-``Planck``                   the Planck constant :math:`h` in J Hz^-1
-``hbar``                     the reduced Planck constant, :math:`\hbar = h/(2\pi)`, in J s
-``G``                        Newtonian constant of gravitation in m^3 kg^-1 s^-2
-``gravitational_constant``   Newtonian constant of gravitation in m^3 kg^-1 s^-2
-``g``                        standard acceleration of gravity in m s^-2
-``e``                        elementary charge in C
-``elementary_charge``        elementary charge in C
-``R``                        molar gas constant in J mol^-1 K^-1
-``gas_constant``             molar gas constant in J mol^-1 K^-1
-``alpha``                    fine-structure constant (unitless)
-``fine_structure``           fine-structure constant (unitless)
-``N_A``                      Avogadro constant in mol^-1
-``Avogadro``                 Avogadro constant in mol^-1
-``k``                        Boltzmann constant in J K^-1
-``Boltzmann``                Boltzmann constant in J K^-1
-``sigma``                    Stefan-Boltzmann constant :math:`\sigma` in W m^-2 K^-4
-``Stefan_Boltzmann``         Stefan-Boltzmann constant :math:`\sigma` in W m^-2 K^-4
-``Wien``                     Wien wavelength displacement law constant in m K
-``Rydberg``                  Rydberg constant in m^-1
-``m_e``                      electron mass in kg
-``electron_mass``            electron mass in kg
-``m_p``                      proton mass in kg
-``proton_mass``              proton mass in kg
-``m_n``                      neutron mass in kg
-``neutron_mass``             neutron mass in kg
-===========================  =================================================================
+===========================  ================================================================  ===============
+Attribute                    Quantity                                                          Units
+===========================  ================================================================  ===============
+``c``                        speed of light in vacuum                                          m s^-1
+``speed_of_light``           speed of light in vacuum                                          m s^-1
+``mu_0``                     the magnetic constant :math:`\mu_0`                               N A^-2
+``epsilon_0``                the electric constant (vacuum permittivity), :math:`\epsilon_0`   F m^-1
+``h``                        the Planck constant :math:`h`                                     J Hz^-1
+``Planck``                   the Planck constant :math:`h`                                     J Hz^-1
+``hbar``                     the reduced Planck constant, :math:`\hbar = h/(2\pi)`             J s
+``G``                        Newtonian constant of gravitation                                 m^3 kg^-1 s^-2
+``gravitational_constant``   Newtonian constant of gravitation                                 m^3 kg^-1 s^-2
+``g``                        standard acceleration of gravity                                  m s^-2
+``e``                        elementary charge                                                 C
+``elementary_charge``        elementary charge                                                 C
+``R``                        molar gas constant                                                J mol^-1 K^-1
+``gas_constant``             molar gas constant                                                J mol^-1 K^-1
+``alpha``                    fine-structure constant                                           (unitless)
+``fine_structure``           fine-structure constant                                           (unitless)
+``N_A``                      Avogadro constant                                                 mol^-1
+``Avogadro``                 Avogadro constant                                                 mol^-1
+``k``                        Boltzmann constant                                                J K^-1
+``Boltzmann``                Boltzmann constant                                                J K^-1
+``sigma``                    Stefan-Boltzmann constant :math:`\sigma`                          W m^-2 K^-4
+``Stefan_Boltzmann``         Stefan-Boltzmann constant :math:`\sigma`                          W m^-2 K^-4
+``Wien``                     Wien wavelength displacement law constant                         m K
+``Rydberg``                  Rydberg constant                                                  m^-1
+``m_e``                      electron mass                                                     kg
+``electron_mass``            electron mass                                                     kg
+``m_p``                      proton mass                                                       kg
+``proton_mass``              proton mass                                                       kg
+``m_n``                      neutron mass                                                      kg
+``neutron_mass``             neutron mass                                                      kg
+===========================  ================================================================  ===============
 
 
 Constants database
