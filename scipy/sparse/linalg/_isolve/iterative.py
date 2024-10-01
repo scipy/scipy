@@ -63,7 +63,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     Notes
     -----
     The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
-    condition number than `A`. See [1]_ for more info.
+    condition number than `A`, see [1]_ .
 
     References
     ----------
@@ -195,7 +195,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     Notes
     -----
     The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
-    condition number than `A`, see [1]_ for more info.
+    condition number than `A`, see [1]_ .
 
     References
     ----------
