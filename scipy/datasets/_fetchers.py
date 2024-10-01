@@ -36,8 +36,8 @@ def ascent():
     Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy
     use in demos.
 
-    The image is derived from accent-to-the-top.jpg at
-    http://www.public-domain-image.com/people-public-domain-images-pictures/
+    The image is derived from
+    https://pixnio.com/people/accent-to-the-top
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ def ascent():
     >>> ascent.shape
     (512, 512)
     >>> ascent.max()
-    255
+    np.uint8(255)
 
     >>> import matplotlib.pyplot as plt
     >>> plt.gray()
@@ -178,7 +178,8 @@ def face(gray=False):
     """
     Get a 1024 x 768, color image of a raccoon face.
 
-    raccoon-procyon-lotor.jpg at http://www.public-domain-image.com
+    The image is derived from
+    https://pixnio.com/fauna-animals/raccoons/raccoon-procyon-lotor
 
     Parameters
     ----------
@@ -197,9 +198,7 @@ def face(gray=False):
     >>> face.shape
     (768, 1024, 3)
     >>> face.max()
-    255
-    >>> face.dtype
-    dtype('uint8')
+    np.uint8(255)
 
     >>> import matplotlib.pyplot as plt
     >>> plt.gray()

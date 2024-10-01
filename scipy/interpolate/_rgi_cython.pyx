@@ -16,9 +16,9 @@ np.import_array()
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
-                       const np.intp_t[:, :] indices,       # unless prior
-                       double[:, :] norm_distances,    # np.ascontiguousarray
+def evaluate_linear_2d(const double_or_complex[:, :] values, # cannot declare as ::1
+                       const np.intp_t[:, :] indices,        # unless prior
+                       const double[:, :] norm_distances,    # np.ascontiguousarray
                        tuple grid not None,
                        double_or_complex[:] out):
     cdef:

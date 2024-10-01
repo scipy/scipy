@@ -286,9 +286,10 @@ class TestSphericalInDerivatives(SphericalDerivativesTestCase):
         return spherical_in(n, z, derivative=True)
 
     def test_spherical_in_d_zero(self):
-        n = np.array([1, 2, 3, 7, 15])
+        n = np.array([0, 1, 2, 3, 7, 15])
+        spherical_in(n, 0, derivative=False)
         assert_allclose(spherical_in(n, 0, derivative=True),
-                        np.zeros(5))
+                        np.array([0, 1/3, 0, 0, 0, 0]))
 
 
 class TestSphericalKnDerivatives(SphericalDerivativesTestCase):
@@ -382,3 +383,18 @@ class TestSphericalOld:
         sy3 = spherical_yn(1, 0.2, derivative=True)
         # compare correct derivative val. (correct =-system val).
         assert_almost_equal(sy3,sphpy,4)
+
+
+@pytest.mark.parametrize('derivative', [False, True])
+@pytest.mark.parametrize('fun', [spherical_jn, spherical_in,
+                                 spherical_yn, spherical_kn])
+def test_negative_real_gh14582(derivative, fun):
+    # gh-14582 reported that the spherical Bessel functions did not work
+    # with negative real argument `z`. Check that this is resolved.
+    rng = np.random.default_rng(3598435982345987234)
+    size = 25
+    n = rng.integers(0, 10, size=size)
+    z = rng.standard_normal(size=size)
+    res = fun(n, z, derivative=derivative)
+    ref = fun(n, z+0j, derivative=derivative)
+    np.testing.assert_allclose(res, ref.real)

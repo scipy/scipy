@@ -507,8 +507,8 @@ def kolmogn(n, x, cdf=True):
 
     The two-sided Kolmogorov-Smirnov distribution has as its CDF Pr(D_n <= x),
     for a sample of size n drawn from a distribution with CDF F(t), where
-    D_n &= sup_t |F_n(t) - F(t)|, and
-    F_n(t) is the Empirical Cumulative Distribution Function of the sample.
+    :math:`D_n &= sup_t |F_n(t) - F(t)|`, and
+    :math:`F_n(t)` is the Empirical Cumulative Distribution Function of the sample.
 
     Parameters
     ----------
@@ -526,7 +526,7 @@ def kolmogn(n, x, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, x, cdf, None],
+    it = np.nditer([n, x, cdf, None], flags=['zerosize_ok'],
                    op_dtypes=[None, np.float64, np.bool_, np.float64])
     for _n, _x, _cdf, z in it:
         if np.isnan(_n):

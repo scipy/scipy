@@ -20,9 +20,9 @@
 # Provides typing union operator ``|`` in Python 3.9:
 from __future__ import annotations
 # Linter does not allow to import ``Generator`` from ``typing`` module:
-from collections.abc import Generator
+from collections.abc import Generator, Callable
 from functools import cache, lru_cache, partial
-from typing import Callable, get_args, Literal
+from typing import get_args, Literal
 
 import numpy as np
 
@@ -545,7 +545,7 @@ class ShortTimeFFT:
             If the FFT length `mfft` is even, the last FFT value is not paired,
             and thus it is not scaled.
 
-        Note that`onesided` and `onesided2X` do not work for complex-valued signals or
+        Note that `onesided` and `onesided2X` do not work for complex-valued signals or
         complex-valued windows. Furthermore, the frequency values can be obtained by
         reading the `f` property, and the number of samples by accessing the `f_pts`
         property.
@@ -861,11 +861,11 @@ class ShortTimeFFT:
             -> np.ndarray:
         r"""Calculate spectrogram or cross-spectrogram.
 
-        The spectrogram is the absolute square of the STFT, i.e, it is
+        The spectrogram is the absolute square of the STFT, i.e., it is
         ``abs(S[q,p])**2`` for given ``S[q,p]``  and thus is always
         non-negative.
         For two STFTs ``Sx[q,p], Sy[q,p]``, the cross-spectrogram is defined
-        as ``Sx[q,p] * np.conj(Sx[q,p])`` and is complex-valued.
+        as ``Sx[q,p] * np.conj(Sy[q,p])`` and is complex-valued.
         This is a convenience function for calling `~ShortTimeFFT.stft` /
         `stft_detrend`, hence all parameters are discussed there. If `y` is not
         ``None`` it needs to have the same shape as `x`.
@@ -886,7 +886,7 @@ class ShortTimeFFT:
         >>> f_i = 5e-3*(t_x - t_x[N // 3])**2 + 1  # varying frequency
         >>> x = square(2*np.pi*np.cumsum(f_i)*T_x)  # the signal
 
-        The utitlized Gaussian window is 50 samples or 2.5 s long. The
+        The utilized Gaussian window is 50 samples or 2.5 s long. The
         parameter ``mfft=800`` (oversampling factor 16) and the `hop` interval
         of 2 in `ShortTimeFFT` was chosen to produce a sufficient number of
         points:
@@ -1449,8 +1449,6 @@ class ShortTimeFFT:
         ----------
         n
             Number of sample of the input signal.
-        x
-            The input signal as real or complex valued array.
         p0
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -1584,7 +1582,7 @@ class ShortTimeFFT:
         if self.fft_mode == 'twosided':
             return fft_lib.fft(x, n=self.mfft, axis=-1)
         if self.fft_mode == 'centered':
-            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1))
+            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1), axes=-1)
         if self.fft_mode == 'onesided':
             return fft_lib.rfft(x, n=self.mfft, axis=-1)
         if self.fft_mode == 'onesided2X':
@@ -1609,7 +1607,7 @@ class ShortTimeFFT:
         if self.fft_mode == 'twosided':
             x = fft_lib.ifft(X, n=self.mfft, axis=-1)
         elif self.fft_mode == 'centered':
-            x = fft_lib.ifft(fft_lib.ifftshift(X), n=self.mfft, axis=-1)
+            x = fft_lib.ifft(fft_lib.ifftshift(X, axes=-1), n=self.mfft, axis=-1)
         elif self.fft_mode == 'onesided':
             x = fft_lib.irfft(X, n=self.mfft, axis=-1)
         elif self.fft_mode == 'onesided2X':

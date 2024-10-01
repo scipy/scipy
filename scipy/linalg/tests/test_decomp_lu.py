@@ -3,7 +3,12 @@ from pytest import raises as assert_raises
 
 import numpy as np
 from scipy.linalg import lu, lu_factor, lu_solve, get_lapack_funcs, solve
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_allclose, assert_array_equal, assert_equal
+
+
+REAL_DTYPES = [np.float32, np.float64]
+COMPLEX_DTYPES = [np.complex64, np.complex128]
+DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 class TestLU:
@@ -185,7 +190,7 @@ class TestLUFactor:
         self.b = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         self.cb = np.array([[1j, 2j, 3j], [4j, 5j, 6j], [7j, 8j, 9j]])
 
-        # Reectangular matrices
+        # Rectangular matrices
         self.hrect = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])
         self.chrect = np.array([[1, 2, 3, 4], [5, 6, 7, 8],
                                 [9, 10, 12, 12]]) * 1.j
@@ -242,6 +247,26 @@ class TestLUFactor:
             assert_allclose(LU, np.array([[2, 1], [0, 1]]))
             assert_array_equal(P, np.array([0, 1]))
 
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_shape_dtype(self, m, n,  dtype):
+        k = min(m, n)
+
+        a = np.eye(m, n, dtype=dtype)
+        lu, p = lu_factor(a)
+        assert_equal(lu.shape, (m, n))
+        assert_equal(lu.dtype, dtype)
+        assert_equal(p.shape, (k,))
+        assert_equal(p.dtype, np.int32)
+
+    @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
+    def test_empty(self, m, n):
+        a = np.zeros((m, n))
+        lu, p = lu_factor(a)
+        assert_allclose(lu, np.empty((m, n)))
+        assert_allclose(p, np.arange(0))
+
 
 class TestLUSolve:
     def setup_method(self):
@@ -265,3 +290,19 @@ class TestLUSolve:
         lu_a = lu_factor(a, check_finite=False)
         x2 = lu_solve(lu_a, b, check_finite=False)
         assert_allclose(x1, x2)
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt, dt_b):
+        lu_and_piv = (np.empty((0, 0), dtype=dt), np.array([]))
+        b = np.asarray([], dtype=dt_b)
+        x = lu_solve(lu_and_piv, b)
+        assert x.shape == (0,)
+
+        m = lu_solve((np.eye(2, dtype=dt), [0, 1]), np.ones(2, dtype=dt_b))
+        assert x.dtype == m.dtype
+
+        b = np.empty((0, 0), dtype=dt_b)
+        x = lu_solve(lu_and_piv, b)
+        assert x.shape == (0, 0)
+        assert x.dtype == m.dtype

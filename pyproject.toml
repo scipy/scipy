@@ -6,56 +6,48 @@
 # the most recent version on PyPI:
 #
 #     "pybind11>=2.4.3,<2.5.0",
+#
+# Upper bounds in release branches must have notes on why they are added.
+# Distro packages can ignore upper bounds added only to prevent future
+# breakage; if we add pins or bounds because of known problems then they need
+# them too.
+
+# Run tools/generate_requirements.txt when making changes to any dependencies
 
 [build-system]
 build-backend = 'mesonpy'
 requires = [
     "meson-python>=0.15.0",
-    "Cython>=3.0.4",  # when updating version, also update check in meson.build
-    "pybind11>=2.10.4",
+    "Cython>=3.0.8",        # when updating version, also update check in meson.build
+    "pybind11>=2.13.1",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.14.0",
 
-    # When numpy 2.0.0rc1 comes out, we should update this to build against 2.0,
-    # and then runtime depend on the range 1.22.X to <2.3. No need to switch to
-    # 1.25.2 in the meantime (1.25.x is the first version which exports older C
-    # API versions by default).
-
-    # default numpy requirements
-    "numpy==1.22.4; python_version<='3.10' and platform_python_implementation != 'PyPy'",
-    "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
-    "numpy>=1.26.0,<1.27; python_version=='3.12'",
-
-    # PyPy requirements; 1.25.0 was the first version to have pypy-3.9 wheels,
-    # and 1.25.0 also changed the C API target to 1.19.x, so no longer a need
-    # for an exact pin.
-    "numpy>=1.25.0; python_version>='3.9' and platform_python_implementation=='PyPy'",
-
-    # For Python versions which aren't yet officially supported, we specify an
-    # unpinned NumPy which allows source distributions to be used and allows
-    # wheels to be used as soon as they become available.
-    # Python 3.13 has known issues that are only fixed in numpy 2.0.0.dev0
-    "numpy>=2.0.0.dev0; python_version>='3.13'",
+    # numpy requirement for wheel builds for distribution on PyPI - building
+    # against 2.x yields wheels that are also compatible with numpy 1.x at
+    # runtime.
+    # Note that building against numpy 1.x works fine too - users and
+    # redistributors can do this by installing the numpy version they like and
+    # disabling build isolation.
+    "numpy>=2.0.0rc1",
 ]
 
 [project]
 name = "scipy"
-version = "1.13.0.dev0"
+version = "1.15.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
-license = {file = "LICENSE.txt"}
+license = { file = "LICENSE.txt" }
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
-    {name = "SciPy Developers", email = "scipy-dev@python.org"},
+    { name = "SciPy Developers", email = "scipy-dev@python.org" },
 ]
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    # TODO: update to "pin-compatible" once possible, see
-    # https://github.com/mesonbuild/meson-python/issues/29
-    "numpy>=1.22.4",
-]
+    "numpy>=1.23.5",
+] # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -65,10 +57,10 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -91,23 +83,31 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
+    "array-api-strict>=2.0",
+    "Cython",
+    "meson",
+    'ninja; sys_platform != "emscripten"',
 ]
 doc = [
-    "sphinx>=5.0.0",
+    "sphinx>=5.0.0,<8.0.0",
+    "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
+    "sphinx-copybutton",
     "sphinx-design>=0.4.0",
     "matplotlib>=3.5",
     "numpydoc",
     "jupytext",
     "myst-nb",
     "pooch",
+    "jupyterlite-sphinx>=0.16.5",
+    "jupyterlite-pyodide-kernel",
 ]
 dev = [
-    "mypy",
+    "mypy==1.10.0",
     "typing_extensions",
     "types-psutil",
     "pycodestyle",
-    "ruff",
+    "ruff>=0.0.292",
     "cython-lint>=0.12.2",
     "rich-click",
     "doit>=0.36.0",
@@ -127,10 +127,17 @@ dodoFile = "dev.py"
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
-build-verbosity = "3"
-# gmpy2 and scikit-umfpack are usually added for testing. However, there are
-# currently wheels missing that make the test script fail.
-test-requires = ["pytest==7.4.3", "pytest-cov", "pytest-xdist", "mpmath", "threadpoolctl", "pooch", "hypothesis"]
+# We're only testing with essential test dependencies, not optional ones.
+# Some of those require binary wheels (often missing for some platforms),
+# or they slow down the test suite runs too much or simply aren't necessary.
+test-requires = [
+    "pytest",
+    "pytest-xdist",
+    "threadpoolctl",
+    "pooch",
+    "hypothesis",
+]
+before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
@@ -138,22 +145,22 @@ manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
 
+[tool.cibuildwheel.linux.environment]
+# /project will be the $PWD equivalent inside the docker used to build the wheel
+PKG_CONFIG_PATH = "/project/"
+
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+
+[tool.cibuildwheel.macos.environment]
+PKG_CONFIG_PATH = "{project}"
 
 [tool.cibuildwheel.windows]
 before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
 repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
 
-[[tool.cibuildwheel.overrides]]
-select = "*-win32"
-
-[[tool.cibuildwheel.overrides]]
-select = "*-win_amd64"
-# can use pkg-config detection for win_amd64 because the installed rtools
-# provide a working pkg-config.
-# An alternative is to set CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32"
-# Don't use double backslash for path separators, they don't get passed
-# to the build correctly
-# environment = { CMAKE_PREFIX_PATH="c:/opt/64" }
-environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }
+[tool.cibuildwheel.windows.environment]
+# This does not work because pkg-config does not like backslashes,
+PKG_CONFIG_PATH = "{project}"
+# do this instead (which will override this setting)
+# set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')

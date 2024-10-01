@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from itertools import product
@@ -195,6 +195,7 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.log1p, cython_special.log1p, ('d', 'D'), None),
     (special.log_expit, cython_special.log_expit, ('f', 'd', 'g'), None),
     (special.log_ndtr, cython_special.log_ndtr, ('d', 'D'), None),
+    (special.log_wright_bessel, cython_special.log_wright_bessel, ('ddd',), None),
     (special.ndtri_exp, cython_special.ndtri_exp, ('d',), None),
     (special.loggamma, cython_special.loggamma, ('D',), None),
     (special.logit, cython_special.logit, ('f', 'd', 'g'), None),
@@ -262,13 +263,13 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.rgamma, cython_special.rgamma, ('d', 'D'), None),
     (special.round, cython_special.round, ('d',), None),
     (special.spherical_jn, cython_special.spherical_jn, ('ld', 'ldb', 'lD', 'lDb'),
-     None),
+     "Python version supports negative reals; Cython version doesn't - see gh-21629"),
     (special.spherical_yn, cython_special.spherical_yn, ('ld', 'ldb', 'lD', 'lDb'),
-     None),
+     "Python version supports negative reals; Cython version doesn't - see gh-21629"),
     (special.spherical_in, cython_special.spherical_in, ('ld', 'ldb', 'lD', 'lDb'),
-     None),
+     "Python version supports negative reals; Cython version doesn't - see gh-21629"),
     (special.spherical_kn, cython_special.spherical_kn, ('ld', 'ldb', 'lD', 'lDb'),
-     None),
+     "Python version supports negative reals; Cython version doesn't - see gh-21629"),
     (special.shichi, cython_special._shichi_pywrap, ('d', 'D'), None),
     (special.sici, cython_special._sici_pywrap, ('d', 'D'), None),
     (special.sindg, cython_special.sindg, ('d',), None),
@@ -319,6 +320,7 @@ def test_cython_api_completeness():
                 raise RuntimeError(f"{name} missing from tests!")
 
 
+@pytest.mark.fail_slow(20)
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
 def test_cython_api(param):
     pyfunc, cyfunc, specializations, knownfailure = param

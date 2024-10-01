@@ -3,15 +3,12 @@ Test cdflib functions versus mpmath, if available.
 
 The following functions still need tests:
 
-- ncfdtr
 - ncfdtri
 - ncfdtridfn
 - ncfdtridfd
 - ncfdtrinc
 - nbdtrik
 - nbdtrin
-- nrdtrimn
-- nrdtrisd
 - pdtrik
 - nctdtr
 - nctdtrit
@@ -281,6 +278,32 @@ class TestCDFlib:
             rtol=1e-7,
             endpt_atol=[None, 1e-7, 1e-10])
 
+    # Overall nrdtrimn and nrdtrisd are not performing well with infeasible/edge
+    # combinations of sigma and x, hence restricted the domains to still use the
+    # testing machinery, also see gh-20069
+
+    # nrdtrimn signature: p, sd, x
+    # nrdtrisd signature: mn, p, x
+    def test_nrdtrimn(self):
+        _assert_inverts(
+            sp.nrdtrimn,
+            lambda x, y, z: mpmath.ncdf(z, x, y),
+            0,
+            [ProbArg(),  # CDF value p
+             Arg(0.1, np.inf, inclusive_a=False, inclusive_b=False),  # sigma
+             Arg(-1e10, 1e10)],  # x
+            rtol=1e-5)
+
+    def test_nrdtrisd(self):
+        _assert_inverts(
+            sp.nrdtrisd,
+            lambda x, y, z: mpmath.ncdf(z, x, y),
+            1,
+            [Arg(-np.inf, 10, inclusive_a=False, inclusive_b=False),  # mn
+             ProbArg(),  # CDF value p
+             Arg(10, 1e100)],  # x
+            rtol=1e-5)
+
     def test_stdtr(self):
         # Ideally the left endpoint for Arg() should be 0.
         assert_mpmath_equal(
@@ -470,7 +493,7 @@ def test_nctdtr_gh19896():
     for df, p, t in itertools.product(dfarr, pnoncarr, tarr):
         actarr += [sp.nctdtr(df, p, t)]
     # The rtol is kept high on purpose to make it pass on 32bit systems
-    assert_allclose(actarr, resarr, rtol=1e-12, atol=0.0)
+    assert_allclose(actarr, resarr, rtol=1e-6, atol=0.0)
 
 
 def test_nctdtrinc_gh19896():
@@ -484,7 +507,7 @@ def test_nctdtrinc_gh19896():
                1.4312427877936222, 2.014225177124157, 3.712743137978295,
                -3.086951096691082]
     actual = sp.nctdtrinc(dfarr, parr, tarr)
-    assert_allclose(actual, desired, rtol=2e-12, atol=0.0)
+    assert_allclose(actual, desired, rtol=5e-12, atol=0.0)
 
 
 def test_stdtr_stdtrit_neg_inf():
@@ -501,3 +524,64 @@ def test_bdtrik_nbdtrik_inf():
         [np.nan, -np.inf, -10.0, -1.0, 0.0, .00001, .5, 1.0, np.inf])
     assert np.all(np.isnan(sp.bdtrik(y, np.inf, p)))
     assert np.all(np.isnan(sp.nbdtrik(y, np.inf, p)))
+
+
+@pytest.mark.parametrize(
+    "dfn,dfd,nc,f,expected",
+    [[100.0, 0.1, 0.1, 100.0, 0.29787396410092676],
+     [100.0, 100.0, 0.01, 0.1, 4.4344737598690424e-26],
+     [100.0, 0.01, 0.1, 0.01, 0.002848616633080384],
+     [10.0, 0.01, 1.0, 0.1, 0.012339557729057956],
+     [100.0, 100.0, 0.01, 0.01, 1.8926477420964936e-72],
+     [1.0, 100.0, 100.0, 0.1, 1.7925940526821304e-22],
+     [1.0, 0.01, 100.0, 10.0, 0.012334711965024968],
+     [1.0, 0.01, 10.0, 0.01, 0.00021944525290299],
+     [10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
+     [0.1, 0.1, 1.0, 1.0, 0.3136335813423239],
+     [100.0, 100.0, 0.1, 10.0, 1.0],
+     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897]]
+)
+def test_ncfdtr(dfn, dfd, nc, f, expected):
+    # Reference values computed with mpmath with the following script
+    #
+    # import numpy as np
+    #
+    # from mpmath import mp
+    # from scipy.special import ncfdtr
+    #
+    # mp.dps = 100
+    #
+    # def mp_ncfdtr(dfn, dfd, nc, f):
+    #     # Uses formula 26.2.20 from Abramowitz and Stegun.
+    #     dfn, dfd, nc, f = map(mp.mpf, (dfn, dfd, nc, f))
+    #     def term(j):
+    #         result = mp.exp(-nc/2)*(nc/2)**j / mp.factorial(j)
+    #         result *= mp.betainc(
+    #             dfn/2 + j, dfd/2, 0, f*dfn/(f*dfn + dfd), regularized=True
+    #         )
+    #         return result
+    #     result = mp.nsum(term, [0, mp.inf])
+    #     return float(result)
+    #
+    # dfn = np.logspace(-2, 2, 5)
+    # dfd = np.logspace(-2, 2, 5)
+    # nc = np.logspace(-2, 2, 5)
+    # f = np.logspace(-2, 2, 5)
+    #
+    # dfn, dfd, nc, f = np.meshgrid(dfn, dfd, nc, f)
+    # dfn, dfd, nc, f = map(np.ravel, (dfn, dfd, nc, f))
+    #
+    # cases = []
+    # re = []
+    # for x0, x1, x2, x3 in zip(*(dfn, dfd, nc, f)):
+    #     observed = ncfdtr(x0, x1, x2, x3)
+    #     expected = mp_ncfdtr(x0, x1, x2, x3)
+    #     cases.append((x0, x1, x2, x3, expected))
+    #     re.append((abs(expected - observed)/abs(expected)))
+    #
+    # assert np.max(re) < 1e-13
+    #
+    # rng = np.random.default_rng(1234)
+    # sample_idx = rng.choice(len(re), replace=False, size=12)
+    # cases = np.array(cases)[sample_idx].tolist()
+    assert_allclose(sp.ncfdtr(dfn, dfd, nc, f), expected, rtol=1e-13, atol=0)

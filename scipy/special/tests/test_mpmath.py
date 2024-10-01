@@ -1528,6 +1528,7 @@ class TestSystematic:
             mp_igam_fac,
             [Arg(0, 1e14, inclusive_a=False), Arg(0, 1e14)],
             rtol=1e-10,
+            dps=29,
         )
 
     def test_j0(self):
@@ -1688,7 +1689,7 @@ class TestSystematic:
                 # mpmath has bad performance here
                 return np.nan
 
-            typ = 2 if abs(z) < 1 else 3
+            typ = 2 if abs(z) <= 1 else 3
             v = exception_to_nan(mpmath.legenp)(n, m, z, type=typ)
 
             if abs(v) > 1e306:
@@ -2032,7 +2033,7 @@ class TestSystematic:
                 # larger DPS needed for correct results
                 old_dps = mpmath.mp.dps
                 try:
-                    mpmath.mp.dps = 300
+                    mpmath.mp.dps = 500
                     return mpmath.struvel(v, z)
                 finally:
                     mpmath.mp.dps = old_dps
@@ -2238,8 +2239,9 @@ class TestSystematic:
 
     def test_spherical_kn(self):
         def mp_spherical_kn(n, z):
-            out = (mpmath.besselk(n + mpmath.mpf(1)/2, z) *
-                   mpmath.sqrt(mpmath.pi/(2*mpmath.mpmathify(z))))
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
             if mpmath.mpmathify(z).imag == 0:
                 return out.real
             else:

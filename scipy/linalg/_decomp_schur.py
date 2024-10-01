@@ -1,5 +1,5 @@
 """Schur decomposition functions."""
-import numpy
+import numpy as np
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
@@ -33,21 +33,30 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     a : (M, M) array_like
         Matrix to decompose
     output : {'real', 'complex'}, optional
-        Construct the real or complex Schur decomposition (for real matrices).
+        When the dtype of `a` is real, this specifies whether to compute
+        the real or complex Schur decomposition.
+        When the dtype of `a` is complex, this argument is ignored, and the
+        complex Schur decomposition is computed.
     lwork : int, optional
         Work array size. If None or -1, it is automatically computed.
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance).
     sort : {None, callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
         Specifies whether the upper eigenvalues should be sorted. A callable
-        may be passed that, given a eigenvalue, returns a boolean denoting
+        may be passed that, given an eigenvalue, returns a boolean denoting
         whether the eigenvalue should be sorted to the top-left (True).
+
+        - If ``output='complex'`` OR the dtype of `a` is complex, the callable
+          should have one argument: the eigenvalue expressed as a complex number.
+        - If ``output='real'`` AND the dtype of `a` is real, the callable should have
+          two arguments: the real and imaginary parts of the eigenvalue, respectively.
+
         Alternatively, string parameters may be used::
 
-            'lhp'   Left-hand plane (x.real < 0.0)
-            'rhp'   Right-hand plane (x.real > 0.0)
-            'iuc'   Inside the unit circle (x*x.conjugate() <= 1.0)
-            'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
+            'lhp'   Left-hand plane (real(eigenvalue) < 0.0)
+            'rhp'   Right-hand plane (real(eigenvalue) >= 0.0)
+            'iuc'   Inside the unit circle (abs(eigenvalue) <= 1.0)
+            'ouc'   Outside the unit circle (abs(eigenvalue) > 1.0)
 
         Defaults to None (no sorting).
     check_finite : bool, optional
@@ -65,6 +74,8 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     sdim : int
         If and only if sorting was requested, a third return value will
         contain the number of eigenvalues satisfying the sort condition.
+        Note that complex conjugate pairs for which the condition is true
+        for either eigenvalue count as 2.
 
     Raises
     ------
@@ -104,14 +115,25 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
            [ 0.        , -0.32948354+0.80225456j, -0.59877807+0.56192146j],
            [ 0.        ,  0.                    , -0.32948354-0.80225456j]])
     >>> eigvals(T2)
-    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])
+    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])   # may vary
 
-    An arbitrary custom eig-sorting condition, having positive imaginary part,
-    which is satisfied by only one eigenvalue
+    A custom eigenvalue-sorting condition that sorts by positive imaginary part
+    is satisfied by only one eigenvalue.
 
-    >>> T3, Z3, sdim = schur(A, output='complex', sort=lambda x: x.imag > 0)
+    >>> _, _, sdim = schur(A, output='complex', sort=lambda x: x.imag > 1e-15)
     >>> sdim
     1
+
+    When ``output='real'`` and the array `a` is real, the `sort` callable must accept
+    the real and imaginary parts as separate arguments. Note that now the complex
+    eigenvalues ``-0.32948354+0.80225456j`` and ``-0.32948354-0.80225456j`` will be
+    treated as a complex conjugate pair, and according to the `sdim` documentation,
+    complex conjugate pairs for which the condition is True for *either* eigenvalue
+    increase `sdim` by *two*.
+
+    >>> _, _, sdim = schur(A, output='real', sort=lambda x, y: y > 1e-15)
+    >>> sdim
+    2
 
     """
     if output not in ['real', 'complex', 'r', 'c']:
@@ -120,45 +142,57 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
-    if numpy.issubdtype(a1.dtype, numpy.integer):
-        a1 = asarray(a, dtype=numpy.dtype("long"))
+    if np.issubdtype(a1.dtype, np.integer):
+        a1 = asarray(a, dtype=np.dtype("long"))
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
+
     typ = a1.dtype.char
     if output in ['complex', 'c'] and typ not in ['F', 'D']:
         if typ in _double_precision:
             a1 = a1.astype('D')
-            typ = 'D'
         else:
             a1 = a1.astype('F')
-            typ = 'F'
+
+    # accommodate empty matrix
+    if a1.size == 0:
+        t0, z0 = schur(np.eye(2, dtype=a1.dtype))
+        if sort is None:
+            return (np.empty_like(a1, dtype=t0.dtype),
+                    np.empty_like(a1, dtype=z0.dtype))
+        else:
+            return (np.empty_like(a1, dtype=t0.dtype),
+                    np.empty_like(a1, dtype=z0.dtype), 0)
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     gees, = get_lapack_funcs(('gees',), (a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
-        lwork = result[-2][0].real.astype(numpy.int_)
+        lwork = result[-2][0].real.astype(np.int_)
 
     if sort is None:
         sort_t = 0
-        def sfunction(x):
+        def sfunction(x, y=None):
             return None
     else:
         sort_t = 1
         if callable(sort):
             sfunction = sort
         elif sort == 'lhp':
-            def sfunction(x):
+            def sfunction(x, y=None):
                 return x.real < 0.0
         elif sort == 'rhp':
-            def sfunction(x):
+            def sfunction(x, y=None):
                 return x.real >= 0.0
         elif sort == 'iuc':
-            def sfunction(x):
-                return abs(x) <= 1.0
+            def sfunction(x, y=None):
+                z = x if y is None else x + y*1j
+                return abs(z) <= 1.0
         elif sort == 'ouc':
-            def sfunction(x):
-                return abs(x) > 1.0
+            def sfunction(x, y=None):
+                z = x if y is None else x + y*1j
+                return abs(z) > 1.0
         else:
             raise ValueError("'sort' parameter must either be 'None', or a "
                              "callable, or one of ('lhp','rhp','iuc','ouc')")
@@ -176,14 +210,14 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     elif info > 0:
         raise LinAlgError("Schur form not found. Possibly ill-conditioned.")
 
-    if sort_t == 0:
+    if sort is None:
         return result[0], result[-3]
     else:
         return result[0], result[-3], result[1]
 
 
-eps = numpy.finfo(float).eps
-feps = numpy.finfo(single).eps
+eps = np.finfo(float).eps
+feps = np.finfo(single).eps
 
 _array_kind = {'b': 0, 'h': 0, 'B': 0, 'i': 0, 'l': 0,
                'f': 0, 'd': 0, 'F': 1, 'D': 1}
@@ -275,7 +309,7 @@ def rsf2csf(T, Z, check_finite=True):
 
     for ind, X in enumerate([Z, T]):
         if X.ndim != 2 or X.shape[0] != X.shape[1]:
-            raise ValueError("Input '{}' must be square.".format('ZT'[ind]))
+            raise ValueError(f"Input '{'ZT'[ind]}' must be square.")
 
     if T.shape[0] != Z.shape[0]:
         message = f"Input array shapes must match: Z: {Z.shape} vs. T: {T.shape}"

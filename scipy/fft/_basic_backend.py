@@ -1,5 +1,5 @@
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, xp_unsupported_param_msg, is_complex
+    array_namespace, is_numpy, xp_unsupported_param_msg, is_complex, xp_float_to_complex
 )
 from . import _pocketfft
 import numpy as np
@@ -15,6 +15,9 @@ def _validate_fft_args(workers, plan, norm):
     return norm
 
 
+# these functions expect complex input in the fft standard extension
+complex_funcs = {'fft', 'ifft', 'fftn', 'ifftn', 'hfft', 'irfft', 'irfftn'}
+
 # pocketfft is used whenever SCIPY_ARRAY_API is not set,
 # or x is a NumPy array or array-like.
 # When SCIPY_ARRAY_API is set, we try to use xp.fft for CuPy arrays,
@@ -25,12 +28,20 @@ def _execute_1D(func_str, pocketfft_func, x, n, axis, norm, overwrite_x, workers
     xp = array_namespace(x)
 
     if is_numpy(xp):
+        x = np.asarray(x)
         return pocketfft_func(x, n=n, axis=axis, norm=norm,
                               overwrite_x=overwrite_x, workers=workers, plan=plan)
 
     norm = _validate_fft_args(workers, plan, norm)
     if hasattr(xp, 'fft'):
         xp_func = getattr(xp.fft, func_str)
+        if func_str in complex_funcs:
+            try:
+                res = xp_func(x, n=n, axis=axis, norm=norm)
+            except: # backends may require complex input  # noqa: E722
+                x = xp_float_to_complex(x, xp)
+                res = xp_func(x, n=n, axis=axis, norm=norm)
+            return res
         return xp_func(x, n=n, axis=axis, norm=norm)
 
     x = np.asarray(x)
@@ -42,12 +53,20 @@ def _execute_nD(func_str, pocketfft_func, x, s, axes, norm, overwrite_x, workers
     xp = array_namespace(x)
     
     if is_numpy(xp):
+        x = np.asarray(x)
         return pocketfft_func(x, s=s, axes=axes, norm=norm,
                               overwrite_x=overwrite_x, workers=workers, plan=plan)
 
     norm = _validate_fft_args(workers, plan, norm)
     if hasattr(xp, 'fft'):
         xp_func = getattr(xp.fft, func_str)
+        if func_str in complex_funcs:
+            try:
+                res = xp_func(x, s=s, axes=axes, norm=norm)
+            except: # backends may require complex input  # noqa: E722
+                x = xp_float_to_complex(x, xp)
+                res = xp_func(x, s=s, axes=axes, norm=norm)
+            return res
         return xp_func(x, s=s, axes=axes, norm=norm)
 
     x = np.asarray(x)
@@ -142,8 +161,8 @@ def _swap_direction(norm):
     elif norm == 'forward':
         norm = 'backward'
     elif norm != 'ortho':
-        raise ValueError('Invalid norm value %s; should be "backward", '
-                         '"ortho", or "forward".' % norm)
+        raise ValueError(f'Invalid norm value {norm}; should be "backward", '
+                         '"ortho", or "forward".')
     return norm
 
 
@@ -151,6 +170,7 @@ def hfftn(x, s=None, axes=None, norm=None,
           overwrite_x=False, workers=None, *, plan=None):
     xp = array_namespace(x)
     if is_numpy(xp):
+        x = np.asarray(x)
         return _pocketfft.hfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
     if is_complex(x, xp):
         x = xp.conj(x)
@@ -167,6 +187,7 @@ def ihfftn(x, s=None, axes=None, norm=None,
            overwrite_x=False, workers=None, *, plan=None):
     xp = array_namespace(x)
     if is_numpy(xp):
+        x = np.asarray(x)
         return _pocketfft.ihfftn(x, s, axes, norm, overwrite_x, workers, plan=plan)
     return xp.conj(rfftn(x, s, axes, _swap_direction(norm),
                          overwrite_x, workers, plan=plan))

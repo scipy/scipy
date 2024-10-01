@@ -13,7 +13,7 @@ from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _lazywhere
 
 from scipy.special import comb, entr
 
@@ -410,12 +410,49 @@ def _skew(data):
 
 
 def _kurtosis(data):
-    """kurtosis is fourth central moment / variance**2 - 3."""
+    """Fisher's excess kurtosis is fourth central moment / variance**2 - 3."""
     data = np.ravel(data)
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
     m4 = ((data - mu)**4).mean()
     return m4 / m2**2 - 3
+
+def _vectorize_rvs_over_shapes(_rvs1):
+    """Decorator that vectorizes _rvs method to work on ndarray shapes"""
+    # _rvs1 must be a _function_ that accepts _scalar_ args as positional
+    # arguments, `size` and `random_state` as keyword arguments.
+    # _rvs1 must return a random variate array with shape `size`. If `size` is
+    # None, _rvs1 must return a scalar.
+    # When applied to _rvs1, this decorator broadcasts ndarray args
+    # and loops over them, calling _rvs1 for each set of scalar args.
+    # For usage example, see _nchypergeom_gen
+    def _rvs(*args, size, random_state):
+        _rvs1_size, _rvs1_indices = _check_shape(args[0].shape, size)
+
+        size = np.array(size)
+        _rvs1_size = np.array(_rvs1_size)
+        _rvs1_indices = np.array(_rvs1_indices)
+
+        if np.all(_rvs1_indices):  # all args are scalars
+            return _rvs1(*args, size, random_state)
+
+        out = np.empty(size)
+
+        # out.shape can mix dimensions associated with arg_shape and _rvs1_size
+        # Sort them to arg_shape + _rvs1_size for easy indexing of dimensions
+        # corresponding with the different sets of scalar args
+        j0 = np.arange(out.ndim)
+        j1 = np.hstack((j0[~_rvs1_indices], j0[_rvs1_indices]))
+        out = np.moveaxis(out, j1, j0)
+
+        for i in np.ndindex(*size[~_rvs1_indices]):
+            # arg can be squeezed because singleton dimensions will be
+            # associated with _rvs1_size, not arg_shape per _check_shape
+            out[i] = _rvs1(*[np.squeeze(arg)[i] for arg in args],
+                           _rvs1_size, random_state)
+
+        return np.moveaxis(out, j0, j1)  # move axes back before returning
+    return _rvs
 
 
 def _fit_determine_optimizer(optimizer):
@@ -427,9 +464,11 @@ def _fit_determine_optimizer(optimizer):
         try:
             optimizer = getattr(optimize, optimizer)
         except AttributeError as e:
-            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+            raise ValueError(f"{optimizer} is not a valid optimizer") from e
     return optimizer
 
+def _isintegral(x):
+    return x == np.round(x)
 
 def _sum_finite(x):
     """
@@ -598,7 +637,7 @@ def argsreduce(cond, *args):
 
     # np.atleast_1d returns an array if only one argument, or a list of arrays
     # if more than one argument.
-    if not isinstance(newargs, (list, tuple)):
+    if not isinstance(newargs, (list | tuple)):
         newargs = (newargs,)
 
     if np.all(cond):
@@ -787,7 +826,10 @@ class rv_generic:
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join('%.3g' % val for val in shapes_vals)
+        try:
+            vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
+        except TypeError:
+            vals = ', '.join(f'{val}' for val in shapes_vals)
         tempdict['vals'] = vals
 
         tempdict['shapes_'] = self.shapes or ''
@@ -1577,8 +1619,8 @@ class _ShapeInfo:
 
 def _get_fixed_fit_value(kwds, names):
     """
-    Given names such as `['f0', 'fa', 'fix_a']`, check that there is
-    at most one non-None value in `kwds` associaed with those names.
+    Given names such as ``['f0', 'fa', 'fix_a']``, check that there is
+    at most one non-None value in `kwds` associated with those names.
     Return that value, or None if none of the names occur in `kwds`.
     As a side effect, all occurrences of those names in `kwds` are
     removed.
@@ -1957,7 +1999,21 @@ class rv_continuous(rv_generic):
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
 
-    # generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
+    def _logcdf(self, x, *args):
+        median = self._ppf(0.5, *args)
+        with np.errstate(divide='ignore'):
+            return _lazywhere(x < median, (x,) + args,
+                              f=lambda x, *args: np.log(self._cdf(x, *args)),
+                              f2=lambda x, *args: np.log1p(-self._sf(x, *args)))
+
+    def _logsf(self, x, *args):
+        median = self._ppf(0.5, *args)
+        with np.errstate(divide='ignore'):
+            return _lazywhere(x > median, (x,) + args,
+                              f=lambda x, *args: np.log(self._sf(x, *args)),
+                              f2=lambda x, *args: np.log1p(-self._cdf(x, *args)))
+
+    # generic _argcheck, _sf, _ppf, _isf, _rvs are defined
     # in rv_generic
 
     def pdf(self, x, *args, **kwds):
@@ -2415,8 +2471,8 @@ class rv_continuous(rv_generic):
         elif method == "mle":
             objective = self._penalized_nnlf
         else:
-            raise ValueError("Method '{}' not available; must be one of {}"
-                             .format(method, methods))
+            raise ValueError(f"Method '{method}' not available; "
+                             f"must be one of {methods}")
 
         if len(fixedn) == 0:
             func = objective
@@ -2459,7 +2515,7 @@ class rv_continuous(rv_generic):
                  np.maximum(np.abs(data_moments), 1e-8))**2).sum()
 
     def fit(self, data, *args, **kwds):
-        """
+        r"""
         Return estimates of shape (if applicable), location, and scale
         parameters from data. The default estimation method is Maximum
         Likelihood Estimation (MLE), but Method of Moments (MM)
@@ -2502,7 +2558,7 @@ class rv_continuous(rv_generic):
             - optimizer : The optimizer to use.  The optimizer must take
               ``func`` and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
-              function to be optimized) and ``disp``. 
+              function to be optimized) and ``disp``.
               The ``fit`` method calls the optimizer with ``disp=0`` to suppress output.
               The optimizer must return the estimated parameters.
 
@@ -2553,6 +2609,29 @@ class rv_continuous(rv_generic):
         may only be locally optimal, or the optimization may fail altogether.
         If the data contain any of ``np.nan``, ``np.inf``, or ``-np.inf``,
         the `fit` method will raise a ``RuntimeError``.
+
+        When passing a ``CensoredData`` instance to ``data``, the log-likelihood
+        function is defined as:
+
+        .. math::
+
+            l(\pmb{\theta}; k) & = \sum
+                                    \log(f(k_u; \pmb{\theta}))
+                                + \sum
+                                    \log(F(k_l; \pmb{\theta})) \\
+                                & + \sum
+                                    \log(1 - F(k_r; \pmb{\theta})) \\
+                                & + \sum
+                                    \log(F(k_{\text{high}, i}; \pmb{\theta})
+                                    - F(k_{\text{low}, i}; \pmb{\theta}))
+
+        where :math:`f` and :math:`F` are the pdf and cdf, respectively, of the
+        function being fitted, :math:`\pmb{\theta}` is the parameter vector,
+        :math:`u` are the indices of uncensored observations,
+        :math:`l` are the indices of left-censored observations,
+        :math:`r` are the indices of right-censored observations,
+        subscripts "low"/"high" denote endpoints of interval-censored observations, and
+        :math:`i` are the indices of interval-censored observations.
 
         Examples
         --------
@@ -2650,7 +2729,7 @@ class rv_continuous(rv_generic):
         optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+            raise TypeError(f"Unknown arguments: {kwds}.")
 
         # In some cases, method of moments can be done with fsolve/root
         # instead of an optimizer, but sometimes no solution exists,
@@ -2979,7 +3058,7 @@ def _drv2_moment(self, n, *args):
         return np.power(x, n) * self._pmf(x, *args)
 
     _a, _b = self._get_support(*args)
-    return _expect(fun, _a, _b, self.ppf(0.5, *args), self.inc)
+    return _expect(fun, _a, _b, self._ppf(0.5, *args), self.inc)
 
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
@@ -3307,7 +3386,8 @@ class rv_discrete(rv_generic):
         return self._cdf(k, *args) - self._cdf(k-1, *args)
 
     def _logpmf(self, k, *args):
-        return log(self._pmf(k, *args))
+        with np.errstate(divide='ignore'):
+            return log(self._pmf(k, *args))
 
     def _logpxf(self, k, *args):
         # continuous distributions have PDF, discrete have PMF, but sometimes
@@ -3330,7 +3410,7 @@ class rv_discrete(rv_generic):
         return np.sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
-        k = floor(x)
+        k = floor(x).astype(np.float64)
         return self._cdfvec(k, *args)
 
     # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
@@ -3699,8 +3779,8 @@ class rv_discrete(rv_generic):
             return stats.entropy(self.pk)
         else:
             _a, _b = self._get_support(*args)
-            return _expect(lambda x: entr(self.pmf(x, *args)),
-                           _a, _b, self.ppf(0.5, *args), self.inc)
+            return _expect(lambda x: entr(self._pmf(x, *args)),
+                           _a, _b, self._ppf(0.5, *args), self.inc)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
                conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
@@ -3756,6 +3836,10 @@ class rv_discrete(rv_generic):
         The function is not vectorized.
 
         """
+        # Although `args` is just the shape parameters, `poisson_binom` needs this
+        # to split the vector-valued shape into a tuple of separate shapes
+        args, _, _ = self._parse_args(*args)
+
         if func is None:
             def fun(x):
                 # loc and args from outer scope
@@ -3787,7 +3871,7 @@ class rv_discrete(rv_generic):
             return res / invfac
 
         # iterate over the support, starting from the median
-        x0 = self.ppf(0.5, *args)
+        x0 = self._ppf(0.5, *args)
         res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
         return res / invfac
 
@@ -3863,12 +3947,12 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     if inc == 0:
         raise ValueError('Cannot increment by zero.')
     if chunksize <= 0:
-        raise ValueError('Chunk size must be positive; got %s.' % chunksize)
+        raise ValueError(f'Chunk size must be positive; got {chunksize}.')
 
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)
 
-    x = x0
+    x = np.copy(x0)
     while (x - x1) * inc < 0:
         delta = min(stepsize, abs(x - x1))
         step = delta * s

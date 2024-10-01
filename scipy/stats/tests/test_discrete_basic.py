@@ -22,6 +22,8 @@ distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 # For these distributions, test_discrete_basic only runs with test mode full
 distslow = {'zipfian', 'nhypergeom'}
 
+# Override number of ULPs adjustment for `check_cdf_ppf`
+roundtrip_cdf_ppf_exceptions = {'nbinom': 30}
 
 def cases_test_discrete_basic():
     seen = set()
@@ -67,7 +69,8 @@ def test_discrete_basic(distname, arg, first_case):
         if distname != 'sample distribution':
             check_scale_docstring(distfn)
         check_random_state_property(distfn, arg)
-        check_pickling(distfn, arg)
+        if distname not in {'poisson_binom'}:  # can't be pickled
+            check_pickling(distfn, arg)
         check_freezing(distfn, arg)
 
         # Entropy
@@ -91,7 +94,9 @@ def test_moments(distname, arg):
     check_mean_expect(distfn, arg, m, distname)
     check_var_expect(distfn, arg, m, v, distname)
     check_skew_expect(distfn, arg, m, v, s, distname)
-    if distname not in ['zipf', 'yulesimon', 'betanbinom']:
+    with np.testing.suppress_warnings() as sup:
+        if distname in ['zipf', 'betanbinom']:
+            sup.filter(RuntimeWarning)
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
     # frozen distr moments
@@ -113,8 +118,7 @@ def test_rvs_broadcast(dist, shape_args):
     # test might also have to be changed.
     shape_only = dist in ['betabinom', 'betanbinom', 'skellam', 'yulesimon',
                           'dlaplace', 'nchypergeom_fisher',
-                          'nchypergeom_wallenius']
-
+                          'nchypergeom_wallenius', 'poisson_binom']
     try:
         distfunc = getattr(stats, dist)
     except TypeError:
@@ -124,6 +128,16 @@ def test_rvs_broadcast(dist, shape_args):
     nargs = distfunc.numargs
     allargs = []
     bshape = []
+
+    if dist == 'poisson_binom':
+        # normal rules apply except the last axis of `p` is ignored
+        p = np.full((3, 1, 10), 0.5)
+        allargs = (p, loc)
+        bshape = (3, 2)
+        check_rvs_broadcast(distfunc, dist, allargs,
+                            bshape, shape_only, [np.dtype(int)])
+        return
+
     # Generate shape parameter arguments...
     for k in range(nargs):
         shp = (k + 3,) + (1,)*(k + 1)
@@ -191,8 +205,9 @@ def check_cdf_ppf(distfn, arg, supp, msg):
     cdf_supp = distfn.cdf(supp, *arg)
     # In very rare cases, the finite precision calculation of ppf(cdf(supp))
     # can produce an array in which an element is off by one.  We nudge the
-    # CDF values down by 15 ULPs help to avoid this.
-    cdf_supp0 = cdf_supp - 15*np.spacing(cdf_supp)
+    # CDF values down by a few ULPs help to avoid this.
+    n_ulps = roundtrip_cdf_ppf_exceptions.get(distfn.name, 15)
+    cdf_supp0 = cdf_supp - n_ulps*np.spacing(cdf_supp)
     npt.assert_array_equal(distfn.ppf(cdf_supp0, *arg),
                            supp, msg + '-roundtrip')
     # Repeat the same calculation, but with the CDF values decreased by 1e-8.
@@ -325,15 +340,16 @@ def test_methods_with_lists(method, distname, args):
         dist = getattr(stats, distname)
     except TypeError:
         return
+    dist_method = getattr(dist, method)
     if method in ['ppf', 'isf']:
         z = [0.1, 0.2]
     else:
         z = [0, 1]
     p2 = [[p]*2 for p in args]
     loc = [0, 1]
-    result = dist.pmf(z, *p2, loc=loc)
+    result = dist_method(z, *p2, loc=loc)
     npt.assert_allclose(result,
-                        [dist.pmf(*v) for v in zip(z, *p2, loc)],
+                        [dist_method(*v) for v in zip(z, *p2, loc)],
                         rtol=1e-15, atol=1e-15)
 
 
@@ -544,3 +560,15 @@ def test_rv_sample():
     rng = np.random.default_rng(98430143469)
     rvs0 = dist.ppf(rng.random(size=100))
     assert_allclose(rvs, rvs0)
+
+def test__pmf_float_input():
+    # gh-21272
+    # test that `rvs()` can be computed when `_pmf` requires float input
+    
+    class rv_exponential(stats.rv_discrete):
+        def _pmf(self, i):
+            return (2/3)*3**(1 - i)
+    
+    rv = rv_exponential(a=0.0, b=float('inf'))
+    rvs = rv.rvs(random_state=42)  # should not crash due to integer input to `_pmf`
+    assert_allclose(rvs, 0)
