@@ -1,5 +1,6 @@
 import itertools
 import platform
+import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -36,6 +37,8 @@ try:
     from scipy.__config__ import CONFIG
 except ImportError:
     CONFIG = None
+
+IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -181,7 +184,8 @@ class TestEig:
         assert_equal(w, np.inf)
         assert_allclose(vr, 1)
 
-    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13):
+    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13,
+                                   atol=1e-13, rtol=1e-13):
         if B is not None:
             A, B = asarray(A), asarray(B)
             B0 = B
@@ -230,7 +234,7 @@ class TestEig:
         for i in range(res.shape[1]):
             if np.all(isfinite(res[:, i])):
                 assert_allclose(res[:, i], 0,
-                                rtol=1e-13, atol=1e-13, err_msg=msg)
+                                rtol=rtol, atol=atol, err_msg=msg)
 
         # try to consistently order eigenvalues, including complex conjugate pairs
         w_fin = w[isfinite(w)]
@@ -269,7 +273,7 @@ class TestEig:
                    [24, 35, 18, 21, 22]])
 
         with np.errstate(all='ignore'):
-            self._check_gen_eig(A, B, atol_homog=5e-13)
+            self._check_gen_eig(A, B, atol_homog=5e-13, atol=5e-13)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
@@ -741,7 +745,7 @@ class TestEigTridiagonal:
 
         for driver in ('sterf', 'stev'):
             assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
-                          lapack_driver='stev', select='i',
+                          lapack_driver=driver, select='i',
                           select_range=(0, 1))
         for driver in ('stebz', 'stemr', 'auto'):
             # extracting eigenvalues with respect to the full index range
@@ -844,31 +848,15 @@ class TestEigh:
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[1, 2], subset_by_index=[2, 4])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          subset_by_value=[1, 2], eigvals=[2, 4])
         # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[0, 4])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          eigvals=[0, 4])
         # Invalid lower index
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[-2, 2])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          eigvals=[-2, 2])
         # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[2, 0])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          subset_by_index=[2, 0])
         # Invalid value spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[2, 0])
@@ -963,38 +951,6 @@ class TestEigh:
         w3 = eigvalsh(b, subset_by_value=[1, 1.4])
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
-
-    @pytest.mark.parametrize("method", [eigh, eigvalsh])
-    def test_deprecation_warnings(self, method):
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'turbo'"):
-            method(np.zeros((2, 2)), turbo=True)
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'eigvals'"):
-            method(np.zeros((2, 2)), eigvals=[0, 1])
-        with pytest.deprecated_call(match="use keyword arguments"):
-            method(np.zeros((2,2)), np.eye(2, 2), True)
-
-    def test_deprecation_results(self):
-        a = _random_hermitian_matrix(3)
-        b = _random_hermitian_matrix(3, posdef=True)
-
-        # check turbo gives same result as driver='gvd'
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'turbo'")
-            w_dep, v_dep = eigh(a, b, turbo=True)
-        w, v = eigh(a, b, driver='gvd')
-        assert_allclose(w_dep, w)
-        assert_allclose(v_dep, v)
-
-        # check eigvals gives the same result as subset_by_index
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals'")
-            w_dep, v_dep = eigh(a, eigvals=[0, 1])
-        w, v = eigh(a, subset_by_index=[0, 1])
-        assert_allclose(w_dep, w)
-        assert_allclose(v_dep, v)
-
 
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
@@ -1226,6 +1182,10 @@ class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
 
+# Allocating an array of such a size leads to _ArrayMemoryError(s)
+# since the maximum memory that can be in 32-bit (WASM) is 4GB
+@pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+@pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
     # cf https://github.com/scipy/scipy/issues/14001
@@ -2167,6 +2127,62 @@ class TestSchur:
         assert t.dtype == t0.dtype
         assert z.dtype == z0.dtype
 
+    @pytest.mark.parametrize('sort', ['iuc', 'ouc'])
+    @pytest.mark.parametrize('output', ['real', 'complex'])
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_gh_13137_sort_str(self, sort, output, dtype):
+        # gh-13137 reported that sort values 'iuc' and 'ouc' were not
+        # correct because the callables assumed that the eigenvalues would
+        # always be expressed as a single complex number.
+        # In fact, when `output='real'` and the dtype is real, the
+        # eigenvalues are passed as separate real and imaginary components
+        # (yet no error is raised if the callable accepts only one argument).
+        #
+        # This tests these sort values by counting the number of eigenvalues
+        # `schur` reports as being inside/outside the unit circle.
+
+        # Real matrix with eigenvalues 0.1 +- 2j
+        A = np.asarray([[0.1, -2], [2, 0.1]])
+
+        # Previously, this would fail for `output='real'` with real dtypes
+        sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
+        assert sdim == 0 if sort == 'iuc' else sdim == 2
+
+    @pytest.mark.parametrize('output', ['real', 'complex'])
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_gh_13137_sort_custom(self, output, dtype):
+        # This simply tests our understanding of how eigenvalues are
+        # passed to a sort callable. If `output='real'` and the dtype is real,
+        # real and imaginary parts are passed as separate real arguments;
+        # otherwise, they are passed a single complex argument.
+        # Also, if `output='real'` and the dtype is real, when either
+        # eigenvalue in a complex conjugate pair satisfies the sort condition,
+        # `sdim` is incremented by TWO.
+
+        # Real matrix with eigenvalues 0.1 +- 2j
+        A = np.asarray([[0.1, -2], [2, 0.1]])
+
+        all_real = output=='real' and dtype in {np.float32, np.float64}
+
+        def sort(x, y=None):
+            if all_real:
+                assert not np.iscomplexobj(x)
+                assert y is not None and np.isreal(y)
+                z = x + y*1j
+            else:
+                assert np.iscomplexobj(x)
+                assert y is None
+                z = x
+            return z.imag > 1e-15
+
+        # Only one complex eigenvalue satisfies the condition, but when
+        # `all_real` applies, both eigenvalues in the complex conjugate pair
+        # are counted.
+        sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
+        assert sdim == 2 if all_real else sdim == 1
+
 
 class TestHessenberg:
 
@@ -2648,6 +2664,7 @@ class TestOrdQZ:
 
 
 class TestOrdQZWorkspaceSize:
+    @pytest.mark.fail_slow(5)
     def test_decompose(self):
         rng = np.random.RandomState(12345)
         N = 202
@@ -2913,52 +2930,63 @@ def test_orth_empty(dt):
     assert oa.shape == (0, 0)
 
 
-def test_null_space():
-    np.random.seed(1)
+class TestNullSpace:
+    def test_null_space(self):
+        np.random.seed(1)
 
-    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-    sizes = [1, 2, 3, 10, 100]
+        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+        sizes = [1, 2, 3, 10, 100]
 
-    for dt, n in itertools.product(dtypes, sizes):
-        X = np.ones((2, n), dtype=dt)
+        for dt, n in itertools.product(dtypes, sizes):
+            X = np.ones((2, n), dtype=dt)
 
-        eps = np.finfo(dt).eps
-        tol = 1000 * eps
+            eps = np.finfo(dt).eps
+            tol = 1000 * eps
 
-        Y = null_space(X)
-        assert_equal(Y.shape, (n, n-1))
-        assert_allclose(X @ Y, 0, atol=tol)
+            Y = null_space(X)
+            assert_equal(Y.shape, (n, n-1))
+            assert_allclose(X @ Y, 0, atol=tol)
 
-        Y = null_space(X.T)
-        assert_equal(Y.shape, (2, 1))
-        assert_allclose(X.T @ Y, 0, atol=tol)
+            Y = null_space(X.T)
+            assert_equal(Y.shape, (2, 1))
+            assert_allclose(X.T @ Y, 0, atol=tol)
 
-        X = np.random.randn(1 + n//2, n)
-        Y = null_space(X)
-        assert_equal(Y.shape, (n, n - 1 - n//2))
-        assert_allclose(X @ Y, 0, atol=tol)
+            X = np.random.randn(1 + n//2, n)
+            Y = null_space(X)
+            assert_equal(Y.shape, (n, n - 1 - n//2))
+            assert_allclose(X @ Y, 0, atol=tol)
 
-        if n > 5:
-            np.random.seed(1)
-            X = np.random.rand(n, 5) @ np.random.rand(5, n)
-            X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
-            X = X.astype(dt)
+            if n > 5:
+                np.random.seed(1)
+                X = np.random.rand(n, 5) @ np.random.rand(5, n)
+                X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+                X = X.astype(dt)
 
-            Y = null_space(X, rcond=1e-3)
-            assert_equal(Y.shape, (n, n - 5))
+                Y = null_space(X, rcond=1e-3)
+                assert_equal(Y.shape, (n, n - 5))
 
-            Y = null_space(X, rcond=1e-6)
-            assert_equal(Y.shape, (n, n - 6))
+                Y = null_space(X, rcond=1e-6)
+                assert_equal(Y.shape, (n, n - 6))
 
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_null_space_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        a0 = np.eye(2, dtype=dt)
+        nsa = null_space(a)
 
-@pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-def test_null_space_empty(dt):
-    a = np.empty((0, 0), dtype=dt)
-    a0 = np.eye(2, dtype=dt)
-    nsa = null_space(a)
+        assert nsa.shape == (0, 0)
+        assert nsa.dtype == null_space(a0).dtype
 
-    assert nsa.shape == (0, 0)
-    assert nsa.dtype == null_space(a0).dtype
+    @pytest.mark.parametrize("overwrite_a", [True, False])
+    @pytest.mark.parametrize("check_finite", [True, False])
+    @pytest.mark.parametrize("lapack_driver", ["gesdd", "gesvd"])
+    def test_null_space_options(self, overwrite_a, check_finite, lapack_driver):
+        rng = np.random.default_rng(42887289350573064398746)
+        n = 10
+        X = rng.standard_normal((1 + n//2, n))
+        Y = null_space(X.copy(), overwrite_a=overwrite_a, check_finite=check_finite,
+                       lapack_driver=lapack_driver)
+        assert_allclose(X @ Y, 0, atol=np.finfo(X.dtype).eps*100)
 
 
 def test_subspace_angles():

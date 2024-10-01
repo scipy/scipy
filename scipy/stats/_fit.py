@@ -433,7 +433,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         The object has the following method:
 
         nllf(params=None, data=None)
-            By default, the negative log-likehood function at the fitted
+            By default, the negative log-likelihood function at the fitted
             `params` for the given `data`. Accepts a tuple containing
             alternative shapes, location, and scale of the distribution and
             an array of alternative data.
@@ -983,7 +983,10 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     >>> loc, scale = np.mean(x), np.std(x, ddof=1)
     >>> cdf = stats.norm(loc, scale).cdf
     >>> stats.ks_1samp(x, cdf)
-    KstestResult(statistic=0.1119257570456813, pvalue=0.2827756409939257)
+    KstestResult(statistic=0.1119257570456813,
+                 pvalue=0.2827756409939257,
+                 statistic_location=0.7751845155861765,
+                 statistic_sign=-1)
 
     An advantage of the KS-test is that the p-value - the probability of
     obtaining a value of the test statistic under the null hypothesis as

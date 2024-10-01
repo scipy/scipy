@@ -48,8 +48,8 @@ Your brother Kyle is the analytical one. He answers:
     >>> std = math.sqrt(n*p*(1-p))
     >>> # CDF of the normal distribution. (Unfortunately, Kyle forgets a continuity correction that would produce a more accurate answer.)
     >>> prob = 0.5 * (1 + math.erf((x - mean) / (std * math.sqrt(2))))
-    >>> print(f"The normal approximation estimates the probability as {prob}")
-    The normal approximation estimates the probability as 0.15865525393145713
+    >>> print(f"The normal approximation estimates the probability as {prob:.3f}")
+    The normal approximation estimates the probability as 0.159
 
 You are a little more practical, so you decide to take a computational
 approach (or more precisely, a Monte Carlo approach): just simulate many
@@ -63,8 +63,8 @@ count does not exceed 45.
     >>> simulation = rng.random(size=(n, N)) < p  # False for tails, True for heads
     >>> counts = np.sum(simulation, axis=0)  # count the number of heads each trial
     >>> prob = np.sum(counts <= x) / N  # estimate the probability as the observed proportion of cases in which the count did not exceed 45
-    >>> print(f"The Monte Carlo approach estimates the probability as {prob}")
-    The Monte Carlo approach estimates the probability as 0.18348
+    >>> print(f"The Monte Carlo approach estimates the probability as {prob:.3f}")
+    The Monte Carlo approach estimates the probability as 0.187
 
 The demon replies:
 

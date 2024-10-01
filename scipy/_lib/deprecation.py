@@ -150,7 +150,7 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
     old_name = f"{module.__name__}.{routine_name}"
 
     if new_name is None:
-        depdoc = "`%s` is deprecated!" % old_name
+        depdoc = f"`{old_name}` is deprecated!"
     else:
         depdoc = f"`{old_name}` is deprecated, use `{new_name}` instead!"
 
@@ -213,14 +213,10 @@ def _deprecate_positional_args(func=None, *, version=None):
                 return f(*args, **kwargs)
 
             # extra_args > 0
-            args_msg = [
-                f"{name}={arg}"
-                for name, arg in zip(kwonly_args[:extra_args], args[-extra_args:])
-            ]
-            args_msg = ", ".join(args_msg)
+            args_msg = ", ".join(kwonly_args[:extra_args])
             warnings.warn(
                 (
-                    f"You are passing {args_msg} as a positional argument. "
+                    f"You are passing as positional arguments: {args_msg}. "
                     "Please change your invocation to use keyword arguments. "
                     f"From SciPy {version}, passing these as positional "
                     "arguments will result in an error."

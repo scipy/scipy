@@ -705,7 +705,7 @@ def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
     seq = "".join(seq_tuple)
     if intrinsic:
         # Extrinsic rotation (wrt to global world) at lower case
-        # intrinsinc (WRT the object itself) lower case.
+        # intrinsic (WRT the object itself) lower case.
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
     angles_quat = rotation.as_euler(seq)
@@ -846,7 +846,7 @@ def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
     # Rotation of the form A/B/A are rotation around symmetric axes
     seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
     if intrinsic:
-        # Extrinsinc rotation (wrt to global world) at lower case
+        # Extrinsic rotation (wrt to global world) at lower case
         # Intrinsic (WRT the object itself) upper case.
         seq = seq.upper()
 
@@ -1026,7 +1026,7 @@ def test_reduction_no_indices():
 
 def test_reduction_none_indices():
     result = Rotation.identity().reduce(return_indices=True)
-    assert type(result) == tuple
+    assert type(result) is tuple
     assert len(result) == 3
 
     reduced, left_best, right_best = result
@@ -1465,6 +1465,32 @@ def test_align_vectors_parallel():
     R, _ = Rotation.align_vectors(a[0], b[0])
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
     assert_allclose(R.apply(b[0]), a[0], atol=atol)
+
+
+def test_align_vectors_antiparallel():
+    # Test exact 180 deg rotation
+    atol = 1e-12
+    as_to_test = np.array([[[1, 0, 0], [0, 1, 0]],
+                           [[0, 1, 0], [1, 0, 0]],
+                           [[0, 0, 1], [0, 1, 0]]])
+    bs_to_test = [[-a[0], a[1]] for a in as_to_test]
+    for a, b in zip(as_to_test, bs_to_test):
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        assert_allclose(R.magnitude(), np.pi, atol=atol)
+        assert_allclose(R.apply(b[0]), a[0], atol=atol)
+
+    # Test exact rotations near 180 deg
+    Rs = Rotation.random(100, random_state=0)
+    dRs = Rotation.from_rotvec(Rs.as_rotvec()*1e-4)  # scale down to small angle
+    a = [[ 1, 0, 0], [0, 1, 0]]
+    b = [[-1, 0, 0], [0, 1, 0]]
+    as_to_test = []
+    for dR in dRs:
+        as_to_test.append([dR.apply(a[0]), a[1]])
+    for a in as_to_test:
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        assert_allclose(R.as_matrix(), R2.as_matrix(), atol=atol)
 
 
 def test_align_vectors_primary_only():

@@ -1,16 +1,13 @@
 project(
   'scipy',
   'c', 'cpp', 'cython',
-  # Note that the git commit hash cannot be added dynamically here (it is added
-  # in the dynamically generated and installed `scipy/version.py` though - see
-  # tools/version_utils.py
-  version: '1.14.0.dev0',
+  version: run_command(['tools/gitversion.py'], check: true).stdout().strip(),
   license: 'BSD-3',
-  meson_version: '>= 1.1.0',
+  meson_version: '>= 1.5.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'c_std=c99',
+    'c_std=c17',
     'cpp_std=c++17',
     'fortran_std=legacy',
     'blas=openblas',
@@ -20,6 +17,8 @@ project(
 
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
+
+min_numpy_version = '1.23.5'  # keep in sync with pyproject.toml
 
 # Emit a warning for 32-bit Python installs on Windows; users are getting
 # unexpected from-source builds there because we no longer provide wheels.
@@ -43,8 +42,8 @@ if cc.get_id() == 'gcc'
     error('SciPy requires GCC >= 9.1')
   endif
 elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
-  if not cc.version().version_compare('>=14.0')
-    error('SciPy requires clang >= 14.0')
+  if not cc.version().version_compare('>=12.0')
+    error('SciPy requires clang >= 12.0')
   endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')

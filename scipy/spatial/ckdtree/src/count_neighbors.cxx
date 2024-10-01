@@ -1,3 +1,6 @@
+#include "ckdtree_decl.h"
+#include "rectangle.h"
+
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -11,9 +14,6 @@
 #include <stdexcept>
 #include <ios>
 
-#include "ckdtree_decl.h"
-#include "rectangle.h"
-
 struct WeightedTree {
     const ckdtree *tree;
     double *weights;
@@ -23,7 +23,7 @@ struct WeightedTree {
 struct CNBParams
 {
     double *r;
-    void * results; /* will be casted inside */
+    void * results; /* will be cast inside */
     WeightedTree self, other;
     int cumulative;
 };

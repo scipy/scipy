@@ -147,8 +147,8 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef tuple _hopcroft_karp(ITYPE_t[:] indices, ITYPE_t[:] indptr,
-                          ITYPE_t i, ITYPE_t j):
+cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
+                          const ITYPE_t i, const ITYPE_t j):
     cdef ITYPE_t INF = np.iinfo(ITYPE).max
     # x will end up containing the matchings of rows to columns, while
     # y will contain the matchings of columns to rows.
@@ -187,7 +187,7 @@ cdef tuple _hopcroft_karp(ITYPE_t[:] indices, ITYPE_t[:] indptr,
 
     # Similarly, we use a stack for our depth-first search. As above, we only
     # represent vertices in the left partition, and since no augmenting path
-    # will visit more than i of thse before encountering an unmatched vertex
+    # will visit more than i of these before encountering an unmatched vertex
     # (as represented by i), the stack capacity can be limited to i + 1.
     # Elements will be pushed to stack_head and popped from stack_head - 1.
     cdef ITYPE_t[:] stack = np.empty(i + 1, dtype=ITYPE)
@@ -528,8 +528,8 @@ ctypedef np.uint8_t BTYPE_t
 cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
                          ITYPE_t[:] kk,
                          DTYPE_t[:] cc,
-                         ITYPE_t nr,
-                         ITYPE_t nc) noexcept:
+                         const ITYPE_t nr,
+                         const ITYPE_t nc) noexcept:
     """Solves the minimum weight bipartite matching problem using LAPJVsp.
 
     The implementation at hand is a straightforward port of the original Pascal

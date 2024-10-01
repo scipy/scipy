@@ -121,11 +121,20 @@ py3.extension_module('_rgi_cython',
   subdir: 'scipy/interpolate'
 )
 
+__fitpack_lib = static_library('__fitpack',
+    ['src/__fitpack.h', 'src/__fitpack.cc'],
+    dependencies:[lapack, np_dep, py3_dep]
+)
+
+__fitpack_dep = declare_dependency(
+    link_with: __fitpack_lib,
+)
+
 py3.extension_module('_bspl',
-  cython_gen.process('_bspl.pyx'),
-  c_args: cython_c_args,
+  cython_gen_cpp.process('_bspl.pyx'),
+  cpp_args: cython_cpp_args,
   include_directories: 'src/',
-  dependencies: np_dep,
+  dependencies: [lapack, np_dep, __fitpack_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
@@ -143,15 +152,9 @@ py3.extension_module('_fitpack',
   subdir: 'scipy/interpolate'
 )
 
-dfitpack_module = custom_target('dfitpack_module',
-  output: ['dfitpack-f2pywrappers.f', 'dfitpackmodule.c'],
-  input: 'src/fitpack.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 # TODO: Add flags for 64 bit ints
-py3.extension_module('dfitpack',
-  dfitpack_module,
+py3.extension_module('_dfitpack',
+  f2py_gen.process('src/dfitpack.pyf'),
   c_args: [Wno_unused_variable],
   link_args: version_link_args,
   dependencies: [lapack_dep, fortranobject_dep],
@@ -181,10 +184,12 @@ endif
 py3.install_sources([
     '__init__.py',
     '_bsplines.py',
+    '_bary_rational.py',
     '_cubic.py',
     '_fitpack_impl.py',
     '_fitpack_py.py',
     '_fitpack2.py',
+    '_fitpack_repro.py',
     '_interpolate.py',
     '_ndgriddata.py',
     '_pade.py',
@@ -193,6 +198,7 @@ py3.install_sources([
     '_rbfinterp.py',
     '_rgi.py',
     '_ndbspline.py',
+    'dfitpack.py',
     'fitpack.py',
     'fitpack2.py',
     'interpolate.py',
