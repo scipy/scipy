@@ -223,7 +223,7 @@ Removed methods and attributes
    non-zeros, use ``A.count_nonzero()``. This is not new to the
    migration, but can be confusing.
 
-   To use the ``axis`` parameter of ``M.getnnz(axis=...)``,
+   To migrate from the ``axis`` parameter of ``M.getnnz(axis=...)``,
    you can use ``A.count_nonzero(axis=...)``
    but it is not an exact replacement because it counts nonzero
    values instead of stored values. The difference is the number
@@ -236,7 +236,7 @@ Removed methods and attributes
    stored values for each major axis value (row for CSR and column
    for CSC). The minor axes can be computed using
    ``np.bincount(A.indices, minlength=N)`` where ``N`` is the length
-   of the minor axis (e.g. ``A.shape[1]`` for CSR). the ``bincount``
+   of the minor axis (e.g. ``A.shape[1]`` for CSR). The ``bincount``
    function works for any axis of COO format using ``A.coords[axis]``
    in place of ``A.indices``.
 
