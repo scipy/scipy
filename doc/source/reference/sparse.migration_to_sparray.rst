@@ -103,8 +103,8 @@ Their signatures are::
    def eye_array(m, n=None, *, k=0, dtype=float, format=None):
    def random_array(m, n, density=0.01, format='coo', dtype=None, random_state=None, data_random_state=None):
 
-Existing functions you should be careful while migrating
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Existing functions that need careful migration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These functions return sparray or spmatrix, depending on the input types they
 receive: :func:`~scipy.sparse.kron`, :func:`~scipy.sparse.kronsum`,
@@ -244,10 +244,10 @@ Other
 -----
 
 -  If you provide compressed data to a constructor,
-   e.g. ``csr_array((data, indices, indptr))`` both arrays and matrices
-   set the index dtype without checking the content of the indices, but only
-   their types (see `gh-18509 <https://github.com/scipy/scipy/pull/18509>`__
-   for more details).
+   e.g. ``csr_array((data, indices, indptr))`` sparse arrays set the index
+   dtype by only checking the index arrays dtype, while sparse matrices check the
+   index values too and may downcast to int32
+   (see `gh-18509 <https://github.com/scipy/scipy/pull/18509>`__ for more details).
 
 -  Binary operations with operators ``+, -, *, /, @, !=, >`` and sparse and/or
    dense operands:
