@@ -4,7 +4,9 @@ import itertools
 
 import pytest
 
-from scipy._lib._array_api import array_namespace, xp_assert_close, xp_size, np_compat
+from scipy._lib._array_api import (
+    array_namespace, xp_assert_close, xp_size, np_compat, is_array_api_strict
+)
 from scipy.conftest import array_api_compatible
 
 from scipy.integrate import cubature
@@ -14,6 +16,11 @@ from scipy.integrate._rules import (
     NestedFixedRule,
     GaussLegendreQuadrature, GaussKronrodQuadrature,
     GenzMalikCubature,
+)
+
+from scipy.integrate._cubature import (
+    _InfiniteLimitsTransform,
+    _FuncLimitsTransform,
 )
 
 pytestmark = [pytest.mark.usefixtures("skip_xp_backends"),]
@@ -34,6 +41,7 @@ def basic_1d_integrand(x, n, xp):
 
 
 def basic_1d_integrand_exact(n, xp):
+    # Exact only for integration over interval [0, 2].
     return xp.reshape(2**(n+1)/(n+1), (-1, 1))
 
 
@@ -42,6 +50,7 @@ def basic_nd_integrand(x, n, xp):
 
 
 def basic_nd_integrand_exact(n, xp):
+    # Exact only for integration over interval [0, 2]^n.
     return (-2**(3+n) + 4**(2+n))/((1+n)*(2+n))
 
 
@@ -288,6 +297,85 @@ def genz_malik_1980_f_5_random_args(rng, shape, xp):
     return alphas, betas
 
 
+def f_gaussian(x, alphas, xp):
+    r"""
+    .. math::
+
+        f(\mathbf x) = \exp\left(-\sum^n_{i = 1} (\alpha_i x_i)^2 \right)
+    """
+    npoints, ndim = x.shape[0], x.shape[-1]
+    alphas_reshaped = alphas[None, ...]
+    x_reshaped = xp.reshape(x, (npoints, *([1]*(len(alphas.shape) - 1)), ndim))
+
+    return xp.exp(-xp.sum((alphas_reshaped * x_reshaped)**2, axis=-1))
+
+
+def f_gaussian_exact(a, b, alphas, xp):
+    # Exact only when `a` and `b` are one of:
+    #   (-oo, oo), or
+    #   (0, oo), or
+    #   (-oo, 0)
+    # `alphas` can be arbitrary.
+
+    ndim = xp_size(a)
+    double_infinite_count = 0
+    semi_infinite_count = 0
+
+    for i in range(ndim):
+        if xp.isinf(a[i]) and xp.isinf(b[i]):   # doubly-infinite
+            double_infinite_count += 1
+        elif xp.isinf(a[i]) != xp.isinf(b[i]):  # exclusive or, so semi-infinite
+            semi_infinite_count += 1
+
+    return (math.sqrt(math.pi) ** ndim) / (
+        2**semi_infinite_count * xp.prod(alphas, axis=-1)
+    )
+
+
+def f_gaussian_random_args(rng, shape, xp):
+    alphas = xp.asarray(rng.random(shape))
+
+    # If alphas are very close to 0 this makes the problem very difficult due to large
+    # values of ``f``.
+    alphas *= 100
+
+    return (alphas,)
+
+
+def f_modified_gaussian(x_arr, n, xp):
+    r"""
+    .. math::
+
+        f(x, y, z, w) = x^n \sqrt{y} \exp(-y-z^2-w^2)
+    """
+    x, y, z, w = x_arr[:, 0], x_arr[:, 1], x_arr[:, 2], x_arr[:, 3]
+    res = (x ** n[:, None]) * xp.sqrt(y) * xp.exp(-y-z**2-w**2)
+
+    return res.T
+
+
+def f_modified_gaussian_exact(a, b, n, xp):
+    # Exact only for the limits
+    #   a = (0, 0, -oo, -oo)
+    #   b = (1, oo, oo, oo)
+    # but defined here as a function to match the format of the other integrands.
+    return 1/(2 + 2*n) * math.pi ** (3/2)
+
+
+def f_with_problematic_points(x_arr, points, xp):
+    """
+    This emulates a function with a list of singularities given by `points`.
+
+    If no `x_arr` are one of the `points`, then this function returns 1.
+    """
+
+    for point in points:
+        if xp.any(x_arr == point):
+            raise ValueError("called with a problematic point")
+
+    return xp.ones(x_arr.shape[0])
+
+
 @array_api_compatible
 class TestCubature:
     """
@@ -359,6 +447,53 @@ class TestCubature:
         with pytest.raises(Exception, match="`a` and `b` must be 1D arrays"):
             cubature(basic_1d_integrand, a, b, args=(xp,))
 
+    def test_a_and_b_must_be_nonempty(self, xp):
+        a = xp.asarray([])
+        b = xp.asarray([])
+
+        with pytest.raises(Exception, match="`a` and `b` must be nonempty"):
+            cubature(basic_1d_integrand, a, b, args=(xp,))
+
+    def test_limits_other_way_around(self, xp):
+        n = xp.arange(5, dtype=xp.float64)
+
+        a = xp.asarray([2], dtype=xp.float64)
+        b = xp.asarray([0], dtype=xp.float64)
+
+        res = cubature(
+            basic_1d_integrand,
+            a,
+            b,
+            args=(n, xp),
+        )
+
+        xp_assert_close(
+            res.estimate,
+            -basic_1d_integrand_exact(n, xp),
+            rtol=1e-1,
+            atol=0,
+        )
+
+    def test_zero_width_limits(self, xp):
+        n = xp.arange(5, dtype=xp.float64)
+
+        a = xp.asarray([0], dtype=xp.float64)
+        b = xp.asarray([0], dtype=xp.float64)
+
+        res = cubature(
+            basic_1d_integrand,
+            a,
+            b,
+            args=(n, xp),
+        )
+
+        xp_assert_close(
+            res.estimate,
+            xp.asarray([[0], [0], [0], [0], [0]], dtype=xp.float64),
+            rtol=1e-1,
+            atol=0,
+        )
+
 
 @pytest.mark.parametrize("rtol", [1e-4])
 @pytest.mark.parametrize("atol", [1e-5])
@@ -373,7 +508,7 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
-    problems_scalar_output = [
+    @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
             # Function to integrate, like `f(x, *args)`
@@ -418,7 +553,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_1,
             genz_malik_1980_f_1_exact,
             [0, 0, 0],
-            [10, 10, 10],
+            [5, 5, 5],
             (
                 1/2,
                 [1, 1, 1],
@@ -440,7 +575,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
 
-            [10, 50],
+            [0, 0],
             [10, 50],
             (
                 [-3, 3],
@@ -583,42 +718,7 @@ class TestCubatureProblems:
                 [1, 1, 1],
             ),
         ),
-    ]
-
-    problem_array_output = [
-        (
-            # Function to integrate, like `f(x, *args)`
-            genz_malik_1980_f_1,
-
-            # Exact solution, like `exact(a, b, *args)`
-            genz_malik_1980_f_1_exact,
-
-            # Function that generates random args of a certain shape.
-            genz_malik_1980_f_1_random_args,
-        ),
-        (
-            genz_malik_1980_f_2,
-            genz_malik_1980_f_2_exact,
-            genz_malik_1980_f_2_random_args,
-        ),
-        (
-            genz_malik_1980_f_3,
-            genz_malik_1980_f_3_exact,
-            genz_malik_1980_f_3_random_args
-        ),
-        (
-            genz_malik_1980_f_4,
-            genz_malik_1980_f_4_exact,
-            genz_malik_1980_f_4_random_args
-        ),
-        (
-            genz_malik_1980_f_5,
-            genz_malik_1980_f_5_exact,
-            genz_malik_1980_f_5_random_args,
-        ),
-    ]
-
-    @pytest.mark.parametrize("problem", problems_scalar_output)
+    ])
     def test_scalar_output(self, problem, rule, rtol, atol, xp):
         f, exact, a, b, args = problem
 
@@ -654,7 +754,38 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
-    @pytest.mark.parametrize("problem", problem_array_output)
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate, like `f(x, *args)`
+            genz_malik_1980_f_1,
+
+            # Exact solution, like `exact(a, b, *args)`
+            genz_malik_1980_f_1_exact,
+
+            # Function that generates random args of a certain shape.
+            genz_malik_1980_f_1_random_args,
+        ),
+        (
+            genz_malik_1980_f_2,
+            genz_malik_1980_f_2_exact,
+            genz_malik_1980_f_2_random_args,
+        ),
+        (
+            genz_malik_1980_f_3,
+            genz_malik_1980_f_3_exact,
+            genz_malik_1980_f_3_random_args
+        ),
+        (
+            genz_malik_1980_f_4,
+            genz_malik_1980_f_4_exact,
+            genz_malik_1980_f_4_random_args
+        ),
+        (
+            genz_malik_1980_f_5,
+            genz_malik_1980_f_5_exact,
+            genz_malik_1980_f_5_random_args,
+        ),
+    ])
     @pytest.mark.parametrize("shape", [
         (2,),
         (3,),
@@ -709,6 +840,555 @@ class TestCubatureProblems:
         assert res.status == "converged", err_msg
 
         assert res.estimate.shape == shape[:-1]
+
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate
+            lambda x, xp: x,
+
+            # Exact value
+            [50.0],
+
+            # Coordinates of `a`
+            [0],
+
+            # Coordinates of `b`
+            [10],
+
+            # Points by which to split up the initial region
+            None,
+        ),
+        (
+            lambda x, xp: xp.sin(x)/x,
+            [2.551496047169878],  # si(1) + si(2),
+            [-1],
+            [2],
+            [
+                [0.0],
+            ],
+        ),
+        (
+            lambda x, xp: xp.ones((x.shape[0], 1)),
+            [1.0],
+            [0, 0, 0],
+            [1, 1, 1],
+            [
+                [0.5, 0.5, 0.5],
+            ],
+        ),
+        (
+            lambda x, xp: xp.ones((x.shape[0], 1)),
+            [1.0],
+            [0, 0, 0],
+            [1, 1, 1],
+            [
+                [0.25, 0.25, 0.25],
+                [0.5, 0.5, 0.5],
+            ],
+        ),
+        (
+            lambda x, xp: xp.ones((x.shape[0], 1)),
+            [1.0],
+            [0, 0, 0],
+            [1, 1, 1],
+            [
+                [0.1, 0.25, 0.5],
+                [0.25, 0.25, 0.25],
+                [0.5, 0.5, 0.5],
+            ],
+        )
+    ])
+    def test_break_points(self, problem, rule, rtol, atol, xp):
+        f, exact, a, b, points = problem
+
+        a = xp.asarray(a, dtype=xp.float64)
+        b = xp.asarray(b, dtype=xp.float64)
+        exact = xp.asarray(exact, dtype=xp.float64)
+
+        if points is not None:
+            points = [xp.asarray(point, dtype=xp.float64) for point in points]
+
+        ndim = xp_size(a)
+
+        if rule == "genz-malik" and ndim < 2:
+            pytest.skip("Genz-Malik cubature does not support 1D integrals")
+
+        if rule == "genz-malik" and ndim >= 5:
+            pytest.mark.slow("Gauss-Kronrod is slow in >= 5 dim")
+
+        res = cubature(
+            f,
+            a,
+            b,
+            rule,
+            rtol,
+            atol,
+            points=points,
+            args=(xp,),
+        )
+
+        xp_assert_close(
+            res.estimate,
+            exact,
+            rtol=rtol,
+            atol=atol,
+            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
+            check_dtype=False,
+        )
+
+        err_msg = (f"estimate_error={res.error}, "
+                   f"subdivisions= {res.subdivisions}, "
+                   f"true_error={xp.abs(res.estimate - exact)}")
+        assert res.status == "converged", err_msg
+
+    @skip_xp_backends(
+        "jax.numpy",
+        reasons=["transforms make use of indexing assignment"],
+    )
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate
+            f_gaussian,
+
+            # Exact solution
+            f_gaussian_exact,
+
+            # Arguments passed to f
+            f_gaussian_random_args,
+            (1, 1),
+
+            # Limits, have to match the shape of the arguments
+            [-math.inf],  # a
+            [math.inf],   # b
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (2, 2),
+            [-math.inf, -math.inf],
+            [math.inf, math.inf],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (1, 1),
+            [0],
+            [math.inf],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (1, 1),
+            [-math.inf],
+            [0],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (2, 2),
+            [0, 0],
+            [math.inf, math.inf],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (2, 2),
+            [0, -math.inf],
+            [math.inf, math.inf],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (1, 4),
+            [0, 0, -math.inf, -math.inf],
+            [math.inf, math.inf, math.inf, math.inf],
+        ),
+        (
+            f_gaussian,
+            f_gaussian_exact,
+            f_gaussian_random_args,
+            (1, 4),
+            [-math.inf, -math.inf, -math.inf, -math.inf],
+            [0, 0, math.inf, math.inf],
+        ),
+        (
+            lambda x, xp: 1/xp.prod(x, axis=-1)**2,
+
+            # Exact only for the below limits, not for general `a` and `b`.
+            lambda a, b, xp: xp.asarray(1/6, dtype=xp.float64),
+
+            # Arguments
+            lambda rng, shape, xp: tuple(),
+            tuple(),
+
+            [1, -math.inf, 3],
+            [math.inf, -2, math.inf],
+        ),
+
+        # This particular problem can be slow
+        pytest.param(
+            (
+                # f(x, y, z, w) = x^n * sqrt(y) * exp(-y-z**2-w**2) for n in [0,1,2,3]
+                f_modified_gaussian,
+
+                # This exact solution is for the below limits, not in general
+                f_modified_gaussian_exact,
+
+                # Constant arguments
+                lambda rng, shape, xp: (xp.asarray([0, 1, 2, 3, 4], dtype=xp.float64),),
+                tuple(),
+
+                [0, 0, -math.inf, -math.inf],
+                [1, math.inf, math.inf, math.inf]
+            ),
+
+            marks=pytest.mark.xslow,
+        ),
+    ])
+    def test_infinite_limits(self, problem, rule, rtol, atol, xp):
+        rng = np_compat.random.default_rng(1)
+        f, exact, random_args_func, random_args_shape, a, b = problem
+
+        a = xp.asarray(a, dtype=xp.float64)
+        b = xp.asarray(b, dtype=xp.float64)
+        args = random_args_func(rng, random_args_shape, xp)
+
+        ndim = xp_size(a)
+
+        if rule == "genz-malik" and ndim < 2:
+            pytest.skip("Genz-Malik cubature does not support 1D integrals")
+
+        if rule == "genz-malik" and ndim >= 4:
+            pytest.mark.slow("Genz-Malik is slow in >= 5 dim")
+
+        if rule == "genz-malik" and ndim >= 4 and is_array_api_strict(xp):
+            pytest.mark.xslow("Genz-Malik very slow for array_api_strict in >= 4 dim")
+
+        res = cubature(
+            f,
+            a,
+            b,
+            rule,
+            rtol,
+            atol,
+            args=(*args, xp),
+        )
+
+        assert res.status == "converged"
+
+        xp_assert_close(
+            res.estimate,
+            exact(a, b, *args, xp),
+            rtol=rtol,
+            atol=atol,
+            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}",
+            check_0d=False,
+        )
+
+    @skip_xp_backends(
+        "jax.numpy",
+        reasons=["transforms make use of indexing assignment"],
+    )
+    @pytest.mark.parametrize(
+        "problem",
+        [
+            (
+                # Integrate
+                #   f(x_1, x_2, x_3) = x_1
+                # with limits
+                #   a = [0, 0, 0]
+                #   b = [1, 1, 1]
+
+                # f
+                lambda x, xp: x[:, 0],
+
+                # exact solution
+                0.5,
+
+                # args
+                (),
+
+                # a & b
+                [0, 0],
+                [1, 1],
+
+                # region
+                # Wrapped in a function so that each region_func has access to the array
+                # namespace specified by the test.
+                lambda xp: [
+                    lambda x: (
+                        xp.reshape(xp.zeros(x.shape[0]), (-1, 1)),
+                        xp.reshape(xp.ones(x.shape[0]), (-1, 1)),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x_1, x_2, x_3) = 1
+                # with limits
+                #   a = [0, 0, 0]
+                #   b = [1, 1, x_1 * x_2]
+                lambda x, xp: xp.ones(x.shape[0]),
+                0.25,
+                (),
+                [0, 0],
+                [1, 1],
+                lambda xp: [
+                    lambda x: (
+                        xp.reshape(xp.zeros(x.shape[0]), (-1, 1)),
+                        xp.reshape((x[:, 0] * x[:, 1]), (-1, 1)),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x_1, ..., x_n) = 1
+                # with limits
+                #   a = [-1, -sqrt(1 - x_1**2)]
+                #   b = [1, sqrt(1 - x_1**2)]
+                lambda x, xp: xp.ones(x.shape[0]),
+                math.pi,
+                (),
+                [-1],
+                [1],
+                lambda xp: [
+                    lambda x: (
+                        xp.reshape(-xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                        xp.reshape(xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x_1, x_2) = 1
+                # with limits
+                #   a = [-inf, -exp(-x_1**2)]
+                #   b = [inf, exp(x_1**2)]
+                lambda x, xp: xp.ones(x.shape[0]),
+                2 * math.sqrt(math.pi),
+                (),
+                [-math.inf],
+                [math.inf],
+                lambda xp: [
+                    lambda x: (
+                        xp.reshape(-xp.exp(-x[:, 0] ** 2), (-1, 1)),
+                        xp.reshape(xp.exp(-x[:, 0] ** 2), (-1, 1)),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x_1, x_2) = n
+                # with limits
+                #   a = [-inf, -exp(-x_1**2)]
+                #   b = [inf, exp(x_1**2)]
+                # for n = range(5)
+                lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                [2 * math.sqrt(math.pi) * i for i in range(5)],
+                ([0, 1, 2, 3, 4],),
+                [-math.inf],
+                [math.inf],
+                lambda xp: [
+                    lambda x: (
+                        xp.reshape(-xp.exp(-x[:, 0] ** 2), (-1, 1)),
+                        xp.reshape(xp.exp(-x[:, 0] ** 2), (-1, 1)),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x, y, z, w) = n
+                # with limits
+                #   a = [-1, -1, -sqrt(1-x^2), -sqrt(1-x^2)],
+                #   b = [1, 1, sqrt(1-x^2), sqrt(1-x^2)]
+                # for n = range(5)
+                lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                [32 / 3 * i for i in range(5)],
+                ([0, 1, 2, 3, 4],),
+                [-1, -1],
+                [1, 1],
+                lambda xp: [
+                    lambda x: (
+                        # Workaround since xp.repeat is not available
+                        -xp.concat([xp.sqrt(1 - x[:, :1] ** 2)] * 2, axis=-1),
+                        xp.concat([xp.sqrt(1 - x[:, :1] ** 2)] * 2, axis=-1),
+                    ),
+                ],
+            ),
+            (
+                # Integrate
+                #   f(x, y, z, w) = n
+                # with limits
+                #   a = [0, 0, 0, 0],
+                #   b = [1, x, x, x]
+                # for n = range(5)
+                lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                [i / 4 for i in range(5)],
+                ([0, 1, 2, 3, 4],),
+                [0],
+                [1],
+                lambda xp: [
+                    lambda x: (
+                        xp.zeros((x.shape[0], 3)),
+                        # Workaround since xp.repeat is not available
+                        xp.concat([x[:, :1]]*3, axis=-1),
+                    ),
+                ],
+            ),
+
+
+            pytest.param(
+                (
+                    # Integrate
+                    #   f(x, y, z) = n
+                    # with limits
+                    #   a = [-1, -sqrt(1-x^2), -sqrt(1-x^2-y^2)],
+                    #   b = [1, sqrt(1-x^2), sqrt(1-x^2-y^2)]
+                    # for n = range(5)
+                    # i.e. integrate a unit ball with densities 0, 1, 2, 3, 4
+                    lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                    [4 / 3 * math.pi * i for i in range(5)],
+                    ([0, 1, 2, 3, 4],),
+                    [-1],
+                    [1],
+                    lambda xp: [
+                        lambda x: (
+                            xp.reshape(-xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                            xp.reshape(xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                        ),
+                        lambda x: (
+                            xp.reshape(
+                                -xp.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2),
+                                (-1, 1),
+                            ),
+                            xp.reshape(
+                                xp.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2),
+                                (-1, 1),
+                            ),
+                        ),
+                    ],
+                ),
+                marks=pytest.mark.slow,
+            ),
+            pytest.param(
+                (
+                    # Integrate
+                    #   f(x, y, z, w, p) = n
+                    # with limits
+                    #   a = [0, 0, 0, 0, 0],
+                    #   b = [1, x, x, xy, xy]
+                    # for n = range(5)
+                    lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                    [i / 21 for i in range(5)],
+                    ([0, 1, 2, 3, 4],),
+                    [0],
+                    [1],
+                    lambda xp: [
+                        lambda x: (
+                            xp.zeros((x.shape[0], 2)),
+                            # Workaround since xp.repeat is not available:
+                            xp.concat([x[:, :1]]*2, axis=-1),
+                        ),
+                        lambda x: (
+                            xp.zeros((x.shape[0], 2)),
+                            # Likewise here:
+                            xp.concat([x[:, :1]*x[:, 1:2]]*2, axis=-1),
+                        ),
+                    ],
+                ),
+                marks=pytest.mark.xslow,
+            ),
+            pytest.param(
+                (
+                    # Integrate
+                    #   f(x, y, z, w) = n
+                    # with limits
+                    #   a = [-1, -sqrt(1-x^2), -sqrt(1-x^2-y^2), -sqrt(1-x^2-y^2-z^2)],
+                    #   b = [1, sqrt(1-x^2), sqrt(1-x^2-y^2), sqrt(1-x^2-y^2-z^2)]
+                    # for n = range(5)
+                    # i.e. integration over a hypersphere
+                    lambda x, n, xp: xp.tile(n, (x.shape[0], 1)),
+                    [math.pi**2 / 2 * i for i in range(5)],
+                    ([0, 1, 2, 3, 4],),
+                    [-1],
+                    [1],
+                    lambda xp: [
+                        lambda x: (
+                            xp.reshape(-xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                            xp.reshape(xp.sqrt(1 - x[:, 0] ** 2), (-1, 1)),
+                        ),
+                        lambda x: (
+                            xp.reshape(
+                                -xp.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2),
+                                (-1, 1),
+                            ),
+                            xp.reshape(
+                                xp.sqrt(1 - x[:, 0] ** 2 - x[:, 1] ** 2),
+                                (-1, 1),
+                            ),
+                        ),
+                        lambda x: (
+                            xp.reshape(
+                                -xp.sqrt(
+                                    1 - x[:, 0] ** 2 - x[:, 1] ** 2 - x[:, 2] ** 2
+                                ),
+                                (-1, 1),
+                            ),
+                            xp.reshape(
+                                xp.sqrt(
+                                    1 - x[:, 0] ** 2 - x[:, 1] ** 2 - x[:, 2] ** 2
+                                ),
+                                (-1, 1),
+                            )
+                        ),
+                    ],
+                ),
+                marks=pytest.mark.xslow,
+            ),
+        ],
+    )
+    def test_func_limits(self, problem, rule, rtol, atol, xp):
+        f, exact, args, a_outer, b_outer, region = problem
+
+        ndim = len(a_outer) + len(region(xp))
+
+        if rule == "genz-malik" and ndim >= 4 and is_array_api_strict(xp):
+            pytest.skip("Genz-Malik is very slow for array_api_strict in >= 4 dim")
+
+        a_outer = xp.asarray(a_outer, dtype=xp.float64)
+        b_outer = xp.asarray(b_outer, dtype=xp.float64)
+        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
+        exact = xp.asarray(exact, dtype=xp.float64)
+
+        xp_compat = array_namespace(xp.empty(0))
+
+        res = cubature(
+            f,
+            a_outer,
+            b_outer,
+            rule,
+            rtol,
+            atol,
+            args=(*args, xp_compat),
+            region=region(xp_compat),
+        )
+
+        assert res.status == "converged"
+
+        xp_assert_close(
+            res.estimate,
+            exact,
+            rtol=rtol,
+            atol=atol,
+            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}",
+            check_0d=False,
+        )
 
 
 @array_api_compatible
@@ -845,6 +1525,127 @@ class TestRulesCubature:
     def test_genz_malik_1d_raises_error(self, xp):
         with pytest.raises(Exception, match="only defined for ndim >= 2"):
             GenzMalikCubature(1, xp=xp)
+
+
+@array_api_compatible
+@skip_xp_backends(
+    "jax.numpy",
+    reasons=["transforms make use of indexing assignment"],
+)
+class TestTransformations:
+    @pytest.mark.parametrize(("a", "b", "points"), [
+        (
+            [0, 1, -math.inf],
+            [1, math.inf, math.inf],
+            [
+                [1, 1, 1],
+                [0.5, 10, 10],
+            ]
+        )
+    ])
+    def test_infinite_limits_maintains_points(self, a, b, points, xp):
+        """
+        Test that break points are correctly mapped under the _InfiniteLimitsTransform
+        transformation.
+        """
+
+        points = [xp.asarray(p, dtype=xp.float64) for p in points]
+
+        f_transformed = _InfiniteLimitsTransform(
+            # Bind `points` and `xp` argument in f
+            lambda x: f_with_problematic_points(x, points, xp),
+            xp.asarray(a, dtype=xp.float64),
+            xp.asarray(b, dtype=xp.float64),
+        )
+
+        for point in points:
+            transformed_point = f_transformed.inv(xp.reshape(point, (1, -1)))
+
+            with pytest.raises(Exception, match="called with a problematic point"):
+                f_transformed(transformed_point)
+
+    @pytest.mark.parametrize(("region", "points"), [
+        (
+            lambda xp: [
+                lambda x: (
+                    xp.reshape(-xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                    xp.reshape(xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                ),
+            ],
+            [
+                [0.5, 0.5],
+                [0, 0],
+                [0, 0.5],
+            ],
+        ),
+        (
+            lambda xp: [
+                lambda x: (
+                    xp.reshape(-2*xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                    xp.reshape(2*xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                ),
+            ],
+            [
+                [0, 1.5],
+            ],
+        ),
+        (
+            lambda xp: [
+                lambda x: (
+                    xp.reshape(-xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                    xp.reshape(xp.sqrt(1-x[:, 0]**2), (-1, 1)),
+                ),
+                lambda x: (
+                    xp.reshape(-2*xp.sqrt(1-x[:, 0]**2-x[:, 1]**2), (-1, 1)),
+                    xp.reshape(2*xp.sqrt(1-x[:, 0]**2-x[:, 1]**2), (-1, 1)),
+                ),
+            ],
+            [
+                [0, 0.5, 1.5],
+            ],
+        ),
+        (
+            lambda xp: [
+                lambda x: (
+                    xp.zeros((x.shape[0], 2)),
+                    xp.reshape(xp.asarray([x[:, 0]]*2), (-1, 2)),
+                ),
+                lambda x: (
+                    xp.zeros((x.shape[0], 2)),
+                    xp.reshape(xp.asarray([x[:, 0] * x[:, 1]]*2), (-1, 2)),
+                ),
+            ],
+            [
+                [1, 1, 1, 1, 1],
+            ]
+        )
+    ])
+    def test_func_limits_maintains_points(self, region, points, xp):
+        """
+        Test that break points are correctly mapped under the _FuncLimitsTransform
+        transformation.
+        """
+
+        points = [xp.asarray(p, dtype=xp.float64) for p in points]
+
+        # Pass xp to each region_func so they have access to the correct array
+        # namespace, as there is no `args` argument for region.
+        region = region(xp)
+
+        f_transformed = _FuncLimitsTransform(
+            # Bind `points` and `xp` argument in f
+            lambda x: f_with_problematic_points(x, points, xp),
+            a=xp.asarray([-1], dtype=xp.float64),
+            b=xp.asarray([1], dtype=xp.float64),
+
+            region=region,
+        )
+
+        for point in points:
+            transformed_point = f_transformed.inv(xp.reshape(point, (1, -1)))
+
+            with pytest.raises(Exception, match="called with a problematic point"):
+                f_transformed(transformed_point)
 
 
 class BadErrorRule(Rule):

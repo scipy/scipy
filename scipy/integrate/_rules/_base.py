@@ -1,7 +1,5 @@
 from scipy._lib._array_api import array_namespace, xp_size
 
-import math
-
 from functools import cached_property
 
 
@@ -147,7 +145,7 @@ class Rule:
         est = self.estimate(f, a, b, args)
         refined_est = 0
 
-        for a_k, b_k in _subregion_coordinates(a, b):
+        for a_k, b_k in _split_patch(a, b):
             refined_est += self.estimate(f, a_k, b_k, args)
 
         return self.xp.abs(est - refined_est)
@@ -444,22 +442,24 @@ def _cartesian_product(arrays):
     return result
 
 
-def _subregion_coordinates(a, b):
+def _split_patch(a, b, split_at=None):
     """
-    Given the coordinates of a region like a=[0, 0] and b=[1, 1], yield the coordinates
-    of all subregions, which in this case would be::
+    Given the coordinates of a patch like a=[0, 0] and b=[1, 1], yield the coordinates
+    of all subpatch split at a specific point (by default the midpoint). For a=[0, 0]
+    and b=[1, 1], this would be::
 
         ([0, 0], [1/2, 1/2]),
         ([0, 1/2], [1/2, 1]),
         ([1/2, 0], [1, 1/2]),
         ([1/2, 1/2], [1, 1])
     """
-
     xp = array_namespace(a, b)
-    m = (a + b) * 0.5
 
-    left = [xp.asarray([a[i], m[i]]) for i in range(a.shape[0])]
-    right = [xp.asarray([m[i], b[i]]) for i in range(b.shape[0])]
+    if split_at is None:
+        split_at = (a + b) / 2
+
+    left = [xp.asarray([a[i], split_at[i]]) for i in range(a.shape[0])]
+    right = [xp.asarray([split_at[i], b[i]]) for i in range(b.shape[0])]
 
     a_sub = _cartesian_product(left)
     b_sub = _cartesian_product(right)
@@ -498,7 +498,7 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
 
     # Also need to multiply the weights by a scale factor equal to the determinant
     # of the Jacobian for this coordinate change.
-    weight_scale_factor = math.prod(lengths) / 2**rule_ndim
+    weight_scale_factor = xp.prod(lengths) / 2**rule_ndim
     weights = orig_weights * weight_scale_factor
 
     f_nodes = f(nodes, *args)
