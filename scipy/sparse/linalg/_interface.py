@@ -593,7 +593,7 @@ class _CustomLinearOperator(LinearOperator):
         if self.__matvec_impl is not None:
             return self.__matvec_impl(x)
         else:
-            raise TypeError("Tthis LinearOperator doesn't implement `rmatvec` nor `adjoint`,"
+            raise TypeError("This LinearOperator doesn't implement `rmatvec` nor `adjoint`,"
                 " and hence multiplying with it on the right-hand side is not supported.")
 
     def _rmatvec(self, x):
