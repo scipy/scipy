@@ -103,8 +103,8 @@ Their signatures are::
    def eye_array(m, n=None, *, k=0, dtype=float, format=None):
    def random_array(m, n, density=0.01, format='coo', dtype=None, random_state=None, data_random_state=None):
 
-Existing functions you should be careful while migrating
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Existing functions that need careful migration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These functions return sparray or spmatrix, depending on the input types they
 receive: :func:`~scipy.sparse.kron`, :func:`~scipy.sparse.kronsum`,
@@ -223,7 +223,7 @@ Removed methods and attributes
    non-zeros, use ``A.count_nonzero()``. This is not new to the
    migration, but can be confusing.
 
-   To use the ``axis`` parameter of ``M.getnnz(axis=...)``,
+   To migrate from the ``axis`` parameter of ``M.getnnz(axis=...)``,
    you can use ``A.count_nonzero(axis=...)``
    but it is not an exact replacement because it counts nonzero
    values instead of stored values. The difference is the number
@@ -236,7 +236,7 @@ Removed methods and attributes
    stored values for each major axis value (row for CSR and column
    for CSC). The minor axes can be computed using
    ``np.bincount(A.indices, minlength=N)`` where ``N`` is the length
-   of the minor axis (e.g. ``A.shape[1]`` for CSR). the ``bincount``
+   of the minor axis (e.g. ``A.shape[1]`` for CSR). The ``bincount``
    function works for any axis of COO format using ``A.coords[axis]``
    in place of ``A.indices``.
 
@@ -244,10 +244,10 @@ Other
 -----
 
 -  If you provide compressed data to a constructor,
-   e.g. ``csr_array((data, indices, indptr))`` both arrays and matrices
-   set the index dtype without checking the content of the indices, but only
-   their types (see `gh-18509 <https://github.com/scipy/scipy/pull/18509>`__
-   for more details).
+   e.g. ``csr_array((data, indices, indptr))`` sparse arrays set the index
+   dtype by only checking the index arrays dtype, while sparse matrices check the
+   index values too and may downcast to int32
+   (see `gh-18509 <https://github.com/scipy/scipy/pull/18509>`__ for more details).
 
 -  Binary operations with operators ``+, -, *, /, @, !=, >`` and sparse and/or
    dense operands:
