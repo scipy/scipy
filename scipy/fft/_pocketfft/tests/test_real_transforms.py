@@ -1,5 +1,5 @@
 from os.path import join, dirname
-from typing import Callable, Union
+from collections.abc import Callable
 from threading import Lock
 
 import numpy as np
@@ -203,7 +203,7 @@ def test_complex(transform, dtype):
 
 
 DecMapType = dict[
-    tuple[Callable[..., np.ndarray], Union[type[np.floating], type[int]], int],
+    tuple[Callable[..., np.ndarray], type[np.floating] | type[int], int],
     int,
 ]
 

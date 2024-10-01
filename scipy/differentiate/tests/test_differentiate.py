@@ -11,7 +11,6 @@ from scipy._lib._array_api import is_numpy, is_torch, array_namespace
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
-import threading
 
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
