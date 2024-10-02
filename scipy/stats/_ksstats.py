@@ -526,7 +526,7 @@ def kolmogn(n, x, cdf=True):
 
     The return value has shape the result of numpy broadcasting n and x.
     """
-    it = np.nditer([n, x, cdf, None],
+    it = np.nditer([n, x, cdf, None], flags=['zerosize_ok'],
                    op_dtypes=[None, np.float64, np.bool_, np.float64])
     for _n, _x, _cdf, z in it:
         if np.isnan(_n):

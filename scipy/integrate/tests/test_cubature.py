@@ -34,6 +34,7 @@ def basic_1d_integrand(x, n, xp):
 
 
 def basic_1d_integrand_exact(n, xp):
+    # Exact only for integration over interval [0, 2].
     return xp.reshape(2**(n+1)/(n+1), (-1, 1))
 
 
@@ -42,6 +43,7 @@ def basic_nd_integrand(x, n, xp):
 
 
 def basic_nd_integrand_exact(n, xp):
+    # Exact only for integration over interval [0, 2].
     return (-2**(3+n) + 4**(2+n))/((1+n)*(2+n))
 
 
@@ -315,7 +317,7 @@ class TestCubature:
         )
 
     @skip_xp_backends(np_only=True,
-                      reasons=['array-likes only supported for NumPy backend'])
+                      reason='array-likes only supported for NumPy backend')
     def test_pass_array_like_not_array(self, xp):
         n = np_compat.arange(5, dtype=np_compat.float64)
         a = [0]
@@ -359,6 +361,33 @@ class TestCubature:
         with pytest.raises(Exception, match="`a` and `b` must be 1D arrays"):
             cubature(basic_1d_integrand, a, b, args=(xp,))
 
+    def test_a_and_b_must_be_nonempty(self, xp):
+        a = xp.asarray([])
+        b = xp.asarray([])
+
+        with pytest.raises(Exception, match="`a` and `b` must be nonempty"):
+            cubature(basic_1d_integrand, a, b, args=(xp,))
+
+    def test_zero_width_limits(self, xp):
+        n = xp.arange(5, dtype=xp.float64)
+
+        a = xp.asarray([0], dtype=xp.float64)
+        b = xp.asarray([0], dtype=xp.float64)
+
+        res = cubature(
+            basic_1d_integrand,
+            a,
+            b,
+            args=(n, xp),
+        )
+
+        xp_assert_close(
+            res.estimate,
+            xp.asarray([[0], [0], [0], [0], [0]], dtype=xp.float64),
+            rtol=1e-1,
+            atol=0,
+        )
+
 
 @pytest.mark.parametrize("rtol", [1e-4])
 @pytest.mark.parametrize("atol", [1e-5])
@@ -373,7 +402,7 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
-    problems_scalar_output = [
+    @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
             # Function to integrate, like `f(x, *args)`
@@ -418,7 +447,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_1,
             genz_malik_1980_f_1_exact,
             [0, 0, 0],
-            [10, 10, 10],
+            [5, 5, 5],
             (
                 1/2,
                 [1, 1, 1],
@@ -440,7 +469,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
 
-            [10, 50],
+            [0, 0],
             [10, 50],
             (
                 [-3, 3],
@@ -583,42 +612,7 @@ class TestCubatureProblems:
                 [1, 1, 1],
             ),
         ),
-    ]
-
-    problem_array_output = [
-        (
-            # Function to integrate, like `f(x, *args)`
-            genz_malik_1980_f_1,
-
-            # Exact solution, like `exact(a, b, *args)`
-            genz_malik_1980_f_1_exact,
-
-            # Function that generates random args of a certain shape.
-            genz_malik_1980_f_1_random_args,
-        ),
-        (
-            genz_malik_1980_f_2,
-            genz_malik_1980_f_2_exact,
-            genz_malik_1980_f_2_random_args,
-        ),
-        (
-            genz_malik_1980_f_3,
-            genz_malik_1980_f_3_exact,
-            genz_malik_1980_f_3_random_args
-        ),
-        (
-            genz_malik_1980_f_4,
-            genz_malik_1980_f_4_exact,
-            genz_malik_1980_f_4_random_args
-        ),
-        (
-            genz_malik_1980_f_5,
-            genz_malik_1980_f_5_exact,
-            genz_malik_1980_f_5_random_args,
-        ),
-    ]
-
-    @pytest.mark.parametrize("problem", problems_scalar_output)
+    ])
     def test_scalar_output(self, problem, rule, rtol, atol, xp):
         f, exact, a, b, args = problem
 
@@ -654,7 +648,38 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
-    @pytest.mark.parametrize("problem", problem_array_output)
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate, like `f(x, *args)`
+            genz_malik_1980_f_1,
+
+            # Exact solution, like `exact(a, b, *args)`
+            genz_malik_1980_f_1_exact,
+
+            # Function that generates random args of a certain shape.
+            genz_malik_1980_f_1_random_args,
+        ),
+        (
+            genz_malik_1980_f_2,
+            genz_malik_1980_f_2_exact,
+            genz_malik_1980_f_2_random_args,
+        ),
+        (
+            genz_malik_1980_f_3,
+            genz_malik_1980_f_3_exact,
+            genz_malik_1980_f_3_random_args
+        ),
+        (
+            genz_malik_1980_f_4,
+            genz_malik_1980_f_4_exact,
+            genz_malik_1980_f_4_random_args
+        ),
+        (
+            genz_malik_1980_f_5,
+            genz_malik_1980_f_5_exact,
+            genz_malik_1980_f_5_random_args,
+        ),
+    ])
     @pytest.mark.parametrize("shape", [
         (2,),
         (3,),

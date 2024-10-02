@@ -500,6 +500,12 @@ class _spbase:
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
 
+    def _broadcast_to(self, shape, copy=False):
+        if self.shape == shape:
+            return self.copy() if copy else self
+        else:
+            return self.tocsr()._broadcast_to(shape, copy)
+
     def __eq__(self, other):
         return self.tocsr().__eq__(other)
 
@@ -1404,6 +1410,11 @@ def issparse(x):
     -------
     bool
         True if `x` is a sparse array or a sparse matrix, False otherwise
+
+    Notes
+    -----
+    Use `isinstance(x, sp.sparse.sparray)` to check between an array or matrix.
+    Use `a.format` to check the sparse format, e.g. `a.format == 'csr'`.
 
     Examples
     --------

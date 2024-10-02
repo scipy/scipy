@@ -901,10 +901,14 @@ add_newdoc(
     function by multiplying the result of ``betainc(a, b, x)`` by
     ``beta(a, b)``.
 
+    This function wraps the ``ibeta`` routine from the
+    Boost Math C++ library [2]_.
+
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -988,10 +992,14 @@ add_newdoc(
     -----
     .. versionadded:: 1.11.0
 
+    This function wraps the ``ibetac`` routine from the
+    Boost Math C++ library [2]_.
+
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -1046,10 +1054,16 @@ add_newdoc(
     betainc : regularized incomplete beta function
     gamma : gamma function
 
+    Notes
+    -----
+    This function wraps the ``ibeta_inv`` routine from the
+    Boost Math C++ library [2]_.
+
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -1111,10 +1125,14 @@ add_newdoc(
     -----
     .. versionadded:: 1.11.0
 
+    This function wraps the ``ibetac_inv`` routine from the
+    Boost Math C++ library [2]_.
+
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
            https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -2597,6 +2615,15 @@ add_newdoc(
     erf : Error function of a complex argument
     erfc : Complementary error function, ``1 - erf(x)``
     erfcinv : Inverse of the complementary error function
+
+    Notes
+    -----
+    This function wraps the ``erf_inv`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -4928,10 +4955,19 @@ add_newdoc("hyp1f1",
     hyp0f1 : confluent hypergeometric limit function
     hyp2f1 : Gaussian hypergeometric function
 
+    Notes
+    -----
+    For real values, this function uses the ``hyp1f1`` routine from the C++ Boost
+    library [2]_, for complex values a C translation of the specfun
+    Fortran library [3]_.
+
     References
     ----------
     .. [dlmf] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/13.2#E2
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [3] Zhang, Jin, "Computation of Special Functions", John Wiley
+           and Sons, Inc, 1996.
 
     Examples
     --------
@@ -7907,6 +7943,13 @@ add_newdoc("powm1", """
       and ``nan``.
     * ``powm1(1, y)`` returns 0 for any ``y``, including ``nan``
       and ``inf``.
+
+    This function wraps the ``powm1`` routine from the
+    Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------

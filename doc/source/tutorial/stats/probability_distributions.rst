@@ -4,8 +4,8 @@ Probability distributions
 There are two general distribution classes that have been implemented
 for encapsulating :ref:`continuous random variables
 <continuous-random-variables>` and :ref:`discrete random variables
-<discrete-random-variables>`. Over 80 continuous random variables
-(RVs) and 10 discrete random variables have been implemented using
+<discrete-random-variables>`. Over 100 continuous random variables
+(RVs) and 20 discrete random variables have been implemented using
 these classes. For mathematical reference information about individual
 distributions, please see :doc:`continuous` and :doc:`discrete`.
 
@@ -80,7 +80,7 @@ introspection:
     >>> print('number of continuous distributions: %d' % len(dist_continu))
     number of continuous distributions: 108
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
-    number of discrete distributions:   20
+    number of discrete distributions:   21
 
 Common methods
 ^^^^^^^^^^^^^^
