@@ -61,10 +61,10 @@ class TestLGMRES:
         niter[0] = 0
         x1, count_1 = do_solve(M=M, callback=cb)
 
-        assert_(count_1 == 3)
-        assert_(count_1 < count_0/2)
-        assert_(allclose(x1, x0, rtol=1e-14))
-        assert_(niter[0] < 3)
+        assert count_1 == 3
+        assert count_1 < count_0/2
+        assert allclose(x1, x0, rtol=1e-14)
+        assert niter[0] < 3
 
     def test_outer_v(self):
         # Check that the augmentation vectors behave as expected

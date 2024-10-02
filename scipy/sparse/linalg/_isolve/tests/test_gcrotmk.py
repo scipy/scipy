@@ -59,9 +59,9 @@ class TestGCROTMK:
         x1, count_1 = do_solve(M=M, callback=cb)
 
         assert_equal(count_1, 3)
-        assert_(count_1 < count_0/2)
-        assert_(allclose(x1, x0, rtol=1e-14))
-        assert_(niter[0] < 3)
+        assert count_1 < count_0/2
+        assert allclose(x1, x0, rtol=1e-14)
+        assert niter[0] < 3
 
     def test_arnoldi(self):
         np.random.seed(1)
