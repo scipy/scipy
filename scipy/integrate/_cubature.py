@@ -180,7 +180,8 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     .. [2] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
         numerical integration over an N-dimensional rectangular region, Journal of
         Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
-        ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
+        ISSN 0377-0427
+        :doi:`10.1016/0771-050X(80)90039-X`
 
     Examples
     --------
