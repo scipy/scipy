@@ -924,7 +924,7 @@ class TestTransforms:
         assert_allclose(b, b0 + loc)
 
         with np.errstate(invalid='ignore', divide='ignore'):
-            assert_allclose(dist.logentropy(), np.log(dist.entropy() + 0j))
+            assert_allclose(np.exp(dist.logentropy()), dist.entropy())
             assert_allclose(dist.entropy(), dist_ref.entropy())
             assert_allclose(dist.median(), dist0.median() + loc)
             assert_allclose(dist.mode(), dist0.mode() + loc)

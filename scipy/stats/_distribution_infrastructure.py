@@ -1213,7 +1213,7 @@ def _logexpxmexpy(x, y):
 
 
 def _log_real_standardize(x):
-    """" Standardizes the (complex) logarithm of a real number.
+    """Standardizes the (complex) logarithm of a real number.
 
     The logarithm of a real number may be represented by a complex number with
     imaginary part that is a multiple of pi*1j. Even multiples correspond with
@@ -1400,8 +1400,6 @@ def _generate_example(dist_family):
 
 class ContinuousDistribution:
     r""" Class that represents a continuous statistical distribution.
-
-    Instances of the class represent a random variable.
 
     Parameters
     ----------
