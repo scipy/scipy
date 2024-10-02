@@ -628,16 +628,17 @@ stop-band attenuation of :math:`\approx 60` dB.
         >>> b = sig.firwin(101, 2500, fs=fs)
         >>> f, h_fft = sig.freqz(b, fs=fs)
         >>> h_amp = 20 * np.log10(np.abs(h_fft))
-        >>> plt.figure()
-        >>> plt.plot(f, h_amp)
-        >>> plt.grid()
+        >>> _, ax = plt.subplots(layout="constrained")
+        >>> ax.plot(f, h_amp, label="FIR")
+        >>> ax.grid(True)
 
         >>> b, a = sig.iirfilter(15, 2500, btype="low", fs=fs)
         >>> f, h_fft = sig.freqz(b, a, fs=fs)
         >>> h_amp = 20 * np.log10(np.abs(h_fft))
-        >>> plt.plot(f, h_amp)
-        >>> plt.axis([2100, 2900, -10, 2])
-        >>> plt.legend(["FIR", "IIR"])
+        >>> ax.plot(f, h_amp, label="IIR")
+        >>> ax.set(xlim=[2100, 2900], ylim=[-10, 2])
+        >>> ax.set(xlabel="Frequency (Hz)", ylabel="Amplitude Response [dB]")
+        >>> ax.legend()
 
 Filter Coefficients
 """""""""""""""""""
