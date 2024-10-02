@@ -921,9 +921,9 @@ class TestCubatureProblems:
             f,
             a,
             b,
-            rule,
-            rtol,
-            atol,
+            rule=rule,
+            rtol=rtol,
+            atol=atol,
             points=points,
             args=(xp,),
         )
@@ -1075,9 +1075,9 @@ class TestCubatureProblems:
             f,
             a,
             b,
-            rule,
-            rtol,
-            atol,
+            rule=rule,
+            rtol=rtol,
+            atol=atol,
             args=(*args, xp),
         )
 
