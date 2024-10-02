@@ -85,8 +85,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
             (output_dim_1, ..., output_dim_n)
     a, b : array_like
         Lower and upper limits of integration as 1D arrays specifying the left and right
-        endpoints of the intervals being integrated over. Infinite limits are currently
-        not supported.
+        endpoints of the intervals being integrated over. Limits can be infinite.
     rule : str, optional
         Rule used to estimate the integral. If passing a string, the options are
         "gauss-kronrod" (21 node), or "genz-malik" (degree 7). If a rule like
@@ -115,6 +114,12 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         map-like callable, such as :meth:`python:multiprocessing.pool.Pool.map` for
         evaluating the population in parallel. This evaluation is carried out as
         ``workers(func, iterable)``.
+    points : list of array_like, optional
+        List of points by which to split up the initial region of integration. If the
+        rule being used does not evaluate `f` on the boundary of a region (which is the
+        case for all Genz-Malik and Gauss-Kronrod rules) then `f` will not be evaluated
+        at these points. This should be a list of array-likes where each element has
+        length ``ndim``. Default is empty. See Examples.
 
     Returns
     -------
@@ -172,6 +177,24 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     Genz-Malik is typically less accurate than Gauss-Kronrod but has much fewer nodes,
     so in this situation using "genz-malik" might be preferable.
+
+    Infinite limits are handeled with an appropriate variable transformation. Assuming
+    ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, \infty)`, the i-th
+    integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
+    :math:`t \in (-1, 1)`.
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in [a_i, \infty)`, the i-th
+    integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
+    :math:`t \in (0, 1)`.
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, b_i]`, the i-th
+    integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
+    :math:`t \in (0, 1)`.
+
+    In all three of these cases, the Jacobian of the transformation is
+    :math:`J(t) = t^{-2}`.
 
     References
     ----------
@@ -259,6 +282,38 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     >>> res.estimate
      array([[-0.79812452,  0.35246913, -0.52273628],
             [ 0.88392779,  0.59139899,  0.41895111]])
+
+    **2D integral with infinite limits**:
+
+    .. math::
+
+        \int^{ \infty }_{ -\infty }
+        \int^{ \infty }_{ -\infty }
+            e^{-x^2-y^2}
+        \text dy
+        \text dx
+
+    >>> def gaussian(x):
+    ...     return np.exp(-np.sum(x**2, axis=-1))
+    >>> res = cubature(gaussian, [-np.inf, -np.inf], [np.inf, np.inf])
+    >>> res.estimate
+     3.1415926
+
+    **1D integral with singularities avoided using** `points`:
+
+    .. math::
+
+        \int^{ 1 }_{ -1 }
+          \frac{\sin(x)}{x}
+        \text dx
+
+    It is necessary to use the `points` parameter to avoid evaluating `f` at the origin.
+
+    >>> def sinc(x):
+    ...     return np.sin(x)/x
+    >>> res = cubature(sinc, [-1], [1], points=[[0]])
+    >>> res.estimate
+     1.8921661
     """
 
     # It is also possible to use a custom rule, but this is not yet part of the public
