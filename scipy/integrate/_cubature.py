@@ -1,3 +1,4 @@
+import math
 import heapq
 import itertools
 
@@ -5,7 +6,7 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
 
-from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib._array_api import array_namespace, xp_size, xp_copy
 from scipy._lib._util import MapWrapper
 
 from scipy.integrate._rules import (
@@ -299,6 +300,23 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
             rule = ProductNestedFixed([base_rule] * ndim)
 
+    # If any of limits are the wrong way around (a > b), flip them and keep track of
+    # the sign.
+    sign = (-1.0) ** xp.sum(xp.astype(a > b, xp.float64))
+
+    a_flipped = xp.min(xp.stack([a, b]), axis=0)
+    b_flipped = xp.max(xp.stack([a, b]), axis=0)
+
+    a, b = a_flipped, b_flipped
+
+    # If any of the limits are infinite, apply a transformation
+    if xp.any(xp.isinf(a)) or xp.any(xp.isinf(b)):
+        f = _InfiniteLimitsTransform(f, a, b)
+        a, b = f.transformed_limits
+
+        points = [f.inv(point) for point in points]
+        points.extend(f.points)
+
     # If any problematic points are specified, divide the initial region so that these
     # points lie on the edge of a subregion.
     #
@@ -374,6 +392,9 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
         status = "converged" if success else "not_converged"
 
+        # Apply sign change to handle any limits which were initially flipped.
+        est = sign * est
+
         return CubatureResult(
             estimate=est,
             error=err,
@@ -444,3 +465,175 @@ def _split_region_at_points(a, b, points):
         regions = new_subregions
 
     return regions
+
+
+class _VariableTransform:
+    """
+    A transformation that can be applied to an integral.
+    """
+
+    @property
+    def transformed_limits(self):
+        """
+        New limits of integration after applying the transformation.
+        """
+
+        raise NotImplementedError
+
+    @property
+    def points(self):
+        """
+        Any problematic points introduced by the transformation.
+
+        These should be specified as points where ``_VariableTransform(f)(self, point)``
+        would be problematic.
+
+        For example, if the transformation ``x = 1/((1-t)(1+t))`` is applied to a
+        univariate integral, then points should return ``[ [1], [-1] ]``.
+        """
+
+        return []
+
+    def inv(self, x):
+        """
+        Map points ``x`` to ``t`` such that if ``f`` is the original function and ``g``
+        is the function after the transformation is applied, then::
+
+            f(x) = g(self.inv(x))
+        """
+
+        raise NotImplementedError
+
+    def __call__(self, t, *args, **kwargs):
+        """
+        Apply the transformation to ``f`` and multiply by the Jacobian determinant.
+        This should be the new integrand after the transformation has been applied so
+        that the following is satisfied::
+
+            f_transformed = _VariableTransform(f)
+
+            cubature(f, a, b) == cubature(
+                f_transformed,
+                *f_transformed.transformed_limits(a, b),
+            )
+        """
+
+        raise NotImplementedError
+
+
+class _InfiniteLimitsTransform(_VariableTransform):
+    r"""
+    Transformation for handling infinite limits.
+
+    Assuming ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, \infty)`, the i-th
+    integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
+    :math:`t \in (-1, 1)`.
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in [a_i, \infty)`, the i-th
+    integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
+    :math:`t \in (0, 1)`.
+
+    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, b_i]`, the i-th
+    integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
+    :math:`t \in (0, 1)`.
+
+    In all three of these cases, the Jacobian of the transformation is
+    :math:`J(t) = t^{-2}`.
+    """
+
+    def __init__(self, f, a, b):
+        self._xp = array_namespace(a, b)
+
+        self._f = f
+        self._orig_a = a
+        self._orig_b = b
+
+        self._negate_pos = []
+        self._semi_inf_pos = []
+        self._double_inf_pos = []
+
+        ndim = xp_size(a)
+
+        for i in range(ndim):
+            if a[i] == -math.inf and b[i] == math.inf:
+                # (-oo, oo) will be mapped to (-1, 1).
+                self._double_inf_pos.append(i)
+
+            elif a[i] != -math.inf and b[i] == math.inf:
+                # (start, oo) will be mapped to (0, 1).
+                self._semi_inf_pos.append(i)
+
+            elif a[i] == -math.inf and b[i] != math.inf:
+                # (-oo, end) will be mapped to (0, 1).
+                #
+                # This is handled by making the transformation t = -x and reducing it to
+                # the other semi-infinite case.
+                self._negate_pos.append(i)
+                self._semi_inf_pos.append(i)
+
+                # Since we flip the limits, we don't need to separately multiply the
+                # integrand by -1.
+                self._orig_a[i] = -b[i]
+                self._orig_b[i] = -a[i]
+
+    @property
+    def transformed_limits(self):
+        a = xp_copy(self._orig_a)
+        b = xp_copy(self._orig_b)
+
+        for index in self._double_inf_pos:
+            a[index] = -1
+            b[index] = 1
+
+        for index in self._semi_inf_pos:
+            a[index] = 0
+            b[index] = 1
+
+        return a, b
+
+    @property
+    def points(self):
+        # If there are infinite limits, then the origin becomes a problematic point
+        # due to a division by zero there.
+        if len(self._double_inf_pos) != 0 or len(self._semi_inf_pos) != 0:
+            return [self._xp.zeros(self._orig_a.shape)]
+        else:
+            return []
+
+    def inv(self, x):
+        t = xp_copy(x)
+
+        for i in self._negate_pos:
+            t[..., i] *= -1
+
+        for i in self._double_inf_pos:
+            t[..., i] = 1/(x[..., i] + self._xp.sign(x[..., i]))
+
+        for i in self._semi_inf_pos:
+            t[..., i] = 1/(x[..., i] - self._orig_a[i] + 1)
+
+        return t
+
+    def __call__(self, t, *args, **kwargs):
+        x = xp_copy(t)
+        jacobian = 1.0
+
+        for i in self._negate_pos:
+            x[..., i] *= -1
+
+        for i in self._double_inf_pos:
+            # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
+            x[..., i] = (1 - self._xp.abs(t[..., i])) / t[..., i]
+            jacobian *= 1/(t[..., i] ** 2)
+
+        for i in self._semi_inf_pos:
+            # For (start, oo) -> (0, 1), use the transformation x = start + (1-t)/t.
+            x[..., i] = self._orig_a[i] + (1 - t[..., i]) / t[..., i]
+            jacobian *= 1/(t[..., i] ** 2)
+
+        f_x = self._f(x, *args, **kwargs)
+        jacobian = self._xp.reshape(jacobian, (-1, *([1]*(len(f_x.shape)-1))))
+
+        return f_x * jacobian
