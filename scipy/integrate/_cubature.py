@@ -115,11 +115,11 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         evaluating the population in parallel. This evaluation is carried out as
         ``workers(func, iterable)``.
     points : list of array_like, optional
-        List of points by which to split up the initial region of integration. If the
-        rule being used does not evaluate `f` on the boundary of a region (which is the
-        case for all Genz-Malik and Gauss-Kronrod rules) then `f` will not be evaluated
-        at these points. This should be a list of array-likes where each element has
-        length ``ndim``. Default is empty. See Examples.
+        List of points to avoid evaluating `f` at, under the condition that the rule
+        being used does not evaluate `f` on the boundary of a region (which is the
+        case for all Genz-Malik and Gauss-Kronrod rules). This can be useful if `f` has
+        a singularity at the specified point. This should be a list of array-likes where
+        each element has length ``ndim``. Default is empty. See Examples.
 
     Returns
     -------
