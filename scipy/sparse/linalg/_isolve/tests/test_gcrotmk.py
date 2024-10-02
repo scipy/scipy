@@ -23,11 +23,16 @@ Am = csr_matrix(array([[-2,1,0,0,0,9],
                        [1,0,0,0,1,-2]]))
 b = array([1,2,3,4,5,6])
 count = [0]
+niter = [0]
 
 
 def matvec(v):
     count[0] += 1
     return Am@v
+
+
+def cb(v):
+    niter[0] += 1
 
 
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
@@ -50,11 +55,13 @@ class TestGCROTMK:
         M = LinearOperator(matvec=pc.solve, shape=A.shape, dtype=A.dtype)
 
         x0, count_0 = do_solve()
-        x1, count_1 = do_solve(M=M)
+        niter[0] = 0
+        x1, count_1 = do_solve(M=M, callback=cb)
 
         assert_equal(count_1, 3)
-        assert_(count_1 < count_0/2)
-        assert_(allclose(x1, x0, rtol=1e-14))
+        assert count_1 < count_0/2
+        assert allclose(x1, x0, rtol=1e-14)
+        assert niter[0] < 3
 
     def test_arnoldi(self):
         np.random.seed(1)
