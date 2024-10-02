@@ -193,7 +193,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
     :math:`t \in (0, 1)`.
 
-    In all three of these cases, the Jacobian of the transformation is
+    In all three of these cases, the Jacobian determinant of the transformation is
     :math:`J(t) = t^{-2}`.
 
     References
