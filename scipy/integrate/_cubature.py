@@ -13,7 +13,7 @@ from scipy.integrate._rules import (
     GaussKronrodQuadrature,
     GenzMalikCubature,
 )
-from scipy.integrate._rules._base import _subregion_coordinates
+from scipy.integrate._rules._base import _split_subregion
 
 __all__ = ['cubature']
 
@@ -54,7 +54,7 @@ class CubatureResult:
 
 
 def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
-             args=(), workers=1):
+             args=(), workers=1, points=None):
     r"""
     Adaptive cubature of multidimensional array-valued function.
 
@@ -265,6 +265,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     xp = array_namespace(a, b)
     max_subdivisions = float("inf") if max_subdivisions is None else max_subdivisions
+    points = [] if points is None else [xp.asarray(p, dtype=xp.float64) for p in points]
 
     # Convert a and b to arrays
     a = xp.asarray(a, dtype=xp.float64)
@@ -298,10 +299,28 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
             rule = ProductNestedFixed([base_rule] * ndim)
 
-    est = rule.estimate(f, a, b, args)
-    err = rule.estimate_error(f, a, b, args)
+    # If any problematic points are specified, divide the initial region so that these
+    # points lie on the edge of a subregion.
+    #
+    # This means ``f`` won't be evaluated there if the rule being used has no evaluation
+    # points on the boundary.
+    if points == []:
+        initial_regions = [(a, b)]
+    else:
+        initial_regions = _split_region_at_points(a, b, points)
 
-    regions = [CubatureRegion(est, err, a, b, xp)]
+    regions = []
+    est = 0.0
+    err = 0.0
+
+    for a_k, b_k in initial_regions:
+        est_k = rule.estimate(f, a_k, b_k, args)
+        err_k = rule.estimate_error(f, a_k, b_k, args)
+        regions.append(CubatureRegion(est_k, err_k, a_k, b_k, xp))
+
+        est += est_k
+        err += err_k
+
     subdivisions = 0
     success = True
 
@@ -334,7 +353,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
                 itertools.repeat(f),
                 itertools.repeat(rule),
                 itertools.repeat(args),
-                _subregion_coordinates(a_k, b_k),
+                _split_subregion(a_k, b_k),
             )
 
             for subdivision_result in mapwrapper(_process_subregion, executor_args):
@@ -374,3 +393,54 @@ def _process_subregion(data):
     err_sub = rule.estimate_error(f, a_k_sub, b_k_sub, args)
 
     return a_k_sub, b_k_sub, est_sub, err_sub
+
+
+def _is_strictly_in_region(point, a, b):
+    xp = array_namespace(point, a, b)
+
+    if xp.all(point == a) or xp.all(point == b):
+        return False
+
+    return xp.all(a <= point) and xp.all(point <= b)
+
+
+def _split_region_at_points(a, b, points):
+    """
+    Given the integration limits `a` and `b` describing a rectangular region and a list
+    of `points`, find the list of ``[(a_1, b_1), ..., (a_l, b_l)]`` which breaks up the
+    initial region into smaller subregion such that no `points` lie strictly inside
+    any of the subregions.
+    """
+
+    xp = array_namespace(a, b)
+    regions = [(a, b)]
+
+    for point in points:
+        if xp.any(xp.isinf(point)):
+            # If a point is specified at infinity, ignore.
+            #
+            # This case occurs when points are given by the user to avoid, but after
+            # applying a transformation, they are removed.
+            continue
+
+        new_subregions = []
+
+        for a_k, b_k in regions:
+            if _is_strictly_in_region(point, a_k, b_k):
+                subregions = _split_subregion(a_k, b_k, point)
+
+                for left, right in subregions:
+                    # Skip any zero-width regions.
+                    if xp.any(left == right):
+                        continue
+                    else:
+                        new_subregions.append((left, right))
+
+                new_subregions.extend(subregions)
+
+            else:
+                new_subregions.append((a_k, b_k))
+
+        regions = new_subregions
+
+    return regions

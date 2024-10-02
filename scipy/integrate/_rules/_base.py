@@ -145,7 +145,7 @@ class Rule:
         est = self.estimate(f, a, b, args)
         refined_est = 0
 
-        for a_k, b_k in _subregion_coordinates(a, b):
+        for a_k, b_k in _split_subregion(a, b):
             refined_est += self.estimate(f, a_k, b_k, args)
 
         return self.xp.abs(est - refined_est)
@@ -442,7 +442,7 @@ def _cartesian_product(arrays):
     return result
 
 
-def _subregion_coordinates(a, b):
+def _split_subregion(a, b, split_at=None):
     """
     Given the coordinates of a region like a=[0, 0] and b=[1, 1], yield the coordinates
     of all subregions, which in this case would be::
@@ -452,12 +452,13 @@ def _subregion_coordinates(a, b):
         ([1/2, 0], [1, 1/2]),
         ([1/2, 1/2], [1, 1])
     """
-
     xp = array_namespace(a, b)
-    m = (a + b) * 0.5
 
-    left = [xp.asarray([a[i], m[i]]) for i in range(a.shape[0])]
-    right = [xp.asarray([m[i], b[i]]) for i in range(b.shape[0])]
+    if split_at is None:
+        split_at = (a + b) / 2
+
+    left = [xp.asarray([a[i], split_at[i]]) for i in range(a.shape[0])]
+    right = [xp.asarray([split_at[i], b[i]]) for i in range(b.shape[0])]
 
     a_sub = _cartesian_product(left)
     b_sub = _cartesian_product(right)
