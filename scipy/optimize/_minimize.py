@@ -65,6 +65,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
         where ``n`` is the number of independent variables.
@@ -474,7 +481,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [16] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
         An interior point algorithm for large-scale nonlinear  programming.
         SIAM Journal on Optimization 9.4: 877-900.
-    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
+    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. 1998. On the
         implementation of an algorithm for large-scale equality constrained
         optimization. SIAM Journal on Optimization 8.3: 682-706.
     .. [18] Ragonneau, T. M. *Model-Based Derivative-Free Optimization Methods
@@ -784,6 +791,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     fun : callable
         Objective function.
         Scalar function, must return a scalar.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
+
     bracket : sequence, optional
         For methods 'brent' and 'golden', `bracket` defines the bracketing
         interval and is required.

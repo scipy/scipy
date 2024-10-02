@@ -65,17 +65,12 @@ py3.extension_module('_zeros',
 
 py3.extension_module('_lbfgsb',
   [
-    'lbfgsb_src/lbfgsb.f',
-    'lbfgsb_src/linpack.f',
-    'lbfgsb_src/timer.f',
-    f2py_gen.process('lbfgsb_src/lbfgsb.pyf'),
+    '__lbfgsb.h',
+    '__lbfgsb.c',
   ],
-  fortran_args: fortran_ignore_warnings,
+  dependencies: [lapack_dep, blas_dep, np_dep],
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
-  override_options: ['b_lto=false'],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -180,10 +175,6 @@ subdir('_shgo_lib')
 subdir('_highs')
 subdir('tests')
 
-py3.install_sources(
-  ['lbfgsb_src/README'],
-  subdir: 'scipy/optimize'
-)
 
 py3.install_sources([
   '__init__.py',

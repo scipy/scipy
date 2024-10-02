@@ -41,9 +41,9 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
-                                   copy, is_numpy, is_torch, SCIPY_ARRAY_API,
-                                   size as xp_size, copy as xp_copy)
+from scipy._lib._array_api import (array_namespace, xp_copy, is_numpy,
+                                   is_torch, xp_size, SCIPY_ARRAY_API)
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -74,10 +74,11 @@ ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
 @array_api_compatible
-@skip_xp_backends('array_api_strict', 'jax.numpy',
-                  reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                           "accept Python floats. See data-apis/array-api#807.",
-                           "JAX doesn't allow item assignment."])
+@skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_xp_backends('array_api_strict',
+                  reason=("`array_api_strict.where` `fillvalue` doesn't "
+                           "accept Python floats. See data-apis/array-api#807.")
+)
 @pytest.mark.usefixtures("skip_xp_backends")
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
@@ -129,6 +130,8 @@ class TestTrimmedStats:
         y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
 
+    @skip_xp_backends('cupy',
+                      reason="cupy/cupy#8391")
     def test_tvar(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
         xp_test = array_namespace(x)  # need array-api-compat var for `correction`
@@ -191,7 +194,7 @@ class TestTrimmedStats:
         xp_assert_equal(res, xp.asarray([np.nan, 4, 8, 12]))
 
     @skip_xp_backends(np_only=True,
-                      reasons=["Only NumPy arrays support scalar input/`nan_policy`."])
+                      reason="Only NumPy arrays support scalar input/`nan_policy`.")
     def test_tmin_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmin(4), 4)
 
@@ -232,7 +235,7 @@ class TestTrimmedStats:
             xp_assert_equal(res, xp.asarray([3, 7, 11, np.nan]))
 
     @skip_xp_backends(np_only=True,
-                      reasons=["Only NumPy arrays support scalar input/`nan_policy`."])
+                      reason="Only NumPy arrays support scalar input/`nan_policy`.")
     def test_tax_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmax(4), 4)
 
@@ -385,8 +388,7 @@ class TestPearsonr:
         assert_equal(res.correlation, res.statistic)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment')
     def test_r_almost_exactly_pos1(self, xp):
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, a)
@@ -397,8 +399,7 @@ class TestPearsonr:
         xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment')
     def test_r_almost_exactly_neg1(self, xp):
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, -a)
@@ -409,8 +410,7 @@ class TestPearsonr:
         xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment')
     def test_basic(self, xp):
         # A basic test, with a correlation coefficient
         # that is not 1 or -1.
@@ -421,8 +421,8 @@ class TestPearsonr:
         xp_assert_close(prob, xp.asarray(1/3))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment',
+                      )
     def test_constant_input(self, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
@@ -435,8 +435,8 @@ class TestPearsonr:
             xp_assert_close(p, xp.asarray(xp.nan))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment',
+                      )
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_near_constant_input(self, xp, dtype):
         npdtype = getattr(np, dtype)
@@ -451,8 +451,8 @@ class TestPearsonr:
             stats.pearsonr(x, y)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment',
+                      )
     def test_very_small_input_values(self, xp):
         # Very small values in an input.  A naive implementation will
         # suffer from underflow.
@@ -469,8 +469,8 @@ class TestPearsonr:
         xp_assert_close(p, xp.asarray(0.1637805429533202, dtype=xp.float64))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment',
+                      )
     def test_very_large_input_values(self, xp):
         # Very large values in an input.  A naive implementation will
         # suffer from overflow.
@@ -486,8 +486,7 @@ class TestPearsonr:
         xp_assert_close(p, xp.asarray(0.011724811003954638, dtype=xp.float64))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment')
     def test_extremely_large_input_values(self, xp):
         # Extremely large values in x and y.  These values would cause the
         # product sigma_x * sigma_y to overflow if the two factors were
@@ -554,8 +553,7 @@ class TestPearsonr:
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment')
     def test_negative_correlation_pvalue_gh17795(self, xp):
         x = xp.arange(10.)
         y = -x
@@ -565,8 +563,7 @@ class TestPearsonr:
         xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment')
     def test_length3_r_exactly_negative_one(self, xp):
         x = xp.asarray([1., 2., 3.])
         y = xp.asarray([5., -4., -13.])
@@ -697,8 +694,7 @@ class TestPearsonr:
                 stats.pearsonr(x, x, method=stats.PermutationMethod())
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment')
     def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
         x0 = xp.asarray(rng.random((3, 5)))
@@ -706,7 +702,7 @@ class TestPearsonr:
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
-            x = copy(x0)
+            x = xp_copy(x0)
             x[0, ...] = 1
             res = stats.pearsonr(x, y0, axis=1)
             ci = res.confidence_interval()
@@ -737,8 +733,7 @@ class TestPearsonr:
         xp_assert_close(ci.high, ones)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reason='JAX arrays do not support item assignment')
     @pytest.mark.parametrize('axis', [0, 1, None])
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_array_api(self, xp, axis, alternative):
@@ -821,7 +816,7 @@ class TestFisherExact:
                                            verbose=True)
 
     def test_gh4130(self):
-        # Previously, a fudge factor used to distinguish between theoeretically
+        # Previously, a fudge factor used to distinguish between theoretically
         # and numerically different probability masses was 1e-4; it has been
         # tightened to fix gh4130. Accuracy checked against R fisher.test.
         # options(digits=16)
@@ -1390,7 +1385,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1401,7 +1396,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.0, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1412,7 +1407,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.14285714286, 0.77261904762)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -1423,7 +1418,7 @@ def test_kendalltau():
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.047619047619, 1.0)
     for taux in variants:
-        res = stats.kendalltau(x, y)
+        res = stats.kendalltau(x, y, variant=taux)
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1])
 
@@ -2171,7 +2166,7 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # This test used to use 'assert_array_almost_equal' but its
-        # formualtion got confusing since LinregressResult became
+        # formulation got confusing since LinregressResult became
         # _lib._bunch._make_tuple_bunch instead of namedtuple
         # (for backwards compatibility, see PR #12983)
         def assert_ae(x, y):
@@ -2193,7 +2188,7 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Make sure propagated numerical errors
-        # did not bring rvalue below -1 (or were coersced)
+        # did not bring rvalue below -1 (or were coerced)
         assert_(result.rvalue >= -1)
         assert_almost_equal(result.rvalue, -1)
 
@@ -2751,7 +2746,7 @@ class TestSEM:
         xp_assert_equal(stats.sem(x), xp.asarray(xp.nan))
 
     @skip_xp_backends(np_only=True,
-                      reasons=['`nan_policy` only supports NumPy backend'])
+                      reason='`nan_policy` only supports NumPy backend')
     def test_sem_nan_policy(self, xp):
         x = np.arange(10.)
         x[9] = np.nan
@@ -2762,7 +2757,7 @@ class TestSEM:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@skip_xp_backends('jax.numpy', reasons=["JAX can't do item assignment"])
+@skip_xp_backends('jax.numpy', reason="JAX can't do item assignment")
 class TestZmapZscore:
 
     @pytest.mark.parametrize(
@@ -2888,6 +2883,7 @@ class TestZmapZscore:
         xp_assert_close(z[0, :], z0_expected)
         xp_assert_close(z[1, :], z1_expected)
 
+    @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_zscore_nan_propagate(self, xp):
         x = xp.asarray([1, 2, np.nan, 4, 5])
         z = stats.zscore(x, nan_policy='propagate')
@@ -2918,6 +2914,7 @@ class TestZmapZscore:
         with pytest.raises(ValueError, match="The input contains nan..."):
             stats.zscore(x, nan_policy='raise')
 
+    @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
@@ -2972,6 +2969,7 @@ class TestZmapZscore:
         xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                                        [-1.0, -1.0, 1.0, 1.0]]))
 
+    @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
         y = xp.full((2, 3), xp.nan)
@@ -3453,6 +3451,8 @@ class TestMoments:
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex128'])
     @pytest.mark.parametrize('expect, order', [(0, 1), (1, 0)])
@@ -3476,7 +3476,7 @@ class TestMoments:
         xp_assert_equal(y, xp.full((), expect, dtype=dtype))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_moment_propagate_nan(self, xp):
@@ -3546,7 +3546,7 @@ class TestSkew(SkewKurtosisTest):
         xp_assert_equal(res, xp.asarray(xp.nan))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_skewness(self, xp):
@@ -3577,7 +3577,7 @@ class TestSkew(SkewKurtosisTest):
         assert_equal(stats.skew(arange(10)), 0.0)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_skew_propagate_nan(self, xp):
@@ -3607,7 +3607,7 @@ class TestSkew(SkewKurtosisTest):
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_precision_loss_gh15554(self, xp):
@@ -3621,7 +3621,7 @@ class TestSkew(SkewKurtosisTest):
             stats.skew(a)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
@@ -3655,7 +3655,7 @@ class TestSkew(SkewKurtosisTest):
 class TestKurtosis(SkewKurtosisTest):
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'])
+                      reason='JAX arrays do not support item assignment')
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_kurtosis(self, xp):
@@ -3721,7 +3721,7 @@ class TestKurtosis(SkewKurtosisTest):
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'])
+                      reason='JAX arrays do not support item assignment')
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
@@ -3790,7 +3790,7 @@ def ttest_data_axis_strategy(draw):
 
 
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 class TestStudentTest:
@@ -5142,7 +5142,7 @@ def _desc_stats(x1, x2, axis=0, *, xp=None):
 
 @array_api_compatible
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind(xp):
     # regression test
@@ -5543,7 +5543,7 @@ class Test_ttest_ind_permutations:
 
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,
-                                  reasons=['Uses NumPy for pvalue, CI'])
+                                  reason='Uses NumPy for pvalue, CI')
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_permutation_not_implement_for_xp(self, xp):
         message = "Use of `permutations` is compatible only with NumPy arrays."
@@ -5753,7 +5753,7 @@ class Test_ttest_trim:
 
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,
-                                  reasons=['Uses NumPy for pvalue, CI'])
+                                  reason='Uses NumPy for pvalue, CI')
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_permutation_not_implement_for_xp(self, xp):
         message = "Use of `trim` is compatible only with NumPy arrays."
@@ -5773,7 +5773,7 @@ class Test_ttest_trim:
 
 @array_api_compatible
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 class Test_ttest_CI:
     # indices in order [alternative={two-sided, less, greater},
@@ -5870,7 +5870,7 @@ def test__broadcast_concatenate():
 
 @array_api_compatible
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_with_uneq_var(xp):
     # check vs. R `t.test`, e.g.
@@ -5955,7 +5955,7 @@ def test_ttest_ind_with_uneq_var(xp):
 
 @array_api_compatible
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_zero_division(xp):
     # test zero division problem
@@ -6015,6 +6015,8 @@ def test_ttest_ind_empty_1d_returns_nan(xp):
     xp_assert_equal(res.pvalue, NaN)
 
 
+@skip_xp_backends('cupy', reason='cupy/cupy#8391')
+@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 @pytest.mark.parametrize('b, expected_shape',
                          [(np.empty((1, 5, 0)), (3, 5)),
@@ -6066,7 +6068,7 @@ def test_ttest_ind_nonaxis_size_zero_different_lengths(xp):
 
 @array_api_compatible
 @pytest.mark.skip_xp_backends(np_only=True,
-                              reasons=["Other backends don't like integers"])
+                              reason="Other backends don't like integers")
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_gh5686(xp):
     mean1, mean2 = xp.asarray([1, 2]), xp.asarray([3, 4])
@@ -6078,7 +6080,7 @@ def test_gh5686(xp):
 
 @array_api_compatible
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_from_stats_inputs_zero(xp):
     # Regression test for gh-6409.
@@ -6092,7 +6094,7 @@ def test_ttest_ind_from_stats_inputs_zero(xp):
 
 @array_api_compatible
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
@@ -6133,7 +6135,7 @@ def _convert_pvalue_alternative(t, p, alt, xp):
 
 @pytest.mark.slow
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_ttest_1samp_new(xp):
@@ -6197,7 +6199,7 @@ def test_ttest_1samp_new(xp):
 
 
 @pytest.mark.skip_xp_backends(np_only=True,
-                              reasons=["Only NumPy has nan_policy='omit' for now"])
+                              reason="Only NumPy has nan_policy='omit' for now")
 @pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_ttest_1samp_new_omit(xp):
@@ -6223,7 +6225,7 @@ def test_ttest_1samp_new_omit(xp):
 
 
 @pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue, CI'])
+                              reason='Uses NumPy for pvalue, CI')
 @pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_ttest_1samp_popmean_array(xp):
@@ -6271,6 +6273,8 @@ class TestDescribe:
         xp_assert_equal(sk, xp.asarray(xp.nan))
         xp_assert_equal(kurt, xp.asarray(xp.nan))
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_describe_numbers(self, xp):
         xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
@@ -6353,6 +6357,8 @@ class TestDescribe:
         attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness', 'kurtosis')
         check_named_results(actual, attributes)
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_describe_ddof(self, xp):
         xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
@@ -6372,6 +6378,8 @@ class TestDescribe:
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_describe_axis_none(self, xp):
         xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
@@ -6420,6 +6428,8 @@ class NormalityTests:
             with pytest.raises(ValueError, match=message):
                 test_fun(x)
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_against_R(self, alternative, xp):
         # testa against R `dagoTest` from package `fBasics`
@@ -6451,6 +6461,8 @@ class NormalityTests:
         xp_assert_close(res_pvalue, ref_pvalue)
         check_named_results(res, ('statistic', 'pvalue'), xp=xp)
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_nan(self, xp):
         # nan in input -> nan output (default nan_policy='propagate')
         test_fun = getattr(stats, self.test_name)
@@ -6495,6 +6507,8 @@ class TestKurtosisTest(NormalityTests):
     test_name = 'kurtosistest'
     case_ref = (-0.01403734404759738, 0.98880018772590561)  # statistic, pvalue
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_intuitive(self, xp):
         # intuitive tests; see gh-13549. excess kurtosis of laplace is 3 > 0
         a2 = stats.laplace.rvs(size=10000, random_state=123)
@@ -6502,6 +6516,8 @@ class TestKurtosisTest(NormalityTests):
         pval = stats.kurtosistest(a2_xp, alternative='greater').pvalue
         xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_gh9033_regression(self, xp):
         # regression test for issue gh-9033: x clearly non-normal but power of
         # negative denom needs to be handled correctly to reject normality
@@ -6510,6 +6526,8 @@ class TestKurtosisTest(NormalityTests):
         x = xp.asarray(x, dtype=xp.float64)
         assert stats.kurtosistest(x)[1] < 0.01
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_kurtosistest_too_few_observations(self, xp):
         # kurtosistest requires at least 5 observations; 4 should raise a ValueError.
         # At least 20 are needed to avoid warning
@@ -6862,8 +6880,8 @@ class TestHMean:
         check_equal_hmean(a, desired, xp=xp, rtol=0.0)
 
     @skip_xp_backends('array_api_strict',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python scalars. See data-apis/array-api#807."])
+                      reason=("`array_api_strict.where` `fillvalue` doesn't "
+                               "accept Python scalars. See data-apis/array-api#807."))
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_1d_with_negative_value(self, xp):
         # Won't work for array_api_strict for now, but see data-apis/array-api#807
@@ -6903,7 +6921,7 @@ class TestHMean:
 
     @pytest.mark.skip_xp_backends(
         np_only=True,
-        reasons=['array-likes only supported for NumPy backend'],
+        reason='array-likes only supported for NumPy backend',
     )
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_weights_1d_list(self, xp):
@@ -7024,7 +7042,7 @@ class TestGMean:
 
     @pytest.mark.skip_xp_backends(
         np_only=True,
-        reasons=['array-likes only supported for NumPy backend'],
+        reason='array-likes only supported for NumPy backend',
     )
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_weights_1d_list(self, xp):
@@ -7094,8 +7112,8 @@ class TestPMean:
         check_equal_pmean(a, p, desired, rtol=0.0, xp=xp)
 
     @skip_xp_backends('array_api_strict',
-                      reasons=["`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python scalars. See data-apis/array-api#807."])
+                      reason=("`array_api_strict.where` `fillvalue` doesn't "
+                              "accept Python scalars. See data-apis/array-api#807."))
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_1d_with_negative_value(self, xp):
         a, p = np.array([1, 0, -1]), 1.23
@@ -7143,7 +7161,7 @@ class TestPMean:
 
     @pytest.mark.skip_xp_backends(
         np_only=True,
-        reasons=['array-likes only supported for NumPy backend'],
+        reason='array-likes only supported for NumPy backend',
     )
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_weights_1d_list(self, xp):
@@ -8057,6 +8075,11 @@ class TestKruskal:
             stats.kruskal()
 
 
+@skip_xp_backends(cpu_only=True,
+                  exceptions=['cupy', 'jax.numpy'],
+                  reason=('Delegation for `special.stdtr` only implemented '
+                          'for CuPy and JAX.'))
+@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 class TestCombinePvalues:
     # Reference values computed using the following R code:
@@ -9333,7 +9356,7 @@ class TestXP_Mean:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@skip_xp_backends('jax.numpy', reasons=['JAX arrays do not support item assignment'])
+@skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
 class TestXP_Var:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('keepdims', [False, True])
@@ -9459,7 +9482,7 @@ def test_chk_asarray(xp):
 
 
 @pytest.mark.skip_xp_backends('numpy',
-                              reasons=['These parameters *are* compatible with NumPy'])
+                              reason='These parameters *are* compatible with NumPy')
 @pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_axis_nan_policy_keepdims_nanpolicy(xp):

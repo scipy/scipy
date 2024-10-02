@@ -172,7 +172,7 @@ capabilities and how to use them.
 There are a number of different JSON files in ``<build-dir>/meson-info/``.
 These have descriptive names, hinting at their content. For example, where the
 final ``_decomp_update`` extension gets installed to is described in
-``intro-install_plan.json`` (note, these files aren't prety-printed, running
+``intro-install_plan.json`` (note, these files aren't pretty-printed, running
 them through a JSON formatter helps):
 
 .. code-block:: json

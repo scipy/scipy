@@ -1047,7 +1047,7 @@ class TestCurveFit:
 
     @pytest.mark.parametrize('method', ['trf', 'dogbox'])
     def test_gh20155_error_mentions_x0(self, method):
-        # `curve_fit` produced an error message that refered to an undocumented
+        # `curve_fit` produced an error message that referred to an undocumented
         # variable `x0`, which was really `p0`. Check that this is resolved.
         def func(x,a):
             return x**a

@@ -449,7 +449,7 @@ struct JaccardDistance {
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
         transform_reduce_2d_<4>(out, x, y, [](T x, T y) INLINE_LAMBDA {
             Acc<T> acc;
-            acc.num = (x != y) & ((x != 0) | (y != 0));
+            acc.num = (x != 0) ^ (y != 0);
             acc.denom = (x != 0) | (y != 0);
             return acc;
         },
@@ -468,7 +468,7 @@ struct JaccardDistance {
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
         transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
             Acc<T> acc;
-            acc.num = w * ((x != y) & ((x != 0) | (y != 0)));
+            acc.num = w * ((x != 0) ^ (y != 0));
             acc.denom = w * ((x != 0) | (y != 0));
             return acc;
         },

@@ -3,7 +3,7 @@
 from math import ceil, log
 import operator
 import warnings
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
@@ -906,7 +906,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     ----------
     .. [1] Ivan Selesnick, Linear-Phase Fir Filter Design By Least Squares.
            OpenStax CNX. Aug 9, 2005.
-           http://cnx.org/contents/eb1ecb35-03a9-4610-ba87-41cd771c95f2@7
+           https://eeweb.engineering.nyu.edu/iselesni/EL713/firls/firls.pdf
 
     Examples
     --------
@@ -1074,7 +1074,7 @@ def _dhtm(mag):
 
 def minimum_phase(h: np.ndarray,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
-                  n_fft: Optional[int] = None, *, half: bool = True) -> np.ndarray:
+                  n_fft: int | None = None, *, half: bool = True) -> np.ndarray:
     """Convert a linear-phase FIR filter to minimum phase
 
     Parameters

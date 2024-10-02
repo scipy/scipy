@@ -65,6 +65,7 @@ class _spbase:
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
+    _allow_nd = (2,)
 
     @property
     def ndim(self) -> int:
@@ -157,8 +158,8 @@ class _spbase:
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
-        is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_1d=is_array)
+        # Don't restrict ndim on this first call. That happens in constructor
+        shape = check_shape(args, self.shape, allow_nd=range(1, 65))
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
             if copy:
@@ -499,6 +500,12 @@ class _spbase:
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
 
+    def _broadcast_to(self, shape, copy=False):
+        if self.shape == shape:
+            return self.copy() if copy else self
+        else:
+            return self.tocsr()._broadcast_to(shape, copy)
+
     def __eq__(self, other):
         return self.tocsr().__eq__(other)
 
@@ -611,7 +618,7 @@ class _spbase:
             elif other.shape == (N, 1):
                 result = self._matmul_vector(other.ravel())
                 if self.ndim == 1:
-                    return result
+                    return result.reshape(1)
                 return result.reshape(M, 1)
             elif other.ndim == 2 and other.shape[0] == N:
                 return self._matmul_multivector(other)
@@ -655,7 +662,10 @@ class _spbase:
 
             if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, reshape the result
-                result = result.reshape(-1, 1)
+                if self.ndim == 1:
+                    result = result.reshape(1)
+                else:
+                    result = result.reshape(-1, 1)
 
             return result
 
@@ -1165,8 +1175,13 @@ class _spbase:
                 np.ones((N, 1), dtype=res_dtype)
             )
 
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
+        if out is not None:
+            if isinstance(self, sparray):
+                ret_shape = ret.shape[:axis] + ret.shape[axis + 1:]
+            else:
+                ret_shape = ret.shape
+            if out.shape != ret_shape:
+                raise ValueError("dimensions do not match")
 
         return ret.sum(axis=axis, dtype=dtype, out=out)
 
@@ -1395,6 +1410,11 @@ def issparse(x):
     -------
     bool
         True if `x` is a sparse array or a sparse matrix, False otherwise
+
+    Notes
+    -----
+    Use `isinstance(x, sp.sparse.sparray)` to check between an array or matrix.
+    Use `a.format` to check the sparse format, e.g. `a.format == 'csr'`.
 
     Examples
     --------
