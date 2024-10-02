@@ -81,7 +81,7 @@ cdef void hess_lu(self, double[:, ::1] H, int i, double[:,::1] ops) noexcept:
 cdef void perform_ops(self, double[::1] y, const double[:,::1] ops, bint rev = False) noexcept:
     """
     Replays operations needed to convert Hessenberg matrix into upper
-    triangular form on a vector y. Equivalent to matrix multlication by
+    triangular form on a vector y. Equivalent to matrix multiplication by
     inverse of matrix 5.12.
     """
     cdef int i, j, k, m

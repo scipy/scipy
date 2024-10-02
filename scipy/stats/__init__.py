@@ -222,6 +222,7 @@ Discrete distributions
    nhypergeom               -- Negative Hypergeometric
    planck                   -- Planck (Discrete Exponential)
    poisson                  -- Poisson
+   poisson_binom            -- Poisson Binomial
    randint                  -- Discrete Uniform
    skellam                  -- Skellam
    yulesimon                -- Yule-Simon

@@ -34,6 +34,7 @@ def basic_1d_integrand(x, n, xp):
 
 
 def basic_1d_integrand_exact(n, xp):
+    # Exact only for integration over interval [0, 2].
     return xp.reshape(2**(n+1)/(n+1), (-1, 1))
 
 
@@ -42,6 +43,7 @@ def basic_nd_integrand(x, n, xp):
 
 
 def basic_nd_integrand_exact(n, xp):
+    # Exact only for integration over interval [0, 2].
     return (-2**(3+n) + 4**(2+n))/((1+n)*(2+n))
 
 
@@ -305,7 +307,7 @@ class TestCubature:
         a = xp.asarray([0, 0], dtype=xp.float64)
         b = xp.asarray([2, 2], dtype=xp.float64)
 
-        res = cubature(basic_nd_integrand, a, b, rule_str, args=(n, xp))
+        res = cubature(basic_nd_integrand, a, b, rule=rule_str, args=(n, xp))
 
         xp_assert_close(
             res.estimate,
@@ -344,7 +346,7 @@ class TestCubature:
             basic_1d_integrand,  # Any function would suffice
             a,
             b,
-            rule,
+            rule=rule,
             max_subdivisions=10,
             args=(xp.arange(5, dtype=xp.float64), xp),
         )
@@ -358,6 +360,33 @@ class TestCubature:
 
         with pytest.raises(Exception, match="`a` and `b` must be 1D arrays"):
             cubature(basic_1d_integrand, a, b, args=(xp,))
+
+    def test_a_and_b_must_be_nonempty(self, xp):
+        a = xp.asarray([])
+        b = xp.asarray([])
+
+        with pytest.raises(Exception, match="`a` and `b` must be nonempty"):
+            cubature(basic_1d_integrand, a, b, args=(xp,))
+
+    def test_zero_width_limits(self, xp):
+        n = xp.arange(5, dtype=xp.float64)
+
+        a = xp.asarray([0], dtype=xp.float64)
+        b = xp.asarray([0], dtype=xp.float64)
+
+        res = cubature(
+            basic_1d_integrand,
+            a,
+            b,
+            args=(n, xp),
+        )
+
+        xp_assert_close(
+            res.estimate,
+            xp.asarray([[0], [0], [0], [0], [0]], dtype=xp.float64),
+            rtol=1e-1,
+            atol=0,
+        )
 
 
 @pytest.mark.parametrize("rtol", [1e-4])
@@ -373,7 +402,7 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
-    problems_scalar_output = [
+    @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
             # Function to integrate, like `f(x, *args)`
@@ -418,7 +447,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_1,
             genz_malik_1980_f_1_exact,
             [0, 0, 0],
-            [10, 10, 10],
+            [5, 5, 5],
             (
                 1/2,
                 [1, 1, 1],
@@ -440,7 +469,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_2,
             genz_malik_1980_f_2_exact,
 
-            [10, 50],
+            [0, 0],
             [10, 50],
             (
                 [-3, 3],
@@ -583,9 +612,43 @@ class TestCubatureProblems:
                 [1, 1, 1],
             ),
         ),
-    ]
+    ])
+    def test_scalar_output(self, problem, rule, rtol, atol, xp):
+        f, exact, a, b, args = problem
 
-    problem_array_output = [
+        a = xp.asarray(a, dtype=xp.float64)
+        b = xp.asarray(b, dtype=xp.float64)
+        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
+
+        ndim = xp_size(a)
+
+        if rule == "genz-malik" and ndim < 2:
+            pytest.skip("Genz-Malik cubature does not support 1D integrals")
+
+        res = cubature(
+            f,
+            a,
+            b,
+            rule=rule,
+            rtol=rtol,
+            atol=atol,
+            args=(*args, xp),
+        )
+
+        assert res.status == "converged"
+
+        est = res.estimate
+        exact_sol = exact(a, b, *args, xp)
+
+        xp_assert_close(
+            est,
+            exact_sol,
+            rtol=rtol,
+            atol=atol,
+            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
+        )
+
+    @pytest.mark.parametrize("problem", [
         (
             # Function to integrate, like `f(x, *args)`
             genz_malik_1980_f_1,
@@ -616,45 +679,7 @@ class TestCubatureProblems:
             genz_malik_1980_f_5_exact,
             genz_malik_1980_f_5_random_args,
         ),
-    ]
-
-    @pytest.mark.parametrize("problem", problems_scalar_output)
-    def test_scalar_output(self, problem, rule, rtol, atol, xp):
-        f, exact, a, b, args = problem
-
-        a = xp.asarray(a, dtype=xp.float64)
-        b = xp.asarray(b, dtype=xp.float64)
-        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
-
-        ndim = xp_size(a)
-
-        if rule == "genz-malik" and ndim < 2:
-            pytest.skip("Genz-Malik cubature does not support 1D integrals")
-
-        res = cubature(
-            f,
-            a,
-            b,
-            rule,
-            rtol,
-            atol,
-            args=(*args, xp),
-        )
-
-        assert res.status == "converged"
-
-        est = res.estimate
-        exact_sol = exact(a, b, *args, xp)
-
-        xp_assert_close(
-            est,
-            exact_sol,
-            rtol=rtol,
-            atol=atol,
-            err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
-        )
-
-    @pytest.mark.parametrize("problem", problem_array_output)
+    ])
     @pytest.mark.parametrize("shape", [
         (2,),
         (3,),
@@ -686,9 +711,9 @@ class TestCubatureProblems:
             f,
             a,
             b,
-            rule,
-            rtol,
-            atol,
+            rule=rule,
+            rtol=rtol,
+            atol=atol,
             args=(*args, xp),
         )
 
@@ -805,7 +830,7 @@ class TestRulesQuadrature:
         res = cubature(
             basic_1d_integrand,
             a, b,
-            rule,
+            rule=rule,
             rtol=1e-1,
             args=(n, xp),
         )

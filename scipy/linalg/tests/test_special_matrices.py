@@ -212,7 +212,11 @@ class TestBlockDiag:
 
 
 class TestKron:
+    def test_dep(self):
+        with pytest.deprecated_call(match="`kron`"):
+            kron(np.array([[1, 2],[3, 4]]),np.array([[1, 1, 1]]))
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_basic(self):
 
         a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
@@ -228,6 +232,7 @@ class TestKron:
                           [33, 44]])
         assert_array_equal(a, expected)
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_empty(self):
         m1 = np.empty((0, 2))
         m2 = np.empty((1, 3))

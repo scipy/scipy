@@ -384,6 +384,7 @@ if HAVE_SCPDT:
             'scipy.signal.ricker',
             'scipy.integrate.simpson',
             'scipy.interpolate.interp2d',
+            'scipy.linalg.kron',
         ]
         for name in deprecated:
             known_warnings[name] = dict(category=DeprecationWarning)
