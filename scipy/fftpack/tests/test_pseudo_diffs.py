@@ -332,7 +332,7 @@ class TestOverwrite:
             sig += repr(args)
         if kwargs:
             sig += repr(kwargs)
-        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+        assert_equal(x2, x, err_msg=f"spurious overwrite in {sig}")
 
     def _check_1d(self, routine, dtype, shape, *args, **kwargs):
         np.random.seed(1234)

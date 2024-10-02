@@ -1,4 +1,4 @@
-/*! \file
+/*
 Copyright (c) 2003, The Regents of the University of California, through
 Lawrence Berkeley National Laboratory (subject to receipt of any required 
 approvals from U.S. Dept. of Energy) 
@@ -8,47 +8,58 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
-/*! @file get_perm_c.c
- * \brief Matrix permutation operations
- *
- * <pre>
+/*
  * -- SuperLU routine (version 3.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * August 1, 2008
- * </pre>
+ * March 25, 2023  add METIS option
+ */
+/*! \file
+ * \brief Matrix permutation operations
+ *
+ * \ingroup Common
  */
 #include "slu_ddefs.h"
 #include "colamd.h"
 
-extern int  genmmd_(int *, int *, int *, int *, int *, int *, int *, 
-		    int *, int *, int *, int *, int *);
 
-void
-get_colamd(
-	   const int m,  /* number of rows in matrix A. */
-	   const int n,  /* number of columns in matrix A. */
-	   const int nnz,/* number of nonzeros in matrix A. */
-	   int *colptr,  /* column pointer of size n+1 for matrix A. */
-	   int *rowind,  /* row indices of size nz for matrix A. */
-	   int *perm_c   /* out - the column permutation vector. */
-	   )
+extern int genmmd_(int *neqns, int_t *xadj, int_t *adjncy, 
+		   int *invp, int *perm, int_t *delta, int_t *dhead, 
+		   int_t *qsize, int_t *llist, int_t *marker, int_t *maxint, 
+		   int_t *nofsub);
+
+/*!
+ * \brief Get COLAMD's permutation for matrix A
+ *
+ * \param[in]  m Number of rows in matrix A.
+ * \param[in]  n Number of columns in matrix A.
+ * \param[in]  nnz Number of nonzeros in matrix A.
+ * \param[in]  colptr Column pointer of size n+1 for matrix A.
+ * \param[in]  rowind Row indices of size nnz for matrix A.
+ * \param[out] perm_c Column permutation vector.
+ */
+void get_colamd(const int m, const int n, const int_t nnz,
+                int_t *colptr, int_t *rowind, int *perm_c)
 {
-    int Alen, *A, i, info, *p;
+    size_t Alen;
+    int_t *A, i, *p;
+    int info;
     double knobs[COLAMD_KNOBS];
-    int stats[COLAMD_STATS];
+    int_t stats[COLAMD_STATS];
 
-    Alen = colamd_recommended(nnz, m, n);
+    Alen = COLAMD_recommended(nnz, m, n);
 
-    colamd_set_defaults(knobs);
+    COLAMD_set_defaults(knobs);
 
-    if (!(A = (int *) SUPERLU_MALLOC(Alen * sizeof(int))) )
-        ABORT("Malloc fails for A[]");
-    if (!(p = (int *) SUPERLU_MALLOC((n+1) * sizeof(int))) )
-        ABORT("Malloc fails for p[]");
+    if ( !(A = intMalloc(Alen)) ) ABORT("Malloc fails for A[]");
+    if ( !(p = intMalloc(n+1)) )  ABORT("Malloc fails for p[]");
     for (i = 0; i <= n; ++i) p[i] = colptr[i];
     for (i = 0; i < nnz; ++i) A[i] = rowind[i];
-    info = colamd(m, n, Alen, A, p, knobs, stats);
+    
+    info = COLAMD_MAIN(m, n, Alen, A, p, knobs, stats);
+
+    //printf("after COLAMD_MAIN info %d\n", info);
     if ( info == FALSE ) ABORT("COLAMD failed");
 
     for (i = 0; i < n; ++i) perm_c[p[i]] = i;
@@ -56,13 +67,67 @@ get_colamd(
     SUPERLU_FREE(A);
     SUPERLU_FREE(p);
 }
-/*! \brief
+
+/*!
+ * \brief Get METIS' permutation for matrix B
  *
- * <pre>
- * Purpose
- * =======
+ * \param[in]  n Number of columns in matrix B.
+ * \param[in]  bnz Number of nonzeros in matrix B.
+ * \param[in]  b_colptr Column pointer of size n+1 for matrix B.
+ * \param[in]  b_rowind Row indices of size bnz for matrix B.
+ * \param[out] perm_c Column permutation vector.
+ */
+void get_metis(int n, int_t bnz, int_t *b_colptr,
+               int_t *b_rowind, int *perm_c)
+{
+#ifdef HAVE_METIS
+    /*#define METISOPTIONS 8*/
+#define METISOPTIONS 40
+    int_t metis_options[METISOPTIONS];
+    int numflag = 0; /* C-Style ordering */
+    int_t i, nm;
+    int_t *perm, *iperm;
+
+    extern int METIS_NodeND(int_t*, int_t*, int_t*, int_t*, int_t*,
+			    int_t*, int_t*);
+
+    metis_options[0] = 0; /* Use Defaults for now */
+
+    perm = intMalloc(2*n);
+    if (!perm) ABORT("intMalloc fails for perm.");
+    iperm = perm + n;
+    nm = n;
+
+    /* Call metis */
+#undef USEEND
+#ifdef USEEND
+    METIS_EdgeND(&nm, b_colptr, b_rowind, &numflag, metis_options,
+		 perm, iperm);
+#else
+
+    /* Earlier version 3.x.x */
+    /* METIS_NodeND(&nm, b_colptr, b_rowind, &numflag, metis_options,
+       perm, iperm);*/
+
+    /* Latest version 4.x.x */
+    METIS_NodeND(&nm, b_colptr, b_rowind, NULL, NULL, perm, iperm);
+
+    /*check_perm_dist("metis perm",  n, perm);*/
+#endif
+
+    /* Copy the permutation vector into SuperLU data structure. */
+    for (i = 0; i < n; ++i) perm_c[i] = iperm[i];
+
+    SUPERLU_FREE(b_colptr);
+    SUPERLU_FREE(b_rowind);
+    SUPERLU_FREE(perm);
+#endif /* HAVE_METIS */
+}
+
+/*!
+ * \brief Form the structure of A'*A.
  *
- * Form the structure of A'*A. A is an m-by-n matrix in column oriented
+ * A is an m-by-n matrix in column oriented
  * format represented by (colptr, rowind). The output A'*A is in column
  * oriented format (symmetrically, also row oriented), represented by
  * (ata_colptr, ata_rowind).
@@ -71,34 +136,33 @@ get_colamd(
  * The complexity of this algorithm is: SUM_{i=1,m} r(i)^2,
  * i.e., the sum of the square of the row counts.
  *
- * Questions
- * =========
- *     o  Do I need to withhold the *dense* rows?
- *     o  How do I know the number of nonzeros in A'*A?
- * </pre>
+ * Questions<br>
+ * <ul>
+ *     <li>Do I need to withhold the *dense* rows?
+ *     <li>How do I know the number of nonzeros in A'*A?
+ * </ul>
+ *
+ * \param[in]  m number of rows in matrix A.
+ * \param[in]  n number of columns in matrix A.
+ * \param[in]  nz number of nonzeros in matrix A
+ * \param[in]  colptr column pointer of size n+1 for matrix A.
+ * \param[in]  rowind row indices of size nz for matrix A.
+ * \param[out] atanz on exit, returns the actual number of nonzeros in matrix A'*A.
+ * \param[out] ata_colptr column pointer of size n+1 for matrix A'*A.
+ * \param[out] ata_rowind row indices of size atanz for matrix A'*A.
  */
-void
-getata(
-       const int m,      /* number of rows in matrix A. */
-       const int n,      /* number of columns in matrix A. */
-       const int nz,     /* number of nonzeros in matrix A */
-       int *colptr,      /* column pointer of size n+1 for matrix A. */
-       int *rowind,      /* row indices of size nz for matrix A. */
-       int *atanz,       /* out - on exit, returns the actual number of
-                            nonzeros in matrix A'*A. */
-       int **ata_colptr, /* out - size n+1 */
-       int **ata_rowind  /* out - size *atanz */
-       )
+void getata(const int m, const int n, const int_t nz, int_t *colptr, int_t *rowind,
+            int_t *atanz, int_t **ata_colptr, int_t **ata_rowind)
 {
-    register int i, j, k, col, num_nz, ti, trow;
-    int *marker, *b_colptr, *b_rowind;
-    int *t_colptr, *t_rowind; /* a column oriented form of T = A' */
+    register int_t i, j, k, col, num_nz, ti, trow;
+    int_t *marker, *b_colptr, *b_rowind;
+    int_t *t_colptr, *t_rowind; /* a column oriented form of T = A' */
 
-    if ( !(marker = (int*) SUPERLU_MALLOC((SUPERLU_MAX(m,n)+1)*sizeof(int))) )
+    if ( !(marker = (int_t*) SUPERLU_MALLOC((SUPERLU_MAX(m,n)+1)*sizeof(int_t))) )
 	ABORT("SUPERLU_MALLOC fails for marker[]");
-    if ( !(t_colptr = (int*) SUPERLU_MALLOC((m+1) * sizeof(int))) )
+    if ( !(t_colptr = (int_t*) SUPERLU_MALLOC((m+1) * sizeof(int_t))) )
 	ABORT("SUPERLU_MALLOC t_colptr[]");
-    if ( !(t_rowind = (int*) SUPERLU_MALLOC(nz * sizeof(int))) )
+    if ( !(t_rowind = (int_t*) SUPERLU_MALLOC(nz * sizeof(int_t))) )
 	ABORT("SUPERLU_MALLOC fails for t_rowind[]");
 
     
@@ -160,10 +224,10 @@ getata(
     *atanz = num_nz;
     
     /* Allocate storage for A'*A */
-    if ( !(*ata_colptr = (int*) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+    if ( !(*ata_colptr = (int_t*) SUPERLU_MALLOC( (n+1) * sizeof(int_t)) ) )
 	ABORT("SUPERLU_MALLOC fails for ata_colptr[]");
     if ( *atanz ) {
-	if ( !(*ata_rowind = (int*) SUPERLU_MALLOC( *atanz * sizeof(int)) ) )
+	if ( !(*ata_rowind = (int_t*) SUPERLU_MALLOC( *atanz * sizeof(int_t)) ) )
 	    ABORT("SUPERLU_MALLOC fails for ata_rowind[]");
     }
     b_colptr = *ata_colptr; /* aliasing */
@@ -200,39 +264,34 @@ getata(
 }
 
 
-/*! \brief
+/*!
+ * \brief Form the structure of A'+A.
  *
- * <pre>
- * Purpose
- * =======
- *
- * Form the structure of A'+A. A is an n-by-n matrix in column oriented
+ * A is an n-by-n matrix in column oriented
  * format represented by (colptr, rowind). The output A'+A is in column
  * oriented format (symmetrically, also row oriented), represented by
  * (b_colptr, b_rowind).
- * </pre>
+ *
+ * \param[in]  n number of columns in matrix A.
+ * \param[in]  nz number of nonzeros in matrix A
+ * \param[in]  colptr column pointer of size n+1 for matrix A.
+ * \param[in]  rowind row indices of size nz for matrix A.
+ * \param[out] bnz on exit, returns the actual number of nonzeros in matrix A'*A.
+ * \param[out] b_colptr column pointer of size n+1 for matrix A'+A.
+ * \param[out] b_rowind row indices of size bnz for matrix A'+A.
  */
-void
-at_plus_a(
-	  const int n,      /* number of columns in matrix A. */
-	  const int nz,     /* number of nonzeros in matrix A */
-	  int *colptr,      /* column pointer of size n+1 for matrix A. */
-	  int *rowind,      /* row indices of size nz for matrix A. */
-	  int *bnz,         /* out - on exit, returns the actual number of
-                               nonzeros in matrix A'*A. */
-	  int **b_colptr,   /* out - size n+1 */
-	  int **b_rowind    /* out - size *bnz */
-	  )
+void at_plus_a(const int n, const int_t nz, int_t *colptr, int_t *rowind,
+               int_t *bnz, int_t **b_colptr, int_t **b_rowind)
 {
-    register int i, j, k, col, num_nz;
-    int *t_colptr, *t_rowind; /* a column oriented form of T = A' */
-    int *marker;
+    register int_t i, j, k, col, num_nz;
+    int_t *t_colptr, *t_rowind; /* a column oriented form of T = A' */
+    int_t *marker;
 
-    if ( !(marker = (int*) SUPERLU_MALLOC( n * sizeof(int)) ) )
+    if ( !(marker = (int_t*) SUPERLU_MALLOC( n * sizeof(int_t)) ) )
 	ABORT("SUPERLU_MALLOC fails for marker[]");
-    if ( !(t_colptr = (int*) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+    if ( !(t_colptr = (int_t*) SUPERLU_MALLOC( (n+1) * sizeof(int_t)) ) )
 	ABORT("SUPERLU_MALLOC fails for t_colptr[]");
-    if ( !(t_rowind = (int*) SUPERLU_MALLOC( nz * sizeof(int)) ) )
+    if ( !(t_rowind = (int_t*) SUPERLU_MALLOC( nz * sizeof(int_t)) ) )
 	ABORT("SUPERLU_MALLOC fails t_rowind[]");
 
     
@@ -295,10 +354,10 @@ at_plus_a(
     *bnz = num_nz;
     
     /* Allocate storage for A+A' */
-    if ( !(*b_colptr = (int*) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+    if ( !(*b_colptr = (int_t*) SUPERLU_MALLOC( (n+1) * sizeof(int_t)) ) )
 	ABORT("SUPERLU_MALLOC fails for b_colptr[]");
     if ( *bnz) {
-      if ( !(*b_rowind = (int*) SUPERLU_MALLOC( *bnz * sizeof(int)) ) )
+      if ( !(*b_rowind = (int_t*) SUPERLU_MALLOC( *bnz * sizeof(int_t)) ) )
 	ABORT("SUPERLU_MALLOC fails for b_rowind[]");
     }
     
@@ -338,48 +397,42 @@ at_plus_a(
     SUPERLU_FREE(t_rowind);
 }
 
-/*! \brief
+/*!
+ * \brief Obtains a permutation matrix by applying the multiple
+ * minimum degree ordering code
  *
- * <pre>
- * Purpose
- * =======
- *
- * GET_PERM_C obtains a permutation matrix Pc, by applying the multiple
- * minimum degree ordering code by Joseph Liu to matrix A'*A or A+A'.
+ * Obtains a permutation matrix Pc by applying the multiple
+ * minimum degree ordering code by Joseph Liu to matrix A'*A or A+A'
  * or using approximate minimum degree column ordering by Davis et. al.
  * The LU factorization of A*Pc tends to have less fill than the LU 
  * factorization of A.
  *
- * Arguments
- * =========
- *
- * ispec   (input) int
- *         Specifies the type of column ordering to reduce fill:
- *         = 1: minimum degree on the structure of A^T * A
- *         = 2: minimum degree on the structure of A^T + A
- *         = 3: approximate minimum degree for unsymmetric matrices
+ * \param[in] ispec
+ *         Specifies the type of column ordering to reduce fill:<br>
+ *         = 1: minimum degree on the structure of A^T * A<br>
+ *         = 2: minimum degree on the structure of A^T + A<br>
+ *         = 3: approximate minimum degree for unsymmetric matrices<br>
  *         If ispec == 0, the natural ordering (i.e., Pc = I) is returned.
- * 
- * A       (input) SuperMatrix*
+ * \param[in] A
  *         Matrix A in A*X=B, of dimension (A->nrow, A->ncol). The number
  *         of the linear equations is A->nrow. Currently, the type of A 
  *         can be: Stype = NC; Dtype = _D; Mtype = GE. In the future,
  *         more general A can be handled.
- *
- * perm_c  (output) int*
- *	   Column permutation vector of size A->ncol, which defines the 
+ * \param[out] perm_c
+ *         Column permutation vector of size A->ncol, which defines the
  *         permutation matrix Pc; perm_c[i] = j means column i of A is 
  *         in position j in A*Pc.
- * </pre>
  */
 void
 get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 {
     NCformat *Astore = A->Store;
-    int m, n, bnz = 0, *b_colptr, i;
-    int delta, maxint, nofsub, *invp;
-    int *b_rowind, *dhead, *qsize, *llist, *marker;
-    double t, SuperLU_timer_();
+    int m, n;
+    int_t i, bnz = 0, *b_colptr, *b_rowind;
+    int_t delta, maxint, nofsub;
+    int *invp;
+    int_t *dhead, *qsize, *llist, *marker;
+    double t;
     
     m = A->nrow;
     n = A->ncol;
@@ -416,7 +469,43 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 #if ( PRNTlevel>=1 )
 	printf(".. Use approximate minimum degree column ordering.\n");
 #endif
-	return; 
+	return;
+#ifdef HAVE_METIS
+    case METIS_ATA: /* METIS ordering on A'*A */
+	    getata(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
+		     &bnz, &b_colptr, &b_rowind);
+
+	    if ( bnz ) { /* non-empty adjacency structure */
+		  get_metis(n, bnz, b_colptr, b_rowind, perm_c);
+	    } else { /* e.g., diagonal matrix */
+		for (i = 0; i < n; ++i) perm_c[i] = i;
+		SUPERLU_FREE(b_colptr);
+		/* b_rowind is not allocated in this case */
+	    }
+
+#if ( PRNTlevel>=1 )
+	    printf(".. Use METIS ordering on A'*A\n");
+#endif
+	    return;
+    case METIS_AT_PLUS_A: /* METIS ordering on A'*A */
+	if ( m != n ) ABORT("Matrix is not square");
+	at_plus_a(n, Astore->nnz, Astore->colptr, Astore->rowind,
+		  &bnz, &b_colptr, &b_rowind);
+
+        if ( bnz ) { /* non-empty adjacency structure */
+	    get_metis(n, bnz, b_colptr, b_rowind, perm_c);
+        } else { /* e.g., diagonal matrix */
+	    for (i = 0; i < n; ++i) perm_c[i] = i;
+		SUPERLU_FREE(b_colptr);
+	    /* b_rowind is not allocated in this case */
+	}
+
+#if ( PRNTlevel>=1 )
+	printf(".. Use METIS ordering on A'+A\n");
+#endif
+	return;
+#endif
+	
     default:
 	ABORT("Invalid ISPEC");
     }
@@ -430,13 +519,13 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	maxint = 2147483647; /* 2**31 - 1 */
 	invp = (int *) SUPERLU_MALLOC((n+delta)*sizeof(int));
 	if ( !invp ) ABORT("SUPERLU_MALLOC fails for invp.");
-	dhead = (int *) SUPERLU_MALLOC((n+delta)*sizeof(int));
+	dhead = intMalloc(n+delta);
 	if ( !dhead ) ABORT("SUPERLU_MALLOC fails for dhead.");
-	qsize = (int *) SUPERLU_MALLOC((n+delta)*sizeof(int));
+	qsize = intMalloc(n+delta);
 	if ( !qsize ) ABORT("SUPERLU_MALLOC fails for qsize.");
-	llist = (int *) SUPERLU_MALLOC(n*sizeof(int));
+	llist = intMalloc(n);
 	if ( !llist ) ABORT("SUPERLU_MALLOC fails for llist.");
-	marker = (int *) SUPERLU_MALLOC(n*sizeof(int));
+	marker = intMalloc(n);
 	if ( !marker ) ABORT("SUPERLU_MALLOC fails for marker.");
 
 	/* Transform adjacency list into 1-based indexing required by GENMMD.*/

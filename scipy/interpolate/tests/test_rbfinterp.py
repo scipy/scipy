@@ -2,7 +2,7 @@ import pickle
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
-from numpy.testing import assert_allclose, assert_array_equal
+from scipy._lib._array_api import xp_assert_close
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree
 from scipy.interpolate._rbfinterp import (
@@ -10,6 +10,7 @@ from scipy.interpolate._rbfinterp import (
     RBFInterpolator
     )
 from scipy.interpolate import _rbfinterp_pythran
+from scipy._lib._testutils import _run_concurrent_barrier
 
 
 def _vandermonde(x, degree):
@@ -47,7 +48,7 @@ def _is_conditionally_positive_definite(kernel, m):
     ntests = 100
     for ndim in [1, 2, 3, 4, 5]:
         # Generate sample points with a Halton sequence to avoid samples that
-        # are too close to eachother, which can make the matrix singular.
+        # are too close to each other, which can make the matrix singular.
         seq = Halton(ndim, scramble=False, seed=np.random.RandomState())
         for _ in range(ntests):
             x = 2*seq.random(nx) - 1
@@ -90,7 +91,7 @@ class _TestRBFInterpolator:
         xitp = 3*seq.random(50)
         yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
-        assert_allclose(yitp1, yitp2, atol=1e-8)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)
 
     @pytest.mark.parametrize('kernel', sorted(_SCALE_INVARIANT))
     def test_scale_invariance_2d(self, kernel):
@@ -102,7 +103,7 @@ class _TestRBFInterpolator:
         xitp = seq.random(100)
         yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
-        assert_allclose(yitp1, yitp2, atol=1e-8)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)
 
     @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_extreme_domains(self, kernel):
@@ -130,7 +131,7 @@ class _TestRBFInterpolator:
                 kernel=kernel
                 )(xitp*scale + shift)
 
-        assert_allclose(yitp1, yitp2, atol=1e-8)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)
 
     def test_polynomial_reproduction(self):
         # If the observed data comes from a polynomial, then the interpolant
@@ -152,7 +153,39 @@ class _TestRBFInterpolator:
         yitp1 = Pitp.dot(poly_coeffs)
         yitp2 = self.build(x, y, degree=degree)(xitp)
 
-        assert_allclose(yitp1, yitp2, atol=1e-8)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)
+
+    @pytest.mark.slow
+    def test_chunking(self, monkeypatch):
+        # If the observed data comes from a polynomial, then the interpolant
+        # should be able to reproduce the polynomial exactly, provided that
+        # `degree` is sufficiently high.
+        rng = np.random.RandomState(0)
+        seq = Halton(2, scramble=False, seed=rng)
+        degree = 3
+
+        largeN = 1000 + 33
+        # this is large to check that chunking of the RBFInterpolator is tested
+        x = seq.random(50)
+        xitp = seq.random(largeN)
+
+        P = _vandermonde(x, degree)
+        Pitp = _vandermonde(xitp, degree)
+
+        poly_coeffs = rng.normal(0.0, 1.0, P.shape[1])
+
+        y = P.dot(poly_coeffs)
+        yitp1 = Pitp.dot(poly_coeffs)
+        interp = self.build(x, y, degree=degree)
+        ce_real = interp._chunk_evaluator
+
+        def _chunk_evaluator(*args, **kwargs):
+            kwargs.update(memory_budget=100)
+            return ce_real(*args, **kwargs)
+
+        monkeypatch.setattr(interp, '_chunk_evaluator', _chunk_evaluator)
+        yitp2 = interp(xitp)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)
 
     def test_vector_data(self):
         # Make sure interpolating a vector field is the same as interpolating
@@ -169,8 +202,8 @@ class _TestRBFInterpolator:
         yitp2 = self.build(x, y[:, 0])(xitp)
         yitp3 = self.build(x, y[:, 1])(xitp)
 
-        assert_allclose(yitp1[:, 0], yitp2)
-        assert_allclose(yitp1[:, 1], yitp3)
+        xp_assert_close(yitp1[:, 0], yitp2)
+        xp_assert_close(yitp1[:, 1], yitp3)
 
     def test_complex_data(self):
         # Interpolating complex input should be the same as interpolating the
@@ -186,8 +219,8 @@ class _TestRBFInterpolator:
         yitp2 = self.build(x, y.real)(xitp)
         yitp3 = self.build(x, y.imag)(xitp)
 
-        assert_allclose(yitp1.real, yitp2)
-        assert_allclose(yitp1.imag, yitp3)
+        xp_assert_close(yitp1.real, yitp2)
+        xp_assert_close(yitp1.imag, yitp3)
 
     @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
     def test_interpolation_misfit_1d(self, kernel):
@@ -266,7 +299,7 @@ class _TestRBFInterpolator:
         smoothing[10] = 1000.0
         yitp = self.build(x, y_with_outlier, smoothing=smoothing)(x)
         # Should be able to reproduce the uncorrupted data almost exactly.
-        assert_allclose(yitp, y, atol=1e-4)
+        xp_assert_close(yitp, y, atol=1e-4)
 
     def test_inconsistent_x_dimensions_error(self):
         # ValueError should be raised if the observation points and evaluation
@@ -337,9 +370,18 @@ class _TestRBFInterpolator:
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)
         for kernel, deg in _NAME_TO_MIN_DEGREE.items():
-            match = f'`degree` should not be below {deg}'
-            with pytest.warns(Warning, match=match):
-                self.build(y, d, epsilon=1.0, kernel=kernel, degree=deg-1)
+            # Only test for kernels that its minimum degree is not 0.
+            if deg >= 1:
+                match = f'`degree` should not be below {deg}'
+                with pytest.warns(Warning, match=match):
+                    self.build(y, d, epsilon=1.0, kernel=kernel, degree=deg-1)
+
+    def test_minus_one_degree(self):
+        # Make sure a degree of -1 is accepted without any warning.
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros(5)
+        for kernel, _ in _NAME_TO_MIN_DEGREE.items():
+            self.build(y, d, epsilon=1.0, kernel=kernel, degree=-1)
 
     def test_rank_error(self):
         # An error should be raised when `kernel` is "thin_plate_spline" and
@@ -357,7 +399,7 @@ class _TestRBFInterpolator:
             y = np.zeros((1, dim))
             d = np.ones((1,))
             f = self.build(y, d, kernel='linear')(y)
-            assert_allclose(d, f)
+            xp_assert_close(d, f)
 
     def test_pickleable(self):
         # Make sure we can pickle and unpickle the interpolant without any
@@ -374,7 +416,7 @@ class _TestRBFInterpolator:
         yitp1 = interp(xitp)
         yitp2 = pickle.loads(pickle.dumps(interp))(xitp)
 
-        assert_array_equal(yitp1, yitp2)
+        xp_assert_close(yitp1, yitp2, atol=1e-16)
 
 
 class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
@@ -404,7 +446,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         Pitp = _vandermonde(xitp, degree)
         yitp2 = Pitp.dot(np.linalg.lstsq(P, y, rcond=None)[0])
 
-        assert_allclose(yitp1, yitp2, atol=1e-8)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)
 
     def test_smoothing_limit_2d(self):
         # For large smoothing parameters, the interpolant should approach a
@@ -429,7 +471,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         Pitp = _vandermonde(xitp, degree)
         yitp2 = Pitp.dot(np.linalg.lstsq(P, y, rcond=None)[0])
 
-        assert_allclose(yitp1, yitp2, atol=1e-8)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)
 
 
 class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
@@ -453,7 +495,23 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
             _, nbr = tree.query(xi, 20)
             yitp2.append(RBFInterpolator(x[nbr], y[nbr])(xi[None])[0])
 
-        assert_allclose(yitp1, yitp2, atol=1e-8)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to
+        # RbfInterpolator
+        seq = Halton(2, scramble=False, seed=np.random.RandomState(0))
+        x = seq.random(100)
+        xitp = seq.random(100)
+
+        y = _2d_test_function(x)
+
+        interp = self.build(x, y)
+
+        def worker_fn(_, interp, xp):
+            interp(xp)
+
+        _run_concurrent_barrier(10, worker_fn, interp, xitp)
 
 
 class TestRBFInterpolatorNeighborsInf(TestRBFInterpolatorNeighborsNone):
@@ -472,4 +530,4 @@ class TestRBFInterpolatorNeighborsInf(TestRBFInterpolatorNeighborsNone):
         yitp1 = self.build(x, y)(xitp)
         yitp2 = RBFInterpolator(x, y)(xitp)
 
-        assert_allclose(yitp1, yitp2, atol=1e-8)
+        xp_assert_close(yitp1, yitp2, atol=1e-8)

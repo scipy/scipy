@@ -8,7 +8,9 @@ from scipy.spatial import KDTree
 from scipy.special import comb
 from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 
-from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
+from ._rbfinterp_pythran import (_build_system,
+                                 _build_evaluation_coefficients,
+                                 _polynomial_matrix)
 
 
 __all__ = ["RBFInterpolator"]
@@ -63,7 +65,7 @@ def _monomial_powers(ndim, degree):
 
     """
     nmonos = comb(degree + ndim, ndim, exact=True)
-    out = np.zeros((nmonos, ndim), dtype=int)
+    out = np.zeros((nmonos, ndim), dtype=np.dtype("long"))
     count = 0
     for deg in range(degree + 1):
         for mono in combinations_with_replacement(range(ndim), deg):
@@ -134,15 +136,17 @@ class RBFInterpolator:
 
     Parameters
     ----------
-    y : (P, N) array_like
-        Data point coordinates.
-    d : (P, ...) array_like
-        Data values at `y`.
+    y : (npoints, ndims) array_like
+        2-D array of data point coordinates.
+    d : (npoints, ...) array_like
+        N-D array of data values at `y`. The length of `d` along the first
+        axis must be equal to the length of `y`. Unlike some interpolators, the
+        interpolation axis cannot be changed.
     neighbors : int, optional
         If specified, the value of the interpolant at each evaluation point
         will be computed using only this many nearest data points. All the data
         points are used by default.
-    smoothing : float or (P,) array_like, optional
+    smoothing : float or (npoints, ) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.
@@ -258,6 +262,7 @@ class RBFInterpolator:
     --------
     Demonstrate interpolating scattered data to a grid in 2-D.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import RBFInterpolator
     >>> from scipy.stats.qmc import Halton
@@ -337,14 +342,15 @@ class RBFInterpolator:
             degree = int(degree)
             if degree < -1:
                 raise ValueError("`degree` must be at least -1.")
-            elif degree < min_degree:
+            elif -1 < degree < min_degree:
                 warnings.warn(
-                    f"`degree` should not be below {min_degree} when `kernel` "
-                    f"is '{kernel}'. The interpolant may not be uniquely "
-                    "solvable, and the smoothing parameter may have an "
-                    "unintuitive effect.",
-                    UserWarning
-                    )
+                    f"`degree` should not be below {min_degree} except -1 "
+                    f"when `kernel` is '{kernel}'."
+                    f"The interpolant may not be uniquely "
+                    f"solvable, and the smoothing parameter may have an "
+                    f"unintuitive effect.",
+                    UserWarning, stacklevel=2
+                )
 
         if neighbors is None:
             nobs = ny
@@ -387,6 +393,73 @@ class RBFInterpolator:
         self.epsilon = epsilon
         self.powers = powers
 
+    def _chunk_evaluator(
+            self,
+            x,
+            y,
+            shift,
+            scale,
+            coeffs,
+            memory_budget=1000000
+    ):
+        """
+        Evaluate the interpolation while controlling memory consumption.
+        We chunk the input if we need more memory than specified.
+
+        Parameters
+        ----------
+        x : (Q, N) float ndarray
+            array of points on which to evaluate
+        y: (P, N) float ndarray
+            array of points on which we know function values
+        shift: (N, ) ndarray
+            Domain shift used to create the polynomial matrix.
+        scale : (N,) float ndarray
+            Domain scaling used to create the polynomial matrix.
+        coeffs: (P+R, S) float ndarray
+            Coefficients in front of basis functions
+        memory_budget: int
+            Total amount of memory (in units of sizeof(float)) we wish
+            to devote for storing the array of coefficients for
+            interpolated points. If we need more memory than that, we
+            chunk the input.
+
+        Returns
+        -------
+        (Q, S) float ndarray
+        Interpolated array
+        """
+        nx, ndim = x.shape
+        if self.neighbors is None:
+            nnei = len(y)
+        else:
+            nnei = self.neighbors
+        # in each chunk we consume the same space we already occupy
+        chunksize = memory_budget // (self.powers.shape[0] + nnei) + 1
+        if chunksize <= nx:
+            out = np.empty((nx, self.d.shape[1]), dtype=float)
+            for i in range(0, nx, chunksize):
+                vec = _build_evaluation_coefficients(
+                    x[i:i + chunksize, :],
+                    y,
+                    self.kernel,
+                    self.epsilon,
+                    self.powers,
+                    shift,
+                    scale)
+                out[i:i + chunksize, :] = np.dot(vec, coeffs)
+        else:
+            vec = _build_evaluation_coefficients(
+                x,
+                y,
+                self.kernel,
+                self.epsilon,
+                self.powers,
+                shift,
+                scale)
+            out = np.dot(vec, coeffs)
+        return out
+
     def __call__(self, x):
         """Evaluate the interpolant at `x`.
 
@@ -407,17 +480,24 @@ class RBFInterpolator:
 
         nx, ndim = x.shape
         if ndim != self.y.shape[1]:
-            raise ValueError(
-                "Expected the second axis of `x` to have length "
-                f"{self.y.shape[1]}."
-                )
+            raise ValueError("Expected the second axis of `x` to have length "
+                             f"{self.y.shape[1]}.")
+
+        # Our memory budget for storing RBF coefficients is
+        # based on how many floats in memory we already occupy
+        # If this number is below 1e6 we just use 1e6
+        # This memory budget is used to decide how we chunk
+        # the inputs
+        memory_budget = max(x.size + self.y.size + self.d.size, 1000000)
 
         if self.neighbors is None:
-            out = _evaluate(
-                x, self.y, self.kernel, self.epsilon, self.powers, self._shift,
-                self._scale, self._coeffs
-                )
-
+            out = self._chunk_evaluator(
+                x,
+                self.y,
+                self._shift,
+                self._scale,
+                self._coeffs,
+                memory_budget=memory_budget)
         else:
             # Get the indices of the k nearest observation points to each
             # evaluation point.
@@ -432,6 +512,7 @@ class RBFInterpolator:
             # neighborhood.
             yindices = np.sort(yindices, axis=1)
             yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
+            inv = np.reshape(inv, (-1,))  # flatten, we need 1-D indices
             # `inv` tells us which neighborhood will be used by each evaluation
             # point. Now we find which evaluation points will be using each
             # neighborhood.
@@ -449,15 +530,21 @@ class RBFInterpolator:
                 dnbr = self.d[yidx]
                 snbr = self.smoothing[yidx]
                 shift, scale, coeffs = _build_and_solve_system(
-                    ynbr, dnbr, snbr, self.kernel, self.epsilon, self.powers,
-                    )
-
-                out[xidx] = _evaluate(
-                    xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
-                    scale, coeffs
-                    )
+                    ynbr,
+                    dnbr,
+                    snbr,
+                    self.kernel,
+                    self.epsilon,
+                    self.powers,
+                )
+                out[xidx] = self._chunk_evaluator(
+                    xnbr,
+                    ynbr,
+                    shift,
+                    scale,
+                    coeffs,
+                    memory_budget=memory_budget)
 
         out = out.view(self.d_dtype)
-        out = out.reshape((nx,) + self.d_shape)
+        out = out.reshape((nx, ) + self.d_shape)
         return out
-

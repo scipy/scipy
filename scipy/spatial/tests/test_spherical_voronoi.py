@@ -3,11 +3,9 @@ import itertools
 from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
-                           assert_array_almost_equal,
-                           suppress_warnings)
+                           assert_array_almost_equal)
 import pytest
 from pytest import raises as assert_raises
-from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.optimize import linear_sum_assignment
 from scipy.constants import golden as phi
@@ -351,7 +349,10 @@ class TestSphericalVoronoi:
         # See Issue #13412
         sv = SphericalVoronoi(self.points)
         dtype = type(sv.regions[0][0])
+        # also enforce nested list type per gh-19177
+        for region in sv.regions:
+            assert isinstance(region, list)
         sv.sort_vertices_of_regions()
-        assert type(sv.regions[0][0]) == dtype
+        assert isinstance(sv.regions[0][0], dtype)
         sv.sort_vertices_of_regions()
-        assert type(sv.regions[0][0]) == dtype
+        assert isinstance(sv.regions[0][0], dtype)

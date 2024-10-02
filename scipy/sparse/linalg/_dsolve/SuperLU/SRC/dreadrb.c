@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required
-approvals from U.S. Dept. of Energy)
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
 
-All rights reserved.
+All rights reserved. 
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -17,11 +17,12 @@ at the top-level directory.
  * Lawrence Berkeley National Laboratory.
  * June 30, 2009
  * </pre>
+ * <pre>
  *
  * Purpose
  * =======
  *
- * Read a DOUBLE PRECISION matrix stored in Rutherford-Boeing format
+ * Read a DOUBLE PRECISION matrix stored in Rutherford-Boeing format 
  * as described below.
  *
  * Line 1 (A72, A8)
@@ -132,21 +133,18 @@ static int dParseFloatFormat(char *buf, int *num, int *size)
     return 0;
 }
 
-static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
+static int ReadVector(FILE *fp, int n, int_t *where, int perline, int persize)
 {
-    register int i, j, item;
-    char tmp, buf[100], *dummy;
+    int_t i, j, item;
+    char tmp, buf[100];
 
     i = 0;
     while (i < n) {
-        dummy = fgets(buf, 100, fp);    /* read a line at a time */
-        if(dummy == NULL) {
-            ABORT("Unable to read from the file");
-        }
+        fgets(buf, 100, fp);    /* read a line at a time */
         for (j=0; j<perline && i<n; j++) {
             tmp = buf[(j+1)*persize];     /* save the char at that place */
             buf[(j+1)*persize] = 0;       /* null terminate */
-            item = atoi(&buf[j*persize]);
+            item = atoi(&buf[j*persize]); 
             buf[(j+1)*persize] = tmp;     /* recover the char at that place */
             where[i++] = item - 1;
         }
@@ -159,14 +157,11 @@ static int dReadValues(FILE *fp, int n, double *destination, int perline,
         int persize)
 {
     register int i, j, k, s;
-    char tmp, buf[100], *dummy;
+    char tmp, buf[100];
 
     i = 0;
     while (i < n) {
-        dummy = fgets(buf, 100, fp);    /* read a line at a time */
-        if(dummy == NULL) {
-            ABORT("Unable to read from the file");
-        }
+        fgets(buf, 100, fp);    /* read a line at a time */
         for (j=0; j<perline && i<n; j++) {
             tmp = buf[(j+1)*persize];     /* save the char at that place */
             buf[(j+1)*persize] = 0;       /* null terminate */
@@ -191,22 +186,22 @@ static int dReadValues(FILE *fp, int n, double *destination, int perline,
  * </pre>
  */
 static void
-FormFullA(int n, int *nonz, double **nzval, int **rowind, int **colptr)
+FormFullA(int n, int_t *nonz, double **nzval, int_t **rowind, int_t **colptr)
 {
-    register int i, j, k, col, new_nnz;
-    int *t_rowind, *t_colptr, *al_rowind, *al_colptr, *a_rowind, *a_colptr;
-    int *marker;
+    int_t i, j, k, col, new_nnz;
+    int_t *t_rowind, *t_colptr, *al_rowind, *al_colptr, *a_rowind, *a_colptr;
+    int_t *marker;
     double *t_val, *al_val, *a_val;
 
     al_rowind = *rowind;
     al_colptr = *colptr;
     al_val = *nzval;
 
-    if ( !(marker =(int *) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+    if ( !(marker = intMalloc( n+1 ) ) )
 	ABORT("SUPERLU_MALLOC fails for marker[]");
-    if ( !(t_colptr = (int *) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+    if ( !(t_colptr = intMalloc( n+1 ) ) )
 	ABORT("SUPERLU_MALLOC t_colptr[]");
-    if ( !(t_rowind = (int *) SUPERLU_MALLOC( *nonz * sizeof(int)) ) )
+    if ( !(t_rowind = intMalloc( *nonz ) ) )
 	ABORT("SUPERLU_MALLOC fails for t_rowind[]");
     if ( !(t_val = (double*) SUPERLU_MALLOC( *nonz * sizeof(double)) ) )
 	ABORT("SUPERLU_MALLOC fails for t_val[]");
@@ -233,13 +228,13 @@ FormFullA(int n, int *nonz, double **nzval, int **rowind, int **colptr)
 	}
 
     new_nnz = *nonz * 2 - n;
-    if ( !(a_colptr = (int *) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+    if ( !(a_colptr = intMalloc( n+1 ) ) )
 	ABORT("SUPERLU_MALLOC a_colptr[]");
-    if ( !(a_rowind = (int *) SUPERLU_MALLOC( new_nnz * sizeof(int)) ) )
+    if ( !(a_rowind = intMalloc( new_nnz) ) )
 	ABORT("SUPERLU_MALLOC fails for a_rowind[]");
     if ( !(a_val = (double*) SUPERLU_MALLOC( new_nnz * sizeof(double)) ) )
 	ABORT("SUPERLU_MALLOC fails for a_val[]");
-
+    
     a_colptr[0] = 0;
     k = 0;
     for (j = 0; j < n; ++j) {
@@ -249,7 +244,7 @@ FormFullA(int n, int *nonz, double **nzval, int **rowind, int **colptr)
 	  a_val[k] = t_val[i];
 #ifdef DEBUG
 	  if ( fabs(a_val[k]) < 4.047e-300 )
-	      printf("%5d: %e\n", k, a_val[k]);
+	      printf("%5d: %e\n", (int)k, a_val[k]);
 #endif
 	  ++k;
 	}
@@ -258,17 +253,15 @@ FormFullA(int n, int *nonz, double **nzval, int **rowind, int **colptr)
       for (i = al_colptr[j]; i < al_colptr[j+1]; ++i) {
 	a_rowind[k] = al_rowind[i];
 	a_val[k] = al_val[i];
-#ifdef DEBUG
-	if ( fabs(a_val[k]) < 4.047e-300 )
-	    printf("%5d: %e\n", k, a_val[k]);
-#endif
+	  if ( fabs(a_val[k]) < 4.047e-300 )
+	      printf("%5d: %e\n", (int)k, a_val[k]);
 	++k;
       }
-
+      
       a_colptr[j+1] = k;
     }
 
-    printf("FormFullA: new_nnz = %d, k = %d\n", new_nnz, k);
+    printf("FormFullA: new_nnz = %lld\n", (long long) new_nnz);
 
     SUPERLU_FREE(al_val);
     SUPERLU_FREE(al_rowind);
@@ -284,63 +277,43 @@ FormFullA(int n, int *nonz, double **nzval, int **rowind, int **colptr)
     *nonz = new_nnz;
 }
 
-
 void
-dreadrb(int *nrow, int *ncol, int *nonz,
-        double **nzval, int **rowind, int **colptr)
+dreadrb(int *nrow, int *ncol, int_t *nonz,
+        double **nzval, int_t **rowind, int_t **colptr)
 {
 
     register int i, numer_lines = 0;
     int tmp, colnum, colsize, rownum, rowsize, valnum, valsize;
-    char buf[100], type[4], *dummy;
-    int sym, f_count = 0, s_count = 0;
+    char buf[100], type[4];
+    int sym;
     FILE *fp;
 
     fp = stdin;
 
     /* Line 1 */
-    dummy = fgets(buf, 100, fp);
-    if(dummy == NULL) {
-        ABORT("Unable to read from the file");
-    }
+    fgets(buf, 100, fp);
     fputs(buf, stdout);
 
     /* Line 2 */
     for (i=0; i<4; i++) {
-        f_count = fscanf(fp, "%14c", buf); buf[14] = 0;
-        check_read(f_count);
-        s_count = sscanf(buf, "%d", &tmp);
-        check_read(s_count);
+        fscanf(fp, "%14c", buf); buf[14] = 0;
+        sscanf(buf, "%d", &tmp);
         if (i == 3) numer_lines = tmp;
     }
     dDumpLine(fp);
 
     /* Line 3 */
-    f_count = fscanf(fp, "%3c", type);
-    check_read(f_count);
-    f_count = fscanf(fp, "%11c", buf); /* pad */
-    check_read(f_count);
+    fscanf(fp, "%3c", type);
+    fscanf(fp, "%11c", buf); /* pad */
     type[3] = 0;
 #ifdef DEBUG
     printf("Matrix type %s\n", type);
 #endif
 
-    f_count = fscanf(fp, "%14c", buf);
-    check_read(f_count);
-    s_count = sscanf(buf, "%d", nrow);
-    check_read(s_count);
-    f_count = fscanf(fp, "%14c", buf);
-    check_read(f_count);
-    s_count = sscanf(buf, "%d", ncol);
-    check_read(s_count);
-    f_count = fscanf(fp, "%14c", buf);
-    check_read(f_count);
-    s_count = sscanf(buf, "%d", nonz);
-    check_read(s_count);
-    f_count = fscanf(fp, "%14c", buf);
-    check_read(f_count);
-    s_count = sscanf(buf, "%d", &tmp);
-    check_read(s_count);
+    fscanf(fp, "%14c", buf); *nrow = atoi(buf);
+    fscanf(fp, "%14c", buf); *ncol = atoi(buf);
+    fscanf(fp, "%14c", buf); *nonz = atoi(buf);
+    fscanf(fp, "%14c", buf); tmp = atoi(buf);
 
     if (tmp != 0)
         printf("This is not an assembled matrix!\n");
@@ -352,19 +325,16 @@ dreadrb(int *nrow, int *ncol, int *nonz,
     dallocateA(*ncol, *nonz, nzval, rowind, colptr);
 
     /* Line 4: format statement */
-    f_count = fscanf(fp, "%16c", buf);
-    check_read(f_count);
+    fscanf(fp, "%16c", buf);
     dParseIntFormat(buf, &colnum, &colsize);
-    f_count = fscanf(fp, "%16c", buf);
-    check_read(f_count);
+    fscanf(fp, "%16c", buf);
     dParseIntFormat(buf, &rownum, &rowsize);
-    f_count = fscanf(fp, "%20c", buf);
-    check_read(f_count);
+    fscanf(fp, "%20c", buf);
     dParseFloatFormat(buf, &valnum, &valsize);
     dDumpLine(fp);
 
 #ifdef DEBUG
-    printf("%d rows, %d nonzeros\n", *nrow, *nonz);
+    printf("%d rows, %lld nonzeros\n", *nrow, (long long) *nonz);
     printf("colnum %d, colsize %d\n", colnum, colsize);
     printf("rownum %d, rowsize %d\n", rownum, rowsize);
     printf("valnum %d, valsize %d\n", valnum, valsize);

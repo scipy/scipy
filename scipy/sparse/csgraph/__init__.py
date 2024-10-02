@@ -19,6 +19,7 @@ Contents
    floyd_warshall -- use the Floyd-Warshall algorithm for shortest path
    bellman_ford -- use the Bellman-Ford algorithm for shortest path
    johnson -- use Johnson's algorithm for shortest path
+   yen -- use Yen's algorithm for K-shortest paths between to nodes.
    breadth_first_order -- compute a breadth-first order of nodes
    depth_first_order -- compute a depth-first order of nodes
    breadth_first_tree -- construct the breadth-first tree from a given node
@@ -77,6 +78,7 @@ weight 2, and nodes 0 and 2 are connected by an edge of weight 1.
 We can construct the dense, masked, and sparse representations as follows,
 keeping in mind that an undirected graph is represented by a symmetric matrix::
 
+    >>> import numpy as np
     >>> G_dense = np.array([[0, 2, 1],
     ...                     [2, 0, 0],
     ...                     [1, 0, 0]])
@@ -101,6 +103,7 @@ leads to ambiguities: how can non-edges be represented if zero is a meaningful
 value? In this case, either a masked or sparse representation must be used
 to eliminate the ambiguity::
 
+    >>> import numpy as np
     >>> G2_data = np.array([[np.inf, 2,      0     ],
     ...                     [2,      np.inf, np.inf],
     ...                     [0,      np.inf, np.inf]])
@@ -124,6 +127,7 @@ assumed to be directed by default. In a directed graph, traversal from node
 i to node j can be accomplished over the edge G[i, j], but not the edge
 G[j, i].  Consider the following dense graph::
 
+    >>> import numpy as np
     >>> G_dense = np.array([[0, 1, 0],
     ...                     [2, 0, 3],
     ...                     [0, 4, 0]])
@@ -149,7 +153,7 @@ using ``directed=True`` generally leads to more efficient computation.
 The routines in this module accept as input either scipy.sparse representations
 (csr, csc, or lil format), masked representations, or dense representations
 with non-edges indicated by zeros, infinities, and NaN entries.
-"""
+"""  # noqa: E501
 
 __docformat__ = "restructuredtext en"
 
@@ -160,6 +164,7 @@ __all__ = ['connected_components',
            'dijkstra',
            'bellman_ford',
            'johnson',
+           'yen',
            'breadth_first_order',
            'depth_first_order',
            'breadth_first_tree',
@@ -181,7 +186,7 @@ __all__ = ['connected_components',
 
 from ._laplacian import laplacian
 from ._shortest_path import (
-    shortest_path, floyd_warshall, dijkstra, bellman_ford, johnson,
+    shortest_path, floyd_warshall, dijkstra, bellman_ford, johnson, yen,
     NegativeCycleError
 )
 from ._traversal import (

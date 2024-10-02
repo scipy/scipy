@@ -2,8 +2,8 @@
 # cython: boundscheck=False
 # cython: wraparound=False
 # cython: cdivision=True
+# cython: cpow=True
 
-# distutils: language = c++
 
 import numpy as np
 cimport numpy as np
@@ -38,28 +38,28 @@ from libcpp.vector cimport vector
 
 cdef mutex threaded_sum_mutex
 
-def _cy_wrapper_centered_discrepancy(double[:, ::1] sample, bint iterative,
+def _cy_wrapper_centered_discrepancy(const double[:, ::1] sample, bint iterative,
                                      workers):
     return centered_discrepancy(sample, iterative, workers)
 
 
-def _cy_wrapper_wrap_around_discrepancy(double[:, ::1] sample,
+def _cy_wrapper_wrap_around_discrepancy(const double[:, ::1] sample,
                                         bint iterative, workers):
     return wrap_around_discrepancy(sample, iterative, workers)
 
 
-def _cy_wrapper_mixture_discrepancy(double[:, ::1] sample,
+def _cy_wrapper_mixture_discrepancy(const double[:, ::1] sample,
                                     bint iterative, workers):
     return mixture_discrepancy(sample, iterative, workers)
 
 
-def _cy_wrapper_l2_star_discrepancy(double[:, ::1] sample,
+def _cy_wrapper_l2_star_discrepancy(const double[:, ::1] sample,
                                     bint iterative, workers):
     return l2_star_discrepancy(sample, iterative, workers)
 
 
-cdef double centered_discrepancy(double[:, ::1] sample_view,
-                                 bint iterative, unsigned int workers) nogil:
+cdef double centered_discrepancy(const double[:, ::1] sample_view,
+                                 bint iterative, unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
@@ -85,8 +85,8 @@ cdef double centered_discrepancy(double[:, ::1] sample_view,
             + 1.0 / (n ** 2) * disc2)
 
 
-cdef double centered_discrepancy_loop(double[:, ::1] sample_view,
-                                      Py_ssize_t istart, Py_ssize_t istop) nogil:
+cdef double centered_discrepancy_loop(const double[:, ::1] sample_view,
+                                      Py_ssize_t istart, Py_ssize_t istop) noexcept nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -106,13 +106,12 @@ cdef double centered_discrepancy_loop(double[:, ::1] sample_view,
     return disc2
 
 
-cdef double wrap_around_discrepancy(double[:, ::1] sample_view,
-                                    bint iterative, unsigned int workers) nogil:
+cdef double wrap_around_discrepancy(const double[:, ::1] sample_view,
+                                    bint iterative, unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
-        double x_kikj, prod = 1, disc
+        double disc
 
     disc = threaded_loops(wrap_around_loop, sample_view,
                           workers)
@@ -123,8 +122,8 @@ cdef double wrap_around_discrepancy(double[:, ::1] sample_view,
     return - (4.0 / 3.0) ** d + 1.0 / (n ** 2) * disc
 
 
-cdef double wrap_around_loop(double[:, ::1] sample_view,
-                             Py_ssize_t istart, Py_ssize_t istop) nogil:
+cdef double wrap_around_loop(const double[:, ::1] sample_view,
+                             Py_ssize_t istart, Py_ssize_t istop) noexcept nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -141,12 +140,12 @@ cdef double wrap_around_loop(double[:, ::1] sample_view,
     return disc
 
 
-cdef double mixture_discrepancy(double[:, ::1] sample_view,
-                                bint iterative, unsigned int workers) nogil:
+cdef double mixture_discrepancy(const double[:, ::1] sample_view,
+                                bint iterative, unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
+        Py_ssize_t i = 0, j = 0
         double prod = 1, disc = 0, disc1 = 0
 
     for i in range(n):
@@ -170,8 +169,8 @@ cdef double mixture_discrepancy(double[:, ::1] sample_view,
     return disc - disc1 + disc2
 
 
-cdef double mixture_loop(double[:, ::1] sample_view, Py_ssize_t istart,
-                         Py_ssize_t istop) nogil:
+cdef double mixture_loop(const double[:, ::1] sample_view, Py_ssize_t istart,
+                         Py_ssize_t istop) noexcept nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -193,12 +192,12 @@ cdef double mixture_loop(double[:, ::1] sample_view, Py_ssize_t istart,
     return disc2
 
 
-cdef double l2_star_discrepancy(double[:, ::1] sample_view,
-                                bint iterative, unsigned int workers) nogil:
+cdef double l2_star_discrepancy(const double[:, ::1] sample_view,
+                                bint iterative, unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
+        Py_ssize_t i = 0, j = 0
         double prod = 1, disc1 = 0
 
     for i in range(n):
@@ -219,8 +218,8 @@ cdef double l2_star_discrepancy(double[:, ::1] sample_view,
     )
 
 
-cdef double l2_star_loop(double[:, ::1] sample_view, Py_ssize_t istart,
-                         Py_ssize_t istop) nogil:
+cdef double l2_star_loop(const double[:, ::1] sample_view, Py_ssize_t istart,
+                         Py_ssize_t istop) noexcept nogil:
 
     cdef:
         Py_ssize_t i, j, k
@@ -241,20 +240,20 @@ cdef double l2_star_loop(double[:, ::1] sample_view, Py_ssize_t istart,
     return disc2
 
 
-def _cy_wrapper_update_discrepancy(double[::1] x_new_view,
-                                   double[:, ::1] sample_view,
+def _cy_wrapper_update_discrepancy(const double[::1] x_new_view,
+                                   const double[:, ::1] sample_view,
                                    double initial_disc):
     return c_update_discrepancy(x_new_view, sample_view, initial_disc)
 
 
-cdef double c_update_discrepancy(double[::1] x_new_view,
-                                 double[:, ::1] sample_view,
-                                 double initial_disc):
+cdef double c_update_discrepancy(const double[::1] x_new_view,
+                                 const double[:, ::1] sample_view,
+                                 double initial_disc) noexcept:
     cdef:
         Py_ssize_t n = sample_view.shape[0] + 1
         Py_ssize_t d = sample_view.shape[1]
-        Py_ssize_t i = 0, j = 0, k = 0
-        double prod = 1, tmp_sum= 0
+        Py_ssize_t i = 0, j = 0
+        double prod = 1
         double  disc1 = 0, disc2 = 0, disc3 = 0
         double[::1] abs_ = np.empty(d, dtype=np.float64)
 
@@ -290,13 +289,13 @@ cdef double c_update_discrepancy(double[::1] x_new_view,
     return initial_disc + disc1 + disc2 + disc3
 
 
-ctypedef double (*func_type)(double[:, ::1], Py_ssize_t,
-                             Py_ssize_t) nogil
+ctypedef double (*func_type)(const double[:, ::1], Py_ssize_t,
+                             Py_ssize_t) noexcept nogil
 
 
 cdef double threaded_loops(func_type loop_func,
-                           double[:, ::1] sample_view,
-                           unsigned int workers) nogil:
+                           const double[:, ::1] sample_view,
+                           unsigned int workers) noexcept nogil:
     cdef:
         Py_ssize_t n = sample_view.shape[0]
         double disc2 = 0
@@ -326,10 +325,10 @@ cdef double threaded_loops(func_type loop_func,
 
 cdef void one_thread_loop(func_type loop_func,
                           double& disc,
-                          double[:, ::1] sample_view,
+                          const double[:, ::1] sample_view,
                           Py_ssize_t istart,
                           Py_ssize_t istop,
-                          _) nogil:
+                          _) noexcept nogil:
 
     cdef double tmp = loop_func(sample_view, istart, istop)
 
@@ -394,7 +393,7 @@ cdef _cy_van_der_corput_threaded_loop(Py_ssize_t istart,
 def _cy_van_der_corput_scrambled(Py_ssize_t n,
                                  long base,
                                  long start_index,
-                                 long[:,::1] permutations,
+                                 const np.int64_t[:,::1] permutations,
                                  unsigned int workers):
     sequence = np.zeros(n)
 
@@ -428,7 +427,7 @@ cdef _cy_van_der_corput_scrambled_loop(Py_ssize_t istart,
                                        Py_ssize_t istop,
                                        long base,
                                        long start_index,
-                                       long[:,::1] permutations,
+                                       const np.int64_t[:,::1] permutations,
                                        double[::1] sequence_view):
 
     cdef:

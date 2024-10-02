@@ -1,5 +1,6 @@
 from collections import namedtuple
-from dataclasses import make_dataclass
+from dataclasses import dataclass
+from math import comb
 import numpy as np
 import warnings
 from itertools import combinations
@@ -7,22 +8,25 @@ import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
-from ._continuous_distns import chi2, norm
+from ._continuous_distns import norm
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
-from ._hypotests_pythran import _a_ij_Aij_Dij2
-from ._hypotests_pythran import (
+from ._stats_pythran import _a_ij_Aij_Dij2
+from ._stats_pythran import (
     _concordant_pairs as _P, _discordant_pairs as _Q
 )
+from ._axis_nan_policy import _axis_nan_policy_factory
+from scipy.stats import _stats_py
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
-           'tukey_hsd']
+           'tukey_hsd', 'poisson_means_test']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
 
@@ -33,7 +37,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     ----------
     x, y : array-like
         The two samples of observations to be tested. Input must not have more
-        than one dimension. Samples can have different lengths.
+        than one dimension. Samples can have different lengths, but both
+        must have at least five observations.
     t : array-like, optional
         The points (t1, ..., tn) where the empirical characteristic function is
         to be evaluated. It should be positive distinct numbers. The default
@@ -89,16 +94,13 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
     """
-    x, y, t = np.asarray(x), np.asarray(y), np.asarray(t)
+    # x and y are converted to arrays by the decorator
+    t = np.asarray(t)
     # check if x and y are valid inputs
-    if x.ndim > 1:
-        raise ValueError('x must be 1d, but x.ndim equals {}.'.format(x.ndim))
-    if y.ndim > 1:
-        raise ValueError('y must be 1d, but y.ndim equals {}.'.format(y.ndim))
     nx, ny = len(x), len(y)
     if (nx < 5) or (ny < 5):
         raise ValueError('x and y should have at least 5 elements, but len(x) '
-                         '= {} and len(y) = {}.'.format(nx, ny))
+                         f'= {nx} and len(y) = {ny}.')
     if not np.isfinite(x).all():
         raise ValueError('x must not contain nonfinite values.')
     if not np.isfinite(y).all():
@@ -107,7 +109,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
 
     # check if t is valid
     if t.ndim > 1:
-        raise ValueError('t must be 1d, but t.ndim equals {}.'.format(t.ndim))
+        raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
     if np.less_equal(t, 0).any():
         raise ValueError('t must contain positive elements only.')
 
@@ -128,7 +130,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     if r < 2*len(t):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
-                      'test might not be consistent.')  # see p. 183 in [1]_
+                      'test might not be consistent.', # see p. 183 in [1]_
+                      stacklevel=2)
 
     # compute test statistic w distributed asympt. as chisquare with df=r
     g_diff = np.mean(gx, axis=0) - np.mean(gy, axis=0)
@@ -139,9 +142,215 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
         corr = 1.0/(1.0 + n**(-0.45) + 10.1*(nx**(-1.7) + ny**(-1.7)))
         w = corr * w
 
-    p = chi2.sf(w, r)
+    chi2 = _stats_py._SimpleChi2(r)
+    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
 
     return Epps_Singleton_2sampResult(w, p)
+
+
+def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
+    r"""
+    Performs the Poisson means test, AKA the "E-test".
+
+    This is a test of the null hypothesis that the difference between means of
+    two Poisson distributions is `diff`. The samples are provided as the
+    number of events `k1` and `k2` observed within measurement intervals
+    (e.g. of time, space, number of observations) of sizes `n1` and `n2`.
+
+    Parameters
+    ----------
+    k1 : int
+        Number of events observed from distribution 1.
+    n1: float
+        Size of sample from distribution 1.
+    k2 : int
+        Number of events observed from distribution 2.
+    n2 : float
+        Size of sample from distribution 2.
+    diff : float, default=0
+        The hypothesized difference in means between the distributions
+        underlying the samples.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+          * 'two-sided': the difference between distribution means is not
+            equal to `diff`
+          * 'less': the difference between distribution means is less than
+            `diff`
+          * 'greater': the difference between distribution means is greater
+            than `diff`
+
+    Returns
+    -------
+    statistic : float
+        The test statistic (see [1]_ equation 3.3).
+    pvalue : float
+        The probability of achieving such an extreme value of the test
+        statistic under the null hypothesis.
+
+    Notes
+    -----
+
+    Let:
+
+    .. math:: X_1 \sim \mbox{Poisson}(\mathtt{n1}\lambda_1)
+
+    be a random variable independent of
+
+    .. math:: X_2  \sim \mbox{Poisson}(\mathtt{n2}\lambda_2)
+
+    and let ``k1`` and ``k2`` be the observed values of :math:`X_1`
+    and :math:`X_2`, respectively. Then `poisson_means_test` uses the number
+    of observed events ``k1`` and ``k2`` from samples of size ``n1`` and
+    ``n2``, respectively, to test the null hypothesis that
+
+    .. math::
+       H_0: \lambda_1 - \lambda_2 = \mathtt{diff}
+
+    A benefit of the E-test is that it has good power for small sample sizes,
+    which can reduce sampling costs [1]_. It has been evaluated and determined
+    to be more powerful than the comparable C-test, sometimes referred to as
+    the Poisson exact test.
+
+    References
+    ----------
+    .. [1]  Krishnamoorthy, K., & Thomson, J. (2004). A more powerful test for
+       comparing two Poisson means. Journal of Statistical Planning and
+       Inference, 119(1), 23-35.
+
+    .. [2]  Przyborowski, J., & Wilenski, H. (1940). Homogeneity of results in
+       testing samples from Poisson series: With an application to testing
+       clover seed for dodder. Biometrika, 31(3/4), 313-323.
+
+    Examples
+    --------
+
+    Suppose that a gardener wishes to test the number of dodder (weed) seeds
+    in a sack of clover seeds that they buy from a seed company. It has
+    previously been established that the number of dodder seeds in clover
+    follows the Poisson distribution.
+
+    A 100 gram sample is drawn from the sack before being shipped to the
+    gardener. The sample is analyzed, and it is found to contain no dodder
+    seeds; that is, `k1` is 0. However, upon arrival, the gardener draws
+    another 100 gram sample from the sack. This time, three dodder seeds are
+    found in the sample; that is, `k2` is 3. The gardener would like to
+    know if the difference is significant and not due to chance. The
+    null hypothesis is that the difference between the two samples is merely
+    due to chance, or that :math:`\lambda_1 - \lambda_2 = \mathtt{diff}`
+    where :math:`\mathtt{diff} = 0`. The alternative hypothesis is that the
+    difference is not due to chance, or :math:`\lambda_1 - \lambda_2 \ne 0`.
+    The gardener selects a significance level of 5% to reject the null
+    hypothesis in favor of the alternative [2]_.
+
+    >>> import scipy.stats as stats
+    >>> res = stats.poisson_means_test(0, 100, 3, 100)
+    >>> res.statistic, res.pvalue
+    (-1.7320508075688772, 0.08837900929018157)
+
+    The p-value is .088, indicating a near 9% chance of observing a value of
+    the test statistic under the null hypothesis. This exceeds 5%, so the
+    gardener does not reject the null hypothesis as the difference cannot be
+    regarded as significant at this level.
+    """
+
+    _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative)
+
+    # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
+    lmbd_hat2 = ((k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2))
+
+    # "\hat{\lambda_{2k}} may be less than or equal to zero ... and in this
+    # case the null hypothesis cannot be rejected ... [and] it is not necessary
+    # to compute the p-value". [1] page 26 below eq. (3.6).
+    if lmbd_hat2 <= 0:
+        return _stats_py.SignificanceResult(0, 1)
+
+    # The unbiased variance estimate [1] (3.2)
+    var = k1 / (n1 ** 2) + k2 / (n2 ** 2)
+
+    # The _observed_ pivot statistic from the input. It follows the
+    # unnumbered equation following equation (3.3) This is used later in
+    # comparison with the computed pivot statistics in an indicator function.
+    t_k1k2 = (k1 / n1 - k2 / n2 - diff) / np.sqrt(var)
+
+    # Equation (3.5) of [1] is lengthy, so it is broken into several parts,
+    # beginning here. Note that the probability mass function of poisson is
+    # exp^(-\mu)*\mu^k/k!, so and this is called with shape \mu, here noted
+    # here as nlmbd_hat*. The strategy for evaluating the double summation in
+    # (3.5) is to create two arrays of the values of the two products inside
+    # the summation and then broadcast them together into a matrix, and then
+    # sum across the entire matrix.
+
+    # Compute constants (as seen in the first and second separated products in
+    # (3.5).). (This is the shape (\mu) parameter of the poisson distribution.)
+    nlmbd_hat1 = n1 * (lmbd_hat2 + diff)
+    nlmbd_hat2 = n2 * lmbd_hat2
+
+    # Determine summation bounds for tail ends of distribution rather than
+    # summing to infinity. `x1*` is for the outer sum and `x2*` is the inner
+    # sum.
+    x1_lb, x1_ub = distributions.poisson.ppf([1e-10, 1 - 1e-16], nlmbd_hat1)
+    x2_lb, x2_ub = distributions.poisson.ppf([1e-10, 1 - 1e-16], nlmbd_hat2)
+
+    # Construct arrays to function as the x_1 and x_2 counters on the summation
+    # in (3.5). `x1` is in columns and `x2` is in rows to allow for
+    # broadcasting.
+    x1 = np.arange(x1_lb, x1_ub + 1)
+    x2 = np.arange(x2_lb, x2_ub + 1)[:, None]
+
+    # These are the two products in equation (3.5) with `prob_x1` being the
+    # first (left side) and `prob_x2` being the second (right side). (To
+    # make as clear as possible: the 1st contains a "+ d" term, the 2nd does
+    # not.)
+    prob_x1 = distributions.poisson.pmf(x1, nlmbd_hat1)
+    prob_x2 = distributions.poisson.pmf(x2, nlmbd_hat2)
+
+    # compute constants for use in the "pivot statistic" per the
+    # unnumbered equation following (3.3).
+    lmbd_x1 = x1 / n1
+    lmbd_x2 = x2 / n2
+    lmbds_diff = lmbd_x1 - lmbd_x2 - diff
+    var_x1x2 = lmbd_x1 / n1 + lmbd_x2 / n2
+
+    # This is the 'pivot statistic' for use in the indicator of the summation
+    # (left side of "I[.]").
+    with np.errstate(invalid='ignore', divide='ignore'):
+        t_x1x2 = lmbds_diff / np.sqrt(var_x1x2)
+
+    # `[indicator]` implements the "I[.] ... the indicator function" per
+    # the paragraph following equation (3.5).
+    if alternative == 'two-sided':
+        indicator = np.abs(t_x1x2) >= np.abs(t_k1k2)
+    elif alternative == 'less':
+        indicator = t_x1x2 <= t_k1k2
+    else:
+        indicator = t_x1x2 >= t_k1k2
+
+    # Multiply all combinations of the products together, exclude terms
+    # based on the `indicator` and then sum. (3.5)
+    pvalue = np.sum((prob_x1 * prob_x2)[indicator])
+    return _stats_py.SignificanceResult(t_k1k2, pvalue)
+
+
+def _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative):
+    # """check for valid types and values of input to `poisson_mean_test`."""
+    if k1 != int(k1) or k2 != int(k2):
+        raise TypeError('`k1` and `k2` must be integers.')
+
+    count_err = '`k1` and `k2` must be greater than or equal to 0.'
+    if k1 < 0 or k2 < 0:
+        raise ValueError(count_err)
+
+    if n1 <= 0 or n2 <= 0:
+        raise ValueError('`n1` and `n2` must be greater than 0.')
+
+    if diff < 0:
+        raise ValueError('diff must be greater than or equal to 0.')
+
+    alternatives = {'two-sided', 'less', 'greater'}
+    if alternative.lower() not in alternatives:
+        raise ValueError(f"Alternative must be one of '{alternatives}'.")
 
 
 class CramerVonMisesResult:
@@ -273,6 +482,12 @@ def _cdf_cvm(x, n=None):
     return y
 
 
+def _cvm_result_to_tuple(res):
+    return res.statistic, res.pvalue
+
+
+@_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
+                          result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=()):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
 
@@ -287,6 +502,7 @@ def cramervonmises(rvs, cdf, args=()):
     ----------
     rvs : array_like
         A 1-D array of observed values of the random variables :math:`X_i`.
+        The sample must contain at least two observations.
     cdf : str or callable
         The cumulative distribution function :math:`F` to test the
         observations against. If a string, it should be the name of a
@@ -330,16 +546,17 @@ def cramervonmises(rvs, cdf, args=()):
 
     Suppose we wish to test whether data generated by ``scipy.stats.norm.rvs``
     were, in fact, drawn from the standard normal distribution. We choose a
-    significance level of alpha=0.05.
+    significance level of ``alpha=0.05``.
 
+    >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(165417232101553420507139617764912913465)
     >>> x = stats.norm.rvs(size=500, random_state=rng)
     >>> res = stats.cramervonmises(x, 'norm')
     >>> res.statistic, res.pvalue
-    (0.49121480855028343, 0.04189256516661377)
+    (0.1072085112565724, 0.5508482238203407)
 
-    The p-value 0.79 exceeds our chosen significance level, so we do not
+    The p-value exceeds our chosen significance level, so we do not
     reject the null hypothesis that the observed sample is drawn from the
     standard normal distribution.
 
@@ -349,7 +566,7 @@ def cramervonmises(rvs, cdf, args=()):
     >>> y = x + 2.1
     >>> res = stats.cramervonmises(y, 'norm', args=(2,))
     >>> res.statistic, res.pvalue
-    (0.07400330012187435, 0.7274595666160468)
+    (0.8364446265294695, 0.00596286797008283)
 
     Here we have used the `args` keyword to specify the mean (``loc``)
     of the normal distribution to test the data against. This is equivalent
@@ -359,11 +576,11 @@ def cramervonmises(rvs, cdf, args=()):
     >>> frozen_dist = stats.norm(loc=2)
     >>> res = stats.cramervonmises(y, frozen_dist.cdf)
     >>> res.statistic, res.pvalue
-    (0.07400330012187435, 0.7274595666160468)
+    (0.8364446265294695, 0.00596286797008283)
 
     In either case, we would reject the null hypothesis that the observed
     sample is drawn from a normal distribution with a mean of 2 (and default
-    variance of 1) because the p-value 0.04 is less than our chosen
+    variance of 1) because the p-value is less than our chosen
     significance level.
 
     """
@@ -374,8 +591,6 @@ def cramervonmises(rvs, cdf, args=()):
 
     if vals.size <= 1:
         raise ValueError('The sample must contain at least two observations.')
-    if vals.ndim > 1:
-        raise ValueError('The sample must be one-dimensional.')
 
     n = len(vals)
     cdfvals = cdf(vals, *args)
@@ -384,7 +599,7 @@ def cramervonmises(rvs, cdf, args=()):
     w = 1/(12*n) + np.sum((u - cdfvals)**2)
 
     # avoid small negative values that can occur due to the approximation
-    p = max(0, 1. - _cdf_cvm(w, n))
+    p = np.clip(1. - _cdf_cvm(w, n), 0., None)
 
     return CramerVonMisesResult(statistic=w, pvalue=p)
 
@@ -396,10 +611,10 @@ def _get_wilcoxon_distr(n):
     Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    c = np.ones(1, dtype=np.double)
+    c = np.ones(1, dtype=np.float64)
     for k in range(1, n + 1):
         prev_c = c
-        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.float64)
         m = len(prev_c)
         c[:m] = prev_c * 0.5
         c[-m:] += prev_c * 0.5
@@ -481,13 +696,17 @@ def _somers_d(A, alternative='two-sided'):
     with np.errstate(divide='ignore'):
         Z = (PA - QA)/(4*(S))**0.5
 
-    _, p = scipy.stats._stats_py._normtest_finish(Z, alternative)
+    norm = _stats_py._SimpleNormal()
+    p = _stats_py._get_pvalue(Z, norm, alternative, xp=np)
 
     return d, p
 
 
-SomersDResult = make_dataclass("SomersDResult",
-                               ("statistic", "pvalue", "table"))
+@dataclass
+class SomersDResult:
+    statistic: float
+    pvalue: float
+    table: np.ndarray
 
 
 def somersd(x, y=None, alternative='two-sided'):
@@ -540,7 +759,7 @@ def somersd(x, y=None, alternative='two-sided'):
     res : SomersDResult
         A `SomersDResult` object with the following fields:
 
-            correlation : float
+            statistic : float
                The Somers' :math:`D` statistic.
             pvalue : float
                The p-value for a hypothesis test whose null
@@ -663,8 +882,13 @@ def somersd(x, y=None, alternative='two-sided'):
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
-    d, p = _somers_d(table, alternative)
-    return SomersDResult(d, p, table)
+    # The table type is converted to a float to avoid an integer overflow
+    d, p = _somers_d(table.astype(float), alternative)
+
+    # add alias for consistency with other correlation functions
+    res = SomersDResult(d, p, table)
+    res.correlation = d
+    return res
 
 
 # This could be combined with `_all_partitions` in `_resampling.py`
@@ -690,9 +914,10 @@ def _compute_log_combinations(n):
     return gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
-BarnardExactResult = make_dataclass(
-    "BarnardExactResult", [("statistic", float), ("pvalue", float)]
-)
+@dataclass
+class BarnardExactResult:
+    statistic: float
+    pvalue: float
 
 
 def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
@@ -862,9 +1087,9 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     >>> import scipy.stats as stats
     >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
     >>> res.statistic
-    -1.894...
+    -1.894
     >>> res.pvalue
-    0.03407...
+    0.03407
 
     Under the null hypothesis that the vaccine will not lower the chance of
     becoming infected, the probability of obtaining test results at least as
@@ -876,7 +1101,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     >>> _, pvalue = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
     >>> pvalue
-    0.0640...
+    0.0640
 
     With the same threshold significance of 5%, we would not have been able
     to reject the null hypothesis in favor of the alternative. As stated in
@@ -960,9 +1185,10 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     return BarnardExactResult(wald_stat_obs, p_value)
 
 
-BoschlooExactResult = make_dataclass(
-    "BoschlooExactResult", [("statistic", float), ("pvalue", float)]
-)
+@dataclass
+class BoschlooExactResult:
+    statistic: float
+    pvalue: float
 
 
 def boschloo_exact(table, alternative="two-sided", n=32):
@@ -1085,9 +1311,9 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     >>> import scipy.stats as stats
     >>> res = stats.boschloo_exact([[74, 31], [43, 32]], alternative="greater")
     >>> res.statistic
-    0.0483...
+    0.0483
     >>> res.pvalue
-    0.0355...
+    0.0355
 
     Under the null hypothesis that scientists are happier in their work than
     college professors, the probability of obtaining test
@@ -1198,7 +1424,7 @@ def _get_binomial_log_p_value_with_nuisance_param(
     Returns
     -------
     p_value : float
-        Return the maximum p-value considering every nuisance paramater
+        Return the maximum p-value considering every nuisance parameter
         between 0 and 1
 
     Notes
@@ -1265,32 +1491,61 @@ def _get_binomial_log_p_value_with_nuisance_param(
     return -log_pvalue
 
 
-def _pval_cvm_2samp_exact(s, nx, ny):
+def _pval_cvm_2samp_exact(s, m, n):
     """
     Compute the exact p-value of the Cramer-von Mises two-sample test
-    for a given value s (float) of the test statistic by enumerating
-    all possible combinations. nx and ny are the sizes of the samples.
+    for a given value s of the test statistic.
+    m and n are the sizes of the samples.
+
+    [1] Y. Xiao, A. Gordon, and A. Yakovlev, "A C++ Program for
+        the Cramér-Von Mises Two-Sample Test", J. Stat. Soft.,
+        vol. 17, no. 8, pp. 1-15, Dec. 2006.
+    [2] T. W. Anderson "On the Distribution of the Two-Sample Cramer-von Mises
+        Criterion," The Annals of Mathematical Statistics, Ann. Math. Statist.
+        33(3), 1148-1159, (September, 1962)
     """
-    rangex = np.arange(nx)
-    rangey = np.arange(ny)
 
-    us = []
+    # [1, p. 3]
+    lcm = np.lcm(m, n)
+    # [1, p. 4], below eq. 3
+    a = lcm // m
+    b = lcm // n
+    # Combine Eq. 9 in [2] with Eq. 2 in [1] and solve for $\zeta$
+    # Hint: `s` is $U$ in [2], and $T_2$ in [1] is $T$ in [2]
+    mn = m * n
+    zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
 
-    # x and y are all possible partitions of ranks from 0 to nx + ny - 1
-    # into two sets of length nx and ny
-    # Here, ranks are from 0 to nx + ny - 1 instead of 1 to nx + ny, but
-    # this does not change the value of the statistic.
-    for x, y in _all_partitions(nx, ny):
-        # compute the statistic
-        u = nx * np.sum((x - rangex)**2)
-        u += ny * np.sum((y - rangey)**2)
-        us.append(u)
+    # bound maximum value that may appear in `gs` (remember both rows!)
+    zeta_bound = lcm**2 * (m + n)  # bound elements in row 1
+    combinations = comb(m + n, m)  # sum of row 2
+    max_gs = max(zeta_bound, combinations)
+    dtype = np.min_scalar_type(max_gs)
 
-    # compute the values of u and the frequencies
-    u, cnt = np.unique(us, return_counts=True)
-    return np.sum(cnt[u >= s]) / np.sum(cnt)
+    # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
+    gs = ([np.array([[0], [1]], dtype=dtype)]
+          + [np.empty((2, 0), dtype=dtype) for _ in range(m)])
+    for u in range(n + 1):
+        next_gs = []
+        tmp = np.empty((2, 0), dtype=dtype)
+        for v, g in enumerate(gs):
+            # Calculate g recursively with eq. 11 in [1]. Even though it
+            # doesn't look like it, this also does 12/13 (all of Algorithm 1).
+            vi, i0, i1 = np.intersect1d(tmp[0], g[0], return_indices=True)
+            tmp = np.concatenate([
+                np.stack([vi, tmp[1, i0] + g[1, i1]]),
+                np.delete(tmp, i0, 1),
+                np.delete(g, i1, 1)
+            ], 1)
+            res = (a * v - b * u) ** 2
+            tmp[0] += res.astype(dtype)
+            next_gs.append(tmp)
+        gs = next_gs
+    value, freq = gs[m]
+    return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
+@_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
+                          result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
 
@@ -1303,8 +1558,10 @@ def cramervonmises_2samp(x, y, method='auto'):
     ----------
     x : array_like
         A 1-D array of observed values of the random variables :math:`X_i`.
+        Must contain at least two observations.
     y : array_like
         A 1-D array of observed values of the random variables :math:`Y_i`.
+        Must contain at least two observations.
     method : {'auto', 'asymptotic', 'exact'}, optional
         The method used to compute the p-value, see Notes for details.
         The default is 'auto'.
@@ -1333,10 +1590,8 @@ def cramervonmises_2samp(x, y, method='auto'):
     - ``exact``: The exact p-value is computed by enumerating all
       possible combinations of the test statistic, see [2]_.
 
-    The exact calculation will be very slow even for moderate sample
-    sizes as the number of combinations increases rapidly with the
-    size of the samples. If ``method=='auto'``, the exact approach
-    is used if both samples contain less than 10 observations,
+    If ``method='auto'``, the exact approach is used
+    if both samples contain equal to or less than 20 observations,
     otherwise the asymptotic distribution is used.
 
     If the underlying distribution is not continuous, the p-value is likely to
@@ -1358,6 +1613,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     ``scipy.stats.norm.rvs`` have the same distribution. We choose a
     significance level of alpha=0.05.
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=100, random_state=rng)
@@ -1394,8 +1650,6 @@ def cramervonmises_2samp(x, y, method='auto'):
 
     if xa.size <= 1 or ya.size <= 1:
         raise ValueError('x and y must contain at least two observations.')
-    if xa.ndim > 1 or ya.ndim > 1:
-        raise ValueError('The samples must be one-dimensional.')
     if method not in ['auto', 'exact', 'asymptotic']:
         raise ValueError('method must be either auto, exact or asymptotic.')
 
@@ -1403,7 +1657,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     ny = len(ya)
 
     if method == 'auto':
-        if max(nx, ny) > 10:
+        if max(nx, ny) > 20:
             method = 'asymptotic'
         else:
             method = 'exact'
@@ -1627,6 +1881,10 @@ def tukey_hsd(*args):
         confidence_interval(confidence_level=0.95):
             Compute the confidence interval for the specified confidence level.
 
+    See Also
+    --------
+    dunnett : performs comparison of means against a control group.
+
     Notes
     -----
     The use of this test relies on several assumptions.
@@ -1669,6 +1927,7 @@ def tukey_hsd(*args):
     Here are some data comparing the time to relief of three brands of
     headache medicine, reported in minutes. Data adapted from [3]_.
 
+    >>> import numpy as np
     >>> from scipy.stats import tukey_hsd
     >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
     >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]

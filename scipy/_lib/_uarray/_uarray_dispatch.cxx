@@ -1,7 +1,7 @@
+#include <Python.h>
+
 #include "small_dynamic_array.h"
 #include "vectorcall.h"
-
-#include <Python.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -1775,13 +1775,8 @@ PyModuleDef uarray_module = {
 
 } // namespace
 
-#if defined(WIN32) || defined(_WIN32)
-#  define MODULE_EXPORT __declspec(dllexport)
-#else
-#  define MODULE_EXPORT __attribute__((visibility("default")))
-#endif
 
-extern "C" MODULE_EXPORT PyObject * PyInit__uarray(void) {
+PyMODINIT_FUNC PyInit__uarray(void) {
 
   auto m = py_ref::steal(PyModule_Create(&uarray_module));
   if (!m)
@@ -1822,6 +1817,10 @@ extern "C" MODULE_EXPORT PyObject * PyInit__uarray(void) {
 
   if (!identifiers.init())
     return nullptr;
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m.get(), Py_MOD_GIL_NOT_USED);
+#endif
 
   return m.release();
 }

@@ -16,12 +16,14 @@
 #
 #    return res
 
+from itertools import product
+
 import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
 import scipy.special as sc
-from scipy.special import rgamma, wright_bessel
+from scipy.special import log_wright_bessel, loggamma, rgamma, wright_bessel
 
 
 @pytest.mark.parametrize('a', [0, 1e-6, 0.1, 0.5, 1, 10])
@@ -29,6 +31,7 @@ from scipy.special import rgamma, wright_bessel
 def test_wright_bessel_zero(a, b):
     """Test at x = 0."""
     assert_equal(wright_bessel(a, b, 0.), rgamma(b))
+    assert_allclose(log_wright_bessel(a, b, 0.), -loggamma(b))
 
 
 @pytest.mark.parametrize('b', [0, 1e-6, 0.1, 0.5, 1, 10])
@@ -113,3 +116,90 @@ def test_wright_data_grid_less_accurate(a, b, x, phi, accuracy):
         assert np.isnan(wright_bessel(a, b, x))
     else:
         assert_allclose(wright_bessel(a, b, x), phi, rtol=accuracy)
+
+
+@pytest.mark.parametrize(
+    'a, b, x',
+    list(
+        product([0, 0.1, 0.5, 1.5, 5, 10], [1, 2], [1e-3, 1, 5, 10])
+    )
+)
+def test_log_wright_bessel_same_as_wright_bessel(a, b, x):
+    """Test that log_wright_bessel equals log of wright_bessel."""
+    assert_allclose(
+        log_wright_bessel(a, b, x),
+        np.log(wright_bessel(a, b, x)),
+        rtol=1e-8,
+    )
+
+
+# Computed with, see also mp_wright_bessel from wright_bessel_data.py:
+#
+# from functools import lru_cache
+# import mpmath as mp
+#
+# @lru_cache(maxsize=1_000_000)
+# def rgamma_cached(x, dps):
+#     with mp.workdps(dps):
+#         return mp.rgamma(x)
+#
+# def mp_log_wright_bessel(a, b, x, dps=100, maxterms=10_000, method="d"):
+#     """Compute log of Wright's generalized Bessel function as Series with mpmath."""
+#     with mp.workdps(dps):
+#         a, b, x = mp.mpf(a), mp.mpf(b), mp.mpf(x)
+#         res = mp.nsum(lambda k: x**k / mp.fac(k)
+#                       * rgamma_cached(a * k + b, dps=dps),
+#                       [0, mp.inf],
+#                       tol=dps, method=method, steps=[maxterms]
+#                       )
+#         return mp.log(res)
+#
+# Sometimes, one needs to set maxterms as high as 1_00_000 to get accurate results for
+# phi.
+# At the end of the day, we can only hope that results are correct for very large x,
+# e.g. by the asymptotic series, as there is no way to produce those in "exact"
+# arithmetic.
+# Note: accuracy = np.nan means log_wright_bessel returns nan.
+@pytest.mark.parametrize(
+    'a, b, x, phi, accuracy',
+    [
+        (0, 0, 0, -np.inf, 1e-11),
+        (0, 0, 1, -np.inf, 1e-11),
+        (0, 1, 1.23, 1.23, 1e-11),
+        (0, 1, 1e50, 1e50, 1e-11),
+        (1e-5, 0, 700, 695.0421608273609, 1e-11),
+        (1e-5, 0, 1e3, 995.40052566540066, 1e-11),
+        (1e-5, 100, 1e3, 640.8197935670078, 1e-11),
+        (1e-3, 0, 1e4, 9987.2229532297262, 1e-11),
+        (1e-3, 0, 1e5, 99641.920687169507, 1e-11),
+        (1e-3, 0, 1e6, 994118.55560054416, 1e-11),  # maxterms=1_000_000
+        (1e-3, 10, 1e5, 99595.47710802537, 1e-11),
+        (1e-3, 50, 1e5, 99401.240922855647, 1e-3),
+        (1e-3, 100, 1e5, 99143.465191656527, np.nan),
+        (0.5, 0, 1e5, 4074.1112442197941, 1e-11),
+        (0.5, 0, 1e7, 87724.552120038896, 1e-11),
+        (0.5, 100, 1e5, 3350.3928746306163, np.nan),
+        (0.5, 100, 1e7, 86696.109975301719, 1e-11),
+        (1, 0, 1e5, 634.06765787997266, 1e-11),
+        (1, 0, 1e8, 20003.339639312035, 1e-11),
+        (1.5, 0, 1e5, 197.01777556071194, 1e-11),
+        (1.5, 0, 1e8, 3108.987414395706, 1e-11),
+        (1.5, 100, 1e8, 2354.8915946283275, np.nan),
+        (5, 0, 1e5, 9.8980480013203547, 1e-11),
+        (5, 0, 1e8, 33.642337258687465, 1e-11),
+        (5, 0, 1e12, 157.53704288117429, 1e-11),
+        (5, 100, 1e5, -359.13419630792148, 1e-11),
+        (5, 100, 1e12, -337.07722086995229, 1e-4),
+        (5, 100, 1e20, 2588.2471229986845, 2e-6),
+        (100, 0, 1e5, -347.62127990460517, 1e-11),
+        (100, 0, 1e20, -313.08250350969449, 1e-11),
+        (100, 100, 1e5, -359.1342053695754, 1e-11),
+        (100, 100, 1e20, -359.1342053695754, 1e-11),
+    ]
+)
+def test_log_wright_bessel(a, b, x, phi, accuracy):
+    """Test for log_wright_bessel, in particular for large x."""
+    if np.isnan(accuracy):
+        assert np.isnan(log_wright_bessel(a, b, x))
+    else:
+        assert_allclose(log_wright_bessel(a, b, x), phi, rtol=accuracy)

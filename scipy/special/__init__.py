@@ -5,8 +5,13 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
-Nearly all of the functions below are universal functions and follow
-broadcasting and automatic array-looping rules.
+Almost all of the functions below accept NumPy arrays as input
+arguments as well as single numbers. This means they follow
+broadcasting and automatic array-looping rules. Technically,
+they are `NumPy universal functions
+<https://numpy.org/doc/stable/user/basics.ufuncs.html#ufuncs-basics>`_.
+Functions which do not accept NumPy arrays are marked by a warning
+in the section description.
 
 .. seealso::
 
@@ -71,31 +76,33 @@ Bessel functions
 .. autosummary::
    :toctree: generated/
 
-   jv            -- Bessel function of the first kind of real order and \
-                    complex argument.
-   jve           -- Exponentially scaled Bessel function of order `v`.
-   yn            -- Bessel function of the second kind of integer order and \
-                    real argument.
-   yv            -- Bessel function of the second kind of real order and \
-                    complex argument.
-   yve           -- Exponentially scaled Bessel function of the second kind \
-                    of real order.
-   kn            -- Modified Bessel function of the second kind of integer \
-                    order `n`
-   kv            -- Modified Bessel function of the second kind of real order \
-                    `v`
-   kve           -- Exponentially scaled modified Bessel function of the \
-                    second kind.
-   iv            -- Modified Bessel function of the first kind of real order.
-   ive           -- Exponentially scaled modified Bessel function of the \
-                    first kind.
-   hankel1       -- Hankel function of the first kind.
-   hankel1e      -- Exponentially scaled Hankel function of the first kind.
-   hankel2       -- Hankel function of the second kind.
-   hankel2e      -- Exponentially scaled Hankel function of the second kind.
-   wright_bessel -- Wright's generalized Bessel function.
+   jv                -- Bessel function of the first kind of real order and \
+                        complex argument.
+   jve               -- Exponentially scaled Bessel function of order `v`.
+   yn                -- Bessel function of the second kind of integer order and \
+                        real argument.
+   yv                -- Bessel function of the second kind of real order and \
+                        complex argument.
+   yve               -- Exponentially scaled Bessel function of the second kind \
+                        of real order.
+   kn                -- Modified Bessel function of the second kind of integer \
+                        order `n`
+   kv                -- Modified Bessel function of the second kind of real order \
+                        `v`
+   kve               -- Exponentially scaled modified Bessel function of the \
+                        second kind.
+   iv                -- Modified Bessel function of the first kind of real order.
+   ive               -- Exponentially scaled modified Bessel function of the \
+                        first kind.
+   hankel1           -- Hankel function of the first kind.
+   hankel1e          -- Exponentially scaled Hankel function of the first kind.
+   hankel2           -- Hankel function of the second kind.
+   hankel2e          -- Exponentially scaled Hankel function of the second kind.
+   wright_bessel     -- Wright's generalized Bessel function.
+   log_wright_bessel -- Logarithm of Wright's generalized Bessel function.
 
-The following is not a universal function:
+The following function does not accept NumPy arrays (it is not a
+universal function):
 
 .. autosummary::
    :toctree: generated/
@@ -105,7 +112,8 @@ The following is not a universal function:
 Zeros of Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -178,7 +186,8 @@ Spherical Bessel functions
 Riccati-Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -204,6 +213,9 @@ Raw statistical functions
 
 .. seealso:: :mod:`scipy.stats`: Friendly versions of these functions.
 
+Binomial distribution
+^^^^^^^^^^^^^^^^^^^^^
+
 .. autosummary::
    :toctree: generated/
 
@@ -212,66 +224,172 @@ Raw statistical functions
    bdtri        -- Inverse function to `bdtr` with respect to `p`.
    bdtrik       -- Inverse function to `bdtr` with respect to `k`.
    bdtrin       -- Inverse function to `bdtr` with respect to `n`.
+
+Beta distribution
+^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    btdtr        -- Cumulative distribution function of the beta distribution.
    btdtri       -- The `p`-th quantile of the beta distribution.
    btdtria      -- Inverse of `btdtr` with respect to `a`.
    btdtrib      -- btdtria(a, p, x).
+
+F distribution
+^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    fdtr         -- F cumulative distribution function.
    fdtrc        -- F survival function.
    fdtri        -- The `p`-th quantile of the F-distribution.
    fdtridfd     -- Inverse to `fdtr` vs dfd.
+
+Gamma distribution
+^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    gdtr         -- Gamma distribution cumulative distribution function.
    gdtrc        -- Gamma distribution survival function.
    gdtria       -- Inverse of `gdtr` vs a.
    gdtrib       -- Inverse of `gdtr` vs b.
    gdtrix       -- Inverse of `gdtr` vs x.
+
+Negative binomial distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nbdtr        -- Negative binomial cumulative distribution function.
    nbdtrc       -- Negative binomial survival function.
    nbdtri       -- Inverse of `nbdtr` vs `p`.
    nbdtrik      -- Inverse of `nbdtr` vs `k`.
    nbdtrin      -- Inverse of `nbdtr` vs `n`.
+
+Noncentral F distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    ncfdtr       -- Cumulative distribution function of the non-central F distribution.
    ncfdtridfd   -- Calculate degrees of freedom (denominator) for the noncentral F-distribution.
    ncfdtridfn   -- Calculate degrees of freedom (numerator) for the noncentral F-distribution.
    ncfdtri      -- Inverse cumulative distribution function of the non-central F distribution.
    ncfdtrinc    -- Calculate non-centrality parameter for non-central F distribution.
+
+Noncentral t distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nctdtr       -- Cumulative distribution function of the non-central `t` distribution.
    nctdtridf    -- Calculate degrees of freedom for non-central t distribution.
    nctdtrit     -- Inverse cumulative distribution function of the non-central t distribution.
    nctdtrinc    -- Calculate non-centrality parameter for non-central t distribution.
+
+Normal distribution
+^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nrdtrimn     -- Calculate mean of normal distribution given other params.
    nrdtrisd     -- Calculate standard deviation of normal distribution given other params.
+   ndtr         -- Normal cumulative distribution function.
+   log_ndtr     -- Logarithm of normal cumulative distribution function.
+   ndtri        -- Inverse of `ndtr` vs x.
+   ndtri_exp    -- Inverse of `log_ndtr` vs x.
+
+Poisson distribution
+^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    pdtr         -- Poisson cumulative distribution function.
    pdtrc        -- Poisson survival function.
    pdtri        -- Inverse to `pdtr` vs m.
    pdtrik       -- Inverse to `pdtr` vs k.
+
+Student t distribution
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    stdtr        -- Student t distribution cumulative distribution function.
    stdtridf     -- Inverse of `stdtr` vs df.
    stdtrit      -- Inverse of `stdtr` vs `t`.
+
+Chi square distribution
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    chdtr        -- Chi square cumulative distribution function.
    chdtrc       -- Chi square survival function.
    chdtri       -- Inverse to `chdtrc`.
    chdtriv      -- Inverse to `chdtr` vs `v`.
-   ndtr         -- Gaussian cumulative distribution function.
-   log_ndtr     -- Logarithm of Gaussian cumulative distribution function.
-   ndtri        -- Inverse of `ndtr` vs x.
-   ndtri_exp    -- Inverse of `log_ndtr` vs x.
+
+Non-central chi square distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    chndtr       -- Non-central chi square cumulative distribution function.
    chndtridf    -- Inverse to `chndtr` vs `df`.
    chndtrinc    -- Inverse to `chndtr` vs `nc`.
    chndtrix     -- Inverse to `chndtr` vs `x`.
+
+Kolmogorov distribution
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function.
    smirnovi     -- Inverse to `smirnov`.
    kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution.
    kolmogi      -- Inverse function to `kolmogorov`.
-   tklmbda      -- Tukey-Lambda cumulative distribution function.
-   logit        -- Logit ufunc for ndarrays.
-   expit        -- Logistic sigmoid function.
-   log_expit    -- Logarithm of the logistic sigmoid function.
+
+Box-Cox transformation
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    boxcox       -- Compute the Box-Cox transformation.
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
    inv_boxcox1p -- Compute the inverse of the Box-Cox transformation.
+
+
+Sigmoidal functions
+^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
+   logit        -- Logit ufunc for ndarrays.
+   expit        -- Logistic sigmoid function.
+   log_expit    -- Logarithm of the logistic sigmoid function.
+
+Miscellaneous
+^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
+   tklmbda      -- Tukey-Lambda cumulative distribution function.
    owens_t      -- Owen's T Function.
 
 
@@ -305,14 +423,15 @@ Gamma and related functions
    beta         -- Beta function.
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
+   betaincc     -- Complemented incomplete beta integral.
    betaincinv   -- Inverse function to beta integral.
+   betainccinv  -- Inverse of the complemented incomplete beta integral.
    psi          -- The digamma function.
    rgamma       -- Gamma function inverted.
    polygamma    -- Polygamma function n.
    multigammaln -- Returns the log of multivariate gamma, also sometimes called the generalized gamma.
    digamma      -- psi(x[, out]).
    poch         -- Rising factorial (z)_m.
-
 
 Error function and Fresnel integrals
 ------------------------------------
@@ -334,7 +453,8 @@ Error function and Fresnel integrals
    modfresnelm   -- Modified Fresnel negative integrals.
    voigt_profile -- Voigt profile.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -349,19 +469,28 @@ Legendre functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated Legendre function of integer order and real degree.
-   sph_harm -- Compute spherical harmonics.
+   legendre_p                 -- Legendre polynomials of the first kind.
+   legendre_p_all             -- All Legendre polynomials of the first kind up to a specified order.
+   assoc_legendre_p           -- Associated Legendre polynomials of the first kind.
+   assoc_legendre_p_all       -- All associated Legendre polynomials of the first kind up to a specified order and degree.
+   sph_legendre_p             -- Spherical Legendre polynomials of the first kind.
+   sph_legendre_p_all         -- All spherical Legendre polynomials of the first kind up to a specified order and degree.
+   sph_harm_y                 -- Spherical harmonics.
+   sph_harm_y_all             -- All spherical harmonics up to a specified order and degree.
 
-These are not universal functions:
+The following functions are in the process of being deprecated in favor of the above,
+which provide a more flexible and consistent interface.
 
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- Associated Legendre function of the first kind for complex arguments.
-   lpn   -- Legendre function of the first kind.
-   lqn   -- Legendre function of the second kind.
-   lpmn  -- Sequence of associated Legendre functions of the first kind.
-   lqmn  -- Sequence of associated Legendre functions of the second kind.
+   lpmv                       -- Associated Legendre function of integer order and real degree.
+   sph_harm                   -- Compute spherical harmonics.
+   clpmn                      -- Associated Legendre function of the first kind for complex arguments.
+   lpn                        -- Legendre function of the first kind.
+   lqn                        -- Legendre function of the second kind.
+   lpmn                       -- Sequence of associated Legendre functions of the first kind.
+   lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal harmonics
 ---------------------
@@ -412,7 +541,7 @@ orthogonal polynomials:
    roots_jacobi      -- Gauss-Jacobi quadrature.
    roots_laguerre    -- Gauss-Laguerre quadrature.
    roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
-   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermite     -- Gauss-Hermite (physicist's) quadrature.
    roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
    roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
    roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.
@@ -477,7 +606,8 @@ Parabolic cylinder functions
    pbvv -- Parabolic cylinder function V.
    pbwa -- Parabolic cylinder function W.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -495,7 +625,8 @@ Mathieu and related functions
    mathieu_a -- Characteristic value of even Mathieu functions.
    mathieu_b -- Characteristic value of odd Mathieu functions.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -523,7 +654,7 @@ Spheroidal wave functions
 
    pro_ang1   -- Prolate spheroidal angular function of the first kind and its derivative.
    pro_rad1   -- Prolate spheroidal radial function of the first kind and its derivative.
-   pro_rad2   -- Prolate spheroidal radial function of the secon kind and its derivative.
+   pro_rad2   -- Prolate spheroidal radial function of the second kind and its derivative.
    obl_ang1   -- Oblate spheroidal angular function of the first kind and its derivative.
    obl_rad1   -- Oblate spheroidal radial function of the first kind and its derivative.
    obl_rad2   -- Oblate spheroidal radial function of the second kind and its derivative.
@@ -561,7 +692,8 @@ Kelvin functions
    kerp         -- Derivative of the Kelvin function ker.
    keip         -- Derivative of the Kelvin function kei.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -583,6 +715,7 @@ Combinatorics
 
    comb -- The number of combinations of N things taken k at a time.
    perm -- Permutations of N things taken k at a time, i.e., k-permutations of N.
+   stirling2 -- Stirling numbers of the second kind.
 
 Lambert W and related functions
 -------------------------------
@@ -633,8 +766,9 @@ Convenience functions
    tandg     -- Tangent of angle x given in degrees.
    cotdg     -- Cotangent of the angle `x` given in degrees.
    log1p     -- Calculates log(1+x) for use when `x` is near zero.
-   expm1     -- exp(x) - 1 for use when `x` is near zero.
-   cosm1     -- cos(x) - 1 for use when `x` is near zero.
+   expm1     -- ``exp(x) - 1`` for use when `x` is near zero.
+   cosm1     -- ``cos(x) - 1`` for use when `x` is near zero.
+   powm1     -- ``x**y - 1`` for use when `y` is near zero or `x` is near 1.
    round     -- Round to nearest integer.
    xlogy     -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
    xlog1py   -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
@@ -642,17 +776,60 @@ Convenience functions
    exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
    sinc      -- Return the sinc function.
 
-"""
+"""  # noqa: E501
+
+import os
+import warnings
+
+
+def _load_libsf_error_state():
+    """Load libsf_error_state.dll shared library on Windows
+
+    libsf_error_state manages shared state used by
+    ``scipy.special.seterr`` and ``scipy.special.geterr`` so that these
+    can work consistently between special functions provided by different
+    extension modules. This shared library is installed in scipy/special
+    alongside this __init__.py file. Due to lack of rpath support, Windows
+    cannot find shared libraries installed within wheels. To circumvent this,
+    we pre-load ``lib_sf_error_state.dll`` when on Windows.
+
+    The logic for this function was borrowed from the function ``make_init``
+    in `scipy/tools/openblas_support.py`:
+    https://github.com/scipy/scipy/blob/bb92c8014e21052e7dde67a76b28214dd1dcb94a/tools/openblas_support.py#L239-L274
+    """  # noqa: E501
+    if os.name == "nt":
+        try:
+            from ctypes import WinDLL
+            basedir = os.path.dirname(__file__)
+        except:  # noqa: E722
+            pass
+        else:
+            dll_path = os.path.join(basedir, "libsf_error_state.dll")
+            if os.path.exists(dll_path):
+                WinDLL(dll_path)
+
+
+_load_libsf_error_state()
+
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
 from ._ufuncs import *
 
+# Replace some function definitions from _ufuncs to add Array API support
+from ._support_alternative_backends import (
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
+    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
+    chdtr, chdtrc, betainc, betaincc, stdtr)
+
 from . import _basic
 from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
+
+from . import _multiufuncs
+from ._multiufuncs import *
 
 from . import _orthogonal
 from ._orthogonal import *
@@ -674,7 +851,11 @@ from ._spherical_bessel import (
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
+# We replace some function definitions from _ufuncs with those from
+# _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
+# so there is no need to consider _support_alternative_backends.__all__ here.
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
+__all__ += [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'logsumexp',
@@ -694,3 +875,34 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+_depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
+             'removed in SciPy 1.14.0.  Use scipy.special.{} instead.')
+
+
+def btdtr(*args, **kwargs):  # type: ignore [no-redef]
+    warnings.warn(_depr_msg.format('betainc'), category=DeprecationWarning,
+                  stacklevel=2)
+    return _ufuncs.btdtr(*args, **kwargs)
+
+
+btdtr.__doc__ = _ufuncs.btdtr.__doc__  # type: ignore [misc]
+
+
+def btdtri(*args, **kwargs):  # type: ignore [no-redef]
+    warnings.warn(_depr_msg.format('betaincinv'), category=DeprecationWarning,
+                  stacklevel=2)
+    return _ufuncs.btdtri(*args, **kwargs)
+
+
+btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
+
+
+def _get_include():
+    """This function is for development purposes only.
+
+    This function could disappear or its behavior could change at any time.
+    """
+    import os
+    return os.path.dirname(__file__)
+

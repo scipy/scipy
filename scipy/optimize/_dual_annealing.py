@@ -7,8 +7,6 @@
 A Dual Annealing global optimization algorithm
 """
 
-import warnings
-
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize, Bounds
@@ -174,8 +172,7 @@ class EnergyState:
             self.current_energy = func_wrapper.fun(self.current_location)
             if self.current_energy is None:
                 raise ValueError('Objective function is returning None')
-            if (not np.isfinite(self.current_energy) or np.isnan(
-                    self.current_energy)):
+            if not np.isfinite(self.current_energy):
                 if reinit_counter >= EnergyState.MAX_REINIT_COUNT:
                     init_error = False
                     message = (
@@ -203,7 +200,7 @@ class EnergyState:
             val = self.callback(x, e, context)
             if val is not None:
                 if val:
-                    return('Callback function requested to stop early by '
+                    return ('Callback function requested to stop early by '
                            'returning True')
 
     def update_current(self, e, x):
@@ -242,6 +239,7 @@ class StrategyChain:
         Instance of `EnergyState` class.
 
     """
+
     def __init__(self, acceptance_param, visit_dist, func_wrapper,
                  minimizer_wrapper, rand_gen, energy_state):
         # Local strategy chain minimum energy and location
@@ -392,9 +390,13 @@ class LocalSearchWrapper:
     LS_MAXITER_MIN = 100
     LS_MAXITER_MAX = 1000
 
-    def __init__(self, search_bounds, func_wrapper, **kwargs):
+    def __init__(self, search_bounds, func_wrapper, *args, **kwargs):
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
+        self.jac = self.kwargs.get('jac', None)
+        self.hess = self.kwargs.get('hess', None)
+        self.hessp = self.kwargs.get('hessp', None)
+        self.kwargs.pop("args", None)
         self.minimizer = minimize
         bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
@@ -411,6 +413,19 @@ class LocalSearchWrapper:
                 'maxiter': ls_max_iter,
             }
             self.kwargs['bounds'] = list(zip(self.lower, self.upper))
+        else:
+            if callable(self.jac):
+                def wrapped_jac(x):
+                    return self.jac(x, *args)
+                self.kwargs['jac'] = wrapped_jac
+            if callable(self.hess):
+                def wrapped_hess(x):
+                    return self.hess(x, *args)
+                self.kwargs['hess'] = wrapped_hess
+            if callable(self.hessp):
+                def wrapped_hessp(x, p):
+                    return self.hessp(x, p, *args)
+                self.kwargs['hessp'] = wrapped_hessp
 
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e
@@ -437,7 +452,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
                    minimizer_kwargs=None, initial_temp=5230.,
                    restart_temp_ratio=2.e-5, visit=2.62, accept=-5.0,
                    maxfun=1e7, seed=None, no_local_search=False,
-                   callback=None, x0=None, local_search_options=None):
+                   callback=None, x0=None):
     """
     Find the global minimum of a function using Dual Annealing.
 
@@ -460,10 +475,15 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     maxiter : int, optional
         The maximum number of global search iterations. Default value is 1000.
     minimizer_kwargs : dict, optional
-        Extra keyword arguments to be passed to the local minimizer
-        (`minimize`). Some important options could be:
-        ``method`` for the minimizer method to use and ``args`` for
-        objective function additional arguments.
+        Keyword arguments to be passed to the local minimizer
+        (`minimize`). An important option could be ``method`` for the minimizer
+        method to use.
+        If no keyword arguments are provided, the local minimizer defaults to
+        'L-BFGS-B' and uses the already supplied bounds. If `minimizer_kwargs`
+        is specified, then the dict must contain all parameters required to
+        control the local minimization. `args` is ignored in this dict, as it is
+        passed automatically. `bounds` is not automatically passed on to the
+        local minimizer as the method may not support them.
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
         search of the energy landscape, allowing dual_annealing to escape
@@ -487,9 +507,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -507,23 +525,16 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         A callback function with signature ``callback(x, f, context)``,
         which will be called for all minima found.
         ``x`` and ``f`` are the coordinates and function value of the
-        latest minimum found, and ``context`` has value in [0, 1, 2], with the
-        following meaning:
+        latest minimum found, and ``context`` has one of the following
+        values:
 
-            - 0: minimum detected in the annealing process.
-            - 1: detection occurred in the local search process.
-            - 2: detection done in the dual annealing process.
+        - ``0``: minimum detected in the annealing process.
+        - ``1``: detection occurred in the local search process.
+        - ``2``: detection done in the dual annealing process.
 
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional
         Coordinates of a single N-D starting point.
-    local_search_options : dict, optional
-        Backwards compatible flag for `minimizer_kwargs`, only one of these
-        should be supplied.
-
-        .. deprecated:: 1.8.0
-            dual_annealing argument `local_search_options` is deprecated in
-            favor of `minimizer_kwargs` and will be removed in SciPy 1.10.0.
 
     Returns
     -------
@@ -608,6 +619,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     The function involved is called Rastrigin
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 
+    >>> import numpy as np
     >>> from scipy.optimize import dual_annealing
     >>> func = lambda x: np.sum(x*x - 10*np.cos(2*np.pi*x)) + 10*np.size(x)
     >>> lw = [-5.12] * 10
@@ -625,7 +637,6 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     if isinstance(bounds, Bounds):
         bounds = new_bounds_to_old(bounds.lb, bounds.ub, len(bounds.lb))
 
-    # noqa: E501
     if x0 is not None and not len(x0) == len(bounds):
         raise ValueError('Bounds size does not match x0')
 
@@ -648,22 +659,12 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
     # Wrapper for the objective function
     func_wrapper = ObjectiveFunWrapper(func, maxfun, *args)
-    # Wrapper for the minimizer
-    if local_search_options and minimizer_kwargs:
-        raise ValueError("dual_annealing only allows either 'minimizer_kwargs' (preferred) or "
-                         "'local_search_options' (deprecated); not both!")
-    if local_search_options is not None:
-        warnings.warn("dual_annealing argument 'local_search_options' is "
-                      "deprecated in favor of 'minimizer_kwargs' and will be "
-                      "removed in SciPy 1.10.0.",
-                      category=DeprecationWarning, stacklevel=2)
-        minimizer_kwargs = local_search_options
 
     # minimizer_kwargs has to be a dict, not None
     minimizer_kwargs = minimizer_kwargs or {}
 
     minimizer_wrapper = LocalSearchWrapper(
-        bounds, func_wrapper, **minimizer_kwargs)
+        bounds, func_wrapper, *args, **minimizer_kwargs)
 
     # Initialization of random Generator for reproducible runs if seed provided
     rand_state = check_random_state(seed)
@@ -688,7 +689,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
     t1 = np.exp((visit - 1) * np.log(2.0)) - 1.0
     # Run the search loop
-    while(not need_to_stop):
+    while not need_to_stop:
         for i in range(maxiter):
             # Compute temperature for this step
             s = float(i) + 2.0

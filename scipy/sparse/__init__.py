@@ -1,9 +1,16 @@
 """
-=====================================
-Sparse matrices (:mod:`scipy.sparse`)
-=====================================
+===================================
+Sparse arrays (:mod:`scipy.sparse`)
+===================================
 
 .. currentmodule:: scipy.sparse
+
+.. toctree::
+   :hidden:
+
+   sparse.csgraph
+   sparse.linalg
+   sparse.migration_to_sparray
 
 SciPy 2-D sparse array package for numeric data.
 
@@ -20,23 +27,30 @@ SciPy 2-D sparse array package for numeric data.
      element-wise multiplication (just like with NumPy arrays).  To
      make code work with both arrays and matrices, use ``x @ y`` for
      matrix multiplication.
-   - Operations such as `sum`, that used to produce dense matrices, now
+   - Operations such as ``sum``, that used to produce dense matrices, now
      produce arrays, whose multiplication behavior differs similarly.
-   - Sparse arrays currently must be two-dimensional.  This also means
-     that all *slicing* operations on these objects must produce
-     two-dimensional results, or they will result in an error. This
-     will be addressed in a future version.
+   - Sparse arrays use array style *slicing* operations, returning scalars,
+     1D, or 2D sparse arrays. If you need 2D results, use an appropriate index.
+     E.g. ``A[:, i, None]`` or ``A[:, [i]]``.
 
    The construction utilities (`eye`, `kron`, `random`, `diags`, etc.)
-   have not yet been ported, but their results can be wrapped into arrays::
+   have appropriate replacements (see :ref:`sparse-construction-functions`).
 
-     A = csr_array(eye(3))
+   For more information see
+   :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
-Contents
-========
+
+Submodules
+==========
+
+.. autosummary::
+
+   csgraph - Compressed sparse graph routines
+   linalg - Sparse linear algebra routines
+
 
 Sparse array classes
---------------------
+====================
 
 .. autosummary::
    :toctree: generated/
@@ -48,9 +62,58 @@ Sparse array classes
    dia_array - Sparse array with DIAgonal storage
    dok_array - Dictionary Of Keys based sparse array
    lil_array - Row-based list of lists sparse array
+   sparray - Sparse array base class
+
+.. _sparse-construction-functions:
+
+Building sparse arrays
+----------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   diags_array - Return a sparse array from diagonals
+   eye_array - Sparse MxN array whose k-th diagonal is all ones
+   random_array - Random values in a given shape array
+   block_array - Build a sparse array from sub-blocks
+
+.. _combining-arrays:
+
+Combining arrays
+----------------
+
+.. autosummary::
+   :toctree: generated/
+
+   kron - Kronecker product of two sparse arrays
+   kronsum - Kronecker sum of sparse arrays
+   block_diag - Build a block diagonal sparse array
+   tril - Lower triangular portion of a sparse array
+   triu - Upper triangular portion of a sparse array
+   hstack - Stack sparse arrays horizontally (column wise)
+   vstack - Stack sparse arrays vertically (row wise)
+
+Sparse tools
+------------
+
+.. autosummary::
+   :toctree: generated/
+
+   save_npz - Save a sparse array to a file using ``.npz`` format.
+   load_npz - Load a sparse array from a file using ``.npz`` format.
+   find - Return the indices and values of the nonzero elements
+
+Identifying sparse arrays
+-------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   issparse - Check if the argument is a sparse object (array or matrix).
+
 
 Sparse matrix classes
----------------------
+=====================
 
 .. autosummary::
    :toctree: generated/
@@ -64,45 +127,24 @@ Sparse matrix classes
    lil_matrix - Row-based list of lists sparse matrix
    spmatrix - Sparse matrix base class
 
-Functions
----------
-
-Building sparse matrices:
+Building sparse matrices
+------------------------
 
 .. autosummary::
    :toctree: generated/
 
    eye - Sparse MxN matrix whose k-th diagonal is all ones
-   identity - Identity matrix in sparse format
-   kron - kronecker product of two sparse matrices
-   kronsum - kronecker sum of sparse matrices
+   identity - Identity matrix in sparse matrix format
    diags - Return a sparse matrix from diagonals
    spdiags - Return a sparse matrix from diagonals
-   block_diag - Build a block diagonal sparse matrix
-   tril - Lower triangular portion of a matrix in sparse format
-   triu - Upper triangular portion of a matrix in sparse format
    bmat - Build a sparse matrix from sparse sub-blocks
-   hstack - Stack sparse matrices horizontally (column wise)
-   vstack - Stack sparse matrices vertically (row wise)
-   rand - Random values in a given shape
-   random - Random values in a given shape
+   random - Random values in a given shape matrix
+   rand - Random values in a given shape matrix (old interface)
 
-Save and load sparse matrices:
+**Combining matrices use the same functions as for** :ref:`combining-arrays`.
 
-.. autosummary::
-   :toctree: generated/
-
-   save_npz - Save a sparse matrix to a file using ``.npz`` format.
-   load_npz - Load a sparse matrix from a file using ``.npz`` format.
-
-Sparse matrix tools:
-
-.. autosummary::
-   :toctree: generated/
-
-   find
-
-Identifying sparse matrices:
+Identifying sparse matrices
+---------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -117,16 +159,9 @@ Identifying sparse matrices:
    isspmatrix_coo
    isspmatrix_dia
 
-Submodules
-----------
 
-.. autosummary::
-
-   csgraph - Compressed sparse graph routines
-   linalg - sparse linear algebra routines
-
-Exceptions
-----------
+Warnings
+========
 
 .. autosummary::
    :toctree: generated/
@@ -138,71 +173,68 @@ Exceptions
 Usage information
 =================
 
-There are seven available sparse matrix types:
+There are seven available sparse array types:
 
-    1. csc_matrix: Compressed Sparse Column format
-    2. csr_matrix: Compressed Sparse Row format
-    3. bsr_matrix: Block Sparse Row format
-    4. lil_matrix: List of Lists format
-    5. dok_matrix: Dictionary of Keys format
-    6. coo_matrix: COOrdinate format (aka IJV, triplet format)
-    7. dia_matrix: DIAgonal format
+    1. csc_array: Compressed Sparse Column format
+    2. csr_array: Compressed Sparse Row format
+    3. bsr_array: Block Sparse Row format
+    4. lil_array: List of Lists format
+    5. dok_array: Dictionary of Keys format
+    6. coo_array: COOrdinate format (aka IJV, triplet format)
+    7. dia_array: DIAgonal format
 
-To construct a matrix efficiently, use either dok_matrix or lil_matrix.
-The lil_matrix class supports basic slicing and fancy indexing with a
-similar syntax to NumPy arrays. As illustrated below, the COO format
-may also be used to efficiently construct matrices. Despite their
-similarity to NumPy arrays, it is **strongly discouraged** to use NumPy
-functions directly on these matrices because NumPy may not properly convert
-them for computations, leading to unexpected (and incorrect) results. If you
-do want to apply a NumPy function to these matrices, first check if SciPy has
-its own implementation for the given sparse matrix class, or **convert the
-sparse matrix to a NumPy array** (e.g., using the `toarray()` method of the
-class) first before applying the method.
+To construct an array efficiently, use any of `coo_array`,
+`dok_array` or `lil_array`. `dok_array` and `lil_array`
+support basic slicing and fancy indexing with a similar syntax
+to NumPy arrays. The COO format does not support indexing (yet)
+but can also be used to efficiently construct arrays using coord
+and value info.
 
-To perform manipulations such as multiplication or inversion, first
-convert the matrix to either CSC or CSR format. The lil_matrix format is
-row-based, so conversion to CSR is efficient, whereas conversion to CSC
-is less so.
+Despite their similarity to NumPy arrays, it is **strongly discouraged**
+to use NumPy functions directly on these arrays because NumPy typically
+treats them as generic Python objects rather than arrays, leading to
+unexpected (and incorrect) results. If you do want to apply a NumPy
+function to these arrays, first check if SciPy has its own implementation
+for the given sparse array class, or **convert the sparse array to
+a NumPy array** (e.g., using the `toarray` method of the class)
+before applying the method.
 
 All conversions among the CSR, CSC, and COO formats are efficient,
 linear-time operations.
 
+To perform manipulations such as multiplication or inversion, first
+convert the array to either CSC or CSR format. The `lil_array`
+format is row-based, so conversion to CSR is efficient, whereas
+conversion to CSC is less so.
+
 Matrix vector product
 ---------------------
-To do a vector product between a sparse matrix and a vector simply use
-the matrix `dot` method, as described in its docstring:
+
+To do a vector product between a 2D sparse array and a vector use
+the matmul operator (i.e., ``@``) which performs a dot product (like the
+``dot`` method):
 
 >>> import numpy as np
->>> from scipy.sparse import csr_matrix
->>> A = csr_matrix([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+>>> from scipy.sparse import csr_array
+>>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
 >>> v = np.array([1, 0, -1])
->>> A.dot(v)
+>>> A @ v
 array([ 1, -3, -1], dtype=int64)
 
-.. warning:: As of NumPy 1.7, `np.dot` is not aware of sparse matrices,
-  therefore using it will result on unexpected results or errors.
-  The corresponding dense array should be obtained first instead:
-
-  >>> np.dot(A.toarray(), v)
-  array([ 1, -3, -1], dtype=int64)
-
-  but then all the performance advantages would be lost.
-
-The CSR format is specially suitable for fast matrix vector products.
+The CSR format is especially suitable for fast matrix vector products.
 
 Example 1
 ---------
-Construct a 1000x1000 lil_matrix and add some values to it:
 
->>> from scipy.sparse import lil_matrix
+Construct a 1000x1000 `lil_array` and add some values to it:
+
+>>> from scipy.sparse import lil_array
 >>> from scipy.sparse.linalg import spsolve
 >>> from numpy.linalg import solve, norm
 >>> from numpy.random import rand
 
->>> A = lil_matrix((1000, 1000))
+>>> A = lil_array((1000, 1000))
 >>> A[0, :100] = rand(100)
->>> A[1, 100:200] = A[0, :100]
 >>> A.setdiag(rand(1000))
 
 Now convert it to CSR format and solve A x = b for x:
@@ -211,7 +243,7 @@ Now convert it to CSR format and solve A x = b for x:
 >>> b = rand(1000)
 >>> x = spsolve(A, b)
 
-Convert it to a dense matrix and solve, and check that the result
+Convert it to a dense array and solve, and check that the result
 is the same:
 
 >>> x_ = solve(A.toarray(), b)
@@ -228,14 +260,14 @@ It should be small :)
 Example 2
 ---------
 
-Construct a matrix in COO format:
+Construct an array in COO format:
 
 >>> from scipy import sparse
 >>> from numpy import array
 >>> I = array([0,3,1,0])
 >>> J = array([0,3,1,2])
 >>> V = array([4,5,7,9])
->>> A = sparse.coo_matrix((V,(I,J)),shape=(4,4))
+>>> A = sparse.coo_array((V,(I,J)),shape=(4,4))
 
 Notice that the indices do not need to be sorted.
 
@@ -244,7 +276,7 @@ Duplicate (i,j) entries are summed when converting to CSR or CSC.
 >>> I = array([0,0,1,3,1,0,0])
 >>> J = array([0,2,1,3,1,0,0])
 >>> V = array([1,1,1,1,1,1,1])
->>> B = sparse.coo_matrix((V,(I,J)),shape=(4,4)).tocsr()
+>>> B = sparse.coo_array((V,(I,J)),shape=(4,4)).tocsr()
 
 This is useful for constructing finite-element stiffness and mass matrices.
 
@@ -252,7 +284,7 @@ Further details
 ---------------
 
 CSR column indices are not necessarily sorted. Likewise for CSC row
-indices. Use the .sorted_indices() and .sort_indices() methods when
+indices. Use the ``.sorted_indices()`` and ``.sort_indices()`` methods when
 sorted indices are required (e.g., when passing data to other libraries).
 
 """
@@ -273,11 +305,8 @@ from ._dia import *
 from ._bsr import *
 from ._construct import *
 from ._extract import *
+from ._matrix import spmatrix
 from ._matrix_io import *
-
-from ._arrays import (
-    csr_array, csc_array, lil_array, dok_array, coo_array, dia_array, bsr_array
-)
 
 # For backward compatibility with v0.19.
 from . import csgraph
@@ -291,7 +320,8 @@ from . import (
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 # Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
-_warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
+msg = 'the matrix subclass is not the recommended way'
+_warnings.filterwarnings('ignore', message=msg)
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

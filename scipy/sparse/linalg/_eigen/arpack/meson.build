@@ -1,4 +1,5 @@
 arpack_sources = [
+  'ARPACK/SRC/ccdotc.f',
   'ARPACK/SRC/cgetv0.f',
   'ARPACK/SRC/cnaitr.f',
   'ARPACK/SRC/cnapps.f',
@@ -65,6 +66,7 @@ arpack_sources = [
   'ARPACK/SRC/zngets.f',
   'ARPACK/SRC/zsortc.f',
   'ARPACK/SRC/zstatn.f',
+  'ARPACK/SRC/zzdotc.f',
   'ARPACK/UTIL/cmout.f',
   'ARPACK/UTIL/cvout.f',
   'ARPACK/UTIL/dmout.f',
@@ -81,24 +83,29 @@ arpack_sources = [
   'ARPACK/UTIL/zvout.f'
 ]
 
+# Building ARPACK yields a ton of rank mismatch (scalar and rank-1) warnings
+# that cannot be suppressed with a more specific flag.
+_suppress_all_warnings = ff.get_supported_arguments('-w')
+
 arpack_lib = static_library('arpack_lib',
   arpack_sources,
-  fortran_args: fortran_ignore_warnings,
-  include_directories: ['ARPACK/SRC']
+  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
+  include_directories: ['ARPACK/SRC'],
+  override_options: ['b_lto=false'],
+  gnu_symbol_visibility: 'hidden',
 )
 
 arpack_module = custom_target('arpack_module',
   output: ['_arpackmodule.c', '_arpack-f2pywrappers.f'],
   input: 'arpack.pyf.src',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 _arpack = py3.extension_module('_arpack',
-  [arpack_module, fortranobject_c, g77_abi_wrappers],
-  c_args: numpy_nodepr_api,
-  link_with: [arpack_lib],
-  include_directories: [incdir_numpy, incdir_f2py],
-  dependencies: [py3_dep, lapack],
+  arpack_module,
+  link_with: arpack_lib,
+  link_args: version_link_args,
+  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/sparse/linalg/_eigen/arpack'
@@ -109,7 +116,6 @@ py3.install_sources([
     'arpack.py',
     'ARPACK/COPYING'
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg/_eigen/arpack'
 )
 
