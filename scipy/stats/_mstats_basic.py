@@ -2899,7 +2899,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     Examples
     --------
-    In this example, we generate an array using the `scipy.stats.norm.rvs`
+    In this example, we generate an array using the ``scipy.stats.norm.rvs``
     method, creating a normal distribution drawn from random variates. We
     then create a masked array for the data and apply the kurtosis method.
     The result is close to zero since we're using Fisher's definition, which
@@ -2915,8 +2915,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     >>> kurtosis(masked)
     >>> -0.543431959470932
     
-    We can show that the `scipy.stats.mstats.kurtosis` method is equivalent to
-    the standard `scipy.stats.kurtosis` calculation by manually dropping the same
+    We can show that the ``scipy.stats.mstats.kurtosis`` method is equivalent to
+    the standard ``scipy.stats.kurtosis`` calculation by manually dropping the same
     values from our array, as for our masked array, and using the standard method.
 
     >>> from scipy.stats import kurtosis
