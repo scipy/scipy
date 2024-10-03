@@ -1258,6 +1258,7 @@ class TestTransformations:
             lambda x: f_with_problematic_points(x, points, xp),
             xp.asarray(a, dtype=xp.float64),
             xp.asarray(b, dtype=xp.float64),
+            xp=xp,
         )
 
         for point in points:

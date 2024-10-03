@@ -366,7 +366,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     # If any of the limits are infinite, apply a transformation
     if xp.any(xp.isinf(a)) or xp.any(xp.isinf(b)):
-        f = _InfiniteLimitsTransform(f, a, b)
+        f = _InfiniteLimitsTransform(f, a, b, xp=xp)
         a, b = f.transformed_limits
 
         points = [f.inv(point) for point in points]
@@ -380,7 +380,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     if points == []:
         initial_regions = [(a, b)]
     else:
-        initial_regions = _split_region_at_points(a, b, points)
+        initial_regions = _split_region_at_points(a, b, points, xp)
 
     regions = []
     est = 0.0
@@ -426,7 +426,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
                 itertools.repeat(f),
                 itertools.repeat(rule),
                 itertools.repeat(args),
-                _split_subregion(a_k, b_k),
+                _split_subregion(a_k, b_k, xp),
             )
 
             for subdivision_result in mapwrapper(_process_subregion, executor_args):
@@ -471,16 +471,14 @@ def _process_subregion(data):
     return a_k_sub, b_k_sub, est_sub, err_sub
 
 
-def _is_strictly_in_region(point, a, b):
-    xp = array_namespace(point, a, b)
-
+def _is_strictly_in_region(a, b, point, xp):
     if xp.all(point == a) or xp.all(point == b):
         return False
 
     return xp.all(a <= point) and xp.all(point <= b)
 
 
-def _split_region_at_points(a, b, points):
+def _split_region_at_points(a, b, points, xp):
     """
     Given the integration limits `a` and `b` describing a rectangular region and a list
     of `points`, find the list of ``[(a_1, b_1), ..., (a_l, b_l)]`` which breaks up the
@@ -488,7 +486,6 @@ def _split_region_at_points(a, b, points):
     any of the subregions.
     """
 
-    xp = array_namespace(a, b)
     regions = [(a, b)]
 
     for point in points:
@@ -502,8 +499,8 @@ def _split_region_at_points(a, b, points):
         new_subregions = []
 
         for a_k, b_k in regions:
-            if _is_strictly_in_region(point, a_k, b_k):
-                subregions = _split_subregion(a_k, b_k, point)
+            if _is_strictly_in_region(a_k, b_k, point, xp):
+                subregions = _split_subregion(a_k, b_k, xp, point)
 
                 for left, right in subregions:
                     # Skip any zero-width regions.
@@ -598,8 +595,8 @@ class _InfiniteLimitsTransform(_VariableTransform):
     :math:`J(t) = t^{-2}`.
     """
 
-    def __init__(self, f, a, b):
-        self._xp = array_namespace(a, b)
+    def __init__(self, f, a, b, xp):
+        self._xp = xp
 
         self._f = f
         self._orig_a = a

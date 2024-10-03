@@ -442,7 +442,7 @@ def _cartesian_product(arrays):
     return result
 
 
-def _split_subregion(a, b, split_at=None):
+def _split_subregion(a, b, xp, split_at=None):
     """
     Given the coordinates of a region like a=[0, 0] and b=[1, 1], yield the coordinates
     of all subregions, which in this case would be::
