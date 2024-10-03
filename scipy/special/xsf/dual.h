@@ -1,5 +1,6 @@
 #pragma once
 
+#include "binom.h"
 #include "config.h"
 #include "numbers.h"
 
@@ -13,13 +14,13 @@ namespace detail {
 
     /* Since we only compute derivatives up to order 2, we only need
      * Binomial coefficients with n <= 2 for use in the General
-     * Leibniz rule. This is an optimized way to get them. */
+     * Leibniz rule. Get these from a lookup table. */
     template <typename T>
-    T dumb_binom(size_t n, size_t k) {
+    T fast_binom(size_t n, size_t k) {
         if ((n <= 2) && (k <= 2)) {
             return small_binom_coefs<T>[n][k];
         }
-        return T(0);
+        return T(xsf::binom(static_cast<double>(n), static_cast<double>(k)));
     }
 } // namespace detail
 
@@ -102,7 +103,7 @@ class dual<T, Order> {
             data[i] *= other.data[0];
             // General Leibniz Rule
             for (size_t j = 0; j < i; ++j) {
-                data[i] += detail::dumb_binom<T>(i, j) * data[j] * other.data[i - j];
+                data[i] += detail::fast_binom<T>(i, j) * data[j] * other.data[i - j];
             }
         }
 
@@ -121,7 +122,7 @@ class dual<T, Order> {
         for (size_t i = 0; i <= Order; ++i) {
             // General Leibniz Rule
             for (size_t j = 1; j <= i; ++j) {
-                data[i] -= detail::dumb_binom<T>(i, j) * other.data[j] * data[i - j];
+                data[i] -= detail::fast_binom<T>(i, j) * other.data[j] * data[i - j];
             }
 
             data[i] /= other.data[0];
@@ -232,7 +233,7 @@ class dual<T, Order0, Order1, Orders...> {
             data[i] *= other.data[0];
             // General Leibniz Rule
             for (size_t j = 0; j < i; ++j) {
-                data[i] += detail::dumb_binom<T>(i, j) * data[j] * other.data[i - j];
+                data[i] += detail::fast_binom<T>(i, j) * data[j] * other.data[i - j];
             }
         }
 
@@ -251,7 +252,7 @@ class dual<T, Order0, Order1, Orders...> {
         for (size_t i = 0; i <= Order0; ++i) {
             // General Leibniz Rule
             for (size_t j = 1; j <= i; ++j) {
-                data[i] -= detail::dumb_binom<T>(i, j) * other.data[j] * data[i - j];
+                data[i] -= detail::fast_binom<T>(i, j) * other.data[j] * data[i - j];
             }
 
             data[i] /= other.data[0];
