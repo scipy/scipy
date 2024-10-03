@@ -18,7 +18,7 @@ jobs:
       message: ${{ steps.skip_check.outputs.message }}
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}

@@ -27,7 +27,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _data_matrix.__init__(self, arg1, maxprint=maxprint)
-        is_array = isinstance(self, sparray)
 
         if issparse(arg1):
             if arg1.format == self.format and copy:
@@ -39,10 +38,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             )
 
         elif isinstance(arg1, tuple):
-            if isshape(arg1, allow_1d=is_array):
+            if isshape(arg1, allow_nd=self._allow_nd):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self._shape = check_shape(arg1, allow_1d=is_array)
+                self._shape = check_shape(arg1, allow_nd=self._allow_nd)
                 M, N = self._swap(self._shape_as_2d)
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
@@ -87,25 +86,23 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError(f"unrecognized {self.__class__.__name__} "
                                  f"constructor input: {arg1}") from e
             if isinstance(self, sparray) and arg1.ndim < 2 and self.format == "csc":
-                raise ValueError(
-                    f"CSC arrays don't support {arg1.ndim}D input. Use 2D"
-                )
+                raise ValueError(f"CSC arrays don't support {arg1.ndim}D input. Use 2D")
             coo = self._coo_container(arg1, dtype=dtype)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, self._shape = arrays
 
         # Read matrix dimensions given, if any
         if shape is not None:
-            self._shape = check_shape(shape, allow_1d=is_array)
+            self._shape = check_shape(shape, allow_nd=self._allow_nd)
         elif self.shape is None:
             # shape not already set, try to infer dimensions
             try:
-                major_d = len(self.indptr) - 1
-                minor_d = self.indices.max() + 1
+                M = len(self.indptr) - 1
+                N = self.indices.max() + 1
             except Exception as e:
                 raise ValueError('unable to infer matrix dimensions') from e
 
-            self._shape = check_shape(self._swap((major_d, minor_d)), allow_1d=is_array)
+            self._shape = check_shape(self._swap((M, N)), allow_nd=self._allow_nd)
 
         if dtype is not None:
             newdtype = getdtype(dtype)
@@ -1288,7 +1285,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.data = _prune_array(self.data[:self.nnz])
 
     def resize(self, *shape):
-        shape = check_shape(shape, allow_1d=isinstance(self, sparray))
+        shape = check_shape(shape, allow_nd=self._allow_nd)
 
         if hasattr(self, 'blocksize'):
             bm, bn = self.blocksize
@@ -1405,6 +1402,56 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # integers types go with nan <-> 0
             out = r
             return out
+
+    def _broadcast_to(self, shape, copy=False):        
+        if self.shape == shape:
+            return self.copy() if copy else self
+        
+        shape = check_shape(shape, allow_nd=(self._allow_nd))
+
+        if np.broadcast_shapes(self.shape, shape) != shape:
+            raise ValueError("cannot be broadcast")
+        
+        if len(self.shape) == 1 and len(shape) == 1:
+            self.sum_duplicates()
+            if self.nnz == 0: # array has no non zero elements
+                return self.__class__(shape, dtype=self.dtype, copy=False)
+            
+            N = shape[0]
+            data = np.full(N, self.data[0])
+            indices = np.arange(0,N)
+            indptr = np.array([0, N])
+            return self._csr_container((data, indices, indptr), shape=shape, copy=False)
+
+        # treat 1D as a 2D row
+        old_shape = self._shape_as_2d
+            
+        if len(shape) != 2:
+            ndim = len(shape)
+            raise ValueError(f'CSR/CSC broadcast_to cannot have shape >2D. Got {ndim}D')
+        
+        if self.nnz == 0: # array has no non zero elements
+            return self.__class__(shape, dtype=self.dtype, copy=False)
+        
+        self.sum_duplicates()
+        M, N = self._swap(shape)
+        oM, oN = self._swap(old_shape)
+        if all(s == 1 for s in old_shape):
+            # Broadcast a single element to the entire shape
+            data = np.full(M * N, self.data[0])
+            indices = np.tile(np.arange(N), M)
+            indptr = np.arange(0, len(data) + 1, N)
+        elif oM == 1 and oN == N:
+            # Broadcast row-wise (columns for CSC)
+            data = np.tile(self.data, M)
+            indices = np.tile(self.indices, M)
+            indptr = np.arange(0, len(data) + 1, len(self.data))
+        elif oN == 1 and oM == M:
+            # Broadcast column-wise (rows for CSC)
+            data = np.repeat(self.data, N)
+            indices = np.tile(np.arange(N), len(self.data))
+            indptr = self.indptr * N
+        return self.__class__((data, indices, indptr), shape=shape, copy=False)
 
 
 def _make_diagonal_csr(data, is_array=False):

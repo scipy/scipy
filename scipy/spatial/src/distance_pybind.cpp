@@ -547,7 +547,7 @@ py::array cdist(const py::object& out_obj, const py::object& x_obj,
     return out;
 }
 
-PYBIND11_MODULE(_distance_pybind, m) {
+PYBIND11_MODULE(_distance_pybind, m, py::mod_gil_not_used()) {
     if (_import_array() != 0) {
         throw py::error_already_set();
     }

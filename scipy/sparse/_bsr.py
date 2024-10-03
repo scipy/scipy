@@ -215,8 +215,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         if axis is not None:
             raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for BSR format")
-        R,C = self.blocksize
-        return int(self.indptr[-1] * R * C)
+        R, C = self.blocksize
+        return int(self.indptr[-1]) * R * C
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
@@ -622,6 +622,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 #        """swap the members of x if this is a column-oriented matrix
 #        """
 #        return (x[0],x[1])
+
+    def _broadcast_to(self, shape, copy=False):
+        return _spbase._broadcast_to(self, shape, copy)
 
 
 def isspmatrix_bsr(x):

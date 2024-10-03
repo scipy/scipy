@@ -7,8 +7,9 @@ import numpy as np
 from scipy import stats
 from scipy.stats import norm, expon  # type: ignore[attr-defined]
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, xp_assert_less,
-                                   is_jax, is_array_api_strict, array_namespace)
+from scipy._lib._array_api import array_namespace, is_array_api_strict, is_jax
+from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
+                                         xp_assert_less)
 
 class TestEntropy:
     @array_api_compatible
@@ -207,7 +208,7 @@ class TestDifferentialEntropy:
                 )
 
     @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason=["JAX doesn't support item assignment"])
+                                  reason="JAX doesn't support item assignment")
     def test_base_differential_entropy_with_axis_0_is_equal_to_default(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((100, 3))
@@ -218,7 +219,7 @@ class TestDifferentialEntropy:
         xp_assert_close(entropy, default_entropy)
 
     @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason=["JAX doesn't support item assignment"])
+                                  reason="JAX doesn't support item assignment")
     def test_base_differential_entropy_transposed(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
@@ -312,7 +313,7 @@ class TestDifferentialEntropy:
         xp_assert_equal(res1, res2)
 
     @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason=["JAX doesn't support item assignment"])
+                                  reason="JAX doesn't support item assignment")
     @pytest.mark.parametrize('method', ["vasicek", "van es", "correa", "ebrahimi"])
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_dtypes_gh21192(self, xp, method, dtype):

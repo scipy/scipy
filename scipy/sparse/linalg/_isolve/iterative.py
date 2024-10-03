@@ -28,7 +28,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -43,13 +43,13 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        Preconditioner for `A`. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
 
     Returns
     -------
@@ -60,6 +60,18 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
+
+    Notes
+    -----
+    The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
+    condition number than `A`, see [1]_ .
+
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia, 
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] "Biconjugate gradient method", Wikipedia, 
+           https://en.wikipedia.org/wiki/Biconjugate_gradient_method
 
     Examples
     --------
@@ -73,7 +85,6 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     0
     >>> np.allclose(A.dot(x), b)
     True
-
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
@@ -151,7 +162,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -166,13 +177,13 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        Preconditioner for `A`. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
 
     Returns
     -------
@@ -183,6 +194,18 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
+
+    Notes
+    -----
+    The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
+    condition number than `A`, see [1]_ .
+
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia, 
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] "Biconjugate gradient stabilized method", 
+           Wikipedia, https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
 
     Examples
     --------
@@ -200,7 +223,6 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     0
     >>> np.allclose(A.dot(x), b)
     True
-
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
@@ -287,8 +309,8 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        ``A`` must represent a hermitian, positive definite matrix.
-        Alternatively, ``A`` can be a linear operator which can
+        `A` must represent a hermitian, positive definite matrix.
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -303,13 +325,14 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        Preconditioner for `A`. `M` must represent a hermitian, positive definite
+        matrix. It should approximate the inverse of `A` (see Notes).
+        Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
 
     Returns
     -------
@@ -319,6 +342,18 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
+
+    Notes
+    -----
+    The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
+    condition number than `A`, see [2]_.
+
+    References
+    ----------
+    .. [1] "Conjugate Gradient Method, Wikipedia, 
+           https://en.wikipedia.org/wiki/Conjugate_gradient_method
+    .. [2] "Preconditioner", 
+           Wikipedia, https://en.wikipedia.org/wiki/Preconditioner
 
     Examples
     --------
@@ -336,7 +371,6 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     0
     >>> np.allclose(A.dot(x), b)
     True
-
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
@@ -395,7 +429,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
         The real-valued N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -410,13 +444,13 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        Preconditioner for ``A``. It should approximate the
+        inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
         User-supplied function to call after each iteration.  It is called
-        as callback(xk), where xk is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
 
     Returns
     -------
@@ -427,6 +461,18 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
+
+    Notes
+    -----
+    The preconditioner `M` should be a matrix such that ``M @ A`` has a smaller
+    condition number than `A`, see [1]_.
+
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia, 
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] "Conjugate gradient squared", Wikipedia,
+           https://en.wikipedia.org/wiki/Conjugate_gradient_squared_method
 
     Examples
     --------
@@ -444,7 +490,6 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     0
     >>> np.allclose(A.dot(x), b)
     True
-
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
@@ -543,7 +588,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     ----------
     A : {sparse matrix, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
-        Alternatively, ``A`` can be a linear operator which can
+        Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
@@ -563,8 +608,8 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         after maxiter steps even if the specified tolerance has not been
         achieved. See `callback_type`.
     M : {sparse matrix, ndarray, LinearOperator}
-        Inverse of the preconditioner of A.  M should approximate the
-        inverse of A and be easy to solve for (see Notes).  Effective
+        Inverse of the preconditioner of `A`.  `M` should approximate the
+        inverse of `A` and be easy to solve for (see Notes).  Effective
         preconditioning dramatically improves the rate of convergence,
         which implies that fewer iterations are needed to reach a given
         error tolerance.  By default, no preconditioner is used.

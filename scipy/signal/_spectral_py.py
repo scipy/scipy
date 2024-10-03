@@ -775,7 +775,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     window, nperseg = _triage_segments(window, nperseg,
                                        input_length=x.shape[axis])
 
-    # Less overlap than welch, so samples are more statisically independent
+    # Less overlap than welch, so samples are more statistically independent
     if noverlap is None:
         noverlap = nperseg // 8
 
@@ -1171,7 +1171,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     .. math:: x[n]=\frac{\sum_{t}x_{t}[n]w[n-tH]}{\sum_{t}w^{2}[n-tH]}
 
     The NOLA constraint ensures that every normalization term that appears
-    in the denomimator of the OLA reconstruction equation is nonzero. Whether a
+    in the denominator of the OLA reconstruction equation is nonzero. Whether a
     choice of `window`, `nperseg`, and `noverlap` satisfy this constraint can
     be tested with `check_NOLA`.
 

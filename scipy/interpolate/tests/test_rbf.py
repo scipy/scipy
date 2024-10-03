@@ -2,8 +2,9 @@
 """ Test functions for rbf module """
 
 import numpy as np
-from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_almost_equal)
+
+from scipy._lib._array_api import assert_array_almost_equal, assert_almost_equal
+
 from numpy import linspace, sin, cos, random, exp, allclose
 from scipy.interpolate._rbf import Rbf
 from scipy._lib._testutils import _run_concurrent_barrier
@@ -20,7 +21,7 @@ def check_rbf1d_interpolation(function):
     rbf = Rbf(x, y, function=function)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
-    assert_almost_equal(rbf(float(x[0])), y[0])
+    assert_almost_equal(rbf(float(x[0])), y[0], check_0d=False)
 
 
 def check_rbf2d_interpolation(function):
@@ -108,7 +109,7 @@ def check_rbf1d_regularity(function, atol):
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
     msg = f"abs-diff: {abs(yi - sin(xi)).max():f}"
-    assert_(allclose(yi, sin(xi), atol=atol), msg)
+    assert allclose(yi, sin(xi), atol=atol), msg
 
 
 def test_rbf_regularity():
@@ -136,7 +137,7 @@ def check_2drbf1d_regularity(function, atol):
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
     msg = f"abs-diff: {abs(yi - np.vstack([sin(xi), cos(xi)]).T).max():f}"
-    assert_(allclose(yi, np.vstack([sin(xi), cos(xi)]).T, atol=atol), msg)
+    assert allclose(yi, np.vstack([sin(xi), cos(xi)]).T, atol=atol), msg
 
 
 def test_2drbf_regularity():
@@ -167,7 +168,7 @@ def check_rbf1d_stability(function):
     yi = rbf(xi)
 
     # subtract the linear trend and make sure there no spikes
-    assert_(np.abs(yi-xi).max() / np.abs(z-x).max() < 1.1)
+    assert np.abs(yi-xi).max() / np.abs(z-x).max() < 1.1
 
 def test_rbf_stability():
     for function in FUNCTIONS:
@@ -221,7 +222,7 @@ def test_rbf_epsilon_none_collinear():
     y = [4, 4, 4]
     z = [5, 6, 7]
     rbf = Rbf(x, y, z, epsilon=None)
-    assert_(rbf.epsilon > 0)
+    assert rbf.epsilon > 0
 
 
 def test_rbf_concurrency():
@@ -235,3 +236,4 @@ def test_rbf_concurrency():
         interp(xp)
 
     _run_concurrent_barrier(10, worker_fn, rbf, x)
+

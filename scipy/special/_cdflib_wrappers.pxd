@@ -2,7 +2,7 @@ from . cimport sf_error
 
 from libc.math cimport NAN, isnan, isinf, isfinite
 
-cdef extern from "special_wrappers.h" nogil:
+cdef extern from "xsf_wrappers.h" nogil:
     double cephes_ndtr_wrap(double a)
     double cephes_ndtri_wrap(double y0)
 
