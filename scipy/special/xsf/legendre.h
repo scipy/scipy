@@ -21,7 +21,7 @@ struct legendre_p_recurrence_n {
     T z;
 
     void operator()(int n, T (&res)[2]) const {
-        using value_type = dual_value_type_t<T>;
+        using value_type = remove_dual_t<T>;
         value_type fac0 = -value_type(n - 1) / value_type(n);
         value_type fac1 = value_type(2 * n - 1) / value_type(n);
 
@@ -271,7 +271,7 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
     int type;
 
     void operator()(int n, T (&res)[2]) const {
-        using value_type = dual_value_type_t<T>;
+        using value_type = remove_dual_t<T>;
         value_type fac0 = -value_type(n + m - 1) / value_type(n - m);
         value_type fac1 = value_type(2 * n - 1) / value_type(n - m);
 
@@ -287,7 +287,7 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
     int type;
 
     void operator()(int n, T (&res)[2]) const {
-        using value_type = dual_value_type_t<T>;
+        using value_type = remove_dual_t<T>;
         value_type fac0 =
             -sqrt(value_type((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / value_type((2 * n - 3) * (n * n - m * m)));
         value_type fac1 =
@@ -571,7 +571,7 @@ struct sph_legendre_p_recurrence_n {
     sph_legendre_p_recurrence_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)) {}
 
     void operator()(int n, T (&res)[2]) const {
-        using value_type = dual_value_type_t<T>;
+        using value_type = remove_dual_t<T>;
         value_type fac0 =
             -sqrt(value_type((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / value_type((2 * n - 3) * (n * n - m * m)));
         value_type fac1 =

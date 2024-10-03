@@ -462,24 +462,6 @@ bool operator>=(const dual<T, Orders...> &lhs, const dual<T, Orders...> &rhs) {
     return lhs.value() >= rhs.value();
 }
 
-template <typename T>
-struct dual_value_type {
-    using type = T;
-};
-
-template <typename T, size_t... Orders>
-struct dual_value_type<dual<T, Orders...>> {
-    using type = T;
-};
-
-template <typename T, size_t Order0, size_t Order1, size_t... Orders>
-struct dual_value_type<dual<T, Order0, Order1, Orders...>> {
-    using type = T;
-};
-
-template <typename T>
-using dual_value_type_t = typename dual_value_type<T>::type;
-
 template <size_t Order, typename T>
 dual<T, Order> dual_var(T value, size_t dim = 0) {
     // dim must be zero
