@@ -8,6 +8,7 @@ py3.install_sources([
     'test_continuous.py',
     'test_continuous_basic.py',
     'test_continuous_fit_censored.py',
+    'test_correlation.py',
     'test_crosstab.py',
     'test_discrete_basic.py',
     'test_discrete_distns.py',
