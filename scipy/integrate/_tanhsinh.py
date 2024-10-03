@@ -424,9 +424,11 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         # Terminate before first iteration if integration limits are equal
         if work.nit == 0:
             i = xp_ravel(work.a == work.b)  # ravel singleton dimension
-            zero = -xp.inf if log else 0
-            work.Sn[i] = zero
-            work.aerr[i] = zero
+            zero = xp.asarray(-xp.inf if log else 0.)
+            zero = xp.full(work.Sn.shape, zero, dtype=Sn.dtype)
+            zero[xp.isnan(Sn)] = xp.nan
+            work.Sn[i] = zero[i]
+            work.aerr[i] = zero[i]
             work.status[i] = eim._ECONVERGED
             stop[i] = True
         else:
@@ -783,11 +785,14 @@ def _estimate_error(work, xp):
 
 
 def _transform_integrals(a, b, xp):
-    # Transform integrals to a form with finite a < b
+    # Transform integrals to a form with finite a <= b
+    # For b == a (even infinite), we ensure that the limits remain equal
     # For b < a, we reverse the limits and will multiply the final result by -1
     # For infinite limit on the right, we use the substitution x = 1/t - 1 + a
     # For infinite limit on the left, we substitute x = -x and treat as above
     # For infinite limits, we substitute x = t / (1-t**2)
+    ab_same = (a == b)
+    a[ab_same], b[ab_same] = 1, 1
 
     # `a, b` may have complex dtype but have zero imaginary part
     negative = xp_real(b) < xp_real(a)
