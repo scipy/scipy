@@ -7,6 +7,10 @@ from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 __all__ = ['xi_correlation']
 
 
+# TODO:
+# - Adjust to respect dtype
+
+
 def _xi_statistic(x, y, y_continuous):
     # Compute xi correlation statistic
 
@@ -39,7 +43,7 @@ def _xi_std(r, l, y_continuous):
     # Compute standard deviation of xi under null hypothesis of independence
 
     # `axis=-1` is guaranteed by _axis_nan_policy decorator
-    n = r.shape[-1]
+    n = np.float64(r.shape[-1])
 
     # "Suppose that X and Y are independent and Y is continuous. Then
     # √n·ξn(X, Y) → N(0, 2/5) in distribution as n → ∞"
@@ -52,11 +56,11 @@ def _xi_std(r, l, y_continuous):
     i = np.arange(1, n + 1)
     u = np.sort(r, axis=-1)
     v = np.cumsum(u, axis=-1)
-    an = 1 / n ** 4 * np.sum((2 * n - 2 * i + 1) * u ** 2, axis=-1)
-    bn = 1 / n ** 5 * np.sum((v + (n - i) * u) ** 2, axis=-1)
-    cn = 1 / n ** 3 * np.sum((2 * n - 2 * i + 1) * u, axis=-1)
-    dn = 1 / n ** 3 * np.sum((l * (n - l)), axis=-1)
-    tau = (an - 2 * bn + cn ** 2) / dn ** 2
+    an = 1 / n**4 * np.sum((2*n - 2*i + 1) * u**2, axis=-1)
+    bn = 1 / n**5 * np.sum((v + (n - i)*u)**2, axis=-1)
+    cn = 1 / n**3 * np.sum((2*n - 2*i + 1) * u, axis=-1)
+    dn = 1 / n**3 * np.sum((l * (n - l)), axis=-1)
+    tau = (an - 2*bn + cn**2) / dn**2
 
     return np.sqrt(tau) / np.sqrt(n)
 
