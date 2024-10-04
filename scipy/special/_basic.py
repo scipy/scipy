@@ -2504,10 +2504,8 @@ def berp_zeros(nt):
 
     Examples
     --------
-    Compute the first 5 zeros of the derivative of the Kelvin function
-    `scipy.special.ber`:
+    Compute the first 5 zeros of the derivative of the Kelvin function.
 
-    >>> import numpy as np
     >>> from scipy.special import berp_zeros
     >>> berp_zeros(5)
     array([ 6.03871081, 10.51364251, 14.96844542, 19.41757493, 23.86430432])
