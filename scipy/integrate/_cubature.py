@@ -600,7 +600,6 @@ class _InfiniteLimitsTransform(_VariableTransform):
         self._orig_a = a
         self._orig_b = b
 
-        self._negate_pos = []
         self._semi_inf_pos = []
         self._double_inf_pos = []
 
@@ -620,7 +619,6 @@ class _InfiniteLimitsTransform(_VariableTransform):
                 #
                 # This is handled by making the transformation t = -x and reducing it to
                 # the other semi-infinite case.
-                self._negate_pos.append(i)
                 self._semi_inf_pos.append(i)
 
                 # Since we flip the limits, we don't need to separately multiply the
@@ -655,9 +653,6 @@ class _InfiniteLimitsTransform(_VariableTransform):
     def inv(self, x):
         t = xp_copy(x)
 
-        for i in self._negate_pos:
-            t[..., i] *= -1
-
         for i in self._double_inf_pos:
             t[..., i] = 1/(x[..., i] + self._xp.sign(x[..., i]))
 
@@ -669,9 +664,6 @@ class _InfiniteLimitsTransform(_VariableTransform):
     def __call__(self, t, *args, **kwargs):
         x = xp_copy(t)
         jacobian = 1.0
-
-        for i in self._negate_pos:
-            x[..., i] *= -1
 
         for i in self._double_inf_pos:
             # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
