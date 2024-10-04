@@ -3663,17 +3663,17 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     accuracy. Determining the right order can be a challenge. This function
     aims to estimate the order for an analog band stop filter:
 
-    import numpy as np
-
-    wp = 2
-    ind = 1
-    passb = np.array([1, 3])
-    stopb = np.array([0.5, 4])
-    gstop = 30
-    gpass = 3
-    filter_type = 'butter'
-    band_stop_obj(wp, ind, passb, stopb, gpass, gstop, filter_type)
-    print(result)  # Expected: 2.386294361119891
+    >>> import numpy as np
+    >>> from scipy.signal import band_stop_obj
+    >>> wp = 2
+    >>> ind = 1
+    >>> passb = np.array([1, 3])
+    >>> stopb = np.array([0.5, 4])
+    >>> gstop = 30
+    >>> gpass = 3
+    >>> filter_type = 'butter'
+    >>> band_stop_obj(wp, ind, passb, stopb, gpass, gstop, filter_type)
+    2.386294361119891
 
     """
 
