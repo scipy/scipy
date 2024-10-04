@@ -191,6 +191,10 @@ class FixedRule(Rule):
      [0.3333333]
     """
 
+    def __init__(self):
+        self.xp = None
+
+
     @property
     def nodes_and_weights(self):
         raise NotImplementedError
@@ -233,7 +237,10 @@ class FixedRule(Rule):
         """
         nodes, weights = self.nodes_and_weights
 
-        return _apply_fixed_rule(f, a, b, nodes, weights, args)
+        if self.xp is None:
+            self.xp = array_namespace(nodes)
+
+        return _apply_fixed_rule(f, a, b, nodes, weights, args, self.xp)
 
 
 class NestedFixedRule(FixedRule):
@@ -339,7 +346,7 @@ class NestedFixedRule(FixedRule):
         error_weights = self.xp.concat([weights, -lower_weights], axis=0)
 
         return self.xp.abs(
-            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args)
+            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, self.xp)
         )
 
 
@@ -467,9 +474,7 @@ def _split_subregion(a, b, xp, split_at=None):
         yield a_sub[i, ...], b_sub[i, ...]
 
 
-def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
-    xp = array_namespace(a, b, orig_nodes, orig_weights)
-
+def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
     # Downcast nodes and weights to common dtype of a and b
     result_dtype = a.dtype
     orig_nodes = xp.astype(orig_nodes, result_dtype)
