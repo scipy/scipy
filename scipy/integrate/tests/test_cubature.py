@@ -399,7 +399,7 @@ class TestCubature:
         xp_assert_close(
             res.estimate,
             basic_nd_integrand_exact(n, xp),
-            rtol=1e-1,
+            rtol=1e-8,
             atol=0,
         )
 
@@ -420,7 +420,7 @@ class TestCubature:
         xp_assert_close(
             res.estimate,
             basic_1d_integrand_exact(n, xp),
-            rtol=1e-1,
+            rtol=1e-8,
             atol=0,
         )
 
@@ -471,7 +471,7 @@ class TestCubature:
         xp_assert_close(
             res.estimate,
             xp.asarray([[0], [0], [0], [0], [0]], dtype=xp.float64),
-            rtol=1e-1,
+            rtol=1e-8,
             atol=0,
         )
 
@@ -491,7 +491,7 @@ class TestCubature:
         xp_assert_close(
             res.estimate,
             -basic_1d_integrand_exact(n, xp),
-            rtol=1e-1,
+            rtol=1e-8,
             atol=0,
         )
 
@@ -1198,7 +1198,7 @@ class TestRulesQuadrature:
         xp_assert_close(
             estimate,
             exact,
-            rtol=1e-1,
+            rtol=1e-8,
             atol=0,
         )
 
@@ -1219,14 +1219,14 @@ class TestRulesQuadrature:
             basic_1d_integrand,
             a, b,
             rule=rule,
-            rtol=1e-1,
+            rtol=1e-8,
             args=(n, xp),
         )
 
         xp_assert_close(
             res.estimate,
             basic_1d_integrand_exact(n, xp),
-            rtol=1e-1,
+            rtol=1e-8,
             atol=0,
         )
 
