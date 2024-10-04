@@ -183,23 +183,19 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     Genz-Malik is typically less accurate than Gauss-Kronrod but has much fewer nodes,
     so in this situation using "genz-malik" might be preferable.
 
-    Infinite limits are handeled with an appropriate variable transformation. Assuming
+    Infinite limits are handled with an appropriate variable transformation. Assuming
     ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, \infty)`, the i-th
-    integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
-    :math:`t \in (-1, 1)`.
+    If :math:`a_i = -\infty` and :math:`b_i = \infty`, the i-th integration variable
+    will use the transformation :math:`x = \frac{1-|t|}{t}` and :math:`t \in (-1, 1)`.
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in [a_i, \infty)`, the i-th
-    integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
+    If :math:`a_i \ne \pm\infty` and :math:`b_i = \infty`, the i-th integration variable
+    will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
     :math:`t \in (0, 1)`.
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, b_i]`, the i-th
-    integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
+    If :math:`a_i = -\infty` and :math:`b_i \ne \pm\infty`, the i-th integration
+    variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
     :math:`t \in (0, 1)`.
-
-    In all three of these cases, the Jacobian determinant of the transformation is
-    :math:`J(t) = t^{-2}`.
 
     References
     ----------
@@ -585,20 +581,16 @@ class _InfiniteLimitsTransform(_VariableTransform):
 
     Assuming ``a = [a_1, ..., a_n]`` and ``b = [b_1, ..., b_n]``:
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, \infty)`, the i-th
-    integration variable will use the transformation :math:`x = \frac{1-|t|}{t}` and
-    :math:`t \in (-1, 1)`.
+    If :math:`a_i = -\infty` and :math:`b_i = \infty`, the i-th integration variable
+    will use the transformation :math:`x = \frac{1-|t|}{t}` and :math:`t \in (-1, 1)`.
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in [a_i, \infty)`, the i-th
-    integration variable will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
+    If :math:`a_i \ne \pm\infty` and :math:`b_i = \infty`, the i-th integration variable
+    will use the transformation :math:`x = a_i + \frac{1-t}{t}` and
     :math:`t \in (0, 1)`.
 
-    If :math:`a_i` and :math:`b_i` range over :math:`x \in (-\infty, b_i]`, the i-th
-    integration variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
+    If :math:`a_i = -\infty` and :math:`b_i \ne \pm\infty`, the i-th integration
+    variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
     :math:`t \in (0, 1)`.
-
-    In all three of these cases, the Jacobian of the transformation is
-    :math:`J(t) = t^{-2}`.
     """
 
     def __init__(self, f, a, b, xp):
