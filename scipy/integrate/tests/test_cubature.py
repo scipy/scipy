@@ -495,6 +495,37 @@ class TestCubature:
             atol=0,
         )
 
+    def test_result_dtype_promoted_correctly(self, xp):
+        result_dtype = cubature(
+            basic_1d_integrand,
+            xp.asarray([0], dtype=xp.float64),
+            xp.asarray([1], dtype=xp.float64),
+            points=[],
+            args=(xp.asarray([1], dtype=xp.float64), xp),
+        ).estimate.dtype
+
+        assert result_dtype == xp.float64
+
+        result_dtype = cubature(
+            basic_1d_integrand,
+            xp.asarray([0], dtype=xp.float32),
+            xp.asarray([1], dtype=xp.float32),
+            points=[],
+            args=(xp.asarray([1], dtype=xp.float32), xp),
+        ).estimate.dtype
+
+        assert result_dtype == xp.float32
+
+        result_dtype = cubature(
+            basic_1d_integrand,
+            xp.asarray([0], dtype=xp.float32),
+            xp.asarray([1], dtype=xp.float64),
+            points=[],
+            args=(xp.asarray([1], dtype=xp.float32), xp),
+        ).estimate.dtype
+
+        assert result_dtype == xp.float64
+
 
 @pytest.mark.parametrize("rtol", [1e-4])
 @pytest.mark.parametrize("atol", [1e-5])
@@ -1158,8 +1189,8 @@ class TestRulesQuadrature:
 
             return x_reshaped**n_reshaped
 
-        a = xp.asarray([0])
-        b = xp.asarray([2])
+        a = xp.asarray([0], dtype=xp.float64)
+        b = xp.asarray([2], dtype=xp.float64)
 
         exact = xp.reshape(2**(n+1)/(n+1), (-1, 1))
         estimate = quadrature.estimate(f, a, b)

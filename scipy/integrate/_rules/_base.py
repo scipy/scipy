@@ -470,6 +470,11 @@ def _split_subregion(a, b, xp, split_at=None):
 def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     xp = array_namespace(a, b, orig_nodes, orig_weights)
 
+    # Downcast nodes and weights to common dtype of a and b
+    result_dtype = a.dtype
+    orig_nodes = xp.astype(orig_nodes, result_dtype)
+    orig_weights = xp.astype(orig_weights, result_dtype)
+
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)
     if orig_nodes.ndim == 1:
@@ -485,8 +490,6 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
                          f"ndim {rule_ndim}, while limit of integration has ndim"
                          f"a_ndim={a_ndim}, b_ndim={b_ndim}")
 
-    a = xp.astype(a, xp.float64)
-    b = xp.astype(b, xp.float64)
     lengths = b - a
 
     # The underlying rule is for the hypercube [-1, 1]^n.
@@ -497,7 +500,7 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
 
     # Also need to multiply the weights by a scale factor equal to the determinant
     # of the Jacobian for this coordinate change.
-    weight_scale_factor = xp.prod(lengths) / 2**rule_ndim
+    weight_scale_factor = xp.prod(lengths, dtype=result_dtype) / 2**rule_ndim
     weights = orig_weights * weight_scale_factor
 
     f_nodes = f(nodes, *args)
@@ -506,6 +509,6 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     # f(nodes) will have shape (num_nodes, output_dim_1, ..., output_dim_n)
     # Summing along the first axis means estimate will shape (output_dim_1, ...,
     # output_dim_n)
-    est = xp.sum(weights_reshaped * f_nodes, axis=0)
+    est = xp.sum(weights_reshaped * f_nodes, axis=0, dtype=result_dtype)
 
     return est

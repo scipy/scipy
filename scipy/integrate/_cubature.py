@@ -6,7 +6,12 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
 
-from scipy._lib._array_api import array_namespace, xp_size, xp_copy
+from scipy._lib._array_api import (
+    array_namespace,
+    xp_size,
+    xp_copy,
+    xp_broadcast_promote
+)
 from scipy._lib._util import MapWrapper
 
 from scipy.integrate._rules import (
@@ -321,11 +326,12 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     xp = array_namespace(a, b)
     max_subdivisions = float("inf") if max_subdivisions is None else max_subdivisions
-    points = [] if points is None else [xp.asarray(p, dtype=xp.float64) for p in points]
+    points = [] if points is None else points
 
-    # Convert a and b to arrays
-    a = xp.asarray(a, dtype=xp.float64)
-    b = xp.asarray(b, dtype=xp.float64)
+    # Convert a and b to arrays and convert each point in points to an array, promoting
+    # each to a common floating dtype.
+    a, b, *points = xp_broadcast_promote(a, b, *points, force_floating=True)
+    result_dtype = a.dtype
 
     if xp_size(a) == 0 or xp_size(b) == 0:
         raise ValueError("`a` and `b` must be nonempty")
@@ -357,7 +363,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     # If any of limits are the wrong way around (a > b), flip them and keep track of
     # the sign.
-    sign = (-1.0) ** xp.sum(xp.astype(a > b, xp.float64))
+    sign = (-1) ** xp.sum(xp.astype(a > b, xp.int8), dtype=result_dtype)
 
     a_flipped = xp.min(xp.stack([a, b]), axis=0)
     b_flipped = xp.max(xp.stack([a, b]), axis=0)
