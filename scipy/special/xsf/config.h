@@ -247,8 +247,6 @@ using cuda::std::uint64_t;
 #define XSF_ASSERT(a)
 #endif
 
-#endif
-
 namespace xsf {
 
 // basic
@@ -302,3 +300,5 @@ template <typename T>
 using complex = complex_type_t<T>;
 
 } // namespace xsf
+
+#endif
