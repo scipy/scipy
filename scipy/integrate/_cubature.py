@@ -383,7 +383,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     #
     # This means ``f`` won't be evaluated there if the rule being used has no evaluation
     # points on the boundary.
-    if points == []:
+    if len(points) == 0:
         initial_regions = [(a, b)]
     else:
         initial_regions = _split_region_at_points(a, b, points, xp)
