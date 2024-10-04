@@ -47,17 +47,23 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup conda
-        uses: s-weigand/setup-conda@678f22c807cb6fde6a290be6f3546877c98ec66f # v1.2.2
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
         with:
-          update-conda: true
           python-version: 3.11
-      - run: conda --version
+          channels: conda-forge
+          channel-priority: true
+          use-only-tar-bz2: false
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          use-mamba: true
+
+      - run: mamba --version
       - run: which python
 
       - name: Install packages from conda
         run: |
-          conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
+          mamba install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
 
       - name: cache install
         id: cache-install
