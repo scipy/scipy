@@ -194,7 +194,7 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     :math:`t \in (0, 1)`.
 
     If :math:`a_i = -\infty` and :math:`b_i \ne \pm\infty`, the i-th integration
-    variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
+    variable will use the transformation :math:`x = b_i - \frac{1-t}{t}` and
     :math:`t \in (0, 1)`.
 
     References
@@ -589,7 +589,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
     :math:`t \in (0, 1)`.
 
     If :math:`a_i = -\infty` and :math:`b_i \ne \pm\infty`, the i-th integration
-    variable will use the transformation :math:`x = b_i - \frac{1+t}{t}` and
+    variable will use the transformation :math:`x = b_i - \frac{1-t}{t}` and
     :math:`t \in (0, 1)`.
     """
 
