@@ -2472,15 +2472,18 @@ def berp_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
-    Examples
-    --------
+    Notes
+    -----
     Understanding the behavior of special functions and their derivatives is
     crucial in various fields of science and engineering. For instance, if
     you're working on problems related to heat conduction, wave propagation,
     or certain types of differential equations, you may come across the Kelvin
-    function. Here's how you can compute the first 5 zeros of its derivative:
+    function.
 
-    Compute the first 5 zeros of the derivative of the Kelvin function ber:
+    Examples
+    --------
+    Compute the first 5 zeros of the derivative of the Kelvin function
+    `scipy.special.ber`:
 
     >>> import numpy as np
     >>> from scipy.special import berp_zeros

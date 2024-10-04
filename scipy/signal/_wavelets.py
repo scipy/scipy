@@ -89,14 +89,6 @@ def qmf(hk):
     array_like
         High-pass filter coefficients.
 
-    Examples
-    --------
-    >>> from scipy.signal import qmf
-    >>> low_pass_coefficients = [0.48296, 0.8365, 0.22414, -0.12940]
-    >>> high_pass_coefficients = qmf(low_pass_coefficients)
-    >>> high_pass_coefficients
-    array([ 0.12940,  0.22414, -0.8365 ,  0.48296])
-
     Notes
     -----
     This function takes the coefficients of a low-pass filter `hk` and computes
@@ -114,6 +106,15 @@ def qmf(hk):
     ----------
     .. [1] Vaidyanathan, P.P. (1993). "Multirate Systems and Filter Banks".
            Prentice Hall. ISBN: 978-0136057185.
+           
+    Examples
+    --------
+    >>> from scipy.signal import qmf
+    >>> low_pass_coefficients = [0.48296, 0.8365, 0.22414, -0.12940]
+    >>> high_pass_coefficients = qmf(low_pass_coefficients)
+    >>> high_pass_coefficients
+    array([ 0.12940,  0.22414, -0.8365 ,  0.48296])
+
     """
     N = len(hk) - 1
     asgn = [{0: 1, 1: -1}[k % 2] for k in range(N + 1)]
