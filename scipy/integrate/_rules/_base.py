@@ -194,7 +194,6 @@ class FixedRule(Rule):
     def __init__(self):
         self.xp = None
 
-
     @property
     def nodes_and_weights(self):
         raise NotImplementedError
