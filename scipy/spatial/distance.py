@@ -105,15 +105,15 @@ __all__ = [
 ]
 
 
-import os
+import math
 import warnings
 import numpy as np
 import dataclasses
 
-from typing import Optional, Callable
-
+from collections.abc import Callable
 from functools import partial
 from scipy._lib._util import _asarray_validated
+from scipy._lib.deprecation import _deprecated
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -121,24 +121,6 @@ from ..linalg import norm
 from ..special import rel_entr
 
 from . import _distance_pybind
-
-
-def _extra_windows_error_checks(x, out, required_shape, **kwargs):
-    # TODO: remove this function when distutils
-    # build system is removed because pybind11 error
-    # handling should suffice per gh-18108
-    if os.name == "nt" and out is not None:
-        if out.shape != required_shape:
-            raise ValueError("Output array has incorrect shape.")
-        if not out.flags["C_CONTIGUOUS"]:
-            raise ValueError("Output array must be C-contiguous.")
-        if not np.can_cast(x.dtype, out.dtype):
-            raise ValueError("Wrong out dtype.")
-    if os.name == "nt" and "w" in kwargs:
-        w = kwargs["w"]
-        if w is not None:
-            if (w < 0).sum() > 0:
-                raise ValueError("Input weights should be all non-negative")
 
 
 def _copy_array_if_base_present(a):
@@ -240,7 +222,9 @@ def _validate_hamming_kwargs(X, m, n, **kwargs):
     w = kwargs.get('w', np.ones((n,), dtype='double'))
 
     if w.ndim != 1 or w.shape[0] != n:
-        raise ValueError("Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n))
+        raise ValueError(
+            "Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n)
+        )
 
     kwargs['w'] = _validate_weights(w)
     return kwargs
@@ -259,7 +243,7 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
                              "are required." % (m, n, n + 1))
         if isinstance(X, tuple):
             X = np.vstack(X)
-        CV = np.atleast_2d(np.cov(X.astype(np.double, copy=False).T))
+        CV = np.atleast_2d(np.cov(X.astype(np.float64, copy=False).T))
         VI = np.linalg.inv(CV).T.copy()
     kwargs["VI"] = _convert_to_double(VI)
     return kwargs
@@ -296,7 +280,7 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
     if V is None:
         if isinstance(X, tuple):
             X = np.vstack(X)
-        V = np.var(X.astype(np.double, copy=False), axis=0, ddof=1)
+        V = np.var(X.astype(np.float64, copy=False), axis=0, ddof=1)
     else:
         V = np.asarray(V, order='c')
         if len(V.shape) != 1:
@@ -318,7 +302,7 @@ def _validate_vector(u, dtype=None):
     raise ValueError("Input vector should be 1-D.")
 
 
-def _validate_weights(w, dtype=np.double):
+def _validate_weights(w, dtype=np.float64):
     w = _validate_vector(w, dtype=dtype)
     if np.any(w < 0):
         raise ValueError("Input weights should be all non-negative")
@@ -334,10 +318,10 @@ def directed_hausdorff(u, v, seed=0):
     Parameters
     ----------
     u : (M,N) array_like
-        Input array.
+        Input array with M points in N dimensions.
     v : (O,N) array_like
-        Input array.
-    seed : int or None
+        Input array with O points in N dimensions.
+    seed : int or None, optional
         Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
 
@@ -605,11 +589,17 @@ def correlation(u, v, w=None, centered=True):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (N,) array_like of floats
         Input array.
-    v : (N,) array_like
+
+        .. deprecated:: 1.15.0
+           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
+    v : (N,) array_like of floats
         Input array.
-    w : (N,) array_like, optional
+
+        .. deprecated:: 1.15.0
+           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
+    w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
     centered : bool, optional
@@ -620,22 +610,54 @@ def correlation(u, v, w=None, centered=True):
     correlation : double
         The correlation distance between 1-D array `u` and `v`.
 
+    Examples
+    --------
+    Find the correlation between two arrays.
+
+    >>> from scipy.spatial.distance import correlation
+    >>> correlation([1, 0, 1], [1, 1, 0])
+    1.5
+
+    Using a weighting array, the correlation can be calculated as:
+
+    >>> correlation([1, 0, 1], [1, 1, 0], w=[0.9, 0.1, 0.1])
+    1.1
+
+    If centering is not needed, the correlation can be calculated as:
+
+    >>> correlation([1, 0, 1], [1, 1, 0], centered=False)
+    0.5
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+    if np.iscomplexobj(u) or np.iscomplexobj(v):
+        message = (
+            "Complex `u` and `v` are deprecated and will raise an error in "
+            "SciPy 1.17.0.")
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
     if w is not None:
         w = _validate_weights(w)
+        w = w / w.sum()
     if centered:
-        umu = np.average(u, weights=w)
-        vmu = np.average(v, weights=w)
+        if w is not None:
+            umu = np.dot(u, w)
+            vmu = np.dot(v, w)
+        else:
+            umu = np.mean(u)
+            vmu = np.mean(v)
         u = u - umu
         v = v - vmu
-    uv = np.average(u * v, weights=w)
-    uu = np.average(np.square(u), weights=w)
-    vv = np.average(np.square(v), weights=w)
-    dist = 1.0 - uv / np.sqrt(uu * vv)
-    # Return absolute value to avoid small negative value due to rounding
-    return np.abs(dist)
+    if w is not None:
+        vw = v * w
+        uw = u * w
+    else:
+        vw, uw = v, u
+    uv = np.dot(u, vw)
+    uu = np.dot(u, uw)
+    vv = np.dot(v, vw)
+    dist = 1.0 - uv / math.sqrt(uu * vv)
+    # Clip the result to avoid rounding error
+    return np.clip(dist, 0.0, 2.0)
 
 
 def cosine(u, v, w=None):
@@ -654,11 +676,17 @@ def cosine(u, v, w=None):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (N,) array_like of floats
         Input array.
-    v : (N,) array_like
+
+        .. deprecated:: 1.15.0
+           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
+    v : (N,) array_like of floats
         Input array.
-    w : (N,) array_like, optional
+
+        .. deprecated:: 1.15.0
+           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
+    w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
 
@@ -680,8 +708,7 @@ def cosine(u, v, w=None):
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
-    # clamp the result to 0-2
-    return max(0, min(correlation(u, v, w=w, centered=False), 2.0))
+    return correlation(u, v, w=w, centered=False)
 
 
 def hamming(u, v, w=None):
@@ -737,86 +764,148 @@ def hamming(u, v, w=None):
         w = _validate_weights(w)
         if w.shape != u.shape:
             raise ValueError("'w' should have the same length as 'u' and 'v'.")
-    return np.average(u_ne_v, weights=w)
+        w = w / w.sum()
+        return np.dot(u_ne_v, w)
+    return np.mean(u_ne_v)
 
 
 def jaccard(u, v, w=None):
-    """
-    Compute the Jaccard-Needham dissimilarity between two boolean 1-D arrays.
+    r"""
+    Compute the Jaccard dissimilarity between two boolean vectors.
 
-    The Jaccard-Needham dissimilarity between 1-D boolean arrays `u` and `v`,
-    is defined as
+    Given boolean vectors :math:`u \equiv (u_1, \cdots, u_n)`
+    and :math:`v \equiv (v_1, \cdots, v_n)` that are not both zero,
+    their *Jaccard dissimilarity* is defined as ([1]_, p. 26)
 
     .. math::
 
-       \\frac{c_{TF} + c_{FT}}
-            {c_{TT} + c_{FT} + c_{TF}}
+       d_\textrm{jaccard}(u, v) := \frac{c_{10} + c_{01}}
+                                        {c_{11} + c_{10} + c_{01}}
 
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`.
+    where
+
+    .. math::
+
+       c_{ij} := \sum_{1 \le k \le n, u_k=i, v_k=j} 1
+
+    for :math:`i, j \in \{ 0, 1\}`.  If :math:`u` and :math:`v` are both zero,
+    their Jaccard dissimilarity is defined to be zero. [2]_
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Jaccard dissimilarity* is defined similarly
+    but with :math:`c_{ij}` replaced by
+
+    .. math::
+
+       \tilde{c}_{ij} := \sum_{1 \le k \le n, u_k=i, v_k=j} w_k
 
     Parameters
     ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-    w : (N,) array_like, optional
-        The weights for each value in `u` and `v`. Default is None,
-        which gives each value a weight of 1.0
+    u : (N,) array_like of bools
+        Input vector.
+    v : (N,) array_like of bools
+        Input vector.
+    w : (N,) array_like of floats, optional
+        Weights for each pair of :math:`(u_k, v_k)`.  Default is ``None``,
+        which gives each pair a weight of ``1.0``.
 
     Returns
     -------
-    jaccard : double
-        The Jaccard distance between vectors `u` and `v`.
+    jaccard : float
+        The Jaccard dissimilarity between vectors `u` and `v`, optionally
+        weighted by `w` if supplied.
 
     Notes
     -----
-    When both `u` and `v` lead to a `0/0` division i.e. there is no overlap
-    between the items in the vectors the returned distance is 0. See the
-    Wikipedia page on the Jaccard index [1]_, and this paper [2]_.
+    The Jaccard dissimilarity satisfies the triangle inequality and is
+    qualified as a metric. [2]_
+
+    The *Jaccard index*, or *Jaccard similarity coefficient*, is equal to
+    one minus the Jaccard dissimilarity. [3]_
+
+    The dissimilarity between general (finite) sets may be computed by
+    encoding them as boolean vectors and computing the dissimilarity
+    between the encoded vectors.
+    For example, subsets :math:`A,B` of :math:`\{ 1, 2, ..., n \}` may be
+    encoded into boolean vectors :math:`u, v` by setting
+    :math:`u_k := 1_{k \in A}`, :math:`v_k := 1_{k \in B}`
+    for :math:`k = 1,2,\cdots,n`.
 
     .. versionchanged:: 1.2.0
-        Previously, when `u` and `v` lead to a `0/0` division, the function
-        would return NaN. This was changed to return 0 instead.
+       Previously, if all (positively weighted) elements in `u` and `v` are
+       zero, the function would return ``nan``.  This was changed to return
+       ``0`` instead.
+
+    .. versionchanged:: 1.15.0
+       Non-0/1 numeric input used to produce an ad hoc result.  Since 1.15.0,
+       numeric input is converted to Boolean before computation.
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Jaccard_index
-    .. [2] S. Kosub, "A note on the triangle inequality for the Jaccard
-       distance", 2016, :arxiv:`1612.02696`
+    .. [1] Kaufman, L. and Rousseeuw, P. J.  (1990).  "Finding Groups in Data:
+           An Introduction to Cluster Analysis."  John Wiley & Sons, Inc.
+    .. [2] Kosub, S.  (2019).  "A note on the triangle inequality for the
+           Jaccard distance."  *Pattern Recognition Letters*, 120:36-38.
+    .. [3] https://en.wikipedia.org/wiki/Jaccard_index
 
     Examples
     --------
     >>> from scipy.spatial import distance
+
+    Non-zero vectors with no matching 1s have dissimilarity of 1.0:
+
     >>> distance.jaccard([1, 0, 0], [0, 1, 0])
     1.0
-    >>> distance.jaccard([1, 0, 0], [1, 1, 0])
-    0.5
-    >>> distance.jaccard([1, 0, 0], [1, 2, 0])
-    0.5
-    >>> distance.jaccard([1, 0, 0], [1, 1, 1])
-    0.66666666666666663
+
+    Vectors with some matching 1s have dissimilarity less than 1.0:
+
+    >>> distance.jaccard([1, 0, 0, 0], [1, 1, 1, 0])
+    0.6666666666666666
+
+    Identical vectors, including zero vectors, have dissimilarity of 0.0:
+
+    >>> distance.jaccard([1, 0, 0], [1, 0, 0])
+    0.0
+    >>> distance.jaccard([0, 0, 0], [0, 0, 0])
+    0.0
+
+    The following example computes the dissimilarity from a confusion matrix
+    directly by setting the weight vector to the frequency of True Positive,
+    False Negative, False Positive, and True Negative:
+
+    >>> distance.jaccard([1, 1, 0, 0], [1, 0, 1, 0], [31, 41, 59, 26])
+    0.7633587786259542  # (41+59)/(31+41+59)
 
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
 
+    unequal = np.bitwise_xor(u != 0, v != 0)
     nonzero = np.bitwise_or(u != 0, v != 0)
-    unequal_nonzero = np.bitwise_and((u != v), nonzero)
     if w is not None:
         w = _validate_weights(w)
+        unequal = w * unequal
         nonzero = w * nonzero
-        unequal_nonzero = w * unequal_nonzero
-    a = np.double(unequal_nonzero.sum())
-    b = np.double(nonzero.sum())
-    return (a / b) if b != 0 else 0
+    a = np.float64(unequal.sum())
+    b = np.float64(nonzero.sum())
+    return (a / b) if b != 0 else np.float64(0)
 
 
+_deprecated_kulczynski1 = _deprecated(
+    "The kulczynski1 metric is deprecated since SciPy 1.15.0 and will be "
+    "removed in SciPy 1.17.0.  Replace usage of 'kulczynski1(u, v)' with "
+    "'1/jaccard(u, v) - 1'."
+)
+
+
+@_deprecated_kulczynski1
 def kulczynski1(u, v, *, w=None):
     """
     Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
+
+    .. deprecated:: 1.15.0
+       This function is deprecated and will be removed in SciPy 1.17.0.
+       Replace usage of ``kulczynski1(u, v)`` with ``1/jaccard(u, v) - 1``.
 
     The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
     of length ``n``, is defined as
@@ -903,7 +992,7 @@ def seuclidean(u, v, V):
         Input array.
     V : (N,) array_like
         `V` is an 1-D array of component variances. It is usually computed
-        among a larger collection vectors.
+        among a larger collection of vectors.
 
     Returns
     -------
@@ -1024,29 +1113,48 @@ def mahalanobis(u, v, VI):
 
 
 def chebyshev(u, v, w=None):
-    """
+    r"""
     Compute the Chebyshev distance.
 
-    Computes the Chebyshev distance between two 1-D arrays `u` and `v`,
-    which is defined as
+    The *Chebyshev distance* between real vectors
+    :math:`u \equiv (u_1, \cdots, u_n)` and
+    :math:`v \equiv (v_1, \cdots, v_n)` is defined as [1]_
 
     .. math::
 
-       \\max_i {|u_i-v_i|}.
+       d_\textrm{chebyshev}(u,v) := \max_{1 \le i \le n} |u_i-v_i|
+
+    If a (non-negative) weight vector :math:`w \equiv (w_1, \cdots, w_n)`
+    is supplied, the *weighted Chebyshev distance* is defined to be the
+    weighted Minkowski distance of infinite order; that is,
+
+    .. math::
+
+       \begin{align}
+       d_\textrm{chebyshev}(u,v;w) &:= \lim_{p\rightarrow \infty}
+          \left( \sum_{i=1}^n w_i | u_i-v_i |^p \right)^\frac{1}{p} \\
+        &= \max_{1 \le i \le n} 1_{w_i > 0} | u_i - v_i |
+       \end{align}
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (N,) array_like of floats
         Input vector.
-    v : (N,) array_like
+    v : (N,) array_like of floats
         Input vector.
-    w : (N,) array_like, optional
-        Unused, as 'max' is a weightless operation. Here for API consistency.
+    w : (N,) array_like of floats, optional
+        Weight vector.  Default is ``None``, which gives all pairs
+        :math:`(u_i, v_i)` the same weight ``1.0``.
 
     Returns
     -------
-    chebyshev : double
-        The Chebyshev distance between vectors `u` and `v`.
+    chebyshev : float
+        The Chebyshev distance between vectors `u` and `v`, optionally weighted
+        by `w`.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Chebyshev_distance
 
     Examples
     --------
@@ -1061,10 +1169,7 @@ def chebyshev(u, v, w=None):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
-        has_weight = w > 0
-        if has_weight.sum() < w.size:
-            u = u[has_weight]
-            v = v[has_weight]
+        return max((w > 0) * abs(u - v))
     return max(abs(u - v))
 
 
@@ -1144,7 +1249,7 @@ def canberra(u, v, w=None):
 
     Notes
     -----
-    When `u[i]` and `v[i]` are 0 for given i, then the fraction 0/0 = 0 is
+    When ``u[i]`` and ``v[i]`` are 0 for given i, then the fraction 0/0 = 0 is
     used in the calculation.
 
     Examples
@@ -1481,9 +1586,21 @@ def russellrao(u, v, w=None):
     return float(n - ntt) / n
 
 
+_deprecated_sokalmichener = _deprecated(
+    "The sokalmichener metric is deprecated since SciPy 1.15.0 and will be "
+    "removed in SciPy 1.17.0.  Replace usage of 'sokalmichener(u, v)' with "
+    "'rogerstanimoto(u, v)'."
+)
+
+
+@_deprecated_sokalmichener
 def sokalmichener(u, v, w=None):
     """
     Compute the Sokal-Michener dissimilarity between two boolean 1-D arrays.
+
+    .. deprecated:: 1.15.0
+       This function is deprecated and will be removed in SciPy 1.17.0.
+       Replace usage of ``sokalmichener(u, v)`` with ``rogerstanimoto(u, v)``.
 
     The Sokal-Michener dissimilarity between boolean 1-D arrays `u` and `v`,
     is defined as
@@ -1592,7 +1709,7 @@ def sokalsneath(u, v, w=None):
     return float(2.0 * (ntf + nft)) / denom
 
 
-_convert_to_double = partial(_convert_to_type, out_type=np.double)
+_convert_to_double = partial(_convert_to_type, out_type=np.float64)
 _convert_to_bool = partial(_convert_to_type, out_type=bool)
 
 # adding python-only wrappers to _distance_wrap module
@@ -1620,33 +1737,7 @@ class CDistMetricWrapper:
             return _cdist_callable(
                 XA, XB, metric=metric, out=out, w=w, **kwargs)
 
-        dm = _prepare_out_argument(out, np.double, (mA, mB))
-        # get cdist wrapper
-        cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
-        cdist_fn(XA, XB, dm, **kwargs)
-        return dm
-
-
-@dataclasses.dataclass(frozen=True)
-class CDistWeightedMetricWrapper:
-    metric_name: str
-    weighted_metric: str
-
-    def __call__(self, XA, XB, *, out=None, **kwargs):
-        XA = np.ascontiguousarray(XA)
-        XB = np.ascontiguousarray(XB)
-        mA, n = XA.shape
-        mB, _ = XB.shape
-        metric_name = self.metric_name
-        XA, XB, typ, kwargs = _validate_cdist_input(
-            XA, XB, mA, mB, n, _METRICS[metric_name], **kwargs)
-        dm = _prepare_out_argument(out, np.double, (mA, mB))
-
-        w = kwargs.pop('w', None)
-        if w is not None:
-            metric_name = self.weighted_metric
-            kwargs['w'] = w
-
+        dm = _prepare_out_argument(out, np.float64, (mA, mB))
         # get cdist wrapper
         cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
         cdist_fn(XA, XB, dm, **kwargs)
@@ -1671,32 +1762,7 @@ class PDistMetricWrapper:
             return _pdist_callable(
                 X, metric=metric, out=out, w=w, **kwargs)
 
-        dm = _prepare_out_argument(out, np.double, (out_size,))
-        # get pdist wrapper
-        pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
-        pdist_fn(X, dm, **kwargs)
-        return dm
-
-
-@dataclasses.dataclass(frozen=True)
-class PDistWeightedMetricWrapper:
-    metric_name: str
-    weighted_metric: str
-
-    def __call__(self, X, *, out=None, **kwargs):
-        X = np.ascontiguousarray(X)
-        m, n = X.shape
-        metric_name = self.metric_name
-        X, typ, kwargs = _validate_pdist_input(
-            X, m, n, _METRICS[metric_name], **kwargs)
-        out_size = (m * (m - 1)) // 2
-        dm = _prepare_out_argument(out, np.double, (out_size,))
-
-        w = kwargs.pop('w', None)
-        if w is not None:
-            metric_name = self.weighted_metric
-            kwargs['w'] = w
-
+        dm = _prepare_out_argument(out, np.float64, (out_size,))
         # get pdist wrapper
         pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
         pdist_fn(X, dm, **kwargs)
@@ -1717,7 +1783,7 @@ class MetricInfo:
     pdist_func: Callable
     # function that checks kwargs and computes default values:
     # f(X, m, n, **kwargs)
-    validator: Optional[Callable] = None
+    validator: Callable | None = None
     # list of supported types:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
@@ -1814,8 +1880,8 @@ _METRIC_INFOS = [
         aka={'kulczynski1'},
         types=['bool'],
         dist_func=kulczynski1,
-        cdist_func=_distance_pybind.cdist_kulczynski1,
-        pdist_func=_distance_pybind.pdist_kulczynski1,
+        cdist_func=_deprecated_kulczynski1(_distance_pybind.cdist_kulczynski1),
+        pdist_func=_deprecated_kulczynski1(_distance_pybind.pdist_kulczynski1),
     ),
     MetricInfo(
         canonical_name='mahalanobis',
@@ -1862,8 +1928,8 @@ _METRIC_INFOS = [
         aka={'sokalmichener'},
         types=['bool'],
         dist_func=sokalmichener,
-        cdist_func=_distance_pybind.cdist_sokalmichener,
-        pdist_func=_distance_pybind.pdist_sokalmichener,
+        cdist_func=_deprecated_sokalmichener(_distance_pybind.cdist_sokalmichener),
+        pdist_func=_deprecated_sokalmichener(_distance_pybind.pdist_sokalmichener),
     ),
     MetricInfo(
         canonical_name='sokalsneath',
@@ -1919,7 +1985,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
-    out : ndarray
+    out : ndarray, optional
         The output array.
         If not None, condensed distance matrix Y is stored in this array.
     **kwargs : dict, optional
@@ -2111,6 +2177,11 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the kulczynski1 distance between each pair of
         boolean vectors. (see kulczynski1 function documentation)
 
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``pdist(X, 'kulczynski1')`` with
+           ``1 / pdist(X, 'jaccard') - 1``.
+
     19. ``Y = pdist(X, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between each pair of
@@ -2125,6 +2196,11 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         Computes the Sokal-Michener distance between each pair of
         boolean vectors. (see sokalmichener function documentation)
+
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``pdist(X, 'sokalmichener')`` with
+           ``pdist(X, 'rogerstanimoto')``.
 
     22. ``Y = pdist(X, 'sokalsneath')``
 
@@ -2216,7 +2292,6 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         if metric_info is not None:
             pdist_fn = metric_info.pdist_func
-            _extra_windows_error_checks(X, out, (m * (m - 1) / 2,), **kwargs)
             return pdist_fn(X, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
@@ -2227,7 +2302,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
             return _pdist_callable(
                 X, metric=metric_info.dist_func, out=out, **kwargs)
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError(f'Unknown Distance Metric: {mstr}')
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')
@@ -2382,9 +2457,8 @@ def squareform(X, force="no", checks=True):
         _distance_wrap.to_vector_from_squareform_wrap(X, v)
         return v
     else:
-        raise ValueError(('The first argument must be one or two dimensional '
-                          'array. A %d-dimensional array is not '
-                          'permitted') % len(s))
+        raise ValueError("The first argument must be one or two dimensional "
+                         f"array. A {len(s)}-dimensional array is not permitted")
 
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
@@ -2461,47 +2535,42 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         s = D.shape
         if len(D.shape) != 2:
             if name:
-                raise ValueError(('Distance matrix \'%s\' must have shape=2 '
-                                  '(i.e. be two-dimensional).') % name)
+                raise ValueError(f"Distance matrix '{name}' must have shape=2 "
+                                 "(i.e. be two-dimensional).")
             else:
                 raise ValueError('Distance matrix must have shape=2 (i.e. '
                                  'be two-dimensional).')
         if tol == 0.0:
             if not (D == D.T).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                     'symmetric.') % name)
+                    raise ValueError(f"Distance matrix '{name}' must be symmetric.")
                 else:
                     raise ValueError('Distance matrix must be symmetric.')
             if not (D[range(0, s[0]), range(0, s[0])] == 0).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must '
-                                      'be zero.') % name)
+                    raise ValueError(f"Distance matrix '{name}' diagonal must be zero.")
                 else:
                     raise ValueError('Distance matrix diagonal must be zero.')
         else:
             if not (D - D.T <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' must be '
-                                      'symmetric within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(f'Distance matrix \'{name}\' must be '
+                                     f'symmetric within tolerance {tol:5.5f}.')
                 else:
-                    raise ValueError('Distance matrix must be symmetric within'
-                                     ' tolerance %5.5f.' % tol)
+                    raise ValueError('Distance matrix must be symmetric within '
+                                     f'tolerance {tol:5.5f}.')
             if not (D[range(0, s[0]), range(0, s[0])] <= tol).all():
                 if name:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % (name, tol))
+                    raise ValueError(f'Distance matrix \'{name}\' diagonal must be '
+                                     f'close to zero within tolerance {tol:5.5f}.')
                 else:
-                    raise ValueError(('Distance matrix \'%s\' diagonal must be'
-                                      ' close to zero within tolerance %5.5f.')
-                                     % tol)
+                    raise ValueError(('Distance matrix \'{}\' diagonal must be close '
+                                      'to zero within tolerance {:5.5f}.').format(*tol))
     except Exception as e:
         if throw:
             raise
         if warning:
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
         valid = False
     return valid
 
@@ -2559,9 +2628,8 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     try:
         if len(y.shape) != 1:
             if name:
-                raise ValueError(('Condensed distance matrix \'%s\' must '
-                                  'have shape=1 (i.e. be one-dimensional).')
-                                 % name)
+                raise ValueError(f"Condensed distance matrix '{name}' must "
+                                 "have shape=1 (i.e. be one-dimensional).")
             else:
                 raise ValueError('Condensed distance matrix must have shape=1 '
                                  '(i.e. be one-dimensional).')
@@ -2569,10 +2637,9 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         d = int(np.ceil(np.sqrt(n * 2)))
         if (d * (d - 1) / 2) != n:
             if name:
-                raise ValueError(('Length n of condensed distance matrix '
-                                  '\'%s\' must be a binomial coefficient, i.e.'
-                                  'there must be a k such that '
-                                  '(k \\choose 2)=n)!') % name)
+                raise ValueError(f"Length n of condensed distance matrix '{name}' "
+                                 "must be a binomial coefficient, i.e."
+                                 "there must be a k such that (k \\choose 2)=n)!")
             else:
                 raise ValueError('Length n of condensed distance matrix must '
                                  'be a binomial coefficient, i.e. there must '
@@ -2581,7 +2648,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         if throw:
             raise
         if warning:
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
         valid = False
     return valid
 
@@ -2601,6 +2668,15 @@ def num_obs_dm(d):
     num_obs_dm : int
         The number of observations in the redundant distance matrix.
 
+    Examples
+    --------
+    Find the number of original observations corresponding
+    to a square redundant distance matrix d.
+    
+    >>> from scipy.spatial.distance import num_obs_dm
+    >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
+    >>> num_obs_dm(d)
+    3
     """
     d = np.asarray(d, order='c')
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
@@ -2622,6 +2698,15 @@ def num_obs_y(Y):
     n : int
         The number of observations in the condensed distance matrix `Y`.
 
+    Examples
+    --------
+    Find the number of original observations corresponding to a
+    condensed distance matrix Y.
+    
+    >>> from scipy.spatial.distance import num_obs_y
+    >>> Y = [1, 2, 3.5, 7, 10, 4]
+    >>> num_obs_y(Y)
+    4
     """
     Y = np.asarray(Y, order='c')
     is_valid_y(Y, throw=True, name='Y')
@@ -2644,7 +2729,7 @@ def _prepare_out_argument(out, dtype, expected_shape):
         raise ValueError("Output array has incorrect shape.")
     if not out.flags.c_contiguous:
         raise ValueError("Output array must be C-contiguous.")
-    if out.dtype != np.double:
+    if out.dtype != np.float64:
         raise ValueError("Output array must be double type.")
     return out
 
@@ -2652,7 +2737,7 @@ def _prepare_out_argument(out, dtype, expected_shape):
 def _pdist_callable(X, *, out, metric, **kwargs):
     n = X.shape[0]
     out_size = (n * (n - 1)) // 2
-    dm = _prepare_out_argument(out, np.double, (out_size,))
+    dm = _prepare_out_argument(out, np.float64, (out_size,))
     k = 0
     for i in range(X.shape[0] - 1):
         for j in range(i + 1, X.shape[0]):
@@ -2664,7 +2749,7 @@ def _pdist_callable(X, *, out, metric, **kwargs):
 def _cdist_callable(XA, XB, *, out, metric, **kwargs):
     mA = XA.shape[0]
     mB = XB.shape[0]
-    dm = _prepare_out_argument(out, np.double, (mA, mB))
+    dm = _prepare_out_argument(out, np.float64, (mA, mB))
     for i in range(mA):
         for j in range(mB):
             dm[i, j] = metric(XA[i], XB[j], **kwargs)
@@ -2884,6 +2969,11 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         Computes the kulczynski distance between the boolean
         vectors. (see `kulczynski1` function documentation)
 
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``cdist(XA, XB, 'kulczynski1')`` with
+           ``1 / cdist(XA, XB, 'jaccard') - 1``.
+
     19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between the boolean
@@ -2898,6 +2988,11 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
 
         Computes the Sokal-Michener distance between the boolean
         vectors. (see `sokalmichener` function documentation)
+
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``cdist(XA, XB, 'sokalmichener')`` with
+           ``cdist(XA, XB, 'rogerstanimoto')``.
 
     22. ``Y = cdist(XA, XB, 'sokalsneath')``
 
@@ -3002,7 +3097,6 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         metric_info = _METRIC_ALIAS.get(mstr, None)
         if metric_info is not None:
             cdist_fn = metric_info.cdist_func
-            _extra_windows_error_checks(XA, out, (mA, mB), **kwargs)
             return cdist_fn(XA, XB, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
@@ -3013,7 +3107,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
             return _cdist_callable(
                 XA, XB, metric=metric_info.dist_func, out=out, **kwargs)
         else:
-            raise ValueError('Unknown Distance Metric: %s' % mstr)
+            raise ValueError(f'Unknown Distance Metric: {mstr}')
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')

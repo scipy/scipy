@@ -8,10 +8,21 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
+from scipy._lib._array_api import array_namespace, xp_moveaxis_to_end
 
 __all__ = ['entropy', 'differential_entropy']
 
 
+@_axis_nan_policy_factory(
+    lambda x: x,
+    n_samples=lambda kwgs: (
+        2 if ("qk" in kwgs and kwgs["qk"] is not None)
+        else 1
+    ),
+    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    too_small=-1  # entropy doesn't have too small inputs
+)
 def entropy(pk: np.typing.ArrayLike,
             qk: np.typing.ArrayLike | None = None,
             base: float | None = None,
@@ -113,7 +124,7 @@ def entropy(pk: np.typing.ArrayLike,
     >>> D = entropy(pk, qk, base=base)
     >>> D
     0.7369655941662062
-    >>> D == np.sum(pk * np.log(pk/qk)) / np.log(base)
+    >>> np.isclose(D, np.sum(pk * np.log(pk/qk)) / np.log(base), rtol=4e-16, atol=0)
     True
 
     The cross entropy can be calculated as the sum of the entropy and
@@ -129,21 +140,39 @@ def entropy(pk: np.typing.ArrayLike,
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
 
-    pk = np.asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
+    xp = array_namespace(pk) if qk is None else array_namespace(pk, qk)
+
+    pk = xp.asarray(pk)
+    with np.errstate(invalid='ignore'):
+        pk = 1.0*pk / xp.sum(pk, axis=axis, keepdims=True)  # type: ignore[operator]
     if qk is None:
         vec = special.entr(pk)
     else:
-        qk = np.asarray(qk)
-        pk, qk = np.broadcast_arrays(pk, qk)
-        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
+        qk = xp.asarray(qk)
+        pk, qk = _broadcast_arrays((pk, qk), axis=None, xp=xp)  # don't ignore any axes
+        sum_kwargs = dict(axis=axis, keepdims=True)
+        qk = 1.0*qk / xp.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
         vec = special.rel_entr(pk, qk)
-    S = np.sum(vec, axis=axis)
+    S = xp.sum(vec, axis=axis)
     if base is not None:
-        S /= np.log(base)
+        S /= math.log(base)
     return S
 
 
+def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
+    values = samples[0]
+    n = values.shape[axis]
+    window_length = kwargs.get("window_length",
+                               math.floor(math.sqrt(n) + 0.5))
+    if not 2 <= 2 * window_length < n:
+        return True
+    return False
+
+
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
+    too_small=_differential_entropy_is_too_small
+)
 def differential_entropy(
     values: np.typing.ArrayLike,
     *,
@@ -288,9 +317,12 @@ def differential_entropy(
     >>> plt.title('Entropy Estimator Error (Exponential Distribution)')
 
     """
-    values = np.asarray(values)
-    values = np.moveaxis(values, axis, -1)
-    n = values.shape[-1]  # number of observations
+    xp = array_namespace(values)
+    values = xp.asarray(values)
+    if xp.isdtype(values.dtype, "integral"):  # type: ignore[union-attr]
+        values = xp.astype(values, xp.asarray(1.).dtype)
+    values = xp_moveaxis_to_end(values, axis, xp=xp)
+    n = values.shape[-1]  # type: ignore[union-attr]
 
     if window_length is None:
         window_length = math.floor(math.sqrt(n) + 0.5)
@@ -304,7 +336,7 @@ def differential_entropy(
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
 
-    sorted_data = np.sort(values, axis=-1)
+    sorted_data = xp.sort(values, axis=-1)
 
     methods = {"vasicek": _vasicek_entropy,
                "van es": _van_es_entropy,
@@ -324,74 +356,75 @@ def differential_entropy(
         else:
             method = 'vasicek'
 
-    res = methods[method](sorted_data, window_length)
+    res = methods[method](sorted_data, window_length, xp=xp)
 
     if base is not None:
-        res /= np.log(base)
+        res /= math.log(base)
 
-    return res
+    # avoid dtype changes due to data-apis/array-api-compat#152
+    # can be removed when data-apis/array-api-compat#152 is resolved
+    return xp.astype(res, values.dtype)  # type: ignore[union-attr]
 
 
-def _pad_along_last_axis(X, m):
+def _pad_along_last_axis(X, m, *, xp):
     """Pad the data for computing the rolling window difference."""
     # scales a  bit better than method in _vasicek_like_entropy
-    shape = np.array(X.shape)
-    shape[-1] = m
-    Xl = np.broadcast_to(X[..., [0]], shape)  # [0] vs 0 to maintain shape
-    Xr = np.broadcast_to(X[..., [-1]], shape)
-    return np.concatenate((Xl, X, Xr), axis=-1)
+    shape = X.shape[:-1] + (m,)
+    Xl = xp.broadcast_to(X[..., :1], shape)  # :1 vs 0 to maintain shape
+    Xr = xp.broadcast_to(X[..., -1:], shape)
+    return xp.concat((Xl, X, Xr), axis=-1)
 
 
-def _vasicek_entropy(X, m):
+def _vasicek_entropy(X, m, *, xp):
     """Compute the Vasicek estimator as described in [6] Eq. 1.3."""
     n = X.shape[-1]
-    X = _pad_along_last_axis(X, m)
+    X = _pad_along_last_axis(X, m, xp=xp)
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
-    logs = np.log(n/(2*m) * differences)
-    return np.mean(logs, axis=-1)
+    logs = xp.log(n/(2*m) * differences)
+    return xp.mean(logs, axis=-1)
 
 
-def _van_es_entropy(X, m):
+def _van_es_entropy(X, m, *, xp):
     """Compute the van Es estimator as described in [6]."""
     # No equation number, but referred to as HVE_mn.
     # Typo: there should be a log within the summation.
     n = X.shape[-1]
     difference = X[..., m:] - X[..., :-m]
-    term1 = 1/(n-m) * np.sum(np.log((n+1)/m * difference), axis=-1)
-    k = np.arange(m, n+1)
-    return term1 + np.sum(1/k) + np.log(m) - np.log(n+1)
+    term1 = 1/(n-m) * xp.sum(xp.log((n+1)/m * difference), axis=-1)
+    k = xp.arange(m, n+1, dtype=term1.dtype)
+    return term1 + xp.sum(1/k) + math.log(m) - math.log(n+1)
 
 
-def _ebrahimi_entropy(X, m):
+def _ebrahimi_entropy(X, m, *, xp):
     """Compute the Ebrahimi estimator as described in [6]."""
     # No equation number, but referred to as HE_mn
     n = X.shape[-1]
-    X = _pad_along_last_axis(X, m)
+    X = _pad_along_last_axis(X, m, xp=xp)
 
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
 
-    i = np.arange(1, n+1).astype(float)
-    ci = np.ones_like(i)*2
+    i = xp.arange(1, n+1, dtype=X.dtype)
+    ci = xp.ones_like(i)*2
     ci[i <= m] = 1 + (i[i <= m] - 1)/m
     ci[i >= n - m + 1] = 1 + (n - i[i >= n-m+1])/m
 
-    logs = np.log(n * differences / (ci * m))
-    return np.mean(logs, axis=-1)
+    logs = xp.log(n * differences / (ci * m))
+    return xp.mean(logs, axis=-1)
 
 
-def _correa_entropy(X, m):
+def _correa_entropy(X, m, *, xp):
     """Compute the Correa estimator as described in [6]."""
     # No equation number, but referred to as HC_mn
     n = X.shape[-1]
-    X = _pad_along_last_axis(X, m)
+    X = _pad_along_last_axis(X, m, xp=xp)
 
-    i = np.arange(1, n+1)
-    dj = np.arange(-m, m+1)[:, None]
+    i = xp.arange(1, n+1)
+    dj = xp.arange(-m, m+1)[:, None]
     j = i + dj
     j0 = j + m - 1  # 0-indexed version of j
 
-    Xibar = np.mean(X[..., j0], axis=-2, keepdims=True)
+    Xibar = xp.mean(X[..., j0], axis=-2, keepdims=True)
     difference = X[..., j0] - Xibar
-    num = np.sum(difference*dj, axis=-2)  # dj is d-i
-    den = n*np.sum(difference**2, axis=-2)
-    return -np.mean(np.log(num/den), axis=-1)
+    num = xp.sum(difference*dj, axis=-2)  # dj is d-i
+    den = n*xp.sum(difference**2, axis=-2)
+    return -xp.mean(xp.log(num/den), axis=-1)

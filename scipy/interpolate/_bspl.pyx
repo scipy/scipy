@@ -6,21 +6,48 @@ Routines for evaluating and manipulating B-splines.
 import numpy as np
 cimport numpy as cnp
 
-from numpy cimport npy_intp
+from numpy cimport npy_intp, npy_int64, npy_int32
 
 cimport cython
 from libc.math cimport NAN
 
 cnp.import_array()
 
-cdef extern from "src/__fitpack.h":
-    void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
+cdef extern from "src/__fitpack.h" namespace "fitpack":
+    void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result
+    ) noexcept nogil
+    ssize_t _find_interval(const double* tptr, ssize_t len_t,
+                           int k,
+                           double xval,
+                           ssize_t prev_l,
+                           int extrapolate
+    ) noexcept nogil
+    void qr_reduce(double *aptr, const ssize_t m, const ssize_t nz,    # a
+                   ssize_t *offset,
+                   const ssize_t nc,
+                   double *yptr, const ssize_t ydim1,                  # y
+                   const ssize_t startrow
+    ) except+ nogil
+    void data_matrix(const double *xptr, ssize_t m,
+                       const double *tptr, ssize_t len_t,
+                       int k,
+                       const double *wptr,
+                       double *Aptr,    # outputs
+                       ssize_t *offset_ptr,
+                       Py_ssize_t *nc,
+                       double *wrk
+    ) except+ nogil
+    void fpback(const double *Rptr, ssize_t m, ssize_t nz,
+                ssize_t nc,
+                const double *yptr, ssize_t ydim2,
+                double *cptr
+    ) except+ nogil
+    double fpknot(const double *x_ptr, ssize_t m,
+                  const double *t_ptr, ssize_t len_t,
+                  int k,
+                  const double *residuals_ptr
+    ) except+ nogil
 
-ctypedef double complex double_complex
-
-ctypedef fused double_or_complex:
-    double
-    double complex
 
 ctypedef fused int32_or_int64:
     cnp.npy_int32
@@ -63,42 +90,31 @@ cdef inline int find_interval(const double[::1] t,
         Suitable interval or -1 if xval was nan.
 
     """
-    cdef:
-        int l
-        int n = t.shape[0] - k - 1
-        double tb = t[k]
-        double te = t[n]
+    return _find_interval(&t[0], t.shape[0], k, xval, prev_l, extrapolate)
 
-    if xval != xval:
-        # nan
-        return -1
 
-    if ((xval < tb) or (xval > te)) and not extrapolate:
-        return -1
-
-    l = prev_l if k < prev_l < n else k
-
-    # xval is in support, search for interval s.t. t[interval] <= xval < t[l+1]
-    while(xval < t[l] and l != k):
-        l -= 1
-
-    l += 1
-    while(xval >= t[l] and l != n):
-        l += 1
-
-    return l-1
+# NB: a python wrapper for find_interval. The leading underscore signals
+# it's not meant to be user-visible outside of _bsplines.py
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _py_find_interval(const double[::1] t,
+                   int k,
+                   double xval,
+                   int prev_l,
+                   bint extrapolate):
+    return find_interval(t, k, xval, prev_l, extrapolate)
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate_spline(const double[::1] t,
-             const double_or_complex[:, ::1] c,
+             const double[:, ::1] c,
              int k,
              const double[::1] xp,
              int nu,
              bint extrapolate,
-             double_or_complex[:, ::1] out):
+             double[:, ::1] out):
     """
     Evaluate a spline in the B-spline basis.
 
@@ -134,7 +150,7 @@ def evaluate_spline(const double[::1] t,
     if nu < 0:
         raise NotImplementedError("Cannot do derivative order %s." % nu)
 
-    cdef double[::1] work = np.empty(2*k+2, dtype=np.float_)
+    cdef double[::1] work = np.empty(2*k+2, dtype=np.float64)
 
     # evaluate
     with nogil:
@@ -217,7 +233,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     >>> plt.show()
 
     """
-    bbb = np.empty(2*k+2, dtype=np.float_)
+    bbb = np.empty(2*k+2, dtype=np.float64)
     cdef double[::1] work = bbb
     _deBoor_D(&t[0], xval, k, m, nu, &work[0])
     return bbb[:k+1]
@@ -265,7 +281,7 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
     cdef double xval
 
     kl = ku = k
-    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     # collocation matrix
     with nogil:
@@ -286,64 +302,13 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
-                            double[::1, :] ab,
-                            int kl, int ku,
-                            const cnp.int_t[::1] deriv_ords,
-                            int offset=0):
-    """ Fill in the entries of the collocation matrix corresponding to known
-    derivatives at xval.
-
-    The collocation matrix is in the banded storage, as prepared by _colloc.
-    No error checking.
-
-    Parameters
-    ----------
-    t : ndarray, shape (nt + k + 1,)
-        knots
-    k : integer
-        B-spline order
-    xval : float
-        The value at which to evaluate the derivatives at.
-    ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
-        B-spline collocation matrix.
-        This argument is modified *in-place*.
-    kl : integer
-        Number of lower diagonals of ab.
-    ku : integer
-        Number of upper diagonals of ab.
-    deriv_ords : 1D ndarray
-        Orders of derivatives known at xval
-    offset : integer, optional
-        Skip this many rows of the matrix ab.
-
-    """
-    cdef:
-        int left, nu, a, clmn, row
-        double[::1] wrk = np.empty(2*k+2, dtype=np.float_)
-
-    # derivatives @ xval
-    with nogil:
-        left = find_interval(t, k, xval, k, extrapolate=False)
-        for row in range(deriv_ords.shape[0]):
-            nu = deriv_ords[row]
-            _deBoor_D(&t[0], xval, k, left, nu, &wrk[0])
-            # if A were a full matrix, it would be just
-            # ``A[row + offset, left-k:left+1] = bb``.
-            for a in range(k+1):
-                clmn = left - k + a
-                ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
 def _norm_eq_lsq(const double[::1] x,
                  const double[::1] t,
                  int k,
-                 const double_or_complex[:, ::1] y,
+                 const double[:, ::1] y,
                  const double[::1] w,
                  double[::1, :] ab,
-                 double_or_complex[::1, :] rhs):
+                 double[:, ::1] rhs):
     """Construct the normal equations for the B-spline LSQ problem.
 
     The observation equations are ``A @ c = y``, and the normal equations are
@@ -378,7 +343,7 @@ def _norm_eq_lsq(const double[::1] x,
         This parameter is modified in-place.
         On entry: should be zeroed out.
         On exit: LHS of the normal equations.
-    rhs : ndarray, shape (n, s), in Fortran order.
+    rhs : ndarray, shape (n, s), in C order.
         This parameter is modified in-place.
         On entry: should be zeroed out.
         On exit: RHS of the normal equations.
@@ -387,7 +352,7 @@ def _norm_eq_lsq(const double[::1] x,
     cdef:
         int j, r, s, row, clmn, left, ci
         double xval, wval
-        double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+        double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     with nogil:
         left = k
@@ -421,7 +386,8 @@ def _make_design_matrix(const double[::1] x,
                         const double[::1] t,
                         int k,
                         bint extrapolate,
-                        int32_or_int64[::1] indices):
+                        int32_or_int64[::1] indices,
+                        int nu=0):
     """
     Returns a design matrix in CSR format.
 
@@ -465,7 +431,7 @@ def _make_design_matrix(const double[::1] x,
         # extrapolate=False and out of bound values are already dealt with in
         # design_matrix
         ind = find_interval(t, k, xval, ind, extrapolate)
-        _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
+        _deBoor_D(&t[0], xval, k, ind, nu, &work[0])
 
         # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
         # indices[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1)
@@ -483,14 +449,15 @@ def _make_design_matrix(const double[::1] x,
 @cython.nonecheck(False)
 def evaluate_ndbspline(const double[:, ::1] xi,
                        const double[:, ::1] t,
-                       long[::1] k,
+                       const npy_int32[::1] len_t,
+                       const npy_int32[::1] k,
                        int[::1] nu,
                        bint extrapolate,
-                       const double_or_complex[::1] c1r,
+                       const double[::1] c1r,
                        npy_intp num_c_tr,
                        const npy_intp[::1] strides_c1,
                        const npy_intp[:, ::] indices_k1d,
-                       double_or_complex[:, ::1] out,
+                       double[:, ::1] out,
                       ):
         """Evaluate an N-dim tensor product spline or its derivative.
 
@@ -499,8 +466,13 @@ def evaluate_ndbspline(const double[:, ::1] xi,
         xi : ndarray, shape(npoints, ndim)
             ``npoints`` values to evaluate the spline at, each value is
             a point in an ``ndim``-dimensional space.
-        t : tuple, len(ndim)
-            Tuple of knots for each dimension.
+        t : ndarray, shape(ndim, max_len_t)
+            Array of knots for each dimension.
+            This array packs the tuple of knot arrays per dimension into a single
+            2D array. The array is ragged (knot lengths may differ), hence
+            the real knots in dimension ``d`` are ``t[d, :len_t[d]]``.
+        len_t : ndarray, 1D, shape (ndim,)
+            Lengths of the knot arrays, per dimension.
         k : tuple of ints, len(ndim)
             Spline degrees in each dimension.
         nu : ndarray of ints, shape(ndim,)
@@ -539,7 +511,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
         N-dimensional vector ``x = (x1, x2, ..., xN)``, iterate over the
         dimensions, form linear combinations of products,
         B(x1) * B(x2) * ... B(xN) of (k+1)**N b-splines which are non-zero
-        at ``x``. 
+        at ``x``.
 
         Since b-splines are localized, the sum has (k+1)**N non-zero elements.
 
@@ -612,7 +584,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                 # For each point, iterate over the dimensions
                 out_of_bounds = 0
                 for d in range(ndim):
-                    td = t[d]
+                    td = t[d, :len_t[d]]
                     xd = xv[d]
                     kd = k[d]
 
@@ -640,9 +612,9 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                 # iterate over the direct products of non-zero b-splines
                 for iflat in range(volume):
                     idx_b = indices_k1d[iflat, :]
-                    # The line above is equivalent to 
+                    # The line above is equivalent to
                     # idx_b = np.unravel_index(iflat, (k+1,)*ndim)
-                    
+
                     # From the indices in ``idx_b``, we prepare to index into
                     # c1.ravel() : for each dimension d, need to shift the index
                     # by ``i[d] - k[d]`` (see the docstring above).
@@ -666,3 +638,230 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                     for i_c in range(num_c_tr):
                         out[j, i_c] = out[j, i_c] + c1r[idx_cflat_base + i_c] * factor
 
+
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.boundscheck(False)
+def _colloc_nd(const double[:, ::1] xvals,
+               const double[:, ::1] _t,
+               const npy_int32[::1] len_t,
+               const npy_int32[::1] k,
+               const npy_intp[:, ::1] _indices_k1d,
+               const npy_intp[::1] _cstrides):
+    """Construct the N-D tensor product collocation matrix as a CSR array.
+
+    In the dense representation, each row of the collocation matrix corresponds
+    to a data point and contains non-zero b-spline basis functions which are
+    non-zero at this data point.
+
+    Parameters
+    ----------
+    xvals : ndarray, shape(size, ndim)
+        Data points. ``xvals[j, :]`` gives the ``j``-th data point as an
+        ``ndim``-dimensional array.
+    t : tuple of 1D arrays, length-ndim
+        Tuple of knot vectors
+    k : ndarray, shape (ndim,)
+        Spline degrees
+
+    Returns
+    -------
+    csr_data, csr_indices, csr_indptr
+        The collocation matrix in the CSR array format.
+
+    Notes
+    -----
+    Algorithm: given `xvals` and the tuple of knots `t`, we construct a tensor
+    product spline, i.e. a linear combination of
+
+       B(x1; i1, t1) * B(x2; i2, t2) * ... * B(xN; iN, tN)
+
+
+    Here ``B(x; i, t)`` is the ``i``-th b-spline defined by the knot vector
+    ``t`` evaluated at ``x``.
+
+    Since ``B`` functions are localized, for each point `(x1, ..., xN)` we
+    loop over the dimensions, and
+    - find the location in the knot array, `t[i] <= x < t[i+1]`,
+    - compute all non-zero `B` values
+    - place these values into the relevant row
+
+    In the dense representation, the collocation matrix would have had a row per
+    data point, and each row has the values of the basis elements (i.e., tensor
+    products of B-splines) evaluated at this data point. Since the matrix is very
+    sparse (has size = len(x)**ndim, with only (k+1)**ndim non-zero elements per
+    row), we construct it in the CSR format.
+    """
+    cdef:
+        npy_intp size = xvals.shape[0]
+        npy_intp ndim = xvals.shape[1]
+
+        # 'intervals': indices for a point in xi into the knot arrays t
+        npy_intp[::1] i = np.empty(ndim, dtype=np.intp)
+
+        # container for non-zero b-splines at each point in xi
+        double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
+
+        double xd               # d-th component of x
+        const double[::1] td    # knots in the dimension d
+        npy_intp kd             # d-th component of k
+
+        npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
+        npy_intp volume   # the number of non-zero terms
+
+        # shifted indices into the data array
+        npy_intp[::1] idx_c = np.ones(ndim, dtype=np.intp) * (-101)  # any sentinel would do, really
+        npy_intp idx_cflat
+
+        npy_intp[::1] nu = np.zeros(ndim, dtype=np.intp)
+
+        int out_of_bounds
+        double factor
+        double[::1] wrk = np.empty(2*max(k) + 2, dtype=float)
+
+        # output
+        double[::1] csr_data
+        npy_int64[::1] csr_indices
+
+        int j, d
+
+    # the number of non-zero b-splines for each data point.
+    volume = 1
+    for d in range(ndim):
+        volume *= k[d] + 1
+
+    # Allocate the collocation matrix in the CSR format.
+    # If dense, this would have been
+    # >>> matr = np.zeros((size, max_row_index), dtype=float)
+    csr_indices = np.empty(shape=(size*volume,), dtype=np.int64)
+    csr_data = np.empty(shape=(size*volume,), dtype=float)
+    csr_indptr = np.arange(0, volume*size + 1, volume, dtype=np.int64)
+
+    # ### Iterate over the data points ###
+    for j in range(size):
+        xv = xvals[j, :]
+
+        # For each point, iterate over the dimensions
+        out_of_bounds = 0
+        for d in range(ndim):
+            td = _t[d, :len_t[d]]
+            xd = xv[d]
+            kd = k[d]
+
+            # get the location of x[d] in t[d]
+            i[d] = find_interval(td, kd, xd, kd, extrapolate=True)
+
+            if i[d] < 0:
+                out_of_bounds = 1
+                break
+
+            # compute non-zero b-splines at this value of xd in dimension d
+            _deBoor_D(&td[0], xd, kd, i[d], nu[d], &wrk[0])
+            b[d, :kd+1] = wrk[:kd+1]
+
+        if out_of_bounds:
+            raise ValueError(f"Out of bounds in {d = }, with {xv = }")
+
+        # Iterate over the products of non-zero b-splines and place them
+        # into the current row of the design matrix
+        for iflat in range(volume):
+            # the line below is an unrolled version of
+            # idx_b = np.unravel_index(iflat,  tuple(kd+1 for kd in k))
+            idx_b = _indices_k1d[iflat, :]
+
+            factor = 1.0
+            idx_cflat = 0
+            for d in range(ndim):
+                factor *= b[d, idx_b[d]]
+                idx_c[d] = idx_b[d] + i[d] - k[d]
+                idx_cflat += idx_c[d] * _cstrides[d]
+
+            # The `idx_cflat` computation above is an unrolled version of
+            # idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
+
+            # Fill the row of the collocation matrix in the CSR format.
+            # If it were dense, it would have been just
+            # >>> matr[j, idx_cflat] = factor
+
+            # Each row of the full matrix has `volume` non-zero elements.
+            # Thus the CSR format `indptr` increases in steps of `volume`
+            csr_indices[j*volume + iflat] = idx_cflat
+            csr_data[j*volume + iflat] = factor
+
+    return np.asarray(csr_data), np.asarray(csr_indices), csr_indptr
+
+
+# ---------------------------
+# wrappers for fitpack repro
+# ---------------------------
+def _qr_reduce(double[:, ::1] a, ssize_t[::1] offset, ssize_t nc,   # A packed
+               double[:, ::1] y,
+               ssize_t startrow=1
+):
+    # (A, offset, nc) is a PackedMatrix instance, unpacked
+    qr_reduce(&a[0, 0], a.shape[0], a.shape[1],
+              &offset[0],
+              nc,
+              &y[0, 0], y.shape[1],
+              startrow)
+
+
+def _data_matrix(const double[::1] x,
+                 const double[::1] t,
+                 int k,
+                 const double[::1] w):
+    cdef:
+         ssize_t m = x.shape[0]
+         double[:, ::1] A = np.empty((m, k+1), dtype=float)
+         ssize_t[::1] offset = np.zeros(m, dtype=np.intp)
+         double[::1] wrk = np.empty(2*k+2, dtype=float)
+         ssize_t nc
+
+    if w.shape[0] != x.shape[0]:
+        raise ValueError(f"{len(w) =} != {len(x) =}.")
+
+    data_matrix(&x[0], m,
+                &t[0], t.shape[0],
+                k,
+                &w[0],
+                &A[0, 0],    # output: (A, offset, nc)
+                &offset[0],
+                &nc,
+                &wrk[0],     # work array
+    )
+    return np.asarray(A), np.asarray(offset), int(nc)
+
+
+def _fpback(const double[:, ::1] R, ssize_t nc,  # (R, offset, nc) triangular => offset is range(nc)
+            const double[:, ::1] y
+):
+    cdef:
+        ssize_t m = R.shape[0]
+        ssize_t nz = R.shape[1]
+
+    if y.shape[0] != m:
+        raise ValueError(f"{y.shape = } != {m =}.")
+    if nc > m:
+        raise ValueError(f"{nc = } > {m = }.")
+
+    cdef double[:, ::1] c = np.empty_like(y[:nc, :])
+
+    fpback(&R[0, 0], m, nz,
+           nc,
+           &y[0, 0], y.shape[1],
+           &c[0, 0])
+
+    return np.asarray(c)
+
+
+def _fpknot(const double[::1] x,
+            const double[::1] t,
+            int k,
+            const double[::1] residuals):
+    if x.shape[0] != residuals.shape[0]:
+        raise ValueError(f"{len(x) = } != {len(residuals) =}")
+
+    return fpknot(&x[0], x.shape[0],
+                  &t[0], t.shape[0],
+                  k,
+                  &residuals[0])

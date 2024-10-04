@@ -7,14 +7,19 @@ from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._util import getfullargspec_no_self as _getfullargspec
+from scipy._lib._util import (
+    getfullargspec_no_self as _getfullargspec, np_long
+)
+from scipy._lib._array_api_no_0d import xp_assert_equal
 from scipy import stats
 
 
-def check_named_results(res, attributes, ma=False):
+def check_named_results(res, attributes, ma=False, xp=None):
     for i, attr in enumerate(attributes):
         if ma:
             ma_npt.assert_equal(res[i], getattr(res, attr))
+        elif xp is not None:
+            xp_assert_equal(res[i], getattr(res, attr))
         else:
             npt.assert_equal(res[i], getattr(res, attr))
 
@@ -45,7 +50,7 @@ def check_moment(distfn, arg, m, v, msg):
                                 err_msg=msg + ' - 1st moment')
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
-                    msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+                    msg + f' - 1st moment -infinite, m1={str(m1)}')
 
     if not np.isinf(v):
         npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10,
@@ -233,7 +238,7 @@ def check_random_state_property(distfn, args):
 def check_meth_dtype(distfn, arg, meths):
     q0 = [0.25, 0.5, 0.75]
     x0 = distfn.ppf(q0, *arg)
-    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32,
+    x_cast = [x0.astype(tp) for tp in (np_long, np.float16, np.float32,
                                        np.float64)]
 
     for x in x_cast:
@@ -242,7 +247,7 @@ def check_meth_dtype(distfn, arg, meths):
         x = x[(distfn.a < x) & (x < distfn.b)]
         for meth in meths:
             val = meth(x, *arg)
-            npt.assert_(val.dtype == np.float_)
+            npt.assert_(val.dtype == np.float64)
 
 
 def check_ppf_dtype(distfn, arg):
@@ -251,7 +256,7 @@ def check_ppf_dtype(distfn, arg):
     for q in q_cast:
         for meth in [distfn.ppf, distfn.isf]:
             val = meth(q, *arg)
-            npt.assert_(val.dtype == np.float_)
+            npt.assert_(val.dtype == np.float64)
 
 
 def check_cmplx_deriv(distfn, arg):
@@ -262,7 +267,7 @@ def check_cmplx_deriv(distfn, arg):
         return (f(x + h*1j, *arg)/h).imag
 
     x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
-    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32,
+    x_cast = [x0.astype(tp) for tp in (np_long, np.float16, np.float32,
                                        np.float64)]
 
     for x in x_cast:
@@ -341,7 +346,7 @@ def check_freezing(distfn, args):
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
     np.random.seed(123)
     sample = distfunc.rvs(*allargs)
-    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+    assert_equal(sample.shape, shape, f"{distname}: rvs failed to broadcast")
     if not shape_only:
         rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
         np.random.seed(123)

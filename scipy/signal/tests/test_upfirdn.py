@@ -35,7 +35,7 @@
 import numpy as np
 from itertools import product
 
-from numpy.testing import assert_equal, assert_allclose
+from scipy._lib._array_api import xp_assert_close
 from pytest import raises as assert_raises
 import pytest
 
@@ -98,16 +98,16 @@ class UpFIRDnCase:
         assert y.shape == yr.shape
         dtypes = (self.h.dtype, x.dtype)
         if all(d == np.complex64 for d in dtypes):
-            assert_equal(y.dtype, np.complex64)
+            assert y.dtype == np.complex64
         elif np.complex64 in dtypes and np.float32 in dtypes:
-            assert_equal(y.dtype, np.complex64)
+            assert y.dtype == np.complex64
         elif all(d == np.float32 for d in dtypes):
-            assert_equal(y.dtype, np.float32)
+            assert y.dtype == np.float32
         elif np.complex128 in dtypes or np.complex64 in dtypes:
-            assert_equal(y.dtype, np.complex128)
+            assert y.dtype == np.complex128
         else:
-            assert_equal(y.dtype, np.float64)
-        assert_allclose(yr, y)
+            assert y.dtype == np.float64
+        xp_assert_close(yr.astype(y.dtype), y)
 
 
 _UPFIRDN_TYPES = (int, np.float32, np.complex64, float, complex)
@@ -129,14 +129,14 @@ class TestUpfirdn:
         x = np.ones(len_x)
         y = upfirdn(h, x, 1, 1)
         want = np.pad(x, (len_h // 2, (len_h - 1) // 2), 'constant')
-        assert_allclose(y, want)
+        xp_assert_close(y, want)
 
     def test_shift_x(self):
         # gh-9844: shifted x can change values?
         y = upfirdn([1, 1], [1.], 1, 1)
-        assert_allclose(y, [1, 1])  # was [0, 1] in the issue
+        xp_assert_close(y, np.asarray([1.0, 1.0]))  # was [0, 1] in the issue
         y = upfirdn([1, 1], [0., 1.], 1, 1)
-        assert_allclose(y, [0, 1, 1])
+        xp_assert_close(y, np.asarray([0.0, 1.0, 1.0]))
 
     # A bunch of lengths/factors chosen because they exposed differences
     # between the "old way" and new way of computing length, and then
@@ -154,7 +154,8 @@ class TestUpfirdn:
         h[0] = 1.
         x = np.ones(len_x)
         y = upfirdn(h, x, up, down)
-        assert_allclose(y, expected)
+        expected = np.asarray(expected, dtype=np.float64)
+        xp_assert_close(y, expected)
 
     @pytest.mark.parametrize('down, want_len', [  # lengths from MATLAB
         (2, 5015),
@@ -177,7 +178,7 @@ class TestUpfirdn:
             y = upfirdn(h, x, up=1, down=down)
             assert y.shape == (want_len,)
             assert yl.shape[0] == y.shape[0]
-            assert_allclose(yl, y, atol=1e-7, rtol=1e-7)
+            xp_assert_close(yl, y, atol=1e-7, rtol=1e-7)
 
     @pytest.mark.parametrize('x_dtype', _UPFIRDN_TYPES)
     @pytest.mark.parametrize('h', (1., 1j))
@@ -211,7 +212,7 @@ class TestUpfirdn:
             len_h = random_state.randint(longest_h) + 1
             h = np.atleast_1d(random_state.randint(len_h))
             h = h.astype(h_dtype)
-            if h_dtype == complex:
+            if h_dtype is complex:
                 h += 1j * random_state.randint(len_h)
 
             tests.append(UpFIRDnCase(p, q, h, x_dtype))
@@ -226,13 +227,13 @@ class TestUpfirdn:
         y = _pad_test(x, npre=npre, npost=npost, mode=mode)
         if mode == 'antisymmetric':
             y_expected = np.asarray(
-                [3, 1, -1, -3, -2, -1, 1, 2, 3, 1, -1, -3, -2, -1, 1, 2])
+                [3.0, 1, -1, -3, -2, -1, 1, 2, 3, 1, -1, -3, -2, -1, 1, 2])
         elif mode == 'antireflect':
             y_expected = np.asarray(
-                [1, 2, 3, 1, -1, 0, 1, 2, 3, 1, -1, 0, 1, 2, 3, 1])
+                [1.0, 2, 3, 1, -1, 0, 1, 2, 3, 1, -1, 0, 1, 2, 3, 1])
         elif mode == 'smooth':
             y_expected = np.asarray(
-                [-5, -4, -3, -2, -1, 0, 1, 2, 3, 1, -1, -3, -5, -7, -9, -11])
+                [-5.0, -4, -3, -2, -1, 0, 1, 2, 3, 1, -1, -3, -5, -7, -9, -11])
         elif mode == "line":
             lin_slope = (x[-1] - x[0]) / (len(x) - 1)
             left = x[0] + np.arange(-npre, 0, 1) * lin_slope
@@ -240,7 +241,7 @@ class TestUpfirdn:
             y_expected = np.concatenate((left, x, right))
         else:
             y_expected = np.pad(x, (npre, npost), mode=mode)
-        assert_allclose(y, y_expected)
+        xp_assert_close(y, y_expected)
 
     @pytest.mark.parametrize(
         'size, h_len, mode, dtype',
@@ -270,7 +271,7 @@ class TestUpfirdn:
         y_expected = ypad[npad:-npad]
 
         atol = rtol = np.finfo(dtype).eps * 1e2
-        assert_allclose(y, y_expected, atol=atol, rtol=rtol)
+        xp_assert_close(y, y_expected, atol=atol, rtol=rtol)
 
 
 def test_output_len_long_input():

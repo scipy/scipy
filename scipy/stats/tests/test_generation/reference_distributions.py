@@ -35,7 +35,7 @@ class ReferenceDistribution:
     - moment accepts `order`, an integer that specifies the order of the (raw)
       moment, and `center`, which is the value about which the moment is
       taken. The default is to calculate the mean and use it to calculate
-      central moments; passing `0` results in a noncentral moment. For
+      central moments; passing ``0`` results in a noncentral moment. For
       efficiency, the mean can be passed explicitly if it is already known.
 
     Follow the example of SkewNormal to generate new reference distributions,
@@ -50,7 +50,7 @@ class ReferenceDistribution:
     inaccuracy of the reference values (e.g. due to numerical issues that
     mpmath's arbitrary precision arithmetic doesn't handle), then it may be
     appropriate to override a method of the reference distribution rather than
-    relying on the generic implementation. Otherwise, hesistate to override
+    relying on the generic implementation. Otherwise, hesitate to override
     methods: the generic implementations are mathematically correct and easy
     to verify, whereas an override introduces many possibilities of mistakes,
     requires more time to write, and requires more time to review.

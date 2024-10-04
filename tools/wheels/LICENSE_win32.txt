@@ -1,14 +1,15 @@
 
 ----
 
-This binary distribution of SciPy also bundles the following software:
+This binary distribution of SciPy can also bundle the following software
+(depending on the build):
 
 
 Name: OpenBLAS
-Files: extra-dll\libopenb*.dll
+Files: scipy.libs\libscipy_openblas*.dll
 Description: bundled as a dynamically linked library
-Availability: https://github.com/xianyi/OpenBLAS/
-License: 3-clause BSD
+Availability: https://github.com/OpenMathLib/OpenBLAS/
+License: BSD-3-Clause-Attribution
   Copyright (c) 2011-2014, The OpenBLAS Project
   All rights reserved.
   
@@ -41,10 +42,10 @@ License: 3-clause BSD
 
 
 Name: LAPACK
-Files: extra-dll\libopenb*.dll
+Files: scipy.libs\libscipy_openblas*.dll
 Description: bundled in OpenBLAS
-Availability: https://github.com/xianyi/OpenBLAS/
-License 3-clause BSD
+Availability: https://github.com/OpenMathLib/OpenBLAS/
+License: BSD-3-Clause-Attribution
   Copyright (c) 1992-2013 The University of Tennessee and The University
                           of Tennessee Research Foundation.  All rights
                           reserved.
@@ -96,10 +97,10 @@ License 3-clause BSD
 
 
 Name: GCC runtime library
-Files: extra-dll\*.dll
-Description: statically linked, in DLL files compiled with gfortran only
-Availability: https://gcc.gnu.org/viewcvs/gcc/
-License: GPLv3 + runtime exception
+Files: scipy.libs\libscipy_openblas*.dll
+Description: statically linked to files compiled with gcc
+Availability: https://gcc.gnu.org/git/?p=gcc.git;a=tree;f=libgfortran
+License: GPL-3.0-with-GCC-exception
   Copyright (C) 2002-2017 Free Software Foundation, Inc.
   
   Libgfortran is free software; you can redistribute it and/or modify

@@ -42,7 +42,7 @@ jobs:
       message: ${{ steps.commit_message.outputs.message }}
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -59,7 +59,9 @@ jobs:
           echo github.ref ${{ github.ref }}
 
   build_wheels:
-    name: Build wheel for ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }} ${{ matrix.buildplat[2] }}
+    name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+      ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
+      ${{ matrix.buildplat[4] }}
     needs: get_commit_message
     if: >-
       contains(needs.get_commit_message.outputs.message, '1') ||
@@ -77,12 +79,14 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-22.04, manylinux, x86_64]
-        - [ubuntu-22.04, musllinux, x86_64]
-        - [macos-11, macosx, x86_64]
-        - [windows-2019, win, AMD64]
-
-        python: [["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"]]
+        - [ubuntu-22.04, manylinux, x86_64, "", ""]
+        - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        - [macos-12, macosx, x86_64, openblas, "10.13"]
+        - [macos-13, macosx, x86_64, accelerate, "14.0"]
+        - [macos-14, macosx, arm64, openblas, "12.3"]
+        - [macos-14, macosx, arm64, accelerate, "14.0"]
+        - [windows-2019, win, AMD64, "", ""]
+        python: [["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -94,14 +98,13 @@ jobs:
 
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           submodules: true
-          fetch-depth: 0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
-          python-version: 3.9
+          python-version: 3.11
 
       - name: win_amd64 - install rtools
         run: |
@@ -110,61 +113,122 @@ jobs:
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
         if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'false' }}
 
-#      - name: win32 - configure mingw for 32-bit builds
-#        run: |
-#          # taken from numpy wheels.yml script
-#          # Force 32-bit mingw. v 8.1.0 is the current version used to build
-#          # the 32 bit openBLAS library (not sure if that matters)
-#          choco uninstall mingw
-#          choco install -y mingw --forcex86 --force --version=8.1.0
-#          echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw32\bin;" >> $env:GITHUB_PATH
-#          echo $(gfortran --version)
-#          echo $(gcc --version)
-#        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
+      - name: windows - set PKG_CONFIG_PATH
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          $env:CIBW = "${{ github.workspace }}"
+          # It seems somewhere in the env passing, `\` is not
+          # passed through, so convert it to '/'
+          $env:CIBW=$env:CIBW.replace("\","/")
+          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
+
+      - name: Setup macOS
+        if: startsWith( matrix.buildplat[0], 'macos-' )
+        run: |
+          if [[ ${{ matrix.buildplat[3] }} == 'accelerate' ]]; then
+            echo CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate\" >> "$GITHUB_ENV"
+            # Always use preinstalled gfortran for Accelerate builds
+            ln -s $(which gfortran-13) gfortran
+            export PATH=$PWD:$PATH
+            echo "PATH=$PATH" >> "$GITHUB_ENV"
+            LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
+          fi
+          if [[ ${{ matrix.buildplat[4] }} == '10.13' ]]; then
+            # 20240621 macos-12 images span Xcode 13.1-->14.2
+            XCODE_VER='13.4.1'
+          else
+            XCODE_VER='15.2'
+          fi
+          CIBW="sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app"
+          echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
+          # setting SDKROOT necessary when using the gfortran compiler
+          # installed in cibw_before_build_macos.sh
+          sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app
+          CIBW="MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }}\
+            SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\
+            PKG_CONFIG_PATH=${{ github.workspace }}"
+          echo "CIBW_ENVIRONMENT=$CIBW" >> "$GITHUB_ENV"
+
+          echo "REPAIR_PATH=$LIB_PATH" >> "$GITHUB_ENV"
+          
+          PREFIX=DYLD_LIBRARY_PATH="\$(dirname \$(gfortran --print-file-name libgfortran.dylib))"
+          # remove libgfortran from location used for linking (if any), to
+          # check wheel has bundled things correctly and all tests pass without
+          # needing installed gfortran
+          POSTFIX=" sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
+                    sudo rm -rf /usr/local/gfortran/lib"
+          CIBW="$PREFIX delocate-listdeps -d {wheel} && echo "-----------" &&\
+            $PREFIX delocate-wheel -v $EXCLUDE --require-archs \
+            {delocate_archs} -w {dest_dir} {wheel} && echo "-----------" &&\
+            delocate-listdeps -d {dest_dir}/*.whl && echo "-----------" &&\
+            $POSTFIX"
+          
+          # Rename x86 Accelerate wheel to test on macOS 13 runner
+          if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
+            CIBW+=" && mv {dest_dir}/\$(basename {wheel}) \
+              {dest_dir}/\$(echo \$(basename {wheel}) | sed 's/14_0/13_0/')"
+          fi
+          
+          # macos-arm64-openblas wheels that target macos-12 need a
+          # MACOS_DEPLOYMENT_TARGET of 12.3 otherwise delocate complains.
+          # Unclear of cause, possibly build tool related.
+          # This results in wheels that have 12_3 in their name. Since Python
+          # has no concept of minor OS versions in packaging land rename the
+          # wheel back to 12.
+          if [[ ${{ matrix.buildplat[0] }} == 'macos-14' && ${{ matrix.buildplat[4] }} == '12.3' ]]; then
+            CIBW+=" && echo \$(ls {dest_dir}) && \
+            mv {dest_dir}/*.whl \$(find {dest_dir} -type f -name '*.whl' | sed 's/12_3/12_0/')"
+          fi          
+          echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
+
+      - name: Inject environment variable for python dev version
+        if: matrix.python[1] == '3.13'
+        shell: bash
+        run: |
+          # For dev versions of python need to use wheels from scientific-python-nightly-wheels
+          # When the python version is released please comment out this section, but do not remove
+          # (there will soon be another dev version to target).
+          DEPS0="pip install --pre -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy"
+          DEPS1="pip install ninja meson-python pybind11 pythran cython"
+          
+          CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+          echo "CIBW_BEFORE_BUILD_LINUX=$CIBW" >> "$GITHUB_ENV"
+          
+          CIBW="$DEPS0 && $DEPS1 && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+          echo "CIBW_BEFORE_BUILD_WINDOWS=$CIBW" >> "$GITHUB_ENV"
+          
+          CIBW="$DEPS0;$DEPS1;bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+          echo "CIBW_BEFORE_BUILD_MACOS=$CIBW" >> "$GITHUB_ENV"
+
+          echo "CIBW_BEFORE_TEST=$DEPS0" >> "$GITHUB_ENV"
+          
+          CIBW="pip; args: --no-build-isolation"
+          echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV" 
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.14.1
+        uses: pypa/cibuildwheel@d4a2945fcc8d13f20a1b99d461b8e844d5fc6e23 # v2.21.1
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
-          CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
           CIBW_PRERELEASE_PYTHONS: True
 
-          # required so that cp312 can grab a nightly wheel
-          # can remove when cp312 is release and we don't need to search
-          # other wheel locations.
-          CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple PIP_PRE=1
+      - name: Rename macOS wheels
+        if: startsWith( matrix.buildplat[0], 'macos-' )
+        run: |
+          # macos-x86_64-accelerate wheels targeting macos-14 were renamed to 13
+          # so they could be tested. Shift wheel name back to targeting 14.
+          if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
+            mv ./wheelhouse/*.whl $(find ./wheelhouse -type f -name '*.whl' | sed 's/13_0/14_0/')
+          fi
 
-          CIBW_ENVIRONMENT_WINDOWS: >
-            PKG_CONFIG_PATH=c:/opt/64/lib/pkgconfig
-            PIP_PRE=1
-            PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-
-          # setting SDKROOT necessary when using the gfortran compiler
-          # installed in cibw_before_build_macos.sh
-          # MACOS_DEPLOYMENT_TARGET is set because of
-          # https://github.com/mesonbuild/meson-python/pull/309. Once
-          # an update is released, then that environment variable can
-          # be removed.
-          CIBW_ENVIRONMENT_MACOS: >
-            SDKROOT=/Applications/Xcode_11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk
-            LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-            MACOSX_DEPLOYMENT_TARGET=10.9
-            MACOS_DEPLOYMENT_TARGET=10.9
-            _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
-            PIP_PRE=1
-            PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-
-          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
-            DYLD_LIBRARY_PATH=/usr/local/lib delocate-listdeps {wheel} &&
-            DYLD_LIBRARY_PATH=/usr/local/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
-
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           path: ./wheelhouse/*.whl
           name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+            ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
+            ${{ matrix.buildplat[4] }}
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
         with:
           # for installation of anaconda-client, required for upload to
           # anaconda.org
@@ -173,6 +237,7 @@ jobs:
           # build and test the wheel
           auto-update-conda: true
           python-version: "3.10"
+          miniforge-version: latest
 
       - name: Upload wheels
         if: success()

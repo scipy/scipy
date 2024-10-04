@@ -234,7 +234,7 @@ cdef DTYPE_t _extend_right(DTYPE_t *x, np.intp_t idx, np.intp_t len_x,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef _pad_test(np.ndarray[DTYPE_t] data, np.intp_t npre=0, np.intp_t npost=0,
-                object mode=0, DTYPE_t cval=0):
+                object mode=0):
     """1D test function for signal extension modes.
 
     Returns ``data extended by ``npre``, ``npost`` at the beginning, end.
@@ -264,9 +264,9 @@ cpdef _pad_test(np.ndarray[DTYPE_t] data, np.intp_t npre=0, np.intp_t npost=0,
     with nogil:
         for idx in range(-npre, len_x + npost, 1):
             if idx < 0:
-                xval = _extend_left(data_ptr, idx, len_x, _mode, cval)
+                xval = _extend_left(data_ptr, idx, len_x, _mode, 0.0)
             elif idx >= len_x:
-                xval = _extend_right(data_ptr, idx, len_x, _mode, cval)
+                xval = _extend_right(data_ptr, idx, len_x, _mode, 0.0)
             else:
                 xval = data_ptr[idx]
             out[cnt] = xval
@@ -274,7 +274,7 @@ cpdef _pad_test(np.ndarray[DTYPE_t] data, np.intp_t npre=0, np.intp_t npost=0,
     return np.asarray(out)
 
 
-def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
+def _apply(np.ndarray data, const DTYPE_t [::1] h_trans_flip, np.ndarray out,
            np.intp_t up, np.intp_t down, np.intp_t axis, np.intp_t mode,
            DTYPE_t cval):
     cdef ArrayInfo data_info, output_info

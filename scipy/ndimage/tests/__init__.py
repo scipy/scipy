@@ -1,14 +1,13 @@
 from __future__ import annotations
-from typing import List, Type 
-import numpy
+import numpy as np
 
 # list of numarray data types
-integer_types: list[type] = [
-    numpy.int8, numpy.uint8, numpy.int16, numpy.uint16,
-    numpy.int32, numpy.uint32, numpy.int64, numpy.uint64]
+integer_types: list[str] = [
+    "int8", "uint8", "int16", "uint16",
+    "int32", "uint32", "int64", "uint64"]
 
-float_types: list[type] = [numpy.float32, numpy.float64]
+float_types: list[str] = ["float32", "float64"]
 
-complex_types: list[type] = [numpy.complex64, numpy.complex128]
+complex_types: list[str] = ["complex64", "complex128"]
 
-types: list[type] = integer_types + float_types
+types: list[str] = integer_types + float_types

@@ -1,4 +1,3 @@
-# distutils: language=c++
 # cython: language_level=3
 
 import numpy as np
@@ -68,7 +67,7 @@ for _r in _ref_opts.records:
     _ref_opt_lookup[_r.name] = _r
 
 
-cdef str _opt_warning(string name, val, valid_set=None) noexcept:
+cdef str _opt_warning(string name, val, valid_set=None):
     cdef OptionRecord * r = _ref_opt_lookup[name]
 
     # BOOL
@@ -113,7 +112,7 @@ cdef str _opt_warning(string name, val, valid_set=None) noexcept:
            'See documentation for valid options. '
            'Using default.' % (name.decode(), str(val)))
 
-cdef apply_options(dict options, Highs & highs) noexcept:
+cdef void apply_options(dict options, Highs & highs):
     '''Take options from dictionary and apply to HiGHS object.'''
 
     # Initialize for error checking
@@ -342,7 +341,7 @@ def _highs_wrapper(
                 Verbosity level, corresponds to:
 
                     - ``0``: ``ML_NONE``
-                        All messaging to stdout is supressed.
+                        All messaging to stdout is suppressed.
 
                     - ``1``: ``ML_VERBOSE``
                         Includes a once-per-iteration report on simplex/ipm
@@ -514,7 +513,7 @@ def _highs_wrapper(
                 Slack variables.
 
             - ``lambda`` : list
-                Lagrange multipliers assoicated with the constraints
+                Lagrange multipliers associated with the constraints
                 Ax = b.
 
             - ``s`` : list

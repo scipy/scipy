@@ -29,6 +29,7 @@ def _mt_fft(x):
     return fft.fft(x, workers=2)
 
 
+@pytest.mark.slow
 def test_mixed_threads_processes(x):
     # Test that the fft threadpool is safe to use before & after fork
 

@@ -2,19 +2,21 @@
 """
 
 import sys
+from typing import Any, Literal, Union
 import operator
 import numpy as np
 from math import prod
 import scipy.sparse as sp
+from scipy._lib._util import np_long, np_ulong
 
 
 __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
-                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong,
-                    np.single, np.double,
-                    np.longdouble, np.csingle, np.cdouble, np.clongdouble]
+                    np.uintc, np_long, np_ulong, np.longlong, np.ulonglong,
+                    np.float32, np.float64, np.longdouble,
+                    np.complex64, np.complex128, np.clongdouble]
 
 _upcast_memo = {}
 
@@ -27,7 +29,7 @@ def upcast(*args):
 
     Examples
     --------
-
+    >>> from scipy.sparse._sputils import upcast
     >>> upcast('int32')
     <type 'numpy.int32'>
     >>> upcast('bool')
@@ -107,13 +109,17 @@ def to_native(A):
 
 
 def getdtype(dtype, a=None, default=None):
-    """Function used to simplify argument processing. If 'dtype' is not
-    specified (is None), returns a.dtype; otherwise returns a np.dtype
-    object created from the specified dtype argument. If 'dtype' and 'a'
-    are both None, construct a data type out of the 'default' parameter.
-    Furthermore, 'dtype' must be in 'allowed' set.
+    """Form a supported numpy dtype based on input arguments.
+
+    Returns a valid ``numpy.dtype`` from `dtype` if not None,
+    or else ``a.dtype`` if possible, or else the given `default`
+    if not None, or else raise a ``TypeError``.
+
+    The resulting ``dtype`` must be in ``supported_dtypes``:
+        bool_, int8, uint8, int16, uint16, int32, uint32,
+        int64, uint64, longlong, ulonglong, float32, float64,
+        longdouble, complex64, complex128, clongdouble
     """
-    # TODO is this really what we want?
     if dtype is None:
         try:
             newdtype = a.dtype
@@ -124,11 +130,11 @@ def getdtype(dtype, a=None, default=None):
                 raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
-        if newdtype == np.object_:
-            raise ValueError(
-                "object dtype is not supported by sparse matrices"
-            )
 
+    if newdtype not in supported_dtypes:
+        supported_dtypes_fmt = ", ".join(t.__name__ for t in supported_dtypes)
+        raise ValueError(f"scipy.sparse does not support dtype {newdtype.name}. "
+                         f"The only supported types are: {supported_dtypes_fmt}.")
     return newdtype
 
 
@@ -199,7 +205,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     return dtype
 
 
-def get_sum_dtype(dtype):
+def get_sum_dtype(dtype: np.dtype) -> np.dtype:
     """Mimic numpy's casting for np.sum"""
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
         return np.uint
@@ -235,15 +241,16 @@ def isintlike(x) -> bool:
     return True
 
 
-def isshape(x, nonneg=False, allow_ndim=False) -> bool:
+def isshape(x, nonneg=False, *, allow_nd=(2,)) -> bool:
     """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
-    If allow_ndim, shapes of any dimensionality are allowed.
+    Shapes of length in the tuple allow_nd are allowed.
     """
     ndim = len(x)
-    if not allow_ndim and ndim != 2:
+    if ndim not in allow_nd:
         return False
+
     for d in x:
         if not isintlike(d):
             return False
@@ -253,13 +260,13 @@ def isshape(x, nonneg=False, allow_ndim=False) -> bool:
 
 
 def issequence(t) -> bool:
-    return ((isinstance(t, (list, tuple)) and
+    return ((isinstance(t, list | tuple) and
             (len(t) == 0 or np.isscalar(t[0]))) or
             (isinstance(t, np.ndarray) and (t.ndim == 1)))
 
 
 def ismatrix(t) -> bool:
-    return ((isinstance(t, (list, tuple)) and
+    return ((isinstance(t, list | tuple) and
              len(t) > 0 and issequence(t[0])) or
             (isinstance(t, np.ndarray) and t.ndim == 2))
 
@@ -277,7 +284,7 @@ def validateaxis(axis) -> None:
     # not very useful for sparse matrices given their limited
     # dimensions, so let's make it explicit that they are not
     # allowed to be passed in
-    if axis_type == tuple:
+    if isinstance(axis, tuple):
         raise TypeError("Tuples are not accepted for the 'axis' parameter. "
                         "Please pass in one of the following: "
                         "{-2, -1, 0, 1, None}.")
@@ -291,11 +298,26 @@ def validateaxis(axis) -> None:
         raise ValueError("axis out of range")
 
 
-def check_shape(args, current_shape=None):
-    """Imitate numpy.matrix handling of shape arguments"""
+def check_shape(args, current_shape=None, *, allow_nd=(2,)) -> tuple[int, ...]:
+    """Imitate numpy.matrix handling of shape arguments
+
+    Parameters
+    ----------
+    args : array_like
+        Data structures providing information about the shape of the sparse array.
+    current_shape : tuple, optional
+        The current shape of the sparse array or matrix.
+        If None (default), the current shape will be inferred from args.
+    allow_nd : tuple of ints, optional default: (2,)
+        If shape does not have a length in the tuple allow_nd an error is raised.
+
+    Returns
+    -------
+    new_shape: tuple
+        The new shape after validation.
+    """
     if len(args) == 0:
-        raise TypeError("function missing 1 required positional argument: "
-                        "'shape'")
+        raise TypeError("function missing 1 required positional argument: 'shape'")
     if len(args) == 1:
         try:
             shape_iter = iter(args[0])
@@ -307,9 +329,9 @@ def check_shape(args, current_shape=None):
         new_shape = tuple(operator.index(arg) for arg in args)
 
     if current_shape is None:
-        if len(new_shape) != 2:
-            raise ValueError('shape must be a 2-tuple of positive integers')
-        elif any(d < 0 for d in new_shape):
+        if len(new_shape) not in allow_nd:
+            raise ValueError(f'shape must have length in {allow_nd}. Got {new_shape=}')
+        if any(d < 0 for d in new_shape):
             raise ValueError("'shape' elements cannot be negative")
     else:
         # Check the current size only if needed
@@ -320,22 +342,22 @@ def check_shape(args, current_shape=None):
         if not negative_indexes:
             new_size = prod(new_shape)
             if new_size != current_size:
-                raise ValueError('cannot reshape array of size {} into shape {}'
-                                 .format(current_size, new_shape))
+                raise ValueError(f'cannot reshape array of size {current_size}'
+                                 f' into shape {new_shape}')
         elif len(negative_indexes) == 1:
             skip = negative_indexes[0]
             specified = prod(new_shape[:skip] + new_shape[skip+1:])
             unspecified, remainder = divmod(current_size, specified)
             if remainder != 0:
                 err_shape = tuple('newshape' if x < 0 else x for x in new_shape)
-                raise ValueError('cannot reshape array of size {} into shape {}'
-                                 ''.format(current_size, err_shape))
+                raise ValueError(f'cannot reshape array of size {current_size}'
+                                 f' into shape {err_shape}')
             new_shape = new_shape[:skip] + (unspecified,) + new_shape[skip+1:]
         else:
             raise ValueError('can only specify one unknown dimension')
 
-    if len(new_shape) != 2:
-        raise ValueError('matrix shape must be two-dimensional')
+    if len(new_shape) not in allow_nd:
+        raise ValueError(f'shape must have length in {allow_nd}. Got {new_shape=}')
 
     return new_shape
 
@@ -352,8 +374,8 @@ def check_reshape_kwargs(kwargs):
     order = kwargs.pop('order', 'C')
     copy = kwargs.pop('copy', False)
     if kwargs:  # Some unused kwargs remain
-        raise TypeError('reshape() got unexpected keywords arguments: {}'
-                        .format(', '.join(kwargs.keys())))
+        raise TypeError("reshape() got unexpected keywords arguments: "
+                        f"{', '.join(kwargs.keys())}")
     return order, copy
 
 
@@ -363,6 +385,29 @@ def is_pydata_spmatrix(m) -> bool:
     """
     base_cls = getattr(sys.modules.get('sparse'), 'SparseArray', None)
     return base_cls is not None and isinstance(m, base_cls)
+
+
+def convert_pydata_sparse_to_scipy(
+    arg: Any,
+    target_format: None | Literal["csc", "csr"] = None,
+    accept_fv: Any = None,
+) -> Union[Any, "sp.spmatrix"]:
+    """
+    Convert a pydata/sparse array to scipy sparse matrix,
+    pass through anything else.
+    """
+    if is_pydata_spmatrix(arg):
+        # The `accept_fv` keyword is new in PyData Sparse 0.15.4 (May 2024),
+        # remove the `except` once the minimum supported version is >=0.15.4
+        try:
+            arg = arg.to_scipy_sparse(accept_fv=accept_fv)
+        except TypeError:
+            arg = arg.to_scipy_sparse()
+        if target_format is not None:
+            arg = arg.asformat(target_format)
+        elif arg.format not in ("csc", "csr"):
+            arg = arg.tocsc()
+    return arg
 
 
 ###############################################################################

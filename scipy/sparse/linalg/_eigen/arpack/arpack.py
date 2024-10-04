@@ -40,7 +40,9 @@ import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
-from scipy.sparse._sputils import isdense, is_pydata_spmatrix
+from scipy.sparse._sputils import (
+    convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
+)
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
@@ -505,8 +507,7 @@ class _SymmetricArpackParams(_ArpackParams):
             raise ValueError("mode=%i not implemented" % mode)
 
         if which not in _SEUPD_WHICH:
-            raise ValueError("which must be one of %s"
-                             % ' '.join(_SEUPD_WHICH))
+            raise ValueError(f"which must be one of {' '.join(_SEUPD_WHICH)}")
         if k >= n:
             raise ValueError("k must be less than ndim(A), k=%d" % k)
 
@@ -514,7 +515,7 @@ class _SymmetricArpackParams(_ArpackParams):
                                ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k:
-            raise ValueError("ncv must be k<ncv<=n, ncv=%s" % self.ncv)
+            raise ValueError(f"ncv must be k<ncv<=n, ncv={self.ncv}")
 
         # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
         self.workd = _aligned_zeros(3 * n, self.tp)
@@ -688,8 +689,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             raise ValueError("mode=%i not implemented" % mode)
 
         if which not in _NEUPD_WHICH:
-            raise ValueError("Parameter which must be one of %s"
-                             % ' '.join(_NEUPD_WHICH))
+            raise ValueError(f"Parameter which must be one of {' '.join(_NEUPD_WHICH)}")
         if k >= n - 1:
             raise ValueError("k must be less than ndim(A)-1, k=%d" % k)
 
@@ -697,7 +697,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
                                ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k + 1:
-            raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
+            raise ValueError(f"ncv must be k+1<ncv<=n, ncv={self.ncv}")
 
         # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
         self.workd = _aligned_zeros(3 * n, self.tp)
@@ -720,17 +720,20 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
     def iterate(self):
         if self.tp in 'fd':
-            self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
-                self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                    self.tol, self.resid, self.v, self.iparam,
-                                    self.ipntr, self.workd, self.workl,
-                                    self.info)
+            results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
+                                          self.tol, self.resid, self.v, self.iparam,
+                                          self.ipntr, self.workd, self.workl, self.info)
+            self.ido, self.tol, self.resid, self.v, \
+                self.iparam, self.ipntr, self.info = results
+                
         else:
-            self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
-                self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                    self.tol, self.resid, self.v, self.iparam,
-                                    self.ipntr, self.workd, self.workl,
-                                    self.rwork, self.info)
+            results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
+                                          self.tol, self.resid, self.v, self.iparam,
+                                          self.ipntr, self.workd, self.workl,
+                                          self.rwork, self.info)
+            self.ido, self.tol, self.resid, self.v, \
+                self.iparam, self.ipntr, self.info = results
+                
 
         xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
         yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)
@@ -1253,15 +1256,17 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     (13, 6)
 
     """
+    A = convert_pydata_sparse_to_scipy(A)
+    M = convert_pydata_sparse_to_scipy(M)
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
-            raise ValueError('wrong M dimensions %s, should be %s'
-                             % (M.shape, A.shape))
+            raise ValueError(f'wrong M dimensions {M.shape}, should be {A.shape}')
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
             warnings.warn('M does not have the same type precision as A. '
-                          'This may adversely affect ARPACK convergence')
+                          'This may adversely affect ARPACK convergence',
+                          stacklevel=2)
 
     n = A.shape[0]
 
@@ -1271,7 +1276,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     if k >= n - 1:
         warnings.warn("k >= N - 1 for N * N square matrix. "
                       "Attempting to use scipy.linalg.eig instead.",
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
 
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eig for sparse A with "
@@ -1563,8 +1568,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     # complex Hermitian matrices should be solved with eigs
     if np.issubdtype(A.dtype, np.complexfloating):
         if mode != 'normal':
-            raise ValueError("mode=%s cannot be used with "
-                             "complex matrix A" % mode)
+            raise ValueError(f"mode={mode} cannot be used with complex matrix A")
         if which == 'BE':
             raise ValueError("which='BE' cannot be used with complex matrix A")
         elif which == 'LA':
@@ -1585,11 +1589,11 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
-            raise ValueError('wrong M dimensions %s, should be %s'
-                             % (M.shape, A.shape))
+            raise ValueError(f'wrong M dimensions {M.shape}, should be {A.shape}')
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
             warnings.warn('M does not have the same type precision as A. '
-                          'This may adversely affect ARPACK convergence')
+                          'This may adversely affect ARPACK convergence',
+                          stacklevel=2)
 
     n = A.shape[0]
 
@@ -1599,7 +1603,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     if k >= n:
         warnings.warn("k >= N for N * N square matrix. "
                       "Attempting to use scipy.linalg.eigh instead.",
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
 
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eigh for sparse A with "
@@ -1686,7 +1690,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         # unrecognized mode
         else:
-            raise ValueError("unrecognized mode '%s'" % mode)
+            raise ValueError(f"unrecognized mode '{mode}'")
 
     params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                     M_matvec, Minv_matvec, sigma,

@@ -21,11 +21,11 @@ __all__ = [
 
 import warnings
 
-from numpy import zeros, concatenate, ravel, diff, array, ones
+from numpy import zeros, concatenate, ravel, diff, array
 import numpy as np
 
 from . import _fitpack_impl
-from . import dfitpack
+from . import _dfitpack as dfitpack
 
 
 dfitpack_int = dfitpack.types.intvar.dtype
@@ -272,7 +272,7 @@ class UnivariateSpline:
         try:
             ext = _extrap_modes[ext]
         except KeyError as e:
-            raise ValueError("Unknown extrapolation mode %s." % ext) from e
+            raise ValueError(f"Unknown extrapolation mode {ext}.") from e
 
         return x, y, w, bbox, ext
 
@@ -309,8 +309,8 @@ class UnivariateSpline:
             # error
             if ier == 1:
                 self._set_class(LSQUnivariateSpline)
-            message = _curfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            message = _curfit_messages.get(ier, f'ier={ier}')
+            warnings.warn(message, stacklevel=3)
 
     def _set_class(self, cls):
         self._spline_class = cls
@@ -346,7 +346,8 @@ class UnivariateSpline:
         data = self._data
         if data[6] == -1:
             warnings.warn('smoothing factor unchanged for'
-                          'LSQ spline with fixed knots')
+                          'LSQ spline with fixed knots',
+                          stacklevel=2)
             return
         args = data[:6] + (s,) + data[7:]
         data = dfitpack.fpcurf1(*args)
@@ -391,7 +392,7 @@ class UnivariateSpline:
             try:
                 ext = _extrap_modes[ext]
             except KeyError as e:
-                raise ValueError("Unknown extrapolation mode %s." % ext) from e
+                raise ValueError(f"Unknown extrapolation mode {ext}.") from e
         return _fitpack_impl.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
@@ -1033,11 +1034,11 @@ class _BivariateSplineBase:
             if dx or dy:
                 z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
                 if not ier == 0:
-                    raise ValueError("Error code returned by parder: %s" % ier)
+                    raise ValueError(f"Error code returned by parder: {ier}")
             else:
                 z, ier = dfitpack.bispev(tx, ty, c, kx, ky, x, y)
                 if not ier == 0:
-                    raise ValueError("Error code returned by bispev: %s" % ier)
+                    raise ValueError(f"Error code returned by bispev: {ier}")
         else:
             # standard Numpy broadcasting
             if x.shape != y.shape:
@@ -1053,11 +1054,11 @@ class _BivariateSplineBase:
             if dx or dy:
                 z, ier = dfitpack.pardeu(tx, ty, c, kx, ky, dx, dy, x, y)
                 if not ier == 0:
-                    raise ValueError("Error code returned by pardeu: %s" % ier)
+                    raise ValueError(f"Error code returned by pardeu: {ier}")
             else:
                 z, ier = dfitpack.bispeu(tx, ty, c, kx, ky, x, y)
                 if not ier == 0:
-                    raise ValueError("Error code returned by bispeu: %s" % ier)
+                    raise ValueError(f"Error code returned by bispeu: {ier}")
 
             z = z.reshape(shape)
         return z
@@ -1223,8 +1224,8 @@ class BivariateSpline(_BivariateSplineBase):
         ...     return np.exp(-np.sqrt((x / 2) ** 2 + y**2))
 
         We sample the function on a coarse grid and set up the interpolator. Note that
-        the default ``indexing="xy"`` of meshgrid would result in an unexpected (transposed)
-        result after interpolation.
+        the default ``indexing="xy"`` of meshgrid would result in an unexpected
+        (transposed) result after interpolation.
 
         >>> xarr = np.linspace(-3, 3, 21)
         >>> yarr = np.linspace(-3, 3, 21)
@@ -1300,7 +1301,7 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
     -----
     The class is not meant to be instantiated directly from the data to be
     interpolated or smoothed. As a result, its ``fp`` attribute and
-    ``get_residual`` method are inherited but overriden; ``AttributeError`` is
+    ``get_residual`` method are inherited but overridden; ``AttributeError`` is
     raised when they are accessed.
 
     The other inherited attributes can be used as usual.
@@ -1313,10 +1314,10 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
 
     @property
     def fp(self):
-        raise AttributeError("attribute \"fp\" %s" % self._invalid_why)
+        raise AttributeError(f"attribute \"fp\" {self._invalid_why}")
 
     def get_residual(self):
-        raise AttributeError("method \"get_residual\" %s" % self._invalid_why)
+        raise AttributeError(f"method \"get_residual\" {self._invalid_why}")
 
 
 class SmoothBivariateSpline(BivariateSpline):
@@ -1415,8 +1416,8 @@ class SmoothBivariateSpline(BivariateSpline):
         if ier in [0, -1, -2]:  # normal return
             pass
         else:
-            message = _surfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            message = _surfit_messages.get(ier, f'ier={ier}')
+            warnings.warn(message, stacklevel=2)
 
         self.fp = fp
         self.tck = tx[:nx], ty[:ny], c[:(nx-kx-1)*(ny-ky-1)]
@@ -1515,8 +1516,8 @@ class LSQBivariateSpline(BivariateSpline):
                 deficiency = (nx-kx-1)*(ny-ky-1)+ier
                 message = _surfit_messages.get(-3) % (deficiency)
             else:
-                message = _surfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+                message = _surfit_messages.get(ier, f'ier={ier}')
+            warnings.warn(message, stacklevel=2)
         self.fp = fp
         self.tck = tx1[:nx], ty1[:ny], c
         self.degrees = kx, ky
@@ -1602,7 +1603,7 @@ class RectBivariateSpline(BivariateSpline):
                                                           ye, kx, ky, s)
 
         if ier not in [0, -1, -2]:
-            msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
+            msg = _surfit_messages.get(ier, f'ier={ier}')
             raise ValueError(msg)
 
         self.fp = fp
@@ -1691,8 +1692,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
         Examples
         --------
 
-        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
-        The value of the function is known on a grid of longitudes and colatitudes.
+        Suppose that we want to use splines to interpolate a bivariate function on a
+        sphere. The value of the function is known on a grid of longitudes and
+        colatitudes.
 
         >>> import numpy as np
         >>> from scipy.interpolate import RectSphereBivariateSpline
@@ -1761,8 +1763,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Examples
         --------
-        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
-        The value of the function is known on a grid of longitudes and colatitudes.
+        Suppose that we want to use splines to interpolate a bivariate function on a
+        sphere. The value of the function is known on a grid of longitudes and
+        colatitudes.
 
         >>> import numpy as np
         >>> from scipy.interpolate import RectSphereBivariateSpline
@@ -1917,13 +1920,11 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
-        if np.issubclass_(w, float):
-            w = ones(len(theta)) * w
         nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
                                                                 r, w=w, s=s,
                                                                 eps=eps)
         if ier not in [0, -1, -2]:
-            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
+            message = _spherefit_messages.get(ier, f'ier={ier}')
             raise ValueError(message)
 
         self.fp = fp
@@ -2070,8 +2071,6 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
-        if np.issubclass_(w, float):
-            w = ones(len(theta)) * w
         nt_, np_ = 8 + len(tt), 8 + len(tp)
         tt_, tp_ = zeros((nt_,), float), zeros((np_,), float)
         tt_[4:-4], tp_[4:-4] = tt, tp
@@ -2079,7 +2078,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         tt_, tp_, c, fp, ier = dfitpack.spherfit_lsq(theta, phi, r, tt_, tp_,
                                                      w=w, eps=eps)
         if ier > 0:
-            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
+            message = _spherefit_messages.get(ier, f'ier={ier}')
             raise ValueError(message)
 
         self.fp = fp
@@ -2115,7 +2114,7 @@ ERROR: on entry, the input data are controlled on validity
                          8<=nv<=min(nvest,mv+7)
                          v(1)<tv(5)<tv(6)<...<tv(nv-4)<v(1)+2*pi
                          the schoenberg-whitney conditions, i.e. there must be
-                         subset of grid co-ordinates uu(p) and vv(q) such that
+                         subset of grid coordinates uu(p) and vv(q) such that
                             tu(p) < uu(p) < tu(p+4) ,p=1,...,nu-4
                             (iopt(2)=1 and iopt(3)=1 also count for a uu-value
                             tv(q) < vv(q) < tv(q+4) ,q=1,...,nv-4
@@ -2346,7 +2345,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
                                                                 r0, r1, s)
 
         if ier not in [0, -1, -2]:
-            msg = _spfit_messages.get(ier, 'ier=%s' % (ier))
+            msg = _spfit_messages.get(ier, f'ier={ier}')
             raise ValueError(msg)
 
         self.fp = fp

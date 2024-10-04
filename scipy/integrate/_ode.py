@@ -384,8 +384,8 @@ class ode:
         if integrator is None:
             # FIXME: this really should be raise an exception. Will that break
             # any code?
-            warnings.warn('No integrator name match with %r or is not '
-                          'available.' % name)
+            message = f'No integrator name match with {name!r} or is not available.'
+            warnings.warn(message, stacklevel=2)
         else:
             self._integrator = integrator(**integrator_params)
             if not len(self._y):
@@ -557,7 +557,7 @@ class ode:
         solout : callable
             ``solout(t, y)`` is called at each internal integrator step,
             t is a scalar providing the current independent position
-            y is the current soloution ``y.shape == (n,)``
+            y is the current solution ``y.shape == (n,)``
             solout should return -1 to stop integration
             otherwise it should return None or 0
 
@@ -734,7 +734,7 @@ class complex_ode(ode):
         solout : callable
             ``solout(t, y)`` is called at each internal integrator step,
             t is a scalar providing the current independent position
-            y is the current soloution ``y.shape == (n,)``
+            y is the current solution ``y.shape == (n,)``
             solout should return -1 to stop integration
             otherwise it should return None or 0
 
@@ -742,8 +742,8 @@ class complex_ode(ode):
         if self._integrator.supports_solout:
             self._integrator.set_solout(solout, complex=True)
         else:
-            raise TypeError("selected integrator does not support solouta,"
-                            + "choose another one")
+            raise TypeError("selected integrator does not support solouta, "
+                            "choose another one")
 
 
 # ------------------------------------------------------------------------------
@@ -765,10 +765,9 @@ class IntegratorConcurrencyError(RuntimeError):
     """
 
     def __init__(self, name):
-        msg = ("Integrator `%s` can be used to solve only a single problem "
-               "at a time. If you want to integrate multiple problems, "
-               "consider using a different integrator "
-               "(see `ode.set_integrator`)") % name
+        msg = (f"Integrator `{name}` can be used to solve only a single problem "
+                "at a time. If you want to integrate multiple problems, "
+                "consider using a different integrator (see `ode.set_integrator`)")
         RuntimeError.__init__(self, msg)
 
 
@@ -809,13 +808,13 @@ class IntegratorBase:
 
     def step(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Make one integration step and return (y1,t1)."""
-        raise NotImplementedError('%s does not support step() method' %
-                                  self.__class__.__name__)
+        raise NotImplementedError(f'{self.__class__.__name__} '
+                                  'does not support step() method')
 
     def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
-        raise NotImplementedError('%s does not support run_relax() method' %
-                                  self.__class__.__name__)
+        raise NotImplementedError(f'{self.__class__.__name__} '
+                                  'does not support run_relax() method')
 
     # XXX: __str__ method for getting visual state of the integrator
 
@@ -867,7 +866,7 @@ class vode(IntegratorBase):
         elif re.match(method, r'bdf', re.I):
             self.meth = 2
         else:
-            raise ValueError('Unknown integration method %s' % method)
+            raise ValueError(f'Unknown integration method {method}')
         self.with_jacobian = with_jacobian
         self.rtol = rtol
         self.atol = atol
@@ -901,7 +900,7 @@ class vode(IntegratorBase):
             self.meth == 2:  method="bdf"
 
         miter is the correction iteration method:
-            miter == 0:  Functional iteraton; no Jacobian involved.
+            miter == 0:  Functional iteration; no Jacobian involved.
             miter == 1:  Chord iteration with user-supplied full Jacobian.
             miter == 2:  Chord iteration with internally computed full Jacobian.
             miter == 3:  Chord iteration with internally computed diagonal Jacobian.
@@ -932,11 +931,12 @@ class vode(IntegratorBase):
                 else:
                     miter = 5  # Chord iteration with internal banded Jacobian.
             else:
-                # self.with_jacobian is set by the user in the call to ode.set_integrator.
+                # self.with_jacobian is set by the user in
+                # the call to ode.set_integrator.
                 if self.with_jacobian:
                     miter = 2  # Chord iteration with internal full Jacobian.
                 else:
-                    miter = 0  # Functional iteraton; no Jacobian involved.
+                    miter = 0  # Functional iteration; no Jacobian involved.
 
         mf = 10 * self.meth + miter
         return mf
@@ -961,7 +961,7 @@ class vode(IntegratorBase):
         elif mf in [24, 25]:
             lrw = 22 + 11 * n + (3 * self.ml + 2 * self.mu) * n
         else:
-            raise ValueError('Unexpected mf=%s' % mf)
+            raise ValueError(f'Unexpected mf={mf}')
 
         if mf % 10 in [0, 3]:
             liw = 30
@@ -1008,8 +1008,9 @@ class vode(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)))
+            warnings.warn(f'{self.__class__.__name__:s}: '
+                          f'{self.messages.get(istate, unexpected_istate_msg):s}',
+                          stacklevel=2)
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
@@ -1176,8 +1177,9 @@ class dopri5(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)))
+            warnings.warn(f'{self.__class__.__name__:s}: '
+                          f'{self.messages.get(istate, unexpected_istate_msg):s}',
+                          stacklevel=2)
             self.success = 0
         return y, x
 
@@ -1309,7 +1311,7 @@ class lsoda(IntegratorBase):
         elif jt in [4, 5]:
             lrs = 22 + (self.max_order_s + 5 + 2 * self.ml + self.mu) * n
         else:
-            raise ValueError('Unexpected jt=%s' % jt)
+            raise ValueError(f'Unexpected jt={jt}')
         lrw = max(lrn, lrs)
         liw = 20 + n
         rwork = zeros((lrw,), float)
@@ -1345,8 +1347,9 @@ class lsoda(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)))
+            warnings.warn(f'{self.__class__.__name__:s}: '
+                          f'{self.messages.get(istate, unexpected_istate_msg):s}',
+                          stacklevel=2)
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2

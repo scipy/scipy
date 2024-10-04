@@ -6,9 +6,10 @@
 
 """
 
+import math
 import numpy as np
 
-from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
+from ._base import _spbase, sparray, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -17,15 +18,16 @@ __all__ = []
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(_spbase):
-    def __init__(self):
-        _spbase.__init__(self)
+    def __init__(self, arg1, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
-    def _get_dtype(self):
+    @property
+    def dtype(self):
         return self.data.dtype
 
-    def _set_dtype(self, newtype):
+    @dtype.setter
+    def dtype(self, newtype):
         self.data.dtype = newtype
-    dtype = property(fget=_get_dtype, fset=_set_dtype)
 
     def _deduped_data(self):
         if hasattr(self, 'sum_duplicates'):
@@ -54,8 +56,7 @@ class _data_matrix(_spbase):
         if isscalarlike(other):
             self.data *= other
             return self
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __itruediv__(self, other):  # self /= other
         if isscalarlike(other):
@@ -95,23 +96,31 @@ class _data_matrix(_spbase):
 
     copy.__doc__ = _spbase.copy.__doc__
 
-    def count_nonzero(self):
-        return np.count_nonzero(self._deduped_data())
-
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
-
     def power(self, n, dtype=None):
         """
         This function performs element-wise power.
 
         Parameters
         ----------
-        n : n is a scalar
+        n : scalar
+            n is a non-zero scalar (nonzero avoids dense ones creation)
+            If zero power is desired, special case it to use `np.ones`
 
         dtype : If dtype is not specified, the current dtype will be preserved.
+
+        Raises
+        ------
+        NotImplementedError : if n is a zero scalar
+            If zero power is desired, special case it to use
+            ``np.ones(A.shape, dtype=A.dtype)``
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
+        if not n:
+            raise NotImplementedError(
+                "zero power is not supported as it would densify the matrix.\n"
+                "Use `np.ones(A.shape, dtype=A.dtype)` for this case."
+            )
 
         data = self._deduped_data()
         if dtype is not None:
@@ -135,8 +144,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = ("Element-wise {}.\n\n"
-                          "See `numpy.{}` for more information.".format(name, name))
+        method.__doc__ = (f"Element-wise {name}.\n\n"
+                          f"See `numpy.{name}` for more information.")
         method.__name__ = name
 
         return method
@@ -162,7 +171,7 @@ class _minmax_mixin:
     These are not implemented for dia_matrix, hence the separate class.
     """
 
-    def _min_or_max_axis(self, axis, min_or_max):
+    def _min_or_max_axis(self, axis, min_or_max, explicit):
         N = self.shape[axis]
         if N == 0:
             raise ValueError("zero-size array to reduction operation")
@@ -173,12 +182,18 @@ class _minmax_mixin:
         mat.sum_duplicates()
 
         major_index, value = mat._minor_reduce(min_or_max)
-        not_full = np.diff(mat.indptr)[major_index] < N
-        value[not_full] = min_or_max(value[not_full], 0)
+        if not explicit:
+            not_full = np.diff(mat.indptr)[major_index] < N
+            value[not_full] = min_or_max(value[not_full], 0)
 
         mask = value != 0
         major_index = np.compress(mask, major_index)
         value = np.compress(mask, value)
+
+        if isinstance(self, sparray):
+            coords = (major_index,)
+            shape = (M,)
+            return self._coo_container((value, coords), shape=shape, dtype=self.dtype)
 
         if axis == 0:
             return self._coo_container(
@@ -191,12 +206,15 @@ class _minmax_mixin:
                 dtype=self.dtype, shape=(M, 1)
             )
 
-    def _min_or_max(self, axis, out, min_or_max):
+    def _min_or_max(self, axis, out, min_or_max, explicit):
         if out is not None:
-            raise ValueError("Sparse matrices do not support "
-                              "an 'out' parameter.")
+            raise ValueError("Sparse arrays do not support an 'out' parameter.")
 
         validateaxis(axis)
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
 
         if axis is None:
             if 0 in self.shape:
@@ -206,7 +224,7 @@ class _minmax_mixin:
             if self.nnz == 0:
                 return zero
             m = min_or_max.reduce(self._deduped_data().ravel())
-            if self.nnz != np.prod(self.shape):
+            if self.nnz != math.prod(self.shape) and not explicit:
                 m = min_or_max(zero, m)
             return m
 
@@ -214,14 +232,13 @@ class _minmax_mixin:
             axis += 2
 
         if (axis == 0) or (axis == 1):
-            return self._min_or_max_axis(axis, min_or_max)
+            return self._min_or_max_axis(axis, min_or_max, explicit)
         else:
             raise ValueError("axis out of range")
 
-    def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare):
+    def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare, explicit):
         if self.shape[axis] == 0:
-            raise ValueError("Can't apply the operation along a zero-sized "
-                             "dimension.")
+            raise ValueError("Cannot apply the operation along a zero-sized dimension.")
 
         if axis < 0:
             axis += 2
@@ -241,33 +258,48 @@ class _minmax_mixin:
             indices = mat.indices[p:q]
             extreme_index = argmin_or_argmax(data)
             extreme_value = data[extreme_index]
-            if compare(extreme_value, zero) or q - p == line_size:
-                ret[i] = indices[extreme_index]
+            if explicit:
+                if q - p > 0:
+                    ret[i] = indices[extreme_index]
             else:
-                zero_ind = _find_missing_index(indices, line_size)
-                if extreme_value == zero:
-                    ret[i] = min(extreme_index, zero_ind)
+                if compare(extreme_value, zero) or q - p == line_size:
+                    ret[i] = indices[extreme_index]
                 else:
-                    ret[i] = zero_ind
+                    zero_ind = _find_missing_index(indices, line_size)
+                    if extreme_value == zero:
+                        ret[i] = min(extreme_index, zero_ind)
+                    else:
+                        ret[i] = zero_ind
+
+        if isinstance(self, sparray):
+            return ret
 
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
         return self._ascontainer(ret)
 
-    def _arg_min_or_max(self, axis, out, argmin_or_argmax, compare):
+    def _arg_min_or_max(self, axis, out, argmin_or_argmax, compare, explicit):
         if out is not None:
             raise ValueError("Sparse types do not support an 'out' parameter.")
 
         validateaxis(axis)
 
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
+
         if axis is not None:
-            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare)
+            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare, explicit)
 
         if 0 in self.shape:
-            raise ValueError("Can't apply the operation to an empty matrix.")
+            raise ValueError("Cannot apply the operation to an empty matrix.")
 
         if self.nnz == 0:
+            if explicit:
+                raise ValueError("Cannot apply the operation to zero matrix "
+                                 "when explicit=True.")
             return 0
 
         zero = self.dtype.type(0)
@@ -275,21 +307,21 @@ class _minmax_mixin:
         # Convert to canonical form: no duplicates, sorted indices.
         mat.sum_duplicates()
         extreme_index = argmin_or_argmax(mat.data)
+        if explicit:
+            return extreme_index
         extreme_value = mat.data[extreme_index]
-        num_row, num_col = mat.shape
+        num_col = mat.shape[-1]
 
         # If the min value is less than zero, or max is greater than zero,
-        # then we don't need to worry about implicit zeros.
+        # then we do not need to worry about implicit zeros.
         if compare(extreme_value, zero):
             # cast to Python int to avoid overflow and RuntimeError
-            return (int(mat.row[extreme_index]) * num_col +
-                    int(mat.col[extreme_index]))
+            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # Cheap test for the rare case where we have no implicit zeros.
-        size = num_row * num_col
+        size = math.prod(self.shape)
         if size == mat.nnz:
-            return (int(mat.row[extreme_index]) * num_col +
-                    int(mat.col[extreme_index]))
+            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # At this stage, any implicit zero could be the min or max value.
         # After sum_duplicates(), the `row` and `col` arrays are guaranteed to
@@ -300,16 +332,17 @@ class _minmax_mixin:
             return min(first_implicit_zero_index, extreme_index)
         return first_implicit_zero_index
 
-    def max(self, axis=None, out=None):
-        """
-        Return the maximum of the matrix or maximum along an axis.
-        This takes all elements into account, not just the non-zero ones.
+    def max(self, axis=None, out=None, *, explicit=False):
+        """Return the maximum of the array/matrix or maximum along an axis.
+
+        By default, all elements are taken into account, not just the non-zero ones.
+        But with `explicit` set, only the stored elements are considered.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
-            compute the maximum over all the matrix elements, returning
+            compute the maximum over all elements, returning
             a scalar (i.e., `axis` = `None`).
 
         out : None, optional
@@ -317,31 +350,39 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except
             for the default value, as this argument is not used.
 
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
+            .. versionadded:: 1.15.0
+
         Returns
         -------
-        amax : coo_matrix or scalar
+        amax : coo_array or scalar
             Maximum of `a`. If `axis` is None, the result is a scalar value.
-            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            If `axis` is given, the result is a sparse.coo_array of dimension
             ``a.ndim - 1``.
 
         See Also
         --------
-        min : The minimum value of a sparse matrix along a given axis.
-        numpy.matrix.max : NumPy's implementation of 'max' for matrices
+        min : The minimum value of a sparse array/matrix along a given axis.
+        numpy.max : NumPy's implementation of 'max'
 
         """
-        return self._min_or_max(axis, out, np.maximum)
+        return self._min_or_max(axis, out, np.maximum, explicit)
 
-    def min(self, axis=None, out=None):
-        """
-        Return the minimum of the matrix or maximum along an axis.
-        This takes all elements into account, not just the non-zero ones.
+    def min(self, axis=None, out=None, *, explicit=False):
+        """Return the minimum of the array/matrix or maximum along an axis.
+
+        By default, all elements are taken into account, not just the non-zero ones.
+        But with `explicit` set, only the stored elements are considered.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
-            compute the minimum over all the matrix elements, returning
+            compute the minimum over all elements, returning
             a scalar (i.e., `axis` = `None`).
 
         out : None, optional
@@ -349,26 +390,34 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
 
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
+            .. versionadded:: 1.15.0
+
         Returns
         -------
         amin : coo_matrix or scalar
             Minimum of `a`. If `axis` is None, the result is a scalar value.
-            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            If `axis` is given, the result is a sparse.coo_array of dimension
             ``a.ndim - 1``.
 
         See Also
         --------
-        max : The maximum value of a sparse matrix along a given axis.
-        numpy.matrix.min : NumPy's implementation of 'min' for matrices
+        max : The maximum value of a sparse array/matrix along a given axis.
+        numpy.min : NumPy's implementation of 'min'
 
         """
-        return self._min_or_max(axis, out, np.minimum)
+        return self._min_or_max(axis, out, np.minimum, explicit)
 
-    def nanmax(self, axis=None, out=None):
-        """
-        Return the maximum of the matrix or maximum along an axis, ignoring any
-        NaNs. This takes all elements into account, not just the non-zero
-        ones.
+    def nanmax(self, axis=None, out=None, *, explicit=False):
+        """Return the maximum, ignoring any Nans, along an axis.
+
+        Return the maximum, ignoring any Nans, of the array/matrix along an axis.
+        By default this takes all elements into account, but with `explicit` set,
+        only stored elements are considered.
 
         .. versionadded:: 1.11.0
 
@@ -376,7 +425,7 @@ class _minmax_mixin:
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the maximum is computed. The default is to
-            compute the maximum over all the matrix elements, returning
+            compute the maximum over all elements, returning
             a scalar (i.e., `axis` = `None`).
 
         out : None, optional
@@ -384,29 +433,37 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except
             for the default value, as this argument is not used.
 
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
+            .. versionadded:: 1.15.0
+
         Returns
         -------
-        amax : coo_matrix or scalar
+        amax : coo_array or scalar
             Maximum of `a`. If `axis` is None, the result is a scalar value.
-            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            If `axis` is given, the result is a sparse.coo_array of dimension
             ``a.ndim - 1``.
 
         See Also
         --------
-        nanmin : The minimum value of a sparse matrix along a given axis,
+        nanmin : The minimum value of a sparse array/matrix along a given axis,
                  ignoring NaNs.
-        max : The maximum value of a sparse matrix along a given axis,
+        max : The maximum value of a sparse array/matrix along a given axis,
               propagating NaNs.
         numpy.nanmax : NumPy's implementation of 'nanmax'.
 
         """
-        return self._min_or_max(axis, out, np.fmax)
+        return self._min_or_max(axis, out, np.fmax, explicit)
 
-    def nanmin(self, axis=None, out=None):
-        """
-        Return the minimum of the matrix or minimum along an axis, ignoring any
-        NaNs. This takes all elements into account, not just the non-zero
-        ones.
+    def nanmin(self, axis=None, out=None, *, explicit=False):
+        """Return the minimum, ignoring any Nans, along an axis.
+
+        Return the minimum, ignoring any Nans, of the array/matrix along an axis.
+        By default this takes all elements into account, but with `explicit` set,
+        only stored elements are considered.
 
         .. versionadded:: 1.11.0
 
@@ -414,7 +471,7 @@ class _minmax_mixin:
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the minimum is computed. The default is to
-            compute the minimum over all the matrix elements, returning
+            compute the minimum over all elements, returning
             a scalar (i.e., `axis` = `None`).
 
         out : None, optional
@@ -422,66 +479,91 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
 
+        explicit : {False, True} optional (default: False)
+            When set to True, only the stored elements will be considered.
+            If a row/column is empty, the sparse.coo_array returned
+            has no stored element (i.e. an implicit zero) for that row/column.
+
+            .. versionadded:: 1.15.0
+
         Returns
         -------
-        amin : coo_matrix or scalar
+        amin : coo_array or scalar
             Minimum of `a`. If `axis` is None, the result is a scalar value.
-            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            If `axis` is given, the result is a sparse.coo_array of dimension
             ``a.ndim - 1``.
 
         See Also
         --------
-        nanmax : The maximum value of a sparse matrix along a given axis,
+        nanmax : The maximum value of a sparse array/matrix along a given axis,
                  ignoring NaNs.
-        min : The minimum value of a sparse matrix along a given axis,
+        min : The minimum value of a sparse array/matrix along a given axis,
               propagating NaNs.
         numpy.nanmin : NumPy's implementation of 'nanmin'.
 
         """
-        return self._min_or_max(axis, out, np.fmin)
+        return self._min_or_max(axis, out, np.fmin, explicit)
 
-    def argmax(self, axis=None, out=None):
+    def argmax(self, axis=None, out=None, *, explicit=False):
         """Return indices of maximum elements along an axis.
 
-        Implicit zero elements are also taken into account. If there are
-        several maximum values, the index of the first occurrence is returned.
+        By default, implicit zero elements are taken into account. If there are
+        several minimum values, the index of the first occurrence is returned.
+        If `explicit` is set, only explicitly stored elements will be considered.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None}, optional
             Axis along which the argmax is computed. If None (default), index
             of the maximum element in the flatten data is returned.
+
         out : None, optional
             This argument is in the signature *solely* for NumPy
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
+
+        explicit : {False, True} optional (default: False)
+            When set to True, only explicitly stored elements will be considered.
+            If axis is not None and a row/column has no stored elements, argmax
+            is undefined, so the index ``0`` is returned for that row/column.
+
+            .. versionadded:: 1.15.0
 
         Returns
         -------
         ind : numpy.matrix or int
             Indices of maximum elements. If matrix, its size along `axis` is 1.
         """
-        return self._arg_min_or_max(axis, out, np.argmax, np.greater)
+        return self._arg_min_or_max(axis, out, np.argmax, np.greater, explicit)
 
-    def argmin(self, axis=None, out=None):
+    def argmin(self, axis=None, out=None, *, explicit=False):
         """Return indices of minimum elements along an axis.
 
-        Implicit zero elements are also taken into account. If there are
+        By default, implicit zero elements are taken into account. If there are
         several minimum values, the index of the first occurrence is returned.
+        If `explicit` is set, only explicitly stored elements will be considered.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None}, optional
             Axis along which the argmin is computed. If None (default), index
             of the minimum element in the flatten data is returned.
+
         out : None, optional
             This argument is in the signature *solely* for NumPy
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
+
+        explicit : {False, True} optional (default: False)
+            When set to True, only explicitly stored elements will be considered.
+            If axis is not None and a row/column has no stored elements, argmin
+            is undefined, so the index ``0`` is returned for that row/column.
+
+            .. versionadded:: 1.15.0
 
         Returns
         -------
          ind : numpy.matrix or int
             Indices of minimum elements. If matrix, its size along `axis` is 1.
         """
-        return self._arg_min_or_max(axis, out, np.argmin, np.less)
+        return self._arg_min_or_max(axis, out, np.argmin, np.less, explicit)

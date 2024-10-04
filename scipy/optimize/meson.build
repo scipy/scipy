@@ -1,4 +1,4 @@
-_direct = py3.extension_module('_direct',
+py3.extension_module('_direct',
   ['_direct/direct_wrap.c',
    '_direct/direct-internal.h',
    '_direct/DIRect.c',
@@ -7,7 +7,6 @@ _direct = py3.extension_module('_direct',
    '_directmodule.h',
    '_directmodule.c'
   ],
-  c_args: [numpy_nodepr_api],
   include_directories: '../_lib/src',
   dependencies: np_dep,
   link_args: version_link_args,
@@ -15,43 +14,14 @@ _direct = py3.extension_module('_direct',
   subdir: 'scipy/optimize'
 )
 
-minpack_lib = static_library('minpack',
+py3.extension_module('_minpack',
   [
-    'minpack/chkder.f',
-    'minpack/dogleg.f',
-    'minpack/dpmpar.f',
-    'minpack/enorm.f',
-    'minpack/fdjac1.f',
-    'minpack/fdjac2.f',
-    'minpack/hybrd.f',
-    'minpack/hybrd1.f',
-    'minpack/hybrj.f',
-    'minpack/hybrj1.f',
-    'minpack/lmder.f',
-    'minpack/lmder1.f',
-    'minpack/lmdif.f',
-    'minpack/lmdif1.f',
-    'minpack/lmpar.f',
-    'minpack/lmstr.f',
-    'minpack/lmstr1.f',
-    'minpack/qform.f',
-    'minpack/qrfac.f',
-    'minpack/qrsolv.f',
-    'minpack/r1mpyq.f',
-    'minpack/r1updt.f',
-    'minpack/rwupdt.f'
-  ]
-)
-
-_minpack = py3.extension_module('_minpack',
-  ['minpack.h', '__minpack.h', '_minpackmodule.c'],
-  link_with: minpack_lib,
-  c_args: numpy_nodepr_api,
+    '__minpack.h',
+    '__minpack.c',
+  ],
   include_directories: '../_lib/src',
   dependencies: np_dep,
-  link_args: version_link_args,
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -60,12 +30,12 @@ rectangular_lsap = static_library('rectangular_lsap',
     'rectangular_lsap/rectangular_lsap.h',
     'rectangular_lsap/rectangular_lsap.cpp'
   ],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_lsap',
   ['_lsap.c'],
   link_with: rectangular_lsap,
-  c_args: numpy_nodepr_api,
   include_directories: '../_lib/src',
   dependencies: np_dep,
   link_args: version_link_args,
@@ -80,42 +50,31 @@ rootfind_lib = static_library('rootfind',
     'Zeros/brentq.c',
     'Zeros/ridder.c',
     'Zeros/zeros.h'
-  ]
+  ],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_zeros',
   'zeros.c',
   link_with: rootfind_lib,
-  c_args: numpy_nodepr_api,
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
 
-lbfgsb_module = custom_target('lbfgsb_module',
-  output: ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
-  input: 'lbfgsb_src/lbfgsb.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-_lbfgsb = py3.extension_module('_lbfgsb',
+py3.extension_module('_lbfgsb',
   [
-    'lbfgsb_src/lbfgsb.f',
-    'lbfgsb_src/linpack.f',
-    'lbfgsb_src/timer.f',
-    lbfgsb_module,
+    '__lbfgsb.h',
+    '__lbfgsb.c',
   ],
-  c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
+  dependencies: [lapack_dep, blas_dep, np_dep],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
-moduleTNC = py3.extension_module('_moduleTNC',
+py3.extension_module('_moduleTNC',
   ['tnc/tnc.h',
     cython_gen.process('tnc/_moduleTNC.pyx'),
     'tnc/tnc.c'],
@@ -127,15 +86,9 @@ moduleTNC = py3.extension_module('_moduleTNC',
   subdir: 'scipy/optimize'
 )
 
-cobyla_module = custom_target('cobyla_module',
-  output: ['_cobylamodule.c'],
-  input: 'cobyla/cobyla.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-_cobyla = py3.extension_module('_cobyla',
-  [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
-  c_args: [numpy_nodepr_api, Wno_unused_variable],
+py3.extension_module('_cobyla',
+  [f2py_gen.process('cobyla/cobyla.pyf'), 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
+  c_args: [Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
@@ -144,15 +97,8 @@ _cobyla = py3.extension_module('_cobyla',
   subdir: 'scipy/optimize'
 )
 
-minpack2_module = custom_target('minpack2_module',
-  output: ['_minpack2module.c'],
-  input: 'minpack2/minpack2.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-minpack2 = py3.extension_module('_minpack2',
-  [minpack2_module, 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
-  c_args: numpy_nodepr_api,
+py3.extension_module('_slsqp',
+  [f2py_gen.process('slsqp/slsqp.pyf'), 'slsqp/slsqp_optmz.f'],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
@@ -161,32 +107,18 @@ minpack2 = py3.extension_module('_minpack2',
   subdir: 'scipy/optimize'
 )
 
-slsqp_module = custom_target('slsqp_module',
-  output: ['_slsqpmodule.c'],
-  input: 'slsqp/slsqp.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-_slsqp = py3.extension_module('_slsqp',
-  [slsqp_module, 'slsqp/slsqp_optmz.f'],
-  c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
+py3.extension_module('_pava_pybind',
+  ['_pava/pava_pybind.cpp'],
+  include_directories: '_pava',
+  dependencies: [np_dep, pybind11_dep],
   link_args: version_link_args,
-  dependencies: [fortranobject_dep],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
 if use_pythran
-  _group_columns_cpp = custom_target('_group_columns',
-    output: ['_group_columns.cpp'],
-    input: '_group_columns.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_group_columns.cpp']
-  )
-
-  _group_columns = py3.extension_module('_group_columns',
-    [_group_columns_cpp],
+  py3.extension_module('_group_columns',
+    pythran_gen.process('_group_columns.py'),
     cpp_args: cpp_args_pythran,
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
@@ -194,7 +126,7 @@ if use_pythran
     subdir: 'scipy/optimize'
   )
 else
-  _group_columns = py3.extension_module('_group_columns',
+  py3.extension_module('_group_columns',
     cython_gen.process('_group_columns.pyx'),
     c_args: cython_c_args,
     dependencies: np_dep,
@@ -217,10 +149,17 @@ opt_gen = generator(cython,
   output : '@BASENAME@.c',
   depends : [_cython_tree, cython_blas_pxd, cython_optimize_pxd, _dummy_init_optimize])
 
-_bglu_dense_c = opt_gen.process('_bglu_dense.pyx')
-
 py3.extension_module('_bglu_dense',
-  _bglu_dense_c,
+  opt_gen.process('_bglu_dense.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
+py3.extension_module('_cython_nnls',
+  opt_gen.process('_cython_nnls.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -236,22 +175,23 @@ subdir('_shgo_lib')
 subdir('_highs')
 subdir('tests')
 
-py3.install_sources(
-  ['lbfgsb_src/README'],
-  subdir: 'scipy/optimize'
-)
 
 py3.install_sources([
   '__init__.py',
   '_basinhopping.py',
+  '_bracket.py',
   '_chandrupatla.py',
   '_cobyla_py.py',
+  '_cobyqa_py.py',
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
   '_direct_py.py',
+  '_dcsrch.py',
   '_dual_annealing.py',
+  '_elementwise.py',
   '_hessian_update_strategy.py',
+  '_isotonic.py',
   '_lbfgsb_py.py',
   '_linesearch.py',
   '_linprog.py',
@@ -285,6 +225,7 @@ py3.install_sources([
   '_zeros_py.py',
   'cobyla.py',
   'cython_optimize.pxd',
+  'elementwise.py',
   'lbfgsb.py',
   'linesearch.py',
   'minpack.py',

@@ -263,7 +263,7 @@ class FortranFormatParser:
                               "%d (got '%s')" % (0, tokens[0].value))
         elif not tokens[-1].type == "RPAR":
             raise SyntaxError("Expected right parenthesis at position "
-                              "%d (got '%s')" % (len(tokens), tokens[-1].value))
+                              f"{len(tokens)} (got '{tokens[-1].value}')")
 
         tokens = tokens[1:-1]
         types = [t.type for t in tokens]
@@ -299,7 +299,7 @@ class FortranFormatParser:
                 min = None
             return ExpFormat(width, significand, min, repeat)
         else:
-            raise SyntaxError("Invalid formater type %s" % next.value)
+            raise SyntaxError(f"Invalid formatter type {next.value}")
 
     def _next(self, tokens, tp):
         if not len(tokens) > 0:

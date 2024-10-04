@@ -68,7 +68,7 @@ ilu_cpivotL(
 	double	   fill_tol, /* in - fill tolerance of current column
 			      * used for a singular column */
 	milu_t	   milu,     /* in */
-	complex	   drop_sum, /* in - computed in ilu_ccopy_to_ucol()
+	singlecomplex	   drop_sum, /* in - computed in ilu_ccopy_to_ucol()
                                 (MILU only) */
 	GlobalLU_t *Glu,     /* modified - global LU data structures */
 	SuperLUStat_t *stat  /* output */
@@ -79,28 +79,28 @@ ilu_cpivotL(
     int		 fsupc;  /* first column in the supernode */
     int		 nsupc;  /* no of columns in the supernode */
     int		 nsupr;  /* no of rows in the supernode */
-    int		 lptr;	 /* points to the starting subscript of the supernode */
+    int_t	 lptr;	 /* points to the starting subscript of the supernode */
     register int	 pivptr;
     int		 old_pivptr, diag, ptr0;
     register float  pivmax, rtemp;
     float	 thresh;
-    complex	 temp;
-    complex	 *lu_sup_ptr;
-    complex	 *lu_col_ptr;
-    int		 *lsub_ptr;
+    singlecomplex	 temp;
+    singlecomplex	 *lu_sup_ptr;
+    singlecomplex	 *lu_col_ptr;
+    int_t	 *lsub_ptr;
     register int	 isub, icol, k, itemp;
-    int		 *lsub, *xlsub;
-    complex	 *lusup;
-    int		 *xlusup;
+    int_t	 *lsub, *xlsub;
+    singlecomplex	 *lusup;
+    int_t	 *xlusup;
     flops_t	 *ops = stat->ops;
     int		 info;
-    complex one = {1.0, 0.0};
+    singlecomplex one = {1.0, 0.0};
 
     /* Initialize pointers */
     n	       = Glu->n;
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = (complex *) Glu->lusup;
+    lusup      = (singlecomplex *) Glu->lusup;
     xlusup     = Glu->xlusup;
     fsupc      = (Glu->xsup)[(Glu->supno)[jcol]];
     nsupc      = jcol - fsupc;		/* excluding jcol; nsupc >= 0 */
@@ -147,12 +147,13 @@ ilu_cpivotL(
     /* Test for singularity */
     if (pivmax < 0.0) {
 #if SCIPY_FIX
-	ABORT("[0]: matrix is singular");
-#else
-	fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
+		ABORT("[0]: matrix is singular");
+    /*fprintf(stderr, "[0]: jcol=%d, SINGULAR!!!\n", jcol);
 	fflush(stderr);
-	exit(1);
+	exit(1); */
 #endif
+	*usepr = 0;
+	return (jcol+1);
     }
     if ( pivmax == 0.0 ) {
 	if (diag != EMPTY)
@@ -168,9 +169,11 @@ ilu_cpivotL(
 #if SCIPY_FIX
 		ABORT("[1]: matrix is singular");
 #else
-		fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
+		/* fprintf(stderr, "[1]: jcol=%d, SINGULAR!!!\n", jcol);
 		fflush(stderr);
-		exit(1);
+		exit(1); */
+   	        *usepr = 0;
+	        return (jcol+1);
 #endif
 	    }
 
@@ -188,8 +191,8 @@ ilu_cpivotL(
 	printf("[0] ZERO PIVOT: FILL (%d, %d).\n", *pivrow, jcol);
 	fflush(stdout);
 #endif
-	info =jcol + 1;
-    } /* if (*pivrow == 0.0) */
+	info = jcol + 1;
+    } /* end if (*pivrow == 0.0) */
     else {
 	thresh = u * pivmax;
 
@@ -251,7 +254,7 @@ ilu_cpivotL(
 		break;
 	}
 
-    } /* else */
+    } /* end else */
 
     /* Record pivot row */
     perm_r[*pivrow] = jcol;

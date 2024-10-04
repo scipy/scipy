@@ -13,6 +13,7 @@ able to represent such matrices efficiently. First, we need a compact way to
 represent an all-ones matrix::
 
     >>> import numpy as np
+    >>> from scipy.sparse.linalg._interface import LinearOperator
     >>> class Ones(LinearOperator):
     ...     def __init__(self, shape):
     ...         super().__init__(dtype=None, shape=shape)
@@ -24,6 +25,7 @@ amount of storage, independent of ``shape``. The ``_matvec`` method specifies
 how this linear operator multiplies with (operates on) a vector. We can now
 add this operator to a sparse matrix that stores only offsets from one::
 
+    >>> from scipy.sparse.linalg._interface import aslinearoperator
     >>> from scipy.sparse import csr_matrix
     >>> offsets = csr_matrix([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
     >>> A = aslinearoperator(offsets) + Ones(offsets.shape)
@@ -443,8 +445,7 @@ class LinearOperator:
             elif x.ndim == 2:
                 return self.matmat(x)
             else:
-                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
-                                 % x)
+                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
 
     def __matmul__(self, other):
         if np.isscalar(other):
@@ -498,8 +499,7 @@ class LinearOperator:
             elif x.ndim == 2:
                 return self.T.matmat(x.T).T
             else:
-                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
-                                 % x)
+                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
 
     def __pow__(self, p):
         if np.isscalar(p):
@@ -757,7 +757,7 @@ class _PowerLinearOperator(LinearOperator):
         if not isinstance(A, LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if A.shape[0] != A.shape[1]:
-            raise ValueError('square LinearOperator expected, got %r' % A)
+            raise ValueError(f'square LinearOperator expected, got {A!r}')
         if not isintlike(p) or p < 0:
             raise ValueError('non-negative integer expected as p')
 

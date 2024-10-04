@@ -1,4 +1,4 @@
-/*! \file
+/*
 Copyright (c) 2003, The Regents of the University of California, through
 Lawrence Berkeley National Laboratory (subject to receipt of any required 
 approvals from U.S. Dept. of Energy) 
@@ -8,10 +8,7 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
-/*! @file heap_relax_snode.c
- * \brief Identify the initial relaxed supernodes
- *
- * <pre>
+/*
  * -- SuperLU routine (version 3.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
@@ -27,7 +24,11 @@ at the top-level directory.
  * Permission to modify the code and to distribute modified code is
  * granted, provided the above notices are retained, and a notice that
  * the code was modified is included with the above copyright notice.
- * </pre>
+ */
+/*! \file
+ * \brief Identify the initial relaxed supernodes
+ *
+ * \ingroup Common
  */
 
 #include "slu_ddefs.h"
@@ -56,7 +57,9 @@ heap_relax_snode (
     register int i, j, k, l, parent;
     register int snode_start;	/* beginning of a snode */
     int *et_save, *post, *inv_post, *iwork;
+#if ( PRNTlevel>=1 )
     int nsuper_et = 0, nsuper_et_post = 0;
+#endif
 
     /* The etree may not be postordered, but is heap ordered. */
 
@@ -94,7 +97,9 @@ heap_relax_snode (
 	    parent = et[j];
 	}
 	/* Found a supernode in postordered etree; j is the last column. */
+#if ( PRNTlevel>=1 )
 	++nsuper_et_post;
+#endif
 	k = n;
 	for (i = snode_start; i <= j; ++i)
 	    k = SUPERLU_MIN(k, inv_post[i]);
@@ -102,13 +107,17 @@ heap_relax_snode (
 	if ( (l - k) == (j - snode_start) ) {
 	    /* It's also a supernode in the original etree */
 	    relax_end[k] = l;		/* Last column is recorded */
+#if ( PRNTlevel>=1 )
 	    ++nsuper_et;
+#endif
 	} else {
 	    for (i = snode_start; i <= j; ++i) {
 	        l = inv_post[i];
 	        if ( descendants[i] == 0 ) {
 		    relax_end[l] = l;
+#if ( PRNTlevel>=1 )
 		    ++nsuper_et;
+#endif
 		}
 	    }
 	}

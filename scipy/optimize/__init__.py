@@ -13,7 +13,7 @@ Optimization and root finding (:mod:`scipy.optimize`)
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
-optimization algorithms), linear programing, constrained
+optimization algorithms), linear programming, constrained
 and nonlinear least-squares, root finding, and curve fitting.
 
 Common functions and objects, shared across different solvers, are:
@@ -65,6 +65,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-lbfgsb
    optimize.minimize-tnc
    optimize.minimize-cobyla
+   optimize.minimize-cobyqa
    optimize.minimize-slsqp
    optimize.minimize-trustconstr
    optimize.minimize-dogleg
@@ -100,6 +101,8 @@ quasi-Newton methods implementing this interface are:
    BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
    SR1 - Symmetric-rank-1 Hessian update strategy.
 
+.. _global_optimization:
+
 Global optimization
 -------------------
 
@@ -133,6 +136,7 @@ Linear least-squares
 
    nnls - Linear least-squares problem with non-negativity constraint.
    lsq_linear - Linear least-squares problem with bound constraints.
+   isotonic_regression - Least squares problem of isotonic regression via PAVA.
 
 Curve fitting
 -------------
@@ -236,6 +240,14 @@ The `root` function supports the following methods:
    optimize.root-excitingmixing
    optimize.root-krylov
    optimize.root-dfsane
+   
+Elementwise Minimization and Root Finding
+=========================================
+
+.. toctree::
+   :maxdepth: 3
+
+   optimize.elementwise
 
 Linear programming / MILP
 =========================
@@ -382,6 +394,7 @@ General nonlinear solvers:
    fsolve - Non-linear multivariable equation solver.
    broyden1 - Broyden's first method.
    broyden2 - Broyden's second method.
+   NoConvergence -  Exception raised when nonlinear solver does not converge.
 
 Large-scale nonlinear solvers:
 
@@ -423,6 +436,7 @@ from ._linprog import linprog, linprog_verbose_callback
 from ._lsap import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
+from ._isotonic import isotonic_regression
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)

@@ -13,55 +13,18 @@ Dependencies
 ------------
 Dependencies are things that a user has to install in order to use (or
 build/test) a package.  They usually cause trouble, especially if they're not
-optional.  SciPy tries to keep its dependencies to a minimum; currently they
-are:
+optional.  SciPy tries to keep its dependencies to a minimum; the current required
+and optional build time dependencies can be seen in `SciPy's configuration file`_, 
+``pyproject.toml``. The only non-optional runtime dependency is NumPy_.
 
-*Unconditional run-time dependencies:*
-
-- Numpy_
-
-*Conditional run-time dependencies:*
-
-- pytest (to run the test suite)
-- asv_ (to run the benchmarks)
-- matplotlib_ (for some functions that can produce plots)
-- pooch_ (for the scipy.datasets module)
-- Pillow_ (for image loading/saving)
-- scikits.umfpack_ (optionally used in ``sparse.linalg``)
-- mpmath_ (for more extended tests in ``special``)
-- pydata/sparse (compatibility support in ``scipy.sparse``)
-- threadpoolctl_ (to control BLAS/LAPACK threading in test suite)
-
-*Unconditional build-time dependencies:*
-
-- Numpy_
-- A BLAS and LAPACK implementation (reference BLAS/LAPACK, ATLAS, OpenBLAS,
-  MKL are all known to work)
-- Cython_
-- setuptools_
-- pybind11_
-
-*Conditional build-time dependencies:*
-
-- wheel_ (``python setup.py bdist_wheel``)
-- Sphinx_ (docs)
-- `PyData Sphinx theme`_ (docs)
-- `Sphinx-Design`_  (docs)
-- matplotlib_ (docs)
-- MyST-NB_ (docs)
-
-Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
-but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see https://scipy.github.io/devdocs/dev/contributor/building.html.
+Furthermore, of course one needs C, C++ and Fortran compilers to build SciPy,
+but we don't consider those to be dependencies, and therefore they are not discussed
+here.  For details, see :ref:`building-from-source`.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
-scipy) the package instead.  For example, decorator_ is vendored in
+SciPy) the package instead.  For example, decorator_ is vendored in
 ``scipy._lib``.
-
-The only dependency that is reported to pip_  is Numpy_, see
-``install_requires`` in SciPy's main ``setup.py``.  The other dependencies
-aren't needed for SciPy to function correctly
 
 Issues with dependency handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,10 +32,10 @@ There are some issues with how Python packaging tools handle
 dependencies reported by projects.  Because SciPy gets regular bug reports
 about this, we go in a bit of detail here.
 
-SciPy only reports its dependency on NumPy via ``install_requires`` if NumPy
-isn't installed at all on a system, or when building wheels with
-``bdist_wheel``. SciPy no longer uses ``setup_requires`` (which in the past
-invoked ``easy_install``); build dependencies are now handled only via
+SciPy reports its dependency on NumPy via ``pyproject.toml`` for build purposes,
+and SciPy also has a runtime check that an appropriate version of NumPy is
+available. SciPy no longer uses ``setup_requires`` (which in
+the past invoked ``easy_install``); build dependencies are now handled only via
 ``pyproject.toml``. ``pyproject.toml`` relies on PEP 517; ``pip`` has
 ``--no-use-pep517`` and ``--no-build-isolation`` flags that may ignore
 ``pyproject.toml`` or treat it differently - if users use those flags, they
@@ -87,13 +50,14 @@ For dependencies it's important to set lower and upper bounds on their
 versions. For *build-time* dependencies, they are specified in
 ``pyproject.toml`` and the versions will *only* apply to the SciPy build
 itself. It's fine to specify either a range or a specific version for a
-dependency like ``wheel`` or ``setuptools``. For NumPy we have to worry
-about ABI compatibility too, hence we specify the version with ``==``
-to the lowest supported version (because NumPy's ABI is backward but not
-forward compatible).
+dependency like ``meson-python`` or ``pybind11``. For NumPy we have to worry
+about ABI compatibility too. However, with NumPy ``>=2.0.0rc1`` backwards
+compatibility is guaranteed as far back as the NumPy ``1.19`` series so
+specification of a lowest supported version of NumPy at build time is no
+longer required in ``pyproject.toml``.
 
 For *run-time dependencies* (currently only ``numpy``), we specify the range
-of versions in ``pyproject.toml`` and in ``install_requires`` in ``setup.py``.
+of versions in ``pyproject.toml`` and in ``scipy/__init__.py``.
 Getting the upper bound right is slightly tricky.  If we don't set any bound, a
 too-new version will be pulled in a few years down the line, and NumPy may have
 deprecated and removed some API that SciPy depended on by then. On the other
@@ -101,8 +65,8 @@ hand if we set the upper bound to the newest already-released version, then as
 soon as a new NumPy version is released there will be no matching SciPy version
 that works with it. Given that NumPy and SciPy both release in a 6-monthly
 cadence and that features that get deprecated in NumPy should stay around for
-another two releases, we specify the upper bound as ``<1.xx+3.0`` (where ``xx``
-is the minor version of the latest already-released NumPy.
+another two releases, we specify the upper bound as ``<2.xx+3.0`` (where ``xx``
+is the minor version of the latest already-released NumPy).
 
 
 .. _supported-py-numpy-versions:
@@ -110,16 +74,16 @@ is the minor version of the latest already-released NumPy.
 Supported Python and NumPy versions
 -----------------------------------
 The Python_ versions that SciPy supports are listed in the list of PyPI
-classifiers in ``setup.py``, and mentioned in the release notes for each
+classifiers in ``pyproject.toml``, and mentioned in the release notes for each
 release.  All newly released Python versions will be supported as soon as
 possible.  For the general policy on dropping support for a Python or NumPy
 version, see :ref:`NEP 29 <NEP29>`.  The final decision on dropping support is
-always taken on the scipy-dev mailing list.
+always taken on the scipy-dev forum.
 
-The lowest supported Numpy_ version for a SciPy version is mentioned in the
-release notes and is encoded in ``pyproject.toml``, ``scipy/__init__.py`` and the
-``install_requires`` field of ``setup.py``.  Typically the latest SciPy release
-supports ~5-7 minor versions of NumPy: up to 2.5 years' old NumPy versions,
+The lowest supported NumPy_ version for a SciPy version is mentioned in the
+release notes and is encoded in ``pyproject.toml`` and ``scipy/__init__.py``.
+Typically the latest SciPy release supports ~5-7 minor versions of NumPy: up
+to 2.5 years' old NumPy versions,
 (given that the frequency of NumPy releases is about 2x/year at the time of
 writing) plus two versions into the future.
 
@@ -127,7 +91,7 @@ Supported versions of optional dependencies and compilers is documented in
 :ref:`toolchain-roadmap`. Note that not all versions of optional dependencies
 that are supported are tested well or at all by SciPy's Continuous
 Integration setup.  Issues regarding this are dealt with as they come up in the
-issue tracker or mailing list.
+issue tracker or forum.
 
 
 Building binary installers
@@ -143,11 +107,12 @@ and distributing them on PyPI or elsewhere.
 
 **General**
 
-- A binary is specific for a single Python version (because different Python
-  versions aren't ABI-compatible, at least up to Python 3.4).
-- Build against the lowest NumPy version that you need to support, then it will
-  work for all NumPy versions with the same major version number (NumPy does
-  maintain backwards ABI compatibility).
+- A binary is specific for a single (major) Python version (because different
+  major Python versions aren't ABI-compatible, at least up to Python 3.12).
+- Build against NumPy ``2.0.0``, then it will work for all NumPy versions with
+  the same major version number (NumPy
+  does maintain backwards ABI compatibility), and as far back as NumPy ``1.19``
+  series at the time of writing.
 - The easiest available toolchain for building portable SciPy binaries
   is our ``cibuildwheel`` infrastructure for common platforms, with
   details available in our CI infrastructure code and available via the
@@ -188,7 +153,8 @@ would need to be distributed via custom channels, e.g. in a
 Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
 
-.. _Numpy: https://numpy.org
+.. _`SciPy's configuration file`: https://github.com/scipy/scipy/blob/main/pyproject.toml
+.. _NumPy: https://numpy.org
 .. _Python: https://www.python.org
 .. _nose: https://nose.readthedocs.io
 .. _asv: https://asv.readthedocs.org
@@ -213,3 +179,4 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _manylinux: https://github.com/pypa/manylinux/
 .. _threadpoolctl: https://github.com/joblib/threadpoolctl
 .. _MyST-NB: https://myst-nb.readthedocs.io/
+.. _Hypothesis: https://hypothesis.readthedocs.io/en/latest/index.html

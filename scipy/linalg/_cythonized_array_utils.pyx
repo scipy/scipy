@@ -101,7 +101,7 @@ def bandwidth(a):
     Returns
     -------
     lu : tuple
-        2-tuple of ints indicating the lower and upper bandwith. A zero
+        2-tuple of ints indicating the lower and upper bandwidth. A zero
         denotes no sub- or super-diagonal on that side (triangular), and,
         say for N rows (N-1) means that side is full. Same example applies
         to the upper triangular part with (M-1).
@@ -126,7 +126,7 @@ def bandwidth(a):
     and in the 6th row, 4th entry is nonzero then, on the succeeding rows
     the horizontal search is done only up to that band entries since we know
     that band is occupied. Therefore, a completely dense matrix scan cost is
-    in the the order of n.
+    in the order of n.
 
     Examples
     --------
@@ -158,7 +158,7 @@ def bandwidth(a):
 
 
 @cython.initializedcheck(False)
-def bandwidth_c(np_numeric_t[:, ::1]A):
+def bandwidth_c(const np_numeric_t[:, ::1]A):
     cdef int l, u
     with nogil:
         l, u = band_check_internal_c(A)
@@ -166,7 +166,7 @@ def bandwidth_c(np_numeric_t[:, ::1]A):
 
 
 @cython.initializedcheck(False)
-def bandwidth_noncontig(np_numeric_t[:, :]A):
+def bandwidth_noncontig(const np_numeric_t[:, :]A):
     cdef int l, u
     with nogil:
         l, u = band_check_internal_noncontig(A)
@@ -176,7 +176,7 @@ def bandwidth_noncontig(np_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) noexcept nogil:
+cdef inline (int, int) band_check_internal_c(const np_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
@@ -198,7 +198,8 @@ cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) noexcept nog
             if A[r, c] != zero:
                 upper_band = c - r
                 break
-        if upper_band == c:
+        # If existing band falls outside matrix; we are done
+        if r + 1 + upper_band > m - 1:
             break
 
     return lower_band, upper_band
@@ -207,7 +208,7 @@ cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) noexcept nog
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) noexcept nogil:
+cdef inline (int, int) band_check_internal_noncontig(const np_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
@@ -229,7 +230,8 @@ cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) noexce
             if A[r, c] != zero:
                 upper_band = c - r
                 break
-        if upper_band == c:
+        # If existing band falls outside matrix; we are done
+        if r + 1 + upper_band > m - 1:
             break
 
     return lower_band, upper_band
@@ -274,7 +276,7 @@ def issymmetric(a, atol=None, rtol=None):
     The diagonal of the array is not scanned. Thus if there are infs, NaNs or
     similar problematic entries on the diagonal, they will be ignored. However,
     `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
-    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.nan` is never
     symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
@@ -324,7 +326,7 @@ def issymmetric(a, atol=None, rtol=None):
 
 
 @cython.initializedcheck(False)
-def is_sym_her_real_c(np_numeric_t[:, ::1]A):
+def is_sym_her_real_c(const np_numeric_t[:, ::1]A):
     cdef bint s
     with nogil:
         s = is_sym_her_real_c_internal(A)
@@ -332,7 +334,7 @@ def is_sym_her_real_c(np_numeric_t[:, ::1]A):
 
 
 @cython.initializedcheck(False)
-def is_sym_her_real_noncontig(np_numeric_t[:, :]A):
+def is_sym_her_real_noncontig(const np_numeric_t[:, :]A):
     cdef bint s
     with nogil:
         s = is_sym_her_real_noncontig_internal(A)
@@ -342,7 +344,7 @@ def is_sym_her_real_noncontig(np_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) noexcept nogil:
+cdef inline bint is_sym_her_real_c_internal(const np_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -355,7 +357,7 @@ cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) noexcept nogi
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) noexcept nogil:
+cdef inline bint is_sym_her_real_noncontig_internal(const np_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -400,7 +402,7 @@ def ishermitian(a, atol=None, rtol=None):
     For square empty arrays the result is returned True by convention.
 
     `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
-    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.nan` is never
     symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
@@ -469,14 +471,14 @@ def ishermitian(a, atol=None, rtol=None):
 
 
 @cython.initializedcheck(False)
-def is_sym_her_complex_c(np_complex_numeric_t[:, ::1]A):
+def is_sym_her_complex_c(const np_complex_numeric_t[:, ::1]A):
     cdef bint s
     with nogil:
         s = is_sym_her_complex_c_internal(A)
     return s
 
 @cython.initializedcheck(False)
-def is_sym_her_complex_noncontig(np_complex_numeric_t[:, :]A):
+def is_sym_her_complex_noncontig(const np_complex_numeric_t[:, :]A):
     cdef bint s
     with nogil:
         s = is_sym_her_complex_noncontig_internal(A)
@@ -485,7 +487,7 @@ def is_sym_her_complex_noncontig(np_complex_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) noexcept nogil:
+cdef inline bint is_sym_her_complex_c_internal(const np_complex_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -497,7 +499,7 @@ cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) no
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_complex_noncontig_internal(np_complex_numeric_t[:, :]A) noexcept nogil:
+cdef inline bint is_sym_her_complex_noncontig_internal(const np_complex_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):

@@ -6,88 +6,21 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
-from ._matrix import spmatrix, _array_doc_to_matrix
+from .._lib._util import copy_if_needed
+from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
-from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape)
+from ._sputils import (
+    isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape
+)
 from ._sparsetools import dia_matvec
 
 
 class _dia_base(_data_matrix):
-    """Sparse matrix with DIAgonal storage
-
-    This can be instantiated in several ways:
-        dia_array(D)
-            with a dense matrix
-
-        dia_array(S)
-            with another sparse matrix S (equivalent to S.todia())
-
-        dia_array((M, N), [dtype])
-            to construct an empty matrix with shape (M, N),
-            dtype is optional, defaulting to dtype='d'.
-
-        dia_array((data, offsets), shape=(M, N))
-            where the ``data[k,:]`` stores the diagonal entries for
-            diagonal ``offsets[k]`` (See example below)
-
-    Attributes
-    ----------
-    dtype : dtype
-        Data type of the matrix
-    shape : 2-tuple
-        Shape of the matrix
-    ndim : int
-        Number of dimensions (this is always 2)
-    nnz
-        Number of stored values, including explicit zeros
-    data
-        DIA format data array of the matrix
-    offsets
-        DIA format offset array of the matrix
-
-    Notes
-    -----
-
-    Sparse matrices can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-
-    Examples
-    --------
-
-    >>> import numpy as np
-    >>> from scipy.sparse import dia_array
-    >>> dia_array((3, 4), dtype=np.int8).toarray()
-    array([[0, 0, 0, 0],
-           [0, 0, 0, 0],
-           [0, 0, 0, 0]], dtype=int8)
-
-    >>> data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
-    >>> offsets = np.array([0, -1, 2])
-    >>> dia_array((data, offsets), shape=(4, 4)).toarray()
-    array([[1, 0, 3, 0],
-           [1, 2, 0, 4],
-           [0, 2, 3, 0],
-           [0, 0, 3, 4]])
-
-    >>> from scipy.sparse import dia_array
-    >>> n = 10
-    >>> ex = np.ones(n)
-    >>> data = np.array([ex, 2 * ex, ex])
-    >>> offsets = np.array([-1, 0, 1])
-    >>> dia_array((data, offsets), shape=(n, n)).toarray()
-    array([[2., 1., 0., ..., 0., 0., 0.],
-           [1., 2., 1., ..., 0., 0., 0.],
-           [0., 1., 2., ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0., ..., 2., 1., 0.],
-           [0., 0., 0., ..., 1., 2., 1.],
-           [0., 0., 0., ..., 0., 1., 2.]])
-    """
     _format = 'dia'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
 
         if issparse(arg1):
             if arg1.format == "dia":
@@ -117,31 +50,38 @@ class _dia_base(_data_matrix):
                     # Try interpreting it as (data, offsets)
                     data, offsets = arg1
                 except Exception as e:
-                    raise ValueError('unrecognized form for dia_array constructor') from e
+                    message = 'unrecognized form for dia_array constructor'
+                    raise ValueError(message) from e
                 else:
                     if shape is None:
                         raise ValueError('expected a shape argument')
+                    if not copy:
+                        copy = copy_if_needed
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
-                    self.offsets = np.atleast_1d(np.array(arg1[1],
-                                                          dtype=self._get_index_dtype(maxval=max(shape)),
-                                                          copy=copy))
+                    offsets = np.array(arg1[1],
+                                       dtype=self._get_index_dtype(maxval=max(shape)),
+                                       copy=copy)
+                    self.offsets = np.atleast_1d(offsets)
                     self._shape = check_shape(shape)
         else:
-            #must be dense, convert to COO first, then to DIA
+            # must be dense, convert to COO first, then to DIA
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format) from e
+                raise ValueError("unrecognized form for "
+                                 f"{self.format}_matrix constructor") from e
+            if isinstance(self, sparray) and arg1.ndim != 2:
+                raise ValueError(f"DIA arrays don't support {arg1.ndim}D input. Use 2D")
             A = self._coo_container(arg1, dtype=dtype, shape=shape).todia()
             self.data = A.data
             self.offsets = A.offsets
             self._shape = check_shape(A.shape)
 
         if dtype is not None:
-            self.data = self.data.astype(dtype)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype)
 
-        #check format
+        # check format
         if self.offsets.ndim != 1:
             raise ValueError('offsets array must have rank 1')
 
@@ -157,11 +97,13 @@ class _dia_base(_data_matrix):
             raise ValueError('offset array contains duplicate values')
 
     def __repr__(self):
-        format = _formats[self.getformat()][1]
-        return "<%dx%d sparse matrix of type '%s'\n" \
-               "\twith %d stored elements (%d diagonals) in %s format>" % \
-               (self.shape + (self.dtype.type, self.nnz, self.data.shape[0],
-                              format))
+        _, fmt = _formats[self.format]
+        sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
+        d = self.data.shape[0]
+        return (
+            f"<{fmt} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements ({d} diagonals) and shape {self.shape}>"
+        )
 
     def _data_mask(self):
         """Returns a mask of the same shape as self.data, where
@@ -174,9 +116,15 @@ class _dia_base(_data_matrix):
         mask &= (offset_inds < num_cols)
         return mask
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over an axis is not implemented for DIA format"
+            )
         mask = self._data_mask()
         return np.count_nonzero(self.data[mask])
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def _getnnz(self, axis=None):
         if axis is not None:
@@ -192,7 +140,6 @@ class _dia_base(_data_matrix):
         return int(nnz)
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def sum(self, axis=None, dtype=None, out=None):
         validateaxis(axis)
@@ -235,32 +182,46 @@ class _dia_base(_data_matrix):
     sum.__doc__ = _spbase.sum.__doc__
 
     def _add_sparse(self, other):
+        # If other is not DIA format, let them handle us instead.
+        if not isinstance(other, _dia_base):
+            return other._add_sparse(self)
 
-        # Check if other is also of type dia_array
-        if not isinstance(other, type(self)):
-            # If other is not of type dia_array, default to
-            # converting to csr_matrix, as is done in the _add_sparse
-            # method of parent class _spbase
-            return self.tocsr()._add_sparse(other)
+        # Fast path for exact equality of the sparsity structure.
+        if np.array_equal(self.offsets, other.offsets):
+            return self._with_data(self.data + other.data)
 
-        # The task is to compute m = self + other
-        # Start by making a copy of self, of the datatype
-        # that should result from adding self and other
-        dtype = np.promote_types(self.dtype, other.dtype)
-        m = self.astype(dtype, copy=True)
+        # Find the union of the offsets (which will be sorted and unique).
+        new_offsets = np.union1d(self.offsets, other.offsets)
+        self_idx = np.searchsorted(new_offsets, self.offsets)
+        other_idx = np.searchsorted(new_offsets, other.offsets)
 
-        # Then, add all the stored diagonals of other.
-        for d in other.offsets:
-            # Check if the diagonal has already been added.
-            if d in m.offsets:
-                # If the diagonal is already there, we need to take
-                # the sum of the existing and the new
-                m.setdiag(m.diagonal(d) + other.diagonal(d), d)
-            else:
-                m.setdiag(other.diagonal(d), d)
-        return m
+        self_d = self.data.shape[1]
+        other_d = other.data.shape[1]
+        # Fast path for a sparsity structure where the final offsets are a
+        # permutation of the existing offsets and the diagonal lengths match.
+        if self_d == other_d and len(new_offsets) == len(self.offsets):
+            new_data = self.data[_invert_index(self_idx)]
+            new_data[other_idx, :] += other.data
+        elif self_d == other_d and len(new_offsets) == len(other.offsets):
+            new_data = other.data[_invert_index(other_idx)]
+            new_data[self_idx, :] += self.data
+        else:
+            # Maximum diagonal length of the result.
+            d = min(self.shape[0] + new_offsets[-1], self.shape[1])
 
-    def _mul_vector(self, other):
+            # Add all diagonals to a freshly-allocated data array.
+            new_data = np.zeros(
+                (len(new_offsets), d),
+                dtype=np.result_type(self.data, other.data),
+            )
+            new_data[self_idx, :self_d] += self.data[:, :d]
+            new_data[other_idx, :other_d] += other.data[:, :d]
+        return self._dia_container((new_data, new_offsets), shape=self.shape)
+
+    def _mul_scalar(self, other):
+        return self._with_data(self.data * other)
+
+    def _matmul_vector(self, other):
         x = other
 
         y = np.zeros(self.shape[0], dtype=upcast_char(self.dtype.char,
@@ -270,12 +231,10 @@ class _dia_base(_data_matrix):
 
         M,N = self.shape
 
-        dia_matvec(M,N, len(self.offsets), L, self.offsets, self.data, x.ravel(), y.ravel())
+        dia_matvec(M,N, len(self.offsets), L, self.offsets, self.data,
+                   x.ravel(), y.ravel())
 
         return y
-
-    def _mul_multimatrix(self, other):
-        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
 
     def _setdiag(self, values, k=0):
         M, N = self.shape
@@ -323,8 +282,8 @@ class _dia_base(_data_matrix):
     todia.__doc__ = _spbase.todia.__doc__
 
     def transpose(self, axes=None, copy=False):
-        if axes is not None:
-            raise ValueError("Sparse matrices do not support "
+        if axes is not None and axes != (1, 0):
+            raise ValueError("Sparse arrays/matrices do not support "
                               "an 'axes' parameter because swapping "
                               "dimensions is the only logical permutation.")
 
@@ -402,6 +361,11 @@ class _dia_base(_data_matrix):
         mask &= (self.data != 0)
         row = row[mask]
         col = np.tile(offset_inds, num_offsets)[mask.ravel()]
+        idx_dtype = self._get_index_dtype(
+            arrays=(self.offsets,), maxval=max(self.shape)
+        )
+        row = row.astype(idx_dtype, copy=False)
+        col = col.astype(idx_dtype, copy=False)
         data = self.data[mask]
         # Note: this cannot set has_canonical_format=True, because despite the
         # lack of duplicates, we do not generate sorted indices.
@@ -443,6 +407,13 @@ class _dia_base(_data_matrix):
     resize.__doc__ = _spbase.resize.__doc__
 
 
+def _invert_index(idx):
+    """Helper function to invert an index array."""
+    inv = np.zeros_like(idx)
+    inv[idx] = np.arange(len(idx))
+    return inv
+
+
 def isspmatrix_dia(x):
     """Is `x` of dia_matrix type?
 
@@ -471,11 +442,152 @@ def isspmatrix_dia(x):
 
 # This namespace class separates array from matrix with isinstance
 class dia_array(_dia_base, sparray):
-    pass
+    """
+    Sparse array with DIAgonal storage.
 
-dia_array.__doc__ = _dia_base.__doc__
+    This can be instantiated in several ways:
+        dia_array(D)
+            where D is a 2-D ndarray
+
+        dia_array(S)
+            with another sparse array or matrix S (equivalent to S.todia())
+
+        dia_array((M, N), [dtype])
+            to construct an empty array with shape (M, N),
+            dtype is optional, defaulting to dtype='d'.
+
+        dia_array((data, offsets), shape=(M, N))
+            where the ``data[k,:]`` stores the diagonal entries for
+            diagonal ``offsets[k]`` (See example below)
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the array
+    shape : 2-tuple
+        Shape of the array
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+    size
+    data
+        DIA format data array of the array
+    offsets
+        DIA format offset array of the array
+    T
+
+    Notes
+    -----
+
+    Sparse arrays can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+    Sparse arrays with DIAgonal storage do not support slicing.
+
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.sparse import dia_array
+    >>> dia_array((3, 4), dtype=np.int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
+
+    >>> data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
+    >>> offsets = np.array([0, -1, 2])
+    >>> dia_array((data, offsets), shape=(4, 4)).toarray()
+    array([[1, 0, 3, 0],
+           [1, 2, 0, 4],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
+
+    >>> from scipy.sparse import dia_array
+    >>> n = 10
+    >>> ex = np.ones(n)
+    >>> data = np.array([ex, 2 * ex, ex])
+    >>> offsets = np.array([-1, 0, 1])
+    >>> dia_array((data, offsets), shape=(n, n)).toarray()
+    array([[2., 1., 0., ..., 0., 0., 0.],
+           [1., 2., 1., ..., 0., 0., 0.],
+           [0., 1., 2., ..., 0., 0., 0.],
+           ...,
+           [0., 0., 0., ..., 2., 1., 0.],
+           [0., 0., 0., ..., 1., 2., 1.],
+           [0., 0., 0., ..., 0., 1., 2.]])
+    """
+
 
 class dia_matrix(spmatrix, _dia_base):
-    pass
+    """
+    Sparse matrix with DIAgonal storage.
 
-dia_matrix.__doc__ = _array_doc_to_matrix(_dia_base.__doc__)
+    This can be instantiated in several ways:
+        dia_matrix(D)
+            where D is a 2-D ndarray
+
+        dia_matrix(S)
+            with another sparse array or matrix S (equivalent to S.todia())
+
+        dia_matrix((M, N), [dtype])
+            to construct an empty matrix with shape (M, N),
+            dtype is optional, defaulting to dtype='d'.
+
+        dia_matrix((data, offsets), shape=(M, N))
+            where the ``data[k,:]`` stores the diagonal entries for
+            diagonal ``offsets[k]`` (See example below)
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+    size
+    data
+        DIA format data array of the matrix
+    offsets
+        DIA format offset array of the matrix
+    T
+
+    Notes
+    -----
+
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+    Sparse matrices with DIAgonal storage do not support slicing.
+
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.sparse import dia_matrix
+    >>> dia_matrix((3, 4), dtype=np.int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
+
+    >>> data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
+    >>> offsets = np.array([0, -1, 2])
+    >>> dia_matrix((data, offsets), shape=(4, 4)).toarray()
+    array([[1, 0, 3, 0],
+           [1, 2, 0, 4],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
+
+    >>> from scipy.sparse import dia_matrix
+    >>> n = 10
+    >>> ex = np.ones(n)
+    >>> data = np.array([ex, 2 * ex, ex])
+    >>> offsets = np.array([-1, 0, 1])
+    >>> dia_matrix((data, offsets), shape=(n, n)).toarray()
+    array([[2., 1., 0., ..., 0., 0., 0.],
+           [1., 2., 1., ..., 0., 0., 0.],
+           [0., 1., 2., ..., 0., 0., 0.],
+           ...,
+           [0., 0., 0., ..., 2., 1., 0.],
+           [0., 0., 0., ..., 1., 2., 1.],
+           [0., 0., 0., ..., 0., 1., 2.]])
+    """

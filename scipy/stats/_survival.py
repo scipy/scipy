@@ -91,7 +91,7 @@ class EmpiricalDistributionFunction:
             Objects representing the plotted data
         """
         try:
-            import matplotlib  # noqa
+            import matplotlib  # noqa: F401
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
             raise ModuleNotFoundError(message) from exc
@@ -391,7 +391,7 @@ def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> res.cdf.plot(ax)
+    >>> res.sf.plot(ax)
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()
@@ -553,8 +553,8 @@ def logrank(
 
     :math:`i` denotes the group (i.e. it may assume values :math:`x` or
     :math:`y`, or it may be omitted to refer to the combined sample)
-    :math:`j` denotes the time (at which an event occured),
-    :math:`N` is the number of subjects at risk just before an event occured,
+    :math:`j` denotes the time (at which an event occurred),
+    :math:`N` is the number of subjects at risk just before an event occurred,
     and :math:`O` is the observed number of events at that time.
 
     The ``statistic`` :math:`Z_x` returned by `logrank` is the (signed) square
@@ -615,7 +615,7 @@ def logrank(
     >>> ecdf_x = stats.ecdf(x)
     >>> ecdf_x.sf.plot(ax, label='Astrocytoma')
     >>> ecdf_y = stats.ecdf(y)
-    >>> ecdf_x.sf.plot(ax, label='Glioblastoma')
+    >>> ecdf_y.sf.plot(ax, label='Glioblastoma')
     >>> ax.set_xlabel('Time to death (weeks)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.legend()
@@ -628,16 +628,16 @@ def logrank(
 
     >>> res = stats.logrank(x=x, y=y)
     >>> res.statistic
-    -2.73799...
+    -2.73799
     >>> res.pvalue
-    0.00618...
+    0.00618
 
     The p-value is less than 1%, so we can consider the data to be evidence
     against the null hypothesis in favor of the alternative that there is a
     difference between the two survival functions.
 
     """
-    # Input validation. `alternative` IV handled in `_normtest_finish` below.
+    # Input validation. `alternative` IV handled in `_get_pvalue` below.
     x = _iv_CensoredData(sample=x, param_name='x')
     y = _iv_CensoredData(sample=y, param_name='y')
 
@@ -680,8 +680,7 @@ def logrank(
     statistic = (n_died_x - sum_exp_deaths_x)/np.sqrt(sum_var)
 
     # Equivalent to chi2(df=1).sf(statistic**2) when alternative='two-sided'
-    _, pvalue = stats._stats_py._normtest_finish(
-        z=statistic, alternative=alternative
-    )
+    norm = stats._stats_py._SimpleNormal()
+    pvalue = stats._stats_py._get_pvalue(statistic, norm, alternative, xp=np)
 
-    return LogRankResult(statistic=statistic, pvalue=pvalue)
+    return LogRankResult(statistic=statistic[()], pvalue=pvalue[()])

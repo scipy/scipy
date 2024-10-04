@@ -98,7 +98,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         For mixed integrality constraints, supply an array of shape `c.shape`.
         To infer a constraint on each decision variable from shorter inputs,
-        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+        the argument will be broadcast to `c.shape` using `np.broadcast_to`.
 
         This argument is currently used only by the ``'highs'`` method and
         ignored otherwise.
@@ -155,7 +155,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         until the computation is too costly or inexact and then switches to
         the devex method.
 
-        Curently, ``None`` always selects ``'steepest-devex'``, but this
+        Currently, ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
     mip_rel_gap : double (default: None)
         Termination criterion for MIP solver: solver will terminate when the
@@ -402,7 +402,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         until the computation is too costly or inexact and then switches to
         the devex method.
 
-        Curently, ``None`` always selects ``'steepest-devex'``, but this
+        Currently, ``None`` always selects ``'steepest-devex'``, but this
         may change as new options become available.
     unknown_options : dict
         Optional arguments not used by this particular solver. If
@@ -1017,7 +1017,7 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ``sym_pos=False`` skips to solver 3, and ``lstsq=True`` skips
     to solver 4 for both sparse and dense problems.
 
-    Potential improvements for combatting issues associated with dense
+    Potential improvements for combating issues associated with dense
     columns in otherwise sparse problems are outlined in [4]_ Section 5.3 and
     [10]_ Section 4.1-4.2; the latter also discusses the alleviation of
     accuracy issues associated with the substitution approach to free

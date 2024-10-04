@@ -16,17 +16,15 @@ from ._complexstuff cimport (
     npy_cdouble_from_double_complex, double_complex_from_npy_cdouble,
     zabs, zlog, zpack)
 
-cdef extern from "specfun_wrappers.h":
-    np.npy_cdouble cexpi_wrap(np.npy_cdouble) nogil
+cdef extern from "xsf_wrappers.h":
+    np.npy_cdouble xsf_cexpi(np.npy_cdouble) nogil
 
-DEF MAXITER = 100
-DEF TOL = 2.220446092504131e-16
 DEF EULER = 0.577215664901532860606512090082402431  # Euler constant
     
 
 cdef inline double complex zexpi(double complex z) noexcept nogil:
     cdef np.npy_cdouble r
-    r = cexpi_wrap(npy_cdouble_from_double_complex(z))
+    r = xsf_cexpi(npy_cdouble_from_double_complex(z))
     return double_complex_from_npy_cdouble(r)
 
 
@@ -40,6 +38,8 @@ cdef inline void power_series(int sgn, double complex z,
     cdef:
         int n
         double complex fac, term1, term2
+        int MAXITER = 100
+        double tol = 2.220446092504131e-16
         
     fac = z
     s[0] = fac
@@ -51,7 +51,7 @@ cdef inline void power_series(int sgn, double complex z,
         fac *= z/(2*n + 1)
         term1 = fac/(2*n + 1)
         s[0] += term1
-        if zabs(term1) < TOL*zabs(s[0]) and zabs(term2) < TOL*zabs(c[0]):
+        if zabs(term1) < tol*zabs(s[0]) and zabs(term2) < tol*zabs(c[0]):
             break
 
     

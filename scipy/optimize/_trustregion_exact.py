@@ -55,7 +55,7 @@ def estimate_smallest_singular_value(U):
     s_min : float
         Estimated smallest singular value of the provided matrix.
     z_min : ndarray
-        Estimatied right singular vector.
+        Estimated right singular vector.
 
     Notes
     -----
@@ -172,7 +172,7 @@ def singular_leading_submatrix(A, U, k):
 
     n = len(A)
 
-    # Inicialize v
+    # Initialize v
     v = np.zeros(n)
     v[k-1] = 1
 
@@ -245,8 +245,8 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.hess_inf = norm(self.hess, np.inf)
         self.hess_fro = norm(self.hess, 'fro')
 
-        # A constant such that for vectors smaler than that
-        # backward substituition is not reliable. It was stabilished
+        # A constant such that for vectors smaller than that
+        # backward substitution is not reliable. It was established
         # based on Golub, G. H., Van Loan, C. F. (2013).
         # "Matrix computations". Forth Edition. JHU press., p.165.
         self.CLOSE_TO_ZERO = self.dimension * self.EPS * self.hess_inf
@@ -344,12 +344,13 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     quadratic_term = np.dot(p, np.dot(H, p))
 
                     # Check stop criteria
-                    relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambda_current*tr_radius**2)
+                    relative_error = ((step_len**2 * s_min**2)
+                                      / (quadratic_term + lambda_current*tr_radius**2))
                     if relative_error <= self.k_hard:
                         p += step_len * z_min
                         break
 
-                    # Update uncertanty bounds
+                    # Update uncertainty bounds
                     lambda_ub = lambda_current
                     lambda_lb = max(lambda_lb, lambda_current - s_min**2)
 
@@ -366,12 +367,14 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         lambda_current = lambda_new
                         already_factorized = True
                     else:  # Unsuccessful factorization
-                        # Update uncertanty bounds
+                        # Update uncertainty bounds
                         lambda_lb = max(lambda_lb, lambda_new)
 
                         # Update damping factor
-                        lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                             lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                        lambda_current = max(
+                            np.sqrt(lambda_lb * lambda_ub),
+                            lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                        )
 
                 else:  # Outside boundary
                     # Check stop criteria
@@ -379,7 +382,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     if relative_error <= self.k_easy:
                         break
 
-                    # Update uncertanty bounds
+                    # Update uncertainty bounds
                     lambda_lb = lambda_current
 
                     # Update damping factor
@@ -398,17 +401,20 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 step_len = tr_radius
 
                 # Check stop criteria
-                if step_len**2 * s_min**2 <= self.k_hard * lambda_current * tr_radius**2:
+                if (step_len**2 * s_min**2
+                    <= self.k_hard * lambda_current * tr_radius**2):
                     p = step_len * z_min
                     break
 
-                # Update uncertanty bounds
+                # Update uncertainty bounds
                 lambda_ub = lambda_current
                 lambda_lb = max(lambda_lb, lambda_current - s_min**2)
 
                 # Update damping factor
-                lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                lambda_current = max(
+                    np.sqrt(lambda_lb * lambda_ub),
+                    lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                )
 
             else:  # Unsuccessful factorization
 
@@ -416,12 +422,14 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 delta, v = singular_leading_submatrix(H, U, info)
                 v_norm = norm(v)
 
-                # Update uncertanty interval
+                # Update uncertainty interval
                 lambda_lb = max(lambda_lb, lambda_current + delta/v_norm**2)
 
                 # Update damping factor
-                lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                lambda_current = max(
+                    np.sqrt(lambda_lb * lambda_ub),
+                    lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                )
 
         self.lambda_lb = lambda_lb
         self.lambda_current = lambda_current

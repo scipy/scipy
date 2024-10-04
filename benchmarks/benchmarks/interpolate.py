@@ -8,6 +8,9 @@ with safe_import():
 with safe_import():
     import scipy.interpolate as interpolate
 
+with safe_import():
+    from scipy.sparse import csr_matrix
+
 
 class Leaks(Benchmark):
     unit = "relative increase with repeats"
@@ -81,8 +84,36 @@ class GridData(Benchmark):
         self.values = self.func(self.points[:, 0], self.points[:, 1])
 
     def time_evaluation(self, n_grids, method):
-        interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y), method=method)
+        interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y),
+                             method=method)
+        
+class GridDataPeakMem(Benchmark):
+    """
+    Benchmark based on https://github.com/scipy/scipy/issues/20357
+    """
+    def setup(self):
+        shape = (7395, 6408)
+        num_nonzero = 488686
 
+        rng = np.random.default_rng(1234)
+
+        random_rows = rng.integers(0, shape[0], num_nonzero)
+        random_cols = rng.integers(0, shape[1], num_nonzero)
+
+        random_values = rng.random(num_nonzero, dtype=np.float32)
+
+        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)), 
+                                   shape=shape, dtype=np.float32)
+        sparse_matrix = sparse_matrix.toarray()
+
+        self.coords = np.column_stack(np.nonzero(sparse_matrix))
+        self.values = sparse_matrix[self.coords[:, 0], self.coords[:, 1]]
+        self.grid_x, self.grid_y = np.mgrid[0:sparse_matrix.shape[0], 
+                                            0:sparse_matrix.shape[1]]
+
+    def peakmem_griddata(self):
+        interpolate.griddata(self.coords, self.values, (self.grid_x, self.grid_y), 
+                             method='cubic')
 
 class Interpolate1d(Benchmark):
     param_names = ['n_samples', 'method']
@@ -120,15 +151,13 @@ class Interpolate2d(Benchmark):
         self.xx, self.yy = np.meshgrid(self.x, self.y)
         self.z = np.sin(self.xx**2+self.yy**2)
 
-    def time_interpolate(self, n_samples, method):
-        interpolate.interp2d(self.x, self.y, self.z, kind=method)
-
 
 class Rbf(Benchmark):
     param_names = ['n_samples', 'function']
     params = [
         [10, 50, 100],
-        ['multiquadric', 'inverse', 'gaussian', 'linear', 'cubic', 'quintic', 'thin_plate']
+        ['multiquadric', 'inverse', 'gaussian', 'linear',
+         'cubic', 'quintic', 'thin_plate']
     ]
 
     def setup(self, n_samples, function):
@@ -220,7 +249,8 @@ class BivariateSpline(Benchmark):
         interpolate.SmoothBivariateSpline(self.x, self.y, self.z)
 
     def time_lsq_bivariate_spline(self, n_samples):
-        interpolate.LSQBivariateSpline(self.x, self.y, self.z, self.xknots.flat, self.yknots.flat)
+        interpolate.LSQBivariateSpline(self.x, self.y, self.z,
+                                       self.xknots.flat, self.yknots.flat)
 
 
 class Interpolate(Benchmark):
@@ -285,6 +315,47 @@ class RegularGridInterpolator(Benchmark):
         )
 
     def time_rgi(self, ndim, max_coord_size, n_samples, flipped):
+        self.interp(self.xi)
+
+
+class RGI_Cubic(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="cubic".
+    """
+    param_names = ['ndim', 'n_samples', 'method']
+    params = [
+        [2],
+        [10, 40, 100, 200, 400],
+        ['cubic', 'cubic_legacy']
+    ]
+
+    def setup(self, ndim, n_samples, method):
+        rng = np.random.default_rng(314159)
+
+        self.points = [np.sort(rng.random(size=n_samples))
+                       for _ in range(ndim)]
+        self.values = rng.random(size=[n_samples]*ndim)
+
+        # choose in-bounds sample points xi
+        bounds = [(p.min(), p.max()) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method=method
+        )
+
+    def time_rgi_setup_interpolator(self, ndim, n_samples, method):
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method=method
+        )
+
+    def time_rgi(self, ndim, n_samples, method):
         self.interp(self.xi)
 
 
@@ -370,71 +441,67 @@ class RegularGridInterpolatorSubclass(Benchmark):
 
 
 class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
+    """Subclass of the CT2DInterpolator with optional `values`.
+
+    This is mainly a demo of the functionality. See
+    https://github.com/scipy/scipy/pull/18376 for discussion
+    """
     def __init__(self, points, xi, tol=1e-6, maxiter=400, **kwargs):
-        interpolate.CloughTocher2DInterpolator.__init__(self, points, None, tol=tol, maxiter=maxiter)
+        interpolate.CloughTocher2DInterpolator.__init__(self, points, None,
+                                                        tol=tol, maxiter=maxiter)
         self.xi = None
         self._preprocess_xi(*xi)
-        self.simplices, self.c = interpolate.CloughTocher2DInterpolator._find_simplicies(self, self.xi)
 
     def _preprocess_xi(self, *args):
         if self.xi is None:
-            self.xi, self.interpolation_points_shape = interpolate.CloughTocher2DInterpolator._preprocess_xi(self, *args)
+            self.xi, self.interpolation_points_shape = (
+                interpolate.CloughTocher2DInterpolator._preprocess_xi(self, *args)
+            )
         return self.xi, self.interpolation_points_shape
     
-    def _find_simplicies(self, xi):
-        return self.simplices, self.c
-
     def __call__(self, values):
         self._set_values(values)
         return super().__call__(self.xi)
 
+
 class CloughTocherInterpolatorSubclass(Benchmark):
     """
-    Benchmark CloughTocherInterpolatorValues with method="linear".
-    """
-    param_names = ['max_coord_size', 'n_samples', 'flipped', 'tol', 'max_iter']
-    params = [
-        [10, 40, 200],
-        [10, 100, 1000, 10000],
-        [1, -1],
-        [1e-3, 1e-6, 1e-8],
-        [1, 10, 100, 400]
-    ]
+    Benchmark CloughTocherInterpolatorValues.
 
-    def setup(self, max_coord_size, n_samples, flipped, tol, max_iter):
+    Derived from the docstring example,
+    https://docs.scipy.org/doc/scipy-1.11.2/reference/generated/scipy.interpolate.CloughTocher2DInterpolator.html
+    """
+    param_names = ['n_samples']
+    params = [10, 50, 100]
+
+    def setup(self, n_samples):
         rng = np.random.default_rng(314159)
 
-        # coordinates halve in size over the dimensions
-        coord_sizes = [max_coord_size // 2**i for i in range(2)]
-        self.points = [np.sort(rng.random(size=s))[::flipped]
-                       for s in coord_sizes]
-        self.values = [rng.random(size=coord_sizes) for i in range(10)]
+        x = rng.random(n_samples) - 0.5
+        y = rng.random(n_samples) - 0.5
 
-        # choose in-bounds sample points xi
-        bounds = [(p.min(), p.max()) for p in self.points]
-        xi = [rng.uniform(low, high, size=n_samples)
-              for low, high in bounds]
-        self.xi = np.array(xi).T
 
-        self.tol = tol
-        self.max_iter = max_iter
+        self.z = np.hypot(x, y)
+        X = np.linspace(min(x), max(x))
+        Y = np.linspace(min(y), max(y))
+        self.X, self.Y = np.meshgrid(X, Y)
 
         self.interp = CloughTocherInterpolatorValues(
-            self.points,
-            self.xi,
-            self.tol,
-            self.max_iter
+            list(zip(x, y)), (self.X, self.Y)
         )
 
-    def time_clough_tocher_setup_interpolator(self, max_coord_size,
-                                    n_samples, flipped, tol, max_iter):
-        self.interp = CloughTocherInterpolatorValues(
-            self.points,
-            self.xi,
-            self.tol,
-            self.max_iter
-        )
+    def time_clough_tocher(self, n_samples):
+            self.interp(self.z)
 
-    def time_clough_tocher(self, max_coord_size, n_samples, flipped, tol, max_iter):
-        for vals in self.values:
-            self.interp(vals)
+
+class AAA(Benchmark):
+    def setup(self):
+        self.z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
+        self.pts = np.linspace(-1, 1, num=1000)
+
+    def time_AAA(self):
+        r = interpolate.AAA(self.z, np.tan(np.pi*self.z/2))
+        r(self.pts)
+        r.poles()
+        r.residues()
+        r.roots()

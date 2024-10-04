@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 import scipy.stats as stats
 from scipy._lib._util import rng_integers, _rng_spawn
+from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.spatial import distance, Voronoi
 from scipy.special import gammainc
 from ._sobol import (
@@ -43,7 +44,7 @@ from ._qmc_cy import (
 )
 
 
-__all__ = ['scale', 'discrepancy', 'update_discrepancy',
+__all__ = ['scale', 'discrepancy', 'geometric_discrepancy', 'update_discrepancy',
            'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube', 'PoissonDisk',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
@@ -64,7 +65,7 @@ def check_random_state(seed=None):
 
     Parameters
     ----------
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional  # noqa
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(seed)``.
         If `seed` is already a ``Generator`` or ``RandomState`` instance, then
@@ -168,6 +169,36 @@ def scale(
         return (sample - lower) / (upper - lower)
 
 
+def _ensure_in_unit_hypercube(sample: npt.ArrayLike) -> np.ndarray:
+    """Ensure that sample is a 2D array and is within a unit hypercube
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        A 2D array of points.
+
+    Returns
+    -------
+    np.ndarray
+        The array interpretation of the input sample
+
+    Raises
+    ------
+    ValueError
+        If the input is not a 2D array or contains points outside of
+        a unit hypercube.
+    """
+    sample = np.asarray(sample, dtype=np.float64, order="C")
+
+    if not sample.ndim == 2:
+        raise ValueError("Sample is not a 2D array")
+
+    if (sample.max() > 1.) or (sample.min() < 0.):
+        raise ValueError("Sample is not in unit hypercube")
+
+    return sample
+
+
 def discrepancy(
         sample: npt.ArrayLike,
         *,
@@ -194,6 +225,10 @@ def discrepancy(
     -------
     discrepancy : float
         Discrepancy.
+
+    See Also
+    --------
+    geometric_discrepancy
 
     Notes
     -----
@@ -281,14 +316,7 @@ def discrepancy(
     0.008142039609053513
 
     """
-    sample = np.asarray(sample, dtype=np.float64, order="C")
-
-    # Checking that sample is within the hypercube and 2D
-    if not sample.ndim == 2:
-        raise ValueError("Sample is not a 2D array")
-
-    if (sample.max() > 1.) or (sample.min() < 0.):
-        raise ValueError("Sample is not in unit hypercube")
+    sample = _ensure_in_unit_hypercube(sample)
 
     workers = _validate_workers(workers)
 
@@ -304,6 +332,131 @@ def discrepancy(
     else:
         raise ValueError(f"{method!r} is not a valid method. It must be one of"
                          f" {set(methods)!r}")
+
+
+def geometric_discrepancy(
+        sample: npt.ArrayLike,
+        method: Literal["mindist", "mst"] = "mindist",
+        metric: str = "euclidean") -> float:
+    """Discrepancy of a given sample based on its geometric properties.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to compute the discrepancy from.
+    method : {"mindist", "mst"}, optional
+        The method to use. One of ``mindist`` for minimum distance (default)
+        or ``mst`` for minimum spanning tree.
+    metric : str or callable, optional
+        The distance metric to use. See the documentation
+        for `scipy.spatial.distance.pdist` for the available metrics and
+        the default.
+
+    Returns
+    -------
+    discrepancy : float
+        Discrepancy (higher values correspond to greater sample uniformity).
+
+    See Also
+    --------
+    discrepancy
+
+    Notes
+    -----
+    The discrepancy can serve as a simple measure of quality of a random sample.
+    This measure is based on the geometric properties of the distribution of points
+    in the sample, such as the minimum distance between any pair of points, or
+    the mean edge length in a minimum spanning tree.
+
+    The higher the value is, the better the coverage of the parameter space is.
+    Note that this is different from `scipy.stats.qmc.discrepancy`, where lower
+    values correspond to higher quality of the sample.
+
+    Also note that when comparing different sampling strategies using this function,
+    the sample size must be kept constant.
+
+    It is possible to calculate two metrics from the minimum spanning tree:
+    the mean edge length and the standard deviation of edges lengths. Using
+    both metrics offers a better picture of uniformity than either metric alone,
+    with higher mean and lower standard deviation being preferable (see [1]_
+    for a brief discussion). This function currently only calculates the mean
+    edge length.
+
+    References
+    ----------
+    .. [1] Franco J. et al. "Minimum Spanning Tree: A new approach to assess the quality
+       of the design of computer experiments." Chemometrics and Intelligent Laboratory
+       Systems, 97 (2), pp. 164-169, 2009.
+
+    Examples
+    --------
+    Calculate the quality of the sample using the minimum euclidean distance
+    (the defaults):
+
+    >>> import numpy as np
+    >>> from scipy.stats import qmc
+    >>> rng = np.random.default_rng(191468432622931918890291693003068437394)
+    >>> sample = qmc.LatinHypercube(d=2, seed=rng).random(50)
+    >>> qmc.geometric_discrepancy(sample)
+    0.03708161435687876
+
+    Calculate the quality using the mean edge length in the minimum
+    spanning tree:
+
+    >>> qmc.geometric_discrepancy(sample, method='mst')
+    0.1105149978798376
+
+    Display the minimum spanning tree and the points with
+    the smallest distance:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from matplotlib.lines import Line2D
+    >>> from scipy.sparse.csgraph import minimum_spanning_tree
+    >>> from scipy.spatial.distance import pdist, squareform
+    >>> dist = pdist(sample)
+    >>> mst = minimum_spanning_tree(squareform(dist))
+    >>> edges = np.where(mst.toarray() > 0)
+    >>> edges = np.asarray(edges).T
+    >>> min_dist = np.min(dist)
+    >>> min_idx = np.argwhere(squareform(dist) == min_dist)[0]
+    >>> fig, ax = plt.subplots(figsize=(10, 5))
+    >>> _ = ax.set(aspect='equal', xlabel=r'$x_1$', ylabel=r'$x_2$',
+    ...            xlim=[0, 1], ylim=[0, 1])
+    >>> for edge in edges:
+    ...     ax.plot(sample[edge, 0], sample[edge, 1], c='k')
+    >>> ax.scatter(sample[:, 0], sample[:, 1])
+    >>> ax.add_patch(plt.Circle(sample[min_idx[0]], min_dist, color='red', fill=False))
+    >>> markers = [
+    ...     Line2D([0], [0], marker='o', lw=0, label='Sample points'),
+    ...     Line2D([0], [0], color='k', label='Minimum spanning tree'),
+    ...     Line2D([0], [0], marker='o', lw=0, markerfacecolor='w', markeredgecolor='r',
+    ...            label='Minimum point-to-point distance'),
+    ... ]
+    >>> ax.legend(handles=markers, loc='center left', bbox_to_anchor=(1, 0.5));
+    >>> plt.show()
+
+    """
+    sample = _ensure_in_unit_hypercube(sample)
+    if sample.shape[0] < 2:
+        raise ValueError("Sample must contain at least two points")
+
+    distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+
+    if np.any(distances == 0.0):
+        warnings.warn("Sample contains duplicate points.", stacklevel=2)
+
+    if method == "mindist":
+        return np.min(distances[distances.nonzero()])
+    elif method == "mst":
+        fully_connected_graph = distance.squareform(distances)
+        mst = minimum_spanning_tree(fully_connected_graph)
+        distances = mst[mst.nonzero()]
+        # TODO consider returning both the mean and the standard deviation
+        # see [1] for a discussion
+        return np.mean(distances)
+    else:
+        raise ValueError(f"{method!r} is not a valid method. "
+                         f"It must be one of {{'mindist', 'mst'}}")
 
 
 def update_discrepancy(
@@ -515,7 +668,7 @@ def n_primes(n: IntNumber) -> list[int]:
               677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761,
               769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
               859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947,
-              953, 967, 971, 977, 983, 991, 997][:n]  # type: ignore[misc]
+              953, 967, 971, 977, 983, 991, 997][:n]
 
     if len(primes) < n:
         big_number = 2000
@@ -551,10 +704,10 @@ def _van_der_corput_permutations(
     Notes
     -----
     In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
-    created for each positive integer `k` such that `1 - base**-k < 1`
+    created for each positive integer `k` such that ``1 - base**-k < 1``
     using floating-point arithmetic. For double precision floats, the
-    condition `1 - base**-k < 1` can also be written as `base**-k >
-    2**-54`, which makes it more apparent how many permutations we need
+    condition ``1 - base**-k < 1`` can also be written as ``base**-k >
+    2**-54``, which makes it more apparent how many permutations we need
     to create.
     """
     rng = check_random_state(random_state)
@@ -627,6 +780,7 @@ def van_der_corput(
         else:
             permutations = np.asarray(permutations)
 
+        permutations = permutations.astype(np.int64)
         return _cy_van_der_corput_scrambled(n, base, start_index,
                                             permutations, workers)
 
@@ -963,7 +1117,7 @@ class Halton(QMCEngine):
     The Halton sequence has severe striping artifacts for even modestly
     large dimensions. These can be ameliorated by scrambling. Scrambling
     also supports replication-based error estimates and extends
-    applicabiltiy to unbounded integrands.
+    applicability to unbounded integrands.
 
     References
     ----------
@@ -1082,184 +1236,218 @@ class Halton(QMCEngine):
 class LatinHypercube(QMCEngine):
     r"""Latin hypercube sampling (LHS).
 
-    A Latin hypercube sample [1]_ generates :math:`n` points in
-    :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
-    placing exactly one point in :math:`[j/n, (j+1)/n)` for
-    :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
+        A Latin hypercube sample [1]_ generates :math:`n` points in
+        :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
+        placing exactly one point in :math:`[j/n, (j+1)/n)` for
+        :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
 
-    Parameters
-    ----------
-    d : int
-        Dimension of the parameter space.
-    scramble : bool, optional
-        When False, center samples within cells of a multi-dimensional grid.
-        Otherwise, samples are randomly placed within cells of the grid.
+        Parameters
+        ----------
+        d : int
+            Dimension of the parameter space.
+        scramble : bool, optional
+            When False, center samples within cells of a multi-dimensional grid.
+            Otherwise, samples are randomly placed within cells of the grid.
 
-        .. note::
-            Setting ``scramble=False`` does not ensure deterministic output.
-            For that, use the `seed` parameter.
+            .. note::
+                Setting ``scramble=False`` does not ensure deterministic output.
+                For that, use the `seed` parameter.
 
-        Default is True.
+            Default is True.
 
-        .. versionadded:: 1.10.0
+            .. versionadded:: 1.10.0
 
-    optimization : {None, "random-cd", "lloyd"}, optional
-        Whether to use an optimization scheme to improve the quality after
-        sampling. Note that this is a post-processing step that does not
-        guarantee that all properties of the sample will be conserved.
-        Default is None.
+        optimization : {None, "random-cd", "lloyd"}, optional
+            Whether to use an optimization scheme to improve the quality after
+            sampling. Note that this is a post-processing step that does not
+            guarantee that all properties of the sample will be conserved.
+            Default is None.
 
-        * ``random-cd``: random permutations of coordinates to lower the
-          centered discrepancy. The best sample based on the centered
-          discrepancy is constantly updated. Centered discrepancy-based
-          sampling shows better space-filling robustness toward 2D and 3D
-          subprojections compared to using other discrepancy measures.
-        * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
-          The process converges to equally spaced samples.
+            * ``random-cd``: random permutations of coordinates to lower the
+              centered discrepancy. The best sample based on the centered
+              discrepancy is constantly updated. Centered discrepancy-based
+              sampling shows better space-filling robustness toward 2D and 3D
+              subprojections compared to using other discrepancy measures.
+            * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
+              The process converges to equally spaced samples.
 
-        .. versionadded:: 1.8.0
-        .. versionchanged:: 1.10.0
-            Add ``lloyd``.
+            .. versionadded:: 1.8.0
+            .. versionchanged:: 1.10.0
+                Add ``lloyd``.
 
-    strength : {1, 2}, optional
-        Strength of the LHS. ``strength=1`` produces a plain LHS while
-        ``strength=2`` produces an orthogonal array based LHS of strength 2
-        [7]_, [8]_. In that case, only ``n=p**2`` points can be sampled,
-        with ``p`` a prime number. It also constrains ``d <= p + 1``.
-        Default is 1.
+        strength : {1, 2}, optional
+            Strength of the LHS. ``strength=1`` produces a plain LHS while
+            ``strength=2`` produces an orthogonal array based LHS of strength 2
+            [7]_, [8]_. In that case, only ``n=p**2`` points can be sampled,
+            with ``p`` a prime number. It also constrains ``d <= p + 1``.
+            Default is 1.
 
-        .. versionadded:: 1.8.0
+            .. versionadded:: 1.8.0
 
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+        seed : {None, int, `numpy.random.Generator`}, optional
+            If `seed` is an int or None, a new `numpy.random.Generator` is
+            created using ``np.random.default_rng(seed)``.
+            If `seed` is already a ``Generator`` instance, then the provided
+            instance is used.
 
-    Notes
-    -----
+        See Also
+        --------
+        :ref:`quasi-monte-carlo`
 
-    When LHS is used for integrating a function :math:`f` over :math:`n`,
-    LHS is extremely effective on integrands that are nearly additive [2]_.
-    With a LHS of :math:`n` points, the variance of the integral is always
-    lower than plain MC on :math:`n-1` points [3]_. There is a central limit
-    theorem for LHS on the mean and variance of the integral [4]_, but not
-    necessarily for optimized LHS due to the randomization.
+        Notes
+        -----
 
-    :math:`A` is called an orthogonal array of strength :math:`t` if in each
-    n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
-    distinct rows occur the same number of times. The elements of :math:`A`
-    are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
-    The constraint that :math:`p` must be a prime number is to allow modular
-    arithmetic. Increasing strength adds some symmetry to the sub-projections
-    of a sample. With strength 2, samples are symmetric along the diagonals of
-    2D sub-projections. This may be undesirable, but on the other hand, the
-    sample dispersion is improved.
+        When LHS is used for integrating a function :math:`f` over :math:`n`,
+        LHS is extremely effective on integrands that are nearly additive [2]_.
+        With a LHS of :math:`n` points, the variance of the integral is always
+        lower than plain MC on :math:`n-1` points [3]_. There is a central limit
+        theorem for LHS on the mean and variance of the integral [4]_, but not
+        necessarily for optimized LHS due to the randomization.
 
-    Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
-    strength 2 is a useful increment over strength 1. Going to strength 3 is
-    a smaller increment and scrambled QMC like Sobol', Halton are more
-    performant [7]_.
+        :math:`A` is called an orthogonal array of strength :math:`t` if in each
+        n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
+        distinct rows occur the same number of times. The elements of :math:`A`
+        are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
+        The constraint that :math:`p` must be a prime number is to allow modular
+        arithmetic. Increasing strength adds some symmetry to the sub-projections
+        of a sample. With strength 2, samples are symmetric along the diagonals of
+        2D sub-projections. This may be undesirable, but on the other hand, the
+        sample dispersion is improved.
 
-    To create a LHS of strength 2, the orthogonal array :math:`A` is
-    randomized by applying a random, bijective map of the set of symbols onto
-    itself. For example, in column 0, all 0s might become 2; in column 1,
-    all 0s might become 1, etc.
-    Then, for each column :math:`i` and symbol :math:`j`, we add a plain,
-    one-dimensional LHS of size :math:`p` to the subarray where
-    :math:`A^i = j`. The resulting matrix is finally divided by :math:`p`.
+        Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
+        strength 2 is a useful increment over strength 1. Going to strength 3 is
+        a smaller increment and scrambled QMC like Sobol', Halton are more
+        performant [7]_.
 
-    References
-    ----------
-    .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
-       of Input Variables in the Analysis of Output from a Computer Code."
-       Technometrics, 1979.
-    .. [2] M. Stein, "Large sample properties of simulations using Latin
-       hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
-    .. [3] A. B. Owen, "Monte Carlo variance of scrambled net quadrature."
-       SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
-    .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
-       24, no. 5: 2058-2080, 1996.
-    .. [5] Fang et al. "Design and modeling for computer experiments".
-       Computer Science and Data Analysis Series, 2006.
-    .. [6] Damblin et al., "Numerical studies of space filling designs:
-       optimization of Latin Hypercube Samples and subprojection properties."
-       Journal of Simulation, 2013.
-    .. [7] A. B. Owen , "Orthogonal arrays for computer experiments,
-       integration and visualization." Statistica Sinica, 1992.
-    .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
-       Journal of the American Statistical Association, 1993.
-    .. [9] Susan K. Seaholm et al. "Latin hypercube sampling and the
-       sensitivity analysis of a Monte Carlo epidemic model".
-       Int J Biomed Comput, 23(1-2), 97-112,
-       :doi:`10.1016/0020-7101(88)90067-0`, 1988.
+        To create a LHS of strength 2, the orthogonal array :math:`A` is
+        randomized by applying a random, bijective map of the set of symbols onto
+        itself. For example, in column 0, all 0s might become 2; in column 1,
+        all 0s might become 1, etc.
+        Then, for each column :math:`i` and symbol :math:`j`, we add a plain,
+        one-dimensional LHS of size :math:`p` to the subarray where
+        :math:`A^i = j`. The resulting matrix is finally divided by :math:`p`.
 
-    Examples
-    --------
-    In [9]_, a Latin Hypercube sampling strategy was used to sample a
-    parameter space to study the importance of each parameter of an epidemic
-    model. Such analysis is also called a sensitivity analysis.
+        References
+        ----------
+        .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
+           of Input Variables in the Analysis of Output from a Computer Code."
+           Technometrics, 1979.
+        .. [2] M. Stein, "Large sample properties of simulations using Latin
+           hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
+        .. [3] A. B. Owen, "Monte Carlo variance of scrambled net quadrature."
+           SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
+        .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
+           24, no. 5: 2058-2080, 1996.
+        .. [5] Fang et al. "Design and modeling for computer experiments".
+           Computer Science and Data Analysis Series, 2006.
+        .. [6] Damblin et al., "Numerical studies of space filling designs:
+           optimization of Latin Hypercube Samples and subprojection properties."
+           Journal of Simulation, 2013.
+        .. [7] A. B. Owen , "Orthogonal arrays for computer experiments,
+           integration and visualization." Statistica Sinica, 1992.
+        .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
+           Journal of the American Statistical Association, 1993.
+        .. [9] Seaholm, Susan K. et al. (1988). Latin hypercube sampling and the
+           sensitivity analysis of a Monte Carlo epidemic model. Int J Biomed
+           Comput, 23(1-2), 97-112. :doi:`10.1016/0020-7101(88)90067-0`
 
-    Since the dimensionality of the problem is high (6), it is computationally
-    expensive to cover the space. When numerical experiments are costly,
-    QMC enables analysis that may not be possible if using a grid.
+        Examples
+        --------
+        Generate samples from a Latin hypercube generator.
 
-    The six parameters of the model represented the probability of illness,
-    the probability of withdrawal, and four contact probabilities,
-    The authors assumed uniform distributions for all parameters and generated
-    50 samples.
+        >>> from scipy.stats import qmc
+        >>> sampler = qmc.LatinHypercube(d=2)
+        >>> sample = sampler.random(n=5)
+        >>> sample
+        array([[0.1545328 , 0.53664833], # random
+                [0.84052691, 0.06474907],
+                [0.52177809, 0.93343721],
+                [0.68033825, 0.36265316],
+                [0.26544879, 0.61163943]])
 
-    Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol, the
-    first step is to create a sample in the unit hypercube:
+        Compute the quality of the sample using the discrepancy criterion.
 
-    >>> from scipy.stats import qmc
-    >>> sampler = qmc.LatinHypercube(d=6)
-    >>> sample = sampler.random(n=50)
+        >>> qmc.discrepancy(sample)
+        0.0196... # random
 
-    Then the sample can be scaled to the appropriate bounds:
+        Samples can be scaled to bounds.
 
-    >>> l_bounds = [0.000125, 0.01, 0.0025, 0.05, 0.47, 0.7]
-    >>> u_bounds = [0.000375, 0.03, 0.0075, 0.15, 0.87, 0.9]
-    >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
+        >>> l_bounds = [0, 2]
+        >>> u_bounds = [10, 5]
+        >>> qmc.scale(sample, l_bounds, u_bounds)
+        array([[1.54532796, 3.609945 ], # random
+                [8.40526909, 2.1942472 ],
+                [5.2177809 , 4.80031164],
+                [6.80338249, 3.08795949],
+                [2.65448791, 3.83491828]])
 
-    Such a sample was used to run the model 50 times, and a polynomial
-    response surface was constructed. This allowed the authors to study the
-    relative importance of each parameter across the range of
-    possibilities of every other parameter.
-    In this computer experiment, they showed a 14-fold reduction in the number
-    of samples required to maintain an error below 2% on their response surface
-    when compared to a grid sampling.
+        Below are other examples showing alternative ways to construct LHS with
+        even better coverage of the space.
 
-    Below are other examples showing alternative ways to construct LHS
-    with even better coverage of the space.
+        Using a base LHS as a baseline.
 
-    Using a base LHS as a baseline.
+        >>> sampler = qmc.LatinHypercube(d=2)
+        >>> sample = sampler.random(n=5)
+        >>> qmc.discrepancy(sample)
+        0.0196...  # random
 
-    >>> sampler = qmc.LatinHypercube(d=2)
-    >>> sample = sampler.random(n=5)
-    >>> qmc.discrepancy(sample)
-    0.0196...  # random
+        Use the `optimization` keyword argument to produce a LHS with
+        lower discrepancy at higher computational cost.
 
-    Use the `optimization` keyword argument to produce a LHS with
-    lower discrepancy at higher computational cost.
+        >>> sampler = qmc.LatinHypercube(d=2, optimization="random-cd")
+        >>> sample = sampler.random(n=5)
+        >>> qmc.discrepancy(sample)
+        0.0176...  # random
 
-    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-cd")
-    >>> sample = sampler.random(n=5)
-    >>> qmc.discrepancy(sample)
-    0.0176...  # random
+        Use the `strength` keyword argument to produce an orthogonal array based
+        LHS of strength 2. In this case, the number of sample points must be the
+        square of a prime number.
 
-    Use the `strength` keyword argument to produce an orthogonal array based
-    LHS of strength 2. In this case, the number of sample points must be the
-    square of a prime number.
+        >>> sampler = qmc.LatinHypercube(d=2, strength=2)
+        >>> sample = sampler.random(n=9)
+        >>> qmc.discrepancy(sample)
+        0.00526...  # random
 
-    >>> sampler = qmc.LatinHypercube(d=2, strength=2)
-    >>> sample = sampler.random(n=9)
-    >>> qmc.discrepancy(sample)
-    0.00526...  # random
+        Options could be combined to produce an optimized centered
+        orthogonal array based LHS. After optimization, the result would not
+        be guaranteed to be of strength 2.
 
-    Options could be combined to produce an optimized centered
-    orthogonal array based LHS. After optimization, the result would not
-    be guaranteed to be of strength 2.
+        **Real-world example**
+
+        In [9]_, a Latin Hypercube sampling (LHS) strategy was used to sample a
+        parameter space to study the importance of each parameter of an epidemic
+        model. Such analysis is also called a sensitivity analysis.
+
+        Since the dimensionality of the problem is high (6), it is computationally
+        expensive to cover the space. When numerical experiments are costly, QMC
+        enables analysis that may not be possible if using a grid.
+
+        The six parameters of the model represented the probability of illness,
+        the probability of withdrawal, and four contact probabilities. The
+        authors assumed uniform distributions for all parameters and generated
+        50 samples.
+
+        Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol,
+        the first step is to create a sample in the unit hypercube:
+
+        >>> from scipy.stats import qmc
+        >>> sampler = qmc.LatinHypercube(d=6)
+        >>> sample = sampler.random(n=50)
+
+        Then the sample can be scaled to the appropriate bounds:
+
+        >>> l_bounds = [0.000125, 0.01, 0.0025, 0.05, 0.47, 0.7]
+        >>> u_bounds = [0.000375, 0.03, 0.0075, 0.15, 0.87, 0.9]
+        >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
+
+        Such a sample was used to run the model 50 times, and a polynomial
+        response surface was constructed. This allowed the authors to study the
+        relative importance of each parameter across the range of possibilities
+        of every other parameter.
+
+        In this computer experiment, they showed a 14-fold reduction in the
+        number of samples required to maintain an error below 2% on their
+        response surface when compared to a grid sampling.
 
     """
 
@@ -1340,7 +1528,8 @@ class LatinHypercube(QMCEngine):
         for j in range(n_col):
             perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
-
+        
+        oa_sample = oa_sample_
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
         lhs_engine = LatinHypercube(d=1, scramble=self.scramble, strength=1,
@@ -1351,11 +1540,9 @@ class LatinHypercube(QMCEngine):
                 lhs = lhs_engine.random(p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
 
-                lhs_engine = lhs_engine.reset()
-
         oa_lhs_sample /= p
 
-        return oa_lhs_sample[:, :self.d]  # type: ignore
+        return oa_lhs_sample[:, :self.d]
 
 
 class Sobol(QMCEngine):
@@ -1614,7 +1801,7 @@ class Sobol(QMCEngine):
                 )
                 sample = np.concatenate(
                     [self._first_point, sample]
-                )[:n]  # type: ignore[misc]
+                )[:n]
         else:
             _draw(
                 n=n, num_gen=self.num_generated - 1, dim=self.d,
@@ -1645,12 +1832,13 @@ class Sobol(QMCEngine):
 
         total_n = self.num_generated + n
         if not (total_n & (total_n - 1) == 0):
-            raise ValueError("The balance properties of Sobol' points require "
-                             "n to be a power of 2. {0} points have been "
-                             "previously generated, then: n={0}+2**{1}={2}. "
-                             "If you still want to do this, the function "
-                             "'Sobol.random()' can be used."
-                             .format(self.num_generated, m, total_n))
+            raise ValueError('The balance properties of Sobol\' points require '
+                             f'n to be a power of 2. {self.num_generated} points '
+                             'have been previously generated, then: '
+                             f'n={self.num_generated}+2**{m}={total_n}. '
+                             'If you still want to do this, the function '
+                             '\'Sobol.random()\' can be used.'
+                             )
 
         return self.random(n)
 
@@ -1735,11 +1923,14 @@ class PoissonDisk(QMCEngine):
         If `seed` is already a ``Generator`` instance, then the provided
         instance is used.
 
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds of target sample data.
+
     Notes
     -----
     Poisson disk sampling is an iterative sampling strategy. Starting from
     a seed sample, `ncandidates` are sampled in the hypersphere
-    surrounding the seed. Candidates bellow a certain `radius` or outside the
+    surrounding the seed. Candidates below a certain `radius` or outside the
     domain are rejected. New samples are added in a pool of sample seed. The
     process stops when the pool is empty or when the number of required
     samples is reached.
@@ -1815,7 +2006,9 @@ class PoissonDisk(QMCEngine):
         hypersphere: Literal["volume", "surface"] = "volume",
         ncandidates: IntNumber = 30,
         optimization: Literal["random-cd", "lloyd"] | None = None,
-        seed: SeedType = None
+        seed: SeedType = None,
+        l_bounds: npt.ArrayLike | None = None,
+        u_bounds: npt.ArrayLike | None = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'radius': radius,
@@ -1847,11 +2040,19 @@ class PoissonDisk(QMCEngine):
 
         # sample to generate per iteration in the hypersphere around center
         self.ncandidates = ncandidates
+        
+        if u_bounds is None:
+            u_bounds = np.ones(d)
+        if l_bounds is None:
+            l_bounds = np.zeros(d)
+        self.l_bounds, self.u_bounds = _validate_bounds(
+            l_bounds=l_bounds, u_bounds=u_bounds, d=int(d)
+        )
 
         with np.errstate(divide='ignore'):
             self.cell_size = self.radius / np.sqrt(self.d)
             self.grid_size = (
-                np.ceil(np.ones(self.d) / self.cell_size)
+                np.ceil((self.u_bounds - self.l_bounds) / self.cell_size)
             ).astype(int)
 
         self._initialize_grid_pool()
@@ -1871,7 +2072,7 @@ class PoissonDisk(QMCEngine):
     def _random(
         self, n: IntNumber = 1, *, workers: IntNumber = 1
     ) -> np.ndarray:
-        """Draw `n` in the interval ``[0, 1]``.
+        """Draw `n` in the interval ``[l_bounds, u_bounds]``.
 
         Note that it can return fewer samples if the space is full.
         See the note section of the class.
@@ -1891,15 +2092,18 @@ class PoissonDisk(QMCEngine):
             return np.empty((n, self.d))
 
         def in_limits(sample: np.ndarray) -> bool:
-            return (sample.max() <= 1.) and (sample.min() >= 0.)
+            for i in range(self.d):
+                if (sample[i] > self.u_bounds[i] or sample[i] < self.l_bounds[i]):
+                    return False
+            return True
 
         def in_neighborhood(candidate: np.ndarray, n: int = 2) -> bool:
             """
             Check if there are samples closer than ``radius_squared`` to the
             `candidate` sample.
             """
-            indices = (candidate / self.cell_size).astype(int)
-            ind_min = np.maximum(indices - n, np.zeros(self.d, dtype=int))
+            indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
+            ind_min = np.maximum(indices - n, self.l_bounds.astype(int))
             ind_max = np.minimum(indices + n + 1, self.grid_size)
 
             # Check if the center cell is empty
@@ -1923,7 +2127,7 @@ class PoissonDisk(QMCEngine):
 
         def add_sample(candidate: np.ndarray) -> None:
             self.sample_pool.append(candidate)
-            indices = (candidate / self.cell_size).astype(int)
+            indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
             self.sample_grid[tuple(indices)] = candidate
             curr_sample.append(candidate)
 
@@ -1931,7 +2135,7 @@ class PoissonDisk(QMCEngine):
 
         if len(self.sample_pool) == 0:
             # the pool is being initialized with a single random sample
-            add_sample(self.rng.random(self.d))
+            add_sample(self.rng.uniform(self.l_bounds, self.u_bounds))
             num_drawn = 1
         else:
             num_drawn = 0
@@ -1961,7 +2165,7 @@ class PoissonDisk(QMCEngine):
         return np.array(curr_sample)
 
     def fill_space(self) -> np.ndarray:
-        """Draw ``n`` samples in the interval ``[0, 1]``.
+        """Draw ``n`` samples in the interval ``[l_bounds, u_bounds]``.
 
         Unlike `random`, this method will try to add points until
         the space is full. Depending on ``candidates`` (and to a lesser extent
@@ -2061,11 +2265,11 @@ class MultivariateNormalQMC:
             engine: QMCEngine | None = None,
             seed: SeedType = None
     ) -> None:
-        mean = np.array(mean, copy=False, ndmin=1)
+        mean = np.asarray(np.atleast_1d(mean))
         d = mean.shape[0]
         if cov is not None:
             # covariance matrix provided
-            cov = np.array(cov, copy=False, ndmin=2)
+            cov = np.asarray(np.atleast_2d(cov))
             # check for square/symmetric cov matrix and mean vector has the
             # same d
             if not mean.shape[0] == cov.shape[0]:
@@ -2162,7 +2366,7 @@ class MultivariateNormalQMC:
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
-            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))  # type: ignore[attr-defined]
+            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))  # type: ignore[attr-defined]  # noqa: E501
         else:
             # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
@@ -2226,7 +2430,7 @@ class MultinomialQMC:
         *, engine: QMCEngine | None = None,
         seed: SeedType = None
     ) -> None:
-        self.pvals = np.array(pvals, copy=False, ndmin=1)
+        self.pvals = np.atleast_1d(np.asarray(pvals))
         if np.min(pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
         if not np.isclose(np.sum(pvals), 1):
@@ -2263,7 +2467,7 @@ class MultinomialQMC:
             base_draws = self.engine.random(self.n_trials).ravel()
             p_cumulative = np.empty_like(self.pvals, dtype=float)
             _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
-            sample_ = np.zeros_like(self.pvals, dtype=int)
+            sample_ = np.zeros_like(self.pvals, dtype=np.intp)
             _categorize(base_draws, p_cumulative, sample_)
             sample[i] = sample_
         return sample
@@ -2501,6 +2705,7 @@ def _lloyd_centroidal_voronoi_tessellation(
     --------
     >>> import numpy as np
     >>> from scipy.spatial import distance
+    >>> from scipy.stats._qmc import _lloyd_centroidal_voronoi_tessellation
     >>> rng = np.random.default_rng()
     >>> sample = rng.random((128, 2))
 

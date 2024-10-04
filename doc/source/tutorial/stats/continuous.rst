@@ -204,7 +204,8 @@ Symbol                                                           Description    
 
 
 Continuous Distributions in `scipy.stats`
------------------------------------------
+=========================================
+
 .. toctree::
    :maxdepth: 1
 
@@ -260,6 +261,7 @@ Continuous Distributions in `scipy.stats`
    continuous_ksone
    continuous_kstwo
    continuous_kstwobign
+   continuous_landau
    continuous_laplace
    continuous_laplace_asymmetric
    continuous_levy_l

@@ -2,20 +2,10 @@
 # Use the `scipy.spatial` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _ckdtree
+from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = [  # noqa: F822
-    'cKDTree',
-    'cKDTreeNode',
-    'coo_entries',
-    'operator',
-    'ordered_pairs',
-    'os',
-    'scipy',
-    'threading',
-]
+__all__ = ["cKDTree"]  # noqa: F822
 
 
 def __dir__():
@@ -23,13 +13,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.spatial.ckdtree is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.spatial instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.spatial` namespace, "
-                  "the `scipy.spatial.ckdtree` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_ckdtree, name)
+    return _sub_module_deprecation(sub_package="spatial", module="ckdtree",
+                                   private_modules=["_ckdtree"], all=__all__,
+                                   attribute=name)

@@ -1,8 +1,10 @@
+import pytest
+from pytest import raises as assert_raises
+
 import numpy as np
 from numpy import array, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
-from pytest import raises as assert_raises
 
 from scipy import integrate
 import scipy.special as sc
@@ -92,6 +94,22 @@ class TestGegenbauer:
                                                0,3*a*(a+1)])/6.0,11)
         assert_array_almost_equal(Ca5.c,array([4*sc.poch(a,5),0,-20*sc.poch(a,4),
                                                0,15*sc.poch(a,3),0])/15.0,11)
+
+    @pytest.mark.parametrize('a', [0, 1])
+    def test_n_zero_gh8888(self, a):
+        # gh-8888 reported that gegenbauer(0, 0) returns NaN polynomial
+        Cn0 = orth.gegenbauer(0, a)
+        assert_equal(Cn0.c, np.asarray([1.]))
+
+    def test_valid_alpha(self):
+        # Check input validation of `alpha`
+        message = '`alpha` must be a finite number greater...'
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(0, np.nan)
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(1, -0.5)
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(2, -np.inf)
 
 
 class TestHermite:
@@ -278,7 +296,7 @@ def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
     # this test is copied from numpy's TestGauss in test_hermite.py
     x, w, mu = root_func(N, True)
 
-    n = np.arange(N)
+    n = np.arange(N, dtype=np.dtype("long"))
     v = eval_func(n[:,np.newaxis], x)
     vv = np.dot(v*w, v.T)
     vd = 1 / np.sqrt(vv.diagonal())
@@ -592,7 +610,8 @@ def test_roots_chebyt():
     weightf = orth.chebyt(5).weight_func
     verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 5)
     verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 25)
-    verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 100, atol=1e-12)
+    verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 100,
+                      atol=1e-12)
 
     x, w = sc.roots_chebyt(5, False)
     y, v, m = sc.roots_chebyt(5, True)
@@ -632,7 +651,8 @@ def test_roots_chebyc():
     weightf = orth.chebyc(5).weight_func
     verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 5)
     verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 25)
-    verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 100, atol=1e-12)
+    verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 100,
+                      atol=1e-12)
 
     x, w = sc.roots_chebyc(5, False)
     y, v, m = sc.roots_chebyc(5, True)
@@ -798,5 +818,5 @@ def test_roots_genlaguerre():
 
 
 def test_gh_6721():
-    # Regresssion test for gh_6721. This should not raise.
+    # Regression test for gh_6721. This should not raise.
     sc.chebyt(65)(0.2)

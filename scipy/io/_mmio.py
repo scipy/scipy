@@ -289,8 +289,8 @@ class MMFile:
     @classmethod
     def _validate_format(self, format):
         if format not in self.FORMAT_VALUES:
-            raise ValueError('unknown format type %s, must be one of %s' %
-                             (format, self.FORMAT_VALUES))
+            msg = f'unknown format type {format}, must be one of {self.FORMAT_VALUES}'
+            raise ValueError(msg)
 
     # field values
     FIELD_INTEGER = 'integer'
@@ -304,8 +304,8 @@ class MMFile:
     @classmethod
     def _validate_field(self, field):
         if field not in self.FIELD_VALUES:
-            raise ValueError('unknown field type %s, must be one of %s' %
-                             (field, self.FIELD_VALUES))
+            msg = f'unknown field type {field}, must be one of {self.FIELD_VALUES}'
+            raise ValueError(msg)
 
     # symmetry values
     SYMMETRY_GENERAL = 'general'
@@ -318,8 +318,8 @@ class MMFile:
     @classmethod
     def _validate_symmetry(self, symmetry):
         if symmetry not in self.SYMMETRY_VALUES:
-            raise ValueError('unknown symmetry type %s, must be one of %s' %
-                             (symmetry, self.SYMMETRY_VALUES))
+            raise ValueError(f'unknown symmetry type {symmetry}, '
+                             f'must be one of {self.SYMMETRY_VALUES}')
 
     DTYPES_BY_FIELD = {FIELD_INTEGER: 'intp',
                        FIELD_UNSIGNED: 'uint64',
@@ -632,9 +632,8 @@ class MMFile:
         invalid_keys = set(kwargs.keys()) - set(public_attrs)
 
         if invalid_keys:
-            raise ValueError('''found {} invalid keyword arguments, please only
-                                use {}'''.format(tuple(invalid_keys),
-                                             public_attrs))
+            raise ValueError(f"found {tuple(invalid_keys)} invalid keyword "
+                             f"arguments, please only use {public_attrs}")
 
         for attr in attrs:
             setattr(self, attr, kwargs.get(attr[1:], None))
@@ -809,7 +808,7 @@ class MMFile:
 
         else:
             if not issparse(a):
-                raise ValueError('unknown matrix type: %s' % type(a))
+                raise ValueError(f'unknown matrix type: {type(a)}')
 
             rep = 'coordinate'
             rows, cols = a.shape
@@ -851,7 +850,7 @@ class MMFile:
 
         # write comments
         for line in comment.split('\n'):
-            data = '%%%s\n' % (line)
+            data = f'%{line}\n'
             stream.write(data.encode('latin1'))
 
         template = self._field_template(field, precision)
@@ -900,7 +899,7 @@ class MMFile:
                 raise ValueError('pattern type inconsisted with dense format')
 
             else:
-                raise TypeError('Unknown field type %s' % field)
+                raise TypeError(f'Unknown field type {field}')
 
         # write sparse format
         else:
@@ -934,7 +933,7 @@ class MMFile:
                     data = ("%i %i " % (r, c)) + (template % (d.real, d.imag))
                     stream.write(data.encode('latin1'))
             else:
-                raise TypeError('Unknown field type %s' % field)
+                raise TypeError(f'Unknown field type {field}')
 
 
 def _is_fromfile_compatible(stream):

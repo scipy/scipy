@@ -1,5 +1,5 @@
 """SVD decomposition functions."""
-import numpy
+import numpy as np
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 # Local imports.
@@ -43,8 +43,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         (``'gesdd'``) or general rectangular approach (``'gesvd'``)
         to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
         Default is ``'gesdd'``.
-
-        .. versionadded:: 0.18
 
     Returns
     -------
@@ -109,13 +107,46 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
+
+    # accommodate empty matrix
+    if a1.size == 0:
+        u0, s0, v0 = svd(np.eye(2, dtype=a1.dtype))
+
+        s = np.empty_like(a1, shape=(0,), dtype=s0.dtype)
+        if full_matrices:
+            u = np.empty_like(a1, shape=(m, m), dtype=u0.dtype)
+            u[...] = np.identity(m)
+            v = np.empty_like(a1, shape=(n, n), dtype=v0.dtype)
+            v[...] = np.identity(n)
+        else:
+            u = np.empty_like(a1, shape=(m, 0), dtype=u0.dtype)
+            v = np.empty_like(a1, shape=(0, n), dtype=v0.dtype)
+        if compute_uv:
+            return u, s, v
+        else:
+            return s
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
     if lapack_driver not in ('gesdd', 'gesvd'):
-        raise ValueError('lapack_driver must be "gesdd" or "gesvd", not "%s"'
-                         % (lapack_driver,))
+        message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
+        raise ValueError(message)
+
+    if lapack_driver == 'gesdd' and compute_uv:
+        # XXX: revisit int32 when ILP64 lapack becomes a thing
+        max_mn, min_mn = (m, n) if m > n else (n, m)
+        if full_matrices:
+            if max_mn*max_mn > np.iinfo(np.int32).max:
+                raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
+                                  " would incur integer overflow in LAPACK.")
+        else:
+            sz = max(m * min_mn, n * min_mn)
+            if max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
+                raise ValueError(f"Indexing a matrix of {sz} elements would "
+                                  "incur an in integer overflow in LAPACK.")
+
     funcs = (lapack_driver, lapack_driver + '_lwork')
     gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
 
@@ -169,18 +200,6 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     svd : Compute the full singular value decomposition of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
 
-    Notes
-    -----
-    ``svdvals(a)`` only differs from ``svd(a, compute_uv=False)`` by its
-    handling of the edge case of empty ``a``, where it returns an
-    empty sequence:
-
-    >>> import numpy as np
-    >>> a = np.empty((0, 2))
-    >>> from scipy.linalg import svdvals
-    >>> svdvals(a)
-    array([], dtype=float64)
-
     Examples
     --------
     >>> import numpy as np
@@ -222,14 +241,8 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     array([ 1.,  1.,  1.,  1.])
 
     """
-    a = _asarray_validated(a, check_finite=check_finite)
-    if a.size:
-        return svd(a, compute_uv=0, overwrite_a=overwrite_a,
-                   check_finite=False)
-    elif len(a.shape) != 2:
-        raise ValueError('expected matrix')
-    else:
-        return numpy.empty(0)
+    return svd(a, compute_uv=0, overwrite_a=overwrite_a,
+               check_finite=check_finite)
 
 
 def diagsvd(s, M, N):
@@ -275,7 +288,7 @@ def diagsvd(s, M, N):
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return numpy.hstack((part, zeros((M, N - M), dtype=typ)))
+        return np.hstack((part, zeros((M, N - M), dtype=typ)))
     elif MorN == N:
         return r_[part, zeros((M - N, N), dtype=typ)]
     else:
@@ -325,14 +338,15 @@ def orth(A, rcond=None):
     u, s, vh = svd(A, full_matrices=False)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
-        rcond = numpy.finfo(s.dtype).eps * max(M, N)
-    tol = numpy.amax(s) * rcond
-    num = numpy.sum(s > tol, dtype=int)
+        rcond = np.finfo(s.dtype).eps * max(M, N)
+    tol = np.amax(s, initial=0.) * rcond
+    num = np.sum(s > tol, dtype=int)
     Q = u[:, :num]
     return Q
 
 
-def null_space(A, rcond=None):
+def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
+               lapack_driver='gesdd'):
     """
     Construct an orthonormal basis for the null space of A using SVD
 
@@ -344,6 +358,18 @@ def null_space(A, rcond=None):
         Relative condition number. Singular values ``s`` smaller than
         ``rcond * max(s)`` are considered zero.
         Default: floating point eps * max(M,N).
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.
+        Default is False.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    lapack_driver : {'gesdd', 'gesvd'}, optional
+        Whether to use the more efficient divide-and-conquer approach
+        (``'gesdd'``) or general rectangular approach (``'gesvd'``)
+        to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
+        Default is ``'gesdd'``.
 
     Returns
     -------
@@ -364,7 +390,7 @@ def null_space(A, rcond=None):
     >>> from scipy.linalg import null_space
     >>> A = np.array([[1, 1], [1, 1]])
     >>> ns = null_space(A)
-    >>> ns * np.sign(ns[0,0])  # Remove the sign ambiguity of the vector
+    >>> ns * np.copysign(1, ns[0,0])  # Remove the sign ambiguity of the vector
     array([[ 0.70710678],
            [-0.70710678]])
 
@@ -386,12 +412,13 @@ def null_space(A, rcond=None):
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = svd(A, full_matrices=True)
+    u, s, vh = svd(A, full_matrices=True, overwrite_a=overwrite_a,
+                   check_finite=check_finite, lapack_driver=lapack_driver)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
-        rcond = numpy.finfo(s.dtype).eps * max(M, N)
-    tol = numpy.amax(s) * rcond
-    num = numpy.sum(s > tol, dtype=int)
+        rcond = np.finfo(s.dtype).eps * max(M, N)
+    tol = np.amax(s, initial=0.) * rcond
+    num = np.sum(s > tol, dtype=int)
     Q = vh[num:,:].T.conj()
     return Q
 
@@ -474,7 +501,7 @@ def subspace_angles(A, B):
         raise ValueError(f'expected 2D array, got shape {B.shape}')
     if len(B) != len(QA):
         raise ValueError('A and B must have the same number of rows, got '
-                         '{} and {}'.format(QA.shape[0], B.shape[0]))
+                         f'{QA.shape[0]} and {B.shape[0]}')
     QB = orth(B)
     del B
 

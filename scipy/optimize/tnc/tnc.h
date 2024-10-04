@@ -78,7 +78,7 @@ typedef enum
   TNC_LSFAIL       =  4, /* Linear search failed */
   TNC_CONSTANT     =  5, /* All lower bounds are equal to the upper bounds */
   TNC_NOPROGRESS   =  6, /* Unable to progress */
-  TNC_USERABORT    =  7  /* User requested end of minization */
+  TNC_USERABORT    =  7  /* User requested end of minimization */
 } tnc_rc;
 
 /*

@@ -15,7 +15,7 @@ class Covariance:
     Calculations involving covariance matrices (e.g. data whitening,
     multivariate normal function evaluation) are often performed more
     efficiently using a decomposition of the covariance matrix instead of the
-    covariance metrix itself. This class allows the user to construct an
+    covariance matrix itself. This class allows the user to construct an
     object representing a covariance matrix using any of several
     decompositions and perform calculations using a common interface.
 
@@ -26,7 +26,7 @@ class Covariance:
 
     Examples
     --------
-    The `Covariance` class is is used by calling one of its
+    The `Covariance` class is used by calling one of its
     factory methods to create a `Covariance` object, then pass that
     representation of the `Covariance` matrix as a shape parameter of a
     multivariate distribution.
@@ -198,7 +198,7 @@ class Covariance:
 
         Notes
         -----
-        Let the covariance matrix be :math:`A`and :math:`L` be the lower
+        Let the covariance matrix be :math:`A` and :math:`L` be the lower
         Cholesky factor such that :math:`L L^T = A`.
         Whitening of a data point :math:`x` is performed by computing
         :math:`L^{-1} x`. :math:`\log\det{A}` is calculated as
@@ -582,7 +582,7 @@ class CovViaEigendecomposition(Covariance):
         psuedo_reciprocals[i_zero] = 0
 
         self._LP = eigenvectors * psuedo_reciprocals
-        self._LA = eigenvectors * np.sqrt(positive_eigenvalues)
+        self._LA = eigenvectors * np.sqrt(eigenvalues)
         self._rank = positive_eigenvalues.shape[-1] - i_zero.sum(axis=-1)
         self._w = eigenvalues
         self._v = eigenvectors

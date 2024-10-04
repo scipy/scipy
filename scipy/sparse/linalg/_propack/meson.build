@@ -32,6 +32,7 @@ d_src = [
 ]
 
 c_src = [
+  'PROPACK/complex8/ccdotc.F',
   'PROPACK/complex8/cblasext.F',
   'PROPACK/complex8/cgemm_ovwr.F',
   'PROPACK/complex8/cgetu0.F',
@@ -52,6 +53,7 @@ z_src = [
   'PROPACK/complex16/dbsvd.F',
   'PROPACK/complex16/dgemm_ovwr.F',
   'PROPACK/complex16/printstat.F',
+  '../_eigen/arpack/ARPACK/SRC/zzdotc.f',
   'PROPACK/complex16/zblasext.F',
   'PROPACK/complex16/zgemm_ovwr.F',
   'PROPACK/complex16/zgetu0.F',
@@ -84,39 +86,25 @@ elements = [
 ]
 
 fargs_propack = ['-U_OPENMP']
-if use_g77_abi
-  # FIXME: define needs to be removed from PROPACK code, in favor of using
-  # `wcdotc` unconditionally, like is done in ARPACK.
-  fargs_propack += ['-DSCIPY_USE_G77_CDOTC_WRAP=1']
-endif
 foreach ele: elements
-  # PROPACK integration is pretty much broken, see for example gh-15108.
-  # Note that in setup.py, adding `g77_abi_wrappers` is skipped for 32-bit
-  # architectures (stated reason: "it blows up").
   propack_lib = static_library('lib_' + ele[0],
     ele[1],
     fortran_args: [
       fargs_propack,
-      fortran_ignore_warnings, 
+      fortran_ignore_warnings,
       _fflag_Wno_intrinsic_shadow,
       _fflag_Wno_uninitialized,
       _fflag_fpp,
     ],
-    dependencies: g77_abi_wrappers,
-  )
-
-  propack_module = custom_target('propack_module' + ele[0],
-    output: [ele[0] + '-f2pywrappers.f', ele[0] + 'module.c'],
-    input: ele[2],
-    command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+    gnu_symbol_visibility: 'hidden',
   )
 
   propacklib = py3.extension_module(ele[0],
-    propack_module,
+    f2py_gen.process(ele[2]),
     link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,
-    dependencies: [lapack, blas, fortranobject_dep],
+    dependencies: [lapack_dep, blas_dep, fortranobject_dep],
     link_args: version_link_args,
     install: true,
     link_language: 'fortran',

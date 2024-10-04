@@ -4,7 +4,8 @@ from itertools import combinations, product
 
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_array_equal
+from numpy.testing import (assert_allclose, assert_equal, assert_array_equal, 
+    assert_array_less)
 
 from scipy.spatial import distance
 from scipy.stats import shapiro
@@ -14,7 +15,7 @@ from scipy.stats._qmc import (
     van_der_corput, n_primes, primes_from_2_to,
     update_discrepancy, QMCEngine, _l1_norm,
     _perturb_discrepancy, _lloyd_centroidal_voronoi_tessellation
-)  # noqa
+)
 
 
 class TestUtils:
@@ -177,6 +178,59 @@ class TestUtils:
 
         with pytest.raises(ValueError, match="Invalid number of workers..."):
             qmc.discrepancy(sample, workers=-2)
+
+    def test_geometric_discrepancy_errors(self):
+        sample = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+
+        with pytest.raises(ValueError, match=r"Sample is not in unit hypercube"):
+            qmc.geometric_discrepancy(sample)
+
+        with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
+            qmc.geometric_discrepancy([1, 3])
+
+        sample = [[0, 0], [1, 1], [0.5, 0.5]]
+        with pytest.raises(ValueError, match=r"'toto' is not a valid ..."):
+            qmc.geometric_discrepancy(sample, method="toto")
+
+        sample = np.array([[0, 0], [0, 0], [0, 1]])
+        with pytest.warns(UserWarning, match="Sample contains duplicate points."):
+            qmc.geometric_discrepancy(sample)
+
+        sample = np.array([[0.5, 0.5]])
+        with pytest.raises(ValueError, match="Sample must contain at least two points"):
+            qmc.geometric_discrepancy(sample)
+
+    def test_geometric_discrepancy(self):
+        sample = np.array([[0, 0], [1, 1]])
+        assert_allclose(qmc.geometric_discrepancy(sample), np.sqrt(2))
+        assert_allclose(qmc.geometric_discrepancy(sample, method="mst"), np.sqrt(2))
+
+        sample = np.array([[0, 0], [0, 1], [0.5, 1]])
+        assert_allclose(qmc.geometric_discrepancy(sample), 0.5)
+        assert_allclose(qmc.geometric_discrepancy(sample, method="mst"), 0.75)
+
+        sample = np.array([[0, 0], [0.25, 0.25], [1, 1]])
+        assert_allclose(qmc.geometric_discrepancy(sample), np.sqrt(2) / 4)
+        assert_allclose(qmc.geometric_discrepancy(sample, method="mst"), np.sqrt(2) / 2)
+        assert_allclose(qmc.geometric_discrepancy(sample, metric="chebyshev"), 0.25)
+        assert_allclose(
+            qmc.geometric_discrepancy(sample, method="mst", metric="chebyshev"), 0.5
+        )
+
+        rng = np.random.default_rng(191468432622931918890291693003068437394)
+        sample = qmc.LatinHypercube(d=3, seed=rng).random(50)
+        assert_allclose(qmc.geometric_discrepancy(sample), 0.05106012076093356)
+        assert_allclose(
+            qmc.geometric_discrepancy(sample, method='mst'), 0.19704396643366182
+        )
+
+    @pytest.mark.xfail(
+            reason="minimum_spanning_tree ignores zero distances (#18892)",
+            strict=True,
+    )
+    def test_geometric_discrepancy_mst_with_zero_distances(self):
+        sample = np.array([[0, 0], [0, 0], [0, 1]])
+        assert_allclose(qmc.geometric_discrepancy(sample, method='mst'), 0.5)
 
     def test_update_discrepancy(self):
         # From Fang et al. Design and modeling for computer experiments, 2006
@@ -400,10 +454,10 @@ def test_subclassing_QMCEngine():
 def test_raises():
     # input validation
     with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
-        RandomEngine((2,))  # noqa
+        RandomEngine((2,))
 
     with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
-        RandomEngine(-1)  # noqa
+        RandomEngine(-1)
 
     msg = r"'u_bounds' and 'l_bounds' must be integers"
     with pytest.raises(ValueError, match=msg):
@@ -884,6 +938,54 @@ class TestPoisson(QMCEngineTests):
         # circle packing problem is np complex
         assert l2_norm(sample) >= radius
 
+    @pytest.mark.parametrize("l_bounds", [[-1, -2, -1], [1, 2, 1]])
+    def test_sample_inside_lower_bounds(self, l_bounds):
+        radius = 0.2
+        u_bounds=[3, 3, 2]
+        engine = self.qmce(
+            d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds
+        )
+        sample = engine.random(30)
+
+        for point in sample:
+            assert_array_less(point, u_bounds) 
+            assert_array_less(l_bounds, point) 
+
+    @pytest.mark.parametrize("u_bounds", [[-1, -2, -1], [1, 2, 1]])
+    def test_sample_inside_upper_bounds(self, u_bounds):
+        radius = 0.2
+        l_bounds=[-3, -3, -2]
+        engine = self.qmce(
+            d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds
+        )
+        sample = engine.random(30)
+
+        for point in sample:
+            assert_array_less(point, u_bounds) 
+            assert_array_less(l_bounds, point) 
+
+    def test_inconsistent_bound_value(self):
+        radius = 0.2
+        l_bounds=[3, 2, 1]
+        u_bounds=[-1, -2, -1]
+        with pytest.raises(
+            ValueError, 
+            match="Bounds are not consistent 'l_bounds' < 'u_bounds'"):
+            self.qmce(d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
+
+    @pytest.mark.parametrize("u_bounds", [[-1, -2, -1], [-1, -2]])
+    @pytest.mark.parametrize("l_bounds", [[3, 2]])
+    def test_inconsistent_bounds(self, u_bounds, l_bounds):
+        radius = 0.2
+        with pytest.raises(
+            ValueError, 
+            match="'l_bounds' and 'u_bounds' must be broadcastable and respect" 
+            " the sample dimension"):
+            self.qmce(
+                d=3, radius=radius, 
+                l_bounds=l_bounds, u_bounds=u_bounds
+            )
+        
     def test_raises(self):
         message = r"'toto' is not a valid hypersphere sampling"
         with pytest.raises(ValueError, match=message):

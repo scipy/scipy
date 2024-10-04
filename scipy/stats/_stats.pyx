@@ -15,6 +15,7 @@ cimport scipy.special.cython_special as cs
 
 np.import_array()
 
+
 cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
     cdef double s, c, sn, cn, R, V
     cdef unsigned int n
@@ -26,17 +27,16 @@ cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
     V = 0
     for n in range(p - 1, 0, -1):
         sn, cn = sn * c - cn * s, cn * c + sn * s
-        R = 1. / (2 * n / k + R)
+        R = k / (2 * n + k * R)
         V = R * (sn / n + V)
 
     with cython.cdivision(True):
         return 0.5 + x / (2 * PI) + V / PI
 
 
-DEF SQRT2_PI = 0.79788456080286535588  # sqrt(2/pi)
-
-
 cdef von_mises_cdf_normalapprox(k, x):
+    cdef double SQRT2_PI = 0.79788456080286535588  # sqrt(2/pi)
+
     b = SQRT2_PI / scipy.special.i0e(k)  # Check for negative k
     z = b * np.sin(x / 2.)
     return scipy.stats.norm.cdf(z)
@@ -172,12 +172,12 @@ def _toint64(x):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool additive):
+def _weightedrankedtau(const ordered[:] x, const ordered[:] y, intp_t[:] rank, weigher, bool additive):
     # y_local and rank_local (declared below) are a work-around for a Cython
     # bug; see gh-16718.  When we can require Cython 3.0, y_local and
     # rank_local can be removed, and the closure weigh() can refer directly
     # to y and rank.
-    cdef ordered[:] y_local = y
+    cdef const ordered[:] y_local = y
     cdef intp_t i, first
     cdef float64_t t, u, v, w, s, sq
     cdef int64_t n = np.int64(len(x))
@@ -377,11 +377,11 @@ def _transform_distance_matrix(distx, disty, global_corr='mgc', is_ranked=True):
 # MGC specific functions
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _expected_covar(float64_t[:, :] distx, float64_t[:, :] disty,
-                     int64_t[:, :] rank_distx, int64_t[:, :] rank_disty,
+cdef _expected_covar(const float64_t[:, :] distx, const float64_t[:, :] disty,
+                     const int64_t[:, :] rank_distx, const int64_t[:, :] rank_disty,
                      float64_t[:, :] cov_xy, float64_t[:] expectx,
                      float64_t[:] expecty):
-    # summing up the the element-wise product of A and B based on the ranks,
+    # summing up the element-wise product of A and B based on the ranks,
     # yields the local family of covariances
     cdef intp_t n = distx.shape[0]
     cdef float64_t a, b
@@ -428,7 +428,7 @@ def _local_covariance(distx, disty, rank_distx, rank_disty):
     cdef ndarray expectx = np.zeros(nx)
     cdef ndarray expecty = np.zeros(ny)
 
-    # summing up the the element-wise product of A and B based on the ranks,
+    # summing up the element-wise product of A and B based on the ranks,
     # yields the local family of covariances
     expectx, expecty = _expected_covar(distx, disty, rank_distx, rank_disty,
                                        cov_xy, expectx, expecty)
@@ -509,7 +509,7 @@ cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) noexcept no
     return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
 
 
-cdef double _geninvgauss_pdf(double x, void *user_data) except * nogil:
+cdef double _geninvgauss_pdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, b
 
@@ -645,7 +645,7 @@ cpdef double genhyperbolic_pdf(double x, double p, double a, double b) noexcept 
     return math.exp(_genhyperbolic_logpdf_kernel(x, p, a, b))
 
 
-cdef double _genhyperbolic_pdf(double x, void *user_data) except * nogil:
+cdef double _genhyperbolic_pdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 
@@ -662,7 +662,8 @@ cpdef double genhyperbolic_logpdf(
     return _genhyperbolic_logpdf_kernel(x, p, a, b)
 
 
-cdef double _genhyperbolic_logpdf(double x, void *user_data) except * nogil:
+# logpdf is always negative, so use positive exception value
+cdef double _genhyperbolic_logpdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 
@@ -711,8 +712,8 @@ ctypedef fused real:
 @cython.cdivision(True)
 @cython.boundscheck(False)
 cdef inline int gaussian_kernel_estimate_inner(
-    real[:, :] points_,  real[:, :] values_, real[:, :] xi_,
-    real[:, :] estimate, real[:, :] cho_cov,
+    const real[:, :] points_,  const real[:, :] values_, const real[:, :] xi_,
+    real[:, :] estimate, const real[:, :] cho_cov,
     int n, int m, int d, int p,
 ) noexcept nogil:
     cdef:

@@ -248,7 +248,7 @@ class PPFDist(Protocol):
 def sobol_indices(
     *,
     func: Callable[[np.ndarray], npt.ArrayLike] |
-          dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],  # noqa
+          dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],
     n: IntNumber,
     dists: list[PPFDist] | None = None,
     method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
@@ -407,7 +407,7 @@ def sobol_indices(
         consider at minima ``n >= 2**12``. The more complex the model is,
         the more samples will be needed.
 
-        Even for a purely addiditive model, the indices may not sum to 1 due
+        Even for a purely additive model, the indices may not sum to 1 due
         to numerical noise.
 
     References
