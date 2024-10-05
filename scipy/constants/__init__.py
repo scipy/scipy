@@ -63,7 +63,7 @@ Constants database
 ------------------
 
 In addition to the above variables, :mod:`scipy.constants` also contains the
-2018 CODATA recommended values [CODATA2018]_ database containing more physical
+2022 CODATA recommended values [CODATA2022]_ database containing more physical
 constants.
 
 .. autosummary::
@@ -79,6 +79,13 @@ constants.
 
    Dictionary of physical constants, of the format
    ``physical_constants[name] = (value, unit, uncertainty)``.
+   The CODATA database uses ellipses to indicate that a value is defined
+   (exactly) in terms of others but cannot be represented exactly with the
+   allocated number of digits. In these cases, SciPy calculates the derived
+   value and reports it to the full precision of a Python ``float``. Although 
+   ``physical_constants`` lists the uncertainty as ``0.0`` to indicate that
+   the CODATA value is exact, the value in ``physical_constants`` is still
+   subject to the truncation error inherent in double-precision representation.
 
 Available constants:
 
@@ -318,8 +325,8 @@ Optics
 References
 ==========
 
-.. [CODATA2018] CODATA Recommended Values of the Fundamental
-   Physical Constants 2018.
+.. [CODATA2022] CODATA Recommended Values of the Fundamental
+   Physical Constants 2022.
 
    https://physics.nist.gov/cuu/Constants/
 
