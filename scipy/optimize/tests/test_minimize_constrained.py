@@ -465,12 +465,13 @@ class TestTrustRegionConstr:
                         Elec(n_electrons=2, constr_jac='3-point',
                              constr_hess=SR1())]
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.parametrize('prob', list_of_problems)
     @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))
     @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
                                       BFGS(exception_strategy='damp_update'),
                                       BFGS(exception_strategy='skip_update')))
-    def test_list_of_problems(self, prob, grad, hess):
+    def test_list_of_problems(self, prob, grad, hess, num_parallel_threads):
         grad = prob.grad if grad == "prob.grad" else grad
         hess = prob.hess if hess == "prob.hess" else hess
         # Remove exceptions
