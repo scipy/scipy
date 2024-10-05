@@ -71,7 +71,7 @@ py3.extension_module('_ckdtree',
 
 py3.extension_module('_distance_wrap',
   'src/distance_wrap.c',
-  include_directories: '../_lib',
+  include_directories: ['../_lib', '../_lib/src'],
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,

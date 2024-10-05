@@ -42,6 +42,7 @@
 #pragma GCC optimize("unroll-loops")
 #endif
 #endif
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
@@ -50,6 +51,7 @@
 #include <stdlib.h>
 
 #include "distance_impl.h"
+#include "ccallback.h"
 
 #define DEFINE_WRAP_CDIST(name, type)                                   \
     static PyObject *                                                   \
@@ -674,8 +676,140 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
   return Py_BuildValue("");
 }
 
+/* For distance computation kernels */
+
+typedef const void *Array;
+typedef const ssize_t *Stride;
+
+typedef int (*DistanceScalar)(Array x, Array y, size_t n, void *out);
+typedef int (*DistanceVector)(Array x, Array y, size_t n, size_t m, void *out);
+typedef int (*DistanceMatrix)(Array x, Array y, size_t n, size_t mx, size_t my, void *out);
+
+typedef int (*DistanceScalar0)(Array x, Stride xs, Array y, Stride ys, size_t n, void *out, Stride outs);
+typedef int (*DistanceScalar1)(Array x, Stride xs, Array y, Stride ys, size_t n, void *out, Stride outs, Array, Stride);
+typedef int (*DistanceScalar2)(Array x, Stride xs, Array y, Stride ys, size_t n, void *out, Stride outs, Array, Stride, Array, Stride);
+
+typedef int (*DistanceVector0)(Array x, Stride xs, Array y, Stride ys, size_t n, size_t m, void *out, Stride outs);
+typedef int (*DistanceVector1)(Array x, Stride xs, Array y, Stride ys, size_t n, size_t m, void *out, Stride outs, Array, Stride);
+typedef int (*DistanceVector2)(Array x, Stride xs, Array y, Stride ys, size_t n, size_t m, void *out, Stride outs, Array, Stride, Array, Stride);
+
+typedef int (*DistanceMatrix0)(Array x, Stride xs, Array y, Stride ys, size_t n, size_t mx, size_t my, void *out, Stride outs);
+typedef int (*DistanceMatrix1)(Array x, Stride xs, Array y, Stride ys, size_t n, size_t mx, size_t my, void *out, Stride outs, Array, Stride);
+typedef int (*DistanceMatrix2)(Array x, Stride xs, Array y, Stride ys, size_t n, size_t mx, size_t my, void *out, Stride outs, Array, Stride, Array, Stride);
+
+static struct ccallback_signature DistanceScalar_signatures[] = {
+    {"int (void *, void *, size_t, void *)"},
+    {NULL}
+};
+
+static struct ccallback_signature DistanceScalar0_signatures[] = {
+    {"int (void *, ssize_t *, void *, ssize_t *, size_t, void *, ssize_t *)"},
+    {NULL}
+};
+
+static struct ccallback_signature DistanceVector_signatures[] = {
+    {"int (void *, void *, size_t, size_t, void *)"},
+    {NULL}
+};
+
+static struct ccallback_signature DistanceVector0_signatures[] = {
+    {"int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, void *, ssize_t *)"},
+    {NULL}
+};
+
+static struct ccallback_signature DistanceMatrix_signatures[] = {
+    {"int (void *, void *, size_t, size_t, size_t, void *)"},
+    {NULL}
+};
+
+static struct ccallback_signature DistanceMatrix0_signatures[] = {
+    {"int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, size_t, void *, ssize_t *)"},
+    {NULL}
+};
+
+//static struct ccallback_signature DistanceScalar1_signatures[] = {
+//    {"int (void *, ssize_t *, void *, ssize_t *, size_t, void *, ssize_t *, void *, ssize_t *)"},
+//    {NULL}
+//};
+//
+//static struct ccallback_signature DistanceScalar2_signatures[] = {
+//    {"int (void *, ssize_t *, void *, ssize_t *, size_t, void *, ssize_t *, void *, ssize_t *, void *, ssize_t *)"},
+//    {NULL}
+//};
+
+static PyObject *call_DistanceScalar(PyObject *self, PyObject *args)
+{
+    PyObject *func, *ret = NULL;
+    Py_buffer x, y, out;
+
+    if (PyArg_ParseTuple(args, "Oy*y*w*", &func, &x, &y, &out)) {
+        ccallback_t cb;
+        if (ccallback_prepare(&cb, DistanceScalar_signatures, func, CCALLBACK_DEFAULTS) == 0) {
+            if (cb.py_function) {
+                PyErr_SetString(PyExc_ValueError, "func must wrap a C function");
+            } else {
+                DistanceScalar f = cb.c_function;
+                int rc;
+                Py_BEGIN_ALLOW_THREADS
+                rc = f(x.buf, y.buf, x.shape[1], out.buf);
+                Py_END_ALLOW_THREADS
+                ret = PyLong_FromLong(ret);
+            }
+            ccallback_release(&cb);
+        }
+        PyBuffer_Release(&out);
+        PyBuffer_Release(&y);
+        PyBuffer_Release(&x);
+    }
+    return ret;
+}
+
+#define DEFINE_CALL_DISTANCE_KERNEL(KernelType, ArgTuple)               \
+static PyObject *call_##KernelType(PyObject *self, PyObject *args)      \
+{                                                                       \
+    PyObject *func, *ret = NULL;                                        \
+    Py_buffer x, y, out;                                                \
+                                                                        \
+    if (PyArg_ParseTuple(args, "Oy*y*w*", &func, &x, &y, &out)) {       \
+        ccallback_t cb;                                                 \
+        if (ccallback_prepare(&cb, KernelType##_signatures,             \
+                              func, CCALLBACK_DEFAULTS) == 0) {         \
+            if (cb.py_function) {                                       \
+                PyErr_SetString(PyExc_ValueError,                       \
+                                "func must wrap a C function");         \
+            } else {                                                    \
+                KernelType f = cb.c_function;                           \
+                int rc;                                                 \
+                Py_BEGIN_ALLOW_THREADS                                  \
+                rc = f ArgTuple ;                                       \
+                Py_END_ALLOW_THREADS                                    \
+                ret = PyLong_FromLong(ret);                             \
+            }                                                           \
+            ccallback_release(&cb);                                     \
+        }                                                               \
+        PyBuffer_Release(&out);                                         \
+        PyBuffer_Release(&y);                                           \
+        PyBuffer_Release(&x);                                           \
+    }                                                                   \
+    return ret;                                                         \
+}
+
+DEFINE_CALL_DISTANCE_KERNEL(DistanceScalar0, (x.buf, x.strides, y.buf, y.strides, x.shape[1], out.buf, out.strides))
+
+DEFINE_CALL_DISTANCE_KERNEL(DistanceVector, (x.buf, y.buf, x.shape[1], x.shape[0], out.buf))
+DEFINE_CALL_DISTANCE_KERNEL(DistanceVector0, (x.buf, x.strides, y.buf, y.strides, x.shape[1], x.shape[0], out.buf, out.strides))
+
+DEFINE_CALL_DISTANCE_KERNEL(DistanceMatrix, (x.buf, y.buf, x.shape[1], x.shape[0], y.shape[0], out.buf))
+DEFINE_CALL_DISTANCE_KERNEL(DistanceMatrix0, (x.buf, x.strides, y.buf, y.strides, x.shape[1], x.shape[0], y.shape[0], out.buf, out.strides))
 
 static PyMethodDef _distanceWrapMethods[] = {
+  {"call_DistanceScalar",  call_DistanceScalar,  METH_VARARGS},
+  {"call_DistanceScalar0", call_DistanceScalar0, METH_VARARGS},
+  {"call_DistanceVector",  call_DistanceVector,  METH_VARARGS},
+  {"call_DistanceVector0", call_DistanceVector0, METH_VARARGS},
+  {"call_DistanceMatrix",  call_DistanceMatrix,  METH_VARARGS},
+  {"call_DistanceMatrix0", call_DistanceMatrix0, METH_VARARGS},
+
   {"cdist_braycurtis_double_wrap",
    cdist_bray_curtis_double_wrap,
    METH_VARARGS},
