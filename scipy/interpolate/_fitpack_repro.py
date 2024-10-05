@@ -21,10 +21,11 @@ import warnings
 import operator
 import numpy as np
 
-from scipy.interpolate._bsplines import (
+from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr
 )
-from scipy.interpolate._bspl import _qr_reduce, _fpback, _fpknot
+from . import _dierckx      # type: ignore[attr-defined]
+
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #    c  part 1: determination of the number of knots and their position     c
@@ -81,7 +82,7 @@ def add_knot(x, t, k, residuals):
 
     and https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
     """
-    new_knot = _fpknot(x, t, k, residuals)
+    new_knot = _dierckx.fpknot(x, t, k, residuals)
 
     idx_t = np.searchsorted(t, new_knot)
     t_new = np.r_[t[:idx_t], new_knot, t[idx_t:]]
@@ -355,6 +356,9 @@ def disc(t, k):
     disc : ndarray, shape(n-2*k-1, k+2)
         The jumps of the k-th derivatives of b-splines at internal knots,
         ``t[k+1], ...., t[n-k-1]``.
+    offset : ndarray, shape(2-2*k-1,)
+        Offsets
+    nc : int
 
     Notes
     -----
@@ -401,7 +405,7 @@ def disc(t, k):
     matr *= (delta/ nrint)**k
 
     # make it packed
-    offset = np.array([i for i in range(nrint-1)])
+    offset = np.array([i for i in range(nrint-1)], dtype=np.int64)
     nc = n - k - 1
     return matr, offset, nc
 
@@ -475,7 +479,7 @@ class F:
         AA[:nc, :nz] = R[:nc, :]
         # AA[nc:, :] = b.a / p  # done in __call__(self, p)
         self.AA  = AA
-        self.offset = np.r_[np.arange(nc, dtype=np.intp), b_offset]
+        self.offset = np.r_[np.arange(nc, dtype=np.int64), b_offset]
 
         self.nc = nc
         self.b = b
@@ -494,10 +498,10 @@ class F:
         QY = self.YY.copy()
 
         # heavy lifting happens here, in-place
-        _qr_reduce(AB, offset, nc, QY, startrow=nc)
+        _dierckx.qr_reduce(AB, offset, nc, QY, startrow=nc)
 
         # solve for the coefficients
-        c = _fpback(AB, nc, QY)
+        c = _dierckx.fpback(AB, nc, QY)
 
         spl = BSpline(self.t, c, self.k)
         residuals = _compute_residuals(self.w**2, spl(self.x), self.y)
