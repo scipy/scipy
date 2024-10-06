@@ -3301,7 +3301,7 @@ def add_distance_kernel(
     if not isinstance(func, LowLevelCallable):
         raise TypeError(f"func must be of type LowLevelCallable")
     expected_signature = _get_expected_signature(
-        metric_dim, -1 if param_dim is None else len(param_dim))
+        metric_dim, -1 if param_dims is None else len(param_dims))
     if func.signature != expected_signature:
         raise ValueError(f"func does not have the expected signature: "
                          f"{expected_signature=} {func.signature=}")
@@ -3329,7 +3329,7 @@ def add_distance_kernel(
      .setdefault(signature_spec, dict())
      .setdefault(out_type_code, dict())
      .setdefault(in_type_code, dict())
-     )[metric_dim] = (func, tuple(param_dims))
+     )[metric_dim] = (func, tuple(param_dims or ()))
 
 
 def _get_expected_signature(metric_dim: _DimCode, num_extra: int) -> str:
@@ -3409,7 +3409,7 @@ def _new_cdist(metric: str, x, y, *, out=None, backend=None, **kwargs):
     # Promote input dtype to a common (floating point) dtype.
     # This is the current behavior of cdist/pdist.
     # TODO: allow non-floating type if supported by any distance kernel.
-    input_dtype = np.common_type(x, y)
+    input_dtype = np.dtype(np.common_type(x, y))
     x = np.asarray(x, dtype=input_dtype)
     y = np.asarray(y, dtype=input_dtype)
 
@@ -3425,7 +3425,7 @@ def _new_cdist(metric: str, x, y, *, out=None, backend=None, **kwargs):
     if out is not None:
         output_dtype = out.dtype
     else:
-        output_dtype = np.common_type(x, y, *extra_args.values())
+        output_dtype = np.dtype(np.common_type(x, y, *extra_args.values()))
 
     # Promote additional arguments to output_dtype and ensure they are properly
     # aligned.
@@ -3486,20 +3486,21 @@ def _new_cdist(metric: str, x, y, *, out=None, backend=None, **kwargs):
         raise RuntimeError(f"no distance computation kernel is available "
                            f"to handle the request ({metric=}, {backend=}, "
                            f"{signature_spec=}, {output_dtype_spec=}, "
-                           f"{input_dtype_spec=}")
+                           f"{input_dtype_spec=})")
 
     # Invoke the kernel through C code.  Make sure to pass any additional
     # parameters in the order expected by the kernel.
     param_values = [extra_args[param_name] for param_name in param_names]
     use_extended_interface = ':' in signature_spec
     if not use_extended_interface:
-        rc = _distance_pybind.call_DistanceMatrix(func, x, y, out)
+        rc = _distance_wrap.call_DistanceMatrix(func, x, y, out)
     elif len(param_values) == 0:
-        rc = _distance_pybind.call_DistanceMatrix0(func, x, y, out)
+        rc = _distance_wrap.call_DistanceMatrix0(func, x, y, out)
     else:
         raise NotImplementedError("")
     if rc != 0:
         raise RuntimeError(f"distance computation kernel failed with code {rc}")
+    return out
 
 
 def _get_dtype_spec(t: np.dtype) -> _DTypeSpec:
@@ -3507,12 +3508,12 @@ def _get_dtype_spec(t: np.dtype) -> _DTypeSpec:
     if not t.isnative:
         raise ValueError(f"'{t}' is not in native byte order")
     specs = {
-        'f': 'f32', 'g': 'f64',
+        'f': 'f32', 'd': 'f64',
     }
     if t.char in specs:
         return specs[t.char]
     else:
-        raise ValueError(f"'{t}' is of unexpected type")
+        raise ValueError(f"'{t.char} ({t})' is of unexpected type")
 
 
 def _is_strided(a: np.ndarray) -> bool:

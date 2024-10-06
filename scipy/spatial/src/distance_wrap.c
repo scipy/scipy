@@ -764,13 +764,28 @@ static PyObject *call_DistanceScalar(PyObject *self, PyObject *args)
     return ret;
 }
 
+static int _extract_buffer(PyObject *obj, Py_buffer *view) {
+    if (obj == NULL) { /* called by Python when other parameters failed */
+        PyBuffer_Release(view);
+        return 0;
+    }
+    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) == 0) {
+        return Py_CLEANUP_SUPPORTED;
+    } else {
+        return 0;
+    }
+}
+
 #define DEFINE_CALL_DISTANCE_KERNEL(KernelType, ArgTuple)               \
 static PyObject *call_##KernelType(PyObject *self, PyObject *args)      \
 {                                                                       \
     PyObject *func, *ret = NULL;                                        \
     Py_buffer x, y, out;                                                \
                                                                         \
-    if (PyArg_ParseTuple(args, "Oy*y*w*", &func, &x, &y, &out)) {       \
+    if (PyArg_ParseTuple(args, "OO&O&O&", &func,                        \
+                         _extract_buffer, &x,                           \
+                         _extract_buffer, &y,                           \
+                         _extract_buffer, &out)) {                      \
         ccallback_t cb;                                                 \
         if (ccallback_prepare(&cb, KernelType##_signatures,             \
                               func, CCALLBACK_DEFAULTS) == 0) {         \
@@ -802,6 +817,25 @@ DEFINE_CALL_DISTANCE_KERNEL(DistanceVector0, (x.buf, x.strides, y.buf, y.strides
 DEFINE_CALL_DISTANCE_KERNEL(DistanceMatrix, (x.buf, y.buf, x.shape[1], x.shape[0], y.shape[0], out.buf))
 DEFINE_CALL_DISTANCE_KERNEL(DistanceMatrix0, (x.buf, x.strides, y.buf, y.strides, x.shape[1], x.shape[0], y.shape[0], out.buf, out.strides))
 
+/* Add one function for testing */
+
+static int cosine_DistanceMatrix(
+    const double *x, const double *y, size_t n, size_t mx, size_t my, double *out)
+{
+    int ret = cdist_cosine(x, y, out, mx, my, n);
+    if (ret == -1) {
+        // out of memory
+    }
+    return ret;
+}
+
+static PyObject *cosine_DistanceMatrix_capsule(PyObject *self, PyObject *args)
+{
+    return PyCapsule_New(cosine_DistanceMatrix,
+                         DistanceMatrix_signatures[0].signature,
+                         NULL);
+}
+
 static PyMethodDef _distanceWrapMethods[] = {
   {"call_DistanceScalar",  call_DistanceScalar,  METH_VARARGS},
   {"call_DistanceScalar0", call_DistanceScalar0, METH_VARARGS},
@@ -809,6 +843,8 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"call_DistanceVector0", call_DistanceVector0, METH_VARARGS},
   {"call_DistanceMatrix",  call_DistanceMatrix,  METH_VARARGS},
   {"call_DistanceMatrix0", call_DistanceMatrix0, METH_VARARGS},
+
+  {"cosine_DistanceMatrix_capsule", cosine_DistanceMatrix_capsule, METH_VARARGS},
 
   {"cdist_braycurtis_double_wrap",
    cdist_bray_curtis_double_wrap,
