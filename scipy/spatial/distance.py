@@ -109,6 +109,7 @@ import math
 import warnings
 import numpy as np
 import dataclasses
+import re
 
 from collections.abc import Callable
 from functools import partial
@@ -3118,49 +3119,101 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
                         'or a function.')
 
 
-_KernelKey = str  # canonical_metric_key ":" in_dtype_code "->" out_dtype_code
-_KernelEntry = tuple[LowLevelCallable, list[str]]  # (func, param_names)
-_distance_kernels = dict[_KernelKey, list[_KernelEntry]]()
-_reserved_param_names = {'x', 'y', 'XA', 'XB', 'out'}
-_ShapeCode = Literal["s", "v", "m"]
+_MetricName = str
+_BackendName = str
+_DimCode = Literal["s", "v", "m"]
+_MetricDimCode = _DimCode
+_DTypeSpec = Literal["f32", "f64"]
+_OutputDTypeSpec = _DTypeSpec
+_InputDTypeSpec = _DTypeSpec
+_SignatureSpec = str  # "", ":", ":w.v", "p.s:w.v"
+_ParamName = str
+
+_distance_kernels = dict[
+    _MetricName,
+    dict[
+        _BackendName,
+        dict[
+            _SignatureSpec,
+            dict[
+                _OutputDTypeSpec,
+                dict[
+                    _InputDTypeSpec,
+                    dict[
+                        _MetricDimCode,
+                        tuple[LowLevelCallable, tuple[_ParamName]]
+                    ]
+                ]
+            ]
+        ]
+    ]
+]()
+_reserved_param_names = {'x', 'y', 'XA', 'XB', 'out', 'backend'}
+_identifier_re = re.compile("[A-Za-z_][A-Za-z0-9]*")
+
+
+# def add_distance_backend(backend_name: str) -> int:
+#     # This function is not thread safe and should not be called at the same
+#     # time when other distance functions are being called
+#     global _distance_backend_count
+#
+#     if not isinstance(backend_name, str):
+#         raise TypeError("name must be a str")
+#     backend_id = _distance_backend_count
+#     _distance_backend_count += 1
+#     _distance_backend_names[backend_id] = backend_name
+#     return backend_id
+
+
+# def remove_distance_backend(backend_id: int) -> None:
+#     # This function is not thread safe and should not be called at the same
+#     # time when other distance functions are being called
+#     if backend_id not in _distance_backend_names:
+#         raise ValueError('backend_id does not exist (anymore)')
+#     for kernel_key in list(_distance_kernels):
+#         kernel_list = _distance_kernels[kernel_key]
+#         for k in reversed(range(len(kernel_list))):
+#             if kernel_list[k][2] == backend_id:
+#                 del kernel_list[k]
+#         if len(kernel_list) == 0:
+#             del _distance_kernels[kernel_key]
+#     del _distance_backend_names[backend_id]
 
 
 def add_distance_kernel(
-    metric_key: str, dtype_key: str, func: LowLevelCallable, backend: str
+    metric_spec: str, dtype_spec: str, func: LowLevelCallable, backend: str
 ):
     """Register a distance computation kernel.
 
-    metric_key: str
-      specifies the metric name, shape, and strideness as well as additional parameters.
+    metric_spec: str
+      specifies the metric name, dimension, stridedness, and additional parameters.
 
-      metric_key := metric_name "." metric_shape
-                  | metric_name "." metric_shape ":"
-                  | metric_name "." metric_shape ( ":" param_name "." param_shape )+
-
-      metric_name := string that does not contain ':' or '.'
-      metric_shape := "s" | "v" | "m"
-      param_name := string that does not contain ':' or '.', and is not one of
-                    "x", "y", "out", "XA", "XB". The same param_name cannot
-                    appear more than once.
-      param_shape := "s" | "v" | "m"
+      metric_spec := metric_name "." metric_dim
+                   | metric_name "." metric_dim ":"
+                   | metric_name "." metric_dim ( ":" param_name "." param_dim )+
+      metric_name := IDENTIFIER
+      metric_dim  := DIM
+      param_name  := IDENTIFIER, except any of the reserved param names.
+                     The same param_name cannot appear more than once.
+      param_dim   := DIM
+      IDENTIFIER  := [A-Za-z_][A-Za-z0-9_]*
+      DIM         := [svm]
 
       Examples: 'cosine.v', 'euclidean.v:', 'chevyshev.m:w.m', 'minkowski.m:w.m:p.s'
 
-      The current implementation supports up to two additional parameters
+      The current implementation supports up to two additional parameters.
 
-    dtype_key: str
+    dtype_spec: str
       Specifies the input dtype and output dtype.
+
       The kernel is guaranteed to be called with x and y having the input dtype
       and out and all additional arguments having the output dtype.
 
       dtype_key := inout_dtype_code
                  | in_dtype_code "->" out_dtype_code
-      inout_dtype_code, in_dtype_code, out_dtype_code: "e" | "f" | "d" | "g"
-        they correspond to float16 (not sure what), c-float, c-double, and
-        c-longdouble.  The c-* types are platform native and their bit-width
-        and format may vary across platforms.
+      inout_dtype_code, in_dtype_code, out_dtype_code := DTYPE_CODE
+      DTYPE_CODE := "f16" | "f32" | "f64", all are (supposed to be) IEEE format
 
-      TODO: support IEEE formats properly
       TODO: support non-floating point types
 
     func: a LowLevelCallable, such that
@@ -3168,73 +3221,79 @@ def add_distance_kernel(
       f.user_data is *NOT* used
       f.signature: MUST match the following *exactly*:
 
-        - if metric_key does not contain a ':', then
-          - if metric_shape is "s":
+        - if metric_spec does not contain a ':', then
+          - if metric_dim is "s":
             "int (void *, void *, size_t, void *)"
-          - if metric_shape is "v":
+          - if metric_dim is "v":
             "int (void *, void *, size_t, size_t, void *)"
-          - if metric_shape is "m":
+          - if metric_dim is "m":
             "int (void *, void *, size_t, size_t, size_t, void *)"
 
-        - if metric_key contains a ':', then:
-          - if metric_shape is "s":
+        - if metric_spec contains a ':', then:
+          - if metric_dim is "s":
             "int (void *, ssize_t *, void *, ssize_t *, size_t, void *" extra_arg_list ")"
-          - if metric_shape is "v":
+          - if metric_dim is "v":
             "int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, void *, ssize_t *" extra_arg_list ")"
-          - if metric_shape is "m":
+          - if metric_dim is "m":
             "int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, size_t, void *, ssize_t *" extra_arg_list ")"
           where extra_arg_list := ", void *, ssize_t *"*N
           where N is the number of additional arguments.
 
-    backend: a string that identifies the provider of this kernel
-             for information only
+    backend: str, IDENTIFIER, case *insensitive*, cannot be "SciPy"
+      An identifier use to identify the backend
     """
-    # -------------------
-    # Validate metric_key
-    # -------------------
+    # This function is not thread safe and should not be called at the same
+    # time when other distance functions are being called
 
-    if ':' in metric_key:
-        metric_spec, *param_specs = metric_key.split(':')
+    # --------------------
+    # Validate metric_spec
+    # --------------------
+
+    if ':' in metric_spec:
+        metric_spec, *param_specs = metric_spec.split(':')
     else:
-        metric_spec = metric_key
         param_specs = None
 
     if metric_spec.count('.') != 1:
-        raise ValueError("metric spec must have the form 'NAME.SHAPE'")
-    metric_name, metric_shape = metric_spec.split('.')
-    if metric_shape not in 'svm':
-        raise ValueError("metric shape must be one of 'svm'")
+        raise ValueError("metric_spec must have the form 'NAME.DIM'")
+    metric_name, metric_dim = metric_spec.split('.')
+    if not _identifier_re.fullmatch(metric_name):
+        raise ValueError("metric name must be a valid identifier")
+    if metric_dim not in 'svm':
+        raise ValueError("metric dim must be one of 'svm'")
 
     if param_specs is not None:
-        param_shapes = dict()
+        param_dims = dict()
         for param_spec in param_specs:
             if param_spec.count('.') != 1:
-                raise ValueError("param spec must have the form 'NAME.SHAPE'")
-            param_name, param_shape = param_spec.split('.')
-            if param_shape not in 'svm':
-                raise ValueError("param shape must be one of 'svm'")
+                raise ValueError("param spec must have the form 'NAME.DIM'")
+            param_name, param_dim = param_spec.split('.')
+            if not _identifier_re.fullmatch(param_name):
+                raise ValueError("param name must be a valid identifier")
             if param_name in _reserved_param_names:
                 raise ValueError(f"param name '{param_name}' is reserved")
-            if param_name in param_shapes:
+            if param_name in param_dims:
                 raise ValueError(f"param name '{param_name}' must be unique")
-            param_shapes[param_name] = param_shape
+            if param_dim not in 'svm':
+                raise ValueError("param dim must be one of 'svm'")
+            param_dims[param_name] = param_dim
     else:
-        param_shapes = None
+        param_dims = None
 
-    # ------------------
-    # Validate dtype_key
-    # ------------------
+    # -------------------
+    # Validate dtype_spec
+    # -------------------
 
-    if dtype_key.count('->') >= 2:
-        raise f"dtype_key can contain at most one '->'"
-    if '->' in dtype_key:
-        in_type_code, out_type_code = dtype_key.split('->')
+    if dtype_spec.count('->') >= 2:
+        raise f"dtype_spec can contain at most one '->'"
+    if '->' in dtype_spec:
+        in_type_code, out_type_code = dtype_spec.split('->')
     else:
-        in_type_code = out_type_code = dtype_key
-    if in_type_code not in ('e', 'f', 'd', 'g'):
-        raise ValueError("Only 'defg' is supported")
-    if out_type_code not in ('e', 'f', 'd', 'g'):
-        raise ValueError("Only 'defg' is supported")
+        in_type_code = out_type_code = dtype_spec
+    if in_type_code not in ('f16', 'f32', 'f64'):
+        raise ValueError("unsupported dtype_spec")
+    if out_type_code not in ('f16', 'f32', 'f64'):
+        raise ValueError("unsupported dtype_spec")
 
     # -------------------------------
     # Validate func and its signature
@@ -3242,27 +3301,38 @@ def add_distance_kernel(
     if not isinstance(func, LowLevelCallable):
         raise TypeError(f"func must be of type LowLevelCallable")
     expected_signature = _get_expected_signature(
-        metric_shape, -1 if param_shapes is None else len(param_shapes))
+        metric_dim, -1 if param_dim is None else len(param_dim))
     if func.signature != expected_signature:
         raise ValueError(f"func does not have the expected signature: "
                          f"{expected_signature=} {func.signature=}")
 
+    # ----------------
+    # Validate backend
+    # ----------------
+    if type(backend) is not str:
+        raise TypeError('backend must be a str')
+    if not _identifier_re.fullmatch(backend):
+        raise ValueError('backend must be a valid identifier')
+
     # -------------------
     # Register the kernel
     # -------------------
-    if not param_shapes:
-        canonical_metric_key = metric_key
+    if not param_dims:
+        signature_spec = ""
     else:
-        canonical_metric_key = f"{metric_name}.{metric_shape}" + "".join(
-            sorted(f":{param_name}.{param_value}"
-                   for param_name, param_value in param_shapes.items()))
-    kernel_key = f"{canonical_metric_key}:{in_type_code}->{out_type_code}"
-    if kernel_key not in _distance_kernels:
-        _distance_kernels[kernel_key] = list[_KernelEntry]()
-    _distance_kernels[kernel_key].insert(0, (func, list(param_shapes)))
+        signature_spec = ":" + ":".join(
+            sorted(f"{param_name}.{param_dim}"
+                   for param_name, param_dim in param_dims.items()))
+    (_distance_kernels
+     .setdefault(metric_name, dict())
+     .setdefault(backend, dict())
+     .setdefault(signature_spec, dict())
+     .setdefault(out_type_code, dict())
+     .setdefault(in_type_code, dict())
+     )[metric_dim] = (func, tuple(param_dims))
 
 
-def _get_expected_signature(metric_shape: _ShapeCode, num_extra: int) -> str:
+def _get_expected_signature(metric_dim: _DimCode, num_extra: int) -> str:
     """Return the expected signature (in LowLevelCallable format) for the
     given metric specification."""
 
@@ -3273,18 +3343,18 @@ def _get_expected_signature(metric_shape: _ShapeCode, num_extra: int) -> str:
         scalar_sig = "int (void *, void *, size_t, void *)"
         vector_sig = "int (void *, void *, size_t, size_t, void *)"
         matrix_sig = "int (void *, void *, size_t, size_t, size_t, void *)"
-        sig = {"s": scalar_sig, "v": vector_sig, "m": matrix_sig}[metric_shape]
+        sig = {"s": scalar_sig, "v": vector_sig, "m": matrix_sig}[metric_dim]
         return sig
 
     scalar_sig = "int (void *, ssize_t *, void *, ssize_t *, size_t, void *)"
     vector_sig = "int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, void *, ssize_t *)"
     matrix_sig = "int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, size_t, void *, ssize_t *)"
-    sig = {"s": scalar_sig, "v": vector_sig, "m": matrix_sig}[metric_shape]
+    sig = {"s": scalar_sig, "v": vector_sig, "m": matrix_sig}[metric_dim]
     extra_sig = ', void *, ssize_t *' * num_extra
     return f"{sig[:-1]}{extra_sig}{sig[-1]}"
 
 
-def _new_cdist(metric: str, x, y, *, out=None, **kwargs):
+def _new_cdist(metric: str, x, y, *, out=None, backend=None, **kwargs):
     """Call distance computation kernel"""
 
     # Validate metric name.
@@ -3310,10 +3380,10 @@ def _new_cdist(metric: str, x, y, *, out=None, **kwargs):
         name: np.asarray(value) for name, value in kwargs.items()
     }
     for name, value in extra_args.items():
-        # if name in ('x', 'y', 'out', 'XA', 'XB'):
-        #     raise ValueError(f"kwarg '{name}' cannot use a reserved name")
         if ':' in name or '.' in name:
             raise ValueError(f"kwarg '{name}' cannot contain a colon or a dot")
+        if name in _reserved_param_names:
+            raise ValueError(f"kwarg '{name}' cannot use a reserved name")
         if value.ndim not in (0, 1, 2):
             raise ValueError(f"kwarg '{name}' must be a scalar, a vector, "
                              f"or a 2-D array")
@@ -3383,41 +3453,66 @@ def _new_cdist(metric: str, x, y, *, out=None, **kwargs):
     # Now we've validated all arguments. Proceed to locate a kernel.
     # TODO: allow different but "compatible" kernels to be used.
 
-    # Generate the "metric key" used to locate a distance computation kernel.
-    # Example: 'cosine.m', 'euclidean.m:', 'minkowski.m:w.m:p.s'
-    canonical_metric_key = f"{metric}.m" + ''.join(sorted(
-        f":{name}.{'svm'[value.ndim]}" for name, value in extra_args.items()
-    ))
-    if ':' not in canonical_metric_key:
-        if any(_is_strided(a) for a in [x, y, out, *extra_args.values()]):
-            canonical_metric_key += ':'
+    # Generate the "signature spec", e.g. '', ':', ':w.m', ':p.s:w.m'
+    if extra_args:
+        signature_spec = ':' + ':'.join(sorted(
+            f":{name}.{'svm'[value.ndim]}" for name, value in extra_args.items()
+        ))
+    elif any(_is_strided(a) for a in [x, y, out]):
+        signature_spec = ':'
+    else:
+        signature_spec = ''
 
-    # Generate the "canonical dtype key".
-    input_dtype_code = _dtype_code(input_dtype)
-    output_dtype_code = _dtype_code(output_dtype)
-    canonical_dtype_key = f"{input_dtype_code}->{output_dtype_code}"
+    # Generate the "dtype spec", e.g. 'f32', 'f64'
+    input_dtype_spec = _get_dtype_spec(input_dtype)
+    output_dtype_spec = _get_dtype_spec(output_dtype)
 
-    # Lookup the most suitable kernel.
-    kernel_key = f"{canonical_metric_key}:{canonical_dtype_key}"
-    kernel_list = _distance_kernels.get(kernel_key)
-    if not kernel_list:
-        raise RuntimeError(f"no distance computation kernel available "
-                           f"to handle {kernel_key}")
-    func, param_names = kernel_list[0]
+    # TODO: support backend priority list, e.g. "simd,scipy", "*", "simd,*"
+    if backend is None:
+        backends = ['scipy']
+    else:
+        backends = [backend]
 
-    # Invoke the kernel through C code.  Because the kernel func may not
-    # expect additional arguments in canonical order (i.e. sorted by name),
-    # to make the calling convention clear.
+    for backend_candidate in backends:
+        candidates = (_distance_kernels.get(metric, dict())
+                      .get(backend_candidate, dict())
+                      .get(signature_spec, dict())
+                      .get(output_dtype_spec, dict())
+                      .get(input_dtype_spec, dict()))
+        if "m" in candidates:
+            func, param_names = candidates["m"]
+            break
+    else:
+        raise RuntimeError(f"no distance computation kernel is available "
+                           f"to handle the request ({metric=}, {backend=}, "
+                           f"{signature_spec=}, {output_dtype_spec=}, "
+                           f"{input_dtype_spec=}")
+
+    # Invoke the kernel through C code.  Make sure to pass any additional
+    # parameters in the order expected by the kernel.
+    param_values = [extra_args[param_name] for param_name in param_names]
+    use_extended_interface = ':' in signature_spec
+    if not use_extended_interface:
+        rc = _distance_pybind.call_DistanceMatrix(func, x, y, out)
+    elif len(param_values) == 0:
+        rc = _distance_pybind.call_DistanceMatrix0(func, x, y, out)
+    else:
+        raise NotImplementedError("")
+    if rc != 0:
+        raise RuntimeError(f"distance computation kernel failed with code {rc}")
 
 
-
-def _dtype_code(t: np.dtype) -> str:
+def _get_dtype_spec(t: np.dtype) -> _DTypeSpec:
     # An exhaustive list of possible type codes can be found by np.typecodes()
     if not t.isnative:
         raise ValueError(f"'{t}' is not in native byte order")
-    if t.char in 'efdg':
-        return t.char
-    raise ValueError(f"'{t}' is of unexpected type")
+    specs = {
+        'f': 'f32', 'g': 'f64',
+    }
+    if t.char in specs:
+        return specs[t.char]
+    else:
+        raise ValueError(f"'{t}' is of unexpected type")
 
 
 def _is_strided(a: np.ndarray) -> bool:
