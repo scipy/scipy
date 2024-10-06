@@ -601,7 +601,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
         self._orig_b = b
 
         # (-oo, oo) will be mapped to (-1, 1).
-        self._double_inf_pos = xp.nonzero((a == -math.inf) & (b == math.inf))[0]
+        self._double_inf_pos = (a == -math.inf) & (b == math.inf)
 
         # (start, oo) will be mapped to (0, 1).
         start_inf_mask = (a != -math.inf) & (b == math.inf)
@@ -610,7 +610,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
         inf_end_mask = (a == -math.inf) & (b != math.inf)
         # This is handled by making the transformation t = -x and reducing it to
         # the other semi-infinite case.
-        self._semi_inf_pos = xp.nonzero(start_inf_mask | inf_end_mask)[0]
+        self._semi_inf_pos = start_inf_mask | inf_end_mask
 
         # Since we flip the limits, we don't need to separately multiply the
         # integrand by -1.
@@ -622,13 +622,11 @@ class _InfiniteLimitsTransform(_VariableTransform):
         a = xp_copy(self._orig_a)
         b = xp_copy(self._orig_b)
 
-        for index in self._double_inf_pos:
-            a[index] = -1
-            b[index] = 1
+        a[self._double_inf_pos] = -1
+        b[self._double_inf_pos] = 1
 
-        for index in self._semi_inf_pos:
-            a[index] = 0
-            b[index] = 1
+        a[self._semi_inf_pos] = 0
+        b[self._semi_inf_pos] = 1
 
         return a, b
 
@@ -636,7 +634,8 @@ class _InfiniteLimitsTransform(_VariableTransform):
     def points(self):
         # If there are infinite limits, then the origin becomes a problematic point
         # due to a division by zero there.
-        if xp_size(self._double_inf_pos) != 0 or xp_size(self._semi_inf_pos) != 0:
+        if (self._xp.sum(self._double_inf_pos) != 0
+            or self._xp.sum(self._semi_inf_pos) != 0):
             return [self._xp.zeros(self._orig_a.shape)]
         else:
             return []
@@ -644,29 +643,31 @@ class _InfiniteLimitsTransform(_VariableTransform):
     def inv(self, x):
         t = xp_copy(x)
 
-        for i in self._double_inf_pos:
-            t[..., i] = 1/(x[..., i] + self._xp.sign(x[..., i]))
+        t[:, self._double_inf_pos] = (1/(x[:, self._double_inf_pos]
+                                         + self._xp.sign(x[:, self._double_inf_pos])))
 
-        for i in self._semi_inf_pos:
-            t[..., i] = 1/(x[..., i] - self._orig_a[i] + 1)
+        t[:, self._semi_inf_pos] = 1/(x[:, self._semi_inf_pos]
+                                      - self._orig_a[self._semi_inf_pos] + 1)
 
         return t
 
     def __call__(self, t, *args, **kwargs):
         x = xp_copy(t)
-        jacobian = 1.0
 
-        for i in self._double_inf_pos:
-            # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
-            x[..., i] = (1 - self._xp.abs(t[..., i])) / t[..., i]
-            jacobian *= 1/(t[..., i] ** 2)
+        # For (-oo, oo) -> (-1, 1), use the transformation x = (1-|t|)/t.
+        x[:, self._double_inf_pos] = ((1 - self._xp.abs(t[:, self._double_inf_pos]))
+                                      / t[:, self._double_inf_pos])
 
-        for i in self._semi_inf_pos:
-            # For (start, oo) -> (0, 1), use the transformation x = start + (1-t)/t.
-            x[..., i] = self._orig_a[i] + (1 - t[..., i]) / t[..., i]
-            jacobian *= 1/(t[..., i] ** 2)
+        # For (start, oo) -> (0, 1), use the transformation x = start + (1-t)/t.
+        x[:, self._semi_inf_pos] = (self._orig_a[self._semi_inf_pos]
+                                    + (1 - t[:, self._semi_inf_pos])
+                                    / t[:, self._semi_inf_pos])
+
+        jacobian_det = self._xp.prod(
+            1/(t[:, self._double_inf_pos | self._semi_inf_pos] ** 2)
+        )
 
         f_x = self._f(x, *args, **kwargs)
-        jacobian = self._xp.reshape(jacobian, (-1, *([1]*(len(f_x.shape)-1))))
+        jacobian_det = self._xp.reshape(jacobian_det, (-1, *([1]*(len(f_x.shape) - 1))))
 
-        return f_x * jacobian
+        return f_x * jacobian_det
