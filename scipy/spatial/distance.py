@@ -68,6 +68,14 @@ computing the distances between all pairs.
    yule             -- the Yule dissimilarity.
 
 :func:`hamming` also operates over discrete numerical vectors.
+
+Functions for manipulating distance computation kernels.
+
+.. autosummary::
+   :toctree: generated/
+
+   add_distance_kernel -- register a distance computation kernel function
+
 """
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
@@ -3152,19 +3160,6 @@ _reserved_param_names = {'x', 'y', 'XA', 'XB', 'out', 'backend'}
 _identifier_re = re.compile("[A-Za-z_][A-Za-z0-9]*")
 
 
-# def add_distance_backend(backend_name: str) -> int:
-#     # This function is not thread safe and should not be called at the same
-#     # time when other distance functions are being called
-#     global _distance_backend_count
-#
-#     if not isinstance(backend_name, str):
-#         raise TypeError("name must be a str")
-#     backend_id = _distance_backend_count
-#     _distance_backend_count += 1
-#     _distance_backend_names[backend_id] = backend_name
-#     return backend_id
-
-
 # def remove_distance_backend(backend_id: int) -> None:
 #     # This function is not thread safe and should not be called at the same
 #     # time when other distance functions are being called
@@ -3181,69 +3176,185 @@ _identifier_re = re.compile("[A-Za-z_][A-Za-z0-9]*")
 
 
 def add_distance_kernel(
-    metric_spec: str, dtype_spec: str, func: LowLevelCallable, backend: str
+    metric_spec: str, dtype_spec: str, kernel: LowLevelCallable, backend: str
 ):
-    """Register a distance computation kernel.
+    r"""Register a distance computation kernel function.
 
-    metric_spec: str
-      specifies the metric name, dimension, stridedness, and additional parameters.
+    Parameters
+    ----------
+    metric_spec : str
+        Specifies the metric name, dimension, striding, and additional
+        parameters that the kernel supports.  The format is described
+        by the following BNF notation:
 
-      metric_spec := metric_name "." metric_dim
-                   | metric_name "." metric_dim ":"
-                   | metric_name "." metric_dim ( ":" param_name "." param_dim )+
-      metric_name := IDENTIFIER
-      metric_dim  := DIM
-      param_name  := IDENTIFIER, except any of the reserved param names.
-                     The same param_name cannot appear more than once.
-      param_dim   := DIM
-      IDENTIFIER  := [A-Za-z_][A-Za-z0-9_]*
-      DIM         := [svm]
+        .. code:: bnf
 
-      Examples: 'cosine.v', 'euclidean.v:', 'chevyshev.m:w.m', 'minkowski.m:w.m:p.s'
+           metric_spec ::= metric_name "." metric_dim
+                         | metric_name "." metric_dim ":"
+                         | metric_name "." metric_dim ":" param_spec
+                         | metric_name "." metric_dim ":" param_spec ":" param_spec
+           metric_name ::= IDENTIFIER
+           metric_dim  ::= DIM
+           param_spec  ::= param_name "." param_dim
+           param_name  ::= IDENTIFIER
+           param_dim   ::= DIM
+           IDENTIFIER  ::= [A-Za-z_][A-Za-z0-9_]*
+           DIM         ::= "s" | "v" | "m"
 
-      The current implementation supports up to two additional parameters.
+        Examples:
 
-    dtype_spec: str
-      Specifies the input dtype and output dtype.
+        - ``'cosine.s'`` declares a kernel to compute the distance between
+          two vectors.
 
-      The kernel is guaranteed to be called with x and y having the input dtype
-      and out and all additional arguments having the output dtype.
+        - ``'euclidean.v:'`` declares a kernel to compute the distance
+          vector between two matrices of the same shape.  The input and
+          output may be strided.
 
-      dtype_key := inout_dtype_code
-                 | in_dtype_code "->" out_dtype_code
-      inout_dtype_code, in_dtype_code, out_dtype_code := DTYPE_CODE
-      DTYPE_CODE := "f16" | "f32" | "f64", all are (supposed to be) IEEE format
+        - ``'mahalanobis.m:w.m'`` declares a kernel to compute the distance
+          matrix between two matrices, taking an additional matrix-valued
+          parameter ``w``.
 
-      TODO: support non-floating point types
+        - ``'minkowski.m:w.v:p.s'`` declares a kernel to compute the distance
+          matrix between two matrices, taking two additional parameters:
+          vector parameter ``w`` and scalar parameter ``p``.
 
-    func: a LowLevelCallable, such that
-      f.function wraps an C function pointer. Python function is *NOT* supported.
-      f.user_data is *NOT* used
-      f.signature: MUST match the following *exactly*:
+        The current implementation supports up to two additional parameters.
 
-        - if metric_spec does not contain a ':', then
-          - if metric_dim is "s":
-            "int (void *, void *, size_t, void *)"
-          - if metric_dim is "v":
-            "int (void *, void *, size_t, size_t, void *)"
-          - if metric_dim is "m":
-            "int (void *, void *, size_t, size_t, size_t, void *)"
+    dtype_spec : str
+        Specifies the input dtype and output dtype that the kernel supports.
 
-        - if metric_spec contains a ':', then:
-          - if metric_dim is "s":
-            "int (void *, ssize_t *, void *, ssize_t *, size_t, void *" extra_arg_list ")"
-          - if metric_dim is "v":
-            "int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, void *, ssize_t *" extra_arg_list ")"
-          - if metric_dim is "m":
-            "int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, size_t, void *, ssize_t *" extra_arg_list ")"
-          where extra_arg_list := ", void *, ssize_t *"*N
-          where N is the number of additional arguments.
+        .. code:: bnf
 
-    backend: str, IDENTIFIER, case *insensitive*, cannot be "SciPy"
-      An identifier use to identify the backend
+           dtype_spec   ::= inout_dtype
+                          | input_dtype "->" output_dtype
+           inout_dtype  ::= DTYPE_CODE
+           input_dtype  ::= DTYPE_CODE
+           output_dtype ::= DTYPE_CODE
+           DTYPE_CODE   ::= "f32"  ; IEEE 754-2008 'binary32' format
+                          | "f64"  ; IEEE 754-2008 'binary64' format
+
+           TODO: support non-floating point types
+
+        The kernel is guaranteed to be called with `x` and `y` having
+        `input_dtype` and `out` and additional arguments having `output_dtype`.
+
+    kernel : scipy.LowLevelCallable
+        Distance computation kernel function and signature.
+        `kernel.function` must wrap a C function pointer to the distance
+        computation kernel; Python function is *NOT* supported.
+        `kernel.user_data` is ignored.  `kernel.signature` must match the
+        following *exactly*:
+
+        - if `metric_spec` does not contain a ``':'``, then
+
+          - if `metric_dim` is ``'s'``:
+
+            ``"int (void *, void *, size_t, void *)"``
+
+            The kernel is called with ``(x, y, n, out)`` where `x` and `y`
+            are `n`-vectors of `input_dtype` and `out` is a scalar of
+            `output_dtype`.
+
+          - if `metric_dim` is ``'v'``:
+
+            ``"int (void *, void *, size_t, size_t, void *)"``
+
+            The kernel is called with ``(x, y, n, m, out)`` where `x` and `y`
+            are `m`-by-`n` matrices of `input_dtype` and `out` is an `m`-vector
+            of `output_dtype`.
+
+          - if `metric_dim` is ``'m'``:
+
+            ``"int (void *, void *, size_t, size_t, size_t, void *)"``
+
+            The kernel is called with ``(x, y, n, mx, my, out)`` where `x` is
+            an `mx`-by-`n` matrix and `y` is an `my`-by-`n` matrix, both of
+            `input_dtype`, and `out` is an `mx`-by-`my` matrix of
+            `output_dtype`.
+
+        - if `metric_spec` contains a ``':'``, then
+
+          - if `metric_dim` is ``'s'``:
+
+            ``"int (void *, ssize_t *, void *, ssize_t *, size_t, void *"
+            + PARAM_LIST + ")"``
+
+            The kernel is called with ``(x, xs, y, ys, n, out, outs, ARGS)``
+            where `x`, `y`, `n` and `out` are defined above, and `xs` and `ys`
+            are length-one arrays containing the stride of `x` and `y`,
+            respectively.
+
+          - if `metric_dim` is ``'v'``:
+
+            ``"int (void *, ssize_t *, void *, ssize_t *, size_t, size_t,
+            void *, ssize_t *" + PARAM_LIST + ")"``
+
+            The kernel is called with ``(x, xs, y, ys, n, m, out, outs, ARGS)``
+            where `x`, `y`, `n`, `m`, and `out` are defined above, `xs` and
+            `ys` are length-two arrays containing the stride of `x` and `y`,
+            respectively, and `outs` is a length-one array containing the
+            stride of `out`.
+
+          - if `metric_dim` is ``'m'``:
+
+            ``"int (void *, ssize_t *, void *, ssize_t *, size_t, size_t,
+            size_t, void *, ssize_t *" + PARAM_LIST + ")"``
+
+            The kernel is called with ``(x, xs, y, ys, n, mx, my, out, outs, ARGS)``
+            where `x`, `y`, `n`, `mx`, `my` and `out` are defined above, and
+            `xs`, `ys` and `outs` are length-two arrays containing the stride
+            of `x`, `y` and `out` respectively.
+
+          In the above, ``PARAM_LIST = ", void *, ssize_t *" * N``
+          where ``0 <= N <= 2`` is the number of additional parameters.
+          ``ARGS`` is either empty or one of ``arg1, str1`` or
+          ``arg1, str1, arg2, str2``, where `argK` is a scalar, vector, or
+          matrix, and `strK` contains the corresponding strides stored in
+          a length-0, length-1 or length-2 array.
+
+        All matrices are stored in row-major order.  The kernel is guaranteed
+        to be called such that any element of `out` does not overlap with
+        any element of `x`, `y`, or an additional argument in memory, and
+        no two elements in `out` overlap in memory.
+
+    backend : str
+        Name of the backend.  Must be an IDENTIFIER.  The default backend
+        has the name ``"scipy"``.
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This function is not thread-safe and should not be called at the same
+    time as other distance functions.
+
+    If a kernel is already registered with the given `metric_spec`,
+    `dtype_spec`, and `backend`, possibly with different ordering of
+    additional parameters, it is replaced with `kernel`.
+
+    The added kernel may be used if the backend is selected either via
+    an explicit ``backend`` argument of a distance function or via the
+    ``select_backend()`` function. (TODO: link select_backend)
+
+    Examples
+    --------
+
+    The following example illustrates the steps needed from Python code to
+    add a distance computation kernel and call it from ``cdist``.  It assumes
+    that a capsule wrapping a C function pointer of the appropriate signature
+    is already exported.
+
+    >>> import scipy
+    >>> import scipy.spatial.distance as sd
+    >>> capsule = sd._distance_wrap.cosine_DistanceMatrix_capsule()
+    >>> kernel = scipy.LowLevelCallable(capsule)
+    >>> sd.add_distance_kernel('cosine.m', 'f64', kernel, 'alt')
+    >>> sd.cdist([[1, 2, 3]], [[4, 5, 6]], 'new_cosine', backend='alt')
+    array([[0.02536815]])
+
     """
-    # This function is not thread safe and should not be called at the same
-    # time when other distance functions are being called
 
     # --------------------
     # Validate metric_spec
@@ -3285,7 +3396,7 @@ def add_distance_kernel(
     # -------------------
 
     if dtype_spec.count('->') >= 2:
-        raise f"dtype_spec can contain at most one '->'"
+        raise ValueError("dtype_spec can contain at most one '->'")
     if '->' in dtype_spec:
         in_type_code, out_type_code = dtype_spec.split('->')
     else:
@@ -3295,16 +3406,16 @@ def add_distance_kernel(
     if out_type_code not in ('f16', 'f32', 'f64'):
         raise ValueError("unsupported dtype_spec")
 
-    # -------------------------------
-    # Validate func and its signature
-    # -------------------------------
-    if not isinstance(func, LowLevelCallable):
-        raise TypeError(f"func must be of type LowLevelCallable")
+    # -------------------------
+    # Validate kernel signature
+    # -------------------------
+    if not isinstance(kernel, LowLevelCallable):
+        raise TypeError("kernel must be of type LowLevelCallable")
     expected_signature = _get_expected_signature(
         metric_dim, -1 if param_dims is None else len(param_dims))
-    if func.signature != expected_signature:
-        raise ValueError(f"func does not have the expected signature: "
-                         f"{expected_signature=} {func.signature=}")
+    if kernel.signature != expected_signature:
+        raise ValueError(f"kernel does not have the expected signature: "
+                         f"{expected_signature=} {kernel.signature=}")
 
     # ----------------
     # Validate backend
@@ -3329,7 +3440,7 @@ def add_distance_kernel(
      .setdefault(signature_spec, dict())
      .setdefault(out_type_code, dict())
      .setdefault(in_type_code, dict())
-     )[metric_dim] = (func, tuple(param_dims or ()))
+     )[metric_dim] = (kernel, tuple(param_dims or ()))
 
 
 def _get_expected_signature(metric_dim: _DimCode, num_extra: int) -> str:
@@ -3346,9 +3457,10 @@ def _get_expected_signature(metric_dim: _DimCode, num_extra: int) -> str:
         sig = {"s": scalar_sig, "v": vector_sig, "m": matrix_sig}[metric_dim]
         return sig
 
-    scalar_sig = "int (void *, ssize_t *, void *, ssize_t *, size_t, void *)"
-    vector_sig = "int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, void *, ssize_t *)"
-    matrix_sig = "int (void *, ssize_t *, void *, ssize_t *, size_t, size_t, size_t, void *, ssize_t *)"
+    xyn_sig = "void *, ssize_t *, void *, ssize_t *, size_t"
+    scalar_sig = f"int ({xyn_sig}, void *)"
+    vector_sig = f"int ({xyn_sig}, size_t, void *, ssize_t *)"
+    matrix_sig = f"int ({xyn_sig}, size_t, size_t, void *, ssize_t *)"
     sig = {"s": scalar_sig, "v": vector_sig, "m": matrix_sig}[metric_dim]
     extra_sig = ', void *, ssize_t *' * num_extra
     return f"{sig[:-1]}{extra_sig}{sig[-1]}"
@@ -3480,9 +3592,10 @@ def _new_cdist(metric: str, x, y, *, out=None, backend=None, **kwargs):
                       .get(output_dtype_spec, dict())
                       .get(input_dtype_spec, dict()))
         if "m" in candidates:
-            func, param_names = candidates["m"]
+            kernel, param_names = candidates["m"]
             break
     else:
+        # TODO: support e.g. computing distance matrix using DistanceScalar
         raise RuntimeError(f"no distance computation kernel is available "
                            f"to handle the request ({metric=}, {backend=}, "
                            f"{signature_spec=}, {output_dtype_spec=}, "
@@ -3493,9 +3606,9 @@ def _new_cdist(metric: str, x, y, *, out=None, backend=None, **kwargs):
     param_values = [extra_args[param_name] for param_name in param_names]
     use_extended_interface = ':' in signature_spec
     if not use_extended_interface:
-        rc = _distance_wrap.call_DistanceMatrix(func, x, y, out)
+        rc = _distance_wrap.call_DistanceMatrix(kernel, x, y, out)
     elif len(param_values) == 0:
-        rc = _distance_wrap.call_DistanceMatrix0(func, x, y, out)
+        rc = _distance_wrap.call_DistanceMatrix0(kernel, x, y, out)
     else:
         raise NotImplementedError("")
     if rc != 0:
@@ -3530,14 +3643,14 @@ def _is_element_stride(a: np.ndarray) -> bool:
 
 
 def _has_self_overlap(a: np.ndarray) -> bool:
-    """Returns true if there exists two elements in 'a' with different
-    indices whose memory location overlap."""
+    """Returns True if there exists two elements of `a` with different
+    indices that overlap in memory."""
     # TODO: implement this
     return False
 
 
 def _has_overlap(a: np.ndarray, b: np.ndarray) -> bool:
-    """Returns True if an element in 'a' has its memory location overlapping
-    with an element in 'b'."""
+    """Returns True if an element of 'a' overlaps with an element of `b`
+    in memory."""
     # TODO: implement this
     return False
