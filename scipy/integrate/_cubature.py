@@ -600,31 +600,22 @@ class _InfiniteLimitsTransform(_VariableTransform):
         self._orig_a = a
         self._orig_b = b
 
-        self._semi_inf_pos = []
-        self._double_inf_pos = []
+        # (-oo, oo) will be mapped to (-1, 1).
+        self._double_inf_pos = xp.nonzero((a == -math.inf) & (b == math.inf))[0]
 
-        ndim = xp_size(a)
+        # (start, oo) will be mapped to (0, 1).
+        start_inf_mask = (a != -math.inf) & (b == math.inf)
 
-        for i in range(ndim):
-            if a[i] == -math.inf and b[i] == math.inf:
-                # (-oo, oo) will be mapped to (-1, 1).
-                self._double_inf_pos.append(i)
+        # (-oo, end) will be mapped to (0, 1).
+        inf_end_mask = (a == -math.inf) & (b != math.inf)
+        # This is handled by making the transformation t = -x and reducing it to
+        # the other semi-infinite case.
+        self._semi_inf_pos = xp.nonzero(start_inf_mask | inf_end_mask)[0]
 
-            elif a[i] != -math.inf and b[i] == math.inf:
-                # (start, oo) will be mapped to (0, 1).
-                self._semi_inf_pos.append(i)
-
-            elif a[i] == -math.inf and b[i] != math.inf:
-                # (-oo, end) will be mapped to (0, 1).
-                #
-                # This is handled by making the transformation t = -x and reducing it to
-                # the other semi-infinite case.
-                self._semi_inf_pos.append(i)
-
-                # Since we flip the limits, we don't need to separately multiply the
-                # integrand by -1.
-                self._orig_a[i] = -b[i]
-                self._orig_b[i] = -a[i]
+        # Since we flip the limits, we don't need to separately multiply the
+        # integrand by -1.
+        self._orig_a[inf_end_mask] = -b[inf_end_mask]
+        self._orig_b[inf_end_mask] = -a[inf_end_mask]
 
     @property
     def transformed_limits(self):
@@ -645,7 +636,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
     def points(self):
         # If there are infinite limits, then the origin becomes a problematic point
         # due to a division by zero there.
-        if len(self._double_inf_pos) != 0 or len(self._semi_inf_pos) != 0:
+        if xp_size(self._double_inf_pos) != 0 or xp_size(self._semi_inf_pos) != 0:
             return [self._xp.zeros(self._orig_a.shape)]
         else:
             return []
