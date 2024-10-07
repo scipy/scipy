@@ -2,7 +2,7 @@
 """
 
 import sys
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Union
 import operator
 import numpy as np
 from math import prod
@@ -241,15 +241,16 @@ def isintlike(x) -> bool:
     return True
 
 
-def isshape(x, nonneg=False, *, allow_1d=False) -> bool:
+def isshape(x, nonneg=False, *, allow_nd=(2,)) -> bool:
     """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
-    If allow_1d, shapes of length 1 or 2 are allowed.
+    Shapes of length in the tuple allow_nd are allowed.
     """
     ndim = len(x)
-    if ndim != 2 and not (allow_1d and ndim == 1):
+    if ndim not in allow_nd:
         return False
+
     for d in x:
         if not isintlike(d):
             return False
@@ -259,13 +260,13 @@ def isshape(x, nonneg=False, *, allow_1d=False) -> bool:
 
 
 def issequence(t) -> bool:
-    return ((isinstance(t, (list, tuple)) and
+    return ((isinstance(t, list | tuple) and
             (len(t) == 0 or np.isscalar(t[0]))) or
             (isinstance(t, np.ndarray) and (t.ndim == 1)))
 
 
 def ismatrix(t) -> bool:
-    return ((isinstance(t, (list, tuple)) and
+    return ((isinstance(t, list | tuple) and
              len(t) > 0 and issequence(t[0])) or
             (isinstance(t, np.ndarray) and t.ndim == 2))
 
@@ -297,7 +298,7 @@ def validateaxis(axis) -> None:
         raise ValueError("axis out of range")
 
 
-def check_shape(args, current_shape=None, *, allow_1d=False) -> tuple[int, ...]:
+def check_shape(args, current_shape=None, *, allow_nd=(2,)) -> tuple[int, ...]:
     """Imitate numpy.matrix handling of shape arguments
 
     Parameters
@@ -307,10 +308,8 @@ def check_shape(args, current_shape=None, *, allow_1d=False) -> tuple[int, ...]:
     current_shape : tuple, optional
         The current shape of the sparse array or matrix.
         If None (default), the current shape will be inferred from args.
-    allow_1d : bool, optional
-        If True, then 1-D or 2-D arrays are accepted.
-        If False (default), then only 2-D arrays are accepted and an error is
-        raised otherwise.
+    allow_nd : tuple of ints, optional default: (2,)
+        If shape does not have a length in the tuple allow_nd an error is raised.
 
     Returns
     -------
@@ -318,8 +317,7 @@ def check_shape(args, current_shape=None, *, allow_1d=False) -> tuple[int, ...]:
         The new shape after validation.
     """
     if len(args) == 0:
-        raise TypeError("function missing 1 required positional argument: "
-                        "'shape'")
+        raise TypeError("function missing 1 required positional argument: 'shape'")
     if len(args) == 1:
         try:
             shape_iter = iter(args[0])
@@ -331,12 +329,8 @@ def check_shape(args, current_shape=None, *, allow_1d=False) -> tuple[int, ...]:
         new_shape = tuple(operator.index(arg) for arg in args)
 
     if current_shape is None:
-        if allow_1d:
-            if len(new_shape) not in (1, 2):
-                raise ValueError('shape must be a 1- or 2-tuple of positive '
-                                 'integers')
-        elif len(new_shape) != 2:
-            raise ValueError('shape must be a 2-tuple of positive integers')
+        if len(new_shape) not in allow_nd:
+            raise ValueError(f'shape must have length in {allow_nd}. Got {new_shape=}')
         if any(d < 0 for d in new_shape):
             raise ValueError("'shape' elements cannot be negative")
     else:
@@ -362,8 +356,8 @@ def check_shape(args, current_shape=None, *, allow_1d=False) -> tuple[int, ...]:
         else:
             raise ValueError('can only specify one unknown dimension')
 
-    if len(new_shape) != 2 and not (allow_1d and len(new_shape) == 1):
-        raise ValueError('matrix shape must be two-dimensional')
+    if len(new_shape) not in allow_nd:
+        raise ValueError(f'shape must have length in {allow_nd}. Got {new_shape=}')
 
     return new_shape
 
@@ -395,7 +389,7 @@ def is_pydata_spmatrix(m) -> bool:
 
 def convert_pydata_sparse_to_scipy(
     arg: Any,
-    target_format: Optional[Literal["csc", "csr"]] = None,
+    target_format: None | Literal["csc", "csr"] = None,
     accept_fv: Any = None,
 ) -> Union[Any, "sp.spmatrix"]:
     """

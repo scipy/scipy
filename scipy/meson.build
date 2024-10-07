@@ -1,3 +1,5 @@
+fs = import('fs')
+
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
 if is_mingw and ff.get_id() != 'gcc'
@@ -83,7 +85,7 @@ fortranobject_c = incdir_f2py / 'fortranobject.c'
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.12.0')
+pybind11_dep = dependency('pybind11', version: '>=2.13.1')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -162,6 +164,8 @@ endif
 # 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
 # 2. targets with #include's (due to no `depend_files` - see feature request
 #    at meson#8295)
+# TODO: add argument to mark extension modules as safe to run without the GIL,
+#       once f2py supports that (see numpy#26157).
 f2py_gen = generator(generate_f2pymod,
   arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
@@ -277,18 +281,26 @@ endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
 
-version_utils = find_program('../tools/version_utils.py')
-generate_version = custom_target(
-  'generate-version',
-  install: true,
-  build_always_stale: true,
-  build_by_default: true,
-  output: 'version.py',
-  input: '../tools/version_utils.py',
-  command: [version_utils, '--source-root', '@SOURCE_ROOT@'],
-  install_dir: scipy_dir,
-  install_tag: 'python-runtime',
+# Generate version.py for sdist
+meson.add_dist_script(
+   ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py']
 )
+if not fs.exists('version.py')
+  generate_version = custom_target(
+    'generate-version',
+    install: true,
+    build_always_stale: true,
+    build_by_default: true,
+    output: 'version.py',
+    input: '../tools/gitversion.py',
+    command: ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py'],
+    install_dir: scipy_dir,
+    install_tag: 'python-runtime',
+  )
+else
+  # When building from sdist, version.py exists and should be included
+  py3.install_sources(['version.py'], subdir : 'scipy')
+endif
 
 python_sources = [
   '__init__.py',
@@ -299,7 +311,6 @@ python_sources = [
   'special.pxd',
 ]
 
-fs = import('fs')
 if fs.exists('_distributor_init_local.py')
   python_sources += ['_distributor_init_local.py']
 endif
@@ -320,6 +331,9 @@ _cython_tree = [
 ]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+if cy.version().version_compare('>=3.1.0')
+  cython_args += ['-Xfreethreading_compatible=True']
+endif
 cython_cplus_args = ['--cplus'] + cython_args
 
 cython_gen = generator(cython,
@@ -333,6 +347,8 @@ cython_gen_cpp = generator(cython,
   depends : [_cython_tree])
 
 if use_pythran
+  # TODO: add argument to mark extension modules as safe to run without the GIL,
+  #       once pythran supports that.
   pythran_gen = generator(pythran,
     arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
     output : '@BASENAME@.cpp',

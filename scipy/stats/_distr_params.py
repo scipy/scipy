@@ -67,6 +67,7 @@ distcont = [
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
     ['kstwo', (10,)],
     ['kstwobign', ()],
+    ['landau', ()],
     ['laplace', ()],
     ['laplace_asymmetric', (2,)],
     ['levy', ()],
@@ -141,6 +142,7 @@ distdiscrete = [
     ['nbinom', (5, 0.5)],
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
+    ['poisson_binom', ([0.1, 0.6, 0.7, 0.8],)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
     ['zipf', (6.6,)],
@@ -168,6 +170,7 @@ invdistdiscrete = [
     ['nbinom', (10, 1.5)],
     ['planck', (-0.5, )],
     ['poisson', (-0.5, )],
+    ['poisson_binom', ([-1, 2, 0.5],)],
     ['randint', (5, 2)],
     ['skellam', (-5, -2)],
     ['zipf', (-2, )],
@@ -238,6 +241,7 @@ invdistcont = [
     ['ksone', (-1, )],
     ['kstwo', (-1, )],
     ['kstwobign', ()],
+    ['landau', ()],
     ['laplace', ()],
     ['laplace_asymmetric', (-1, )],
     ['levy', ()],

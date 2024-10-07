@@ -185,7 +185,11 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
     Notes
     -----
-    Requires Matplotlib.
+    Requires Matplotlib. For degenerate input, including collinearity and
+    other violations of general position, it may be preferable to
+    calculate the Voronoi diagram with Qhull options ``QJ`` for random
+    joggling, or ``Qt`` to enforce triangulated output. Otherwise, some
+    Voronoi regions may not be visible.
 
     Examples
     --------

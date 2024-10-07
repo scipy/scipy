@@ -1,8 +1,7 @@
 # pylint: disable=missing-docstring
 import numpy as np
-from numpy import array
-from numpy.testing import assert_allclose, assert_raises
 import pytest
+from scipy._lib._array_api import xp_assert_close
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
@@ -52,20 +51,20 @@ class TestSymIIR:
 
         # Create a step signal of size n + 1
         x = np.ones(n_exp + 1, dtype=dtype)
-        assert_allclose(symiirorder1_ic(x, b, precision), expected,
+        xp_assert_close(symiirorder1_ic(x, b, precision), expected,
                         atol=2e-6, rtol=2e-7)
 
         # Check the conditions for a exponential decreasing signal with base 2.
         # Same conditions hold, as the product of 0.5^n * 0.85^n is
         # still a geometric series
-        b_d = array(b, dtype=dtype)
+        b_d = np.asarray(b, dtype=dtype)
         expected = np.asarray(
             [[(1 - (0.5 * b_d) ** n_exp) / (1 - (0.5 * b_d))]], dtype=dtype)
         expected = 1 + b_d * expected
 
         # Create an exponential decreasing signal of size n + 1
         x = 2 ** -np.arange(n_exp + 1, dtype=dtype)
-        assert_allclose(symiirorder1_ic(x, b, precision), expected,
+        xp_assert_close(symiirorder1_ic(x, b, precision), expected,
                         atol=2e-6, rtol=2e-7)
 
     def test_symiir1_ic_fails(self):
@@ -76,11 +75,11 @@ class TestSymIIR:
 
         # Compute the closed form for the geometrical series
         precision = 1 / (1 - b)
-        assert_raises(ValueError, symiirorder1_ic, x, b, precision)
+        pytest.raises(ValueError, symiirorder1_ic, x, b, precision)
 
         # Test that symiirorder1_ic fails when |z1| >= 1
-        assert_raises(ValueError, symiirorder1_ic, x, 1.0, -1)
-        assert_raises(ValueError, symiirorder1_ic, x, 2.0, -1)
+        pytest.raises(ValueError, symiirorder1_ic, x, 1.0, -1)
+        pytest.raises(ValueError, symiirorder1_ic, x, 2.0, -1)
 
     @pytest.mark.parametrize(
         'dtype', [np.float32, np.float64, np.complex64, np.complex128])
@@ -149,32 +148,34 @@ class TestSymIIR:
         exp_out = exp_out[::-1]
 
         out = symiirorder1(signal, c0, z1, precision)
-        assert_allclose(out, exp_out, atol=4e-6, rtol=6e-7)
+        xp_assert_close(out, exp_out, atol=4e-6, rtol=6e-7)
 
-    @pytest.mark.parametrize('dtyp', [np.float32, np.float64])
-    def test_symiir1_values(self, dtyp):
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_symiir1_values(self, dtype):
         rng = np.random.RandomState(1234)
-        s = rng.uniform(size=16).astype(dtyp)
+        dtype = getattr(np, dtype)
+        s = rng.uniform(size=16).astype(dtype)
         res = symiirorder1(s, 0.5, 0.1)
 
         # values from scipy 1.9.1
         exp_res = np.array([0.14387447, 0.35166047, 0.29735238, 0.46295986, 0.45174927,
                             0.19982875, 0.20355805, 0.47378628, 0.57232247, 0.51597393,
                            0.25935107, 0.31438554, 0.41096728, 0.4190693 , 0.25812255,
-                           0.33671467])
-        assert res.dtype == dtyp
-        atol = {np.float64: 1e-15, np.float32: 1e-7}[dtyp]
-        assert_allclose(res, exp_res, atol=atol)
+                           0.33671467], dtype=res.dtype)
+        assert res.dtype == dtype
+        atol = {np.float64: 1e-15, np.float32: 1e-7}[dtype]
+        xp_assert_close(res, exp_res, atol=atol)
 
         s = s + 1j*s
         res = symiirorder1(s, 0.5, 0.1)
-        assert res.dtype == np.complex64 if dtyp == np.float32 else np.complex128
-        assert_allclose(res, exp_res + 1j*exp_res, atol=atol)
+        assert res.dtype == np.complex64 if dtype == np.float32 else np.complex128
+        xp_assert_close(res, exp_res + 1j*exp_res, atol=atol)
 
     @pytest.mark.parametrize(
-        'dtype', [np.float32, np.float64])
+        'dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
     def test_symiir2_initial_fwd(self, dtype, precision):
+        dtype = getattr(np, dtype)
         c_precision = precision
         if precision <= 0.0 or precision > 1.0:
             if dtype in {np.float32, np.complex64}:
@@ -229,12 +230,13 @@ class TestSymIIR:
              r**(n_exp + 4) * np.sin(omega * (n_exp + 3))) / np.sin(omega))
 
         expected = np.r_[fwd_initial_1, fwd_initial_2][None, :]
+        expected = expected.astype(dtype)
 
         n = 100
         signal = np.ones(n, dtype=dtype)
 
         out = symiirorder2_ic_fwd(signal, r, omega, precision)
-        assert_allclose(out, expected, atol=4e-6, rtol=6e-7)
+        xp_assert_close(out, expected, atol=4e-6, rtol=6e-7)
 
     @pytest.mark.parametrize(
         'dtype', [np.float32, np.float64])
@@ -282,7 +284,7 @@ class TestSymIIR:
         ic2[1] = ic2_1_all[pos[0]]
 
         out_ic = symiirorder2_ic_bwd(out, r, omega, precision)[0]
-        assert_allclose(out_ic, ic2, atol=4e-6, rtol=6e-7)
+        xp_assert_close(out_ic, ic2, atol=4e-6, rtol=6e-7)
 
     @pytest.mark.parametrize(
         'dtype', [np.float32, np.float64])
@@ -317,10 +319,11 @@ class TestSymIIR:
             exp[i] = cs * out1[i] + a2 * exp[i + 1] + a3 * exp[i + 2]
 
         out = symiirorder2(signal, r, omega, precision)
-        assert_allclose(out, exp, atol=4e-6, rtol=6e-7)
+        xp_assert_close(out, exp, atol=4e-6, rtol=6e-7)
 
-    @pytest.mark.parametrize('dtyp', [np.float32, np.float64])
+    @pytest.mark.parametrize('dtyp', ['float32', 'float64'])
     def test_symiir2_values(self, dtyp):
+        dtyp = getattr(np, dtyp)
         rng = np.random.RandomState(1234)
         s = rng.uniform(size=16).astype(dtyp)
         res = symiirorder2(s, 0.1, 0.1, precision=1e-10)
@@ -329,7 +332,7 @@ class TestSymIIR:
         exp_res = np.array([0.26572609, 0.53408018, 0.51032696, 0.72115829, 0.69486885,
            0.3649055 , 0.37349478, 0.74165032, 0.89718521, 0.80582483,
            0.46758053, 0.51898709, 0.65025605, 0.65394321, 0.45273595,
-           0.53539183])
+           0.53539183], dtype=dtyp)
 
         assert res.dtype == dtyp
         # The values in SciPy 1.14 agree with those in SciPy 1.9.1 to this
@@ -340,20 +343,20 @@ class TestSymIIR:
         # test_symiir2_initial_{fwd,bwd} above, so the difference is likely
         # due to a different way roundoff errors accumulate in the filter.
         # In that respect, sosfilt is likely doing a better job.
-        assert_allclose(res, exp_res, atol=2e-6)
+        xp_assert_close(res, exp_res, atol=2e-6)
 
         s = s + 1j*s
-        with assert_raises(TypeError):
+        with pytest.raises(TypeError):
             res = symiirorder2(s, 0.5, 0.1)
 
     def test_symiir1_integer_input(self):
         s = np.where(np.arange(100) % 2, -1, 1)
         expected = symiirorder1(s.astype(float), 0.5, 0.5)
         out = symiirorder1(s, 0.5, 0.5)
-        assert_allclose(out, expected)
+        xp_assert_close(out, expected)
 
     def test_symiir2_integer_input(self):
         s = np.where(np.arange(100) % 2, -1, 1)
         expected = symiirorder2(s.astype(float), 0.5, np.pi / 3.0)
         out = symiirorder2(s, 0.5, np.pi / 3.0)
-        assert_allclose(out, expected)
+        xp_assert_close(out, expected)

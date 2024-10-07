@@ -1,9 +1,6 @@
 """
 Unit tests for trust-region optimization routines.
 
-To run it in its simplest form::
-  nosetests test_optimize.py
-
 """
 import pytest
 import numpy as np

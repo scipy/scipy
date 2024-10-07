@@ -1344,7 +1344,7 @@ def sen_seasonal_slopes(x):
             For each season, the Theil-Sen slope estimator: the median of
             within-season slopes.
         inter_slope : float
-            The seasonal Kendall slope estimateor: the median of within-season
+            The seasonal Kendall slope estimator: the median of within-season
             slopes *across all* seasons.
 
     See Also
@@ -3193,7 +3193,7 @@ def normaltest(a, axis=0):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
+def mquantiles(a, prob=(.25, .5, .75), alphap=.4, betap=.4, axis=None,
                limit=()):
     """
     Computes empirical quantiles for a data array.
