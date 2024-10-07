@@ -664,7 +664,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
                                     / t[:, self._semi_inf_pos])
 
         jacobian_det = self._xp.prod(
-            1/(t[:, self._double_inf_pos | self._semi_inf_pos] ** 2)
+            1/(t[:, self._double_inf_pos | self._semi_inf_pos] ** 2, axis=-1)
         )
 
         f_x = self._f(x, *args, **kwargs)
