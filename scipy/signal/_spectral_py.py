@@ -122,7 +122,7 @@ def lombscargle(
            A new formalism for the floating-mean and Keplerian periodograms,"
            Astronomy and Astrophysics, vol. 496, pp. 577-584, 2009
 
-    .. [4] J.T. VanderPlas, “Understanding the Lomb-Scargle Periodogram,”
+    .. [4] J.T. VanderPlas, "Understanding the Lomb-Scargle Periodogram,"
            The Astrophysical Journal Supplement Series, vol. 236, no. 1, p. 16,
            May 2018, doi: 10.3847/1538-4365/aab766.
 
