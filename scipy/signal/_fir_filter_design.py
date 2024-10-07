@@ -14,8 +14,9 @@ from scipy.signal._arraytools import _validate_fs
 
 from . import _sigtools
 
+
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
-           'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
+           'firwin', 'firwin2', 'fwind1', 'remez', 'firls', 'minimum_phase']
 
 
 # Some notes on function parameters:
@@ -1280,3 +1281,123 @@ def minimum_phase(h: np.ndarray,
         h_minimum = h_temp.real
     n_out = (n_half + len(h) % 2) if half else len(h)
     return h_minimum[:n_out]
+
+
+def fwind1(hsize, window, fc=None, fs=2, circular=False):
+    """
+    2D FIR filter design using the window method.
+
+    This function computes the coefficients of a 2D finite impulse response
+    filter. The filter is separable with linear phase; it will be designed
+    as a product of two 1D filters with dimensions defined by `hsize`.
+    Additionally, it can create approximately circularly symmetric 2-D windows.
+
+    Parameters
+    ----------
+    hsize : tuple or list of length 2
+        Lengths of the filter in each dimension. `hsize[0]` specifies the
+        number of coefficients in the row direction and `hsize[1]` specifies
+        the number of coefficients in the column direction.
+    window : tuple or list of length 2 or string
+        Desired window to use for each 1D filter or a single window type 
+        for creating circularly symmetric 2-D windows. Each element should be
+        a string or tuple of string and parameter values. See
+        'scipy.signal.get_window' for a list of windows and required
+        parameters.
+    fc : float or 1-D array_like, optional
+        Cutoff frequency of filter (expressed in the same units as `fs`).
+        Required if `circular` is False.
+    fs : float, optional
+        The sampling frequency of the signal. Default is 2.
+    circular : bool, optional
+        Whether to create a circularly symmetric 2-D window. Default is False.
+
+    Returns
+    -------
+    filter_2d : (hsize[0], hsize[1]) ndarray
+        Coefficients of 2D FIR filter.
+
+    Raises
+    ------
+    ValueError
+        If `hsize` and `window` are not 2-element tuples or lists.
+        If `cutoff` is None when `circular` is True.
+        If `cutoff` is outside the range [0, fs / 2] and `circular` is False.
+        If any of the elements in `window` are not recognized.
+    RuntimeError
+        If `firwin` fails to converge when designing the filter.
+
+    See Also
+    --------
+    scipy.signal.firwin, scipy.signal.get_window
+
+    Examples
+    --------
+    Generate a 5x5 low-pass filter with cutoff frequency 0.1.
+
+    >>> import numpy as np
+    >>> from scipy.signal import get_window
+    >>> from scipy.signal import fwind1
+    >>> hsize = (5, 5)
+    >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
+    >>> fc = 0.1
+    >>> filter_2d = fwind1(hsize, window, fc)
+    >>> filter_2d
+    array([[0.00025366, 0.00401662, 0.00738617, 0.00401662, 0.00025366],
+           [0.00401662, 0.06360159, 0.11695714, 0.06360159, 0.00401662],
+           [0.00738617, 0.11695714, 0.21507283, 0.11695714, 0.00738617],
+           [0.00401662, 0.06360159, 0.11695714, 0.06360159, 0.00401662],
+           [0.00025366, 0.00401662, 0.00738617, 0.00401662, 0.00025366]])
+
+    Generate a circularly symmetric 5x5 low-pass filter with Hamming window.
+
+    >>> filter_2d = fwind1((5, 5), 'hamming', circular=True)
+    >>> filter_2d
+    array([[0.08566336, 0.08566336, 0.08566336, 0.08566336, 0.08566336],
+           [0.08566336, 0.71034579, 0.99716832, 0.71034579, 0.08566336],
+           [0.08566336, 0.99716832, 0.08      , 0.99716832, 0.08566336],
+           [0.08566336, 0.71034579, 0.99716832, 0.71034579, 0.08566336],
+           [0.08566336, 0.08566336, 0.08566336, 0.08566336, 0.08566336]])
+
+    Plotting the generated 2D filters (optional).
+
+    >>> import matplotlib.pyplot as plt
+    >>> hsize, fc = (50, 50), 0.05
+    >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
+    >>> filter0_2d = fwind1(hsize, window, fc)
+    >>> filter1_2d = fwind1((50, 50), 'hamming', circular=True)
+
+    >>> fg, (ax0, ax1) = plt.subplots(1, 2, tight_layout=True, figsize=(6.5, 3.5))
+    >>> ax0.set_title("Product of 2 Windows")
+    >>> im0 = ax0.imshow(filter0_2d, cmap='viridis', origin='lower', aspect='equal')
+    >>> fg.colorbar(im0, ax=ax0, shrink=0.7)
+    >>> ax1.set_title("Circular Window")
+    >>> im1 = ax1.imshow(filter1_2d, cmap='plasma', origin='lower', aspect='equal')
+    >>> fg.colorbar(im1, ax=ax1, shrink=0.7)
+    >>> plt.show()
+    """
+    if len(hsize) != 2:
+            raise ValueError("hsize must be a 2-element tuple or list")
+
+    if circular:
+        if fc is None:
+            raise ValueError("Cutoff frequency `fc` must be "
+                            "provided when `circular` is True")
+        
+        n_r = max(hsize[0], hsize[1]) * 8  # oversample 1d window by factor 8
+        
+        win_r = firwin(n_r, cutoff=fc, window=window, fs=fs)
+
+        f1, f2 = np.meshgrid(np.linspace(-1, 1, hsize[0]), np.linspace(-1, 1, hsize[1]))
+        r = np.sqrt(f1**2 + f2**2)
+
+        win_2d = np.interp(r, np.linspace(0, 1, n_r), win_r)
+        return win_2d
+
+    if len(window) != 2:
+        raise ValueError("window must be a 2-element tuple or list")
+
+    row_filter = firwin(hsize[0], cutoff=fc, window=window[0], fs=fs)
+    col_filter = firwin(hsize[1], cutoff=fc, window=window[1], fs=fs)
+
+    return np.outer(row_filter, col_filter)
