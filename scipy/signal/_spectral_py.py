@@ -124,7 +124,8 @@ def lombscargle(
 
     .. [4] J.T. VanderPlas, "Understanding the Lomb-Scargle Periodogram,"
            The Astrophysical Journal Supplement Series, vol. 236, no. 1, p. 16,
-           May 2018, doi: 10.3847/1538-4365/aab766.
+           May 2018
+           :doi:`10.3847/1538-4365/aab766`
 
 
     Examples
