@@ -649,6 +649,22 @@ def test_roundtrip_multidimensional(fft_mode: FFT_MODE_TYPE):
                         err_msg="Multidim. roundtrip for component " +
                         f"x[{i}, :, {j}] and {fft_mode=} failed!")
 
+@pytest.mark.parametrize("phase_shift", (0, 4,  None))
+def test_roundtrip_two_dimensional(phase_shift: int|None):
+    """Test roundtrip of a 2 channel input signal with `mfft` set with different
+    values for `phase_shift`
+
+    Tests for Issue https://github.com/scipy/scipy/issues/21671
+    """
+    n = 21
+    SFT = ShortTimeFFT.from_window('hann', fs=1, nperseg=13, noverlap=7,
+                                   mfft=16, phase_shift=phase_shift)
+    x = np.arange(2*n, dtype=float).reshape(2, n)
+    Sx = SFT.stft(x)
+    y = SFT.istft(Sx, k1=n)
+    xp_assert_close(y, x, atol=2 * np.finfo(SFT.win.dtype).resolution,
+                    err_msg='2-dim. roundtrip failed!')
+
 
 @pytest.mark.parametrize('window, n, nperseg, noverlap',
                          [('boxcar', 100, 10, 0),     # Test no overlap
