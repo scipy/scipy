@@ -634,8 +634,9 @@ class _InfiniteLimitsTransform(_VariableTransform):
     def points(self):
         # If there are infinite limits, then the origin becomes a problematic point
         # due to a division by zero there.
-        if (self._xp.sum(self._double_inf_pos) != 0
-            or self._xp.sum(self._semi_inf_pos) != 0):
+        xp = self._xp
+        if (xp.sum(xp.astype(self._double_inf_pos, xp.int32)) != 0
+            or xp.sum(xp.astype(self._semi_inf_pos, xp.int32)) != 0):
             return [self._xp.zeros(self._orig_a.shape)]
         else:
             return []
