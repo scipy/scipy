@@ -1180,7 +1180,7 @@ class TestLombscargle:
         f = np.linspace(0, 1, 3) + 0.1
         weights = np.expand_dims(np.linspace(0, 1, 2), 1)
         assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
-    
+
     def test_wrong_dtype(self):
         t = np.linspace(0, 1, 2, dtype=np.complex64)
         y = np.linspace(0, 1, 2)
@@ -1215,7 +1215,7 @@ class TestLombscargle:
         y = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
         lombscargle(t, y, f*2*np.pi)
-    
+
     def test_wrong_shape_weights(self):
         # Weights must be the same shape as t
 
@@ -1227,13 +1227,13 @@ class TestLombscargle:
 
     def test_zero_division_weights(self):
         # Weights cannot sum to 0
-        
+
         t = np.zeros(1)
         y = np.zeros(1)
         f = np.ones(1)
         weights = np.zeros(1)
         assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
-    
+
     def test_normalize_parameter(self):
         # Test the validity of the normalize parameter input
 
@@ -1255,7 +1255,7 @@ class TestLombscargle:
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
-        
+
         # check each of the valid inputs
         pgram_false = lombscargle(t, y, f, normalize=False)
         pgram_true = lombscargle(t, y, f, normalize=True)
@@ -1283,7 +1283,7 @@ class TestLombscargle:
         assert_raises(ValueError, lombscargle, t, y, f, normalize='lomb')
         #  2) something besides a bool or str
         assert_raises(TypeError, lombscargle, t, y, f, normalize=2)
-    
+
     def test_offset_removal(self):
         # Verify that the amplitude is the same, even with an offset (not removed)
 
@@ -1313,7 +1313,7 @@ class TestLombscargle:
 
         # check if offset removal works as expected
         assert_allclose(pgram, pgram_offset)
-    
+
     def test_floating_mean_false(self):
         # Verify that when disabling the floating_mean, the calculations are correct
 
@@ -1347,7 +1347,7 @@ class TestLombscargle:
         assert_(pgram[0] < 0.01) 
         # significant value with offset, exact value will change based on seed
         assert_(pgram_offset[0] > 0.5)
-    
+
     def test_amplitude_is_correct(self):
         # Verify that the amplitude is correct (when normalize='amplitude')
 
