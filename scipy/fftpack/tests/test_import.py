@@ -13,10 +13,12 @@ on one version of Python.
 from pathlib import Path
 import re
 import tokenize
+import pytest
 from numpy.testing import assert_
 import scipy
 
 class TestFFTPackImport:
+    @pytest.mark.slow
     def test_fftpack_import(self):
         base = Path(scipy.__file__).parent
         regexp = r"\s*from.+\.fftpack import .*\n"
@@ -28,4 +30,4 @@ class TestFFTPackImport:
             with tokenize.open(str(path)) as file:
                 assert_(all(not re.fullmatch(regexp, line)
                             for line in file),
-                        "{0} contains an import from fftpack".format(path))
+                        f"{path} contains an import from fftpack")

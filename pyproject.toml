@@ -6,62 +6,48 @@
 # the most recent version on PyPI:
 #
 #     "pybind11>=2.4.3,<2.5.0",
+#
+# Upper bounds in release branches must have notes on why they are added.
+# Distro packages can ignore upper bounds added only to prevent future
+# breakage; if we add pins or bounds because of known problems then they need
+# them too.
+
+# Run tools/generate_requirements.txt when making changes to any dependencies
 
 [build-system]
+build-backend = 'mesonpy'
 requires = [
-    "wheel",
-    "setuptools<60.0",  # do not increase, 60.0 enables vendored distutils
-    "Cython>=0.29.18",
-    "pybind11>=2.4.3",
-    "pythran>=0.9.12",
+    "meson-python>=0.15.0",
+    "Cython>=3.0.8",        # when updating version, also update check in meson.build
+    "pybind11>=2.13.1",     # when updating version, also update check in scipy/meson.build
+    "pythran>=0.14.0",
 
-    # NumPy dependencies - to update these, sync from
-    # https://github.com/scipy/oldest-supported-numpy/, and then
-    # update minimum version to match our install_requires min version
-    # ----------------------------------------------------------------
-
-    # numpy 1.19 was the first minor release to provide aarch64 wheels, but
-    # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
-    # aarch64 for py39 is covered by default requirement below
-
-    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.20.0
-    "numpy==1.20.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
-    "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
-
-    # default numpy requirements
-    "numpy==1.18.5; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
-    "numpy==1.21.4; python_version=='3.10' and platform_python_implementation != 'PyPy'",
-
-    # For Python versions which aren't yet officially supported,
-    # we specify an unpinned NumPy which allows source distributions
-    # to be used and allows wheels to be used as soon as they
-    # become available.
-    "numpy; python_version>='3.11'",
-    "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
+    # numpy requirement for wheel builds for distribution on PyPI - building
+    # against 2.x yields wheels that are also compatible with numpy 1.x at
+    # runtime.
+    # Note that building against numpy 1.x works fine too - users and
+    # redistributors can do this by installing the numpy version they like and
+    # disabling build isolation.
+    "numpy>=2.0.0rc1",
 ]
 
 [project]
-name = "SciPy"
-license = {file = "LICENSE.txt"}
-description = """
-SciPy (pronounced "Sigh Pie") is an open-source software for mathematics,
-science, and engineering. It includes modules for statistics, optimization,
-integration, linear algebra, Fourier transforms, signal and image processing,
-ODE solvers, and more.
-"""
-
+name = "scipy"
+version = "1.15.0.dev0"
+# TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
+#       at that point, no longer include them in `py3.install_sources()`
+license = { file = "LICENSE.txt" }
+description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
-    {name = "SciPy Developers", email = "scipy-dev@python.org"},
+    { name = "SciPy Developers", email = "scipy-dev@python.org" },
 ]
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
-    "numpy>=1.18.5",
-]
+    "numpy>=1.23.5",
+] # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -71,9 +57,10 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -82,32 +69,49 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-dynamic = ['version']
 
 [project.optional-dependencies]
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
     "pytest-xdist",
     "asv",
     "mpmath",
     "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
+    "pooch",
+    "hypothesis>=6.30",
+    "array-api-strict>=2.0",
+    "Cython",
+    "meson",
+    'ninja; sys_platform != "emscripten"',
 ]
 doc = [
-    "sphinx!=3.1.0, !=4.1.0",
-    "pydata-sphinx-theme>=0.8.1",
-    "sphinx-panels>=0.5.2",
-    "matplotlib>2",
+    "sphinx>=5.0.0,<8.0.0",
+    "intersphinx_registry",
+    "pydata-sphinx-theme>=0.15.2",
+    "sphinx-copybutton",
+    "sphinx-design>=0.4.0",
+    "matplotlib>=3.5",
     "numpydoc",
-    "sphinx-tabs",
+    "jupytext",
+    "myst-nb",
+    "pooch",
+    "jupyterlite-sphinx>=0.16.5",
+    "jupyterlite-pyodide-kernel",
 ]
 dev = [
-    "mypy",
+    "mypy==1.10.0",
     "typing_extensions",
+    "types-psutil",
     "pycodestyle",
-    "flake8",
+    "ruff>=0.0.292",
+    "cython-lint>=0.12.2",
+    "rich-click",
+    "doit>=0.36.0",
+    "pydevtool",
 ]
 
 [project.urls]
@@ -117,7 +121,46 @@ source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
 
-
 [tool.doit]
-dodoFile = "do.py"
+dodoFile = "dev.py"
 
+
+[tool.cibuildwheel]
+skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
+# We're only testing with essential test dependencies, not optional ones.
+# Some of those require binary wheels (often missing for some platforms),
+# or they slow down the test suite runs too much or simply aren't necessary.
+test-requires = [
+    "pytest",
+    "pytest-xdist",
+    "threadpoolctl",
+    "pooch",
+    "hypothesis",
+]
+before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
+test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
+before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+
+[tool.cibuildwheel.linux.environment]
+# /project will be the $PWD equivalent inside the docker used to build the wheel
+PKG_CONFIG_PATH = "/project/"
+
+[tool.cibuildwheel.macos]
+before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+
+[tool.cibuildwheel.macos.environment]
+PKG_CONFIG_PATH = "{project}"
+
+[tool.cibuildwheel.windows]
+before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
+
+[tool.cibuildwheel.windows.environment]
+# This does not work because pkg-config does not like backslashes,
+PKG_CONFIG_PATH = "{project}"
+# do this instead (which will override this setting)
+# set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')

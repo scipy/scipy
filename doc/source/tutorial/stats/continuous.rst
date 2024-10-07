@@ -204,7 +204,8 @@ Symbol                                                           Description    
 
 
 Continuous Distributions in `scipy.stats`
------------------------------------------
+=========================================
+
 .. toctree::
    :maxdepth: 1
 
@@ -254,11 +255,13 @@ Continuous Distributions in `scipy.stats`
    continuous_invgamma
    continuous_invgauss
    continuous_invweibull
+   continuous_jf_skew_t
    continuous_johnsonsb
    continuous_johnsonsu
    continuous_ksone
    continuous_kstwo
    continuous_kstwobign
+   continuous_landau
    continuous_laplace
    continuous_laplace_asymmetric
    continuous_levy_l
@@ -285,6 +288,7 @@ Continuous Distributions in `scipy.stats`
    continuous_rayleigh
    continuous_rice
    continuous_recipinvgauss
+   continuous_rel_breitwigner
    continuous_semicircular
    continuous_studentized_range
    continuous_t
@@ -292,6 +296,7 @@ Continuous Distributions in `scipy.stats`
    continuous_triang
    continuous_truncexpon
    continuous_truncnorm
+   continuous_truncpareto
    continuous_truncweibull_min
    continuous_tukeylambda
    continuous_uniform

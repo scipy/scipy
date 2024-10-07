@@ -1,7 +1,41 @@
+from functools import wraps
+from scipy._lib._util import _lazywhere
+import numpy as np
 from ._ufuncs import (_spherical_jn, _spherical_yn, _spherical_in,
                       _spherical_kn, _spherical_jn_d, _spherical_yn_d,
                       _spherical_in_d, _spherical_kn_d)
 
+
+def use_reflection(sign_n_even=None, reflection_fun=None):
+    # - If reflection_fun is not specified, reflects negative `z` and multiplies
+    #   output by appropriate sign (indicated by `sign_n_even`).
+    # - If reflection_fun is specified, calls `reflection_fun` instead of `fun`.
+    # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
+    def decorator(fun):
+        def standard_reflection(n, z, derivative):
+            # sign_n_even indicates the sign when the order `n` is even
+            sign = np.where(n % 2 == 0, sign_n_even, -sign_n_even)
+            # By the chain rule, differentiation at `-z` adds a minus sign
+            sign = -sign if derivative else sign
+            # Evaluate at positive z (minus negative z) and adjust the sign
+            return fun(n, -z, derivative) * sign
+
+        @wraps(fun)
+        def wrapper(n, z, derivative=False):
+            z = np.asarray(z)
+
+            if np.issubdtype(z.dtype, np.complexfloating):
+                return fun(n, z, derivative)  # complex dtype just works
+
+            f2 = standard_reflection if reflection_fun is None else reflection_fun
+            return _lazywhere(z.real >= 0, (n, z),
+                              f=lambda n, z: fun(n, z, derivative),
+                              f2=lambda n, z: f2(n, z, derivative))[()]
+        return wrapper
+    return decorator
+
+
+@use_reflection(+1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_jn(n, z, derivative=False):
     r"""Spherical Bessel function of the first kind or its derivative.
 
@@ -65,7 +99,7 @@ def spherical_jn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
-    >>> from scipy.special import spherical_jn
+    >>> import numpy as np
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_jn(3, x, True),
     ...             spherical_jn(2, x) - 4/x * spherical_jn(3, x))
@@ -74,7 +108,6 @@ def spherical_jn(n, z, derivative=False):
     The first few :math:`j_n` with real argument:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import spherical_jn
     >>> x = np.arange(0.0, 10.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-0.5, 1.5)
@@ -85,12 +118,14 @@ def spherical_jn(n, z, derivative=False):
     >>> plt.show()
 
     """
+    n = np.asarray(n, dtype=np.dtype("long"))
     if derivative:
         return _spherical_jn_d(n, z)
     else:
         return _spherical_jn(n, z)
 
 
+@use_reflection(-1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_yn(n, z, derivative=False):
     r"""Spherical Bessel function of the second kind or its derivative.
 
@@ -153,7 +188,7 @@ def spherical_yn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
-    >>> from scipy.special import spherical_yn
+    >>> import numpy as np
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_yn(3, x, True),
     ...             spherical_yn(2, x) - 4/x * spherical_yn(3, x))
@@ -162,7 +197,6 @@ def spherical_yn(n, z, derivative=False):
     The first few :math:`y_n` with real argument:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import spherical_yn
     >>> x = np.arange(0.0, 10.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-2.0, 1.0)
@@ -173,12 +207,14 @@ def spherical_yn(n, z, derivative=False):
     >>> plt.show()
 
     """
+    n = np.asarray(n, dtype=np.dtype("long"))
     if derivative:
         return _spherical_yn_d(n, z)
     else:
         return _spherical_yn(n, z)
 
 
+@use_reflection(+1)  # See DLMF 10.47(v) https://dlmf.nist.gov/10.47
 def spherical_in(n, z, derivative=False):
     r"""Modified spherical Bessel function of the first kind or its derivative.
 
@@ -240,7 +276,7 @@ def spherical_in(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
-    >>> from scipy.special import spherical_in
+    >>> import numpy as np
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_in(3, x, True),
     ...             spherical_in(2, x) - 4/x * spherical_in(3, x))
@@ -249,7 +285,6 @@ def spherical_in(n, z, derivative=False):
     The first few :math:`i_n` with real argument:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import spherical_in
     >>> x = np.arange(0.0, 6.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-0.5, 5.0)
@@ -260,12 +295,21 @@ def spherical_in(n, z, derivative=False):
     >>> plt.show()
 
     """
+    n = np.asarray(n, dtype=np.dtype("long"))
     if derivative:
         return _spherical_in_d(n, z)
     else:
         return _spherical_in(n, z)
 
 
+def spherical_kn_reflection(n, z, derivative=False):
+    # More complex than the other cases, and this will likely be re-implemented
+    # in C++ anyway. Would require multiple function evaluations. Probably about
+    # as fast to just resort to complex math, and much simpler.
+    return spherical_kn(n, z + 0j, derivative=derivative).real
+
+
+@use_reflection(reflection_fun=spherical_kn_reflection)
 def spherical_kn(n, z, derivative=False):
     r"""Modified spherical Bessel function of the second kind or its derivative.
 
@@ -327,7 +371,7 @@ def spherical_kn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
-    >>> from scipy.special import spherical_kn
+    >>> import numpy as np
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_kn(3, x, True),
     ...             - 4/x * spherical_kn(3, x) - spherical_kn(2, x))
@@ -336,7 +380,6 @@ def spherical_kn(n, z, derivative=False):
     The first few :math:`k_n` with real argument:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import spherical_kn
     >>> x = np.arange(0.0, 4.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(0.0, 5.0)
@@ -347,6 +390,7 @@ def spherical_kn(n, z, derivative=False):
     >>> plt.show()
 
     """
+    n = np.asarray(n, dtype=np.dtype("long"))
     if derivative:
         return _spherical_kn_d(n, z)
     else:

@@ -25,11 +25,16 @@ Am = csr_matrix(array([[-2, 1, 0, 0, 0, 9],
                        [1, 0, 0, 0, 1, -2]]))
 b = array([1, 2, 3, 4, 5, 6])
 count = [0]
+niter = [0]
 
 
 def matvec(v):
     count[0] += 1
     return Am@v
+
+
+def cb(v):
+    niter[0] += 1
 
 
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
@@ -40,7 +45,7 @@ def do_solve(**kw):
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, ".*called without specifying.*")
         x0, flag = lgmres(A, b, x0=zeros(A.shape[0]),
-                          inner_m=6, tol=1e-14, **kw)
+                          inner_m=6, rtol=1e-14, **kw)
     count_0 = count[0]
     assert_(allclose(A@x0, b, rtol=1e-12, atol=1e-12), norm(A@x0-b))
     return x0, count_0
@@ -53,11 +58,13 @@ class TestLGMRES:
         M = LinearOperator(matvec=pc.solve, shape=A.shape, dtype=A.dtype)
 
         x0, count_0 = do_solve()
-        x1, count_1 = do_solve(M=M)
+        niter[0] = 0
+        x1, count_1 = do_solve(M=M, callback=cb)
 
-        assert_(count_1 == 3)
-        assert_(count_1 < count_0/2)
-        assert_(allclose(x1, x0, rtol=1e-14))
+        assert count_1 == 3
+        assert count_1 < count_0/2
+        assert allclose(x1, x0, rtol=1e-14)
+        assert niter[0] < 3
 
     def test_outer_v(self):
         # Check that the augmentation vectors behave as expected
@@ -128,7 +135,7 @@ class TestLGMRES:
                 assert_equal(info, 0)
                 assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
-                x, info = lgmres(A, b, tol=0, maxiter=10)
+                x, info = lgmres(A, b, rtol=0, maxiter=10)
                 if info == 0:
                     assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
@@ -137,7 +144,7 @@ class TestLGMRES:
                 assert_equal(info, 0)
                 assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
-                x, info = lgmres(A, b, tol=0, maxiter=10)
+                x, info = lgmres(A, b, rtol=0, maxiter=10)
                 if info == 0:
                     assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
@@ -148,7 +155,7 @@ class TestLGMRES:
 
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x, info = lgmres(A, b, tol=0, maxiter=10)
+            x, info = lgmres(A, b, rtol=0, maxiter=10)
             assert_equal(info, 1)
 
     def test_breakdown_with_outer_v(self):

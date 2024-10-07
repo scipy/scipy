@@ -3,7 +3,7 @@ Adding A New Statistics Distribution
 
 For hundreds of years statisticians, mathematicians and scientists have needed
 to understand, analyze and model data.
-This has led to a plethora of statisics distributions, many of which are
+This has led to a plethora of statistics distributions, many of which are
 related to others.
 Modeling of new types of data continues to give rise to new distributions,
 as does theoretical considerations being applied to new disciplines.

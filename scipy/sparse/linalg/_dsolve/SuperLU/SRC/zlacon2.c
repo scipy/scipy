@@ -16,7 +16,7 @@ at the top-level directory.
  * -- SuperLU routine (version 5.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * July 25, 2015
+ * July 24, 2022
  * </pre>
  */
 #include <math.h>
@@ -32,7 +32,7 @@ at the top-level directory.
  *   ZLACON2 estimates the 1-norm of a square matrix A.   
  *   Reverse communication is used for evaluating matrix-vector products. 
  * 
- *   This is a thread safe version of ZLACON, which uses the array ISAVE
+ *   This is a thread safe version of CLACON, which uses the array ISAVE
  *   in place of a STATIC variables, as follows:
  *
  *     ZLACON     ZLACON2
@@ -106,13 +106,9 @@ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int
     extern double dmach(char *);
     extern int izmax1_slu(int *, doublecomplex *, int *);
     extern double dzsum1_slu(int *, doublecomplex *, int *);
-#ifdef _CRAY
-    extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
-#else
     extern int zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
-#endif
 
-    safmin = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
+    safmin = dmach("Safe minimum");
     if ( *kase == 0 ) {
 	for (i = 0; i < *n; ++i) {
 	    x[i].r = 1. / (double) (*n);
@@ -131,7 +127,7 @@ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int
 	case 5:  goto L140;
     }
 
-    /*     ................ ENTRY   (isave[0] = 1)   
+    /*     ................ ENTRY   (isave[0] == 1)   
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY A*X. */
   L20:
     if (*n == 1) {
@@ -156,12 +152,12 @@ zlacon2_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase, int
     isave[0] = 2;  /* jump = 2; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 2)
+    /*     ................ ENTRY   (isave[0] == 2)   
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
 L40:
     isave[1] = izmax1_slu(n, &x[0], &c__1);  /* j */
     --isave[1];  /* --j; */
-    isave[2] = 2;  /* iter = 2; */
+    isave[2] = 2; /* iter = 2; */
 
     /*     MAIN LOOP - ITERATIONS 2,3,...,ITMAX. */
 L50:
@@ -171,7 +167,7 @@ L50:
     isave[0] = 3;  /* jump = 3; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 3)   
+    /*     ................ ENTRY   (isave[0] == 3)   
 	   X HAS BEEN OVERWRITTEN BY A*X. */
 L70:
 #ifdef _CRAY
@@ -183,7 +179,7 @@ L70:
     *est = dzsum1_slu(n, v, &c__1);
 
 
-L90:
+/* L90: */
     /*     TEST FOR CYCLING. */
     if (*est <= estold) goto L120;
 
@@ -201,11 +197,11 @@ L90:
     isave[0] = 4;  /* jump = 4; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 4)   
+    /*     ................ ENTRY   (isave[0] == 4)
 	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
 L110:
     jlast = isave[1];  /* j; */
-    isave[1] = izmax1_slu(n, &x[0], &c__1);  /* j */
+    isave[1] = izmax1_slu(n, &x[0], &c__1); /* j */
     isave[1] = isave[1] - 1;  /* --j; */
     if (x[jlast].r != (d__1 = x[isave[1]].r, fabs(d__1)) && isave[2] < 5) {
 	isave[2] = isave[2] + 1;  /* ++iter; */
@@ -241,4 +237,4 @@ L150:
     *kase = 0;
     return 0;
 
-} /* zlacon_ */
+} /* zlacon2_ */

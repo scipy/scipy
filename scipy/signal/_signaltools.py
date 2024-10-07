@@ -1,31 +1,37 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
+from __future__ import annotations # Provides typing union operator `|` in Python 3.9
 import operator
 import math
+from math import prod as _prod
 import timeit
+import warnings
+from typing import Literal
+
+from numpy._typing import ArrayLike
+
 from scipy.spatial import cKDTree
 from . import _sigtools
 from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
+from scipy import ndimage
 from scipy.fft._helper import _init_nd_shape_and_axes
-from scipy._lib._util import prod as _prod
 import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from ._filter_design import cheby1, _validate_sos
+from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
-import warnings
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
-           'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
+           'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
            'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
            'filtfilt', 'decimate', 'vectorstrength']
@@ -85,6 +91,22 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
                          "as large as the other in every dimension")
 
     return not ok1
+
+
+def _reject_objects(arr, name):
+    """Warn if arr.dtype is object or longdouble.
+    """
+    dt = np.asarray(arr).dtype
+    if not (np.issubdtype(dt, np.integer)
+            or dt in [np.bool_, np.float16, np.float32, np.float64,
+                      np.complex64, np.complex128]
+    ):
+        msg = (
+            f"dtype={dt} is not supported by {name} and will raise an error in "
+            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, `np.float16`,"
+            f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
+        )
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
 
 
 def correlate(in1, in2, mode='full', method='auto'):
@@ -171,6 +193,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     Implement a matched filter using cross-correlation, to recover a signal
     that has passed through a noisy channel.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -222,6 +245,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
+    _reject_objects(in1, 'correlate')
+    _reject_objects(in1, 'correlate')
 
     if in1.ndim == in2.ndim == 0:
         return in1 * in2.conj()
@@ -300,16 +325,16 @@ def correlation_lags(in1_len, in2_len, mode='full'):
         A string indicating the size of the output.
         See the documentation `correlate` for more information.
 
-    See Also
-    --------
-    correlate : Compute the N-dimensional cross-correlation.
-
     Returns
     -------
     lags : array
         Returns an array containing cross-correlation lag/displacement indices.
         Indices can be indexed with the np.argmax of the correlation to return
         the lag/displacement.
+
+    See Also
+    --------
+    correlate : Compute the N-dimensional cross-correlation.
 
     Notes
     -----
@@ -338,9 +363,9 @@ def correlation_lags(in1_len, in2_len, mode='full'):
     --------
     Cross-correlation of a signal with its time-delayed self.
 
+    >>> import numpy as np
     >>> from scipy import signal
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> rng = np.random.default_rng()
     >>> x = rng.standard_normal(1000)
     >>> y = np.concatenate([rng.standard_normal(100), x])
     >>> correlation = signal.correlate(x, y, mode="full")
@@ -434,7 +459,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if not noaxes and not len(axes):
         raise ValueError("when provided, axes cannot be empty")
 
-    # Axes of length 1 can rely on broadcasting rules for multipy,
+    # Axes of length 1 can rely on broadcasting rules for multiply,
     # no fft needed.
     axes = [a for a in axes if s1[a] != 1 and s2[a] != 1]
 
@@ -444,7 +469,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
                for a in range(in1.ndim) if a not in axes):
         raise ValueError("incompatible shapes for in1 and in2:"
-                         " {0} and {1}".format(s1, s2))
+                         f" {s1} and {s2}")
 
     # Check that input sizes are compatible with 'valid' mode.
     if _inputs_swap_needed(mode, s1, s2, axes=axes):
@@ -606,6 +631,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     --------
     Autocorrelation of white noise is an impulse.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> sig = rng.standard_normal(1000)
@@ -625,8 +651,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     The `convolve2d` function allows for other types of image boundaries,
     but is far slower.
 
-    >>> from scipy import misc
-    >>> face = misc.face(gray=True)
+    >>> from scipy import datasets
+    >>> face = datasets.face(gray=True)
     >>> kernel = np.outer(signal.windows.gaussian(70, 8),
     ...                   signal.windows.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
@@ -670,7 +696,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
 
 
 def _calc_oa_lens(s1, s2):
-    """Calculate the optimal FFT lengths for overlapp-add convolution.
+    """Calculate the optimal FFT lengths for overlap-add convolution.
 
     The calculation is done for a single dimension.
 
@@ -831,10 +857,19 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     -----
     .. versionadded:: 1.4.0
 
+    References
+    ----------
+    .. [1] Wikipedia, "Overlap-add_method".
+           https://en.wikipedia.org/wiki/Overlap-add_method
+    .. [2] Richard G. Lyons. Understanding Digital Signal Processing,
+           Third Edition, 2011. Chapter 13.10.
+           ISBN 13: 978-0137-02741-5
+
     Examples
     --------
     Convolve a 100,000 sample signal with a 512-sample filter.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> sig = rng.standard_normal(100000)
@@ -849,14 +884,6 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     >>> ax_mag.set_title('Filtered noise')
     >>> fig.tight_layout()
     >>> fig.show()
-
-    References
-    ----------
-    .. [1] Wikipedia, "Overlap-add_method".
-           https://en.wikipedia.org/wiki/Overlap-add_method
-    .. [2] Richard G. Lyons. Understanding Digital Signal Processing,
-           Third Edition, 2011. Chapter 13.10.
-           ISBN 13: 978-0137-02741-5
 
     """
     in1 = np.asarray(in1)
@@ -1000,7 +1027,7 @@ def _numeric_arrays(arrays, kinds='buifc'):
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
     """
-    if type(arrays) == np.ndarray:
+    if isinstance(arrays, np.ndarray):
         return arrays.dtype.kind in kinds
     for array_ in arrays:
         if array_.dtype.kind not in kinds:
@@ -1025,7 +1052,7 @@ def _conv_ops(x_shape, h_shape, mode):
         out_shape = x_shape
     else:
         raise ValueError("Acceptable mode flags are 'valid',"
-                         " 'same', or 'full', not mode={}".format(mode))
+                         f" 'same', or 'full', not mode={mode}")
 
     s1, s2 = x_shape, h_shape
     if len(x_shape) == 1:
@@ -1241,6 +1268,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     --------
     Estimate the fastest method for a given input:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> rng = np.random.default_rng()
     >>> img = rng.random((32, 32))
@@ -1262,6 +1290,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     """
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
+
+    _reject_objects(in1, 'choose_conv_method')
+    _reject_objects(in1, 'choose_conv_method')
 
     if measure:
         times = {}
@@ -1361,13 +1392,14 @@ def convolve(in1, in2, mode='full', method='auto'):
     `choose_conv_method` to choose the fastest method using pre-computed
     values (`choose_conv_method` can also measure real-world timing with a
     keyword argument). Because `fftconvolve` relies on floating point numbers,
-    there are certain constraints that may force `method=direct` (more detail
+    there are certain constraints that may force ``method='direct'`` (more detail
     in `choose_conv_method` docstring).
 
     Examples
     --------
     Smooth a square pulse using a Hann window:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> sig = np.repeat([0., 1., 0.], 100)
     >>> win = signal.windows.hann(50)
@@ -1390,6 +1422,9 @@ def convolve(in1, in2, mode='full', method='auto'):
     """
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
+
+    _reject_objects(volume, 'correlate')
+    _reject_objects(kernel, 'correlate')
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
@@ -1458,6 +1493,7 @@ def order_filter(a, domain, rank):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> x = np.arange(25).reshape(5, 5)
     >>> domain = np.identity(3)
@@ -1468,17 +1504,17 @@ def order_filter(a, domain, rank):
            [15, 16, 17, 18, 19],
            [20, 21, 22, 23, 24]])
     >>> signal.order_filter(x, domain, 0)
-    array([[  0.,   0.,   0.,   0.,   0.],
-           [  0.,   0.,   1.,   2.,   0.],
-           [  0.,   5.,   6.,   7.,   0.],
-           [  0.,  10.,  11.,  12.,   0.],
-           [  0.,   0.,   0.,   0.,   0.]])
+    array([[  0,   0,   0,   0,   0],
+           [  0,   0,   1,   2,   0],
+           [  0,   5,   6,   7,   0],
+           [  0,  10,  11,  12,   0],
+           [  0,   0,   0,   0,   0]])
     >>> signal.order_filter(x, domain, 2)
-    array([[  6.,   7.,   8.,   9.,   4.],
-           [ 11.,  12.,  13.,  14.,   9.],
-           [ 16.,  17.,  18.,  19.,  14.],
-           [ 21.,  22.,  23.,  24.,  19.],
-           [ 20.,  21.,  22.,  23.,  24.]])
+    array([[  6,   7,   8,   9,   4],
+           [ 11,  12,  13,  14,   9],
+           [ 16,  17,  18,  19,  14],
+           [ 21,  22,  23,  24,  19],
+           [ 20,  21,  22,  23,  24]])
 
     """
     domain = np.asarray(domain)
@@ -1486,7 +1522,14 @@ def order_filter(a, domain, rank):
         if (dimsize % 2) != 1:
             raise ValueError("Each dimension of domain argument "
                              "should have an odd number of elements.")
-    return _sigtools._order_filterND(a, domain, rank)
+
+    a = np.asarray(a)
+    if not (np.issubdtype(a.dtype, np.integer) 
+            or a.dtype in [np.float32, np.float64]):
+        raise ValueError(f"dtype={a.dtype} is not supported by order_filter")
+
+    result = ndimage.rank_filter(a, rank, footprint=domain, mode='constant')
+    return result
 
 
 def medfilt(volume, kernel_size=None):
@@ -1532,6 +1575,10 @@ def medfilt(volume, kernel_size=None):
 
     """
     volume = np.atleast_1d(volume)
+    if not (np.issubdtype(volume.dtype, np.integer) 
+            or volume.dtype in [np.float32, np.float64]):
+        raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
+
     if kernel_size is None:
         kernel_size = [3] * volume.ndim
     kernel_size = np.asarray(kernel_size)
@@ -1543,13 +1590,14 @@ def medfilt(volume, kernel_size=None):
             raise ValueError("Each element of kernel_size should be odd.")
     if any(k > s for k, s in zip(kernel_size, volume.shape)):
         warnings.warn('kernel_size exceeds volume extent: the volume will be '
-                      'zero-padded.')
+                      'zero-padded.',
+                      stacklevel=2)
 
-    domain = np.ones(kernel_size, dtype=volume.dtype)
+    size = math.prod(kernel_size)
+    result = ndimage.rank_filter(volume, size // 2, size=kernel_size,
+                                 mode='constant')
 
-    numels = np.prod(kernel_size, axis=0)
-    order = numels // 2
-    return _sigtools._order_filterND(volume, domain, order)
+    return result
 
 
 def wiener(im, mysize=None, noise=None):
@@ -1576,10 +1624,19 @@ def wiener(im, mysize=None, noise=None):
     out : ndarray
         Wiener filtered result with the same shape as `im`.
 
+    Notes
+    -----
+    This implementation is similar to wiener2 in Matlab/Octave.
+    For more details see [1]_
+
+    References
+    ----------
+    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
+           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
+
     Examples
     --------
-
-    >>> from scipy.misc import face
+    >>> from scipy.datasets import face
     >>> from scipy.signal import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
@@ -1591,17 +1648,6 @@ def wiener(im, mysize=None, noise=None):
     >>> plot2.imshow(filtered_img)
     >>> plt.show()
 
-    Notes
-    -----
-    This implementation is similar to wiener2 in Matlab/Octave.
-    For more details see [1]_
-
-    References
-    ----------
-    .. [1] Lim, Jae S., Two-Dimensional Signal and Image Processing,
-           Englewood Cliffs, NJ, Prentice Hall, 1990, p. 548.
-
-
     """
     im = np.asarray(im)
     if mysize is None:
@@ -1611,11 +1657,11 @@ def wiener(im, mysize=None, noise=None):
         mysize = np.repeat(mysize.item(), im.ndim)
 
     # Estimate the local mean
-    lMean = correlate(im, np.ones(mysize), 'same') / np.prod(mysize, axis=0)
+    size = math.prod(mysize)
+    lMean = correlate(im, np.ones(mysize), 'same') / size
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, np.ones(mysize), 'same') /
-            np.prod(mysize, axis=0) - lMean ** 2)
+    lVar = (correlate(im ** 2, np.ones(mysize), 'same') / size - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
@@ -1681,9 +1727,10 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     symmetric boundary condition to avoid creating edges at the image
     boundaries.
 
+    >>> import numpy as np
     >>> from scipy import signal
-    >>> from scipy import misc
-    >>> ascent = misc.ascent()
+    >>> from scipy import datasets
+    >>> ascent = datasets.ascent()
     >>> scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],
     ...                    [-10+0j, 0+ 0j, +10 +0j],
     ...                    [ -3+3j, 0+10j,  +3 +3j]]) # Gx + j*Gy
@@ -1773,11 +1820,12 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     Use 2D cross-correlation to find the location of a template in a noisy
     image:
 
-    >>> from scipy import signal
-    >>> from scipy import misc
+    >>> import numpy as np
+    >>> from scipy import signal, datasets, ndimage
     >>> rng = np.random.default_rng()
-    >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
-    >>> template = np.copy(face[300:365, 670:750])  # right eye
+    >>> face = datasets.face(gray=True) - datasets.face(gray=True).mean()
+    >>> face = ndimage.zoom(face[30:500, 400:950], 0.5)  # extract the face
+    >>> template = np.copy(face[135:165, 140:175])  # right eye
     >>> template -= template.mean()
     >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
     >>> corr = signal.correlate2d(face, template, boundary='symm', mode='same')
@@ -1844,7 +1892,7 @@ def medfilt2d(input, kernel_size=3):
         An array the same size as input containing the median filtered
         result.
 
-    See also
+    See Also
     --------
     scipy.ndimage.median_filter
 
@@ -1852,16 +1900,66 @@ def medfilt2d(input, kernel_size=3):
     -----
     This is faster than `medfilt` when the input dtype is ``uint8``,
     ``float32``, or ``float64``; for other types, this falls back to
-    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
-    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    `medfilt`. In some situations, `scipy.ndimage.median_filter` may be
     faster than this function.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> x = np.arange(25).reshape(5, 5)
+    >>> x
+    array([[ 0,  1,  2,  3,  4],
+           [ 5,  6,  7,  8,  9],
+           [10, 11, 12, 13, 14],
+           [15, 16, 17, 18, 19],
+           [20, 21, 22, 23, 24]])
+
+    # Replaces i,j with the median out of 5*5 window
+
+    >>> signal.medfilt2d(x, kernel_size=5)
+    array([[ 0,  0,  2,  0,  0],
+           [ 0,  3,  7,  4,  0],
+           [ 2,  8, 12,  9,  4],
+           [ 0,  8, 12,  9,  0],
+           [ 0,  0, 12,  0,  0]])
+
+    # Replaces i,j with the median out of default 3*3 window
+
+    >>> signal.medfilt2d(x)
+    array([[ 0,  1,  2,  3,  0],
+           [ 1,  6,  7,  8,  4],
+           [ 6, 11, 12, 13,  9],
+           [11, 16, 17, 18, 14],
+           [ 0, 16, 17, 18,  0]])
+
+    # Replaces i,j with the median out of default 5*3 window
+
+    >>> signal.medfilt2d(x, kernel_size=[5,3])
+    array([[ 0,  1,  2,  3,  0],
+           [ 0,  6,  7,  8,  3],
+           [ 5, 11, 12, 13,  8],
+           [ 5, 11, 12, 13,  8],
+           [ 0, 11, 12, 13,  0]])
+
+    # Replaces i,j with the median out of default 3*5 window
+
+    >>> signal.medfilt2d(x, kernel_size=[3,5])
+    array([[ 0,  0,  2,  1,  0],
+           [ 1,  5,  7,  6,  3],
+           [ 6, 10, 12, 11,  8],
+           [11, 15, 17, 16, 13],
+           [ 0, 15, 17, 16,  0]])
+
+    # As seen in the examples,
+    # kernel numbers must be odd and not exceed original array dim
 
     """
     image = np.asarray(input)
 
     # checking dtype.type, rather than just dtype, is necessary for
     # excluding np.longdouble with MS Visual C.
-    if image.dtype.type not in (np.ubyte, np.single, np.double):
+    if image.dtype.type not in (np.ubyte, np.float32, np.float64):
         return medfilt(image, kernel_size)
 
     if kernel_size is None:
@@ -1961,6 +2059,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     --------
     Generate a noisy signal to be filtered:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -2000,7 +2099,13 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    b = np.atleast_1d(b)
     a = np.atleast_1d(a)
+
+    _reject_objects(x, 'lfilter')
+    _reject_objects(a, 'lfilter')
+    _reject_objects(b, 'lfilter')
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
@@ -2034,20 +2139,19 @@ def lfilter(b, a, x, axis=-1, zi=None):
                         strides[k] = 0
                     else:
                         raise ValueError('Unexpected shape for zi: expected '
-                                         '%s, found %s.' %
-                                         (expected_shape, zi.shape))
+                                         f'{expected_shape}, found {zi.shape}.')
                 zi = np.lib.stride_tricks.as_strided(zi, expected_shape,
                                                      strides)
             inputs.append(zi)
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError("input type '%s' not supported" % dtype)
+            raise NotImplementedError(f"input type '{dtype}' not supported")
 
         b = np.array(b, dtype=dtype)
-        a = np.array(a, dtype=dtype, copy=False)
+        a = np.asarray(a, dtype=dtype)
         b /= a[0]
-        x = np.array(x, dtype=dtype, copy=False)
+        x = np.asarray(x, dtype=dtype)
 
         out_full = np.apply_along_axis(lambda y: np.convolve(b, y), axis, x)
         ind = out_full.ndim * [slice(None)]
@@ -2170,6 +2274,11 @@ def deconvolve(signal, divisor):
     remainder : ndarray
         Remainder
 
+    See Also
+    --------
+    numpy.polydiv : performs polynomial division (same operation, but
+                    also accepts poly1d objects)
+
     Examples
     --------
     Deconvolve a signal that's been filtered:
@@ -2183,11 +2292,6 @@ def deconvolve(signal, divisor):
     >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
     >>> recovered
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
-
-    See Also
-    --------
-    numpy.polydiv : performs polynomial division (same operation, but
-                    also accepts poly1d objects)
 
     """
     num = np.atleast_1d(signal)
@@ -2243,6 +2347,15 @@ def hilbert(x, N=None, axis=-1):
     transformed signal can be obtained from ``np.imag(hilbert(x))``, and the
     original signal from ``np.real(hilbert(x))``.
 
+    References
+    ----------
+    .. [1] Wikipedia, "Analytic signal".
+           https://en.wikipedia.org/wiki/Analytic_signal
+    .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
+           Processing, Third Edition, 2009. Chapter 12.
+           ISBN 13: 978-1292-02572-8
+
     Examples
     --------
     In this example we use the Hilbert transform to determine the amplitude
@@ -2283,15 +2396,6 @@ def hilbert(x, N=None, axis=-1):
     >>> ax1.set_xlabel("time in seconds")
     >>> ax1.set_ylim(0.0, 120.0)
     >>> fig.tight_layout()
-
-    References
-    ----------
-    .. [1] Wikipedia, "Analytic signal".
-           https://en.wikipedia.org/wiki/Analytic_signal
-    .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
-           Processing, Third Edition, 2009. Chapter 12.
-           ISBN 13: 978-1292-02572-8
 
     """
     x = np.asarray(x)
@@ -2359,16 +2463,14 @@ def hilbert2(x, N=None):
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
     h1 = np.zeros(N[0], dtype=Xf.dtype)
     h2 = np.zeros(N[1], dtype=Xf.dtype)
-    for p in range(2):
-        h = eval("h%d" % (p + 1))
-        N1 = N[p]
+    for h in (h1, h2):
+        N1 = h.shape[0]
         if N1 % 2 == 0:
             h[0] = h[N1 // 2] = 1
             h[1:N1 // 2] = 2
         else:
             h[0] = 1
             h[1:(N1 + 1) // 2] = 2
-        exec("h%d = h" % (p + 1), globals(), locals())
 
     h = h1[:, np.newaxis] * h2[np.newaxis, :]
     k = x.ndim
@@ -2379,7 +2481,7 @@ def hilbert2(x, N=None):
     return x
 
 
-def cmplx_sort(p):
+def _cmplx_sort(p):
     """Sort roots based on magnitude.
 
     Parameters
@@ -2717,7 +2819,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
     poles = np.roots(a)
     if b.size == 0:
-        return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
+        return np.zeros(poles.shape), _cmplx_sort(poles)[0], np.array([])
 
     if len(b) < len(a):
         k = np.empty(0)
@@ -2725,7 +2827,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
         k, b = np.polydiv(b, a)
 
     unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
-    unique_poles, order = cmplx_sort(unique_poles)
+    unique_poles, order = _cmplx_sort(unique_poles)
     multiplicity = multiplicity[order]
 
     residues = _compute_residues(unique_poles, multiplicity, b)
@@ -2815,7 +2917,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
     poles = np.roots(a)
     if b.size == 0:
-        return np.zeros(poles.shape), cmplx_sort(poles)[0], np.array([])
+        return np.zeros(poles.shape), _cmplx_sort(poles)[0], np.array([])
 
     b_rev = b[::-1]
     a_rev = a[::-1]
@@ -2826,7 +2928,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
         k_rev, b_rev = np.polydiv(b_rev, a_rev)
 
     unique_poles, multiplicity = unique_roots(poles, tol=tol, rtype=rtype)
-    unique_poles, order = cmplx_sort(unique_poles)
+    unique_poles, order = _cmplx_sort(unique_poles)
     multiplicity = multiplicity[order]
 
     residues = _compute_residues(1 / unique_poles, multiplicity, b_rev)
@@ -3011,15 +3113,19 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     If `t` is not None, then it is used solely to calculate the resampled
     positions `resampled_t`
 
-    As noted, `resample` uses FFT transformations, which can be very
-    slow if the number of input or output samples is large and prime;
-    see `scipy.fft.fft`.
+    As noted, `resample` uses FFT transformations, which can be very 
+    slow if the number of input or output samples is large and prime; 
+    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
+    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
+    ``n//num`` before using `resample`. Note that this approach changes the 
+    characteristics of the antialiasing filter.
 
     Examples
     --------
     Note that the end of the resampled data rises to meet the first
     sample of the next cycle:
 
+    >>> import numpy as np
     >>> from scipy import signal
 
     >>> x = np.linspace(0, 10, 20, endpoint=False)
@@ -3031,11 +3137,27 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
+
+    Consider the following signal  ``y`` where ``len(y)`` is a large  prime number:
+
+    >>> N = 55949
+    >>> freq = 100
+    >>> x = np.linspace(0, 1, N)
+    >>> y = np.cos(2 * np.pi * freq * x)
+
+    Due to ``N`` being prime, 
+
+    >>> num = 5000  
+    >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
+
+    runs significantly faster than
+
+    >>> f = signal.resample(y, num)
     """
 
     if domain not in ('time', 'freq'):
         raise ValueError("Acceptable domain flags are 'time' or"
-                         " 'freq', not domain={}".format(domain))
+                         f" 'freq', not domain={domain}")
 
     x = np.asarray(x)
     Nx = x.shape[axis]
@@ -3075,7 +3197,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
             X *= W.reshape(newshape_W)
 
     # Copy each half of the original spectrum to the output spectrum, either
-    # truncating high frequences (downsampling) or zero-padding them
+    # truncating high frequencies (downsampling) or zero-padding them
     # (upsampling)
 
     # Placeholder array for output spectrum
@@ -3219,7 +3341,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     sample of the next cycle for the FFT method, and gets closer to zero
     for the polyphase method:
 
+    >>> import numpy as np
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
 
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
@@ -3227,7 +3351,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> f_poly = signal.resample_poly(y, 100, 20)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
 
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
     >>> plt.plot(x, y, 'ko-')
     >>> plt.plot(10, y[0], 'bo', 10, 0., 'ro')  # boundaries
@@ -3235,9 +3358,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> plt.show()
 
     This default behaviour can be changed by using the padtype option:
-
-    >>> import numpy as np
-    >>> from scipy import signal
 
     >>> N = 5
     >>> x = np.linspace(0, 1, N, endpoint=False)
@@ -3251,7 +3371,6 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> y3 = signal.resample_poly(Y, up, 1, padtype='mean')
     >>> y4 = signal.resample_poly(Y, up, 1, padtype='line')
 
-    >>> import matplotlib.pyplot as plt
     >>> for i in [0,1]:
     ...     plt.figure()
     ...     plt.plot(xr, y4[:,i], 'g.', label='line')
@@ -3286,7 +3405,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
-    if isinstance(window, (list, np.ndarray)):
+    if isinstance(window, (list | np.ndarray)):
         window = np.array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
@@ -3424,9 +3543,10 @@ def vectorstrength(events, period):
     return strength, phase
 
 
-def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
-    """
-    Remove linear trend along axis from data.
+def detrend(data: np.ndarray, axis: int = -1,
+            type: Literal['linear', 'constant'] = 'linear',
+            bp: ArrayLike | int = 0, overwrite_data: bool = False) -> np.ndarray:
+    r"""Remove linear or constant trend along axis from data.
 
     Parameters
     ----------
@@ -3453,17 +3573,55 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     ret : ndarray
         The detrended input data.
 
+    Notes
+    -----
+    Detrending can be interpreted as subtracting a least squares fit polynomial:
+    Setting the parameter `type` to 'constant' corresponds to fitting a zeroth degree
+    polynomial, 'linear' to a first degree polynomial. Consult the example below.
+
+    See Also
+    --------
+    numpy.polynomial.polynomial.Polynomial.fit: Create least squares fit polynomial.
+
+
     Examples
     --------
-    >>> from scipy import signal
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
-    >>> npoints = 1000
-    >>> noise = rng.standard_normal(npoints)
-    >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (signal.detrend(x) - noise).max()
-    0.06  # random
+    The following example detrends the function :math:`x(t) = \sin(\pi t) + 1/4`:
 
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal import detrend
+    ...
+    >>> t = np.linspace(-0.5, 0.5, 21)
+    >>> x = np.sin(np.pi*t) + 1/4
+    ...
+    >>> x_d_const = detrend(x, type='constant')
+    >>> x_d_linear = detrend(x, type='linear')
+    ...
+    >>> fig1, ax1 = plt.subplots()
+    >>> ax1.set_title(r"Detrending $x(t)=\sin(\pi t) + 1/4$")
+    >>> ax1.set(xlabel="t", ylabel="$x(t)$", xlim=(t[0], t[-1]))
+    >>> ax1.axhline(y=0, color='black', linewidth=.5)
+    >>> ax1.axvline(x=0, color='black', linewidth=.5)
+    >>> ax1.plot(t, x, 'C0.-',  label="No detrending")
+    >>> ax1.plot(t, x_d_const, 'C1x-', label="type='constant'")
+    >>> ax1.plot(t, x_d_linear, 'C2+-', label="type='linear'")
+    >>> ax1.legend()
+    >>> plt.show()
+
+    Alternatively, NumPy's `~numpy.polynomial.polynomial.Polynomial` can be used for
+    detrending as well:
+
+    >>> pp0 = np.polynomial.Polynomial.fit(t, x, deg=0)  # fit degree 0 polynomial
+    >>> np.allclose(x_d_const, x - pp0(t))  # compare with constant detrend
+    True
+    >>> pp1 = np.polynomial.Polynomial.fit(t, x, deg=1)  # fit degree 1 polynomial
+    >>> np.allclose(x_d_linear, x - pp1(t))  # compare with linear detrend
+    True
+
+    Note that `~numpy.polynomial.polynomial.Polynomial` also allows fitting higher
+    degree polynomials. Consult its documentation on how to extract the polynomial
+    coefficients.
     """
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
@@ -3477,37 +3635,38 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     else:
         dshape = data.shape
         N = dshape[axis]
-        bp = np.sort(np.unique(np.r_[0, bp, N]))
+        bp = np.sort(np.unique(np.concatenate(np.atleast_1d(0, bp, N))))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
                              "of data along given axis.")
-        Nreg = len(bp) - 1
+
         # Restructure data so that axis is along first dimension and
         #  all other dimensions are collapsed into second dimension
         rnk = len(dshape)
         if axis < 0:
             axis = axis + rnk
-        newdims = np.r_[axis, 0:axis, axis + 1:rnk]
-        newdata = np.reshape(np.transpose(data, tuple(newdims)),
-                             (N, _prod(dshape) // N))
+        newdata = np.moveaxis(data, axis, 0)
+        newdata_shape = newdata.shape
+        newdata = newdata.reshape(N, -1)
+
         if not overwrite_data:
             newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
             newdata = newdata.astype(dtype)
+
+#        Nreg = len(bp) - 1
         # Find leastsq fit and remove it for each piece
-        for m in range(Nreg):
+        for m in range(len(bp) - 1):
             Npts = bp[m + 1] - bp[m]
             A = np.ones((Npts, 2), dtype)
-            A[:, 0] = np.cast[dtype](np.arange(1, Npts + 1) * 1.0 / Npts)
+            A[:, 0] = np.arange(1, Npts + 1, dtype=dtype) / Npts
             sl = slice(bp[m], bp[m + 1])
             coef, resids, rank, s = linalg.lstsq(A, newdata[sl])
-            newdata[sl] = newdata[sl] - np.dot(A, coef)
+            newdata[sl] = newdata[sl] - A @ coef
+
         # Put data back in original shape.
-        tdshape = np.take(dshape, newdims, 0)
-        ret = np.reshape(newdata, tuple(tdshape))
-        vals = list(range(1, rnk))
-        olddims = vals[:axis] + [0] + vals[axis:]
-        ret = np.transpose(ret, tuple(olddims))
+        newdata = newdata.reshape(newdata_shape)
+        ret = np.moveaxis(newdata, 0, axis)
         return ret
 
 
@@ -3561,7 +3720,7 @@ def lfilter_zi(b, a):
         A = scipy.linalg.companion(a).T
         B = b[1:] - a[1:]*b[0]
 
-    assuming `a[0]` is 1.0; if `a[0]` is not 1, `a` and `b` are first
+    assuming ``a[0]`` is 1.0; if ``a[0]`` is not 1, `a` and `b` are first
     divided by a[0].
 
     Examples
@@ -3589,7 +3748,7 @@ def lfilter_zi(b, a):
         0.44399389,  0.35505241])
 
     Note that the `zi` argument to `lfilter` was computed using
-    `lfilter_zi` and scaled by `x[0]`.  Then the output `y` has no
+    `lfilter_zi` and scaled by ``x[0]``.  Then the output `y` has no
     transient until the input drops from 0.5 to 0.0.
 
     """
@@ -3684,6 +3843,7 @@ def sosfilt_zi(sos):
     Filter a rectangular pulse that begins at time 0, with and without
     the use of the `zi` argument of `scipy.signal.sosfilt`.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3725,7 +3885,7 @@ def sosfilt_zi(sos):
 def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     """Forward-backward IIR filter that uses Gustafsson's method.
 
-    Apply the IIR filter defined by `(b,a)` to `x` twice, first forward
+    Apply the IIR filter defined by ``(b,a)`` to `x` twice, first forward
     then backward, using Gustafsson's initial conditions [1]_.
 
     Let ``y_fb`` be the result of filtering first forward and then backward,
@@ -3986,6 +4146,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     --------
     The examples will use several functions from `scipy.signal`.
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -4051,11 +4212,11 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     argument.  The difference between `y1` and `y2` is small.  For long
     signals, using `irlen` gives a significant performance improvement.
 
-    >>> x = rng.standard_normal(5000)
+    >>> x = rng.standard_normal(4000)
     >>> y1 = signal.filtfilt(b, a, x, method='gust')
     >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
     >>> print(np.max(np.abs(y1 - y2)))
-    1.80056858312e-10
+    2.875334415008979e-10
 
     """
     b = np.atleast_1d(b)
@@ -4105,9 +4266,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 def _validate_pad(padtype, padlen, x, axis, ntaps):
     """Helper to validate padding for filtfilt"""
     if padtype not in ['even', 'odd', 'constant', None]:
-        raise ValueError(("Unknown value '%s' given to padtype.  padtype "
-                          "must be 'even', 'odd', 'constant', or None.") %
-                         padtype)
+        raise ValueError(f"Unknown value '{padtype}' given to padtype. "
+                         "padtype must be 'even', 'odd', 'constant', or None.")
 
     if padtype is None:
         padlen = 0
@@ -4184,7 +4344,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See Also
     --------
-    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, sosfreqz
+    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, freqz_sos
 
     Notes
     -----
@@ -4224,7 +4384,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         inputs.append(np.asarray(zi))
     dtype = np.result_type(*inputs)
     if dtype.char not in 'fdgFDGO':
-        raise NotImplementedError("input type '%s' not supported" % dtype)
+        raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
         zi = np.array(zi, dtype)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:
@@ -4301,7 +4461,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    filtfilt, sosfilt, sosfilt_zi, sosfreqz
+    filtfilt, sosfilt, sosfilt_zi, freqz_sos
 
     Notes
     -----
@@ -4309,6 +4469,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import sosfiltfilt, butter
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -4418,6 +4579,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     Examples
     --------
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -4458,32 +4620,49 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     if n is not None:
         n = operator.index(n)
 
+    result_type = x.dtype
+    if not np.issubdtype(result_type, np.inexact) \
+       or result_type.type == np.float16:
+        # upcast integers and float16 to float64
+        result_type = np.float64
+
     if ftype == 'fir':
         if n is None:
             half_len = 10 * q  # reasonable cutoff for our sinc-like function
             n = 2 * half_len
         b, a = firwin(n+1, 1. / q, window='hamming'), 1.
+        b = np.asarray(b, dtype=result_type)
+        a = np.asarray(a, dtype=result_type)
     elif ftype == 'iir':
+        iir_use_sos = True
         if n is None:
             n = 8
-        system = dlti(*cheby1(n, 0.05, 0.8 / q))
-        b, a = system.num, system.den
+        sos = cheby1(n, 0.05, 0.8 / q, output='sos')
+        sos = np.asarray(sos, dtype=result_type)
     elif isinstance(ftype, dlti):
-        system = ftype._as_tf()  # Avoids copying if already in TF form
-        b, a = system.num, system.den
+        system = ftype._as_zpk()
+        if system.poles.shape[0] == 0:
+            # FIR
+            system = ftype._as_tf()
+            b, a = system.num, system.den
+            ftype = 'fir'
+        elif (any(np.iscomplex(system.poles))
+              or any(np.iscomplex(system.poles))
+              or np.iscomplex(system.gain)):
+            # sosfilt & sosfiltfilt don't handle complex coeffs
+            iir_use_sos = False
+            system = ftype._as_tf()
+            b, a = system.num, system.den
+        else:
+            iir_use_sos = True
+            sos = zpk2sos(system.zeros, system.poles, system.gain)
+            sos = np.asarray(sos, dtype=result_type)
     else:
         raise ValueError('invalid ftype')
 
-    result_type = x.dtype
-    if result_type.kind in 'bui':
-        result_type = np.float64
-    b = np.asarray(b, dtype=result_type)
-    a = np.asarray(a, dtype=result_type)
-
     sl = [slice(None)] * x.ndim
-    a = np.asarray(a)
 
-    if a.size == 1:  # FIR case
+    if ftype == 'fir':
         b = b / a
         if zero_phase:
             y = resample_poly(x, 1, q, axis=axis, window=b)
@@ -4496,9 +4675,16 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     else:  # IIR case
         if zero_phase:
-            y = filtfilt(b, a, x, axis=axis)
+            if iir_use_sos:
+                y = sosfiltfilt(sos, x, axis=axis)
+            else:
+                y = filtfilt(b, a, x, axis=axis)
         else:
-            y = lfilter(b, a, x, axis=axis)
+            if iir_use_sos:
+                y = sosfilt(sos, x, axis=axis)
+            else:
+                y = lfilter(b, a, x, axis=axis)
+
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]

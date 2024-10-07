@@ -89,7 +89,6 @@ DEFINE_WRAP_CDIST(sqeuclidean, double)
 
 DEFINE_WRAP_CDIST(dice, char)
 DEFINE_WRAP_CDIST(jaccard, char)
-DEFINE_WRAP_CDIST(kulsinski, char)
 DEFINE_WRAP_CDIST(kulczynski1, char)
 DEFINE_WRAP_CDIST(rogerstanimoto, char)
 DEFINE_WRAP_CDIST(russellrao, char)
@@ -382,7 +381,6 @@ DEFINE_WRAP_PDIST(jensenshannon, double)
 DEFINE_WRAP_PDIST(sqeuclidean, double)
 
 DEFINE_WRAP_PDIST(dice, char)
-DEFINE_WRAP_PDIST(kulsinski, char)
 DEFINE_WRAP_PDIST(kulczynski1, char)
 DEFINE_WRAP_PDIST(jaccard, char)
 DEFINE_WRAP_PDIST(rogerstanimoto, char)
@@ -631,7 +629,8 @@ static PyObject *pdist_weighted_minkowski_double_wrap(
 static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) 
 {
   PyArrayObject *M_, *v_;
-  int n, elsize;
+  int n;
+  npy_intp elsize;
   if (!PyArg_ParseTuple(args, "O!O!",
             &PyArray_Type, &M_,
             &PyArray_Type, &v_)) {
@@ -639,7 +638,7 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
   }
   NPY_BEGIN_ALLOW_THREADS;
   n = PyArray_DIMS(M_)[0];
-  elsize = PyArray_DESCR(M_)->elsize;
+  elsize = PyArray_ITEMSIZE(M_);
   if (elsize == 8) {
     dist_to_squareform_from_vector_double(
         (double*)PyArray_DATA(M_), (const double*)PyArray_DATA(v_), n);
@@ -654,7 +653,8 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
 static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) 
 {
   PyArrayObject *M_, *v_;
-  int n, s;
+  int n;
+  npy_intp s;
   char *v;
   const char *M;
   if (!PyArg_ParseTuple(args, "O!O!",
@@ -667,7 +667,7 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
     M = (const char*)PyArray_DATA(M_);
     v = (char*)PyArray_DATA(v_);
     n = PyArray_DIMS(M_)[0];
-    s = PyArray_DESCR(M_)->elsize;
+    s = PyArray_ITEMSIZE(M_);
     dist_to_vector_from_squareform(M, v, n, s);
     NPY_END_ALLOW_THREADS;
   }
@@ -714,9 +714,6 @@ static PyMethodDef _distanceWrapMethods[] = {
    METH_VARARGS},
   {"cdist_jensenshannon_double_wrap",
    cdist_jensenshannon_double_wrap,
-   METH_VARARGS},
-  {"cdist_kulsinski_bool_wrap",
-   cdist_kulsinski_char_wrap,
    METH_VARARGS},
    {"cdist_kulczynski1_bool_wrap",
    cdist_kulczynski1_char_wrap,
@@ -790,9 +787,6 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_jensenshannon_double_wrap",
    pdist_jensenshannon_double_wrap,
    METH_VARARGS},
-  {"pdist_kulsinski_bool_wrap",
-   pdist_kulsinski_char_wrap,
-   METH_VARARGS},
    {"pdist_kulczynski1_bool_wrap",
    pdist_kulczynski1_char_wrap,
    METH_VARARGS},
@@ -847,12 +841,20 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__distance_wrap(void)
+PyMODINIT_FUNC
+PyInit__distance_wrap(void)
 {
-    PyObject *m;
+    PyObject *module;
 
-    m = PyModule_Create(&moduledef);
     import_array();
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
 
-    return m;
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }

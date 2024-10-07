@@ -60,9 +60,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
             ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
             where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : {None, int, `numpy.random.Generator`,
-               `numpy.random.RandomState`}, optional
-
+        rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -112,6 +110,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import quadratic_assignment
     >>> A = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
     ...               [150, 130, 0, 120], [170, 100, 120, 0]])
@@ -119,8 +118,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     ...               [0, 0, 0, 3], [0, 0, 0, 0]])
     >>> res = quadratic_assignment(A, B)
     >>> print(res)
-     col_ind: array([0, 3, 2, 1])
          fun: 3260
+     col_ind: [0 3 2 1]
          nit: 9
 
     The see the relationship between the returned ``col_ind`` and ``fun``,
@@ -162,8 +161,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     ...               [8, 5, 0, 5], [4, 2, 5, 0]])
     >>> res = quadratic_assignment(A, B)
     >>> print(res)
-     col_ind: array([1, 0, 3, 2])
          fun: 178
+     col_ind: [1 0 3 2]
          nit: 13
 
     If accuracy is important, consider using  :ref:`'2opt' <optimize.qap-2opt>`
@@ -173,8 +172,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
     >>> res = quadratic_assignment(A, B, method="2opt",
     ...                            options = {'partial_guess': guess})
     >>> print(res)
-     col_ind: array([1, 2, 3, 0])
          fun: 176
+     col_ind: [1 2 3 0]
          nit: 17
 
     """
@@ -285,9 +284,7 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``, where
         ``m`` is not greater than the number of nodes, :math:`n`.
 
-    rng : {None, int, `numpy.random.Generator`,
-           `numpy.random.RandomState`}, optional
-
+    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -581,9 +578,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     -------
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
-    rng : {None, int, `numpy.random.Generator`,
-           `numpy.random.RandomState`}, optional
-
+    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -597,6 +592,10 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_match[i, 0]`` of `A` is matched to node
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
+
+        .. note::
+             `partial_match` must be sorted by the first column.
+
     partial_guess : 2-D array of integers, optional (default: None)
         A guess for the matching between the two matrices. Unlike
         `partial_match`, `partial_guess` does not fix the indices; they are
@@ -606,6 +605,9 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_guess[i, 0]`` of `A` is matched to node
         ``partial_guess[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
+
+        .. note::
+                `partial_guess` must be sorted by the first column.
 
     Returns
     -------

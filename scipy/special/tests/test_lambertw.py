@@ -6,10 +6,11 @@
 # [1] mpmath source code, Subversion revision 992
 #     http://code.google.com/p/mpmath/source/browse/trunk/mpmath/tests/test_functions2.py?spec=svn994&r=992
 
+import pytest
 import numpy as np
 from numpy.testing import assert_, assert_equal, assert_array_almost_equal
 from scipy.special import lambertw
-from numpy import nan, inf, pi, e, isnan, log, r_, array, complex_
+from numpy import nan, inf, pi, e, isnan, log, r_, array, complex128
 
 from scipy.special._testutils import FuncData
 
@@ -75,7 +76,7 @@ def test_values():
         (-0.448+0.4j,0, -0.11855133765652382241 + 0.66570534313583423116j),
         (-0.448-0.4j,0, -0.11855133765652382241 - 0.66570534313583423116j),
     ]
-    data = array(data, dtype=complex_)
+    data = array(data, dtype=complex128)
 
     def w(x, y):
         return lambertw(x, y.real.astype(int))
@@ -96,3 +97,13 @@ def test_lambertw_ufunc_loop_selection():
     assert_equal(lambertw(0, [0], 0).dtype, dt)
     assert_equal(lambertw(0, 0, [0]).dtype, dt)
     assert_equal(lambertw([0], [0], [0]).dtype, dt)
+
+
+@pytest.mark.parametrize('z', [1e-316, -2e-320j, -5e-318+1e-320j])
+def test_lambertw_subnormal_k0(z):
+    # Verify that subnormal inputs are handled correctly on
+    # the branch k=0 (regression test for gh-16291).
+    w = lambertw(z)
+    # For values this small, we can be sure that numerically,
+    # lambertw(z) is z.
+    assert w == z

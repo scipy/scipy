@@ -5,8 +5,7 @@ The matfile specification last found here:
 https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
-'''
-'''
+
 =================================
  Note on functions and mat files
 =================================
@@ -65,12 +64,12 @@ The mat files I was playing with are in ``tests/data``:
 See ``tests/test_mio.py:test_mio_funcs.py`` for the debugging
 script I was working with.
 
+Small fragments of current code adapted from matfile.py by Heiko
+Henkelmann; parts of the code for simplify_cells=True adapted from
+http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 '''
 
-# Small fragments of current code adapted from matfile.py by Heiko
-# Henkelmann; parts of the code for simplify_cells=True adapted from
-# http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
-
+import math
 import os
 import time
 import sys
@@ -105,7 +104,7 @@ from ._streams import ZlibInputStream
 
 def _has_struct(elem):
     """Determine if elem is an array and if first array item is a struct."""
-    return (isinstance(elem, np.ndarray) and (elem.size > 0) and
+    return (isinstance(elem, np.ndarray) and (elem.size > 0) and (elem.ndim > 0) and
             isinstance(elem[0], mat_struct))
 
 
@@ -154,7 +153,7 @@ class MatFile5Reader(MatFileReader):
     uint16_codec - char codec to use for uint16 char arrays
         (defaults to system default codec)
 
-    Uses variable reader that has the following stardard interface (see
+    Uses variable reader that has the following standard interface (see
     abstract class in ``miobase``::
 
        __init__(self, file_reader)
@@ -312,11 +311,13 @@ class MatFile5Reader(MatFileReader):
             hdr, next_position = self.read_var_header()
             name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if name in mdict:
-                warnings.warn('Duplicate variable name "%s" in stream'
-                              ' - replacing previous with new\n'
-                              'Consider mio5.varmats_from_mat to split '
-                              'file into single variable files' % name,
-                              MatReadWarning, stacklevel=2)
+                msg = (
+                    f'Duplicate variable name "{name}" in stream'
+                    " - replacing previous with new\nConsider"
+                    "scipy.io.matlab._mio5.varmats_from_mat to split "
+                    "file into single variable files"
+                )
+                warnings.warn(msg, MatReadWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -332,10 +333,9 @@ class MatFile5Reader(MatFileReader):
                 res = self.read_var_array(hdr, process)
             except MatReadError as err:
                 warnings.warn(
-                    'Unreadable variable "%s", because "%s"' %
-                    (name, err),
+                    f'Unreadable variable "{name}", because "{err}"',
                     Warning, stacklevel=2)
-                res = "Read error: %s" % err
+                res = f"Read error: {err}"
             self.mat_stream.seek(next_position)
             mdict[name] = res
             if hdr.is_global:
@@ -405,10 +405,9 @@ def varmats_from_mat(file_obj):
     Examples
     --------
     >>> import scipy.io
-
-    BytesIO is from the ``io`` module in Python 3, and is ``cStringIO`` for
-    Python < 3.
-
+    >>> import numpy as np
+    >>> from io import BytesIO
+    >>> from scipy.io.matlab._mio5 import varmats_from_mat
     >>> mat_fileobj = BytesIO()
     >>> scipy.io.savemat(mat_fileobj, {'b': np.arange(10), 'a': 'a string'})
     >>> varmats = varmats_from_mat(mat_fileobj)
@@ -466,6 +465,8 @@ def to_writeable(source):
         return source
     if source is None:
         return None
+    if hasattr(source, "__array__"):
+        return np.asarray(source)
     # Objects that implement mappings
     is_mapping = (hasattr(source, 'keys') and hasattr(source, 'values') and
                   hasattr(source, 'items'))
@@ -474,8 +475,8 @@ def to_writeable(source):
         # NumPy scalars are never mappings (PyPy issue workaround)
         pass
     elif not is_mapping and hasattr(source, '__dict__'):
-        source = dict((key, value) for key, value in source.__dict__.items()
-                      if not key.startswith('_'))
+        source = {key: value for key, value in source.__dict__.items()
+                      if not key.startswith('_')}
         is_mapping = True
     if is_mapping:
         dtype = []
@@ -490,7 +491,10 @@ def to_writeable(source):
         else:
             return EmptyStructMarker
     # Next try and convert to an array
-    narr = np.asanyarray(source)
+    try:
+        narr = np.asanyarray(source)
+    except ValueError:
+        narr = np.asanyarray(source, dtype=object)
     if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible
@@ -531,7 +535,7 @@ class VarWriter5:
             mdtype = NP_TO_MTYPES[arr.dtype.str[1:]]
         # Array needs to be in native byte order
         if arr.dtype.byteorder == swapped_code:
-            arr = arr.byteswap().newbyteorder()
+            arr = arr.byteswap().view(arr.dtype.newbyteorder())
         byte_count = arr.size*arr.itemsize
         if byte_count <= 4:
             self.write_smalldata_element(arr, mdtype, byte_count)
@@ -650,8 +654,7 @@ class VarWriter5:
         # Try to convert things that aren't arrays
         narr = to_writeable(arr)
         if narr is None:
-            raise TypeError('Could not convert %s (type %s) to array'
-                            % (arr, type(arr)))
+            raise TypeError(f'Could not convert {arr} (type {type(arr)}) to array')
         if isinstance(narr, MatlabObject):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
@@ -728,7 +731,7 @@ class VarWriter5:
             # transpose here, because we're flattening the array, before
             # we write the bytes. The bytes have to be written in
             # Fortran order.
-            n_chars = np.prod(shape)
+            n_chars = math.prod(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr.T.copy())  # Fortran order
@@ -843,8 +846,8 @@ class MatFile5Writer:
     def write_file_header(self):
         # write header
         hdr = np.zeros((), NDT_FILE_HDR)
-        hdr['description'] = 'MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
-            % (os.name,time.asctime())
+        hdr['description'] = (f'MATLAB 5.0 MAT-file Platform: {os.name}, '
+                              f'Created on: {time.asctime()}')
         hdr['version'] = 0x0100
         hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',

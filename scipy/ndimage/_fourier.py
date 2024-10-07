@@ -28,8 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import numpy
-from numpy.core.multiarray import normalize_axis_index
+import numpy as np
+from scipy._lib._util import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 
@@ -39,16 +39,15 @@ __all__ = ['fourier_gaussian', 'fourier_uniform', 'fourier_ellipsoid',
 
 def _get_output_fourier(output, input):
     if output is None:
-        if input.dtype.type in [numpy.complex64, numpy.complex128,
-                                numpy.float32]:
-            output = numpy.zeros(input.shape, dtype=input.dtype)
+        if input.dtype.type in [np.complex64, np.complex128, np.float32]:
+            output = np.zeros(input.shape, dtype=input.dtype)
         else:
-            output = numpy.zeros(input.shape, dtype=numpy.float64)
+            output = np.zeros(input.shape, dtype=np.float64)
     elif type(output) is type:
-        if output not in [numpy.complex64, numpy.complex128,
-                          numpy.float32, numpy.float64]:
+        if output not in [np.complex64, np.complex128,
+                          np.float32, np.float64]:
             raise RuntimeError("output type not supported")
-        output = numpy.zeros(input.shape, dtype=output)
+        output = np.zeros(input.shape, dtype=output)
     elif output.shape != input.shape:
         raise RuntimeError("output shape not correct")
     return output
@@ -56,14 +55,14 @@ def _get_output_fourier(output, input):
 
 def _get_output_fourier_complex(output, input):
     if output is None:
-        if input.dtype.type in [numpy.complex64, numpy.complex128]:
-            output = numpy.zeros(input.shape, dtype=input.dtype)
+        if input.dtype.type in [np.complex64, np.complex128]:
+            output = np.zeros(input.shape, dtype=input.dtype)
         else:
-            output = numpy.zeros(input.shape, dtype=numpy.complex128)
+            output = np.zeros(input.shape, dtype=np.complex128)
     elif type(output) is type:
-        if output not in [numpy.complex64, numpy.complex128]:
+        if output not in [np.complex64, np.complex128]:
             raise RuntimeError("output type not supported")
-        output = numpy.zeros(input.shape, dtype=output)
+        output = np.zeros(input.shape, dtype=output)
     elif output.shape != input.shape:
         raise RuntimeError("output shape not correct")
     return output
@@ -94,7 +93,6 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
         The axis of the real transform.
     output : ndarray, optional
         If given, the result of filtering the input is placed in this array.
-        None is returned in this case.
 
     Returns
     -------
@@ -103,12 +101,12 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import numpy.fft
     >>> import matplotlib.pyplot as plt
     >>> fig, (ax1, ax2) = plt.subplots(1, 2)
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> input_ = numpy.fft.fft2(ascent)
     >>> result = ndimage.fourier_gaussian(input_, sigma=4)
     >>> result = numpy.fft.ifft2(result)
@@ -116,11 +114,11 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     >>> ax2.imshow(result.real)  # the imaginary part is an artifact
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     output = _get_output_fourier(output, input)
     axis = normalize_axis_index(axis, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
-    sigmas = numpy.asarray(sigmas, dtype=numpy.float64)
+    sigmas = np.asarray(sigmas, dtype=np.float64)
     if not sigmas.flags.contiguous:
         sigmas = sigmas.copy()
 
@@ -153,7 +151,6 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
         The axis of the real transform.
     output : ndarray, optional
         If given, the result of filtering the input is placed in this array.
-        None is returned in this case.
 
     Returns
     -------
@@ -162,12 +159,12 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import numpy.fft
     >>> import matplotlib.pyplot as plt
     >>> fig, (ax1, ax2) = plt.subplots(1, 2)
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> input_ = numpy.fft.fft2(ascent)
     >>> result = ndimage.fourier_uniform(input_, size=20)
     >>> result = numpy.fft.ifft2(result)
@@ -175,11 +172,11 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     >>> ax2.imshow(result.real)  # the imaginary part is an artifact
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     output = _get_output_fourier(output, input)
     axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
-    sizes = numpy.asarray(sizes, dtype=numpy.float64)
+    sizes = np.asarray(sizes, dtype=np.float64)
     if not sizes.flags.contiguous:
         sizes = sizes.copy()
     _nd_image.fourier_filter(input, sizes, n, axis, output, 1)
@@ -190,7 +187,7 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     """
     Multidimensional ellipsoid Fourier filter.
 
-    The array is multiplied with the fourier transform of a ellipsoid of
+    The array is multiplied with the fourier transform of an ellipsoid of
     given sizes.
 
     Parameters
@@ -211,7 +208,6 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
         The axis of the real transform.
     output : ndarray, optional
         If given, the result of filtering the input is placed in this array.
-        None is returned in this case.
 
     Returns
     -------
@@ -224,12 +220,12 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import numpy.fft
     >>> import matplotlib.pyplot as plt
     >>> fig, (ax1, ax2) = plt.subplots(1, 2)
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> input_ = numpy.fft.fft2(ascent)
     >>> result = ndimage.fourier_ellipsoid(input_, size=20)
     >>> result = numpy.fft.ifft2(result)
@@ -237,13 +233,17 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     >>> ax2.imshow(result.real)  # the imaginary part is an artifact
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     if input.ndim > 3:
         raise NotImplementedError("Only 1d, 2d and 3d inputs are supported")
     output = _get_output_fourier(output, input)
+    if output.size == 0:
+        # The C code has a bug that can result in a segfault with arrays
+        # that have size 0 (gh-17270), so check here.
+        return output
     axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
-    sizes = numpy.asarray(sizes, dtype=numpy.float64)
+    sizes = np.asarray(sizes, dtype=np.float64)
     if not sizes.flags.contiguous:
         sizes = sizes.copy()
     _nd_image.fourier_filter(input, sizes, n, axis, output, 2)
@@ -274,7 +274,6 @@ def fourier_shift(input, shift, n=-1, axis=-1, output=None):
         The axis of the real transform.
     output : ndarray, optional
         If given, the result of shifting the input is placed in this array.
-        None is returned in this case.
 
     Returns
     -------
@@ -283,12 +282,12 @@ def fourier_shift(input, shift, n=-1, axis=-1, output=None):
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> import numpy.fft
     >>> fig, (ax1, ax2) = plt.subplots(1, 2)
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> input_ = numpy.fft.fft2(ascent)
     >>> result = ndimage.fourier_shift(input_, shift=200)
     >>> result = numpy.fft.ifft2(result)
@@ -296,11 +295,11 @@ def fourier_shift(input, shift, n=-1, axis=-1, output=None):
     >>> ax2.imshow(result.real)  # the imaginary part is an artifact
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     output = _get_output_fourier_complex(output, input)
     axis = normalize_axis_index(axis, input.ndim)
     shifts = _ni_support._normalize_sequence(shift, input.ndim)
-    shifts = numpy.asarray(shifts, dtype=numpy.float64)
+    shifts = np.asarray(shifts, dtype=np.float64)
     if not shifts.flags.contiguous:
         shifts = shifts.copy()
     _nd_image.fourier_shift(input, shifts, n, axis, output)

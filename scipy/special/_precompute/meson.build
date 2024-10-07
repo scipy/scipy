@@ -4,6 +4,7 @@ python_sources = [
   'expn_asy.py',
   'gammainc_asy.py',
   'gammainc_data.py',
+  'hyp2f1_data.py',
   'lambertw.py',
   'loggamma.py',
   'struve_convergence.py',
@@ -17,6 +18,5 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/special/_precompute'
 )

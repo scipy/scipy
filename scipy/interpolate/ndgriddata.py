@@ -2,16 +2,13 @@
 # Use the `scipy.interpolate` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _ndgriddata
+from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
     'CloughTocher2DInterpolator',
     'LinearNDInterpolator',
-    'NDInterpolatorBase',
     'NearestNDInterpolator',
-    'cKDTree',
     'griddata',
 ]
 
@@ -21,13 +18,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.interpolate.ndgriddata is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.interpolate instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.interpolate` namespace, "
-                  "the `scipy.interpolate.ndgriddata` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_ndgriddata, name)
+    return _sub_module_deprecation(sub_package="interpolate", module="ndgriddata",
+                                   private_modules=["_ndgriddata"], all=__all__,
+                                   attribute=name)

@@ -1,17 +1,18 @@
 import warnings
 
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_, suppress_warnings)
+from numpy.testing import suppress_warnings
 from pytest import raises as assert_raises
+from scipy._lib._array_api import(
+    assert_almost_equal, xp_assert_equal, xp_assert_close
+)
 
-from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
+from scipy.signal import (ss2tf, tf2ss, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
-from scipy.sparse._sputils import matrix
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -166,15 +167,15 @@ class TestPlacePoles:
         fsf = self._check(A, B, P)
         # rtol and nb_iter should be set to np.nan as the identity can be
         # used as transfer matrix
-        assert_equal(fsf.rtol, np.nan)
-        assert_equal(fsf.nb_iter, np.nan)
+        assert np.isnan(fsf.rtol)
+        assert np.isnan(fsf.nb_iter)
 
         # check with complex poles too as they trigger a specific case in
         # the specific case :-)
         P = np.array((-2+1j,-2-1j,-3,-2))
         fsf = self._check(A, B, P)
-        assert_equal(fsf.rtol, np.nan)
-        assert_equal(fsf.nb_iter, np.nan)
+        assert np.isnan(fsf.rtol)
+        assert np.isnan(fsf.nb_iter)
 
         #now test with a B matrix with only one column (no optimisation)
         B = B[:,0].reshape(4,1)
@@ -182,8 +183,8 @@ class TestPlacePoles:
         fsf = self._check(A, B, P)
 
         #  we can't optimize anything, check they are set to 0 as expected
-        assert_equal(fsf.rtol, 0)
-        assert_equal(fsf.nb_iter, 0)
+        assert fsf.rtol == 0
+        assert fsf.nb_iter == 0
 
     def test_errors(self):
         # Test input mistakes from user
@@ -223,7 +224,7 @@ class TestPlacePoles:
         # should fail as ndim(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
-        #unctrollable system
+        # uncontrollable system
         assert_raises(ValueError, place_poles, np.ones((4,4)),
                       np.ones((4,2)), (1,2,3,4))
 
@@ -232,11 +233,11 @@ class TestPlacePoles:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             fsf = place_poles(A, B, (-1,-2,-3,-4), rtol=1e-16, maxiter=42)
-            assert_(len(w) == 1)
-            assert_(issubclass(w[-1].category, UserWarning))
-            assert_("Convergence was not reached after maxiter iterations"
+            assert len(w) == 1
+            assert issubclass(w[-1].category, UserWarning)
+            assert ("Convergence was not reached after maxiter iterations"
                     in str(w[-1].message))
-            assert_equal(fsf.nb_iter, 42)
+            assert fsf.nb_iter == 42
 
         # should fail as a complex misses its conjugate
         assert_raises(ValueError, place_poles, A, B, (-2+1j,-2-1j,-2+3j,-2))
@@ -272,95 +273,95 @@ class TestSS2TF:
         a = np.array([1.0, 2.0, 3.0])
 
         A, B, C, D = tf2ss(b, a)
-        assert_allclose(A, [[-2, -3], [1, 0]], rtol=1e-13)
-        assert_allclose(B, [[1], [0]], rtol=1e-13)
-        assert_allclose(C, [[1, 2]], rtol=1e-13)
-        assert_allclose(D, [[1]], rtol=1e-14)
+        xp_assert_close(A, [[-2., -3], [1, 0]], rtol=1e-13)
+        xp_assert_close(B, [[1.], [0]], rtol=1e-13)
+        xp_assert_close(C, [[1., 2]], rtol=1e-13)
+        xp_assert_close(D, [[1.]], rtol=1e-14)
 
         bb, aa = ss2tf(A, B, C, D)
-        assert_allclose(bb[0], b, rtol=1e-13)
-        assert_allclose(aa, a, rtol=1e-13)
+        xp_assert_close(bb[0], b, rtol=1e-13)
+        xp_assert_close(aa, a, rtol=1e-13)
 
     def test_zero_order_round_trip(self):
         # See gh-5760
         tf = (2, 1)
         A, B, C, D = tf2ss(*tf)
-        assert_allclose(A, [[0]], rtol=1e-13)
-        assert_allclose(B, [[0]], rtol=1e-13)
-        assert_allclose(C, [[0]], rtol=1e-13)
-        assert_allclose(D, [[2]], rtol=1e-13)
+        xp_assert_close(A, [[0.]], rtol=1e-13)
+        xp_assert_close(B, [[0.]], rtol=1e-13)
+        xp_assert_close(C, [[0.]], rtol=1e-13)
+        xp_assert_close(D, [[2.]], rtol=1e-13)
 
         num, den = ss2tf(A, B, C, D)
-        assert_allclose(num, [[2, 0]], rtol=1e-13)
-        assert_allclose(den, [1, 0], rtol=1e-13)
+        xp_assert_close(num, [[2., 0]], rtol=1e-13)
+        xp_assert_close(den, [1., 0], rtol=1e-13)
 
         tf = ([[5], [2]], 1)
         A, B, C, D = tf2ss(*tf)
-        assert_allclose(A, [[0]], rtol=1e-13)
-        assert_allclose(B, [[0]], rtol=1e-13)
-        assert_allclose(C, [[0], [0]], rtol=1e-13)
-        assert_allclose(D, [[5], [2]], rtol=1e-13)
+        xp_assert_close(A, [[0.]], rtol=1e-13)
+        xp_assert_close(B, [[0.]], rtol=1e-13)
+        xp_assert_close(C, [[0.], [0]], rtol=1e-13)
+        xp_assert_close(D, [[5.], [2]], rtol=1e-13)
 
         num, den = ss2tf(A, B, C, D)
-        assert_allclose(num, [[5, 0], [2, 0]], rtol=1e-13)
-        assert_allclose(den, [1, 0], rtol=1e-13)
+        xp_assert_close(num, [[5., 0], [2, 0]], rtol=1e-13)
+        xp_assert_close(den, [1., 0], rtol=1e-13)
 
     def test_simo_round_trip(self):
         # See gh-5753
         tf = ([[1, 2], [1, 1]], [1, 2])
         A, B, C, D = tf2ss(*tf)
-        assert_allclose(A, [[-2]], rtol=1e-13)
-        assert_allclose(B, [[1]], rtol=1e-13)
-        assert_allclose(C, [[0], [-1]], rtol=1e-13)
-        assert_allclose(D, [[1], [1]], rtol=1e-13)
+        xp_assert_close(A, [[-2.]], rtol=1e-13)
+        xp_assert_close(B, [[1.]], rtol=1e-13)
+        xp_assert_close(C, [[0.], [-1.]], rtol=1e-13)
+        xp_assert_close(D, [[1.], [1.]], rtol=1e-13)
 
         num, den = ss2tf(A, B, C, D)
-        assert_allclose(num, [[1, 2], [1, 1]], rtol=1e-13)
-        assert_allclose(den, [1, 2], rtol=1e-13)
+        xp_assert_close(num, [[1., 2.], [1., 1.]], rtol=1e-13)
+        xp_assert_close(den, [1., 2.], rtol=1e-13)
 
         tf = ([[1, 0, 1], [1, 1, 1]], [1, 1, 1])
         A, B, C, D = tf2ss(*tf)
-        assert_allclose(A, [[-1, -1], [1, 0]], rtol=1e-13)
-        assert_allclose(B, [[1], [0]], rtol=1e-13)
-        assert_allclose(C, [[-1, 0], [0, 0]], rtol=1e-13)
-        assert_allclose(D, [[1], [1]], rtol=1e-13)
+        xp_assert_close(A, [[-1., -1.], [1., 0.]], rtol=1e-13)
+        xp_assert_close(B, [[1.], [0.]], rtol=1e-13)
+        xp_assert_close(C, [[-1., 0.], [0., 0.]], rtol=1e-13)
+        xp_assert_close(D, [[1.], [1.]], rtol=1e-13)
 
         num, den = ss2tf(A, B, C, D)
-        assert_allclose(num, [[1, 0, 1], [1, 1, 1]], rtol=1e-13)
-        assert_allclose(den, [1, 1, 1], rtol=1e-13)
+        xp_assert_close(num, [[1., 0., 1.], [1., 1., 1.]], rtol=1e-13)
+        xp_assert_close(den, [1., 1., 1.], rtol=1e-13)
 
         tf = ([[1, 2, 3], [1, 2, 3]], [1, 2, 3, 4])
         A, B, C, D = tf2ss(*tf)
-        assert_allclose(A, [[-2, -3, -4], [1, 0, 0], [0, 1, 0]], rtol=1e-13)
-        assert_allclose(B, [[1], [0], [0]], rtol=1e-13)
-        assert_allclose(C, [[1, 2, 3], [1, 2, 3]], rtol=1e-13)
-        assert_allclose(D, [[0], [0]], rtol=1e-13)
+        xp_assert_close(A, [[-2., -3, -4], [1, 0, 0], [0, 1, 0]], rtol=1e-13)
+        xp_assert_close(B, [[1.], [0], [0]], rtol=1e-13)
+        xp_assert_close(C, [[1., 2, 3], [1, 2, 3]], rtol=1e-13)
+        xp_assert_close(D, [[0.], [0]], rtol=1e-13)
 
         num, den = ss2tf(A, B, C, D)
-        assert_allclose(num, [[0, 1, 2, 3], [0, 1, 2, 3]], rtol=1e-13)
-        assert_allclose(den, [1, 2, 3, 4], rtol=1e-13)
+        xp_assert_close(num, [[0., 1, 2, 3], [0, 1, 2, 3]], rtol=1e-13)
+        xp_assert_close(den, [1., 2, 3, 4], rtol=1e-13)
 
         tf = (np.array([1, [2, 3]], dtype=object), [1, 6])
         A, B, C, D = tf2ss(*tf)
-        assert_allclose(A, [[-6]], rtol=1e-31)
-        assert_allclose(B, [[1]], rtol=1e-31)
-        assert_allclose(C, [[1], [-9]], rtol=1e-31)
-        assert_allclose(D, [[0], [2]], rtol=1e-31)
+        xp_assert_close(A, [[-6.]], rtol=1e-31)
+        xp_assert_close(B, [[1.]], rtol=1e-31)
+        xp_assert_close(C, [[1.], [-9]], rtol=1e-31)
+        xp_assert_close(D, [[0.], [2]], rtol=1e-31)
 
         num, den = ss2tf(A, B, C, D)
-        assert_allclose(num, [[0, 1], [2, 3]], rtol=1e-13)
-        assert_allclose(den, [1, 6], rtol=1e-13)
+        xp_assert_close(num, [[0., 1], [2, 3]], rtol=1e-13)
+        xp_assert_close(den, [1., 6], rtol=1e-13)
 
         tf = (np.array([[1, -3], [1, 2, 3]], dtype=object), [1, 6, 5])
         A, B, C, D = tf2ss(*tf)
-        assert_allclose(A, [[-6, -5], [1, 0]], rtol=1e-13)
-        assert_allclose(B, [[1], [0]], rtol=1e-13)
-        assert_allclose(C, [[1, -3], [-4, -2]], rtol=1e-13)
-        assert_allclose(D, [[0], [1]], rtol=1e-13)
+        xp_assert_close(A, [[-6., -5], [1, 0]], rtol=1e-13)
+        xp_assert_close(B, [[1.], [0]], rtol=1e-13)
+        xp_assert_close(C, [[1., -3], [-4, -2]], rtol=1e-13)
+        xp_assert_close(D, [[0.], [1]], rtol=1e-13)
 
         num, den = ss2tf(A, B, C, D)
-        assert_allclose(num, [[0, 1, -3], [1, 2, 3]], rtol=1e-13)
-        assert_allclose(den, [1, 6, 5], rtol=1e-13)
+        xp_assert_close(num, [[0., 1, -3], [1, 2, 3]], rtol=1e-13)
+        xp_assert_close(den, [1., 6, 5], rtol=1e-13)
 
     def test_all_int_arrays(self):
         A = [[0, 1, 0], [0, 0, 1], [-3, -4, -2]]
@@ -368,8 +369,8 @@ class TestSS2TF:
         C = [[5, 1, 0]]
         D = [[0]]
         num, den = ss2tf(A, B, C, D)
-        assert_allclose(num, [[0.0, 0.0, 1.0, 5.0]], rtol=1e-13, atol=1e-14)
-        assert_allclose(den, [1.0, 2.0, 4.0, 3.0], rtol=1e-13)
+        xp_assert_close(num, [[0.0, 0.0, 1.0, 5.0]], rtol=1e-13, atol=1e-14)
+        xp_assert_close(den, [1.0, 2.0, 4.0, 3.0], rtol=1e-13)
 
     def test_multioutput(self):
         # Regression test for gh-2669.
@@ -404,13 +405,15 @@ class TestSS2TF:
         b2, a2 = ss2tf(A, B, C[2], D[2])
 
         # Check that we got the same results.
-        assert_allclose(a0, a, rtol=1e-13)
-        assert_allclose(a1, a, rtol=1e-13)
-        assert_allclose(a2, a, rtol=1e-13)
-        assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
+        xp_assert_close(a0, a, rtol=1e-13)
+        xp_assert_close(a1, a, rtol=1e-13)
+        xp_assert_close(a2, a, rtol=1e-13)
+        xp_assert_close(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
 class TestLsim:
+    digits_accuracy = 7
+
     def lti_nowarn(self, *args):
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
@@ -428,6 +431,17 @@ class TestLsim:
         assert_almost_equal(x, expected_x)
         assert_almost_equal(y, expected_x)
 
+    def test_second_order(self):
+        t = np.linspace(0, 10, 1001)
+        u = np.zeros_like(t)
+        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
+        # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
+        # is (1-t)*exp(-t).
+        system = self.lti_nowarn([1.0], [1.0, 2.0, 1.0])
+        tout, y, x = lsim(system, u, t, X0=[1.0, 0.0])
+        expected_x = (1.0 - tout) * np.exp(-tout)
+        assert_almost_equal(x[:, 0], expected_x)
+
     def test_integrator(self):
         # integrator: y' = u
         system = self.lti_nowarn(0., 1., 1., 0.)
@@ -435,22 +449,41 @@ class TestLsim:
         u = t
         tout, y, x = lsim(system, u, t)
         expected_x = 0.5 * tout**2
-        assert_almost_equal(x, expected_x)
-        assert_almost_equal(y, expected_x)
+        assert_almost_equal(x, expected_x, decimal=self.digits_accuracy)
+        assert_almost_equal(y, expected_x, decimal=self.digits_accuracy)
+
+    def test_two_states(self):
+        # A system with two state variables, two inputs, and one output.
+        A = np.array([[-1.0, 0.0], [0.0, -2.0]])
+        B = np.array([[1.0, 0.0], [0.0, 1.0]])
+        C = np.array([1.0, 0.0])
+        D = np.zeros((1, 2))
+
+        system = self.lti_nowarn(A, B, C, D)
+
+        t = np.linspace(0, 10.0, 21)
+        u = np.zeros((len(t), 2))
+        tout, y, x = lsim(system, U=u, T=t, X0=[1.0, 1.0])
+        expected_y = np.exp(-tout)
+        expected_x0 = np.exp(-tout)
+        expected_x1 = np.exp(-2.0 * tout)
+        assert_almost_equal(y, expected_y)
+        assert_almost_equal(x[:, 0], expected_x0)
+        assert_almost_equal(x[:, 1], expected_x1)
 
     def test_double_integrator(self):
         # double integrator: y'' = 2u
-        A = matrix([[0., 1.], [0., 0.]])
-        B = matrix([[0.], [1.]])
-        C = matrix([[2., 0.]])
+        A = np.array([[0., 1.], [0., 0.]])
+        B = np.array([[0.], [1.]])
+        C = np.array([[2., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
         tout, y, x = lsim(system, u, t)
         expected_x = np.transpose(np.array([0.5 * tout**2, tout]))
         expected_y = tout**2
-        assert_almost_equal(x, expected_x)
-        assert_almost_equal(y, expected_y)
+        assert_almost_equal(x, expected_x, decimal=self.digits_accuracy)
+        assert_almost_equal(y, expected_y, decimal=self.digits_accuracy)
 
     def test_jordan_block(self):
         # Non-diagonalizable A matrix
@@ -458,9 +491,9 @@ class TestLsim:
         #   x2' + x2 = u
         #   y = x1
         # Exact solution with u = 0 is y(t) = t exp(-t)
-        A = matrix([[-1., 1.], [0., -1.]])
-        B = matrix([[0.], [1.]])
-        C = matrix([[1., 0.]])
+        A = np.array([[-1., 1.], [0., -1.]])
+        B = np.array([[0.], [1.]])
+        C = np.array([[1., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
@@ -477,7 +510,7 @@ class TestLsim:
         system = self.lti_nowarn(A, B, C, D)
 
         t = np.linspace(0, 5.0, 101)
-        u = np.zeros_like(t)
+        u = np.zeros((len(t), 2))
         tout, y, x = lsim(system, u, t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
@@ -494,94 +527,26 @@ class TestLsim:
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-
-class Test_lsim2:
-
-    def test_01(self):
-        t = np.linspace(0,10,1001)
-        u = np.zeros_like(t)
-        # First order system: x'(t) + x(t) = u(t), x(0) = 1.
-        # Exact solution is x(t) = exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0])
-        expected_x = np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
-
-    def test_02(self):
+    def test_nonequal_timesteps(self):
         t = np.array([0.0, 1.0, 1.0, 3.0])
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
-        system = ([1.0],[1.0,0.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0])
-        expected_x = np.maximum(1.0, tout)
-        assert_almost_equal(x[:,0], expected_x)
-
-    def test_03(self):
-        t = np.array([0.0, 1.0, 1.0, 1.1, 1.1, 2.0])
-        u = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
-        # Simple integrator:  x'(t) = u(t)
-        system = ([1.0],[1.0, 0.0])
-        tout, y, x = lsim2(system, u, t, hmax=0.01)
-        expected_x = np.array([0.0, 0.0, 0.0, 0.1, 0.1, 0.1])
-        assert_almost_equal(x[:,0], expected_x)
-
-    def test_04(self):
-        t = np.linspace(0, 10, 1001)
-        u = np.zeros_like(t)
-        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
-        # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
-        # is (1-t)*exp(-t).
-        system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0, 0.0])
-        expected_x = (1.0 - tout) * np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
-
-    def test_05(self):
-        # The call to lsim2 triggers a "BadCoefficients" warning from
-        # scipy.signal._filter_design, but the test passes.  I think the warning
-        # is related to the incomplete handling of multi-input systems in
-        # scipy.signal.
-
-        # A system with two state variables, two inputs, and one output.
-        A = np.array([[-1.0, 0.0], [0.0, -2.0]])
-        B = np.array([[1.0, 0.0], [0.0, 1.0]])
-        C = np.array([1.0, 0.0])
-        D = np.zeros((1, 2))
-
-        t = np.linspace(0, 10.0, 101)
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
-            tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
-        expected_y = np.exp(-tout)
-        expected_x0 = np.exp(-tout)
-        expected_x1 = np.exp(-2.0 * tout)
-        assert_almost_equal(y, expected_y)
-        assert_almost_equal(x[:,0], expected_x0)
-        assert_almost_equal(x[:,1], expected_x1)
-
-    def test_06(self):
-        # Test use of the default values of the arguments `T` and `U`.
-        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
-        # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
-        # is (1-t)*exp(-t).
-        system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y, x = lsim2(system, X0=[1.0, 0.0])
-        expected_x = (1.0 - tout) * np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
+        system = ([1.0], [1.0, 0.0])
+        with assert_raises(ValueError,
+                           match="Time steps are not equally spaced."):
+            tout, y, x = lsim(system, u, t, X0=[1.0])
 
 
-class _TestImpulseFuncs:
-    # Common tests for impulse/impulse2 (= self.func)
-
-    def test_01(self):
+class TestImpulse:
+    def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact impulse response is x(t) = exp(-t).
         system = ([1.0], [1.0,1.0])
-        tout, y = self.func(system)
+        tout, y = impulse(system)
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_02(self):
+    def test_first_order_fixed_time(self):
         # Specify the desired time values for the output.
 
         # First order system: x'(t) + x(t) = u(t)
@@ -589,45 +554,45 @@ class _TestImpulseFuncs:
         system = ([1.0], [1.0,1.0])
         n = 21
         t = np.linspace(0, 2.0, n)
-        tout, y = self.func(system, T=t)
-        assert_equal(tout.shape, (n,))
+        tout, y = impulse(system, T=t)
+        assert tout.shape == (n,)
         assert_almost_equal(tout, t)
         expected_y = np.exp(-t)
         assert_almost_equal(y, expected_y)
 
-    def test_03(self):
+    def test_first_order_initial(self):
         # Specify an initial condition as a scalar.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact impulse response is x(t) = 4*exp(-t).
         system = ([1.0], [1.0,1.0])
-        tout, y = self.func(system, X0=3.0)
+        tout, y = impulse(system, X0=3.0)
         expected_y = 4.0 * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_04(self):
+    def test_first_order_initial_list(self):
         # Specify an initial condition as a list.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact impulse response is x(t) = 4*exp(-t).
         system = ([1.0], [1.0,1.0])
-        tout, y = self.func(system, X0=[3.0])
+        tout, y = impulse(system, X0=[3.0])
         expected_y = 4.0 * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_05(self):
+    def test_integrator(self):
         # Simple integrator: x'(t) = u(t)
         system = ([1.0], [1.0,0.0])
-        tout, y = self.func(system)
+        tout, y = impulse(system)
         expected_y = np.ones_like(tout)
         assert_almost_equal(y, expected_y)
 
-    def test_06(self):
+    def test_second_order(self):
         # Second order system with a repeated root:
         #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact impulse response is t*exp(-t).
         system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y = self.func(system)
+        tout, y = impulse(system)
         expected_y = tout * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
@@ -635,34 +600,24 @@ class _TestImpulseFuncs:
         # Test that function can accept sequences, scalars.
         system = ([1.0], [1.0, 2.0, 1.0])
         # TODO: add meaningful test where X0 is a list
-        tout, y = self.func(system, X0=[3], T=[5, 6])
-        tout, y = self.func(system, X0=[3], T=[5])
+        tout, y = impulse(system, X0=[3], T=[5, 6])
+        tout, y = impulse(system, X0=[3], T=[5])
 
     def test_array_like2(self):
         system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y = self.func(system, X0=3, T=5)
+        tout, y = impulse(system, X0=3, T=5)
 
 
-class TestImpulse2(_TestImpulseFuncs):
-    def setup_method(self):
-        self.func = impulse2
-
-
-class TestImpulse(_TestImpulseFuncs):
-    def setup_method(self):
-        self.func = impulse
-
-
-class _TestStepFuncs:
-    def test_01(self):
+class TestStep:
+    def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
         system = ([1.0], [1.0,1.0])
-        tout, y = self.func(system)
+        tout, y = step(system)
         expected_y = 1.0 - np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_02(self):
+    def test_first_order_fixed_time(self):
         # Specify the desired time values for the output.
 
         # First order system: x'(t) + x(t) = u(t)
@@ -670,46 +625,46 @@ class _TestStepFuncs:
         system = ([1.0], [1.0,1.0])
         n = 21
         t = np.linspace(0, 2.0, n)
-        tout, y = self.func(system, T=t)
-        assert_equal(tout.shape, (n,))
+        tout, y = step(system, T=t)
+        assert tout.shape == (n,)
         assert_almost_equal(tout, t)
         expected_y = 1 - np.exp(-t)
         assert_almost_equal(y, expected_y)
 
-    def test_03(self):
+    def test_first_order_initial(self):
         # Specify an initial condition as a scalar.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact step response is x(t) = 1 + 2*exp(-t).
         system = ([1.0], [1.0,1.0])
-        tout, y = self.func(system, X0=3.0)
+        tout, y = step(system, X0=3.0)
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_04(self):
+    def test_first_order_initial_list(self):
         # Specify an initial condition as a list.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact step response is x(t) = 1 + 2*exp(-t).
         system = ([1.0], [1.0,1.0])
-        tout, y = self.func(system, X0=[3.0])
+        tout, y = step(system, X0=[3.0])
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_05(self):
+    def test_integrator(self):
         # Simple integrator: x'(t) = u(t)
         # Exact step response is x(t) = t.
         system = ([1.0],[1.0,0.0])
-        tout, y = self.func(system)
+        tout, y = step(system)
         expected_y = tout
         assert_almost_equal(y, expected_y)
 
-    def test_06(self):
+    def test_second_order(self):
         # Second order system with a repeated root:
         #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact step response is 1 - (1 + t)*exp(-t).
         system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y = self.func(system)
+        tout, y = step(system)
         expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
@@ -717,29 +672,7 @@ class _TestStepFuncs:
         # Test that function can accept sequences, scalars.
         system = ([1.0], [1.0, 2.0, 1.0])
         # TODO: add meaningful test where X0 is a list
-        tout, y = self.func(system, T=[5, 6])
-
-
-class TestStep2(_TestStepFuncs):
-    def setup_method(self):
-        self.func = step2
-
-    def test_05(self):
-        # This test is almost the same as the one it overwrites in the base
-        # class.  The only difference is the tolerances passed to step2:
-        # the default tolerances are not accurate enough for this test
-
-        # Simple integrator: x'(t) = u(t)
-        # Exact step response is x(t) = t.
-        system = ([1.0], [1.0,0.0])
-        tout, y = self.func(system, atol=1e-10, rtol=1e-8)
-        expected_y = tout
-        assert_almost_equal(y, expected_y)
-
-
-class TestStep(_TestStepFuncs):
-    def setup_method(self):
-        self.func = step
+        tout, y = step(system, T=[5, 6])
 
     def test_complex_input(self):
         # Test that complex input doesn't raise an error.
@@ -755,25 +688,25 @@ class TestLti:
 
         # TransferFunction
         s = lti([1], [-1])
-        assert_(isinstance(s, TransferFunction))
-        assert_(isinstance(s, lti))
-        assert_(not isinstance(s, dlti))
-        assert_(s.dt is None)
+        assert isinstance(s, TransferFunction)
+        assert isinstance(s, lti)
+        assert not isinstance(s, dlti)
+        assert s.dt is None
 
         # ZerosPolesGain
         s = lti(np.array([]), np.array([-1]), 1)
-        assert_(isinstance(s, ZerosPolesGain))
-        assert_(isinstance(s, lti))
-        assert_(not isinstance(s, dlti))
-        assert_(s.dt is None)
+        assert isinstance(s, ZerosPolesGain)
+        assert isinstance(s, lti)
+        assert not isinstance(s, dlti)
+        assert s.dt is None
 
         # StateSpace
         s = lti([], [-1], 1)
         s = lti([1], [-1], 1, 3)
-        assert_(isinstance(s, StateSpace))
-        assert_(isinstance(s, lti))
-        assert_(not isinstance(s, dlti))
-        assert_(s.dt is None)
+        assert isinstance(s, StateSpace)
+        assert isinstance(s, lti)
+        assert not isinstance(s, dlti)
+        assert s.dt is None
 
 
 class TestStateSpace:
@@ -787,13 +720,13 @@ class TestStateSpace:
     def test_conversion(self):
         # Check the conversion functions
         s = StateSpace(1, 2, 3, 4)
-        assert_(isinstance(s.to_ss(), StateSpace))
-        assert_(isinstance(s.to_tf(), TransferFunction))
-        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+        assert isinstance(s.to_ss(), StateSpace)
+        assert isinstance(s.to_tf(), TransferFunction)
+        assert isinstance(s.to_zpk(), ZerosPolesGain)
 
         # Make sure copies work
-        assert_(StateSpace(s) is not s)
-        assert_(s.to_ss() is not s)
+        assert StateSpace(s) is not s
+        assert s.to_ss() is not s
 
     def test_properties(self):
         # Test setters/getters for cross class properties.
@@ -801,9 +734,9 @@ class TestStateSpace:
 
         # Getters
         s = StateSpace(1, 1, 1, 1)
-        assert_equal(s.poles, [1])
-        assert_equal(s.zeros, [0])
-        assert_(s.dt is None)
+        xp_assert_equal(s.poles, [1.])
+        xp_assert_equal(s.zeros, [0.])
+        assert s.dt is None
 
     def test_operators(self):
         # Test +/-/* operators on systems
@@ -834,22 +767,22 @@ class TestStateSpace:
 
         # Test multiplication
         for typ in (int, float, complex, np.float32, np.complex128, np.array):
-            assert_allclose(lsim(typ(2) * s1, U=u, T=t)[1],
+            xp_assert_close(lsim(typ(2) * s1, U=u, T=t)[1],
                             typ(2) * lsim(s1, U=u, T=t)[1])
 
-            assert_allclose(lsim(s1 * typ(2), U=u, T=t)[1],
+            xp_assert_close(lsim(s1 * typ(2), U=u, T=t)[1],
                             lsim(s1, U=u, T=t)[1] * typ(2))
 
-            assert_allclose(lsim(s1 / typ(2), U=u, T=t)[1],
+            xp_assert_close(lsim(s1 / typ(2), U=u, T=t)[1],
                             lsim(s1, U=u, T=t)[1] / typ(2))
 
             with assert_raises(TypeError):
                 typ(2) / s1
 
-        assert_allclose(lsim(s1 * 2, U=u, T=t)[1],
+        xp_assert_close(lsim(s1 * 2, U=u, T=t)[1],
                         lsim(s1, U=2 * u, T=t)[1])
 
-        assert_allclose(lsim(s1 * s2, U=u, T=t)[1],
+        xp_assert_close(lsim(s1 * s2, U=u, T=t)[1],
                         lsim(s1, U=lsim(s2, U=u, T=t)[1], T=t)[1],
                         atol=1e-5)
 
@@ -876,7 +809,7 @@ class TestStateSpace:
             BadType() / s1
 
         # Test addition
-        assert_allclose(lsim(s1 + 2, U=u, T=t)[1],
+        xp_assert_close(lsim(s1 + 2, U=u, T=t)[1],
                         2 * u + lsim(s1, U=u, T=t)[1])
 
         # Check for dimension mismatch
@@ -902,17 +835,17 @@ class TestStateSpace:
         with assert_raises(TypeError):
             BadType() + s1
 
-        assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
+        xp_assert_close(lsim(s1 + s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
 
         # Test subtraction
-        assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
+        xp_assert_close(lsim(s1 - 2, U=u, T=t)[1],
                         -2 * u + lsim(s1, U=u, T=t)[1])
 
-        assert_allclose(lsim(2 - s1, U=u, T=t)[1],
+        xp_assert_close(lsim(2 - s1, U=u, T=t)[1],
                         2 * u + lsim(-s1, U=u, T=t)[1])
 
-        assert_allclose(lsim(s1 - s2, U=u, T=t)[1],
+        xp_assert_close(lsim(s1 - s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] - lsim(s2, U=u, T=t)[1])
 
         with assert_raises(TypeError):
@@ -922,16 +855,16 @@ class TestStateSpace:
             BadType() - s1
 
         s = s_discrete + s3_discrete
-        assert_(s.dt == 0.1)
+        assert s.dt == 0.1
 
         s = s_discrete * s3_discrete
-        assert_(s.dt == 0.1)
+        assert s.dt == 0.1
 
         s = 3 * s_discrete
-        assert_(s.dt == 0.1)
+        assert s.dt == 0.1
 
         s = -s_discrete
-        assert_(s.dt == 0.1)
+        assert s.dt == 0.1
 
 class TestTransferFunction:
     def test_initialization(self):
@@ -943,13 +876,13 @@ class TestTransferFunction:
     def test_conversion(self):
         # Check the conversion functions
         s = TransferFunction([1, 0], [1, -1])
-        assert_(isinstance(s.to_ss(), StateSpace))
-        assert_(isinstance(s.to_tf(), TransferFunction))
-        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+        assert isinstance(s.to_ss(), StateSpace)
+        assert isinstance(s.to_tf(), TransferFunction)
+        assert isinstance(s.to_zpk(), ZerosPolesGain)
 
         # Make sure copies work
-        assert_(TransferFunction(s) is not s)
-        assert_(s.to_tf() is not s)
+        assert TransferFunction(s) is not s
+        assert s.to_tf() is not s
 
     def test_properties(self):
         # Test setters/getters for cross class properties.
@@ -957,8 +890,8 @@ class TestTransferFunction:
 
         # Getters
         s = TransferFunction([1, 0], [1, -1])
-        assert_equal(s.poles, [1])
-        assert_equal(s.zeros, [0])
+        xp_assert_equal(s.poles, [1.])
+        xp_assert_equal(s.zeros, [0.])
 
 
 class TestZerosPolesGain:
@@ -971,13 +904,13 @@ class TestZerosPolesGain:
     def test_conversion(self):
         #Check the conversion functions
         s = ZerosPolesGain(1, 2, 3)
-        assert_(isinstance(s.to_ss(), StateSpace))
-        assert_(isinstance(s.to_tf(), TransferFunction))
-        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+        assert isinstance(s.to_ss(), StateSpace)
+        assert isinstance(s.to_tf(), TransferFunction)
+        assert isinstance(s.to_zpk(), ZerosPolesGain)
 
         # Make sure copies work
-        assert_(ZerosPolesGain(s) is not s)
-        assert_(s.to_zpk() is not s)
+        assert ZerosPolesGain(s) is not s
+        assert s.to_zpk() is not s
 
 
 class Test_abcd_normalize:
@@ -1012,97 +945,97 @@ class Test_abcd_normalize:
 
     def test_normalized_matrices_unchanged(self):
         A, B, C, D = abcd_normalize(self.A, self.B, self.C, self.D)
-        assert_equal(A, self.A)
-        assert_equal(B, self.B)
-        assert_equal(C, self.C)
-        assert_equal(D, self.D)
+        xp_assert_equal(A, self.A)
+        xp_assert_equal(B, self.B)
+        xp_assert_equal(C, self.C)
+        xp_assert_equal(D, self.D)
 
     def test_shapes(self):
         A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0)
-        assert_equal(A.shape[0], A.shape[1])
-        assert_equal(A.shape[0], B.shape[0])
-        assert_equal(A.shape[0], C.shape[1])
-        assert_equal(C.shape[0], D.shape[0])
-        assert_equal(B.shape[1], D.shape[1])
+        xp_assert_equal(A.shape[0], A.shape[1])
+        xp_assert_equal(A.shape[0], B.shape[0])
+        xp_assert_equal(A.shape[0], C.shape[1])
+        xp_assert_equal(C.shape[0], D.shape[0])
+        xp_assert_equal(B.shape[1], D.shape[1])
 
     def test_zero_dimension_is_not_none1(self):
         B_ = np.zeros((2, 0))
         D_ = np.zeros((0, 0))
         A, B, C, D = abcd_normalize(A=self.A, B=B_, D=D_)
-        assert_equal(A, self.A)
-        assert_equal(B, B_)
-        assert_equal(D, D_)
-        assert_equal(C.shape[0], D_.shape[0])
-        assert_equal(C.shape[1], self.A.shape[0])
+        xp_assert_equal(A, self.A)
+        xp_assert_equal(B, B_)
+        xp_assert_equal(D, D_)
+        assert C.shape[0] == D_.shape[0]
+        assert C.shape[1] == self.A.shape[0]
 
     def test_zero_dimension_is_not_none2(self):
         B_ = np.zeros((2, 0))
         C_ = np.zeros((0, 2))
         A, B, C, D = abcd_normalize(A=self.A, B=B_, C=C_)
-        assert_equal(A, self.A)
-        assert_equal(B, B_)
-        assert_equal(C, C_)
-        assert_equal(D.shape[0], C_.shape[0])
-        assert_equal(D.shape[1], B_.shape[1])
+        xp_assert_equal(A, self.A)
+        xp_assert_equal(B, B_)
+        xp_assert_equal(C, C_)
+        assert D.shape[0] == C_.shape[0]
+        assert D.shape[1] == B_.shape[1]
 
     def test_missing_A(self):
         A, B, C, D = abcd_normalize(B=self.B, C=self.C, D=self.D)
-        assert_equal(A.shape[0], A.shape[1])
-        assert_equal(A.shape[0], B.shape[0])
-        assert_equal(A.shape, (self.B.shape[0], self.B.shape[0]))
+        assert A.shape[0] == A.shape[1]
+        assert A.shape[0] == B.shape[0]
+        assert A.shape == (self.B.shape[0], self.B.shape[0])
 
     def test_missing_B(self):
         A, B, C, D = abcd_normalize(A=self.A, C=self.C, D=self.D)
-        assert_equal(B.shape[0], A.shape[0])
-        assert_equal(B.shape[1], D.shape[1])
-        assert_equal(B.shape, (self.A.shape[0], self.D.shape[1]))
+        assert B.shape[0] == A.shape[0]
+        assert B.shape[1] == D.shape[1]
+        assert B.shape == (self.A.shape[0], self.D.shape[1])
 
     def test_missing_C(self):
         A, B, C, D = abcd_normalize(A=self.A, B=self.B, D=self.D)
-        assert_equal(C.shape[0], D.shape[0])
-        assert_equal(C.shape[1], A.shape[0])
-        assert_equal(C.shape, (self.D.shape[0], self.A.shape[0]))
+        assert C.shape[0] == D.shape[0]
+        assert C.shape[1] == A.shape[0]
+        assert C.shape == (self.D.shape[0], self.A.shape[0])
 
     def test_missing_D(self):
         A, B, C, D = abcd_normalize(A=self.A, B=self.B, C=self.C)
-        assert_equal(D.shape[0], C.shape[0])
-        assert_equal(D.shape[1], B.shape[1])
-        assert_equal(D.shape, (self.C.shape[0], self.B.shape[1]))
+        assert D.shape[0] == C.shape[0]
+        assert D.shape[1] == B.shape[1]
+        assert D.shape == (self.C.shape[0], self.B.shape[1])
 
     def test_missing_AB(self):
         A, B, C, D = abcd_normalize(C=self.C, D=self.D)
-        assert_equal(A.shape[0], A.shape[1])
-        assert_equal(A.shape[0], B.shape[0])
-        assert_equal(B.shape[1], D.shape[1])
-        assert_equal(A.shape, (self.C.shape[1], self.C.shape[1]))
-        assert_equal(B.shape, (self.C.shape[1], self.D.shape[1]))
+        assert A.shape[0] == A.shape[1]
+        assert A.shape[0] == B.shape[0]
+        assert B.shape[1] == D.shape[1]
+        assert A.shape == (self.C.shape[1], self.C.shape[1])
+        assert B.shape == (self.C.shape[1], self.D.shape[1])
 
     def test_missing_AC(self):
         A, B, C, D = abcd_normalize(B=self.B, D=self.D)
-        assert_equal(A.shape[0], A.shape[1])
-        assert_equal(A.shape[0], B.shape[0])
-        assert_equal(C.shape[0], D.shape[0])
-        assert_equal(C.shape[1], A.shape[0])
-        assert_equal(A.shape, (self.B.shape[0], self.B.shape[0]))
-        assert_equal(C.shape, (self.D.shape[0], self.B.shape[0]))
+        assert A.shape[0] == A.shape[1]
+        assert A.shape[0] == B.shape[0]
+        assert C.shape[0] == D.shape[0]
+        assert C.shape[1] == A.shape[0]
+        assert A.shape == (self.B.shape[0], self.B.shape[0])
+        assert C.shape == (self.D.shape[0], self.B.shape[0])
 
     def test_missing_AD(self):
         A, B, C, D = abcd_normalize(B=self.B, C=self.C)
-        assert_equal(A.shape[0], A.shape[1])
-        assert_equal(A.shape[0], B.shape[0])
-        assert_equal(D.shape[0], C.shape[0])
-        assert_equal(D.shape[1], B.shape[1])
-        assert_equal(A.shape, (self.B.shape[0], self.B.shape[0]))
-        assert_equal(D.shape, (self.C.shape[0], self.B.shape[1]))
+        assert A.shape[0] == A.shape[1]
+        assert A.shape[0] == B.shape[0]
+        assert D.shape[0] == C.shape[0]
+        assert D.shape[1] == B.shape[1]
+        assert A.shape == (self.B.shape[0], self.B.shape[0])
+        assert D.shape == (self.C.shape[0], self.B.shape[1])
 
     def test_missing_BC(self):
         A, B, C, D = abcd_normalize(A=self.A, D=self.D)
-        assert_equal(B.shape[0], A.shape[0])
-        assert_equal(B.shape[1], D.shape[1])
-        assert_equal(C.shape[0], D.shape[0])
-        assert_equal(C.shape[1], A.shape[0])
-        assert_equal(B.shape, (self.A.shape[0], self.D.shape[1]))
-        assert_equal(C.shape, (self.D.shape[0], self.A.shape[0]))
+        assert B.shape[0] == A.shape[0]
+        assert B.shape[1] == D.shape[1]
+        assert C.shape[0] == D.shape[0]
+        assert C.shape[1], A.shape[0]
+        assert B.shape == (self.A.shape[0], self.D.shape[1])
+        assert C.shape == (self.D.shape[0], self.A.shape[0])
 
     def test_missing_ABC_fails(self):
         assert_raises(ValueError, abcd_normalize, D=self.D)
@@ -1179,7 +1112,7 @@ class Test_bode:
         # integrator, pole at zero: H(s) = 1 / s
         system = lti([1], [1, 0])
         w, mag, phase = bode(system, n=2)
-        assert_equal(w[0], 0.01)  # a fail would give not-a-number
+        assert w[0] == 0.01   # a fail would give not-a-number
 
     def test_07(self):
         # bode() should not fail on a system with pure imaginary poles.
@@ -1256,7 +1189,7 @@ class Test_freqresp:
         # integrator, pole at zero: H(s) = 1 / s
         system = lti([1], [1, 0])
         w, H = freqresp(system, n=2)
-        assert_equal(w[0], 0.01)  # a fail would give not-a-number
+        assert w[0] == 0.01  # a fail would give not-a-number
 
     def test_from_state_space(self):
         # Ensure that freqresp works with a system that was created from the

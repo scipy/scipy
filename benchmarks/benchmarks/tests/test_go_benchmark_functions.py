@@ -46,7 +46,7 @@ class TestGoBenchmarkFunctions:
 
             f = klass()
             # should result in an attribute error if it doesn't exist
-            val = f.fglob
+            _ = f.fglob
 
     def test_bounds_access_subscriptable(self):
         # In Python 2 zip returns a list which is subscriptable
@@ -56,7 +56,7 @@ class TestGoBenchmarkFunctions:
                 continue
 
             f = klass()
-            bounds = f.bounds[0]
+            _ = f.bounds[0]
 
     def test_redimension(self):
         # check that problems can be redimensioned, use LJ for this.

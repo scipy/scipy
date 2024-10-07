@@ -1,7 +1,8 @@
 import warnings
 import numpy as np
-from scipy.sparse import csc_array, vstack
-from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
+from scipy.sparse import csc_array, vstack, issparse
+from scipy._lib._util import VisibleDeprecationWarning
+from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import-not-found,import-untyped]
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
 from ._linprog_highs import _highs_to_scipy_status_message
@@ -43,7 +44,7 @@ def _constraints_to_components(constraints):
             # argument could be a single tuple representing a LinearConstraint
             try:
                 constraints = [LinearConstraint(*constraints)]
-            except TypeError:
+            except (TypeError, ValueError, VisibleDeprecationWarning):
                 # argument was not a tuple representing a LinearConstraint
                 pass
 
@@ -57,11 +58,11 @@ def _constraints_to_components(constraints):
             except TypeError as exc:
                 raise ValueError(message) from exc
         As.append(csc_array(constraint.A))
-        b_ls.append(np.atleast_1d(constraint.lb).astype(np.double))
-        b_us.append(np.atleast_1d(constraint.ub).astype(np.double))
+        b_ls.append(np.atleast_1d(constraint.lb).astype(np.float64))
+        b_us.append(np.atleast_1d(constraint.ub).astype(np.float64))
 
     if len(As) > 1:
-        A = vstack(As)
+        A = vstack(As, format="csc")
         b_l = np.concatenate(b_ls)
         b_u = np.concatenate(b_us)
     else:  # avoid unnecessary copying
@@ -74,13 +75,17 @@ def _constraints_to_components(constraints):
 
 def _milp_iv(c, integrality, bounds, constraints, options):
     # objective IV
-    c = np.atleast_1d(c).astype(np.double)
+    if issparse(c):
+        raise ValueError("`c` must be a dense array.")
+    c = np.atleast_1d(c).astype(np.float64)
     if c.ndim != 1 or c.size == 0 or not np.all(np.isfinite(c)):
         message = ("`c` must be a one-dimensional array of finite numbers "
                    "with at least one element.")
         raise ValueError(message)
 
     # integrality IV
+    if issparse(integrality):
+        raise ValueError("`integrality` must be a dense array.")
     message = ("`integrality` must contain integers 0-3 and be broadcastable "
                "to `c.shape`.")
     if integrality is None:
@@ -104,8 +109,8 @@ def _milp_iv(c, integrality, bounds, constraints, options):
             raise ValueError(message) from exc
 
     try:
-        lb = np.broadcast_to(bounds.lb, c.shape).astype(np.double)
-        ub = np.broadcast_to(bounds.ub, c.shape).astype(np.double)
+        lb = np.broadcast_to(bounds.lb, c.shape).astype(np.float64)
+        ub = np.broadcast_to(bounds.ub, c.shape).astype(np.float64)
     except (ValueError, TypeError) as exc:
         message = ("`bounds.lb` and `bounds.ub` must contain reals and "
                    "be broadcastable to `c.shape`.")
@@ -126,17 +131,19 @@ def _milp_iv(c, integrality, bounds, constraints, options):
     if A.shape != (b_l.size, c.size):
         message = "The shape of `A` must be (len(b_l), len(c))."
         raise ValueError(message)
-    indptr, indices, data = A.indptr, A.indices, A.data.astype(np.double)
+    indptr, indices, data = A.indptr, A.indices, A.data.astype(np.float64)
 
     # options IV
     options = options or {}
-    supported_options = {'disp', 'presolve', 'time_limit'}
+    supported_options = {'disp', 'presolve', 'time_limit', 'node_limit',
+                         'mip_rel_gap'}
     unsupported_options = set(options).difference(supported_options)
     if unsupported_options:
         message = (f"Unrecognized options detected: {unsupported_options}. "
                    "These will be passed to HiGHS verbatim.")
         warnings.warn(message, RuntimeWarning, stacklevel=3)
-    options_iv = {'log_to_console': options.get("disp", False)}
+    options_iv = {'log_to_console': options.pop("disp", False),
+                  'mip_max_nodes': options.pop("node_limit", None)}
     options_iv.update(options)
 
     return c, integrality, lb, ub, indptr, indices, data, b_l, b_u, options_iv
@@ -179,11 +186,11 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     Parameters
     ----------
-    c : 1D array_like
+    c : 1D dense array_like
         The coefficients of the linear objective function to be minimized.
         `c` is converted to a double precision array before the problem is
         solved.
-    integrality : 1D array_like, optional
+    integrality : 1D dense array_like, optional
         Indicates the type of integrality constraint on each decision variable.
 
         ``0`` : Continuous variable; no integrality constraint.
@@ -225,6 +232,9 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         disp : bool (default: ``False``)
             Set to ``True`` if indicators of optimization status are to be
             printed to the console during optimization.
+        node_limit : int, optional
+            The maximum number of nodes (linear program relaxations) to solve
+            before stopping. Default is no maximum number of nodes.
         presolve : bool (default: ``True``)
             Presolve attempts to identify trivial infeasibilities,
             identify trivial unboundedness, and simplify the problem before
@@ -232,6 +242,10 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         time_limit : float, optional
             The maximum number of seconds allotted to solve the problem.
             Default is no time limit.
+        mip_rel_gap : float, optional
+            Termination criterion for MIP solver: solver will terminate when
+            the gap between the primal objective value and the dual objective
+            bound, scaled by the primal objective value, is <= mip_rel_gap.
 
     Returns
     -------
@@ -272,8 +286,8 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
             The MILP solver's final estimate of the lower bound on the optimal
             solution.
         mip_gap : float
-            The difference between the final objective function value and the
-            final dual bound.
+            The difference between the primal objective value and the dual
+            objective bound, scaled by the primal objective value.
 
     Notes
     -----
@@ -285,7 +299,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     ----------
     .. [1] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
            "HiGHS - high performance software for linear optimization."
-           Accessed 12/25/2021 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+           https://highs.dev/
     .. [2] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
            119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -298,6 +312,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     that the problem be expressed as a minimization problem, the objective
     function coefficients on the decision variables are:
 
+    >>> import numpy as np
     >>> c = -np.array([0, 1])
 
     Note the negative sign: we maximize the original objective function
@@ -307,7 +322,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     >>> A = np.array([[-1, 1], [3, 2], [2, 3]])
     >>> b_u = np.array([1, 12, 12])
-    >>> b_l = np.full_like(b_u, -np.inf)
+    >>> b_l = np.full_like(b_u, -np.inf, dtype=float)
 
     Because there is no lower limit on these constraints, we have defined a
     variable ``b_l`` full of values representing negative infinity. This may
@@ -335,7 +350,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> from scipy.optimize import milp
     >>> res = milp(c=c, constraints=constraints, integrality=integrality)
     >>> res.x
-    [1.0, 2.0]
+    [2.0, 2.0]
 
     Note that had we solved the relaxed problem (without integrality
     constraints):
@@ -347,6 +362,8 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     we would not have obtained the correct solution by rounding to the nearest
     integers.
+
+    Other examples are given :ref:`in the tutorial <tutorial-optimize_milp>`.
 
     """
     args_iv = _milp_iv(c, integrality, bounds, constraints, options)
