@@ -55,7 +55,7 @@ class TestConstructUtils:
             )
         ):
             cls(0)
-    
+
     @pytest.mark.parametrize("cls", [
         csc_matrix, csr_matrix, coo_matrix,
         bsr_matrix, dia_matrix, lil_matrix
@@ -478,10 +478,20 @@ class TestConstructUtils:
     def test_vstack_1d_with_2d(self):
         # fixes gh-21064
         arr = csr_array([[1, 0, 0], [0, 1, 0]])
-        arr1d = arr[0]
+        arr1d = csr_array([1, 0, 0])
+        arr1dcoo = coo_array([1, 0, 0])
         assert construct.vstack([arr, np.array([0, 0, 0])]).shape == (3, 3)
         assert construct.hstack([arr1d, np.array([[0]])]).shape == (1, 4)
+        assert construct.hstack([arr1d, arr1d]).shape == (1, 6)
         assert construct.vstack([arr1d, arr1d]).shape == (2, 3)
+
+        # check csr specialty stacking code like _stack_along_minor_axis
+        assert construct.hstack([arr, arr]).shape == (2, 6)
+        assert construct.hstack([arr1d, arr1d]).shape == (1, 6)
+
+        assert construct.hstack([arr1d, arr1dcoo]).shape == (1, 6)
+        assert construct.vstack([arr, arr1dcoo]).shape == (3, 3)
+        assert construct.vstack([arr1d, arr1dcoo]).shape == (2, 3)
 
         with pytest.raises(ValueError, match="incompatible row dimensions"):
             construct.hstack([arr, np.array([0, 0])])
@@ -790,6 +800,19 @@ class TestConstructUtils:
         # for the dtype
         construct.random(10, 10, dtype='d')
         construct.random_array((10, 10), dtype='d')
+        construct.random_array((10, 10, 10), dtype='d')
+        construct.random_array((10, 10, 10, 10, 10), dtype='d')
+
+    def test_random_array_maintains_array_shape(self):
+        arr = construct.random_array((0, 4), density=0.3, dtype=int)
+        assert arr.shape == (0, 4)
+
+        arr = construct.random_array((10, 10, 10), density=0.3, dtype=int)
+        assert arr.shape == (10, 10, 10)
+
+        arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int)
+        assert arr.shape == (10, 10, 10, 10, 10)
+
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
@@ -804,6 +827,16 @@ class TestConstructUtils:
         shape = (2**33, 2**33)
         sparse_array = construct.random_array(shape, density=2.7105e-17)
         assert_equal(sparse_array.count_nonzero(),2000)
+
+        # for n-D
+        # check random_array
+        sparse_array = construct.random_array((10, 10, 10, 10), density=0.12658)
+        assert_equal(sparse_array.count_nonzero(),1266)
+        assert isinstance(sparse_array, sparray)
+        # check big size
+        shape = (2**33, 2**33, 2**33)
+        sparse_array = construct.random_array(shape, density=2.7105e-28)
+        assert_equal(sparse_array.count_nonzero(),172)
 
 
 def test_diags_array():

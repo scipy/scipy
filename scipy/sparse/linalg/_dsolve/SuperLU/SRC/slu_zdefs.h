@@ -20,7 +20,7 @@ at the top-level directory.
  * 
  * Global data structures used in LU factorization -
  * 
- *   nsuper: \#supernodes = nsuper + 1, numbered [0, nsuper].
+ *   nsuper: #supernodes = nsuper + 1, numbered [0, nsuper].
  *   (xsup,supno): supno[i] is the supernode no to which i belongs;
  *	xsup(s) points to the beginning of the s-th supernode.
  *	e.g.   supno 0 1 2 2 3 3 3 4 4 4 4 4   (n=12)

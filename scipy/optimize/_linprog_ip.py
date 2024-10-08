@@ -1005,7 +1005,7 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
     ``sym_pos=False`` skips to solver 3, and ``lstsq=True`` skips
     to solver 4 for both sparse and dense problems.
 
-    Potential improvements for combatting issues associated with dense
+    Potential improvements for combating issues associated with dense
     columns in otherwise sparse problems are outlined in [4]_ Section 5.3 and
     [10]_ Section 4.1-4.2; the latter also discusses the alleviation of
     accuracy issues associated with the substitution approach to free
