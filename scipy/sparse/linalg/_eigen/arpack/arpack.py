@@ -321,7 +321,7 @@ class _ArpackParams:
             raise ValueError("maxiter must be positive, maxiter=%d" % maxiter)
 
         if tp not in 'fdFD':
-            # Use `float64` libraties from integer dtypes.
+            # Use `float64` libraries from integer dtypes.
             if np.can_cast(tp, 'd'):
                 tp = 'd'
             else:
