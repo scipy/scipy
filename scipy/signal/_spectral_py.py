@@ -83,9 +83,6 @@ def lombscargle(
         If any of the input arrays x, y, freqs, or weights are not 1D, or if any are
         zero length. Or, if the input arrays x, y, and weights do not have the same
         shape as each other.
-    TypeError
-        If any of the input arrays x, y, freqs, or weights are not a real floating
-        dtype. Or, if any of the arrays are a different dtype.
     ValueError
         If any weight is < 0, or the sum of the weights is <= 0.
     ValueError
@@ -187,7 +184,10 @@ def lombscargle(
 
     # if no weights are provided, assume all data points are equally important
     if weights is None:
-        weights = np.ones_like(x, dtype=x.dtype)
+        weights = np.ones_like(y, dtype=np.float64)
+    else:
+        # if provided, then cast to float64 (other inputs are cast further below)
+        weights = weights.astype(np.float64)
 
     # validate input shapes
     if not (x.ndim == 1 and x.size > 0 and x.shape == y.shape == weights.shape):
@@ -195,12 +195,6 @@ def lombscargle(
                          "equal non-zero length!")
     if not (freqs.ndim == 1 and freqs.size > 0):
         raise ValueError("Parameter freqs must be a 1-D array of non-zero length!")
-
-    # validate input dtypes
-    if not np.issubdtype(x.dtype, np.floating) or (
-        not (x.dtype == y.dtype == freqs.dtype == weights.dtype)):
-        raise TypeError("Parameters x, y, freqs, and weights must be arrays of same "
-                         "floating dtype (int and complex dtypes are not allowed)!")
 
     # validate weights
     if not (np.all(weights >= 0) and np.sum(weights) > 0):
@@ -217,6 +211,11 @@ def lombscargle(
             "Normalize must be: False (or 'power'), True (or 'normalize'), "
             "or 'amplitude'."
         )
+
+    # cast inputs to float64 (weights is cast above)
+    x = x.astype(np.float64)
+    y = y.astype(np.float64)
+    freqs = freqs.astype(np.float64)
 
     # weight vector must sum to 1
     weights = weights / weights.sum()

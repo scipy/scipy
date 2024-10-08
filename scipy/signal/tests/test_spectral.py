@@ -1154,33 +1154,6 @@ class TestLombscargle:
         weights = np.expand_dims(np.linspace(0, 1, 2), 1)
         assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
-    def test_wrong_dtype(self):
-        t = np.linspace(0, 1, 2, dtype=np.complex64)
-        y = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(TypeError, lombscargle, t, y, f)
-
-        t = np.linspace(0, 1, 2, dtype=np.int64)
-        y = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(TypeError, lombscargle, t, y, f)
-
-        t = np.linspace(0, 1, 2)
-        y = np.linspace(0, 1, 2, dtype=np.complex64)
-        f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(TypeError, lombscargle, t, y, f)
-
-        t = np.linspace(0, 1, 2)
-        y = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3, dtype=np.complex64) + 0.1
-        assert_raises(TypeError, lombscargle, t, y, f)
-
-        t = np.linspace(0, 1, 2)
-        y = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3) + 0.1
-        weights = np.ones_like(t, dtype=np.complex64)
-        assert_raises(TypeError, lombscargle, t, y, f, weights=weights)
-
     def test_lombscargle_atan_vs_atan2(self):
         # https://github.com/scipy/scipy/issues/3787
         # This raised a ZeroDivisionError.
