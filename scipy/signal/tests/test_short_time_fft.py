@@ -91,12 +91,12 @@ def test_closest_STFT_dual_window_roundtrip(win_name, m, hop, sym_win, scaled):
     d2, s2 = closest_STFT_dual_window(d1, hop, win * s1, scaled=True)
 
     res = np.finfo(win.dtype).resolution * 5
-    assert_allclose(s1*s2, 1, atol=res, err_msg="Invalid Scale factors")
-    assert_allclose(d2, win, atol=res, err_msg="Roundtrip failed!")
+    xp_assert_close(s1*s2, 1., atol=res, err_msg="Invalid Scale factors")
+    xp_assert_close(d2, win, atol=res, err_msg="Roundtrip failed!")
 
     if scaled:  # check that scaling factor is correct:
         d3, _ = closest_STFT_dual_window(win, hop, np.ones(m) * s1, scaled=False)
-        assert_allclose(d3, d1, atol=res, err_msg="Roundtrip failed!")
+        xp_assert_close(d3, d1, atol=res, err_msg="Roundtrip failed!")
 
 
 @pytest.mark.parametrize('scaled', (False, True))
@@ -113,7 +113,7 @@ def test_closest_STFT_dual_window_STFT_roundtrip(scaled):
     y = SFT.istft(Sx, 0, n)
 
     atol = np.finfo(w.dtype).resolution * 10
-    assert_allclose(y, x, atol=atol, err_msg="Invalid closest window")
+    xp_assert_close(y, x, atol=atol, err_msg="Invalid closest window")
 
 
 @pytest.mark.parametrize('scaled', (False, True))
@@ -132,17 +132,17 @@ def test_closest_STFT_dual_window_STFT_roundtrip_complex(scaled):
     y = SFT.istft(Sx, 0, n)
 
     atol = np.finfo(win.dtype).resolution * 10
-    assert_allclose(y, x, atol=atol, err_msg=f"Invalid complex closest window ({s=})")
+    xp_assert_close(y, x, atol=atol, err_msg=f"Invalid complex closest window ({s=})")
 
 
 @pytest.mark.parametrize("win_name, nperseg, noverlap, scale_fac", ([
                          ('boxcar',      16,        8,       1/2),
                          ('boxcar',      18,       12,       1/3),
                          ('boxcar',      16,       12,       1/4),
-                         ('bartlett',    16,        8,         1),
+                         ('bartlett',    16,        8,        1.),
                          ('bartlett',    16,       12,       1/2),
                          ('bartlett',    30,       25,       1/3),
-                         ('hann',        16,        8,         1),
+                         ('hann',        16,        8,        1.),
                          ('hann',        18,       12,       2/3),
                          ('hann',        16,       12,       1/2),
                          ('blackman',     9,        6,     50/63),
@@ -163,9 +163,9 @@ def test_closest_STFT_dual_window_cola(win_name, nperseg, noverlap, scale_fac):
 
     res = np.finfo(desired_dual.dtype).resolution
     rel_tol_d = max(abs(d_s))*res*3
-    assert_allclose(s, scale_fac, atol=res*10,
+    xp_assert_close(s, scale_fac, atol=res*10,
                     err_msg=f"Scale factor off by {s/scale_fac}")
-    assert_allclose(d_s, desired_dual*scale_fac, atol=res*10, rtol=rel_tol_d,
+    xp_assert_close(d_s, desired_dual*scale_fac, atol=res*10, rtol=rel_tol_d,
                     err_msg="Calculated incorrect scaled window!")
 
     # check unscaled window:
@@ -173,7 +173,7 @@ def test_closest_STFT_dual_window_cola(win_name, nperseg, noverlap, scale_fac):
                                       desired_dual, scaled=False)
 
     assert u == 1, "Scaling factor not 1 for parameter `scaled=True`!"
-    assert_allclose(d_u, desired_dual, atol=res*10, rtol=rel_tol_d,
+    xp_assert_close(d_u, desired_dual, atol=res*10, rtol=rel_tol_d,
                     err_msg="Calculated incorrect unscaled window!")
 
 
@@ -369,10 +369,10 @@ def test_from_win_equals_dual(m, hop, fft_bins):
     """
     desired_win = get_window('flattop', m, fftbins=fft_bins)
     SFT0 = ShortTimeFFT.from_win_equals_dual(desired_win, hop, fs=1)
-    assert_allclose(SFT0.dual_win, SFT0.win)  # window equals dual window
+    xp_assert_close(SFT0.dual_win, SFT0.win)  # window equals dual window
 
     SFT1 = ShortTimeFFT(SFT0.win, hop, fs=1)
-    assert_allclose(SFT1.dual_win, SFT0.win)  # dual window is canonical window
+    xp_assert_close(SFT1.dual_win, SFT0.win)  # dual window is canonical window
 
 
 def test_dual_win_roundtrip():
