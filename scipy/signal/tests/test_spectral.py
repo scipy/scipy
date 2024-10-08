@@ -1038,12 +1038,12 @@ class TestLombscargle:
         # Calculate Lomb-Scargle periodogram
         pgram = lombscargle(t, y, f)
 
-        # Normalize
+        # convert to the amplitude
         pgram = np.sqrt(4 * pgram / t.shape[0])
 
-        # Check if difference between found frequency maximum and input
-        # frequency is less than accuracy
-        assert_allclose(np.max(pgram), ampl)
+        # Check if amplitude is correct (this will not exactly match, due to
+        # numerical differences when data is removed)
+        assert_allclose(np.max(pgram), ampl, rtol=3e-2)
 
     def test_precenter(self):
         # Test if precenter gives the same result as manually precentering.
@@ -1255,7 +1255,7 @@ class TestLombscargle:
         #  1) a string that is not allowed
         assert_raises(ValueError, lombscargle, t, y, f, normalize='lomb')
         #  2) something besides a bool or str
-        assert_raises(TypeError, lombscargle, t, y, f, normalize=2)
+        assert_raises(ValueError, lombscargle, t, y, f, normalize=2)
 
     def test_offset_removal(self):
         # Verify that the amplitude is the same, even with an offset (not removed)
