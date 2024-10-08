@@ -1319,6 +1319,14 @@ class TestZoom:
         x = xp.reshape(xp.arange(12), (3, 4))
         ndimage.zoom(x, 2, output=xp.zeros((6, 8)))
 
+    def test_zoom_0d_array(self, xp):
+        # Ticket #21670 regression test
+        a = xp.arange(10.)
+        factor = 2
+        actual = ndimage.zoom(a, np.array(factor))
+        expected = ndimage.zoom(a, factor)
+        xp_assert_close(actual, expected)
+
 
 class TestRotate:
 
