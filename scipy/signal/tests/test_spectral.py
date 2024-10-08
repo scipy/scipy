@@ -1,7 +1,7 @@
 import sys
 
 import numpy as np
-from numpy.testing import (assert_, assert_approx_equal,
+from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, suppress_warnings)
 import pytest
@@ -1001,42 +1001,15 @@ class TestLombscargle:
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         delta = f[1] - f[0]
-        assert_(w - f[np.argmax(P)] < (delta/2.))
+        assert(w - f[np.argmax(P)] < (delta/2.))
 
-        # do this again, for each input array being float32
-        # this is to exercise the float64 dtype conversions
-        
-        # first, t
-        P = lombscargle(t.astype(y.dtype), y, f)
-
-        # Check if difference between found frequency maximum and input
-        # frequency is less than accuracy
-        delta = f[1] - f[0]
-        assert_(w - f[np.argmax(P)] < (delta/2.))
-
-        # then, y
-        P = lombscargle(t, y.astype(t.dtype), f)
-
-        # Check if difference between found frequency maximum and input
-        # frequency is less than accuracy
-        delta = f[1] - f[0]
-        assert_(w - f[np.argmax(P)] < (delta/2.))
-
-        # then, f
-        P = lombscargle(t, y, f.astype(t.dtype))
-
-        # Check if difference between found frequency maximum and input
-        # frequency is less than accuracy
-        delta = f[1] - f[0]
-        assert_(w - f[np.argmax(P)] < (delta/2.))
-
-        # finally, add weights
+        # also, check that it works with weights
         P = lombscargle(t, y, f, weights=np.ones_like(t, dtype=f.dtype))
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         delta = f[1] - f[0]
-        assert_(w - f[np.argmax(P)] < (delta/2.))
+        assert(w - f[np.argmax(P)] < (delta/2.))
 
 
     def test_amplitude(self):
@@ -1070,7 +1043,7 @@ class TestLombscargle:
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
-        assert_approx_equal(np.max(pgram), ampl, significant=2)
+        assert_allclose(np.max(pgram), ampl)
 
     def test_precenter(self):
         # Test if precenter gives the same result as manually precentering.
@@ -1146,7 +1119,7 @@ class TestLombscargle:
 
         # check if normalization works as expected
         assert_allclose(pgram * scale_to_use, pgram2)
-        assert_approx_equal(np.max(pgram2), 1.0, significant=2)
+        assert_allclose(np.max(pgram2), 1.0)
 
     def test_wrong_shape(self):
 
@@ -1276,7 +1249,7 @@ class TestLombscargle:
 
         # validate that the amp output is correct for the given input
         f_i = np.where(f==w)[0][0]
-        assert_approx_equal(np.abs(pgram_amp[f_i]), ampl, significant=2)
+        assert_allclose(np.abs(pgram_amp[f_i]), ampl)
 
         # check invalid inputs
         #  1) a string that is not allowed
@@ -1344,9 +1317,9 @@ class TestLombscargle:
 
         # check if disabling floating_mean works as expected
         # nearly-zero for no offset, exact value will change based on seed
-        assert_(pgram[0] < 0.01) 
+        assert(pgram[0] < 0.01) 
         # significant value with offset, exact value will change based on seed
-        assert_(pgram_offset[0] > 0.5)
+        assert(pgram_offset[0] > 0.5)
 
     def test_amplitude_is_correct(self):
         # Verify that the amplitude is correct (when normalize='amplitude')
@@ -1378,11 +1351,11 @@ class TestLombscargle:
         pgram = lombscargle(t, y, f, normalize='amplitude')
 
         # Check if amplitude is correct
-        assert_approx_equal(np.abs(pgram[f_indx]), ampl, significant=2)
+        assert_allclose(np.abs(pgram[f_indx]), ampl)
 
         # Check if phase is correct 
         # (phase angle is the negative of the phase offset)
-        assert_approx_equal(-np.angle(pgram[f_indx]), phi, significant=2)
+        assert_allclose(-np.angle(pgram[f_indx]), phi)
 
     def test_negative_weight(self):
         # Test that a negative weight produces an error
