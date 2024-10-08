@@ -40,6 +40,7 @@ class TestNorm:
         b = a.reshape((3, 3))
         self.b = scipy.sparse.csr_array(b)
 
+    @pytest.mark.parallel_threads(1)
     def test_matrix_norm(self):
 
         # Frobenius norm is the default
