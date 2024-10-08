@@ -1450,7 +1450,8 @@ class TestBetaInc:
         # Test for gh-21426: betaincinv must not return NaN
         a = np.array([5.], dtype=dtype)
         x = np.array([0.5], dtype=dtype)
-        assert_allclose(special.betaincinv(a, a, x), x, rtol=1e-15)
+        result = special.betaincinv(a, a, x)
+        assert_allclose(result, x, rtol=1e-15)
 
 
 class TestCombinatorics:
