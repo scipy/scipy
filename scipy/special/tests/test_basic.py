@@ -1445,6 +1445,12 @@ class TestBetaInc:
             with pytest.raises(special.SpecialFunctionError, match='domain'):
                 special.betainc(*args)
 
+    def test_gh21426(self):
+        # Test for gh-21426: betaincinv must not return NaN
+        a = 5.
+        x = 0.5
+        assert_allclose(special.betaincinv(a, a, x), x, rtol=1e-15)
+
 
 class TestCombinatorics:
     def test_comb(self):
