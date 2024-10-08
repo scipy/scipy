@@ -16,6 +16,7 @@ from .common import EPS, in_bounds, make_strictly_feasible
 
 
 TERMINATION_MESSAGES = {
+    -2: "Stopped because `outfun` function returned `True`",
     -1: "Improper input parameters status returned from `leastsq`",
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
@@ -242,7 +243,7 @@ def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=1.0, loss='linear',
         f_scale=1.0, diff_step=None, tr_solver=None, tr_options=None,
-        jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs=None):
+        jac_sparsity=None, max_nfev=None, verbose=0, outfun=None, args=(), kwargs=None):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
     Given the residuals f(x) (an m-D real function of n real
@@ -439,6 +440,26 @@ def least_squares(
         * 1 : display a termination report.
         * 2 : display progress during iterations (not supported by 'lm'
           method).
+          
+    outfun : None or callable, optional
+        Output function that is called by the algorithm on each iteration. 
+        This can be used to print or plot the optimization results at each
+        step, and to stop the optimization algorithm based on some user-defined
+        condition.  Only implemented for the `trf` and `dogbox` methods.
+        
+        The function signature is ``outfun(x_new, f_new, cost_new, iteration)``.
+        
+        * Argument x_new is the optimized point in the current iteration. 
+        * Argument f_new is the vector of residuals in the current iteration.
+        * Argument cost_new is the sum of the squared residuals. 
+        * Argument iteration is the current iteration (integer)
+       
+        It must return a boolean: 
+        
+        * True to stop the algorithm at the current iteration, 
+        * False to continue with the optimization algorithm.
+        
+        .. versionadded:: 1.14.2
 
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
@@ -487,6 +508,7 @@ def least_squares(
         status : int
             The reason for algorithm termination:
 
+            * -2 : terminated because outfun returned True
             * -1 : improper input parameters status returned from MINPACK.
             *  0 : the maximum number of function evaluations is exceeded.
             *  1 : `gtol` termination condition is satisfied.
@@ -946,7 +968,7 @@ def least_squares(
     elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
                      gtol, max_nfev, x_scale, loss_function, tr_solver,
-                     tr_options.copy(), verbose)
+                     tr_options.copy(), verbose, outfun=outfun)
 
     elif method == 'dogbox':
         if tr_solver == 'lsmr' and 'regularize' in tr_options:
@@ -958,7 +980,7 @@ def least_squares(
 
         result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
                         xtol, gtol, max_nfev, x_scale, loss_function,
-                        tr_solver, tr_options, verbose)
+                        tr_solver, tr_options, verbose, outfun=outfun)
 
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0

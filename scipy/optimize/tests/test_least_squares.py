@@ -787,6 +787,41 @@ def test_basic():
     assert_allclose(res.x, 0, atol=1e-10)
 
 
+
+
+def test_outfun():
+    # test that output function works as expected
+    
+    p = [0.0, 0.0, 0.0, 0.0]
+    
+    def my_outfun(x_new, f_new, cost_new, iteration):
+        p[0] = x_new
+        p[1] = f_new
+        p[2] = cost_new
+        p[3] = iteration
+        return False
+    
+    res = least_squares(fun_trivial, 5.0, method='trf', outfun=my_outfun)
+    assert_(p[0] != 0)
+    assert_(p[1] != 0)
+    assert_(p[2] != 0)
+    assert_(p[3] != 0)
+    
+    p = [0.0, 0.0, 0.0, 0.0]
+    res = least_squares(fun_trivial, 5.0, method='trf', bounds=(-8.0, 8.0), outfun=my_outfun)
+    assert_(p[0] != 0)
+    assert_(p[1] != 0)
+    assert_(p[2] != 0)
+    assert_(p[3] != 0)
+    
+    p = [0.0, 0.0, 0.0, 0.0]
+    res = least_squares(fun_trivial, 5.0, method='dogbox', outfun=my_outfun)
+    assert_(p[0] != 0)
+    assert_(p[1] != 0)
+    assert_(p[2] != 0)
+    assert_(p[3] != 0)
+
+
 def test_small_tolerances_for_lm():
     for ftol, xtol, gtol in [(None, 1e-13, 1e-13),
                              (1e-13, None, 1e-13),
