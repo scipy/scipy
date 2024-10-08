@@ -1445,10 +1445,11 @@ class TestBetaInc:
             with pytest.raises(special.SpecialFunctionError, match='domain'):
                 special.betainc(*args)
 
-    def test_gh21426(self):
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_gh21426(self, dtype):
         # Test for gh-21426: betaincinv must not return NaN
-        a = 5.
-        x = 0.5
+        a = np.array([5.], dtype=dtype)
+        x = np.array([0.5], dtype=dtype)
         assert_allclose(special.betaincinv(a, a, x), x, rtol=1e-15)
 
 
