@@ -18,6 +18,7 @@
 typedef boost::math::policies::policy<
     boost::math::policies::promote_float<false >,
     boost::math::policies::promote_double<false >,
+    boost::math::policies::evaluation_error<boost::math::policies::user_error >,
     boost::math::policies::max_root_iterations<400 > > SpecialPolicy;
 
 // Round up to achieve correct ppf(cdf) round-trips for discrete distributions
