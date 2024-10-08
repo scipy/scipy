@@ -787,7 +787,7 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
 
     See Also
     --------
-    freqz, sosfilt
+    freqz, filt_sos
 
     Notes
     -----
@@ -1229,12 +1229,12 @@ def tf2sos(b, a, pairing=None, *, analog=False):
     -------
     sos : ndarray
         Array of second-order filter coefficients, with shape
-        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        ``(n_sections, 6)``. See `filt_sos` for the SOS filter format
         specification.
 
     See Also
     --------
-    zpk2sos, sosfilt
+    zpk2sos, filt_sos
 
     Notes
     -----
@@ -1271,7 +1271,7 @@ def sos2tf(sos):
     ----------
     sos : array_like
         Array of second-order filter coefficients, must have shape
-        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        ``(n_sections, 6)``. See `filt_sos` for the SOS filter format
         specification.
 
     Returns
@@ -1319,7 +1319,7 @@ def sos2zpk(sos):
     ----------
     sos : array_like
         Array of second-order filter coefficients, must have shape
-        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        ``(n_sections, 6)``. See `filt_sos` for the SOS filter format
         specification.
 
     Returns
@@ -1398,12 +1398,12 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     -------
     sos : ndarray
         Array of second-order filter coefficients, with shape
-        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        ``(n_sections, 6)``. See `filt_sos` for the SOS filter format
         specification.
 
     See Also
     --------
-    sosfilt
+    filt_sos
 
     Notes
     -----
@@ -1414,8 +1414,8 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     with the poles closest to the unit circle for discrete-time systems, and
     poles closest to the imaginary axis for continuous-time systems.
 
-    ``pairing='minimal'`` outputs may not be suitable for `sosfilt`,
-    and ``analog=True`` outputs will never be suitable for `sosfilt`.
+    ``pairing='minimal'`` outputs may not be suitable for `filt_sos`,
+    and ``analog=True`` outputs will never be suitable for `filt_sos`.
 
     *Algorithms*
 
@@ -1555,9 +1555,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     """
     # TODO in the near future:
     # 1. Add SOS capability to `filtfilt`, `freqz`, etc. somehow (#3259).
-    # 2. Make `decimate` use `sosfilt` instead of `lfilter`.
-    # 3. Make sosfilt automatically simplify sections to first order
-    #    when possible. Note this might make `sosfiltfilt` a bit harder (ICs).
+    # 2. Make `decimate` use `filt_sos` instead of `lfilter`.
+    # 3. Make filt_sos automatically simplify sections to first order
+    #    when possible. Note this might make `filtfilt_sos` a bit harder (ICs).
     # 4. Further optimizations of the section ordering / pole-zero pairing.
     # See the wiki for other potential issues.
 
@@ -3232,7 +3232,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     (``ba``) format):
 
     >>> sos = signal.butter(10, 15, 'hp', fs=1000, output='sos')
-    >>> filtered = signal.sosfilt(sos, sig)
+    >>> filtered = signal.filt_sos(sos, sig)
     >>> ax2.plot(t, filtered)
     >>> ax2.set_title('After 15 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
@@ -3350,7 +3350,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     (``ba``) format):
 
     >>> sos = signal.cheby1(10, 1, 15, 'hp', fs=1000, output='sos')
-    >>> filtered = signal.sosfilt(sos, sig)
+    >>> filtered = signal.filt_sos(sos, sig)
     >>> ax2.plot(t, filtered)
     >>> ax2.set_title('After 15 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
@@ -3463,7 +3463,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     (``ba``) format):
 
     >>> sos = signal.cheby2(12, 20, 17, 'hp', fs=1000, output='sos')
-    >>> filtered = signal.sosfilt(sos, sig)
+    >>> filtered = signal.filt_sos(sos, sig)
     >>> ax2.plot(t, filtered)
     >>> ax2.set_title('After 17 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
@@ -3587,7 +3587,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     (``ba``) format):
 
     >>> sos = signal.ellip(8, 1, 100, 17, 'hp', fs=1000, output='sos')
-    >>> filtered = signal.sosfilt(sos, sig)
+    >>> filtered = signal.filt_sos(sos, sig)
     >>> ax2.plot(t, filtered)
     >>> ax2.set_title('After 17 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
