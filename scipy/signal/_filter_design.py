@@ -3798,6 +3798,30 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     n : scalar
         Filter order (possibly non-integer).
 
+    Notes
+    -----
+    Band-stop filters are used in applications where certain frequency
+    components need to be blocked while others are allowed; for instance,
+    removing noise at specific frequencies while allowing the desired signal
+    to pass through. The order of a filter often determines its complexity and
+    accuracy. Determining the right order can be a challenge. This function
+    aims to provide an appropriate order for an analog band stop filter.
+    
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.signal import band_stop_obj
+    >>> wp = 2
+    >>> ind = 1
+    >>> passb = np.array([1, 3])
+    >>> stopb = np.array([0.5, 4])
+    >>> gstop = 30
+    >>> gpass = 3
+    >>> filter_type = 'butter'
+    >>> band_stop_obj(wp, ind, passb, stopb, gpass, gstop, filter_type)
+    np.float64(-2.758504160760643)
+
     """
 
     _validate_gpass_gstop(gpass, gstop)
