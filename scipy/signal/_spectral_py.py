@@ -213,10 +213,6 @@ def lombscargle(
     if isinstance(normalize, bool):
         # if bool, convert to str literal
         normalize = "normalize" if normalize else "power"
-    else:
-        # if neither a bool or str
-        if not isinstance(normalize, str):
-            raise TypeError("Normalize type must a bool or str.")
 
     if normalize not in ["power", "normalize", "amplitude"]:
         raise ValueError(
