@@ -1001,7 +1001,7 @@ class TestLombscargle:
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         delta = f[1] - f[0]
-        assert(w - f[np.argmax(P)] < (delta/2.))
+        assert w - f[np.argmax(P)] < (delta/2.)
 
         # also, check that it works with weights
         P = lombscargle(t, y, f, weights=np.ones_like(t, dtype=f.dtype))
@@ -1009,7 +1009,7 @@ class TestLombscargle:
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         delta = f[1] - f[0]
-        assert(w - f[np.argmax(P)] < (delta/2.))
+        assert w - f[np.argmax(P)] < (delta/2.)
 
 
     def test_amplitude(self):
@@ -1285,14 +1285,14 @@ class TestLombscargle:
 
         # Calculate Lomb-Scargle periodogram
         pgram = lombscargle(t, y, f, normalize=True, floating_mean=False)
-        pgram_offset = lombscargle(t, y + offset, f, normalize=True, 
+        pgram_offset = lombscargle(t, y + offset, f, normalize=True,
                                    floating_mean=False)
 
         # check if disabling floating_mean works as expected
         # nearly-zero for no offset, exact value will change based on seed
-        assert(pgram[0] < 0.01) 
+        assert pgram[0] < 0.01
         # significant value with offset, exact value will change based on seed
-        assert(pgram_offset[0] > 0.5)
+        assert pgram_offset[0] > 0.5
 
     def test_amplitude_is_correct(self):
         # Verify that the amplitude is correct (when normalize='amplitude')
