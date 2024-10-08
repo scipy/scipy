@@ -106,6 +106,7 @@ Continuous distributions
    ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
    kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
    kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
+   landau            -- Landau
    laplace           -- Laplace
    laplace_asymmetric    -- Asymmetric Laplace
    levy              -- Levy
@@ -221,6 +222,7 @@ Discrete distributions
    nhypergeom               -- Negative Hypergeometric
    planck                   -- Planck (Discrete Exponential)
    poisson                  -- Poisson
+   poisson_binom            -- Poisson Binomial
    randint                  -- Discrete Uniform
    skellam                  -- Skellam
    yulesimon                -- Yule-Simon
@@ -456,6 +458,14 @@ tests) are listed above.
 The following functions are related to the tests above but do not belong in the
 above categories.
 
+Random Variables
+================
+
+.. autosummary::
+   :toctree: generated/
+
+   Normal
+
 Quasi-Monte Carlo
 =================
 
@@ -624,6 +634,7 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
+from ._new_distributions import Normal
 from ._mgc import multiscale_graphcorr
 
 

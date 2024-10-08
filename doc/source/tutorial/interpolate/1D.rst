@@ -173,9 +173,9 @@ linear extrapolation since ``make_interp_spline`` extrapolates by default. Consi
     >>> y = 2*x
     >>> spl = make_interp_spline(x, y, k=1)  # k=1: linear
     >>> spl([-1, 6])
-    [-2, 12]
+    [-2., 12.]
     >>> np.interp([-1, 6], x, y)
-    [0, 10]
+    [0., 10.]
 
 See :ref:`the extrapolation section <tutorial-extrapolation>` for more details
 and discussion.

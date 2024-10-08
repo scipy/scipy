@@ -46,7 +46,9 @@ class LagrangianHessian:
         self.objective_hess = objective_hess
         self.constraints_hess = constraints_hess
 
-    def __call__(self, x, v_eq=np.empty(0), v_ineq=np.empty(0)):
+    def __call__(self, x, v_eq, v_ineq=None):
+        if v_ineq is None:
+            v_ineq = np.empty(0)
         H_objective = self.objective_hess(x)
         H_constraints = self.constraints_hess(x, v_eq, v_ineq)
 
@@ -338,7 +340,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                finite_diff_rel_step, finite_diff_bounds)
 
     # Put constraints in list format when needed.
-    if isinstance(constraints, (NonlinearConstraint, LinearConstraint)):
+    if isinstance(constraints, (NonlinearConstraint | LinearConstraint)):
         constraints = [constraints]
 
     # Prepare constraints.
@@ -536,7 +538,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             xtol, state, initial_barrier_parameter,
             initial_barrier_tolerance,
             initial_constr_penalty, initial_tr_radius,
-            factorization_method)
+            factorization_method, finite_diff_bounds)
 
     # Status 3 occurs when the callback function requests termination,
     # this is assumed to not be a success.

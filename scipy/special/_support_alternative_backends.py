@@ -32,20 +32,20 @@ def get_array_special_func(f_name, xp, n_array_args):
 
     # if generic array-API implementation is available, use that;
     # otherwise, fall back to NumPy/SciPy
-    if f_name in _generic_implementations and spx is not None:
+    if f_name in _generic_implementations:
         _f = _generic_implementations[f_name](xp=xp, spx=spx)
         if _f is not None:
             return _f
 
     _f = getattr(_ufuncs, f_name, None)
-    def f(*args, _f=_f, _xp=xp, **kwargs):
+    def __f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
         array_args = [np.asarray(arg) for arg in array_args]
         out = _f(*array_args, *other_args, **kwargs)
         return _xp.asarray(out)
 
-    return f
+    return __f
 
 
 def _get_shape_dtype(*args, xp):
@@ -83,17 +83,19 @@ def _chdtr(xp, spx):
     # defined by `get_array_special_func` is that if `gammainc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtr`.
-    gammainc = getattr(spx.special, 'gammainc', None)  # noqa: F811
+    gammainc = getattr(spx.special, 'gammainc', None) if spx else None  # noqa: F811
     if gammainc is None and hasattr(xp, 'special'):
         gammainc = getattr(xp.special, 'gammainc', None)
     if gammainc is None:
         return None
 
     def __chdtr(v, x):
-        res = xp.where(x >= 0, gammainc(v/2, x/2), 0)
-        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v)
-        res = xp.where(i_nan, xp.nan, res)
-        return res
+        res = gammainc(v / 2, x / 2)  # this is almost all we need
+        # The rest can be removed when google/jax#20507 is resolved
+        mask = (v == 0) & (x > 0)  # JAX returns NaN
+        res = xp.where(mask, 1., res)
+        mask = xp.isinf(v) & xp.isinf(x)  # JAX returns 1.0
+        return xp.where(mask, xp.nan, res)
     return __chdtr
 
 
@@ -102,7 +104,7 @@ def _chdtrc(xp, spx):
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtrc`.
-    gammaincc = getattr(spx.special, 'gammaincc', None)  # noqa: F811
+    gammaincc = getattr(spx.special, 'gammaincc', None) if spx else None  # noqa: F811
     if gammaincc is None and hasattr(xp, 'special'):
         gammaincc = getattr(xp.special, 'gammaincc', None)
     if gammaincc is None:
@@ -117,7 +119,7 @@ def _chdtrc(xp, spx):
 
 
 def _betaincc(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None)  # noqa: F811
+    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
     if betainc is None and hasattr(xp, 'special'):
         betainc = getattr(xp.special, 'betainc', None)
     if betainc is None:
@@ -130,7 +132,7 @@ def _betaincc(xp, spx):
 
 
 def _stdtr(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None)  # noqa: F811
+    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
     if betainc is None and hasattr(xp, 'special'):
         betainc = getattr(xp.special, 'betainc', None)
     if betainc is None:
@@ -146,7 +148,7 @@ def _stdtr(xp, spx):
 
 _generic_implementations = {'rel_entr': _rel_entr,
                             'xlogy': _xlogy,
-                            'chdtr,': _chdtr,
+                            'chdtr': _chdtr,
                             'chdtrc': _chdtrc,
                             'betaincc': _betaincc,
                             'stdtr': _stdtr,

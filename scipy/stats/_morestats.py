@@ -14,8 +14,7 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from scipy._lib._array_api import (
     array_namespace,
-    size as xp_size,
-    xp_minimum,
+    xp_size,
     xp_moveaxis_to_end,
     xp_vector_norm,
 )
@@ -857,15 +856,21 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
 
 def _log_mean(logx):
     # compute log of mean of x from log(x)
-    return special.logsumexp(logx, axis=0) - np.log(len(logx))
+    res = special.logsumexp(logx, axis=0) - math.log(logx.shape[0])
+    return res
 
 
-def _log_var(logx):
+def _log_var(logx, xp):
     # compute log of variance of x from log(x)
     logmean = _log_mean(logx)
-    pij = np.full_like(logx, np.pi * 1j, dtype=np.complex128)
-    logxmu = special.logsumexp([logx, logmean + pij], axis=0)
-    return np.real(special.logsumexp(2 * logxmu, axis=0)) - np.log(len(logx))
+    # get complex dtype with component dtypes same as `logx` dtype;
+    # see data-apis/array-api#841
+    dtype = xp.result_type(logx.dtype, xp.complex64)
+    pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
+    logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
+    res = (xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=0)))
+           - math.log(logx.shape[0]))
+    return res
 
 
 def boxcox_llf(lmb, data):
@@ -970,10 +975,7 @@ def boxcox_llf(lmb, data):
         # lead to loss of precision.
         # Division by lmb can be factored out to enhance numerical stability.
         logx = lmb * logdata
-        # convert to `np` for `special.logsumexp`
-        logx = np.asarray(logx)
-        logvar = _log_var(logx) - 2 * np.log(abs(lmb))
-        logvar = xp.asarray(logvar)
+        logvar = _log_var(logx, xp) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
     res = xp.astype(res, dt)
@@ -1170,8 +1172,11 @@ class _BigFloat:
         return "BIG_FLOAT"
 
 
+_BigFloat_singleton = _BigFloat()
+
+
 def boxcox_normmax(
-    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat()
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat_singleton
 ):
     """Compute optimal Box-Cox transform parameter for input data.
 
@@ -1288,7 +1293,7 @@ def boxcox_normmax(
         raise ValueError(message)
 
     end_msg = "exceed specified `ymax`."
-    if isinstance(ymax, _BigFloat):
+    if ymax is _BigFloat_singleton:
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         # 10000 is a safety factor because `special.boxcox` overflows prematurely.
         ymax = np.finfo(dtype).max / 10000
@@ -1469,7 +1474,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     lmbdas : ndarray
         The ``lmbda`` values for which a Box-Cox transform was done.
     ppcc : ndarray
-        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        Probability Plot Correlation Coefficient, as obtained from `probplot`
         when fitting the Box-Cox transformed input `x` against a normal
         distribution.
 
@@ -1844,7 +1849,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     lmbdas : ndarray
         The ``lmbda`` values for which a Yeo-Johnson transform was done.
     ppcc : ndarray
-        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        Probability Plot Correlation Coefficient, as obtained from `probplot`
         when fitting the Box-Cox transformed input `x` against a normal
         distribution.
 
@@ -2142,7 +2147,7 @@ def anderson(x, dist='norm'):
 
     For `weibull_min`, maximum likelihood estimation is known to be
     challenging. If the test returns successfully, then the first order
-    conditions for a maximum likehood estimate have been verified and
+    conditions for a maximum likelihood estimate have been verified and
     the critical values correspond relatively well to the significance levels,
     provided that the sample is sufficiently large (>10 observations [7]).
     However, for some data - especially data with no left tail - `anderson`
@@ -2882,15 +2887,20 @@ def bartlett(*samples, axis=0):
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
     ssq = xp.concat(ssq, axis=0)
-    Ntot = xp.sum(Ni, axis=0)
-    spsq = xp.sum((Ni - 1)*ssq, axis=0) / (Ntot - k)
-    numer = (Ntot - k) * xp.log(spsq) - xp.sum((Ni - 1)*xp.log(ssq), axis=0)
-    denom = 1 + 1/(3*(k - 1)) * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k))
+    # sum dtype can be removed when 2023.12 rules kick in
+    dtype = Ni.dtype
+    Ntot = xp.sum(Ni, axis=0, dtype=dtype)
+    spsq = xp.sum((Ni - 1)*ssq, axis=0, dtype=dtype) / (Ntot - k)
+    numer = ((Ntot - k) * xp.log(spsq)
+             - xp.sum((Ni - 1)*xp.log(ssq), axis=0, dtype=dtype))
+    denom = (1 + 1/(3*(k - 1))
+             * ((xp.sum(1/(Ni - 1), axis=0, dtype=dtype)) - 1/(Ntot - k)))
     T = numer / denom
 
     chi2 = _SimpleChi2(xp.asarray(k-1))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
+    T = xp.clip(T, min=0., max=xp.inf)
     T = T[()] if T.ndim == 0 else T
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
@@ -4094,7 +4104,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     cos_mean = xp.mean(cos_samp, axis=axis)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    R = xp_minimum(xp.asarray(1.), hypotenuse)
+    R = xp.clip(hypotenuse, max=1.)
 
     res = 1. - R
     return res
@@ -4198,7 +4208,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
+    R = xp.clip(hypotenuse, max=1.)  # [1] (2.2.4)
 
     res = (-2*xp.log(R))**0.5+0.0  # torch.pow returns -0.0 if R==1
     if not normalize:
