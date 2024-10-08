@@ -97,38 +97,36 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         raise ValueError(message)
 
     if not isinstance(method, stats.PermutationMethod):
-        methods = {"auto", "approx", "exact"}
+        methods = {"auto", "asymptotic", "exact"}
         message = (f"`method` must be one of {methods} or "
                    "an instance of `stats.PermutationMethod`.")
         if method not in methods:
             raise ValueError(message)
-    output_z = True if method == 'approx' else False
+    output_z = True if method == 'asymptotic' else False
 
-    # logic unchanged here for backward compatibility
-    n_zero = np.sum(d == 0, axis=-1)
-    has_zeros = np.any(n_zero > 0)
-    if method == "auto":
-        if d.shape[-1] <= 50 and not has_zeros:
-            method = "exact"
-        else:
-            method = "approx"
-
+    # for small samples, we decide later whether to perform an exact test or a
+    # permutation test. the reason is that the presence of ties is not
+    # know at the input validation stage
     n_zero = np.sum(d == 0)
-    if n_zero > 0 and method == "exact":
-        method = "approx"
+    has_zeros = n_zero > 0
+    if method == "auto" and d.shape[-1] > 50:
+        method = "asymptotic"
+
+    if has_zeros and method == "exact":
         warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Switching to normal approximation.",
+                      "zeros. Consider using method `asymptotic` or "
+                      "`stats.PermutationMethod`",
                       stacklevel=2)
 
-    if (method == "approx" and zero_method in ["wilcox", "pratt"]
+    if (method == "asymptotic" and zero_method in ["wilcox", "pratt"]
             and n_zero == d.size and d.size > 0 and d.ndim == 1):
         raise ValueError("zero_method 'wilcox' and 'pratt' do not "
                          "work if x - y is zero for all elements.")
 
-    if 0 < d.shape[-1] < 10 and method == "approx":
+    if 0 < d.shape[-1] < 10 and method == "asymptotic":
         warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
-    return d, zero_method, correction, alternative, method, axis, output_z
+    return d, zero_method, correction, alternative, method, axis, output_z, has_zeros
 
 
 def _wilcoxon_statistic(d, zero_method='wilcox'):
@@ -151,6 +149,8 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
 
     r_plus = np.sum((d > 0) * r, axis=-1)
     r_minus = np.sum((d < 0) * r, axis=-1)
+
+    has_ties = (t == 0).any()
 
     if zero_method == "zsplit":
         # The "zero-split" method for treating zeros is to add half their contribution
@@ -181,7 +181,7 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
 
     z = (r_plus - mn) / se
 
-    return r_plus, r_minus, se, z, count
+    return r_plus, r_minus, se, z, count, has_ties
 
 
 def _correction_sign(z, alternative):
@@ -197,18 +197,44 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
                  alternative='two-sided', method='auto', axis=0):
 
     temp = _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis)
-    d, zero_method, correction, alternative, method, axis, output_z = temp
+    d, zero_method, correction, alternative, method, axis, output_z, has_zeros = temp
 
     if d.size == 0:
         NaN = _get_nan(d)
         res = _morestats.WilcoxonResult(statistic=NaN, pvalue=NaN)
-        if method == 'approx':
+        if method == 'asymptotic':
             res.zstatistic = NaN
         return res
 
-    r_plus, r_minus, se, z, count = _wilcoxon_statistic(d, zero_method)
+    r_plus, r_minus, se, z, count, has_ties = _wilcoxon_statistic(d, zero_method)
 
-    if method == 'approx':
+    # we only know if there are ties after computing the statistic and not
+    # at the input validation stage. if the original method was auto and
+    # the decision was to use an exact test, we override this to
+    # a permutation test now (since method=`exact`` is not exact in the
+    # presence of ties)
+    if method == "auto":
+        if not (has_ties or has_zeros):
+            method = "exact"
+        else:
+            # the possible outcomes to be simulated by the permutation test
+            # are 2**n, where n is the sample size.
+            if d.shape[-1] > 13:
+                n_resamples = 9999
+                msg = ("Since the sample size is not large and there are ties "
+                       "or zeros, method=`auto` performs a permutation test. "
+                       "For sample size > 13, the p-value is simulated and "
+                       "not deterministic since `n_resamples` is capped at "
+                       "9999 to avoid long runtimes. Consider running "
+                       "wilcoxon using PermutationMethod with a larger "
+                       "number of `n_resamples` if needed.")
+                warnings.warn(msg, stacklevel=2)
+            else:
+                # this is enough to get deterministic results
+                n_resamples = 2**d.shape[-1]
+            method = stats.PermutationMethod(n_resamples=n_resamples)
+
+    if method == 'asymptotic':
         if correction:
             sign = _correction_sign(z, alternative)
             z -= sign * 0.5 / se
@@ -238,7 +264,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
 
     # for backward compatibility...
     statistic = np.minimum(r_plus, r_minus) if alternative=='two-sided' else r_plus
-    z = -np.abs(z) if (alternative == 'two-sided' and method == 'approx') else z
+    z = -np.abs(z) if (alternative == 'two-sided' and method == 'asymptotic') else z
 
     res = _morestats.WilcoxonResult(statistic=statistic, pvalue=p[()])
     if output_z:
