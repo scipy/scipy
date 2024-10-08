@@ -88,8 +88,6 @@ def lombscargle(
         dtype. Or, if any of the arrays are a different dtype.
     ValueError
         If any weight is < 0, or the sum of the weights is <= 0.
-    TypeError
-        If the normalize parameter is not a bool or str.
     ValueError
         If the normalize parameter is not one of the allowed options.
 
