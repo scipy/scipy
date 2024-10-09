@@ -1451,13 +1451,7 @@ class TestBetaInc:
         a = np.array([5.], dtype=dtype)
         x = np.array([0.5], dtype=dtype)
         result = special.betaincinv(a, a, x)
-        if sys.maxsize <= 2**32 and dtype == np.float32:
-            # result is not very precise for 32bit architecture and single
-            # precision
-            rtol = 1e-6
-        else:
-            rtol = 1e-15
-        assert_allclose(result, x, rtol=rtol)
+        assert_allclose(result, x, rtol=10 * np.finfo(dtype).eps)
 
 
 class TestCombinatorics:
