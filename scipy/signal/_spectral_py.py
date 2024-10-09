@@ -58,7 +58,7 @@ def lombscargle(
         Measurement values.
     freqs : array_like
         Angular frequencies for output periodogram. Frequencies are normally >= 0.
-        Any peak at ``-freq`` will also exist at ``+freq``.
+        Any peak at -freq will also exist at +freq.
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. This is
         unnecessary if `floating_mean` is True (default).
@@ -70,7 +70,7 @@ def lombscargle(
         Weights for each sample. Weights must be nonnegative.
     floating_mean : bool, optional
         Determines an offset or each frequency independently, if True.
-        Else an offset of 0 is assumed.
+        Else an offset of `0` is assumed.
 
     Returns
     -------
@@ -80,13 +80,13 @@ def lombscargle(
     Raises
     ------
     ValueError
-        If any of the input arrays `x`, `y`, `freqs`, or `weights` are not 1D, or if any
-        are zero length. Or, if the input arrays `x`, `y`, and `weights` do not have the
-        same shape as each other.
+        If any of the input arrays x, y, freqs, or weights are not 1D, or if any are
+        zero length. Or, if the input arrays x, y, and weights do not have the same
+        shape as each other.
     ValueError
-        If any `weight` is < 0, or the sum of the `weights` is <= 0.
+        If any weight is < 0, or the sum of the weights is <= 0.
     ValueError
-        If the `normalize` parameter is not one of the allowed options.
+        If the normalize parameter is not one of the allowed options.
 
     See Also
     --------
@@ -97,11 +97,11 @@ def lombscargle(
     Notes
     -----
     The algorithm used will account for any unknown offset by default, unless
-    `floating_mean` is False. If `precenter` is True, it performs the operation
-    ``y -= y.mean()``. However, `precenter` is a legacy parameter, and unnecessary
-    when `floating_mean` is True. Furthermore, the mean removed by `precenter` does not
-    account for sample weights. When the `normalize` parameter is "amplitude", for any
-    frequency in `freqs` that is below ``(2*pi)/(x.max() - x.min())``, the predicted
+    floating_mean is False. If precenter is True, it performs the operation
+    ``y -= y.mean()``. However, precenter is a legacy parameter, and unnecessary
+    when floating_mean is True. Furthermore, the mean removed by precenter does not
+    account for sample weights. When the normalize parameter is "amplitude", for any
+    frequency in freqs that is below ``(2*pi)/(x.max() - x.min())``, the predicted
     amplitude will tend towards infinity.
 
     References
