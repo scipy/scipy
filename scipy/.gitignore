@@ -1,0 +1,14 @@
+# Compiled Python files
+*.pyc
+__pycache__/
+
+# Logs
+*.log
+
+# Build directories
+build/
+dist/
+
+# IDE settings
+.vscode/
+.idea/
