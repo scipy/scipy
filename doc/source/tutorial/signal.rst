@@ -610,6 +610,36 @@ stop-band attenuation of :math:`\approx 60` dB.
    >>> plt.grid()
    >>> plt.show()
 
+.. note::
+
+    It is important to note that the cutoffs for :func:`firwin` and :func:`iirfilter` 
+    are defined differently. For :func:`firwin`, the cutoff-frequency is at 
+    half-amplitude (i.e. -6dB). For :func:`iirfilter`, the cutoff is at half-power
+    (i.e. -3dB).
+
+    .. plot::
+        :alt: "This code generates an example plot displaying the differences in cutoff frequency between FIR and IIR filters. FIR filters have a cutoff frequency at half-amplitude, while IIR filter cutoffs are at half-power."
+
+        >>> import numpy as np
+        >>> from matplotlib import pyplot as plt
+        >>> from scipy import signal as sig
+
+        >>> fs = 16000
+        >>> b = sig.firwin(101, 2500, fs=fs)
+        >>> f, h_fft = sig.freqz(b, fs=fs)
+        >>> h_amp = 20 * np.log10(np.abs(h_fft))
+        >>> _, ax = plt.subplots(layout="constrained")
+        >>> ax.plot(f, h_amp, label="FIR")
+        >>> ax.grid(True)
+
+        >>> b, a = sig.iirfilter(15, 2500, btype="low", fs=fs)
+        >>> f, h_fft = sig.freqz(b, a, fs=fs)
+        >>> h_amp = 20 * np.log10(np.abs(h_fft))
+        >>> ax.plot(f, h_amp, label="IIR")
+        >>> ax.set(xlim=[2100, 2900], ylim=[-10, 2])
+        >>> ax.set(xlabel="Frequency (Hz)", ylabel="Amplitude Response [dB]")
+        >>> ax.legend()
+
 Filter Coefficients
 """""""""""""""""""
 

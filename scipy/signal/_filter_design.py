@@ -2290,7 +2290,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
         Note, that for bandpass and bandstop filters passband must lie strictly
-        inside stopband or vice versa.
+        inside stopband or vice versa. Also note that the cutoff at the band edges 
+        for IIR filters is defined as half-power, so -3dB, not half-amplitude (-6dB)
+        like for `scipy.signal.fiwin`.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
