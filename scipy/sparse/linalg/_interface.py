@@ -187,7 +187,17 @@ class LinearOperator:
         """
         if self.dtype is None:
             v = np.zeros(self.shape[-1], dtype=np.int8)
-            self.dtype = np.asarray(self.matvec(v)).dtype
+            try:
+                matvec_v = np.asarray(self.matvec(v))
+            except ValueError as e:
+                if str(e) == 'Python integer 200 out of bounds for int8':
+                    # generic large `int` promoted to `np.int64`
+                    self.dtype = np.int64
+                else:
+                    # matvec fails for unknown reasons
+                    raise ValueError
+            else:
+                self.dtype = matvec_v.dtype
 
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.
