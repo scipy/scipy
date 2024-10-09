@@ -1456,7 +1456,6 @@ class TestBetaInc:
             # precision
             rtol = 1e-6
         else:
-
             rtol = 1e-15
         assert_allclose(result, x, rtol=rtol)
 
