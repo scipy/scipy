@@ -149,17 +149,28 @@ def test_quat_double_cover():
                     [0, 0, 0, -1], atol=2e-16)
 
 
-def test_malformed_1d_from_quat():
-    with pytest.raises(ValueError):
+def test_from_quat_wrong_shape():
+    # Wrong shape 1d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
         Rotation.from_quat(np.array([1, 2, 3]))
 
-
-def test_malformed_2d_from_quat():
-    with pytest.raises(ValueError):
+    # Wrong shape 2d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
         Rotation.from_quat(np.array([
             [1, 2, 3, 4, 5],
             [4, 5, 6, 7, 8]
             ]))
+
+    # 3d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
+        Rotation.from_quat(np.array([
+            [[1, 2, 3, 4]],
+            [[4, 5, 6, 7]]
+            ]))
+
+    # 0-length 2d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
+        Rotation.from_quat(np.array([]).reshape((0, 4)))
 
 
 def test_zero_norms_from_quat():
@@ -1758,27 +1769,69 @@ def test_concatenate():
     result = Rotation.concatenate(split)
     assert_equal(rotation.as_quat(), result.as_quat())
 
+    # Test Rotation input for multiple rotations
+    result = Rotation.concatenate(rotation)
+    assert_equal(rotation.as_quat(), result.as_quat())
+
+    # Test Rotation input for single rotations
+    result = Rotation.concatenate(Rotation.identity())
+    assert_equal(Rotation.identity().as_quat(), result.as_quat())
+
 
 def test_concatenate_wrong_type():
     with pytest.raises(TypeError, match='Rotation objects only'):
         Rotation.concatenate([Rotation.identity(), 1, None])
 
 
+def test_split():
+    r1 = Rotation.from_rotvec([0, 0, 1])
+    r2 = Rotation.from_rotvec([0, 0, 2])
+    r3 = Rotation.from_rotvec([0, 0, 3])
+    r4 = Rotation.from_rotvec([0, 0, 4])
+    r34 = Rotation.concatenate([r3, r4])
+    rc = Rotation.concatenate([r1, r2, r3, r4])
+
+    # Test split by integer
+    for rs, r in zip(rc.split(len(rc)), [r1, r2, r3, r4]):
+        assert_equal(rs.as_quat(), r.as_quat())
+
+    # Test split by list
+    for rs, r in zip(rc.split([1, 2]), [r1, r2, r34]):
+        assert_equal(rs.as_quat(), r.as_quat())
+
+    # Test split by integer with invalid lengths
+    with pytest.raises(ValueError, match='does not result in an equal division'):
+        rc.split(7)
+    with pytest.raises(ValueError, match='does not result in an equal division'):
+        rc.split(3)
+    with pytest.raises(ZeroDivisionError):
+        rc.split(0)
+    with pytest.raises(ValueError, match='must be larger than 0'):
+        rc.split(-2)
+
+    # Test identity split
+    assert_equal(rc.split(1).as_quat(), rc.as_quat())
+
+    # Test single rotation split
+    assert isinstance(r1.split(1), Rotation)
+
+    # Test out of bounds split
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
+        rc.split([1, 8])
+
+
 # Regression test for gh-16663
 def test_len_and_bool():
-    rotation_multi_empty = Rotation(np.empty((0, 4)))
     rotation_multi_one = Rotation([[0, 0, 0, 1]])
     rotation_multi = Rotation([[0, 0, 0, 1], [0, 0, 0, 1]])
     rotation_single = Rotation([0, 0, 0, 1])
 
-    assert len(rotation_multi_empty) == 0
     assert len(rotation_multi_one) == 1
     assert len(rotation_multi) == 2
     with pytest.raises(TypeError, match="Single rotation has no len()."):
         len(rotation_single)
 
     # Rotation should always be truthy. See gh-16663
-    assert rotation_multi_empty
     assert rotation_multi_one
     assert rotation_multi
     assert rotation_single
