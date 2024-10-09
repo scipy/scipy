@@ -1,40 +1,54 @@
 """Tools for spectral analysis.
 """
 import numpy as np
+import numpy.typing as npt
 from scipy import fft as sp_fft
 from . import _signaltools
 from .windows import get_window
-from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
+from typing import Literal
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
 
 
-def lombscargle(x,
-                y,
-                freqs,
-                precenter=False,
-                normalize=False):
+def lombscargle(
+    x: npt.NDArray,
+    y: npt.NDArray,
+    freqs: npt.NDArray,
+    precenter: bool = False,
+    normalize: bool | Literal["power", "normalize", "amplitude"] = False,
+    *,
+    weights: npt.NDArray | None = None,
+    floating_mean: bool = True,
+) -> npt.NDArray:
     """
-    lombscargle(x, y, freqs)
-
-    Computes the Lomb-Scargle periodogram.
+    Compute the generalized Lomb-Scargle periodogram.
 
     The Lomb-Scargle periodogram was developed by Lomb [1]_ and further
     extended by Scargle [2]_ to find, and test the significance of weak
-    periodic signals with uneven temporal sampling.
+    periodic signals with uneven temporal sampling. The algorithm used
+    here is based on a weighted least-squares fit of the form
+    ``y(ω) = a*cos(ω*x) + b*sin(ω*x) + c``, where the fit is calculated for
+    each frequency independently. This algorithm was developed by Zechmeister
+    and Kürster which improves the Lomb-Scargle periodogram by enabling
+    the weighting of individual samples and calculating an unknown offset
+    (also called a "floating-mean") [3]_. For more details, and practical
+    considerations, see the excellent reference on the Lomb-Scargle periodogram [4]_.
 
-    When *normalize* is False (default) the computed periodogram
+    When *normalize* is False (or "power") (default) the computed periodogram
     is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
-    signal with amplitude A for sufficiently large N.
+    signal with amplitude A for sufficiently large N. Where N is the length of x or y.
 
-    When *normalize* is True the computed periodogram is normalized by
-    the residuals of the data around a constant reference model (at zero).
+    When *normalize* is True (or "normalize") the computed periodogram is normalized
+    by the residuals of the data around a constant reference model (at zero).
 
-    Input arrays should be 1-D and will be cast to float64.
+    When *normalize* is "amplitude" the computed periodogram is the complex
+    representation of the amplitude and phase.
+
+    Input arrays should be 1-D with a real floating dtype.
 
     Parameters
     ----------
@@ -43,11 +57,20 @@ def lombscargle(x,
     y : array_like
         Measurement values.
     freqs : array_like
-        Angular frequencies for output periodogram.
+        Angular frequencies for output periodogram. Frequencies are normally >= 0.
+        Any peak at -freq will also exist at +freq.
     precenter : bool, optional
-        Pre-center measurement values by subtracting the mean.
-    normalize : bool, optional
-        Compute normalized periodogram.
+        Pre-center measurement values by subtracting the mean, if True. This is
+        unnecessary if `floating_mean` is True (default).
+    normalize : bool | str, optional
+        Compute normalized or complex (amplitude + phase) periodogram.
+        Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or
+        ``"amplitude"``.
+    weights : array_like, optional
+        Weights for each sample. Weights must be nonnegative.
+    floating_mean : bool, optional
+        Determines an offset or each frequency independently, if True.
+        Else an offset of `0` is assumed.
 
     Returns
     -------
@@ -57,25 +80,29 @@ def lombscargle(x,
     Raises
     ------
     ValueError
-        If the input arrays `x` and `y` do not have the same shape.
+        If any of the input arrays x, y, freqs, or weights are not 1D, or if any are
+        zero length. Or, if the input arrays x, y, and weights do not have the same
+        shape as each other.
+    ValueError
+        If any weight is < 0, or the sum of the weights is <= 0.
+    ValueError
+        If the normalize parameter is not one of the allowed options.
 
     See Also
     --------
-    istft: Inverse Short Time Fourier Transform
-    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    periodogram: Power spectral density using a periodogram
     welch: Power spectral density by Welch's method
-    spectrogram: Spectrogram by Welch's method
     csd: Cross spectral density by Welch's method
 
     Notes
     -----
-    This subroutine calculates the periodogram using a slightly
-    modified algorithm due to Townsend [3]_ which allows the
-    periodogram to be calculated using only a single pass through
-    the input arrays for each frequency.
-
-    The algorithm running time scales roughly as O(x * freqs) or O(N^2)
-    for a large number of samples and frequencies.
+    The algorithm used will account for any unknown offset by default, unless
+    floating_mean is False. If precenter is True, it performs the operation
+    ``y -= y.mean()``. However, precenter is a legacy parameter, and unnecessary
+    when floating_mean is True. Furthermore, the mean removed by precenter does not
+    account for sample weights. When the normalize parameter is "amplitude", for any
+    frequency in freqs that is below ``(2*pi)/(x.max() - x.min())``, the predicted
+    amplitude will tend towards infinity.
 
     References
     ----------
@@ -86,22 +113,28 @@ def lombscargle(x,
            Statistical aspects of spectral analysis of unevenly spaced data",
            The Astrophysical Journal, vol 263, pp. 835-853, 1982
 
-    .. [3] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
-           periodogram using graphics processing units.", The Astrophysical
-           Journal Supplement Series, vol 191, pp. 247-253, 2010
+    .. [3] M. Zechmeister and M. Kürster, "The generalised Lomb-Scargle periodogram.
+           A new formalism for the floating-mean and Keplerian periodograms,"
+           Astronomy and Astrophysics, vol. 496, pp. 577-584, 2009
+
+    .. [4] J.T. VanderPlas, "Understanding the Lomb-Scargle Periodogram,"
+           The Astrophysical Journal Supplement Series, vol. 236, no. 1, p. 16,
+           May 2018
+           :doi:`10.3847/1538-4365/aab766`
+
 
     Examples
     --------
     >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
 
     First define some input parameters for the signal:
 
-    >>> A = 2.
+    >>> A = 2.  # amplitude
+    >>> c = 2.  # offset
     >>> w0 = 1.  # rad/sec
     >>> nin = 150
-    >>> nout = 100000
+    >>> nout = 1000
 
     Randomly generate sample times:
 
@@ -109,47 +142,159 @@ def lombscargle(x,
 
     Plot a sine wave for the selected times:
 
-    >>> y = A * np.cos(w0*x)
+    >>> y = A * np.cos(w0*x) + c
 
     Define the array of frequencies for which to compute the periodogram:
 
-    >>> w = np.linspace(0.01, 10, nout)
+    >>> w = np.linspace(0.25, 10, nout)
 
-    Calculate Lomb-Scargle periodogram:
+    Calculate Lomb-Scargle periodogram for each of the normalize options:
 
     >>> import scipy.signal as signal
-    >>> pgram = signal.lombscargle(x, y, w, normalize=True)
+    >>> pgram_power = signal.lombscargle(x, y, w, normalize=False)
+    >>> pgram_norm = signal.lombscargle(x, y, w, normalize=True)
+    >>> pgram_amp = signal.lombscargle(x, y, w, normalize='amplitude')
 
     Now make a plot of the input data:
 
-    >>> fig, (ax_t, ax_w) = plt.subplots(2, 1, constrained_layout=True)
+    >>> import matplotlib.pyplot as plt
+    >>> fig, (ax_t, ax_p, ax_n, ax_a) = plt.subplots(4, 1, figsize=(5, 5))
     >>> ax_t.plot(x, y, 'b+')
     >>> ax_t.set_xlabel('Time [s]')
+    >>> ax_t.set_ylabel('Amplitude')
 
-    Then plot the normalized periodogram:
+    Then plot the periodogram for each of the normalize options:
 
-    >>> ax_w.plot(w, pgram)
-    >>> ax_w.set_xlabel('Angular frequency [rad/s]')
-    >>> ax_w.set_ylabel('Normalized amplitude')
+    >>> ax_p.plot(w, pgram_power)
+    >>> ax_p.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_p.set_ylabel('Power')
+
+    >>> ax_n.plot(w, pgram_norm)
+    >>> ax_n.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_n.set_ylabel('Normalized')
+
+    >>> ax_a.plot(w, np.abs(pgram_amp))
+    >>> ax_a.set_xlabel('Angular frequency [rad/s]')
+    >>> ax_a.set_ylabel('Amplitude')
+
+    >>> plt.tight_layout()
     >>> plt.show()
 
     """
-    x = np.ascontiguousarray(x, dtype=np.float64)
-    y = np.ascontiguousarray(y, dtype=np.float64)
-    freqs = np.ascontiguousarray(freqs, dtype=np.float64)
 
-    assert x.ndim == 1
-    assert y.ndim == 1
-    assert freqs.ndim == 1
-
-    if precenter:
-        pgram = _lombscargle(x, y - y.mean(), freqs)
+    # if no weights are provided, assume all data points are equally important
+    if weights is None:
+        weights = np.ones_like(y, dtype=np.float64)
     else:
-        pgram = _lombscargle(x, y, freqs)
+        # if provided, then cast to float64 (other inputs are cast further below)
+        weights = weights.astype(np.float64)
 
-    if normalize:
-        pgram *= 2 / np.dot(y, y)
+    # validate input shapes
+    if not (x.ndim == 1 and x.size > 0 and x.shape == y.shape == weights.shape):
+        raise ValueError("Parameters x, y, weights must be 1-D arrays of "
+                         "equal non-zero length!")
+    if not (freqs.ndim == 1 and freqs.size > 0):
+        raise ValueError("Parameter freqs must be a 1-D array of non-zero length!")
 
+    # validate weights
+    if not (np.all(weights >= 0) and np.sum(weights) > 0):
+        raise ValueError("Parameter weights must have only non-negative entries "
+                         "which sum to a positive value!")
+
+    # validate normalize parameter
+    if isinstance(normalize, bool):
+        # if bool, convert to str literal
+        normalize = "normalize" if normalize else "power"
+
+    if normalize not in ["power", "normalize", "amplitude"]:
+        raise ValueError(
+            "Normalize must be: False (or 'power'), True (or 'normalize'), "
+            "or 'amplitude'."
+        )
+
+    # cast inputs to float64 (weights is cast above)
+    x = x.astype(np.float64)
+    y = y.astype(np.float64)
+    freqs = freqs.astype(np.float64)
+
+    # weight vector must sum to 1
+    weights = weights / weights.sum()
+
+    # pre-allocate arrays for intermediate and final calculations
+    coswt = np.empty_like(x)
+    sinwt = np.empty_like(x)
+    pgram = np.empty_like(freqs)
+    # store a and b so that phase can be calculated outside loop, if necessary
+    a = np.empty_like(freqs)
+    b = np.empty_like(freqs)
+
+    # if requested, perform precenter
+    if precenter:
+        y -= y.mean()
+
+    # calculate the single sum that does not depend on the frequency
+    Y_sum = (weights * y).sum()
+
+    # loop over the frequencies
+    for i in range(freqs.shape[0]):
+        coswt[:] = np.cos(freqs[i] * x)
+        sinwt[:] = np.sin(freqs[i] * x)
+
+        # calculate CC, SS, and CS first
+        # these variable names are of form XX_hat in the paper, but dropping the suffix
+        # to reuse variables later whether floating_mean is True or False
+        CC = (weights * coswt * coswt).sum()
+        SS = 1 - CC  # trig identity: S^2 = 1 - C^2
+        CS = (weights * coswt * sinwt).sum()
+
+        # now, redefine trig arrays to always be multiplied by the weights
+        coswt[:] = weights * coswt
+        sinwt[:] = weights * sinwt
+
+        # these are also of the form XX_hat in the paper
+        YC = (y * coswt).sum()
+        YS = (y * sinwt).sum()
+
+        if floating_mean:
+            # calculate best-fit offset for each frequency independently (default)
+            C_sum = coswt.sum()
+            S_sum = sinwt.sum()
+            YC -= Y_sum * C_sum
+            YS -= Y_sum * S_sum
+            CC -= C_sum * C_sum
+            SS -= S_sum * S_sum
+            CS -= C_sum * S_sum
+
+        # determinate of the system of linear equations
+        D = CC * SS - CS * CS
+
+        # where: y(w) = a*cos(w) + b*sin(w) + c
+        a[i] = (YC * SS - YS * CS) / D
+        b[i] = (YS * CC - YC * CS) / D
+        #  c = Y_sum - a * C_sum - b * S_sum  # offset is not useful to return
+
+        # store final value as power in (y units)^2
+        pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
+
+    if normalize == "normalize":
+        # return the normalized power (power at current frequency wrt the entire signal)
+
+        # calculate the final necessary frequency-independent sum
+        YY_hat = (weights * y * y).sum()
+        if floating_mean:
+            pgram /= 2.0 * (YY_hat - Y_sum * Y_sum)  # 2 * YY
+        else:
+            pgram /= 2.0 * YY_hat
+        return pgram
+
+    elif normalize == "amplitude":
+        # return the complex representation of the best-fit amplitude and phase
+
+        return a + 1j * b
+
+    # otherwise, the default, normalize == "power"
+    # return the legacy power units
+    pgram *= float(x.shape[0]) / 4.0
     return pgram
 
 
