@@ -100,6 +100,7 @@ class TestGeometricSlerp:
                             end=end,
                             t=np.linspace(0, 1, 10))
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.parametrize("start, end, expected", [
         # North and South Poles are definitely antipodes
         # but should be handled gracefully now
