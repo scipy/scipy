@@ -115,7 +115,6 @@ class TestLeslie:
 class TestCompanion:
 
     def test_bad_shapes(self):
-        assert_raises(ValueError, companion, [[1, 1], [2, 2]])
         assert_raises(ValueError, companion, [0, 4, 5])
         assert_raises(ValueError, companion, [1])
         assert_raises(ValueError, companion, [])
@@ -131,6 +130,16 @@ class TestCompanion:
         expected = array([
             [-2.5, 5.0],
             [1.0, 0.0]])
+        assert_array_equal(c, expected)
+
+        c = companion([(1.0, 2.0, 3.0),
+                       (4.0, 5.0, 6.0)])
+        expected = array([
+            ([-2.00, -3.00],
+             [+1.00, +0.00]),
+            ([-1.25, -1.50],
+             [+1.00, +0.00])
+        ])
         assert_array_equal(c, expected)
 
 
@@ -203,7 +212,11 @@ class TestBlockDiag:
 
 
 class TestKron:
+    def test_dep(self):
+        with pytest.deprecated_call(match="`kron`"):
+            kron(np.array([[1, 2],[3, 4]]),np.array([[1, 1, 1]]))
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_basic(self):
 
         a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
@@ -219,6 +232,7 @@ class TestKron:
                           [33, 44]])
         assert_array_equal(a, expected)
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_empty(self):
         m1 = np.empty((0, 2))
         m2 = np.empty((1, 3))

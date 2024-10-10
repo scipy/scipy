@@ -35,7 +35,7 @@ dependencies:
   - typing_extensions
   - types-psutil
   # For building docs
-  - sphinx
+  - sphinx<8.0.0
   - intersphinx-registry
   - numpydoc
   - ipython
@@ -46,7 +46,7 @@ dependencies:
   - sphinx-design
   - jupytext
   - myst-nb
-  - jupyterlite-sphinx>=0.13.1
+  - jupyterlite-sphinx>=0.16.5
   - jupyterlite-pyodide-kernel
   # Some optional test dependencies
   - mpmath

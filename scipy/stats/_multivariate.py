@@ -2092,7 +2092,7 @@ class wishart_gen(multi_rv_generic):
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -2697,7 +2697,7 @@ class invwishart_gen(wishart_gen):
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -2959,7 +2959,7 @@ class invwishart_gen(wishart_gen):
         df : int
             Degrees of freedom
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
         %(_doc_random_state)s
 
         Notes
@@ -4185,7 +4185,7 @@ class unitary_group_gen(multi_rv_generic):
     >>> np.dot(x, x.conj().T)
     array([[  1.00000000e+00,   1.13231364e-17,  -2.86852790e-16],
            [  1.13231364e-17,   1.00000000e+00,  -1.46845020e-16],
-           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])
+           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])  # may vary
 
     This generates one random matrix from U(3). The dot product confirms that
     it is unitary up to machine precision.
@@ -5408,8 +5408,8 @@ class random_table_gen(multi_rv_generic):
 
     >>> dist = random_table(row, col)
     >>> dist.rvs(random_state=123)
-    array([[1., 0., 0.],
-           [1., 3., 1.]])
+    array([[1, 0, 0],
+           [1, 3, 1]])
 
     References
     ----------

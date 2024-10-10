@@ -309,11 +309,6 @@ class Dirs:
         else:
             self.installed = self.build.parent / (self.build.stem + "-install")
 
-        if sys.platform == 'win32' and sys.version_info < (3, 10):
-            # Work around a pathlib bug; these must be absolute paths
-            self.build = Path(os.path.abspath(self.build))
-            self.installed = Path(os.path.abspath(self.installed))
-
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
         self.site = self.get_site_packages()
@@ -686,7 +681,7 @@ class Test(Task):
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
     $ python dev.py test -s cluster -m full --durations 20
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
-    $ python dev.py test -b numpy -b pytorch -s cluster
+    $ python dev.py test -b numpy -b torch -s cluster
     ```
     """
     ctx = CONTEXT
@@ -723,7 +718,7 @@ class Test(Task):
         multiple=True,
         help=(
             "Array API backend "
-            "('all', 'numpy', 'pytorch', 'cupy', 'array_api_strict', 'jax.numpy')."
+            "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', 'jax.numpy')."
         )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`

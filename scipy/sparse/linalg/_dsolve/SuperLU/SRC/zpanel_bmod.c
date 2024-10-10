@@ -235,6 +235,12 @@ zpanel_bmod (
 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #else
+#if SCIPY_FIX
+		   if (nsupr < segsze) {
+			/* Fail early rather than passing in invalid parameters to TRSV. */
+			ABORT("failed to factorize matrix");
+		   }
+#endif
 		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #endif
@@ -428,12 +434,6 @@ zpanel_bmod (
 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #else
-#if SCIPY_FIX
-		   if (nsupr < segsze) {
-			/* Fail early rather than passing in invalid parameters to TRSV. */
-			ABORT("failed to factorize matrix");
-		   }
-#endif
 		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #endif

@@ -8,14 +8,12 @@ from collections import namedtuple
 import inspect
 import math
 from typing import (
-    Optional,
-    Union,
     TYPE_CHECKING,
     TypeVar,
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
+from scipy._lib._array_api import array_namespace, is_numpy, xp_size
 
 
 AxisError: type[Exception]
@@ -53,10 +51,10 @@ else:
     np_long = np.int_
     np_ulong = np.uint
 
-IntNumber = Union[int, np.integer]
-DecimalNumber = Union[float, np.floating, np.integer]
+IntNumber = int | np.integer
+DecimalNumber = float | np.floating | np.integer
 
-copy_if_needed: Optional[bool]
+copy_if_needed: bool | None
 
 if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
     copy_if_needed = None
@@ -73,10 +71,9 @@ else:
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
 if TYPE_CHECKING:
-    SeedType = Optional[Union[IntNumber, np.random.Generator,
-                              np.random.RandomState]]
-    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
-                                                         np.random.RandomState])
+    SeedType = IntNumber | np.random.Generator | np.random.RandomState | None
+    GeneratorType = TypeVar("GeneratorType",
+                            bound=np.random.Generator|np.random.RandomState)
 
 try:
     from numpy.random import Generator as Generator
@@ -271,9 +268,9 @@ def check_random_state(seed):
     """
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
-    if isinstance(seed, (numbers.Integral, np.integer)):
+    if isinstance(seed, numbers.Integral | np.integer):
         return np.random.RandomState(seed)
-    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
+    if isinstance(seed, np.random.RandomState | np.random.Generator):
         return seed
 
     raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
@@ -318,8 +315,8 @@ def _asarray_validated(a, check_finite=True,
     if not sparse_ok:
         import scipy.sparse
         if scipy.sparse.issparse(a):
-            msg = ('Sparse matrices are not supported by this function. '
-                   'Perhaps one of the scipy.sparse.linalg functions '
+            msg = ('Sparse arrays/matrices are not supported by this function. '
+                   'Perhaps one of the `scipy.sparse.linalg` functions '
                    'would work instead.')
             raise ValueError(msg)
     if not mask_ok:
