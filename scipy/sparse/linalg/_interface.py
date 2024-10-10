@@ -194,8 +194,8 @@ class LinearOperator:
                     # generic large `int` promoted to `np.int64`
                     self.dtype = np.int64
                 else:
-                    # matvec fails for unknown reasons
-                    raise ValueError
+                    # matvec fails for other reasons
+                    raise e
             else:
                 self.dtype = matvec_v.dtype
 
