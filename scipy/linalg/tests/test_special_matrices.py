@@ -71,10 +71,29 @@ class TestHankel:
 
 
 class TestCirculant:
-    def test_basic(self):
+    def test_basic_0d(self):
+        y = circulant(1)
+        assert_array_equal(y, [[1]])
+
+    def test_basic_1d(self):
         y = circulant([1, 2, 3])
         assert_array_equal(y, [[1, 3, 2], [2, 1, 3], [3, 2, 1]])
 
+    @pytest.mark.parametrize('preprocess', [lambda x: x, np.asarray, np.asfortranarray])
+    def test_basic_2d(self, preprocess):
+        y = circulant(preprocess([[1, 2, 3], [4, 5, 6]]))
+        assert_array_equal(y, [[[1, 3, 2], [2, 1, 3], [3, 2, 1]],
+                               [[4, 6, 5], [5, 4, 6], [6, 5, 4]]])
+
+    @pytest.mark.parametrize('shape', [(0,), (5, 0), (0, 5)])
+    @pytest.mark.parametrize('dtype', [np.int32, np.float64])
+    def test_empty(self, shape, dtype):
+        y = circulant(np.zeros(shape, dtype=dtype))
+        if len(shape) == 1:
+            assert_array_equal(y, np.empty((0, 0), dtype=dtype))
+        else:
+            m, n = shape
+            assert_array_equal(y, np.empty((m, n, n), dtype=dtype))
 
 class TestHadamard:
 
@@ -615,3 +634,16 @@ class TestConvolutionMatrix:
             A = convolution_matrix(a, nv, mode)
         y2 = A @ v
         assert_array_almost_equal(y1, y2)
+
+
+@pytest.mark.parametrize('f, args', [(circulant, ())])
+def test_batch(f, args):
+    rng = np.random.default_rng(283592436523456)
+    batch_shape = (2, 3)
+    m = 10
+    A = rng.random(batch_shape + (m,))
+
+    res = f(A, *args)
+    ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
+    ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
+    assert_allclose(res, ref)
