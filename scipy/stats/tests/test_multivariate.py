@@ -3751,6 +3751,21 @@ class TestDirichletMultinomial:
         assert_equal(dist.var(), 0)
         assert_equal(dist.cov(), 0)
 
+    def test_n_is_zero(self):
+        # similarly, only one possible outcome if n is zero
+        n = 0
+        alpha = np.asarray([1., 1.])
+        x = np.asarray([0, 0])
+        dist = dirichlet_multinomial(alpha, n)
+
+        assert_equal(dist.pmf(x), 1)
+        assert_equal(dist.pmf(x+1), 0)
+        assert_equal(dist.logpmf(x), 0)
+        assert_equal(dist.logpmf(x+1), -np.inf)
+        assert_equal(dist.mean(), [0, 0])
+        assert_equal(dist.var(), [0, 0])
+        assert_equal(dist.cov(), [[0, 0], [0, 0]])
+
     @pytest.mark.parametrize('method_name', ['pmf', 'logpmf'])
     def test_against_betabinom_pmf(self, method_name):
         rng, m, alpha, n, x = self.get_params(100)
@@ -3813,11 +3828,11 @@ class TestDirichletMultinomial:
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, [3, -1, 4], n0)
 
-        text = "`n` must be a positive integer."
+        text = "`n` must be a non-negative integer."
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, alpha0, 49.1)
         with assert_raises(ValueError, match=text):
-            dirichlet_multinomial.logpmf(x0, alpha0, 0)
+            dirichlet_multinomial.logpmf(x0, alpha0, -1)
 
         x = np.array([1, 2, 3, 4])
         alpha = np.array([3, 4, 5])
