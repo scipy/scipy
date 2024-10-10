@@ -1,6 +1,6 @@
 import functools
 from scipy._lib._array_api import (
-    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
+    is_cupy, is_jax, scipy_namespace_for, GLOBAL_CONFIG
 )
 
 import numpy as np
@@ -36,7 +36,7 @@ def delegate_xp(delegator, module_name):
                 # XXX: output arrays
                 result = func(*args, **kwds)
 
-                if isinstance(result, (np.ndarray, np.generic)):
+                if isinstance(result, np.ndarray | np.generic):
                     # XXX: np.int32->np.array_0D
                     return xp.asarray(result)
                 elif isinstance(result, int):
@@ -65,7 +65,7 @@ for func_name in _ndimage_api.__all__:
     delegator = getattr(_delegators, func_name + "_signature")
 
     f = (delegate_xp(delegator, MODULE_NAME)(bare_func)
-         if SCIPY_ARRAY_API
+         if GLOBAL_CONFIG.SCIPY_ARRAY_API
          else bare_func)
 
     # add the decorated function to the namespace, to be imported in __init__.py
