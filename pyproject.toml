@@ -164,3 +164,13 @@ repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}
 PKG_CONFIG_PATH = "{project}"
 # do this instead (which will override this setting)
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
+
+[tool.spin.commands]
+"Build" = [
+  ".spin/cmds.py:build"
+]
+"Environments" = [
+  "spin.cmds.meson.run",
+  "spin.cmds.meson.gdb",
+  "spin.cmds.meson.lldb"
+]
