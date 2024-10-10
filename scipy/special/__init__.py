@@ -768,6 +768,7 @@ Convenience functions
    log1p     -- Calculates log(1+x) for use when `x` is near zero.
    expm1     -- ``exp(x) - 1`` for use when `x` is near zero.
    cosm1     -- ``cos(x) - 1`` for use when `x` is near zero.
+   pow1p     -- ``(1+x)**y``.
    powm1     -- ``x**y - 1`` for use when `y` is near zero or `x` is near 1.
    round     -- Round to nearest integer.
    xlogy     -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
