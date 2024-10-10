@@ -189,13 +189,9 @@ class LinearOperator:
             v = np.zeros(self.shape[-1], dtype=np.int8)
             try:
                 matvec_v = np.asarray(self.matvec(v))
-            except ValueError as e:
-                if str(e) == 'Python integer 200 out of bounds for int8':
-                    # generic large `int` promoted to `np.int64`
-                    self.dtype = np.int64
-                else:
-                    # matvec fails for other reasons
-                    raise e
+            except OverflowError:
+                # generic large `int` promoted to `np.int64`
+                self.dtype = np.int64
             else:
                 self.dtype = matvec_v.dtype
 
