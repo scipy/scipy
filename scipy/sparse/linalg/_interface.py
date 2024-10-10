@@ -131,7 +131,7 @@ class LinearOperator:
     ...
     >>> A = LinearOperator((2,2), matvec=mv)
     >>> A
-    <2x2 _CustomLinearOperator with dtype=float64>
+    <2x2 _CustomLinearOperator with dtype=int8>
     >>> A.matvec(np.ones(2))
     array([ 2.,  3.])
     >>> A * np.ones(2)
@@ -175,11 +175,25 @@ class LinearOperator:
         self.shape = shape
 
     def _init_dtype(self):
-        """Called from subclasses at the end of the __init__ routine.
+        """Determine the dtype by executing `matvec` on an `int8` test vector.
+
+        In `np.promote_types` hierarchy, the type `int8` is the smallest,
+        so we call `matvec` on `int8` and use the promoted dtype of the output
+        to set the default `dtype` of the `LinearOperator`.
+        We assume that `matmat`, `rmatvec`, and `rmatmat` would result in
+        the same dtype of the output given an `int8` input as `matvec`.
+
+        Called from subclasses at the end of the __init__ routine.
         """
         if self.dtype is None:
-            v = np.zeros(self.shape[-1])
-            self.dtype = np.asarray(self.matvec(v)).dtype
+            v = np.zeros(self.shape[-1], dtype=np.int8)
+            try:
+                matvec_v = np.asarray(self.matvec(v))
+            except OverflowError:
+                # generic large `int` promoted to `np.int64`
+                self.dtype = np.int64
+            else:
+                self.dtype = matvec_v.dtype
 
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.

@@ -131,12 +131,12 @@ class SVDSCommonTests:
     # some of these IV tests could run only once, say with solver=None
 
     _A_empty_msg = "`A` must not be empty."
-    _A_dtype_msg = "`A` must be of floating or complex floating data type"
+    _A_dtype_msg = "`A` must be of numeric data type"
     _A_type_msg = "type not understood"
     _A_ndim_msg = "array must have ndim <= 2"
     _A_validation_inputs = [
         (np.asarray([[]]), ValueError, _A_empty_msg),
-        (np.asarray([[1, 2], [3, 4]]), ValueError, _A_dtype_msg),
+        (np.array([['a', 'b'], ['c', 'd']], dtype='object'), ValueError, _A_dtype_msg),
         ("hi", TypeError, _A_type_msg),
         (np.asarray([[[1., 2.], [3., 4.]]]), ValueError, _A_ndim_msg)]
 
@@ -145,6 +145,44 @@ class SVDSCommonTests:
         A, error_type, message = args
         with pytest.raises(error_type, match=message):
             svds(A, k=1, solver=self.solver)
+
+    @pytest.mark.parametrize("which", ["LM", "SM"])
+    def test_svds_int_A(self, which):
+        A = np.asarray([[1, 2], [3, 4]])
+        if self.solver == 'lobpcg':
+            with pytest.warns(UserWarning, match="The problem size"):
+                res = svds(A, k=1, which=which, solver=self.solver,
+                           random_state=0)
+        else:
+            res = svds(A, k=1, which=which, solver=self.solver,
+                       random_state=0)
+        _check_svds(A, 1, *res, which=which, atol=8e-10)
+
+    def test_svds_diff0_docstring_example(self):
+        def diff0(a):
+            return np.diff(a, axis=0)
+        def diff0t(a):
+            if a.ndim == 1:
+                a = a[:,np.newaxis]  # Turn 1D into 2D array
+            d = np.zeros((a.shape[0] + 1, a.shape[1]), dtype=a.dtype)
+            d[0, :] = - a[0, :]
+            d[1:-1, :] = a[0:-1, :] - a[1:, :]
+            d[-1, :] = a[-1, :]
+            return d
+        def diff0_func_aslo_def(n):
+            return LinearOperator(matvec=diff0,
+                                  matmat=diff0,
+                                  rmatvec=diff0t,
+                                  rmatmat=diff0t,
+                                  shape=(n - 1, n))
+        n = 100
+        diff0_func_aslo = diff0_func_aslo_def(n)
+        u, s, _ = svds(diff0_func_aslo, k=3, which='SM')
+        se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
+        ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
+                                     np.arange(1, 4)) / n)
+        assert_allclose(s, se, atol=1e-3)
+        assert_allclose(np.abs(u), np.abs(ue), atol=1e-6)
 
     @pytest.mark.parametrize("k", [-1, 0, 3, 4, 5, 1.5, "1"])
     def test_svds_input_validation_k_1(self, k):
