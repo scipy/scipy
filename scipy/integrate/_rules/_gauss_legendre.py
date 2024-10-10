@@ -55,4 +55,8 @@ class GaussLegendreQuadrature(FixedRule):
     def nodes_and_weights(self):
         # TODO: current converting to/from numpy
         nodes, weights = roots_legendre(self.npoints)
-        return self.xp.asarray(nodes), self.xp.asarray(weights)
+
+        return (
+            self.xp.asarray(nodes, dtype=self.xp.float64),
+            self.xp.asarray(weights, dtype=self.xp.float64)
+        )
