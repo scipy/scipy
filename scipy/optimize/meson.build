@@ -86,17 +86,6 @@ py3.extension_module('_moduleTNC',
   subdir: 'scipy/optimize'
 )
 
-py3.extension_module('_cobyla',
-  [f2py_gen.process('cobyla/cobyla.pyf'), 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
-  c_args: [Wno_unused_variable],
-  fortran_args: fortran_ignore_warnings,
-  link_args: version_link_args,
-  dependencies: [fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/optimize'
-)
-
 py3.extension_module('_slsqp',
   [f2py_gen.process('slsqp/slsqp.pyf'), 'slsqp/slsqp_optmz.f'],
   fortran_args: fortran_ignore_warnings,
@@ -173,6 +162,7 @@ subdir('_trustregion_constr')
 subdir('cython_optimize')
 subdir('_shgo_lib')
 subdir('_highs')
+subdir('_prima')
 subdir('tests')
 
 
