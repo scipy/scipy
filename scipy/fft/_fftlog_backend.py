@@ -92,7 +92,7 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0, inverse=False):
     np.exp(u, out=u)
 
     # fix last coefficient to be real
-    if (n%2==0):
+    if n % 2 == 0:
         u.imag[-1] = 0
 
     # deal with special cases
