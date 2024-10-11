@@ -3673,7 +3673,7 @@ dcstep (double* stx, double* fx, double* dx, double* sty, double* fy, double* dy
         q = ((gamma - dp) + gamma) + *dx;
         r = p / q;
         stpc = *stp + r * (*stx - *stp);
-        stpq = *stp + (dp / (dp - *dx)) * (stx - stp);
+        stpq = *stp + (dp / (dp - *dx)) * (*stx - *stp);
         if (fabs(stpc - *stp) > fabs(stpq - *stp))
         {
             stpf = stpc;
