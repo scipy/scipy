@@ -167,6 +167,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         being studied then the `trust-constr` method is used instead. For large
         problems with many constraints, polishing can take a long time due to
         the Jacobian computations.
+
+        .. versionchanged:: 1.15.0
+            If `workers` is specified then the map-like callable that wraps
+            `func` is supplied to `minimize` instead of it using `func`
+            directly. This allows the caller to control how and where the
+            invocations actually run.
+
     init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
         one of:
@@ -1220,7 +1227,8 @@ class DifferentialEvolutionSolver:
                                   UserWarning, stacklevel=2)
             if self.disp:
                 print(f"Polishing solution with '{polish_method}'")
-            result = minimize(self.func,
+            result = minimize(lambda x:
+                                list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
                               np.copy(DE_result.x),
                               method=polish_method,
                               bounds=self.limits.T,
