@@ -190,8 +190,12 @@ class LinearOperator:
             try:
                 matvec_v = np.asarray(self.matvec(v))
             except OverflowError:
-                # generic large `int` promoted to `np.int64`
-                self.dtype = np.int64
+                # Python large `int` promoted to `np.int64`or `np.int32`
+                try:
+                    test_int64 = np.int64(1)
+                    self.dtype = np.int64
+                except AttributeError:
+                    self.dtype = np.int32
             else:
                 self.dtype = matvec_v.dtype
 
