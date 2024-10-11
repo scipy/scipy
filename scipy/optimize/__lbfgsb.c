@@ -2639,7 +2639,7 @@ lnsrlb(int n, double* l, double* u, int* nbd, double* x,
         r[i] = g[i];
     }
 
-    *fold = f;  // What's the point of this?
+    *fold = f;  // Later used in mainlb, see control flow after returning from this function.
     *ifun = 0;
     *iback = 0;
     *temp_task = START;
