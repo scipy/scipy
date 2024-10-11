@@ -1,7 +1,6 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
-import asyncio
 import multiprocessing
 from multiprocessing.dummy import Pool as ThreadPool
 import platform
