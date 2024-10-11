@@ -24,7 +24,7 @@ def test_sparray_norm():
             for A in (test_arr, test_mat):
                 expected = npnorm(A.toarray(), ord=ord, axis=ax)
                 assert_equal(spnorm(A, ord=ord, axis=ax), expected)
-    # test 1d
+    # test 1d array and 1d-like (column) matrix
     test_arr_1d = scipy.sparse.coo_array((data, (col,)), shape=(4,))
     test_mat_col = scipy.sparse.coo_matrix((data, (col, [0, 0, 0, 0])), shape=(4, 1))
     for ord in (1, np.inf, None):
