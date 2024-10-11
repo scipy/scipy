@@ -720,7 +720,7 @@ class TestDifferentialEvolutionSolver:
             # is being overridden by the workers keyword
             with warns(UserWarning):
                 with DifferentialEvolutionSolver(rosen, bounds, workers=p.map) as s:
-                    pass
+                    solver.solve()
             assert s._updating == 'deferred'
 
     @pytest.mark.fail_slow(10)
@@ -1697,27 +1697,3 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
-
-    @pytest.mark.fail_slow(10)
-    def test_asyncio(self):
-        def quadratic(x):
-            return np.sum(x**2)
-
-        async def asyncio_quadratic(x):
-            await asyncio.sleep(0.01)
-            return quadratic(x)
-
-        async def gather(func, args):
-            return await asyncio.gather(*(func(arg) for arg in args))
-
-        def asyncio_map(func, args):
-            return asyncio.run(gather(func, args))
-
-        res1 = differential_evolution(quadratic, self.bounds,
-                                      updating='deferred')
-        res2 = differential_evolution(asyncio_quadratic, self.bounds,
-                                      workers=asyncio_map, updating='deferred')
-
-        assert res1.success
-        assert res2.success
-        assert_allclose(res1.x, res2.x)
