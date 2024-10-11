@@ -440,24 +440,27 @@ def test_no_double_init():
 
 INT_DTYPES = (np.int8, np.int16, np.int32, np.int64)
 UINT_DTYPES = (np.uint8, np.uint16, np.uint32, np.uint64)
-REAL_DTYPES = (np.float32, np.float64, np.float128)
-COMPLEX_DTYPES = (np.complex64, np.complex128, np.complex256)
+REAL_DTYPES = (np.float32, np.float64)
+COMPLEX_DTYPES = (np.complex64, np.complex128)
 INEXECTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
 ALLDTYPES = INT_DTYPES + UINT_DTYPES + INEXECTDTYPES
 
 
 @pytest.mark.parametrize("test_dtype", ALLDTYPES)
 def test_determine_lo_dtype_from_matvec(test_dtype):
+
+    def mv(v):
+        return np.array([scalar * v[0], v[1]])
+
     scalar = np.array(1, dtype=test_dtype)
-    mv = lambda v: np.array([scalar * v[0], v[1]])
     lo = interface.LinearOperator((2, 2), matvec=mv)
     assert lo.dtype == np.dtype(test_dtype)
     # test small Python int
-    mv = lambda v: np.array([1 * v[0], v[1]])
+    scalar  = 1
     lo = interface.LinearOperator((2, 2), matvec=mv)
     assert lo.dtype == np.dtype(np.int8)
     # test Python int larger than int8 max
-    mv = lambda v: np.array([128 * v[0], v[1]])
+    scalar = 128
     lo = interface.LinearOperator((2, 2), matvec=mv)
     assert lo.dtype == np.dtype(np.int64)
 
