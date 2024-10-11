@@ -675,7 +675,6 @@ mainlb(int n, int m, double* x, double* l, double* u,
     //
     //     ************
     int prjctd, cnstnd, boxed, updatd, wrk;
-    enum StatusWord word;
     int i, k, nintol, iback, nskip, head, col, iter, itail, iupdat;
     int nseg, nfgv, info, ifun, iword, nfree, nact, ileave, nenter;
     double theta, fold, dr, rr, tol, xstep, sbgnrm, stpmx, ddum, dnorm, dtd;
@@ -716,9 +715,6 @@ mainlb(int n, int m, double* x, double* l, double* u,
         ifun = 0;
         // For stopping tolerance
         tol = factr * epsmach;
-
-        // 'word' records the status of subspace solutions.
-        word = SUBS_THREE_DASH;
 
         // 'info' records the termination information.
         info = 0;
@@ -970,19 +966,6 @@ LINE666:
 
         // Compute the infinity norm of the projected (-)gradient.
         projgr(n, l, u, nbd, x, g, &sbgnrm);
-
-        if (iword == 0)
-        {
-            word = SUBS_CONVERGED;
-        } else if (iword == 1)
-        {
-            word = SUBS_BOUNDED;
-        } else if (iword == 5)
-        {
-            word = SUBS_TRUNCATED;
-        } else {
-            word = SUBS_THREE_DASH;
-        }
 
         goto LINE1000;
     }
@@ -1761,8 +1744,6 @@ cauchy(int n, double* x, double* l, double* u,
             // to repeat the loop for unsearched intervals.
             dtm = -f1 / f2;
         } else if (bnded) {
-            f1 = 0.0;
-            f2 = 0.0;
             dtm = 0.0;
             break;
         } else {
