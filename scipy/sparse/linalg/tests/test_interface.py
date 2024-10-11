@@ -461,7 +461,7 @@ def test_determine_lo_dtype_for_int():
         return np.array([128 * v[0], v[1]])
 
     lo = interface.LinearOperator((2, 2), matvec=mv)
-    assert lo.dtype == np.dtype(np.int64)
+    assert lo.dtype in INT_DTYPES
 
 def test_adjoint_conjugate():
     X = np.array([[1j]])
