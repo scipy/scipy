@@ -445,18 +445,21 @@ COMPLEX_DTYPES = (np.complex64, np.complex128)
 INEXECTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
 ALLDTYPES = INT_DTYPES + INEXECTDTYPES
 
-def mv(v):
-    return np.array([scalar * v[0], v[1]])
 
 @pytest.mark.parametrize("test_dtype", ALLDTYPES)
 def test_determine_lo_dtype_from_matvec(test_dtype):
     scalar = np.array(1, dtype=test_dtype)
+    def mv(v):
+        return np.array([scalar * v[0], v[1]])
+
     lo = interface.LinearOperator((2, 2), matvec=mv)
     assert lo.dtype == np.dtype(test_dtype)
 
 def test_determine_lo_dtype_for_int():
     # test Python int larger than int8 max
-    scalar = 128
+    def mv(v):
+        return np.array([128 * v[0], v[1]])
+
     lo = interface.LinearOperator((2, 2), matvec=mv)
     assert lo.dtype == np.dtype(np.int64)
 
