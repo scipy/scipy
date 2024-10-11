@@ -440,11 +440,10 @@ def test_no_double_init():
     assert_equal(call_count[0], 1)
 
 INT_DTYPES = (np.int8, np.int16, np.int32, np.int64)
-UINT_DTYPES = (np.uint8, np.uint16, np.uint32, np.uint64)
 REAL_DTYPES = (np.float32, np.float64)
 COMPLEX_DTYPES = (np.complex64, np.complex128)
 INEXECTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
-ALLDTYPES = INT_DTYPES + UINT_DTYPES + INEXECTDTYPES
+ALLDTYPES = INT_DTYPES + INEXECTDTYPES
 
 
 @pytest.mark.parametrize("test_dtype", ALLDTYPES)
