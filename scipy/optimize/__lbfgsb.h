@@ -1,17 +1,17 @@
 #ifndef __LBFGSB_H
 #define __LBFGSB_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include <math.h>
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
 
 // BLAS
 void daxpy_(int* n, double* alpha, double* x, int* incx, double* y, int* incy);
