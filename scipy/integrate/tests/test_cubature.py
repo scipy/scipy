@@ -1282,18 +1282,19 @@ class TestTransformations:
         transformation.
         """
 
+        xp_compat = array_namespace(xp.empty(0))
         points = [xp.asarray(p, dtype=xp.float64) for p in points]
 
         f_transformed = _InfiniteLimitsTransform(
             # Bind `points` and `xp` argument in f
-            lambda x: f_with_problematic_points(x, points, xp),
-            xp.asarray(a, dtype=xp.float64),
-            xp.asarray(b, dtype=xp.float64),
-            xp=xp,
+            lambda x: f_with_problematic_points(x, points, xp_compat),
+            xp.asarray(a, dtype=xp_compat.float64),
+            xp.asarray(b, dtype=xp_compat.float64),
+            xp=xp_compat,
         )
 
         for point in points:
-            transformed_point = f_transformed.inv(xp.reshape(point, (1, -1)))
+            transformed_point = f_transformed.inv(xp_compat.reshape(point, (1, -1)))
 
             with pytest.raises(Exception, match="called with a problematic point"):
                 f_transformed(transformed_point)
