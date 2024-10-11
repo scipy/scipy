@@ -2062,7 +2062,7 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
             for (jy = 0; jy < m - 1; jy++)
             {
                 js = m + jy;
-                temp_int = m - jy + 1;
+                temp_int = m - (jy + 1);
                 dcopy_(&temp_int, &wn1[(jy + 1) + 2*m*(jy + 1)], &one_int, &wn1[jy + 2*m*jy], &one_int);
                 dcopy_(&temp_int, &wn1[(js + 1) + 2*m*(js + 1)], &one_int, &wn1[js + 2*m*js], &one_int);
                 temp_int = m - 1;
