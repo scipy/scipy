@@ -192,7 +192,7 @@ class LinearOperator:
             except OverflowError:
                 # Python large `int` promoted to `np.int64`or `np.int32`
                 try:
-                    test_int64 = np.int64(1)
+                    test_int64 = np.int64(1)  # noqa: F841
                     self.dtype = np.int64
                 except AttributeError:
                     self.dtype = np.int32
