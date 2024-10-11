@@ -7226,8 +7226,8 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5. According to [3]_, the
-    total number of samples is recommended to be greater than 13,
+    and expected frequencies should be at least 5. According to [2]_, the
+    total number of observations is recommended to be greater than 13,
     otherwise exact tests (such as Barnard's Exact test) should be used
     because they do not overreject.
 
@@ -7245,7 +7245,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
     This function may be used to perform other statistical tests that do not require
     the total counts to be equal. For instance, to test the null hypothesis that
     ``f_obs[i]`` is Poisson-distributed with expectation ``f_exp[i]``, set ``ddof=-1``
-     and ``sum_check=False``.
+    and ``sum_check=False``.
 
     References
     ----------
