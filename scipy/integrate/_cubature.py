@@ -371,7 +371,20 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         f = _InfiniteLimitsTransform(f, a, b, xp=xp)
         a, b = f.transformed_limits
 
+        # Map points from the original coordinates to the new transformed coordinates.
+        #
+        # `points` is a list of arrays of shape (ndim,), but transformations are applied
+        # to arrays of shape (npoints, ndim).
+        #
+        # It is not possible to combine all the points into one array and then apply
+        # f.inv to all of them at once since `points` needs to remain iterable.
+        # Instead, each point is reshaped to an array of shape (1, ndim), `f.inv` is
+        # applied, and then each is reshaped back to (ndim,).
+        points = [xp.reshape(point, (1, -1)) for point in points]
         points = [f.inv(point) for point in points]
+        points = [xp.reshape(point, (-1,)) for point in points]
+
+        # Include any problematic points introduced by the transformation
         points.extend(f.points)
 
     # If any problematic points are specified, divide the initial region so that these
@@ -658,7 +671,15 @@ class _InfiniteLimitsTransform(_VariableTransform):
             (npoints, 1),
         )
 
-        t[double_inf_mask] = 1/(x[double_inf_mask] + self._xp.sign(x[double_inf_mask]))
+        # If any components of x are 0, then this component will be mapped to infinity
+        # under the transformation used for doubly-infinite limits.
+        #
+        # Handle the zero values and non-zero values separately to avoid division by
+        # zero.
+        zero_mask = x[double_inf_mask] == 0
+        non_zero_mask = double_inf_mask & ~zero_mask
+        t[zero_mask] = math.inf
+        t[non_zero_mask] = 1/(x[non_zero_mask] + self._xp.sign(x[non_zero_mask]))
 
         start = self._xp.tile(self._orig_a[self._semi_inf_pos], (npoints,))
         t[semi_inf_mask] = 1/(x[semi_inf_mask] - start + 1)

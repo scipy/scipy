@@ -1123,6 +1123,79 @@ class TestCubatureProblems:
             check_0d=False,
         )
 
+    @skip_xp_backends(
+        "jax.numpy",
+        reasons=["transforms make use of indexing assignment"],
+    )
+    @pytest.mark.parametrize("problem", [
+        (
+            # Function to integrate
+            lambda x, xp: (xp.sin(x) / x)**8,
+
+            # Exact value
+            [151/315 * math.pi],
+
+            # Limits
+            [-math.inf],
+            [math.inf],
+
+            # Breakpoints
+            [[0]],
+
+        ),
+        (
+            # Function to integrate
+            lambda x, xp: (xp.sin(x[:, 0]) / x[:, 0])**8,
+
+            # Exact value
+            151/315 * math.pi,
+
+            # Limits
+            [-math.inf, 0],
+            [math.inf, 1],
+
+            # Breakpoints
+            [[0, 0.5]],
+
+        )
+    ])
+    def test_infinite_limits_and_break_points(self, problem, rule, rtol, atol, xp):
+        f, exact, a, b, points = problem
+
+        a = xp.asarray(a, dtype=xp.float64)
+        b = xp.asarray(b, dtype=xp.float64)
+        exact = xp.asarray(exact, dtype=xp.float64)
+
+        ndim = xp_size(a)
+
+        if rule == "genz-malik" and ndim < 2:
+            pytest.skip("Genz-Malik cubature does not support 1D integrals")
+
+        if points is not None:
+            points = [xp.asarray(point, dtype=xp.float64) for point in points]
+
+        res = cubature(
+            f,
+            a,
+            b,
+            rule=rule,
+            rtol=rtol,
+            atol=atol,
+            points=points,
+            args=(xp,),
+        )
+
+        assert res.status == "converged"
+
+        xp_assert_close(
+            res.estimate,
+            exact,
+            rtol=rtol,
+            atol=atol,
+            err_msg=f"error_estimate={res.error}, subdivisions={res.subdivisions}",
+            check_0d=False,
+        )
+
 
 @array_api_compatible
 class TestRules:
