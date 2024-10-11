@@ -133,8 +133,7 @@ lbfgsb_setulb(PyObject *self, PyObject *args)
     setulb(n, m, x, l, u, nbd, &f, g, factr, pgtol, wa, iwa, taskptr, lsave,
            isave, dsave, maxls, ln_taskptr);
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static struct PyMethodDef lbfgsb_module_methods[] = {
