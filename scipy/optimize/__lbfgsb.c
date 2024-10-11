@@ -154,14 +154,6 @@ enum StatusMsg {
 };
 
 
-enum StatusWord {
-    SUBS_THREE_DASH,
-    SUBS_CONVERGED,
-    SUBS_BOUNDED,
-    SUBS_TRUNCATED
-};
-
-
 // Internal functions
 
 static void mainlb(
