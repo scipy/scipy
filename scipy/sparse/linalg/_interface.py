@@ -112,6 +112,12 @@ class LinearOperator:
     where v has shape (N,) as well as the (N,1) case.  The shape of
     the return type is handled internally by LinearOperator.
 
+    It is highly recommended to explicitly specify the `dtype`, otherwise
+    it is determined automatically at the cost of a single matvec application
+    on `int8` zero vector using the promoted `dtype` of the output.
+    It is assumed that `matmat`, `rmatvec`, and `rmatmat` would result in
+    the same dtype of the output given an `int8` input as `matvec`.
+
     LinearOperator instances can also be multiplied, added with each
     other and exponentiated, all lazily: the result of these operations
     is always a new, composite LinearOperator, that defers linear
