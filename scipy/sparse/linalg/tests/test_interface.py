@@ -448,6 +448,7 @@ ALLDTYPES = INT_DTYPES + INEXECTDTYPES
 
 @pytest.mark.parametrize("test_dtype", ALLDTYPES)
 def test_determine_lo_dtype_from_matvec(test_dtype):
+    # gh-19209
     scalar = np.array(1, dtype=test_dtype)
     def mv(v):
         return np.array([scalar * v[0], v[1]])
@@ -456,9 +457,10 @@ def test_determine_lo_dtype_from_matvec(test_dtype):
     assert lo.dtype == np.dtype(test_dtype)
 
 def test_determine_lo_dtype_for_int():
+    # gh-19209
     # test Python int larger than int8 max
     def mv(v):
-        return np.array([10**50 * v[0], v[1]])
+        return np.array([128 * v[0], v[1]])
 
     lo = interface.LinearOperator((2, 2), matvec=mv)
     assert lo.dtype == np.dtype(np.float64)
