@@ -52,6 +52,12 @@ from scipy.special._testutils import with_special_errors, \
 import math
 
 
+native_int = np.int32 if (
+    sys.platform == 'win32'
+    or platform.architecture()[0] == "32bit"
+) else np.int64
+
+
 class TestCephes:
     def test_airy(self):
         cephes.airy(0)
@@ -2123,7 +2129,7 @@ class TestFactorialFunctions:
         rtol = 1e-15
         n = [-5, -4, 0, 1]
         # Consistent output for n < 0
-        expected = np.array([0, 0, 1, 1], dtype=np.int64 if exact else np.float64)
+        expected = np.array([0, 0, 1, 1], dtype=native_int if exact else np.float64)
         xp_assert_close(special.factorial(n, **kw), expected, rtol=rtol)
         xp_assert_close(special.factorial2(n, **kw), expected, rtol=rtol)
         xp_assert_close(special.factorialk(n, k=3, **kw), expected, rtol=rtol)
@@ -2312,7 +2318,7 @@ class TestFactorialFunctions:
             # result is empty if and only if n is empty, and has the same dimension
             # as n; dtype stays the same, except when not empty and not exact:
             if n.size:
-                dtype = np.int64 if exact else np.float64
+                dtype = native_int if exact else np.float64
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             xp_assert_equal(result, expected)
 
