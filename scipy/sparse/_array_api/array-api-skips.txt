@@ -1,0 +1,5 @@
+# idea from https://github.com/numpy/numpy/blob/18c13458d544d9b935b63e7b495a346ec14f5468/tools/ci/array-api-skips.txt
+# Add here tests that should be skipped (just the name of the python file should do, no need to add the `array_api_tests` prefix)
+
+# i.e., running pytest array_api_tests/test_fft.py --skips-file ../scipy/scipy/array_api/array-api-skips.txt with only the below commented in will skip all.
+# test_fft.py
