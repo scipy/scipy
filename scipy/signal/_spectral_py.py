@@ -97,13 +97,13 @@ def lombscargle(
     Notes
     -----
     The algorithm used will not automatically account for any unknown y offset, unless
-    floating_mean is True. If precenter is True, it performs the operation
-    ``y -= y.mean()``. However, precenter is a legacy parameter, and unnecessary
-    when floating_mean is True. Furthermore, the mean removed by precenter does not
-    account for sample weights, nor will it correct for any bias due to consistently 
-    missing observations at peaks and/or troughs. For most use cases, if there is a
-    possibility of a y offset, it is recommended to set floating_mean to True. When the
-    normalize parameter is "amplitude", for any frequency in freqs that is below 
+    floating_mean is True. Therefore, for most use cases, if there is a possibility of
+    a y offset, it is recommended to set floating_mean to True. If precenter is True,
+    it performs the operation ``y -= y.mean()``. However, precenter is a legacy
+    parameter, and unnecessary when floating_mean is True. Furthermore, the mean
+    removed by precenter does not account for sample weights, nor will it correct for
+    any bias due to consistently missing observations at peaks and/or troughs. When the
+    normalize parameter is "amplitude", for any frequency in freqs that is below
     ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards infinity.
 
     References
