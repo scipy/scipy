@@ -136,7 +136,7 @@ def lombscargle(
     >>> c = 2.  # offset
     >>> w0 = 1.  # rad/sec
     >>> nin = 150
-    >>> nout = 1000
+    >>> nout = 1002
 
     Randomly generate sample times:
 
@@ -152,32 +152,43 @@ def lombscargle(
 
     Calculate Lomb-Scargle periodogram for each of the normalize options:
 
-    >>> import scipy.signal as signal
-    >>> pgram_power = signal.lombscargle(x, y, w, normalize=False)
-    >>> pgram_norm = signal.lombscargle(x, y, w, normalize=True)
-    >>> pgram_amp = signal.lombscargle(x, y, w, normalize='amplitude')
+    >>> from scipy.signal import lombscargle
+    >>> pgram_power = lombscargle(x, y, w, normalize=False)
+    >>> pgram_norm = lombscargle(x, y, w, normalize=True)
+    >>> pgram_amp = lombscargle(x, y, w, normalize='amplitude')
+
+    >>> pgram_power_f = lombscargle(x, y, w, normalize=False, floating_mean=True)
+    >>> pgram_norm_f = lombscargle(x, y, w, normalize=True, floating_mean=True)
+    >>> pgram_amp_f = lombscargle(x, y, w, normalize='amplitude', floating_mean=True)
 
     Now make a plot of the input data:
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, (ax_t, ax_p, ax_n, ax_a) = plt.subplots(4, 1, figsize=(5, 5))
+    >>> fig, (ax_t, ax_p, ax_n, ax_a) = plt.subplots(4, 1, figsize=(5, 6))
     >>> ax_t.plot(x, y, 'b+')
     >>> ax_t.set_xlabel('Time [s]')
     >>> ax_t.set_ylabel('Amplitude')
 
-    Then plot the periodogram for each of the normalize options:
+    Then plot the periodogram for each of the normalize options, as well as with and
+    without floating_mean=True:
 
-    >>> ax_p.plot(w, pgram_power)
+    >>> ax_p.plot(w, pgram_power, label='default')
+    >>> ax_p.plot(w, pgram_power_f, label='floating_mean=True')
     >>> ax_p.set_xlabel('Angular frequency [rad/s]')
     >>> ax_p.set_ylabel('Power')
+    >>> ax_p.legend(prop={'size': 7})
 
-    >>> ax_n.plot(w, pgram_norm)
+    >>> ax_n.plot(w, pgram_norm, label='default')
+    >>> ax_n.plot(w, pgram_norm_f, label='floating_mean=True')
     >>> ax_n.set_xlabel('Angular frequency [rad/s]')
     >>> ax_n.set_ylabel('Normalized')
+    >>> ax_n.legend(prop={'size': 7})
 
-    >>> ax_a.plot(w, np.abs(pgram_amp))
+    >>> ax_a.plot(w, np.abs(pgram_amp), label='default')
+    >>> ax_a.plot(w, np.abs(pgram_amp_f), label='floating_mean=True')
     >>> ax_a.set_xlabel('Angular frequency [rad/s]')
     >>> ax_a.set_ylabel('Amplitude')
+    >>> ax_a.legend(prop={'size': 7})
 
     >>> plt.tight_layout()
     >>> plt.show()
