@@ -7177,7 +7177,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
 
     Pearson's chi-squared test [1]_ assesses the null hypothesis that the observed
     frequencies (counts) are a sample from a multinomial distribution; that is,
-    they are the counts after *N* total observations from a categorical
+    they are the counts after *N* total observations are taken from a categorical
     distribution.
 
     Parameters
@@ -7245,7 +7245,11 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
     This function may be used to perform other statistical tests that do not require
     the total counts to be equal. For instance, to test the null hypothesis that
     ``f_obs[i]`` is Poisson-distributed with expectation ``f_exp[i]``, set ``ddof=-1``
-    and ``sum_check=False``.
+    and ``sum_check=False``. This test follows from the fact that a Poisson random
+    variable with mean and variance ``f_exp[i]`` is approximately normal with the
+    same mean and variance; the chi-squared statistic standardizes, squares, and sums
+    the observations; and the sum of ``n`` squared standard normal variables follows
+    the chi-squared distribution with ``n`` degrees of freedom.
 
     References
     ----------
