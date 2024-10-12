@@ -5,7 +5,9 @@ from scipy._lib._array_api import (
 )
 from ._signaltools import (convolve, fftconvolve, convolve2d, oaconvolve,
                            correlate, correlate2d, order_filter, medfilt, medfilt2d,
-                           wiener, detrend, hilbert, hilbert2)
+                           wiener, detrend, hilbert, hilbert2, lfilter, deconvolve,
+                           sosfilt, sosfiltfilt, sosfilt_zi, lfilter_zi,
+                           filtfilt,)
 
 MODULE_NAME = 'signal'
 
@@ -94,6 +96,34 @@ def hilbert_signature(x, *args, **kwds):
 hilbert2_signature = hilbert_signature
 
 
+def lfilter_signature(b, a, x, axis=-1, zi=None):
+    return array_namespace(b, a, x, zi)
+
+
+def lfilter_zi_signature(b, a):
+    return array_namespace(b, a)
+
+
+def filtfilt_signature(b, a, x, *args, **kwds):
+    return array_namespace(b, a, x)
+
+
+def sosfilt_signature(sos, x, axis=-1, zi=None):
+    return array_namespace(sos, x, zi)
+
+
+def sosfilt_zi_signature(sos):
+    return array_namespace(sos)
+
+
+def sosfiltfilt_signature(sos, x, axis=-1, padtype='odd', padlen=None):
+    return array_namespace(sos, x)
+
+
+def deconvolve_signature(signal, divisor):
+    return array_namespace(signal, divisor)
+
+
 # functions we patch for dispatch
 _FUNC_MAP = {
     convolve: convolve_signature,
@@ -109,6 +139,13 @@ _FUNC_MAP = {
     detrend: detrend_signature,
     hilbert: hilbert_signature,
     hilbert2: hilbert2_signature,
+    lfilter: lfilter_signature,
+    lfilter_zi: lfilter_zi_signature, 
+    deconvolve: deconvolve_signature,
+    sosfilt: sosfilt_signature,
+    sosfiltfilt: sosfiltfilt_signature,
+    sosfilt_zi : sosfilt_zi_signature,
+    filtfilt: filtfilt_signature,
 }
 
 

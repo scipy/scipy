@@ -2189,12 +2189,22 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    try:
+        xp = array_namespace(b, a, x, zi)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(x, 'lfilter')
+        _reject_objects(a, 'lfilter')
+        _reject_objects(b, 'lfilter')
+
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
-
-    _reject_objects(x, 'lfilter')
-    _reject_objects(a, 'lfilter')
-    _reject_objects(b, 'lfilter')
+    x = np.asarray(x)
+    if zi is not None:
+       zi = np.asarray(zi)
 
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
@@ -2253,16 +2263,18 @@ def lfilter(b, a, x, axis=-1, zi=None):
         out = out_full[tuple(ind)]
 
         if zi is None:
-            return out
+            return xp.asarray(out)
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
             zf = out_full[tuple(ind)]
-            return out, zf
+            return xp.asarray(out), xp.asarray(zf)
     else:
         if zi is None:
-            return _sigtools._linear_filter(b, a, x, axis)
+            result =_sigtools._linear_filter(b, a, x, axis)
+            return xp.asarray(result)
         else:
-            return _sigtools._linear_filter(b, a, x, axis, zi)
+            out, zf = _sigtools._linear_filter(b, a, x, axis, zi)
+            return xp.asarray(out), xp.asarray(zf)
 
 
 def lfiltic(b, a, y, x=None):
@@ -2305,40 +2317,59 @@ def lfiltic(b, a, y, x=None):
     lfilter, lfilter_zi
 
     """
-    N = np.size(a) - 1
-    M = np.size(b) - 1
+    try:
+        xp = array_namespace(a, b, y, x)
+    except TypeError:
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(a, 'lfiltic')
+        _reject_objects(b, 'lfiltic')
+        _reject_objects(y, 'lfiltic')
+        if x is not None:
+            _reject_objects(x, 'lfiltic')
+
+    a = xp.asarray(a)
+    b = xp.asarray(b)
+
+    N = xp_size(a) - 1
+    M = xp_size(b) - 1
     K = max(M, N)
-    y = np.asarray(y)
+    y = xp.asarray(y)
 
     if x is None:
-        result_type = np.result_type(np.asarray(b), np.asarray(a), y)
-        if result_type.kind in 'bui':
-            result_type = np.float64
-        x = np.zeros(M, dtype=result_type)
+        result_type = xp.result_type(b, a, y)
+        if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
+            result_type = xp.float64
+        x = xp.zeros(M, dtype=result_type)
     else:
-        x = np.asarray(x)
+        x = xp.asarray(x)
 
-        result_type = np.result_type(np.asarray(b), np.asarray(a), y, x)
-        if result_type.kind in 'bui':
-            result_type = np.float64
-        x = x.astype(result_type)
+        result_type = xp.result_type(b, a, y, x)
+        if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
+            result_type = xp.float64
+        x = xp.astype(x, result_type)
 
-        L = np.size(x)
+        concat = array_namespace(a).concat
+
+        L = xp_size(x)
         if L < M:
-            x = np.r_[x, np.zeros(M - L)]
+            x = concat((x, xp.zeros(M - L)))
 
-    y = y.astype(result_type)
-    zi = np.zeros(K, result_type)
+    y = xp.astype(y, result_type)
+    zi = xp.zeros(K, dtype=result_type)
 
-    L = np.size(y)
+    concat = array_namespace(xp.ones(3)).concat
+
+    L = xp_size(y)
     if L < N:
-        y = np.r_[y, np.zeros(N - L)]
+        y = concat((y, np.zeros(N - L)))
 
     for m in range(M):
-        zi[m] = np.sum(b[m + 1:] * x[:M - m], axis=0)
+        zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
 
     for m in range(N):
-        zi[m] -= np.sum(a[m + 1:] * y[:N - m], axis=0)
+        zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
 
     return zi
 
@@ -2384,19 +2415,21 @@ def deconvolve(signal, divisor):
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
 
     """
-    num = np.atleast_1d(signal)
-    den = np.atleast_1d(divisor)
+    xp = array_namespace(signal, divisor)
+
+    num = xp_atleast_nd(signal, ndim=1)
+    den = xp_atleast_nd(divisor, ndim=1)
     if num.ndim > 1:
         raise ValueError("signal must be 1-D.")
     if den.ndim > 1:
         raise ValueError("divisor must be 1-D.")
-    N = len(num)
-    D = len(den)
+    N = num.shape[0]
+    D = den.shape[0]
     if D > N:
         quot = []
         rem = num
     else:
-        input = np.zeros(N - D + 1, float)
+        input = xp.zeros(N - D + 1, dtype=xp.float64)
         input[0] = 1
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
@@ -3855,6 +3888,7 @@ def lfilter_zi(b, a):
     transient until the input drops from 0.5 to 0.0.
 
     """
+    xp = array_namespace(b, a)
 
     # FIXME: Can this function be replaced with an appropriate
     # use of lfiltic?  For example, when b,a = butter(N,Wn),
@@ -3864,16 +3898,16 @@ def lfilter_zi(b, a):
     # We could use scipy.signal.normalize, but it uses warnings in
     # cases where a ValueError is more appropriate, and it allows
     # b to be 2D.
-    b = np.atleast_1d(b)
+    b = xp_atleast_nd(b, ndim=1)
     if b.ndim != 1:
         raise ValueError("Numerator b must be 1-D.")
-    a = np.atleast_1d(a)
+    a = xp_atleast_nd(a, ndim=1)
     if a.ndim != 1:
         raise ValueError("Denominator a must be 1-D.")
 
-    while len(a) > 1 and a[0] == 0.0:
+    while a.shape[0] > 1 and a[0] == 0.0:
         a = a[1:]
-    if a.size < 1:
+    if xp_size(a) < 1:
         raise ValueError("There must be at least one nonzero `a` coefficient.")
 
     if a[0] != 1.0:
@@ -3881,18 +3915,20 @@ def lfilter_zi(b, a):
         b = b / a[0]
         a = a / a[0]
 
-    n = max(len(a), len(b))
+    n = max(a.shape[0], b.shape[0])
 
     # Pad a or b with zeros so they are the same length.
-    if len(a) < n:
-        a = np.r_[a, np.zeros(n - len(a), dtype=a.dtype)]
-    elif len(b) < n:
-        b = np.r_[b, np.zeros(n - len(b), dtype=b.dtype)]
+    if a.shape[0] < n:
+        a = xp.concat((a, xp.zeros(n - a.shape[0], dtype=a.dtype)))
+    elif b.shape[0] < n:
+        b = xp.concat((b, xp.zeros(n - b.shape[0], dtype=b.dtype)))
 
-    IminusA = np.eye(n - 1, dtype=np.result_type(a, b)) - linalg.companion(a).T
+    dt = xp.result_type(a, b)
+    IminusA = np.eye(n - 1) - linalg.companion(a).T
+    IminusA = xp.asarray(IminusA, dtype=dt)
     B = b[1:] - a[1:] * b[0]
     # Solve zi = A*zi + B
-    zi = np.linalg.solve(IminusA, B)
+    zi = xp.linalg.solve(IminusA, B)
 
     # For future reference: we could also use the following
     # explicit formulas to solve the linear system:
@@ -3963,24 +3999,26 @@ def sosfilt_zi(sos):
     >>> plt.show()
 
     """
-    sos = np.asarray(sos)
+    xp = array_namespace(sos)
+
+    sos = xp.asarray(sos)
     if sos.ndim != 2 or sos.shape[1] != 6:
         raise ValueError('sos must be shape (n_sections, 6)')
 
-    if sos.dtype.kind in 'bui':
-        sos = sos.astype(np.float64)
+    if xp.isdtype(sos.dtype, ("integral", "bool")):
+        sos = xp.astype(sos, xp.float64)
 
     n_sections = sos.shape[0]
-    zi = np.empty((n_sections, 2), dtype=sos.dtype)
+    zi = xp.empty((n_sections, 2), dtype=sos.dtype)
     scale = 1.0
     for section in range(n_sections):
         b = sos[section, :3]
         a = sos[section, 3:]
-        zi[section] = scale * lfilter_zi(b, a)
+        zi[section, ...] = scale * lfilter_zi(b, a)
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
-        scale *= b.sum() / a.sum()
+        scale *= xp.sum(b) / xp.sum(a)
 
     return zi
 
@@ -4322,6 +4360,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     2.875334415008979e-10
 
     """
+    xp = array_namespace(b, a, x)
+
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
     x = np.asarray(x)
@@ -4331,7 +4371,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     if method == "gust":
         y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
-        return y
+        return xp.asarray(y)
 
     # method == "pad"
     edge, ext = _validate_pad(padtype, padlen, x, axis,
@@ -4363,7 +4403,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
 
-    return y
+    return xp.asarray(y)
 
 
 def _validate_pad(padtype, padlen, x, axis, ntaps):
@@ -4477,6 +4517,18 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    try:
+        xp = array_namespace(sos, x, zi)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(sos, 'sosfilt')
+        _reject_objects(x, 'sosfilt')
+        if zi is not None:
+            _reject_objects(zi, 'sosfilt')
+
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
     x_zi_shape = list(x.shape)
@@ -4489,7 +4541,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
     if dtype.char not in 'fdgFDGO':
         raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
-        zi = np.array(zi, dtype)  # make a copy so that we can operate in place
+        zi = np.asarray(zi, dtype=dtype)
+
+        # make a copy so that we can operate in place
+        # NB: 1. use xp_copy to paper over numpy 1/2 copy= keyword
+        #     2. make sure the copied zi remains a numpy array
+        zi = xp_copy(zi, xp=array_namespace(zi))
         if zi.shape != x_zi_shape:
             raise ValueError('Invalid zi shape. With axis=%r, an input with '
                              'shape %r, and an sos array with %d sections, zi '
@@ -4501,7 +4558,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         return_zi = False
     axis = axis % x.ndim  # make positive
     x = np.moveaxis(x, axis, -1)
-    zi = np.moveaxis(zi, [0, axis + 1], [-2, -1])
+    zi = np.moveaxis(zi, (0, axis + 1), (-2, -1))
     x_shape, zi_shape = x.shape, zi.shape
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
@@ -4512,10 +4569,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x = np.moveaxis(x, -1, axis)
     if return_zi:
         zi.shape = zi_shape
-        zi = np.moveaxis(zi, [-2, -1], [0, axis + 1])
-        out = (x, zi)
+        zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
+        out = (xp.asarray(x), xp.asarray(zi))
     else:
-        out = x
+        out = xp.asarray(x)
     return out
 
 
@@ -4608,6 +4665,8 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(sos, x)
+
     sos, n_sections = _validate_sos(sos)
     x = _validate_x(x)
 
@@ -4629,7 +4688,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     y = axis_reverse(y, axis=axis)
     if edge > 0:
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
-    return y
+    return xp.asarray(y)
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
