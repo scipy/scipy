@@ -2020,12 +2020,10 @@ class _TestLinearFilter:
             lfilter(a, b, [1, 2, 3, 4])
 
 
-@skip_xp_backends(np_only=True)
 class TestLinearFilterFloat32(_TestLinearFilter):
     dtype = np.dtype('f')
 
 
-@skip_xp_backends(np_only=True)
 class TestLinearFilterFloat64(_TestLinearFilter):
     dtype = np.dtype('d')
 
@@ -2036,12 +2034,10 @@ class TestLinearFilterFloatExtended(_TestLinearFilter):
     dtype = np.dtype('g')
 
 
-@skip_xp_backends(np_only=True)
 class TestLinearFilterComplex64(_TestLinearFilter):
     dtype = np.dtype('F')
 
 
-@skip_xp_backends(np_only=True)
 class TestLinearFilterComplex128(_TestLinearFilter):
     dtype = np.dtype('D')
 

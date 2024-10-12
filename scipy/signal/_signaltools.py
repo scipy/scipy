@@ -2189,12 +2189,19 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    try:
+        xp = array_namespace(b, a, x, zi)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(x, 'lfilter')
+        _reject_objects(a, 'lfilter')
+        _reject_objects(b, 'lfilter')
+
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
-
-    _reject_objects(x, 'lfilter')
-    _reject_objects(a, 'lfilter')
-    _reject_objects(b, 'lfilter')
 
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
@@ -2253,16 +2260,18 @@ def lfilter(b, a, x, axis=-1, zi=None):
         out = out_full[tuple(ind)]
 
         if zi is None:
-            return out
+            return xp.asarray(out)
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
             zf = out_full[tuple(ind)]
-            return out, zf
+            return xp.asarray(out), xp.asarray(zf)
     else:
         if zi is None:
-            return _sigtools._linear_filter(b, a, x, axis)
+            result =_sigtools._linear_filter(b, a, x, axis)
+            return xp.asarray(result)
         else:
-            return _sigtools._linear_filter(b, a, x, axis, zi)
+            out, zf = _sigtools._linear_filter(b, a, x, axis, zi)
+            return xp.asarray(out), xp.asarray(zf)
 
 
 def lfiltic(b, a, y, x=None):
