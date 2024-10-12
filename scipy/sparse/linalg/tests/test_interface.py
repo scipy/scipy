@@ -440,8 +440,8 @@ def test_no_double_init():
     assert_equal(call_count[0], 1)
 
 INT_DTYPES = (np.int8, np.int16, np.int32, np.int64)
-REAL_DTYPES = (np.float32, np.float64)
-COMPLEX_DTYPES = (np.complex64, np.complex128)
+REAL_DTYPES = (np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 INEXECTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
 ALLDTYPES = INT_DTYPES + INEXECTDTYPES
 
@@ -458,10 +458,10 @@ def test_determine_lo_dtype_from_matvec(test_dtype):
 def test_determine_lo_dtype_for_int():
     # test Python int larger than int8 max
     def mv(v):
-        return np.array([128 * v[0], v[1]])
+        return np.array([10**50 * v[0], v[1]])
 
     lo = interface.LinearOperator((2, 2), matvec=mv)
-    assert lo.dtype in INT_DTYPES
+    assert lo.dtype == np.dtype(np.float64)
 
 def test_adjoint_conjugate():
     X = np.array([[1j]])
