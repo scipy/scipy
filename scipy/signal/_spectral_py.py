@@ -34,8 +34,8 @@ def lombscargle(
     ``y(ω) = a*cos(ω*x) + b*sin(ω*x) + c``, where the fit is calculated for
     each frequency independently. This algorithm was developed by Zechmeister
     and Kürster which improves the Lomb-Scargle periodogram by enabling
-    the weighting of individual samples and calculating an unknown offset
-    (also called a "floating-mean") [3]_. For more details, and practical
+    the weighting of individual samples and calculating an unknown y offset
+    (also called a "floating-mean" model) [3]_. For more details, and practical
     considerations, see the excellent reference on the Lomb-Scargle periodogram [4]_.
 
     When *normalize* is False (or "power") (default) the computed periodogram
@@ -61,7 +61,7 @@ def lombscargle(
         Any peak at -freq will also exist at +freq.
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. This is
-        unnecessary if `floating_mean` is True (default).
+        unnecessary if `floating_mean` is True.
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
         Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or
@@ -69,8 +69,8 @@ def lombscargle(
     weights : array_like, optional
         Weights for each sample. Weights must be nonnegative.
     floating_mean : bool, optional
-        Determines an offset or each frequency independently, if True.
-        Else an offset of `0` is assumed.
+        Determines a y offset for each frequency independently, if True.
+        Else the y offset is assumed to be `0`.
 
     Returns
     -------
@@ -96,13 +96,15 @@ def lombscargle(
 
     Notes
     -----
-    The algorithm used will account for any unknown offset by default, unless
-    floating_mean is False. If precenter is True, it performs the operation
+    The algorithm used will not automatically account for any unknown y offset, unless
+    floating_mean is True. If precenter is True, it performs the operation
     ``y -= y.mean()``. However, precenter is a legacy parameter, and unnecessary
     when floating_mean is True. Furthermore, the mean removed by precenter does not
-    account for sample weights. When the normalize parameter is "amplitude", for any
-    frequency in freqs that is below ``(2*pi)/(x.max() - x.min())``, the predicted
-    amplitude will tend towards infinity.
+    account for sample weights, nor will it correct for any bias due to consistently 
+    missing observations at peaks and/or troughs. For most use cases, if there is a
+    possibility of a y offset, it is recommended to set floating_mean to True. When the
+    normalize parameter is "amplitude", for any frequency in freqs that is below 
+    ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards infinity.
 
     References
     ----------
