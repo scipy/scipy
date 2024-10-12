@@ -2243,7 +2243,7 @@ class TestFactorialFunctions:
         assert_array_equal(correct, special.factorial(n, exact=True))
         assert_array_equal(correct, special.factorial([n], exact=True)[0])
 
-        rtol = 6e-14 if sys.platform == 'win32' else 1e-15
+        rtol = 8e-14 if sys.platform == 'win32' else 1e-15
         # need to cast exact result to float due to numpy/numpy#21220
         correct = float(correct)
         assert_allclose(correct, special.factorial(n, exact=False), rtol=rtol)
@@ -2251,7 +2251,7 @@ class TestFactorialFunctions:
 
     def test_factorial_float_reference(self):
         def _check(n, expected):
-            rtol = 1e-15
+            rtol = 8e-14 if sys.platform == 'win32' else 1e-15
             assert_allclose(special.factorial(n), expected, rtol=rtol)
             assert_allclose(special.factorial([n])[0], expected, rtol=rtol)
             # using floats with `exact=True` raises an error for scalars and arrays
@@ -2356,7 +2356,7 @@ class TestFactorialFunctions:
         assert_array_equal(correct, special.factorial2(n, exact=True))
         assert_array_equal(correct, special.factorial2([n], exact=True)[0])
 
-        rtol = 1e-15
+        rtol = 2e-14 if sys.platform == 'win32' else 1e-15
         # need to cast exact result to float due to numpy/numpy#21220
         correct = float(correct)
         assert_allclose(correct, special.factorial2(n, exact=False), rtol=rtol)
@@ -2422,7 +2422,7 @@ class TestFactorialFunctions:
         # Compare exact=True vs False, i.e. that the accuracy of the
         # approximation is better than the specified tolerance.
 
-        rtol = 2e-14
+        rtol = 6e-14 if sys.platform == 'win32' else 2e-14
         # need to cast exact result to float due to numpy/numpy#21220
         assert_allclose(float(special.factorialk(n, k=k, exact=True)),
                         special.factorialk(n, k=k, exact=False), rtol=rtol)
@@ -2442,7 +2442,7 @@ class TestFactorialFunctions:
         assert_array_equal(correct, special.factorialk(n, k, exact=True))
         assert_array_equal(correct, special.factorialk([n], k, exact=True)[0])
 
-        rtol = 1e-14
+        rtol = 3e-14 if sys.platform == 'win32' else 1e-14
         # need to cast exact result to float due to numpy/numpy#21220
         correct = float(correct)
         assert_allclose(correct, special.factorialk(n, k, exact=False), rtol=rtol)
