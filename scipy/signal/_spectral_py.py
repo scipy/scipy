@@ -22,7 +22,7 @@ def lombscargle(
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     *,
     weights: npt.NDArray | None = None,
-    floating_mean: bool = True,
+    floating_mean: bool = False,
 ) -> npt.NDArray:
     """
     Compute the generalized Lomb-Scargle periodogram.
