@@ -2560,7 +2560,6 @@ class TestLFilterZI:
         assert np.real(signal.lfilter_zi(b, a)).dtype == dtype
 
 
-@skip_xp_backends(np_only=True)
 class TestFiltFilt:
     filtfilt_kind = 'tf'
 
@@ -2657,7 +2656,6 @@ class TestFiltFilt:
         xp_assert_close(y, expected)
 
 
-@skip_xp_backends(np_only=True)
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
 
@@ -3692,7 +3690,7 @@ def test_nonnumeric_dtypes(func, xp):
         func(*args, x=1.)
 
 
-@skip_xp_backends(np_only=True)
+#@skip_xp_backends(np_only=True)
 @pytest.mark.parametrize('dt', 'fdFD')
 class TestSOSFilt:
 

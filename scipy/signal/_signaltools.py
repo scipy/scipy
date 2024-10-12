@@ -4492,6 +4492,8 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(sos, x, zi)
+
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
     x_zi_shape = list(x.shape)
@@ -4528,9 +4530,9 @@ def sosfilt(sos, x, axis=-1, zi=None):
     if return_zi:
         zi.shape = zi_shape
         zi = np.moveaxis(zi, [-2, -1], [0, axis + 1])
-        out = (x, zi)
+        out = (xp.asarray(x), xp.asarray(zi))
     else:
-        out = x
+        out = xp.asarray(x)
     return out
 
 
@@ -4623,6 +4625,8 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(sos, x)
+
     sos, n_sections = _validate_sos(sos)
     x = _validate_x(x)
 
@@ -4644,7 +4648,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     y = axis_reverse(y, axis=axis)
     if edge > 0:
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
-    return y
+    return xp.asarray(y)
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
