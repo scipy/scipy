@@ -2393,19 +2393,21 @@ def deconvolve(signal, divisor):
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
 
     """
-    num = np.atleast_1d(signal)
-    den = np.atleast_1d(divisor)
+    xp = array_namespace(signal, divisor)
+
+    num = xp_atleast_nd(signal, ndim=1)
+    den = xp_atleast_nd(divisor, ndim=1)
     if num.ndim > 1:
         raise ValueError("signal must be 1-D.")
     if den.ndim > 1:
         raise ValueError("divisor must be 1-D.")
-    N = len(num)
-    D = len(den)
+    N = num.shape[0]
+    D = den.shape[0]
     if D > N:
         quot = []
         rem = num
     else:
-        input = np.zeros(N - D + 1, float)
+        input = xp.zeros(N - D + 1, dtype=xp.float64)
         input[0] = 1
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
@@ -3864,6 +3866,7 @@ def lfilter_zi(b, a):
     transient until the input drops from 0.5 to 0.0.
 
     """
+    xp = array_namespace(b, a)
 
     # FIXME: Can this function be replaced with an appropriate
     # use of lfiltic?  For example, when b,a = butter(N,Wn),
@@ -3873,10 +3876,10 @@ def lfilter_zi(b, a):
     # We could use scipy.signal.normalize, but it uses warnings in
     # cases where a ValueError is more appropriate, and it allows
     # b to be 2D.
-    b = np.atleast_1d(b)
+    b = xp_atleast_nd(b, ndim=1)
     if b.ndim != 1:
         raise ValueError("Numerator b must be 1-D.")
-    a = np.atleast_1d(a)
+    a = xp_atleast_nd(a, ndim=1)
     if a.ndim != 1:
         raise ValueError("Denominator a must be 1-D.")
 
@@ -3894,14 +3897,15 @@ def lfilter_zi(b, a):
 
     # Pad a or b with zeros so they are the same length.
     if len(a) < n:
-        a = np.r_[a, np.zeros(n - len(a), dtype=a.dtype)]
+        a = xp.concat(a, xp.zeros(n - len(a), dtype=a.dtype))
     elif len(b) < n:
-        b = np.r_[b, np.zeros(n - len(b), dtype=b.dtype)]
+        b = xp.concat(b, xp.zeros(n - len(b), dtype=b.dtype))
 
-    IminusA = np.eye(n - 1, dtype=np.result_type(a, b)) - linalg.companion(a).T
+    dt = xp.result_type(a, b)
+    IminusA = np.eye(n - 1, dtype=dt) - xp.asarray(linalg.companion(a)).T
     B = b[1:] - a[1:] * b[0]
     # Solve zi = A*zi + B
-    zi = np.linalg.solve(IminusA, B)
+    zi = xp.linalg.solve(IminusA, B)
 
     # For future reference: we could also use the following
     # explicit formulas to solve the linear system:
@@ -3972,15 +3976,17 @@ def sosfilt_zi(sos):
     >>> plt.show()
 
     """
-    sos = np.asarray(sos)
+    xp = array_namespace(sos)
+
+    sos = xp.asarray(sos)
     if sos.ndim != 2 or sos.shape[1] != 6:
         raise ValueError('sos must be shape (n_sections, 6)')
 
-    if sos.dtype.kind in 'bui':
-        sos = sos.astype(np.float64)
+    if xp.isdtype(sos.dtype, ("integral", "bool")):
+        sos = xp.astype(sos, xp.float64)
 
     n_sections = sos.shape[0]
-    zi = np.empty((n_sections, 2), dtype=sos.dtype)
+    zi = xp.empty((n_sections, 2), dtype=sos.dtype)
     scale = 1.0
     for section in range(n_sections):
         b = sos[section, :3]
@@ -3989,7 +3995,7 @@ def sosfilt_zi(sos):
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
-        scale *= b.sum() / a.sum()
+        scale *= xp.sum(b) / xp.sum(a)
 
     return zi
 

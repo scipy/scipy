@@ -3867,7 +3867,6 @@ class TestSOSFilt:
         assert_allclose_cast(zf, zi, rtol=1e-13)
 
 
-@skip_xp_backends(np_only=True)
 class TestDeconvolve:
 
     def test_basic(self, xp):
