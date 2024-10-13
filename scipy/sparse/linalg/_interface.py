@@ -115,6 +115,8 @@ class LinearOperator:
     It is highly recommended to explicitly specify the `dtype`, otherwise
     it is determined automatically at the cost of a single matvec application
     on `int8` zero vector using the promoted `dtype` of the output.
+    Python `int` could be difficult to automatically cast to numpy integers
+    in the definition of the `matvec` so the determination may be inaccurate.
     It is assumed that `matmat`, `rmatvec`, and `rmatmat` would result in
     the same dtype of the output given an `int8` input as `matvec`.
 
@@ -196,8 +198,12 @@ class LinearOperator:
             try:
                 matvec_v = np.asarray(self.matvec(v))
             except OverflowError:
-                # Python `int` outside of `np.int8` range promoted to `np.float64`
-                    self.dtype = np.float64
+                # Python large `int` promoted to `np.int64`or `np.int32`
+                try:
+                    test_int64 = np.int64(1)  # noqa: F841
+                    self.dtype = np.int64
+                except AttributeError:
+                    self.dtype = np.int32
             else:
                 self.dtype = matvec_v.dtype
 
