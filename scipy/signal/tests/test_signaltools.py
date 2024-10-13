@@ -1,4 +1,5 @@
 import sys
+import math
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
@@ -33,6 +34,7 @@ from scipy._lib._util import ComplexWarning
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, array_namespace,
     assert_array_almost_equal, assert_almost_equal,
+    xp_copy,
 )
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -1613,11 +1615,13 @@ class _TestLinearFilter:
             self.assert_equal = xp_assert_equal
             self.assert_array_almost_equal = assert_array_almost_equal
 
-    def generate(self, shape):
-        x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
-        return self.convert_dtype(x)
+    def generate(self, shape, xp):
+        prodshape = shape if isinstance(shape, int) else math.prod(shape)
+        x = xp.linspace(0, prodshape - 1, prodshape)
+        x = xp.reshape(x, shape)
+        return self.convert_dtype(x, xp)
 
-    def convert_dtype(self, arr):
+    def convert_dtype(self, arr, xp):
         if self.dtype == np.dtype('O'):
             arr = np.asarray(arr)
             out = np.empty(arr.shape, self.dtype)
@@ -1627,159 +1631,165 @@ class _TestLinearFilter:
                 y[...] = self.type(x[()])
             return out
         else:
-            return np.asarray(arr, dtype=self.dtype)
+            dtype = (getattr(xp, self.dtype)
+                     if isinstance(self.dtype, str)
+                     else self.dtype)
+            return xp.asarray(arr, dtype=dtype)
 
     def test_rank_1_IIR(self, xp):
-        x = self.generate((6,))
-        b = self.convert_dtype([1, -1])
-        a = self.convert_dtype([0.5, -0.5])
-        y_r = self.convert_dtype([0, 2, 4, 6, 8, 10.])
+        x = self.generate((6,), xp)
+        b = self.convert_dtype([1, -1], xp)
+        a = self.convert_dtype([0.5, -0.5], xp)
+        y_r = self.convert_dtype([0, 2, 4, 6, 8, 10.], xp)
         self.assert_array_almost_equal(lfilter(b, a, x), y_r)
 
     def test_rank_1_FIR(self, xp):
-        x = self.generate((6,))
-        b = self.convert_dtype([1, 1])
-        a = self.convert_dtype([1])
-        y_r = self.convert_dtype([0, 1, 3, 5, 7, 9.])
+        x = self.generate((6,), xp)
+        b = self.convert_dtype([1, 1], xp)
+        a = self.convert_dtype([1], xp)
+        y_r = self.convert_dtype([0, 1, 3, 5, 7, 9.], xp)
         self.assert_array_almost_equal(lfilter(b, a, x), y_r)
 
     def test_rank_1_IIR_init_cond(self, xp):
-        x = self.generate((6,))
-        b = self.convert_dtype([1, 0, -1])
-        a = self.convert_dtype([0.5, -0.5])
-        zi = self.convert_dtype([1, 2])
-        y_r = self.convert_dtype([1, 5, 9, 13, 17, 21])
-        zf_r = self.convert_dtype([13, -10])
+        x = self.generate((6,), xp)
+        b = self.convert_dtype([1, 0, -1], xp)
+        a = self.convert_dtype([0.5, -0.5], xp)
+        zi = self.convert_dtype([1, 2], xp)
+        y_r = self.convert_dtype([1, 5, 9, 13, 17, 21], xp)
+        zf_r = self.convert_dtype([13, -10], xp)
         y, zf = lfilter(b, a, x, zi=zi)
         self.assert_array_almost_equal(y, y_r)
         self.assert_array_almost_equal(zf, zf_r)
 
     def test_rank_1_FIR_init_cond(self, xp):
-        x = self.generate((6,))
-        b = self.convert_dtype([1, 1, 1])
-        a = self.convert_dtype([1])
-        zi = self.convert_dtype([1, 1])
-        y_r = self.convert_dtype([1, 2, 3, 6, 9, 12.])
-        zf_r = self.convert_dtype([9, 5])
+        x = self.generate((6,), xp)
+        b = self.convert_dtype([1, 1, 1], xp)
+        a = self.convert_dtype([1], xp)
+        zi = self.convert_dtype([1, 1], xp)
+        y_r = self.convert_dtype([1, 2, 3, 6, 9, 12.], xp)
+        zf_r = self.convert_dtype([9, 5], xp)
         y, zf = lfilter(b, a, x, zi=zi)
         self.assert_array_almost_equal(y, y_r)
         self.assert_array_almost_equal(zf, zf_r)
 
     def test_rank_2_IIR_axis_0(self, xp):
-        x = self.generate((4, 3))
-        b = self.convert_dtype([1, -1])
-        a = self.convert_dtype([0.5, 0.5])
+        x = self.generate((4, 3), xp)
+        b = self.convert_dtype([1, -1], xp)
+        a = self.convert_dtype([0.5, 0.5], xp)
         y_r2_a0 = self.convert_dtype([[0, 2, 4], [6, 4, 2], [0, 2, 4],
-                                      [6, 4, 2]])
+                                      [6, 4, 2]], xp)
         y = lfilter(b, a, x, axis=0)
         self.assert_array_almost_equal(y_r2_a0, y)
 
     def test_rank_2_IIR_axis_1(self, xp):
-        x = self.generate((4, 3))
-        b = self.convert_dtype([1, -1])
-        a = self.convert_dtype([0.5, 0.5])
+        x = self.generate((4, 3), xp)
+        b = self.convert_dtype([1, -1], xp)
+        a = self.convert_dtype([0.5, 0.5], xp)
         y_r2_a1 = self.convert_dtype([[0, 2, 0], [6, -4, 6], [12, -10, 12],
-                            [18, -16, 18]])
+                            [18, -16, 18]], xp)
         y = lfilter(b, a, x, axis=1)
         self.assert_array_almost_equal(y_r2_a1, y)
 
     def test_rank_2_IIR_axis_0_init_cond(self, xp):
-        x = self.generate((4, 3))
-        b = self.convert_dtype([1, -1])
-        a = self.convert_dtype([0.5, 0.5])
-        zi = self.convert_dtype(np.ones((4,1)))
+        x = self.generate((4, 3), xp)
+        b = self.convert_dtype([1, -1], xp)
+        a = self.convert_dtype([0.5, 0.5], xp)
+        zi = self.convert_dtype(np.ones((4,1)), xp)
 
         y_r2_a0_1 = self.convert_dtype([[1, 1, 1], [7, -5, 7], [13, -11, 13],
-                              [19, -17, 19]])
-        zf_r = self.convert_dtype([-5, -17, -29, -41])[:, np.newaxis]
+                              [19, -17, 19]], xp)
+        zf_r = self.convert_dtype([-5, -17, -29, -41], xp)[:, np.newaxis]
         y, zf = lfilter(b, a, x, axis=1, zi=zi)
         self.assert_array_almost_equal(y_r2_a0_1, y)
         self.assert_array_almost_equal(zf, zf_r)
 
     def test_rank_2_IIR_axis_1_init_cond(self, xp):
-        x = self.generate((4,3))
-        b = self.convert_dtype([1, -1])
-        a = self.convert_dtype([0.5, 0.5])
-        zi = self.convert_dtype(np.ones((1,3)))
+        x = self.generate((4, 3), xp)
+        b = self.convert_dtype([1, -1], xp)
+        a = self.convert_dtype([0.5, 0.5], xp)
+        zi = self.convert_dtype(np.ones((1, 3)), xp)
 
         y_r2_a0_0 = self.convert_dtype([[1, 3, 5], [5, 3, 1],
-                                        [1, 3, 5], [5, 3, 1]])
-        zf_r = self.convert_dtype([[-23, -23, -23]])
+                                        [1, 3, 5], [5, 3, 1]], xp)
+        zf_r = self.convert_dtype([[-23, -23, -23]], xp)
         y, zf = lfilter(b, a, x, axis=0, zi=zi)
         self.assert_array_almost_equal(y_r2_a0_0, y)
         self.assert_array_almost_equal(zf, zf_r)
 
     def test_rank_3_IIR(self, xp):
-        x = self.generate((4, 3, 2))
-        b = self.convert_dtype([1, -1])
-        a = self.convert_dtype([0.5, 0.5])
+        x = self.generate((4, 3, 2), xp)
+        b = self.convert_dtype([1, -1], xp)
+        a = self.convert_dtype([0.5, 0.5], xp)
 
+        a_np, b_np, x_np = np.asarray(a), np.asarray(b), np.asarray(x)
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
-            y_r = np.apply_along_axis(lambda w: lfilter(b, a, w), axis, x)
-            self.assert_array_almost_equal(y, y_r)
+            y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
+            self.assert_array_almost_equal(y, xp.asarray(y_r))
 
     def test_rank_3_IIR_init_cond(self, xp):
-        x = self.generate((4, 3, 2))
-        b = self.convert_dtype([1, -1])
-        a = self.convert_dtype([0.5, 0.5])
+        x = self.generate((4, 3, 2), xp)
+        b = self.convert_dtype([1, -1], xp)
+        a = self.convert_dtype([0.5, 0.5], xp)
 
         for axis in range(x.ndim):
             zi_shape = list(x.shape)
             zi_shape[axis] = 1
-            zi = self.convert_dtype(np.ones(zi_shape))
-            zi1 = self.convert_dtype([1])
+            zi = self.convert_dtype(xp.ones(zi_shape), xp)
+            zi1 = self.convert_dtype([1], xp)
             y, zf = lfilter(b, a, x, axis, zi)
             def lf0(w):
-                return lfilter(b, a, w, zi=zi1)[0]
+                return np.asarray(lfilter(b, a, w, zi=zi1)[0])
             def lf1(w):
-                return lfilter(b, a, w, zi=zi1)[1]
-            y_r = np.apply_along_axis(lf0, axis, x)
-            zf_r = np.apply_along_axis(lf1, axis, x)
-            self.assert_array_almost_equal(y, y_r)
-            self.assert_array_almost_equal(zf, zf_r)
+                return np.asarray(lfilter(b, a, w, zi=zi1)[1])
+            y_r = np.apply_along_axis(lf0, axis, np.asarray(x))
+            zf_r = np.apply_along_axis(lf1, axis, np.asarray(x))
+            self.assert_array_almost_equal(y, xp.asarray(y_r))
+            self.assert_array_almost_equal(zf, xp.asarray(zf_r))
 
     def test_rank_3_FIR(self, xp):
-        x = self.generate((4, 3, 2))
-        b = self.convert_dtype([1, 0, -1])
-        a = self.convert_dtype([1])
+        x = self.generate((4, 3, 2), xp)
+        b = self.convert_dtype([1, 0, -1], xp)
+        a = self.convert_dtype([1], xp)
 
+        a_np, b_np, x_np = np.asarray(a), np.asarray(b), np.asarray(x)
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
-            y_r = np.apply_along_axis(lambda w: lfilter(b, a, w), axis, x)
-            self.assert_array_almost_equal(y, y_r)
+            y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
+            self.assert_array_almost_equal(y, xp.asarray(y_r))
 
     def test_rank_3_FIR_init_cond(self, xp):
-        x = self.generate((4, 3, 2))
-        b = self.convert_dtype([1, 0, -1])
-        a = self.convert_dtype([1])
+        x = self.generate((4, 3, 2), xp)
+        b = self.convert_dtype([1, 0, -1], xp)
+        a = self.convert_dtype([1], xp)
 
+        x_np = np.asarray(x)
         for axis in range(x.ndim):
             zi_shape = list(x.shape)
             zi_shape[axis] = 2
-            zi = self.convert_dtype(np.ones(zi_shape))
-            zi1 = self.convert_dtype([1, 1])
+            zi = self.convert_dtype(xp.ones(zi_shape), xp)
+            zi1 = self.convert_dtype([1, 1], xp)
             y, zf = lfilter(b, a, x, axis, zi)
             def lf0(w):
-                return lfilter(b, a, w, zi=zi1)[0]
+                return np.asarray(lfilter(b, a, w, zi=zi1)[0])
             def lf1(w):
-                return lfilter(b, a, w, zi=zi1)[1]
-            y_r = np.apply_along_axis(lf0, axis, x)
-            zf_r = np.apply_along_axis(lf1, axis, x)
-            self.assert_array_almost_equal(y, y_r)
-            self.assert_array_almost_equal(zf, zf_r)
+                return np.asarray(lfilter(b, a, w, zi=zi1)[1])
+            y_r = np.apply_along_axis(lf0, axis, x_np)
+            zf_r = np.apply_along_axis(lf1, axis, x_np)
+            self.assert_array_almost_equal(y, xp.asarray(y_r))
+            self.assert_array_almost_equal(zf, xp.asarray(zf_r))
 
     def test_zi_pseudobroadcast(self, xp):
-        x = self.generate((4, 5, 20))
-        b,a = signal.butter(8, 0.2, output='ba')
-        b = self.convert_dtype(b)
-        a = self.convert_dtype(a)
+        x = self.generate((4, 5, 20), xp)
+        b, a = signal.butter(8, 0.2, output='ba')
+        b = self.convert_dtype(b, xp)
+        a = self.convert_dtype(a, xp)
         zi_size = b.shape[0] - 1
 
         # lfilter requires x.ndim == zi.ndim exactly.  However, zi can have
         # length 1 dimensions.
-        zi_full = self.convert_dtype(np.ones((4, 5, zi_size)))
-        zi_sing = self.convert_dtype(np.ones((1, 1, zi_size)))
+        zi_full = self.convert_dtype(xp.ones((4, 5, zi_size)), xp)
+        zi_sing = self.convert_dtype(xp.ones((1, 1, zi_size)), xp)
 
         y_full, zf_full = lfilter(b, a, x, zi=zi_full)
         y_sing, zf_sing = lfilter(b, a, x, zi=zi_sing)
@@ -1788,14 +1798,14 @@ class _TestLinearFilter:
         self.assert_array_almost_equal(zf_full, zf_sing)
 
         # lfilter does not prepend ones
-        assert_raises(ValueError, lfilter, b, a, x, -1, np.ones(zi_size))
+        assert_raises(ValueError, lfilter, b, a, x, -1, xp.ones(zi_size))
 
     def test_scalar_a(self, xp):
         # a can be a scalar.
-        x = self.generate(6)
-        b = self.convert_dtype([1, 0, -1])
-        a = self.convert_dtype([1])
-        y_r = self.convert_dtype([0, 1, 2, 2, 2, 2])
+        x = self.generate(6, xp)
+        b = self.convert_dtype([1, 0, -1], xp)
+        a = self.convert_dtype([1], xp)
+        y_r = self.convert_dtype([0, 1, 2, 2, 2, 2], xp)
 
         y = lfilter(b, a[0], x)
         self.assert_array_almost_equal(y, y_r)
@@ -1804,18 +1814,18 @@ class _TestLinearFilter:
         # lfilter doesn't really broadcast (no prepending of 1's).  But does
         # do singleton expansion if x and zi have the same ndim.  This was
         # broken only if a subset of the axes were singletons (gh-4681).
-        x = self.convert_dtype(np.zeros((3,2,5), 'l'))
-        b = self.convert_dtype(np.ones(5, 'l'))
-        a = self.convert_dtype(np.array([1,0,0]))
-        zi = np.ones((3,1,4), 'l')
-        zi[1,:,:] *= 2
-        zi[2,:,:] *= 3
-        zi = self.convert_dtype(zi)
+        x = self.convert_dtype(xp.zeros((3, 2, 5), dtype=xp.int64), xp)
+        b = self.convert_dtype(xp.ones(5, dtype=xp.int64), xp)
+        a = self.convert_dtype(xp.asarray([1, 0, 0]), xp)
+        zi = xp.ones((3, 1, 4), dtype=xp.int64)
+        zi[1, :, :] *= 2
+        zi[2, :, :] *= 3
+        zi = self.convert_dtype(zi, xp)
 
-        zf_expected = self.convert_dtype(np.zeros((3,2,4), 'l'))
-        y_expected = np.zeros((3,2,5), 'l')
-        y_expected[:,:,:4] = [[[1]], [[2]], [[3]]]
-        y_expected = self.convert_dtype(y_expected)
+        zf_expected = self.convert_dtype(xp.zeros((3, 2, 4), dtype=xp.int64), xp)
+        y_expected = xp.zeros((3, 2, 5), dtype=xp.int64)
+        y_expected[:, :, :4] = [[[1]], [[2]], [[3]]]
+        y_expected = self.convert_dtype(y_expected, xp)
 
         # IIR
         y_iir, zf_iir = lfilter(b, a, x, -1, zi)
@@ -1827,38 +1837,39 @@ class _TestLinearFilter:
         self.assert_array_almost_equal(y_fir, y_expected)
         self.assert_array_almost_equal(zf_fir, zf_expected)
 
-    def base_bad_size_zi(self, b, a, x, axis, zi):
-        b = self.convert_dtype(b)
-        a = self.convert_dtype(a)
-        x = self.convert_dtype(x)
-        zi = self.convert_dtype(zi)
+    def base_bad_size_zi(self, b, a, x, axis, zi, xp):
+        b = self.convert_dtype(b, xp)
+        a = self.convert_dtype(a, xp)
+        x = self.convert_dtype(x, xp)
+        zi = self.convert_dtype(zi, xp)
         assert_raises(ValueError, lfilter, b, a, x, axis, zi)
 
     def test_bad_size_zi(self, xp):
         # rank 1
-        x1 = np.arange(6)
-        self.base_bad_size_zi([1], [1], x1, -1, [1])
-        self.base_bad_size_zi([1, 1], [1], x1, -1, [0, 1])
-        self.base_bad_size_zi([1, 1], [1], x1, -1, [[0]])
-        self.base_bad_size_zi([1, 1], [1], x1, -1, [0, 1, 2])
-        self.base_bad_size_zi([1, 1, 1], [1], x1, -1, [[0]])
-        self.base_bad_size_zi([1, 1, 1], [1], x1, -1, [0, 1, 2])
-        self.base_bad_size_zi([1], [1, 1], x1, -1, [0, 1])
-        self.base_bad_size_zi([1], [1, 1], x1, -1, [[0]])
-        self.base_bad_size_zi([1], [1, 1], x1, -1, [0, 1, 2])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x1, -1, [0])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x1, -1, [[0], [1]])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x1, -1, [0, 1, 2])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x1, -1, [0, 1, 2, 3])
-        self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [0])
-        self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [[0], [1]])
-        self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [0, 1, 2])
-        self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [0, 1, 2, 3])
+        x1 = xp.arange(6)
+        self.base_bad_size_zi([1], [1], x1, -1, [1], xp)
+        self.base_bad_size_zi([1, 1], [1], x1, -1, [0, 1], xp)
+        self.base_bad_size_zi([1, 1], [1], x1, -1, [[0]], xp)
+        self.base_bad_size_zi([1, 1], [1], x1, -1, [0, 1, 2], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x1, -1, [[0]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x1, -1, [0, 1, 2], xp)
+        self.base_bad_size_zi([1], [1, 1], x1, -1, [0, 1], xp)
+        self.base_bad_size_zi([1], [1, 1], x1, -1, [[0]], xp)
+        self.base_bad_size_zi([1], [1, 1], x1, -1, [0, 1, 2], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x1, -1, [0], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x1, -1, [[0], [1]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x1, -1, [0, 1, 2], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x1, -1, [0, 1, 2, 3], xp)
+        self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [0], xp)
+        self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [[0], [1]], xp)
+        self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [0, 1, 2], xp)
+        self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [0, 1, 2, 3], xp)
 
         # rank 2
         x2 = np.arange(12).reshape((4,3))
+        x2 = xp.asarray(x2)
         # for axis=0 zi.shape should == (max(len(a),len(b))-1, 3)
-        self.base_bad_size_zi([1], [1], x2, 0, [0])
+        self.base_bad_size_zi([1], [1], x2, 0, [0], xp)
 
         # for each of these there are 5 cases tested (in this order):
         # 1. not deep enough, right # elements
@@ -1867,84 +1878,94 @@ class _TestLinearFilter:
         # 4. right depth, too few elements
         # 5. right depth, too many elements
 
-        self.base_bad_size_zi([1, 1], [1], x2, 0, [0,1,2])
-        self.base_bad_size_zi([1, 1], [1], x2, 0, [[[0,1,2]]])
-        self.base_bad_size_zi([1, 1], [1], x2, 0, [[0], [1], [2]])
-        self.base_bad_size_zi([1, 1], [1], x2, 0, [[0,1]])
-        self.base_bad_size_zi([1, 1], [1], x2, 0, [[0,1,2,3]])
+        self.base_bad_size_zi([1, 1], [1], x2, 0, [0, 1, 2], xp)
+        self.base_bad_size_zi([1, 1], [1], x2, 0, [[[0, 1, 2]]], xp)
+        self.base_bad_size_zi([1, 1], [1], x2, 0, [[0], [1], [2]], xp)
+        self.base_bad_size_zi([1, 1], [1], x2, 0, [[0, 1]], xp)
+        self.base_bad_size_zi([1, 1], [1], x2, 0, [[0, 1, 2, 3]], xp)
 
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [0,1,2,3,4,5])
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[[0,1,2],[3,4,5]]])
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[0,1],[2,3],[4,5]])
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[0,1],[2,3]])
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[0,1,2,3],[4,5,6,7]])
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [0, 1, 2, 3, 4, 5], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[[0, 1, 2], [3, 4, 5]]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[0, 1], [2, 3], [4, 5]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[0, 1], [2, 3]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[0, 1, 2, 3], [4, 5, 6, 7]], xp)
 
-        self.base_bad_size_zi([1], [1, 1], x2, 0, [0,1,2])
-        self.base_bad_size_zi([1], [1, 1], x2, 0, [[[0,1,2]]])
-        self.base_bad_size_zi([1], [1, 1], x2, 0, [[0], [1], [2]])
-        self.base_bad_size_zi([1], [1, 1], x2, 0, [[0,1]])
-        self.base_bad_size_zi([1], [1, 1], x2, 0, [[0,1,2,3]])
+        self.base_bad_size_zi([1], [1, 1], x2, 0, [0, 1, 2], xp)
+        self.base_bad_size_zi([1], [1, 1], x2, 0, [[[0, 1, 2]]], xp)
+        self.base_bad_size_zi([1], [1, 1], x2, 0, [[0], [1], [2]], xp)
+        self.base_bad_size_zi([1], [1, 1], x2, 0, [[0, 1]], xp)
+        self.base_bad_size_zi([1], [1, 1], x2, 0, [[0, 1, 2, 3]], xp)
 
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [0,1,2,3,4,5])
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [[[0,1,2],[3,4,5]]])
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [[0,1],[2,3],[4,5]])
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [[0,1],[2,3]])
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [[0,1,2,3],[4,5,6,7]])
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [0, 1, 2, 3, 4, 5], xp)
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [[[0, 1, 2], [3, 4, 5]]], xp)
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [[0, 1], [2, 3], [4, 5]], xp)
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [[0, 1], [2, 3]], xp)
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 0, [[0, 1, 2, 3], [4, 5, 6, 7]], xp)
 
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [0,1,2,3,4,5])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [[[0,1,2],[3,4,5]]])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [[0,1],[2,3],[4,5]])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [[0,1],[2,3]])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [[0,1,2,3],[4,5,6,7]])
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [0, 1, 2, 3, 4, 5], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [[[0, 1, 2], [3, 4, 5]]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [[0, 1], [2, 3], [4, 5]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0, [[0, 1], [2, 3]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 0,
+                              [[0, 1, 2, 3], [4, 5, 6, 7]], xp)
 
         # for axis=1 zi.shape should == (4, max(len(a),len(b))-1)
-        self.base_bad_size_zi([1], [1], x2, 1, [0])
+        self.base_bad_size_zi([1], [1], x2, 1, [0], xp)
 
-        self.base_bad_size_zi([1, 1], [1], x2, 1, [0,1,2,3])
-        self.base_bad_size_zi([1, 1], [1], x2, 1, [[[0],[1],[2],[3]]])
-        self.base_bad_size_zi([1, 1], [1], x2, 1, [[0, 1, 2, 3]])
-        self.base_bad_size_zi([1, 1], [1], x2, 1, [[0],[1],[2]])
-        self.base_bad_size_zi([1, 1], [1], x2, 1, [[0],[1],[2],[3],[4]])
+        self.base_bad_size_zi([1, 1], [1], x2, 1, [0, 1, 2, 3], xp)
+        self.base_bad_size_zi([1, 1], [1], x2, 1, [[[0], [1], [2], [3]]], xp)
+        self.base_bad_size_zi([1, 1], [1], x2, 1, [[0, 1, 2, 3]], xp)
+        self.base_bad_size_zi([1, 1], [1], x2, 1, [[0], [1], [2]], xp)
+        self.base_bad_size_zi([1, 1], [1], x2, 1, [[0], [1], [2], [3], [4]], xp)
 
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [0,1,2,3,4,5,6,7])
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [[[0,1],[2,3],[4,5],[6,7]]])
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [[0,1,2,3],[4,5,6,7]])
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [[0,1],[2,3],[4,5]])
-        self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [[0,1],[2,3],[4,5],[6,7],[8,9]])
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [0, 1, 2, 3, 4, 5, 6, 7], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 1,
+                              [[[0, 1], [2, 3], [4, 5], [6, 7]]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [[0, 1, 2, 3], [4, 5, 6, 7]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [[0, 1], [2, 3], [4, 5]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1], x2, 1,
+                              [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]], xp)
 
-        self.base_bad_size_zi([1], [1, 1], x2, 1, [0,1,2,3])
-        self.base_bad_size_zi([1], [1, 1], x2, 1, [[[0],[1],[2],[3]]])
-        self.base_bad_size_zi([1], [1, 1], x2, 1, [[0, 1, 2, 3]])
-        self.base_bad_size_zi([1], [1, 1], x2, 1, [[0],[1],[2]])
-        self.base_bad_size_zi([1], [1, 1], x2, 1, [[0],[1],[2],[3],[4]])
+        self.base_bad_size_zi([1], [1, 1], x2, 1, [0, 1, 2, 3], xp)
+        self.base_bad_size_zi([1], [1, 1], x2, 1, [[[0], [1], [2], [3]]], xp)
+        self.base_bad_size_zi([1], [1, 1], x2, 1, [[0, 1, 2, 3]], xp)
+        self.base_bad_size_zi([1], [1, 1], x2, 1, [[0], [1], [2]], xp)
+        self.base_bad_size_zi([1], [1, 1], x2, 1, [[0], [1], [2], [3], [4]], xp)
 
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [0,1,2,3,4,5,6,7])
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [[[0,1],[2,3],[4,5],[6,7]]])
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [[0,1,2,3],[4,5,6,7]])
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [[0,1],[2,3],[4,5]])
-        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [[0,1],[2,3],[4,5],[6,7],[8,9]])
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [0, 1, 2, 3, 4, 5, 6, 7], xp)
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 1,
+                              [[[0, 1], [2, 3], [4, 5], [6, 7]]], xp)
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [[0, 1, 2, 3], [4, 5, 6, 7]], xp)
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [[0, 1], [2, 3], [4, 5]], xp)
+        self.base_bad_size_zi([1], [1, 1, 1], x2, 1, [[0, 1],
+                              [2, 3], [4, 5], [6, 7], [8, 9]], xp)
 
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1, [0,1,2,3,4,5,6,7])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1, [[[0,1],[2,3],[4,5],[6,7]]])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1, [[0,1,2,3],[4,5,6,7]])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1, [[0,1],[2,3],[4,5]])
-        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1, [[0,1],[2,3],[4,5],[6,7],[8,9]])
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1, [0, 1, 2, 3, 4, 5, 6, 7], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1,
+                              [[[0, 1], [2, 3], [4, 5], [6, 7]]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1,
+                              [[0, 1, 2, 3], [4, 5, 6, 7]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1, [[0, 1], [2, 3], [4, 5]], xp)
+        self.base_bad_size_zi([1, 1, 1], [1, 1], x2, 1,
+                              [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]], xp)
 
     def test_empty_zi(self, xp):
         # Regression test for #880: empty array for zi crashes.
-        x = self.generate((5,))
-        a = self.convert_dtype([1])
-        b = self.convert_dtype([1])
-        zi = self.convert_dtype([])
+        x = self.generate((5,), xp)
+        a = self.convert_dtype([1], xp)
+        b = self.convert_dtype([1], xp)
+        zi = self.convert_dtype([], xp)
         y, zf = lfilter(b, a, x, zi=zi)
         self.assert_array_almost_equal(y, x)
-        assert zf.dtype == self.dtype
+        assert zf.dtype == (getattr(xp, self.dtype)
+                            if isinstance(self.dtype, str)
+                            else self.dtype)
         assert zf.size == 0
 
     def test_lfiltic_bad_zi(self, xp):
         # Regression test for #3699: bad initial conditions
-        a = self.convert_dtype([1])
-        b = self.convert_dtype([1])
+        a = self.convert_dtype([1], xp)
+        b = self.convert_dtype([1], xp)
         # "y" sets the datatype of zi, so it truncates if int
         zi = lfiltic(b, a, [1., 0])
         zi_1 = lfiltic(b, a, [1, 0])
@@ -1957,12 +1978,12 @@ class _TestLinearFilter:
     def test_short_x_FIR(self, xp):
         # regression test for #5116
         # x shorter than b, with non None zi fails
-        a = self.convert_dtype([1])
-        b = self.convert_dtype([1, 0, -1])
-        zi = self.convert_dtype([2, 7])
-        x = self.convert_dtype([72])
-        ye = self.convert_dtype([74])
-        zfe = self.convert_dtype([7, -72])
+        a = self.convert_dtype([1], xp)
+        b = self.convert_dtype([1, 0, -1], xp)
+        zi = self.convert_dtype([2, 7], xp)
+        x = self.convert_dtype([72], xp)
+        ye = self.convert_dtype([74], xp)
+        zfe = self.convert_dtype([7, -72], xp)
         y, zf = lfilter(b, a, x, zi=zi)
         self.assert_array_almost_equal(y, ye)
         self.assert_array_almost_equal(zf, zfe)
@@ -1970,49 +1991,53 @@ class _TestLinearFilter:
     def test_short_x_IIR(self, xp):
         # regression test for #5116
         # x shorter than b, with non None zi fails
-        a = self.convert_dtype([1, 1])
-        b = self.convert_dtype([1, 0, -1])
-        zi = self.convert_dtype([2, 7])
-        x = self.convert_dtype([72])
-        ye = self.convert_dtype([74])
-        zfe = self.convert_dtype([-67, -72])
+        a = self.convert_dtype([1, 1], xp)
+        b = self.convert_dtype([1, 0, -1], xp)
+        zi = self.convert_dtype([2, 7], xp)
+        x = self.convert_dtype([72], xp)
+        ye = self.convert_dtype([74], xp)
+        zfe = self.convert_dtype([-67, -72], xp)
         y, zf = lfilter(b, a, x, zi=zi)
         self.assert_array_almost_equal(y, ye)
         self.assert_array_almost_equal(zf, zfe)
 
     def test_do_not_modify_a_b_IIR(self, xp):
-        x = self.generate((6,))
-        b = self.convert_dtype([1, -1])
-        b0 = b.copy()
-        a = self.convert_dtype([0.5, -0.5])
-        a0 = a.copy()
-        y_r = self.convert_dtype([0, 2, 4, 6, 8, 10.])
+        x = self.generate((6,), xp)
+        b = self.convert_dtype([1, -1], xp)
+        b0 = xp_copy(b, xp=xp)
+        a = self.convert_dtype([0.5, -0.5], xp)
+        a0 = xp_copy(a, xp=xp)
+        y_r = self.convert_dtype([0, 2, 4, 6, 8, 10.], xp)
         y_f = lfilter(b, a, x)
         self.assert_array_almost_equal(y_f, y_r)
         self.assert_equal(b, b0)
         self.assert_equal(a, a0)
 
     def test_do_not_modify_a_b_FIR(self, xp):
-        x = self.generate((6,))
-        b = self.convert_dtype([1, 0, 1])
-        b0 = b.copy()
-        a = self.convert_dtype([2])
-        a0 = a.copy()
-        y_r = self.convert_dtype([0, 0.5, 1, 2, 3, 4.])
+        x = self.generate((6,), xp)
+        b = self.convert_dtype([1, 0, 1], xp)
+        b0 = xp_copy(b, xp=xp)
+        a = self.convert_dtype([2], xp)
+        a0 = xp_copy(a, xp=xp)
+        y_r = self.convert_dtype([0, 0.5, 1, 2, 3, 4.], xp)
         y_f = lfilter(b, a, x)
         self.assert_array_almost_equal(y_f, y_r)
         self.assert_equal(b, b0)
         self.assert_equal(a, a0)
 
+    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("a", [1.0, [1.0], np.array(1.0)])
     @pytest.mark.parametrize("b", [1.0, [1.0], np.array(1.0)])
     def test_scalar_input(self, a, b, xp):
         data = np.random.randn(10)
+        data = xp.asarray(data)
         self.assert_close(
-            lfilter(np.array([1.0]), np.array([1.0]), data),
-            lfilter(b, a, data))
+            lfilter(xp.asarray([1.0]), xp.asarray([1.0]), data),
+            lfilter(b, a, data)
+        )
 
-    def test_dtype_deprecation(self):
+    @skip_xp_backends(np_only=True)
+    def test_dtype_deprecation(self, xp):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
         b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
@@ -2021,11 +2046,11 @@ class _TestLinearFilter:
 
 
 class TestLinearFilterFloat32(_TestLinearFilter):
-    dtype = np.dtype('f')
+    dtype = 'float32'
 
 
 class TestLinearFilterFloat64(_TestLinearFilter):
-    dtype = np.dtype('d')
+    dtype = 'float64'
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
@@ -2035,11 +2060,11 @@ class TestLinearFilterFloatExtended(_TestLinearFilter):
 
 
 class TestLinearFilterComplex64(_TestLinearFilter):
-    dtype = np.dtype('F')
+    dtype = 'complex64'
 
 
 class TestLinearFilterComplex128(_TestLinearFilter):
-    dtype = np.dtype('D')
+    dtype = 'complex128'
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
