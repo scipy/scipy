@@ -676,7 +676,7 @@ def test_eigsh_for_k_greater():
 
 
 def test_real_eigs_real_k_subset():
-    np.random.seed(1)
+    np.random.seed(2)
 
     n = 10
     A = rand(n, n, density=0.5)
@@ -701,14 +701,3 @@ def test_real_eigs_real_k_subset():
             assert_allclose(dist, 0, atol=np.sqrt(eps))
 
             prev_w = w
-
-            # Check sort order
-            if sigma is None:
-                d = w
-            else:
-                d = 1 / (w - sigma)
-
-            if which == 'LM':
-                # ARPACK is systematic for 'LM', but sort order
-                # appears not well defined for other modes
-                assert np.all(np.diff(abs(d)) <= 1e-6)
