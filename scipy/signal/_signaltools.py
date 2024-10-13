@@ -30,11 +30,12 @@ from ._sosfilt import _sosfilt
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
-           'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
+           'lfiltic', 'filt_sos', 'deconvolve', 'hilbert', 'hilbert2',
            'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
-           'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
-           'filtfilt', 'decimate', 'vectorstrength']
+           'lfilter_zi', 'filt_zi_sos', 'filtfilt_sos', 'choose_conv_method',
+           'filtfilt', 'decimate', 'vectorstrength', 'sosfilt', 'sosfilt_zi',
+           'sosfiltfilt']
 
 
 _modedict = {'valid': 0, 'same': 1, 'full': 2}
@@ -1984,7 +1985,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     form II transposed implementation of the standard difference equation
     (see Notes).
 
-    The function `sosfilt` (and filter design using ``output='sos'``) should be
+    The function `filt_sos` (and filter design using ``output='sos'``) should be
     preferred over `lfilter` for most filtering tasks, as second-order sections
     have fewer numerical problems.
 
@@ -2022,8 +2023,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
                  `lfilter`.
     filtfilt : A forward-backward filter, to obtain a filter with zero phase.
     savgol_filter : A Savitzky-Golay filter.
-    sosfilt: Filter data using cascaded second-order sections.
-    sosfiltfilt: A forward-backward filter using second-order sections.
+    filt_sos: Filter data using cascaded second-order sections.
+    filtfilt_sos: A forward-backward filter using second-order sections.
 
     Notes
     -----
@@ -3806,11 +3807,11 @@ def lfilter_zi(b, a):
     return zi
 
 
-def sosfilt_zi(sos):
+def filt_zi_sos(sos):
     """
-    Construct initial conditions for sosfilt for step response steady-state.
+    Construct initial conditions for filt_sos for step response steady-state.
 
-    Compute an initial state `zi` for the `sosfilt` function that corresponds
+    Compute an initial state `zi` for the `filt_sos` function that corresponds
     to the steady state of the step response.
 
     A typical use of this function is to set the initial state so that the
@@ -3821,18 +3822,18 @@ def sosfilt_zi(sos):
     ----------
     sos : array_like
         Array of second-order filter coefficients, must have shape
-        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        ``(n_sections, 6)``. See `filt_sos` for the SOS filter format
         specification.
 
     Returns
     -------
     zi : ndarray
-        Initial conditions suitable for use with ``sosfilt``, shape
+        Initial conditions suitable for use with ``filt_sos``, shape
         ``(n_sections, 2)``.
 
     See Also
     --------
-    sosfilt, zpk2sos
+    filt_sos, zpk2sos
 
     Notes
     -----
@@ -3841,17 +3842,17 @@ def sosfilt_zi(sos):
     Examples
     --------
     Filter a rectangular pulse that begins at time 0, with and without
-    the use of the `zi` argument of `scipy.signal.sosfilt`.
+    the use of the `zi` argument of `scipy.signal.filt_sos`.
 
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
     >>> sos = signal.butter(9, 0.125, output='sos')
-    >>> zi = signal.sosfilt_zi(sos)
+    >>> zi = signal.filt_zi_sos(sos)
     >>> x = (np.arange(250) < 100).astype(int)
-    >>> f1 = signal.sosfilt(sos, x)
-    >>> f2, zo = signal.sosfilt(sos, x, zi=zi)
+    >>> f1 = signal.filt_sos(sos, x)
+    >>> f2, zo = signal.filt_sos(sos, x, zi=zi)
 
     >>> plt.plot(x, 'k--', label='x')
     >>> plt.plot(f1, 'b', alpha=0.5, linewidth=2, label='filtered')
@@ -3880,6 +3881,24 @@ def sosfilt_zi(sos):
         scale *= b.sum() / a.sum()
 
     return zi
+
+
+def sosfilt_zi(*args, **kwargs):
+    """
+    Construct initial conditions for filt_sos for step response steady-state.
+
+    Compute an initial state `zi` for the `filt_sos` function that corresponds
+    to the steady state of the step response.
+
+    A typical use of this function is to set the initial state so that the
+    output of the filter starts at the same value as the first element of
+    the signal to be filtered.
+
+    .. warning:: This function is an alias, provided for backward
+                 compatibility. New code should use the function
+                 :func:`scipy.signal.filt_zi_sos`.
+    """
+    return filt_zi_sos(*args, **kwargs)
 
 
 def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
@@ -4072,7 +4091,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     The function provides options for handling the edges of the signal.
 
-    The function `sosfiltfilt` (and filter design using ``output='sos'``)
+    The function `filtfilt_sos` (and filter design using ``output='sos'``)
     should be preferred over `filtfilt` for most filtering tasks, as
     second-order sections have fewer numerical problems.
 
@@ -4117,7 +4136,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     See Also
     --------
-    sosfiltfilt, lfilter_zi, lfilter, lfiltic, savgol_filter, sosfilt
+    filtfilt_sos, lfilter_zi, lfilter, lfiltic, savgol_filter, filt_sos
 
     Notes
     -----
@@ -4304,7 +4323,7 @@ def _validate_x(x):
     return x
 
 
-def sosfilt(sos, x, axis=-1, zi=None):
+def filt_sos(sos, x, axis=-1, zi=None):
     """
     Filter data along one dimension using cascaded second-order sections.
 
@@ -4344,7 +4363,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See Also
     --------
-    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, freqz_sos
+    zpk2sos, sos2zpk, filt_zi_sos, filtfilt_sos, freqz_sos
 
     Notes
     -----
@@ -4357,7 +4376,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     Examples
     --------
     Plot a 13th-order filter's impulse response using both `lfilter` and
-    `sosfilt`, showing the instability that results from trying to do a
+    `filt_sos`, showing the instability that results from trying to do a
     13th-order filter in a single stage (the numerical error pushes some poles
     outside of the unit circle):
 
@@ -4367,7 +4386,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> sos = signal.ellip(13, 0.009, 80, 0.05, output='sos')
     >>> x = signal.unit_impulse(700)
     >>> y_tf = signal.lfilter(b, a, x)
-    >>> y_sos = signal.sosfilt(sos, x)
+    >>> y_sos = signal.filt_sos(sos, x)
     >>> plt.plot(y_tf, 'r', label='TF')
     >>> plt.plot(y_sos, 'k', label='SOS')
     >>> plt.legend(loc='best')
@@ -4416,7 +4435,21 @@ def sosfilt(sos, x, axis=-1, zi=None):
     return out
 
 
-def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
+def sosfilt(*args, **kwargs):
+    """
+    Filter data along one dimension using cascaded second-order sections.
+
+    Filter a data sequence, `x`, using a digital IIR filter defined by
+    `sos`.
+
+    .. warning:: This function is an alias, provided for backward
+                 compatibility. New code should use the function
+                 :func:`scipy.signal.filt_sos`.
+    """
+    return filt_sos(*args, **kwargs)
+
+
+def filtfilt_sos(sos, x, axis=-1, padtype='odd', padlen=None):
     """
     A forward-backward digital filter using cascaded second-order sections.
 
@@ -4461,7 +4494,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    filtfilt, sosfilt, sosfilt_zi, freqz_sos
+    filtfilt, filt_sos, filt_zi_sos, freqz_sos
 
     Notes
     -----
@@ -4470,7 +4503,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.signal import sosfiltfilt, butter
+    >>> from scipy.signal import filtfilt_sos, butter
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
 
@@ -4483,15 +4516,15 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     Create a lowpass Butterworth filter, and use it to filter `x`.
 
     >>> sos = butter(4, 0.125, output='sos')
-    >>> y = sosfiltfilt(sos, x)
+    >>> y = filtfilt_sos(sos, x)
 
-    For comparison, apply an 8th order filter using `sosfilt`.  The filter
+    For comparison, apply an 8th order filter using `filt_sos`.  The filter
     is initialized using the mean of the first four values of `x`.
 
-    >>> from scipy.signal import sosfilt, sosfilt_zi
+    >>> from scipy.signal import filt_sos, filt_zi_sos
     >>> sos8 = butter(8, 0.125, output='sos')
-    >>> zi = x[:4].mean() * sosfilt_zi(sos8)
-    >>> y2, zo = sosfilt(sos8, x, zi=zi)
+    >>> zi = x[:4].mean() * filt_zi_sos(sos8)
+    >>> y2, zo = filt_sos(sos8, x, zi=zi)
 
     Plot the results.  Note that the phase of `y` matches the input, while
     `y2` has a significant phase delay.
@@ -4515,18 +4548,31 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
                               ntaps=ntaps)
 
     # These steps follow the same form as filtfilt with modifications
-    zi = sosfilt_zi(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
+    zi = filt_zi_sos(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
     zi_shape = [1] * x.ndim
     zi_shape[axis] = 2
     zi.shape = [n_sections] + zi_shape
     x_0 = axis_slice(ext, stop=1, axis=axis)
-    (y, zf) = sosfilt(sos, ext, axis=axis, zi=zi * x_0)
+    (y, zf) = filt_sos(sos, ext, axis=axis, zi=zi * x_0)
     y_0 = axis_slice(y, start=-1, axis=axis)
-    (y, zf) = sosfilt(sos, axis_reverse(y, axis=axis), axis=axis, zi=zi * y_0)
+    (y, zf) = filt_sos(sos, axis_reverse(y, axis=axis), axis=axis, zi=zi * y_0)
     y = axis_reverse(y, axis=axis)
     if edge > 0:
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
     return y
+
+
+def sosfiltfilt(*args, **kwargs):
+    """
+    A forward-backward digital filter using cascaded second-order sections.
+
+    See `filtfilt` for more complete information about this method.
+
+    .. warning:: This function is an alias, provided for backward
+                 compatibility. New code should use the function
+                 :func:`scipy.signal.filtfilt_sos`.
+    """
+    return filtfilt_sos(*args, **kwargs)
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
@@ -4649,7 +4695,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         elif (any(np.iscomplex(system.poles))
               or any(np.iscomplex(system.poles))
               or np.iscomplex(system.gain)):
-            # sosfilt & sosfiltfilt don't handle complex coeffs
+            # filt_sos & filtfilt_sos don't handle complex coeffs
             iir_use_sos = False
             system = ftype._as_tf()
             b, a = system.num, system.den
@@ -4676,12 +4722,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     else:  # IIR case
         if zero_phase:
             if iir_use_sos:
-                y = sosfiltfilt(sos, x, axis=axis)
+                y = filtfilt_sos(sos, x, axis=axis)
             else:
                 y = filtfilt(b, a, x, axis=axis)
         else:
             if iir_use_sos:
-                y = sosfilt(sos, x, axis=axis)
+                y = filt_sos(sos, x, axis=axis)
             else:
                 y = lfilter(b, a, x, axis=axis)
 
