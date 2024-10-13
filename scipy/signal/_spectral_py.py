@@ -48,7 +48,8 @@ def lombscargle(
     When *normalize* is "amplitude" the computed periodogram is the complex
     representation of the amplitude and phase.
 
-    Input arrays should be 1-D with a real floating dtype.
+    Input arrays should be 1-D of a real floating data type, which are converted into
+    float64 arrays before processing.
 
     Parameters
     ----------
@@ -156,7 +157,7 @@ def lombscargle(
     >>> pgram_power = lombscargle(x, y, w, normalize=False)
     >>> pgram_norm = lombscargle(x, y, w, normalize=True)
     >>> pgram_amp = lombscargle(x, y, w, normalize='amplitude')
-
+    ...
     >>> pgram_power_f = lombscargle(x, y, w, normalize=False, floating_mean=True)
     >>> pgram_norm_f = lombscargle(x, y, w, normalize=True, floating_mean=True)
     >>> pgram_amp_f = lombscargle(x, y, w, normalize='amplitude', floating_mean=True)
@@ -177,19 +178,19 @@ def lombscargle(
     >>> ax_p.set_xlabel('Angular frequency [rad/s]')
     >>> ax_p.set_ylabel('Power')
     >>> ax_p.legend(prop={'size': 7})
-
+    ...
     >>> ax_n.plot(w, pgram_norm, label='default')
     >>> ax_n.plot(w, pgram_norm_f, label='floating_mean=True')
     >>> ax_n.set_xlabel('Angular frequency [rad/s]')
     >>> ax_n.set_ylabel('Normalized')
     >>> ax_n.legend(prop={'size': 7})
-
+    ...
     >>> ax_a.plot(w, np.abs(pgram_amp), label='default')
     >>> ax_a.plot(w, np.abs(pgram_amp_f), label='floating_mean=True')
     >>> ax_a.set_xlabel('Angular frequency [rad/s]')
     >>> ax_a.set_ylabel('Amplitude')
     >>> ax_a.legend(prop={'size': 7})
-
+    ...
     >>> plt.tight_layout()
     >>> plt.show()
 
