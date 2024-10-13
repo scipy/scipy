@@ -22,7 +22,7 @@ def lombscargle(
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     *,
     weights: npt.NDArray | None = None,
-    floating_mean: bool = True,
+    floating_mean: bool = False,
 ) -> npt.NDArray:
     """
     Compute the generalized Lomb-Scargle periodogram.
@@ -34,8 +34,8 @@ def lombscargle(
     ``y(ω) = a*cos(ω*x) + b*sin(ω*x) + c``, where the fit is calculated for
     each frequency independently. This algorithm was developed by Zechmeister
     and Kürster which improves the Lomb-Scargle periodogram by enabling
-    the weighting of individual samples and calculating an unknown offset
-    (also called a "floating-mean") [3]_. For more details, and practical
+    the weighting of individual samples and calculating an unknown y offset
+    (also called a "floating-mean" model) [3]_. For more details, and practical
     considerations, see the excellent reference on the Lomb-Scargle periodogram [4]_.
 
     When *normalize* is False (or "power") (default) the computed periodogram
@@ -48,7 +48,8 @@ def lombscargle(
     When *normalize* is "amplitude" the computed periodogram is the complex
     representation of the amplitude and phase.
 
-    Input arrays should be 1-D with a real floating dtype.
+    Input arrays should be 1-D of a real floating data type, which are converted into
+    float64 arrays before processing.
 
     Parameters
     ----------
@@ -61,7 +62,7 @@ def lombscargle(
         Any peak at -freq will also exist at +freq.
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. This is
-        unnecessary if `floating_mean` is True (default).
+        unnecessary if `floating_mean` is True.
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
         Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or
@@ -69,8 +70,8 @@ def lombscargle(
     weights : array_like, optional
         Weights for each sample. Weights must be nonnegative.
     floating_mean : bool, optional
-        Determines an offset or each frequency independently, if True.
-        Else an offset of `0` is assumed.
+        Determines a y offset for each frequency independently, if True.
+        Else the y offset is assumed to be `0`.
 
     Returns
     -------
@@ -96,13 +97,15 @@ def lombscargle(
 
     Notes
     -----
-    The algorithm used will account for any unknown offset by default, unless
-    floating_mean is False. If precenter is True, it performs the operation
-    ``y -= y.mean()``. However, precenter is a legacy parameter, and unnecessary
-    when floating_mean is True. Furthermore, the mean removed by precenter does not
-    account for sample weights. When the normalize parameter is "amplitude", for any
-    frequency in freqs that is below ``(2*pi)/(x.max() - x.min())``, the predicted
-    amplitude will tend towards infinity.
+    The algorithm used will not automatically account for any unknown y offset, unless
+    floating_mean is True. Therefore, for most use cases, if there is a possibility of
+    a y offset, it is recommended to set floating_mean to True. If precenter is True,
+    it performs the operation ``y -= y.mean()``. However, precenter is a legacy
+    parameter, and unnecessary when floating_mean is True. Furthermore, the mean
+    removed by precenter does not account for sample weights, nor will it correct for
+    any bias due to consistently missing observations at peaks and/or troughs. When the
+    normalize parameter is "amplitude", for any frequency in freqs that is below
+    ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards infinity.
 
     References
     ----------
@@ -134,7 +137,7 @@ def lombscargle(
     >>> c = 2.  # offset
     >>> w0 = 1.  # rad/sec
     >>> nin = 150
-    >>> nout = 1000
+    >>> nout = 1002
 
     Randomly generate sample times:
 
@@ -150,33 +153,44 @@ def lombscargle(
 
     Calculate Lomb-Scargle periodogram for each of the normalize options:
 
-    >>> import scipy.signal as signal
-    >>> pgram_power = signal.lombscargle(x, y, w, normalize=False)
-    >>> pgram_norm = signal.lombscargle(x, y, w, normalize=True)
-    >>> pgram_amp = signal.lombscargle(x, y, w, normalize='amplitude')
+    >>> from scipy.signal import lombscargle
+    >>> pgram_power = lombscargle(x, y, w, normalize=False)
+    >>> pgram_norm = lombscargle(x, y, w, normalize=True)
+    >>> pgram_amp = lombscargle(x, y, w, normalize='amplitude')
+    ...
+    >>> pgram_power_f = lombscargle(x, y, w, normalize=False, floating_mean=True)
+    >>> pgram_norm_f = lombscargle(x, y, w, normalize=True, floating_mean=True)
+    >>> pgram_amp_f = lombscargle(x, y, w, normalize='amplitude', floating_mean=True)
 
     Now make a plot of the input data:
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, (ax_t, ax_p, ax_n, ax_a) = plt.subplots(4, 1, figsize=(5, 5))
+    >>> fig, (ax_t, ax_p, ax_n, ax_a) = plt.subplots(4, 1, figsize=(5, 6))
     >>> ax_t.plot(x, y, 'b+')
     >>> ax_t.set_xlabel('Time [s]')
     >>> ax_t.set_ylabel('Amplitude')
 
-    Then plot the periodogram for each of the normalize options:
+    Then plot the periodogram for each of the normalize options, as well as with and
+    without floating_mean=True:
 
-    >>> ax_p.plot(w, pgram_power)
+    >>> ax_p.plot(w, pgram_power, label='default')
+    >>> ax_p.plot(w, pgram_power_f, label='floating_mean=True')
     >>> ax_p.set_xlabel('Angular frequency [rad/s]')
     >>> ax_p.set_ylabel('Power')
-
-    >>> ax_n.plot(w, pgram_norm)
+    >>> ax_p.legend(prop={'size': 7})
+    ...
+    >>> ax_n.plot(w, pgram_norm, label='default')
+    >>> ax_n.plot(w, pgram_norm_f, label='floating_mean=True')
     >>> ax_n.set_xlabel('Angular frequency [rad/s]')
     >>> ax_n.set_ylabel('Normalized')
-
-    >>> ax_a.plot(w, np.abs(pgram_amp))
+    >>> ax_n.legend(prop={'size': 7})
+    ...
+    >>> ax_a.plot(w, np.abs(pgram_amp), label='default')
+    >>> ax_a.plot(w, np.abs(pgram_amp_f), label='floating_mean=True')
     >>> ax_a.set_xlabel('Angular frequency [rad/s]')
     >>> ax_a.set_ylabel('Amplitude')
-
+    >>> ax_a.legend(prop={'size': 7})
+    ...
     >>> plt.tight_layout()
     >>> plt.show()
 

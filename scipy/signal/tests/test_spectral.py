@@ -1013,7 +1013,7 @@ class TestLombscargle:
 
 
     def test_amplitude(self):
-        # Test if height of peak in normalized Lomb-Scargle periodogram
+        # Test if height of peak in unnormalized Lomb-Scargle periodogram
         # corresponds to amplitude of the generated input signal.
 
         # Input parameters
@@ -1043,10 +1043,11 @@ class TestLombscargle:
 
         # Check if amplitude is correct (this will not exactly match, due to
         # numerical differences when data is removed)
-        assert_allclose(np.max(pgram), ampl, rtol=3e-2)
+        assert_allclose(np.max(pgram), ampl, rtol=5e-2)
 
     def test_precenter(self):
-        # Test if precenter gives the same result as manually precentering.
+        # Test if precenter gives the same result as manually precentering
+        # (for a very simple offset)
 
         # Input parameters
         ampl = 2.
@@ -1075,11 +1076,11 @@ class TestLombscargle:
         # check if centering worked
         assert_allclose(pgram, pgram2)
 
-        # do this again, but with floating_mean=False
+        # do this again, but with floating_mean=True
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, y, f, precenter=True, floating_mean=False)
-        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False, floating_mean=False)
+        pgram = lombscargle(t, y, f, precenter=True, floating_mean=True)
+        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False, floating_mean=True)
 
         # check if centering worked
         assert_allclose(pgram, pgram2)
@@ -1112,9 +1113,8 @@ class TestLombscargle:
 
         # Calculate the scale to convert from unnormalized to normalized
         weights = np.ones_like(t)/float(t.shape[0])
-        Y_sum = (weights * y).sum()
         YY_hat = (weights * y * y).sum()
-        YY = YY_hat - Y_sum * Y_sum
+        YY = YY_hat  # correct formula for floating_mean=False
         scale_to_use = 2/(YY*t.shape[0])
 
         # check if normalization works as expected
@@ -1215,9 +1215,8 @@ class TestLombscargle:
 
         # validate that the power and norm outputs are proper wrt each other
         weights = np.ones_like(y)/float(y.shape[0])
-        Y_sum = (weights * y).sum()
         YY_hat = (weights * y * y).sum()
-        YY = YY_hat - Y_sum * Y_sum
+        YY = YY_hat  # correct formula for floating_mean=False
         assert_allclose(pgram_power * 2.0 / (float(t.shape[0]) * YY), pgram_norm)
 
         # validate that the amp output is correct for the given input
@@ -1231,7 +1230,8 @@ class TestLombscargle:
         assert_raises(ValueError, lombscargle, t, y, f, normalize=2)
 
     def test_offset_removal(self):
-        # Verify that the amplitude is the same, even with an offset (not removed)
+        # Verify that the amplitude is the same, even with an offset
+        # must use floating_mean=True, otherwise it will not remove an offset
 
         # Input parameters
         ampl = 2.
@@ -1254,8 +1254,8 @@ class TestLombscargle:
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, y, f)
-        pgram_offset = lombscargle(t, y + offset, f)
+        pgram = lombscargle(t, y, f, floating_mean=True)
+        pgram_offset = lombscargle(t, y + offset, f, floating_mean=True)
 
         # check if offset removal works as expected
         assert_allclose(pgram, pgram_offset)
@@ -1285,12 +1285,12 @@ class TestLombscargle:
 
         # Calculate Lomb-Scargle periodogram
         pgram = lombscargle(t, y, f, normalize=True, floating_mean=False)
-        pgram_offset = lombscargle(t, y + offset, f, normalize=True, 
+        pgram_offset = lombscargle(t, y + offset, f, normalize=True,
                                    floating_mean=False)
 
         # check if disabling floating_mean works as expected
         # nearly-zero for no offset, exact value will change based on seed
-        assert(pgram[0] < 0.01) 
+        assert(pgram[0] < 0.01)
         # significant value with offset, exact value will change based on seed
         assert(pgram_offset[0] > 0.5)
 
@@ -1321,12 +1321,12 @@ class TestLombscargle:
         f_indx = np.where(f==w)[0][0]
 
         # Calculate Lomb-Scargle periodogram (amplitude + phase)
-        pgram = lombscargle(t, y, f, normalize='amplitude')
+        pgram = lombscargle(t, y, f, normalize='amplitude', floating_mean=True)
 
         # Check if amplitude is correct
         assert_allclose(np.abs(pgram[f_indx]), ampl)
 
-        # Check if phase is correct 
+        # Check if phase is correct
         # (phase angle is the negative of the phase offset)
         assert_allclose(-np.angle(pgram[f_indx]), phi)
 
