@@ -399,3 +399,102 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
     ctx.params.pop('tags')
 
     ctx.forward(meson.build)
+
+@click.command()
+@click.argument("pytest_args", nargs=-1)
+@click.option(
+    '--verbose', '-v', default=False, is_flag=True,
+    help="more verbosity")
+@click.option(
+    '--coverage', '-c', default=False, is_flag=True,
+    help=("report coverage of project code. "
+            "HTML output goes under build/coverage")) # removed doctests as currently not supported by _lib/_testutils.py
+                                                    # doctests = Option(['--doctests'], default=False)
+@click.option(
+    '--durations', '-d', default=None, metavar="NUM_TESTS",
+    help="Show timing for the given number of slowest tests"
+)
+@click.option(
+    '--submodule', '-s', default=None, metavar='MODULE_NAME',
+    help="Submodule whose tests to run (cluster, constants, ...)")
+@click.option(
+    '--tests', '-t', default=None, multiple=True, metavar='TESTS',
+    help='Specify tests to run')
+@click.option(
+    '--mode', '-m', default='not slow', metavar='MODE', show_default=True,
+    help=("'fast', 'full', or something that could be passed to "
+            "`pytest -m` as a marker expression"))
+@click.option(
+    '--parallel', '-j', default=1, metavar='N_JOBS',
+    help="Number of parallel jobs for testing"
+)
+@click.option(
+    '--array-api-backend', '-b', default=None, metavar='ARRAY_BACKEND',
+    multiple=True,
+    help=(
+        "Array API backend "
+        "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', 'jax.numpy')."
+    )
+)
+@click.pass_context
+def test(ctx, pytest_args, verbose, *args, **kwargs):
+    """🔧 Run tests
+
+    PYTEST_ARGS are passed through directly to pytest, e.g.:
+
+      spin test -- --pdb
+
+    To run tests on a directory or file:
+
+     \b
+     spin test numpy/linalg
+     spin test numpy/linalg/tests/test_linalg.py
+
+    To report the durations of the N slowest tests:
+
+      spin test -- --durations=N
+
+    To run tests that match a given pattern:
+
+     \b
+     spin test -- -k "geometric"
+     spin test -- -k "geometric and not rgeometric"
+
+    By default, spin will run `-m 'not slow'`. To run the full test suite, use
+    `spin test -m full`
+
+    For more, see `pytest --help`.
+    """  # noqa: E501
+    tests = ctx.params['tests']
+    markexpr = ctx.params['mode']
+    print(tests)
+    if (not pytest_args) and (not tests):
+        pytest_args = ('scipy',)
+
+    if '-m' not in pytest_args:
+        if len(pytest_args) == 1 and not tests:
+            tests = pytest_args[0]
+            pytest_args = ()
+        if markexpr != "full":
+            pytest_args = ('-m', markexpr) + pytest_args
+
+    n_jobs = ctx.params['parallel']
+    if (n_jobs != "1") and ('-n' not in pytest_args):
+        pytest_args = ('-n', str(n_jobs)) + pytest_args
+
+    if tests and '--pyargs' not in pytest_args:
+        pytest_args = ('--pyargs', tests) + pytest_args
+
+    if verbose:
+        pytest_args = ('-v',) + pytest_args
+
+    ctx.params['pytest_args'] = pytest_args
+
+    for extra_param in (
+        'verbose', 'coverage', 'durations',
+        'submodule', 'array_api_backend',
+        'mode', 'parallel', 'tests'):
+        del ctx.params[extra_param]
+
+    print(ctx.params)
+    ctx.forward(meson.test)

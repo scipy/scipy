@@ -124,6 +124,17 @@ tracker = "https://github.com/scipy/scipy/issues"
 [tool.doit]
 dodoFile = "dev.py"
 
+[tool.meson-python]
+meson = 'vendored-meson/meson/meson.py'
+
+[tool.meson-python.args]
+install = ['--tags=runtime,python-runtime,tests,devel']
+
+[tool.spin]
+package = 'numpy'
+
+[tool.spin.meson]
+cli = 'vendored-meson/meson/meson.py'
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
@@ -167,7 +178,8 @@ PKG_CONFIG_PATH = "{project}"
 
 [tool.spin.commands]
 "Build" = [
-  ".spin/cmds.py:build"
+  ".spin/cmds.py:build",
+  ".spin/cmds.py:test"
 ]
 "Environments" = [
   "spin.cmds.meson.run",
