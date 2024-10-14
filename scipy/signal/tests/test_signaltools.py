@@ -2559,30 +2559,30 @@ class TestCorrelate2d:
                         xp.asarray([12j]), check_shape=False, check_dtype=False)
 
 
-@skip_xp_backends(np_only=True)
 class TestLFilterZI:
 
     def test_basic(self, xp):
-        a = np.array([1.0, -1.0, 0.5])
-        b = np.array([1.0, 0.0, 2.0])
-        zi_expected = np.array([5.0, -1.0])
+        a = xp.asarray([1.0, -1.0, 0.5])
+        b = xp.asarray([1.0, 0.0, 2.0])
+        zi_expected = xp.asarray([5.0, -1.0])
         zi = lfilter_zi(b, a)
         assert_array_almost_equal(zi, zi_expected)
 
     def test_scale_invariance(self, xp):
         # Regression test.  There was a bug in which b was not correctly
         # rescaled when a[0] was nonzero.
-        b = np.array([2, 8, 5])
-        a = np.array([1, 1, 8])
+        b = xp.asarray([2.0, 8, 5])
+        a = xp.asarray([1.0, 1, 8])
         zi1 = lfilter_zi(b, a)
         zi2 = lfilter_zi(2*b, 2*a)
         xp_assert_close(zi2, zi1, rtol=1e-12)
 
-    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_types(self, dtype, xp):
-        b = np.zeros((8), dtype=dtype)
-        a = np.array([1], dtype=dtype)
-        assert np.real(signal.lfilter_zi(b, a)).dtype == dtype
+        dtype = getattr(xp, dtype)
+        b = xp.zeros((8), dtype=dtype)
+        a = xp.asarray([1], dtype=dtype)
+        assert signal.lfilter_zi(b, a).dtype == dtype
 
 
 class TestFiltFilt:

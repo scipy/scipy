@@ -3883,7 +3883,7 @@ def lfilter_zi(b, a):
     if a.ndim != 1:
         raise ValueError("Denominator a must be 1-D.")
 
-    while len(a) > 1 and a[0] == 0.0:
+    while a.shape[0] > 1 and a[0] == 0.0:
         a = a[1:]
     if a.size < 1:
         raise ValueError("There must be at least one nonzero `a` coefficient.")
@@ -3893,16 +3893,17 @@ def lfilter_zi(b, a):
         b = b / a[0]
         a = a / a[0]
 
-    n = max(len(a), len(b))
+    n = max(a.shape[0], b.shape[0])
 
     # Pad a or b with zeros so they are the same length.
-    if len(a) < n:
-        a = xp.concat(a, xp.zeros(n - len(a), dtype=a.dtype))
-    elif len(b) < n:
-        b = xp.concat(b, xp.zeros(n - len(b), dtype=b.dtype))
+    if a.shape[0] < n:
+        a = xp.concat((a, xp.zeros(n - a.shape[0], dtype=a.dtype)))
+    elif b.shape[0] < n:
+        b = xp.concat((b, xp.zeros(n - b.shape[0], dtype=b.dtype)))
 
     dt = xp.result_type(a, b)
-    IminusA = np.eye(n - 1, dtype=dt) - xp.asarray(linalg.companion(a)).T
+    IminusA = np.eye(n - 1) - linalg.companion(a).T
+    IminusA = xp.asarray(IminusA, dtype=dt)
     B = b[1:] - a[1:] * b[0]
     # Solve zi = A*zi + B
     zi = xp.linalg.solve(IminusA, B)
