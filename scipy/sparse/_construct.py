@@ -49,8 +49,13 @@ def spdiags(data, diags, m=None, n=None, format=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``diags_array`` to take advantage
+        You are encouraged to use ``dia_array`` to take advantage
         of the sparse array functionality.
+
+    Notes
+    -----
+    This function can be replaced by an equivalent call to ``dia_matrix``
+    as ``dia_matrix((data, diags), shape=(m, n)).asformat(format)``.
 
     See Also
     --------
@@ -92,6 +97,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
+        Repeated diagonal offsets are disallowed.
     shape : tuple of int, optional
         Shape of the result. If omitted, a square array large enough
         to contain the diagonals is returned.
@@ -104,13 +110,17 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
 
     Notes
     -----
+    Repeated diagonal offsets are disallowed.
+
     The result from `diags_array` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    Repeated diagonal offsets are disallowed.
+    ``diags_array`` differs from `dia_array` in the way it handles off-diagonals.
+    Specifically, ``diags_array`` does not pad the diagonal data with
+    ignored values at the start/end for positive/negative offset.
 
     .. versionadded:: 1.11
 
@@ -217,6 +227,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
+        Repeated diagonal offsets are disallowed.
     shape : tuple of int, optional
         Shape of the result. If omitted, a square matrix large enough
         to contain the diagonals is returned.
@@ -234,8 +245,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
 
     Notes
     -----
-    This function differs from `spdiags` in the way it handles
-    off-diagonals.
+    Repeated diagonal offsets are disallowed.
 
     The result from `diags` is the sparse equivalent of::
 
@@ -243,7 +253,9 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    Repeated diagonal offsets are disallowed.
+    ``diags`` differs from ``dia_matrix`` in the way it handles off-diagonals.
+    Specifically, ``diags`` does not pad the diagonal data with
+    ignored values at the start/end for positive/negative offset.
 
     .. versionadded:: 0.11
 
