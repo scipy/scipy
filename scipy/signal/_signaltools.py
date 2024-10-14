@@ -2462,27 +2462,27 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
              axis: int = -1) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
     r"""Compute the envelope of a real- or complex-valued signal.
 
-    Any complex-valued signal `z(t)` can be described by a real-valued instantaneous
-    amplitude `a(t)` and a real-valued instantaneous phase `phi(t)`, i.e.,
-    `z(t) = a(t) * exp(1j*phi(t))`. The envelope is defined as the absolute value of
-    the amplitude `|a(t)| = |z(t)|`, which is at the same time the absolute value of
-    the signal. Hence, `|a(t)|` "envelopes" the class of all signals with amplitude
-    `a(t)` and arbitrary phase `phi(t)`.
-    For real-valued signals, `x(t) = a(t) * cos(phi(t))` is the analogous formulation.
-    Hence, `|a(t)|` can be determined by converting `x(t)` into an analytic signal
-    `z_a(t)` by means of a Hilbert transform, i.e.,
-    `z_a(t) = a(t) * cos(phi(t)) + 1j * a(t) * sin(phi(t))`, which produces a
-    complex-valued signal with the same envelope `|a(t)|`.
+    Any complex-valued signal z(t) can be described by a real-valued instantaneous
+    amplitude a(t) and a real-valued instantaneous phase phi(t), i.e.,
+    z(t) = a(t) * exp(1j*phi(t)). The envelope is defined as the absolute value of
+    the amplitude |a(t)| = |z(t)|, which is at the same time the absolute value of
+    the signal. Hence, |a(t)| "envelopes" the class of all signals with amplitude
+    a(t) and arbitrary phase phi(t).
+    For real-valued signals, x(t) = a(t) * cos(phi(t)) is the analogous formulation.
+    Hence, `|a(t)|` can be determined by converting x(t) into an analytic signal
+    z_a(t) by means of a Hilbert transform, i.e.,
+    z_a(t) = a(t) * cos(phi(t)) + 1j * a(t) * sin(phi(t)), which produces a
+    complex-valued signal with the same envelope |a(t)|.
 
     Parameters
     ----------
     z :
-        Real- or complex-valued input signal, which is assumed to be made up of `n`
-        samples and having sampling interval `T`. `z` may also be a multidimensional
+        Real- or complex-valued input signal, which is assumed to be made up of ``n``
+        samples and having sampling interval ``T``. `z` may also be a multidimensional
         array with the time axis being defined by `axis`.
     bp_in :
         2-tuple defining the frequency band ``bp_in[0]:bp_in[1]`` of the input filter.
-        The corner frequencies are specified as integer multiples of `1/(n*T)` with
+        The corner frequencies are specified as integer multiples of ``1/(n*T)`` with
         ``-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2`` being the allowed frequency range.
         ``None`` entries are replaced with `-n//2` or `(n+1)//2` respectively. The
         default of ``(1, None)`` removes the mean value as well as the negative
@@ -2493,12 +2493,12 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     squared :
         If set, the square of the envelope is returned. The bandwidth of the squared
         envelope is often smaller than the non-squared envelope bandwidth due to the
-        nonlinear nature of the utilized `abs` function. I.e., the embbeded square root
-        function typically produces addiational harmonics.
+        nonlinear nature of the utilized absolute value function. I.e., the embbeded
+        square root function typically produces addiational harmonics.
     residual :
         This option determines what kind of residual, i.e., the signal part which the
-        input bandpass filter removes, is returned. `'all'` returns everything except
-        the contents of the frequency band ``bp_in[0]:bp_in[1]``, `'lowpass'`
+        input bandpass filter removes, is returned. ``'all'`` returns everything except
+        the contents of the frequency band ``bp_in[0]:bp_in[1]``, ``'lowpass'``
         returns the contents of the frequency band ``< bp_in[0]``. If ``None`` then
         nothing is returned.
     axis :
