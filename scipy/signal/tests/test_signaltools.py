@@ -1818,14 +1818,16 @@ class _TestLinearFilter:
         x = self.convert_dtype(xp.zeros((3, 2, 5), dtype=xp.int64), xp)
         b = self.convert_dtype(xp.ones(5, dtype=xp.int64), xp)
         a = self.convert_dtype(xp.asarray([1, 0, 0]), xp)
-        zi = xp.ones((3, 1, 4), dtype=xp.int64)
+        zi = np.ones((3, 1, 4), dtype=np.int64)
         zi[1, :, :] *= 2
         zi[2, :, :] *= 3
+        zi = xp.asarray(zi)
         zi = self.convert_dtype(zi, xp)
 
         zf_expected = self.convert_dtype(xp.zeros((3, 2, 4), dtype=xp.int64), xp)
-        y_expected = xp.zeros((3, 2, 5), dtype=xp.int64)
-        y_expected[:, :, :4] = xp.asarray([[[1]], [[2]], [[3]]])
+        y_expected = np.zeros((3, 2, 5), dtype=np.int64)
+        y_expected[:, :, :4] = [[[1]], [[2]], [[3]]]
+        y_expected = xp.asarray(y_expected)
         y_expected = self.convert_dtype(y_expected, xp)
 
         # IIR
@@ -1963,6 +1965,7 @@ class _TestLinearFilter:
                             else self.dtype)
         assert xp_size(zf) == 0
 
+    @skip_xp_backends('jax.numpy', reason='jax dtype defaults differ')
     def test_lfiltic_bad_zi(self, xp):
         # Regression test for #3699: bad initial conditions
         a = self.convert_dtype([1], xp)
@@ -3708,11 +3711,11 @@ def test_nonnumeric_dtypes(func, xp):
         func(*args, x=1.)
 
 
-#@skip_xp_backends(np_only=True)
 @pytest.mark.parametrize('dt', ['float32', 'float64', 'complex64', 'complex128'])
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
+    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank1(self, dt, xp):
         dt = getattr(xp, dt)
         x = xp.linspace(0, 5, 6, dtype=dt)
@@ -3744,6 +3747,7 @@ class TestSOSFilt:
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
 
+    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank2(self, dt, xp):
         dt = getattr(xp, dt)
         shape = (4, 3)
@@ -3770,6 +3774,7 @@ class TestSOSFilt:
         y = sosfilt(sos, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
+    @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank3(self, dt, xp):
         dt = getattr(xp, dt)
         shape = (4, 3, 2)
@@ -3799,6 +3804,7 @@ class TestSOSFilt:
         a, b, sos = map(xp.asarray, (a, b, sos))
         return a, b, sos
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_initial_conditions(self, dt, xp):
         a, b, sos = self._get_ab_sos(xp)
 
@@ -3825,6 +3831,7 @@ class TestSOSFilt:
         xp_assert_close(y, xp.ones(8), check_dtype=False)
         xp_assert_close(zf, zi, check_dtype=False)
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
     def test_initial_conditions_2(self, dt, xp):
         dt = getattr(xp, dt)
@@ -3848,6 +3855,7 @@ class TestSOSFilt:
         xp_assert_close(y[0, 0], xp.ones(8), check_dtype=False)
         xp_assert_close(zf[:, 0, 0, :], zi, check_dtype=False)
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_initial_conditions_3d_axis1(self, dt, xp):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
 
@@ -3900,6 +3908,7 @@ class TestSOSFilt:
         y_tf = lfilter(b, a, x, axis=axis, zi=zi)[0]
         xp_assert_close(y, y_tf, rtol=1e-10, atol=1e-13)
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_bad_zi_shape(self, dt, xp):
         dt = getattr(xp, dt)
         # The shape of zi is checked before using any values in the
@@ -3913,6 +3922,7 @@ class TestSOSFilt:
         with pytest.raises(ValueError, match='Invalid zi shape'):
             sosfilt(sos, x, zi=zi, axis=1)
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_sosfilt_zi(self, dt, xp):
         dt = getattr(xp, dt)
         sos = signal.butter(6, 0.2, output='sos')
@@ -3946,7 +3956,7 @@ class TestSOSFilt:
             sosfilt(sos, x)
 
 
-
+@skip_xp_backends('jax.numpy', reason='item assignment')
 class TestDeconvolve:
 
     def test_basic(self, xp):
