@@ -1965,6 +1965,9 @@ class _TestLinearFilter:
                             else self.dtype)
         assert xp_size(zf) == 0
 
+    @skip_xp_backends(
+        'array_api_strict', reason='int64 and float64 cannot be promoted together'
+    )
     @skip_xp_backends('jax.numpy', reason='jax dtype defaults differ')
     def test_lfiltic_bad_zi(self, xp):
         # Regression test for #3699: bad initial conditions
@@ -1972,7 +1975,7 @@ class _TestLinearFilter:
         b = self.convert_dtype([1], xp)
         # "y" sets the datatype of zi, so it truncates if int
         zi = lfiltic(b, a, xp.asarray([1., 0]))
-        zi_1 = lfiltic(b, a, xp.asarray([1, 0]))
+        zi_1 = lfiltic(b, a, xp.asarray([1.0, 0]))
         zi_2 = lfiltic(b, a, xp.asarray([True, False]))
         self.assert_equal(zi, zi_1)
 

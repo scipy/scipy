@@ -4540,7 +4540,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
         zi = np.asarray(zi, dtype=dtype)
-        zi = np.asarray(zi, copy=True)  # make a copy so that we can operate in place
+        zi = xp_copy(zi, xp=xp)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:
             raise ValueError('Invalid zi shape. With axis=%r, an input with '
                              'shape %r, and an sos array with %d sections, zi '
