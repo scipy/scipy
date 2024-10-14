@@ -3894,21 +3894,21 @@ class TestDeconvolve:
 
     def test_basic(self, xp):
         # From docstring example
-        original = [0.0, 1, 0, 0, 1, 1, 0, 0]
-        impulse_response = [2, 1]
-        recorded = [0.0, 2, 1, 0, 2, 3, 1, 0, 0]
+        original = xp.asarray([0.0, 1, 0, 0, 1, 1, 0, 0])
+        impulse_response = xp.asarray([2, 1])
+        recorded = xp.asarray([0.0, 2, 1, 0, 2, 3, 1, 0, 0])
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         xp_assert_close(recovered, original)
 
     def test_n_dimensional_signal(self, xp):
-        recorded = [[0, 0], [0, 0]]
-        impulse_response = [0, 0]
+        recorded = xp.asarray([[0, 0], [0, 0]])
+        impulse_response = xp.asarray([0, 0])
         with pytest.raises(ValueError, match="signal must be 1-D."):
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
     def test_n_dimensional_divisor(self, xp):
-        recorded = [0, 0]
-        impulse_response = [[0, 0], [0, 0]]
+        recorded = xp.asarray([0, 0])
+        impulse_response = xp.asarray([[0, 0], [0, 0]])
         with pytest.raises(ValueError, match="divisor must be 1-D."):
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
