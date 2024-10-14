@@ -3740,7 +3740,6 @@ class TestSOSFilt:
         concat = array_namespace(b, a).concat
         sos = concat((b, a))
         sos = xp.reshape(sos, (1, 6))
-#        sos.shape = (1, 6)
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
 
@@ -3935,6 +3934,15 @@ class TestSOSFilt:
 
         _, zf = sosfilt(sos, xp.ones(40, dtype=dt), zi=zi.tolist())
         xp_assert_close(zf, zi, rtol=1e-13, check_dtype=False)
+
+    @skip_xp_backends(np_only=True)
+    def test_dtype_deprecation(self, dt, xp):
+        # gh-21211
+        sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)
+        x = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
+            sosfilt(sos, x)
+
 
 
 class TestDeconvolve:
