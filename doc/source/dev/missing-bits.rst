@@ -25,10 +25,15 @@ rule.
 Coding Style and Guidelines
 ---------------------------
 Note that docstrings should be generally made up of ASCII characters
-in spite of being Unicode. Additionally, lower case greek letters
-"αβγδεζηθικλμνξoπρστυϕχψω" as well the following upper case greek letters
-"ΓΔΘΛΞΠΣϒΦΨΩ" are allowed. Also the following symbols may be used:
-"®ő∫≠≥≤±∞²³".
+in spite of being Unicode. The following code block from the file
+``tools/unicode-check.py`` tells the linter which additional characters
+are allowed:
+
+.. literalinclude:: ../../../tools/unicode-check.py
+    :start-after: # BEGIN_INCLUDE_RST
+    :end-before: # END_INCLUDE_RST
+    :lineno-match:
+
 
 Required keyword names
 ~~~~~~~~~~~~~~~~~~~~~~
