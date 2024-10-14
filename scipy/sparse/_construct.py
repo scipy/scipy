@@ -95,11 +95,10 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         Sequence of arrays containing the array diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
-        Diagonals to set:
+        Diagonals to set (repeated offsets are not allowed):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
-        Repeated diagonal offsets are disallowed.
     shape : tuple of int, optional
         Shape of the result. If omitted, a square array large enough
         to contain the diagonals is returned.
@@ -228,11 +227,10 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         Sequence of arrays containing the matrix diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
-        Diagonals to set:
+        Diagonals to set (repeated offsets are not allowed):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
-        Repeated diagonal offsets are disallowed.
     shape : tuple of int, optional
         Shape of the result. If omitted, a square matrix large enough
         to contain the diagonals is returned.
