@@ -55,7 +55,9 @@ def spdiags(data, diags, m=None, n=None, format=None):
     Notes
     -----
     This function can be replaced by an equivalent call to ``dia_matrix``
-    as ``dia_matrix((data, diags), shape=(m, n)).asformat(format)``.
+    as::
+
+        dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
     See Also
     --------
@@ -119,8 +121,10 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         + np.diag(diagonals[k], offsets[k])
 
     ``diags_array`` differs from `dia_array` in the way it handles off-diagonals.
-    Specifically, ``diags_array`` does not pad the diagonal data with
-    ignored values at the start/end for positive/negative offset.
+    Specifically, `dia_array` assumes the data input includes padding
+    (ignored values) at the start/end of the rows for positive/negative
+    offset, while ``diags_array` assumes the input data has no padding.
+    Each value in the input ``diagonals`` is used.
 
     .. versionadded:: 1.11
 
@@ -152,6 +156,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
+
     """
     # if offsets is not a sequence, assume that there's only one diagonal
     if isscalarlike(offsets):
@@ -254,8 +259,10 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         + np.diag(diagonals[k], offsets[k])
 
     ``diags`` differs from ``dia_matrix`` in the way it handles off-diagonals.
-    Specifically, ``diags`` does not pad the diagonal data with
-    ignored values at the start/end for positive/negative offset.
+    Specifically, `dia_matrix` assumes the data input includes padding
+    (ignored values) at the start/end of the rows for positive/negative
+    offset, while ``diags` assumes the input data has no padding.
+    Each value in the input ``diagonals`` is used.
 
     .. versionadded:: 0.11
 
@@ -287,6 +294,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
+
     """
     A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
     return dia_matrix(A).asformat(format)

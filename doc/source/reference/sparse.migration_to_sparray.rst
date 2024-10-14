@@ -70,7 +70,7 @@ Recommended steps for migration
       Moreover ``isspmatrix_csr(G) or isspmatrix_csc(G)`` becomes
       ``issparse(G) and G.format in ['csr', 'csc']``.
    -  Convert all ``spdiags`` calls to ``dia_matrix``.
-      See docs in :func:`spdiags<scipy.sparse.spdiags>`_
+      See docs in :func:`spdiags<scipy.sparse.spdiags>`.
    -  Run all your tests on the resulting code. You are still using
       spmatrix, not sparray. But your code and tests are prepared for
       the change.
