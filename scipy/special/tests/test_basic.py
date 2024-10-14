@@ -2441,7 +2441,7 @@ class TestFactorialFunctions:
             # result is empty if and only if n is empty, and has the same dimension
             # as n; dtype stays the same, except when not empty and not exact:
             if n.size:
-                dtype = np.int64 if exact else np.float64
+                dtype = native_int if exact else np.float64
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected, rtol=1e-15)
 
@@ -2527,7 +2527,7 @@ class TestFactorialFunctions:
             # result is empty if and only if n is empty, and has the same dimension
             # as n; dtype stays the same, except when not empty and not exact:
             if n.size:
-                dtype = np.int64 if exact else np.float64
+                dtype = native_int if exact else np.float64
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected, rtol=1e-15)
 
