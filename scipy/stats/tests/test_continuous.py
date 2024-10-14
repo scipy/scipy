@@ -15,7 +15,7 @@ from scipy.stats._ksstats import kolmogn
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support)
+    _generate_domain_support, Mixture)
 from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
 
 class Test_RealDomain:
@@ -1066,3 +1066,82 @@ class TestFullCoverage:
 
         X = _Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
         assert str(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
+
+
+class MixedDist(ContinuousDistribution):
+    _variable = _RealParameter('x', domain=_RealDomain(endpoints=(-np.inf, np.inf)))
+    def _pdf_formula(self, x, *args, **kwargs):
+        return (0.4 * 1/(1.1 * np.sqrt(2*np.pi)) * np.exp(-0.5*((x+0.25)/1.1)**2)
+                + 0.6 * 1/(0.9 * np.sqrt(2*np.pi)) * np.exp(-0.5*((x-0.5)/0.9)**2))
+
+
+class TestMixture:
+    def test_input_validation(self):
+        message = "`vars` must contain at least one random variable."
+        with pytest.raises(ValueError, match=message):
+            Mixture([])
+
+        message = "Each element of `vars` must be an instance..."
+        with pytest.raises(ValueError, match=message):
+            Mixture((1, 2, 3))
+
+        message = "All random variables in `vars` must have scalar shapes."
+        with pytest.raises(ValueError, match=message):
+            Mixture([Normal(mu=[1, 2]), Normal()])
+
+        message = "`vars` and `weights` must have the same length."
+        with pytest.raises(ValueError, match=message):
+            Mixture([Normal()], weights=[0.5, 0.5])
+
+        message = "`weights` must have floating point dtype."
+        with pytest.raises(ValueError, match=message):
+            Mixture([Normal()], weights=[1])
+
+        message = "`weights` must have floating point dtype."
+        with pytest.raises(ValueError, match=message):
+            Mixture([Normal()], weights=[1])
+
+        message = "`weights` must sum to 1.0."
+        with pytest.raises(ValueError, match=message):
+            Mixture([Normal(), Normal()], weights=[0.5, 1.0])
+
+        message = "All `weights` must be non-negative."
+        with pytest.raises(ValueError, match=message):
+            Mixture([Normal(), Normal()], weights=[1.5, -0.5])
+
+    def test_basic(self):
+        rng = np.random.default_rng(582348972387243524)
+        X = Mixture((Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)),
+                    weights=(0.4, 0.6))
+        Y = MixedDist()
+        x = rng.random(10)
+
+        assert_allclose(X.entropy(), Y.entropy())
+        assert_allclose(X.mode(), Y.mode())
+        assert_allclose(X.median(), Y.median())
+        assert_allclose(X.mean(), Y.mean())
+        assert_allclose(X.variance(), Y.variance())
+        assert_allclose(X.standard_deviation(), Y.standard_deviation())
+        assert_allclose(X.skewness(), Y.skewness())
+        assert_allclose(X.kurtosis(), Y.kurtosis())
+        assert_allclose(X.logpdf(x), Y.logpdf(x))
+        assert_allclose(X.pdf(x), Y.pdf(x))
+        assert_allclose(X.logcdf(x), Y.logcdf(x))
+        assert_allclose(X.cdf(x), Y.cdf(x))
+        assert_allclose(X.logccdf(x), Y.logccdf(x))
+        assert_allclose(X.ccdf(x), Y.ccdf(x))
+        assert_allclose(X.ilogcdf(x), Y.ilogcdf(x))
+        assert_allclose(X.icdf(x), Y.icdf(x))
+        assert_allclose(X.ilogccdf(x), Y.ilogccdf(x))
+        assert_allclose(X.iccdf(x), Y.iccdf(x))
+        for kind in ['raw', 'central', 'standardized']:
+            for order in range(5):
+                assert_allclose(X.moment(order, kind=kind),
+                                Y.moment(order, kind=kind),
+                                atol=1e-15)
+
+        # weak test of `sample`
+        shape = (10, 20, 5)
+        y = X.sample(shape, rng=rng)
+        assert y.shape == shape
+        assert stats.ks_1samp(y.ravel(), X.cdf).pvalue > 0.05

@@ -5219,3 +5219,254 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def __neg__(self):
         return self * -1
+
+
+class Mixture:
+    r""" Class that represents a mixture distribution.
+
+    A mixture distribution is the distribution of a random variable
+    defined in the following way: first, a random variable is selected
+    from `vars` according to the probabilities given by `weights`, then
+    the random variable is realized[1]_.
+
+    Parameters
+    ----------
+    vars : sequence of `ContinuousDistribution`
+        The underlying instances of `ContinuousDistribution`.
+        All must have scalar shape parameters.
+    weights : sequence of floats
+        The corresponding probabilities of selecting each random variable.
+        Must be non-negative and sum to one.
+
+    Methods
+    -------
+    support
+
+    sample
+
+    moment
+
+    mean
+    median
+    mode
+
+    variance
+    standard_deviation
+
+    skewness
+    kurtosis
+
+    pdf
+    logpdf
+
+    cdf
+    icdf
+    ccdf
+    iccdf
+
+    logcdf
+    ilogcdf
+    logccdf
+    ilogccdf
+
+    entropy
+
+    Notes
+    -----
+    The following abbreviations are used throughout the documentation.
+
+    - PDF: probability density function
+    - CDF: cumulative distribution function
+    - CCDF: complementary CDF
+    - entropy: differential entropy
+    - log-*F*: logarithm of *F* (e.g. log-CDF)
+    - inverse *F*: inverse function of *F* (e.g. inverse CDF)
+
+    References
+    ----------
+    .. [1] Mixture distribution, *Wikipedia*,
+           https://en.wikipedia.org/wiki/Mixture_distribution
+
+    """
+    # Todo:
+    # Fix Normal(mu=0.5).logentropy() runtime warning
+    # Add method documentation
+    # Add support for array shapes
+
+    def _input_validation(self, vars, weights):
+        if len(vars) == 0:
+            message = ("`vars` must contain at least one random variable.")
+            raise ValueError(message)
+
+        for var in vars:
+            # will generalize to other kinds of distributoins when there
+            # *are* other kinds of distributions
+            if not isinstance(var, ContinuousDistribution):
+                message = ("Each element of `vars` must be an instance of "
+                           "`ContinuousDistribution`.")
+                raise ValueError(message)
+            if not var._shape == ():
+                message = "All random variables in `vars` must have scalar shapes."
+                raise ValueError(message)
+
+        if weights is None:
+            return
+
+        weights = np.asarray(weights)
+        if len(vars) != len(weights):
+            message = "`vars` and `weights` must have the same length."
+            raise ValueError(message)
+
+        if not np.issubdtype(weights.dtype, np.inexact):
+            message = "`weights` must have floating point dtype."
+            raise ValueError(message)
+
+        if not np.isclose(np.sum(weights), 1.0):
+            message = "`weights` must sum to 1.0."
+            raise ValueError(message)
+
+        if not np.all(weights >= 0):
+            message = "All `weights` must be non-negative."
+            raise ValueError(message)
+
+    def __init__(self, vars, /, *, weights=None):
+        self._input_validation(vars, weights)
+        n = len(vars)
+        dtype = np.result_type(*(var._dtype for var in vars))
+        self._shape = np.broadcast_shapes(*(var._shape for var in vars))
+        self._dtype, self._vars = dtype, vars
+        self._weights = np.full(n, 1/n, dtype=dtype) if weights is None else weights
+        self.validation_policy = None  # needed for
+
+    def _full(self, val, *args):
+        args = [np.asarray(arg) for arg in args]
+        dtype = np.result_type(self._dtype, *(arg.dtype for arg in args))
+        shape = np.broadcast_shapes(self._shape, *(arg.shape for arg in args))
+        return np.full(shape, val, dtype=dtype)
+
+    def _sum(self, fun, *args):
+        out = self._full(0, *args)
+        for var, weight in zip(self._vars, self._weights):
+            out += getattr(var, fun)(*args) * weight
+        return out
+
+    def _logsum(self, fun, *args):
+        out = self._full(-np.inf, *args)
+        for var, log_weight in zip(self._vars, np.log(self._weights)):
+            np.logaddexp(out, getattr(var, fun)(*args) + log_weight, out=out)
+        return out
+
+    def support(self):
+        a = self._full(np.inf)
+        b = self._full(-np.inf)
+        for var in self._vars:
+            a = np.minimum(a, var.support()[0])
+            b = np.maximum(b, var.support()[1])
+        return a, b
+
+    def entropy(self):
+        return _tanhsinh(lambda x: -self.pdf(x) * self.logpdf(x),
+                         *self.support()).integral
+
+    def mode(self):
+        # xl, xm, xr
+        a, b = self.support()
+        f = lambda x: -self.pdf(x)  # noqa: E731 is silly
+        res = _bracket_minimum(f, 1., xmin=a, xmax=b)
+        res = _chandrupatla_minimize(f, res.xl, res.xm, res.xr)
+        return res.x
+
+    def median(self):
+        return self.icdf(0.5)
+
+    def mean(self):
+        return self._sum('mean')
+
+    def variance(self):
+        return self._moment_central(2)
+
+    def standard_deviation(self):
+        return self.variance()**0.5
+
+    def skewness(self):
+        return self._moment_standardized(3)
+
+    def kurtosis(self):
+        return self._moment_standardized(4)
+
+    def moment(self, order=1, kind='raw'):
+        kinds = {'raw': self._moment_raw,
+                 'central': self._moment_central,
+                 'standardized': self._moment_standardized}
+        order = ContinuousDistribution._validate_order_kind(self, order, kind, kinds)
+        moment_kind = kinds[kind]
+        return moment_kind(order)
+
+    def _moment_raw(self, order):
+        out = self._full(0)
+        for var, weight in zip(self._vars, self._weights):
+            out += var.moment(order, kind='raw') * weight
+        return out
+
+    def _moment_central(self, order):
+        order = int(order)
+        out = self._full(0)
+        for var, weight in zip(self._vars, self._weights):
+            moment_as = [var.moment(order, kind='central')
+                         for order in range(order + 1)]
+            a, b = var.mean(), self.mean()
+            moment = var._moment_transform_center(order, moment_as, a, b)
+            out += moment * weight
+        return out
+
+    def _moment_standardized(self, order):
+        return self._moment_central(order) / self.standard_deviation()**order
+
+    def pdf(self, x):
+        return self._sum('pdf', x)
+
+    def logpdf(self, x):
+        return self._logsum('logpdf', x)
+
+    def cdf(self, x, y=None):
+        args = (x,) if y is None else (x, y)
+        return self._sum('cdf', *args)
+
+    def logcdf(self, x, y=None):
+        args = (x,) if y is None else (x, y)
+        return self._logsum('logcdf', *args)
+
+    def ccdf(self, x, y=None):
+        args = (x,) if y is None else (x, y)
+        return self._sum('ccdf', *args)
+
+    def logccdf(self, x, y=None):
+        args = (x,) if y is None else (x, y)
+        return self._logsum('logccdf', *args)
+
+    def _invert(self, fun, p):
+        xmin, xmax = self.support()
+        fun = getattr(self, fun)
+        f = lambda x, p: fun(x) - p  # noqa: E731 is silly
+        res = _bracket_root(f, xl0=self.mean(), xmin=xmin, xmax=xmax, args=(p,))
+        return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
+
+    def icdf(self, p):
+        return self._invert('cdf', p)
+
+    def iccdf(self, p):
+        return self._invert('ccdf', p)
+
+    def ilogcdf(self, p):
+        return self._invert('logcdf', p)
+
+    def ilogccdf(self, p):
+        return self._invert('logccdf', p)
+
+    def sample(self, shape=(), *, rng=None):
+        rng = np.random.default_rng(rng)
+        size = np.prod(np.atleast_1d(shape))
+        ns = rng.multinomial(size, self._weights)
+        x = [var.sample(shape=n) for n, var in zip(ns, self._vars)]
+        x = np.reshape(rng.permuted(np.concatenate(x)), shape)
+        return x[()]
