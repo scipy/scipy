@@ -24,6 +24,11 @@ rule.
 
 Coding Style and Guidelines
 ---------------------------
+Note that docstrings should be generally made up of ASCII characters
+in spite of being Unicode. Additionally, lower case greek letters
+"αβγδεζηθικλμνξoπρστυϕχψω" as well the following upper case greek letters
+"ΓΔΘΛΞΠΣϒΦΨΩ" are allowed. Also the following symbols may be used:
+"®ő∫≠≥≤±∞²³".
 
 Required keyword names
 ~~~~~~~~~~~~~~~~~~~~~~
