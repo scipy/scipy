@@ -98,11 +98,13 @@ hilbert2_signature = hilbert_signature
 def lfilter_signature(b, a, x, axis=-1, zi=None):
     return array_namespace(b, a, x, zi)
 
-sosfilt_signature = lfilter_signature
-
 
 def lfilter_zi_signature(b, a):
     return array_namespace(b, a)
+
+
+def sosfilt_signature(sos, x, axis=-1, zi=None):
+    return array_namespace(sos, x, zi)
 
 
 def sosfilt_zi_signature(sos):

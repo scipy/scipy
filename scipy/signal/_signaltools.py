@@ -3992,7 +3992,7 @@ def sosfilt_zi(sos):
     for section in range(n_sections):
         b = sos[section, :3]
         a = sos[section, 3:]
-        zi[section] = scale * lfilter_zi(b, a)
+        zi[section, ...] = scale * lfilter_zi(b, a)
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
@@ -4493,7 +4493,17 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    xp = array_namespace(sos, x, zi)
+    try:
+        xp = array_namespace(sos, x, zi)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(sos, 'sosfilt')
+        _reject_objects(x, 'sosfilt')
+        if zi is not None:
+            _reject_objects(zi, 'sosfilt')
 
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)

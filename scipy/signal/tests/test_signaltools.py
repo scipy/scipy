@@ -3681,14 +3681,6 @@ class TestVectorstrength:
         assert_raises(ValueError, vectorstrength, events, period)
 
 
-def assert_allclose_cast(actual, desired, rtol=1e-7, atol=0):
-    """Wrap assert_allclose while casting object arrays."""
-    if actual.dtype.kind == 'O':
-        dtype = np.array(actual.flat[0]).dtype
-        actual, desired = actual.astype(dtype), desired.astype(dtype)
-    assert_allclose(actual, desired, rtol, atol)
-
-
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 @pytest.mark.parametrize('func', (sosfilt, lfilter))
@@ -3716,69 +3708,87 @@ def test_nonnumeric_dtypes(func, xp):
 
 
 #@skip_xp_backends(np_only=True)
-@pytest.mark.parametrize('dt', 'fdFD')
+@pytest.mark.parametrize('dt', ['float32', 'float64', 'complex64', 'complex128'])
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
     def test_rank1(self, dt, xp):
-        x = np.linspace(0, 5, 6).astype(dt)
-        b = np.array([1, -1]).astype(dt)
-        a = np.array([0.5, -0.5]).astype(dt)
+        dt = getattr(xp, dt)
+        x = xp.linspace(0, 5, 6, dtype=dt)
+        b = xp.asarray([1, -1], dtype=dt)
+        a = xp.asarray([0.5, -0.5], dtype=dt)
 
         # Test simple IIR
-        y_r = np.array([0, 2, 4, 6, 8, 10.]).astype(dt)
+        y_r = xp.asarray([0, 2, 4, 6, 8, 10.], dtype=dt)
         sos = tf2sos(b, a)
-        assert_array_almost_equal(sosfilt(tf2sos(b, a), x), y_r)
+        sos = xp.asarray(sos)   # XXX until tf2sos is numpy only
+        assert_array_almost_equal(sosfilt(sos, x), y_r)
 
         # Test simple FIR
-        b = np.array([1, 1]).astype(dt)
+        b = xp.asarray([1, 1],  dtype=dt)
         # NOTE: This was changed (rel. to TestLinear...) to add a pole @zero:
-        a = np.array([1, 0]).astype(dt)
-        y_r = np.array([0, 1, 3, 5, 7, 9.]).astype(dt)
-        assert_array_almost_equal(sosfilt(tf2sos(b, a), x), y_r)
+        a = xp.asarray([1, 0], dtype=dt)
+        y_r = xp.asarray([0, 1, 3, 5, 7, 9.], dtype=dt)
+        sos = tf2sos(b, a)
+        sos = xp.asarray(sos)   # XXX until tf2sos is numpy only
+        assert_array_almost_equal(sosfilt(sos, x), y_r)
 
-        b = [1, 1, 0]
-        a = [1, 0, 0]
-        x = np.ones(8)
-        sos = np.concatenate((b, a))
-        sos.shape = (1, 6)
+        b = xp.asarray([1.0, 1, 0])
+        a = xp.asarray([1.0, 0, 0])
+        x = xp.ones(8)
+
+        concat = array_namespace(b, a).concat
+        sos = concat((b, a))
+        sos = xp.reshape(sos, (1, 6))
+#        sos.shape = (1, 6)
         y = sosfilt(sos, x)
-        xp_assert_close(y, [1.0, 2, 2, 2, 2, 2, 2, 2])
+        xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
 
     def test_rank2(self, dt, xp):
+        dt = getattr(xp, dt)
         shape = (4, 3)
-        x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
-        x = x.astype(dt)
+        prodshape = math.prod(shape)
+        x = xp.linspace(0, prodshape - 1, prodshape, dtype=dt)
+        x = xp.reshape(x, shape)
 
-        b = np.array([1, -1]).astype(dt)
-        a = np.array([0.5, 0.5]).astype(dt)
+        b = xp.asarray([1, -1], dtype=dt)
+        a = xp.asarray([0.5, 0.5], dtype=dt)
 
-        y_r2_a0 = np.array([[0, 2, 4], [6, 4, 2], [0, 2, 4], [6, 4, 2]],
+        y_r2_a0 = xp.asarray([[0, 2, 4], [6, 4, 2], [0, 2, 4], [6, 4, 2]],
                            dtype=dt)
 
-        y_r2_a1 = np.array([[0, 2, 0], [6, -4, 6], [12, -10, 12],
+        y_r2_a1 = xp.asarray([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=dt)
 
-        y = sosfilt(tf2sos(b, a), x, axis=0)
+        sos = tf2sos(b, a)
+        sos = xp.asarray(sos)   # XXX
+        y = sosfilt(sos, x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        y = sosfilt(tf2sos(b, a), x, axis=1)
+        sos = tf2sos(b, a)
+        sos = xp.asarray(sos)   # XXX
+        y = sosfilt(sos, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
     def test_rank3(self, dt, xp):
+        dt = getattr(xp, dt)
         shape = (4, 3, 2)
-        x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
+        prodshape = math.prod(shape)
+        x = xp.linspace(0, prodshape - 1, prodshape)
+        x = xp.reshape(x, shape)
 
-        b = np.array([1, -1]).astype(dt)
-        a = np.array([0.5, 0.5]).astype(dt)
+        b = xp.asarray([1, -1], dtype=dt)
+        a = xp.asarray([0.5, 0.5], dtype=dt)
 
         # Test last axis
-        y = sosfilt(tf2sos(b, a), x)
+        sos = tf2sos(b, a)
+        sos = xp.asarray(sos)   # XXX
+        y = sosfilt(sos, x)
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
-                assert_array_almost_equal(y[i, j], lfilter(b, a, x[i, j]))
+                assert_array_almost_equal(y[i, j, ...], lfilter(b, a, x[i, j, ...]))
 
-    def test_initial_conditions(self, dt, xp):
+    def _get_ab_sos(self, xp):
         b1, a1 = signal.butter(2, 0.25, 'low')
         b2, a2 = signal.butter(2, 0.75, 'low')
         b3, a3 = signal.butter(2, 0.75, 'low')
@@ -3786,35 +3796,56 @@ class TestSOSFilt:
         a = np.convolve(np.convolve(a1, a2), a3)
         sos = np.array((np.r_[b1, a1], np.r_[b2, a2], np.r_[b3, a3]))
 
+        a, b, sos = map(xp.asarray, (a, b, sos))
+        return a, b, sos
+
+    def test_initial_conditions(self, dt, xp):
+        a, b, sos = self._get_ab_sos(xp)
+
         x = np.random.rand(50).astype(dt)
+        x = xp.asarray(x)
+
+        dt = getattr(xp, dt)
+        concat = array_namespace(x).concat
 
         # Stopping filtering and continuing
-        y_true, zi = lfilter(b, a, x[:20], zi=np.zeros(6))
-        y_true = np.r_[y_true, lfilter(b, a, x[20:], zi=zi)[0]]
-        assert_allclose_cast(y_true, lfilter(b, a, x))
+        y_true, zi = lfilter(b, a, x[:20], zi=xp.zeros(6))
+        y_true = concat((y_true, lfilter(b, a, x[20:], zi=zi)[0]))
+        xp_assert_close(y_true, lfilter(b, a, x))
 
-        y_sos, zi = sosfilt(sos, x[:20], zi=np.zeros((3, 2)))
-        y_sos = np.r_[y_sos, sosfilt(sos, x[20:], zi=zi)[0]]
-        assert_allclose_cast(y_true, y_sos)
+        y_sos, zi = sosfilt(sos, x[:20], zi=xp.zeros((3, 2)))
+        y_sos = concat((y_sos, sosfilt(sos, x[20:], zi=zi)[0]))
+        xp_assert_close(y_true, y_sos)
 
         # Use a step function
         zi = sosfilt_zi(sos)
-        x = np.ones(8, dt)
+        x = xp.ones(8, dtype=dt)
         y, zf = sosfilt(sos, x, zi=zi)
 
-        assert_allclose_cast(y, np.ones(8))
-        assert_allclose_cast(zf, zi)
+        xp_assert_close(y, xp.ones(8), check_dtype=False)
+        xp_assert_close(zf, zi, check_dtype=False)
 
+    @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
+    def test_initial_conditions_2(self, dt, xp):
+        x = xp.ones(8, dtype=dt)
+
+        _, _, sos = self._get_ab_sos(xp)
+        zi = sosfilt_zi(sos)
+        
         # Initial condition shape matching
-        x.shape = (1, 1) + x.shape  # 3D
-        assert_raises(ValueError, sosfilt, sos, x, zi=zi)
-        zi_nd = zi.copy()
-        zi_nd.shape = (zi.shape[0], 1, 1, zi.shape[-1])
-        assert_raises(ValueError, sosfilt, sos, x,
-                      zi=zi_nd[:, :, :, [0, 1, 1]])
+        x = xp.reshape(x, (1, 1) + x.shape)  # 3D
+        with pytest.raises(ValueError):
+            sosfilt(sos, x, zi=zi)
+
+        zi_nd = xp_copy(zi, xp=xp)
+        zi_nd = xp.reshape(zi_nd, (zi.shape[0], 1, 1, zi.shape[-1]))
+
+        with pytest.raises(ValueError):
+            sosfilt(sos, x, zi=zi_nd[:, :, :, [0, 1, 1]])
+
         y, zf = sosfilt(sos, x, zi=zi_nd)
-        assert_allclose_cast(y[0, 0], np.ones(8))
-        assert_allclose_cast(zf[:, 0, 0, :], zi)
+        xp_assert_close(y[0, 0], xp.ones(8), check_dtype=False)
+        xp_assert_close(zf[:, 0, 0, :], zi, check_dtype=False)
 
     def test_initial_conditions_3d_axis1(self, dt, xp):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
@@ -3822,10 +3853,13 @@ class TestSOSFilt:
         # Input array is x.
         x = np.random.RandomState(159).randint(0, 5, size=(2, 15, 3))
         x = x.astype(dt)
+        x = xp.asarray(x)
 
         # Design a filter in ZPK format and convert to SOS
         zpk = signal.butter(6, 0.35, output='zpk')
         sos = zpk2sos(*zpk)
+        sos = xp.asarray(sos)   # XXX while zpk2sos is numpy-only
+
         nsections = sos.shape[0]
 
         # Filter along this axis.
@@ -3834,8 +3868,8 @@ class TestSOSFilt:
         # Initial conditions, all zeros.
         shp = list(x.shape)
         shp[axis] = 2
-        shp = [nsections] + shp
-        z0 = np.zeros(shp)
+        shp = tuple([nsections] + shp)
+        z0 = xp.zeros(shp)
 
         # Apply the filter to x.
         yf, zf = sosfilt(sos, x, axis=axis, zi=z0)
@@ -3845,29 +3879,33 @@ class TestSOSFilt:
         y2, z2 = sosfilt(sos, x[:, 5:, :], axis=axis, zi=z1)
 
         # y should equal yf, and z2 should equal zf.
-        y = np.concatenate((y1, y2), axis=axis)
-        assert_allclose_cast(y, yf, rtol=1e-10, atol=1e-13)
-        assert_allclose_cast(z2, zf, rtol=1e-10, atol=1e-13)
+        concat = array_namespace(x).concat
+        y = concat((y1, y2), axis=axis)
+        xp_assert_close(y, yf, rtol=1e-10, atol=1e-13)
+        xp_assert_close(z2, zf, rtol=1e-10, atol=1e-13)
 
         # let's try the "step" initial condition
         zi = sosfilt_zi(sos)
-        zi.shape = [nsections, 1, 2, 1]
+        zi = xp.reshape(zi, (nsections, 1, 2, 1))
         zi = zi * x[:, 0:1, :]
         y = sosfilt(sos, x, axis=axis, zi=zi)[0]
         # check it against the TF form
         b, a = zpk2tf(*zpk)
+        b, a = xp.asarray(b), xp.asarray(a)    # XXX while zpk2tf is numpy-only
+
         zi = lfilter_zi(b, a)
-        zi.shape = [1, zi.size, 1]
+        zi = xp.reshape(zi, (1, zi.size, 1))
         zi = zi * x[:, 0:1, :]
         y_tf = lfilter(b, a, x, axis=axis, zi=zi)[0]
-        assert_allclose_cast(y, y_tf, rtol=1e-10, atol=1e-13)
+        xp_assert_close(y, y_tf, rtol=1e-10, atol=1e-13)
 
     def test_bad_zi_shape(self, dt, xp):
+        dt = getattr(xp, dt)
         # The shape of zi is checked before using any values in the
         # arguments, so np.empty is fine for creating the arguments.
-        x = np.empty((3, 15, 3), dt)
-        sos = np.zeros((4, 6))
-        zi = np.empty((4, 3, 3, 2))  # Correct shape is (4, 3, 2, 3)
+        x = xp.empty((3, 15, 3), dtype=dt)
+        sos = xp.zeros((4, 6))
+        zi = xp.empty((4, 3, 3, 2))  # Correct shape is (4, 3, 2, 3)
         with pytest.raises(ValueError, match='should be all ones'):
             sosfilt(sos, x, zi=zi, axis=1)
         sos[:, 3] = 1.
@@ -3875,19 +3913,28 @@ class TestSOSFilt:
             sosfilt(sos, x, zi=zi, axis=1)
 
     def test_sosfilt_zi(self, dt, xp):
+        dt = getattr(xp, dt)
         sos = signal.butter(6, 0.2, output='sos')
+        sos = xp.asarray(sos)   # XXX while butter is np-only
         zi = sosfilt_zi(sos)
 
-        y, zf = sosfilt(sos, np.ones(40, dt), zi=zi)
-        assert_allclose_cast(zf, zi, rtol=1e-13)
+        y, zf = sosfilt(sos, xp.ones(40, dtype=dt), zi=zi)
+        xp_assert_close(zf, zi, rtol=1e-13, check_dtype=False)
 
         # Expected steady state value of the step response of this filter:
-        ss = np.prod(sos[:, :3].sum(axis=-1) / sos[:, 3:].sum(axis=-1))
-        assert_allclose_cast(y, ss, rtol=1e-13)
+        ss = xp.prod(xp.sum(sos[:, :3], axis=-1) / xp.sum(sos[:, 3:], axis=-1))
+        xp_assert_close(y, ss * xp.ones_like(y), rtol=1e-13)
 
+    @skip_xp_backends(np_only=True)
+    def test_sosfilt_zi_2(self, dt, xp):
         # zi as array-like
-        _, zf = sosfilt(sos, np.ones(40, dt), zi=zi.tolist())
-        assert_allclose_cast(zf, zi, rtol=1e-13)
+        dt = getattr(xp, dt)
+        sos = signal.butter(6, 0.2, output='sos')
+        sos = xp.asarray(sos)   # XXX while butter is np-only
+        zi = sosfilt_zi(sos)
+
+        _, zf = sosfilt(sos, xp.ones(40, dtype=dt), zi=zi.tolist())
+        xp_assert_close(zf, zi, rtol=1e-13, check_dtype=False)
 
 
 class TestDeconvolve:
