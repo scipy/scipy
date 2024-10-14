@@ -34,7 +34,7 @@ from scipy._lib._util import ComplexWarning
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, array_namespace,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy,
+    xp_copy, xp_size,
 )
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -1618,7 +1618,8 @@ class _TestLinearFilter:
     def generate(self, shape, xp):
         prodshape = shape if isinstance(shape, int) else math.prod(shape)
         x = xp.linspace(0, prodshape - 1, prodshape)
-        x = xp.reshape(x, shape)
+        if not isinstance(shape, int):
+            x = xp.reshape(x, shape)
         return self.convert_dtype(x, xp)
 
     def convert_dtype(self, arr, xp):
@@ -1824,7 +1825,7 @@ class _TestLinearFilter:
 
         zf_expected = self.convert_dtype(xp.zeros((3, 2, 4), dtype=xp.int64), xp)
         y_expected = xp.zeros((3, 2, 5), dtype=xp.int64)
-        y_expected[:, :, :4] = [[[1]], [[2]], [[3]]]
+        y_expected[:, :, :4] = xp.asarray([[[1]], [[2]], [[3]]])
         y_expected = self.convert_dtype(y_expected, xp)
 
         # IIR
@@ -1960,16 +1961,16 @@ class _TestLinearFilter:
         assert zf.dtype == (getattr(xp, self.dtype)
                             if isinstance(self.dtype, str)
                             else self.dtype)
-        assert zf.size == 0
+        assert xp_size(zf) == 0
 
     def test_lfiltic_bad_zi(self, xp):
         # Regression test for #3699: bad initial conditions
         a = self.convert_dtype([1], xp)
         b = self.convert_dtype([1], xp)
         # "y" sets the datatype of zi, so it truncates if int
-        zi = lfiltic(b, a, [1., 0])
-        zi_1 = lfiltic(b, a, [1, 0])
-        zi_2 = lfiltic(b, a, [True, False])
+        zi = lfiltic(b, a, xp.asarray([1., 0]))
+        zi_1 = lfiltic(b, a, xp.asarray([1, 0]))
+        zi_2 = lfiltic(b, a, xp.asarray([True, False]))
         self.assert_equal(zi, zi_1)
 
         check_dtype_arg = {} if self.dtype == object else {'check_dtype': False}
@@ -3826,11 +3827,12 @@ class TestSOSFilt:
 
     @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
     def test_initial_conditions_2(self, dt, xp):
+        dt = getattr(xp, dt)
         x = xp.ones(8, dtype=dt)
 
         _, _, sos = self._get_ab_sos(xp)
         zi = sosfilt_zi(sos)
-        
+
         # Initial condition shape matching
         x = xp.reshape(x, (1, 1) + x.shape)  # 3D
         with pytest.raises(ValueError):
@@ -3893,7 +3895,7 @@ class TestSOSFilt:
         b, a = xp.asarray(b), xp.asarray(a)    # XXX while zpk2tf is numpy-only
 
         zi = lfilter_zi(b, a)
-        zi = xp.reshape(zi, (1, zi.size, 1))
+        zi = xp.reshape(zi, (1, xp_size(zi), 1))
         zi = zi * x[:, 0:1, :]
         y_tf = lfilter(b, a, x, axis=axis, zi=zi)[0]
         xp_assert_close(y, y_tf, rtol=1e-10, atol=1e-13)
@@ -3949,7 +3951,7 @@ class TestDeconvolve:
 
     def test_basic(self, xp):
         # From docstring example
-        original = xp.asarray([0.0, 1, 0, 0, 1, 1, 0, 0])
+        original = xp.asarray([0.0, 1, 0, 0, 1, 1, 0, 0], dtype=xp.float64)
         impulse_response = xp.asarray([2, 1])
         recorded = xp.asarray([0.0, 2, 1, 0, 2, 3, 1, 0, 0])
         recovered, remainder = signal.deconvolve(recorded, impulse_response)

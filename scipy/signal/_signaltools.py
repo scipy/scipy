@@ -2202,6 +2202,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
+    x = np.asarray(x)
+    if zi is not None:
+       zi = np.asarray(zi)
 
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
@@ -2314,40 +2317,59 @@ def lfiltic(b, a, y, x=None):
     lfilter, lfilter_zi
 
     """
-    N = np.size(a) - 1
-    M = np.size(b) - 1
+    try:
+        xp = array_namespace(a, b, y, x)
+    except TypeError:
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(a, 'lfiltic')
+        _reject_objects(b, 'lfiltic')
+        _reject_objects(y, 'lfiltic')
+        if x is not None:
+            _reject_objects(x, 'lfiltic')
+
+    a = xp.asarray(a)
+    b = xp.asarray(b)
+
+    N = xp_size(a) - 1
+    M = xp_size(b) - 1
     K = max(M, N)
-    y = np.asarray(y)
+    y = xp.asarray(y)
 
     if x is None:
-        result_type = np.result_type(np.asarray(b), np.asarray(a), y)
-        if result_type.kind in 'bui':
-            result_type = np.float64
-        x = np.zeros(M, dtype=result_type)
+        result_type = xp.result_type(b, a, y)
+        if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
+            result_type = xp.float64
+        x = xp.zeros(M, dtype=result_type)
     else:
-        x = np.asarray(x)
+        x = xp.asarray(x)
 
-        result_type = np.result_type(np.asarray(b), np.asarray(a), y, x)
-        if result_type.kind in 'bui':
-            result_type = np.float64
-        x = x.astype(result_type)
+        result_type = xp.result_type(b, a, y, x)
+        if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
+            result_type = xp.float64
+        x = xp.astype(x, result_type)
 
-        L = np.size(x)
+        concat = array_namespace(a).concat
+
+        L = xp_size(x)
         if L < M:
-            x = np.r_[x, np.zeros(M - L)]
+            x = concat((x, xp.zeros(M - L)))
 
-    y = y.astype(result_type)
-    zi = np.zeros(K, result_type)
+    y = xp.astype(y, result_type)
+    zi = xp.zeros(K, dtype=result_type)
 
-    L = np.size(y)
+    concat = array_namespace(xp.ones(3)).concat
+
+    L = xp_size(y)
     if L < N:
-        y = np.r_[y, np.zeros(N - L)]
+        y = concat((y, np.zeros(N - L)))
 
     for m in range(M):
-        zi[m] = np.sum(b[m + 1:] * x[:M - m], axis=0)
+        zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
 
     for m in range(N):
-        zi[m] -= np.sum(a[m + 1:] * y[:N - m], axis=0)
+        zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
 
     return zi
 
@@ -3885,7 +3907,7 @@ def lfilter_zi(b, a):
 
     while a.shape[0] > 1 and a[0] == 0.0:
         a = a[1:]
-    if a.size < 1:
+    if xp_size(a) < 1:
         raise ValueError("There must be at least one nonzero `a` coefficient.")
 
     if a[0] != 1.0:
@@ -4517,7 +4539,8 @@ def sosfilt(sos, x, axis=-1, zi=None):
     if dtype.char not in 'fdgFDGO':
         raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
-        zi = np.array(zi, dtype)  # make a copy so that we can operate in place
+        zi = np.asarray(zi, dtype=dtype)
+        zi = np.asarray(zi, copy=True)  # make a copy so that we can operate in place
         if zi.shape != x_zi_shape:
             raise ValueError('Invalid zi shape. With axis=%r, an input with '
                              'shape %r, and an sos array with %d sections, zi '
