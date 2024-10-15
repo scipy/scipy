@@ -2579,10 +2579,10 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     filter is used. The low-pass residuum of the input bandpass filter is utilized to
     determine an asymmetric upper and lower bound to enclose the signal. Due to the
     smoothness of the resulting envelope, it is down-sampled from 500 to 40 samples.
-    Note that the instantaneous amplitude `a_x` and the computed envelope `x_env` are
-    not perfectly identical. This is due to the signal not being perfectly periodic as
-    well as the existence of some spectral overlapping of `x_carrier` and `x_drift`.
-    Hence, they cannot be completely separated by a bandpass filter.
+    Note that the instantaneous amplitude ``a_x`` and the computed envelope ``x_env``
+    are not perfectly identical. This is due to the signal not being perfectly periodic
+    as well as the existence of some spectral overlapping of ``x_carrier`` and
+    ``x_drift``. Hence, they cannot be completely separated by a bandpass filter.
 
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
