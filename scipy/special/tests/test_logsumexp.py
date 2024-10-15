@@ -229,6 +229,19 @@ class TestLogSumExp:
         xp_assert_close(out, xp.real(xp.log(ref)))
         xp_assert_close(sgn, ref/xp.abs(ref))
 
+    def test_gh21709_small_imaginary(self, xp):
+        # Test that `logsumexp` does not lose relative precision of
+        # small imaginary components
+        x = xp.asarray([0, 0.+2.2204460492503132e-17j])
+        res = logsumexp(x)
+        # from mpmath import mp
+        # mp.dps = 100
+        # x, y = mp.mpc(0), mp.mpc('0', '2.2204460492503132e-17')
+        # ref = complex(mp.log(mp.exp(x) + mp.exp(y)))
+        ref = xp.asarray(0.6931471805599453+1.1102230246251566e-17j)
+        xp_assert_close(xp.real(res), xp.real(ref))
+        xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
+
 
 class TestSoftmax:
     def test_softmax_fixtures(self):
