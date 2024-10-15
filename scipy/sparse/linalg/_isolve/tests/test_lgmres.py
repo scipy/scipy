@@ -111,7 +111,7 @@ class TestLGMRES:
             x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=10, maxiter=1)
 
         assert_equal(flag0, 1)
-        assert_equal(flag1, 1, f'{i=} {np.allclose(x0, x1)=}')
+        assert_equal(flag1, 1)
         norm = np.linalg.norm(A.dot(x0) - b)
         assert_(norm > 1e-4)
         assert_allclose(x0, x1)
