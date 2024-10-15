@@ -72,8 +72,8 @@ class TestGCROTMK:
         # The inner arnoldi should be equivalent to gmres
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x0, flag0 = gcrotmk(A, b, x0=zeros(A.shape[0]), m=15, k=0, maxiter=1)
-            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
+            x0, flag0 = gcrotmk(A, b, x0=zeros(A.shape[0]), m=10, k=0, maxiter=1)
+            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=10, maxiter=1)
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)

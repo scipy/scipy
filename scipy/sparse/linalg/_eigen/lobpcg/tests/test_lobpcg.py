@@ -629,7 +629,7 @@ def test_diagonal_data_types(n, m):
     list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
     for s_f_i, s_f in enumerate(list_sparse_format):
 
-        As64 = dia_array(([vals * vals], [0]), shape=(n, n), format=s_f)
+        As64 = dia_array(([vals * vals], [0]), shape=(n, n)).asformat(s_f)
         As32 = As64.astype(np.float32)
         Af64 = As64.toarray()
         Af32 = Af64.astype(np.float32)
@@ -643,7 +643,7 @@ def test_diagonal_data_types(n, m):
 
         listA = [Af64, As64, Af32, As32, As32f, As32LO, lambda v: As32 @ v]
 
-        Bs64 = dia_array(([vals], [0]), shape=(n, n), format=s_f)
+        Bs64 = dia_array(([vals], [0]), shape=(n, n)).asformat(s_f)
         Bf64 = Bs64.toarray()
         Bs32 = Bs64.astype(np.float32)
 
@@ -656,7 +656,7 @@ def test_diagonal_data_types(n, m):
         listB = [Bf64, Bs64, Bs32, Bs32f, Bs32LO, lambda v: Bs32 @ v]
 
         # Define the preconditioner function as LinearOperator.
-        Ms64 = dia_array(([1./vals], [0]), shape=(n, n), format=s_f)
+        Ms64 = dia_array(([1./vals], [0]), shape=(n, n)).asformat(s_f)
 
         def Ms64precond(x):
             return Ms64 @ x

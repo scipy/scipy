@@ -55,10 +55,10 @@ def inv(A):
     >>> A = csc_array([[1., 0.], [1., 2.]])
     >>> Ainv = inv(A)
     >>> Ainv
-    <Compressed Sparse Column sparse arrays of dtype 'float64'
+    <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (2, 2)>
     >>> A.dot(Ainv)
-    <Compressed Sparse Column sparse arrays of dtype 'float64'
+    <Compressed Sparse Column sparse array of dtype 'float64'
         with 2 stored elements and shape (2, 2)>
     >>> A.dot(Ainv).toarray()
     array([[ 1.,  0.],
