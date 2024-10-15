@@ -39,6 +39,7 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
+from scipy.special import softplus
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
 from scipy._lib._util import np_long, np_ulong
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
@@ -3752,6 +3753,47 @@ class TestRiccati:
             C[0,n] = x*y
             C[1,n] = x*yp + y
         assert_array_almost_equal(C, special.riccati_yn(n, x), 8)
+
+
+class TestSoftplus:
+    def test_softplus(self):
+        # Test cases for the softplus function. Selected based on Eq.(10) of:
+        # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision
+        # Floating-Point Reliable. Retrieved from:
+        # https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
+        # Reference values computed with `mpmath`
+        import numpy as np
+        rng = np.random.default_rng(3298432985245)
+        n = 3
+        a1 = rng.uniform(-100, -37, size=n)
+        a2 = rng.uniform(-37, 18, size=n)
+        a3 = rng.uniform(18, 33.3, size=n)
+        a4 = rng.uniform(33.33, 100, size=n)
+        a = np.stack([a1, a2, a3, a4])
+
+        # from mpmath import mp
+        # mp.dps = 100
+        # @np.vectorize
+        # def softplus(x):
+        #     return float(mp.log(mp.one + mp.exp(x)))
+        # softplus(a).tolist()
+        ref = [[1.692721323272333e-42, 7.42673911145206e-41, 8.504608846033205e-35],
+               [1.8425343736349797, 9.488245799395577e-15, 7.225195764021444e-08],
+               [31.253760266045106, 27.758244090327832, 29.995959179643634],
+               [73.26040086468937, 76.24944728617226, 37.83955519155184]]
+
+        res = softplus(a)
+        assert_allclose(res, ref, rtol=2e-15)
+
+    def test_softplus_with_kwargs(self):
+        x = np.arange(5) - 2
+        out = np.ones(5)
+        ref = out.copy()
+        where = x > 0
+
+        softplus(x, out=out, where=where)
+        ref[where] = softplus(x[where])
+        assert_allclose(out, ref)
 
 
 class TestRound:
