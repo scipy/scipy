@@ -4360,6 +4360,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     2.875334415008979e-10
 
     """
+    xp = array_namespace(b, a, x)
+
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
     x = np.asarray(x)
@@ -4369,7 +4371,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     if method == "gust":
         y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
-        return y
+        return xp.asarray(y)
 
     # method == "pad"
     edge, ext = _validate_pad(padtype, padlen, x, axis,
@@ -4401,7 +4403,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
 
-    return y
+    return xp.asarray(y)
 
 
 def _validate_pad(padtype, padlen, x, axis, ntaps):

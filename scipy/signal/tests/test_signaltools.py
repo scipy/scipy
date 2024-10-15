@@ -2592,29 +2592,32 @@ class TestLFilterZI:
         assert signal.lfilter_zi(b, a).dtype == dtype
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestFiltFilt:
     filtfilt_kind = 'tf'
 
     def filtfilt(self, zpk, x, axis=-1, padtype='odd', padlen=None,
-                 method='pad', irlen=None):
+                 method='pad', irlen=None, xp=None):
         if self.filtfilt_kind == 'tf':
             b, a = zpk2tf(*zpk)
+            b, a = xp.asarray(b), xp.asarray(a)
             return filtfilt(b, a, x, axis, padtype, padlen, method, irlen)
         elif self.filtfilt_kind == 'sos':
             sos = zpk2sos(*zpk)
+            sos = xp.asarray(sos)
             return sosfiltfilt(sos, x, axis, padtype, padlen)
 
     def test_basic(self, xp):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
-        out = self.filtfilt(zpk, np.arange(12))
-        xp_assert_close(out, np.arange(12, dtype=float), atol=5.28e-11)
+        out = self.filtfilt(zpk, xp.arange(12), xp=xp)
+        xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=5.28e-11)
 
     def test_sine(self, xp):
         rate = 2000
-        t = np.linspace(0, 1.0, rate + 1)
+        t = xp.linspace(0, 1.0, rate + 1)
         # A signal with low frequency and a high frequency.
-        xlow = np.sin(5 * 2 * np.pi * t)
-        xhigh = np.sin(250 * 2 * np.pi * t)
+        xlow = xp.sin(5 * 2 * np.pi * t)
+        xhigh = xp.sin(250 * 2 * np.pi * t)
         x = xlow + xhigh
 
         zpk = butter(8, 0.125, output='zpk')
@@ -2626,61 +2629,75 @@ class TestFiltFilt:
         n = int(np.ceil(np.log(eps) / np.log(r)))
 
         # High order lowpass filter...
-        y = self.filtfilt(zpk, x, padlen=n)
+        y = self.filtfilt(zpk, x, padlen=n, xp=xp)
         # Result should be just xlow.
         err = np.abs(y - xlow).max()
         assert err < 1e-4
 
         # A 2D case.
-        x2d = np.vstack([xlow, xlow + xhigh])
-        y2d = self.filtfilt(zpk, x2d, padlen=n, axis=1)
+        x2d = xp.asarray(np.vstack([xlow, xlow + xhigh]))
+        y2d = self.filtfilt(zpk, x2d, padlen=n, axis=1, xp=xp)
         assert y2d.shape == x2d.shape
         err = np.abs(y2d - xlow).max()
         assert err < 1e-4
 
         # Use the previous result to check the use of the axis keyword.
         # (Regression test for ticket #1620)
-        y2dt = self.filtfilt(zpk, x2d.T, padlen=n, axis=0)
+        y2dt = self.filtfilt(zpk, x2d.T, padlen=n, axis=0, xp=xp)
         xp_assert_equal(y2d, y2dt.T)
 
     def test_axis(self, xp):
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
+        x = xp.asarray(x)
         zpk = butter(3, 0.125, output='zpk')
-        y0 = self.filtfilt(zpk, x, padlen=0, axis=0)
-        y1 = self.filtfilt(zpk, np.swapaxes(x, 0, 1), padlen=0, axis=1)
-        xp_assert_equal(y0, np.swapaxes(y1, 0, 1))
-        y2 = self.filtfilt(zpk, np.swapaxes(x, 0, 2), padlen=0, axis=2)
-        xp_assert_equal(y0, np.swapaxes(y2, 0, 2))
+        y0 = self.filtfilt(zpk, x, padlen=0, axis=0, xp=xp)
+        y1 = self.filtfilt(
+            zpk, xp.asarray(np.swapaxes(x, 0, 1)), padlen=0, axis=1, xp=xp
+        )
+        xp_assert_equal(y0, xp.asarray(np.swapaxes(y1, 0, 1)))
+        y2 = self.filtfilt(
+            zpk, xp.asarray(np.swapaxes(x, 0, 2)), padlen=0, axis=2, xp=xp
+        )
+        xp_assert_equal(y0, xp.asarray(np.swapaxes(y2, 0, 2)))
 
+    @skip_xp_backends(np_only=True,
+                      reason='python scalars in array_namespace are np-only')
     def test_acoeff(self, xp):
         if self.filtfilt_kind != 'tf':
             return  # only necessary for TF
         # test for 'a' coefficient as single number
-        out = signal.filtfilt([.5, .5], 1, np.arange(10, dtype=float))
-        xp_assert_close(out, np.arange(10, dtype=float), rtol=1e-14, atol=1e-14)
+        out = signal.filtfilt(
+            xp.asarray([.5, .5]), 1, xp.arange(10, dtype=xp.float64)
+        )
+        xp_assert_close(out, xp.arange(10, dtype=xp.float64), rtol=1e-14, atol=1e-14)
 
+    @skip_xp_backends(np_only=True, reason='_filtfilt_gust is np-only')
     def test_gust_simple(self, xp):
         if self.filtfilt_kind != 'tf':
             pytest.skip('gust only implemented for TF systems')
         # The input array has length 2.  The exact solution for this case
         # was computed "by hand".
-        x = np.array([1.0, 2.0])
-        b = np.array([0.5])
-        a = np.array([1.0, -0.5])
+        x = xp.asarray([1.0, 2.0])
+        b = xp.asarray([0.5])
+        a = xp.asarray([1.0, -0.5])
         y, z1, z2 = _filtfilt_gust(b, a, x)
-        xp_assert_close(np.asarray([z1[0], z2[0]]),
-                        np.asarray([0.3*x[0] + 0.2*x[1], 0.2*x[0] + 0.3*x[1]]))
-        xp_assert_close(y, [z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
-                            0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
+        xp_assert_close(z1[0], 0.3*x[0] + 0.2*x[1])
+        xp_assert_close(z2[0], 0.2*x[0] + 0.3*x[1])
+        xp_assert_close(y,
+                        xp.asarray([z1[0] + 0.25*z2[0] + 0.25*x[0] + 0.125*x[1],
+                                    0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
+        )
 
+    @skip_xp_backends(np_only=True,
+                      reason='python scalars in array_namespace are np-only')
     def test_gust_scalars(self, xp):
         if self.filtfilt_kind != 'tf':
             pytest.skip('gust only implemented for TF systems')
         # The filter coefficients are both scalars, so the filter simply
         # multiplies its input by b/a.  When it is used in filtfilt, the
         # factor is (b/a)**2.
-        x = np.arange(12)
+        x = xp.arange(12)
         b = 3.0
         a = 2.0
         y = filtfilt(b, a, x, method="gust")
@@ -2694,10 +2711,13 @@ class TestSOSFiltFilt(TestFiltFilt):
     def test_equivalence(self, xp):
         """Test equivalence between sosfiltfilt and filtfilt"""
         x = np.random.RandomState(0).randn(1000)
+        x = xp.asarray(x)
         for order in range(1, 6):
             zpk = signal.butter(order, 0.35, output='zpk')
             b, a = zpk2tf(*zpk)
             sos = zpk2sos(*zpk)
+
+            b, a, sos = map(xp.asarray, (b, a, sos))
             y = filtfilt(b, a, x)
             y_sos = sosfiltfilt(sos, x)
             xp_assert_close(y, y_sos, atol=1e-12, err_msg=f'order={order}')
