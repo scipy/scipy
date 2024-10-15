@@ -15,7 +15,7 @@ import pytest
 
 from numpy import dot, conj, random
 from scipy.linalg import eig, eigh
-from scipy.sparse import csc_array, csr_array, diags_array, random_array, rand
+from scipy.sparse import csc_array, csr_array, diags_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.arpack import (eigs, eigsh, arpack,
                                               ArpackNoConvergence)

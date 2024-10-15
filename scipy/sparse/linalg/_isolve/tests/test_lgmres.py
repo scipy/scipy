@@ -10,7 +10,7 @@ from platform import python_implementation
 import numpy as np
 from numpy import zeros, array, allclose
 from scipy.linalg import norm
-from scipy.sparse import csr_array, eye_array, random,random_array
+from scipy.sparse import csr_array, eye_array, random_array
 
 from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse.linalg import splu
