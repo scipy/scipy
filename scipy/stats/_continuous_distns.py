@@ -3459,6 +3459,9 @@ class gamma_gen(rv_continuous):
     def _stats(self, a):
         return a, a, 2.0/np.sqrt(a), 6.0/a
 
+    def _munp(self, n, a):
+        return sc.poch(a, n)
+
     def _entropy(self, a):
 
         def regular_formula(a):

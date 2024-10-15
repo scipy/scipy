@@ -7,7 +7,7 @@ from numpy import inf
 
 from scipy._lib._util import _lazywhere
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
-from scipy import special
+from scipy import special, stats
 from scipy.integrate._tanhsinh import _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
@@ -5219,3 +5219,98 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def __neg__(self):
         return self * -1
+
+
+def wrap_rv_continuous(dist, support):
+    """Wrap an instance of `rv_continuous` as a `ContinuousDistribution`
+
+    The returned object will be a `ContinuousDistribution` subclass. Like any subclass
+    of `ContinuousDistribution`, it must be instantiated (i.e. by passing all shape
+    parameters as keyword arguments) before use. Once instantiated, the resulting
+    object will have the same interface as any other instance of
+    `ContinuousDistribution`; e.g., `scipy.stats.Normal`.
+
+    Parameters
+    ----------
+    dist : `rv_continuous`
+        Instance of `rv_continuous`.
+    support : 2-tuple
+        The documented endpoints of the support of the standard distribution.
+        Each value may be a float (e.g. ``(0, np.inf)``) or, for distributions with
+        support dependent on the shape parameters, a string corresponding with the
+        name of the parameter (e.g. ``('a', 'b')``).
+
+    Returns
+    -------
+    CustomDistribution : `ContinuousDistribution`
+        A subclass of `ContinuousDistribution` corresponding with `dist`. The
+        initializer requires all shape parameters to be passed as keyword arguments
+        (using the same names as the instance of `rv_continuous`).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>> LogUniform = stats.wrap_rv_continuous(stats.loguniform, ('a', 'b'))
+    >>> X = LogUniform(a=1.0, b=3.0)
+    >>> np.isclose((X + 0.25).median(), stats.loguniform.ppf(0.5, 1, 3, loc=0.25))
+    np.True_
+    >>> X.plot()
+    >>> plt.show()
+
+    """
+    parameters = []
+    names = []
+    for shape_info in dist._shape_info():
+        domain = _RealDomain(endpoints=shape_info.endpoints,
+                             inclusive=shape_info.inclusive)
+        param = _RealParameter(shape_info.name,  domain=domain)
+        parameters.append(param)
+        names.append(shape_info.name)
+
+    _x_support = _RealDomain(endpoints=support)
+    _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
+
+    class CustomDistribution(ContinuousDistribution):
+        _parameterizations = [_Parameterization(*parameters)]
+        _variable = _x_param
+
+    def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
+        return dist._rvs(size=full_shape, random_state=rng, **kwargs)
+
+    def _moment_standardized_formula(self, order, **kwargs):
+        _stats = dist._stats(**kwargs)
+        return None if order >= len(_stats) else _stats[int(order-1)]
+
+    methods = {'_logpdf': '_logpdf_formula',
+               '_pdf': '_pdf_formula',
+               '_logcdf': '_logcdf_formula',
+               '_cdf': '_cdf_formula',
+               '_logsf': '_logccdf_formula',
+               '_sf': '_ccdf_formula',
+               '_ppf': '_icdf_formula',
+               '_isf': '_iccdf_formula',
+               '_entropy': '_entropy_formula',
+               '_median': '_median_formula',
+               '_munp': '_moment_raw_formula'}
+    for old_method, new_method in methods.items():
+        # If the method of the old distribution overrides the generic implementation...
+        method = getattr(dist.__class__, old_method, None)
+        super_method = getattr(stats.rv_continuous, old_method, None)
+        if method is not super_method:
+            # Make it an attribute of the new object with the new name
+            setattr(CustomDistribution, new_method, method)
+            # Also make it an attribute of the new object with the old name
+            # This is needed, e.g., by some `_pdf` methods: `np.exp(self._logpdf)`
+            setattr(CustomDistribution, old_method, method)
+
+    if (getattr(dist.__class__, '_rvs', None)
+            is not getattr(stats.rv_continuous, '_rvs', None)):
+        CustomDistribution._sample_formula = _sample_formula
+
+    if (getattr(dist.__class__, '_stats', None)
+            is not getattr(stats.rv_continuous, '_stats', None)):
+        CustomDistribution._moment_standardized_formula = _moment_standardized_formula
+
+    return CustomDistribution

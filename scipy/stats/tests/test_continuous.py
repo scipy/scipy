@@ -1066,3 +1066,33 @@ class TestFullCoverage:
 
         X = _Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
         assert str(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
+
+
+class TestWrapRVContinuous:
+    def test_basic(self):
+        rng = np.random.default_rng(7548723590230982)
+        Gamma = stats.wrap_rv_continuous(stats.gamma, (0, np.inf))
+        X = Gamma(a=1.5)
+        Y = stats.gamma(1.5)
+        x = rng.random(size=10)
+
+        assert_allclose(X.entropy(), Y.entropy())
+        assert_allclose(X.median(), Y.median())
+        assert_allclose(X.mean(), Y.stats('m'))
+        assert_allclose(X.variance(), Y.stats('v'))
+        assert_allclose(X.skewness(), Y.stats('s'))
+        assert_allclose(X.kurtosis(convention='excess'), Y.stats('k'))
+        assert_allclose(X.logpdf(x), Y.logpdf(x))
+        assert_allclose(X.pdf(x), Y.pdf(x))
+        assert_allclose(X.logcdf(x), Y.logcdf(x))
+        assert_allclose(X.cdf(x), Y.cdf(x))
+        assert_allclose(X.logccdf(x), Y.logsf(x))
+        assert_allclose(X.ccdf(x), Y.sf(x))
+        assert_allclose(X.icdf(x), Y.ppf(x))
+        assert_allclose(X.iccdf(x), Y.isf(x))
+        for order in range(5):
+            assert_allclose(X.moment(order, kind='raw'),
+                            Y.moment(order))
+        for order in range(3, 4):
+            assert_allclose(X.moment(order, kind='standardized'),
+                            Y.stats('mvsk'[order-1]))
