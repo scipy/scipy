@@ -31,6 +31,7 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
+from scipy._lib._array_api import xp_assert_close
 from scipy._lib._util import ComplexWarning, np_long, np_ulong
 
 
@@ -2806,7 +2807,7 @@ class TestEnvelope:
     @classmethod
     def assert_close(cls, actual, desired, msg):
         """Little helper to compare to arrays with proper tolerances"""
-        assert_allclose(actual, desired, atol=1e-12, rtol=1e-12, err_msg=msg)
+        xp_assert_close(actual, desired, atol=1e-12, rtol=1e-12, err_msg=msg)
 
 # noinspection PyTypeChecker
     def test_envelope_invalid_parameters(self):
@@ -2875,7 +2876,7 @@ class TestEnvelope:
         self.assert_close(z_a.real, z,
                           msg="Reference analytic signal error")
         ze2_a, zr_a = envelope(z_a, (1, 3), residual='all', squared=True)
-        self.assert_close(ze2_a, ze2_0,
+        self.assert_close(ze2_a, ze2_0.astype(complex),  # dtypes must match
                           msg="Complex envelope calculation error")
         self.assert_close(sp_fft.fft(zr_a), np.array(Zr_a).astype(complex),
                           msg="Complex residual calculation error")

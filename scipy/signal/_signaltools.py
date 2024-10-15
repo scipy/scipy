@@ -2481,14 +2481,14 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     squared : bool
         If set, the square of the envelope is returned. The bandwidth of the squared
         envelope is often smaller than the non-squared envelope bandwidth due to the
-        nonlinear nature of the utilized absolute value function. I.e., the embbeded
+        nonlinear nature of the utilized absolute value function. I.e., the embedded
         square root function typically produces addiational harmonics.
     residual : Literal['lowpass', 'all', None]
         This option determines what kind of residual, i.e., the signal part which the
         input bandpass filter removes, is returned. ``'all'`` returns everything except
         the contents of the frequency band ``bp_in[0]:bp_in[1]``, ``'lowpass'``
         returns the contents of the frequency band ``< bp_in[0]``. If ``None`` then
-        nothing is returned.
+        only the envelope is returned.
     axis : int
        Axis of `z` over which to compute the envelope. Default is last the axis.
 
@@ -2628,7 +2628,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     The right plot shows the real part of that analytic signal being interpreted
     as a complex-vauled signal, i.e., having zero imaginary part. There the resulting
     envelope is not as smooth as in the analytic case and the instantaneous amplitude
-    in the real plane is not recovered. If `z_re` had been passed as a real-valued
+    in the real plane is not recovered. If ``z_re`` had been passed as a real-valued
     signal, i.e., as ``z_re = z.real`` instead of ``z_re = z.real + 0j``, the result
     would have been identical to the left plot. The reason for this is that real-valued
     signals are interpreted as being the real part of a complex-valued analytic signal.
