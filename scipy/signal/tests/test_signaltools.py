@@ -2607,11 +2607,13 @@ class TestFiltFilt:
             sos = xp.asarray(sos)
             return sosfiltfilt(sos, x, axis, padtype, padlen)
 
+    @skip_xp_backends('torch', reason='negative strides')
     def test_basic(self, xp):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
         xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=5.28e-11)
 
+    @skip_xp_backends('torch', reason='negative strides')
     def test_sine(self, xp):
         rate = 2000
         t = xp.linspace(0, 1.0, rate + 1)
@@ -2646,6 +2648,7 @@ class TestFiltFilt:
         y2dt = self.filtfilt(zpk, x2d.T, padlen=n, axis=0, xp=xp)
         xp_assert_equal(y2d, y2dt.T)
 
+    @skip_xp_backends('torch', reason='negative strides')
     def test_axis(self, xp):
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
@@ -2708,6 +2711,7 @@ class TestFiltFilt:
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
 
+    @skip_xp_backends('torch', reason='negative strides')
     def test_equivalence(self, xp):
         """Test equivalence between sosfiltfilt and filtfilt"""
         x = np.random.RandomState(0).randn(1000)

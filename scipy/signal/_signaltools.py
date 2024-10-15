@@ -4542,7 +4542,11 @@ def sosfilt(sos, x, axis=-1, zi=None):
         raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
         zi = np.asarray(zi, dtype=dtype)
-        zi = xp_copy(zi, xp=xp)  # make a copy so that we can operate in place
+
+        # make a copy so that we can operate in place
+        # NB: 1. use xp_copy to paper over numpy 1/2 copy= keyword
+        #     2. make sure the copied zi remains a numpy array
+        zi = xp_copy(zi, xp=array_namespace(zi))
         if zi.shape != x_zi_shape:
             raise ValueError('Invalid zi shape. With axis=%r, an input with '
                              'shape %r, and an sos array with %d sections, zi '
@@ -4554,7 +4558,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         return_zi = False
     axis = axis % x.ndim  # make positive
     x = np.moveaxis(x, axis, -1)
-    zi = np.moveaxis(zi, [0, axis + 1], [-2, -1])
+    zi = np.moveaxis(zi, (0, axis + 1), (-2, -1))
     x_shape, zi_shape = x.shape, zi.shape
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
@@ -4565,7 +4569,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x = np.moveaxis(x, -1, axis)
     if return_zi:
         zi.shape = zi_shape
-        zi = np.moveaxis(zi, [-2, -1], [0, axis + 1])
+        zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
         out = (xp.asarray(x), xp.asarray(zi))
     else:
         out = xp.asarray(x)
