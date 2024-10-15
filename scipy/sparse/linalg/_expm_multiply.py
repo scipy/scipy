@@ -99,7 +99,7 @@ def _ident_like(A):
         return scipy.sparse.dia_array(out).asformat(A.format)
     elif is_pydata_spmatrix(A):
         import sparse
-        return sparse.eye_array(A.shape[0], A.shape[1], dtype=A.dtype)
+        return sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
     elif isinstance(A, scipy.sparse.linalg.LinearOperator):
         return IdentityOperator(A.shape, dtype=A.dtype)
     else:
