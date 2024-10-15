@@ -32,7 +32,8 @@ from scipy._lib import _testutils
 from scipy._lib._util import ComplexWarning
 
 from scipy._lib._array_api import (
-    xp_assert_close, xp_assert_equal, is_numpy, is_torch, array_namespace,
+    xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax,
+    array_namespace,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size,
 )
@@ -2609,12 +2610,18 @@ class TestFiltFilt:
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_basic(self, xp):
+        if is_jax(xp) and self.filtfilt_kind == 'sos':
+            pytest.skip(reason='sosfilt works in-place')
+
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
         xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=5.28e-11)
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_sine(self, xp):
+        if is_jax(xp) and self.filtfilt_kind == 'sos':
+            pytest.skip(reason='sosfilt works in-place')
+
         rate = 2000
         t = xp.linspace(0, 1.0, rate + 1)
         # A signal with low frequency and a high frequency.
@@ -2650,6 +2657,9 @@ class TestFiltFilt:
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_axis(self, xp):
+        if is_jax(xp) and self.filtfilt_kind == 'sos':
+            pytest.skip(reason='sosfilt works in-place')
+
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
         x = xp.asarray(x)
@@ -2711,6 +2721,7 @@ class TestFiltFilt:
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
 
+    @skip_xp_backends('jax.numpy', reason='sosfilt works in-place')
     @skip_xp_backends('torch', reason='negative strides')
     def test_equivalence(self, xp):
         """Test equivalence between sosfiltfilt and filtfilt"""
