@@ -26,7 +26,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
@@ -42,7 +42,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
+    M : {sparse array, ndarray, LinearOperator}
         Preconditioner for `A`. It should approximate the
         inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
@@ -76,9 +76,9 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import bicg
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
     >>> b = np.array([2., 4., -1.])
     >>> x, exitCode = bicg(A, b, atol=1e-5)
     >>> print(exitCode)  # 0 indicates successful convergence
@@ -160,7 +160,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
@@ -176,7 +176,7 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
+    M : {sparse array, ndarray, LinearOperator}
         Preconditioner for `A`. It should approximate the
         inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
@@ -210,13 +210,13 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import bicgstab
     >>> R = np.array([[4, 2, 0, 1],
     ...               [3, 0, 0, 2],
     ...               [0, 1, 1, 1],
     ...               [0, 2, 1, 0]])
-    >>> A = csc_matrix(R)
+    >>> A = csc_array(R)
     >>> b = np.array([-1, -0.5, -1, 2])
     >>> x, exit_code = bicgstab(A, b, atol=1e-5)
     >>> print(exit_code)  # 0 indicates successful convergence
@@ -307,7 +307,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         `A` must represent a hermitian, positive definite matrix.
         Alternatively, `A` can be a linear operator which can
@@ -324,7 +324,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
+    M : {sparse array, ndarray, LinearOperator}
         Preconditioner for `A`. `M` must represent a hermitian, positive definite
         matrix. It should approximate the inverse of `A` (see Notes).
         Effective preconditioning dramatically improves the
@@ -358,13 +358,13 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import cg
     >>> P = np.array([[4, 0, 1, 0],
     ...               [0, 5, 0, 0],
     ...               [1, 0, 3, 2],
     ...               [0, 0, 2, 4]])
-    >>> A = csc_matrix(P)
+    >>> A = csc_array(P)
     >>> b = np.array([-1, -0.5, -1, 2])
     >>> x, exit_code = cg(A, b, atol=1e-5)
     >>> print(exit_code)    # 0 indicates successful convergence
@@ -427,7 +427,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real-valued N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -443,7 +443,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}
+    M : {sparse array, ndarray, LinearOperator}
         Preconditioner for ``A``. It should approximate the
         inverse of `A` (see Notes). Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
@@ -477,13 +477,13 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import cgs
     >>> R = np.array([[4, 2, 0, 1],
     ...               [3, 0, 0, 2],
     ...               [0, 1, 1, 1],
     ...               [0, 2, 1, 0]])
-    >>> A = csc_matrix(R)
+    >>> A = csc_array(R)
     >>> b = np.array([-1, -0.5, -1, 2])
     >>> x, exit_code = cgs(A, b)
     >>> print(exit_code)  # 0 indicates successful convergence
@@ -586,7 +586,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -607,7 +607,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         Maximum number of iterations (restart cycles).  Iteration will stop
         after maxiter steps even if the specified tolerance has not been
         achieved. See `callback_type`.
-    M : {sparse matrix, ndarray, LinearOperator}
+    M : {sparse array, ndarray, LinearOperator}
         Inverse of the preconditioner of `A`.  `M` should approximate the
         inverse of `A` and be easy to solve for (see Notes).  Effective
         preconditioning dramatically improves the rate of convergence,
@@ -658,9 +658,9 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import gmres
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
     >>> x, exitCode = gmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
@@ -847,7 +847,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real-valued N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` and ``A^T x`` using, e.g.,
@@ -863,9 +863,9 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M1 : {sparse matrix, ndarray, LinearOperator}
+    M1 : {sparse array, ndarray, LinearOperator}
         Left preconditioner for A.
-    M2 : {sparse matrix, ndarray, LinearOperator}
+    M2 : {sparse array, ndarray, LinearOperator}
         Right preconditioner for A. Used together with the left
         preconditioner M1.  The matrix M1@A@M2 should have better
         conditioned than A alone.
@@ -890,9 +890,9 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import qmr
-    >>> A = csc_matrix([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
+    >>> A = csc_array([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
     >>> b = np.array([2., 4., -1.])
     >>> x, exitCode = qmr(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
