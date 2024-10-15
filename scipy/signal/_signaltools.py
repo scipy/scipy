@@ -2459,63 +2459,68 @@ def hilbert2(x, N=None):
 def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
              n_out: int | None = None, squared: bool = False,
              residual: Literal['lowpass', 'all', None] = 'lowpass',
-             axis: int = -1) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
+             axis: int = -1) -> np.ndarray:
     r"""Compute the envelope of a real- or complex-valued signal.
-
-    Any complex-valued signal z(t) can be described by a real-valued instantaneous
-    amplitude a(t) and a real-valued instantaneous phase phi(t), i.e.,
-    z(t) = a(t) * exp(1j*phi(t)). The envelope is defined as the absolute value of
-    the amplitude |a(t)| = |z(t)|, which is at the same time the absolute value of
-    the signal. Hence, |a(t)| "envelopes" the class of all signals with amplitude
-    a(t) and arbitrary phase phi(t).
-    For real-valued signals, x(t) = a(t) * cos(phi(t)) is the analogous formulation.
-    Hence, `|a(t)|` can be determined by converting x(t) into an analytic signal
-    z_a(t) by means of a Hilbert transform, i.e.,
-    z_a(t) = a(t) * cos(phi(t)) + 1j * a(t) * sin(phi(t)), which produces a
-    complex-valued signal with the same envelope |a(t)|.
 
     Parameters
     ----------
-    z :
+    z : ndarray
         Real- or complex-valued input signal, which is assumed to be made up of ``n``
         samples and having sampling interval ``T``. `z` may also be a multidimensional
         array with the time axis being defined by `axis`.
-    bp_in :
+    bp_in : tuple[int | None, int | None]
         2-tuple defining the frequency band ``bp_in[0]:bp_in[1]`` of the input filter.
         The corner frequencies are specified as integer multiples of ``1/(n*T)`` with
         ``-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2`` being the allowed frequency range.
         ``None`` entries are replaced with `-n//2` or `(n+1)//2` respectively. The
         default of ``(1, None)`` removes the mean value as well as the negative
         frequency components.
-    n_out :
+    n_out : int | None
         If not ``None`` the output will be resampled to `n_out` samples. The default
         of ``None`` sets the output to the same length as the input `z`.
-    squared :
+    squared : bool
         If set, the square of the envelope is returned. The bandwidth of the squared
         envelope is often smaller than the non-squared envelope bandwidth due to the
         nonlinear nature of the utilized absolute value function. I.e., the embbeded
         square root function typically produces addiational harmonics.
-    residual :
+    residual : Literal['lowpass', 'all', None]
         This option determines what kind of residual, i.e., the signal part which the
         input bandpass filter removes, is returned. ``'all'`` returns everything except
         the contents of the frequency band ``bp_in[0]:bp_in[1]``, ``'lowpass'``
         returns the contents of the frequency band ``< bp_in[0]``. If ``None`` then
         nothing is returned.
-    axis :
+    axis : int
        Axis of `z` over which to compute the envelope. Default is last the axis.
 
     Returns
     -------
-    z_env :
-        The envelope of input `z`.
-    z_res :
-        Optional residual, i.e., the signal part which the input bandpass filter
-        removed. What is returned is determined by the parameter `residual`. Note that
-        for real-valued signals, also a real-valued residual is returned. Hence, the
-        negative frequency components of `bp_in` are ignored.
+    np.ndarray
+        If parameter `residual` is ``None`` then an array `z_env` with the same shape
+        as the input `z` is returned, containing its envelope. Otherwise, an array with
+        shape ``(2, *z.shape)``, containing the arrays `z_env`, `z_res` being stacked
+        along the first axis, is returned.
+        It allows unpacking, i.e., ``z_env, z_res = envelope(z)``.
+        The residual `z_res` contains the signal part which the input bandpass filter
+        removed, depending on the parameter `residual`. Note that for real-valued
+        signals, also a real-valued residual is returned. Hence, the negative frequency
+        components of `bp_in` are ignored.
 
     Notes
     -----
+    Any complex-valued signal :math:`z(t)` can be described by a real-valued
+    instantaneous amplitude :math:`a(t)` and a real-valued instantaneous phase
+    :math:`\phi(t)`, i.e., :math:`z(t) = a(t) \exp\!\big(j \phi(t)\big)`. The
+    envelope is defined as the absolute value of the amplitude :math:`|a(t)| = |z(t)|`,
+    which is at the same time the absolute value of the signal. Hence, :math:`|a(t)|`
+    "envelopes" the class of all signals with amplitude :math:`a(t)` and arbitrary
+    phase :math:`\phi(t)`.
+    For real-valued signals, :math:`x(t) = a(t) \cos\!\big(\phi(t)\big)` is the
+    analogous formulation. Hence, :math:`|a(t)|` can be determined by converting
+    :math:`x(t)` into an analytic signal :math:`z_a(t)` by means of a Hilbert
+    transform, i.e.,
+    :math:`z_a(t) = a(t) \cos\!\big(\phi(t)\big) + j a(t) \sin\!\big(\phi(t) \big)`,
+    which produces a complex-valued signal with the same envelope :math:`|a(t)|`.
+
     The implementation is based on computing the FFT of the input signal and then
     performing the necessary operations in Fourier space. Hence, the typical FFT
     caveats need to be taken into account:
@@ -2725,7 +2730,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
 
     z_res = fak * (sp_fft.ifft(Z, n=n_out) if np.iscomplexobj(z) else
                    sp_fft.irfft(Z, n=n_out))
-    return z_env, np.moveaxis(z_res, -1, axis)
+    return np.stack((z_env, np.moveaxis(z_res, -1, axis)), axis=0)
 
 def _cmplx_sort(p):
     """Sort roots based on magnitude.
