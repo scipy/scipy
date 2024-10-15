@@ -1627,8 +1627,9 @@ class TestTandg:
 
 
 class TestEllip:
-    def test_ellipj_nan(self):
+    def test_ellipj_nan(self, num_parallel_threads):
         """Regression test for #912."""
+        special.seterr(domain='ignore')
         special.ellipj(0.5, np.nan)
 
     def test_ellipj(self):
@@ -2801,6 +2802,7 @@ class TestFactorialFunctions:
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected, rtol=2e-15)
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
