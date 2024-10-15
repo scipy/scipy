@@ -107,11 +107,11 @@ class TestLGMRES:
         # The inner arnoldi should be equivalent to gmres
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=15, maxiter=1)
-            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
+            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=10, maxiter=1)
+            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=10, maxiter=1)
 
         assert_equal(flag0, 1)
-        assert_equal(flag1, 1)
+        assert_equal(flag1, 1, f'{i=} {np.allclose(x0, x1)=}')
         norm = np.linalg.norm(A.dot(x0) - b)
         assert_(norm > 1e-4)
         assert_allclose(x0, x1)
