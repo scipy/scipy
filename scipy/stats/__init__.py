@@ -465,6 +465,7 @@ Random Variables
    :toctree: generated/
 
    Normal
+   Mixture
 
 Quasi-Monte Carlo
 =================
