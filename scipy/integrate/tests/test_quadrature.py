@@ -667,3 +667,13 @@ class TestLebedev:
         ref = 14.7680137457653  # lebedev_rule reference [3]
         assert_allclose(res, ref, rtol=1e-14)
         assert_allclose(np.sum(w), 4 * np.pi)
+
+    @pytest.mark.parametrize('order', list(range(3, 32, 2)) + list(range(35, 132, 6)))
+    def test_properties(self, order):
+        x, w = integrate.lebedev_rule(order)
+        # dispersion should be maximal; no clear spherical mean
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.directional_stats(x.T, axis=0)
+            assert_allclose(res.mean_resultant_length, 0, atol=1e-15)
+        # weights should sum to 4*pi (surface area of unit sphere)
+        assert_allclose(np.sum(w), 4*np.pi)
