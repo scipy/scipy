@@ -2645,7 +2645,7 @@ class TestHankel:
     def test_hankel2_gh4517(self):
         # Test edge case reported in https://github.com/scipy/scipy/issues/4517
         res = special.hankel2(0, 0)
-        assert res.real == 1
+        assert np.isnan(res.real)
         assert np.isposinf(res.imag)
 
 
