@@ -2177,8 +2177,7 @@ class TestFactorialFunctions:
 
     @pytest.mark.parametrize("n", [-1.1, -2.2, -3.3])
     def test_factorialx_negative_extend_complex(self, n):
-        # factorialk defaults to exact=True, need to explicitly set to False
-        kw = {"exact": False, "extend": "complex"}
+        kw = {"extend": "complex"}
         exp_1 = {-1.1: -10.686287021193184771,
                  -2.2:   4.8509571405220931958,
                  -3.3:  -1.4471073942559181166}
@@ -2199,13 +2198,12 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("imag", [0, 0j])
     @pytest.mark.parametrize("n_outer", [-1, -2, -3])
     def test_factorialx_negative_extend_complex_poles(self, n_outer, imag):
+        kw = {"extend": "complex"}
         def _check(n):
             complexify = _is_subdtype(type(n), "c")
             # like for gamma, we expect complex nans for complex inputs
             complex_nan = np.complex128("nan+nanj")
             exp = np.complex128("nan+nanj") if complexify else np.float64("nan")
-            # factorialk defaults to incompatible exact=True, explicitly set to False
-            kw = {"exact": False, "extend": "complex"}
             # poles are at negative integers that are multiples of k
             assert_really_equal(special.factorial(n, **kw), exp)
             assert_really_equal(special.factorial2(n * 2, **kw), exp)
@@ -2778,13 +2776,6 @@ class TestFactorialFunctions:
         else:
             expected = self.factorialk_ref(n, **kw)
             assert_really_equal(special.factorialk(n, **kw), expected, rtol=1e-15)
-
-    @pytest.mark.parametrize("k", range(1, 5))
-    def test_factorialk_deprecation_exact(self, k):
-        with pytest.deprecated_call(match="factorialk will default.*"):
-            # leaving exact= unspecified raises warning;
-            # cannot happen for extend="complex" because it requires non-default exact
-            special.factorialk(1, k=k)
 
     @pytest.mark.parametrize("boxed", [True, False])
     @pytest.mark.parametrize("exact,extend",

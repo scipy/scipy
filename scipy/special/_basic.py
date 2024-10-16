@@ -3232,7 +3232,7 @@ def factorial2(n, exact=False, extend="zero"):
     return _factorialx_wrapper("factorial2", n, k=2, exact=exact, extend=extend)
 
 
-def factorialk(n, k, exact=None, extend="zero"):
+def factorialk(n, k, exact=False, extend="zero"):
     """Multifactorial of n of order k, n(!!...!).
 
     This is the multifactorial of n skipping k values.  For example,
@@ -3255,10 +3255,6 @@ def factorialk(n, k, exact=None, extend="zero"):
         If exact is set to True, calculate the answer exactly using
         integer arithmetic, otherwise use an approximation (faster,
         but yields floats instead of integers)
-
-        .. warning::
-           The default value for ``exact`` will be changed to
-           ``False`` in SciPy 1.15.0.
     extend : string, optional
         One of ``'zero'`` or ``'complex'``; this determines how values `n<0` are
         handled - by default they are 0, but it is possible to opt into the complex
@@ -3314,16 +3310,6 @@ def factorialk(n, k, exact=None, extend="zero"):
     .. [1] Complex extension to multifactorial
             https://en.wikipedia.org/wiki/Double_factorial#Alternative_extension_of_the_multifactorial
     """
-    if exact is None:
-        msg = (
-            "factorialk will default to `exact=False` starting from SciPy "
-            "1.15.0. To avoid behaviour changes due to this, explicitly "
-            "specify either `exact=False` (faster, returns floats), or the "
-            "past default `exact=True` (slower, lossless result as integer)."
-        )
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        exact = True
-
     return _factorialx_wrapper("factorialk", n, k=k, exact=exact, extend=extend)
 
 
