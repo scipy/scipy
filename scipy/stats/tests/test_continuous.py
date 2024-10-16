@@ -18,6 +18,7 @@ from scipy.stats._distribution_infrastructure import (
     _generate_domain_support, Mixture)
 from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
 
+
 class Test_RealDomain:
     rng = np.random.default_rng(349849812549824)
 
@@ -1077,19 +1078,19 @@ class MixedDist(ContinuousDistribution):
 
 class TestMixture:
     def test_input_validation(self):
-        message = "`vars` must contain at least one random variable."
+        message = "`components` must contain at least one random variable."
         with pytest.raises(ValueError, match=message):
             Mixture([])
 
-        message = "Each element of `vars` must be an instance..."
+        message = "Each element of `components` must be an instance..."
         with pytest.raises(ValueError, match=message):
             Mixture((1, 2, 3))
 
-        message = "All random variables in `vars` must have scalar shapes."
+        message = "All elements of `components` must have scalar shapes."
         with pytest.raises(ValueError, match=message):
             Mixture([Normal(mu=[1, 2]), Normal()])
 
-        message = "`vars` and `weights` must have the same length."
+        message = "`components` and `weights` must have the same length."
         with pytest.raises(ValueError, match=message):
             Mixture([Normal()], weights=[0.5, 0.5])
 

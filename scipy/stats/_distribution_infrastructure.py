@@ -183,6 +183,92 @@ _NO_CACHE = "no_cache"
 # It is much faster to check whether these are necessary than to do them.
 
 
+class _ProbabilityDistribution(ABC):
+    @abstractmethod
+    def support(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def sample(self, shape, *, rng):
+        raise NotImplementedError
+
+    @abstractmethod
+    def moment(self, order, kind):
+        raise NotImplementedError
+
+    @abstractmethod
+    def mean(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def median(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def mode(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def variance(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def standard_deviation(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def skewness(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def kurtosis(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def pdf(self, x, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def logpdf(self, x, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def cdf(self, x, y, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def icdf(self, p, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def ccdf(self, x, y, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def iccdf(self, p, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def logcdf(self, x, y, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def ilogcdf(self, logp, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def logccdf(self, x, y, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def ilogccdf(self, logp, /):
+        raise NotImplementedError
+
+    @abstractmethod
+    def entropy(self):
+        raise NotImplementedError
+
+
 class _Domain(ABC):
     r""" Representation of the applicable domain of a parameter or variable.
 
@@ -1398,7 +1484,7 @@ def _generate_example(dist_family):
     return example
 
 
-class ContinuousDistribution:
+class ContinuousDistribution(_ProbabilityDistribution):
     r""" Class that represents a continuous statistical distribution.
 
     Parameters
@@ -5221,17 +5307,17 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return self * -1
 
 
-class Mixture:
+class Mixture(_ProbabilityDistribution):
     r""" Class that represents a mixture distribution.
 
     A mixture distribution is the distribution of a random variable
     defined in the following way: first, a random variable is selected
-    from `vars` according to the probabilities given by `weights`, then
+    from `components` according to the probabilities given by `weights`, then
     the random variable is realized[1]_.
 
     Parameters
     ----------
-    vars : sequence of `ContinuousDistribution`
+    components : sequence of `ContinuousDistribution`
         The underlying instances of `ContinuousDistribution`.
         All must have scalar shape parameters.
     weights : sequence of floats
@@ -5291,30 +5377,30 @@ class Mixture:
     # Todo:
     # Fix Normal(mu=0.5).logentropy() runtime warning
     # Add method documentation
-    # Add support for array shapes
+    # Add support for array shapes, weights
 
-    def _input_validation(self, vars, weights):
-        if len(vars) == 0:
-            message = ("`vars` must contain at least one random variable.")
+    def _input_validation(self, components, weights):
+        if len(components) == 0:
+            message = ("`components` must contain at least one random variable.")
             raise ValueError(message)
 
-        for var in vars:
+        for var in components:
             # will generalize to other kinds of distributoins when there
             # *are* other kinds of distributions
             if not isinstance(var, ContinuousDistribution):
-                message = ("Each element of `vars` must be an instance of "
+                message = ("Each element of `components` must be an instance of "
                            "`ContinuousDistribution`.")
                 raise ValueError(message)
             if not var._shape == ():
-                message = "All random variables in `vars` must have scalar shapes."
+                message = "All elements of `components` must have scalar shapes."
                 raise ValueError(message)
 
         if weights is None:
             return
 
         weights = np.asarray(weights)
-        if len(vars) != len(weights):
-            message = "`vars` and `weights` must have the same length."
+        if len(components) != len(weights):
+            message = "`components` and `weights` must have the same length."
             raise ValueError(message)
 
         if not np.issubdtype(weights.dtype, np.inexact):
@@ -5329,12 +5415,12 @@ class Mixture:
             message = "All `weights` must be non-negative."
             raise ValueError(message)
 
-    def __init__(self, vars, /, *, weights=None):
-        self._input_validation(vars, weights)
-        n = len(vars)
-        dtype = np.result_type(*(var._dtype for var in vars))
-        self._shape = np.broadcast_shapes(*(var._shape for var in vars))
-        self._dtype, self._vars = dtype, vars
+    def __init__(self, components, /, *, weights=None):
+        self._input_validation(components, weights)
+        n = len(components)
+        dtype = np.result_type(*(var._dtype for var in components))
+        self._shape = np.broadcast_shapes(*(var._shape for var in components))
+        self._dtype, self._components = dtype, components
         self._weights = np.full(n, 1/n, dtype=dtype) if weights is None else weights
         self.validation_policy = None  # needed for
 
@@ -5346,20 +5432,20 @@ class Mixture:
 
     def _sum(self, fun, *args):
         out = self._full(0, *args)
-        for var, weight in zip(self._vars, self._weights):
+        for var, weight in zip(self._components, self._weights):
             out += getattr(var, fun)(*args) * weight
         return out
 
     def _logsum(self, fun, *args):
         out = self._full(-np.inf, *args)
-        for var, log_weight in zip(self._vars, np.log(self._weights)):
+        for var, log_weight in zip(self._components, np.log(self._weights)):
             np.logaddexp(out, getattr(var, fun)(*args) + log_weight, out=out)
         return out
 
     def support(self):
         a = self._full(np.inf)
         b = self._full(-np.inf)
-        for var in self._vars:
+        for var in self._components:
             a = np.minimum(a, var.support()[0])
             b = np.maximum(b, var.support()[1])
         return a, b
@@ -5404,14 +5490,14 @@ class Mixture:
 
     def _moment_raw(self, order):
         out = self._full(0)
-        for var, weight in zip(self._vars, self._weights):
+        for var, weight in zip(self._components, self._weights):
             out += var.moment(order, kind='raw') * weight
         return out
 
     def _moment_central(self, order):
         order = int(order)
         out = self._full(0)
-        for var, weight in zip(self._vars, self._weights):
+        for var, weight in zip(self._components, self._weights):
             moment_as = [var.moment(order, kind='central')
                          for order in range(order + 1)]
             a, b = var.mean(), self.mean()
@@ -5467,6 +5553,6 @@ class Mixture:
         rng = np.random.default_rng(rng)
         size = np.prod(np.atleast_1d(shape))
         ns = rng.multinomial(size, self._weights)
-        x = [var.sample(shape=n) for n, var in zip(ns, self._vars)]
+        x = [var.sample(shape=n) for n, var in zip(ns, self._components)]
         x = np.reshape(rng.permuted(np.concatenate(x)), shape)
         return x[()]
