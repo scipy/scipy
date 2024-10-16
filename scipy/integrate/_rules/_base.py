@@ -1,7 +1,5 @@
 from scipy._lib._array_api import array_namespace, xp_size
 
-import math
-
 from functools import cached_property
 
 
@@ -498,7 +496,7 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
 
     # Also need to multiply the weights by a scale factor equal to the determinant
     # of the Jacobian for this coordinate change.
-    weight_scale_factor = math.prod(lengths) / 2**rule_ndim
+    weight_scale_factor = xp.prod(lengths) / 2**rule_ndim
     weights = orig_weights * weight_scale_factor
 
     f_nodes = f(nodes, *args)

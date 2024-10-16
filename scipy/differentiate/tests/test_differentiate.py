@@ -9,7 +9,7 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_ass
 from scipy._lib._array_api import is_numpy, is_torch, array_namespace
 
 from scipy import stats, optimize, special
-from scipy.differentiate import differentiate, jacobian, hessian
+from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
 
 
@@ -21,7 +21,7 @@ from scipy.differentiate._differentiate import _EERRORINCREASE
                               reason='JAX arrays do not support item assignment.')
 @pytest.mark.skip_xp_backends('cupy',
                               reason='cupy/cupy#8391')
-class TestDifferentiate:
+class TestDerivative:
 
     def f(self, x):
         return special.ndtr(x)
@@ -30,7 +30,7 @@ class TestDifferentiate:
     def test_basic(self, x, xp):
         # Invert distribution CDF and compare against distribution `ppf`
         default_dtype = xp.asarray(1.).dtype
-        res = differentiate(self.f, xp.asarray(x, dtype=default_dtype))
+        res = derivative(self.f, xp.asarray(x, dtype=default_dtype))
         ref = xp.asarray(stats.norm().pdf(x), dtype=default_dtype)
         xp_assert_close(res.df, ref)
         # This would be nice, but doesn't always work out. `error` is an
@@ -44,7 +44,7 @@ class TestDifferentiate:
         distname, params = case
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
-        res = differentiate(dist.cdf, x)
+        res = derivative(dist.cdf, x)
         ref = dist.pdf(x)
         assert_allclose(res.df, ref, atol=1e-10)
 
@@ -57,8 +57,8 @@ class TestDifferentiate:
         n = np.size(x)
 
         @np.vectorize
-        def _differentiate_single(x):
-            return differentiate(self.f, x, order=order)
+        def _derivative_single(x):
+            return derivative(self.f, x, order=order)
 
         def f(x, *args, **kwargs):
             f.nit += 1
@@ -67,8 +67,8 @@ class TestDifferentiate:
         f.nit = -1
         f.feval = 0
 
-        res = differentiate(f, xp.asarray(x, dtype=xp.float64), order=order)
-        refs = _differentiate_single(x).ravel()
+        res = derivative(f, xp.asarray(x, dtype=xp.float64), order=order)
+        refs = _derivative_single(x).ravel()
 
         ref_x = [ref.x for ref in refs]
         xp_assert_close(xp.reshape(res.x, (-1,)), xp.asarray(ref_x))
@@ -111,9 +111,9 @@ class TestDifferentiate:
         f.nit = 0
 
         args = (xp.arange(4, dtype=xp.int64),)
-        res = differentiate(f, xp.ones(4, dtype=xp.float64),
-                            tolerances=dict(rtol=1e-14),
-                            order=2, args=args)
+        res = derivative(f, xp.ones(4, dtype=xp.float64),
+                         tolerances=dict(rtol=1e-14),
+                         order=2, args=args)
 
         ref_flags = xp.asarray([eim._ECONVERGED,
                                 _EERRORINCREASE,
@@ -131,9 +131,9 @@ class TestDifferentiate:
                    xp.full_like(x, xp.nan)]  # stops due to NaN
             return xp.stack(out)
 
-        res = differentiate(f, xp.asarray(1, dtype=xp.float64),
-                            tolerances=dict(rtol=1e-14),
-                            order=2, preserve_shape=True)
+        res = derivative(f, xp.asarray(1, dtype=xp.float64),
+                         tolerances=dict(rtol=1e-14),
+                         order=2, preserve_shape=True)
 
         ref_flags = xp.asarray([eim._ECONVERGED,
                                 _EERRORINCREASE,
@@ -150,7 +150,7 @@ class TestDifferentiate:
         x = xp.asarray(0.)
         ref = xp.asarray([xp.asarray(1), 3*xp.cos(3*x), 1+10*xp.cos(10*x),
                           20*xp.cos(20*x)*(x-1)**2 + 2*xp.sin(20*x)*(x-1)])
-        res = differentiate(f, x, preserve_shape=True)
+        res = derivative(f, x, preserve_shape=True)
         xp_assert_close(res.df, ref)
 
     def test_convergence(self, xp):
@@ -162,19 +162,19 @@ class TestDifferentiate:
 
         tolerances = tolerances0.copy()
         tolerances['atol'] = 1e-3
-        res1 = differentiate(f, x, tolerances=tolerances, order=4)
+        res1 = derivative(f, x, tolerances=tolerances, order=4)
         assert abs(res1.df - ref) < 1e-3
         tolerances['atol'] = 1e-6
-        res2 = differentiate(f, x, tolerances=tolerances, order=4)
+        res2 = derivative(f, x, tolerances=tolerances, order=4)
         assert abs(res2.df - ref) < 1e-6
         assert abs(res2.df - ref) < abs(res1.df - ref)
 
         tolerances = tolerances0.copy()
         tolerances['rtol'] = 1e-3
-        res1 = differentiate(f, x, tolerances=tolerances, order=4)
+        res1 = derivative(f, x, tolerances=tolerances, order=4)
         assert abs(res1.df - ref) < 1e-3 * ref
         tolerances['rtol'] = 1e-6
-        res2 = differentiate(f, x, tolerances=tolerances, order=4)
+        res2 = derivative(f, x, tolerances=tolerances, order=4)
         assert abs(res2.df - ref) < 1e-6 * ref
         assert abs(res2.df - ref) < abs(res1.df - ref)
 
@@ -184,31 +184,29 @@ class TestDifferentiate:
         f = special.ndtr
         ref = float(stats.norm.pdf(1.))
 
-        res1 = differentiate(f, x, initial_step=0.5, maxiter=1)
-        res2 = differentiate(f, x, initial_step=0.05, maxiter=1)
+        res1 = derivative(f, x, initial_step=0.5, maxiter=1)
+        res2 = derivative(f, x, initial_step=0.05, maxiter=1)
         assert abs(res2.df - ref) < abs(res1.df - ref)
 
-        res1 = differentiate(f, x, step_factor=2, maxiter=1)
-        res2 = differentiate(f, x, step_factor=20, maxiter=1)
+        res1 = derivative(f, x, step_factor=2, maxiter=1)
+        res2 = derivative(f, x, step_factor=20, maxiter=1)
         assert abs(res2.df - ref) < abs(res1.df - ref)
 
         # `step_factor` can be less than 1: `initial_step` is the minimum step
         kwargs = dict(order=4, maxiter=1, step_direction=0)
-        res = differentiate(f, x, initial_step=0.5, step_factor=0.5, **kwargs)
-        ref = differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
+        res = derivative(f, x, initial_step=0.5, step_factor=0.5, **kwargs)
+        ref = derivative(f, x, initial_step=1, step_factor=2, **kwargs)
         xp_assert_close(res.df, ref.df, rtol=5e-15)
 
         # This is a similar test for one-sided difference
         kwargs = dict(order=2, maxiter=1, step_direction=1)
-        res = differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        ref = differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5,
-                                   **kwargs)
+        res = derivative(f, x, initial_step=1, step_factor=2, **kwargs)
+        ref = derivative(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
         xp_assert_close(res.df, ref.df, rtol=5e-15)
 
         kwargs['step_direction'] = -1
-        res = differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        ref = differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5,
-                                   **kwargs)
+        res = derivative(f, x, initial_step=1, step_factor=2, **kwargs)
+        ref = derivative(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
         xp_assert_close(res.df, ref.df, rtol=5e-15)
 
     def test_step_direction(self, xp):
@@ -221,7 +219,7 @@ class TestDifferentiate:
         x = xp.linspace(0, 2, 10)
         step_direction = xp.zeros_like(x)
         step_direction[x < 0.6], step_direction[x > 1.4] = 1, -1
-        res = differentiate(f, x, step_direction=step_direction)
+        res = derivative(f, x, step_direction=step_direction)
         xp_assert_close(res.df, xp.exp(x))
         assert xp.all(res.success)
 
@@ -236,7 +234,7 @@ class TestDifferentiate:
         x = xp.reshape(xp.asarray([1, 2, 3, 4]), (-1, 1, 1))
         hdir = xp.reshape(xp.asarray([-1, 0, 1]), (1, -1, 1))
         p = xp.reshape(xp.asarray([2, 3]), (1, 1, -1))
-        res = differentiate(f, x, step_direction=hdir, args=(p,))
+        res = derivative(f, x, step_direction=hdir, args=(p,))
         ref = xp.broadcast_to(df(x, p), res.df.shape)
         ref = xp.asarray(ref, dtype=xp.asarray(1.).dtype)
         xp_assert_close(res.df, ref)
@@ -249,8 +247,8 @@ class TestDifferentiate:
         x = xp.asarray(0., dtype=xp.float64)
         step_direction = xp.asarray([-1, 0, 1])
         h0 = xp.reshape(xp.logspace(-3, 0, 10), (-1, 1))
-        res = differentiate(f, x, initial_step=h0, order=2, maxiter=1,
-                            step_direction=step_direction)
+        res = derivative(f, x, initial_step=h0, order=2, maxiter=1,
+                         step_direction=step_direction)
         err = xp.abs(res.df - f(x))
 
         # error should be smaller for smaller step sizes
@@ -259,8 +257,8 @@ class TestDifferentiate:
         # results of vectorized call should match results with
         # initial_step taken one at a time
         for i in range(h0.shape[0]):
-            ref = differentiate(f, x, initial_step=h0[i, 0], order=2, maxiter=1,
-                                step_direction=step_direction)
+            ref = derivative(f, x, initial_step=h0[i, 0], order=2, maxiter=1,
+                             step_direction=step_direction)
             xp_assert_close(res.df[i, :], ref.df, rtol=1e-14)
 
     def test_maxiter_callback(self, xp):
@@ -273,7 +271,7 @@ class TestDifferentiate:
             return res
 
         default_order = 8
-        res = differentiate(f, x, maxiter=maxiter, tolerances=dict(rtol=1e-15))
+        res = derivative(f, x, maxiter=maxiter, tolerances=dict(rtol=1e-15))
         assert not xp.any(res.success)
         assert xp.all(res.nfev == default_order + 1 + (maxiter - 1)*2)
         assert xp.all(res.nit == maxiter)
@@ -291,7 +289,7 @@ class TestDifferentiate:
         callback.res = None
         callback.dfs = set()
 
-        res2 = differentiate(f, x, callback=callback, tolerances=dict(rtol=1e-15))
+        res2 = derivative(f, x, callback=callback, tolerances=dict(rtol=1e-15))
         # terminating with callback is identical to terminating due to maxiter
         # (except for `status`)
         for key in res.keys():
@@ -321,8 +319,7 @@ class TestDifferentiate:
             assert res.df.dtype == dtype
             assert res.error.dtype == dtype
 
-        res = differentiate(f, x, order=4, step_direction=hdir,
-                                   callback=callback)
+        res = derivative(f, x, order=4, step_direction=hdir, callback=callback)
         assert res.x.dtype == dtype
         assert res.df.dtype == dtype
         assert res.error.dtype == dtype
@@ -337,43 +334,43 @@ class TestDifferentiate:
 
         message = '`f` must be callable.'
         with pytest.raises(ValueError, match=message):
-            differentiate(None, one)
+            derivative(None, one)
 
         message = 'Abscissae and function output must be real numbers.'
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, xp.asarray(-4+1j))
+            derivative(lambda x: x, xp.asarray(-4+1j))
 
         message = "When `preserve_shape=False`, the shape of the array..."
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: [1, 2, 3], xp.asarray([-2, -3]))
+            derivative(lambda x: [1, 2, 3], xp.asarray([-2, -3]))
 
         message = 'Tolerances and step parameters must be non-negative...'
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, tolerances=dict(atol=-1))
+            derivative(lambda x: x, one, tolerances=dict(atol=-1))
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, tolerances=dict(rtol='ekki'))
+            derivative(lambda x: x, one, tolerances=dict(rtol='ekki'))
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, step_factor=object())
+            derivative(lambda x: x, one, step_factor=object())
 
         message = '`maxiter` must be a positive integer.'
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, maxiter=1.5)
+            derivative(lambda x: x, one, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, maxiter=0)
+            derivative(lambda x: x, one, maxiter=0)
 
         message = '`order` must be a positive integer'
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, order=1.5)
+            derivative(lambda x: x, one, order=1.5)
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, order=0)
+            derivative(lambda x: x, one, order=0)
 
         message = '`preserve_shape` must be True or False.'
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, preserve_shape='herring')
+            derivative(lambda x: x, one, preserve_shape='herring')
 
         message = '`callback` must be callable.'
         with pytest.raises(ValueError, match=message):
-            differentiate(lambda x: x, one, callback='shrubbery')
+            derivative(lambda x: x, one, callback='shrubbery')
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
@@ -386,16 +383,16 @@ class TestDifferentiate:
             return x ** 99 - 1
 
         if not is_torch(xp):  # torch defaults to float32
-            res = differentiate(f, xp.asarray(7), tolerances=dict(rtol=1e-10))
+            res = derivative(f, xp.asarray(7), tolerances=dict(rtol=1e-10))
             assert res.success
             xp_assert_close(res.df, xp.asarray(99*7.**98))
 
         # Test invalid step size and direction
-        res = differentiate(xp.exp, xp.asarray(1), step_direction=xp.nan)
+        res = derivative(xp.exp, xp.asarray(1), step_direction=xp.nan)
         xp_assert_equal(res.df, xp.asarray(xp.nan))
         xp_assert_equal(res.status, xp.asarray(-3, dtype=xp.int32))
 
-        res = differentiate(xp.exp, xp.asarray(1), initial_step=0)
+        res = derivative(xp.exp, xp.asarray(1), initial_step=0)
         xp_assert_equal(res.df, xp.asarray(xp.nan))
         xp_assert_equal(res.status, xp.asarray(-3, dtype=xp.int32))
 
@@ -403,7 +400,7 @@ class TestDifferentiate:
         # of iterations if function is a polynomial. Ideally, all polynomials
         # of order 0-2 would get exact result with 0 refinement iterations,
         # all polynomials of order 3-4 would be differentiated exactly after
-        # 1 iteration, etc. However, it seems that differentiate needs an
+        # 1 iteration, etc. However, it seems that `derivative` needs an
         # extra iteration to detect convergence based on the error estimate.
 
         for n in range(6):
@@ -413,11 +410,11 @@ class TestDifferentiate:
 
             ref = 2*n*x**(n-1)
 
-            res = differentiate(f, x, maxiter=1, order=max(1, n))
+            res = derivative(f, x, maxiter=1, order=max(1, n))
             xp_assert_close(res.df, ref, rtol=1e-15)
             xp_assert_equal(res.error, xp.asarray(xp.nan, dtype=xp.float64))
 
-            res = differentiate(f, x, order=max(1, n))
+            res = derivative(f, x, order=max(1, n))
             assert res.success
             assert res.nit == 2
             xp_assert_close(res.df, ref, rtol=1e-15)
@@ -426,7 +423,7 @@ class TestDifferentiate:
         def f(x, c):
             return c*x - 1
 
-        res = differentiate(f, xp.asarray(2), args=xp.asarray(3))
+        res = derivative(f, xp.asarray(2), args=xp.asarray(3))
         xp_assert_close(res.df, xp.asarray(3.))
 
     # no need to run a test on multiple backends if it's xfailed
@@ -437,11 +434,11 @@ class TestDifferentiate:
         (lambda x: np.where(x > 1, (x - 1) ** 5, (x - 1) ** 3), 1)
     ))
     def test_saddle_gh18811(self, case):
-        # With default settings, differentiate will not always converge when
+        # With default settings, `derivative` will not always converge when
         # the true derivative is exactly zero. This tests that specifying a
         # (tight) `atol` alleviates the problem. See discussion in gh-18811.
         atol = 1e-16
-        res = differentiate(*case, step_direction=[-1, 0, 1], atol=atol)
+        res = derivative(*case, step_direction=[-1, 0, 1], atol=atol)
         assert np.all(res.success)
         assert_allclose(res.df, 0, atol=atol)
 
@@ -455,7 +452,7 @@ class JacobianHessianTest:
         with pytest.raises(ValueError, match=message):
             jh_func(np.sin, 1, tolerances=dict(atol=-1))
 
-        # Confirm that other parameters are being passed to `differentiate`,
+        # Confirm that other parameters are being passed to `derivative`,
         # which raises an appropriate error message.
         x = np.ones(3)
         func = optimize.rosen

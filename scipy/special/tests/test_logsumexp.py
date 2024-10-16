@@ -6,13 +6,29 @@ from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import array_namespace, is_array_api_strict
-from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
+                                         xp_assert_less)
 
 from scipy.special import logsumexp, softmax
+from scipy.special._logsumexp import _wrap_radians
 
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
+
+
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('jax.numpy',
+                              reason="JAX arrays do not support item assignment")
+def test_wrap_radians(xp):
+    x = xp.asarray([-math.pi-1, -math.pi, -1, -1e-300,
+                    0, 1e-300, 1, math.pi, math.pi+1])
+    ref = xp.asarray([math.pi-1, math.pi, -1, -1e-300,
+                    0, 1e-300, 1, math.pi, -math.pi+1])
+    res = _wrap_radians(x, xp)
+    xp_assert_close(res, ref, atol=0)
+
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
@@ -196,10 +212,50 @@ class TestLogSumExp:
         xp_assert_close(logsumexp(a, b=b), desired)
 
     def test_gh18295(self, xp):
+        # gh-18295 noted loss of precision when real part of one element is much
+        # larger than the rest. Check that this is resolved.
         a = xp.asarray([0.0, -40.0])
         res = logsumexp(a)
         ref = xp.logaddexp(a[0], a[1])
         xp_assert_close(res, ref)
+
+    @pytest.mark.parametrize('dtype', ['complex64', 'complex128'])
+    def test_gh21610(self, xp, dtype):
+        # gh-21610 noted that `logsumexp` could return imaginary components
+        # outside the range (-pi, pi]. Check that this is resolved.
+        # While working on this, I noticed that all other tests passed even
+        # when the imaginary component of the result was zero. This suggested
+        # the need of a stronger test with imaginary dtype.
+        rng = np.random.default_rng(324984329582349862)
+        dtype = getattr(xp, dtype)
+        shape = (10, 100)
+        x = rng.uniform(1, 40, shape) + 1.j * rng.uniform(1, 40, shape)
+        x = xp.asarray(x, dtype=dtype)
+
+        res = logsumexp(x, axis=1)
+        ref = xp.log(xp.sum(xp.exp(x), axis=1))
+        max = xp.full_like(xp.imag(res), xp.asarray(xp.pi))
+        xp_assert_less(xp.abs(xp.imag(res)), max)
+        xp_assert_close(res, ref)
+
+        out, sgn = logsumexp(x, return_sign=True, axis=1)
+        ref = xp.sum(xp.exp(x), axis=1)
+        xp_assert_less(xp.abs(xp.imag(sgn)), max)
+        xp_assert_close(out, xp.real(xp.log(ref)))
+        xp_assert_close(sgn, ref/xp.abs(ref))
+
+    def test_gh21709_small_imaginary(self, xp):
+        # Test that `logsumexp` does not lose relative precision of
+        # small imaginary components
+        x = xp.asarray([0, 0.+2.2204460492503132e-17j])
+        res = logsumexp(x)
+        # from mpmath import mp
+        # mp.dps = 100
+        # x, y = mp.mpc(0), mp.mpc('0', '2.2204460492503132e-17')
+        # ref = complex(mp.log(mp.exp(x) + mp.exp(y)))
+        ref = xp.asarray(0.6931471805599453+1.1102230246251566e-17j)
+        xp_assert_close(xp.real(res), xp.real(ref))
+        xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
 
 class TestSoftmax:

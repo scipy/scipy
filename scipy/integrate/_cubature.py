@@ -1,7 +1,7 @@
 import heapq
 import itertools
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import ModuleType
 from typing import Any, TYPE_CHECKING
 
@@ -29,7 +29,7 @@ class CubatureRegion:
     error: Array
     a: Array
     b: Array
-    _xp: ModuleType
+    _xp: ModuleType = field(repr=False)
 
     def __lt__(self, other):
         # Consider regions with higher error estimates as being "less than" regions with
@@ -53,7 +53,7 @@ class CubatureResult:
     rtol: float
 
 
-def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
+def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
              args=(), workers=1):
     r"""
     Adaptive cubature of multidimensional array-valued function.
@@ -90,23 +90,21 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
         Rule used to estimate the integral. If passing a string, the options are
         "gauss-kronrod" (21 node), or "genz-malik" (degree 7). If a rule like
         "gauss-kronrod" is specified for an ``n``-dim integrand, the corresponding
-        Cartesian product rule is used. See Notes.
-
-        "gk21", "gk15" are also supported for compatibility with `quad_vec`.
+        Cartesian product rule is used. "gk21", "gk15" are also supported for
+        compatibility with `quad_vec`. See Notes.
     rtol, atol : float, optional
         Relative and absolute tolerances. Iterations are performed until the error is
         estimated to be less than ``atol + rtol * abs(est)``. Here `rtol` controls
         relative accuracy (number of correct digits), while `atol` controls absolute
         accuracy (number of correct decimal places). To achieve the desired `rtol`, set
         `atol` to be smaller than the smallest value that can be expected from
-        ``rtol * abs(y)`` so that rtol dominates the allowable error. If `atol` is
+        ``rtol * abs(y)`` so that `rtol` dominates the allowable error. If `atol` is
         larger than ``rtol * abs(y)`` the number of correct digits is not guaranteed.
-        Conversely, to achieve the desired `atol` set `rtol` such that ``rtol * abs(y)``
-        is always smaller than `atol`. Default values are 1e-8 for `rtol` and 0 for
-        `atol`.
+        Conversely, to achieve the desired `atol`, set `rtol` such that
+        ``rtol * abs(y)`` is always smaller than `atol`. Default values are 1e-8 for
+        `rtol` and 0 for `atol`.
     max_subdivisions : int, optional
-        Upper bound on the number of subdivisions to perform to improve the estimate
-        over a subregion. Default is 10,000.
+        Upper bound on the number of subdivisions to perform. Default is 10,000.
     args : tuple, optional
         Additional positional args passed to `f`, if any.
     workers : int or map-like callable, optional
@@ -119,87 +117,36 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     Returns
     -------
-    res : CubatureResult
-        Result of estimation. The estimate of the integral is `res.estimate`, and the
-        estimated error is `res.error`. If the integral converges within
-        `max_subdivions`, then `res.status` will be ``"converged"``, otherwise it will
-        be ``"not_converged"``. See `CubatureResult`.
+    res : object
+        Object containing the results of the estimation. It has the following
+        attributes:
 
-    Examples
-    --------
-    A simple 1D integral with vector output. Here ``f(x) = x^n`` is integrated over the
-    interval ``[0, 1]``. Since no rule is specified, the default "gk21" is used, which
-    corresponds to `GaussKronrod` rule with 21 nodes.
+        estimate : ndarray
+            Estimate of the value of the integral over the overall region specified.
+        error : ndarray
+            Estimate of the error of the approximation over the overall region
+            specified.
+        status : str
+            Whether the estimation was successful. Can be either: "converged",
+            "not_converged".
+        subdivisions : int
+            Number of subdivisions performed.
+        atol, rtol : float
+            Requested tolerances for the approximation.
+        regions: list of object
+            List of objects containing the estimates of the integral over smaller
+            regions of the domain.
 
-    >>> import numpy as np
-    >>> from scipy.integrate import cubature
-    >>> def f(x, n):
-    ...    return x.reshape(-1, 1)**n  # Make sure x and n are broadcastable
-    >>> res = cubature(
-    ...     f,
-    ...     a=[0],
-    ...     b=[1],
-    ...     args=(
-    ...         # Since f accepts arrays of shape (npoints, ndim) we need to
-    ...         # make sure n is the right shape
-    ...         np.arange(10).reshape(1, -1),
-    ...     )
-    ... )
-    >>> res.estimate
-     array([1.        , 0.5       , 0.33333333, 0.25      , 0.2       ,
-            0.16666667, 0.14285714, 0.125     , 0.11111111, 0.1       ])
+        Each object in ``regions`` has the following attributes:
 
-    A 7D integral with arbitrary-shaped array output. Here::
-
-        f(x) = cos(2*pi*r + alphas @ x)
-
-    for some ``r`` and ``alphas``, and the integral is performed over the unit
-    hybercube, :math:`[0, 1]^7`. Since the integral is in a moderate number of
-    dimensions, "genz-malik" is used rather than the default "gauss-kronrod" to avoid
-    constructing a product rule with :math:`21^7 \approx 2 \times 10^9` nodes.
-
-    >>> import numpy as np
-    >>> from scipy.integrate import cubature
-    >>> def f(x, r, alphas):
-    ...     # f(x) = cos(2*pi*r + alpha @ x)
-    ...     # Need to allow r and alphas to be arbitrary shape
-    ...     npoints, ndim = x.shape[0], x.shape[-1]
-    ...     alphas_reshaped = alphas[np.newaxis, :]
-    ...     x_reshaped = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
-    ...     return np.cos(2*np.pi*r + np.sum(alphas_reshaped * x_reshaped, axis=-1))
-    >>> rng = np.random.default_rng()
-    >>> r, alphas = rng.random((2, 3)), rng.random((2, 3, 7))
-    >>> res = cubature(
-    ...     f=f,
-    ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
-    ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
-    ...     rtol=1e-5,
-    ...     rule="genz-malik",
-    ...     args=(r, alphas),
-    ... )
-    >>> res.estimate
-     array([[-0.79812452,  0.35246913, -0.52273628],
-            [ 0.88392779,  0.59139899,  0.41895111]])
-
-    To compute in parallel, it is possible to use the argument `workers`, for example:
-
-    >>> from concurrent.futures import ThreadPoolExecutor
-    >>> with ThreadPoolExecutor() as executor:
-    ...     res = cubature(
-    ...         f=f,
-    ...         a=np.array([0, 0, 0, 0, 0, 0, 0]),
-    ...         b=np.array([1, 1, 1, 1, 1, 1, 1]),
-    ...         rtol=1e-5,
-    ...         rule="genz-malik",
-    ...         args=(r, alphas),
-    ...         workers=executor.map,
-    ...      )
-    >>> res.estimate
-     array([[-0.79812452,  0.35246913, -0.52273628],
-            [ 0.88392779,  0.59139899,  0.41895111]])
-
-    When this is done with process-based parallelization (as would be the case passing
-    `workers` as an integer) you should ensure the main module is import-safe.
+        a, b : ndarray
+            Points describing the corners of the region. If the original integral
+            contained infinite limits or was over a region described by `region`,
+            then `a` and `b` are in the transformed coordinates.
+        estimate : ndarray
+            Estimate of the value of the integral over this region.
+        error : ndarray
+            Estimate of the error of the approximation over this region.
 
     Notes
     -----
@@ -233,7 +180,84 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     .. [2] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
         numerical integration over an N-dimensional rectangular region, Journal of
         Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
-        ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
+        ISSN 0377-0427
+        :doi:`10.1016/0771-050X(80)90039-X`
+
+    Examples
+    --------
+    **1D integral with vector output**:
+
+    .. math::
+
+        \int^1_0 \mathbf f(x) \text dx
+
+    Where ``f(x) = x^n`` and ``n = np.arange(10)`` is a vector. Since no rule is
+    specified, the default "gk21" is used, which corresponds to Gauss-Kronrod
+    integration with 21 nodes.
+
+    >>> import numpy as np
+    >>> from scipy.integrate import cubature
+    >>> def f(x, n):
+    ...    # Make sure x and n are broadcastable
+    ...    return x[:, np.newaxis]**n[np.newaxis, :]
+    >>> res = cubature(
+    ...     f,
+    ...     a=[0],
+    ...     b=[1],
+    ...     args=(np.arange(10),),
+    ... )
+    >>> res.estimate
+     array([1.        , 0.5       , 0.33333333, 0.25      , 0.2       ,
+            0.16666667, 0.14285714, 0.125     , 0.11111111, 0.1       ])
+
+    **7D integral with arbitrary-shaped array output**::
+
+        f(x) = cos(2*pi*r + alphas @ x)
+
+    for some ``r`` and ``alphas``, and the integral is performed over the unit
+    hybercube, :math:`[0, 1]^7`. Since the integral is in a moderate number of
+    dimensions, "genz-malik" is used rather than the default "gauss-kronrod" to
+    avoid constructing a product rule with :math:`21^7 \approx 2 \times 10^9` nodes.
+
+    >>> import numpy as np
+    >>> from scipy.integrate import cubature
+    >>> def f(x, r, alphas):
+    ...     # f(x) = cos(2*pi*r + alphas @ x)
+    ...     # Need to allow r and alphas to be arbitrary shape
+    ...     npoints, ndim = x.shape[0], x.shape[-1]
+    ...     alphas = alphas[np.newaxis, ...]
+    ...     x = x.reshape(npoints, *([1]*(len(alphas.shape) - 1)), ndim)
+    ...     return np.cos(2*np.pi*r + np.sum(alphas * x, axis=-1))
+    >>> rng = np.random.default_rng()
+    >>> r, alphas = rng.random((2, 3)), rng.random((2, 3, 7))
+    >>> res = cubature(
+    ...     f=f,
+    ...     a=np.array([0, 0, 0, 0, 0, 0, 0]),
+    ...     b=np.array([1, 1, 1, 1, 1, 1, 1]),
+    ...     rtol=1e-5,
+    ...     rule="genz-malik",
+    ...     args=(r, alphas),
+    ... )
+    >>> res.estimate
+     array([[-0.79812452,  0.35246913, -0.52273628],
+            [ 0.88392779,  0.59139899,  0.41895111]])
+
+    **Parallel computation with** `workers`:
+
+    >>> from concurrent.futures import ThreadPoolExecutor
+    >>> with ThreadPoolExecutor() as executor:
+    ...     res = cubature(
+    ...         f=f,
+    ...         a=np.array([0, 0, 0, 0, 0, 0, 0]),
+    ...         b=np.array([1, 1, 1, 1, 1, 1, 1]),
+    ...         rtol=1e-5,
+    ...         rule="genz-malik",
+    ...         args=(r, alphas),
+    ...         workers=executor.map,
+    ...      )
+    >>> res.estimate
+     array([[-0.79812452,  0.35246913, -0.52273628],
+            [ 0.88392779,  0.59139899,  0.41895111]])
     """
 
     # It is also possible to use a custom rule, but this is not yet part of the public
@@ -245,6 +269,9 @@ def cubature(f, a, b, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     # Convert a and b to arrays
     a = xp.asarray(a, dtype=xp.float64)
     b = xp.asarray(b, dtype=xp.float64)
+
+    if xp_size(a) == 0 or xp_size(b) == 0:
+        raise ValueError("`a` and `b` must be nonempty")
 
     if a.ndim != 1 or b.ndim != 1:
         raise ValueError("`a` and `b` must be 1D arrays")

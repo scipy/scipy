@@ -1623,9 +1623,9 @@ class ShortTimeFFT:
             raise RuntimeError(error_str)
 
         if self.phase_shift is None:
-            return x[:self.m_num]
+            return x[..., :self.m_num]
         p_s = (self.phase_shift + self.m_num_mid) % self.m_num
-        return np.roll(x, p_s, axis=-1)[:self.m_num]
+        return np.roll(x, p_s, axis=-1)[..., :self.m_num]
 
     def extent(self, n: int, axes_seq: Literal['tf', 'ft'] = 'tf',
                center_bins: bool = False) -> tuple[float, float, float, float]:

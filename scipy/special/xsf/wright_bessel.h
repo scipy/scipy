@@ -780,7 +780,9 @@ XSF_HOST_DEVICE inline double wright_bessel_t(double a, double b, double x) {
     }
     if (x <= 2) {
         // 20 term Taylor Series => error mostly smaller 1e-12 to 1e-13
-        return detail::wb_series(a, b, x, 0, 20);
+        double res = detail::wb_series(a, b, x, 0, 20);
+        if (log_wb) res = std::log(res);
+        return res;
     }
     if (a >= 5) {
         /* Taylor series around the approximate maximum term.
