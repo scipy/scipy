@@ -26,6 +26,3 @@
 [submodule "scipy/_lib/cobyqa"]
 	path = scipy/_lib/cobyqa
 	url = https://github.com/cobyqa/cobyqa.git
-[submodule "vendored-meson/meson"]
-	path = vendored-meson/meson
-	url = https://github.com/numpy/meson.git

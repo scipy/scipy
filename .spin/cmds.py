@@ -2,6 +2,7 @@ import os
 import sys
 import importlib
 import importlib.util
+import json
 import traceback
 import warnings
 import math
@@ -364,7 +365,7 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
         ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + ('-Db_sanitize=address,undefined', )
 
     if ctx.params['setup_args']:
-        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + tuple([str(arg) for arg in args.setup_args])
+        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + tuple([str(arg) for arg in ctx.params['setup_args']])
 
     if ctx.params['with_accelerate']:
         # on a mac you probably want to use accelerate over scipy_openblas
@@ -382,7 +383,7 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
         n_cores = cpu_count(only_physical_cores=True)
         ctx.params[MESON_ARGS]["jobs"] = n_cores
     else:
-        ctx.params[MESON_ARGS]["jobs"] = ctx.parallel
+        ctx.params[MESON_ARGS]["jobs"] = ctx.params['parallel']
 
     ctx.params[MESON_ARGS]["install"] = ctx.params[MESON_ARGS]["install"] + ("--tags=" + ctx.params['tags'], )
 
@@ -467,7 +468,6 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
     """  # noqa: E501
     tests = ctx.params['tests']
     markexpr = ctx.params['mode']
-    print(tests)
     if (not pytest_args) and (not tests):
         pytest_args = ('scipy',)
 
@@ -490,11 +490,13 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
 
     ctx.params['pytest_args'] = pytest_args
 
+    if len(ctx.params['array_api_backend']) != 0:
+        os.environ['SCIPY_ARRAY_API'] = json.dumps(list(ctx.params['array_api_backend']))
+
     for extra_param in (
         'verbose', 'coverage', 'durations',
         'submodule', 'array_api_backend',
         'mode', 'parallel', 'tests'):
         del ctx.params[extra_param]
 
-    print(ctx.params)
     ctx.forward(meson.test)

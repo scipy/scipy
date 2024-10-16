@@ -131,10 +131,7 @@ meson = 'vendored-meson/meson/meson.py'
 install = ['--tags=runtime,python-runtime,tests,devel']
 
 [tool.spin]
-package = 'numpy'
-
-[tool.spin.meson]
-cli = 'vendored-meson/meson/meson.py'
+package = 'scipy'
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
