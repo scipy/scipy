@@ -14,8 +14,11 @@ from .trf import trf
 from .dogbox import dogbox
 from .common import EPS, in_bounds, make_strictly_feasible
 
+    
+from .._optimize import (_wrap_callback)
 
 TERMINATION_MESSAGES = {
+    -2: "Stopped because `callback` function raised `StopIteration` or returned `True`",
     -1: "Improper input parameters status returned from `leastsq`",
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
@@ -242,7 +245,7 @@ def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=1.0, loss='linear',
         f_scale=1.0, diff_step=None, tr_solver=None, tr_options=None,
-        jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs=None):
+        jac_sparsity=None, max_nfev=None, verbose=0, callback=None, args=(), kwargs=None):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
     Given the residuals f(x) (an m-D real function of n real
@@ -439,6 +442,27 @@ def least_squares(
         * 1 : display a termination report.
         * 2 : display progress during iterations (not supported by 'lm'
           method).
+          
+    callback : None or callable, optional
+        Callback function that is called by the algorithm on each iteration. 
+        This can be used to print or plot the optimization results at each
+        step, and to stop the optimization algorithm based on some user-defined
+        condition.  Only implemented for the `trf` and `dogbox` methods.
+        
+        The signature is ``callback(intermediate_result: OptimizeResult)``
+        
+        `intermediate_result is a `scipy.optimize.OptimizeResult` 
+        which contains the intermediate results of the optimization at the 
+        current iteration.
+        
+        The callback also supports a signature like: ``callback(x)``
+
+        Introspection is used to determine which of the signatures is invoked.
+       
+        If the `callback` function raises `StopIteration` or returns `True`,
+        the optimization algorithm will stop and return with status code -2.
+        
+        .. versionadded:: 1.14.2
 
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
@@ -487,6 +511,7 @@ def least_squares(
         status : int
             The reason for algorithm termination:
 
+            * -2 : terminated because callback raised StopIteration or returned True
             * -1 : improper input parameters status returned from MINPACK.
             *  0 : the maximum number of function evaluations is exceeded.
             *  1 : `gtol` termination condition is satisfied.
@@ -939,14 +964,19 @@ def least_squares(
             else:
                 tr_solver = 'lsmr'
 
+    # Wrap callback function.  If callback is None, callback_wrapped also is None
+    callback_wrapped = _wrap_callback(callback)
+
     if method == 'lm':
+        if callback is not None:
+            warn("Callback function specified, but not supported with `lm` method.")
         result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
                               max_nfev, x_scale, diff_step)
 
     elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
                      gtol, max_nfev, x_scale, loss_function, tr_solver,
-                     tr_options.copy(), verbose)
+                     tr_options.copy(), verbose, callback=callback_wrapped)
 
     elif method == 'dogbox':
         if tr_solver == 'lsmr' and 'regularize' in tr_options:
@@ -958,7 +988,7 @@ def least_squares(
 
         result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
                         xtol, gtol, max_nfev, x_scale, loss_function,
-                        tr_solver, tr_options, verbose)
+                        tr_solver, tr_options, verbose, callback=callback_wrapped)
 
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0
