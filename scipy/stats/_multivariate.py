@@ -5965,7 +5965,7 @@ alpha : array_like
     determines the dimensionality of the distribution. Each entry must be
     strictly positive.
 n : int or array_like
-    The number of trials. Each element must be a strictly positive integer.
+    The number of trials. Each element must be a non-negative integer.
 """
 
 _dirichlet_mn_doc_frozen_callparams = ""
@@ -6007,8 +6007,8 @@ def _dirichlet_multinomial_check_parameters(alpha, n, x=None):
         raise ValueError("`alpha` must contain only positive values.")
 
     n_int = np.floor(n)
-    if np.any(n <= 0) or np.any(n != n_int):
-        raise ValueError("`n` must be a positive integer.")
+    if np.any(n < 0) or np.any(n != n_int):
+        raise ValueError("`n` must be a non-negative integer.")
     n = n_int
 
     sum_alpha = np.sum(alpha, axis=-1)
