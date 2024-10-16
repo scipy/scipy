@@ -1604,6 +1604,7 @@ class TestOrderFilt:
                            [2, 3, 2])
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class _TestLinearFilter:
 
     def setup_method(self):
@@ -2718,6 +2719,7 @@ class TestFiltFilt:
         xp_assert_close(y, expected)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
 
@@ -3749,6 +3751,7 @@ def test_nonnumeric_dtypes(func, xp):
         func(*args, x=1.)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 @skip_xp_backends('jax.numpy', reason='item assignment: sosfilt uses in-place ops')
 @pytest.mark.parametrize('dt', ['float32', 'float64', 'complex64', 'complex128'])
 class TestSOSFilt:
@@ -3987,6 +3990,7 @@ class TestSOSFilt:
             sosfilt(sos, x)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 @skip_xp_backends('jax.numpy', reason='item assignment')
 class TestDeconvolve:
 
