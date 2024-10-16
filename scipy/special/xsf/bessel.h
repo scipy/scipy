@@ -1172,8 +1172,8 @@ inline std::complex<double> cyl_hankel_2(double v, std::complex<double> z) {
     if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
         return cy;
     }
-    if (v == 0 && z.real() == 0 && z.imag() == 0) {
-        cy.real(1.0);
+    if (v == 0 && z == 0.0) {
+        cy.real(NAN);
         cy.imag(INFINITY);
         return cy;
     }
