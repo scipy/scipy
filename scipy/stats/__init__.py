@@ -464,6 +464,7 @@ Random Variables
 .. autosummary::
    :toctree: generated/
 
+   ContinuousDistribution
    Normal
 
 Quasi-Monte Carlo
@@ -635,7 +636,7 @@ from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
 from ._new_distributions import Normal
-from ._distribution_infrastructure import wrap_rv_continuous
+from ._distribution_infrastructure import ContinuousDistribution
 from ._mgc import multiscale_graphcorr
 
 
