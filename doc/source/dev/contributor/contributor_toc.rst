@@ -94,7 +94,6 @@ Compiled code
     development_workflow
     pep8
     ../gitwash/gitwash
-    ../../reference/index
     reviewing_prs
     ../triage
     adding_new

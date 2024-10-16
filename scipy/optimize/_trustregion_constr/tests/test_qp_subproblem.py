@@ -33,7 +33,7 @@ class TestEQPDirectFactorization(TestCase):
 class TestSphericalBoundariesIntersections(TestCase):
 
     def test_2d_sphere_constraints(self):
-        # Interior inicial point
+        # Interior initial point
         ta, tb, intersect = sphere_intersections([0, 0],
                                                  [1, 0], 0.5)
         assert_array_almost_equal([ta, tb], [0, 0.5])
@@ -184,7 +184,7 @@ class TestBoxBoundariesIntersections(TestCase):
         assert_array_almost_equal([ta, tb], [1, 3])
         assert_equal(intersect, True)
 
-        # Interior initial pointoint
+        # Interior initial point
         ta, tb, intersect = box_intersections([0, 0], [4, 4],
                                               [-2, -3], [3, 2],
                                               entire_line=True)

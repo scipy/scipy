@@ -376,7 +376,7 @@ class TestDifferentialEvolutionSolver:
         args = (1., 2., 3.)
 
         def quadratic(x, *args):
-            if type(args) != tuple:
+            if not isinstance(args, tuple):
                 raise ValueError('args should be a tuple')
             return args[0] + args[1] * x + args[2] * x**2.
 
@@ -719,7 +719,7 @@ class TestDifferentialEvolutionSolver:
             # is being overridden by the workers keyword
             with warns(UserWarning):
                 with DifferentialEvolutionSolver(rosen, bounds, workers=p.map) as s:
-                    pass
+                    solver.solve()
             assert s._updating == 'deferred'
 
     @pytest.mark.fail_slow(10)
@@ -1696,4 +1696,3 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
-

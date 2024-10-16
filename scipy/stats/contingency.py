@@ -205,6 +205,7 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
     scipy.stats.power_divergence
     scipy.stats.barnard_exact
     scipy.stats.boschloo_exact
+    :ref:`hypothesis_chi2_contingency` : Extended example
 
     Notes
     -----
@@ -246,38 +247,10 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
     .. [3] Cressie, N. and Read, T. R. C., "Multinomial Goodness-of-Fit
            Tests", J. Royal Stat. Soc. Series B, Vol. 46, No. 3 (1984),
            pp. 440-464.
-    .. [4] Berger, Jeffrey S. et al. "Aspirin for the Primary Prevention of
-           Cardiovascular Events in Women and Men: A Sex-Specific
-           Meta-analysis of Randomized Controlled Trials."
-           JAMA, 295(3):306-313, :doi:`10.1001/jama.295.3.306`, 2006.
 
     Examples
     --------
-    In [4]_, the use of aspirin to prevent cardiovascular events in women
-    and men was investigated. The study notably concluded:
-
-        ...aspirin therapy reduced the risk of a composite of
-        cardiovascular events due to its effect on reducing the risk of
-        ischemic stroke in women [...]
-
-    The article lists studies of various cardiovascular events. Let's
-    focus on the ischemic stoke in women.
-
-    The following table summarizes the results of the experiment in which
-    participants took aspirin or a placebo on a regular basis for several
-    years. Cases of ischemic stroke were recorded::
-
-                          Aspirin   Control/Placebo
-        Ischemic stroke     176           230
-        No stroke         21035         21018
-
-    Is there evidence that the aspirin reduces the risk of ischemic stroke?
-    We begin by formulating a null hypothesis :math:`H_0`:
-
-        The effect of aspirin is equivalent to that of placebo.
-
-    Let's assess the plausibility of this hypothesis with
-    a chi-square test.
+    A two-way example (2 x 3):
 
     >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
@@ -352,7 +325,9 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
     >>> res.pvalue, ref.pvalue
     (0.0614122539870913, 0.1074)  # may vary
 
-    """
+    For a more detailed example, see :ref:`hypothesis_chi2_contingency`.
+
+"""
     observed = np.asarray(observed)
     if np.any(observed < 0):
         raise ValueError("All values in `observed` must be nonnegative.")

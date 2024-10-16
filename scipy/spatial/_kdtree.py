@@ -36,7 +36,7 @@ def minkowski_distance_p(x, y, p=2):
     --------
     >>> from scipy.spatial import minkowski_distance_p
     >>> minkowski_distance_p([[0, 0], [0, 0]], [[1, 1], [0, 1]])
-    array([2, 1])
+    array([2., 1.])
 
     """
     x = np.asarray(x)
@@ -107,7 +107,7 @@ class Rectangle:
         self.m, = self.maxes.shape
 
     def __repr__(self):
-        return "<Rectangle %s>" % list(zip(self.mins, self.maxes))
+        return f"<Rectangle {list(zip(self.mins, self.maxes))}>"
 
     def volume(self):
         """Total volume."""

@@ -135,7 +135,7 @@ def cluster_maxclust_dist(const double[:, :] Z, int[:] T, int n, int mc):
     mc : int
         The maximum number of clusters.
     """
-    cdef double[:] max_dists = np.ndarray(n, dtype=np.float64)
+    cdef double[:] max_dists = np.ndarray(n - 1, dtype=np.float64)
     get_max_dist_for_each_cluster(Z, max_dists, n)
     # should use an O(n) algorithm
     cluster_maxclust_monocrit(Z, max_dists, T, n, mc)
@@ -160,7 +160,13 @@ cpdef void cluster_maxclust_monocrit(const double[:, :] Z, const double[:] MC, i
     max_nc : int
         The maximum number of clusters.
     """
-    cdef int i, k, i_lc, i_rc, root, nc, lower_idx, upper_idx
+    cdef int i
+    if max_nc >= n:
+        for i in range(n):
+            T[i] = i + 1
+        return
+
+    cdef int k, i_lc, i_rc, root, nc, lower_idx, upper_idx
     cdef double thresh
     cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
@@ -169,7 +175,8 @@ cpdef void cluster_maxclust_monocrit(const double[:, :] Z, const double[:] MC, i
     if not visited:
         raise MemoryError
 
-    lower_idx = 0
+    # This index corresponds to "-INFINITY". `MC` is never evaluated at this index.
+    lower_idx = -1
     upper_idx = n - 1
     while upper_idx - lower_idx > 1:
         i = (lower_idx + upper_idx) >> 1
@@ -768,6 +775,12 @@ cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
         if dist < current_min:
             current_min = dist
             y = i
+
+    if y == -1:
+        raise ValueError(
+            "find_min_dist cannot find any neighbors closer than inf away. "
+            "Check that distances contain no negative/infinite/NaN entries. "
+        )
 
     return Pair(y, current_min)
 
