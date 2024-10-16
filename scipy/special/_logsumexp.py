@@ -141,9 +141,10 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     return (out, sgn) if return_sign else out
 
 
-def _wrap_radians(x, xp):
-    # Wrap radians to -pi, pi interval
-    out = (x + math.pi) % (2 * math.pi) - math.pi
+def _wrap_radians(x, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+    # Wrap radians to (-pi, pi] interval
+    out = -((-x + math.pi) % (2 * math.pi) - math.pi)
     # preserve relative precision
     no_wrap = xp.abs(x) < xp.pi
     out[no_wrap] = x[no_wrap]
