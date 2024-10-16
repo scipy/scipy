@@ -49,8 +49,15 @@ def spdiags(data, diags, m=None, n=None, format=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``diags_array`` to take advantage
+        You are encouraged to use ``dia_array`` to take advantage
         of the sparse array functionality.
+
+    Notes
+    -----
+    This function can be replaced by an equivalent call to ``dia_matrix``
+    as::
+
+        dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
     See Also
     --------
@@ -88,7 +95,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         Sequence of arrays containing the array diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
-        Diagonals to set:
+        Diagonals to set (repeated offsets are not allowed):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
@@ -104,13 +111,19 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
 
     Notes
     -----
+    Repeated diagonal offsets are disallowed.
+
     The result from `diags_array` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    Repeated diagonal offsets are disallowed.
+    ``diags_array`` differs from `dia_array` in the way it handles off-diagonals.
+    Specifically, `dia_array` assumes the data input includes padding
+    (ignored values) at the start/end of the rows for positive/negative
+    offset, while ``diags_array` assumes the input data has no padding.
+    Each value in the input ``diagonals`` is used.
 
     .. versionadded:: 1.11
 
@@ -142,6 +155,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
+
     """
     # if offsets is not a sequence, assume that there's only one diagonal
     if isscalarlike(offsets):
@@ -213,7 +227,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         Sequence of arrays containing the matrix diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
-        Diagonals to set:
+        Diagonals to set (repeated offsets are not allowed):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
@@ -234,8 +248,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
 
     Notes
     -----
-    This function differs from `spdiags` in the way it handles
-    off-diagonals.
+    Repeated diagonal offsets are disallowed.
 
     The result from `diags` is the sparse equivalent of::
 
@@ -243,7 +256,11 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    Repeated diagonal offsets are disallowed.
+    ``diags`` differs from ``dia_matrix`` in the way it handles off-diagonals.
+    Specifically, `dia_matrix` assumes the data input includes padding
+    (ignored values) at the start/end of the rows for positive/negative
+    offset, while ``diags` assumes the input data has no padding.
+    Each value in the input ``diagonals`` is used.
 
     .. versionadded:: 0.11
 
@@ -275,6 +292,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
+
     """
     A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
     return dia_matrix(A).asformat(format)
