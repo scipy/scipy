@@ -1117,6 +1117,7 @@ class TestMixture:
         Y = MixedDist()
         x = rng.random(10)
 
+        assert_allclose(X.logentropy(), Y.logentropy())
         assert_allclose(X.entropy(), Y.entropy())
         assert_allclose(X.mode(), Y.mode())
         assert_allclose(X.median(), Y.median())

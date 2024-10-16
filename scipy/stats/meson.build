@@ -135,6 +135,7 @@ py3.install_sources([
     '_new_distribution_docs.json',
     '_odds_ratio.py',
     '_page_trend_test.py',
+    '_probability_distribution.py',
     '_qmc.py',
     '_qmvnt.py',
     '_relative_risk.py',
