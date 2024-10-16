@@ -1333,7 +1333,7 @@ def toms748(f, a, b, args=(), k=1,
     iteration with the same asymptotic efficiency as it finds the root.
 
     For easy statement of efficiency indices, assume that `f` has 4
-    continuouous deriviatives.
+    continuous deriviatives.
     For ``k=1``, the convergence order is at least 2.7, and with about
     asymptotically 2 function evaluations per iteration, the efficiency
     index is approximately 1.65.

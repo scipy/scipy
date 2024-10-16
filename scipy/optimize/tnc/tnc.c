@@ -508,7 +508,7 @@ static void setConstraints(int n, double x[], int pivot[], double xscale[],
  * the truncated-newton method is preconditioned by a limited-memory
  * quasi-newton method (this preconditioning strategy is developed
  * in this routine) with a further diagonal scaling
- * (see routine diagonalscaling).
+ * (see routine diagonalScaling).
  */
 static tnc_rc tnc_minimize(int n, double x[],
                            double *f, double gfull[],

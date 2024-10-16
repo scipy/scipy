@@ -208,7 +208,7 @@ class TestDifferentialEntropy:
                 )
 
     @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason=["JAX doesn't support item assignment"])
+                                  reason="JAX doesn't support item assignment")
     def test_base_differential_entropy_with_axis_0_is_equal_to_default(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((100, 3))
@@ -219,7 +219,7 @@ class TestDifferentialEntropy:
         xp_assert_close(entropy, default_entropy)
 
     @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason=["JAX doesn't support item assignment"])
+                                  reason="JAX doesn't support item assignment")
     def test_base_differential_entropy_transposed(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
@@ -313,7 +313,7 @@ class TestDifferentialEntropy:
         xp_assert_equal(res1, res2)
 
     @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason=["JAX doesn't support item assignment"])
+                                  reason="JAX doesn't support item assignment")
     @pytest.mark.parametrize('method', ["vasicek", "van es", "correa", "ebrahimi"])
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_dtypes_gh21192(self, xp, method, dtype):

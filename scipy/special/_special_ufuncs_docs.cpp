@@ -4762,6 +4762,42 @@ const char *mathieu_cem_doc = R"(
     --------
     mathieu_a, mathieu_b, mathieu_sem
 
+    Notes
+    -----
+    The even Mathieu functions are the solutions to Mathieu's differential equation
+
+    .. math::
+
+        \frac{d^2y}{dx^2} + (a_m - 2q \cos(2x))y = 0
+
+    for which the characteristic number :math:`a_m` (calculated with `mathieu_a`)
+    results in an odd, periodic solution :math:`y(x)` with period 180 degrees
+    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
+
+    References
+    ----------
+    .. [1] 'Mathieu function'. *Wikipedia*.
+           https://en.wikipedia.org/wiki/Mathieu_function
+
+    Examples
+    --------
+    Plot even Mathieu functions of orders ``2`` and ``4``.
+
+    >>> import numpy as np
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+    >>> m = np.asarray([2, 4])
+    >>> q = 50
+    >>> x = np.linspace(-180, 180, 300)[:, np.newaxis]
+    >>> y, _ = special.mathieu_cem(m, q, x)
+    >>> plt.plot(x, y)
+    >>> plt.xlabel('x (degrees)')
+    >>> plt.ylabel('y')
+    >>> plt.legend(('m = 2', 'm = 4'))
+
+    Because the orders ``2`` and
+    ``4`` are even, the period of each function is 180 degrees.
+
     )";
 
 const char *mathieu_modcem1_doc = R"(
@@ -4926,6 +4962,42 @@ const char *mathieu_sem_doc = R"(
     See Also
     --------
     mathieu_a, mathieu_b, mathieu_cem
+
+    Notes
+    -----
+    Odd Mathieu functions are the solutions to Mathieu's differential equation
+
+    .. math::
+
+        \frac{d^2y}{dx^2} + (b_m - 2q \cos(2x))y = 0
+
+    for which the characteristic number :math:`b_m` (calculated with `mathieu_b`)
+    results in an odd, periodic solution :math:`y(x)` with period 180 degrees
+    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
+
+    References
+    ----------
+    .. [1] 'Mathieu function'. *Wikipedia*.
+           https://en.wikipedia.org/wiki/Mathieu_function
+
+    Examples
+    --------
+    Plot odd Mathieu functions of orders ``2`` and ``4``.
+
+    >>> import numpy as np
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+    >>> m = np.asarray([2, 4])
+    >>> q = 50
+    >>> x = np.linspace(-180, 180, 300)[:, np.newaxis]
+    >>> y, _ = special.mathieu_sem(m, q, x)
+    >>> plt.plot(x, y)
+    >>> plt.xlabel('x (degrees)')
+    >>> plt.ylabel('y')
+    >>> plt.legend(('m = 2', 'm = 4'))
+
+    Because the orders ``2`` and
+    ``4`` are even, the period of each function is 180 degrees.
 
     )";
 

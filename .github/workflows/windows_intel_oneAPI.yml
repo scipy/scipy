@@ -47,15 +47,23 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup conda
-        uses: s-weigand/setup-conda@678f22c807cb6fde6a290be6f3546877c98ec66f # v1.2.2
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
         with:
-          update-conda: true
           python-version: 3.11
+          channels: conda-forge
+          channel-priority: strict
+          use-only-tar-bz2: false
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          auto-activate-base: true
+          activate-environment: true
+
       - run: conda --version
       - run: which python
 
       - name: Install packages from conda
+        shell: cmd /C call {0}
         run: |
           conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
 
@@ -83,20 +91,22 @@ jobs:
       # -C-Duse-pythran=false while building SciPy.
       # Reference - https://github.com/serge-sans-paille/pythran/issues/2215
       - name: Initialise Intel oneAPI, MSVC and Build SciPy
+        shell: cmd /C call {0}
         run: |
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
           set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           python dev.py build -C-Duse-pythran=false -C--vsenv
-        shell: cmd
 
       # "import scipy; scipy.test();" fails because
       # scipy/sparse/linalg/_eigen/arpack crashes.
       # Reference - https://github.com/scipy/scipy/issues/20728
       - name: Test scipy.datasets
-        run: python dev.py test -s datasets
-        shell: cmd
+        shell: cmd /C call {0}
+        run: |
+          python dev.py test -s datasets
 
       - name: Test scipy.misc
-        run: python dev.py test -s misc
-        shell: cmd
+        shell: cmd /C call {0}
+        run: |
+          python dev.py test -s misc

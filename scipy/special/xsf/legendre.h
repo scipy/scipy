@@ -21,8 +21,9 @@ struct legendre_p_recurrence_n {
     T z;
 
     void operator()(int n, T (&res)[2]) const {
-        T fac0 = -T(n - 1) / T(n);
-        T fac1 = T(2 * n - 1) / T(n);
+        using value_type = remove_dual_t<T>;
+        value_type fac0 = -value_type(n - 1) / value_type(n);
+        value_type fac1 = value_type(2 * n - 1) / value_type(n);
 
         res[0] = fac0;
         res[1] = fac1 * z;
@@ -270,8 +271,9 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
     int type;
 
     void operator()(int n, T (&res)[2]) const {
-        T fac0 = -T(n + m - 1) / T(n - m);
-        T fac1 = T(2 * n - 1) / T(n - m);
+        using value_type = remove_dual_t<T>;
+        value_type fac0 = -value_type(n + m - 1) / value_type(n - m);
+        value_type fac1 = value_type(2 * n - 1) / value_type(n - m);
 
         res[0] = fac0;
         res[1] = fac1 * z;
@@ -285,8 +287,11 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
     int type;
 
     void operator()(int n, T (&res)[2]) const {
-        T fac0 = -sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
-        T fac1 = sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
+        using value_type = remove_dual_t<T>;
+        value_type fac0 =
+            -sqrt(value_type((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / value_type((2 * n - 3) * (n * n - m * m)));
+        value_type fac1 =
+            sqrt(value_type((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / value_type((2 * n - 3) * (n * n - m * m)));
 
         res[0] = fac0;
         res[1] = fac1 * z;
@@ -566,8 +571,11 @@ struct sph_legendre_p_recurrence_n {
     sph_legendre_p_recurrence_n(int m, T theta) : m(m), theta(theta), theta_cos(cos(theta)) {}
 
     void operator()(int n, T (&res)[2]) const {
-        T fac0 = -sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
-        T fac1 = sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
+        using value_type = remove_dual_t<T>;
+        value_type fac0 =
+            -sqrt(value_type((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / value_type((2 * n - 3) * (n * n - m * m)));
+        value_type fac1 =
+            sqrt(value_type((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / value_type((2 * n - 3) * (n * n - m * m)));
 
         res[0] = fac0;
         res[1] = fac1 * theta_cos;

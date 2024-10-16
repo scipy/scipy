@@ -1247,7 +1247,7 @@ def test_ormrz_unmrz():
 
 def test_tfttr_trttf():
     """
-    Test conversion routines between the Rectengular Full Packed (RFP) format
+    Test conversion routines between the Rectangular Full Packed (RFP) format
     and Standard Triangular Array (TR)
     """
     seed(1234)
@@ -1305,7 +1305,7 @@ def test_tfttr_trttf():
 
 def test_tpttr_trttp():
     """
-    Test conversion routines between the Rectengular Full Packed (RFP) format
+    Test conversion routines between the Rectangular Full Packed (RFP) format
     and Standard Triangular Array (TR)
     """
     seed(1234)
@@ -1346,7 +1346,7 @@ def test_tpttr_trttp():
 
 def test_pftrf():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array
     """
     seed(1234)
@@ -1373,7 +1373,7 @@ def test_pftrf():
 
 def test_pftri():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array to find its inverse
     """
     seed(1234)
@@ -1405,7 +1405,7 @@ def test_pftri():
 
 def test_pftrs():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array and solve a linear system
     """
     seed(1234)
@@ -2992,7 +2992,7 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
                                      [1 - 1j, 2 + 1j]]))])
 def test_ptsvx_NAG(d, e, b, x):
     # test to assure that wrapper is consistent with NAG Manual Mark 26
-    # example problemss: f07jbf, f07jpf
+    # example problems: f07jbf, f07jpf
     # (Links expire, so please search for "NAG Library Manual Mark 26" online)
 
     # obtain routine with correct type based on e.dtype

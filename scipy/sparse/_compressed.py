@@ -1403,6 +1403,56 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             out = r
             return out
 
+    def _broadcast_to(self, shape, copy=False):        
+        if self.shape == shape:
+            return self.copy() if copy else self
+        
+        shape = check_shape(shape, allow_nd=(self._allow_nd))
+
+        if np.broadcast_shapes(self.shape, shape) != shape:
+            raise ValueError("cannot be broadcast")
+        
+        if len(self.shape) == 1 and len(shape) == 1:
+            self.sum_duplicates()
+            if self.nnz == 0: # array has no non zero elements
+                return self.__class__(shape, dtype=self.dtype, copy=False)
+            
+            N = shape[0]
+            data = np.full(N, self.data[0])
+            indices = np.arange(0,N)
+            indptr = np.array([0, N])
+            return self._csr_container((data, indices, indptr), shape=shape, copy=False)
+
+        # treat 1D as a 2D row
+        old_shape = self._shape_as_2d
+            
+        if len(shape) != 2:
+            ndim = len(shape)
+            raise ValueError(f'CSR/CSC broadcast_to cannot have shape >2D. Got {ndim}D')
+        
+        if self.nnz == 0: # array has no non zero elements
+            return self.__class__(shape, dtype=self.dtype, copy=False)
+        
+        self.sum_duplicates()
+        M, N = self._swap(shape)
+        oM, oN = self._swap(old_shape)
+        if all(s == 1 for s in old_shape):
+            # Broadcast a single element to the entire shape
+            data = np.full(M * N, self.data[0])
+            indices = np.tile(np.arange(N), M)
+            indptr = np.arange(0, len(data) + 1, N)
+        elif oM == 1 and oN == N:
+            # Broadcast row-wise (columns for CSC)
+            data = np.tile(self.data, M)
+            indices = np.tile(self.indices, M)
+            indptr = np.arange(0, len(data) + 1, len(self.data))
+        elif oN == 1 and oM == M:
+            # Broadcast column-wise (rows for CSC)
+            data = np.repeat(self.data, N)
+            indices = np.tile(np.arange(N), len(self.data))
+            indptr = self.indptr * N
+        return self.__class__((data, indices, indptr), shape=shape, copy=False)
+
 
 def _make_diagonal_csr(data, is_array=False):
     """build diagonal csc_array/csr_array => self._csr_container

@@ -1,18 +1,19 @@
 # mypy: disable-error-code="attr-defined"
+import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import array_namespace, xp_sign
 
-_EERRORINCREASE = -1  # used in differentiate
+_EERRORINCREASE = -1  # used in derivative
 
-def _differentiate_iv(func, x, args, tolerances, maxiter, order, initial_step,
-                      step_factor, step_direction, preserve_shape, callback):
-    # Input validation for `differentiate`
+def _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
+                   step_factor, step_direction, preserve_shape, callback):
+    # Input validation for `derivative`
     xp = array_namespace(x)
 
-    if not callable(func):
-        raise ValueError('`func` must be callable.')
+    if not callable(f):
+        raise ValueError('`f` must be callable.')
 
     if not np.iterable(args):
         args = (args,)
@@ -51,16 +52,16 @@ def _differentiate_iv(func, x, args, tolerances, maxiter, order, initial_step,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return (func, x, args, atol, rtol, maxiter_int, order_int, initial_step,
+    return (f, x, args, atol, rtol, maxiter_int, order_int, initial_step,
             step_factor, step_direction, preserve_shape, callback)
 
 
-def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
-                  order=8, initial_step=0.5, step_factor=2.0,
-                  step_direction=0, preserve_shape=False, callback=None):
+def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
+               order=8, initial_step=0.5, step_factor=2.0,
+               step_direction=0, preserve_shape=False, callback=None):
     """Evaluate the derivative of a elementwise, real scalar function numerically.
 
-    For each element of the output of `f`, `differentiate` approximates the first
+    For each element of the output of `f`, `derivative` approximates the first
     derivative of `f` at the corresponding element of `x` using finite difference
     differentiation.
 
@@ -143,10 +144,10 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is a ``_RichResult``
-        similar to that returned by `differentiate` (but containing the current
+        similar to that returned by `derivative` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `differentiate` will return a result. `callback` must not mutate
+        `derivative` will return a result. `callback` must not mutate
         `res` or its attributes.
 
     Returns
@@ -184,6 +185,10 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
         x : float array
             The value at which the derivative of `f` was evaluated
             (after broadcasting with `args` and `step_direction`).
+
+    See Also
+    --------
+    jacobian, hessian
 
     Notes
     -----
@@ -231,11 +236,11 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     Evaluate the derivative of ``np.exp`` at several points ``x``.
 
     >>> import numpy as np
-    >>> from scipy.differentiate import differentiate
+    >>> from scipy.differentiate import derivative
     >>> f = np.exp
     >>> df = np.exp  # true derivative
     >>> x = np.linspace(1, 2, 5)
-    >>> res = differentiate(f, x)
+    >>> res = derivative(f, x)
     >>> res.df  # approximation of the derivative
     array([2.71828183, 3.49034296, 4.48168907, 5.75460268, 7.3890561 ])
     >>> res.error  # estimate of the error
@@ -260,10 +265,10 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     >>> ref = df(x)
     >>> errors = []  # true error
     >>> for i in iter:
-    ...     res = differentiate(f, x, maxiter=i, step_factor=hfac,
-    ...                         step_direction=hdir, order=order,
-    ...                         # prevent early termination
-    ...                         tolerances=dict(atol=0, rtol=0))
+    ...     res = derivative(f, x, maxiter=i, step_factor=hfac,
+    ...                      step_direction=hdir, order=order,
+    ...                      # prevent early termination
+    ...                      tolerances=dict(atol=0, rtol=0))
     ...     errors.append(abs(res.df - ref))
     >>> errors = np.array(errors)
     >>> plt.semilogy(iter, errors[:, 0], label='left differences')
@@ -289,7 +294,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     >>> x = np.arange(1, 5)
     >>> p = np.arange(1, 6).reshape((-1, 1))
     >>> hdir = np.arange(-1, 2).reshape((-1, 1, 1))
-    >>> res = differentiate(f, x, args=(p,), step_direction=hdir, maxiter=1)
+    >>> res = derivative(f, x, args=(p,), step_direction=hdir, maxiter=1)
     >>> np.allclose(res.df, df(x, p))
     True
     >>> res.df.shape
@@ -308,12 +313,12 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     ...    return np.sin(c*x)
     >>>
     >>> c = [1, 5, 10, 20]
-    >>> res = differentiate(f, 0, args=(c,))
+    >>> res = derivative(f, 0, args=(c,))
     >>> shapes
     [(4,), (4, 8), (4, 2), (3, 2), (2, 2), (1, 2)]
 
     To understand where these shapes are coming from - and to better
-    understand how `differentiate` computes accurate results - note that
+    understand how `derivative` computes accurate results - note that
     higher values of ``c`` correspond with higher frequency sinusoids.
     The higher frequency sinusoids make the function's derivative change
     faster, so more function evaluations are required to achieve the target
@@ -341,7 +346,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     >>> def f(x):
     ...    return [x, np.sin(3*x), x+np.sin(10*x), np.sin(20*x)*(x-1)**2]
 
-    This integrand is not compatible with `differentiate` as written; for instance,
+    This integrand is not compatible with `derivative` as written; for instance,
     the shape of the output will not be the same as the shape of ``x``. Such a
     function *could* be converted to a compatible form with the introduction of
     additional parameters, but this would be inconvenient. In such cases,
@@ -354,7 +359,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     ...     return [x0, np.sin(3*x1), x2+np.sin(10*x2), np.sin(20*x3)*(x3-1)**2]
     >>>
     >>> x = np.zeros(4)
-    >>> res = differentiate(f, x, preserve_shape=True)
+    >>> res = derivative(f, x, preserve_shape=True)
     >>> shapes
     [(4,), (4, 8), (4, 2), (4, 2), (4, 2), (4, 2)]
 
@@ -366,8 +371,10 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     # TODO (followup):
     #  - investigate behavior at saddle points
     #  - multivariate functions?
+    #  - relative steps?
+    #  - show example of `np.vectorize`
 
-    res = _differentiate_iv(f, x, args, tolerances, maxiter, order, initial_step,
+    res = _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
                             step_factor, step_direction, preserve_shape, callback)
     (func, x, args, atol, rtol, maxiter, order,
      h0, fac, hdir, preserve_shape, callback) = res
@@ -382,14 +389,14 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
 
     finfo = xp.finfo(dtype)
     atol = finfo.smallest_normal if atol is None else atol
-    rtol = finfo.eps**0.5 if rtol is None else rtol
+    rtol = finfo.eps**0.5 if rtol is None else rtol  # keep same as `hessian`
 
     x, f = xs[0], fs[0]
     df = xp.full_like(f, xp.nan)
 
     # Ideally we'd broadcast the shape of `hdir` in `_elementwise_algo_init`, but
     # it's simpler to do it here than to generalize `_elementwise_algo_init` further.
-    # `hdir` and `x` are already broadcasted in `_differentiate_iv`, so we know
+    # `hdir` and `x` are already broadcasted in `_derivative_iv`, so we know
     # that `hdir` can be broadcasted to the final shape. Same with `h0`.
     hdir = xp.broadcast_to(hdir, shape)
     hdir = xp.reshape(hdir, (-1,))
@@ -411,7 +418,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     # - `fs` holds all the function values of all active `x`. The zeroth
     #   axis corresponds with active points `x`, the first axis corresponds
     #   with the different steps (in the order described in
-    #   `_differentiate_weights`).
+    #   `_derivative_weights`).
     # - `terms` (which could probably use a better name) is half the `order`,
     #   which is always even.
     work = _RichResult(x=x, df=df, fs=f[:, xp.newaxis], error=xp.nan, h=h0,
@@ -428,7 +435,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
     def pre_func_eval(work):
         """Determine the abscissae at which the function needs to be evaluated.
 
-        See `_differentiate_weights` for a description of the stencil (pattern
+        See `_derivative_weights` for a description of the stencil (pattern
         of the abscissae).
 
         In the first iteration, there is only one stored function value in
@@ -478,7 +485,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
         function value in `work.fs`, `f(x)`, so we need to add the `order` new
         points. In subsequent iterations, we add two new points. The tricky
         part is getting the order to match that of the weights, which is
-        described in `_differentiate_weights`.
+        described in `_derivative_weights`.
 
         For improvement:
         - Change the order of the weights (and steps in `pre_func_eval`) to
@@ -521,7 +528,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
         work.fs[ic] = work_fc
         work.fs[io] = work_fo
 
-        wc, wo = _differentiate_weights(work, n, xp)
+        wc, wo = _derivative_weights(work, n, xp)
         work.df_last = xp.asarray(work.df, copy=True)
         work.df[ic] = fc @ wc / work.h[ic]
         work.df[io] = fo @ wo / work.h[io]
@@ -576,7 +583,7 @@ def differentiate(f, x, *, args=(), tolerances=None, maxiter=10,
                      xp, preserve_shape)
 
 
-def _differentiate_weights(work, n, xp):
+def _derivative_weights(work, n, xp):
     # This produces the weights of the finite difference formula for a given
     # stencil. In experiments, use of a second-order central difference formula
     # with Richardson extrapolation was more accurate numerically, but it was
@@ -644,15 +651,15 @@ def _differentiate_weights(work, n, xp):
 
     # Note that if the user switches back to floating point precision with
     # `x` and `args`, then `fac` will not necessarily equal the (lower
-    # precision) cached `_differentiate_weights.fac`, and the weights will
+    # precision) cached `_derivative_weights.fac`, and the weights will
     # need to be recalculated. This could be fixed, but it's late, and of
     # low consequence.
-    if fac != _differentiate_weights.fac:
-        _differentiate_weights.central = []
-        _differentiate_weights.right = []
-        _differentiate_weights.fac = fac
+    if fac != _derivative_weights.fac:
+        _derivative_weights.central = []
+        _derivative_weights.right = []
+        _derivative_weights.fac = fac
 
-    if len(_differentiate_weights.central) != 2*n + 1:
+    if len(_derivative_weights.central) != 2*n + 1:
         # Central difference weights. Consider refactoring this; it could
         # probably be more compact.
         # Note: Using NumPy here is OK; we convert to xp-type at the end
@@ -673,7 +680,7 @@ def _differentiate_weights(work, n, xp):
 
         # Cache the weights. We only need to calculate them once unless
         # the step factor changes.
-        _differentiate_weights.central = weights
+        _derivative_weights.central = weights
 
         # One-sided difference weights. The left one-sided weights (with
         # negative steps) are simply the negative of the right one-sided
@@ -688,13 +695,13 @@ def _differentiate_weights(work, n, xp):
         b[1] = 1
         weights = np.linalg.solve(A, b)
 
-        _differentiate_weights.right = weights
+        _derivative_weights.right = weights
 
-    return (xp.asarray(_differentiate_weights.central, dtype=work.dtype),
-            xp.asarray(_differentiate_weights.right, dtype=work.dtype))
-_differentiate_weights.central = []
-_differentiate_weights.right = []
-_differentiate_weights.fac = None
+    return (xp.asarray(_derivative_weights.central, dtype=work.dtype),
+            xp.asarray(_derivative_weights.right, dtype=work.dtype))
+_derivative_weights.central = []
+_derivative_weights.right = []
+_derivative_weights.fac = None
 
 
 def jacobian(f, x, *, tolerances=None, maxiter=10,
@@ -760,28 +767,32 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
             - ``-1`` : The error estimate increased, so iteration was terminated.
             - ``-2`` : The maximum number of iterations was reached.
             - ``-3`` : A non-finite value was encountered.
-            - ``-4`` : Iteration was terminated by `callback`.
 
         df : float array
             The Jacobian of `f` at `x`, if the algorithm terminated
             successfully.
         error : float array
             An estimate of the error: the magnitude of the difference between
-            the current estimate of the derivative and the estimate in the
+            the current estimate of the Jacobian and the estimate in the
             previous iteration.
         nit : int array
             The number of iterations of the algorithm that were performed.
         nfev : int array
             The number of points at which `f` was evaluated.
 
+        Each element of an attribute is associated with the corresponding
+        element of `df`. For instance, element ``i`` of `nfev` is the
+        number of points at which `f` was evaluated for the sake of
+        computing element ``i`` of `df`.
+
     See Also
     --------
-    differentiate
+    derivative, hessian
 
     Notes
     -----
     Suppose we wish to evaluate the Jacobian of a function
-    :math:`f: \mathbf{R^m} \rightarrow \mathbf{R^n}`, and assign to variables
+    :math:`f: \mathbf{R}^m \rightarrow \mathbf{R}^n`, and assign to variables
     ``m`` and ``n`` the positive integer values of :math:`m` and :math:`n`,
     respectively. If we wish to evaluate the Jacobian at a single point,
     then:
@@ -811,7 +822,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
     --------
     The Rosenbrock function maps from :math:`\mathbf{R}^m \rightarrow \mathbf{R}`;
     the SciPy implementation `scipy.optimize.rosen` is vectorized to accept an
-    array of shape ``(m, p)`` and return an array of shape ``m``. Suppose we wish
+    array of shape ``(m, p)`` and return an array of shape ``p``. Suppose we wish
     to evaluate the Jacobian (AKA the gradient because the function returns a scalar)
     at ``[0.5, 0.5, 0.5]``.
 
@@ -884,8 +895,198 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
         xph[i, i] = x
         return f(xph)
 
-    res = differentiate(wrapped, x, tolerances=tolerances,
-                        maxiter=maxiter, order=order, initial_step=initial_step,
-                        step_factor=step_factor, preserve_shape=True)
+    res = derivative(wrapped, x, tolerances=tolerances,
+                     maxiter=maxiter, order=order, initial_step=initial_step,
+                     step_factor=step_factor, preserve_shape=True)
     del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
+    return res
+
+
+def hessian(f, x, *, tolerances=None, maxiter=10,
+            order=8, initial_step=0.5, step_factor=2.0):
+    r"""Evaluate the Hessian of a function numerically.
+
+    Parameters
+    ----------
+    f : callable
+        The function whose Hessian is desired. The signature must be::
+
+            f(xi: ndarray) -> ndarray
+
+        where each element of ``xi`` is a finite real. If the function to be
+        differentiated accepts additional arguments, wrap it (e.g. using
+        `functools.partial` or ``lambda``) and pass the wrapped callable
+        into `hessian`. `f` must not mutate the array ``xi``. See Notes
+        regarding vectorization and the dimensionality of the input and output.
+    x : float array_like
+        Points at which to evaluate the Hessian. Must have at least one dimension.
+        See Notes regarding the dimensionality and vectorization.
+    tolerances : dictionary of floats, optional
+        Absolute and relative tolerances. Valid keys of the dictionary are:
+
+        - ``atol`` - absolute tolerance on the derivative
+        - ``rtol`` - relative tolerance on the derivative
+
+        Iteration will stop when ``res.error < atol + rtol * abs(res.df)``. The default
+        `atol` is the smallest normal number of the appropriate dtype, and
+        the default `rtol` is the square root of the precision of the
+        appropriate dtype.
+    order : int, default: 8
+        The (positive integer) order of the finite difference formula to be
+        used. Odd integers will be rounded up to the next even integer.
+    initial_step : float, default: 0.5
+        The (absolute) initial step size for the finite difference derivative
+        approximation.
+    step_factor : float, default: 2.0
+        The factor by which the step size is *reduced* in each iteration; i.e.
+        the step size in iteration 1 is ``initial_step/step_factor``. If
+        ``step_factor < 1``, subsequent steps will be greater than the initial
+        step; this may be useful if steps smaller than some threshold are
+        undesirable (e.g. due to subtractive cancellation error).
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform. See
+        Notes.
+
+    Returns
+    -------
+    res : _RichResult
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
+        arrays of the same shape.
+
+        success : bool array
+            ``True`` where the algorithm terminated successfully (status ``0``);
+            ``False`` otherwise.
+        status : int array
+            An integer representing the exit status of the algorithm.
+
+            - ``0`` : The algorithm converged to the specified tolerances.
+            - ``-1`` : The error estimate increased, so iteration was terminated.
+            - ``-2`` : The maximum number of iterations was reached.
+            - ``-3`` : A non-finite value was encountered.
+
+        ddf : float array
+            The Hessian of `f` at `x`, if the algorithm terminated
+            successfully.
+        error : float array
+            An estimate of the error: the magnitude of the difference between
+            the current estimate of the Hessian and the estimate in the
+            previous iteration.
+        nfev : int array
+            The number of points at which `f` was evaluated.
+
+        Each element of an attribute is associated with the corresponding
+        element of `ddf`. For instance, element ``[i, j]`` of `nfev` is the
+        number of points at which `f` was evaluated for the sake of
+        computing element ``[i, j]`` of `ddf`.
+
+    See Also
+    --------
+    derivative, jacobian
+
+    Notes
+    -----
+    Suppose we wish to evaluate the Hessian of a function
+    :math:`f: \mathbf{R}^m \rightarrow \mathbf{R}`, and we assign to variable
+    ``m`` the positive integer value of :math:`m`. If we wish to evaluate
+    the Hessian at a single point, then:
+
+    - argument `x` must be an array of shape ``(m,)``
+    - argument `f` must be vectorized to accept an array of shape
+      ``(m, ...)``. The first axis represents the :math:`m` inputs of
+      :math:`f`; the remaining axes indicated by ellipses are for evaluating
+      the function at several abscissae in a single call.
+    - argument `f` must return an array of shape ``(...)``.
+    - attribute ``dff`` of the result object will be an array of shape ``(m, m)``,
+      the Hessian.
+
+    This function is also vectorized in the sense that the Hessian can be
+    evaluated at ``k`` points in a single call. In this case, `x` would be an
+    array of shape ``(m, k)``, `f` would accept an array of shape
+    ``(m, ...)`` and return an array of shape ``(...)``, and the ``ddf``
+    attribute of the result would have shape ``(m, m, k)``. Note that the
+    axis associated with the ``k`` points is included within the axes
+    denoted by ``(...)``.
+
+    Currently, `hessian` is implemented by nesting calls to `jacobian`.
+    All options passed to `hessian` are used for both the inner and outer
+    calls with one exception: the `rtol` used in the inner `jacobian` call
+    is tightened by a factor of 100 with the expectation that the inner
+    error can be ignored. A consequence is that `rtol` should not be set
+    less than 100 times the precision of the dtype of `x`; a warning is
+    emitted otherwise.
+
+    References
+    ----------
+    .. [1] Hessian matrix, *Wikipedia*,
+           https://en.wikipedia.org/wiki/Hessian_matrix
+
+    Examples
+    --------
+    The Rosenbrock function maps from :math:`\mathbf{R}^m \rightarrow \mathbf{R}`;
+    the SciPy implementation `scipy.optimize.rosen` is vectorized to accept an
+    array of shape ``(m, ...)`` and return an array of shape ``...``. Suppose we
+    wish to evaluate the Hessian at ``[0.5, 0.5, 0.5]``.
+
+    >>> import numpy as np
+    >>> from scipy.differentiate import hessian
+    >>> from scipy.optimize import rosen, rosen_hess
+    >>> m = 3
+    >>> x = np.full(m, 0.5)
+    >>> res = hessian(rosen, x)
+    >>> ref = rosen_hess(x)  # reference value of the Hessian
+    >>> np.allclose(res.ddf, ref)
+    True
+
+    `hessian` is vectorized to evaluate the Hessian at multiple points
+    in a single call.
+
+    >>> rng = np.random.default_rng(4589245925010)
+    >>> x = rng.random((m, 10))
+    >>> res = hessian(rosen, x)
+    >>> ref = [rosen_hess(xi) for xi in x.T]
+    >>> ref = np.moveaxis(ref, 0, -1)
+    >>> np.allclose(res.ddf, ref)
+    True
+
+    """
+    # todo:
+    # - add ability to vectorize over additional parameters (*args?)
+    # - error estimate stack with inner jacobian (or use legit 2D stencil)
+
+    kwargs = dict(maxiter=maxiter, order=order, initial_step=initial_step,
+                  step_factor=step_factor)
+    tolerances = {} if tolerances is None else tolerances
+    atol = tolerances.get('atol', None)
+    rtol = tolerances.get('rtol', None)
+
+    x = np.asarray(x)
+    dtype = x.dtype if np.issubdtype(x.dtype, np.inexact) else np.float64
+    finfo = np.finfo(dtype)
+    rtol = finfo.eps**0.5 if rtol is None else rtol  # keep same as `derivative`
+
+    # tighten the inner tolerance to make the inner error negligible
+    rtol_min = finfo.eps * 100
+    message = (f"The specified `{rtol=}`, but error estimates are likely to be "
+               f"unreliable when `rtol < {rtol_min}`.")
+    if 0 < rtol < rtol_min:  # rtol <= 0 is an error
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+        rtol = rtol_min
+
+    def df(x):
+        tolerances = dict(rtol=rtol/100, atol=atol)
+        temp = jacobian(f, x, tolerances=tolerances, **kwargs)
+        nfev.append(temp.nfev if len(nfev) == 0 else temp.nfev.sum(axis=-1))
+        return temp.df
+
+    nfev = []  # track inner function evaluations
+    res = jacobian(df, x, tolerances=tolerances, **kwargs)  # jacobian of jacobian
+
+    nfev = np.cumsum(nfev, axis=0)
+    res.nfev = np.take_along_axis(nfev, res.nit[np.newaxis, ...], axis=0)[0]
+    res.ddf = res.df
+    del res.df  # this is renamed to ddf
+    del res.nit  # this is only the outer-jacobian nit
+
     return res

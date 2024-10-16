@@ -224,7 +224,7 @@ class IndexMixin:
                 idx_shape.append(len_slice)
                 index_ndim += 1
             elif isintlike(idx):
-                N = self._shape[index_ndim]
+                N = self._shape[index_ndim] if ellps_pos is None else self._shape[-1]
                 if not (-N <= idx < N):
                     raise IndexError(f'index ({idx}) out of range')
                 idx = int(idx + N if idx < 0 else idx)

@@ -886,7 +886,7 @@ class ShortTimeFFT:
         >>> f_i = 5e-3*(t_x - t_x[N // 3])**2 + 1  # varying frequency
         >>> x = square(2*np.pi*np.cumsum(f_i)*T_x)  # the signal
 
-        The utitlized Gaussian window is 50 samples or 2.5 s long. The
+        The utilized Gaussian window is 50 samples or 2.5 s long. The
         parameter ``mfft=800`` (oversampling factor 16) and the `hop` interval
         of 2 in `ShortTimeFFT` was chosen to produce a sufficient number of
         points:
@@ -1623,9 +1623,9 @@ class ShortTimeFFT:
             raise RuntimeError(error_str)
 
         if self.phase_shift is None:
-            return x[:self.m_num]
+            return x[..., :self.m_num]
         p_s = (self.phase_shift + self.m_num_mid) % self.m_num
-        return np.roll(x, p_s, axis=-1)[:self.m_num]
+        return np.roll(x, p_s, axis=-1)[..., :self.m_num]
 
     def extent(self, n: int, axes_seq: Literal['tf', 'ft'] = 'tf',
                center_bins: bool = False) -> tuple[float, float, float, float]:
