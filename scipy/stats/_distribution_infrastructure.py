@@ -5449,37 +5449,49 @@ class Mixture(_ProbabilityDistribution):
             b = np.maximum(b, var.support()[1])
         return a, b
 
-    def entropy(self):
+    def _raise_if_method(self, method):
+        if method is not None:
+            raise NotImplementedError("`method` not implemented for this distribution.")
+
+    def entropy(self, *, method=None):
+        self._raise_if_method(method)
         return _tanhsinh(lambda x: -self.pdf(x) * self.logpdf(x),
                          *self.support()).integral
 
-    def mode(self):
-        # xl, xm, xr
+    def mode(self, *, method=None):
+        self._raise_if_method(method)
         a, b = self.support()
         f = lambda x: -self.pdf(x)  # noqa: E731 is silly
         res = _bracket_minimum(f, 1., xmin=a, xmax=b)
         res = _chandrupatla_minimize(f, res.xl, res.xm, res.xr)
         return res.x
 
-    def median(self):
+    def median(self, *, method=None):
+        self._raise_if_method(method)
         return self.icdf(0.5)
 
-    def mean(self):
+    def mean(self, *, method=None):
+        self._raise_if_method(method)
         return self._sum('mean')
 
-    def variance(self):
+    def variance(self, *, method=None):
+        self._raise_if_method(method)
         return self._moment_central(2)
 
-    def standard_deviation(self):
+    def standard_deviation(self, *, method=None):
+        self._raise_if_method(method)
         return self.variance()**0.5
 
-    def skewness(self):
+    def skewness(self, *, method=None):
+        self._raise_if_method(method)
         return self._moment_standardized(3)
 
-    def kurtosis(self):
+    def kurtosis(self, *, method=None):
+        self._raise_if_method(method)
         return self._moment_standardized(4)
 
-    def moment(self, order=1, kind='raw'):
+    def moment(self, order=1, kind='raw', *, method=None):
+        self._raise_if_method(method)
         kinds = {'raw': self._moment_raw,
                  'central': self._moment_central,
                  'standardized': self._moment_standardized}
@@ -5507,25 +5519,31 @@ class Mixture(_ProbabilityDistribution):
     def _moment_standardized(self, order):
         return self._moment_central(order) / self.standard_deviation()**order
 
-    def pdf(self, x):
+    def pdf(self, x, /, *, method=None):
+        self._raise_if_method(method)
         return self._sum('pdf', x)
 
-    def logpdf(self, x):
+    def logpdf(self, x, /, *, method=None):
+        self._raise_if_method(method)
         return self._logsum('logpdf', x)
 
-    def cdf(self, x, y=None):
+    def cdf(self, x, y=None, /, *, method=None):
+        self._raise_if_method(method)
         args = (x,) if y is None else (x, y)
         return self._sum('cdf', *args)
 
-    def logcdf(self, x, y=None):
+    def logcdf(self, x, y=None, /, *, method=None):
+        self._raise_if_method(method)
         args = (x,) if y is None else (x, y)
         return self._logsum('logcdf', *args)
 
-    def ccdf(self, x, y=None):
+    def ccdf(self, x, y=None, /, *, method=None):
+        self._raise_if_method(method)
         args = (x,) if y is None else (x, y)
         return self._sum('ccdf', *args)
 
-    def logccdf(self, x, y=None):
+    def logccdf(self, x, y=None, /, *, method=None):
+        self._raise_if_method(method)
         args = (x,) if y is None else (x, y)
         return self._logsum('logccdf', *args)
 
@@ -5536,19 +5554,24 @@ class Mixture(_ProbabilityDistribution):
         res = _bracket_root(f, xl0=self.mean(), xmin=xmin, xmax=xmax, args=(p,))
         return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
 
-    def icdf(self, p):
+    def icdf(self, p, /, *, method=None):
+        self._raise_if_method(method)
         return self._invert('cdf', p)
 
-    def iccdf(self, p):
+    def iccdf(self, p, /, *, method=None):
+        self._raise_if_method(method)
         return self._invert('ccdf', p)
 
-    def ilogcdf(self, p):
+    def ilogcdf(self, p, /, *, method=None):
+        self._raise_if_method(method)
         return self._invert('logcdf', p)
 
-    def ilogccdf(self, p):
+    def ilogccdf(self, p, /, *, method=None):
+        self._raise_if_method(method)
         return self._invert('logccdf', p)
 
-    def sample(self, shape=(), *, rng=None):
+    def sample(self, shape=(), *, rng=None, method=None):
+        self._raise_if_method(method)
         rng = np.random.default_rng(rng)
         size = np.prod(np.atleast_1d(shape))
         ns = rng.multinomial(size, self._weights)
