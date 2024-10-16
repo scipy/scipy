@@ -2717,6 +2717,12 @@ class TestHankel:
         hankrl2e = special.hankel2e(1,.1)
         assert_almost_equal(hank2e,hankrl2e,8)
 
+    def test_hankel2_gh4517(self):
+        # Test edge case reported in https://github.com/scipy/scipy/issues/4517
+        res = special.hankel2(0, 0)
+        assert np.isnan(res.real)
+        assert np.isposinf(res.imag)
+
 
 class TestHyper:
     def test_h1vp(self):
