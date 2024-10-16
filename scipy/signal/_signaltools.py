@@ -2494,7 +2494,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
 
     Returns
     -------
-    np.ndarray
+    ndarray
         If parameter `residual` is ``None`` then an array `z_env` with the same shape
         as the input `z` is returned, containing its envelope. Otherwise, an array with
         shape ``(2, *z.shape)``, containing the arrays `z_env`, `z_res` being stacked
