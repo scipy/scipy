@@ -902,10 +902,10 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
         xph[i, i] = x
         return f(xph)
 
-    res = differentiate(wrapped, x, tolerances=tolerances,
-                        maxiter=maxiter, order=order, initial_step=initial_step,
-                        step_factor=step_factor, preserve_shape=True,
-                        step_direction=step_direction)
+    res = derivative(wrapped, x, tolerances=tolerances,
+                     maxiter=maxiter, order=order, initial_step=initial_step,
+                     step_factor=step_factor, preserve_shape=True,
+                     step_direction=step_direction)
     del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
     return res
 
