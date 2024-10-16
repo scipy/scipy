@@ -30,7 +30,7 @@ import numpy as np
 from numpy import pi, zeros, sqrt
 
 
-__all__ = ['roots_lebedev']
+__all__ = ['lebedev_rule']
 
 
 def get_lebedev_sphere(degree):
@@ -5355,7 +5355,7 @@ def get_lebedev_reccurence_points(type_, start, a, b, v, leb):
     return leb, start
 
 
-def roots_lebedev(n):
+def lebedev_rule(n):
     r"""Lebedev quadrature.
 
     Compute the sample points and weights for Lebedev quadrature [1]_
@@ -5411,7 +5411,7 @@ def roots_lebedev(n):
 
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    >>> from scipy.special import roots_lebedev
+    >>> from scipy.integrate import lebedev_rule
     >>>
     >>> def f(x):
     ...     return np.exp(x[0])
@@ -5419,7 +5419,7 @@ def roots_lebedev(n):
     >>> res = []
     >>> orders = np.arange(3, 20, 2)
     >>> for n in orders:
-    ...     x, w = roots_lebedev(n)
+    ...     x, w = lebedev_rule(n)
     ...     res.append(w @ f(x))
     >>>
     >>> ref = np.full_like(res, 14.7680137457653)

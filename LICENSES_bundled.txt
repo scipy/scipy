@@ -298,6 +298,6 @@ License 3-Clause BSD
   For details, see scipy/interpolate/_aaa.py
 
 Name: getLebedevSphere
-Files: scipy/special/_lebedev.py
-License 2-Clause BSF
-  For details, see scipy/special/_lebedev.py
+Files: scipy/integrate/_lebedev.py
+License 2-Clause BSD
+  For details, see scipy/integrate/_lebedev.py

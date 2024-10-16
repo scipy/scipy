@@ -6,7 +6,7 @@ from numpy import array, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
 
-from scipy import integrate, special
+from scipy import integrate
 import scipy.special as sc
 from scipy.special import gamma
 import scipy.special._orthogonal as orth
@@ -820,23 +820,3 @@ def test_roots_genlaguerre():
 def test_gh_6721():
     # Regression test for gh_6721. This should not raise.
     sc.chebyt(65)(0.2)
-
-
-class TestLebedev:
-    def test_input_validation(self):
-        # only certain rules are available
-        message = "Order n=-1 not available..."
-        with pytest.raises(NotImplementedError, match=message):
-            special.roots_lebedev(-1)
-
-    def test_quadrature(self):
-        # Test points/weights to integrate an example function
-
-        def f(x):
-            return np.exp(x[0])
-
-        x, w = special.roots_lebedev(15)
-        res = w @ f(x)
-        ref = 14.7680137457653  # roots_lebedev reference [3]
-        assert_allclose(res, ref, rtol=1e-14)
-        assert_allclose(np.sum(w), 4 * np.pi)

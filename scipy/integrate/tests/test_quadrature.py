@@ -11,7 +11,7 @@ from scipy.integrate import (romb, newton_cotes,
                              quad, simpson, fixed_quad,
                              qmc_quad, cumulative_simpson)
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
-from scipy import stats, special
+from scipy import stats, special, integrate
 
 
 class TestFixedQuad:
@@ -648,3 +648,22 @@ class TestCumulativeSimpson:
         np.testing.assert_allclose(
             res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
         )
+
+class TestLebedev:
+    def test_input_validation(self):
+        # only certain rules are available
+        message = "Order n=-1 not available..."
+        with pytest.raises(NotImplementedError, match=message):
+            integrate.lebedev_rule(-1)
+
+    def test_quadrature(self):
+        # Test points/weights to integrate an example function
+
+        def f(x):
+            return np.exp(x[0])
+
+        x, w = integrate.lebedev_rule(15)
+        res = w @ f(x)
+        ref = 14.7680137457653  # lebedev_rule reference [3]
+        assert_allclose(res, ref, rtol=1e-14)
+        assert_allclose(np.sum(w), 4 * np.pi)
