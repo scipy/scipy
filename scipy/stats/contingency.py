@@ -464,7 +464,7 @@ def _chi2_monte_carlo_method(observed, expected, method):
     expected = expected.ravel()
 
     def statistic(table, axis):
-        return np.sum((table - expected.ravel())**2/expected, axis=axis)
+        return np.sum((table - expected)**2/expected, axis=axis)
 
     return stats.monte_carlo_test(observed.ravel(), rvs, statistic,
                                   alternative='greater', **method)

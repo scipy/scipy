@@ -2132,8 +2132,7 @@ class ResamplingMethod:
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
+    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
 
         Pseudorandom number generator state used to generate resamples.
 
@@ -2143,7 +2142,7 @@ class ResamplingMethod:
         seeded with `random_state`.
         If `random_state` is ``None`` (default), the
         `numpy.random.RandomState` singleton is used.
-    """
+    """  # noqa: E501
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
     random_state: object = None
