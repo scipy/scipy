@@ -24,6 +24,7 @@ from scipy._lib.array_api_compat import (
     numpy as np_compat,
     device as xp_device
 )
+from scipy._lib import array_api_extra as xpx
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
@@ -31,7 +32,7 @@ __all__ = [
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_atleast_nd', 'xp_copy', 'xp_copysign', 'xp_device',
+    'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
     'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
 ]
@@ -192,17 +193,6 @@ def _asarray(
         _check_finite(array, xp)
 
     return array
-
-
-def xp_atleast_nd(x: Array, *, ndim: int, xp: ModuleType | None = None) -> Array:
-    """Recursively expand the dimension to have at least `ndim`."""
-    if xp is None:
-        xp = array_namespace(x)
-    x = xp.asarray(x)
-    if x.ndim < ndim:
-        x = xp.expand_dims(x, axis=0)
-        x = xp_atleast_nd(x, ndim=ndim, xp=xp)
-    return x
 
 
 def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
@@ -403,8 +393,8 @@ def xp_cov(x: Array, *, xp: ModuleType | None = None) -> Array:
     X = xp_copy(x, xp=xp)
     dtype = xp.result_type(X, xp.float64)
 
-    X = xp_atleast_nd(X, ndim=2, xp=xp)
     X = xp.asarray(X, dtype=dtype)
+    X = xpx.atleast_nd(X, ndim=2, xp=xp)
 
     avg = xp.mean(X, axis=1)
     fact = X.shape[1] - 1

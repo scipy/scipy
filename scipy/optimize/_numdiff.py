@@ -6,7 +6,8 @@ from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
-from scipy._lib._array_api import xp_atleast_nd, array_namespace
+from scipy._lib._array_api import array_namespace
+from scipy._lib import array_api_extra as xpx
 
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
@@ -440,7 +441,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         raise ValueError(f"Unknown method '{method}'. ")
 
     xp = array_namespace(x0)
-    _x = xp_atleast_nd(x0, ndim=1, xp=xp)
+    _x = xpx.atleast_nd(xp.asarray(x0), ndim=1, xp=xp)
     _dtype = xp.float64
     if xp.isdtype(_x.dtype, "real floating"):
         _dtype = _x.dtype
