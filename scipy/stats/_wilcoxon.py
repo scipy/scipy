@@ -185,7 +185,7 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
     #   the statistic is calculated
     # - for method != "asymptotic", avoid division by zero warning
     #   (z is not needed anyways)
-    if se == 0:
+    if np.any(se) == 0:
         z = np.nan
     else:
         z = (r_plus - mn) / se
