@@ -104,15 +104,14 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
             raise ValueError(message)
     output_z = True if method == 'asymptotic' else False
 
-    # for small samples, we decide later whether to perform an exact test or a
-    # permutation test. the reason is that the presence of ties is not
-    # know at the input validation stage
+    # For small samples, we decide later whether to perform an exact test or a
+    # permutation test. The reason is that the presence of ties is not
+    # known at the input validation stage.
     n_zero = np.sum(d == 0)
-    has_zeros = n_zero > 0
     if method == "auto" and d.shape[-1] > 50:
         method = "asymptotic"
 
-    if has_zeros and method == "exact":
+    if n_zero > 0 and method == "exact":
         warnings.warn("Exact p-value calculation does not work if there are "
                       "zeros. Consider using method `asymptotic` or "
                       "`stats.PermutationMethod`",
@@ -126,7 +125,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
     if 0 < d.shape[-1] < 10 and method == "asymptotic":
         warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
-    return d, zero_method, correction, alternative, method, axis, output_z, has_zeros
+    return d, zero_method, correction, alternative, method, axis, output_z, n_zero
 
 
 def _wilcoxon_statistic(d, zero_method='wilcox'):
@@ -179,7 +178,17 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
     se -= tie_correct/2
     se = np.sqrt(se / 24)
 
-    z = (r_plus - mn) / se
+    # se = 0 means that no non-zero values are left in d. usually this
+    # will be detected at the input validation stage (if method is asymptotic).
+    # handling this case here has two reasons:
+    # - if method="auto", the switch to asymptotic might only happen after
+    #   the statistic is calculated
+    # - for method != "asymptotic", avoid division by zero warning
+    #   (z is not needed anyways)
+    if se == 0:
+        z = np.nan
+    else:
+        z = (r_plus - mn) / se
 
     return r_plus, r_minus, se, z, count, has_ties
 
@@ -197,7 +206,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
                  alternative='two-sided', method='auto', axis=0):
 
     temp = _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis)
-    d, zero_method, correction, alternative, method, axis, output_z, has_zeros = temp
+    d, zero_method, correction, alternative, method, axis, output_z, n_zero = temp
 
     if d.size == 0:
         NaN = _get_nan(d)
@@ -211,28 +220,32 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
     # we only know if there are ties after computing the statistic and not
     # at the input validation stage. if the original method was auto and
     # the decision was to use an exact test, we override this to
-    # a permutation test now (since method=`exact`` is not exact in the
+    # a permutation test now (since method='exact' is not exact in the
     # presence of ties)
     if method == "auto":
-        if not (has_ties or has_zeros):
+        if not (has_ties or n_zero > 0):
             method = "exact"
-        else:
+        elif d.shape[-1] <= 13:
             # the possible outcomes to be simulated by the permutation test
             # are 2**n, where n is the sample size.
-            if d.shape[-1] > 13:
-                n_resamples = 9999
-                msg = ("Since the sample size is not large and there are ties "
-                       "or zeros, method=`auto` performs a permutation test. "
-                       "For sample size > 13, the p-value is simulated and "
-                       "not deterministic since `n_resamples` is capped at "
-                       "9999 to avoid long runtimes. Consider running "
-                       "wilcoxon using PermutationMethod with a larger "
-                       "number of `n_resamples` if needed.")
-                warnings.warn(msg, stacklevel=2)
-            else:
-                # this is enough to get deterministic results
-                n_resamples = 2**d.shape[-1]
-            method = stats.PermutationMethod(n_resamples=n_resamples)
+            # if n <= 13, the p-value is deterministic since 2**13 is less
+            # than 9999, the default number of n_resamples
+            method = stats.PermutationMethod()
+        else:
+            # if there are ties and the sample size is too large to
+            # run a deterministic permutation test, fall back to asymptotic
+            method = "asymptotic"
+            # rerun check that is done for asymptotic during input validation
+            if (zero_method in ["wilcox", "pratt"] and n_zero == d.size and
+                d.size > 0 and d.ndim == 1):
+                msg = ("Trying to resolve method='auto' failed. Attempted "
+                       "to perform asymptotic test, but zero_method 'wilcox' "
+                       "and 'pratt' do not work if x - y is zero for all "
+                       "elements. Consider changing zero_method or run "
+                       "use PermutationMethod. Note that method='auto' "
+                       "does not switch to PermutationMethod for this sample "
+                       "size since the p-value is not deterministic.")
+                raise RuntimeError(msg)
 
     if method == 'asymptotic':
         if correction:

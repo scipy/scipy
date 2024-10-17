@@ -72,7 +72,7 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue)),
     (stats.wilcoxon, tuple(), dict(), 1, 2, True,
      lambda res: (res.statistic, res.pvalue)),
-    (stats.wilcoxon, tuple(), {'mode': 'approx'}, 1, 3, True,
+    (stats.wilcoxon, tuple(), {'method': 'asymptotic'}, 1, 3, True,
      lambda res: (res.statistic, res.pvalue, res.zstatistic)),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),

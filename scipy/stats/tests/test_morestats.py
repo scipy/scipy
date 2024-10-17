@@ -1635,6 +1635,14 @@ class TestWilcoxon:
             assert_equal(sum(pmf1), 1)
             assert_array_almost_equal(pmf1, pmf2)
 
+        # make sure invalid calculation of z due to division by 0 is skipped
+        # warning would cause a test failure
+        msg = "Exact p-value calculation does not work if there are zeros"
+        with pytest.warns(UserWarning, match=msg):
+            w, p = stats.wilcoxon(np.zeros(5), method="exact")
+        assert_equal((w, p), (0.0, 1.0))
+
+
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
         x = np.array([1.81, 0.82, 1.56, -0.48, 0.81, 1.28, -1.04, 0.23,
@@ -1689,22 +1697,20 @@ class TestWilcoxon:
         # so we do not need to use a seed
         assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
-        # for larger vectors, also run permutation test but warn user
-        # that value is not deterministic
+        # for larger vectors with ties/zeros, use asymptotic test
         d = np.arange(0, 14)
-        with pytest.warns(UserWarning, match="not deterministic"):
-            w, p = stats.wilcoxon(d)
-        # we should reject null since d >=0 ...
-        assert_(p < 0.05)
-
-        # n <= 50: if there are ties in d = x-y, use PermutationMethod
-        d = np.array([1, 2, 2, 7, 5, -6, 9, -4])
         w, p = stats.wilcoxon(d)
-        assert_equal((w, p), stats.wilcoxon(d, method=pm))
+        assert_equal((w, p), stats.wilcoxon(d, method="asymptotic"))
+
+        # unless that is not possible, e.g., d = 0
+        d = np.zeros(15)
+        with pytest.raises(RuntimeError, match="Trying to resolve"):
+            stats.wilcoxon(d)
 
         # use approximation for samples > 50
         d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="asymptotic"))
+
 
     @pytest.mark.parametrize('size', [3, 5, 10])
     def test_permutation_method(self, size):

@@ -3576,9 +3576,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=True,
 
     - The default, ``method='auto'``, selects between the two: when
       ``len(d) <= 50`` and there are no zeros and no ties, the exact method
-      is used; if ``len(d) <= 50`` and there are zeros or ties, the
+      is used; if the sample size is small and there are zeros or ties, the
       p-value is computed using `permutation_test`;
-      otherwise, the approximate method is used.
+      otherwise, the approximate method is used. The p-value computed by
+      the permutation test is deterministic since it is only used if the
+      sample size is small enough to iterate over all possible outcomes.
 
     The presence of "ties" (i.e. not all elements of ``d`` are unique) or
     "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
