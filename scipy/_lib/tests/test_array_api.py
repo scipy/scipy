@@ -3,7 +3,7 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy
+    GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy
 )
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 import scipy._lib.array_api_compat.numpy as np_compat
@@ -11,7 +11,7 @@ import scipy._lib.array_api_compat.numpy as np_compat
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
-@pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
+@pytest.mark.skipif(not GLOBAL_CONFIG.SCIPY_ARRAY_API,
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
 
@@ -20,10 +20,10 @@ class TestArrayAPI:
         xp = array_namespace(x, y)
         assert 'array_api_compat.numpy' in xp.__name__
 
-        _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
+        GLOBAL_CONFIG.SCIPY_ARRAY_API = False
         xp = array_namespace(x, y)
         assert 'array_api_compat.numpy' in xp.__name__
-        _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
+        GLOBAL_CONFIG.SCIPY_ARRAY_API = True
 
     @array_api_compatible
     def test_asarray(self, xp):
