@@ -2835,6 +2835,7 @@ class truncweibull_min_gen(rv_continuous):
 
 
 truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
+truncweibull_min._support = ('a', 'b')
 
 
 class weibull_max_gen(rv_continuous):
@@ -4123,6 +4124,8 @@ class gumbel_r_gen(rv_continuous):
 
         f(x) = \exp(-(x + e^{-x}))
 
+    for real :math:`x`.
+
     The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
     distribution.  It is also related to the extreme value distribution,
     log-Weibull and Gompertz distributions.
@@ -4252,6 +4255,8 @@ class gumbel_l_gen(rv_continuous):
     .. math::
 
         f(x) = \exp(x - e^x)
+
+    for real :math:`x`.
 
     The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
     distribution.  It is also related to the extreme value distribution,
@@ -6845,6 +6850,8 @@ class gibrat_gen(rv_continuous):
 
         f(x) = \frac{1}{x \sqrt{2\pi}} \exp(-\frac{1}{2} (\log(x))^2)
 
+    for :math:`x >= 0`.
+
     `gibrat` is a special case of `lognorm` with ``s=1``.
 
     %(after_notes)s
@@ -9106,6 +9113,8 @@ class reciprocal_gen(rv_continuous):
 
 loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
+loguniform._support = ('a', 'b')
+reciprocal._support = ('a', 'b')
 
 
 class rice_gen(rv_continuous):
@@ -9301,6 +9310,7 @@ class irwinhall_gen(rv_continuous):
 
 
 irwinhall = irwinhall_gen(name="irwinhall")
+irwinhall._support = (0.0, 'n')
 
 
 class recipinvgauss_gen(rv_continuous):
@@ -10013,6 +10023,7 @@ class truncexpon_gen(rv_continuous):
 
 
 truncexpon = truncexpon_gen(a=0.0, name='truncexpon')
+truncexpon._support = (0.0, 'b')
 
 
 # logsumexp trick for log(p + q) with only log(p) and log(q)
@@ -10300,6 +10311,7 @@ class truncnorm_gen(rv_continuous):
 
 
 truncnorm = truncnorm_gen(name='truncnorm', momtype=1)
+truncnorm._support = ('a', 'b')
 
 
 class truncpareto_gen(rv_continuous):
@@ -10620,6 +10632,7 @@ class truncpareto_gen(rv_continuous):
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
+truncexpon._support = (0.0, 'c')
 
 
 class tukeylambda_gen(rv_continuous):

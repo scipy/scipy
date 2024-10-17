@@ -896,8 +896,7 @@ class TestAttributes:
 
     def test_from_rv_continuous(self):
         rng = np.random.default_rng(7548723590230982)
-        Gamma = stats.ContinuousDistribution.from_rv_continuous(stats.gamma,
-                                                                (0, np.inf))
+        Gamma = stats.ContinuousDistribution.from_rv_continuous(stats.gamma)
         X = Gamma(a=1.5)
         Y = stats.gamma(1.5)
         x = rng.random(size=10)

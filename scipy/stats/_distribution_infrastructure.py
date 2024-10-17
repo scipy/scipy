@@ -4908,7 +4908,7 @@ class ContinuousDistribution:
     # fit method removed for initial PR
 
     @staticmethod
-    def from_rv_continuous(dist, support):
+    def from_rv_continuous(dist):
         """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
 
         The returned value is a `ContinuousDistribution` subclass. Like any subclass
@@ -4921,11 +4921,6 @@ class ContinuousDistribution:
         ----------
         dist : `rv_continuous`
             Instance of `rv_continuous`.
-        support : 2-tuple
-            The documented endpoints of the support of the standard distribution.
-            Each value may be a float (e.g. ``(0, np.inf)``) or, for distributions with
-            support dependent on the shape parameters, a string corresponding with the
-            name of the parameter (e.g. ``('a', 'b')``).
 
         Returns
         -------
@@ -4939,16 +4934,21 @@ class ContinuousDistribution:
         >>> import numpy as np
         >>> import matplotlib.pyplot as plt
         >>> from scipy import stats
-        >>> LogUniform = stats.wrap_rv_continuous(stats.loguniform, ('a', 'b'))
-        >>> X = LogUniform(a=1.0, b=3.0)
+        >>> LogU = stats.ContinuousDistribution.from_rv_continuous(stats.loguniform)
+        >>> X = LogU(a=1.0, b=3.0)
         >>> np.isclose((X + 0.25).median(), stats.loguniform.ppf(0.5, 1, 3, loc=0.25))
         np.True_
         >>> X.plot()
+        >>> sample = X.sample(10000, rng=np.random.default_rng())
+        >>> plt.hist(sample, density=True, bins=30)
+        >>> plt.legend(('pdf', 'histogram'))
         >>> plt.show()
 
         """
+        # todo: check genpareto, genextreme, genhalflogistic, kstwo, kappa4, tukeylambda
         parameters = []
         names = []
+        support = getattr(dist, '_support', (dist.a, dist.b))
         for shape_info in dist._shape_info():
             domain = _RealDomain(endpoints=shape_info.endpoints,
                                  inclusive=shape_info.inclusive)
@@ -4982,7 +4982,7 @@ class ContinuousDistribution:
                    '_median': '_median_formula',
                    '_munp': '_moment_raw_formula'}
         for old_method, new_method in methods.items():
-            # If the method of the old distribution overrides the generic implementation...
+            # If method of old distribution overrides generic implementation...
             method = getattr(dist.__class__, old_method, None)
             super_method = getattr(stats.rv_continuous, old_method, None)
             if method is not super_method:
@@ -4998,7 +4998,7 @@ class ContinuousDistribution:
 
         if (getattr(dist.__class__, '_stats', None)
                 is not getattr(stats.rv_continuous, '_stats', None)):
-            CustomDistribution._moment_standardized_formula = _moment_standardized_formula
+            CustomDistribution._moment_standardized_formula = _moment_standardized_formula  # noqa: E501
 
         return CustomDistribution
 
