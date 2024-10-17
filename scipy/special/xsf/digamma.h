@@ -127,7 +127,9 @@ XSF_HOST_DEVICE inline double digamma(double z) {
     return cephes::psi(z);
 }
 
-XSF_HOST_DEVICE inline float digamma(float z) { return static_cast<float>(digamma(static_cast<double>(z))); }
+XSF_HOST_DEVICE inline float digamma(float z) {
+    return static_cast<float>(digamma(static_cast<double>(z)));
+}
 
 XSF_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) {
     /*

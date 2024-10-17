@@ -112,11 +112,17 @@ namespace cephes {
             double hi, lo;
 
             double_double() = default;
-            double_double(double high, double low) : hi(high), lo(low) {}
-            explicit double_double(double high) : hi(high), lo(0.0) {}
+            double_double(double high, double low) : hi(high), lo(low) {
+            }
+            explicit double_double(double high) : hi(high), lo(0.0) {
+            }
 
-            XSF_HOST_DEVICE explicit operator double() const { return hi; }
-            XSF_HOST_DEVICE explicit operator int() const { return static_cast<int>(hi); }
+            XSF_HOST_DEVICE explicit operator double() const {
+                return hi;
+            }
+            XSF_HOST_DEVICE explicit operator int() const {
+                return static_cast<int>(hi);
+            }
         };
 
         // Arithmetic operations
@@ -274,9 +280,13 @@ namespace cephes {
             return rhs < lhs;
         }
 
-        XSF_HOST_DEVICE inline bool operator<(const double lhs, const double_double &rhs) { return rhs > lhs; }
+        XSF_HOST_DEVICE inline bool operator<(const double lhs, const double_double &rhs) {
+            return rhs > lhs;
+        }
 
-        XSF_HOST_DEVICE inline bool operator>(const double lhs, const double_double &rhs) { return rhs < lhs; }
+        XSF_HOST_DEVICE inline bool operator>(const double lhs, const double_double &rhs) {
+            return rhs < lhs;
+        }
 
         XSF_HOST_DEVICE inline bool operator<=(const double_double &lhs, const double_double &rhs) {
             if (lhs.hi < rhs.hi) {
@@ -303,9 +313,13 @@ namespace cephes {
             return rhs <= lhs;
         }
 
-        XSF_HOST_DEVICE inline bool operator>=(const double lhs, const double_double &rhs) { return rhs <= lhs; }
+        XSF_HOST_DEVICE inline bool operator>=(const double lhs, const double_double &rhs) {
+            return rhs <= lhs;
+        }
 
-        XSF_HOST_DEVICE inline bool operator<=(const double lhs, const double_double &rhs) { return rhs >= lhs; }
+        XSF_HOST_DEVICE inline bool operator<=(const double lhs, const double_double &rhs) {
+            return rhs >= lhs;
+        }
 
         // Math functions
 
@@ -314,9 +328,13 @@ namespace cephes {
             return double_double(lhs.hi * rhs, lhs.lo * rhs);
         }
 
-        XSF_HOST_DEVICE inline bool isfinite(const double_double &a) { return std::isfinite(a.hi); }
+        XSF_HOST_DEVICE inline bool isfinite(const double_double &a) {
+            return std::isfinite(a.hi);
+        }
 
-        XSF_HOST_DEVICE inline bool isinf(const double_double &a) { return std::isinf(a.hi); }
+        XSF_HOST_DEVICE inline bool isinf(const double_double &a) {
+            return std::isinf(a.hi);
+        }
 
         XSF_HOST_DEVICE inline double_double round(const double_double &a) {
             double hi = two_nint(a.hi);
@@ -370,7 +388,9 @@ namespace cephes {
             return (a.hi >= 0.0) ? floor(a) : ceil(a);
         }
 
-        XSF_HOST_DEVICE inline double_double abs(const double_double &a) { return (a.hi < 0.0 ? -a : a); }
+        XSF_HOST_DEVICE inline double_double abs(const double_double &a) {
+            return (a.hi < 0.0 ? -a : a);
+        }
 
         XSF_HOST_DEVICE inline double_double fmod(const double_double &lhs, const double_double &rhs) {
             double_double n = trunc(lhs / rhs);
@@ -382,15 +402,15 @@ namespace cephes {
             return lhs - rhs * n;
         }
 
-        XSF_HOST_DEVICE inline std::pair<double_double, double_double> divrem(const double_double &lhs,
-                                                                                  const double_double &rhs) {
+        XSF_HOST_DEVICE inline std::pair<double_double, double_double>
+        divrem(const double_double &lhs, const double_double &rhs) {
             double_double n = round(lhs / rhs);
             double_double remainder = lhs - n * rhs;
             return {n, remainder};
         }
 
-        XSF_HOST_DEVICE inline double_double fma(
-            const double_double &a, const double_double &b, const double_double &c) {
+        XSF_HOST_DEVICE inline double_double
+        fma(const double_double &a, const double_double &b, const double_double &c) {
             // TODO: make an accurate fma
             return a * b + c;
         }
@@ -442,21 +462,23 @@ namespace cephes {
             return double_double(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
         }
 
-        const double_double inv_fact[] = {double_double(1.66666666666666657e-01, 9.25185853854297066e-18),
-                                          double_double(4.16666666666666644e-02, 2.31296463463574266e-18),
-                                          double_double(8.33333333333333322e-03, 1.15648231731787138e-19),
-                                          double_double(1.38888888888888894e-03, -5.30054395437357706e-20),
-                                          double_double(1.98412698412698413e-04, 1.72095582934207053e-22),
-                                          double_double(2.48015873015873016e-05, 2.15119478667758816e-23),
-                                          double_double(2.75573192239858925e-06, -1.85839327404647208e-22),
-                                          double_double(2.75573192239858883e-07, 2.37677146222502973e-23),
-                                          double_double(2.50521083854417202e-08, -1.44881407093591197e-24),
-                                          double_double(2.08767569878681002e-09, -1.20734505911325997e-25),
-                                          double_double(1.60590438368216133e-10, 1.25852945887520981e-26),
-                                          double_double(1.14707455977297245e-11, 2.06555127528307454e-28),
-                                          double_double(7.64716373181981641e-13, 7.03872877733453001e-30),
-                                          double_double(4.77947733238738525e-14, 4.39920548583408126e-31),
-                                          double_double(2.81145725434552060e-15, 1.65088427308614326e-31)};
+        const double_double inv_fact[] = {
+            double_double(1.66666666666666657e-01, 9.25185853854297066e-18),
+            double_double(4.16666666666666644e-02, 2.31296463463574266e-18),
+            double_double(8.33333333333333322e-03, 1.15648231731787138e-19),
+            double_double(1.38888888888888894e-03, -5.30054395437357706e-20),
+            double_double(1.98412698412698413e-04, 1.72095582934207053e-22),
+            double_double(2.48015873015873016e-05, 2.15119478667758816e-23),
+            double_double(2.75573192239858925e-06, -1.85839327404647208e-22),
+            double_double(2.75573192239858883e-07, 2.37677146222502973e-23),
+            double_double(2.50521083854417202e-08, -1.44881407093591197e-24),
+            double_double(2.08767569878681002e-09, -1.20734505911325997e-25),
+            double_double(1.60590438368216133e-10, 1.25852945887520981e-26),
+            double_double(1.14707455977297245e-11, 2.06555127528307454e-28),
+            double_double(7.64716373181981641e-13, 7.03872877733453001e-30),
+            double_double(4.77947733238738525e-14, 4.39920548583408126e-31),
+            double_double(2.81145725434552060e-15, 1.65088427308614326e-31)
+        };
 
         // Math constants
         const double_double E = double_double(2.718281828459045091e+00, 1.445646891729250158e-16);
