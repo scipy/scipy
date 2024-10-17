@@ -121,7 +121,7 @@ def cases_test_cont_basic():
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 @pytest.mark.parametrize('sn', [500])
-def test_cont_basic(distname, arg, sn):
+def test_cont_basic(distname, arg, sn, num_parallel_threads):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -167,13 +167,14 @@ def test_cont_basic(distname, arg, sn):
         arg = (3,)
 
     check_named_args(distfn, x, arg, locscale_defaults, meths)
-    check_random_state_property(distfn, arg)
+    if num_parallel_threads == 1:
+        check_random_state_property(distfn, arg)
 
-    if distname in ['rel_breitwigner'] and _IS_32BIT:
-        # gh18414
-        pytest.skip("fails on Linux 32-bit")
-    else:
-        check_pickling(distfn, arg)
+        if distname in ['rel_breitwigner'] and _IS_32BIT:
+            # gh18414
+            pytest.skip("fails on Linux 32-bit")
+        else:
+            check_pickling(distfn, arg)
     check_freezing(distfn, arg)
 
     # Entropy
@@ -281,6 +282,7 @@ def test_rvs_scalar(distname, arg):
     assert np.isscalar(distfn.rvs(*arg, size=None))
 
 
+@pytest.mark.parallel_threads(1)
 def test_levy_stable_random_state_property():
     # levy_stable only implements rvs(), so it is skipped in the
     # main loop in test_cont_basic(). Here we apply just the test
@@ -986,6 +988,7 @@ def test_kappa4_array_gh13582():
     assert res2.shape == (4, 4, 3)
 
 
+@pytest.mark.parallel_threads(1)
 def test_frozen_attributes():
     # gh-14827 reported that all frozen distributions had both pmf and pdf
     # attributes; continuous should have pdf and discrete should have pmf.
