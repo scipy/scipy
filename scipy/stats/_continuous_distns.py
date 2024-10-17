@@ -1061,7 +1061,7 @@ class betaprime_gen(rv_continuous):
     def _munp(self, n, a, b):
         return _lazywhere(
             b > n, (a, b),
-            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, n+1)], axis=0),
+            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, int(n)+1)], axis=0),
             fillvalue=np.inf)
 
 
@@ -4906,7 +4906,7 @@ class invgauss_gen(rv_continuous):
     def _ppf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            ppf = scu._invgauss_ppf(x, mu, 1)
+            ppf = np.asarray(scu._invgauss_ppf(x, mu, 1))
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
             ppf[i_wt] = scu._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(ppf)
@@ -5042,10 +5042,10 @@ class geninvgauss_gen(rv_continuous):
         # relying on logpdf avoids overflow of x**(p-1) for large x and p
         return np.exp(self._logpdf(x, p, b))
 
-    def _cdf(self, x, *args):
-        _a, _b = self._get_support(*args)
+    def _cdf(self, x, p, b):
+        _a, _b = self._get_support(p, b)
 
-        def _cdf_single(x, *args):
+        def _cdf_single(x, p, b):
             p, b = args
             user_data = np.array([p, b], float).ctypes.data_as(ctypes.c_void_p)
             llc = LowLevelCallable.from_cython(_stats, '_geninvgauss_pdf',
@@ -5055,7 +5055,7 @@ class geninvgauss_gen(rv_continuous):
 
         _cdf_single = np.vectorize(_cdf_single, otypes=[np.float64])
 
-        return _cdf_single(x, *args)
+        return _cdf_single(x, p, b)
 
     def _logquasipdf(self, x, p, b):
         # log of the quasi-density (w/o normalizing constant) used in _rvs
@@ -11584,7 +11584,7 @@ class crystalball_gen(rv_continuous):
             rhs = (2**((n-1)/2.0) * sc.gamma((n+1)/2) *
                    (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2)))
             lhs = np.zeros(rhs.shape)
-            for k in range(n + 1):
+            for k in range(int(n) + 1):
                 lhs += (sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) *
                         (m/beta)**(-m + k + 1))
             return A * lhs + rhs

@@ -1946,8 +1946,8 @@ class ContinuousDistribution:
             # might need to figure out result type based on p
             return np.empty(p.shape, dtype=self._dtype)
 
-        def f2(x, p, **kwargs):
-            return f(x, **kwargs) - p
+        def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
+            return f(x, **kwargs) - _p
 
         f3, args = _kwargs2args(f2, args=[p], kwargs=params)
         # If we know the median or mean, should use it
@@ -3526,7 +3526,7 @@ class ContinuousDistribution:
             method = self._logccdf_quadrature
         return method
 
-    def _logccdf_formula(self):
+    def _logccdf_formula(self, x, **params):
         raise NotImplementedError(self._not_implemented)
 
     def _logccdf_logexp(self, x, **params):
@@ -4612,7 +4612,8 @@ class ContinuousDistribution:
         i = np.arange(n+1).reshape([-1]+[1]*a.ndim)  # orthogonal to other axes
         i = self._preserve_type(i)
         n_choose_i = special.binom(n, i)
-        moment_b = np.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
+        with np.errstate(invalid='ignore'):  # can happen with infinite moment
+            moment_b = np.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
         return moment_b
 
     def _logmoment(self, order=1, *, logcenter=None, standardized=False):
@@ -4960,13 +4961,26 @@ class ContinuousDistribution:
         _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
         class CustomDistribution(ContinuousDistribution):
-            _parameterizations = [_Parameterization(*parameters)]
+            _parameterizations = ([_Parameterization(*parameters)] if parameters
+                                  else [])
             _variable = _x_param
 
         def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
             return dist._rvs(size=full_shape, random_state=rng, **kwargs)
 
+        def _moment_raw_formula(self, order, **kwargs):
+            if order != 1:
+                return None
+            return dist._stats(**kwargs)[0]
+
+        def _moment_central_formula(self, order, **kwargs):
+            if order != 2:
+                return None
+            return dist._stats(**kwargs)[1]
+
         def _moment_standardized_formula(self, order, **kwargs):
+            if order < 3:
+                return None
             _stats = dist._stats(**kwargs)
             return None if order >= len(_stats) else _stats[int(order - 1)]
 
@@ -4992,13 +5006,18 @@ class ContinuousDistribution:
                 # This is needed, e.g., by some `_pdf` methods: `np.exp(self._logpdf)`
                 setattr(CustomDistribution, old_method, method)
 
-        if (getattr(dist.__class__, '_rvs', None)
-                is not getattr(stats.rv_continuous, '_rvs', None)):
+        def _overrides(method_name):
+            return (getattr(dist.__class__, method_name, None)
+                    is not getattr(stats.rv_continuous, method_name, None))
+
+        if _overrides('_rvs'):
             CustomDistribution._sample_formula = _sample_formula
 
-        if (getattr(dist.__class__, '_stats', None)
-                is not getattr(stats.rv_continuous, '_stats', None)):
+        if _overrides('_stats'):
             CustomDistribution._moment_standardized_formula = _moment_standardized_formula  # noqa: E501
+            if not _overrides('_munp'):
+                CustomDistribution._moment_raw_formula = _moment_raw_formula  # noqa: E501
+                CustomDistribution._moment_central_formula = _moment_central_formula  # noqa: E501
 
         return CustomDistribution
 
