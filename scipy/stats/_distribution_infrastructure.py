@@ -4979,10 +4979,13 @@ class ContinuousDistribution:
             return dist._stats(**kwargs)[1]
 
         def _moment_standardized_formula(self, order, **kwargs):
-            if order < 3:
+            if order == 3:
+                return dist._stats(**kwargs)[int(order - 1)]
+            elif order == 4:
+                k = dist._stats(**kwargs)[int(order - 1)]
+                return k if k is None else k + 3
+            else:
                 return None
-            _stats = dist._stats(**kwargs)
-            return None if order >= len(_stats) else _stats[int(order - 1)]
 
         methods = {'_logpdf': '_logpdf_formula',
                    '_pdf': '_pdf_formula',
@@ -5001,10 +5004,7 @@ class ContinuousDistribution:
             super_method = getattr(stats.rv_continuous, old_method, None)
             if method is not super_method:
                 # Make it an attribute of the new object with the new name
-                setattr(CustomDistribution, new_method, method)
-                # Also make it an attribute of the new object with the old name
-                # This is needed, e.g., by some `_pdf` methods: `np.exp(self._logpdf)`
-                setattr(CustomDistribution, old_method, method)
+                setattr(CustomDistribution, new_method, getattr(dist, old_method))
 
         def _overrides(method_name):
             return (getattr(dist.__class__, method_name, None)

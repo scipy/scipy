@@ -492,8 +492,10 @@ class norm_gen(rv_continuous):
 
         See eq. 16 of https://arxiv.org/abs/1209.4340v2
         """
+        if n == 0:
+            return 1.
         if n % 2 == 0:
-            return sc.factorial2(n - 1)
+            return sc.factorial2(int(n) - 1)
         else:
             return 0.
 
@@ -4465,6 +4467,8 @@ class halflogistic_gen(rv_continuous):
                           f2=lambda q: 2*np.arctanh(1 - q))
 
     def _munp(self, n):
+        if n == 0:
+            return 1  # otherwise returns NaN
         if n == 1:
             return 2*np.log(2)
         if n == 2:
@@ -4767,7 +4771,7 @@ class invgamma_gen(rv_continuous):
     _support_mask = rv_continuous._open_support_mask
 
     def _shape_info(self):
-        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("a", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, a):
         # invgamma.pdf(x, a) = x**(-a-1) / gamma(a) * exp(-1/x)
@@ -5046,7 +5050,6 @@ class geninvgauss_gen(rv_continuous):
         _a, _b = self._get_support(p, b)
 
         def _cdf_single(x, p, b):
-            p, b = args
             user_data = np.array([p, b], float).ctypes.data_as(ctypes.c_void_p)
             llc = LowLevelCallable.from_cython(_stats, '_geninvgauss_pdf',
                                                user_data)
@@ -5841,7 +5844,7 @@ class landau_gen(rv_continuous):
         return np.nan, np.nan, np.nan, np.nan
 
     def _munp(self, n):
-        return np.nan
+        return np.nan if n > 0 else 1
 
     def _fitstart(self, data, args=None):
         # Initialize ML guesses using quartiles instead of moments.
@@ -7738,7 +7741,7 @@ class ncf_gen(rv_continuous):
     :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a
     generalized Laguerre polynomial and :math:`B` is the beta function.
 
-    `ncf` takes ``df1``, ``df2`` and ``nc`` as shape parameters. If ``nc=0``,
+    `ncf` takes ``dfn``, ``dfd`` and ``nc`` as shape parameters. If ``nc=0``,
     the distribution becomes equivalent to the Fisher distribution.
 
     This distribution uses routines from the Boost Math C++ library for
@@ -7754,12 +7757,12 @@ class ncf_gen(rv_continuous):
     %(example)s
 
     """
-    def _argcheck(self, df1, df2, nc):
-        return (df1 > 0) & (df2 > 0) & (nc >= 0)
+    def _argcheck(self, dfn, dfd, nc):
+        return (dfn > 0) & (dfd > 0) & (nc >= 0)
 
     def _shape_info(self):
-        idf1 = _ShapeInfo("df1", False, (0, np.inf), (False, False))
-        idf2 = _ShapeInfo("df2", False, (0, np.inf), (False, False))
+        idf1 = _ShapeInfo("dfn", False, (0, np.inf), (False, False))
+        idf2 = _ShapeInfo("dfd", False, (0, np.inf), (False, False))
         inc = _ShapeInfo("nc", False, (0, np.inf), (True, False))
         return [idf1, idf2, inc]
 
@@ -7783,19 +7786,21 @@ class ncf_gen(rv_continuous):
         with np.errstate(over='ignore'):  # see gh-17432
             return scu._ncf_isf(x, dfn, dfd, nc)
 
-    def _munp(self, n, dfn, dfd, nc):
-        val = (dfn * 1.0/dfd)**n
-        term = sc.gammaln(n+0.5*dfn) + sc.gammaln(0.5*dfd-n) - sc.gammaln(dfd*0.5)
-        val *= np.exp(-nc / 2.0+term)
-        val *= sc.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
-        return val
+    # # Produces bogus values as written - maybe it's close, though?
+    # def _munp(self, n, dfn, dfd, nc):
+    #     val = (dfn * 1.0/dfd)**n
+    #     term = sc.gammaln(n+0.5*dfn) + sc.gammaln(0.5*dfd-n) - sc.gammaln(dfd*0.5)
+    #     val *= np.exp(-nc / 2.0+term)
+    #     val *= sc.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
+    #     return val
 
     def _stats(self, dfn, dfd, nc, moments='mv'):
         mu = scu._ncf_mean(dfn, dfd, nc)
         mu2 = scu._ncf_variance(dfn, dfd, nc)
         g1 = scu._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
-        g2 = scu._ncf_kurtosis_excess(
-            dfn, dfd, nc) if 'k' in moments else None
+        g2 = scu._ncf_kurtosis_excess(  # isn't really excess kurtosis!
+            dfn, dfd, nc) - 3 if 'k' in moments else None
+        # Mathematica: Kurtosis[NoncentralFRatioDistribution[27, 27, 0.415784417992261]]
         return mu, mu2, g1, g2
 
 
@@ -8067,8 +8072,8 @@ class pareto_gen(rv_continuous):
             np.place(g2, mask, vals)
         return mu, mu2, g1, g2
 
-    def _entropy(self, c):
-        return 1 + 1.0/c - np.log(c)
+    def _entropy(self, b):
+        return 1 + 1.0/b - np.log(b)
 
     @_call_super_mom
     @inherit_docstring_from(rv_continuous)
@@ -9090,6 +9095,8 @@ class reciprocal_gen(rv_continuous):
         return np.exp(np.log(a) + q*(np.log(b) - np.log(a)))
 
     def _munp(self, n, a, b):
+        if n == 0:
+            return 1.0
         t1 = 1 / (np.log(b) - np.log(a)) / n
         t2 = np.real(np.exp(_log_diff(n * np.log(b), n*np.log(a))))
         return t1 * t2
