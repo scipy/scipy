@@ -270,7 +270,7 @@ def lombscargle(
         YS = (y * sinwt).sum()
 
         if floating_mean:
-            # calculate best-fit offset for each frequency independently (default)
+            # calculate best-fit offset for each frequency independently
             C_sum = coswt.sum()
             S_sum = sinwt.sum()
             YC -= Y_sum * C_sum
@@ -306,7 +306,7 @@ def lombscargle(
 
         return a + 1j * b
 
-    # otherwise, the default, normalize == "power"
+    # otherwise, normalize == "power" (default)
     # return the legacy power units
     pgram *= float(x.shape[0]) / 4.0
     return pgram
