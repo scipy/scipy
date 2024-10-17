@@ -5514,7 +5514,6 @@ class RunAll64Bit:
         check(cls, method_name)
 
 
-@pytest.mark.slow
 class Test64BitArray(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
@@ -5522,6 +5521,7 @@ class Test64BitArray(RunAll64Bit):
    def test_resiliency_limit_10(self, cls, method_name):
        self._check_resiliency(cls, method_name, maxval_limit=10)
 
+   @pytest.mark.xslow
    @pytest.mark.fail_slow(2)
    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
    def test_resiliency_random(self, cls, method_name):
@@ -5546,6 +5546,9 @@ class Test64BitMatrix(RunAll64Bit):
     def test_no_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, assert_32bit=True)
 
+
+@pytest.mark.xslow
+class Test64BitMatrixXSlow(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
     @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
