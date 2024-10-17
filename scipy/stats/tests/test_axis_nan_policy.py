@@ -334,6 +334,7 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("axis"), (1,))
 @pytest.mark.parametrize(("data_generator"), ("mixed",))
+@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
@@ -505,6 +506,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("data_generator"),
                          ("all_nans", "all_finite", "mixed", "empty"))
+@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                                       n_outputs, paired, unpacker, nan_policy,
                                       data_generator):
@@ -633,7 +635,7 @@ def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
     if not unpacker:
         def unpacker(res):
             return res
-    rng = np.random.default_rng(0)
+    rng = np.random.RandomState(0)
     data = [rng.random(sample_shape) for _ in range(n_samples)]
     nan_data = [sample.copy() for sample in data]
     nan_mask = [rng.random(sample_shape) < 0.2 for _ in range(n_samples)]
@@ -822,6 +824,7 @@ def _check_arrays_broadcastable(arrays, axis):
 @pytest.mark.slow
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
+@pytest.mark.parallel_threads(1)
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
     if hypotest in {stats.kruskal, stats.friedmanchisquare} and not SCIPY_XSLOW:
@@ -1114,13 +1117,13 @@ def test_mixed_mask_nan_1():
     m, n = 3, 20
     axis = -1
 
-    np.random.seed(0)
-    a = np.random.rand(m, n)
-    b = np.random.rand(m, n)
-    mask_a1 = np.random.rand(m, n) < 0.2
-    mask_a2 = np.random.rand(m, n) < 0.1
-    mask_b1 = np.random.rand(m, n) < 0.15
-    mask_b2 = np.random.rand(m, n) < 0.15
+    rng = np.random.RandomState(0)
+    a = rng.rand(m, n)
+    b = rng.rand(m, n)
+    mask_a1 = rng.rand(m, n) < 0.2
+    mask_a2 = rng.rand(m, n) < 0.1
+    mask_b1 = rng.rand(m, n) < 0.15
+    mask_b2 = rng.rand(m, n) < 0.15
     mask_a1[2, :] = True
 
     a_nans = a.copy()
