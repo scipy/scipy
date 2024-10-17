@@ -3585,18 +3585,19 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
 
 class Mixture(_ProbabilityDistribution):
-    r""" Class that represents a mixture distribution.
+    r"""Representation of a mixture distribution.
 
     A mixture distribution is the distribution of a random variable
     defined in the following way: first, a random variable is selected
     from `components` according to the probabilities given by `weights`, then
-    the random variable is realized[1]_.
+    the selected random variable is realized.
 
     Parameters
     ----------
     components : sequence of `ContinuousDistribution`
         The underlying instances of `ContinuousDistribution`.
-        All must have scalar shape parameters.
+        All must have scalar shape parameters (if any); e.g., the `pdf` evaluated
+        at a scalar argument must return a scalar.
     weights : sequence of floats
         The corresponding probabilities of selecting each random variable.
         Must be non-negative and sum to one.
@@ -3675,7 +3676,7 @@ class Mixture(_ProbabilityDistribution):
             return
 
         weights = np.asarray(weights)
-        if len(components) != len(weights):
+        if weights.shape != (len(components),):
             message = "`components` and `weights` must have the same length."
             raise ValueError(message)
 
@@ -3864,6 +3865,6 @@ class Mixture(_ProbabilityDistribution):
         rng = np.random.default_rng(rng)
         size = np.prod(np.atleast_1d(shape))
         ns = rng.multinomial(size, self._weights)
-        x = [var.sample(shape=n) for n, var in zip(ns, self._components)]
+        x = [var.sample(shape=n, rng=rng) for n, var in zip(ns, self._components)]
         x = np.reshape(rng.permuted(np.concatenate(x)), shape)
         return x[()]
