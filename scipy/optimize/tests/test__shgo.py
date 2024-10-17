@@ -1007,6 +1007,7 @@ class TestShgoFailures:
 
         np.testing.assert_equal(False, res.success)
 
+    @pytest.mark.parallel_threads(1)
     def test_6_1_lower_known_f_min(self):
         """Test Global mode limiting local evaluations with f* too high"""
         options = {  # Specify known function value

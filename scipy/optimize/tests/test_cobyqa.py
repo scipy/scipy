@@ -11,6 +11,7 @@ from scipy.optimize import (
 )
 
 
+@pytest.mark.parallel_threads(1)
 class TestCOBYQA:
 
     def setup_method(self):
@@ -42,6 +43,7 @@ class TestCOBYQA:
                 assert isinstance(intermediate_result, OptimizeResult)
                 self.n_calls += 1
 
+        x0 = [4.95, 0.66]
         callback = Callback()
         callback_new_syntax = CallbackNewSyntax()
 
@@ -49,7 +51,7 @@ class TestCOBYQA:
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
         sol = minimize(
             self.fun,
-            self.x0,
+            x0,
             method='cobyqa',
             constraints=constraints,
             callback=callback,
@@ -57,7 +59,7 @@ class TestCOBYQA:
         )
         sol_new = minimize(
             self.fun,
-            self.x0,
+            x0,
             method='cobyqa',
             constraints=constraints,
             callback=callback_new_syntax,

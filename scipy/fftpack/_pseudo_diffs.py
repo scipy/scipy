@@ -8,13 +8,15 @@ __all__ = ['diff',
            'cs_diff','cc_diff','sc_diff','ss_diff',
            'shift']
 
+import threading
+
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
 from . import convolve
 
 from scipy.fft._pocketfft.helper import _datacopied
 
 
-_cache = {}
+_cache = threading.local()
 
 
 def diff(x,order=1,period=None, _cache=_cache):
@@ -46,11 +48,17 @@ def diff(x,order=1,period=None, _cache=_cache):
     For odd order and even ``len(x)``, the Nyquist mode is taken zero.
 
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'diff_cache'):
+            _cache.diff_cache = {}
+        _cache = _cache.diff_cache
+
     tmp = asarray(x)
     if order == 0:
         return tmp
     if iscomplexobj(tmp):
-        return diff(tmp.real,order,period)+1j*diff(tmp.imag,order,period)
+        return diff(tmp.real, order, period, _cache)+1j*diff(
+            tmp.imag, order, period, _cache)
     if period is not None:
         c = 2*pi/period
     else:
@@ -72,12 +80,6 @@ def diff(x,order=1,period=None, _cache=_cache):
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=order % 2,
                              overwrite_x=overwrite_x)
-
-
-del _cache
-
-
-_cache = {}
 
 
 def tilbert(x, h, period=None, _cache=_cache):
@@ -116,10 +118,15 @@ def tilbert(x, h, period=None, _cache=_cache):
     For even ``len(x)``, the Nyquist mode of ``x`` is taken zero.
 
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'tilbert_cache'):
+            _cache.tilbert_cache = {}
+        _cache = _cache.tilbert_cache
+
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return tilbert(tmp.real, h, period) + \
-               1j * tilbert(tmp.imag, h, period)
+        return tilbert(tmp.real, h, period, _cache) + \
+               1j * tilbert(tmp.imag, h, period, _cache)
 
     if period is not None:
         h = h * 2 * pi / period
@@ -144,12 +151,6 @@ def tilbert(x, h, period=None, _cache=_cache):
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 
 
-del _cache
-
-
-_cache = {}
-
-
 def itilbert(x,h,period=None, _cache=_cache):
     """
     Return inverse h-Tilbert transform of a periodic sequence x.
@@ -163,10 +164,15 @@ def itilbert(x,h,period=None, _cache=_cache):
     For more details, see `tilbert`.
 
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'itilbert_cache'):
+            _cache.itilbert_cache = {}
+        _cache = _cache.itilbert_cache
+
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return itilbert(tmp.real,h,period) + \
-               1j*itilbert(tmp.imag,h,period)
+        return itilbert(tmp.real, h, period, _cache) + \
+               1j*itilbert(tmp.imag, h, period, _cache)
     if period is not None:
         h = h*2*pi/period
     n = len(x)
@@ -184,12 +190,6 @@ def itilbert(x,h,period=None, _cache=_cache):
         _cache[(n,h)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
-
-
-del _cache
-
-
-_cache = {}
 
 
 def hilbert(x, _cache=_cache):
@@ -231,9 +231,14 @@ def hilbert(x, _cache=_cache):
     function.
 
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'hilbert_cache'):
+            _cache.hilbert_cache = {}
+        _cache = _cache.hilbert_cache
+
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return hilbert(tmp.real)+1j*hilbert(tmp.imag)
+        return hilbert(tmp.real, _cache) + 1j * hilbert(tmp.imag, _cache)
     n = len(x)
     omega = _cache.get(n)
     if omega is None:
@@ -253,10 +258,7 @@ def hilbert(x, _cache=_cache):
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
 
 
-del _cache
-
-
-def ihilbert(x):
+def ihilbert(x, _cache=_cache):
     """
     Return inverse Hilbert transform of a periodic sequence x.
 
@@ -267,10 +269,11 @@ def ihilbert(x):
       y_0 = 0
 
     """
-    return -hilbert(x)
-
-
-_cache = {}
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'ihilbert_cache'):
+            _cache.ihilbert_cache = {}
+        _cache = _cache.ihilbert_cache
+    return -hilbert(x, _cache)
 
 
 def cs_diff(x, a, b, period=None, _cache=_cache):
@@ -303,10 +306,15 @@ def cs_diff(x, a, b, period=None, _cache=_cache):
     For even len(`x`), the Nyquist mode of `x` is taken as zero.
 
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'cs_diff_cache'):
+            _cache.cs_diff_cache = {}
+        _cache = _cache.cs_diff_cache
+
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return cs_diff(tmp.real,a,b,period) + \
-               1j*cs_diff(tmp.imag,a,b,period)
+        return cs_diff(tmp.real, a, b, period, _cache) + \
+               1j*cs_diff(tmp.imag, a, b, period, _cache)
     if period is not None:
         a = a*2*pi/period
         b = b*2*pi/period
@@ -325,12 +333,6 @@ def cs_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
-
-
-del _cache
-
-
-_cache = {}
 
 
 def sc_diff(x, a, b, period=None, _cache=_cache):
@@ -359,10 +361,15 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
     For even ``len(x)``, the Nyquist mode of x is taken as zero.
 
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'sc_diff_cache'):
+            _cache.sc_diff_cache = {}
+        _cache = _cache.sc_diff_cache
+
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return sc_diff(tmp.real,a,b,period) + \
-               1j*sc_diff(tmp.imag,a,b,period)
+        return sc_diff(tmp.real, a, b, period, _cache) + \
+               1j * sc_diff(tmp.imag, a, b, period, _cache)
     if period is not None:
         a = a*2*pi/period
         b = b*2*pi/period
@@ -381,12 +388,6 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
-
-
-del _cache
-
-
-_cache = {}
 
 
 def ss_diff(x, a, b, period=None, _cache=_cache):
@@ -414,10 +415,15 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
     ``ss_diff(ss_diff(x,a,b),b,a) == x``
 
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'ss_diff_cache'):
+            _cache.ss_diff_cache = {}
+        _cache = _cache.ss_diff_cache
+
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return ss_diff(tmp.real,a,b,period) + \
-               1j*ss_diff(tmp.imag,a,b,period)
+        return ss_diff(tmp.real, a, b, period, _cache) + \
+               1j*ss_diff(tmp.imag, a, b, period, _cache)
     if period is not None:
         a = a*2*pi/period
         b = b*2*pi/period
@@ -436,12 +442,6 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
-
-
-del _cache
-
-
-_cache = {}
 
 
 def cc_diff(x, a, b, period=None, _cache=_cache):
@@ -473,10 +473,15 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
     ``cc_diff(cc_diff(x,a,b),b,a) == x``
 
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'cc_diff_cache'):
+            _cache.cc_diff_cache = {}
+        _cache = _cache.cc_diff_cache
+
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return cc_diff(tmp.real,a,b,period) + \
-               1j*cc_diff(tmp.imag,a,b,period)
+        return cc_diff(tmp.real, a, b, period, _cache) + \
+               1j * cc_diff(tmp.imag, a, b, period, _cache)
     if period is not None:
         a = a*2*pi/period
         b = b*2*pi/period
@@ -493,12 +498,6 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
-
-
-del _cache
-
-
-_cache = {}
 
 
 def shift(x, a, period=None, _cache=_cache):
@@ -519,9 +518,15 @@ def shift(x, a, period=None, _cache=_cache):
     period : float, optional
         The period of the sequences x and y. Default period is ``2*pi``.
     """
+    if isinstance(_cache, threading.local):
+        if not hasattr(_cache, 'shift_cache'):
+            _cache.shift_cache = {}
+        _cache = _cache.shift_cache
+
     tmp = asarray(x)
     if iscomplexobj(tmp):
-        return shift(tmp.real,a,period)+1j*shift(tmp.imag,a,period)
+        return shift(tmp.real, a, period, _cache) + 1j * shift(
+            tmp.imag, a, period, _cache)
     if period is not None:
         a = a*2*pi/period
     n = len(x)
@@ -547,5 +552,3 @@ def shift(x, a, period=None, _cache=_cache):
     return convolve.convolve_z(tmp,omega_real,omega_imag,
                                overwrite_x=overwrite_x)
 
-
-del _cache
