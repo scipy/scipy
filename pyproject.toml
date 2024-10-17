@@ -124,6 +124,14 @@ tracker = "https://github.com/scipy/scipy/issues"
 [tool.doit]
 dodoFile = "dev.py"
 
+[tool.meson-python]
+meson = 'vendored-meson/meson/meson.py'
+
+[tool.meson-python.args]
+install = ['--tags=runtime,python-runtime,tests,devel']
+
+[tool.spin]
+package = 'scipy'
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
@@ -164,3 +172,14 @@ repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}
 PKG_CONFIG_PATH = "{project}"
 # do this instead (which will override this setting)
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
+
+[tool.spin.commands]
+"Build" = [
+  ".spin/cmds.py:build",
+  ".spin/cmds.py:test"
+]
+"Environments" = [
+  "spin.cmds.meson.run",
+  "spin.cmds.meson.gdb",
+  "spin.cmds.meson.lldb"
+]
