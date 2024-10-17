@@ -11,6 +11,7 @@ import hypothesis.extra.numpy as npst
 from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
+from scipy.stats._distr_params import distcont
 
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
@@ -893,6 +894,77 @@ class TestAttributes:
         message = "Attribute `validation_policy` of `MyUniform`..."
         with pytest.raises(ValueError, match=message):
             X.validation_policy = "invalid"
+
+    @pytest.mark.fail_slow(20)
+    @pytest.mark.slow()
+    @pytest.mark.parametrize('i, distdata', enumerate(distcont))
+    def test_from_rv_continuous(self, i, distdata):
+        # if i != 83:
+        #     return
+
+        # still working on debugging these
+        if i in {83, 84, 85, 93, 94, 97, 98, 99, 100,
+                 101, 102, 103, 104, 105, 109, 113}:
+            return
+        distname = distdata[0]
+
+        if distname in {
+            'genpareto', 'genextreme', 'genhalflogistic',  # complicated support
+            'kstwo', 'kappa4', 'tukeylambda',  # complicated support
+            'levy_stable',  # its levystable, c'mon. Would you expect it to work?
+            'ksone',  # tolerance issues
+            'norminvgauss',  # private methods seem to have broadcasting issues
+            'vonmises',  # circular distribution; shouldn't work
+            'irwinhall'  # requires dtype of shape parameter to be integer
+        }:
+            return
+
+        dist = getattr(stats, distname)
+        params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
+        rng = np.random.default_rng(7548723590230982)
+        CustomDistribution = stats.ContinuousDistribution.from_rv_continuous(dist)
+        X = CustomDistribution(**params)
+        Y = dist(**params)
+        x = X.sample(shape=10, rng=rng)
+        atol = 1e-12
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            if distname not in {'kstwobign'}:  # tolerance issue
+                assert_allclose(X.entropy(), Y.entropy())
+            assert_allclose(X.median(), Y.median())
+            assert_allclose(X.mean(), Y.stats('m'), atol=atol)
+            assert_allclose(X.variance(), Y.stats('v'), atol=atol)
+            if distname not in {'exponpow'}:  # tolerance issue
+                assert_allclose(X.skewness(), Y.stats('s'), atol=atol)
+            if distname not in {'chi', 'exponpow',
+                                'invgamma', 'johnsonsb'}:  # tolerance issue
+                assert_allclose(X.kurtosis(convention='excess'),
+                                Y.stats('k'), atol=atol)
+            assert_allclose(X.logpdf(x), Y.logpdf(x))
+            assert_allclose(X.pdf(x), Y.pdf(x))
+            assert_allclose(X.logcdf(x), Y.logcdf(x))
+            assert_allclose(X.cdf(x), Y.cdf(x))
+            if distname not in {'jf_skew_t', # check this out later
+                                'arcsine'}:  # tolerance
+                assert_allclose(X.logccdf(x), Y.logsf(x))
+            assert_allclose(X.ccdf(x), Y.sf(x))
+            assert_allclose(X.icdf(x), Y.ppf(x))
+            assert_allclose(X.iccdf(x), Y.isf(x))
+            for order in range(5):
+                if distname in {'alpha', 'foldcauchy', 'halfcauchy',
+                                'levy', 'levy_l'} and order == 2:
+                    # if mean and variance are infinite, what can we say about
+                    # the raw second moment?
+                    continue
+                if distname in {'invgamma'} and order == 4:  # tolerances
+                    continue
+                assert_allclose(X.moment(order, kind='raw'),
+                                Y.moment(order), atol=atol)
+            for order in range(3, 4):
+                if distname == 'exponpow':  # tolerances
+                    continue
+                assert_allclose(X.moment(order, kind='standardized'),
+                                Y.stats('mvsk'[order-1]), atol=atol)
 
 
 class TestTransforms:
