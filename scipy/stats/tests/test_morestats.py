@@ -1979,6 +1979,22 @@ class TestBoxcox_llf:
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input
         xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
+    
+    def test_axis(self, xp):
+        data = xp.asarray([[100, 200], [300, 400]])
+        llf_axis_0 = stats.boxcox_llf(1, data, axis=0)
+        data_axes_swapped = xp.moveaxis(data, 0, -1)
+        llf_0 = xp.asarray([
+                stats.boxcox_llf(1, data_axes_swapped[0, :]),
+                stats.boxcox_llf(1, data_axes_swapped[1, :]),
+        ])
+        xp_assert_close(llf_axis_0, llf_0)
+        llf_axis_1 = stats.boxcox_llf(1, data, axis=1)
+        llf_1 = xp.asarray([
+            stats.boxcox_llf(1, data[0, :]),
+            stats.boxcox_llf(1, data[1, :]),
+        ])
+        xp_assert_close(llf_axis_1, llf_1)
 
 
 # This is the data from github user Qukaiyi, given as an example
