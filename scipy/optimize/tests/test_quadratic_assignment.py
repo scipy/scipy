@@ -158,6 +158,7 @@ class QAPCommonTests:
         assert_equal(res.nit, 0)
         assert_equal(res.fun, 0)
 
+    @pytest.mark.parallel_threads(1)
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
 
@@ -242,6 +243,7 @@ class TestFAQ(QAPCommonTests):
 class Test2opt(QAPCommonTests):
     method = "2opt"
 
+    @pytest.mark.parallel_threads(1)
     def test_deterministic(self):
         # np.random.seed(0) executes before every method
         n = 20
@@ -259,9 +261,10 @@ class Test2opt(QAPCommonTests):
         assert_equal(res1.nit, res2.nit)
 
     def test_partial_guess(self):
+        rng = np.random.RandomState(0)
         n = 5
-        A = np.random.rand(n, n)
-        B = np.random.rand(n, n)
+        A = rng.rand(n, n)
+        B = rng.rand(n, n)
 
         res1 = quadratic_assignment(A, B, method=self.method,
                                     options={'rng': 0})

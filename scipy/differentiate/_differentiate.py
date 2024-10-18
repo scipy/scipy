@@ -425,7 +425,9 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
                        df_last=xp.nan, error_last=xp.nan, fac=fac,
                        atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                        status=status, dtype=dtype, terms=(order+1)//2,
-                       hdir=hdir, il=il, ic=ic, ir=ir, io=io)
+                       hdir=hdir, il=il, ic=ic, ir=ir, io=io,
+                       diff_state=_RichResult(central=[], right=[], fac=None))
+
     # This is the correspondence between terms in the `work` object and the
     # final result. In this case, the mapping is trivial. Note that `success`
     # is prepended automatically.
@@ -654,12 +656,14 @@ def _derivative_weights(work, n, xp):
     # precision) cached `_derivative_weights.fac`, and the weights will
     # need to be recalculated. This could be fixed, but it's late, and of
     # low consequence.
-    if fac != _derivative_weights.fac:
-        _derivative_weights.central = []
-        _derivative_weights.right = []
-        _derivative_weights.fac = fac
 
-    if len(_derivative_weights.central) != 2*n + 1:
+    diff_state = work.diff_state
+    if fac != diff_state.fac:
+        diff_state.central = []
+        diff_state.right = []
+        diff_state.fac = fac
+
+    if len(diff_state.central) != 2*n + 1:
         # Central difference weights. Consider refactoring this; it could
         # probably be more compact.
         # Note: Using NumPy here is OK; we convert to xp-type at the end
@@ -680,7 +684,7 @@ def _derivative_weights(work, n, xp):
 
         # Cache the weights. We only need to calculate them once unless
         # the step factor changes.
-        _derivative_weights.central = weights
+        diff_state.central = weights
 
         # One-sided difference weights. The left one-sided weights (with
         # negative steps) are simply the negative of the right one-sided
@@ -695,13 +699,10 @@ def _derivative_weights(work, n, xp):
         b[1] = 1
         weights = np.linalg.solve(A, b)
 
-        _derivative_weights.right = weights
+        diff_state.right = weights
 
-    return (xp.asarray(_derivative_weights.central, dtype=work.dtype),
-            xp.asarray(_derivative_weights.right, dtype=work.dtype))
-_derivative_weights.central = []
-_derivative_weights.right = []
-_derivative_weights.fac = None
+    return (xp.asarray(diff_state.central, dtype=work.dtype),
+            xp.asarray(diff_state.right, dtype=work.dtype))
 
 
 def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,

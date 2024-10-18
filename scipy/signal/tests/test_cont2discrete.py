@@ -13,9 +13,10 @@ from scipy.signal import tf2ss, impulse, dimpulse, step, dstep
 
 
 class TestC2D:
+    @pytest.mark.parallel_threads(1)
     def test_zoh(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
+        ac = np.eye(2, dtype=np.float64)
+        bc = np.full((2, 1), 0.5, dtype=np.float64)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
