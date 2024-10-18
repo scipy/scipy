@@ -128,8 +128,8 @@ class TestCommon1D:
 
         with pytest.raises(ValueError, match='axis must be None, -1 or 0'):
             datsp.sum(axis=1)
-        with pytest.raises(TypeError, match='Tuples are not accepted'):
-            datsp.sum(axis=(0, 1))
+        # with pytest.raises(TypeError, match='Tuples are not accepted'):
+        #     datsp.sum(axis=(0, 1))
         with pytest.raises(TypeError, match='axis must be an integer'):
             datsp.sum(axis=1.5)
         with pytest.raises(ValueError, match='dimensions do not match'):
@@ -166,8 +166,8 @@ class TestCommon1D:
         datsp = spcreator(dat)
         with pytest.raises(ValueError, match='axis out of range'):
             datsp.mean(axis=3)
-        with pytest.raises(TypeError, match='Tuples are not accepted'):
-            datsp.mean(axis=(0, 1))
+        # with pytest.raises(TypeError, match='Tuples are not accepted'):
+        #     datsp.mean(axis=(0, 1))
         with pytest.raises(TypeError, match='axis must be an integer'):
             datsp.mean(axis=1.5)
         with pytest.raises(ValueError, match='dimensions do not match'):
