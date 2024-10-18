@@ -56,13 +56,14 @@ def lombscargle(
     x : array_like
         Sample times.
     y : array_like
-        Measurement values.
+        Measurement values. Values are assumed to have a baseline of y = 0. If there is
+        a possibility of a y offset, it is recommended to set `floating_mean` to True.
     freqs : array_like
-        Angular frequencies for output periodogram. Frequencies are normally >= 0.
-        Any peak at -freq will also exist at +freq.
+        Angular frequencies (e.g., rad/s) for output periodogram. Frequencies are
+        normally >= 0. Any peak at -freq will also exist at +freq.
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. This is
-        unnecessary if `floating_mean` is True.
+        a legacy parameter and unnecessary if `floating_mean` is True.
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
         Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or
@@ -106,6 +107,9 @@ def lombscargle(
     any bias due to consistently missing observations at peaks and/or troughs. When the
     normalize parameter is "amplitude", for any frequency in freqs that is below
     ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards infinity.
+    Unlike evenly-sampled data (required for FFT variants), when the data are unevenly
+    sampled, the upper frequency is not limited to the sampling rate divided by 2
+    (Nyquist-Shannon sampling theorem).
 
     References
     ----------
@@ -200,8 +204,17 @@ def lombscargle(
     if weights is None:
         weights = np.ones_like(y, dtype=np.float64)
     else:
-        # if provided, then cast to float64 (other inputs are cast further below)
-        weights = weights.astype(np.float64)
+        # if provided, make sure weights is an array and cast to float64
+        weights = np.asarray(weights, dtype=np.float64)
+
+    # make sure other inputs are arrays and cast to float64
+    # done before validation, in case they were not arrays
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    freqs = np.asarray(freqs, dtype=np.float64)
+
+    # store eps to prevent division by zero errors with D
+    eps = np.finfo(freqs.dtype).eps
 
     # validate input shapes
     if not (x.ndim == 1 and x.size > 0 and x.shape == y.shape == weights.shape):
@@ -225,11 +238,6 @@ def lombscargle(
             "Normalize must be: False (or 'power'), True (or 'normalize'), "
             "or 'amplitude'."
         )
-
-    # cast inputs to float64 (weights is cast above)
-    x = x.astype(np.float64)
-    y = y.astype(np.float64)
-    freqs = freqs.astype(np.float64)
 
     # weight vector must sum to 1
     weights = weights / weights.sum()
@@ -270,7 +278,7 @@ def lombscargle(
         YS = (y * sinwt).sum()
 
         if floating_mean:
-            # calculate best-fit offset for each frequency independently (default)
+            # calculate best-fit offset for each frequency independently
             C_sum = coswt.sum()
             S_sum = sinwt.sum()
             YC -= Y_sum * C_sum
@@ -281,6 +289,10 @@ def lombscargle(
 
         # determinate of the system of linear equations
         D = CC * SS - CS * CS
+
+        # eps is used to prevent spurious numerical issues around the "pseudo-Nyquist"
+        if D == 0:
+            D = eps
 
         # where: y(w) = a*cos(w) + b*sin(w) + c
         a[i] = (YC * SS - YS * CS) / D
@@ -306,7 +318,7 @@ def lombscargle(
 
         return a + 1j * b
 
-    # otherwise, the default, normalize == "power"
+    # otherwise, normalize == "power" (default)
     # return the legacy power units
     pgram *= float(x.shape[0]) / 4.0
     return pgram
