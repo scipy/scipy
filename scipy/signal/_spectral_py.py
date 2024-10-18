@@ -213,6 +213,9 @@ def lombscargle(
     y = np.asarray(y, dtype=np.float64)
     freqs = np.asarray(freqs, dtype=np.float64)
 
+    # store eps to prevent division by zero errors with D
+    eps = np.finfo(freqs.dtype).eps
+
     # validate input shapes
     if not (x.ndim == 1 and x.size > 0 and x.shape == y.shape == weights.shape):
         raise ValueError("Parameters x, y, weights must be 1-D arrays of "
@@ -285,7 +288,8 @@ def lombscargle(
             CS -= C_sum * S_sum
 
         # determinate of the system of linear equations
-        D = CC * SS - CS * CS
+        # eps is added to prevent spurious numerical issues around the "pseudo-Nyquist"
+        D = CC * SS - CS * CS + eps
 
         # where: y(w) = a*cos(w) + b*sin(w) + c
         a[i] = (YC * SS - YS * CS) / D
