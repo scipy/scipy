@@ -40,7 +40,7 @@ def _xi_statistic(x, y, y_continuous):
 
 
 def _xi_std(r, l, y_continuous):
-    # Compute standard deviation of xi under null hypothesis of independence
+    # Compute asymptotic standard deviation of xi under null hypothesis of independence
 
     # `axis=-1` is guaranteed by _axis_nan_policy decorator
     n = np.float64(r.shape[-1])
@@ -60,9 +60,9 @@ def _xi_std(r, l, y_continuous):
     bn = 1 / n**5 * np.sum((v + (n - i)*u)**2, axis=-1)
     cn = 1 / n**3 * np.sum((2*n - 2*i + 1) * u, axis=-1)
     dn = 1 / n**3 * np.sum((l * (n - l)), axis=-1)
-    tau = (an - 2*bn + cn**2) / dn**2
+    tau2 = (an - 2*bn + cn**2) / dn**2
 
-    return np.sqrt(tau) / np.sqrt(n)
+    return np.sqrt(tau2) / np.sqrt(n)
 
 
 def _xi_correlation_iv(y_continuous, method):
@@ -134,6 +134,15 @@ def xi_correlation(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     --------
     scipy.stats.pearsonr, scipy.stats.spearmanr, scipy.stats.kendalltau
 
+    Notes
+    -----
+    There is currently no special handling of ties in `x`; they are broken arbitrarily
+    by the implementation.
+
+    [1]_ notes that the statistic is not symmetric in `x` and `y` *by design*:
+    "...we may want to understand if :math:`Y` is a function :math:`X`, and not just
+    if one of the variables is a function of the other." See [1]_ Remark 1.
+
     References
     ----------
     .. [1] Chatterjee, Sourav. "A new coefficient of correlation." Journal of
@@ -167,8 +176,9 @@ def xi_correlation(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     >>> res.statistic
     array([0.79507951, 0.41824182, 0.16651665])
 
-    Because the distribution of `y` is continuous, continuity may be
-    assumed with little effect on the results.
+    Because the distribution of `y` is continuous, it is valid to pass
+    ``y_continuous=True``. The statistic is identical, and the p-value
+    (not shown) is only slightly different.
 
     >>> stats.xi_correlation(x, y + noise, y_continuous=True, axis=-1).statistic
     array([0.79507951, 0.41824182, 0.16651665])
