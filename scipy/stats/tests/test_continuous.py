@@ -1,3 +1,4 @@
+import os
 import pickle
 from copy import deepcopy
 
@@ -895,29 +896,39 @@ class TestAttributes:
         with pytest.raises(ValueError, match=message):
             X.validation_policy = "invalid"
 
-    @pytest.mark.fail_slow(20)
-    @pytest.mark.slow()
     @pytest.mark.parametrize('i, distdata', enumerate(distcont))
     def test_from_rv_continuous(self, i, distdata):
-        # if i != 83:
-        #     return
-
-        # still working on debugging these
-        if i in {83, 84, 85, 93, 94, 97, 98, 99, 100,
-                 101, 102, 103, 104, 105, 109, 113}:
-            return
         distname = distdata[0]
 
-        if distname in {
+        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
+                'johnsonsb', 'kstwobign', 'powerlognorm', 'powernorm', 'recipinvgauss',
+                'vonmises_line'}
+        if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
+            pytest.skip('Skipping as XSLOW')
+
+
+        if distname in {  # skip these distributions
             'genpareto', 'genextreme', 'genhalflogistic',  # complicated support
             'kstwo', 'kappa4', 'tukeylambda',  # complicated support
-            'levy_stable',  # its levystable, c'mon. Would you expect it to work?
+            'levy_stable',  # levy_stable does things differently...
             'ksone',  # tolerance issues
             'norminvgauss',  # private methods seem to have broadcasting issues
             'vonmises',  # circular distribution; shouldn't work
-            'irwinhall'  # requires dtype of shape parameter to be integer
+            'irwinhall',  # requires dtype of shape parameter to be integer
+            'studentized_range',  # too slow
         }:
             return
+
+        # skip single test, mostly due to slight disagreement
+        skip_entropy = {'kstwobign', 'pearson3'}  # tolerance issue
+        skip_skewness = {'exponpow'}  # tolerance issue
+        skip_kurtosis = {'chi', 'exponpow', 'invgamma', 'johnsonsb'}  # tolerance issue
+        skip_logccdf = {'jf_skew_t', # check this out later
+                        'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
+                    3: {'pareto'},  # stats.pareto is just wrong
+                    4: {'invgamma'}}  # tolerance issue
+        skip_standardized = {'exponpow'}  # tolerances
 
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
@@ -926,45 +937,37 @@ class TestAttributes:
         X = CustomDistribution(**params)
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
+        p = X.cdf(x)
         atol = 1e-12
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            if distname not in {'kstwobign'}:  # tolerance issue
+            m, v, s, k = Y.stats('mvsk')
+            if distname not in skip_entropy:
                 assert_allclose(X.entropy(), Y.entropy())
             assert_allclose(X.median(), Y.median())
-            assert_allclose(X.mean(), Y.stats('m'), atol=atol)
-            assert_allclose(X.variance(), Y.stats('v'), atol=atol)
-            if distname not in {'exponpow'}:  # tolerance issue
-                assert_allclose(X.skewness(), Y.stats('s'), atol=atol)
-            if distname not in {'chi', 'exponpow',
-                                'invgamma', 'johnsonsb'}:  # tolerance issue
-                assert_allclose(X.kurtosis(convention='excess'),
-                                Y.stats('k'), atol=atol)
+            assert_allclose(X.mean(), m, atol=atol)
+            assert_allclose(X.variance(), v, atol=atol)
+            if distname not in skip_skewness:
+                assert_allclose(X.skewness(), s, atol=atol)
+            if distname not in skip_kurtosis:
+                assert_allclose(X.kurtosis(convention='excess'), k, atol=atol)
             assert_allclose(X.logpdf(x), Y.logpdf(x))
             assert_allclose(X.pdf(x), Y.pdf(x))
             assert_allclose(X.logcdf(x), Y.logcdf(x))
             assert_allclose(X.cdf(x), Y.cdf(x))
-            if distname not in {'jf_skew_t', # check this out later
-                                'arcsine'}:  # tolerance
+            if distname not in skip_logccdf:
                 assert_allclose(X.logccdf(x), Y.logsf(x))
             assert_allclose(X.ccdf(x), Y.sf(x))
-            assert_allclose(X.icdf(x), Y.ppf(x))
-            assert_allclose(X.iccdf(x), Y.isf(x))
+            assert_allclose(X.icdf(p), Y.ppf(p))
+            assert_allclose(X.iccdf(p), Y.isf(p))
             for order in range(5):
-                if distname in {'alpha', 'foldcauchy', 'halfcauchy',
-                                'levy', 'levy_l'} and order == 2:
-                    # if mean and variance are infinite, what can we say about
-                    # the raw second moment?
-                    continue
-                if distname in {'invgamma'} and order == 4:  # tolerances
-                    continue
-                assert_allclose(X.moment(order, kind='raw'),
-                                Y.moment(order), atol=atol)
+                if distname not in skip_raw.get(order, {}):
+                    assert_allclose(X.moment(order, kind='raw'),
+                                    Y.moment(order), atol=atol)
             for order in range(3, 4):
-                if distname == 'exponpow':  # tolerances
-                    continue
-                assert_allclose(X.moment(order, kind='standardized'),
-                                Y.stats('mvsk'[order-1]), atol=atol)
+                if distname not in skip_standardized:
+                    assert_allclose(X.moment(order, kind='standardized'),
+                                    Y.stats('mvsk'[order-1]), atol=atol)
 
 
 class TestTransforms:

@@ -9629,7 +9629,7 @@ class skewnorm_gen(rv_continuous):
         return skewnorm_odd_moments
 
     def _munp(self, order, a):
-        if order & 1:
+        if order % 2:
             if order > 19:
                 raise NotImplementedError("skewnorm noncentral moments not "
                                           "implemented for odd orders greater "
@@ -10639,7 +10639,7 @@ class truncpareto_gen(rv_continuous):
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
-truncexpon._support = (0.0, 'c')
+truncpareto._support = (0.0, 'c')
 
 
 class tukeylambda_gen(rv_continuous):
@@ -12293,6 +12293,8 @@ class rel_breitwigner_gen(rv_continuous):
         return np.clip(result, None, 1)
 
     def _munp(self, n, rho):
+        if n == 0:
+            return 1.
         if n == 1:
             # C = k / (2 * rho)
             C = np.sqrt(

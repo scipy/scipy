@@ -4968,7 +4968,10 @@ class ContinuousDistribution:
         def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
             return dist._rvs(size=full_shape, random_state=rng, **kwargs)
 
-        def _moment_raw_formula(self, order, **kwargs):
+        def _moment_raw_formula(self, n, **kwargs):
+            return dist._munp(int(n), **kwargs)
+
+        def _moment_raw_formula_1(self, order, **kwargs):
             if order != 1:
                 return None
             return dist._stats(**kwargs)[0]
@@ -4978,10 +4981,14 @@ class ContinuousDistribution:
                 return None
             return dist._stats(**kwargs)[1]
 
-        def _moment_standardized_formula(self, order, **kwargs):
+        def _moment_standard_formula(self, order, **kwargs):
             if order == 3:
+                if dist._stats_has_moments:
+                    kwargs['moments'] = 's'
                 return dist._stats(**kwargs)[int(order - 1)]
             elif order == 4:
+                if dist._stats_has_moments:
+                    kwargs['moments'] = 'k'
                 k = dist._stats(**kwargs)[int(order - 1)]
                 return k if k is None else k + 3
             else:
@@ -4996,8 +5003,8 @@ class ContinuousDistribution:
                    '_ppf': '_icdf_formula',
                    '_isf': '_iccdf_formula',
                    '_entropy': '_entropy_formula',
-                   '_median': '_median_formula',
-                   '_munp': '_moment_raw_formula'}
+                   '_median': '_median_formula'}
+
         for old_method, new_method in methods.items():
             # If method of old distribution overrides generic implementation...
             method = getattr(dist.__class__, old_method, None)
@@ -5010,14 +5017,17 @@ class ContinuousDistribution:
             return (getattr(dist.__class__, method_name, None)
                     is not getattr(stats.rv_continuous, method_name, None))
 
+        if _overrides('_munp'):
+            CustomDistribution._moment_raw_formula = _moment_raw_formula
+
         if _overrides('_rvs'):
             CustomDistribution._sample_formula = _sample_formula
 
         if _overrides('_stats'):
-            CustomDistribution._moment_standardized_formula = _moment_standardized_formula  # noqa: E501
+            CustomDistribution._moment_standardized_formula = _moment_standard_formula
             if not _overrides('_munp'):
-                CustomDistribution._moment_raw_formula = _moment_raw_formula  # noqa: E501
-                CustomDistribution._moment_central_formula = _moment_central_formula  # noqa: E501
+                CustomDistribution._moment_raw_formula = _moment_raw_formula_1
+                CustomDistribution._moment_central_formula = _moment_central_formula
 
         return CustomDistribution
 
