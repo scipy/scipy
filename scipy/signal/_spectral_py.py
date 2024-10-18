@@ -288,8 +288,11 @@ def lombscargle(
             CS -= C_sum * S_sum
 
         # determinate of the system of linear equations
-        # eps is added to prevent spurious numerical issues around the "pseudo-Nyquist"
-        D = CC * SS - CS * CS + eps
+        D = CC * SS - CS * CS
+
+        # eps is used to prevent spurious numerical issues around the "pseudo-Nyquist"
+        if D == 0:
+            D = eps
 
         # where: y(w) = a*cos(w) + b*sin(w) + c
         a[i] = (YC * SS - YS * CS) / D
