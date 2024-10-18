@@ -117,11 +117,14 @@ class GenzMalikCubature(NestedFixedRule):
         w_5 = 6859 / 19683
 
         weights = self.xp.concat([
-            self.xp.asarray([w_1] * 1),
-            self.xp.asarray([w_2] * (2 * self.ndim)),
-            self.xp.asarray([w_3] * (2 * self.ndim)),
-            self.xp.asarray([w_4] * (2 * (self.ndim - 1) * self.ndim)),
-            self.xp.asarray([w_5] * (2**self.ndim)),
+            self.xp.asarray([w_1] * 1, dtype=self.xp.float64),
+            self.xp.asarray([w_2] * (2 * self.ndim), dtype=self.xp.float64),
+            self.xp.asarray([w_3] * (2 * self.ndim), dtype=self.xp.float64),
+            self.xp.asarray(
+                [w_4] * (2 * (self.ndim - 1) * self.ndim),
+                dtype=self.xp.float64,
+            ),
+            self.xp.asarray([w_5] * (2**self.ndim), dtype=self.xp.float64),
         ])
 
         return nodes, weights
@@ -150,11 +153,7 @@ class GenzMalikCubature(NestedFixedRule):
 
         nodes_size = 1 + (2 * (self.ndim + 1) * self.ndim)
 
-        nodes = self.xp.asarray(
-            list(zip(*its)),
-            dtype=self.xp.float64,
-        )
-
+        nodes = self.xp.asarray(list(zip(*its)), dtype=self.xp.float64)
         nodes = self.xp.reshape(nodes, (self.ndim, nodes_size))
         nodes = nodes.T
 
@@ -165,10 +164,13 @@ class GenzMalikCubature(NestedFixedRule):
         w_4 = (2**self.ndim) * (25 / 729)
 
         weights = self.xp.concat([
-            self.xp.asarray([w_1] * 1),
-            self.xp.asarray([w_2] * (2 * self.ndim)),
-            self.xp.asarray([w_3] * (2 * self.ndim)),
-            self.xp.asarray([w_4] * (2 * (self.ndim - 1) * self.ndim)),
+            self.xp.asarray([w_1] * 1, dtype=self.xp.float64),
+            self.xp.asarray([w_2] * (2 * self.ndim), dtype=self.xp.float64),
+            self.xp.asarray([w_3] * (2 * self.ndim), dtype=self.xp.float64),
+            self.xp.asarray(
+                [w_4] * (2 * (self.ndim - 1) * self.ndim),
+                dtype=self.xp.float64,
+            ),
         ])
 
         return nodes, weights

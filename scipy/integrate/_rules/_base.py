@@ -145,7 +145,7 @@ class Rule:
         est = self.estimate(f, a, b, args)
         refined_est = 0
 
-        for a_k, b_k in _subregion_coordinates(a, b):
+        for a_k, b_k in _split_subregion(a, b):
             refined_est += self.estimate(f, a_k, b_k, args)
 
         return self.xp.abs(est - refined_est)
@@ -191,6 +191,9 @@ class FixedRule(Rule):
      [0.3333333]
     """
 
+    def __init__(self):
+        self.xp = None
+
     @property
     def nodes_and_weights(self):
         raise NotImplementedError
@@ -233,7 +236,10 @@ class FixedRule(Rule):
         """
         nodes, weights = self.nodes_and_weights
 
-        return _apply_fixed_rule(f, a, b, nodes, weights, args)
+        if self.xp is None:
+            self.xp = array_namespace(nodes)
+
+        return _apply_fixed_rule(f, a, b, nodes, weights, args, self.xp)
 
 
 class NestedFixedRule(FixedRule):
@@ -339,7 +345,7 @@ class NestedFixedRule(FixedRule):
         error_weights = self.xp.concat([weights, -lower_weights], axis=0)
 
         return self.xp.abs(
-            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args)
+            _apply_fixed_rule(f, a, b, error_nodes, error_weights, args, self.xp)
         )
 
 
@@ -442,7 +448,7 @@ def _cartesian_product(arrays):
     return result
 
 
-def _subregion_coordinates(a, b):
+def _split_subregion(a, b, xp, split_at=None):
     """
     Given the coordinates of a region like a=[0, 0] and b=[1, 1], yield the coordinates
     of all subregions, which in this case would be::
@@ -452,12 +458,13 @@ def _subregion_coordinates(a, b):
         ([1/2, 0], [1, 1/2]),
         ([1/2, 1/2], [1, 1])
     """
-
     xp = array_namespace(a, b)
-    m = (a + b) * 0.5
 
-    left = [xp.asarray([a[i], m[i]]) for i in range(a.shape[0])]
-    right = [xp.asarray([m[i], b[i]]) for i in range(b.shape[0])]
+    if split_at is None:
+        split_at = (a + b) / 2
+
+    left = [xp.asarray([a[i], split_at[i]]) for i in range(a.shape[0])]
+    right = [xp.asarray([split_at[i], b[i]]) for i in range(b.shape[0])]
 
     a_sub = _cartesian_product(left)
     b_sub = _cartesian_product(right)
@@ -466,8 +473,11 @@ def _subregion_coordinates(a, b):
         yield a_sub[i, ...], b_sub[i, ...]
 
 
-def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
-    xp = array_namespace(a, b, orig_nodes, orig_weights)
+def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
+    # Downcast nodes and weights to common dtype of a and b
+    result_dtype = a.dtype
+    orig_nodes = xp.astype(orig_nodes, result_dtype)
+    orig_weights = xp.astype(orig_weights, result_dtype)
 
     # Ensure orig_nodes are at least 2D, since 1D cubature methods can return arrays of
     # shape (npoints,) rather than (npoints, 1)
@@ -484,8 +494,6 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
                          f"ndim {rule_ndim}, while limit of integration has ndim"
                          f"a_ndim={a_ndim}, b_ndim={b_ndim}")
 
-    a = xp.astype(a, xp.float64)
-    b = xp.astype(b, xp.float64)
     lengths = b - a
 
     # The underlying rule is for the hypercube [-1, 1]^n.
@@ -496,7 +504,7 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
 
     # Also need to multiply the weights by a scale factor equal to the determinant
     # of the Jacobian for this coordinate change.
-    weight_scale_factor = xp.prod(lengths) / 2**rule_ndim
+    weight_scale_factor = xp.prod(lengths, dtype=result_dtype) / 2**rule_ndim
     weights = orig_weights * weight_scale_factor
 
     f_nodes = f(nodes, *args)
@@ -505,6 +513,6 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args=()):
     # f(nodes) will have shape (num_nodes, output_dim_1, ..., output_dim_n)
     # Summing along the first axis means estimate will shape (output_dim_1, ...,
     # output_dim_n)
-    est = xp.sum(weights_reshaped * f_nodes, axis=0)
+    est = xp.sum(weights_reshaped * f_nodes, axis=0, dtype=result_dtype)
 
     return est
