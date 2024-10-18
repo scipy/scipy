@@ -140,6 +140,8 @@ axis_nan_policy_cases = [
     (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.xi_correlation, tuple(), dict(), 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
 ]
 
 # If the message is one of those expected, put nans in

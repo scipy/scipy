@@ -355,6 +355,7 @@ coordinates of multivariate observations.
    spearmanr
    pointbiserialr
    kendalltau
+   xi_correlation
    weightedtau
    somersd
    siegelslopes
@@ -636,6 +637,7 @@ from ._sensitivity_analysis import *
 from ._survival import *
 from ._new_distributions import Normal
 from ._mgc import multiscale_graphcorr
+from ._correlation import xi_correlation
 
 
 # Deprecated namespaces, to be removed in v2.0.0
