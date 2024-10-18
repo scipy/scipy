@@ -31,7 +31,7 @@ def lombscargle(
     extended by Scargle [2]_ to find, and test the significance of weak
     periodic signals with uneven temporal sampling. The algorithm used
     here is based on a weighted least-squares fit of the form
-    ``y(ω) = a*cos(ω*x) + b*sin(ω*x) + c(ω)``, where the fit is calculated for
+    ``y(ω) = a*cos(ω*x) + b*sin(ω*x) + c``, where the fit is calculated for
     each frequency independently. This algorithm was developed by Zechmeister
     and Kürster which improves the Lomb-Scargle periodogram by enabling
     the weighting of individual samples and calculating an unknown y offset
