@@ -123,7 +123,7 @@ def norm(x, ord=None, axis=None):
     x = x.tocsr()
 
     if axis is None:
-        axis = (0, 1)
+        axis = tuple(range(x.ndim))
     elif not isinstance(axis, tuple):
         msg = "'axis' must be None, an integer or a tuple of integers"
         try:
@@ -134,7 +134,7 @@ def norm(x, ord=None, axis=None):
             raise TypeError(msg)
         axis = (int_axis,)
 
-    nd = 2
+    nd = x.ndim
     if len(axis) == 2:
         row_axis, col_axis = axis
         if not (-nd <= row_axis < nd and -nd <= col_axis < nd):
@@ -150,13 +150,13 @@ def norm(x, ord=None, axis=None):
             raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
         elif ord == 1:
-            return abs(x).sum(axis=row_axis).max(axis=col_axis)[0,0]
+            return abs(x).sum(axis=row_axis).max().item()
         elif ord == np.inf:
-            return abs(x).sum(axis=col_axis).max(axis=row_axis)[0,0]
+            return abs(x).sum(axis=col_axis).max().item()
         elif ord == -1:
-            return abs(x).sum(axis=row_axis).min(axis=col_axis)[0,0]
+            return abs(x).sum(axis=row_axis).min().item()
         elif ord == -np.inf:
-            return abs(x).sum(axis=col_axis).min(axis=row_axis)[0,0]
+            return abs(x).sum(axis=col_axis).min().item()
         elif ord in (None, 'f', 'fro'):
             # The axis order does not matter for this norm.
             return _sparse_frobenius_norm(x)

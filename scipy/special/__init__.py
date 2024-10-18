@@ -750,6 +750,7 @@ Other special functions
    spence      -- Spence's function, also known as the dilogarithm.
    zeta        -- Riemann zeta function.
    zetac       -- Riemann zeta function minus 1.
+   softplus    -- Softplus function.
 
 Convenience functions
 ---------------------
