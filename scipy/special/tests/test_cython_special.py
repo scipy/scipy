@@ -246,6 +246,7 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.pdtri, cython_special.pdtri, ('ld', 'dd'), None),
     (special.pdtrik, cython_special.pdtrik, ('dd',), None),
     (special.poch, cython_special.poch, ('dd',), None),
+    (special.pow1p, cython_special.pow1p, ('ff', 'dd'), None),
     (special.powm1, cython_special.powm1, ('dd',), None),
     (special.pro_ang1, cython_special._pro_ang1_pywrap, ('dddd',), None),
     (special.pro_ang1_cv, cython_special._pro_ang1_cv_pywrap, ('ddddd',), None),
