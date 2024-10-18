@@ -1339,6 +1339,20 @@ class TestLombscargle:
         weights = -np.ones(1)
         assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
+    def test_list_input(self):
+        # Test that input can be passsed in as lists
+        # https://github.com/scipy/scipy/issues/8787
+
+        # inputs are modified to prevent numerical issue
+
+        t = [1.98201652e+09, 1.98201752e+09, 1.98201852e+09, 1.98201952e+09]
+        y = [2.97600000e+03, 3.18200000e+03, 3.74900000e+03, 4.53500000e+03]
+
+        periods = np.linspace(300, 120, 1000)
+        angular_freq = 2 * np.pi / periods
+
+        lombscargle(t, y, angular_freq, precenter=True, normalize=True)
+
 
 class TestSTFT:
     def test_input_validation(self):
