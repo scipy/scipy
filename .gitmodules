@@ -26,3 +26,7 @@
 [submodule "scipy/_lib/cobyqa"]
 	path = scipy/_lib/cobyqa
 	url = https://github.com/cobyqa/cobyqa.git
+[submodule "scipy/_lib/prima"]
+	path = scipy/_lib/prima
+	url = https://www.github.com/nbelakovski/prima
+	branch = fixes
