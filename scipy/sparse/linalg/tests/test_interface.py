@@ -442,8 +442,8 @@ def test_no_double_init():
 INT_DTYPES = (np.int8, np.int16, np.int32, np.int64)
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
-INEXECTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
-ALLDTYPES = INT_DTYPES + INEXECTDTYPES
+INEXACTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
+ALLDTYPES = INT_DTYPES + INEXACTDTYPES
 
 
 @pytest.mark.parametrize("test_dtype", ALLDTYPES)
