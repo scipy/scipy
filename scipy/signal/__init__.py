@@ -63,6 +63,7 @@ Filtering
    sosfiltfilt   -- A forward-backward filter for second-order sections.
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
+   envelope      -- Compute the envelope of a real- or complex-valued signal.
 
    decimate      -- Downsample a signal.
    detrend       -- Remove linear and/or constant trends from data.
