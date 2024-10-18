@@ -1435,9 +1435,9 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
                 # The target point is in the direction of neighbor `k`!
                 m = d.neighbors[(ndim+1)*isimplex + k]
                 if m == -1:
-                    # The point is outside the triangulation: bail out
-                    start[0] = isimplex
-                    return -1
+                    # gh-21279
+                    isimplex = _find_simplex_bruteforce(d, c, x, eps, eps_broad)
+                    break
 
                 isimplex = m
                 inside = -1
