@@ -3,7 +3,8 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy
+    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
+    is_dask,
 )
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 import scipy._lib.array_api_compat.numpy as np_compat
@@ -67,6 +68,10 @@ class TestArrayAPI:
             x[0] = 10
             x[1] = 11
             x[2] = 12
+
+            if is_dask(xp):
+                x.compute()
+                y.compute()
 
             assert x[0] != y[0]
             assert x[1] != y[1]
