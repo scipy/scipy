@@ -1004,7 +1004,8 @@ class Bench(Task):
             if not args.compare:
                 print(f"Running benchmarks for Scipy version {version} at {mod_path}")
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
-                       '--python=same', '--quick'] + bench_args
+                       '--python=same', '--quick',
+                       '--config=asv.conf.jsonc',] + bench_args
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
