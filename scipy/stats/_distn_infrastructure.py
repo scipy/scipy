@@ -1608,6 +1608,8 @@ class _ShapeInfo:
                  inclusive=(True, True)):
         self.name = name
         self.integrality = integrality
+        self.endpoints = domain
+        self.inclusive = inclusive
 
         domain = list(domain)
         if np.isfinite(domain[0]) and not inclusive[0]:
