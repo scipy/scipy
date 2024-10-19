@@ -125,11 +125,11 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     if xp.isdtype(out.dtype, 'complex floating'):
         if return_sign:
             real = xp.real(sgn)
-            imag = xp_float_to_complex(_wrap_radians(xp.imag(sgn)))
+            imag = xp_float_to_complex(_wrap_radians(xp.imag(sgn), xp))
             sgn = real + imag*1j
         else:
             real = xp.real(out)
-            imag = xp_float_to_complex(_wrap_radians(xp.imag(out)))
+            imag = xp_float_to_complex(_wrap_radians(xp.imag(out), xp))
             out = real + imag*1j
 
     # Deal with shape details - reducing dimensions and convert 0-D to scalar for NumPy
@@ -141,9 +141,14 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     return (out, sgn) if return_sign else out
 
 
-def _wrap_radians(x):
-    # Wrap radians to -pi, pi interval
-    return (x + math.pi) % (2 * math.pi) - math.pi
+def _wrap_radians(x, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+    # Wrap radians to (-pi, pi] interval
+    out = -((-x + math.pi) % (2 * math.pi) - math.pi)
+    # preserve relative precision
+    no_wrap = xp.abs(x) < xp.pi
+    out[no_wrap] = x[no_wrap]
+    return out
 
 
 def _elements_and_indices_with_max_real(a, axis=-1, xp=None):

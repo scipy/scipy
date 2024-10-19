@@ -75,6 +75,7 @@ __all__ = [
     'riccati_jn',
     'riccati_yn',
     'sinc',
+    'softplus',
     'stirling2',
     'y0_zeros',
     'y1_zeros',
@@ -3451,3 +3452,36 @@ def zeta(x, q=None, out=None):
         return _ufuncs._riemann_zeta(x, out)
     else:
         return _ufuncs._zeta(x, q, out)
+
+      
+def softplus(x, **kwargs):
+    r"""
+    Compute the softplus function element-wise.
+
+    The softplus function is defined as: ``softplus(x) = log(1 + exp(x))``.
+    It is a smooth approximation of the rectifier function (ReLU).
+
+    Parameters
+    ----------
+    x : array_like
+        Input value.
+    **kwargs
+        For other keyword-only arguments, see the
+        `ufunc docs <https://numpy.org/doc/stable/reference/ufuncs.html>`_.
+
+    Returns
+    -------
+    softplus : ndarray
+        Logarithm of ``exp(0) + exp(x)``.
+
+    Examples
+    --------
+    >>> from scipy import special
+    
+    >>> special.softplus(0)
+    0.6931471805599453
+
+    >>> special.softplus([-1, 0, 1])
+    array([0.31326169, 0.69314718, 1.31326169])
+    """
+    return np.logaddexp(0, x, **kwargs)

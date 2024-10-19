@@ -591,6 +591,27 @@ class TestJacobian(JacobianHessianTest):
                                     [getattr(res10, attr), getattr(res11, attr)]])
             np.testing.assert_allclose(res[attr], ref[attr], rtol=1e-14)
 
+    def test_step_direction_size(self):
+        # Check that `step_direction` and `initial_step` can be used to ensure that
+        # the usable domain of a function is respected.
+        rng = np.random.default_rng(23892589425245)
+        b = rng.random(3)
+
+        def f(x):
+            x[0, x[0] < b[0]] = np.nan
+            x[0, x[0] > b[0] + 0.25] = np.nan
+            x[1, x[1] > b[1]] = np.nan
+            x[1, x[1] < b[1] - 0.1] = np.nan
+            return TestJacobian.f5(x)
+
+        dir = [1, -1, 0]
+        h0 = [0.25, 0.1, 0.5]
+        atol = {'atol': 1e-8}
+        res = jacobian(f, b, initial_step=h0, step_direction=dir, tolerances=atol)
+        ref = TestJacobian.df5(b)
+        np.testing.assert_allclose(res.df, ref, atol=1e-8)
+        assert np.all(np.isfinite(ref))
+
 
 class TestHessian(JacobianHessianTest):
     jh_func = hessian
