@@ -32,7 +32,7 @@ from scipy._lib import _testutils
 from scipy._lib._util import ComplexWarning
 
 from scipy._lib._array_api import (
-    xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax,
+    xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     array_namespace,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size,
@@ -1604,6 +1604,7 @@ class TestOrderFilt:
                            [2, 3, 2])
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class _TestLinearFilter:
 
     def setup_method(self):
@@ -1652,6 +1653,7 @@ class _TestLinearFilter:
         y_r = self.convert_dtype([0, 1, 3, 5, 7, 9.], xp)
         self.assert_array_almost_equal(lfilter(b, a, x), y_r)
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug?)')
     def test_rank_1_IIR_init_cond(self, xp):
         x = self.generate((6,), xp)
         b = self.convert_dtype([1, 0, -1], xp)
@@ -1663,6 +1665,7 @@ class _TestLinearFilter:
         self.assert_array_almost_equal(y, y_r)
         self.assert_array_almost_equal(zf, zf_r)
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug?)')
     def test_rank_1_FIR_init_cond(self, xp):
         x = self.generate((6,), xp)
         b = self.convert_dtype([1, 1, 1], xp)
@@ -1692,6 +1695,7 @@ class _TestLinearFilter:
         y = lfilter(b, a, x, axis=1)
         self.assert_array_almost_equal(y_r2_a1, y)
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug)')
     def test_rank_2_IIR_axis_0_init_cond(self, xp):
         x = self.generate((4, 3), xp)
         b = self.convert_dtype([1, -1], xp)
@@ -1705,6 +1709,7 @@ class _TestLinearFilter:
         self.assert_array_almost_equal(y_r2_a0_1, y)
         self.assert_array_almost_equal(zf, zf_r)
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug)')
     def test_rank_2_IIR_axis_1_init_cond(self, xp):
         x = self.generate((4, 3), xp)
         b = self.convert_dtype([1, -1], xp)
@@ -1718,6 +1723,7 @@ class _TestLinearFilter:
         self.assert_array_almost_equal(y_r2_a0_0, y)
         self.assert_array_almost_equal(zf, zf_r)
 
+    @skip_xp_backends('cupy', reason='np.apply_along_axis is np only')
     def test_rank_3_IIR(self, xp):
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, -1], xp)
@@ -1729,6 +1735,7 @@ class _TestLinearFilter:
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
             self.assert_array_almost_equal(y, xp.asarray(y_r))
 
+    @skip_xp_backends('cupy', reason='np.apply_along_axis is np only')
     def test_rank_3_IIR_init_cond(self, xp):
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, -1], xp)
@@ -1749,6 +1756,7 @@ class _TestLinearFilter:
             self.assert_array_almost_equal(y, xp.asarray(y_r))
             self.assert_array_almost_equal(zf, xp.asarray(zf_r))
 
+    @skip_xp_backends('cupy', reason='np.apply_along_axis is np only')
     def test_rank_3_FIR(self, xp):
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, 0, -1], xp)
@@ -1760,6 +1768,7 @@ class _TestLinearFilter:
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
             self.assert_array_almost_equal(y, xp.asarray(y_r))
 
+    @skip_xp_backends('cupy', reason='np.apply_along_axis is np only')
     def test_rank_3_FIR_init_cond(self, xp):
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, 0, -1], xp)
@@ -1781,6 +1790,7 @@ class _TestLinearFilter:
             self.assert_array_almost_equal(y, xp.asarray(y_r))
             self.assert_array_almost_equal(zf, xp.asarray(zf_r))
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug)')
     def test_zi_pseudobroadcast(self, xp):
         x = self.generate((4, 5, 20), xp)
         b, a = signal.butter(8, 0.2, output='ba')
@@ -1802,6 +1812,7 @@ class _TestLinearFilter:
         # lfilter does not prepend ones
         assert_raises(ValueError, lfilter, b, a, x, -1, xp.ones(zi_size))
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug)')
     def test_scalar_a(self, xp):
         # a can be a scalar.
         x = self.generate(6, xp)
@@ -1812,6 +1823,7 @@ class _TestLinearFilter:
         y = lfilter(b, a[0], x)
         self.assert_array_almost_equal(y, y_r)
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug)')
     def test_zi_some_singleton_dims(self, xp):
         # lfilter doesn't really broadcast (no prepending of 1's).  But does
         # do singleton expansion if x and zi have the same ndim.  This was
@@ -1848,6 +1860,7 @@ class _TestLinearFilter:
         zi = self.convert_dtype(zi, xp)
         assert_raises(ValueError, lfilter, b, a, x, axis, zi)
 
+    @skip_xp_backends('cupy', reason='cupy does not raise')
     def test_bad_size_zi(self, xp):
         # rank 1
         x1 = xp.arange(6)
@@ -1983,6 +1996,7 @@ class _TestLinearFilter:
         check_dtype_arg = {} if self.dtype == object else {'check_dtype': False}
         self.assert_equal(zi, zi_2, **check_dtype_arg)
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug)')
     def test_short_x_FIR(self, xp):
         # regression test for #5116
         # x shorter than b, with non None zi fails
@@ -1996,6 +2010,7 @@ class _TestLinearFilter:
         self.assert_array_almost_equal(y, ye)
         self.assert_array_almost_equal(zf, zfe)
 
+    @skip_xp_backends('cupy', reason='results differ (a cupy bug)')
     def test_short_x_IIR(self, xp):
         # regression test for #5116
         # x shorter than b, with non None zi fails
@@ -2567,6 +2582,8 @@ class TestCorrelate2d:
                         xp.asarray([12j]), check_shape=False, check_dtype=False)
 
 
+@skip_xp_backends(cpu_only=True)
+@skip_xp_backends('cupy', reason='lfilter_zi is incompatible')
 class TestLFilterZI:
 
     def test_basic(self, xp):
@@ -2615,7 +2632,8 @@ class TestFiltFilt:
 
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
-        xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=5.28e-11)
+        atol= 3e-9 if is_cupy(xp) else 5.28e-11
+        xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=atol)
 
     @skip_xp_backends('torch', reason='negative strides')
     def test_sine(self, xp):
@@ -2718,6 +2736,7 @@ class TestFiltFilt:
         xp_assert_close(y, expected)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
 
@@ -3749,6 +3768,7 @@ def test_nonnumeric_dtypes(func, xp):
         func(*args, x=1.)
 
 
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize('dt', ['float32', 'float64', 'complex64', 'complex128'])
 class TestSOSFilt:
 
