@@ -1329,7 +1329,7 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
 
     See Also
     --------
-    scipy.signal.firwin, ~scipy.signal.get_window
+    scipy.signal.firwin, scipy.signal.get_window
 
     Examples
     --------
