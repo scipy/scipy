@@ -8,6 +8,7 @@ from .windows import get_window
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 from typing import Literal
+import math
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
@@ -292,7 +293,7 @@ def lombscargle(
 
         # eps is used to prevent spurious numerical issues around the "pseudo-Nyquist"
         if D == 0:
-            D = eps
+            D = eps * math.copysign(1.0, D)
 
         # where: y(w) = a*cos(w) + b*sin(w) + c
         a[i] = (YC * SS - YS * CS) / D
