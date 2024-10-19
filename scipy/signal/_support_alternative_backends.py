@@ -19,6 +19,9 @@ JAX_SIGNAL_FUNCS = [
     'csd', 'detrend', 'istft', 'welch'
 ]
 
+# some cupyx.scipy.signal functions are incompatible with their scipy counterparts
+CUPY_BLACKLIST = ['lfilter_zi', 'sosfilt_zi']
+
 def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
@@ -31,7 +34,7 @@ def delegate_xp(delegator, module_name):
                 xp = np
 
             # try delegating to a cupyx/jax namesake
-            if is_cupy(xp):
+            if is_cupy(xp) and func.__name__ not in CUPY_BLACKLIST:
                 # https://github.com/cupy/cupy/issues/8336
                 import importlib
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
