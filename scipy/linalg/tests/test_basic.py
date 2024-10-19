@@ -882,8 +882,9 @@ class TestSolve:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
-    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'lower triangular',
-                                          'upper triangular', 'symmetric', 'hermitian',
+    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
+                                          'lower triangular', 'upper triangular',
+                                          'symmetric', 'hermitian',
                                           'positive definite', 'general',
                                           'sym', 'her', 'pos', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
@@ -893,7 +894,7 @@ class TestSolve:
     def test_structure_detection(self, dtype, assume_a, nrhs, transposed,
                                  overwrite, fortran):
         rng = np.random.default_rng(982345982439826)
-        n = 5
+        n = 5 if not assume_a == 'banded' else 20
         b = rng.random(size=(n,) + nrhs)
         A = rng.random(size=(n, n))
 
@@ -911,6 +912,8 @@ class TestSolve:
             A = (np.diag(np.diag(A))
                  + np.diag(np.diag(A, -1), -1)
                  + np.diag(np.diag(A, 1), 1))
+        elif assume_a == 'banded':
+            A = np.triu(np.tril(A, 2), -1)
         elif assume_a in {'symmetric', 'sym'}:
             A = A + A.T
         elif assume_a in {'hermitian', 'her'}:
