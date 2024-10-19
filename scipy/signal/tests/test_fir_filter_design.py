@@ -717,7 +717,7 @@ class TestFwind1:
     def test_circular_symmetry(self):
         hsize = (51, 51)
         window = "hamming"
-        taps = fwind1(hsize, window, circular=True)
+        taps = fwind1(hsize, window, circular=True, fc=0.5)
         center = hsize[0] // 2
         for i in range(hsize[0]):
             for j in range(hsize[1]):
@@ -728,11 +728,11 @@ class TestFwind1:
     def test_edge_case_circular(self):
         hsize = (3, 3)
         window = "hamming"
-        taps_small = fwind1(hsize, window, circular=True)
+        taps_small = fwind1(hsize, window, circular=True, fc=0.5)
         assert taps_small.shape == (3, 3)
 
         hsize = (101, 101)
-        taps_large = fwind1(hsize, window, circular=True)
+        taps_large = fwind1(hsize, window, circular=True, fc=0.5)
         assert taps_large.shape == (101, 101)
 
     def test_known_result(self):
