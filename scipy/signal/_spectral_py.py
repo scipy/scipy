@@ -60,8 +60,9 @@ def lombscargle(
         Measurement values. Values are assumed to have a baseline of y = 0. If there is
         a possibility of a y offset, it is recommended to set `floating_mean` to True.
     freqs : array_like
-        Angular frequencies (e.g., rad/s) for output periodogram. Frequencies are
-        normally >= 0. Any peak at -freq will also exist at +freq.
+        Angular frequencies (e.g., having unit rad/s=2π/s for `x` having unit s) for
+        output periodogram. Frequencies are normally >= 0, as any peak at -freq will
+        also exist at +freq.
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. This is
         a legacy parameter and unnecessary if `floating_mean` is True.
@@ -108,9 +109,9 @@ def lombscargle(
     any bias due to consistently missing observations at peaks and/or troughs. When the
     normalize parameter is "amplitude", for any frequency in freqs that is below
     ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards infinity.
-    Unlike evenly-sampled data (required for FFT variants), when the data are unevenly
-    sampled, the upper frequency is not limited to the sampling rate divided by 2
-    (Nyquist-Shannon sampling theorem).
+    The concept of a "Nyquist frequency" limit (see Nyquist-Shannon sampling theorem)
+    is not generally applicable to unevenly sampled data. Therefore, with unevenly
+    sampled data, valid frequencies in freqs can often be much higher than expected.
 
     References
     ----------
