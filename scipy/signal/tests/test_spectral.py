@@ -1411,6 +1411,37 @@ class TestLombscargle:
 
         lombscargle(t, y, angular_freq, precenter=True, normalize=True)
 
+    def test_zero_freq(self):
+        # Verify that function works when freqs includes 0
+        # The value at f=0 will depend on the seed
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.12
+        nin = 100
+        nout = 1001
+        p = 0.7  # Fraction of points to select
+        offset = 0
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.cos(w*t + phi) + offset
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, normalize=True, floating_mean=True)
+
+        # exact value will change based on seed
+        # testing to make sure it is very small
+        assert(pgram[0] < 1e-4)
+
 
 class TestSTFT:
     def test_input_validation(self):
