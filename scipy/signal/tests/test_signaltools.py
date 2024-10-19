@@ -1414,6 +1414,15 @@ class TestResample:
                         x, up=1, down=down, window=weights)
                     assert_allclose(y_g[::down], y_s)
 
+    @pytest.mark.parametrize('dtype', [np.int32, np.float32])
+    def test_gh_15620(self, dtype):
+        data = np.array([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
+        actual = signal.resample_poly(data,
+                                      up=2,
+                                      down=1,
+                                      padtype='smooth')
+        assert np.count_nonzero(actual) > 0
+
 
 class TestCSpline1DEval:
 
@@ -3564,6 +3573,13 @@ class TestSOSFilt:
         # zi as array-like
         _, zf = sosfilt(sos, np.ones(40, dt), zi=zi.tolist())
         assert_allclose_cast(zf, zi, rtol=1e-13)
+
+    def test_dtype_deprecation(self, dt):
+        # gh-21211
+        sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)
+        x = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
+            sosfilt(sos, x)
 
 
 class TestDeconvolve:
