@@ -49,12 +49,15 @@ https://physics.nist.gov/cuu/Constants/
 # Updated to 2006 values by Vincent Davis June 2010
 # Updated to 2014 values by Joseph Booker, 2015
 # Updated to 2018 values by Jakob Jakobson, 2019
+# Updated to 2022 values by Jakob Jakobson, 2024
 
 from __future__ import annotations
 
 import warnings
+import math
 
 from typing import Any
+from collections.abc import Callable
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -102,7 +105,7 @@ electron-deuteron magn. moment ratio                   -2143.923 493         0.0
 electron-muon magn. moment ratio                       206.766 9894          0.000 0054
 electron-neutron magn. moment ratio                    960.920 50            0.000 23
 electron-proton magn. moment ratio                     -658.210 6862         0.000 0066
-magn. constant                                         12.566 370 614...e-7  0                     N A^-2
+magn. constant                                         12.566 370 614...e-7  (exact)               N A^-2
 magn. flux quantum                                     2.067 833 72e-15      0.000 000 18e-15      Wb
 muon magn. moment                                      -4.490 447 99e-26     0.000 000 40e-26      J T^-1
 muon magn. moment to Bohr magneton ratio               -4.841 970 45e-3      0.000 000 13e-3
@@ -136,6 +139,14 @@ shielded proton magn. moment                           1.410 570 47e-26      0.0
 shielded proton magn. moment to Bohr magneton ratio    1.520 993 132e-3      0.000 000 016e-3
 shielded proton magn. moment to nuclear magneton ratio 2.792 775 604         0.000 000 030
 {220} lattice spacing of silicon                       192.015 5965e-12      0.000 0070e-12        m"""
+
+
+def exact2002(exact):
+    replace = {
+        'magn. constant': 4e-7 * math.pi,
+    }
+    return replace
+
 
 txt2006 = """\
 lattice spacing of silicon                             192.015 5762 e-12     0.000 0050 e-12       m
@@ -464,6 +475,23 @@ von Klitzing constant                                  25 812.807 557        0.0
 weak mixing angle                                      0.222 55              0.000 56
 Wien frequency displacement law constant               5.878 933 e10         0.000 010 e10         Hz K^-1
 Wien wavelength displacement law constant              2.897 7685 e-3        0.000 0051 e-3        m K"""
+
+
+def exact2006(exact):
+    mu0 = 4e-7 * math.pi
+    c = exact['speed of light in vacuum']
+    epsilon0 = 1 / (mu0 * c**2)
+    replace = {
+        'mag. constant': mu0,
+        'electric constant': epsilon0,
+        'atomic unit of permittivity': 4*math.pi*epsilon0,
+        'characteristic impedance of vacuum': math.sqrt(mu0 / epsilon0),
+        'hertz-inverse meter relationship': 1/c,
+        'joule-kilogram relationship': 1/c**2,
+        'kilogram-joule relationship': c**2,
+    }
+    return replace
+
 
 txt2010 = """\
 {220} lattice spacing of silicon                       192.015 5714 e-12     0.000 0032 e-12       m
@@ -802,6 +830,10 @@ weak mixing angle                                      0.2223                0.0
 Wien frequency displacement law constant               5.878 9254 e10        0.000 0053 e10        Hz K^-1
 Wien wavelength displacement law constant              2.897 7721 e-3        0.000 0026 e-3        m K"""
 
+
+exact2010 = exact2006
+
+
 txt2014 = """\
 {220} lattice spacing of silicon                       192.015 5714 e-12     0.000 0032 e-12       m
 alpha particle-electron mass ratio                     7294.299 541 36       0.000 000 24
@@ -1138,6 +1170,10 @@ von Klitzing constant                                  25 812.807 4555       0.0
 weak mixing angle                                      0.2223                0.0021
 Wien frequency displacement law constant               5.878 9238 e10        0.000 0034 e10        Hz K^-1
 Wien wavelength displacement law constant              2.897 7729 e-3        0.000 0017 e-3        m K"""
+
+
+exact2014 = exact2010
+
 
 txt2018 = """\
 alpha particle-electron mass ratio                          7294.299 541 42          0.000 000 24
@@ -1494,6 +1530,103 @@ weak mixing angle                                           0.222 90            
 Wien frequency displacement law constant                    5.878 925 757... e10     (exact)                  Hz K^-1
 Wien wavelength displacement law constant                   2.897 771 955... e-3     (exact)                  m K
 W to Z mass ratio                                           0.881 53                 0.000 17                   """
+
+
+def exact2018(exact):
+    # SI base constants
+    c = exact['speed of light in vacuum']
+    h = exact['Planck constant']
+    e = exact['elementary charge']
+    k = exact['Boltzmann constant']
+    N_A = exact['Avogadro constant']
+
+    # Other useful constants
+    R = N_A * k
+    hbar = h / (2*math.pi)
+    G_0 = 2 * e**2 / h
+
+    # Wien law numerical constants: https://en.wikipedia.org/wiki/Wien%27s_displacement_law
+    # (alpha - 3)*exp(alpha) + 3 = 0
+    # (x - 5)*exp(x) + 5 = 0
+    alpha_W = 2.821439372122078893403  # 3 + lambertw(-3 * exp(-3))
+    x_W = 4.965114231744276303699  # 5 + lambertw(-5 * exp(-5))
+
+    # Conventional electrical unit
+    # See https://en.wikipedia.org/wiki/Conventional_electrical_unit
+    K_J90 = exact['conventional value of Josephson constant']
+    K_J = 2 * e / h
+    R_K90 = exact['conventional value of von Klitzing constant']
+    R_K = h / e**2
+    V_90 = K_J90 / K_J
+    ohm_90 = R_K / R_K90
+    A_90 = V_90 / ohm_90
+
+    replace = {
+        'atomic unit of action': hbar,
+        'Boltzmann constant in eV/K': k / e,
+        'Boltzmann constant in Hz/K': k / h,
+        'Boltzmann constant in inverse meter per kelvin': k / (h * c),
+        'conductance quantum': G_0,
+        'conventional value of ampere-90': A_90,
+        'conventional value of coulomb-90': A_90,
+        'conventional value of farad-90': 1 / ohm_90,
+        'conventional value of henry-90': ohm_90,
+        'conventional value of ohm-90': ohm_90,
+        'conventional value of volt-90': V_90,
+        'conventional value of watt-90': V_90**2 / ohm_90,
+        'electron volt-hertz relationship': e / h,
+        'electron volt-inverse meter relationship': e / (h * c),
+        'electron volt-kelvin relationship': e / k,
+        'electron volt-kilogram relationship': e / c**2,
+        'elementary charge over h-bar': e / hbar,
+        'Faraday constant': e * N_A,
+        'first radiation constant': 2 * math.pi * h * c**2,
+        'first radiation constant for spectral radiance': 2 * h * c**2,
+        'hertz-electron volt relationship': h / e,
+        'hertz-inverse meter relationship': 1 / c,
+        'hertz-kelvin relationship': h / k,
+        'hertz-kilogram relationship': h / c**2,
+        'inverse meter-electron volt relationship': (h * c) / e,
+        'inverse meter-joule relationship': h * c,
+        'inverse meter-kelvin relationship': h * c / k,
+        'inverse meter-kilogram relationship': h / c,
+        'inverse of conductance quantum': 1 / G_0,
+        'Josephson constant': K_J,
+        'joule-electron volt relationship': 1 / e,
+        'joule-hertz relationship': 1 / h,
+        'joule-inverse meter relationship': 1 / (h * c),
+        'joule-kelvin relationship': 1 / k,
+        'joule-kilogram relationship': 1 / c**2,
+        'kelvin-electron volt relationship': k / e,
+        'kelvin-hertz relationship': k / h,
+        'kelvin-inverse meter relationship': k / (h * c),
+        'kelvin-kilogram relationship': k / c**2,
+        'kilogram-electron volt relationship': c**2 / e,
+        'kilogram-hertz relationship': c**2 / h,
+        'kilogram-inverse meter relationship': c / h,
+        'kilogram-joule relationship': c**2,
+        'kilogram-kelvin relationship': c**2 / k,
+        'Loschmidt constant (273.15 K, 100 kPa)': 100e3 / 273.15 / k,
+        'Loschmidt constant (273.15 K, 101.325 kPa)': 101.325e3 / 273.15 / k,
+        'mag. flux quantum': h / (2 * e),
+        'molar gas constant': R,
+        'molar Planck constant': h * N_A,
+        'molar volume of ideal gas (273.15 K, 100 kPa)': R * 273.15 / 100e3,
+        'molar volume of ideal gas (273.15 K, 101.325 kPa)': R * 273.15 / 101.325e3,
+        'natural unit of action': hbar,
+        'natural unit of action in eV s': hbar / e,
+        'Planck constant in eV/Hz': h / e,
+        'reduced Planck constant': hbar,
+        'reduced Planck constant in eV s': hbar / e,
+        'reduced Planck constant times c in MeV fm': hbar * c / (e * 1e6 * 1e-15),
+        'second radiation constant': h * c / k,
+        'Stefan-Boltzmann constant': 2 * math.pi**5 * k**4 / (15 * h**3 * c**2),
+        'von Klitzing constant': R_K,
+        'Wien frequency displacement law constant': alpha_W * k / h,
+        'Wien wavelength displacement law constant': h * c / (x_W * k),
+    }
+    return replace
+
 
 txt2022 = """\
 alpha particle-electron mass ratio                          7294.299 541 71          0.000 000 17             
@@ -1852,40 +1985,82 @@ Wien frequency displacement law constant                    5.878 925 757... e10
 Wien wavelength displacement law constant                   2.897 771 955... e-3     (exact)                  m K
 W to Z mass ratio                                           0.881 45                 0.000 13                    """
 
+
+exact2022 = exact2018
+
+
 # -----------------------------------------------------------------------------
 
-physical_constants: dict[str, tuple[float, str, float]] = {}
 
-
-def parse_constants_2002to2014(d: str) -> dict[str, tuple[float, str, float]]:
-    constants = {}
+def parse_constants_2002to2014(
+    d: str, exact_func: Callable[[Any], Any]
+) -> dict[str, tuple[float, str, float]]:
+    constants: dict[str, tuple[float, str, float]] = {}
+    exact: dict[str, float] = {}
+    need_replace = set()
     for line in d.split('\n'):
         name = line[:55].rstrip()
         val = float(line[55:77].replace(' ', '').replace('...', ''))
+        is_truncated = '...' in line[55:77]
+        is_exact = '(exact)' in line[77:99]
+        if is_truncated and is_exact:
+            # missing decimals, use computed exact value
+            need_replace.add(name)
+        elif is_exact:
+            exact[name] = val
+        else:
+            assert not is_truncated
         uncert = float(line[77:99].replace(' ', '').replace('(exact)', '0'))
         units = line[99:].rstrip()
         constants[name] = (val, units, uncert)
+    replace = exact_func(exact)
+    replace_exact(constants, need_replace, replace)
     return constants
 
 
-def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
-    constants = {}
+def parse_constants_2018toXXXX(
+    d: str, exact_func: Callable[[Any], Any]
+) -> dict[str, tuple[float, str, float]]:
+    constants: dict[str, tuple[float, str, float]] = {}
+    exact: dict[str, float] = {}
+    need_replace = set()
     for line in d.split('\n'):
         name = line[:60].rstrip()
         val = float(line[60:85].replace(' ', '').replace('...', ''))
+        is_truncated = '...' in line[60:85]
+        is_exact = '(exact)' in line[85:110]
+        if is_truncated and is_exact:
+            # missing decimals, use computed exact value
+            need_replace.add(name)
+        elif is_exact:
+            exact[name] = val
+        else:
+            assert not is_truncated
         uncert = float(line[85:110].replace(' ', '').replace('(exact)', '0'))
         units = line[110:].rstrip()
         constants[name] = (val, units, uncert)
+    replace = exact_func(exact)
+    replace_exact(constants, need_replace, replace)
     return constants
 
 
-_physical_constants_2002 = parse_constants_2002to2014(txt2002)
-_physical_constants_2006 = parse_constants_2002to2014(txt2006)
-_physical_constants_2010 = parse_constants_2002to2014(txt2010)
-_physical_constants_2014 = parse_constants_2002to2014(txt2014)
-_physical_constants_2018 = parse_constants_2018toXXXX(txt2018)
-_physical_constants_2022 = parse_constants_2018toXXXX(txt2022)
+def replace_exact(d, to_replace, exact):
+    for name in to_replace:
+        assert name in exact, f'Missing exact value: {name}'
+        assert abs(exact[name]/d[name][0] - 1) <= 1e-9, \
+            f'Bad exact value: {name}: { exact[name]}, {d[name][0]}'
+        d[name] = (exact[name],) + d[name][1:]
+    assert set(exact.keys()) == set(to_replace)
 
+
+_physical_constants_2002 = parse_constants_2002to2014(txt2002, exact2002)
+_physical_constants_2006 = parse_constants_2002to2014(txt2006, exact2006)
+_physical_constants_2010 = parse_constants_2002to2014(txt2010, exact2010)
+_physical_constants_2014 = parse_constants_2002to2014(txt2014, exact2014)
+_physical_constants_2018 = parse_constants_2018toXXXX(txt2018, exact2018)
+_physical_constants_2022 = parse_constants_2018toXXXX(txt2022, exact2022)
+
+physical_constants: dict[str, tuple[float, str, float]] = {}
 physical_constants.update(_physical_constants_2002)
 physical_constants.update(_physical_constants_2006)
 physical_constants.update(_physical_constants_2010)
@@ -1919,6 +2094,25 @@ for k in _physical_constants_2022:
 # CODATA 2018 and 2022: renamed and no longer exact; use as aliases
 _aliases['mag. constant'] = 'vacuum mag. permeability'
 _aliases['electric constant'] = 'vacuum electric permittivity'
+
+
+_extra_alias_keys = ['natural unit of velocity',
+                     'natural unit of action',
+                     'natural unit of action in eV s',
+                     'natural unit of mass',
+                     'natural unit of energy',
+                     'natural unit of energy in MeV',
+                     'natural unit of mom.um',
+                     'natural unit of mom.um in MeV/c',
+                     'natural unit of length',
+                     'natural unit of time']
+
+# finally, insert aliases for values
+for k, v in list(_aliases.items()):
+    if v in _current_constants or v in _extra_alias_keys:
+        physical_constants[k] = physical_constants[v]
+    else:
+        del _aliases[k]
 
 
 class ConstantWarning(DeprecationWarning):
@@ -2069,42 +2263,6 @@ def find(sub: str | None = None, disp: bool = False) -> Any:
     else:
         return result
 
-
+# This is not used here, but it must be defined to pass
+# scipy/_lib/tests/test_public_api.py::test_private_but_present_deprecation
 c = value('speed of light in vacuum')
-mu0 = value('vacuum mag. permeability')
-epsilon0 = value('vacuum electric permittivity')
-
-# Table is lacking some digits for exact values: calculate from definition
-exact_values = {
-    'joule-kilogram relationship': (1 / (c * c), 'kg', 0.0),
-    'kilogram-joule relationship': (c * c, 'J', 0.0),
-    'hertz-inverse meter relationship': (1 / c, 'm^-1', 0.0),
-}
-
-# sanity check
-for key in exact_values:
-    val = physical_constants[key][0]
-    if abs(exact_values[key][0] - val) / val > 1e-9:
-        raise ValueError("Constants.codata: exact values too far off.")
-    if exact_values[key][2] == 0 and physical_constants[key][2] != 0:
-        raise ValueError("Constants.codata: value not exact")
-
-physical_constants.update(exact_values)
-
-_tested_keys = ['natural unit of velocity',
-                'natural unit of action',
-                'natural unit of action in eV s',
-                'natural unit of mass',
-                'natural unit of energy',
-                'natural unit of energy in MeV',
-                'natural unit of mom.um',
-                'natural unit of mom.um in MeV/c',
-                'natural unit of length',
-                'natural unit of time']
-
-# finally, insert aliases for values
-for k, v in list(_aliases.items()):
-    if v in _current_constants or v in _tested_keys:
-        physical_constants[k] = physical_constants[v]
-    else:
-        del _aliases[k]

@@ -307,7 +307,7 @@ class TestCubature:
         a = xp.asarray([0, 0], dtype=xp.float64)
         b = xp.asarray([2, 2], dtype=xp.float64)
 
-        res = cubature(basic_nd_integrand, a, b, rule_str, args=(n, xp))
+        res = cubature(basic_nd_integrand, a, b, rule=rule_str, args=(n, xp))
 
         xp_assert_close(
             res.estimate,
@@ -346,7 +346,7 @@ class TestCubature:
             basic_1d_integrand,  # Any function would suffice
             a,
             b,
-            rule,
+            rule=rule,
             max_subdivisions=10,
             args=(xp.arange(5, dtype=xp.float64), xp),
         )
@@ -629,9 +629,9 @@ class TestCubatureProblems:
             f,
             a,
             b,
-            rule,
-            rtol,
-            atol,
+            rule=rule,
+            rtol=rtol,
+            atol=atol,
             args=(*args, xp),
         )
 
@@ -711,9 +711,9 @@ class TestCubatureProblems:
             f,
             a,
             b,
-            rule,
-            rtol,
-            atol,
+            rule=rule,
+            rtol=rtol,
+            atol=atol,
             args=(*args, xp),
         )
 
@@ -830,7 +830,7 @@ class TestRulesQuadrature:
         res = cubature(
             basic_1d_integrand,
             a, b,
-            rule,
+            rule=rule,
             rtol=1e-1,
             args=(n, xp),
         )

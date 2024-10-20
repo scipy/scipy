@@ -237,8 +237,6 @@ scipy/optimize/_trlib/_trlib.c
 scipy/optimize/tnc/moduleTNC.c
 scipy/optimize/tnc/_moduleTNC.c
 scipy/signal/_peak_finding_utils.c
-scipy/signal/_spectral.c
-scipy/signal/_spectral.cpp
 scipy/signal/_max_len_seq_inner.c
 scipy/signal/_max_len_seq_inner.cpp
 scipy/signal/_sosfilt.c

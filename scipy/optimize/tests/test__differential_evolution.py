@@ -719,7 +719,7 @@ class TestDifferentialEvolutionSolver:
             # is being overridden by the workers keyword
             with warns(UserWarning):
                 with DifferentialEvolutionSolver(rosen, bounds, workers=p.map) as s:
-                    pass
+                    solver.solve()
             assert s._updating == 'deferred'
 
     @pytest.mark.fail_slow(10)
@@ -1696,4 +1696,3 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
-
