@@ -10,7 +10,6 @@ The following functions still need tests:
 - nbdtrik
 - nbdtrin
 - pdtrik
-- nctdtr
 - nctdtrit
 - nctdtridf
 - nctdtrinc
@@ -585,3 +584,50 @@ def test_ncfdtr(dfn, dfd, nc, f, expected):
     # sample_idx = rng.choice(len(re), replace=False, size=12)
     # cases = np.array(cases)[sample_idx].tolist()
     assert_allclose(sp.ncfdtr(dfn, dfd, nc, f), expected, rtol=1e-13, atol=0)
+
+
+@pytest.mark.parametrize(
+    "df,nc,x,expected,rtol",
+    [[3000., 3., 0.1, 0.0018657780826323328, 1e-13],
+     [3., 5., -2., 1.5645373999149622e-09, 5e-10],
+     [1000., 10., 1., 1.1493552133826623e-19, 1e-13],
+     [1e-5, -6., 2., 0.9999999990135003, 1e-13]]
+)
+def test_nctdtr(df, nc, x, expected, rtol):
+
+    # Reference values computed with mpmath with the following script
+    # Formula from:
+    # Lenth, Russell V (1989). "Algorithm AS 243: Cumulative Distribution Function
+    # of the Non-central t Distribution". Journal of the Royal Statistical Society,
+    # Series C. 38 (1): 185-189
+    #
+    # from mpmath import mp
+    # mp.dps = 100
+
+    # def nct_cdf(df, nc, x):
+    #     df, nc, x = map(mp.mpf, (df, nc, x))
+    # 
+    #     def f(df, nc, x):
+    #        phi = mp.ncdf(-nc)
+    #        y = x * x / (x * x + df)
+    #        constant = mp.exp(-nc * nc / 2.)
+    #        def term(j):
+    #            intermediate = constant * (nc *nc / 2.)**j
+    #            p = intermediate/mp.factorial(j)
+    #            q = nc / (mp.sqrt(2.) * mp.gamma(j + 1.5)) * intermediate
+    #            first_beta_term = mp.betainc(j + 0.5, df/2., x2=y, regularized=True)
+    #            second_beta_term = mp.betainc(j + 1., df/2., x2=y, regularized=True)
+    #            return p * first_beta_term + q * second_beta_term
+
+    #       sum_term = mp.nsum(term, [0, mp.inf])
+
+    #     f = phi + 0.5 * sum_term
+    #     return f
+
+    #     if x >= 0:
+    #         result = f(df, nc, x)
+    #     else:
+    #         result = mp.one - f(df, -nc, x)
+    #     return float(result)
+
+    assert_allclose(sp.nctdtr(df, nc, x), expected, rtol=rtol)
