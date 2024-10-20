@@ -1351,7 +1351,7 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
 
     Generate a circularly symmetric 5x5 low-pass filter with Hamming window.
 
-    >>> filter_2d = fwind1((5, 5), 'hamming', circular=True)
+    >>> filter_2d = fwind1((5, 5), 'hamming', fc, circular=True)
     >>> filter_2d
     array([[0.08566336, 0.08566336, 0.08566336, 0.08566336, 0.08566336],
            [0.08566336, 0.71034579, 0.99716832, 0.71034579, 0.08566336],
@@ -1365,8 +1365,8 @@ def fwind1(hsize, window, fc=None, fs=2, circular=False):
     >>> hsize, fc = (50, 50), 0.05
     >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
     >>> filter0_2d = fwind1(hsize, window, fc)
-    >>> filter1_2d = fwind1((50, 50), 'hamming', circular=True)
-
+    >>> filter1_2d = fwind1((50, 50), 'hamming', fc, circular=True)
+    ...
     >>> fg, (ax0, ax1) = plt.subplots(1, 2, tight_layout=True, figsize=(6.5, 3.5))
     >>> ax0.set_title("Product of 2 Windows")
     >>> im0 = ax0.imshow(filter0_2d, cmap='viridis', origin='lower', aspect='equal')
