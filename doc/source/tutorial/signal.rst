@@ -1520,11 +1520,10 @@ these two steps:
                \mu_p(k) = k + \lfloor M/2\rfloor - h p
 
    for :math:`k \in [0, \ldots, n-1]`. :math:`w_d[m]` is the so-called
-   canonical dual window of :math:`w[m]` and is also made up of :math:`M`
-   samples.
+   dual window of :math:`w[m]` and is also made up of :math:`M` samples.
 
-Note that an inverse STFT does not necessarily exist for all windows and hop sizes. For a given
-window :math:`w[m]` the hop size :math:`h` must be small enough to ensure that
+Note that an inverse STFT does not necessarily exist for all windows and hop sizes. For
+a given window :math:`w[m]` the hop size :math:`h` must be small enough to ensure that
 every sample of :math:`x[k]` is touched by a non-zero value of at least one
 window slice. This is sometimes referred as the "non-zero overlap condition"
 (see :func:`~scipy.signal.check_NOLA`). Some more details are
@@ -1642,6 +1641,7 @@ with :math:`\delta_{k,l}` being the Kronecker Delta.
 Eq. :math:numref:`eq_STFT_DFT` can be expressed as
 
 .. math::
+    :label: eq_STFT_unitaryDFT
 
     \vb{s}_p = \vb{F}\,\vb{x}_p \quad\text{with}\quad
     F[q,m] = \frac{1}{\sqrt{M}}\exp\!\big\{-2\jj\pi (q + \phi_m)\, m / M\big\}\ ,
@@ -1801,13 +1801,12 @@ which can be reformulated into
 
    \conjT{\vb{V}}\,\vb{u} = \vb{1}\ , \qquad
    V[i,j] :=  w[i]\, \delta_{i, j+ph}\ , \qquad
-   \vb{V}\in \IC^{M\times h}\ ,
+   \vb{V}\in \IC^{M\times h},\  p\in\IZ\ ,
 
 where :math:`\vb{1}\in\IR^h` is a vector of ones. The reason
 that :math:`\vb{V}` has only :math:`h` columns is that the :math:`i`-th and
 :math:`(i+m)`-th row, :math:`i\in\IN`, in Eq. :math:numref:`eq_STFT_WindDualCond0` are
-identical. Hence there are only :math:`h` distinct equations and one non-zero entry per
-row in :math:`\vb{V}`.
+identical. Hence there are only :math:`h` distinct equations.
 
 Of practical interest is finding the valid dual window :math:`\vb{u}_d` closest to a
 given vector :math:`\vb{d}\in\IC^M`. By utilizing an :math:`h`-dimensional vector
@@ -1848,7 +1847,7 @@ with :math:`\eta,\xi,\zeta\in\IZ`. Note that the first term :math:`\vb{w}_d` is 
 to the solution given in Eq. :math:numref:`eq_STFT_CanonDualWin` and that the inverse
 of :math:`\conjT{\vb{V}}\vb{V}` must exist or else the STFT is not invertible. When
 :math:`\vb{d}=\vb{0}`, the solution :math:`\vb{w}_d` is obtained. Hence,
-:math:`\vb{w}_d` minimizes the :math:`L_2`-norm :math:`\lVert\vb{u}\rVert`, which is
+:math:`\vb{w}_d` minimizes the :math:`L^2`-norm :math:`\lVert\vb{u}\rVert`, which is
 the justification for its name "canonical dual window". Sometimes it is more desirable
 to find the closest vector in regard to direction and ignoring the vector length. This
 can be achieved by introducing a scaling factor :math:`\alpha\in\IC` to minimize
@@ -1871,7 +1870,6 @@ be easily derived from Eq. :math:numref:`eq_STFT_AllDualWinsCond0` resulting in
 .. math::
    :label: eq_STFT_EqualWindDualCond
 
-
    \sum_{p=0}^{\lfloor M / h \rfloor} \big|w[m+ph]\big|^2 = 1\ ,
                                                      \qquad m \in \{0, \ldots, h-1\}\ .
 
@@ -1879,11 +1877,30 @@ Note that each window sample :math:`w[m]` appears only once in the :math:`h` equ
 To find a closest window :math:`\vb{w}` for given window :math:`\vb{d}` is
 straightforward: Partition :math:`\vb{d}` according to Eq.
 :math:numref:`eq_STFT_EqualWindDualCond` and normalize the length of each partition to
-unity. Note that if Eq. :math:numref:`eq_STFT_EqualWindDualCond` holds, the matrix
+unity. In this case :math:`w[m]` is also a canonical dual window, which can be seen by
+recognizing that setting :math:`u[m]=w[m]` in Eq.
+:math:numref:`eq_STFT_AllDualWinsCond` is equivalent of the denominator in Eq.
+:math:numref:`eq_STFT_CanonDualWin` being unity.
+
+Furthermore, if Eq. :math:numref:`eq_STFT_EqualWindDualCond` holds, the matrix
 :math:`\vb{D}` of Eq. :math:numref:`eq_STFT_MoorePenrose_DD` is the identity matrix
 making the STFT :math:`\vb{G}` a unitary mapping, i.e.,
-:math:`\conjT{\vb{G}}\vb{G}=\vb{I}`. In this case :math:`w[m]` is also a canonical dual
-window, which can be seen by investigating Eq. :math:numref:`eq_STFT_CanonDualWin`.
+:math:`\conjT{\vb{G}}\vb{G}=\vb{I}`. Note that this holds only when a unitary DFT of Eq.
+:math:numref:`eq_STFT_unitaryDFT` is utilized. The |ShortTimeFFT| implementation uses
+the standard DFT of Eq. :math:numref:`eq_SpectA_FFT`. Hence, there the scalar product in
+the STFT space needs to be scaled by :math:`1/M` to ensure that the key property of
+unitary mappings, the equality of the scalar products, holds. I.e.,
+
+.. math::
+    :label: eq_STFT_unitary
+
+    \langle x, y\rangle = \sum_k x[k]\, \conj{y[k]}
+    \stackrel{\stackrel{\text{unitary}}{\downarrow}}{=}
+    \frac{1}{M}\sum_{q,p} S_x[q,p]\, \conj{S_y[q,p]}\ ,
+
+with :math:`S_{x,y}` being the STFT of :math:`x,y`. Alternatively, the window can
+be scaled by :math:`1/\sqrt{M}` and the dual by :math:`\sqrt{M}` to obtain a unitary
+mapping, which is implemented in `~scipy.signal.ShortTimeFFT.from_win_equals_dual`.
 
 
 

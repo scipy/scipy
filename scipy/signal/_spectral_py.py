@@ -973,7 +973,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
 def check_COLA(window, nperseg, noverlap, tol=1e-10):
     r"""Check whether the Constant OverLap Add (COLA) constraint is met
-        (leagcy function).
+    (leagcy function).
 
     .. legacy:: function
 

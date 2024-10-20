@@ -358,21 +358,57 @@ def test_from_win_equals_dual_exceptions():
     with pytest.raises(ValueError, match="P.+ desired_win does not have valid.*"):
         w = np.array([1, 0, 1, 0, 1], dtype=float)
         ShortTimeFFT.from_win_equals_dual(w, hop=2, fs=1)
-
+    with pytest.raises(ValueError, match="Parameter scale_to='invalid' not in.*"):
+        # noinspection PyTypeChecker
+        ShortTimeFFT.from_win_equals_dual(w, hop=2, fs=1, scale_to='invalid')
 
 @pytest.mark.parametrize('fft_bins', (True, False))
 @pytest.mark.parametrize('m, hop', [(16, 8), (16, 7), (17, 8), (17, 9), (16, 16)])
-def test_from_win_equals_dual(m, hop, fft_bins):
+def test_from_win_equals_dual_params(m, hop, fft_bins):
     """Test windows parameterizations for `ShortTimeFFT.from_closest_win_equals_dual`.
 
     The flattop window is used since it also has negative values.
     """
     desired_win = get_window('flattop', m, fftbins=fft_bins)
     SFT0 = ShortTimeFFT.from_win_equals_dual(desired_win, hop, fs=1)
-    xp_assert_close(SFT0.dual_win, SFT0.win)  # window equals dual window
+    xp_assert_close(SFT0.dual_win, SFT0.win, err_msg="win must equals dual window!")
 
     SFT1 = ShortTimeFFT(SFT0.win, hop, fs=1)
-    xp_assert_close(SFT1.dual_win, SFT0.win)  # dual window is canonical window
+    xp_assert_close(SFT1.dual_win, SFT0.win, err_msg="dual win isn't canonical win!")
+
+
+@pytest.mark.parametrize('fft_bins', (True, False))
+@pytest.mark.parametrize('m, hop', [(16, 8), (16, 7), (17, 8), (17, 9), (16, 16)])
+@pytest.mark.parametrize('scale_to', (None, 'unitary'))
+def test_from_win_equals_dual_roundtrip(m, hop, fft_bins, scale_to):
+    """Testing roundtrip verifies that the dual window is correct.
+    """
+    desired_win = get_window('flattop', m, fftbins=fft_bins)
+    SFT0 = ShortTimeFFT.from_win_equals_dual(desired_win, hop, fs=1)
+
+    x = np.cos(np.arange(2*m)**2)
+    x1 = SFT0.istft(SFT0.stft(x), 0, len(x))
+    xp_assert_close(x1, x, err_msg="Roundtrip for win equaling its dual failed!")
+
+
+def test_from_win_equals_dual_unitary():
+    """Check that STFT can be unitary mapping. """
+    m, hop = 8, 4
+    des_win = get_window('hann', m)
+    SFT = ShortTimeFFT.from_win_equals_dual(des_win, hop, 1, fft_mode='twosided',
+                                            scale_to='unitary')
+    # Orthogonal signals:
+    x, y = np.tile([-1, -1, 1, 1], 4), np.tile([1, -1, -1, 1], 4)
+    Sxx, Sxy = SFT.spectrogram(x), SFT.spectrogram(x, y)
+
+    atol = np.finfo(Sxx.dtype).resolution
+    assert sum(x * y) == 0
+    xp_assert_close(np.sum(Sxx), np.sum(x ** 2, dtype=Sxx.dtype), atol=atol,
+                    err_msg="Energies do not match!")
+    xp_assert_close(np.sum(Sxy), 0.0j, atol=atol,
+                    err_msg="STFT scalar product of Sx and Sy not 0!")
+    xp_assert_close(SFT.dual_win, SFT.win*SFT.m_num, atol=atol,
+                    err_msg="Wrong factor for dual_win/win!")
 
 
 def test_dual_win_roundtrip():
