@@ -3592,6 +3592,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=True,
     `method` parameter also accepts instances `PermutationMethod`. In this
     case, the p-value is computed using `permutation_test` with the provided
     configuration options and other appropriate settings.
+    Please also note that in the edge case that all elements of ``d`` are zero,
+    the p-value relying on the normal approximaton cannot be computed (NaN)
+    if ``zero_method='wilcox'`` or ``zero_method='pratt'``.
 
     References
     ----------

@@ -1476,13 +1476,17 @@ class TestWilcoxon:
 
     def test_zero_diff(self):
         x = np.arange(20)
-        # pratt and wilcox do not work if x - y == 0
-        assert_raises(ValueError, stats.wilcoxon, x, x, "wilcox",
-                      mode="asymptotic")
-        assert_raises(ValueError, stats.wilcoxon, x, x, "pratt",
-                      mode="asymptotic")
+        # pratt and wilcox do not work if x - y == 0 and method == "asymptotic"
+        # => warning is emitted and p-value is nan
+        msg = "invalid value encountered in scalar divide"
+        with pytest.warns(RuntimeWarning, match=msg):
+            w, p = stats.wilcoxon(x, x, "wilcox", method="asymptotic")
+        assert_equal((w, p), (0.0, np.nan))
+        with pytest.warns(RuntimeWarning, match=msg):
+            w, p = stats.wilcoxon(x, x, "pratt", method="asymptotic")
+        assert_equal((w, p), (0.0, np.nan))
         # ranksum is n*(n+1)/2, split in half if zero_method == "zsplit"
-        assert_equal(stats.wilcoxon(x, x, "zsplit", mode="asymptotic"),
+        assert_equal(stats.wilcoxon(x, x, "zsplit", method="asymptotic"),
                      (20*21/4, 1.0))
 
     def test_pratt(self):
@@ -1701,11 +1705,6 @@ class TestWilcoxon:
         d = np.arange(0, 14)
         w, p = stats.wilcoxon(d)
         assert_equal((w, p), stats.wilcoxon(d, method="asymptotic"))
-
-        # unless that is not possible, e.g., d = 0
-        d = np.zeros(15)
-        with pytest.raises(RuntimeError, match="Trying to resolve"):
-            stats.wilcoxon(d)
 
         # use approximation for samples > 50
         d = np.arange(1, 52)

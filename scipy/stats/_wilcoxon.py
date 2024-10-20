@@ -117,18 +117,13 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
                       "`stats.PermutationMethod`",
                       stacklevel=2)
 
-    if (method == "asymptotic" and zero_method in ["wilcox", "pratt"]
-            and n_zero == d.size and d.size > 0 and d.ndim == 1):
-        raise ValueError("zero_method 'wilcox' and 'pratt' do not "
-                         "work if x - y is zero for all elements.")
-
     if 0 < d.shape[-1] < 10 and method == "asymptotic":
         warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
     return d, zero_method, correction, alternative, method, axis, output_z, n_zero
 
 
-def _wilcoxon_statistic(d, zero_method='wilcox'):
+def _wilcoxon_statistic(d, method, zero_method='wilcox'):
 
     i_zeros = (d == 0)
 
@@ -178,17 +173,15 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
     se -= tie_correct/2
     se = np.sqrt(se / 24)
 
-    # se = 0 means that no non-zero values are left in d. usually this
-    # will be detected at the input validation stage (if method is asymptotic).
-    # handling this case here has two reasons:
-    # - if method="auto", the switch to asymptotic might only happen after
-    #   the statistic is calculated
-    # - for method != "asymptotic", avoid division by zero warning
-    #   (z is not needed anyways)
-    if np.any(se) == 0:
-        z = np.nan
-    else:
+    # se = 0 means that no non-zero values are left in d. we only need z
+    # if method is asymptotic. however, if method="auto", the switch to
+    # asymptotic might only happen after the statistic is calculated, so z
+    # needs to be computed. in all other cases, avoid division by zero warning
+    # (z is not needed anyways)
+    if method in ["asymptotic", "auto"]:
         z = (r_plus - mn) / se
+    else:
+        z = np.nan
 
     return r_plus, r_minus, se, z, count, has_ties
 
@@ -215,7 +208,9 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             res.zstatistic = NaN
         return res
 
-    r_plus, r_minus, se, z, count, has_ties = _wilcoxon_statistic(d, zero_method)
+    r_plus, r_minus, se, z, count, has_ties = _wilcoxon_statistic(
+        d, method, zero_method
+    )
 
     # we only know if there are ties after computing the statistic and not
     # at the input validation stage. if the original method was auto and
@@ -235,17 +230,6 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             # if there are ties and the sample size is too large to
             # run a deterministic permutation test, fall back to asymptotic
             method = "asymptotic"
-            # rerun check that is done for asymptotic during input validation
-            if (zero_method in ["wilcox", "pratt"] and n_zero == d.size and
-                d.size > 0 and d.ndim == 1):
-                msg = ("Trying to resolve method='auto' failed. Attempted "
-                       "to perform asymptotic test, but zero_method 'wilcox' "
-                       "and 'pratt' do not work if x - y is zero for all "
-                       "elements. Consider changing zero_method or run "
-                       "use PermutationMethod. Note that method='auto' "
-                       "does not switch to PermutationMethod for this sample "
-                       "size since the p-value is not deterministic.")
-                raise RuntimeError(msg)
 
     if method == 'asymptotic':
         if correction:
@@ -271,7 +255,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             p = np.clip(p, 0, 1)
     else:  # `PermutationMethod` instance (already validated)
         p = stats.permutation_test(
-            (d,), lambda d: _wilcoxon_statistic(d, zero_method)[0],
+            (d,), lambda d: _wilcoxon_statistic(d, method, zero_method)[0],
             permutation_type='samples', **method._asdict(),
             alternative=alternative, axis=-1).pvalue
 
