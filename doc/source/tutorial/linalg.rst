@@ -956,3 +956,11 @@ Van der Monde         `numpy.vander`                     Create a Van der Monde 
 
 
 For examples of the use of these functions, see their respective docstrings.
+
+Advanced Features
+-----------------
+
+Batch Support
+^^^^^^^^^^^^^
+Some of SciPy's linear algebra functions can process batches of scalars, 1D-, or
+2D-arrays given N-d array input. For more information, see :doc:`linalg_batch`.

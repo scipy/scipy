@@ -121,7 +121,11 @@ convert-notebooks:
 		output_name="source/_contents/$${basename}.ipynb"; \
 		$(PYTHON) -m jupytext --output "$$output_name"  $$file; \
 	done
-
+	for file in source/tutorial/*.md; do \
+		basename=$$(basename $$file .md); \
+		output_name="source/_contents/$${basename}.ipynb"; \
+		$(PYTHON) -m jupytext --output "$$output_name"  $$file; \
+	done
 
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees
