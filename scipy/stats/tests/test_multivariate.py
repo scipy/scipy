@@ -4011,3 +4011,18 @@ class TestNormalInverseGamma:
 
         ref = dblquad(lambda s2, x: dist.pdf(x, s2) * s2, -np.inf, np.inf, 0, np.inf)
         assert_allclose(res[1], ref[0], rtol=1e-6)
+
+    @pytest.mark.parametrize('dtype', [np.int32, np.float16, np.float32, np.float64])
+    def test_dtype(self, dtype):
+        rng = np.random.default_rng(8925849245)
+        x, s2, mu, lmbda, a, b = rng.uniform(3, 10, size=6).astype(dtype)
+        dtype_out = np.result_type(1.0, dtype)
+        dist = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        assert dist.rvs()[0].dtype == dtype_out
+        assert dist.rvs()[1].dtype == dtype_out
+        assert dist.mean()[0].dtype == dtype_out
+        assert dist.mean()[1].dtype == dtype_out
+        assert dist.var()[0].dtype == dtype_out
+        assert dist.var()[1].dtype == dtype_out
+        assert dist.logpdf(x, s2).dtype == dtype_out
+        assert dist.pdf(x, s2).dtype == dtype_out

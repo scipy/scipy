@@ -7128,11 +7128,12 @@ class normal_inverse_gamma_gen(multi_rv_generic):
         s2 = invgamma(a, scale=b).rvs(size=size, random_state=random_state)
         scale = (s2 / lmbda)**0.5
         x = norm(loc=mu, scale=scale).rvs(size=size, random_state=random_state)
-        return x, s2
+        dtype = np.result_type(1.0, mu, lmbda, a, b)
+        return x.astype(dtype), s2.astype(dtype)
 
     def _logpdf(self, x, s2, mu, lmbda, a, b):
         t1 = 0.5 * (np.log(lmbda) - np.log(2 * np.pi * s2))
-        t2 = a*np.log(b) - special.gammaln(a)
+        t2 = a*np.log(b) - special.gammaln(a).astype(a.dtype)
         t3 = -(a + 1) * np.log(s2)
         t4 = -(2*b + lmbda*(x - mu)**2) / (2*s2)
         return t1 + t2 + t3 + t4
@@ -7165,7 +7166,7 @@ class normal_inverse_gamma_gen(multi_rv_generic):
 
     def _pdf(self, x, s2, mu, lmbda, a, b):
         t1 = np.sqrt(lmbda / (2 * np.pi * s2))
-        t2 = b**a / special.gamma(a)
+        t2 = b**a / special.gamma(a).astype(a.dtype)
         t3 = (1 / s2)**(a + 1)
         t4 = np.exp(-(2*b + lmbda*(x - mu)**2) / (2*s2))
         return t1 * t2 * t3 * t4
@@ -7214,9 +7215,8 @@ class normal_inverse_gamma_gen(multi_rv_generic):
         invalid, args = self._process_shapes(mu, lmbda, a, b)
         mu, lmbda, a, b = args
         invalid |= ~(a > 1)
-        mean_x = np.asarray(mu)
-        mean_s2 = b / (a - 1)
-        mean_x, mean_s2 = np.asarray(mean_x), np.asarray(mean_s2)
+        mean_x = np.asarray(mu).copy()
+        mean_s2 = np.asarray(b / (a - 1))
         mean_x[invalid] = np.nan
         mean_s2[invalid] = np.nan
         return mean_x[()], mean_s2[()]
@@ -7249,14 +7249,16 @@ class normal_inverse_gamma_gen(multi_rv_generic):
 
     def _process_parameters_pdf(self, x, s2, mu, lmbda, a, b):
         args = np.broadcast_arrays(x, s2, mu, lmbda, a, b)
-        args = [arg.astype(np.float64, copy=True) for arg in args]
+        dtype = np.result_type(1.0, *(arg.dtype for arg in args))
+        args = [arg.astype(dtype, copy=False) for arg in args]
         x, s2, mu, lmbda, a, b = args
         invalid = ~((lmbda > 0) & (a > 0) & (b > 0))
         return invalid, args
 
     def _process_shapes(self, mu, lmbda, a, b):
         args = np.broadcast_arrays(mu, lmbda, a, b)
-        args = [arg.astype(np.float64, copy=True) for arg in args]
+        dtype = np.result_type(1.0, *(arg.dtype for arg in args))
+        args = [arg.astype(dtype, copy=False) for arg in args]
         mu, lmbda, a, b = args
         invalid = ~((lmbda > 0) & (a > 0) & (b > 0))
         return invalid, args
