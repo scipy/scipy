@@ -8,7 +8,7 @@ from .windows import get_window
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 from typing import Literal
-import math
+from scipy.linalg import lu_factor, lu_solve
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
@@ -215,9 +215,6 @@ def lombscargle(
     y = np.asarray(y, dtype=np.float64)
     freqs = np.asarray(freqs, dtype=np.float64)
 
-    # store eps to prevent division by zero errors with D
-    eps = np.finfo(freqs.dtype).eps
-
     # validate input shapes
     if not (x.ndim == 1 and x.size > 0 and x.shape == y.shape == weights.shape):
         raise ValueError("Parameters x, y, weights must be 1-D arrays of "
@@ -292,14 +289,19 @@ def lombscargle(
         # determinate of the system of linear equations
         D = CC * SS - CS * CS
 
-        # eps is used to prevent spurious numerical issues around the "pseudo-Nyquist"
-        if D == 0:
-            D = eps * math.copysign(1.0, D)
-
-        # where: y(w) = a*cos(w) + b*sin(w) + c
-        a[i] = (YC * SS - YS * CS) / D
-        b[i] = (YS * CC - YC * CS) / D
-        #  c = Y_sum - a * C_sum - b * S_sum  # offset is not useful to return
+        # calculate a and b
+        if D != 0:
+            # where: y(w) = a*cos(w) + b*sin(w) + c
+            a[i] = (YC * SS - YS * CS) / D
+            b[i] = (YS * CC - YC * CS) / D
+            #  c = Y_sum - a * C_sum - b * S_sum  # offset is not useful to return
+        else:
+            # If D==0, this is a rare numerical issue that can occur around the
+            # "pseudo-Nyquist". Use LU solver.
+            lu, piv = lu_factor(np.array([[CC, CS], [CS, SS]], dtype=a.dtype))
+            ab = lu_solve((lu, piv), np.array([YC, YS], dtype=a.dtype))
+            a[i] = ab[0]
+            b[i] = ab[1]
 
         # store final value as power in (y units)^2
         pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
