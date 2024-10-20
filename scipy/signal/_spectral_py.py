@@ -8,7 +8,6 @@ from .windows import get_window
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 from typing import Literal
-from scipy.linalg import lu_factor, lu_solve
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
