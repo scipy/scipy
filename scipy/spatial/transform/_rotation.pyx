@@ -1210,7 +1210,7 @@ cdef class Rotation:
         >>> r.as_rotvec().shape
         (2, 3)
 
-        It is also possible to have a stack of a single rotaton:
+        It is also possible to have a stack of a single rotation:
 
         >>> r = R.from_rotvec([[0, 0, np.pi/2]])
         >>> r.as_rotvec().shape
@@ -3488,7 +3488,7 @@ cdef class Rotation:
             tolerance = 1e-3  # tolerance for small angle approximation (rad)
             R_flip = cls.identity()
             if (np.pi - theta) < tolerance:
-                # Near pi radians, the Taylor series appoximation of x/sin(x)
+                # Near pi radians, the Taylor series approximation of x/sin(x)
                 # diverges, so for numerical stability we flip pi and then
                 # rotate back by the small angle pi - theta
                 if cross_norm == 0:

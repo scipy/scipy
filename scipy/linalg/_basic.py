@@ -553,7 +553,12 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
-        b2 /= a1[1, 0]
+        # a1.shape[-1] == 1 -> original matrix is 1x1. Typically, the user
+        # will pass u = l = 0 and `a1` will be 1x1. However, the rest of the
+        # function works with unnecessary rows in `a1` as long as
+        # `a1[u + i - j, j] == a[i,j]`. In the 1x1 case, we want i = j = 0,
+        # so the diagonal is in row `u` of `a1`. See gh-8906.
+        b2 /= a1[nupper, 0]
         return b2
     if nlower == nupper == 1:
         overwrite_ab = overwrite_ab or _datacopied(a1, ab)
@@ -1132,9 +1137,9 @@ def det(a, overwrite_a=False, check_finite=True):
     input with LAPACK routine 'getrf', and then calculating the product of
     diagonal entries of the U factor.
 
-    Even the input array is single precision (float32 or complex64), the result
-    will be returned in double precision (float64 or complex128) to prevent
-    overflows.
+    Even if the input array is single precision (float32 or complex64), the
+    result will be returned in double precision (float64 or complex128) to
+    prevent overflows.
 
     Examples
     --------
@@ -1190,17 +1195,13 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Scalar case
     if a1.shape[-2:] == (1, 1):
-        # Either ndarray with spurious singletons or a single element
-        if max(*a1.shape) > 1:
-            temp = np.squeeze(a1)
-            if a1.dtype.char in 'dD':
-                return temp
-            else:
-                return (temp.astype('d') if a1.dtype.char == 'f' else
-                        temp.astype('D'))
-        else:
-            return (np.float64(a1.item()) if a1.dtype.char in 'fd' else
-                    np.complex128(a1.item()))
+        a1 = a1[..., 0, 0]
+        if a1.ndim == 0:
+            a1 = a1[()]
+        # Convert float32 to float64, and complex64 to complex128.
+        if a1.dtype.char in 'dD':
+            return a1
+        return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
     # Then check overwrite permission
     if not _datacopied(a1, a):  # "a"  still alive through "a1"

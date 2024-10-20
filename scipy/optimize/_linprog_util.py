@@ -69,7 +69,7 @@ _LPProblem.__doc__ = \
 
         For mixed integrality constraints, supply an array of shape `c.shape`.
         To infer a constraint on each decision variable from shorter inputs,
-        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+        the argument will be broadcast to `c.shape` using `np.broadcast_to`.
 
         This argument is currently used only by the ``'highs'`` method and
         ignored otherwise.

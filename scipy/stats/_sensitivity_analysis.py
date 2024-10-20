@@ -407,7 +407,7 @@ def sobol_indices(
         consider at minima ``n >= 2**12``. The more complex the model is,
         the more samples will be needed.
 
-        Even for a purely addiditive model, the indices may not sum to 1 due
+        Even for a purely additive model, the indices may not sum to 1 due
         to numerical noise.
 
     References

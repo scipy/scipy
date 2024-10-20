@@ -337,7 +337,7 @@ class TestContainsNaNTest:
         assert _contains_nan(data4)[0]
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
@@ -398,7 +398,7 @@ class TestLazywhere:
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
@@ -445,7 +445,7 @@ class TestLazywhere:
             ref2 = ref2.reshape(result_shape)
             ref3 = ref3.reshape(result_shape)
 
-        xp_assert_close(res1, ref1, rtol=2e-16, allow_0d=True)
-        xp_assert_equal(res2, ref2, allow_0d=True)
+        xp_assert_close(res1, ref1, rtol=2e-16)
+        xp_assert_equal(res2, ref2)
         if not is_array_api_strict(xp):
-            xp_assert_equal(res3, ref3, allow_0d=True)
+            xp_assert_equal(res3, ref3)

@@ -141,14 +141,14 @@ class TestOnenormest:
         assert_allclose(est, est_plain)
 
     @pytest.mark.xslow
-    def test_onenormest_table_6_t_1(self):
+    def test_onenormest_table_6_t_2(self):
         #TODO this test seems to give estimates that match the table,
         #TODO even though no attempt has been made to deal with
         #TODO complex numbers in the one-norm estimation.
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
         np.random.seed(1234)
-        t = 1
+        t = 2
         n = 100
         itmax = 5
         nsamples = 5000
@@ -249,4 +249,3 @@ class TestAlgorithm_2_2:
 
             # Compute the 1-norm bounds.
             g, ind = _algorithm_2_2(A, A.T, t)
-

@@ -5,9 +5,9 @@ import numpy as np
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   xp_assert_less, is_numpy, is_cupy,
-                                   xp_ravel, xp_size,)
+from scipy._lib._array_api import array_namespace, is_cupy, is_numpy, xp_ravel, xp_size
+from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
+                                         xp_assert_less)
 
 from scipy.optimize.elementwise import find_minimum, find_root
 from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS
@@ -40,7 +40,7 @@ def _vectorize(xp):
 # `_chandrupatla`/`_chandrupatla_minimize` from `_chandrupatla.py`, we import
 # `find_root`/`find_minimum` from `optimize.elementwise` and wrap those
 # functions to conform to the private interface. This may look a little strange,
-# since it effectly just inverts the interface transformation done within the
+# since it effectively just inverts the interface transformation done within the
 # `find_root`/`find_minimum` functions, but it allows us to run the original,
 # unmodified tests on the public interfaces, simplifying the PR that adds
 # the public interfaces. We'll refactor this when we want to @parametrize the
@@ -188,9 +188,10 @@ cases = [
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
-                              reasons=['Currently uses fancy indexing assignment.',
-                                       'JAX arrays do not support item assignment.'])
+@pytest.mark.skip_xp_backends('jax.numpy',
+                              reason='JAX arrays do not support item assignment.')
+@pytest.mark.skip_xp_backends('array_api_strict',
+                              reason='Currently uses fancy indexing assignment.')
 class TestChandrupatlaMinimize:
 
     def f(self, x, loc):
@@ -553,10 +554,12 @@ class TestChandrupatlaMinimize:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy', 'cupy',
-                              reasons=['Currently uses fancy indexing assignment.',
-                                       'JAX arrays do not support item assignment.',
-                                       'cupy/cupy#8391',],)
+@pytest.mark.skip_xp_backends('array_api_strict',
+                              reason='Currently uses fancy indexing assignment.')
+@pytest.mark.skip_xp_backends('jax.numpy',
+                              reason='JAX arrays do not support item assignment.')
+@pytest.mark.skip_xp_backends('cupy',
+                              reason='cupy/cupy#8391')
 class TestChandrupatla(TestScalarRootFinders):
 
     def f(self, q, p):
@@ -564,7 +567,7 @@ class TestChandrupatla(TestScalarRootFinders):
 
     @pytest.mark.parametrize('p', [0.6, np.linspace(-0.05, 1.05, 10)])
     def test_basic(self, p, xp):
-        # Invert distribution CDF and compare against distrtibution `ppf`
+        # Invert distribution CDF and compare against distribution `ppf`
         a, b = xp.asarray(-5.), xp.asarray(5.)
         res = _chandrupatla_root(self.f, a, b, args=(xp.asarray(p),))
         ref = xp.asarray(stats.norm().ppf(p), dtype=xp.asarray(p).dtype)

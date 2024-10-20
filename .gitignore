@@ -223,8 +223,6 @@ scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/linalg/_matfuncs_sqrtm_triu.c
 scipy/linalg/_matfuncs_sqrtm_triu.cpp
-scipy/linalg/_matfuncs_expm.c
-scipy/linalg/_matfuncs_expm.pyx
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
@@ -239,8 +237,6 @@ scipy/optimize/_trlib/_trlib.c
 scipy/optimize/tnc/moduleTNC.c
 scipy/optimize/tnc/_moduleTNC.c
 scipy/signal/_peak_finding_utils.c
-scipy/signal/_spectral.c
-scipy/signal/_spectral.cpp
 scipy/signal/_max_len_seq_inner.c
 scipy/signal/_max_len_seq_inner.cpp
 scipy/signal/_sosfilt.c
