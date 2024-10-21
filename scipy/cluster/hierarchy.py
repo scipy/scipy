@@ -1080,7 +1080,7 @@ class ClusterNode:
 
     """
 
-    def __init__(self, id, left=None, right=None, dist=0, count=1):
+    def __init__(self, id, left=None, right=None, dist=0.0, count=1):
         if id < 0:
             raise ValueError('The id must be non-negative.')
         if dist < 0:
