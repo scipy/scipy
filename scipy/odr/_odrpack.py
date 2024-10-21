@@ -36,6 +36,7 @@ robert.kern@gmail.com
 
 """
 import os
+from threading import Lock
 
 import numpy as np
 from warnings import warn
@@ -46,6 +47,7 @@ __all__ = ['odr', 'OdrWarning', 'OdrError', 'OdrStop',
            'odr_error', 'odr_stop']
 
 odr = __odrpack.odr
+ODR_LOCK = Lock()
 
 
 class OdrWarning(UserWarning):
@@ -408,7 +410,7 @@ class RealData(Data):
             return weights
 
     def __getattr__(self, attr):
-    
+
         if attr not in ('wd', 'we'):
             if attr != "meta" and attr in self.meta:
                 return self.meta[attr]
@@ -419,7 +421,7 @@ class RealData(Data):
                       ('wd', 'covx'): (self._cov2wt, self.covx),
                       ('we', 'sy'): (self._sd2wt, self.sy),
                       ('we', 'covy'): (self._cov2wt, self.covy)}
-            
+
             func, arg = lookup_tbl[(attr, self._ga_flags[attr])]
 
             if arg is not None:
@@ -552,9 +554,9 @@ class Output:
         Standard deviations of the estimated parameters, of shape (p,).
     cov_beta : ndarray
         Covariance matrix of the estimated parameters, of shape (p,p).
-        Note that this `cov_beta` is not scaled by the residual variance 
-        `res_var`, whereas `sd_beta` is. This means 
-        ``np.sqrt(np.diag(output.cov_beta * output.res_var))`` is the same 
+        Note that this `cov_beta` is not scaled by the residual variance
+        `res_var`, whereas `sd_beta` is. This means
+        ``np.sqrt(np.diag(output.cov_beta * output.res_var))`` is the same
         result as `output.sd_beta`.
     delta : ndarray, optional
         Array of estimated errors in input variables, of same shape as `x`.
@@ -1121,7 +1123,8 @@ class ODR:
             if obj is not None:
                 kwds[attr] = obj
 
-        self.output = Output(odr(*args, **kwds))
+        with ODR_LOCK:
+            self.output = Output(odr(*args, **kwds))
 
         return self.output
 

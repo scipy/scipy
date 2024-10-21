@@ -293,6 +293,7 @@ _msg_time = "Time limit reached. (HiGHS Status 13:"
 _msg_iter = "Iteration limit reached. (HiGHS Status 14:"
 
 
+@pytest.mark.parallel_threads(1)
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
                     reason="Unhandled 32-bit GCC FP bug")
 @pytest.mark.slow
