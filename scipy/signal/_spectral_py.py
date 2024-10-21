@@ -264,13 +264,13 @@ def lombscargle(
     sinwt = np.sin(freqst)
 
     CC = 2.0 * np.dot(weights.T, 0.5 - sinwt**2.0)
-    SS = 2.0 * np.dot(weights.T, sinwt * coswt)
+    SS = 2.0 * np.dot(weights.T, coswt * sinwt)
 
     if floating_mean:
         C = np.dot(weights.T, coswt)
         S = np.dot(weights.T, sinwt)
         CC -= C * C - S * S
-        SS -= 2.0 * S * C
+        SS -= 2.0 * C * S
 
     # calculate tau (phase offset to eliminate CS variable)
     tau = 0.5 * np.arctan2(SS, CC)
