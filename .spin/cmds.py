@@ -13,6 +13,8 @@ import click
 from spin import util
 from spin.cmds import meson
 
+from pathlib import Path
+
 
 # # Check that the meson git submodule is present
 # curdir = pathlib.Path(__file__).parent
@@ -387,17 +389,17 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
 
     ctx.params[MESON_ARGS]["install"] = ctx.params[MESON_ARGS]["install"] + ("--tags=" + ctx.params['tags'], )
 
-    ctx.params.pop('werror')
-    ctx.params.pop('debug')
-    ctx.params.pop('release')
-    ctx.params.pop('gcov')
-    ctx.params.pop('asan')
-    ctx.params.pop('setup_args')
-    ctx.params.pop('with_accelerate')
-    ctx.params.pop('with_scipy_openblas')
-    ctx.params.pop('parallel')
-    ctx.params.pop('show_build_log') # the behaviour needs to be implemented in spin
-    ctx.params.pop('tags')
+    if ctx.params["show_build_log"]:
+        ctx.params[MESON_ARGS]["show_build_log"] = ctx.params["show_build_log"]
+
+    ctx.params[MESON_ARGS]["root"] = Path(__file__).parent.parent.absolute()
+
+    for option in ('werror', 'debug', 'release',
+                   'gcov', 'asan','setup_args',
+                   'with_accelerate', 'with_scipy_openblas',
+                   'parallel', 'show_build_log',
+                   'tags'):
+        ctx.params.pop(option)
 
     ctx.forward(meson.build)
 
