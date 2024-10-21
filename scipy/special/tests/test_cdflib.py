@@ -591,7 +591,11 @@ def test_ncfdtr(dfn, dfd, nc, f, expected):
     [[3000., 3., 0.1, 0.0018657780826323328, 1e-13],
      [3., 5., -2., 1.5645373999149622e-09, 5e-10],
      [1000., 10., 1., 1.1493552133826623e-19, 1e-13],
-     [1e-5, -6., 2., 0.9999999990135003, 1e-13]]
+     [1e-5, -6., 2., 0.9999999990135003, 1e-13],
+     [0.98, -3.8, 0.15, 0.9999528361700505, 1e-13],
+     [10., 20., 0.15, 6.426530505957303e-88, 1e-13],
+     [1., 1., np.inf, 1.0, 0.0],
+     [1., 1., -np.inf, 0.0, 0.0],]
 )
 def test_nctdtr(df, nc, x, expected, rtol):
 
@@ -606,23 +610,24 @@ def test_nctdtr(df, nc, x, expected, rtol):
 
     # def nct_cdf(df, nc, x):
     #     df, nc, x = map(mp.mpf, (df, nc, x))
-    # 
+        
     #     def f(df, nc, x):
-    #        phi = mp.ncdf(-nc)
-    #        y = x * x / (x * x + df)
-    #        constant = mp.exp(-nc * nc / 2.)
-    #        def term(j):
-    #            intermediate = constant * (nc *nc / 2.)**j
-    #            p = intermediate/mp.factorial(j)
-    #            q = nc / (mp.sqrt(2.) * mp.gamma(j + 1.5)) * intermediate
-    #            first_beta_term = mp.betainc(j + 0.5, df/2., x2=y, regularized=True)
-    #            second_beta_term = mp.betainc(j + 1., df/2., x2=y, regularized=True)
-    #            return p * first_beta_term + q * second_beta_term
+    #         phi = mp.ncdf(-nc)
+    #         y = x * x / (x * x + df)
+    #         constant = mp.exp(-nc * nc / 2.)
+    #         def term(j):
+    #             intermediate = constant * (nc *nc / 2.)**j
+    #             p = intermediate/mp.factorial(j)
+    #             q = nc / (mp.sqrt(2.) * mp.gamma(j + 1.5)) * intermediate
+    #             first_beta_term = mp.betainc(j + 0.5, df/2., x2=y,
+    #                                          regularized=True)
+    #             second_beta_term = mp.betainc(j + mp.one, df/2., x2=y,
+    #                                           regularized=True)
+    #             return p * first_beta_term + q * second_beta_term
 
-    #       sum_term = mp.nsum(term, [0, mp.inf])
-
-    #     f = phi + 0.5 * sum_term
-    #     return f
+    #         sum_term = mp.nsum(term, [0, mp.inf])
+    #         f = phi + 0.5 * sum_term
+    #         return f
 
     #     if x >= 0:
     #         result = f(df, nc, x)
