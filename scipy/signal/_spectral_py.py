@@ -117,14 +117,17 @@ def lombscargle(
     ----------
     .. [1] N.R. Lomb "Least-squares frequency analysis of unequally spaced
            data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
+           :doi:`10.1007/bf00648343`
 
     .. [2] J.D. Scargle "Studies in astronomical time series analysis. II -
            Statistical aspects of spectral analysis of unevenly spaced data",
            The Astrophysical Journal, vol 263, pp. 835-853, 1982
+           :doi:`10.1086/160554`
 
     .. [3] M. Zechmeister and M. Kürster, "The generalised Lomb-Scargle periodogram.
            A new formalism for the floating-mean and Keplerian periodograms,"
            Astronomy and Astrophysics, vol. 496, pp. 577-584, 2009
+           :doi:`10.1051/0004-6361:200811296`
 
     .. [4] J.T. VanderPlas, "Understanding the Lomb-Scargle Periodogram,"
            The Astrophysical Journal Supplement Series, vol. 236, no. 1, p. 16,
