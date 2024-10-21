@@ -56,9 +56,9 @@ class LinearOperator:
     """Common interface for performing matrix vector products
 
     Many iterative methods (e.g. cg, gmres) do not need to know the
-    individual entries of a matrix to solve a linear system A*x=b.
+    individual entries of a matrix to solve a linear system A@x=b.
     Such solvers only require the computation of matrix vector
-    products, A*v where v is a dense vector.  This class serves as
+    products, A@v where v is a dense vector.  This class serves as
     an abstract interface between iterative solvers and matrix-like
     objects.
 
@@ -84,15 +84,15 @@ class LinearOperator:
     shape : tuple
         Matrix dimensions (M, N).
     matvec : callable f(v)
-        Returns returns A * v.
+        Returns returns A @ v.
     rmatvec : callable f(v)
-        Returns A^H * v, where A^H is the conjugate transpose of A.
+        Returns A^H @ v, where A^H is the conjugate transpose of A.
     matmat : callable f(V)
-        Returns A * V, where V is a dense matrix with dimensions (N, K).
+        Returns A @ V, where V is a dense matrix with dimensions (N, K).
     dtype : dtype
         Data type of the matrix.
     rmatmat : callable f(V)
-        Returns A^H * V, where V is a dense matrix with dimensions (M, K).
+        Returns A^H @ V, where V is a dense matrix with dimensions (M, K).
 
     Attributes
     ----------
@@ -134,7 +134,7 @@ class LinearOperator:
     <2x2 _CustomLinearOperator with dtype=float64>
     >>> A.matvec(np.ones(2))
     array([ 2.,  3.])
-    >>> A * np.ones(2)
+    >>> A @ np.ones(2)
     array([ 2.,  3.])
 
     """
@@ -205,7 +205,7 @@ class LinearOperator:
     def matvec(self, x):
         """Matrix-vector multiplication.
 
-        Performs the operation y=A*x where A is an MxN linear
+        Performs the operation y=A@x where A is an MxN linear
         operator and x is a column vector or 1-d array.
 
         Parameters
@@ -252,7 +252,7 @@ class LinearOperator:
     def rmatvec(self, x):
         """Adjoint matrix-vector multiplication.
 
-        Performs the operation y = A^H * x where A is an MxN linear
+        Performs the operation y = A^H @ x where A is an MxN linear
         operator and x is a column vector or 1-d array.
 
         Parameters
@@ -307,7 +307,7 @@ class LinearOperator:
     def matmat(self, X):
         """Matrix-matrix multiplication.
 
-        Performs the operation y=A*X where A is an MxN linear
+        Performs the operation y=A@X where A is an MxN linear
         operator and X dense N*K matrix or ndarray.
 
         Parameters
@@ -354,7 +354,7 @@ class LinearOperator:
     def rmatmat(self, X):
         """Adjoint matrix-matrix multiplication.
 
-        Performs the operation y = A^H * x where A is an MxN linear
+        Performs the operation y = A^H @ x where A is an MxN linear
         operator and x is a column vector or 1-d array, or 2-d array.
         The default implementation defers to the adjoint.
 
@@ -405,7 +405,7 @@ class LinearOperator:
             return self.H.matmat(X)
 
     def __call__(self, x):
-        return self*x
+        return self@x
 
     def __mul__(self, x):
         return self.dot(x)
@@ -716,7 +716,7 @@ class _ProductLinearOperator(LinearOperator):
 
     def _adjoint(self):
         A, B = self.args
-        return B.H * A.H
+        return B.H @ A.H
 
 
 class _ScaledLinearOperator(LinearOperator):
@@ -734,6 +734,7 @@ class _ScaledLinearOperator(LinearOperator):
         dtype = _get_dtype([A], [type(alpha)])
         super().__init__(dtype, A.shape)
         self.args = (A, alpha)
+        # Note: args[1] is alpha (a scalar), so use `*` below, not `@`
 
     def _matvec(self, x):
         return self.args[1] * self.args[0].matvec(x)
