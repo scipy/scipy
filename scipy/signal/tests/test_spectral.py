@@ -985,8 +985,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1020,13 +1020,13 @@ class TestLombscargle:
         ampl = 2.
         w = 1.
         phi = 0.5 * np.pi
-        nin = 100
+        nin = 1000
         nout = 1000
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1039,11 +1039,11 @@ class TestLombscargle:
         pgram = lombscargle(t, y, f)
 
         # convert to the amplitude
-        pgram = np.sqrt(4 * pgram / t.shape[0])
+        pgram = np.sqrt(4.0 * pgram / t.shape[0])
 
         # Check if amplitude is correct (this will not exactly match, due to
         # numerical differences when data is removed)
-        assert_allclose(np.max(pgram), ampl, rtol=5e-2)
+        assert_allclose(pgram[f==w], ampl, rtol=5e-2)
 
     def test_precenter(self):
         # Test if precenter gives the same result as manually precentering
@@ -1059,8 +1059,8 @@ class TestLombscargle:
         offset = 0.15  # Offset to be subtracted in pre-centering
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1097,8 +1097,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1192,8 +1192,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1243,8 +1243,8 @@ class TestLombscargle:
         offset = 2.15  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1273,8 +1273,8 @@ class TestLombscargle:
         offset = 2  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a cos wave for the selected times
@@ -1307,8 +1307,8 @@ class TestLombscargle:
         offset = 2.15  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1425,8 +1425,8 @@ class TestLombscargle:
         offset = 0
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.default_rng(12345)
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
