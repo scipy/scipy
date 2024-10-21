@@ -1830,7 +1830,7 @@ dgamma = dgamma_gen(name='dgamma')
 
 
 class dpareto_lognorm_gen(rv_continuous):
-    r"""A double pareto lognormal continuous random variable.
+    r"""A double Pareto lognormal continuous random variable.
 
     %(before_notes)s
 
@@ -1868,11 +1868,11 @@ class dpareto_lognorm_gen(rv_continuous):
 
     References
     ----------
-    .. [1] Hajargasht, Gholamreza, and William E. Griffiths. "Pareto–lognormal
+    .. [1] Hajargasht, Gholamreza, and William E. Griffiths. "Pareto-lognormal
            distributions: Inequality, poverty, and estimation from grouped income
            data." Economic Modelling 33 (2013): 593-604.
     .. [2] Reed, William J., and Murray Jorgensen. "The double Pareto-lognormal
-           distribution — a new parametric model for size distributions."
+           distribution - a new parametric model for size distributions."
            Communications in Statistics - Theory and Methods 33.8 (2004): 1733-1753.
 
     %(example)s
