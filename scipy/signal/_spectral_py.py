@@ -251,10 +251,10 @@ def lombscargle(
     # column vectors
     x = x[:, np.newaxis]
     y = y[:, np.newaxis]
-    weights = weights[:, np.newaxis]
+    weights = weights[:, np.newaxis]  # type: ignore
 
-    yweights = y * weights
-    Y_sum = (yweights).sum()
+    weights_y = weights * y
+    Y_sum = (weights_y).sum()
 
     freqst = freqs * x
     coswt = np.cos(freqst)
@@ -269,11 +269,11 @@ def lombscargle(
         CC -= C * C - S * S
         SS -= 2.0 * S * C
 
-    # calculate tau
+    # calculate tau (phase offset to eliminate CS variable)
     tau = 0.5 * np.arctan2(SS, CC)
     freqst_tau = freqst - tau
 
-    # now coswt and sinwt are offset by tau
+    # now, coswt and sinwt are offset by tau
     coswt = np.cos(freqst_tau)
     sinwt = np.sin(freqst_tau)
 
@@ -282,12 +282,12 @@ def lombscargle(
     # by definition, CC can only be [0, 1]
     # to prevent division by zero errors, limit to [0+eps, 1-eps]
     eps = np.finfo(dtype=y.dtype).eps
-    CC[CC==1.0] = 1.0 - eps
-    CC[CC==0.0] = eps
+    CC[CC == 1.0] = 1.0 - eps
+    CC[CC == 0.0] = eps
 
     SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2
-    YC = np.dot(yweights.T, coswt)
-    YS = np.dot(yweights.T, sinwt)
+    YC = np.dot(weights_y.T, coswt)
+    YS = np.dot(weights_y.T, sinwt)
 
     if floating_mean:
         CT_sum = np.dot(weights.T, coswt)
@@ -298,46 +298,49 @@ def lombscargle(
         SS -= ST_sum * ST_sum
 
     # calculate a and b
+    # where: y(w) = a*cos(w) + b*sin(w) + c
     a = YC / CC
     b = YS / SS
+    # c = Y_sum - a * C_sum - b * S_sum # offset is not useful to return
 
-    # store final value as power in (y units)^2
+    # store final value as power in A^2 (i.e., (y units)^2)
     pgram = 2.0 * (a * YC + b * YS)
 
     # squeeze back to a vector
     pgram = np.squeeze(pgram)
 
-    if normalize == "normalize":
+    if normalize == "power":  # (default)
+        # return the legacy power units ((A**2) * N/4)
+
+        pgram *= float(x.shape[0]) / 4.0
+
+    elif normalize == "normalize":
         # return the normalized power (power at current frequency wrt the entire signal)
+        # range will be [0, 1]
 
         # calculate the final necessary frequency-independent sum
-        YY_hat = (y * yweights).sum()
+        YY_hat = (weights_y * y).sum()
         if floating_mean:
             pgram /= 2.0 * (YY_hat - Y_sum * Y_sum)  # 2 * YY
         else:
             pgram /= 2.0 * YY_hat
-        return pgram
 
-    elif normalize == "amplitude":
+    else:  # normalize == "amplitude":
         # return the complex representation of the best-fit amplitude and phase
 
         # squeeze back to vectors
         a = np.squeeze(a)
         b = np.squeeze(b)
+        tau = np.squeeze(tau)
 
         # calculate the complex representation, and correct for tau rotation
-        pgram = (a + 1j * b) * np.exp(1j * np.squeeze(tau))
+        pgram = (a + 1j * b) * np.exp(1j * tau)
 
         # while the predicted amplitude will tend towards infinity as the frequency
         # goes below (2*pi)/(x.max() - x.min()) and approaches 0, it can be assumed
         # to be Y_sum at exactly 0, with zero phase
         pgram[np.squeeze(freqs) == 0] = Y_sum + 1j * 0
 
-        return pgram
-
-    # otherwise, normalize == "power" (default)
-    # return the legacy power units
-    pgram *= float(x.shape[0]) / 4.0
     return pgram
 
 
