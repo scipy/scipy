@@ -232,7 +232,10 @@ def test_maxiter(case):
     residuals = []
 
     def callback(x):
-        residuals.append(norm(b - case.A * x))
+        if x.ndim == 0:
+            residuals.append(norm(b - case.A * x))
+        else:
+            residuals.append(norm(b - case.A @ x))
 
     if case.solver == gmres:
         with pytest.warns(DeprecationWarning, match=CB_TYPE_FILTER):
