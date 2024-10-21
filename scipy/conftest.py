@@ -656,3 +656,13 @@ if HAVE_SCPDT:
     # ignore Matplotlib's `ax.text`:
     dt_config.stopwords.add('.text(')
 ############################################################################
+
+def pytest_collection_modifyitems(items):
+    """Modifies test items in place to put report_zero test last."""
+    name = "test_report_zero_get_index_dtype_calls"
+    idx_list = [i for i, item in enumerate(items) if name == item.name]
+    if len(idx_list) != 1:
+        return
+    idx = idx_list[0]
+    sorted_items = items[:idx] + items[idx + 1:] + [items[idx]]
+    items[:] = sorted_items
