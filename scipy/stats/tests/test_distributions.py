@@ -10305,6 +10305,24 @@ class TestIrwinHall:
         assert_array_max_ulp(self.ih10.sf(1/10), ref, maxulp=10)
 
 
+class TestDParetoLognorm:
+    def test_against_R(self):
+        # Test against R implementation in `distributionsrd`
+        # library(distributionsrd)
+        # options(digits=16)
+        # x = 1.1
+        # b = 2
+        # a = 1.5
+        # m = 3
+        # s = 1.2
+        # ddoubleparetolognormal(x, b, a, m, s)
+        # pdoubleparetolognormal(x, b, a, m, s)
+        x, m, s, a, b = 1.1, 3, 1.2, 1.5, 2
+        dist = stats.dpareto_lognorm(m, s, a, b)
+        np.testing.assert_allclose(dist.pdf(x), 0.02490187219085912)
+        np.testing.assert_allclose(dist.cdf(x), 0.01664024173822796)
+
+
 # Cases are (distribution name, log10 of smallest probability mass to test,
 # log10 of the complement of the largest probability mass to test, atol,
 # rtol). None uses default values.

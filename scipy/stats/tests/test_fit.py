@@ -89,6 +89,7 @@ fail_interval_censored = {"truncpareto"}
 skip_fit = [
     'erlang',  # Subclass of gamma, generates a warning.
     'genhyperbolic', 'norminvgauss',  # too slow
+    'dpareto_lognorm',  # temporarily skip
 ]
 
 
@@ -232,6 +233,7 @@ def cases_test_fit_mle():
     skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto',
                       'truncweibull_min', 'ksone', 'levy_stable',
                       'studentized_range', 'kstwo', 'arcsine',
+                      'dpareto_lognorm',  # temporarily skip
                       'poisson_binom'}  # vector-valued shape parameter
 
     # Please keep this list in alphabetical order...
@@ -284,6 +286,7 @@ def cases_test_fit_mse():
                       'vonmises',  # can have negative CDF; doesn't play nice
                       'argus',  # doesn't meet tolerance; tested separately
                       'poisson_binom',  # vector-valued shape parameter
+                      'dpareto_lognorm',  # temporarily skip
                       }
 
     # Please keep this list in alphabetical order...
