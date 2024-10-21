@@ -56,12 +56,13 @@ def lombscargle(
     x : array_like
         Sample times.
     y : array_like
-        Measurement values. Values are assumed to have a baseline of y = 0. If there is
-        a possibility of a y offset, it is recommended to set `floating_mean` to True.
+        Measurement values. Values are assumed to have a baseline of ``y = 0``. If
+        there is a possibility of a y offset, it is recommended to set `floating_mean`
+        to True.
     freqs : array_like
         Angular frequencies (e.g., having unit rad/s=2π/s for `x` having unit s) for
-        output periodogram. Frequencies are normally >= 0, as any peak at -freq will
-        also exist at +freq.
+        output periodogram. Frequencies are normally >= 0, as any peak at ``-freq`` will
+        also exist at ``+freq``.
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. This is
         a legacy parameter and unnecessary if `floating_mean` is True.
