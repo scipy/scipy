@@ -275,16 +275,11 @@ def lombscargle(
     sinwt = np.sin(freqst_tau)
 
     CC = np.dot(weights.T, coswt * coswt)
-
-    # by definition, CC can only be [0, 1]
-    # to prevent division by zero errors, limit to [0+eps, 1-eps]
-    eps = np.finfo(dtype=y.dtype).eps
-    CC[CC==1.0] = 1.0 - eps
-    CC[CC==0.0] = eps
-
     SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2
-    YC = np.dot(weights.T, y * coswt)
-    YS = np.dot(weights.T, y * sinwt)
+
+    yweights = y * weights
+    YC = np.dot(yweights.T, coswt)
+    YS = np.dot(yweights.T, sinwt)
 
     if floating_mean:
         CT_sum = np.dot(weights.T, coswt)
