@@ -42,6 +42,7 @@ jobs:
           architecture: 'x64'
           cache: 'pip'
           cache-dependency-path: 'environment.yml'
+
       - name: Install mingw-w64 toolchain
         run: |
           curl -LO https://github.com/isuruf/isuruf.github.io/releases/download/v1.0/mingw-w64-ucrt-x86_64-toolchain-v0.1.zip
