@@ -402,7 +402,8 @@ jobs:
         python -m pip install numpy==1.25.2 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
         python dev.py build --with-scipy-openblas && \
-        python dev.py --no-build test"
+        python dev.py --no-build test && \
+        python dev.py --no-build test -j2 -mode full -t scipy/sparse/tests/test_64bit.py::Test64BitMatrixSameAsArray"
 
   #################################################################################
   distro_multiple_pythons:
