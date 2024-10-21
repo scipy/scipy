@@ -35,13 +35,12 @@ The CDF is:
 
 Raw moment :math:`k > \alpha` is given by:
 
-
 .. math::
    :nowrap:
-    \begin{eqnarray*}
-        \mu_k^{'} = \frac{\alpha \beta}{(\alpha - k)(\beta + k)} 
-                    \exp \left(k \mu + \frac{k^2 \sigma^2}{2} \right)
-    \end{eqnarray*}
 
+    \begin{eqnarray*}
+        \mu_k' = \frac{\alpha \beta}{(\alpha - k)(\beta + k)} 
+                 \exp \left(k \mu + \frac{k^2 \sigma^2}{2} \right)
+    \end{eqnarray*}
 
 Implementation: `scipy.stats.dpareto_lognorm`
