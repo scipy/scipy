@@ -240,6 +240,14 @@ def lombscargle(
     # weight vector must sum to 1
     weights = weights / weights.sum()
 
+    # pre-allocate arrays for intermediate and final calculations
+    coswt = np.empty_like(x)
+    sinwt = np.empty_like(x)
+    pgram = np.empty_like(freqs)
+    # store a and b so that phase can be calculated outside loop, if necessary
+    a = np.empty_like(freqs)
+    b = np.empty_like(freqs)
+
     # if requested, perform precenter
     if precenter:
         y -= y.mean()
@@ -247,62 +255,46 @@ def lombscargle(
     # calculate the single sum that does not depend on the frequency
     Y_sum = (weights * y).sum()
 
-    # transform arrays
-    # row vector
-    freqs = freqs.ravel()[np.newaxis, :]
-    # column vectors
-    x, y, weights = (vector[:, np.newaxis] for vector in (x, y, weights))
+    # loop over the frequencies
+    for i in range(freqs.shape[0]):
+        coswt[:] = np.cos(freqs[i] * x)
+        sinwt[:] = np.sin(freqs[i] * x)
 
-    freqst = freqs * x
-    coswt = np.cos(freqst)
-    sinwt = np.sin(freqst)
+        # calculate CC, SS, and CS first
+        # these variable names are of form XX_hat in the paper, but dropping the suffix
+        # to reuse variables later whether floating_mean is True or False
+        CC = (weights * coswt * coswt).sum()
+        SS = 1 - CC  # trig identity: S^2 = 1 - C^2
+        CS = (weights * coswt * sinwt).sum()
 
-    CC = 2.0 * np.dot(weights.T, 0.5 - sinwt**2.0)
-    SS = 2.0 * np.dot(weights.T, sinwt * coswt)
+        # now, redefine trig arrays to always be multiplied by the weights
+        coswt[:] = weights * coswt
+        sinwt[:] = weights * sinwt
 
-    if floating_mean:
-        C = np.dot(weights.T, coswt)
-        S = np.dot(weights.T, sinwt)
-        CC -= C * C - S * S
-        SS -= 2.0 * S * C
+        # these are also of the form XX_hat in the paper
+        YC = (y * coswt).sum()
+        YS = (y * sinwt).sum()
 
-    # calculate tau
-    tau = 0.5 * np.arctan2(SS, CC)
-    freqst_tau = freqst - tau
+        if floating_mean:
+            # calculate best-fit offset for each frequency independently (default)
+            C_sum = coswt.sum()
+            S_sum = sinwt.sum()
+            YC -= Y_sum * C_sum
+            YS -= Y_sum * S_sum
+            CC -= C_sum * C_sum
+            SS -= S_sum * S_sum
+            CS -= C_sum * S_sum
 
-    # now coswt and sinwt are offset by tau
-    coswt = np.cos(freqst_tau)
-    sinwt = np.sin(freqst_tau)
+        # determinate of the system of linear equations
+        D = CC * SS - CS * CS
 
-    CC = np.dot(weights.T, coswt * coswt)
+        # where: y(w) = a*cos(w) + b*sin(w) + c
+        a[i] = (YC * SS - YS * CS) / D
+        b[i] = (YS * CC - YC * CS) / D
+        #  c = Y_sum - a * C_sum - b * S_sum  # offset is not useful to return
 
-    # by definition, CC can only be [0, 1]
-    # to prevent division by zero errors, limit to [0+eps, 1-eps]
-    eps = np.finfo(dtype=y.dtype).eps
-    CC[CC==1.0] = 1.0 - eps
-    CC[CC==0.0] = eps
-
-    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2
-    YC = np.dot(weights.T, y * coswt)
-    YS = np.dot(weights.T, y * sinwt)
-
-    if floating_mean:
-        CT_sum = np.dot(weights.T, coswt)
-        ST_sum = np.dot(weights.T, sinwt)
-        YC -= Y_sum * CT_sum
-        YS -= Y_sum * ST_sum
-        CC -= CT_sum * CT_sum
-        SS -= ST_sum * ST_sum
-
-    # calculate a and b
-    a = YC / CC
-    b = YS / SS
-
-    # store final value as power in (y units)^2
-    pgram = 2.0 * (a * YC + b * YS)
-
-    # squeeze back to a vector
-    pgram = np.squeeze(pgram)
+        # store final value as power in (y units)^2
+        pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
 
     if normalize == "normalize":
         # return the normalized power (power at current frequency wrt the entire signal)
@@ -318,15 +310,9 @@ def lombscargle(
     elif normalize == "amplitude":
         # return the complex representation of the best-fit amplitude and phase
 
-        # squeeze back to vectors
-        a = np.squeeze(a)
-        b = np.squeeze(b)
+        return a + 1j * b
 
-        # calculate the complex representation, and correct for tau rotation
-        pgram = (a + 1j * b) * np.exp(1j * np.squeeze(tau))
-        return pgram
-
-    # otherwise, normalize == "power" (default)
+    # otherwise, the default, normalize == "power"
     # return the legacy power units
     pgram *= float(x.shape[0]) / 4.0
     return pgram
