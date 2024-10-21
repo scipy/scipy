@@ -293,18 +293,18 @@ def lombscargle(
     YS = np.dot(weights_y.T, sinwt)
 
     if floating_mean:
-        CT_sum = np.dot(weights.T, coswt)
-        ST_sum = np.dot(weights.T, sinwt)
-        YC -= Y_sum * CT_sum
-        YS -= Y_sum * ST_sum
-        CC -= CT_sum * CT_sum
-        SS -= ST_sum * ST_sum
+        C_sum = np.dot(weights.T, coswt)
+        S_sum = np.dot(weights.T, sinwt)
+        YC -= Y_sum * C_sum
+        YS -= Y_sum * S_sum
+        CC -= C_sum * C_sum
+        SS -= S_sum * S_sum
 
     # calculate a and b
     # where: y(w) = a*cos(w) + b*sin(w) + c
     a = YC / CC
     b = YS / SS
-    # c = Y_sum - a * C_sum - b * S_sum # offset is not useful to return
+    # c = Y_sum - a * C_sum - b * S_sum  # offset is not useful to return
 
     # store final value as power in A^2 (i.e., (y units)^2)
     pgram = 2.0 * (a * YC + b * YS)
