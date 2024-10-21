@@ -282,11 +282,11 @@ def lombscargle(
 
     CC = np.dot(weights.T, coswt * coswt)
 
-    # by definition, CC can only be [0, 1]
-    # to prevent division by zero errors, limit to [0+eps, 1-eps]
-    eps = np.finfo(dtype=y.dtype).eps
-    CC[CC == 1.0] = 1.0 - eps
-    CC[CC == 0.0] = eps
+    # by definition, CC can only be in the range [0, 1]
+    # to prevent division by zero errors, limit range to [0+epsneg, 1-epsneg]
+    epsneg = np.finfo(dtype=y.dtype).epsneg  # delta to next float smaller than 1.0
+    CC[CC == 1.0] = 1.0 - epsneg
+    CC[CC == 0.0] = epsneg
 
     SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2
     YC = np.dot(weights_y.T, coswt)
