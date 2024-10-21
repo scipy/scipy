@@ -44,7 +44,7 @@ jobs:
           cache-dependency-path: 'environment.yml'
       - name: Install mingw-w64 toolchain
         run: |
-          curl -LO https://github.com/isuruf/isuruf.github.io/releases/download/v1.0/mingw-w64-ucrt-x86_64-toolchain.zip
+          curl -LO https://github.com/isuruf/isuruf.github.io/releases/download/v1.0/mingw-w64-ucrt-x86_64-toolchain-v0.1.zip
           7z x mingw-w64-ucrt-x86_64-toolchain.zip
           echo "${{ github.workspace }}/mingw-w64-ucrt-x86_64-toolchain/bin;" >> $env:GITHUB_PATH
 
@@ -86,7 +86,7 @@ jobs:
 
       - name: Install mingw-w64 toolchain
         run: |
-          curl -LO https://github.com/isuruf/isuruf.github.io/releases/download/v1.0/mingw-w64-ucrt-x86_64-toolchain.zip
+          curl -LO https://github.com/isuruf/isuruf.github.io/releases/download/v1.0/mingw-w64-ucrt-x86_64-toolchain-v0.1.zip
           7z x mingw-w64-ucrt-x86_64-toolchain.zip
           echo "${{ github.workspace }}/mingw-w64-ucrt-x86_64-toolchain/bin;" >> $env:GITHUB_PATH
 
@@ -131,7 +131,7 @@ jobs:
 
       - name: Install mingw-w64 toolchain
         run: |
-          curl -LO https://github.com/isuruf/isuruf.github.io/releases/download/v1.0/mingw-w64-ucrt-x86_64-toolchain.zip
+          curl -LO https://github.com/isuruf/isuruf.github.io/releases/download/v1.0/mingw-w64-ucrt-x86_64-toolchain-v0.1.zip
           7z x mingw-w64-ucrt-x86_64-toolchain.zip
           echo "${{ github.workspace }}/mingw-w64-ucrt-x86_64-toolchain/bin;" >> $env:GITHUB_PATH
 
