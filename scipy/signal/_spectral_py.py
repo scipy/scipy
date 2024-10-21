@@ -250,11 +250,11 @@ def lombscargle(
 
     # transform arrays
     # row vector
-    freqs = freqs[np.newaxis, :]
+    freqs = freqs.reshape(1, -1)
     # column vectors
-    x = x[:, np.newaxis]
-    y = y[:, np.newaxis]
-    weights = weights[:, np.newaxis]  # type: ignore
+    x = x.reshape(-1, 1)
+    y = y.reshape(-1, 1)
+    weights = weights.reshape(-1, 1)  # type: ignore
 
     weights_y = weights * y
     Y_sum = (weights_y).sum()
