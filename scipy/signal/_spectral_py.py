@@ -247,9 +247,11 @@ def lombscargle(
 
     # transform arrays
     # row vector
-    freqs = freqs.ravel()[np.newaxis, :]
+    freqs = freqs[np.newaxis, :]
     # column vectors
-    x, y, weights = (vec[:, np.newaxis] for vec in (x, y, weights))  # type: ignore
+    x = x[:, np.newaxis]
+    y = y[:, np.newaxis]
+    weights = weights[:, np.newaxis]
 
     yweights = y * weights
     Y_sum = (yweights).sum()
@@ -309,7 +311,7 @@ def lombscargle(
         # return the normalized power (power at current frequency wrt the entire signal)
 
         # calculate the final necessary frequency-independent sum
-        YY_hat = (weights * y * y).sum()
+        YY_hat = (y * yweights).sum()
         if floating_mean:
             pgram /= 2.0 * (YY_hat - Y_sum * Y_sum)  # 2 * YY
         else:
