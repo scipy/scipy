@@ -15,6 +15,8 @@ from spin.cmds import meson
 
 from pathlib import Path
 
+PROJECT_MODULE = "scipy"
+
 
 # # Check that the meson git submodule is present
 # curdir = pathlib.Path(__file__).parent
@@ -481,8 +483,15 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
             pytest_args = ('-m', markexpr) + pytest_args
 
     n_jobs = ctx.params['parallel']
-    if (n_jobs != "1") and ('-n' not in pytest_args):
+    if (n_jobs != 1) and ('-n' not in pytest_args):
         pytest_args = ('-n', str(n_jobs)) + pytest_args
+
+    if ctx.params["submodule"]:
+        tests = PROJECT_MODULE + "." + ctx.params["submodule"]
+    elif ctx.params["tests"]:
+        tests = ctx.params["tests"]
+    else:
+        tests = PROJECT_MODULE
 
     if tests and '--pyargs' not in pytest_args:
         pytest_args = ('--pyargs', tests) + pytest_args
