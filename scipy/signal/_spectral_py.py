@@ -15,9 +15,9 @@ __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
 
 
 def lombscargle(
-    x: npt.NDArray,
-    y: npt.NDArray,
-    freqs: npt.NDArray,
+    x: npt.ArrayLike,
+    y: npt.ArrayLike,
+    freqs: npt.ArrayLike,
     precenter: bool = False,
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     *,
