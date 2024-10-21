@@ -244,14 +244,14 @@ def lombscargle(
     if precenter:
         y -= y.mean()
 
-    # calculate the single sum that does not depend on the frequency
-    Y_sum = (weights * y).sum()
-
     # transform arrays
     # row vector
     freqs = freqs.ravel()[np.newaxis, :]
     # column vectors
     x, y, weights = (vec[:, np.newaxis] for vec in (x, y, weights))  # type: ignore
+
+    yweights = y * weights
+    Y_sum = (yweights).sum()
 
     freqst = freqs * x
     coswt = np.cos(freqst)
@@ -275,9 +275,14 @@ def lombscargle(
     sinwt = np.sin(freqst_tau)
 
     CC = np.dot(weights.T, coswt * coswt)
-    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2
 
-    yweights = y * weights
+    # by definition, CC can only be [0, 1]
+    # to prevent division by zero errors, limit to [0+eps, 1-eps]
+    eps = np.finfo(dtype=y.dtype).eps
+    CC[CC==1.0] = 1.0 - eps
+    CC[CC==0.0] = eps
+
+    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2
     YC = np.dot(yweights.T, coswt)
     YS = np.dot(yweights.T, sinwt)
 
@@ -319,6 +324,12 @@ def lombscargle(
 
         # calculate the complex representation, and correct for tau rotation
         pgram = (a + 1j * b) * np.exp(1j * np.squeeze(tau))
+
+        # while the predicted amplitude will tend towards infinity as the frequency
+        # goes below (2*pi)/(x.max() - x.min()) and approaches 0, it can be assumed
+        # to be Y_sum at exactly 0, with zero phase
+        pgram[np.squeeze(freqs) == 0] = Y_sum + 1j * 0
+
         return pgram
 
     # otherwise, normalize == "power" (default)
