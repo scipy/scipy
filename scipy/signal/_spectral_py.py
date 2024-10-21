@@ -251,7 +251,7 @@ def lombscargle(
     # row vector
     freqs = freqs.ravel()[np.newaxis, :]
     # column vectors
-    x, y, weights = (vector[:, np.newaxis] for vector in (x, y, weights))
+    x, y, weights = (vec[:, np.newaxis] for vec in (x, y, weights))  # type: ignore
 
     freqst = freqs * x
     coswt = np.cos(freqst)
