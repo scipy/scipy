@@ -961,7 +961,7 @@ nct_cdf_wrap(const Real v, const Real l, const Real x)
 	return NAN;
     }
     if (std::isinf(x)) {
-	return 1.0;
+	return  (x > 0) ? 1.0 : 0.0;
     }
     Real y;
     try {
