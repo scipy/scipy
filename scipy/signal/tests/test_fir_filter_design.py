@@ -702,7 +702,7 @@ class TestFwind1:
         freq_response = fftshift(fft2(taps))
 
         magnitude = np.abs(freq_response)
-        assert np.isclose(magnitude.max(), 1.0, atol=0.01), (
+        assert xp_assert_close(magnitude.max(), 1.0, atol=0.01), (
             f"Max magnitude is {magnitude.max()}"
         )        
         assert magnitude.min() >= 0.0, f"Min magnitude is {magnitude.min()}"

@@ -1283,7 +1283,7 @@ def minimum_phase(h: np.ndarray,
     return h_minimum[:n_out]
 
 
-def fwind1(hsize, window, fc=None, fs=2, circular=False):
+def fwind1(hsize, window, *, fc=None, fs=2, circular=False):
     """
     2D FIR filter design using the window method.
 
