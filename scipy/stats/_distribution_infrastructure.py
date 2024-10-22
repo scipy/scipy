@@ -3193,7 +3193,16 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _logmoment_quad(self, order, logcenter, **params):
         def logintegrand(x, order, logcenter, **params):
             logpdf = self._logpdf_dispatch(x, **params)
-            return logpdf + order*_logexpxmexpy(np.log(x+0j), logcenter)
+            return logpdf + order * _logexpxmexpy(np.log(x + 0j), logcenter)
+            ## if logx == logcenter, `_logexpxmexpy` returns (-inf + 0j)
+            ## multiplying by order produces (-inf + nan j) - bad
+            ## We're skipping logmoment tests, so we might don't need to fix
+            ## now, but if we ever do use run them, this might help:
+            # logx = np.log(x+0j)
+            # out = np.asarray(logpdf + order*_logexpxmexpy(logx, logcenter))
+            # i = (logx == logcenter)
+            # out[i] = logpdf[i]
+            # return out
         return self._quadrature(logintegrand, args=(order, logcenter),
                                 params=params, log=True)
 

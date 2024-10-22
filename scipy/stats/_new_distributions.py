@@ -1,6 +1,4 @@
 import sys
-import json
-import os
 
 import numpy as np
 from numpy import inf
@@ -10,7 +8,7 @@ from scipy.stats._distribution_infrastructure import (
     ContinuousDistribution, _RealDomain, _RealParameter, _Parameterization,
     _combine_docs)
 
-__all__ = ['Normal']
+__all__ = ['Normal', 'Uniform']
 
 
 class Normal(ContinuousDistribution):
@@ -269,8 +267,7 @@ class _LogUniform(ContinuousDistribution):
         return t1 * t2
 
 
-# currently for testing only
-class _Uniform(ContinuousDistribution):
+class Uniform(ContinuousDistribution):
     r"""Uniform distribution.
 
     The probability density function of the uniform distribution is:
@@ -284,7 +281,7 @@ class _Uniform(ContinuousDistribution):
 
     _a_domain = _RealDomain(endpoints=(-inf, inf))
     _b_domain = _RealDomain(endpoints=('a', inf))
-    _x_support = _RealDomain(endpoints=('a', 'b'), inclusive=(False, False))
+    _x_support = _RealDomain(endpoints=('a', 'b'), inclusive=(True, True))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(1e-3, 0.9))
     _b_param = _RealParameter('b', domain=_b_domain, typical=(1.1, 1e3))
@@ -307,11 +304,44 @@ class _Uniform(ContinuousDistribution):
     def _pdf_formula(self, x, *, ab, **kwargs):
         return np.full(x.shape, 1/ab)
 
-    def _icdf_formula(self, x, a, b, ab, **kwargs):
-        return a + ab*x
+    def _logcdf_formula(self, x, *, a, ab, **kwargs):
+        return np.log(x - a) - np.log(ab)
+
+    def _cdf_formula(self, x, *, a, ab, **kwargs):
+        return (x - a) / ab
+
+    def _logccdf_formula(self, x, *, b, ab, **kwargs):
+        return np.log(b - x) - np.log(ab)
+
+    def _ccdf_formula(self, x, *, b, ab, **kwargs):
+        return (b - x) / ab
+
+    def _icdf_formula(self, p, *, a, ab, **kwargs):
+        return a + ab*p
+
+    def _iccdf_formula(self, p, *, b, ab, **kwargs):
+        return b - ab*p
+
+    def _entropy_formula(self, *, ab, **kwargs):
+        return np.log(ab)
 
     def _mode_formula(self, *, a, b, ab, **kwargs):
         return a + 0.5*ab
+
+    def _median_formula(self, *, a, b, ab, **kwargs):
+        return a + 0.5*ab
+
+    def _moment_raw_formula(self, order, a, b, ab, **kwargs):
+        np1 = order + 1
+        return (b**np1 - a**np1) / (np1 * ab)
+
+    def _moment_central_formula(self, order, ab, **kwargs):
+        return ab**2/12 if order == 2 else None
+
+    _moment_central_formula.orders = [2]  # type: ignore[attr-defined]
+
+    def _sample_formula(self, sample_shape, full_shape, rng, a, b, **kwargs):
+        return rng.uniform(a, b, size=full_shape)[()]
 
 
 class _Gamma(ContinuousDistribution):
