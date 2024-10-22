@@ -1341,7 +1341,7 @@ def fwind1(hsize, window, *, fc=None, fs=2, circular=False):
     >>> hsize = (5, 5)
     >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
     >>> fc = 0.1
-    >>> filter_2d = fwind1(hsize, window, fc)
+    >>> filter_2d = fwind1(hsize, window)
     >>> filter_2d
     array([[0.00025366, 0.00401662, 0.00738617, 0.00401662, 0.00025366],
            [0.00401662, 0.06360159, 0.11695714, 0.06360159, 0.00401662],
@@ -1364,7 +1364,7 @@ def fwind1(hsize, window, *, fc=None, fs=2, circular=False):
     >>> import matplotlib.pyplot as plt
     >>> hsize, fc = (50, 50), 0.05
     >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
-    >>> filter0_2d = fwind1(hsize, window, fc)
+    >>> filter0_2d = fwind1(hsize, window)
     >>> filter1_2d = fwind1((50, 50), 'hamming', fc, circular=True)
     ...
     >>> fg, (ax0, ax1) = plt.subplots(1, 2, tight_layout=True, figsize=(6.5, 3.5))
