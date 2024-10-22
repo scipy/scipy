@@ -1,4 +1,5 @@
 from itertools import product
+from unittest.mock import Mock
 from numpy.testing import (assert_, assert_allclose, assert_array_less,
                            assert_equal, assert_no_warnings, suppress_warnings)
 import pytest
@@ -6,7 +7,7 @@ from pytest import raises as assert_raises
 import numpy as np
 from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
-from scipy.integrate import OdeSolution
+from scipy.integrate import OdeSolution, OdeSolver
 from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
@@ -1242,3 +1243,13 @@ def test_inital_maxstep():
                                             method_order, 
                                             rtol, atol)
             assert_equal(max_step, step_with_max)
+
+
+def test_callable():
+    callable_fun = Mock()
+    sol = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun)
+    assert callable_fun.call_count == len(sol.t) - 1  # initial time isn't a step
+    call_args, call_kwargs = callable_fun.call_args
+    assert call_kwargs == {}
+    assert len(call_args) == 1
+    assert isinstance(call_args[0], OdeSolver)
