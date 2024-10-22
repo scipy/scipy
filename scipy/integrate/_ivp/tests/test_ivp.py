@@ -889,6 +889,7 @@ def test_classes():
         assert_(solver.nfev > 0)
         assert_(solver.njev >= 0)
         assert_(solver.nlu >= 0)
+        assert_equal(solver.nstep, 1)
         sol = solver.dense_output()
         assert_allclose(sol(5), y0, rtol=1e-15, atol=0)
 
