@@ -183,3 +183,6 @@ PKG_CONFIG_PATH = "{project}"
   "spin.cmds.meson.gdb",
   "spin.cmds.meson.lldb"
 ]
+"Documentation" = [
+  ".spin/cmds.py:docs"
+]
