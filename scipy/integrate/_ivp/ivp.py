@@ -295,7 +295,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         then `jac` (if given) and any event functions must have the same
         signature, and `args` must be a tuple of length 3.
     callback : callable, optional
-        Callable that is executed after every step. A function signature is
+        Callable that is executed after every step. The function signature is
         ``fun(solver)``, where ``solver`` is an ``OdeSolver`` object, e.g.
         ``RK45``.
     **options
