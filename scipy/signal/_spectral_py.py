@@ -207,16 +207,16 @@ def lombscargle(
 
     # if no weights are provided, assume all data points are equally important
     if weights is None:
-        weights = np.ones_like(y, dtype=np.float64)
+        weights = np.ones_like(y, dtype=np.float64).squeeze()
     else:
         # if provided, make sure weights is an array and cast to float64
-        weights = np.asarray(weights, dtype=np.float64)
+        weights = np.asarray(weights, dtype=np.float64).squeeze()
 
     # make sure other inputs are arrays and cast to float64
     # done before validation, in case they were not arrays
-    x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    freqs = np.asarray(freqs, dtype=np.float64)
+    x = np.asarray(x, dtype=np.float64).squeeze()
+    y = np.asarray(y, dtype=np.float64).squeeze()
+    freqs = np.asarray(freqs, dtype=np.float64).squeeze()
 
     # validate input shapes
     if not (x.ndim == 1 and x.size > 0 and x.shape == y.shape == weights.shape):

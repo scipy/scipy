@@ -1129,30 +1129,60 @@ class TestLombscargle:
         f = np.linspace(0, 1, 3) + 0.1
         assert_raises(ValueError, lombscargle, t, y, f)
 
+        # t is 2D, with both axes length > 1
+        t = np.repeat(np.expand_dims(np.linspace(0, 1, 2), 1), 2, axis=1)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # y is 2D, with both axes length > 1
+        t = np.linspace(0, 1, 2)
+        y = np.repeat(np.expand_dims(np.linspace(0, 1, 2), 1), 2, axis=1)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # f is 2D, with both axes length > 1
+        t = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
+        f = np.repeat(np.expand_dims(np.linspace(0, 1, 3), 1) + 0.1, 2, axis=1)
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # weights is 2D, with both axes length > 1
+        t = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        weights = np.repeat(np.expand_dims(np.linspace(0, 1, 2), 1), 2, axis=1)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
+
+
+    def test_valid_shape(self):
+        # make sure no error is raised if shape is 2D, but
+        # the extra axis has a length of 1
+
         # t is 2D
         t = np.expand_dims(np.linspace(0, 1, 2), 1)
         y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(ValueError, lombscargle, t, y, f)
+        lombscargle(t, y, f)
 
         # y is 2D
         t = np.linspace(0, 1, 2)
         y = np.expand_dims(np.linspace(0, 1, 2), 1)
         f = np.linspace(0, 1, 3) + 0.1
-        assert_raises(ValueError, lombscargle, t, y, f)
+        lombscargle(t, y, f)
 
         # f is 2D
         t = np.linspace(0, 1, 2)
         y = np.linspace(0, 1, 2)
         f = np.expand_dims(np.linspace(0, 1, 3) + 0.1, 1)
-        assert_raises(ValueError, lombscargle, t, y, f)
+        lombscargle(t, y, f)
 
         # weights is 2D
         t = np.linspace(0, 1, 2)
         y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
         weights = np.expand_dims(np.linspace(0, 1, 2), 1)
-        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
+        lombscargle(t, y, f, weights=weights)
 
     def test_lombscargle_atan_vs_atan2(self):
         # https://github.com/scipy/scipy/issues/3787
