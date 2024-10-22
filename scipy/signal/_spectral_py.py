@@ -242,7 +242,7 @@ def lombscargle(
         )
 
     # weight vector must sum to 1
-    weights = weights / weights.sum()
+    weights *= 1.0 / weights.sum()
 
     # if requested, perform precenter
     if precenter:
@@ -275,7 +275,7 @@ def lombscargle(
         CS -= C * S  # Eq. 15
 
     # calculate tau (phase offset to eliminate CS variable)
-    tau = 0.5 * np.arctan2(2 * CS, CC - SS)  # Eq. 19
+    tau = 0.5 * np.arctan2(2.0 * CS, CC - SS)  # Eq. 19
     freqst_tau = freqst - tau
 
     # coswt and sinwt are now offset by tau, which eliminates CS
@@ -325,7 +325,7 @@ def lombscargle(
         if floating_mean:
             YY -= Y * Y  # Eq. 10
 
-        pgram /= 2.0 * np.squeeze(YY)  # Eq. 20
+        pgram *= 0.5 / np.squeeze(YY)  # Eq. 20
 
     else:  # normalize == "amplitude":
         # return the complex representation of the best-fit amplitude and phase
