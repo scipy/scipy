@@ -3975,6 +3975,7 @@ class TestSOSFilt:
         y_tf = lfilter(b, a, x, axis=axis, zi=zi)[0]
         xp_assert_close(y, y_tf, rtol=1e-10, atol=1e-13)
 
+    @skip_xp_backends('torch', reason='issues a RuntimeWarning')
     @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_bad_zi_shape(self, dt, xp):
         dt = getattr(xp, dt)
