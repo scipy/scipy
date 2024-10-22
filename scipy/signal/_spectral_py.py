@@ -256,42 +256,44 @@ def lombscargle(
     y = y.reshape(-1, 1)
     weights = weights.reshape(-1, 1)  # type: ignore
 
+    # store frequent intermediates
     weights_y = weights * y
-    Y_sum = (weights_y).sum()
-
     freqst = freqs * x
     coswt = np.cos(freqst)
     sinwt = np.sin(freqst)
 
-    CC = 2.0 * np.dot(weights.T, 0.5 - sinwt**2.0)
-    SS = 2.0 * np.dot(weights.T, coswt * sinwt)
+    Y = np.dot(weights.T, y)  # Eq. 7
+    CC = np.dot(weights.T, coswt * coswt)  # Eq. 13
+    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2  Eq.14
+    CS = np.dot(weights.T, coswt * sinwt)  # Eq. 15
 
     if floating_mean:
-        C = np.dot(weights.T, coswt)
-        S = np.dot(weights.T, sinwt)
-        CC -= C * C - S * S
-        SS -= 2.0 * C * S
+        C = np.dot(weights.T, coswt)  # Eq. 8
+        S = np.dot(weights.T, sinwt)  # Eq. 9
+        CC -= C * C  # Eq. 13
+        SS -= S * S  # Eq. 14
+        CS -= C * S  # Eq. 15
 
     # calculate tau (phase offset to eliminate CS variable)
-    tau = 0.5 * np.arctan2(SS, CC)
+    tau = 0.5 * np.arctan2(2 * CS, CC - SS)  # Eq. 19
     freqst_tau = freqst - tau
 
-    # now, coswt and sinwt are offset by tau
-    coswt = np.cos(freqst_tau)
-    sinwt = np.sin(freqst_tau)
+    # coswt and sinwt are now offset by tau, which eliminates CS
+    coswt_tau = np.cos(freqst_tau)
+    sinwt_tau = np.sin(freqst_tau)
 
-    CC = np.dot(weights.T, coswt * coswt)
-    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2
-    YC = np.dot(weights_y.T, coswt)
-    YS = np.dot(weights_y.T, sinwt)
+    YC = np.dot(weights_y.T, coswt_tau)  # Eq. 11
+    YS = np.dot(weights_y.T, sinwt_tau)  # Eq. 12
+    CC = np.dot(weights.T, coswt_tau * coswt_tau)  # Eq. 13
+    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2  Eq. 14
 
     if floating_mean:
-        C_sum = np.dot(weights.T, coswt)
-        S_sum = np.dot(weights.T, sinwt)
-        YC -= Y_sum * C_sum
-        YS -= Y_sum * S_sum
-        CC -= C_sum * C_sum
-        SS -= S_sum * S_sum
+        C = np.dot(weights.T, coswt_tau)  # Eq. 8
+        S = np.dot(weights.T, sinwt_tau)  # Eq. 9
+        YC -= Y * C  # Eq. 11
+        YS -= Y * S  # Eq. 12
+        CC -= C * C  # Eq. 13
+        SS -= S * S  # Eq. 14
 
     # to prevent division by zero errors, don't allow exactly 0.0
     eps = np.finfo(dtype=y.dtype).eps
@@ -300,9 +302,9 @@ def lombscargle(
 
     # calculate a and b
     # where: y(w) = a*cos(w) + b*sin(w) + c
-    a = YC / CC
-    b = YS / SS
-    # c = Y_sum - a * C_sum - b * S_sum  # offset is not useful to return
+    a = YC / CC  # Eq. A.4 and 6, eliminating CS
+    b = YS / SS  # Eq. A.4 and 6, eliminating CS
+    # c = Y - a * C - b * S
 
     # store final value as power in A^2 (i.e., (y units)^2)
     pgram = 2.0 * (a * YC + b * YS)
@@ -319,12 +321,11 @@ def lombscargle(
         # return the normalized power (power at current frequency wrt the entire signal)
         # range will be [0, 1]
 
-        # calculate the final necessary frequency-independent sum
-        YY_hat = (weights_y * y).sum()
+        YY = np.dot(weights_y.T, y)  # Eq. 10
         if floating_mean:
-            pgram /= 2.0 * (YY_hat - Y_sum * Y_sum)  # 2 * YY
-        else:
-            pgram /= 2.0 * YY_hat
+            YY -= Y * Y  # Eq. 10
+
+        pgram /= 2.0 * np.squeeze(YY)  # Eq. 20
 
     else:  # normalize == "amplitude":
         # return the complex representation of the best-fit amplitude and phase
@@ -336,11 +337,6 @@ def lombscargle(
 
         # calculate the complex representation, and correct for tau rotation
         pgram = (a + 1j * b) * np.exp(1j * tau)
-
-        # while the predicted amplitude will tend towards infinity as the frequency
-        # goes below (2*pi)/(x.max() - x.min()) and approaches 0, it can be assumed
-        # to be Y_sum at exactly 0, with zero phase
-        pgram[np.squeeze(freqs) == 0] = Y_sum + 1j * 0
 
     return pgram
 
