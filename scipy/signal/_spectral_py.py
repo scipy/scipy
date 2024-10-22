@@ -281,13 +281,6 @@ def lombscargle(
     sinwt = np.sin(freqst_tau)
 
     CC = np.dot(weights.T, coswt * coswt)
-
-    # by definition, CC can only be in the range [0, 1]
-    # to prevent division by zero errors, limit range to [0+epsneg, 1-epsneg]
-    epsneg = np.finfo(dtype=y.dtype).epsneg  # delta to next float smaller than 1.0
-    CC[CC == 1.0] = 1.0 - epsneg
-    CC[CC == 0.0] = epsneg
-
     SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2
     YC = np.dot(weights_y.T, coswt)
     YS = np.dot(weights_y.T, sinwt)
@@ -299,6 +292,11 @@ def lombscargle(
         YS -= Y_sum * S_sum
         CC -= C_sum * C_sum
         SS -= S_sum * S_sum
+
+    # to prevent division by zero errors, don't allow exactly 0.0
+    eps = np.finfo(dtype=y.dtype).eps
+    CC[CC == 0.0] = eps * np.copysign(1.0, CC[CC == 0.0])
+    SS[SS == 0.0] = eps * np.copysign(1.0, SS[SS == 0.0])
 
     # calculate a and b
     # where: y(w) = a*cos(w) + b*sin(w) + c
