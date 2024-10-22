@@ -157,7 +157,7 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, args=None, **options):
+              events=None, vectorized=False, args=None, callback=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -294,6 +294,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
         then `jac` (if given) and any event functions must have the same
         signature, and `args` must be a tuple of length 3.
+    callback : callable, optional
+        Callable that is executed after every step. A function signature is
+        ``fun(solver)``, where ``solver`` is an ``OdeSolver`` object, e.g.
+        ``RK45``.
     **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -653,6 +657,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     status = None
     while status is None:
         message = solver.step()
+
+        if callback is not None:
+            callback(solver)
 
         if solver.status == 'finished':
             status = 0
