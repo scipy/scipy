@@ -15,7 +15,7 @@ from scipy.stats._ksstats import kolmogn
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support)
+    _generate_domain_support, imf_transform)
 from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
 
 class Test_RealDomain:
@@ -997,6 +997,39 @@ class TestTransforms:
             # assert_allclose(dist.sample(x_result_shape, rng=rng),
             #                 dist0.sample(x_result_shape, rng=rng0) * scale + loc)
             # Should also try to test fit, plot?
+
+    def test_imf_transform(self):
+        rng = np.random.default_rng(81345982345826)
+
+        X = Normal()
+        Y = imf_transform(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
+                          logdh=lambda u: -np.log(u))
+        Y0 = stats.lognorm(1)
+
+        y = Y0.rvs(10, random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
 
 
 class TestFullCoverage:

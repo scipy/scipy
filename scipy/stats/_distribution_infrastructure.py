@@ -5219,3 +5219,119 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def __neg__(self):
         return self * -1
+
+
+class IMFTransformedDistribution(TransformedDistribution):
+    """Distribution underlying an injective, monotonic function of a random variable"""
+
+    _parameterizations = []
+
+    def __init__(self, dist, *args, g, h, dh, logdh=None, **kwargs):
+        super().__init__(dist, *args, **kwargs)
+        self._g = g
+        self._h = h
+        self._dh = dh
+        self._logdh = (logdh if logdh is not None
+                       else lambda u: np.log(dh(u)))
+
+    def _overrides(self, method_name):
+        # Do not use the generic overrides of TransformedDistribution
+        return False
+
+    def _support(self, **params):
+        # Add shortcut for infinite support?
+        a, b = self._dist._support(**params)
+        return self._g(a), self._g(b)
+
+    def _logpdf_dispatch(self, x, *args, **params):
+        return self._dist._logpdf_dispatch(self._h(x), *args, **params) + self._logdh(x)
+
+    def _pdf_dispatch(self, x, *args, **params):
+        return self._dist._pdf_dispatch(self._h(x), *args, **params) * self._dh(x)
+
+    def _logcdf_dispatch(self, x, *args, **params):
+        return self._dist._logcdf_dispatch(self._h(x), *args, **params)
+
+    def _cdf_dispatch(self, x, *args, **params):
+        return self._dist._cdf_dispatch(self._h(x), *args, **params)
+
+    def _logccdf_dispatch(self, x, *args, **params):
+        return self._dist._logccdf_dispatch(self._h(x), *args, **params)
+
+    def _ccdf_dispatch(self, x, *args, **params):
+        return self._dist._ccdf_dispatch(self._h(x), *args, **params)
+
+    def _ilogcdf_dispatch(self, p, *args, **params):
+        return self._g(self._dist._ilogcdf_dispatch(p, *args, **params))
+
+    def _icdf_dispatch(self, p, *args, **params):
+        return self._g(self._dist._icdf_dispatch(p, *args, **params))
+
+    def _ilogccdf_dispatch(self, p, *args, **params):
+        return self._g(self._dist._ilogccdf_dispatch(p, *args, **params))
+
+    def _iccdf_dispatch(self, p, *args, **params):
+        return self._g(self._dist._iccdf_dispatch(p, *args, **params))
+
+    def _sample_dispatch(self, sample_shape, full_shape, *,
+                         method, rng, **params):
+        rvs = self._dist._sample_dispatch(
+            sample_shape, full_shape, method=method, rng=rng, **params)
+        return self._g(rvs)
+
+
+def imf_transform(X, g, h, dh, logdh=None):
+    r"""Transform a random variable with an injective, monotonic function
+
+    Given a random variable :math:`X`; an injective, monotonic function
+    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, the derivative
+    :math:`h'(u) = \frac{dh(u)}{du}`, define a random variable
+    :math:`Y = g(X)`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    g, h, dh : callable
+        Elementwise functions representing the mathematical functions
+        :math:`g(u)`, :math:`h(u)`, and :math:`h'(u)`
+    logdh : callable, optional
+        Elementwise function representing :math:`\log(h'(u))`.
+        The default is ``lambda u: np.log(dh(u))``, but providing
+        a custom implementation may avoid over/underflow.
+`
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = g(X)`
+
+    Examples
+    --------
+    Suppose we have a normally-distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.Normal()
+
+    We wish to have a lognormally-distributed random variable :math:`Y`;
+    that is, we want a random variable whose natural logarithm is :math:`X`.
+    Since :math:`\log(X) = Y`, we know that :math:`X = \exp(Y)`. In this case,
+    :math:`g(u) = \exp(u)`, :math:`h(u) = \log(u)`, and :math:`h'(u) = \frac{1}{u}`.
+
+    >>> Y = stats.imf_transform(X, g=np.exp, h=np.log, dh=lambda u: 1 / u)
+
+    To demonstrate that ``Y`` represents the natural logarithm of ``X``,
+    we plot a normalized histogram of exponentiated observations of ``Y``
+    against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.log(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of $X$', 'histogram of $\exp(Y)$'))
+    >>> plt.show()
+
+    """
+    return IMFTransformedDistribution(X, g=g, h=h, dh=dh)
