@@ -3425,6 +3425,11 @@ def zeta(x, q=None, out=None):
     see [dlmf]_ for details. The Riemann zeta function corresponds to
     the case when ``q = 1``.
 
+    For complex inputs with ``q = None`, points with
+    ``abs(z.imag) > 1e9` and 49 < abs(z.real) < 50 are currently not
+    handled due to numerical difficulties in the underlying method
+    in this region. special.zeta will return ``nan`` in these cases.
+
     References
     ----------
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
