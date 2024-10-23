@@ -73,11 +73,11 @@ namespace detail {
 	std::complex<double> result;
 	if (n < 50) {
 	    result = zeta_em_log_abs_coeff_lookup[n];
+	} else {
+	    // asymptotic formula
+	    result = std::log(2.0) - 2.0*(n + 1)*std::log(2*M_PI);
 	}
-	n += 1;
-	// asymptotic formula
-	result = std::log(2.0) - 2.0*n*std::log(2*M_PI);
-	if (n % 2 == 0) {
+	if (n % 2 == 1) {
 	    /* B_{2n}/(2n)! is negative for even n. This contributes a term
 	     * pi*i when taking the log. */
 	    result += M_PI * J;
@@ -108,8 +108,7 @@ namespace detail {
 	std::complex<double> log_poch = std::log(z);
 	std::complex<double> log_factor = std::log(b) - std::log(N);
 	for (std::size_t i = 0; i < m; i++) {
-	    std::complex<double> term;
-	    term = std::exp(zeta_em_log_coeff(i) + log_factor + log_poch);
+	    std::complex<double> term = std::exp(zeta_em_log_coeff(i) + log_factor + log_poch);
 	    result += term;
 	    if (std::abs(term)/std::abs(result) <= std::numeric_limits<double>::epsilon()) {
 		return result;
