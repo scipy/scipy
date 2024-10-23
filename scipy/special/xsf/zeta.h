@@ -1,3 +1,8 @@
+/* Complex riemann-zeta function implementation based on Python implementation
+ * written by Matt Haberland (@mdhaber) in:
+ * https://colab.research.google.com/drive/1zMDSAJlXCLRqMMtJ0e9nDGjQ8iZCnmn5?usp=sharing
+ */
+
 #pragma once
 
 #include "cephes/const.h"
@@ -7,9 +12,6 @@
 namespace xsf {
 
 namespace detail {
-
-    /* Complex riemann-zeta function implementation based on Python implementation
-     * written by Matt Haberland (@mdhaber) in [link here]. */
 
     /* Log of absolute value of expansion coefficients for Euler-Maclaurin
      * summation formula.
