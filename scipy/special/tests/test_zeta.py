@@ -134,4 +134,4 @@ def test_riemann_zeta_avoid_overflow():
     ]
 )
 def test_riemann_zeta_complex(z, desired):
-    assert_allclose(sc.zeta(z), desired)
+    assert_allclose(sc.zeta(z), desired, rtol=1e-13)
