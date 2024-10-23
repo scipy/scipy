@@ -3393,10 +3393,15 @@ def zeta(x, q=None, out=None):
 
     Parameters
     ----------
-    x : array_like of float
-        Input data, must be real
+    x : array_like of float or complex.
+        Input data
     q : array_like of float, optional
-        Input data, must be real.  Defaults to Riemann zeta.
+        Input data, must be real.  Defaults to Riemann zeta. When `q` is
+        ``None``, complex inputs `x` are supported. If q is not ``None``,
+        then only real inputs `x` are supported, and the function returns
+        ``nan`` when ``x < 1``, even when ``q = 1.0`` (corresponding to
+        the Riemann zeta function).
+        
     out : ndarray, optional
         Output array for the computed values.
 
