@@ -652,6 +652,13 @@ class _InfiniteLimitsTransform(_VariableTransform):
     def points(self):
         # If there are infinite limits, then the origin becomes a problematic point
         # due to a division by zero there.
+
+        # If the function using this class only wraps f when a and b contain infinite
+        # limits, this condition will always be met (as is the case with cubature).
+        #
+        # If a and b do not contain infinite limits but f is still wrapped with this
+        # class, then without this condition the initial region of integration will
+        # be split around the origin unnecessarily.
         if self._num_inf != 0:
             return [self._xp.zeros(self._orig_a.shape)]
         else:
