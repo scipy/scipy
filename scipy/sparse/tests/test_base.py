@@ -110,10 +110,15 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
         def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             return fixed_dtype
     elif random:
-        counter = np.random.RandomState(seed=1234)
-
-        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
-            return (np.int32, np.int64)[counter.randint(2)]
+        rng = np.random.default_rng(1234)
+        if random is not True:  # assume a list to accumulate counts in first entry
+            counter = random
+            def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
+                counter[0] = counter[0] + 1
+                return (np.int32, np.int64)[rng.integers(2)]
+        else:
+            def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
+                return (np.int32, np.int64)[rng.integers(2)]
     else:
         def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             dtype = np.int32
@@ -5455,105 +5460,6 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
 
 class TestCOONonCanonicalMatrix(TestCOONonCanonical, TestCOOMatrix):
     pass
-
-
-#Todo: Revisit 64bit tests: avoid rerun of all tests for each version of get_index_dtype
-class Test64Bit:
-    # classes that use get_index_dtype
-    MAT_CLASSES = [
-        bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix,
-        bsr_array, coo_array, csc_array, csr_array, dia_array,
-    ]
-
-    def _compare_index_dtype(self, m, dtype):
-        dtype = np.dtype(dtype)
-        if m.format in ['csc', 'csr', 'bsr']:
-            return (m.indices.dtype == dtype) and (m.indptr.dtype == dtype)
-        elif m.format == 'coo':
-            return (m.row.dtype == dtype) and (m.col.dtype == dtype)
-        elif m.format == 'dia':
-            return (m.offsets.dtype == dtype)
-        else:
-            raise ValueError(f"matrix {m!r} has no integer indices")
-
-    @pytest.mark.thread_unsafe
-    def test_decorator_maxval_limit(self):
-        # Test that the with_64bit_maxval_limit decorator works
-
-        @with_64bit_maxval_limit(maxval_limit=10)
-        def check(mat_cls):
-            m = mat_cls(np.random.rand(10, 1))
-            assert_(self._compare_index_dtype(m, np.int32))
-            m = mat_cls(np.random.rand(11, 1))
-            assert_(self._compare_index_dtype(m, np.int64))
-
-        for mat_cls in self.MAT_CLASSES:
-            check(mat_cls)
-
-    @pytest.mark.thread_unsafe
-    def test_decorator_maxval_random(self):
-        # Test that the with_64bit_maxval_limit decorator works (2)
-
-        @with_64bit_maxval_limit(random=True)
-        def check(mat_cls):
-            seen_32 = False
-            seen_64 = False
-            for k in range(100):
-                m = mat_cls(np.random.rand(9, 9))
-                seen_32 = seen_32 or self._compare_index_dtype(m, np.int32)
-                seen_64 = seen_64 or self._compare_index_dtype(m, np.int64)
-                if seen_32 and seen_64:
-                    break
-            else:
-                raise AssertionError("both 32 and 64 bit indices not seen")
-
-        for mat_cls in self.MAT_CLASSES:
-            check(mat_cls)
-
-    @pytest.mark.thread_unsafe
-    def test_downcast_intp(self):
-        # Check that bincount and ufunc.reduceat intp downcasts are
-        # dealt with. The point here is to trigger points in the code
-        # that can fail on 32-bit systems when using 64-bit indices,
-        # due to use of functions that only work with intp-size
-        # indices.
-
-        @with_64bit_maxval_limit(fixed_dtype=np.int64, downcast_maxval=1)
-        def check_limited(csc_container, csr_container, coo_container):
-            # These involve indices larger than `downcast_maxval`
-            a = csc_container([[1, 2], [3, 4], [5, 6]])
-            assert_raises(AssertionError, a.count_nonzero, axis=1)
-            assert_raises(AssertionError, a.sum, axis=0)
-
-            a = csr_container([[1, 2, 3], [3, 4, 6]])
-            assert_raises(AssertionError, a.count_nonzero, axis=0)
-            assert_raises(AssertionError, a.sum, axis=1)
-
-            a = coo_container([[1, 2, 3], [3, 4, 5]])
-            assert_raises(AssertionError, a.count_nonzero, axis=0)
-            a.has_canonical_format = False
-            assert_raises(AssertionError, a.sum_duplicates)
-
-        @with_64bit_maxval_limit(fixed_dtype=np.int64)
-        def check_unlimited(csc_container, csr_container, coo_container):
-            # These involve indices smaller than `downcast_maxval`
-            a = csc_container([[1, 2], [3, 4], [5, 6]])
-            a.count_nonzero(axis=1)
-            a.sum(axis=0)
-
-            a = csr_container([[1, 2, 3], [3, 4, 6]])
-            a.count_nonzero(axis=0)
-            a.sum(axis=1)
-
-            a = coo_container([[1, 2, 3], [3, 4, 5]])
-            a.count_nonzero(axis=0)
-            a.has_canonical_format = False
-            a.sum_duplicates()
-
-        check_limited(csc_array, csr_array, coo_array)
-        check_unlimited(csc_array, csr_array, coo_array)
-        check_limited(csc_matrix, csr_matrix, coo_matrix)
-        check_unlimited(csc_matrix, csr_matrix, coo_matrix)
 
 
 def test_broadcast_to():
