@@ -295,10 +295,10 @@ def lombscargle(
         CC -= C * C  # Eq. 13
         SS -= S * S  # Eq. 14
 
-    # to prevent division by zero errors, don't allow exactly 0.0
-    eps = np.finfo(dtype=y.dtype).eps
-    CC[CC == 0.0] = eps * np.copysign(1.0, CC[CC == 0.0])
-    SS[SS == 0.0] = eps * np.copysign(1.0, SS[SS == 0.0])
+    # to prevent division by zero errors, don't allow CC or SS to be exactly 0.0
+    epsneg = np.finfo(dtype=y.dtype).epsneg
+    CC[CC == 0.0] = epsneg * np.copysign(1.0, CC[CC == 0.0])
+    SS[SS == 0.0] = epsneg * np.copysign(1.0, SS[SS == 0.0])
 
     # calculate a and b
     # where: y(w) = a*cos(w) + b*sin(w) + c
