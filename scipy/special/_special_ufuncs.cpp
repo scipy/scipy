@@ -847,7 +847,9 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
 
     PyObject *_riemann_zeta = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::f_f>(xsf::riemann_zeta)},
+	 {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::D_D>(xsf::riemann_zeta),
+	 static_cast<xsf::numpy::f_f>(xsf::riemann_zeta), static_cast<xsf::numpy::F_F>(xsf::riemann_zeta)
+	},
         "_riemann_zeta", _riemann_zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_riemann_zeta", _riemann_zeta);
 
