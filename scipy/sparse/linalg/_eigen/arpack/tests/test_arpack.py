@@ -63,7 +63,10 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
         tol = 30 * np.finfo(np.float32).eps
         rtol *= 5
 
-    if issubclass(mattype, csr_array) and type_char in ('f', 'F'):
+    if (
+        isinstance(mattype, type) and issubclass(mattype, csr_array)
+        and type_char in ('f', 'F')
+    ):
         # sparse in single precision: worse errors
         rtol *= 5
 
