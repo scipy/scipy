@@ -98,11 +98,10 @@ class TestLGMRES:
     @pytest.mark.skipif(python_implementation() == 'PyPy',
                         reason="Fails on PyPy CI runs. See #9507")
     def test_arnoldi(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(123)
 
-        A = eye_array(2000) + random_array((2000, 2000), density=5e-4)
-
-        b = np.random.rand(2000)
+        A = eye_array(2000) + random_array((2000, 2000), density=5e-4, random_state=rng)
+        b = rng.random(2000)
 
         # The inner arnoldi should be equivalent to gmres
         with suppress_warnings() as sup:

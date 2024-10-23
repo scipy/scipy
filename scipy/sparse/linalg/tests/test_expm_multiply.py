@@ -143,13 +143,13 @@ class TestExpmActionSimple:
         assert_allclose(observed, expected)
 
     def test_sparse_expm_multiply(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = 40
         k = 3
         nsamples = 10
         for i in range(nsamples):
-            A = scipy.sparse.random_array((n, n), density=0.05)
-            B = np.random.randn(n, k)
+            A = scipy.sparse.random_array((n, n), density=0.05, random_state=rng)
+            B = rng.standard_normal((n, k))
             observed = expm_multiply(A, B)
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
@@ -180,16 +180,16 @@ class TestExpmActionInterval:
 
     @pytest.mark.fail_slow(20)
     def test_sparse_expm_multiply_interval(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         start = 0.1
         stop = 3.2
         n = 40
         k = 3
         endpoint = True
         for num in (14, 13, 2):
-            A = scipy.sparse.random_array((n, n), density=0.05)
-            B = np.random.randn(n, k)
-            v = np.random.randn(n)
+            A = scipy.sparse.random_array((n, n), density=0.05, random_state=rng)
+            B = rng.standard_normal((n, k))
+            v = rng.standard_normal((n,))
             for target in (B, v):
                 X = expm_multiply(A, target, start=start, stop=stop,
                                   num=num, endpoint=endpoint)

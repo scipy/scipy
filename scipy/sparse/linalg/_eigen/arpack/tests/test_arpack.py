@@ -676,10 +676,10 @@ def test_eigsh_for_k_greater():
 
 
 def test_real_eigs_real_k_subset():
-    np.random.seed(2)
+    rng = np.random.default_rng(2)
 
     n = 10
-    A = random_array(shape=(n, n), density=0.5)
+    A = random_array(shape=(n, n), density=0.5, random_state=rng)
     A.data *= 2
     A.data -= 1
     A += A.T  # make symmetric to test real eigenvalues
