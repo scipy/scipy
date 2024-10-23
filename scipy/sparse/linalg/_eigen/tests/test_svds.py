@@ -818,7 +818,7 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
         k = 3
         if ncv in {4, 5}:
             u, s, vh = svds(A, k=k, ncv=ncv, solver=self.solver, random_state=0)
-        # partial decomposition, so don't check that u@dia_array(s)@vh=A;
+        # partial decomposition, so don't check that u@diag(s)@vh=A;
         # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
             _check_svds(A, k, u, s, vh)
         else:

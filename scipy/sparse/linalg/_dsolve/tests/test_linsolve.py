@@ -224,7 +224,7 @@ class TestLinsolve:
     @pytest.mark.parametrize('idx_dtype', [np.int32, np.int64])
     def test_twodiags(self, format: str, idx_dtype: np.dtype):
         A = dia_array(([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1]),
-                        shape=(5, 5)).tocsr()
+                        shape=(5, 5)).asformat(format)
         b = array([1, 2, 3, 4, 5])
 
         # condition number of A
@@ -366,8 +366,8 @@ class TestLinsolve:
         d = arange(N) + 1.0
         A = dia_array(((d, 2*d, d[::-1]), (-3, 0, 5)), shape=(N, N))
 
-        for spmatrix in (csc_array, csr_array):
-            A = spmatrix(A)
+        for container in (csc_array, csr_array):
+            A = container(A)
             b = np.arange(N)
 
             def not_c_contig(x):
@@ -385,17 +385,17 @@ class TestLinsolve:
             badops = [not_c_contig, not_1dim, bad_type, too_short]
 
             for badop in badops:
-                msg = f"{spmatrix!r} {badop!r}"
+                msg = f"{container!r} {badop!r}"
                 # Not C-contiguous
                 assert_raises((ValueError, TypeError), _superlu.gssv,
                               N, A.nnz, badop(A.data), A.indices, A.indptr,
-                              b, int(spmatrix == csc_array), err_msg=msg)
+                              b, int(A.format == 'csc'), err_msg=msg)
                 assert_raises((ValueError, TypeError), _superlu.gssv,
                               N, A.nnz, A.data, badop(A.indices), A.indptr,
-                              b, int(spmatrix == csc_array), err_msg=msg)
+                              b, int(A.format == 'csc'), err_msg=msg)
                 assert_raises((ValueError, TypeError), _superlu.gssv,
                               N, A.nnz, A.data, A.indices, badop(A.indptr),
-                              b, int(spmatrix == csc_array), err_msg=msg)
+                              b, int(A.format == 'csc'), err_msg=msg)
 
     def test_sparsity_preservation(self):
         ident = csc_array([
@@ -597,11 +597,11 @@ class TestSplu:
         A_ = csc_array(A)
         b = A_ @ x
 
-        # without permc_spec, permutation is not eye_array
+        # without permc_spec, permutation is not identity
         lu = splu_fun(A_)
         assert_(np.any(lu.perm_c != np.arange(n)))
 
-        # with permc_spec="NATURAL", permutation is eye_array
+        # with permc_spec="NATURAL", permutation is identity
         lu = splu_fun(A_, permc_spec="NATURAL")
         assert_array_equal(lu.perm_c, np.arange(n))
 
@@ -724,7 +724,7 @@ class TestSplu:
     def test_singular_matrix(self):
         # Test that SuperLU does not print to stdout when a singular matrix is
         # passed. See gh-20993.
-        A = eye_array(10, format='csr').tocsr()
+        A = eye_array(10, format='csr')
         A[-1, -1] = 0
         b = np.zeros(10)
         with pytest.warns(MatrixRankWarning):
