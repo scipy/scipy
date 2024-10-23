@@ -3443,6 +3443,11 @@ def zeta(x, q=None, out=None):
     >>> zeta(4), np.pi**4/90
     (1.0823232337111381, 1.082323233711138)
 
+    First nontrivial zero:
+
+    >>> zeta(0.5 + 14.134725141734695j)
+    0 + 0j
+
     Relation to the `polygamma` function:
 
     >>> m = 3
