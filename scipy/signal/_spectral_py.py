@@ -254,7 +254,7 @@ def lombscargle(
     # column vectors
     x = x.reshape(-1, 1)
     y = y.reshape(-1, 1)
-    weights = weights.reshape(-1, 1)  # type: ignore
+    weights = weights.reshape(-1, 1)
 
     # store frequent intermediates
     weights_y = weights * y
