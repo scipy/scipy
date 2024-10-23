@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include "config.h"
+#include "error.h"
+
 #include "cephes/const.h"
 #include "cephes/zeta.h"
 #include "cephes/zetac.h"
@@ -211,6 +214,12 @@ namespace detail {
 	    return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 	}
 	if (z.real() < 50.0 && std::abs(z.imag()) > 50.0) {
+	    if (std::abs(z.imag()) > 1e9) {
+		/* This is the point where computing with the em series can start to take impractically
+		 * long. Return NaN to avoid hanging indefinitely for large imaginary part. */
+		set_error("zeta", SF_ERROR_NO_RESULT, NULL);
+		return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
+	    }
 	    return zeta_euler_maclaurin(z);
 	}
 	return zeta_borwein(z);
