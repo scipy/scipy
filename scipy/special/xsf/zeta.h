@@ -17,8 +17,9 @@ namespace xsf {
 namespace detail {
 
     /* Log of absolute value of expansion coefficients for Euler-Maclaurin
-     * summation formula.
-     * log(|B2k / (2k)!|)
+     * summation formula. log(|B2k / (2k)!|)
+     *
+     * See https://en.wikipedia.org/wiki/Riemann_zeta_function#Numerical_algorithms
      *
      * Generated with the script
      *
@@ -96,7 +97,10 @@ namespace detail {
 	if (n < 50) {
 	    result = zeta_em_log_abs_coeff_lookup[n];
 	} else {
-	    // asymptotic formula
+	    /* Asymptotic formula
+	     * Uses https://dlmf.nist.gov/24.11#E1 to approximate B_{2n} and
+	     * Stirling's approximation for (2n)!.
+	     */
 	    result = std::log(2.0) - 2.0*n*std::log(2*M_PI);
 	}
 	if (n % 2 == 0) {
@@ -112,6 +116,7 @@ namespace detail {
      * overflow. TODO: only logarithmize when necessary. */
     XSF_HOST_DEVICE inline std::complex<double> zeta_euler_maclaurin(std::complex<double> z) {
 	if (z == 1.0) {
+	    /* Return NaN at pole since value depends on how z approaches 1.0. */
 	    return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 	}
 	std::size_t n = static_cast<std::size_t>(std::max(std::abs(z.imag()) / 4.0, 50.0));
@@ -255,6 +260,8 @@ namespace detail {
 	if (z == 1.0) {
 	    return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 	}
+	/* Cutoff for using Euler-MacLaurin chosen based on cursory empirical search.
+	 * TODO: Choose cutoffs in a more principled way. */
 	if (z.real() < 50.0 && std::abs(z.imag()) > 50.0) {
 	    if (z.real() >= 0.0 && z.real() < 2.5 && std::abs(z.imag()) > 1e9) {
 		/* Euler-MacLaurin summation starts to take an unreasonable amount of time in this
