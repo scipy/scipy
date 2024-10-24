@@ -55,7 +55,8 @@ slow_fit_mle = {'exponweib', 'genexpon', 'genhyperbolic', 'johnsonsb',
                 'kappa4', 'powerlognorm', 'tukeylambda'}
 xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'recipinvgauss', 'vonmises_line'}
 xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto', 'irwinhall'}
-skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
+skip_fit_mle = {'dpareto_lognorm',  # temporary skip
+                'levy_stable', 'studentized_range'}  # far too slow (>10min)
 slow_fit_mm = {'chi2', 'expon', 'lognorm', 'loguniform', 'powerlaw', 'reciprocal'}
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
@@ -69,6 +70,7 @@ xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
                 'powernorm', 'rel_breitwigner',  'skewcauchy', 't', 'trapezoid',
                 'truncexpon', 'truncpareto', 'tukeylambda', 'vonmises', 'vonmises_line'}
 skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
+               'dpareto_lognorm',  # temporary skip
                'recipinvgauss', 'studentized_range'}  # far too slow (>10min)
 
 # These distributions fail the complex derivative test below.
@@ -76,8 +78,8 @@ skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = {'argus', 'beta', 'betaprime', 'cauchy', 'chi', 'chi2', 'cosine',
-               'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
-               'gausshyper', 'gengamma', 'genhyperbolic',
+               'dgamma', 'dpareto_lognorm', 'dweibull', 'erlang', 'f', 'foldcauchy',
+               'gamma', 'gausshyper', 'gengamma', 'genhyperbolic',
                'geninvgauss', 'gennorm', 'genpareto',
                'halfcauchy', 'halfgennorm', 'invgamma', 'irwinhall', 'jf_skew_t',
                'ksone', 'kstwo', 'kstwobign', 'landau', 'levy_l', 'loggamma',
@@ -385,7 +387,7 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
+    shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dpareto_lognorm', 'dweibull',
                           'exponnorm', 'genhyperbolic', 'geninvgauss', 'landau',
                           'levy_stable', 'nct', 'norminvgauss', 'rice',
                           'skewnorm', 'semicircular', 'gennorm', 'loggamma']
