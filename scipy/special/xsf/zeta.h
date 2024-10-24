@@ -304,10 +304,7 @@ namespace detail {
 	std::complex<double> t4 = xsf::loggamma(1.0 - z);
 	std::complex<double> factor = std::exp(t1 + t2 + t3 + t4);
 	std::complex<double> result = zeta_right_halfplane(1.0 - z);
-	/* zeta tends to 1.0 as real part tends to +inf, so we handle this case
-	 * below to get the correct quadrant of complex infinity for z with real
-	 * part approaching -inf for cases where factor blows up. */
-	return (result == 1.0) ? factor : factor * result;
+	return result;
     }
 }
 
