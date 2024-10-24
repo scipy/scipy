@@ -8,7 +8,7 @@ from scipy._lib._util import normalize_axis_index
 
 # From splinemodule.c
 from ._spline import sepfir2d, symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd
-from ._signaltools import lfilter, sosfilt, lfiltic
+from ._signaltools import lfilter, filt_sos, lfiltic
 from ._arraytools import axis_slice, axis_reverse
 
 from scipy.interpolate import BSpline
@@ -188,7 +188,7 @@ def _cubic_smooth_coeff(signal, lamb):
     sos = r_[cs, 0, 0, 1, -2 * rho * cos(omega), rho * rho]
     sos = sos.reshape(1, -1)
 
-    yp, _ = sosfilt(sos, signal[2:], zi=zi)
+    yp, _ = filt_sos(sos, signal[2:], zi=zi)
     yp = r_[zi_2, zi_1, yp]
 
     # Reverse filter:
@@ -203,7 +203,7 @@ def _cubic_smooth_coeff(signal, lamb):
 
     zi = lfiltic(cs, r_[1, -2 * rho * cos(omega), rho * rho], r_[zi_1, zi_2])
     zi = zi.reshape(1, -1)
-    y, _ = sosfilt(sos, yp[-3::-1], zi=zi)
+    y, _ = filt_sos(sos, yp[-3::-1], zi=zi)
     y = r_[y[::-1], zi_1, zi_2]
     return y
 
@@ -785,21 +785,21 @@ def symiirorder2(input, r, omega, precision=-1.0):
     ic_fwd = symiirorder2_ic_fwd(input, r, omega, precision)
 
     # Apply first the system cs / (1 - a2 * z^-1 - a3 * z^-2)
-    # Compute the initial conditions in the form expected by sosfilt
+    # Compute the initial conditions in the form expected by filt_sos
     # coef = np.asarray([[a3, a2], [0, a3]], dtype=input.dtype)
     coef = np.r_[a3, a2, 0, a3].reshape(2, 2).astype(input.dtype)
     zi = np.matmul(coef, ic_fwd[:, :, None])[:, :, 0]
 
-    y_fwd, _ = sosfilt(sos, axis_slice(input, 2), zi=zi[None])
+    y_fwd, _ = filt_sos(sos, axis_slice(input, 2), zi=zi[None])
     y_fwd = np.c_[ic_fwd, y_fwd]
 
     # Then compute the symmetric backward starting conditions
     ic_bwd = symiirorder2_ic_bwd(input, r, omega, precision)
 
     # Apply the system cs / (1 - a2 * z^1 - a3 * z^2)
-    # Compute the initial conditions in the form expected by sosfilt
+    # Compute the initial conditions in the form expected by filt_sos
     zi = np.matmul(coef, ic_bwd[:, :, None])[:, :, 0]
-    y, _ = sosfilt(sos, axis_slice(y_fwd, -3, step=-1), zi=zi[None])
+    y, _ = filt_sos(sos, axis_slice(y_fwd, -3, step=-1), zi=zi[None])
     out = np.c_[axis_reverse(y), axis_reverse(ic_bwd)]
 
     if squeeze_dim:
