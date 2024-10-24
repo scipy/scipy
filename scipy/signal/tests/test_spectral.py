@@ -1472,6 +1472,23 @@ class TestLombscargle:
         # testing to make sure it is very small
         assert(pgram[0] < 1e-4)
 
+    def test_simple_div_zero(self):
+        # these are bare-minimum examples that would, without the eps adjustments,
+        # cause division-by-zero errors
+
+        # first, test with example that will cause first SS sum to be 0.0
+        t = [t + 1 for t in range(0, 32)]
+        y = np.ones(len(t))
+        freqs = [2.0*np.pi] * 2  # must have 2+ elements
+        lombscargle(t, y, freqs)
+
+        # second, test with example that will cause first CC sum to be 0.0
+        t = [t*4 + 1 for t in range(0, 32)]
+        y = np.ones(len(t))
+        freqs = [np.pi/2.0] * 2  # must have 2+ elements
+
+        lombscargle(t, y, freqs)
+
 
 class TestSTFT:
     def test_input_validation(self):
