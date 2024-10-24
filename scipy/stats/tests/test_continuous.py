@@ -15,7 +15,7 @@ from scipy.stats._ksstats import kolmogn
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support, imf_transform)
+    _generate_domain_support)
 from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
 
 class Test_RealDomain:
@@ -1000,13 +1000,14 @@ class TestTransforms:
 
     def test_imf_transform(self):
         rng = np.random.default_rng(81345982345826)
+        mu = rng.random((3, 1))
+        sigma = rng.random((3, 1))
 
-        X = Normal()
-        Y = imf_transform(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
-                          logdh=lambda u: -np.log(u))
-        Y0 = stats.lognorm(1)
+        X = Normal()*sigma + mu
+        Y = stats.exp(X)
+        Y0 = stats.lognorm(sigma, scale=np.exp(mu))
 
-        y = Y0.rvs(10, random_state=rng)
+        y = Y0.rvs((3, 10), random_state=rng)
         p = Y0.cdf(y)
 
         assert_allclose(Y.logentropy(), np.log(Y0.entropy()))

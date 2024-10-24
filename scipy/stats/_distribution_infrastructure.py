@@ -4977,11 +4977,6 @@ def _shift_scale_inverse_function(func):
 
 
 class TransformedDistribution(ContinuousDistribution):
-    # TODO: This may need some sort of default `_parameterizations` with a
-    #       single `_Parameterization` that has no parameters. The reason is
-    #       that `dist`'s parameters need to get added to it. If they're not
-    #       added, then those parameter kwargs are not recognized in
-    #       `_update_parameters`.
     def __init__(self, dist, *args, **kwargs):
         self._copy_parameterization()
         self._variable = dist._variable
@@ -4990,6 +4985,8 @@ class TransformedDistribution(ContinuousDistribution):
             # Add standard distribution parameters to our parameterization
             dist_parameters = dist._parameterization.parameters
             set_params = set(dist_parameters)
+            if not self._parameterizations:
+                self._parameterizations.append(_Parameterization())
             for parameterization in self._parameterizations:
                 if set_params.intersection(parameterization.parameters):
                     message = (f"One or more of the parameters of {dist} has "
@@ -5222,9 +5219,26 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
 
 class IMFTransformedDistribution(TransformedDistribution):
-    """Distribution underlying an injective, monotonic function of a random variable"""
+    r"""Distribution underlying an injective, monotonic function of a random variable
 
-    _parameterizations = []
+    Given a random variable :math:`X`; an injective, monotonic function
+    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, the derivative
+    :math:`h'(u) = \frac{dh(u)}{du}`, define the distribution underlying
+    the random variable :math:`Y = g(X)`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    g, h, dh : callable
+        Elementwise functions representing the mathematical functions
+        :math:`g(u)`, :math:`h(u)`, and :math:`h'(u)`
+    logdh : callable, optional
+        Elementwise function representing :math:`\log(h'(u))`.
+        The default is ``lambda u: np.log(dh(u))``, but providing
+        a custom implementation may avoid over/underflow.
+
+    """
 
     def __init__(self, dist, *args, g, h, dh, logdh=None, **kwargs):
         super().__init__(dist, *args, **kwargs)
@@ -5280,49 +5294,40 @@ class IMFTransformedDistribution(TransformedDistribution):
         return self._g(rvs)
 
 
-def imf_transform(X, g, h, dh, logdh=None):
-    r"""Transform a random variable with an injective, monotonic function
+def exp(X):
+    r"""Natural exponential of a random variable
 
-    Given a random variable :math:`X`; an injective, monotonic function
-    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, the derivative
-    :math:`h'(u) = \frac{dh(u)}{du}`, define a random variable
-    :math:`Y = g(X)`.
+    Given a random variable :math:`X`, define a random variable
+    :math:`Y = \exp(X)`.
 
     Parameters
     ----------
     X : `ContinuousDistribution`
         The random variable :math:`X`.
-    g, h, dh : callable
-        Elementwise functions representing the mathematical functions
-        :math:`g(u)`, :math:`h(u)`, and :math:`h'(u)`
-    logdh : callable, optional
-        Elementwise function representing :math:`\log(h'(u))`.
-        The default is ``lambda u: np.log(dh(u))``, but providing
-        a custom implementation may avoid over/underflow.
 `
     Returns
     -------
     Y : `ContinuousDistribution`
-        A random variable :math:`Y = g(X)`
+        A random variable :math:`Y = \exp(X)`.
 
     Examples
     --------
-    Suppose we have a normally-distributed random variable :math:`X`:
+    Suppose we have a normally distributed random variable :math:`X`:
 
     >>> import numpy as np
     >>> from scipy import stats
     >>> X = stats.Normal()
 
-    We wish to have a lognormally-distributed random variable :math:`Y`;
-    that is, we want a random variable whose natural logarithm is :math:`X`.
-    Since :math:`\log(X) = Y`, we know that :math:`X = \exp(Y)`. In this case,
-    :math:`g(u) = \exp(u)`, :math:`h(u) = \log(u)`, and :math:`h'(u) = \frac{1}{u}`.
+    We wish to have a lognormally distributed random variable :math:`Y`,
+    a random variable whose natural logarithm is :math:`X`.
+    If :math:`X` is the natural logarithm of :math:`Y`, then :math:`Y` is
+    the exponential of :math:`X`.
 
-    >>> Y = stats.imf_transform(X, g=np.exp, h=np.log, dh=lambda u: 1 / u)
+    >>> Y = stats.exp(X)
 
-    To demonstrate that ``Y`` represents the natural logarithm of ``X``,
-    we plot a normalized histogram of exponentiated observations of ``Y``
-    against the PDF underlying ``X``.
+    To demonstrate that ``Y`` represents the exponential of ``X``,
+    we plot a normalized histogram of the logarithm of observations of
+    ``Y`` against the PDF underlying ``X``.
 
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng(435383595582522)
@@ -5330,8 +5335,9 @@ def imf_transform(X, g, h, dh, logdh=None):
     >>> ax = plt.gca()
     >>> ax.hist(np.log(y), bins=50, density=True)
     >>> X.plot(ax=ax)
-    >>> plt.legend(('PDF of $X$', 'histogram of $\exp(Y)$'))
+    >>> plt.legend(('PDF of `X`', 'histogram of `log(y)`'))
     >>> plt.show()
 
     """
-    return IMFTransformedDistribution(X, g=g, h=h, dh=dh)
+    return IMFTransformedDistribution(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
+                                      logdh=lambda u: -np.log(u))
