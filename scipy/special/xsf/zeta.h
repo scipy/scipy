@@ -284,12 +284,28 @@ namespace detail {
 	}
 
     XSF_HOST_DEVICE inline std::complex<double> logsinpi(std::complex<double> z) {
-	// log(sinpi(z)) using sin(z) = (exp(i*pi*z) - exp(-i*pi*z)) / 2i
+	/* log(sinpi(z)) using sin(z) = (exp(i*pi*z) - exp(-i*pi*z)) / 2i
+	 *
+	 * No attempt is made to choose any particular branch of the logarithm.
+	 * This is an internal function and the intent is that this that the
+	 * result of log(sinpi(z)) will be added to other terms, and the sum
+	 * will then be exponentiated, making the choice of a specific branch
+	 * unnecessary.
+	 */
 	std::complex<double> J(0.0, 1.0);
+	/* Calculating log((exp(i*pi*z) - exp(-i*pi*z)) / 2i). Factor out term
+	 * with larger magnitude before taking log. */
 	if (z.imag() > 0 ) {
-	    return -z * J * M_PI  + std::log((-1.0 + exppi(2.0 * z * J)) / (2.0*J));
+	    /* if z.imag() > 0 then, exp(-i*pi*z) has greatest magnitude. Factor it
+	     * out to get:
+	     * log(exp(-i*pi*z)*((exp(2*i*pi*z) - 1.0)/(2i)) =
+	     * log(exp(-i*pi*z)) + log((exp(2*i*pi*z) - 1.0)/(2i)) =
+	     * -i*pi*z + log((exp(2*i*pi*z) - 1.0)/(2i)) */
+	    return -J * M_PI * z + std::log((exppi(2.0 * z * J) - 1.0) / (2.0*J));
 	}
-	return z * J * M_PI + std::log((1.0 - exppi(-2.0 * z * J)) / (2.0*J));
+	/* if z.imag() < 0 then, exp(i*pi*z) has greatest magnitude. Factor similarly
+	 * to above */
+	return J * M_PI * z + std::log((1.0 - exppi(-2.0 * z * J)) / (2.0*J));
     }
 
     /* Reflection formula for zeta function. 
