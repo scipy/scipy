@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "config.h"
-#include "tools.h"
-#include "error.h"
 #include "cephes/dd_real.h"
+#include "config.h"
+#include "error.h"
+#include "tools.h"
 
 namespace xsf {
 
@@ -33,9 +33,9 @@ template <class T>
 struct IvRatioCFTailGenerator {
 
     XSF_HOST_DEVICE IvRatioCFTailGenerator(T vc, T xc, T c) noexcept {
-        a0_ = -(2*vc-c)*xc;
-        as_ = -2*c*xc;
-        b0_ = 2*(vc+xc);
+        a0_ = -(2 * vc - c) * xc;
+        as_ = -2 * c * xc;
+        b0_ = 2 * (vc + xc);
         bs_ = c;
         k_ = 0;
     }
@@ -43,13 +43,12 @@ struct IvRatioCFTailGenerator {
     XSF_HOST_DEVICE std::pair<T, T> operator()() noexcept {
         using std::fma;
         ++k_;
-        return {fma(static_cast<T>(k_), as_, a0_),
-                fma(static_cast<T>(k_), bs_, b0_)};
+        return {fma(static_cast<T>(k_), as_, a0_), fma(static_cast<T>(k_), bs_, b0_)};
     }
 
-private:
-    T a0_, as_;  // a[k] == a0 + as*k, k >= 1
-    T b0_, bs_;  // b[k] == b0 + bs*k, k >= 1
+  private:
+    T a0_, as_;       // a[k] == a0 + as*k, k >= 1
+    T b0_, bs_;       // b[k] == b0 + bs*k, k >= 1
     std::uint64_t k_; // current index
 };
 
@@ -59,21 +58,18 @@ private:
 // calculations in a higher precision, such as double-double, even if
 // the return type is hardcoded to be double.
 template <class T>
-XSF_HOST_DEVICE inline std::pair<double, std::uint64_t>
-_iv_ratio_cf(double v, double x, bool complement) {
+XSF_HOST_DEVICE inline std::pair<double, std::uint64_t> _iv_ratio_cf(double v, double x, bool complement) {
 
     int e;
     std::frexp(std::fmax(v, x), &e);
-    T c = T(std::ldexp(1, 2-e)); // rescaling multiplier
+    T c = T(std::ldexp(1, 2 - e)); // rescaling multiplier
     T vc = v * c;
     T xc = x * c;
 
     IvRatioCFTailGenerator<T> cf(vc, xc, c);
     auto [fc, terms] = detail::series_eval_kahan(
-        detail::continued_fraction_series(cf),
-        T(std::numeric_limits<double>::epsilon()),
-        1000,
-        2*vc);
+        detail::continued_fraction_series(cf), T(std::numeric_limits<double>::epsilon()), 1000, 2 * vc
+    );
 
     T ret = (complement ? fc : xc) / (xc + fc);
     return {static_cast<double>(ret), terms};
@@ -161,7 +157,7 @@ XSF_HOST_DEVICE inline double iv_ratio_c(double v, double x) {
     } else {
         // The previous branch (v > 0.5) also works for v == 0.5, but
         // the closed-form formula "1 - tanh(x)" is more efficient.
-        double t = std::exp(-2*x);
+        double t = std::exp(-2 * x);
         return (2 * t) / (1 + t);
     }
 }
