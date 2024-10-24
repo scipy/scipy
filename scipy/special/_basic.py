@@ -3426,7 +3426,7 @@ def zeta(x, q=None, out=None):
 
     For complex inputs with ``q = None`, points with
     ``abs(z.imag) > 1e9` and 0 <= abs(z.real) < 2.5 are currently not
-    handled due to slow convergence causing excessive runtime. 
+    supported due to slow convergence causing excessive runtime.
 
     References
     ----------
