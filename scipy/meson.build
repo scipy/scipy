@@ -212,13 +212,15 @@ if blas_name == 'openblas' or blas_name == 'auto'
     blas_name = 'scipy-openblas'
     generate_blas_wrappers = true
   endif
+elif blas_name == 'meson-openblas'
+  blas = dependency('meson-openblas', method: 'pkg-config')
 endif
 
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
   blas = dependency(['openblas', 'OpenBLAS'])
-elif blas_name != 'scipy-openblas'  # if so, we found it already
+elif blas_name != 'scipy-openblas' and blas_name != 'meson-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
 blas_dep = declare_dependency(
@@ -240,6 +242,8 @@ if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name =
   # For these libraries we know that they contain LAPACK, and it's desirable to
   # use that - no need to run the full detection twice.
   lapack = blas
+elif lapack_name == 'meson-lapack'
+  lapack = dependency('meson-lapack', method: 'pkg-config')
 elif lapack_name == 'openblas'
   lapack = dependency(['openblas', 'OpenBLAS'])
 else
