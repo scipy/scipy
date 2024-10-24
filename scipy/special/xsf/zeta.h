@@ -354,6 +354,19 @@ XSF_HOST_DEVICE inline double zeta(double x, double q) { return cephes::zeta(x, 
 
 XSF_HOST_DEVICE inline float zeta(float x, float q) { return zeta(static_cast<double>(x), static_cast<double>(q)); }
 
+XSF_HOST_DEVICE inline std::complex<double> zeta(std::complex<double> z, double q) {
+    if (z.imag() == 0.0) {
+	return zeta(z.real(), q);
+    }
+    // Complex input for Hurwitz Zeta is not currently supported.
+    set_error("zeta", SF_ERROR_DOMAIN, NULL);
+    return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
+}
+
+XSF_HOST_DEVICE inline std::complex<float> zeta(std::complex<float> z, float q) {
+    return static_cast<std::complex<float>>(zeta(static_cast<std::complex<double>>(z), static_cast<float>(q)));
+}
+
 XSF_HOST_DEVICE inline double zetac(double x) { return cephes::zetac(x); }
 
 XSF_HOST_DEVICE inline float zetac(float x) { return zetac(static_cast<double>(x)); }
