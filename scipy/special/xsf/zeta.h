@@ -18,7 +18,23 @@ namespace detail {
 
     /* Log of absolute value of expansion coefficients for Euler-Maclaurin
      * summation formula.
-     * log(|B2k / (2k)!|) */
+     * log(|B2k / (2k)!|)
+     *
+     * Generated with the script
+     *
+     * import numpy as np
+     * from mpmath import mp
+     *
+     * mp.dps = 10000
+     *
+     * results = []
+     * for k in range(51):
+     *     results.append(
+     *         float(
+     *             mp.log(abs(mp.bernoulli(2*k)/(mp.factorial(2*k))))
+     *         )
+     *     )
+     */
     constexpr double zeta_em_log_abs_coeff_lookup[] = {
 	0.0,
 	-2.4849066497880004,
