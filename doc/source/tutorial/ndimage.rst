@@ -1,5 +1,5 @@
-Multidimensional image processing (`scipy.ndimage`)
-====================================================
+Multidimensional Image Processing (`scipy.ndimage`)
+===================================================
 
 .. moduleauthor:: Peter Verveer <verveer@users.sourceforge.net>
 
@@ -215,7 +215,7 @@ Smoothing filters
   corresponds to convolution with a Gaussian kernel. An order of 1, 2,
   or 3 corresponds to convolution with the first, second, or third
   derivatives of a Gaussian. Higher-order derivatives are not
-  implemented. 
+  implemented.
 
 
 
@@ -232,7 +232,7 @@ Smoothing filters
   number, to specify the same order for all axes, or a sequence of
   numbers to specify a different order for each axis. The example below
   shows the filter applied on test data with different values of *sigma*.
-  The *order* parameter is kept at 0. 
+  The *order* parameter is kept at 0.
 
   .. plot:: tutorial/examples/gaussian_filter_plot1.py
       :align: center
