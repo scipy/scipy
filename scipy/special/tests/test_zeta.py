@@ -53,7 +53,7 @@ def test_riemann_zeta_avoid_overflow():
 
 @pytest.mark.parametrize(
     "z, desired",
-    # Reference cases taken from mpmath with the script:
+    # # Reference cases taken from mpmath with the script:
     # import numpy as np
     # import scipy.stats as stats
 
