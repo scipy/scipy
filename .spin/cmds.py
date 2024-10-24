@@ -392,9 +392,7 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
     ctx.params[MESON_ARGS]["install"] = ctx.params[MESON_ARGS]["install"] + ("--tags=" + ctx.params['tags'], )
 
     if ctx.params["show_build_log"]:
-        ctx.params[MESON_ARGS]["show_build_log"] = ctx.params["show_build_log"]
-
-    ctx.params[MESON_ARGS]["root"] = Path(__file__).parent.parent.absolute()
+        ctx.params["verbose"] = ctx.params["show_build_log"]
 
     for option in ('werror', 'debug', 'release',
                    'gcov', 'asan','setup_args',
