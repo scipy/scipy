@@ -27,8 +27,8 @@ INT_DTYPES = (np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong)
 # np.half is unsupported on many test systems so excluded
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
-INEXECTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
-ALLDTYPES = INT_DTYPES + INEXECTDTYPES
+INEXACTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
+ALLDTYPES = INT_DTYPES + INEXACTDTYPES
 
 
 def sign_align(A, B):
@@ -75,9 +75,9 @@ def test_ElasticRod(n):
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.filterwarnings("ignore:Casting complex values to real")
-@pytest.mark.parametrize("Vdtype", INEXECTDTYPES)
+@pytest.mark.parametrize("Vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("Bdtype", ALLDTYPES)
-@pytest.mark.parametrize("BVdtype", INEXECTDTYPES)
+@pytest.mark.parametrize("BVdtype", INEXACTDTYPES)
 def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     """Test B-orthonormalization by Cholesky with callable 'B'.
     The function '_b_orthonormalize' is key in LOBPCG but may
@@ -441,7 +441,7 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
-@pytest.mark.parametrize("vdtype", INEXECTDTYPES)
+@pytest.mark.parametrize("vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("mdtype", ALLDTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,
                                       sparse.csr_matrix,

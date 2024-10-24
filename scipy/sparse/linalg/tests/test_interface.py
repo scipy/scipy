@@ -4,6 +4,7 @@
 from functools import partial
 from itertools import product
 import operator
+import pytest
 from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal
 
@@ -452,6 +453,32 @@ def test_no_double_init():
     # operator dtype)
     interface.LinearOperator((2, 2), matvec=matvec)
     assert_equal(call_count[0], 1)
+
+INT_DTYPES = (np.int8, np.int16, np.int32, np.int64)
+REAL_DTYPES = (np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
+INEXACTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
+ALLDTYPES = INT_DTYPES + INEXACTDTYPES
+
+
+@pytest.mark.parametrize("test_dtype", ALLDTYPES)
+def test_determine_lo_dtype_from_matvec(test_dtype):
+    # gh-19209
+    scalar = np.array(1, dtype=test_dtype)
+    def mv(v):
+        return np.array([scalar * v[0], v[1]])
+
+    lo = interface.LinearOperator((2, 2), matvec=mv)
+    assert lo.dtype == np.dtype(test_dtype)
+
+def test_determine_lo_dtype_for_int():
+    # gh-19209
+    # test Python int larger than int8 max cast to some int
+    def mv(v):
+        return np.array([128 * v[0], v[1]])
+
+    lo = interface.LinearOperator((2, 2), matvec=mv)
+    assert lo.dtype in INT_DTYPES
 
 def test_adjoint_conjugate():
     X = np.array([[1j]])

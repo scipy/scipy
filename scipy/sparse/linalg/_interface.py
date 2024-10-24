@@ -112,6 +112,14 @@ class LinearOperator:
     where v has shape (N,) as well as the (N,1) case.  The shape of
     the return type is handled internally by LinearOperator.
 
+    It is highly recommended to explicitly specify the `dtype`, otherwise
+    it is determined automatically at the cost of a single matvec application
+    on `int8` zero vector using the promoted `dtype` of the output.
+    Python `int` could be difficult to automatically cast to numpy integers
+    in the definition of the `matvec` so the determination may be inaccurate.
+    It is assumed that `matmat`, `rmatvec`, and `rmatmat` would result in
+    the same dtype of the output given an `int8` input as `matvec`.
+
     LinearOperator instances can also be multiplied, added with each
     other and exponentiated, all lazily: the result of these operations
     is always a new, composite LinearOperator, that defers linear
@@ -131,7 +139,7 @@ class LinearOperator:
     ...
     >>> A = LinearOperator((2,2), matvec=mv)
     >>> A
-    <2x2 _CustomLinearOperator with dtype=float64>
+    <2x2 _CustomLinearOperator with dtype=int8>
     >>> A.matvec(np.ones(2))
     array([ 2.,  3.])
     >>> A @ np.ones(2)
@@ -175,11 +183,25 @@ class LinearOperator:
         self.shape = shape
 
     def _init_dtype(self):
-        """Called from subclasses at the end of the __init__ routine.
+        """Determine the dtype by executing `matvec` on an `int8` test vector.
+
+        In `np.promote_types` hierarchy, the type `int8` is the smallest,
+        so we call `matvec` on `int8` and use the promoted dtype of the output
+        to set the default `dtype` of the `LinearOperator`.
+        We assume that `matmat`, `rmatvec`, and `rmatmat` would result in
+        the same dtype of the output given an `int8` input as `matvec`.
+
+        Called from subclasses at the end of the __init__ routine.
         """
         if self.dtype is None:
-            v = np.zeros(self.shape[-1])
-            self.dtype = np.asarray(self.matvec(v)).dtype
+            v = np.zeros(self.shape[-1], dtype=np.int8)
+            try:
+                matvec_v = np.asarray(self.matvec(v))
+            except OverflowError:
+                # Python large `int` promoted to `np.int64`or `np.int32`
+                self.dtype = np.dtype(int)
+            else:
+                self.dtype = matvec_v.dtype
 
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.
