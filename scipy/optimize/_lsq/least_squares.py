@@ -969,7 +969,8 @@ def least_squares(
 
     if method == 'lm':
         if callback is not None:
-            warn("Callback function specified, but not supported with `lm` method.")
+            warn("Callback function specified, but not supported with `lm` method.",
+                stacklevel=2)
         result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
                               max_nfev, x_scale, diff_step)
 

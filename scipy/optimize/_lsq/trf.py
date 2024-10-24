@@ -107,8 +107,6 @@ from .common import (
     CL_scaling_vector, compute_grad, compute_jac_scale, check_termination,
     update_tr_radius, scale_for_robust_loss_function, print_header_nonlinear,
     print_iteration_nonlinear)
-    
-from .._optimize import (_call_callback_maybe_halt)
 
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
@@ -205,7 +203,8 @@ def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
 
 
 def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
-               x_scale, loss_function, tr_solver, tr_options, verbose, callback=None):
+               x_scale, loss_function, tr_solver, tr_options, verbose, 
+               callback=None):
     x = x0.copy()
 
     f = f0
@@ -392,7 +391,8 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
             
         # Call callback function and possibly stop optimization
         if callback is not None:
-            intermediate_result = OptimizeResult(x=x_new, fun=f_new, nit=iteration, nfev=nfev)
+            intermediate_result = OptimizeResult(
+                x=x_new, fun=f_new, nit=iteration, nfev=nfev)
             intermediate_result["cost"] = cost_new
             
             try:
@@ -570,7 +570,8 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
         
         # Call callback function and possibly stop optimization
         if callback is not None:
-            intermediate_result = OptimizeResult(x=x_new, fun=f_new, nit=iteration, nfev=nfev)
+            intermediate_result = OptimizeResult(
+                x=x_new, fun=f_new, nit=iteration, nfev=nfev)
             intermediate_result["cost"] = cost_new
             
             try:
