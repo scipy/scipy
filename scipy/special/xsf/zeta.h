@@ -197,17 +197,15 @@ namespace detail {
 
     /* Compute riemann_zeta for complex input z using Borwein's algorithm. */
     XSF_HOST_DEVICE inline std::complex<double> zeta_borwein(std::complex<double> z) {
-	std::complex<double> s1 = 0.0;
+	std::complex<double> result = 0.0;
 	// Sum in reverse order because smaller terms come later.
 	for (int k = 49; k >= 0; k--) {
 	    double sign = std::pow(-1.0, k);
 	    std::complex<double> den = std::pow(k + 1, z);
-	    auto t1 = sign * (zeta_borwein_coeff[k] - 1.0) / den;
-	    s1 += t1;
+	    std::complex<double> term = sign * (zeta_borwein_coeff[k] - 1.0) / den;
+	    result += term;
 	}
-	std::complex<double> result = s1;
-	result *= -1.0/(1.0 - std::pow(2.0, 1.0 - z));
-	return result;
+	return result * -1.0/(1.0 - std::pow(2.0, 1.0 - z));
     }
 
     /* Compute riemann zeta for complex z and real part >= 0 */
