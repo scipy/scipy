@@ -95,7 +95,7 @@ namespace detail {
      * Computation of individual terms in expansion are logarithmized to avoid
      * overflow. TODO: only logarithmize when necessary. */
     XSF_HOST_DEVICE inline std::complex<double> zeta_euler_maclaurin(std::complex<double> z) {
-	if (z.real() == 1.0) {
+	if (z == 1.0) {
 	    return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 	}
 	std::size_t n = static_cast<std::size_t>(std::max(std::abs(z.imag()) / 4.0, 50.0));
