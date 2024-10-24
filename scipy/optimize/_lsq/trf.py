@@ -417,7 +417,8 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
 
 def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
-                  x_scale, loss_function, tr_solver, tr_options, verbose, callback=None):
+                  x_scale, loss_function, tr_solver, tr_options, verbose, 
+                  callback=None):
     x = x0.copy()
 
     f = f0
