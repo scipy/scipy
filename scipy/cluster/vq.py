@@ -68,8 +68,9 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    _asarray, array_namespace, xp_size, xp_atleast_nd, xp_copy, xp_cov
+    _asarray, array_namespace, xp_size, xp_copy, xp_cov
 )
+from scipy._lib import array_api_extra as xpx
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
 
@@ -563,7 +564,7 @@ def _krandinit(data, k, rng, xp):
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1.))
         x = x @ sVh
     else:
-        _cov = xp_atleast_nd(xp_cov(data.T), ndim=2)
+        _cov = xpx.atleast_nd(xp_cov(data.T), ndim=2, xp=xp)
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
