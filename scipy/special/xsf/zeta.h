@@ -142,6 +142,32 @@ namespace detail {
 	return result;
     }
 
+    /* Lookup table of coefficients for Algorithm 2 from Borwein 1995
+     * Borwein, Peter B.. “An efficient algorithm for the Riemann zeta function.” (1995).
+     *
+     * Stores coefficients as dk / dn, where dn is the final coefficient.
+     *
+     * Generated with the Python script:
+     *
+     * import numpy as np
+     * import math
+     * from mpmath import mp
+     *
+     * mp.dps = 1000
+     * n = 50
+     *
+     * coeffs = []
+     * S = mp.zero
+     * for i in range(n + 1):
+     * num = math.factorial(n + i - 1) * 4**i
+     * den = math.factorial(n - i) * math.factorial(2*i)
+     * S += mp.mpf(num) / mp.mpf(den)
+     * coeffs.append(S*n)
+     *
+     * dn = coeffs[-1]
+     * coeffs = [float(dk/dn) for dk in coeffs[:-1]]
+     * coeffs = np.asarray(coeffs)
+     */
     constexpr double zeta_borwein_coeff[] = {
 	1.0555078361382878e-38,
 	5.278594688527578e-35,
@@ -195,7 +221,7 @@ namespace detail {
 	0.9999999933099243
     };
 
-    /* Compute riemann_zeta for complex input z using Borwein's algorithm. */
+    /* Compute riemann_zeta for complex input z using Algorithm 2 from Borwein 1995. */
     XSF_HOST_DEVICE inline std::complex<double> zeta_borwein(std::complex<double> z) {
 	std::complex<double> result = 0.0;
 	// Sum in reverse order because smaller terms come later.
