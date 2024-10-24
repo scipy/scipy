@@ -304,7 +304,15 @@ namespace detail {
 	std::complex<double> t4 = xsf::loggamma(1.0 - z);
 	std::complex<double> factor = std::exp(t1 + t2 + t3 + t4);
 	std::complex<double> result = zeta_right_halfplane(1.0 - z);
-	return result;
+	/* zeta tends to 1.0 as real part tends to +inf. In cases where
+	 * the real part of zeta tends to -inf, then zeta(1 - z) in the
+	 * reflection formula will tend to 1.0. Factor overflows then,
+	 * factor * result below will become NaN. In this case, we just
+	 * return factor to preserve complex infinity. Only zeta(1 - z) == 1.0
+	 * is handled because this is the only practical case where we should
+	 *  expect zeta(1 - z) == x for a real number x when z is not on the
+	 * real line. */
+	return (result == 1.0) ? factor : factor * result;
     }
 }
 
