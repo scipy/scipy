@@ -3397,10 +3397,9 @@ def zeta(x, q=None, out=None):
         Input data
     q : array_like of float, optional
         Input data, must be real.  Defaults to Riemann zeta. When `q` is
-        ``None``, complex inputs `x` are supported. If q is not ``None``,
-        then only real inputs `x` are supported, and the function returns
-        ``nan`` when ``x < 1``, even when ``q = 1.0`` (corresponding to
-        the Riemann zeta function).
+        ``None``, complex inputs `x` are supported. If `q` is not ``None``,
+        then currently only real inputs `x` with ``x >= 1`` are supported,
+        even when ``q = 1.0`` (corresponding to the Riemann zeta function).
         
     out : ndarray, optional
         Output array for the computed values.
@@ -3426,9 +3425,8 @@ def zeta(x, q=None, out=None):
     the case when ``q = 1``.
 
     For complex inputs with ``q = None`, points with
-    ``abs(z.imag) > 1e9` and 49 < abs(z.real) < 50 are currently not
-    handled due to numerical difficulties in the underlying method
-    in this region. special.zeta will return ``nan`` in these cases.
+    ``abs(z.imag) > 1e9` and 0 <= abs(z.real) < 2.5 are currently not
+    handled due to slow convergence causing excessive runtime. 
 
     References
     ----------
