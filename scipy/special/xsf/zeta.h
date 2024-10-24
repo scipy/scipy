@@ -216,9 +216,9 @@ namespace detail {
 	    return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 	}
 	if (z.real() < 50.0 && std::abs(z.imag()) > 50.0) {
-	    if (std::abs(z.imag()) > 1e9) {
-		/* This is the point where computing with the em series can start to take impractically
-		 * long. Return NaN to avoid hanging indefinitely for large imaginary part. */
+	    if (z.real() >= 0.0 && z.real() < 2.5 && std::abs(z.imag()) > 1e9) {
+		/* Euler-MacLaurin summation starts to take an unreasonable amount of time in this
+		 * region, so just give up and return NaN instead. */
 		set_error("zeta", SF_ERROR_NO_RESULT, NULL);
 		return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 	    }
