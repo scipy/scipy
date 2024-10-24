@@ -4977,11 +4977,6 @@ def _shift_scale_inverse_function(func):
 
 
 class TransformedDistribution(ContinuousDistribution):
-    # TODO: This may need some sort of default `_parameterizations` with a
-    #       single `_Parameterization` that has no parameters. The reason is
-    #       that `dist`'s parameters need to get added to it. If they're not
-    #       added, then those parameter kwargs are not recognized in
-    #       `_update_parameters`.
     def __init__(self, dist, *args, **kwargs):
         self._copy_parameterization()
         self._variable = dist._variable
@@ -4990,6 +4985,8 @@ class TransformedDistribution(ContinuousDistribution):
             # Add standard distribution parameters to our parameterization
             dist_parameters = dist._parameterization.parameters
             set_params = set(dist_parameters)
+            if not self._parameterizations:
+                self._parameterizations.append(_Parameterization())
             for parameterization in self._parameterizations:
                 if set_params.intersection(parameterization.parameters):
                     message = (f"One or more of the parameters of {dist} has "
@@ -5219,3 +5216,122 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def __neg__(self):
         return self * -1
+
+
+class IMFTransformedDistribution(TransformedDistribution):
+    r"""Distribution underlying an injective, monotonic function of a random variable
+
+    Given a random variable :math:`X`; a strictly increasing function
+    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, the derivative
+    :math:`h'(u) = \frac{dh(u)}{du}`, define the distribution underlying
+    the random variable :math:`Y = g(X)`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    g, h, dh : callable
+        Elementwise functions representing the mathematical functions
+        :math:`g(u)`, :math:`h(u)`, and :math:`h'(u)`
+    logdh : callable, optional
+        Elementwise function representing :math:`\log(h'(u))`.
+        The default is ``lambda u: np.log(dh(u))``, but providing
+        a custom implementation may avoid over/underflow.
+
+    """
+
+    def __init__(self, dist, *args, g, h, dh, logdh=None, **kwargs):
+        super().__init__(dist, *args, **kwargs)
+        self._g = g
+        self._h = h
+        self._dh = dh
+        self._logdh = (logdh if logdh is not None
+                       else lambda u: np.log(dh(u)))
+
+    def _overrides(self, method_name):
+        # Do not use the generic overrides of TransformedDistribution
+        return False
+
+    def _support(self, **params):
+        a, b = self._dist._support(**params)
+        return self._g(a), self._g(b)
+
+    def _logpdf_dispatch(self, x, *args, **params):
+        return self._dist._logpdf_dispatch(self._h(x), *args, **params) + self._logdh(x)
+
+    def _pdf_dispatch(self, x, *args, **params):
+        return self._dist._pdf_dispatch(self._h(x), *args, **params) * self._dh(x)
+
+    def _logcdf_dispatch(self, x, *args, **params):
+        return self._dist._logcdf_dispatch(self._h(x), *args, **params)
+
+    def _cdf_dispatch(self, x, *args, **params):
+        return self._dist._cdf_dispatch(self._h(x), *args, **params)
+
+    def _logccdf_dispatch(self, x, *args, **params):
+        return self._dist._logccdf_dispatch(self._h(x), *args, **params)
+
+    def _ccdf_dispatch(self, x, *args, **params):
+        return self._dist._ccdf_dispatch(self._h(x), *args, **params)
+
+    def _ilogcdf_dispatch(self, p, *args, **params):
+        return self._g(self._dist._ilogcdf_dispatch(p, *args, **params))
+
+    def _icdf_dispatch(self, p, *args, **params):
+        return self._g(self._dist._icdf_dispatch(p, *args, **params))
+
+    def _ilogccdf_dispatch(self, p, *args, **params):
+        return self._g(self._dist._ilogccdf_dispatch(p, *args, **params))
+
+    def _iccdf_dispatch(self, p, *args, **params):
+        return self._g(self._dist._iccdf_dispatch(p, *args, **params))
+
+    def _sample_dispatch(self, sample_shape, full_shape, *,
+                         method, rng, **params):
+        rvs = self._dist._sample_dispatch(
+            sample_shape, full_shape, method=method, rng=rng, **params)
+        return self._g(rvs)
+
+
+def exp(X):
+    r"""Natural exponential of a random variable
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = \exp(X)`.
+
+    Examples
+    --------
+    Suppose we have a normally distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.Normal()
+
+    We wish to have a lognormally distributed random variable :math:`Y`,
+    a random variable whose natural logarithm is :math:`X`.
+    If :math:`X` is to be the natural logarithm of :math:`Y`, then we
+    must take :math:`Y` to be the natural exponential of :math:`X`.
+
+    >>> Y = stats.exp(X)
+
+    To demonstrate that ``X`` represents the logarithm of ``Y``,
+    we plot a normalized histogram of the logarithm of observations of
+    ``Y`` against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.log(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of `X`', 'histogram of `log(y)`'))
+    >>> plt.show()
+
+    """
+    return IMFTransformedDistribution(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
+                                      logdh=lambda u: -np.log(u))

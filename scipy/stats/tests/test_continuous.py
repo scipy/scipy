@@ -998,6 +998,40 @@ class TestTransforms:
             #                 dist0.sample(x_result_shape, rng=rng0) * scale + loc)
             # Should also try to test fit, plot?
 
+    def test_imf_transform(self):
+        rng = np.random.default_rng(81345982345826)
+        mu = rng.random((3, 1))
+        sigma = rng.random((3, 1))
+
+        X = Normal()*sigma + mu
+        Y = stats.exp(X)
+        Y0 = stats.lognorm(sigma, scale=np.exp(mu))
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
+
 
 class TestFullCoverage:
     # Adds tests just to get to 100% test coverage; this way it's more obvious
