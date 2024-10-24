@@ -316,17 +316,28 @@ namespace detail {
 	return J * M_PI * z + std::log((1.0 - exppi(-2.0 * z * J)) / (2.0*J));
     }
 
-    /* Reflection formula for zeta function. 
+    /* Leading factor in reflection formula for zeta function.
      * zeta(z) = 2^z * pi^(z-1) * sin(pi*z/2) * gamma(1 - z) * zeta(1 - z)
+     * This computes 2^z * pi^(z - 1) * sin(pi*z/2) * gamma(1 - z)
+     *
      * Computation is logarithimized to prevent overflow.
      * TODO: Complexify the cephes zeta_reflection implementation, which uses
      * the lanczos approximation for the gamma function. */
-    XSF_HOST_DEVICE inline std::complex<double> zeta_reflection(std::complex<double> z) {
+    XSF_HOST_DEVICE inline std::complex<double> zeta_reflection_factor_with_logs(std::complex<double> z) {
  	std::complex<double> t1 = z * M_LN2;
 	std::complex<double> t2 = (z - 1.0) * xsf::cephes::detail::LOGPI;
 	std::complex<double> t3 = logsinpi(z / 2.0);
 	std::complex<double> t4 = xsf::loggamma(1.0 - z);
 	std::complex<double> factor = std::exp(t1 + t2 + t3 + t4);
+	return factor;
+    }
+
+    XSF_HOST_DEVICE inline std::complex<double> zeta_reflection(std::complex<double> z) {
+	std::complex<double> factor = 2.0 * std::pow(2*M_PI, z - 1.0) * xsf::sinpi(z/2.0) * xsf::gamma(1.0 - z);
+	if (!std::isfinite(factor.real()) || !std::isfinite(factor.imag())) {
+	    // Try again with logs if standard calculation had overflow.
+	    factor = zeta_reflection_factor_with_logs(z);
+	}
 	std::complex<double> result = zeta_right_halfplane(1.0 - z);
 	/* zeta tends to 1.0 as real part tends to +inf. In cases where
 	 * the real part of zeta tends to -inf, then zeta(1 - z) in the
