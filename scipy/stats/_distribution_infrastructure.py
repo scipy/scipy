@@ -5221,7 +5221,7 @@ class ShiftedScaledDistribution(TransformedDistribution):
 class IMFTransformedDistribution(TransformedDistribution):
     r"""Distribution underlying an injective, monotonic function of a random variable
 
-    Given a random variable :math:`X`; an injective, monotonic function
+    Given a random variable :math:`X`; a strictly increasing function
     :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, the derivative
     :math:`h'(u) = \frac{dh(u)}{du}`, define the distribution underlying
     the random variable :math:`Y = g(X)`.
@@ -5253,7 +5253,6 @@ class IMFTransformedDistribution(TransformedDistribution):
         return False
 
     def _support(self, **params):
-        # Add shortcut for infinite support?
         a, b = self._dist._support(**params)
         return self._g(a), self._g(b)
 
@@ -5296,15 +5295,10 @@ class IMFTransformedDistribution(TransformedDistribution):
 
 def exp(X):
     r"""Natural exponential of a random variable
-
-    Given a random variable :math:`X`, define a random variable
-    :math:`Y = \exp(X)`.
-
     Parameters
     ----------
     X : `ContinuousDistribution`
         The random variable :math:`X`.
-`
     Returns
     -------
     Y : `ContinuousDistribution`
@@ -5320,12 +5314,12 @@ def exp(X):
 
     We wish to have a lognormally distributed random variable :math:`Y`,
     a random variable whose natural logarithm is :math:`X`.
-    If :math:`X` is the natural logarithm of :math:`Y`, then :math:`Y` is
-    the exponential of :math:`X`.
+    If :math:`X` is to be the natural logarithm of :math:`Y`, then we
+    must take :math:`Y` to be the natural exponential of :math:`X`.
 
     >>> Y = stats.exp(X)
 
-    To demonstrate that ``Y`` represents the exponential of ``X``,
+    To demonstrate that ``X`` represents the logarithm of ``Y``,
     we plot a normalized histogram of the logarithm of observations of
     ``Y`` against the PDF underlying ``X``.
 
