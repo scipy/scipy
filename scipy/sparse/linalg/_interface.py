@@ -406,6 +406,8 @@ class LinearOperator:
             raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
 
         try:
+            if self._rmatmat is None:
+                raise TypeError("The rmatmat method is not defined for this LinearOperator.")
             Y = self._rmatmat(X)
         except Exception as e:
             if issparse(X) or is_pydata_spmatrix(X):
