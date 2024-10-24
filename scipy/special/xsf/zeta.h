@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "error.h"
+#include "gamma.h"
 #include "trig.h"
 
 #include "cephes/const.h"
