@@ -20,6 +20,7 @@ namespace detail {
      * summation formula.
      * log(|B2k / (2k)!|) */
     constexpr double zeta_em_log_abs_coeff_lookup[] = {
+	0.0,
 	-2.4849066497880004,
 	-6.579251212010101,
 	-10.31692083029347,
@@ -80,9 +81,9 @@ namespace detail {
 	    result = zeta_em_log_abs_coeff_lookup[n];
 	} else {
 	    // asymptotic formula
-	    result = std::log(2.0) - 2.0*(n + 1)*std::log(2*M_PI);
+	    result = std::log(2.0) - 2.0*n*std::log(2*M_PI);
 	}
-	if (n % 2 == 1) {
+	if (n % 2 == 0) {
 	    /* B_{2n}/(2n)! is negative for even n. This contributes a term
 	     * pi*i when taking the log. */
 	    result += M_PI * J;
@@ -113,19 +114,19 @@ namespace detail {
 	result += b * (0.5 + N / (z - 1.0));
 	std::complex<double> log_poch = std::log(z);
 	std::complex<double> log_factor = std::log(b) - std::log(N);
-	for (std::size_t i = 0; i < m; i++) {
+	for (std::size_t i = 1; i <= m; i++) {
 	    std::complex<double> term = std::exp(zeta_em_log_coeff(i) + log_factor + log_poch);
 	    result += term;
 	    if (std::abs(term)/std::abs(result) <= std::numeric_limits<double>::epsilon()) {
 		return result;
 	    }
-	    log_poch += std::log(z + static_cast<double>(2*i + 1)) + std::log(z + static_cast<double>(2*i + 2));
+	    log_poch += std::log(z + static_cast<double>(2*i - 1)) + std::log(z + static_cast<double>(2*i));
 	    log_factor -= 2*std::log(N);
 	}
 	// Euler-maclaurin absolute error estimate.
 	double error;
 	error = std::abs(std::exp(zeta_em_log_coeff(m) + log_factor + log_poch));
-	error *= std::abs((z + 2.0*m + 1.0)/(z.real() + 2.0*m + 1.0));
+	error *= std::abs((z + 2.0*(m+1) + 1.0)/(z.real() + 2.0*(m+1) + 1.0));
 	// convert to relative error estimate
 	error /= std::abs(result);
 	if (error > 1e-8) {
