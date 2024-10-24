@@ -103,6 +103,7 @@ namespace detail {
 	for (std::size_t i = 1; i < n; i++) {
 	    std::complex<double> term = std::pow(static_cast<double>(i), -z);
 	    result += term;
+	    // When z.real() > 1, series converges and we can consider early termination
 	    if (z.real() > 1 && std::abs(term) / std::abs(result) <= std::numeric_limits<double>::epsilon()) {
 	     	return result;
 	    }
