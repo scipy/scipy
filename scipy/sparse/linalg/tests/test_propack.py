@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.sparse.linalg._svdp import _svdp
-from scipy.sparse import csr_matrix, csc_matrix
+from scipy.sparse import csr_array, csc_array
 
 
 # dtype_flavour to tolerance
@@ -33,7 +33,7 @@ _dtypes = tuple(_dtypes)  # type: ignore[assignment]
 
 def generate_matrix(constructor, n, m, f,
                     dtype=float, rseed=0, **kwargs):
-    """Generate a random sparse matrix"""
+    """Generate a random sparse array"""
     rng = np.random.RandomState(rseed)
     if is_complex_type(dtype):
         M = (- 5 + 10 * rng.rand(n, m)
@@ -74,7 +74,7 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
     assert_orthogonal(vt1.T, vt2.T, rtol=tol, atol=tol)
 
 
-@pytest.mark.parametrize('ctor', (np.array, csr_matrix, csc_matrix))
+@pytest.mark.parametrize('ctor', (np.array, csr_array, csc_array))
 @pytest.mark.parametrize('dtype', _dtypes)
 @pytest.mark.parametrize('irl', (True, False))
 @pytest.mark.parametrize('which', ('LM', 'SM'))

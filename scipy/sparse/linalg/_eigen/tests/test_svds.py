@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
 from scipy.linalg import svd, null_space
-from scipy.sparse import csc_matrix, issparse, spdiags, random
+from scipy.sparse import csc_array, issparse, dia_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg import svds
 from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
@@ -326,7 +326,7 @@ class SVDSCommonTests:
         _, s, _ = svd(A)  # calculate ground truth
 
         # calculate the error as a function of `tol`
-        A = csc_matrix(A)
+        A = csc_array(A)
 
         def err(tol):
             _, s2, _ = svds(A, k=k, v0=np.ones(n), maxiter=1000,
@@ -564,7 +564,7 @@ class SVDSCommonTests:
     @pytest.mark.parametrize('real', (True, False))
     @pytest.mark.parametrize('transpose', (False, True))
     # In gh-14299, it was suggested the `svds` should _not_ work with lists
-    @pytest.mark.parametrize('lo_type', (np.asarray, csc_matrix,
+    @pytest.mark.parametrize('lo_type', (np.asarray, csc_array,
                                          aslinearoperator))
     def test_svd_simple(self, A, k, real, transpose, lo_type):
 
@@ -702,12 +702,12 @@ class SVDSCommonTests:
         rng = np.random.default_rng(0)
         k = 5
         (m, n) = shape
-        S = random(m, n, density=0.1, random_state=rng)
+        S = random_array(shape=(m, n), density=0.1, random_state=rng)
         if dtype is complex:
-            S = + 1j * random(m, n, density=0.1, random_state=rng)
+            S = + 1j * random_array(shape=(m, n), density=0.1, random_state=rng)
         e = np.ones(m)
         e[0:5] *= 1e1 ** np.arange(-5, 0, 1)
-        S = spdiags(e, 0, m, m) @ S
+        S = dia_array((e, 0), shape=(m, m)) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000,
                         random_state=0)
@@ -822,7 +822,7 @@ class SVDSCommonTests:
         assert_allclose(mat @ vh[-dim:, :].T, 0, atol=1e-6, rtol=1e0)
 
         # Smallest singular values should be 0
-        sp_mat = csc_matrix(mat)
+        sp_mat = csc_array(mat)
         su, ss, svh = svds(sp_mat, k=dim, which='SM', solver=self.solver,
                            random_state=0)
         # Smallest dim singular values are 0:
