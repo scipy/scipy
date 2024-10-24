@@ -589,7 +589,7 @@ class TestJacobian(JacobianHessianTest):
         for attr in ['success', 'status', 'df', 'nit', 'nfev']:
             ref[attr] = np.squeeze([[getattr(res00, attr), getattr(res01, attr)],
                                     [getattr(res10, attr), getattr(res11, attr)]])
-            np.testing.assert_allclose(res[attr], ref[attr], rtol=1e-14)
+            np.testing.assert_allclose(res[attr], ref[attr], rtol=1.5e-14)
 
     def test_step_direction_size(self):
         # Check that `step_direction` and `initial_step` can be used to ensure that
