@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "error.h"
+#include "trig.h"
 
 #include "cephes/const.h"
 #include "cephes/zeta.h"
@@ -292,6 +293,13 @@ namespace detail {
 	 * will then be exponentiated, making the choice of a specific branch
 	 * unnecessary.
 	 */
+	std::complex<double> result = std::log(xsf::sinpi(z));
+	// If it doesn't overflow, just do the regular calculation.
+	if (std::isfinite(result.real()) && !std::isfinite(result.imag())) {
+	    return result;
+	}
+	/* Otherwise factor before taking log. This is where we may end up
+	 * taking a branch other than the principal branch. */
 	std::complex<double> J(0.0, 1.0);
 	/* Calculating log((exp(i*pi*z) - exp(-i*pi*z)) / 2i). Factor out term
 	 * with larger magnitude before taking log. */
