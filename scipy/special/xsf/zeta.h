@@ -283,6 +283,15 @@ namespace detail {
 	    return factor1 * factor2;
 	}
 
+    XSF_HOST_DEVICE inline std::complex<double> logsinpi(std::complex<double> z) {
+	// log(sinpi(z)) using sin(z) = (exp(i*pi*z) - exp(-i*pi*z)) / 2i
+	std::complex<double> J(0.0, 1.0);
+	if (z.imag() > 0 ) {
+	    return -z * J * M_PI  + std::log((-1.0 + exppi(2.0 * z * J)) / (2.0*J));
+	}
+	return z * J * M_PI + std::log((1.0 - exppi(-2.0 * z * J)) / (2.0*J));
+    }
+
     /* Reflection formula for zeta function. 
      * zeta(z) = 2^z * pi^(z-1) * sin(pi*z/2) * gamma(1 - z) * zeta(1 - z)
      * Computation is logarithimized to prevent overflow.
@@ -291,14 +300,7 @@ namespace detail {
     XSF_HOST_DEVICE inline std::complex<double> zeta_reflection(std::complex<double> z) {
  	std::complex<double> t1 = z * M_LN2;
 	std::complex<double> t2 = (z - 1.0) * xsf::cephes::detail::LOGPI;
-	std::complex<double> t3;
-	std::complex<double> J(0.0, 1.0);
-	// log(sinpi(z)) using sin(z) = (exp(i*pi*z) - exp(-i*pi*z)) / 2i
-	if (z.imag() > 0 ) {
-	    t3 = -z * J * M_PI / 2.0 + std::log((-1.0 + exppi(z * J)) / (2.0*J));
-	} else {
-	    t3 = z * J * M_PI / 2.0 + std::log((1.0 - exppi(-z * J)) / (2.0*J));
-	}
+	std::complex<double> t3 = logsinpi(z / 2.0);
 	std::complex<double> t4 = xsf::loggamma(1.0 - z);
 	std::complex<double> factor = std::exp(t1 + t2 + t3 + t4);
 	std::complex<double> result = zeta_right_halfplane(1.0 - z);
