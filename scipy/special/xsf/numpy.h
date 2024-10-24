@@ -176,6 +176,8 @@ namespace numpy {
     using ld_d = double (*)(long int, double);
     using lF_F = cfloat (*)(long int, cfloat);
     using lD_D = cdouble (*)(long int, cdouble);
+    using Dd_D = cdouble (*) (cdouble, double);
+    using Ff_F = cfloat (*) (cfloat, float);
 
     // autodiff, 2 inputs, 1 output
     using autodiff0_if_f = autodiff0_float (*)(int, autodiff0_float);
