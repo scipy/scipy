@@ -105,7 +105,7 @@ def test_riemann_zeta_avoid_overflow():
         #     reference = complex(mp.zeta(t))
         #     cases.append((complex(t), reference, 1e-7))
 
-        ## Some other points near real axis
+        # # Some other points near real axis
         # x = np.array([-0.5, 0, 0.2, 0.75])
         # y = np.array([1e-15, -1e-15])
         # x, y = np.meshgrid(x, y)

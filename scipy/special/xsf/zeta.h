@@ -182,10 +182,10 @@ namespace detail {
      * coeffs = []
      * S = mp.zero
      * for i in range(n + 1):
-     * num = math.factorial(n + i - 1) * 4**i
-     * den = math.factorial(n - i) * math.factorial(2*i)
-     * S += mp.mpf(num) / mp.mpf(den)
-     * coeffs.append(S*n)
+     *     num = math.factorial(n + i - 1) * 4**i
+     *     den = math.factorial(n - i) * math.factorial(2*i)
+     *     S += mp.mpf(num) / mp.mpf(den)
+     *     coeffs.append(S*n)
      *
      * dn = coeffs[-1]
      * coeffs = [float(dk/dn) for dk in coeffs[:-1]]
