@@ -53,7 +53,7 @@ def test_riemann_zeta_avoid_overflow():
 
 # Some of the test cases below fail for intel compilers
 cpp_compiler = scipy.__config__.CONFIG["Compilers"]["c++"]["name"]
-using_intel_compiler = cpp_compiler == "intel-cl"
+using_intel_compiler = cpp_compiler in ["intel", "intel-cl"]
 
 @pytest.mark.parametrize(
     "z, desired, rtol",
