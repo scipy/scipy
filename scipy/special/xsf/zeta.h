@@ -156,7 +156,7 @@ namespace detail {
 	    log_factor -= 2*std::log(N);
 	}
 	/* Euler-maclaurin absolute error estimate.
-	 * The error is bounded above by |(z + 2m + 1)/(z.real + 2m + 1)|*T(m+1, n)
+	 * The error is bounded above by |(z + 2m + 1)/(z.real + 2m + 1) * T(m+1, n)|
 	 * See https://en.wikipedia.org/wiki/Riemann_zeta_function#Numerical_algorithms
 	 */
 	double error;
