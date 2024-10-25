@@ -18,7 +18,8 @@ TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
     2: "`xtol` termination condition is satisfied.",
-    3: "`callback` function requested termination."
+    3: "`callback` function requested termination.",
+    4: "Constraint violation exceeds 'gtol'"
 }
 
 
@@ -292,13 +293,14 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Total execution time.
     message : str
         Termination message.
-    status : {0, 1, 2, 3}
+    status : {0, 1, 2, 3, 4}
         Termination status:
 
         * 0 : The maximum number of function evaluations is exceeded.
         * 1 : `gtol` termination condition is satisfied.
         * 2 : `xtol` termination condition is satisfied.
         * 3 : `callback` function requested termination.
+        * 4 : Constraint violation exceeds 'gtol'.
 
     cg_stop_cond : int
         Reason for CG subproblem termination at the last iteration:
@@ -539,6 +541,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             initial_barrier_tolerance,
             initial_constr_penalty, initial_tr_radius,
             factorization_method, finite_diff_bounds)
+
+    # Status 4 occurs when minimize is successful but constraints are not satisfied.
+    if result.status in (1, 2) and state.constr_violation > gtol:
+        result.status = 4
 
     # Status 3 occurs when the callback function requests termination,
     # this is assumed to not be a success.
