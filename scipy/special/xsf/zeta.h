@@ -148,7 +148,7 @@ namespace detail {
 	}
 	// Euler-maclaurin absolute error estimate.
 	double error;
-	error = std::abs(std::exp(zeta_em_log_coeff(m) + log_factor + log_poch));
+	error = std::abs(std::exp(zeta_em_log_coeff(m + 1) + log_factor + log_poch));
 	error *= std::abs((z + 2.0*(m+1) + 1.0)/(z.real() + 2.0*(m+1) + 1.0));
 	// convert to relative error estimate
 	error /= std::abs(result);
