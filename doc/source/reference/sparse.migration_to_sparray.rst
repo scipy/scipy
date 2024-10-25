@@ -58,7 +58,7 @@ Recommended steps for migration
 
    -  In your spmatrix code, change ``*`` to ``@`` for matrix
       multiplication. Note that scalar multiplication with sparse should
-      use ``*``.
+      use ``*``. (See helper-code :ref:`sparse-migration-star-vs-at` below)
    -  Matrix powers, e.g. ``M**3``, should be converted to
       ``scipy.sparse.linalg.matrix_power(A, 3)``
    -  Implement alternatives to unsupported functions/methods like
@@ -69,11 +69,14 @@ Recommended steps for migration
       and ``isspmatrix_csr(G)`` with ``issparse(G) and G.format == "csr"``.
       Moreover ``isspmatrix_csr(G) or isspmatrix_csc(G)`` becomes
       ``issparse(G) and G.format in ['csr', 'csc']``.
+      The git search idiom ``git grep 'isspm[a-z_]*('`` should be helpful.
    -  Convert all ``spdiags`` calls to ``dia_matrix``.
       See docs in :func:`spdiags<scipy.sparse.spdiags>`.
+      A search for ``spdiags`` is all you need here.
    -  Run all your tests on the resulting code. You are still using
       spmatrix, not sparray. But your code and tests are prepared for
-      the change.
+      the change and you should be able to take sparrays as input to your
+      code and have them mostly "just work".
 
 -  Second pass (switching to sparray):
 
@@ -82,6 +85,12 @@ Recommended steps for migration
    -  Check all functions/methods for which migration causes 1D return
       values. These are mostly indexing and the reduction functions
       (see :ref:`sparse-migration-shapes-reductions` below).
+   -  If you use sparse libraries that only accept ``int32`` index arrays
+      for sparse representations, you may need to convert the index arrays
+      to ``int32`` just before calling the library. ``sparray`` tries
+      to select index dtype based in input dtype instead of dtype-by-value.
+      Using just-in-time conversion is a good approach to index dtype issues.
+      Convert to ``int32`` just before you call the code that requires ``int32``
    -  Check all places where you iterate over spmatrices and change them
       to account for the sparrays yielding 1D sparrays rather than 2D spmatrices.
    -  Find and change places where your code makes use of ``np.matrix``
@@ -103,7 +112,18 @@ Their signatures are::
    def block_array(blocks, format=None, dtype=None):
    def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None):
    def eye_array(m, n=None, *, k=0, dtype=float, format=None):
-   def random_array(m, n, density=0.01, format='coo', dtype=None, random_state=None, data_random_state=None):
+   def random_array(shape, density=0.01, format='coo', dtype=None, random_state=None, data_random_state=None):
+
+The ``random_array`` function has a ``shape`` (2-tuple) arg rather than
+two integers. And the ``random_state`` arg defaults to NumPy's new ``default_rng()``.
+This differs from the spmatrix ``rand`` and ``random`` which default to
+the global RandomState instance. If you don't care much about these things,
+leaving it as the default should work fine.  If you care about seeding your
+random numbers, you should probably add a ``random_state=...`` keyword argument
+to this call when you switch functions. In summary, to migrate to ``random_array``
+change the function name, switch the shape argument to a single tuple argument,
+leave any other parameters as before, and think about what
+sort of ``random_state=`` argument should be used, if any.
 
 Existing functions that need careful migration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -131,17 +151,17 @@ to a sparse array to get sparse arrays out.
 Functions that changed names for the migration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   =========  =============
-   Function    New function
-   =========  =============
+   =========  =============  ==================================
+   Function    New function   Comments
+   =========  =============  ==================================
    eye         eye_array
    identity    eye_array
-   diags       diags_array
-   spdiags     dia_array
+   diags       diags_array    keyword-only input
+   spdiags     dia_array      shape as 2-tuple
    bmat        block
-   rand        random_array
-   random      random_array
-   =========  =============
+   rand        random_array   shape as 2-tuple and default_rng
+   random      random_array   shape as 2-tuple and default_rng
+   =========  =============  ==================================
 
 .. _sparse-migration-shapes-reductions:
 
@@ -242,6 +262,94 @@ Removed methods and attributes
    function works for any axis of COO format using ``A.coords[axis]``
    in place of ``A.indices``.
 
+.. _sparse-migration-star-vs-at:
+
+Use tests to find * and ** spots
+--------------------------------
+
+-  It can be tricky to distinguish scalar multiplication ``*`` from
+   matrix multiplciation ``*`` as you migrate your code. Python solved
+   this, in theory, by introducing the matrix multiplication operator
+   ``@``. ``*`` is used for scalar multiplication while ``@`` for matrix
+   multiplication. But converting expressions that use ``*`` for both
+   can be tricky and cause eye strain. Luckily, if your code has a
+   test suite that covers the expressions you need to convert, you
+   can use it to find places where ``*`` is being used for matrix
+   multiplication involving sparse matrices. Change those to ``@``.
+
+   The approach monkey-patches the spmatrix class dunder methods
+   to raise an exception when ``*`` is used for matrix multiplication
+   (and not raise for scalar multiplication). The test suite will
+   flag a failure at these locations. And a test failure is a success
+   here because it shows where to make changes. Change the offending
+   ``*`` to ``@``, look nearby for other similar changes, and run the
+   tests again. Similarly, this approach helps find where ``**`` is
+   used for matrix power. SciPy raises an exception when ``@`` is
+   used with for scalar multiplication, so that will catch places where
+   you change when you shouldn't have. So the test suite with this
+   monkey-patch checks the corrections too.
+
+   Add the following code to your ``conftest.py`` file near the top.
+   Then run your tests locally. If there are many matrix expressions,
+   you might want to test one section of your codebase at a time.
+   A quick read of the code shows that it raises a ``ValueError`` whenever
+   ``*`` is used between two matrix-like objects (sparse or dense),
+   and whenever ``**`` is used for matrix power.
+
+   .. code-block:: python
+
+        import scipy
+
+
+        class _strict_mul_mixin:
+            def __mul__(self, other):
+                if not scipy.sparse._sputils.isscalarlike(other):
+                    raise ValueError('Operator * used here! Change to @?')
+                return super().__mul__(other)
+
+            def __rmul__(self, other):
+                if not scipy.sparse._sputils.isscalarlike(other):
+                    raise ValueError('Operator * used here! Change to @?')
+                return super().__rmul__(other)
+
+            def __imul__(self, other):
+                if not scipy.sparse._sputils.isscalarlike(other):
+                    raise ValueError('Operator * used here! Change to @?')
+                return super().__imul__(other)
+
+            def __pow__(self, *args, **kwargs):
+                raise ValueError('spmatrix ** found! Use linalg.matrix_power?')
+
+        class _strict_coo_matrix(_strict_mul_mixin, scipy.sparse.coo_matrix):
+            pass
+
+        class _strict_bsr_matrix(_strict_mul_mixin, scipy.sparse.bsr_matrix):
+            pass
+
+        class _strict_csr_matrix(_strict_mul_mixin, scipy.sparse.csr_matrix):
+            pass
+
+        class _strict_csc_matrix(_strict_mul_mixin, scipy.sparse.csc_matrix):
+            pass
+
+        class _strict_dok_matrix(_strict_mul_mixin, scipy.sparse.dok_matrix):
+            pass
+
+        class _strict_lil_matrix(_strict_mul_mixin, scipy.sparse.lil_matrix):
+            pass
+
+        class _strict_dia_matrix(_strict_mul_mixin, scipy.sparse.dia_matrix):
+            pass
+
+        scipy.sparse.coo_matrix = scipy.sparse._coo.coo_matrix = _strict_coo_matrix
+        scipy.sparse.bsr_matrix = scipy.sparse._bsr.bsr_matrix = _strict_bsr_matrix
+        scipy.sparse.csr_matrix = scipy.sparse._csr.csr_matrix = _strict_csr_matrix
+        scipy.sparse.csc_matrix = scipy.sparse._csc.csc_matrix = _strict_csc_matrix
+        scipy.sparse.dok_matrix = scipy.sparse._dok.dok_matrix = _strict_dok_matrix
+        scipy.sparse.lil_matrix = scipy.sparse._lil.lil_matrix = _strict_lil_matrix
+        scipy.sparse.dia_matrix = scipy.sparse._dia.dia_matrix = _strict_dia_matrix
+
+
 Other
 -----
 
@@ -250,6 +358,9 @@ Other
    dtype by only checking the index arrays dtype, while sparse matrices check the
    index values too and may downcast to int32
    (see `gh-18509 <https://github.com/scipy/scipy/pull/18509>`__ for more details).
+
+   This means you may get int64 indexing when you used to get int32.
+   You recast manually if you need to, e.g. ``A.indices = A.indices.astype('int32')``
 
 -  Binary operations with operators ``+, -, *, /, @, !=, >`` and sparse and/or
    dense operands:
