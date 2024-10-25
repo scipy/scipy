@@ -633,7 +633,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
 
         self._num_inf = self._xp.sum(
             self._xp.astype(self._double_inf_pos | self._semi_inf_pos, self._xp.int64),
-        )
+        ).__int__()
 
     @property
     def transformed_limits(self):
