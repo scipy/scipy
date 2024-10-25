@@ -135,18 +135,30 @@ namespace detail {
 	double N = static_cast<double>(n);
 	std::complex<double> b = std::pow(n, -z);
 	result += b * (0.5 + N / (z - 1.0));
+	/* The terms of the Euler-Maclaurin
+	 * expansion below are T(k, n) = B2k/(2k)! * n^(1 -z - 2k) * z(z+1)...(z+2k-2).
+	 * We work with logarithms to avoid overflow in all cases at the expense of
+	 * some accuracy. At the start of iteration k:
+	 *     log_poch will equal log(z(z+1)...(z+2k-2))
+	 *     log_factor will equal log(n^(1 - z - 2k))
+	 * These are updated one extra time after the loop completes for use in the
+	 * Euler-Maclaurin error estimate.
+	 */
 	std::complex<double> log_poch = std::log(z);
-	std::complex<double> log_factor = std::log(b) - std::log(N);
-	for (std::size_t i = 1; i <= m; i++) {
-	    std::complex<double> term = std::exp(zeta_em_log_coeff(i) + log_factor + log_poch);
+	std::complex<double> log_factor = -(z + 1.0) * std::log(N);
+	for (std::size_t k = 1; k <= m; k++) {
+	    std::complex<double> term = std::exp(zeta_em_log_coeff(k) + log_factor + log_poch);
 	    result += term;
 	    if (std::abs(term)/std::abs(result) <= std::numeric_limits<double>::epsilon()) {
 		return result;
 	    }
-	    log_poch += std::log(z + static_cast<double>(2*i - 1)) + std::log(z + static_cast<double>(2*i));
+	    log_poch += std::log(z + static_cast<double>(2*k - 1)) + std::log(z + static_cast<double>(2*k));
 	    log_factor -= 2*std::log(N);
 	}
-	// Euler-maclaurin absolute error estimate.
+	/* Euler-maclaurin absolute error estimate.
+	 * The error is bounded above by |(z + 2m + 1)/(z.real + 2m + 1)|*T(m+1, n)
+	 * See https://en.wikipedia.org/wiki/Riemann_zeta_function#Numerical_algorithms
+	 */
 	double error;
 	error = std::abs(std::exp(zeta_em_log_coeff(m + 1) + log_factor + log_poch));
 	error *= std::abs((z + 2.0*m + 1.0)/(z.real() + 2.0*m + 1.0));
