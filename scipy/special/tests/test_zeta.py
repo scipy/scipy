@@ -135,7 +135,17 @@ def test_riemann_zeta_avoid_overflow():
         #     reference = complex(mp.zeta(t))
         #     rtol = 1e-7 if t.real == 0.5 else default_rtol
         #     cases.append((complex(t), reference, rtol))
-
+        #
+        # # Naive implementation of reflection formula suffers internal overflow
+        # x = -rng.uniform(200, 300, 3)
+        # y = np.array([rng.uniform(10, 30), -rng.uniform(10, 30)])
+        # x, y = np.meshgrid(x, y)
+        # x, y = x.ravel(), y.ravel()
+        # z = x + y*1j
+        # for t in z:
+        #     reference = complex(mp.zeta(t))
+        #     cases.append((complex(t), reference, default_rtol))
+        #
         # A small point in each quadrant outside of the critical strip
         ((3.12838509346655+7.111085974836645j),
          (1.0192654793474945+0.08795174413289127j),
@@ -244,7 +254,22 @@ def test_riemann_zeta_avoid_overflow():
          1e-13),
         ((50.55805244181687-1e6j),
          (1.0000000000000002-5.736517078070873e-16j),
-         1e-13)
+         1e-13),
+        # Naive implementation of reflection formula suffers internal overflow
+        ((-217.40285743524163+13.992648136816397j),
+         (-6.012818500554211e+249-1.926943776932387e+250j),
+         1e-13),
+        ((-237.71710702931668+13.992648136816397j),
+         (-8.823803086106129e+281-5.009074181335139e+281j),
+         1e-13),
+        ((-294.86605461349745+13.992648136816397j), (-np.inf+np.inf*1j), 1e-13),
+        ((-217.40285743524163-16.147667799398363j),
+         (-5.111612904844256e+251-4.907132127666742e+250j),
+         1e-13),
+        ((-237.71710702931668-16.147667799398363j),
+         (-1.3256112779883167e+283-2.253002003455494e+283j),
+         5e-13),
+        ((-294.86605461349745-16.147667799398363j), (np.inf-np.inf*1j), 1e-13),
     ]
 )
 def test_riemann_zeta_complex(z, desired, rtol):
