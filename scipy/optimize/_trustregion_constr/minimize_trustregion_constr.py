@@ -19,7 +19,7 @@ TERMINATION_MESSAGES = {
     1: "`gtol` termination condition is satisfied.",
     2: "`xtol` termination condition is satisfied.",
     3: "`callback` function requested termination.",
-    4: "Constraints are not satisfied."
+    4: "Constraint violation exceeds 'gtol'"
 }
 
 
@@ -300,7 +300,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         * 1 : `gtol` termination condition is satisfied.
         * 2 : `xtol` termination condition is satisfied.
         * 3 : `callback` function requested termination.
-        * 4 : Constraints are not satisfied.
+        * 4 : Constraint violation exceeds 'gtol'.
 
     cg_stop_cond : int
         Reason for CG subproblem termination at the last iteration:
