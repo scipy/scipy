@@ -216,7 +216,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_sinpi", _sinpi);
 
     PyObject *_zeta = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ff_f>(xsf::zeta), static_cast<xsf::numpy::dd_d>(xsf::zeta)}, "_zeta", _zeta_doc);
+	{static_cast<xsf::numpy::ff_f>(xsf::zeta), static_cast<xsf::numpy::Ff_F>(xsf::zeta),
+	 static_cast<xsf::numpy::dd_d>(xsf::zeta), static_cast<xsf::numpy::Dd_D>(xsf::zeta)}, "_zeta", _zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_zeta", _zeta);
 
     PyObject *airy =
@@ -847,7 +848,9 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
 
     PyObject *_riemann_zeta = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::f_f>(xsf::riemann_zeta)},
+	 {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::D_D>(xsf::riemann_zeta),
+	 static_cast<xsf::numpy::f_f>(xsf::riemann_zeta), static_cast<xsf::numpy::F_F>(xsf::riemann_zeta)
+	},
         "_riemann_zeta", _riemann_zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_riemann_zeta", _riemann_zeta);
 
