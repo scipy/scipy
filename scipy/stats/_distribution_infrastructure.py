@@ -5322,6 +5322,7 @@ class IMFTransformedDistribution(TransformedDistribution):
 
 def exp(X):
     r"""Natural exponential of a random variable
+
     Parameters
     ----------
     X : `ContinuousDistribution`
