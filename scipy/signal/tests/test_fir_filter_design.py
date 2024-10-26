@@ -672,18 +672,18 @@ class TestFwind1:
         hsize = (51, 51)
         window = (("kaiser", 8.0), ("kaiser", 8.0))
         fc = 0.4
-        taps_kaiser = fwind1(hsize, window, fc)
+        taps_kaiser = fwind1(hsize, window, fc=fc)
         assert taps_kaiser.shape == (51, 51)
 
         window = ("hamming", "hamming")
-        taps_hamming = fwind1(hsize, window, fc)
+        taps_hamming = fwind1(hsize, window, fc=fc)
         assert taps_hamming.shape == (51, 51)
 
     def test_impulse_response(self):
         hsize = (31, 31)
         window = ("hamming", "hamming")
         fc = 0.4
-        taps = fwind1(hsize, window, fc)
+        taps = fwind1(hsize, window, fc=fc)
 
         impulse = np.zeros((63, 63))
         impulse[31, 31] = 1
@@ -697,7 +697,7 @@ class TestFwind1:
         hsize = (31, 31)
         window = ("hamming", "hamming")
         fc = 0.4
-        taps = fwind1(hsize, window, fc)
+        taps = fwind1(hsize, window, fc=fc)
 
         freq_response = fftshift(fft2(taps))
 
@@ -711,7 +711,7 @@ class TestFwind1:
         hsize = (51, 51)
         window = ("hamming", "hamming")
         fc = 0.4
-        taps = fwind1(hsize, window, fc)
+        taps = fwind1(hsize, window, fc=fc)
         xp_assert_close(taps, np.flip(taps), rtol=1e-5)
 
     def test_circular_symmetry(self):

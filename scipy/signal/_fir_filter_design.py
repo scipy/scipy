@@ -1341,7 +1341,7 @@ def fwind1(hsize, window, *, fc=None, fs=2, circular=False):
     >>> hsize = (5, 5)
     >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
     >>> fc = 0.1
-    >>> filter_2d = fwind1(hsize, window)
+    >>> filter_2d = fwind1(hsize, window, fc=fc)
     >>> filter_2d
     array([[0.00025366, 0.00401662, 0.00738617, 0.00401662, 0.00025366],
            [0.00401662, 0.06360159, 0.11695714, 0.06360159, 0.00401662],
@@ -1351,7 +1351,7 @@ def fwind1(hsize, window, *, fc=None, fs=2, circular=False):
 
     Generate a circularly symmetric 5x5 low-pass filter with Hamming window.
 
-    >>> filter_2d = fwind1((5, 5), 'hamming', fc, circular=True)
+    >>> filter_2d = fwind1((5, 5), 'hamming', fc=fc, circular=True)
     >>> filter_2d
     array([[-0.00020354, -0.00020354, -0.00020354, -0.00020354, -0.00020354],
            [-0.00020354,  0.01506844,  0.09907658,  0.01506844, -0.00020354],
@@ -1365,7 +1365,7 @@ def fwind1(hsize, window, *, fc=None, fs=2, circular=False):
     >>> hsize, fc = (50, 50), 0.05
     >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
     >>> filter0_2d = fwind1(hsize, window)
-    >>> filter1_2d = fwind1((50, 50), 'hamming', fc, circular=True)
+    >>> filter1_2d = fwind1((50, 50), 'hamming', fc=fc, circular=True)
     ...
     >>> fg, (ax0, ax1) = plt.subplots(1, 2, tight_layout=True, figsize=(6.5, 3.5))
     >>> ax0.set_title("Product of 2 Windows")
