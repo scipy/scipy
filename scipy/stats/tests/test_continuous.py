@@ -16,7 +16,8 @@ from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
     _generate_domain_support)
-from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
+from scipy.stats._new_distributions import (StandardNormal, Normal, _LogUniform,
+                                            _Uniform, _Gamma)
 
 class Test_RealDomain:
     rng = np.random.default_rng(349849812549824)
@@ -998,7 +999,7 @@ class TestTransforms:
             #                 dist0.sample(x_result_shape, rng=rng0) * scale + loc)
             # Should also try to test fit, plot?
 
-    def test_imf_transform(self):
+    def test_exp(self):
         rng = np.random.default_rng(81345982345826)
         mu = rng.random((3, 1))
         sigma = rng.random((3, 1))
@@ -1032,6 +1033,36 @@ class TestTransforms:
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
 
+    def test_reciprocal(self):
+        rng = np.random.default_rng(81345982345826)
+        a = rng.random((3, 1))
+
+        X = _Gamma(a=a)
+        Y0 = stats.invgamma(a)
+        Y = 1 / X
+        assert_allclose(Y.entropy(), Y0.entropy())
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        # moments are not finite
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        with np.errstate(invalid='ignore'):
+            assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+            assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), 1/(X.sample(rng=seed)))
 
 class TestFullCoverage:
     # Adds tests just to get to 100% test coverage; this way it's more obvious

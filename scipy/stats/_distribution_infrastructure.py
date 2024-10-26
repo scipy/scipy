@@ -1831,13 +1831,14 @@ class ContinuousDistribution:
         return self.__add__(other)
 
     def __rsub__(self, other):
-        return self.__add__(other)
+        return self.__neg__().__add__(other)
 
     def __rmul__(self, other):
-        return self.__add__(other)
+        return self.__mul__(other)
 
     def __rtruediv__(self, other):
-        return self.__add__(other)
+        return IMFTransformedDistribution(self, g=lambda u: 1 / u, h=lambda u: 1 / u,
+                                          dh=lambda u: 1 / u ** 2, increasing=False)
 
     def __neg__(self):
         return self * -1
@@ -5219,12 +5220,12 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
 
 class IMFTransformedDistribution(TransformedDistribution):
-    r"""Distribution underlying an injective, monotonic function of a random variable
+    r"""Distribution underlying a strictly monotonic function of a random variable
 
-    Given a random variable :math:`X`; a strictly increasing function
-    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, the derivative
-    :math:`h'(u) = \frac{dh(u)}{du}`, define the distribution underlying
-    the random variable :math:`Y = g(X)`.
+    Given a random variable :math:`X`; a strictly monotonic function
+    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, and the derivative magnitude
+    :math: `|h'(u)| = \left| \frac{dh(u)}{du} \right|`, define the distribution
+    underlying the random variable :math:`Y = g(X)`.
 
     Parameters
     ----------
@@ -5232,21 +5233,43 @@ class IMFTransformedDistribution(TransformedDistribution):
         The random variable :math:`X`.
     g, h, dh : callable
         Elementwise functions representing the mathematical functions
-        :math:`g(u)`, :math:`h(u)`, and :math:`h'(u)`
+        :math:`g(u)`, :math:`h(u)`, and :math:`|h'(u)|`
     logdh : callable, optional
         Elementwise function representing :math:`\log(h'(u))`.
         The default is ``lambda u: np.log(dh(u))``, but providing
         a custom implementation may avoid over/underflow.
+    increasing : bool, optional
+        Whether the function is strictly increasing (True, default)
+        or strictly decreasing (False).
 
     """
 
-    def __init__(self, dist, *args, g, h, dh, logdh=None, **kwargs):
+    def __init__(self, dist, *args, g, h, dh, logdh=None, increasing=True, **kwargs):
         super().__init__(dist, *args, **kwargs)
         self._g = g
         self._h = h
         self._dh = dh
         self._logdh = (logdh if logdh is not None
                        else lambda u: np.log(dh(u)))
+        if increasing:
+            self._xdf = self._dist._cdf_dispatch
+            self._cxdf = self._dist._ccdf_dispatch
+            self._ixdf = self._dist._icdf_dispatch
+            self._icxdf = self._dist._iccdf_dispatch
+            self._logxdf = self._dist._logcdf_dispatch
+            self._logcxdf = self._dist._logccdf_dispatch
+            self._ilogxdf = self._dist._ilogcdf_dispatch
+            self._ilogcxdf = self._dist._ilogccdf_dispatch
+        else:
+            self._xdf = self._dist._ccdf_dispatch
+            self._cxdf = self._dist._cdf_dispatch
+            self._ixdf = self._dist._iccdf_dispatch
+            self._icxdf = self._dist._icdf_dispatch
+            self._logxdf = self._dist._logccdf_dispatch
+            self._logcxdf = self._dist._logcdf_dispatch
+            self._ilogxdf = self._dist._ilogccdf_dispatch
+            self._ilogcxdf = self._dist._ilogcdf_dispatch
+        self._increasing = increasing
 
     def _overrides(self, method_name):
         # Do not use the generic overrides of TransformedDistribution
@@ -5254,7 +5277,11 @@ class IMFTransformedDistribution(TransformedDistribution):
 
     def _support(self, **params):
         a, b = self._dist._support(**params)
-        return self._g(a), self._g(b)
+        with np.errstate(divide='ignore'):
+            if self._increasing:
+                return self._g(a), self._g(b)
+            else:
+                return self._g(b), self._g(a)
 
     def _logpdf_dispatch(self, x, *args, **params):
         return self._dist._logpdf_dispatch(self._h(x), *args, **params) + self._logdh(x)
@@ -5263,28 +5290,28 @@ class IMFTransformedDistribution(TransformedDistribution):
         return self._dist._pdf_dispatch(self._h(x), *args, **params) * self._dh(x)
 
     def _logcdf_dispatch(self, x, *args, **params):
-        return self._dist._logcdf_dispatch(self._h(x), *args, **params)
+        return self._logxdf(self._h(x), *args, **params)
 
     def _cdf_dispatch(self, x, *args, **params):
-        return self._dist._cdf_dispatch(self._h(x), *args, **params)
+        return self._xdf(self._h(x), *args, **params)
 
     def _logccdf_dispatch(self, x, *args, **params):
-        return self._dist._logccdf_dispatch(self._h(x), *args, **params)
+        return self._logcxdf(self._h(x), *args, **params)
 
     def _ccdf_dispatch(self, x, *args, **params):
-        return self._dist._ccdf_dispatch(self._h(x), *args, **params)
+        return self._cxdf(self._h(x), *args, **params)
 
     def _ilogcdf_dispatch(self, p, *args, **params):
-        return self._g(self._dist._ilogcdf_dispatch(p, *args, **params))
+        return self._g(self._ilogxdf(p, *args, **params))
 
     def _icdf_dispatch(self, p, *args, **params):
-        return self._g(self._dist._icdf_dispatch(p, *args, **params))
+        return self._g(self._ixdf(p, *args, **params))
 
     def _ilogccdf_dispatch(self, p, *args, **params):
-        return self._g(self._dist._ilogccdf_dispatch(p, *args, **params))
+        return self._g(self._ilogcxdf(p, *args, **params))
 
     def _iccdf_dispatch(self, p, *args, **params):
-        return self._g(self._dist._iccdf_dispatch(p, *args, **params))
+        return self._g(self._icxdf(p, *args, **params))
 
     def _sample_dispatch(self, sample_shape, full_shape, *,
                          method, rng, **params):
