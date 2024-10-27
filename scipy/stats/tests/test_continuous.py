@@ -1017,6 +1017,28 @@ class TestTransforms:
             #                 dist0.sample(x_result_shape, rng=rng0) * scale + loc)
             # Should also try to test fit, plot?
 
+    def test_arithmetic_operators(self):
+        rng = np.random.default_rng(2348923495832349834)
+
+        a, b, loc, scale = 0.294, 1.34, 0.57, 1.16
+
+        x = rng.uniform(-3, 3, 100)
+        Y = _LogUniform(a=a, b=b)
+
+        X = scale*Y + loc
+        assert_allclose(X.cdf(x), Y.cdf((x - loc) / scale))
+        X = loc + Y*scale
+        assert_allclose(X.cdf(x), Y.cdf((x - loc) / scale))
+
+        X = Y/scale - loc
+        assert_allclose(X.cdf(x), Y.cdf((x + loc) * scale))
+        X = loc -_LogUniform(a=a, b=b)/scale
+        assert_allclose(X.cdf(x), Y.ccdf((-x + loc)*scale))
+
+        message = "Division by a random variable is not yet implemented."
+        with pytest.raises(NotImplementedError, match=message):
+            1 / Y
+
 
 class TestFullCoverage:
     # Adds tests just to get to 100% test coverage; this way it's more obvious
