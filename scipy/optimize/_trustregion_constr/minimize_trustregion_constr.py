@@ -303,7 +303,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         * 4 : Constraint violation exceeds 'gtol'.
 
         .. versionchanged:: 1.15.0
-            If the constraint violation exceeds gtol, then `result.success`
+            If the constraint violation exceeds `gtol`, then ``result.success``
             will now be False.
 
     cg_stop_cond : int
