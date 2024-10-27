@@ -3602,6 +3602,13 @@ class Mixture(_ProbabilityDistribution):
         The corresponding probabilities of selecting each random variable.
         Must be non-negative and sum to one.
 
+    Attributes
+    ----------
+    components : sequence of `ContinuousDistribution`
+        The underlying instances of `ContinuousDistribution`.
+    weights : ndarray
+        The corresponding probabilities of selecting each random variable.
+
     Methods
     -------
     support
@@ -3662,7 +3669,7 @@ class Mixture(_ProbabilityDistribution):
             raise ValueError(message)
 
         for var in components:
-            # will generalize to other kinds of distributoins when there
+            # will generalize to other kinds of distributions when there
             # *are* other kinds of distributions
             if not isinstance(var, ContinuousDistribution):
                 message = ("Each element of `components` must be an instance of "
@@ -3692,14 +3699,24 @@ class Mixture(_ProbabilityDistribution):
             message = "All `weights` must be non-negative."
             raise ValueError(message)
 
-    def __init__(self, components, /, *, weights=None):
-        self._input_validation(components, weights)
+        return components, weights
+
+    def __init__(self, components, *, weights=None):
+        components, weights = self._input_validation(components, weights)
         n = len(components)
         dtype = np.result_type(*(var._dtype for var in components))
         self._shape = np.broadcast_shapes(*(var._shape for var in components))
         self._dtype, self._components = dtype, components
         self._weights = np.full(n, 1/n, dtype=dtype) if weights is None else weights
         self.validation_policy = None  # needed for
+
+    @property
+    def components(self):
+        return list(self._components)
+
+    @property
+    def weights(self):
+        return self._weights.copy()
 
     def _full(self, val, *args):
         args = [np.asarray(arg) for arg in args]
@@ -3751,7 +3768,7 @@ class Mixture(_ProbabilityDistribution):
     def mode(self, *, method=None):
         self._raise_if_method(method)
         a, b = self.support()
-        f = lambda x: -self.pdf(x)  # noqa: E731 is silly
+        def f(x): return -self.pdf(x)
         res = _bracket_minimum(f, 1., xmin=a, xmax=b)
         res = _chandrupatla_minimize(f, res.xl, res.xm, res.xr)
         return res.x

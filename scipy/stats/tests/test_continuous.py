@@ -1147,3 +1147,20 @@ class TestMixture:
         y = X.sample(shape, rng=rng)
         assert y.shape == shape
         assert stats.ks_1samp(y.ravel(), X.cdf).pvalue > 0.05
+
+    def test_properties(self):
+        components = [Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)]
+        weights = (0.4, 0.6)
+        X = Mixture(components, weights=weights)
+
+        # Replacing properties doesn't work
+        with pytest.raises(AttributeError, match="...'Mixture' object has no setter"):
+            X.components = 10
+        with pytest.raises(AttributeError, match="...'Mixture' object has no setter"):
+            X.weights = 10
+
+        # Mutation doesn't work
+        X.components[0] = components[1]
+        assert X.components[0] == components[0]
+        X.weights[0] = weights[1]
+        assert X.weights[0] == weights[0]
