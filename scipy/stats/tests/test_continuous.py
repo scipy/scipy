@@ -1102,6 +1102,8 @@ class TestFullCoverage:
         X = _Uniform(a=0, b=1)
         assert str(X) == "_Uniform(a=0.0, b=1.0)"
 
+        assert str(X*3 + 2) == "ShiftedScaled_Uniform(a=0.0, b=1.0, loc=2.0, scale=3.0)"
+
         X = _Uniform(a=np.zeros(4), b=1)
         assert str(X) == "_Uniform(a, b, shape=(4,))"
 

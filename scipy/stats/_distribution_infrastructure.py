@@ -5015,7 +5015,7 @@ class TransformedDistribution(ContinuousDistribution):
 
     def __repr__(self):
         s = super().__repr__()
-        return s.replace(self.__class__.__name__,
+        return s.replace("Distribution",
                          self._dist.__class__.__name__)
 
 
