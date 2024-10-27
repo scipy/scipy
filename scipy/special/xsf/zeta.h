@@ -136,7 +136,7 @@ namespace detail {
 	std::complex<double> b = std::pow(n, -z);
 	result += b * (0.5 + N / (z - 1.0));
 	/* The terms of the Euler-Maclaurin
-	 * expansion below are T(k, n) = B2k/(2k)! * n^(1 -z - 2k) * z(z+1)...(z+2k-2).
+	 * expansion below are T(k, n) = B2k/(2k)! * n^(1 - z - 2k) * z(z+1)...(z+2k-2).
 	 * We work with logarithms to avoid overflow in all cases at the expense of
 	 * some accuracy. At the start of iteration k:
 	 *     log_poch will equal log(z(z+1)...(z+2k-2))
