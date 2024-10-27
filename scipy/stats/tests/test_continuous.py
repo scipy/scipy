@@ -894,6 +894,25 @@ class TestAttributes:
         with pytest.raises(ValueError, match=message):
             X.validation_policy = "invalid"
 
+    def test_shapes(self):
+        X = stats.Normal(mu=1, sigma=2)
+        Y = stats.Normal(mu=[2], sigma=3)
+
+        # Check that attributes are available as expected
+        assert X.mu == 1
+        assert X.sigma == 2
+        assert Y.mu[0] == 2
+        assert Y.sigma[0] == 3
+
+        # Trying to set an attribute raises
+        message = "property of 'Normal' object has no setter"
+        with pytest.raises(AttributeError, match=message):
+            X.mu = 2
+
+        # Trying to mutate an attribute really mutates a copy
+        Y.mu[0] = 10
+        assert Y.mu[0] == 2
+
 
 class TestTransforms:
     @pytest.mark.fail_slow(10)

@@ -1571,6 +1571,12 @@ class ContinuousDistribution:
         self._parameters = parameters
         self._parameterization = parameterization
         self._original_parameters = original_parameters
+        for name in self._parameters.keys():
+            # Make parameters properties of the class; return values from the instance
+            if hasattr(self.__class__, name):
+                continue
+            setattr(self.__class__, name, property(lambda self_, name_=name:
+                                                   self_._parameters[name_].copy()[()]))
 
     def reset_cache(self):
         r""" Clear all cached values.
@@ -1771,22 +1777,6 @@ class ContinuousDistribution:
                        f"must be one of {iv_policies}, if specified.")
             raise ValueError(message)
         self._validation_policy = validation_policy
-
-    def __getattr__(self, item):
-        # This override allows distribution parameters to be accessed as
-        # attributes. See Question 1 at the top.
-
-        # This might be needed in __init__ to ensure that `_parameters` exists
-        # super().__setattr__('_parameters', dict())
-
-        # This is needed for deepcopy/pickling
-        if '_parameters' not in vars(self):
-            return super().__getattribute__(item)
-
-        if item in self._parameters:
-            return self._parameters[item][()]
-
-        return super().__getattribute__(item)
 
     ### Other magic methods
 
