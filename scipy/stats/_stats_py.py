@@ -4613,10 +4613,15 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError(message)
 
     if n == 2:
-        r = (xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))
-        r = r[()] if r.ndim == 0 else r
-        pvalue = xp.ones_like(r)
-        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        if xp.any(const_xy):
+            r = np.nan
+            pvalue = np.nan
+        else:
+            r = (xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))
+            r = r[()] if r.ndim == 0 else r
+            pvalue = xp.ones_like(r)
+            pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
         result = PearsonRResult(statistic=r, pvalue=pvalue, n=n,
                                 alternative=alternative, x=x, y=y, axis=axis)
         return result
