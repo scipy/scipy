@@ -528,6 +528,18 @@ class TestPearsonr:
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
+    def test_length_two_constant_input(self, xp):
+        # Zero variance input
+        # See https://github.com/scipy/scipy/issues/3728
+        # and https://github.com/scipy/scipy/issues/7730
+        msg = "An input array is constant"
+        with pytest.warns(stats.ConstantInputWarning, match=msg):
+            x = xp.asarray([0.667, 0.667])
+            y = xp.asarray([0.123, 0.456])
+            r, p = stats.pearsonr(x, y)
+            xp_assert_close(r, xp.asarray(xp.nan))
+            xp_assert_close(p, xp.asarray(xp.nan))
+
     # Expected values computed with R 3.6.2 cor.test, e.g.
     # options(digits=16)
     # x <- c(1, 2, 3, 4)
