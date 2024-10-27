@@ -284,21 +284,23 @@ def lombscargle(
 
     YC = np.dot(weights_y.T, coswt_tau)  # Eq. 11
     YS = np.dot(weights_y.T, sinwt_tau)  # Eq. 12
-    CC = np.dot(weights.T, coswt_tau * coswt_tau)  # Eq. 13
-    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2  Eq. 14
+    CC = np.dot(weights.T, coswt_tau * coswt_tau)  # Eq. 13, CC range is [0, 1.0]
+    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2    Eq. 14, SS range is [0, 1.0]
 
     if floating_mean:
         C = np.dot(weights.T, coswt_tau)  # Eq. 8
         S = np.dot(weights.T, sinwt_tau)  # Eq. 9
         YC -= Y * C  # Eq. 11
         YS -= Y * S  # Eq. 12
-        CC -= C * C  # Eq. 13
-        SS -= S * S  # Eq. 14
+        CC -= C * C  # Eq. 13, CC range is now [0, 1.0]
+        SS -= S * S  # Eq. 14, SS range is now [0, 0.5]
 
-    # to prevent division by zero errors, don't allow CC or SS to be exactly 0.0
+    # to prevent division by zero errors with a and b, as well as correcting for
+    # numerical precision errors that lead to CC or SS being approximately -0.0,
+    # make sure CC and SS are both > 0
     epsneg = np.finfo(dtype=y.dtype).epsneg
-    CC[CC == 0.0] = epsneg * np.copysign(1.0, CC[CC == 0.0])
-    SS[SS == 0.0] = epsneg * np.copysign(1.0, SS[SS == 0.0])
+    CC[CC < epsneg] = epsneg
+    SS[SS < epsneg] = epsneg
 
     # calculate a and b
     # where: y(w) = a*cos(w) + b*sin(w) + c
