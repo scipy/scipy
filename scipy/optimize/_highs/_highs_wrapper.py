@@ -119,7 +119,7 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
     lp.num_row_ = numrow
     lp.a_matrix_.num_col_ = numcol
     lp.a_matrix_.num_row_ = numrow
-    lp.a_matrix_.format_ = _h.HighsMatrixFormat.kColwise
+    lp.a_matrix_.format_ = _h.MatrixFormat.kColwise
     lp.col_cost_ = c
     lp.col_lower_ = lb
     lp.col_upper_ = ub

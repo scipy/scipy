@@ -21,13 +21,13 @@ from ._highspy._highs_wrapper import _highs_wrapper
 from ._highspy._core import(
     kHighsInf,
     HighsDebugLevel,
-    HighsObjSense,
+    ObjSense,
     HighsModelStatus,
 )
 from ._highspy._core.simplex_constants import (
-    HighsSimplexStrategy,
-    HighsSimplexCrashStrategy,
-    HighsSimplexEdgeWeightStrategy,
+    SimplexStrategy,
+    SimplexCrashStrategy,
+    SimplexEdgeWeightStrategy,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
 
@@ -37,7 +37,7 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
 
     scipy_statuses_messages = {
         None: (4, "HiGHS did not provide a status code. "),
-        HighsModelStatus.kNotSet: (4, ""),
+        HighsModelStatus.kNotset: (4, ""),
         HighsModelStatus.kLoadError: (4, ""),
         HighsModelStatus.kModelError: (2, ""),
         HighsModelStatus.kPresolveError: (4, ""),
@@ -293,10 +293,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
         'simplex_dual_edge_weight_strategy',
-        choices={'dantzig': HighsSimplexEdgeWeightStrategy.kDantzig,
-                 'devex': HighsSimplexEdgeWeightStrategy.kDevex,
-                 'steepest-devex': HighsSimplexEdgeWeightStrategy.kChoose,
-                 'steepest': HighsSimplexEdgeWeightStrategy.kSteepestEdge,
+        choices={'dantzig': SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig,
+                 'devex': SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex,
+                 'steepest-devex': SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose,
+                 'steepest': SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge,
                  None: None})
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
@@ -319,10 +319,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     options = {
         'presolve': presolve,
-        'sense': HighsObjSense.kMinimize,
+        'sense': ObjSense.kMinimize,
         'solver': solver,
         'time_limit': time_limit,
-        'highs_debug_level': HighsDebugLevel.kNone,
+        'highs_debug_level': HighsDebugLevel.kHighsDebugLevelNone,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
@@ -331,8 +331,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
             simplex_dual_edge_weight_strategy_enum,
-        'simplex_strategy': HighsSimplexStrategy.kDual,
-        'simplex_crash_strategy': HighsSimplexCrashStrategy.kOff,
+        'simplex_strategy': SimplexStrategy.kSimplexStrategyDual,
+        'simplex_crash_strategy': SimplexCrashStrategy.kSimplexCrashStrategyOff,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
         'mip_rel_gap': mip_rel_gap,
