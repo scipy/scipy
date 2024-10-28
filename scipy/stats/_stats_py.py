@@ -4639,27 +4639,27 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
                "correlation coefficient may be inaccurate.")
         warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
-    if n == 2:
-        r = xp.asarray(
-                xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))
-        pvalue = xp.ones_like(r)
-        r[const_xy] = xp.nan
-    else:
-        with np.errstate(invalid='ignore', divide='ignore'):
-            r = xp.sum(xm/normxm * ym/normym, axis=axis)
-        # Presumably, if abs(r) > 1, then it is only some small artifact of
-        # floating point arithmetic.
-        one = xp.asarray(1, dtype=dtype)
-        r = xp.asarray(xp.clip(r, -one, one))
-        r[const_xy] = xp.nan
+    with np.errstate(invalid='ignore', divide='ignore'):
+        r = xp.sum(xm/normxm * ym/normym, axis=axis)
 
+    # Presumably, if abs(r) > 1, then it is only some small artifact of
+    # floating point arithmetic.
+    one = xp.asarray(1, dtype=dtype)
+    r = xp.asarray(xp.clip(r, -one, one))
+    r[const_xy] = xp.nan
+
+    # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promissed
+    # in the docs.
+    if n == 2:
+        r = xp_sign(r)
+        pvalue = xp.ones_like(r)
+        pvalue[xp.asarray(xp.isnan(r))] = xp.nan
+    else:
         # As explained in the docstring, the distribution of `r` under the null
         # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
         ab = xp.asarray(n/2 - 1)
         dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
-        pvalue = xp.asarray(_get_pvalue(r, dist, alternative, xp=xp))
-
-    pvalue[const_xy] = xp.nan
+        pvalue = _get_pvalue(r, dist, alternative, xp=xp)
 
     r = r[()] if r.ndim == 0 else r
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
