@@ -1315,23 +1315,22 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False, pass_zero=True, s
         The sampling frequency of the signal. Default is 2.
     circular : bool, optional
         Whether to create a circularly symmetric 2-D window. Default is False.
-    pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
-        If True, the gain at the frequency 0 (i.e., the "DC gain") is 1.
-        If False, the DC gain is 0. Can also be a string argument for the
-        desired filter type (equivalent to ``btype`` in IIR design functions).
-
-        .. versionadded:: 1.3.0
-           Support for string arguments.
+    pass_zero : This parameter is passed to the `firwin` function for each scalar frequency axis.
+        Hence, if ``True``, the DC gain, i.e., the gain at frequency (0, 0), is 1.
+        If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``. 
+        If `circular` is ``False`` the frequencies (0, f1) and (f0, 0) will have gain 0.
+        It can also be a string argument for the desired filter type 
+        (equivalent to ``btype`` in IIR design functions).
     scale : bool, optional
-        Set to True to scale the coefficients so that the frequency
-        response is exactly unity at a certain frequency.
+        This parameter is passed to the `firwin` function for each scalar frequency axis.
+        Set to ``True`` to scale the coefficients so that the frequency
+        response is exactly unity at a certain frequency on one frequency axis.
         That frequency is either:
-
-        - 0 (DC) if the first passband starts at 0 (i.e. pass_zero
-          is True)
+        
+        - 0 (DC) if the first passband starts at 0 (i.e. pass_zero is ``True``)
         - `fs/2` (the Nyquist frequency) if the first passband ends at
-          `fs/2` (i.e the filter is a single band highpass filter);
-          center of first passband otherwise
+        `fs/2` (i.e the filter is a single band highpass filter);
+        center of first passband otherwise
 
     Returns
     -------
