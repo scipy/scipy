@@ -22,10 +22,6 @@ inline double bdtri(double k, int n, double y) { return cephes::bdtri(k, n, y); 
 
 inline double bdtrc(double k, int n, double p) { return cephes::bdtrc(k, n, p); }
 
-inline double btdtri(double aa, double bb, double yy0) { return cephes::incbi(aa, bb, yy0); }
-
-inline double btdtr(double a, double b, double x) { return cephes::incbet(a, b, x); }
-
 inline double chdtr(double df, double x) { return cephes::chdtr(df, x); }
 
 inline double chdtrc(double df, double x) { return cephes::chdtrc(df, x); }
