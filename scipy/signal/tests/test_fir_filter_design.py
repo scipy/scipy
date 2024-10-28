@@ -7,7 +7,7 @@ from scipy._lib._array_api import (
 from pytest import raises as assert_raises
 import pytest
 
-from scipy.fft import fft, fft2, fftshift
+from scipy.fft import fft, fft2
 from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
     firwin, firwin2, freqz, remez, firls, minimum_phase, \
@@ -694,18 +694,23 @@ class Testfirwin_2d:
         xp_assert_close(response[16:47, 16:47], expected_response, rtol=1e-5)
 
     def test_frequency_response(self):
+        """Compare 1d and 2d frequency response. """
         hsize = (31, 31)
-        window = ("hamming", "hamming")
+        windows = ("hamming", "hamming")
         fc = 0.4
-        taps = firwin_2d(hsize, window, fc=fc)
+        taps_1d = firwin(numtaps=hsize[0], cutoff=fc, window=windows[0])
+        taps_2d = firwin_2d(hsize, windows, fc=fc)
 
-        freq_response = fftshift(fft2(taps))
+        f_resp_1d = fft(taps_1d)
+        f_resp_2d = fft2(taps_2d)
 
-        magnitude = np.abs(freq_response)
-        assert xp_assert_close(magnitude.max(), 1.0, atol=0.01), (
-            f"Max magnitude is {magnitude.max()}"
-        )        
-        assert magnitude.min() >= 0.0, f"Min magnitude is {magnitude.min()}"
+        xp_assert_close(f_resp_2d[0, :], f_resp_1d,
+                        err_msg='DC Gain at (0, f1) is not unity!')
+        xp_assert_close(f_resp_2d[:, 0], f_resp_1d,
+                        err_msg='DC Gain at (f0, 0) is not unity!')
+        xp_assert_close(f_resp_2d, np.outer(f_resp_1d, f_resp_1d),
+                        atol=np.finfo(f_resp_2d.dtype).resolution,
+                        err_msg='2d frequency response is not product of 1d responses')
 
     def test_symmetry(self):
         hsize = (51, 51)
@@ -745,7 +750,7 @@ class Testfirwin_2d:
         col_filter = firwin(hsize[1], cutoff=fc, window=window, fs=fs)
         known_result = np.outer(row_filter, col_filter)
 
-        taps = firwin_2d(hsize, (window, window), fc)
+        taps = firwin_2d(hsize, (window, window), fc=fc)
         assert taps.shape == known_result.shape, (
             f"Shape mismatch: {taps.shape} vs {known_result.shape}"
         )

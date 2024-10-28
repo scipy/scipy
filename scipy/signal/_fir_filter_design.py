@@ -320,6 +320,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     See Also
     --------
     firwin2
+    firwin_2d
     firls
     minimum_phase
     remez
@@ -1283,7 +1284,7 @@ def minimum_phase(h: np.ndarray,
     return h_minimum[:n_out]
 
 
-def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False, 
+def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
               pass_zero=True, scale=True):
     """
     2D FIR filter design using the window method.
@@ -1315,25 +1316,25 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     fs : float, optional
         The sampling frequency of the signal. Default is 2.
     circular : bool, optional
-        Whether to create a circularly symmetric 2-D window. Default is False.
-    pass_zero : This parameter is passed to the `firwin` function for each 
-        scalar frequency axis.
+        Whether to create a circularly symmetric 2-D window. Default is ``False``.
+    pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
+        This parameter is directly passed to `firwin` for each scalar frequency axis.
         Hence, if ``True``, the DC gain, i.e., the gain at frequency (0, 0), is 1.
         If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``. 
-        If `circular` is ``False`` the frequencies (0, f1) and (f0, 0) will have gain 0.
+        If `circular` is ``False`` the frequencies (0, f1) and (f0, 0) will
+        have gain 0.
         It can also be a string argument for the desired filter type 
         (equivalent to ``btype`` in IIR design functions).
     scale : bool, optional
-        This parameter is passed to the `firwin` function for 
-        each scalar frequency axis.
+        This parameter is directly passed to `firwin` for each scalar frequency axis.
         Set to ``True`` to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency on one frequency axis.
         That frequency is either:
         
         - 0 (DC) if the first passband starts at 0 (i.e. pass_zero is ``True``)
-        - `fs/2` (the Nyquist frequency) if the first passband ends at
-        `fs/2` (i.e the filter is a single band highpass filter);
-        center of first passband otherwise
+        - `fs`/2 (the Nyquist frequency) if the first passband ends at `fs`/2
+          (i.e., the filter is a single band highpass filter);
+          center of first passband otherwise
 
     Returns
     -------
@@ -1343,28 +1344,29 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     Raises
     ------
     ValueError
-        If `hsize` and `window` are not 2-element tuples or lists.
-        If `cutoff` is None when `circular` is True.
-        If `cutoff` is outside the range [0, fs / 2] and `circular` is False.
-        If any of the elements in `window` are not recognized.
+        - If `hsize` and `window` are not 2-element tuples or lists.
+        - If `cutoff` is None when `circular` is True.
+        - If `cutoff` is outside the range [0, `fs`/2] and `circular` is ``False``.
+        - If any of the elements in `window` are not recognized.
     RuntimeError
         If `firwin` fails to converge when designing the filter.
 
     See Also
     --------
-    scipy.signal.firwin, scipy.signal.get_window
+    firwin: FIR filter design using the window method for 1d arrays.
+    get_window: Return a window of a given length and type.
 
     Examples
     --------
-    Generate a 5x5 low-pass filter with cutoff frequency 0.1.
+    Generate a 5x5 low-pass filter with cutoff frequency 0.1:
 
     >>> import numpy as np
     >>> from scipy.signal import get_window
-    >>> from scipy.signal import fwind1
+    >>> from scipy.signal import firwin_2d
     >>> hsize = (5, 5)
     >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
     >>> fc = 0.1
-    >>> filter_2d = fwind1(hsize, window, fc=fc)
+    >>> filter_2d = firwin_2d(hsize, window, fc=fc)
     >>> filter_2d
     array([[0.00025366, 0.00401662, 0.00738617, 0.00401662, 0.00025366],
            [0.00401662, 0.06360159, 0.11695714, 0.06360159, 0.00401662],
@@ -1372,9 +1374,9 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
            [0.00401662, 0.06360159, 0.11695714, 0.06360159, 0.00401662],
            [0.00025366, 0.00401662, 0.00738617, 0.00401662, 0.00025366]])
 
-    Generate a circularly symmetric 5x5 low-pass filter with Hamming window.
+    Generate a circularly symmetric 5x5 low-pass filter with Hamming window:
 
-    >>> filter_2d = fwind1((5, 5), 'hamming', fc=fc, circular=True)
+    >>> filter_2d = firwin_2d((5, 5), 'hamming', fc=fc, circular=True)
     >>> filter_2d
     array([[-0.00020354, -0.00020354, -0.00020354, -0.00020354, -0.00020354],
            [-0.00020354,  0.01506844,  0.09907658,  0.01506844, -0.00020354],
@@ -1382,13 +1384,14 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
            [-0.00020354,  0.01506844,  0.09907658,  0.01506844, -0.00020354],
            [-0.00020354, -0.00020354, -0.00020354, -0.00020354, -0.00020354]])
 
-    Plotting the generated 2D filters (optional).
+    Generate Plots comparing the product of two 1d filters with a circular
+    symmetric filter:
 
     >>> import matplotlib.pyplot as plt
     >>> hsize, fc = (50, 50), 0.05
     >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
-    >>> filter0_2d = fwind1(hsize, window, fc=fc)
-    >>> filter1_2d = fwind1((50, 50), 'hamming', fc=fc, circular=True)
+    >>> filter0_2d = firwin_2d(hsize, window, fc=fc)
+    >>> filter1_2d = firwin_2d((50, 50), 'hamming', fc=fc, circular=True)
     ...
     >>> fg, (ax0, ax1) = plt.subplots(1, 2, tight_layout=True, figsize=(6.5, 3.5))
     >>> ax0.set_title("Product of 2 Windows")
