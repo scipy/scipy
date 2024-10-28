@@ -293,10 +293,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
         'simplex_dual_edge_weight_strategy',
-        choices={'dantzig': SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig,
-                 'devex': SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex,
-                 'steepest-devex': SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose,
-                 'steepest': SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge,
+        choices={'dantzig': \
+                 SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig,
+                 'devex': \
+                 SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex,
+                 'steepest-devex': \
+                 SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose,
+                 'steepest': \
+                 SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge,
                  None: None})
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
