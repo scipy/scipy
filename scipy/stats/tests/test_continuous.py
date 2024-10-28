@@ -905,8 +905,8 @@ class TestAttributes:
         assert Y.sigma[0] == 3
 
         # Trying to set an attribute raises
-        message = "property of 'Normal' object has no setter"
-        with pytest.raises(AttributeError, match=message):
+        # message depends on Python version
+        with pytest.raises(AttributeError):
             X.mu = 2
 
         # Trying to mutate an attribute really mutates a copy
