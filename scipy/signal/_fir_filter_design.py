@@ -1283,7 +1283,8 @@ def minimum_phase(h: np.ndarray,
     return h_minimum[:n_out]
 
 
-def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False, pass_zero=True, scale=True):
+def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False, 
+              pass_zero=True, scale=True):
     """
     2D FIR filter design using the window method.
 
@@ -1315,14 +1316,16 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False, pass_zero=True, s
         The sampling frequency of the signal. Default is 2.
     circular : bool, optional
         Whether to create a circularly symmetric 2-D window. Default is False.
-    pass_zero : This parameter is passed to the `firwin` function for each scalar frequency axis.
+    pass_zero : This parameter is passed to the `firwin` function for each 
+        scalar frequency axis.
         Hence, if ``True``, the DC gain, i.e., the gain at frequency (0, 0), is 1.
         If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``. 
         If `circular` is ``False`` the frequencies (0, f1) and (f0, 0) will have gain 0.
         It can also be a string argument for the desired filter type 
         (equivalent to ``btype`` in IIR design functions).
     scale : bool, optional
-        This parameter is passed to the `firwin` function for each scalar frequency axis.
+        This parameter is passed to the `firwin` function for 
+        each scalar frequency axis.
         Set to ``True`` to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency on one frequency axis.
         That frequency is either:
