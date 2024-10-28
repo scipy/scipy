@@ -3393,10 +3393,14 @@ def zeta(x, q=None, out=None):
 
     Parameters
     ----------
-    x : array_like of float
-        Input data, must be real
+    x : array_like of float or complex.
+        Input data
     q : array_like of float, optional
-        Input data, must be real.  Defaults to Riemann zeta.
+        Input data, must be real.  Defaults to Riemann zeta. When `q` is
+        ``None``, complex inputs `x` are supported. If `q` is not ``None``,
+        then currently only real inputs `x` with ``x >= 1`` are supported,
+        even when ``q = 1.0`` (corresponding to the Riemann zeta function).
+        
     out : ndarray, optional
         Output array for the computed values.
 
@@ -3420,6 +3424,10 @@ def zeta(x, q=None, out=None):
     see [dlmf]_ for details. The Riemann zeta function corresponds to
     the case when ``q = 1``.
 
+    For complex inputs with ``q = None``, points with
+    ``abs(z.imag) > 1e9`` and ``0 <= abs(z.real) < 2.5`` are currently not
+    supported due to slow convergence causing excessive runtime.
+
     References
     ----------
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
@@ -3437,6 +3445,11 @@ def zeta(x, q=None, out=None):
 
     >>> zeta(4), np.pi**4/90
     (1.0823232337111381, 1.082323233711138)
+
+    First nontrivial zero:
+
+    >>> zeta(0.5 + 14.134725141734695j)
+    0 + 0j
 
     Relation to the `polygamma` function:
 
