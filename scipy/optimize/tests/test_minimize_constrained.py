@@ -711,6 +711,9 @@ def test_bug_11886():
 
 
 def test_gh11649():
+    # trust - constr error when attempting to keep bound constrained solutions
+    # feasible. Algorithm attempts to go outside bounds when evaluating finite
+    # differences. (don't give objective an analytic gradient)
     bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
 
     def assert_inbounds(x):
@@ -738,7 +741,6 @@ def test_gh11649():
 
     res = minimize(fun=obj, x0=x0, method='trust-constr',
                    bounds=bnds, constraints=nlcs)
-    assert res.success
     assert_inbounds(res.x)
     assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
 

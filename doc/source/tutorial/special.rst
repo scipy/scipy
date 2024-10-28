@@ -1,4 +1,4 @@
-Special functions (:mod:`scipy.special`)
+Special Functions (:mod:`scipy.special`)
 ========================================
 
 .. currentmodule:: scipy.special
