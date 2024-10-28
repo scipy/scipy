@@ -404,7 +404,7 @@ jobs:
         python -c 'import numpy as np; np.show_config()' && \
         python dev.py build --with-scipy-openblas && \
         python dev.py --no-build test && \
-        python dev.py --no-build test -j2 -mode full -t scipy/sparse/tests/test_64bit.py::Test64BitMatrixSameAsArray"
+        python dev.py --no-build test -j2 --mode full -t scipy/sparse/tests/test_64bit.py::Test64BitMatrixSameAsArray"
 
   #################################################################################
   distro_multiple_pythons:
