@@ -146,9 +146,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     Parameters
     ----------
-    A : ndarray or sparse matrix
+    A : ndarray or sparse array or matrix
         The square matrix A will be converted into CSC or CSR form
-    b : ndarray or sparse matrix
+    b : ndarray or sparse array or matrix
         The matrix or vector representing the right hand side of the equation.
         If a vector, b.shape must be (n,) or (n, 1).
     permc_spec : str, optional
@@ -167,7 +167,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     Returns
     -------
-    x : ndarray or sparse matrix
+    x : ndarray or sparse array or matrix
         the solution of the sparse linear equation.
         If b is a vector, then x is a vector of size A.shape[1]
         If b is a matrix, then x is a matrix of size (A.shape[1], b.shape[1])
@@ -339,8 +339,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Parameters
     ----------
-    A : sparse matrix
-        Sparse matrix to factorize. Most efficient when provided in CSC
+    A : sparse array or matrix
+        Sparse array to factorize. Most efficient when provided in CSC
         format. Other formats will be converted to CSC before factorization.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
@@ -447,7 +447,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Parameters
     ----------
     A : (N, N) array_like
-        Sparse matrix to factorize. Most efficient when provided in CSC format.
+        Sparse array to factorize. Most efficient when provided in CSC format.
         Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
@@ -608,7 +608,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     Parameters
     ----------
-    A : (M, M) sparse matrix
+    A : (M, M) sparse array or matrix
         A sparse square triangular matrix. Should be in CSR or CSC format.
     b : (M,) or (M, N) array_like
         Right-hand side matrix in ``A x = b``
