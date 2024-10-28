@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: mypy (py3.10) & dev deps (py3.12), fast, dev.py
+    name: mypy (py3.10) & dev deps (py3.13), fast, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.10', '3.12'] # this run will use python dev versions when available
+        python-version: ['3.10', '3.13-dev'] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
@@ -44,16 +44,17 @@ jobs:
             python-version: '3.12'
 
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: 'environment.yml'
+        allow-prereleases: true
 
     - name: Install Ubuntu dependencies
       run: |
@@ -67,7 +68,7 @@ jobs:
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
 
     - name: Install Python packages from repositories
-      if: matrix.python-version == '3.12' # this run will use python dev versions when available
+      if: matrix.python-version == '3.13-dev' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3"
@@ -84,7 +85,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v3
+      uses:  actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have a unique cache key for each workflow run
@@ -123,6 +124,9 @@ jobs:
         python dev.py build --tags=runtime,python-runtime,devel,tests
         python tools/check_installation.py ${{ env.INSTALLDIR }}
 
+    - name: Check build-internal dependencies
+      run: ninja -C build -t missingdeps
+
     - name: Mypy
       if: matrix.python-version == '3.10'
       run: |
@@ -146,7 +150,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         submodules: recursive
 
@@ -205,7 +209,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           submodules: recursive
       - name: Configuring Test Environment
@@ -235,12 +239,12 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
           python-version: "3.10"
 
@@ -293,12 +297,12 @@ jobs:
         python-version: ['3.10', '3.11']
 
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -308,7 +312,7 @@ jobs:
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
 
     - name: Caching Python dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
       id: cache
       with:
         path: ~/.cache/pip
@@ -317,10 +321,7 @@ jobs:
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
-        # Note: matplotlib not installed here to avoid issues around numpy 2.0
-        # (it can be put back after matplotlib has made a 2.0-compatible
-        # release on PyPI.
-        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
+        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
@@ -335,7 +336,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v3
+      uses:  actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -374,7 +375,7 @@ jobs:
     # entries. Unfortunately at this time options: does not seem to listen to
     # --platform linux/i386.
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         submodules: recursive
 
@@ -414,7 +415,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           submodules: recursive
 
@@ -454,12 +455,12 @@ jobs:
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         submodules: recursive
         fetch-tags: true
     # TODO: replace with setup-python when there is support
-    - uses: deadsnakes/action@6c8b9b82fe0b4344f4b98f2775fcc395df45e494 # v3.1.0
+    - uses: deadsnakes/action@e640ac8743173a67cca4d7d77cd837e514bf98e8 # v3.2.0
       with:
           python-version: '3.13-dev'
           nogil: true
@@ -471,13 +472,9 @@ jobs:
     - name: Install pre-release pip
       run: |
         pip install -U --pre pip
-    # TODO: remove cython nightly install when cython does a release
-    - name: Install nightly Cython
+    - name: Install nightly NumPy and Cython
       run: |
-        pip install git+https://github.com/cython/cython
-    - name: Install nightly NumPy
-      run: |
-        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple cython numpy
     - name: Install Python dependencies
       run: |
         pip install git+https://github.com/serge-sans-paille/pythran
@@ -497,3 +494,40 @@ jobs:
         PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
         PYTHON_GIL=0 python -m pytest --pyargs scipy -n2 --durations=10
+  #################################################################################
+  clang-17-build-only:
+    # Purpose is to check for warnings in builds with latest clang.
+    # We do not run the test suite here.
+    name: Clang-17 build-only (-Werror)
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Setup system dependencies
+        run: |
+          sudo apt-get -y update
+          wget https://apt.llvm.org/llvm.sh
+          chmod u+x llvm.sh
+          sudo ./llvm.sh 17
+          sudo apt install -y libopenblas-dev liblapack-dev
+
+      - name: Setup Python build deps
+        run: |
+          pip install -r requirements/build.txt
+          pip install build
+
+      - name: Build wheel, check for compiler warnings
+        run: |
+          # specify which compilers to use using environment variables
+          CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror

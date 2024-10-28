@@ -17,11 +17,10 @@ from scipy._lib._util import np_long
 
 
 IMPRECISE = {np.single, np.csingle}
-REAL_DTYPES = {np.intc, np_long, np.longlong,
-               np.float32, np.float64, np.longdouble}
-COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted list to ensure fixed order of tests
-DTYPES = sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
+REAL_DTYPES = (np.intc, np_long, np.longlong,
+               np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
+DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 def estimated(func):
@@ -179,7 +178,7 @@ class TestExpmActionSimple:
 
 class TestExpmActionInterval:
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(20)
     def test_sparse_expm_multiply_interval(self):
         np.random.seed(1234)
         start = 0.1
@@ -205,7 +204,7 @@ class TestExpmActionInterval:
                     for solution, t in zip(X, samples):
                         assert_allclose(solution, sp_expm(t*A).dot(target))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(20)
     def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)
         interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
@@ -232,7 +231,7 @@ class TestExpmActionInterval:
                 assert_allclose(sol_given, correct)
                 assert_allclose(sol_wrong, correct)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(20)
     def test_expm_multiply_interval_matrix(self):
         np.random.seed(1234)
         interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}

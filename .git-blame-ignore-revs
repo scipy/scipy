@@ -36,3 +36,5 @@ ecef3490da68a0c53ba543c618bab0c8e15dccee
 7b921fd28659b02544bfb46368ddadd1048b37aa
 # Style cleanup to always `import numpy as np`
 ceafa8e730887b81cf10d483ce375559ebd1de09
+# Clean-up for UP031, UP032 lint rules (gh-21029)
+d1b5af016e907e037136b7a38e485437165490f2

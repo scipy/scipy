@@ -15,10 +15,13 @@ import numpy as np
 
 from ._distn_infrastructure import (rv_discrete, get_distribution_names,
                                     _vectorize_rvs_over_shapes,
-                                    _ShapeInfo, _isintegral)
+                                    _ShapeInfo, _isintegral,
+                                    rv_discrete_frozen)
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
+from ._stats_pythran import _poisson_binom
+
 import scipy.special._ufuncs as scu
 
 
@@ -42,7 +45,15 @@ class binom_gen(rv_discrete):
     where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pmf``, ``cdf``, ``sf``, ``ppf`` and ``isf``
+    methods. [1]_
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -309,7 +320,15 @@ class nbinom_gen(rv_discrete):
        p &= \frac{\mu}{\sigma^2} \\
        n &= \frac{\mu^2}{\sigma^2 - \mu}
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pmf``, ``cdf``, ``sf``, ``ppf``, ``isf``
+    and ``stats`` methods. [1]_
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -464,7 +483,7 @@ class betanbinom_gen(rv_discrete):
                       + 2. * (a - 1.)**2.))
             denominator = ((a - 4.) * (a - 3.) * b * n
                            * (a + b - 1.) * (a + n - 1.))
-            # Wolfram Alpha uses Pearson kurtosis, so we substract 3 to get
+            # Wolfram Alpha uses Pearson kurtosis, so we subtract 3 to get
             # scipy's Fisher kurtosis
             return term * term_2 / denominator - 3.
         if 'k' in moments:
@@ -494,6 +513,11 @@ class geom_gen(rv_discrete):
     where :math:`p` is the probability of a single success
     and :math:`1-p` is the probability of a single failure.
 
+    Note that when drawing random samples, the probability of observations that exceed
+    ``np.iinfo(np.int64).max`` increases rapidly as $p$ decreases below $10^{-17}$. For
+    $p < 10^{-20}$, almost all observations would exceed the maximum ``int64``; however,
+    the output dtype is always ``int64``, so these values are clipped to the maximum.
+
     %(after_notes)s
 
     See Also
@@ -508,7 +532,11 @@ class geom_gen(rv_discrete):
         return [_ShapeInfo("p", False, (0, 1), (True, True))]
 
     def _rvs(self, p, size=None, random_state=None):
-        return random_state.geometric(p, size=size)
+        res = random_state.geometric(p, size=size)
+        # RandomState.geometric can wrap around to negative values; make behavior
+        # consistent with Generator.geometric by replacing with maximum integer.
+        max_int = np.iinfo(res.dtype).max
+        return np.where(res < 0, max_int, res)
 
     def _argcheck(self, p):
         return (p <= 1) & (p > 0)
@@ -576,7 +604,14 @@ class hypergeom_gen(rv_discrete):
 
     .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pmf``, ``cdf``, ``sf`` and ``stats`` methods. [1]_
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -1209,7 +1244,7 @@ class randint_gen(rv_discrete):
 
     def _pmf(self, k, low, high):
         # randint.pmf(k) = 1./(high - low)
-        p = np.ones_like(k) / (high - low)
+        p = np.ones_like(k) / (np.asarray(high, dtype=np.int64) - low)
         return np.where((k >= low) & (k < high), p, 0.)
 
     def _cdf(self, x, low, high):
@@ -1389,7 +1424,7 @@ class zipfian_gen(rv_discrete):
 
     %(example)s
 
-    Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
+    Confirm that `zipfian` reduces to `zipf` for large `n`, ``a > 1``.
 
     >>> import numpy as np
     >>> from scipy.stats import zipf, zipfian
@@ -1526,6 +1561,140 @@ class dlaplace_gen(rv_discrete):
 
 dlaplace = dlaplace_gen(a=-np.inf,
                         name='dlaplace', longname='A discrete Laplacian')
+
+
+class poisson_binom_gen(rv_discrete):
+    r"""A Poisson Binomial discrete random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    binom
+
+    Notes
+    -----
+    The probability mass function for `poisson_binom` is:
+
+    .. math::
+
+     f(k; p_1, p_2, ..., p_n) = \sum_{A \in F_k} \prod_{i \in A} p_i \prod_{j \in A^C} 1 - p_j
+
+    where :math:`k \in \{0, 1, \dots, n-1, n\}`, :math:`F_k` is the set of all
+    subsets of :math:`k` integers that can be selected :math:`\{0, 1, \dots, n-1, n\}`,
+    and :math:`A^C` is the complement of a set :math:`A`.
+
+    `poisson_binom` accepts a single array argument ``p`` for shape parameters
+    :math:`0 ≤ p_i ≤ 1`, where the last axis corresponds with the index :math:`i` and
+    any others are for batch dimensions. Broadcasting behaves according to the usual
+    rules except that the last axis of ``p`` is ignored. Instances of this class do
+    not support serialization/unserialization.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Poisson binomial distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Poisson_binomial_distribution
+    .. [2] Biscarri, William, Sihai Dave Zhao, and Robert J. Brunner. "A simple and
+           fast method for computing the Poisson binomial distribution function".
+           Computational Statistics & Data Analysis 122 (2018) 92-100.
+           :doi:`10.1016/j.csda.2018.01.007`
+
+    %(example)s
+
+    """  # noqa: E501
+    def _shape_info(self):
+        # message = 'Fitting is not implemented for this distribution."
+        # raise NotImplementedError(message)
+        return []
+
+    def _argcheck(self, *args):
+        p = np.stack(args, axis=0)
+        conds = (0 <= p) & (p <= 1)
+        return np.all(conds, axis=0)
+
+    def _rvs(self, *args, size=None, random_state=None):
+        # convenient to work along the last axis here to avoid interference with `size`
+        p = np.stack(args, axis=-1)
+        # Size passed by the user is the *shape of the returned array*, so it won't
+        # contain the length of the last axis of p.
+        size = (p.shape if size is None else
+                (size, 1) if np.isscalar(size) else tuple(size) + (1,))
+        size = np.broadcast_shapes(p.shape, size)
+        return bernoulli._rvs(p, size=size, random_state=random_state).sum(axis=-1)
+
+    def _get_support(self, *args):
+        return 0, len(args)
+
+    def _pmf(self, k, *args):
+        k = np.atleast_1d(k).astype(np.int64)
+        k, *args = np.broadcast_arrays(k, *args)
+        args = np.asarray(args, dtype=np.float64)
+        return _poisson_binom(k, args, 'pmf')
+
+    def _cdf(self, k, *args):
+        k = np.atleast_1d(k).astype(np.int64)
+        k, *args = np.broadcast_arrays(k, *args)
+        args = np.asarray(args, dtype=np.float64)
+        return _poisson_binom(k, args, 'cdf')
+
+    def _stats(self, *args, **kwds):
+        p = np.stack(args, axis=0)
+        mean = np.sum(p, axis=0)
+        var = np.sum(p * (1-p), axis=0)
+        return (mean, var, None, None)
+
+    def __call__(self, *args, **kwds):
+        return poisson_binomial_frozen(self, *args, **kwds)
+
+
+poisson_binom = poisson_binom_gen(name='poisson_binom', longname='A Poisson binomial',
+                                  shapes='p')
+
+# The _parse_args methods don't work with vector-valued shape parameters, so we rewrite
+# them. Note that `p` is accepted as an array with the index `i` of `p_i` corresponding
+# with the last axis; we return it as a tuple (p_1, p_2, ..., p_n) so that it looks
+# like `n` scalar (or arrays of scalar-valued) shape parameters to the infrastructure.
+
+def _parse_args_rvs(self, p, loc=0, size=None):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0, size
+
+def _parse_args_stats(self, p, loc=0, moments='mv'):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0, moments
+
+def _parse_args(self, p, loc=0):
+    return tuple(np.moveaxis(p, -1, 0)), loc, 1.0
+
+# The infrastructure manually binds these methods to the instance, so
+# we can only override them by manually binding them, too.
+_pb_obj, _pb_cls = poisson_binom, poisson_binom_gen  # shorter names (for PEP8)
+poisson_binom._parse_args_rvs = _parse_args_rvs.__get__(_pb_obj, _pb_cls)
+poisson_binom._parse_args_stats = _parse_args_stats.__get__(_pb_obj, _pb_cls)
+poisson_binom._parse_args = _parse_args.__get__(_pb_obj, _pb_cls)
+
+class poisson_binomial_frozen(rv_discrete_frozen):
+    # copied from rv_frozen; we just need to bind the `_parse_args` methods
+    def __init__(self, dist, *args, **kwds):                        # verbatim
+        self.args = args                                            # verbatim
+        self.kwds = kwds                                            # verbatim
+
+        # create a new instance                                     # verbatim
+        self.dist = dist.__class__(**dist._updated_ctor_param())    # verbatim
+
+        # Here is the only modification
+        self.dist._parse_args_rvs = _parse_args_rvs.__get__(_pb_obj, _pb_cls)
+        self.dist._parse_args_stats = _parse_args_stats.__get__(_pb_obj, _pb_cls)
+        self.dist._parse_args = _parse_args.__get__(_pb_obj, _pb_cls)
+
+        shapes, _, _ = self.dist._parse_args(*args, **kwds)         # verbatim
+        self.a, self.b = self.dist._get_support(*shapes)            # verbatim
+
+    def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
+        a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
+        # Here's the modification: we pass all args (including `loc`) into the `args`
+        # parameter of `expect` so the shape only goes through `_parse_args` once.
+        return self.dist.expect(func, self.args, loc, lb, ub, conditional, **kwds)
 
 
 class skellam_gen(rv_discrete):

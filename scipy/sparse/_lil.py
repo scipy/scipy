@@ -20,8 +20,8 @@ from . import _csparsetools
 class _lil_base(_spbase, IndexMixin):
     _format = 'lil'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
@@ -32,7 +32,8 @@ class _lil_base(_spbase, IndexMixin):
                 A = arg1.tolil()
 
             if dtype is not None:
-                A = A.astype(dtype, copy=False)
+                newdtype = getdtype(dtype)
+                A = A.astype(newdtype, copy=False)
 
             self._shape = check_shape(A.shape)
             self.dtype = A.dtype
@@ -62,7 +63,7 @@ class _lil_base(_spbase, IndexMixin):
             A = self._csr_container(A, dtype=dtype).tolil()
 
             self._shape = check_shape(A.shape)
-            self.dtype = A.dtype
+            self.dtype = getdtype(A.dtype)
             self.rows = A.rows
             self.data = A.data
 
@@ -106,10 +107,27 @@ class _lil_base(_spbase, IndexMixin):
         else:
             raise ValueError('axis out of bounds')
 
-    def count_nonzero(self):
-        return sum(np.count_nonzero(rowvals) for rowvals in self.data)
-
     _getnnz.__doc__ = _spbase._getnnz.__doc__
+
+    def count_nonzero(self, axis=None):
+        if axis is None:
+            return sum(np.count_nonzero(rowvals) for rowvals in self.data)
+
+        if axis < 0:
+            axis += 2
+        if axis == 0:
+            out = np.zeros(self.shape[1], dtype=np.intp)
+            for row, data in zip(self.rows, self.data):
+                mask = [c for c, d in zip(row, data) if d != 0]
+                out[mask] += 1
+            return out
+        elif axis == 1:
+            return np.array(
+                [np.count_nonzero(rowvals) for rowvals in self.data], dtype=np.intp,
+            )
+        else:
+            raise ValueError('axis out of bounds')
+
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def getrowview(self, i):
@@ -163,8 +181,10 @@ class _lil_base(_spbase, IndexMixin):
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_arrayXint(self, row, col):
-        row = row.squeeze()
-        return self._get_row_ranges(row, slice(col, col+1))
+        res = self._get_row_ranges(row.ravel(), slice(col, col+1))
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_intXslice(self, row, col):
         return self._get_row_ranges((row,), col)

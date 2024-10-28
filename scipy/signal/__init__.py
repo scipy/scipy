@@ -89,8 +89,8 @@ Filter design
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
+   freqz_sos     -- Digital filter frequency response for SOS format filter.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
-   sosfreqz      -- Digital filter frequency response for SOS format filter.
    gammatone     -- FIR and IIR gammatone filter design.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
@@ -125,7 +125,6 @@ Lower-level filter design functions:
    buttap         -- Return (z,p,k) for analog prototype of Butterworth filter.
    cheb1ap        -- Return (z,p,k) for type I Chebyshev filter.
    cheb2ap        -- Return (z,p,k) for type II Chebyshev filter.
-   cmplx_sort     -- Sort roots based on magnitude.
    ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
    lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
    lp2bp_zpk      -- Transform a lowpass filter prototype to a bandpass filter.
@@ -236,20 +235,6 @@ obtain these windows by name:
 
    get_window -- Return a window of a given length and type.
 
-Wavelets
-========
-
-.. autosummary::
-   :toctree: generated/
-
-   cascade      -- Compute scaling function and wavelet from coefficients.
-   daub         -- Return low-pass.
-   morlet       -- Complex Morlet wavelet.
-   qmf          -- Return quadrature mirror filter from low-pass.
-   ricker       -- Return ricker wavelet.
-   morlet2      -- Return Morlet wavelet, compatible with cwt.
-   cwt          -- Perform continuous wavelet transform.
-
 Peak finding
 ============
 
@@ -313,8 +298,7 @@ from ._spline import (
     sepfir2d
 )
 
-from ._splines import *
-from ._bsplines import *
+from ._spline_filters import *
 from ._filter_design import *
 from ._fir_filter_design import *
 from ._ltisys import *
@@ -323,7 +307,6 @@ from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from ._spectral_py import *
 from ._short_time_fft import *
-from ._wavelets import *
 from ._peak_finding import *
 from ._czt import *
 from .windows import get_window  # keep this one in signal namespace

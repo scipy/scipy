@@ -65,7 +65,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
                    'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
                    'halfcauchy', 'invgamma', 'invweibull', 'irwinhall', 'jf_skew_t',
-                   'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
+                   'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'landau', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
                    'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
@@ -174,17 +174,17 @@ def test_cont_fit(distname, arg, method):
             if np.all(np.abs(diff) <= diffthreshold):
                 break
     else:
-        txt = 'parameter: %s\n' % str(truearg)
-        txt += 'estimated: %s\n' % str(est)
-        txt += 'diff     : %s\n' % str(diff)
-        raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
+        txt = f'parameter: {str(truearg)}\n'
+        txt += f'estimated: {str(est)}\n'
+        txt += f'diff     : {str(diff)}\n'
+        raise AssertionError(f'fit not very good in {distfn.name}\n' + txt)
 
 
 def _check_loc_scale_mle_fit(name, data, desired, atol=None):
     d = getattr(stats, name)
     actual = d.fit(data)[-2:]
     assert_allclose(actual, desired, atol=atol,
-                    err_msg='poor mle fit of (loc, scale) in %s' % name)
+                    err_msg=f'poor mle fit of (loc, scale) in {name}')
 
 
 def test_non_default_loc_scale_mle_fit():
@@ -231,7 +231,8 @@ def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto',
                       'truncweibull_min', 'ksone', 'levy_stable',
-                      'studentized_range', 'kstwo', 'arcsine'}
+                      'studentized_range', 'kstwo', 'arcsine',
+                      'poisson_binom'}  # vector-valued shape parameter
 
     # Please keep this list in alphabetical order...
     slow_basic_fit = {'alpha', 'betaprime', 'binom', 'bradford', 'burr12',
@@ -281,7 +282,9 @@ def cases_test_fit_mse():
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'tukeylambda',  # close, but doesn't meet tolerance
                       'vonmises',  # can have negative CDF; doesn't play nice
-                      'argus'}  # doesn't meet tolerance; tested separately
+                      'argus',  # doesn't meet tolerance; tested separately
+                      'poisson_binom',  # vector-valued shape parameter
+                      }
 
     # Please keep this list in alphabetical order...
     slow_basic_fit = {'alpha', 'anglit', 'arcsine', 'betabinom', 'bradford',
@@ -589,6 +592,7 @@ class TestFit:
 
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
+    @pytest.mark.fail_slow(5)
     def test_truncweibull_min(self):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
@@ -1029,10 +1033,6 @@ class TestFitResult:
             with pytest.raises(ValueError, match=message):
                 res.plot(plot_type='llama')
         except (ModuleNotFoundError, ImportError):
-            # Avoid trying to call MPL with numpy 2.0-dev, because that fails
-            # too often due to ABI mismatches and is hard to avoid. This test
-            # will work fine again once MPL has done a 2.0-compatible release.
-            if not np.__version__.startswith('2.0.0.dev0'):
-                message = r"matplotlib must be installed to use method `plot`."
-                with pytest.raises(ModuleNotFoundError, match=message):
-                    res.plot(plot_type='llama')
+            message = r"matplotlib must be installed to use method `plot`."
+            with pytest.raises(ModuleNotFoundError, match=message):
+                res.plot(plot_type='llama')

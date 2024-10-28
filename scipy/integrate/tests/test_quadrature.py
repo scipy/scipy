@@ -1,16 +1,14 @@
 # mypy: disable-error-code="attr-defined"
 import pytest
 import numpy as np
-from numpy import cos, sin, pi
-from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
-                           assert_, suppress_warnings)
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 from hypothesis import given
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as hyp_num
 
-from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
+from scipy.integrate import (romb, newton_cotes,
                              cumulative_trapezoid, trapezoid,
-                             quad, simpson, fixed_quad, AccuracyWarning,
+                             quad, simpson, fixed_quad,
                              qmc_quad, cumulative_simpson)
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 from scipy import stats, special
@@ -32,58 +30,9 @@ class TestFixedQuad:
         assert_allclose(got, expected, rtol=1e-12)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestQuadrature:
     def quad(self, x, a, b, args):
         raise NotImplementedError
-
-    def test_quadrature(self):
-        # Typical function with two extra arguments:
-        def myfunc(x, n, z):       # Bessel function integrand
-            return cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, (2, 1.8))
-        table_val = 0.30614353532540296487
-        assert_almost_equal(val, table_val, decimal=7)
-
-    def test_quadrature_rtol(self):
-        def myfunc(x, n, z):       # Bessel function integrand
-            return 1e90 * cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, (2, 1.8), rtol=1e-10)
-        table_val = 1e90 * 0.30614353532540296487
-        assert_allclose(val, table_val, rtol=1e-10)
-
-    def test_quadrature_miniter(self):
-        # Typical function with two extra arguments:
-        def myfunc(x, n, z):       # Bessel function integrand
-            return cos(n*x-z*sin(x))/pi
-        table_val = 0.30614353532540296487
-        for miniter in [5, 52]:
-            val, err = quadrature(myfunc, 0, pi, (2, 1.8), miniter=miniter)
-            assert_almost_equal(val, table_val, decimal=7)
-            assert_(err < 1.0)
-
-    def test_quadrature_single_args(self):
-        def myfunc(x, n):
-            return 1e90 * cos(n*x-1.8*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, args=2, rtol=1e-10)
-        table_val = 1e90 * 0.30614353532540296487
-        assert_allclose(val, table_val, rtol=1e-10)
-
-    def test_romberg(self):
-        # Typical function with two extra arguments:
-        def myfunc(x, n, z):       # Bessel function integrand
-            return cos(n*x-z*sin(x))/pi
-        val = romberg(myfunc, 0, pi, args=(2, 1.8))
-        table_val = 0.30614353532540296487
-        assert_almost_equal(val, table_val, decimal=7)
-
-    def test_romberg_rtol(self):
-        # Typical function with two extra arguments:
-        def myfunc(x, n, z):       # Bessel function integrand
-            return 1e19*cos(n*x-z*sin(x))/pi
-        val = romberg(myfunc, 0, pi, args=(2, 1.8), rtol=1e-10)
-        table_val = 1e19*0.30614353532540296487
-        assert_allclose(val, table_val, rtol=1e-10)
 
     def test_romb(self):
         assert_equal(romb(np.arange(17)), 128)
@@ -95,19 +44,6 @@ class TestQuadrature:
         val = romb(y)
         val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
         assert_allclose(val, val2, rtol=1e-8, atol=0)
-
-        # should be equal to romb with 2**k+1 samples
-        with suppress_warnings() as sup:
-            sup.filter(AccuracyWarning, "divmax .4. exceeded")
-            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(), divmax=4)
-        assert_allclose(val, val3, rtol=1e-12, atol=0)
-
-    def test_non_dtype(self):
-        # Check that we work fine with functions returning float
-        import math
-        valmath = romberg(math.sin, 0, 1)
-        expected_val = 0.45969769413185085
-        assert_almost_equal(valmath, expected_val, decimal=7)
 
     def test_newton_cotes(self):
         """Test the first few degrees, for evenly spaced points."""
@@ -239,13 +175,6 @@ class TestQuadrature:
         assert_equal(result, expected)
 
 
-@pytest.mark.parametrize('func', [romberg, quadrature])
-def test_deprecate_integrator(func):
-    message = f"`scipy.integrate.{func.__name__}` is deprecated..."
-    with pytest.deprecated_call(match=message):
-        func(np.exp, 0, 1)
-
-
 class TestCumulative_trapezoid:
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
@@ -324,12 +253,11 @@ class TestCumulative_trapezoid:
     @pytest.mark.parametrize(
         "initial", [1, 0.5]
     )
-    def test_initial_warning(self, initial):
+    def test_initial_error(self, initial):
         """If initial is not None or 0, a ValueError is raised."""
         y = np.linspace(0, 10, num=10)
-        with pytest.deprecated_call(match="`initial`"):
-            res = cumulative_trapezoid(y, initial=initial)
-        assert_allclose(res, [initial, *np.cumsum(y[1:] + y[:-1])/2])
+        with pytest.raises(ValueError, match="`initial`"):
+            cumulative_trapezoid(y, initial=initial)
 
     def test_zero_len_y(self):
         with pytest.raises(ValueError, match="At least one point is required"):
@@ -434,8 +362,9 @@ class TestQMCQuad:
         with pytest.raises(TypeError, match=message):
             qmc_quad(lambda x: 1, [0, 0], [1, 1], log=10)
 
-    def basic_test(self, n_points=2**8, n_estimates=8, signs=np.ones(2)):
-
+    def basic_test(self, n_points=2**8, n_estimates=8, signs=None):
+        if signs is None:
+            signs = np.ones(2)
         ndim = 2
         mean = np.zeros(ndim)
         cov = np.eye(ndim)

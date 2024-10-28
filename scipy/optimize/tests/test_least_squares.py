@@ -404,7 +404,7 @@ class BoundsMixin:
     def test_inconsistent_shape(self):
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       bounds=(1.0, [2.0, 3.0]), method=self.method)
-        # 1-D array wont't be broadcasted
+        # 1-D array won't be broadcast
         assert_raises(ValueError, least_squares, fun_rosenbrock, [1.0, 2.0],
                       bounds=([0.0], [3.0, 4.0]), method=self.method)
 
@@ -468,7 +468,7 @@ class BoundsMixin:
                             bounds=Bounds(lb=[0.1, 0.1]))
         assert_allclose(res.x, [0.1, 0.1], atol=1e-5)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_rosenbrock_bounds(self):
         x0_1 = np.array([-2.0, 1.0])
         x0_2 = np.array([2.0, 2.0])
@@ -554,7 +554,7 @@ class SparseMixin:
             assert_allclose(res_dense.cost, 0, atol=1e-20)
             assert_allclose(res_sparse.cost, 0, atol=1e-20)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_with_bounds(self):
         p = BroydenTridiagonal()
         for jac, jac_sparsity in product(

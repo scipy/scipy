@@ -1109,6 +1109,7 @@ class TestNumericalInverseHermite:
         #     pytest.skip("Tested separately")
         self.basic_test_all_scipy_dists(distname, shapes)
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_basic_truncnorm_gh17155(self):
         self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
@@ -1377,9 +1378,6 @@ class TestSimpleRatioUniforms:
 
 
 class TestRatioUniforms:
-    """ Tests for rvs_ratio_uniforms.
-    """
-
     def test_rv_generation(self):
         # use KS test to check distribution of rvs
         # normal distribution

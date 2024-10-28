@@ -155,7 +155,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     >>> x
     array([0., 0.])
 
-    The stopping code `istop=0` returned indicates that a vector of zeros was
+    The stopping code ``istop=0`` returned indicates that a vector of zeros was
     found as a solution. The returned solution `x` indeed contains
     ``[0., 0.]``. The next example has a non-trivial solution:
 
@@ -170,7 +170,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     >>> normr
     4.440892098500627e-16
 
-    As indicated by `istop=1`, `lsmr` found a solution obeying the tolerance
+    As indicated by ``istop=1``, `lsmr` found a solution obeying the tolerance
     limits. The given solution ``[1., -1.]`` obviously solves the equation. The
     remaining return values include information about the number of iterations
     (`itn=1`) and the remaining difference of left and right side of the solved
@@ -230,7 +230,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print(' ')
         print('LSMR            Least-squares solution of  Ax = b\n')
         print(f'The matrix A has {m} rows and {n} columns')
-        print('damp = %20.14e\n' % (damp))
+        print(f'damp = {damp:20.14e}\n')
         print(f'atol = {atol:8.2e}                 conlim = {conlim:8.2e}\n')
         print(f'btol = {btol:8.2e}             maxiter = {maxiter:8g}\n')
 
@@ -479,7 +479,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print(f'istop ={istop:8g}    normr ={normr:8.1e}')
         print(f'    normA ={normA:8.1e}    normAr ={normar:8.1e}')
         print(f'itn   ={itn:8g}    condA ={condA:8.1e}')
-        print('    normx =%8.1e' % (normx))
+        print(f'    normx ={normx:8.1e}')
         print(str1, str2)
         print(str3, str4)
 

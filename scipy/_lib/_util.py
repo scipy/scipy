@@ -8,14 +8,12 @@ from collections import namedtuple
 import inspect
 import math
 from typing import (
-    Optional,
-    Union,
     TYPE_CHECKING,
     TypeVar,
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
+from scipy._lib._array_api import array_namespace, is_numpy, xp_size
 
 
 AxisError: type[Exception]
@@ -28,7 +26,7 @@ if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
         DTypePromotionError
     )
 else:
-    from numpy import (
+    from numpy import (  # type: ignore[attr-defined, no-redef]
         AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
     )
     DTypePromotionError = TypeError  # type: ignore
@@ -53,10 +51,10 @@ else:
     np_long = np.int_
     np_ulong = np.uint
 
-IntNumber = Union[int, np.integer]
-DecimalNumber = Union[float, np.floating, np.integer]
+IntNumber = int | np.integer
+DecimalNumber = float | np.floating | np.integer
 
-copy_if_needed: Optional[bool]
+copy_if_needed: bool | None
 
 if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
     copy_if_needed = None
@@ -73,10 +71,9 @@ else:
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
 if TYPE_CHECKING:
-    SeedType = Optional[Union[IntNumber, np.random.Generator,
-                              np.random.RandomState]]
-    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
-                                                         np.random.RandomState])
+    SeedType = IntNumber | np.random.Generator | np.random.RandomState | None
+    GeneratorType = TypeVar("GeneratorType",
+                            bound=np.random.Generator|np.random.RandomState)
 
 try:
     from numpy.random import Generator as Generator
@@ -141,9 +138,17 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
 
     if f2 is None:
-        fillvalue = xp.asarray(fillvalue)
-        dtype = xp.result_type(temp1.dtype, fillvalue.dtype)
-        out = xp.full(cond.shape, fill_value=fillvalue, dtype=dtype)
+        # If `fillvalue` is a Python scalar and we convert to `xp.asarray`, it gets the
+        # default `int` or `float` type of `xp`, so `result_type` could be wrong.
+        # `result_type` should/will handle mixed array/Python scalars;
+        # remove this special logic when it does.
+        if type(fillvalue) in {bool, int, float, complex}:
+            with np.errstate(invalid='ignore'):
+                dtype = (temp1 * fillvalue).dtype
+        else:
+           dtype = xp.result_type(temp1.dtype, fillvalue)
+        out = xp.full(cond.shape, dtype=dtype,
+                      fill_value=xp.asarray(fillvalue, dtype=dtype))
     else:
         ncond = ~cond
         temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
@@ -263,9 +268,9 @@ def check_random_state(seed):
     """
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
-    if isinstance(seed, (numbers.Integral, np.integer)):
+    if isinstance(seed, numbers.Integral | np.integer):
         return np.random.RandomState(seed)
-    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
+    if isinstance(seed, np.random.RandomState | np.random.Generator):
         return seed
 
     raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
@@ -310,8 +315,8 @@ def _asarray_validated(a, check_finite=True,
     if not sparse_ok:
         import scipy.sparse
         if scipy.sparse.issparse(a):
-            msg = ('Sparse matrices are not supported by this function. '
-                   'Perhaps one of the scipy.sparse.linalg functions '
+            msg = ('Sparse arrays/matrices are not supported by this function. '
+                   'Perhaps one of the `scipy.sparse.linalg` functions '
                    'would work instead.')
             raise ValueError(msg)
     if not mask_ok:
@@ -707,7 +712,13 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', policies=None, *, xp=None):
+def _contains_nan(a, nan_policy='propagate', policies=None, *,
+                  xp_omit_okay=False, xp=None):
+    # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
+    # handle non-NumPy arrays, most functions that call `_contains_nan` want
+    # it to raise an error if `nan_policy='omit'` and `xp` is not `np`.
+    # Some functions support `nan_policy='omit'` natively, so setting this to
+    # `True` prevents the error from being raised.
     if xp is None:
         xp = array_namespace(a)
     not_numpy = not is_numpy(xp)
@@ -738,7 +749,7 @@ def _contains_nan(a, nan_policy='propagate', policies=None, *, xp=None):
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
 
-    if not_numpy and contains_nan and nan_policy=='omit':
+    if not xp_omit_okay and not_numpy and contains_nan and nan_policy=='omit':
         message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
         raise ValueError(message)
 

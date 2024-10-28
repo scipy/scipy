@@ -475,6 +475,10 @@ class TestCorr:
             res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
+    @skip_xp_invalid_arg
+    # mstats.pointbiserialr returns a NumPy float for the statistic, but converts
+    # it to a masked array with no masked elements before calling `special.betainc`,
+    # which won't accept masked arrays when `SCIPY_ARRAY_API=1`.
     def test_pointbiserial(self):
         x = [1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
              0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, -1]
@@ -1030,7 +1034,7 @@ def test_siegelslopes():
     y[:4] = 1000
     assert_equal(mstats.siegelslopes(y, x), (5.0, -3.0))
 
-    # if there are no outliers, results should be comparble to linregress
+    # if there are no outliers, results should be comparable to linregress
     x = np.arange(10)
     y = -2.3 + 0.3*x + stats.norm.rvs(size=10, random_state=231)
     slope_ols, intercept_ols, _, _, _ = stats.linregress(x, y)
@@ -1861,7 +1865,8 @@ class TestCompareWithStats:
         xm = np.ma.array(tmp, mask=mask)
         x_orig, xm_orig = x.copy(), xm.copy()
 
-        r = stats.find_repeats(x)
+        unique, unique_counts = np.unique(x, return_counts=True)
+        r = unique[unique_counts > 1], unique_counts[unique_counts > 1]
         rm = stats.mstats.find_repeats(xm)
 
         assert_equal(r, rm)

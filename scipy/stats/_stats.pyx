@@ -172,12 +172,12 @@ def _toint64(x):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool additive):
+def _weightedrankedtau(const ordered[:] x, const ordered[:] y, intp_t[:] rank, weigher, bool additive):
     # y_local and rank_local (declared below) are a work-around for a Cython
     # bug; see gh-16718.  When we can require Cython 3.0, y_local and
     # rank_local can be removed, and the closure weigh() can refer directly
     # to y and rank.
-    cdef ordered[:] y_local = y
+    cdef const ordered[:] y_local = y
     cdef intp_t i, first
     cdef float64_t t, u, v, w, s, sq
     cdef int64_t n = np.int64(len(x))
@@ -377,8 +377,8 @@ def _transform_distance_matrix(distx, disty, global_corr='mgc', is_ranked=True):
 # MGC specific functions
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef _expected_covar(float64_t[:, :] distx, float64_t[:, :] disty,
-                     int64_t[:, :] rank_distx, int64_t[:, :] rank_disty,
+cdef _expected_covar(const float64_t[:, :] distx, const float64_t[:, :] disty,
+                     const int64_t[:, :] rank_distx, const int64_t[:, :] rank_disty,
                      float64_t[:, :] cov_xy, float64_t[:] expectx,
                      float64_t[:] expecty):
     # summing up the element-wise product of A and B based on the ranks,
@@ -712,8 +712,8 @@ ctypedef fused real:
 @cython.cdivision(True)
 @cython.boundscheck(False)
 cdef inline int gaussian_kernel_estimate_inner(
-    real[:, :] points_,  real[:, :] values_, real[:, :] xi_,
-    real[:, :] estimate, real[:, :] cho_cov,
+    const real[:, :] points_,  const real[:, :] values_, const real[:, :] xi_,
+    real[:, :] estimate, const real[:, :] cho_cov,
     int n, int m, int d, int p,
 ) noexcept nogil:
     cdef:

@@ -3,7 +3,7 @@
 from math import ceil, log
 import operator
 import warnings
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
@@ -237,8 +237,8 @@ def kaiserord(ripple, width):
     A = abs(ripple)  # in case somebody is confused as to what's meant
     if A < 8:
         # Formula for N is not valid in this range.
-        raise ValueError("Requested maximum ripple attenuation %f is too "
-                         "small for the Kaiser formula." % A)
+        raise ValueError("Requested maximum ripple attenuation "
+                         f"{A:f} is too small for the Kaiser formula.")
     beta = kaiser_beta(A)
 
     # Kaiser's formula (as given in Oppenheim and Schafer) is for the filter
@@ -269,10 +269,14 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         Nyquist frequency.
     cutoff : float or 1-D array_like
         Cutoff frequency of filter (expressed in the same units as `fs`)
-        OR an array of cutoff frequencies (that is, band edges). In the
-        latter case, the frequencies in `cutoff` should be positive and
-        monotonically increasing between 0 and `fs/2`. The values 0 and
-        `fs/2` must not be included in `cutoff`.
+        OR an array of cutoff frequencies (that is, band edges). In the 
+        former case, as a float, the cutoff frequency should correspond 
+        with the half-amplitude point, where the attenuation will be -6dB. 
+        In the latter case, the frequencies in `cutoff` should be positive 
+        and monotonically increasing between 0 and `fs/2`. The values 0 
+        and `fs/2` must not be included in `cutoff`. It should be noted 
+        that this is different than the behavior of `scipy.signal.iirdesign`, 
+        where the cutoff is the half-power point (-3dB).
     width : float or None, optional
         If `width` is not None, then assume it is the approximate width
         of the transition region (expressed in the same units as `fs`)
@@ -906,7 +910,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     ----------
     .. [1] Ivan Selesnick, Linear-Phase Fir Filter Design By Least Squares.
            OpenStax CNX. Aug 9, 2005.
-           http://cnx.org/contents/eb1ecb35-03a9-4610-ba87-41cd771c95f2@7
+           https://eeweb.engineering.nyu.edu/iselesni/EL713/firls/firls.pdf
 
     Examples
     --------
@@ -956,7 +960,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     # normalize bands 0->1 and make it 2 columns
     nyq = float(nyq)
     if nyq <= 0:
-        raise ValueError('nyq must be positive, got %s <= 0.' % nyq)
+        raise ValueError(f'nyq must be positive, got {nyq} <= 0.')
     bands = np.asarray(bands).flatten() / nyq
     if len(bands) % 2 != 0:
         raise ValueError("bands must contain frequency pairs.")
@@ -1074,7 +1078,7 @@ def _dhtm(mag):
 
 def minimum_phase(h: np.ndarray,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
-                  n_fft: Optional[int] = None, *, half: bool = True) -> np.ndarray:
+                  n_fft: int | None = None, *, half: bool = True) -> np.ndarray:
     """Convert a linear-phase FIR filter to minimum phase
 
     Parameters
@@ -1222,7 +1226,7 @@ def minimum_phase(h: np.ndarray,
     minimum phase filters clearly show a reduced (negative) phase slope in the pass and
     transition band. The plots also illustrate that the filter with parameters
     ``method='homomorphic', half=False`` has same order and magnitude response as the
-    linear filter `h` wheras the other minimum phase filters have only half the order
+    linear filter `h` whereas the other minimum phase filters have only half the order
     and the square root  of the magnitude response.
     """
     h = np.asarray(h)
@@ -1243,7 +1247,7 @@ def minimum_phase(h: np.ndarray,
         n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
     n_fft = int(n_fft)
     if n_fft < len(h):
-        raise ValueError('n_fft must be at least len(h)==%s' % len(h))
+        raise ValueError(f'n_fft must be at least len(h)=={len(h)}')
     if method == 'hilbert':
         w = np.arange(n_fft) * (2 * np.pi / n_fft * n_half)
         H = np.real(fft(h, n_fft) * np.exp(1j * w))

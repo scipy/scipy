@@ -13,7 +13,7 @@ from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 
 from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
-                                   copy as xp_copy)
+                                   xp_copy, is_array_api_strict)
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
@@ -337,7 +337,7 @@ class TestContainsNaNTest:
         assert _contains_nan(data4)[0]
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
@@ -395,10 +395,10 @@ class TestLazywhere:
     p = strategies.floats(min_value=0, max_value=1)
     data = strategies.data()
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
@@ -407,7 +407,10 @@ class TestLazywhere:
                                                  min_side=0)
         input_shapes, result_shape = data.draw(mbs)
         cond_shape, *shapes = input_shapes
-        fillvalue = xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=tuple())))
+        elements = {'allow_subnormal': False}  # cupy/cupy#8382
+        fillvalue = xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=tuple(),
+                                                     elements=elements)))
+        float_fillvalue = float(fillvalue)
         arrays = [xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=shape)))
                   for shape in shapes]
 
@@ -422,26 +425,27 @@ class TestLazywhere:
 
         res1 = _lazywhere(cond, arrays, f, fillvalue)
         res2 = _lazywhere(cond, arrays, f, f2=f2)
+        if not is_array_api_strict(xp):
+            res3 = _lazywhere(cond, arrays, f, float_fillvalue)
 
         # Ensure arrays are at least 1d to follow sane type promotion rules.
+        # This can be removed when minimum supported NumPy is 2.0
         if xp == np:
             cond, fillvalue, *arrays = np.atleast_1d(cond, fillvalue, *arrays)
 
         ref1 = xp.where(cond, f(*arrays), fillvalue)
         ref2 = xp.where(cond, f(*arrays), f2(*arrays))
+        if not is_array_api_strict(xp):
+            # Array API standard doesn't currently define behavior when fillvalue is a
+            # Python scalar. When it does, test can be run with array_api_strict, too.
+            ref3 = xp.where(cond, f(*arrays), float_fillvalue)
 
-        if xp == np:
+        if xp == np:  # because we ensured arrays are at least 1d
             ref1 = ref1.reshape(result_shape)
             ref2 = ref2.reshape(result_shape)
-            res1 = xp.asarray(res1)[()]
-            res2 = xp.asarray(res2)[()]
+            ref3 = ref3.reshape(result_shape)
 
-        isinstance(res1, type(xp.asarray([])))
         xp_assert_close(res1, ref1, rtol=2e-16)
-        assert_equal(res1.shape, ref1.shape)
-        assert_equal(res1.dtype, ref1.dtype)
-
-        isinstance(res2, type(xp.asarray([])))
         xp_assert_equal(res2, ref2)
-        assert_equal(res2.shape, ref2.shape)
-        assert_equal(res2.dtype, ref2.dtype)
+        if not is_array_api_strict(xp):
+            xp_assert_equal(res3, ref3)

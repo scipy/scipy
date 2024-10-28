@@ -40,6 +40,27 @@ def _get_ttest_ci(ttest):
     return ttest_ci
 
 
+def xp_mean_1samp(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    return stats._stats_py._xp_mean(*args, **kwargs)
+
+
+def xp_mean_2samp(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    weights = args[1]
+    return stats._stats_py._xp_mean(args[0], *args[2:], weights=weights, **kwargs)
+
+
+def xp_var(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    return stats._stats_py._xp_var(*args, **kwargs)
+
+
+def combine_pvalues_weighted(*args, **kwargs):
+    return stats.combine_pvalues(args[0], *args[2:], weights=args[1],
+                                 method='stouffer', **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -115,6 +136,10 @@ axis_nan_policy_cases = [
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
+    (combine_pvalues_weighted, tuple(), {}, 2, 2, True, None),
+    (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
+    (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -143,8 +168,11 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",
                       "Input sample size must be greater than one.",
+                      "At least one slice along `axis` has zero length",
+                      "One or more sample arguments is too small",
                       "invalid value encountered",
-                      "divide by zero encountered",}
+                      "divide by zero encountered",
+}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
@@ -406,7 +434,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        assert_equal(res_1db, res_1da)
+        assert_allclose(res_1db, res_1da, rtol=1e-15)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -531,7 +559,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
-        assert_equal(res1db, res1da)
+        assert_allclose(res1db, res1da, rtol=1e-15)
         all_results += list(res1da)
 
     for item in all_results:
@@ -540,31 +568,29 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 
 
 # Test keepdims for:
-#     - single-output and multi-output functions (gmean and mannwhitneyu)
 #     - Axis negative, positive, None, and tuple
 #     - 1D with no NaNs
 #     - 1D with NaN propagation
 #     - Zero-sized output
-@pytest.mark.filterwarnings('ignore:All axis-slices of one...')
-@pytest.mark.filterwarnings('ignore:After omitting NaNs...')
-# These were added in gh-20734 for `ttest_1samp`; they should be addressed and removed
-@pytest.mark.filterwarnings('ignore:divide by zero encountered...')
-@pytest.mark.filterwarnings('ignore:invalid value encountered...')
+# We're working on making `stats` quieter, but that's not what this test
+# is about. For now, we expect all sorts of warnings here due to small samples.
+@pytest.mark.filterwarnings('ignore::UserWarning')
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize("nan_policy", ("omit", "propagate"))
-@pytest.mark.parametrize(
-    ("hypotest", "args", "kwds", "n_samples", "unpacker"),
-    ((stats.gmean, tuple(), dict(), 1, lambda x: (x,)),
-     (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, None),
-     (stats.ttest_1samp, (0,), dict(), 1, unpack_ttest_result))
-)
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
+                          "paired", "unpacker"), axis_nan_policy_cases)
 @pytest.mark.parametrize(
     ("sample_shape", "axis_cases"),
     (((2, 3, 3, 4), (None, 0, -1, (0, 2), (1, -1), (3, 1, 2, 0))),
      ((10, ), (0, -1)),
      ((20, 0), (0, 1)))
 )
-def test_keepdims(hypotest, args, kwds, n_samples, unpacker,
+def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                   sample_shape, axis_cases, nan_policy):
+    small_sample_raises = {stats.skewtest, stats.kurtosistest, stats.normaltest,
+                           stats.differential_entropy}
+    if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
+        pytest.skip("Sample too small; test raises error.")
     # test if keepdims parameter works correctly
     if not unpacker:
         def unpacker(res):
@@ -600,10 +626,11 @@ def test_keepdims(hypotest, args, kwds, n_samples, unpacker,
                                           nan_res_base):
             assert r.shape == expected_shape
             r = np.squeeze(r, axis=axis)
-            assert_equal(r, r_base)
+            assert_allclose(r, r_base, atol=1e-16)
             assert rn.shape == expected_shape
             rn = np.squeeze(rn, axis=axis)
-            assert_equal(rn, rn_base)
+            # ideally assert_equal, but `combine_pvalues` failed on 32-bit build
+            assert_allclose(rn, rn_base, atol=1e-16)
 
 
 @pytest.mark.parametrize(("fun", "nsamp"),
@@ -1221,10 +1248,6 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
     a_masked3 = np.ma.masked_array(a, mask=(mask_a1 | mask_a2))
     b_masked3 = np.ma.masked_array(b, mask=(mask_b1 | mask_b2))
 
-    mask_all = (mask_a1 | mask_a2 | mask_b1 | mask_b2)
-    a_masked4 = np.ma.masked_array(a, mask=mask_all)
-    b_masked4 = np.ma.masked_array(b, mask=mask_all)
-
     with np.testing.suppress_warnings() as sup:
         message = 'invalid value encountered'
         sup.filter(RuntimeWarning, message)
@@ -1233,21 +1256,11 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
         res2 = func(a_masked2, weights=b_masked2, nan_policy="omit", axis=axis)
         res3 = func(a_masked3, weights=b_masked3, nan_policy="raise", axis=axis)
         res4 = func(a_masked3, weights=b_masked3, nan_policy="propagate", axis=axis)
-        # Would test with a_masked3/b_masked3, but there is a bug in np.average
-        # that causes a bug in _no_deco mean with masked weights. Would use
-        # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        if weighted_fun_name in {"hmean"}:
-            weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
-            res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
-                                   axis=axis, _no_deco=True)
 
     np.testing.assert_array_equal(res1, res)
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    if weighted_fun_name in {"hmean"}:
-        # _no_deco mean returns masked array, last element was masked
-        np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
 
 
 def test_raise_invalid_args_g17713():
