@@ -1571,6 +1571,12 @@ class ContinuousDistribution:
         self._parameters = parameters
         self._parameterization = parameterization
         self._original_parameters = original_parameters
+        for name in self._parameters.keys():
+            # Make parameters properties of the class; return values from the instance
+            if hasattr(self.__class__, name):
+                continue
+            setattr(self.__class__, name, property(lambda self_, name_=name:
+                                                   self_._parameters[name_].copy()[()]))
 
     def reset_cache(self):
         r""" Clear all cached values.
@@ -1772,22 +1778,6 @@ class ContinuousDistribution:
             raise ValueError(message)
         self._validation_policy = validation_policy
 
-    def __getattr__(self, item):
-        # This override allows distribution parameters to be accessed as
-        # attributes. See Question 1 at the top.
-
-        # This might be needed in __init__ to ensure that `_parameters` exists
-        # super().__setattr__('_parameters', dict())
-
-        # This is needed for deepcopy/pickling
-        if '_parameters' not in vars(self):
-            return super().__getattribute__(item)
-
-        if item in self._parameters:
-            return self._parameters[item][()]
-
-        return super().__getattribute__(item)
-
     ### Other magic methods
 
     def __repr__(self):
@@ -1831,13 +1821,14 @@ class ContinuousDistribution:
         return self.__add__(other)
 
     def __rsub__(self, other):
-        return self.__add__(other)
+        return self.__neg__().__add__(other)
 
     def __rmul__(self, other):
-        return self.__add__(other)
+        return self.__mul__(other)
 
     def __rtruediv__(self, other):
-        return self.__add__(other)
+        message = "Division by a random variable is not yet implemented."
+        raise NotImplementedError(message)
 
     def __neg__(self):
         return self * -1
@@ -5024,7 +5015,7 @@ class TransformedDistribution(ContinuousDistribution):
 
     def __repr__(self):
         s = super().__repr__()
-        return s.replace(self.__class__.__name__,
+        return s.replace("Distribution",
                          self._dist.__class__.__name__)
 
 
@@ -5203,19 +5194,3 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return ShiftedScaledDistribution(self._dist,
                                          loc=self.loc / scale,
                                          scale=self.scale / scale)
-
-    def __radd__(self, other):
-        return self.__add__(other)
-
-    def __rsub__(self, other):
-        return self.__neg__().__add__(other)
-
-    def __rmul__(self, other):
-        return self.__mul__(other)
-
-    def __rtruediv__(self, other):
-        message = "Division by a random variable is not yet implemented."
-        raise NotImplementedError(message)
-
-    def __neg__(self):
-        return self * -1

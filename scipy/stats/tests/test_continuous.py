@@ -894,6 +894,25 @@ class TestAttributes:
         with pytest.raises(ValueError, match=message):
             X.validation_policy = "invalid"
 
+    def test_shapes(self):
+        X = stats.Normal(mu=1, sigma=2)
+        Y = stats.Normal(mu=[2], sigma=3)
+
+        # Check that attributes are available as expected
+        assert X.mu == 1
+        assert X.sigma == 2
+        assert Y.mu[0] == 2
+        assert Y.sigma[0] == 3
+
+        # Trying to set an attribute raises
+        # message depends on Python version
+        with pytest.raises(AttributeError):
+            X.mu = 2
+
+        # Trying to mutate an attribute really mutates a copy
+        Y.mu[0] = 10
+        assert Y.mu[0] == 2
+
 
 class TestTransforms:
     @pytest.mark.fail_slow(10)
@@ -998,6 +1017,28 @@ class TestTransforms:
             #                 dist0.sample(x_result_shape, rng=rng0) * scale + loc)
             # Should also try to test fit, plot?
 
+    def test_arithmetic_operators(self):
+        rng = np.random.default_rng(2348923495832349834)
+
+        a, b, loc, scale = 0.294, 1.34, 0.57, 1.16
+
+        x = rng.uniform(-3, 3, 100)
+        Y = _LogUniform(a=a, b=b)
+
+        X = scale*Y + loc
+        assert_allclose(X.cdf(x), Y.cdf((x - loc) / scale))
+        X = loc + Y*scale
+        assert_allclose(X.cdf(x), Y.cdf((x - loc) / scale))
+
+        X = Y/scale - loc
+        assert_allclose(X.cdf(x), Y.cdf((x + loc) * scale))
+        X = loc -_LogUniform(a=a, b=b)/scale
+        assert_allclose(X.cdf(x), Y.ccdf((-x + loc)*scale))
+
+        message = "Division by a random variable is not yet implemented."
+        with pytest.raises(NotImplementedError, match=message):
+            1 / Y
+
 
 class TestFullCoverage:
     # Adds tests just to get to 100% test coverage; this way it's more obvious
@@ -1060,6 +1101,8 @@ class TestFullCoverage:
     def test_ContinuousDistribution__str__(self):
         X = _Uniform(a=0, b=1)
         assert str(X) == "_Uniform(a=0.0, b=1.0)"
+
+        assert str(X*3 + 2) == "ShiftedScaled_Uniform(a=0.0, b=1.0, loc=2.0, scale=3.0)"
 
         X = _Uniform(a=np.zeros(4), b=1)
         assert str(X) == "_Uniform(a, b, shape=(4,))"
