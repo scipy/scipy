@@ -1336,6 +1336,65 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False, pass_zero=True, s
     -------
     filter_2d : (hsize[0], hsize[1]) ndarray
         Coefficients of 2D FIR filter.
+
+    Raises
+    ------
+    ValueError
+        If `hsize` and `window` are not 2-element tuples or lists.
+        If `cutoff` is None when `circular` is True.
+        If `cutoff` is outside the range [0, fs / 2] and `circular` is False.
+        If any of the elements in `window` are not recognized.
+    RuntimeError
+        If `firwin` fails to converge when designing the filter.
+
+    See Also
+    --------
+    scipy.signal.firwin, scipy.signal.get_window
+
+    Examples
+    --------
+    Generate a 5x5 low-pass filter with cutoff frequency 0.1.
+
+    >>> import numpy as np
+    >>> from scipy.signal import get_window
+    >>> from scipy.signal import fwind1
+    >>> hsize = (5, 5)
+    >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
+    >>> fc = 0.1
+    >>> filter_2d = fwind1(hsize, window, fc=fc)
+    >>> filter_2d
+    array([[0.00025366, 0.00401662, 0.00738617, 0.00401662, 0.00025366],
+           [0.00401662, 0.06360159, 0.11695714, 0.06360159, 0.00401662],
+           [0.00738617, 0.11695714, 0.21507283, 0.11695714, 0.00738617],
+           [0.00401662, 0.06360159, 0.11695714, 0.06360159, 0.00401662],
+           [0.00025366, 0.00401662, 0.00738617, 0.00401662, 0.00025366]])
+
+    Generate a circularly symmetric 5x5 low-pass filter with Hamming window.
+
+    >>> filter_2d = fwind1((5, 5), 'hamming', fc=fc, circular=True)
+    >>> filter_2d
+    array([[-0.00020354, -0.00020354, -0.00020354, -0.00020354, -0.00020354],
+           [-0.00020354,  0.01506844,  0.09907658,  0.01506844, -0.00020354],
+           [-0.00020354,  0.09907658, -0.00020354,  0.09907658, -0.00020354],
+           [-0.00020354,  0.01506844,  0.09907658,  0.01506844, -0.00020354],
+           [-0.00020354, -0.00020354, -0.00020354, -0.00020354, -0.00020354]])
+
+    Plotting the generated 2D filters (optional).
+
+    >>> import matplotlib.pyplot as plt
+    >>> hsize, fc = (50, 50), 0.05
+    >>> window = (("kaiser", 5.0), ("kaiser", 5.0))
+    >>> filter0_2d = fwind1(hsize, window, fc=fc)
+    >>> filter1_2d = fwind1((50, 50), 'hamming', fc=fc, circular=True)
+    ...
+    >>> fg, (ax0, ax1) = plt.subplots(1, 2, tight_layout=True, figsize=(6.5, 3.5))
+    >>> ax0.set_title("Product of 2 Windows")
+    >>> im0 = ax0.imshow(filter0_2d, cmap='viridis', origin='lower', aspect='equal')
+    >>> fg.colorbar(im0, ax=ax0, shrink=0.7)
+    >>> ax1.set_title("Circular Window")
+    >>> im1 = ax1.imshow(filter1_2d, cmap='plasma', origin='lower', aspect='equal')
+    >>> fg.colorbar(im1, ax=ax1, shrink=0.7)
+    >>> plt.show()
     """
     if len(hsize) != 2:
             raise ValueError("hsize must be a 2-element tuple or list")
