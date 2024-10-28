@@ -51,6 +51,30 @@ Overview and big picture
    -  ``issparse(A) and A.format == 'csr'`` looks for a CSR sparse
       array/matrix.
 
+-  Handling your library's API for sparse output:
+
+   -  Inputs are fairly easy to accommodate either spmatrix or sparray. So
+      long as you use ``A.multiply(B)`` for elementwise and ``A @ B`` for matrix
+      multiplication, and you use ``sparse.linalg.matrix_power`` for matrix
+      power, you should be fine after you complete the "first pass" of the
+      migration steps described in the next section. Your code will handle
+      both types of inputs interchangeably.
+   -  Output types from your library's functions require a little more thought.
+      Make a list of all your public functions that return spmatrix objects.
+      Check whether you feel OK returning sparrays instead. That depends on
+      your library and its users. If you want to allow these functions to
+      continue to return spmatrix objects with a user's existing code, you
+      can do that most of the time. Often there is an sparse input that
+      you can use as a signal for what type of output should be returned.
+      Design the function to return the type that was input. That can be
+      extended to dense inputs. If the input is an np.matrix or a masked array
+      with np.matrix as its ``._baseclass`` attribute, then return spmatrix.
+      Otherwise return an sparray. Without those inputs, two other approaches
+      are to create a keyword argument to determine which to return, or to
+      create a new function (like we have done with, e.g. ``eye_array``) that
+      has the same basic syntax, but returns sparray. Which method you choose
+      should depend on your library and your users and your preferences.
+
 Recommended steps for migration
 -------------------------------
 
@@ -90,7 +114,7 @@ Recommended steps for migration
       to ``int32`` just before calling the library. ``sparray`` tries
       to select index dtype based in input dtype instead of dtype-by-value.
       Using just-in-time conversion is a good approach to index dtype issues.
-      Convert to ``int32`` just before you call the code that requires ``int32``
+      Convert to ``int32`` just before you call the code that requires ``int32``.
    -  Check all places where you iterate over spmatrices and change them
       to account for the sparrays yielding 1D sparrays rather than 2D spmatrices.
    -  Find and change places where your code makes use of ``np.matrix``
@@ -124,6 +148,11 @@ to this call when you switch functions. In summary, to migrate to ``random_array
 change the function name, switch the shape argument to a single tuple argument,
 leave any other parameters as before, and think about what
 sort of ``random_state=`` argument should be used, if any.
+
+The `diags_array` function uses keyword-only rules for arguments. So you have
+to type the `offsets=` in front of the offsets arguments. That seems like a pain
+during migration from using `diags`, but it helps avoid confusion and eases reading.
+A single shape parameter replaces two integers for this migration as well.
 
 Existing functions that need careful migration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -360,7 +389,8 @@ Other
    (see `gh-18509 <https://github.com/scipy/scipy/pull/18509>`__ for more details).
 
    This means you may get int64 indexing when you used to get int32.
-   You recast manually if you need to, e.g. ``A.indices = A.indices.astype('int32')``
+   You can recast manually if you need to: ``A.indices = A.indices.astype('int32')``
+   and simiarly for ``indptr``.
 
 -  Binary operations with operators ``+, -, *, /, @, !=, >`` and sparse and/or
    dense operands:
