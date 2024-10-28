@@ -42,7 +42,6 @@ _highs_dep = declare_dependency(
 
 highspy_cpp = highs_proj.get_variable('highspy_cpp')
 highs_conf_file = highs_proj.get_variable('highs_conf_file')
-highsoptions_cpp = highs_proj.get_variable('highsoptions_cpp')
 
 scipy_highspy_dep = [py3_dep, pybind11_dep, _highs_dep, thread_dep, atomic_dep]
 
@@ -65,7 +64,7 @@ py3.extension_module(
 
 py3.extension_module(
     '_highs_options',
-    sources: highsoptions_cpp + highs_conf_file,
+    sources: [highs_conf_file, 'highs_options.cpp'],
     dependencies: scipy_highspy_dep,
     c_args: [Wno_unused_variable, Wno_unused_but_set_variable],
     cpp_args: [_cpp_Wno_unused_variable, _cpp_Wno_unused_but_set_variable],
