@@ -26,7 +26,7 @@ from .test_base import (
 )
 
 counter_container = [0]
-zero_get_index_dtype_calls = set()
+zero_get_index_dtype_calls : set[str] = set()
 
 # name : reason not tested here
 SKIP_TESTS = {
