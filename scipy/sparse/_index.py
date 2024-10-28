@@ -282,11 +282,11 @@ class IndexMixin:
         if len(array_indices) > 1:
             idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
             if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
-                shapes = [str(ix.shape) for ix in idx_arrays]
+                shapes = " ".join(str(ix.shape) for ix in idx_arrays)
                 msg = (f'shape mismatch: indexing arrays could not be broadcast '
-                       f'together with shapes {" ".join(shapes)}')
+                       f'together with shapes {shapes}')
                 raise IndexError(msg)
-            # Todo: for nD (adjacenct arrays stay, separated move to start)
+            # TODO: handle this for nD (adjacent arrays stay, separated move to start)
             idx_shape = list(idx_arrays[0].shape) + idx_shape
         elif len(array_indices) == 1:
             arr_index = array_indices[0]
