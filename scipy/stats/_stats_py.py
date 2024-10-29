@@ -4652,8 +4652,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # in the docs.
     if n == 2:
         r = xp.round(r)
-        pvalue = xp.ones_like(r)
-        pvalue[xp.asarray(xp.isnan(r))] = xp.nan
+        pvalue = np.where(xp.asarray(xp.isnan(r)), xp.nan, 1.0)
     else:
         # As explained in the docstring, the distribution of `r` under the null
         # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
