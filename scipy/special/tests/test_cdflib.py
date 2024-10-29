@@ -552,18 +552,7 @@ def test_ncfdtr(dfn, dfd, nc, f, expected):
     assert_allclose(sp.ncfdtr(dfn, dfd, nc, f), expected, rtol=1e-13, atol=0)
 
 
-@pytest.mark.parametrize(
-    "df,nc,x,expected,rtol",
-    [[3000., 3., 0.1, 0.0018657780826323328, 1e-13],
-     [3., 5., -2., 1.5645373999149622e-09, 5e-9],
-     [1000., 10., 1., 1.1493552133826623e-19, 1e-13],
-     [1e-5, -6., 2., 0.9999999990135003, 1e-13],
-     [0.98, -3.8, 0.15, 0.9999528361700505, 1e-13],
-     [10., 20., 0.15, 6.426530505957303e-88, 1e-13],
-     [1., 1., np.inf, 1.0, 0.0],
-     [1., 1., -np.inf, 0.0, 0.0],]
-)
-def test_nctdtr(df, nc, x, expected, rtol):
+class TestNctdtr:
 
     # Reference values computed with mpmath with the following script
     # Formula from:
@@ -601,4 +590,64 @@ def test_nctdtr(df, nc, x, expected, rtol):
     #         result = mp.one - f(df, -nc, x)
     #     return float(result)
 
-    assert_allclose(sp.nctdtr(df, nc, x), expected, rtol=rtol)
+    def test_nctdtr_gh19896(self):
+        # test that gh-19896 is resolved.
+        # Originally this was a regression test that used the old Fortran results
+        # as a reference. The Fortran results were not accurate, so the reference
+        # values were recomputed with mpmath.
+    
+        dfarr = [0.98, 9.8, 98, 980]
+        pnoncarr = [-3.8, 0.38, 3.8, 15]
+        tarr = [0.0015, 0.15, 1.5, 15]
+        resarr = [0.9999279987514815, 0.9999528361700505, 0.9999908823016942,
+                  0.9999990264591945, 0.35241533122693, 0.39749697267146983,
+                  0.716862963488558, 0.9656246449257494, 7.26973354942293e-05,
+                  0.00012416481147589105, 0.035388035775454095,
+                  0.7954826975430583, 3.737844301207848e-51, 8.92105695383943e-50,
+                  1.356352627985402e-16, 0.3167162755783798,
+                  0.9999280776192786, 0.9999599410685442, 0.9999997432394788,
+                  0.9999999999999984, 0.3525155979107491, 0.40763120140379194,
+                  0.8476794017024651, 0.9999999297116268, 7.277620328149153e-05,
+                  0.00013024802220900652, 0.013477432800072933,
+                  0.999850151230648, 3.752781643490965e-51,
+                  3.739228558834831e-50, 5.17392293477121e-37,
+                  0.44345998477769566, 0.9999280875149109,
+                  0.9999608250170452, 0.9999999304757682, 1.0,
+                  0.35252817848596313, 0.40890253001794846,
+                  0.8664672830006552, 1.0, 7.278609891281275e-05,
+                  0.0001310318674827004, 0.010990879189991727,
+                  0.9999999999999989, 3.754655850567323e-51,
+                  3.5029669586819616e-50, 2.1700008247139212e-41,
+                  0.4877293654384679, 0.9999280885188965,
+                  0.9999609144559273, 0.9999999410050979,
+                  1.0, 0.3525294548792812, 0.4090315324657382,
+                  0.8684247068517293, 1.0, 7.278710289828983e-05,
+                  0.00013111131667906573, 0.010750678886113882, 1.0,
+                  3.7548460021980094e-51, 3.4808716245839245e-50,
+                  8.642849639404198e-42, 0.4985046949987335]
+        actarr = []
+        for df, p, t in itertools.product(dfarr, pnoncarr, tarr):
+            actarr += [sp.nctdtr(df, p, t)]
+        assert_allclose(actarr, resarr, rtol=1e-13, atol=0.0)
+
+
+    def test_nctdtr_gh8344(self):
+        # test that gh-8344 is resolved.
+        df, nc, x = 3000, 3, 0.1
+        expected = 0.0018657780826323328
+        assert_allclose(sp.nctdtr(df, nc, x), expected, rtol=1e-13)
+
+
+    @pytest.mark.parametrize(
+        "df, nc, x, expected, rtol",
+        [[3., 5., -2., 1.5645373999149622e-09, 5e-9],
+         [1000., 10., 1., 1.1493552133826623e-19, 1e-13],
+         [1e-5, -6., 2., 0.9999999990135003, 1e-13],
+         [0.98, -3.8, 0.15, 0.9999528361700505, 1e-13],
+         [10., 20., 0.15, 6.426530505957303e-88, 1e-13],
+         [1., 1., np.inf, 1.0, 0.0],
+         [1., 1., -np.inf, 0.0, 0.0]
+        ]
+    )
+    def test_nctdtr_accuracy(self, df, nc, x, expected, rtol):
+        assert_allclose(sp.nctdtr(df, nc, x), expected, rtol=rtol)
