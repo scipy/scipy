@@ -4422,7 +4422,7 @@ class TestSkewNorm:
         bounds = {'a': (-5, 5), 'loc': (-10, 10), 'scale': (1e-16, 10)}
 
         def optimizer(fun, bounds):
-            return differential_evolution(fun, bounds, seed=rng)
+            return differential_evolution(fun, bounds, rng=rng)
 
         fit_result = stats.fit(stats.skewnorm, x, bounds, optimizer=optimizer)
         np.testing.assert_allclose(params, fit_result.params, rtol=1e-4)

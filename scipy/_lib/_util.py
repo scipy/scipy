@@ -273,7 +273,8 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None):
       `numpy.random.seed` will eventually have no effect. Either way, the decorator
       calls the function without explicitly passing the `rng` argument.
 
-    If `end_version` is specified, a user must pass `rng` as a keyword to avoid warnings.
+    If `end_version` is specified, a user must pass `rng` as a keyword to avoid
+    warnings.
 
     After the deprecation period, the decorator can be removed, and the function
     can simply validate the `rng` argument by calling `np.random.default_rng(rng)`.
