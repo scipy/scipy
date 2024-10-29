@@ -1833,6 +1833,9 @@ class ContinuousDistribution:
     def __neg__(self):
         return self * -1
 
+    def __abs__(self):
+        return FoldedDistribution(self)
+
     ### Utilities
 
     ## Input validation
@@ -4968,11 +4971,6 @@ def _shift_scale_inverse_function(func):
 
 
 class TransformedDistribution(ContinuousDistribution):
-    # TODO: This may need some sort of default `_parameterizations` with a
-    #       single `_Parameterization` that has no parameters. The reason is
-    #       that `dist`'s parameters need to get added to it. If they're not
-    #       added, then those parameter kwargs are not recognized in
-    #       `_update_parameters`.
     def __init__(self, dist, *args, **kwargs):
         self._copy_parameterization()
         self._variable = dist._variable
@@ -4981,6 +4979,8 @@ class TransformedDistribution(ContinuousDistribution):
             # Add standard distribution parameters to our parameterization
             dist_parameters = dist._parameterization.parameters
             set_params = set(dist_parameters)
+            if not self._parameterizations:
+                self._parameterizations.append(_Parameterization())
             for parameterization in self._parameterizations:
                 if set_params.intersection(parameterization.parameters):
                     message = (f"One or more of the parameters of {dist} has "
@@ -5069,11 +5069,11 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def _entropy_dispatch(self, *args, loc, scale, sign, **params):
         return (self._dist._entropy_dispatch(*args, **params)
-                + np.log(abs(scale)))
+                + np.log(np.abs(scale)))
 
     def _logentropy_dispatch(self, *args, loc, scale, sign, **params):
         lH0 = self._dist._logentropy_dispatch(*args, **params)
-        lls = np.log(np.log(abs(scale))+0j)
+        lls = np.log(np.log(np.abs(scale))+0j)
         return special.logsumexp(np.broadcast_arrays(lH0, lls), axis=0)
 
     def _median_dispatch(self, *, method, loc, scale, sign, **params):
@@ -5087,12 +5087,12 @@ class ShiftedScaledDistribution(TransformedDistribution):
     def _logpdf_dispatch(self, x, *args, loc, scale, sign, **params):
         x = self._transform(x, loc, scale)
         logpdf = self._dist._logpdf_dispatch(x, *args, **params)
-        return logpdf - np.log(abs(scale))
+        return logpdf - np.log(np.abs(scale))
 
     def _pdf_dispatch(self, x, *args, loc, scale, sign, **params):
         x = self._transform(x, loc, scale)
         pdf = self._dist._pdf_dispatch(x, *args, **params)
-        return pdf / abs(scale)
+        return pdf / np.abs(scale)
 
     # Sorry about the magic. This is just a draft to show the behavior.
     @_shift_scale_distribution_function
@@ -5194,3 +5194,118 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return ShiftedScaledDistribution(self._dist,
                                          loc=self.loc / scale,
                                          scale=self.scale / scale)
+
+
+class FoldedDistribution(TransformedDistribution):
+    r"""Distribution underlying the absolute value of a random variable
+
+    Given a random variable :math:`X`; define the distribution
+    underlying the random variable :math:`Y = |X|`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        The random variable :math:`Y = |X|`
+
+    """
+    # Many enhancements are possible if distribution is symmetric. Start
+    # with the general case; enhance later.
+
+    def __init__(self, dist, *args, **kwargs):
+        super().__init__(dist, *args, **kwargs)
+        # I think we need to allow `_support` to define whether the endpoints
+        # are inclusive or not. In the meantime, it's best to ensure that the lower
+        # endpoint (typically 0 for folded distribution) is inclusive so PDF evaluates
+        # correctly at that point.
+        self._variable.domain.inclusive = (True, self._variable.domain.inclusive[1])
+
+    def _overrides(self, method_name):
+        # Do not use the generic overrides of TransformedDistribution
+        return False
+
+    def _support(self, **params):
+        a, b = self._dist._support(**params)
+        a_, b_ = np.abs(a), np.abs(b)
+        a_, b_ = np.minimum(a_, b_), np.maximum(a_, b_)
+        i = (a < 0) & (b > 0)
+        a_ = np.asarray(a_)
+        a_[i] = 0
+        return a_[()], b_[()]
+
+    def _logpdf_dispatch(self, x, *args, **params):
+        logpdfs = np.stack([self._dist._logpdf_dispatch(x, *args, **params),
+                            self._dist._logpdf_dispatch(-x, *args, **params)])
+        return special.logsumexp(logpdfs, axis=0)
+
+    def _pdf_dispatch(self, x, *args, **params):
+        return (self._dist._pdf_dispatch(x, *args, **params)
+                + self._dist._pdf_dispatch(-x, *args, **params))
+
+    def _logcdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._logcdf2_dispatch(-x, x, *args, **params).real
+
+    def _cdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._cdf2_dispatch(-x, x, *args, **params)
+
+    def _logccdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._logccdf2_dispatch(-x, x, *args, **params).real
+
+    def _ccdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._ccdf2_dispatch(-x, x, *args, **params)
+
+    def _sample_dispatch(self, sample_shape, full_shape, *,
+                         method, rng, **params):
+        rvs = self._dist._sample_dispatch(
+            sample_shape, full_shape, method=method, rng=rng, **params)
+        return np.abs(rvs)
+
+
+def abs(X):
+    r"""Absolute value of a random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = |X|`.
+
+    Examples
+    --------
+    Suppose we have a normally distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.Normal()
+
+    We wish to have a random variable :math:`Y` distributed according to
+    the folded normal distribution; that is, a random variable :math:`|X|`.
+
+    >>> Y = stats.abs(X)
+
+    The PDF of the distribution in the left half plane is "folded" over to
+    the right half plane. Because the normal PDF is symmetric, the resulting
+    PDF is zero for negative arguments and doubled for positive arguments.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 300)
+    >>> ax = plt.gca()
+    >>> Y.plot(x='x', y='pdf', t=('x', -1, 5), ax=ax)
+    >>> plt.plot(x, 2 * X.pdf(x), '--')
+    >>> plt.legend(('PDF of `Y`', 'Doubled PDF of `X`'))
+    >>> plt.show()
+
+    """
+    return FoldedDistribution(X)

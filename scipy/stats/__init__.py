@@ -466,6 +466,7 @@ Random Variables
    :toctree: generated/
 
    Normal
+   abs
 
 Quasi-Monte Carlo
 =================
@@ -636,6 +637,7 @@ from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
 from ._new_distributions import Normal
+from ._distribution_infrastructure import abs
 from ._mgc import multiscale_graphcorr
 
 

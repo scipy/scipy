@@ -213,7 +213,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
     def post_termination_check(work):
         # [1] Figure 1 (third diamond and boxes / Equation 1)
         xi1 = (work.x1 - work.x2) / (work.x3 - work.x2)
-        phi1 = (work.f1 - work.f2) / (work.f3 - work.f2)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            phi1 = (work.f1 - work.f2) / (work.f3 - work.f2)
         alpha = (work.x3 - work.x1) / (work.x2 - work.x1)
         j = ((1 - xp.sqrt(1 - xi1)) < phi1) & (phi1 < xp.sqrt(xi1))
 
