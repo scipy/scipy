@@ -4648,7 +4648,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r = xp.asarray(xp.clip(r, -one, one))
     r[const_xy] = xp.nan
 
-    # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promissed
+    # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
     # in the docs.
     if n == 2:
         r = xp_sign(r)
