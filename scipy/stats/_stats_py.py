@@ -4651,7 +4651,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
     # in the docs.
     if n == 2:
-        r = xp_sign(r)
+        r = xp.round(r)
         pvalue = xp.ones_like(r)
         pvalue[xp.asarray(xp.isnan(r))] = xp.nan
     else:
