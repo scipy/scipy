@@ -602,7 +602,7 @@ the probabilities.
    :include-source: 0
 
 
-Next, we can use a chi-squared test, `stats.chisquare`, to test the null
+Next, we can use a chi-squared test, :func:`scipy.stats.chisquare`, to test the null
 hypothesis that the sample is distributed according to our norm-discrete
 distribution.
 
