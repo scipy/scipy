@@ -624,5 +624,5 @@ hypothesized distribution that would produce a statistic value more extreme than
 the one we observed. Our statistic value is not very high; in fact, there is
 a 40.9% chance that the statistic would be higher than 12.466 if we were to draw a
 sample of the same size from the discrete distribution defined by ``p2``. Therefore,
-the test does not provide evidence that the sample was drawn from our norm-discrete
-distribution.
+the test provides little evidence against the null hypothesis that the sample was
+drawn from our norm-discrete distribution.
