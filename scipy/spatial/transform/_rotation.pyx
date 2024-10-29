@@ -2354,7 +2354,8 @@ cdef class Rotation:
         Parameters
         ----------
         rotations : sequence of `Rotation` objects
-            The rotations to concatenate.
+            The rotations to concatenate. If a single `Rotation` object is
+            passed in, a copy is returned.
 
         Returns
         -------
@@ -2385,6 +2386,9 @@ cdef class Rotation:
         -----
         .. versionadded:: 1.8.0
         """
+        if isinstance(rotations, Rotation):
+            return cls(rotations.as_quat(), normalize=False, copy=True)
+
         if not all(isinstance(x, Rotation) for x in rotations):
             raise TypeError("input must contain Rotation objects only")
 

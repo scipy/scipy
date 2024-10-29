@@ -1758,6 +1758,14 @@ def test_concatenate():
     result = Rotation.concatenate(split)
     assert_equal(rotation.as_quat(), result.as_quat())
 
+    # Test Rotation input for multiple rotations
+    result = Rotation.concatenate(rotation)
+    assert_equal(rotation.as_quat(), result.as_quat())
+
+    # Test Rotation input for single rotations
+    result = Rotation.concatenate(Rotation.identity())
+    assert_equal(Rotation.identity().as_quat(), result.as_quat())
+
 
 def test_concatenate_wrong_type():
     with pytest.raises(TypeError, match='Rotation objects only'):
