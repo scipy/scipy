@@ -376,7 +376,7 @@ class TestFit:
     tols = {'atol': atol, 'rtol': rtol}
 
     def opt(self, *args, **kwds):
-        return differential_evolution(*args, rng=0, **kwds)
+        return differential_evolution(*args, rng=1, **kwds)
 
     def test_dist_iv(self):
         message = "`dist` must be an instance of..."
