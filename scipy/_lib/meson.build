@@ -199,6 +199,7 @@ py3.install_sources(
     'array_api_compat/array_api_compat/numpy/_info.py',
     'array_api_compat/array_api_compat/numpy/fft.py',
     'array_api_compat/array_api_compat/numpy/linalg.py',
+    'array_api_compat/array_api_compat/numpy/_info.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/numpy',
 )
