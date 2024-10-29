@@ -875,8 +875,6 @@ from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
 
-_depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
-             'removed in SciPy 1.14.0.  Use scipy.special.{} instead.')
 
 def _get_include():
     """This function is for development purposes only.
