@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize._optimize import _status_message, _wrap_callback
-from scipy._lib._util import (check_random_state_spec007, MapWrapper, _FunctionWrapper,
+from scipy._lib._util import (MapWrapper, _FunctionWrapper,
                               rng_integers, _transition_to_rng)
 from scipy._lib._util import check_random_state_spec007 as check_random_state
 
