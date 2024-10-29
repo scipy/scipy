@@ -34,6 +34,7 @@ __all__ = [
     'xp_atleast_nd', 'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
     'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
+    'xp_create_diagonal'
 ]
 
 
@@ -645,3 +646,16 @@ def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
         arr = xp.astype(arr, xp.complex128)
 
     return arr
+
+def xp_create_diagonal(x: Array, /, *, offset: int = 0,
+                       xp: ModuleType | None = None) -> Array:
+    if xp is None:
+        xp = array_namespace(x)
+    n = x.shape[0] + abs(offset)
+    diag = xp.zeros(n**2, dtype=x.dtype)
+    if offset >= 0:
+        i = offset
+    else:
+        i = -offset * n
+    diag[i::n+1] = x
+    return xp.reshape(diag, (n, n))
