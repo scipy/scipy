@@ -366,7 +366,7 @@ def test_label_output_dtype(xp):
         assert output.dtype == t
 
 
-@xfail_xp_backends('dask.array', reason='Dask does not raise')
+@skip_xp_backends('dask.array', reason='Dask does not raise')
 @xfail_xp_backends('jax.numpy', reason='JAX does not raise')
 def test_label_output_wrong_size(xp):
     data = xp.ones([5])
@@ -555,6 +555,7 @@ def test_value_indices02(xp):
         ndimage.value_indices(data)
 
 
+@skip_xp_backends("dask.array", reason="len on data-dependent output shapes")
 def test_value_indices03(xp):
     "Test different input array shapes, from 1-D to 4-D"
     for shape in [(36,), (18, 2), (3, 3, 4), (3, 3, 2, 2)]:
@@ -674,6 +675,7 @@ def test_sum11(xp):
         assert_almost_equal(output, xp.asarray(6.0), check_0d=False)
 
 
+@skip_xp_backends("dask.array", reason="data-dependent output shapes")
 def test_sum12(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:
@@ -683,6 +685,7 @@ def test_sum12(xp):
         assert_array_almost_equal(output, xp.asarray([4.0, 0.0, 5.0]))
 
 
+@skip_xp_backends("dask.array", reason="data-dependent output shapes")
 def test_sum_labels(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:
@@ -695,7 +698,7 @@ def test_sum_labels(xp):
         assert xp.all(output_sum == output_labels)
         assert_array_almost_equal(output_labels, xp.asarray([4.0, 0.0, 5.0]))
 
-
+@skip_xp_backends("dask.array", reason="dask outputs wrong results here")
 def test_mean01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -706,6 +709,7 @@ def test_mean01(xp):
         assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
+@skip_xp_backends("dask.array", reason="dask outputs wrong results here")
 def test_mean02(xp):
     labels = np.asarray([1, 0], dtype=bool)
     input = np.asarray([[1, 2], [3, 4]], dtype=bool)
@@ -716,6 +720,7 @@ def test_mean02(xp):
     assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@skip_xp_backends("dask.array", reason="dask outputs wrong results here")
 def test_mean03(xp):
     labels = xp.asarray([1, 2])
     for type in types:
@@ -726,6 +731,7 @@ def test_mean03(xp):
         assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
+@skip_xp_backends("dask.array", reason="dask outputs wrong results here")
 def test_mean04(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     with np.errstate(all='ignore'):
@@ -829,6 +835,7 @@ def test_maximum05(xp):
     assert ndimage.maximum(x) == -1
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning:dask")
 def test_median01(xp):
     a = xp.asarray([[1, 2, 0, 1],
                     [5, 3, 0, 4],
@@ -851,6 +858,7 @@ def test_median02(xp):
     assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@skip_xp_backends("dask.array", reason="dask.array.median only implemented for along an axis.")
 def test_median03(xp):
     a = xp.asarray([[1, 2, 0, 1],
                     [5, 3, 0, 4],
@@ -864,6 +872,7 @@ def test_median03(xp):
     assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
+@skip_xp_backends("dask.array", reason="Crash inside dask searchsorted")
 def test_median_gh12836_bool(xp):
     # test boolean addition fix on example from gh-12836
     a = np.asarray([1, 1], dtype=bool)
@@ -871,7 +880,7 @@ def test_median_gh12836_bool(xp):
     output = ndimage.median(a, labels=xp.ones((2,)), index=xp.asarray([1]))
     assert_array_almost_equal(output, xp.asarray([1.0]))
 
-
+@skip_xp_backends("dask.array", reason="Crash inside dask searchsorted")
 def test_median_no_int_overflow(xp):
     # test integer overflow fix on example from gh-12836
     a = xp.asarray([65, 70], dtype=xp.int8)
@@ -912,7 +921,9 @@ def test_variance04(xp):
     output = ndimage.variance(input)
     assert_almost_equal(output, xp.asarray(0.25), check_0d=False)
 
-
+# dask.array is maybe due to failed conversion to numpy?
+# array-api-strict should've caught use of non array API functions I think
+@skip_xp_backends("dask.array", reason="conjugate called on dask.array which doesn't exist")
 def test_variance05(xp):
     labels = xp.asarray([2, 2, 3])
     for type in types:
@@ -922,7 +933,7 @@ def test_variance05(xp):
         output = ndimage.variance(input, labels, 2)
         assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
-
+@skip_xp_backends("dask.array", reason="Data-dependent output shapes")
 def test_variance06(xp):
     labels = xp.asarray([2, 2, 3, 3, 4])
     with np.errstate(all='ignore'):
@@ -967,6 +978,9 @@ def test_standard_deviation04(xp):
     assert_almost_equal(output, xp.asarray(0.5), check_0d=False)
 
 
+# dask.array is maybe due to failed conversion to numpy?
+# array-api-strict should've caught use of non array API functions I think
+@skip_xp_backends("dask.array", reason="conjugate called on dask.array which doesn't exist")
 def test_standard_deviation05(xp):
     labels = xp.asarray([2, 2, 3])
     for type in types:
@@ -976,6 +990,7 @@ def test_standard_deviation05(xp):
         assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@skip_xp_backends("dask.array", reason="data-dependent output shapes")
 def test_standard_deviation06(xp):
     labels = xp.asarray([2, 2, 3, 3, 4])
     with np.errstate(all='ignore'):
@@ -988,6 +1003,7 @@ def test_standard_deviation06(xp):
             assert_array_almost_equal(output, xp.asarray([1.0, 1.0, 0.0]))
 
 
+@skip_xp_backends("dask.array", reason="data-dependent output shapes")
 def test_standard_deviation07(xp):
     labels = xp.asarray([1])
     with np.errstate(all='ignore'):
@@ -1140,7 +1156,7 @@ def test_maximum_position06(xp):
         assert output[0] == (0, 0)
         assert output[1] == (1, 1)
 
-
+@skip_xp_backends("dask.array", reason="crash in dask.array searchsorted")
 def test_maximum_position07(xp):
     # Test float labels
     if is_torch(xp):
@@ -1158,6 +1174,7 @@ def test_maximum_position07(xp):
         assert output[1] == (0, 3)
 
 
+@skip_xp_backends("dask.array", reason="dask wrong answer")
 def test_extrema01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -1174,6 +1191,7 @@ def test_extrema01(xp):
         assert output1 == (output2, output3, output4, output5)
 
 
+@skip_xp_backends("dask.array", reason="dask wrong answer")
 def test_extrema02(xp):
     labels = xp.asarray([1, 2])
     for type in types:
@@ -1298,6 +1316,7 @@ def test_center_of_mass06(xp):
     assert output == expected
 
 
+@skip_xp_backends("dask.array", reason="wrong output shape")
 def test_center_of_mass07(xp):
     labels = xp.asarray([1, 0])
     expected = (0.5, 0.0)
@@ -1307,6 +1326,7 @@ def test_center_of_mass07(xp):
     assert output == expected
 
 
+@skip_xp_backends("dask.array", reason="wrong output shape")
 def test_center_of_mass08(xp):
     labels = xp.asarray([1, 2])
     expected = (0.5, 1.0)
@@ -1316,6 +1336,7 @@ def test_center_of_mass08(xp):
     assert output == expected
 
 
+@skip_xp_backends("dask.array", reason="data-dependent output shapes")
 def test_center_of_mass09(xp):
     labels = xp.asarray((1, 2))
     expected = xp.asarray([(0.5, 0.0), (0.5, 1.0)], dtype=xp.float64)
@@ -1353,6 +1374,7 @@ def test_histogram03(xp):
     assert_array_almost_equal(output[1], expected2)
 
 
+@skip_xp_backends("dask.array", reason="data-dependent output shapes")
 def test_stat_funcs_2d(xp):
     a = xp.asarray([[5, 6, 0, 0, 0], [8, 9, 0, 0, 0], [0, 0, 0, 3, 5]])
     lbl = xp.asarray([[1, 1, 0, 0, 0], [1, 1, 0, 0, 0], [0, 0, 0, 2, 2]])

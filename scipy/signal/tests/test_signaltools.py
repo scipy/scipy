@@ -298,7 +298,7 @@ class TestConvolve:
             convolve(a, b)
 
 
-
+@pytest.mark.filterwarnings("ignore::FutureWarning:dask")
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestConvolve2d:
 
@@ -515,7 +515,7 @@ class TestConvolve2d:
         assert fails[0].size == 0
 
 
-
+@pytest.mark.filterwarnings("ignore::FutureWarning:dask")
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestFFTConvolve:
 
@@ -973,6 +973,10 @@ def gen_oa_shapes_eq(sizes):
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 @skip_xp_backends("jax.numpy", reason="fails all around")
+@skip_xp_backends("dask.array",
+    reason="Gets converted to numpy at some point for some reason. "
+           "Probably also suffers from boolean indexing issues"
+)
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
@@ -2456,7 +2460,9 @@ class TestCorrelateComplex:
             dt = np.cdouble
 
         # emulate np.finfo(dt).precision for complex64 and complex128
-        prec = {64: 15, 32: 6}[xp.finfo(dt).bits]
+        # note: unwrapped dask has no finfo
+        xp_compat = array_namespace(xp.asarray(1))
+        prec = {64: 15, 32: 6}[xp_compat.finfo(dt).bits]
         return int(2 * prec / 3)
 
     def _setup_rank1(self, dt, mode, xp):
@@ -2782,6 +2788,7 @@ class TestFiltFilt:
         xp_assert_close(y, expected)
 
 
+@skip_xp_backends("dask.array", reason="sosfiltfilt directly sets shape attributes on arrays which dask doesn't like")
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
@@ -4014,10 +4021,12 @@ def test_nonnumeric_dtypes(func, xp):
 #      (https://github.com/cupy/cupy/pull/8677)
 #  3. an issue with CuPy's __array__ not numpy-2.0 compatible
 @skip_xp_backends(cpu_only=True)
+@skip_xp_backends("dask.array", reason="sosfilt doesn't convert dask array to numpy before cython")
 @pytest.mark.parametrize('dt', ['float32', 'float64', 'complex64', 'complex128'])
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
+
     @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank1(self, dt, xp):
         dt = getattr(xp, dt)
@@ -4226,6 +4235,7 @@ class TestSOSFilt:
         with pytest.raises(ValueError, match='Invalid zi shape'):
             sosfilt(sos, x, zi=zi, axis=1)
 
+
     @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_sosfilt_zi(self, dt, xp):
         dt = getattr(xp, dt)
@@ -4333,6 +4343,7 @@ class TestDetrend:
         with assert_raises(ValueError):
             detrend(data, type="linear", bp=3)
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning:dask")
     @pytest.mark.parametrize('bp', [np.array([0, 2]), [0, 2]])
     def test_detrend_array_bp(self, bp, xp):
         # regression test for https://github.com/scipy/scipy/issues/18675

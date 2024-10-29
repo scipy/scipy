@@ -2,6 +2,7 @@ import pytest
 
 import numpy as np
 
+from scipy.cluster.tests.test_vq import skip_xp_backends
 from scipy.optimize._bracket import _ELIMITS
 from scipy.optimize.elementwise import bracket_root, bracket_minimum
 import scipy._lib._elementwise_iterative_method as eim
@@ -42,10 +43,11 @@ def _bracket_minimum(*args, **kwargs):
 
 
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
-jax_skip_reason = 'JAX arrays do not support item assignment.'
+boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 class TestBracketRoot:
@@ -354,7 +356,8 @@ class TestBracketRoot:
 
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
 class TestBracketMinimum:

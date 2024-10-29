@@ -7,7 +7,7 @@ from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn
 import scipy.fft as fft
 from scipy import fftpack
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_copy, xp_assert_close
+from scipy._lib._array_api import xp_copy, xp_assert_close, array_namespace
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -197,9 +197,10 @@ def test_orthogonalize_noop(func, type, norm, xp):
                   cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 def test_orthogonalize_dct1(norm, xp):
-    x = xp.asarray(np.random.rand(100))
+    x_np = np.random.rand(100)
+    x = xp.asarray(x_np)
 
-    x2 = xp_copy(x, xp=xp)
+    x2 = xp.asarray(x_np.copy())
     x2[0] *= SQRT_2
     x2[-1] *= SQRT_2
 
@@ -231,8 +232,9 @@ def test_orthogonalize_dcst2(func, norm, xp):
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst3(func, norm, xp):
-    x = xp.asarray(np.random.rand(100))
-    x2 = xp_copy(x, xp=xp)
+    x_np = np.random.rand(100)
+    x = xp.asarray(x_np)
+    x2 = xp.asarray(x_np.copy())
     x2[0 if func == dct else -1] *= SQRT_2
 
     y1 = func(x, type=3, norm=norm, orthogonalize=True)

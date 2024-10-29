@@ -1320,10 +1320,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     if not bias:
         can_correct = ~zero & (n > 2)
         if xp.any(can_correct):
-            m2 = m2[can_correct]
-            m3 = m3[can_correct]
             nval = ((n - 1.0) * n)**0.5 / (n - 2.0) * m3 / m2**1.5
-            vals[can_correct] = nval
+            vals = xp.where(can_correct, nval, vals)
 
     return vals[()] if vals.ndim == 0 else vals
 
@@ -1430,10 +1428,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     if not bias:
         can_correct = ~zero & (n > 3)
         if xp.any(can_correct):
-            m2 = m2[can_correct]
-            m4 = m4[can_correct]
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
-            vals[can_correct] = nval + 3.0
+            vals = xp.where(can_correct, nval + 3.0, vals)
 
     vals = vals - 3 if fisher else vals
     return vals[()] if vals.ndim == 0 else vals

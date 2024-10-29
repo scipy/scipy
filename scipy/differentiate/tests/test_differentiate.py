@@ -478,6 +478,7 @@ class JacobianHessianTest:
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
 class TestJacobian(JacobianHessianTest):
     jh_func = jacobian
 
@@ -629,6 +630,7 @@ class TestJacobian(JacobianHessianTest):
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
 class TestHessian(JacobianHessianTest):
     jh_func = hessian
 

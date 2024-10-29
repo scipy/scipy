@@ -56,6 +56,8 @@ def test_rel_entr_generic(dtype):
 # @pytest.mark.usefixtures("skip_xp_backends")
 # `reversed` is for developer convenience: test new function first = less waiting
 @pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))
+# numpy warning filter doesn't work for dask
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
