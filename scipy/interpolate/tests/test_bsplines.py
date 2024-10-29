@@ -3261,7 +3261,7 @@ def disc_naive(t, k):
     tii = np.repeat(ti, 2)
     tii[::2] += 1e-10
     tii[1::2] -= 1e-10
-    m = BSpline.design_matrix(tii, t, k, nu=k).todense()
+    m = BSpline(t, np.eye(n - k - 1), k)(tii, nu=k)
 
     matr = np.empty((nrint-1, m.shape[1]), dtype=float)
     for i in range(0, m.shape[0], 2):
@@ -3284,18 +3284,16 @@ class F_dense:
         assert self.w.ndim == 1
 
         # lhs
-        a_csr = BSpline.design_matrix(x, t, k)
-        self.a_w = (a_csr * self.w[:, None]).tocsr()
-        from scipy.interpolate import _fitpack_repro as _fr
-        self.b = PackedMatrix(*_fr.disc(t, k))
+        a_dense = BSpline(t, np.eye(t.shape[0] - k - 1), k)(x)
+        self.a_dense = a_dense * self.w[:, None]
 
-        self.a_dense = (a_csr * self.w[:, None]).todense()
+        from scipy.interpolate import _fitpack_repro as _fr
         self.b_dense = PackedMatrix(*_fr.disc(t, k)).todense()
 
         # rhs
         assert y.ndim == 1
         yy = y * self.w
-        self.yy = np.r_[yy, np.zeros(self.b.shape[0])]
+        self.yy = np.r_[yy, np.zeros(self.b_dense.shape[0])]
 
         self.s = s
 

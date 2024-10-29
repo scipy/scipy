@@ -1,5 +1,4 @@
 import itertools
-import warnings
 
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
@@ -773,15 +772,19 @@ class TestSolve:
         b = np.arange(9)[:, None]
         assert_raises(LinAlgError, solve, a, b)
 
-    def test_ill_condition_warning(self):
-        a = np.array([[1, 1, 1],
-                      [1+1e-16, 1-1e-16, 1],
-                      [1-1e-16, 1+1e-16, 1],
-                      ])
-        b = np.ones(3)
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            assert_raises(LinAlgWarning, solve, a, b)
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', None))
+    def test_ill_condition_warning(self, structure):
+        rng = np.random.default_rng(234859349452)
+        n = 10
+        d = np.logspace(0, 50, n)
+        A = np.diag(d)
+        b = rng.random(size=n)
+        message = "Ill-conditioned matrix..."
+        with pytest.warns(LinAlgWarning, match=message):
+            solve(A, b, assume_a=structure)
 
     def test_multiple_rhs(self):
         a = np.eye(2)

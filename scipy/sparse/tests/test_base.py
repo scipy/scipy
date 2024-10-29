@@ -2803,6 +2803,28 @@ class _TestSlicing:
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
 
+    def test_ellipsis_fancy_bool(self):
+        numpy_a = self.asdense(arange(50).reshape(5, 10))
+        a = self.spcreator(numpy_a)
+
+        ix5 = [True, False, True, False, True]
+        ix10 = [False] * 5 + ix5  # same number of True values as ix5
+        ix10_6True = ix5 + ix5  # not same number of True values as ix5
+        full_ix = [ix10] * 5
+
+        assert_array_equal(toarray(a[full_ix, ...]), numpy_a[full_ix, ...])
+        assert_array_equal(toarray(a[..., full_ix]), numpy_a[..., full_ix])
+
+        assert_array_equal(toarray(a[ix5, ...]), numpy_a[ix5, ...])
+        assert_array_equal(toarray(a[..., ix10]), numpy_a[..., ix10])
+
+        assert_array_equal(toarray(a[ix5, ..., ix10]), numpy_a[ix5, ..., ix10])
+        assert_array_equal(toarray(a[..., ix5, ix10]), numpy_a[..., ix5, ix10])
+        assert_array_equal(toarray(a[ix5, ix10, ...]), numpy_a[ix5, ix10, ...])
+
+        with assert_raises(ValueError, match="shape mismatch"):
+            a[ix5, ix10_6True]
+
     def test_ellipsis_fancy_slicing(self):
         b = self.asdense(arange(50).reshape(5, 10))
         a = self.spcreator(b)

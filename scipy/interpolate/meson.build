@@ -95,8 +95,8 @@ fitpack_lib = static_library('fitpack_lib',
   gnu_symbol_visibility: 'hidden',
 )
 
-py3.extension_module('interpnd',
-  spt_cython_gen.process('interpnd.pyx'),
+py3.extension_module('_interpnd',
+  spt_cython_gen.process('_interpnd.pyx'),
   c_args: [Wno_discarded_qualifiers, cython_c_args],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -203,6 +203,7 @@ py3.install_sources([
     'fitpack2.py',
     'interpolate.py',
     'ndgriddata.py',
+    'interpnd.py',
     'polyint.py',
     'rbf.py'
   ],

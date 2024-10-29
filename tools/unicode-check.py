@@ -7,13 +7,18 @@ import sys
 import argparse
 
 
-# The set of Unicode code points greater than 127 that we
-# allow in the source code.
+# The set of Unicode code points greater than 127 that we allow in the source code:
+# Note that the lines enclosed by the marker lines BEGIN_INCLUDE_RST/END_INCLUDE_RST
+# are included in the file `doc/source/dev/missing-bits.rst` to be rendered in the user
+# documentation.
+#
+# BEGIN_INCLUDE_RST (do not change this line!)
 latin1_letters = set(chr(cp) for cp in range(192, 256))
+greek_letters = set('αβγδεζηθικλμνξoπρστυϕχψω' + 'ΓΔΘΛΞΠΣϒΦΨΩ')
 box_drawing_chars = set(chr(cp) for cp in range(0x2500, 0x2580))
-extra_symbols = set(['®', 'ő', 'λ', 'π', 'ω', '∫', '≠', '≥', '≤', 'μ',
-                     '±', '∞'])
-allowed = latin1_letters | box_drawing_chars | extra_symbols
+extra_symbols = set('®ő∫≠≥≤±∞²³')
+allowed = latin1_letters | greek_letters | box_drawing_chars | extra_symbols
+# END_INCLUDE_RST (do not change this line!)
 
 
 def unicode_check(showall=False):
