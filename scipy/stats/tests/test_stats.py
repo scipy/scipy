@@ -528,6 +528,7 @@ class TestPearsonr:
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
+    @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
     def test_length_two_constant_input(self, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
