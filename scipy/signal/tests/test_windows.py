@@ -2,8 +2,7 @@ import math
 
 import numpy as np
 from numpy import array
-from numpy.testing import (assert_array_almost_equal, assert_array_equal,
-                           assert_, assert_array_less, suppress_warnings)
+from numpy.testing import  suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 
@@ -11,7 +10,8 @@ from scipy.conftest import array_api_compatible
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
 from scipy._lib._array_api import (
-     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax
+     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
+     assert_array_almost_equal
 )
 
 pytestmark = [array_api_compatible,
@@ -211,39 +211,39 @@ class TestBoxcar:
                         xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
 
 
-cheb_odd_true = array([0.200938, 0.107729, 0.134941, 0.165348,
-                       0.198891, 0.235450, 0.274846, 0.316836,
-                       0.361119, 0.407338, 0.455079, 0.503883,
-                       0.553248, 0.602637, 0.651489, 0.699227,
-                       0.745266, 0.789028, 0.829947, 0.867485,
-                       0.901138, 0.930448, 0.955010, 0.974482,
-                       0.988591, 0.997138, 1.000000, 0.997138,
-                       0.988591, 0.974482, 0.955010, 0.930448,
-                       0.901138, 0.867485, 0.829947, 0.789028,
-                       0.745266, 0.699227, 0.651489, 0.602637,
-                       0.553248, 0.503883, 0.455079, 0.407338,
-                       0.361119, 0.316836, 0.274846, 0.235450,
-                       0.198891, 0.165348, 0.134941, 0.107729,
-                       0.200938])
+cheb_odd_true = [0.200938, 0.107729, 0.134941, 0.165348,
+                 0.198891, 0.235450, 0.274846, 0.316836,
+                 0.361119, 0.407338, 0.455079, 0.503883,
+                 0.553248, 0.602637, 0.651489, 0.699227,
+                 0.745266, 0.789028, 0.829947, 0.867485,
+                 0.901138, 0.930448, 0.955010, 0.974482,
+                 0.988591, 0.997138, 1.000000, 0.997138,
+                 0.988591, 0.974482, 0.955010, 0.930448,
+                 0.901138, 0.867485, 0.829947, 0.789028,
+                 0.745266, 0.699227, 0.651489, 0.602637,
+                 0.553248, 0.503883, 0.455079, 0.407338,
+                 0.361119, 0.316836, 0.274846, 0.235450,
+                 0.198891, 0.165348, 0.134941, 0.107729,
+                 0.200938]
 
-cheb_even_true = array([0.203894, 0.107279, 0.133904,
-                        0.163608, 0.196338, 0.231986,
-                        0.270385, 0.311313, 0.354493,
-                        0.399594, 0.446233, 0.493983,
-                        0.542378, 0.590916, 0.639071,
-                        0.686302, 0.732055, 0.775783,
-                        0.816944, 0.855021, 0.889525,
-                        0.920006, 0.946060, 0.967339,
-                        0.983557, 0.994494, 1.000000,
-                        1.000000, 0.994494, 0.983557,
-                        0.967339, 0.946060, 0.920006,
-                        0.889525, 0.855021, 0.816944,
-                        0.775783, 0.732055, 0.686302,
-                        0.639071, 0.590916, 0.542378,
-                        0.493983, 0.446233, 0.399594,
-                        0.354493, 0.311313, 0.270385,
-                        0.231986, 0.196338, 0.163608,
-                        0.133904, 0.107279, 0.203894])
+cheb_even_true = [0.203894, 0.107279, 0.133904,
+                  0.163608, 0.196338, 0.231986,
+                  0.270385, 0.311313, 0.354493,
+                  0.399594, 0.446233, 0.493983,
+                  0.542378, 0.590916, 0.639071,
+                  0.686302, 0.732055, 0.775783,
+                  0.816944, 0.855021, 0.889525,
+                  0.920006, 0.946060, 0.967339,
+                  0.983557, 0.994494, 1.000000,
+                  1.000000, 0.994494, 0.983557,
+                  0.967339, 0.946060, 0.920006,
+                  0.889525, 0.855021, 0.816944,
+                  0.775783, 0.732055, 0.686302,
+                  0.639071, 0.590916, 0.542378,
+                  0.493983, 0.446233, 0.399594,
+                  0.354493, 0.311313, 0.270385,
+                  0.231986, 0.196338, 0.163608,
+                  0.133904, 0.107279, 0.203894]
 
 
 @skip_xp_backends('jax.numpy', reason='item assignment')
@@ -286,18 +286,18 @@ class TestChebWin:
         assert_array_almost_equal(cheb_even, cheb_even_true, decimal=4)
 
     def test_cheb_odd_low_attenuation(self, xp):
-        cheb_odd_low_at_true = array([1.000000, 0.519052, 0.586405,
-                                      0.610151, 0.586405, 0.519052,
-                                      1.000000])
+        cheb_odd_low_at_true = xp.asarray([1.000000, 0.519052, 0.586405,
+                                           0.610151, 0.586405, 0.519052,
+                                           1.000000])
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             cheb_odd = windows.chebwin(7, at=10, xp=xp)
         assert_array_almost_equal(cheb_odd, cheb_odd_low_at_true, decimal=4)
 
     def test_cheb_even_low_attenuation(self, xp):
-        cheb_even_low_at_true = array([1.000000, 0.451924, 0.51027,
-                                       0.541338, 0.541338, 0.51027,
-                                       0.451924, 1.000000])
+        cheb_even_low_at_true = xp.asarray([1.000000, 0.451924, 0.51027,
+                                            0.541338, 0.541338, 0.51027,
+                                            0.451924, 1.000000])
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             cheb_even = windows.chebwin(8, at=-10, xp=xp)
@@ -712,11 +712,11 @@ class TestGetWindow:
 
     def test_boxcar(self, xp):
         w = windows.get_window('boxcar', 12, xp=xp)
-        assert_array_equal(w, np.ones_like(w))
+        xp_assert_equal(w, xp.ones_like(w))
 
         # window is a tuple of len 1
         w = windows.get_window(('boxcar',), 16, xp=xp)
-        assert_array_equal(w, np.ones_like(w))
+        xp_assert_equal(w, xp.ones_like(w))
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_cheb_odd(self, xp):
@@ -732,6 +732,7 @@ class TestGetWindow:
             w = windows.get_window(('chebwin', 40), 54, fftbins=False, xp=xp)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
 
+    @skip_xp_backends('cupy', reason='dpss not implemented in CuPy')
     def test_dpss(self, xp):
         win1 = windows.get_window(('dpss', 3), 64, fftbins=False, xp=xp)
         win2 = windows.dpss(64, 3, xp=xp)
@@ -788,6 +789,8 @@ def test_windowfunc_basics(xp):
         window = getattr(windows, window_name)
         if is_jax(xp) and window_name in ['taylor', 'chebwin']:
             pytest.skip(reason=f'{window_name = }: item assignment')
+        if is_cupy(xp) and window_name in ['dpss']:
+            pytest.skip(reason='dpss window is not implemented for cupy')
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
@@ -811,10 +814,10 @@ def test_windowfunc_basics(xp):
             assert_raises(ValueError, window, -7, *params, xp=xp)
 
             # Check degenerate cases
-            assert_array_equal(window(0, *params, sym=True, xp=xp), [])
-            assert_array_equal(window(0, *params, sym=False, xp=xp), [])
-            assert_array_equal(window(1, *params, sym=True, xp=xp), [1])
-            assert_array_equal(window(1, *params, sym=False, xp=xp), [1])
+            xp_assert_equal(window(0, *params, sym=True, xp=xp), [])
+            xp_assert_equal(window(0, *params, sym=False, xp=xp), [])
+            xp_assert_equal(window(1, *params, sym=True, xp=xp), [1])
+            xp_assert_equal(window(1, *params, sym=False, xp=xp), [1])
 
             # Check dtype
             assert window(0, *params, sym=True, xp=xp).dtype == xp.float64
@@ -825,10 +828,10 @@ def test_windowfunc_basics(xp):
             assert window(6, *params, sym=False, xp=xp).dtype == xp.float64
 
             # Check normalization
-            assert_array_less(window(10, *params, sym=True, xp=xp), 1.01)
-            assert_array_less(window(10, *params, sym=False, xp=xp), 1.01)
-            assert_array_less(window(9, *params, sym=True, xp=xp), 1.01)
-            assert_array_less(window(9, *params, sym=False, xp=xp), 1.01)
+            assert xp.all(window(10, *params, sym=True, xp=xp) < 1.01)
+            assert xp.all(window(10, *params, sym=False, xp=xp) < 1.01)
+            assert xp.all(window(9, *params, sym=True, xp=xp) < 1.01)
+            assert xp.all(window(9, *params, sym=False, xp=xp) < 1.01)
 
             # Check that DFT-even spectrum is purely real for odd and even
             res = fft(window(10, *params, sym=False, xp=xp))

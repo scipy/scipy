@@ -8,7 +8,7 @@ import numpy as np
 
 from scipy import linalg, special, fft as sp_fft
 from scipy._lib.array_api_compat import numpy as np_compat
-from scipy._lib._array_api import xp_acos, xp_acosh, xp_sinc, array_namespace
+from scipy._lib._array_api import xp_acos, xp_acosh, xp_sinc, array_namespace, is_cupy
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',
@@ -45,8 +45,8 @@ def _asarray(x, xp, *, device=None):
     """A shim for the `device` arg of `np.asarray(x, device=device)` not recognized
        in NumPy < 2.
     """
-    if xp == np:
-        return np.asarray(x)
+    if xp == np or is_cupy(xp):
+        return xp.asarray(x)
     else:
         return xp.asarray(x, device=device)
 
