@@ -270,6 +270,8 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
+    if isinstance(desired, list):
+        desired = xp.asarray(desired)
 
     actual, desired = _strict_check(
         actual, desired, xp, check_namespace=check_namespace,
@@ -295,6 +297,8 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
+    if isinstance(desired, list):
+        desired = xp.asarray(desired)
 
     actual, desired = _strict_check(
         actual, desired, xp,
