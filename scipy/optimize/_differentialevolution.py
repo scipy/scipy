@@ -21,7 +21,7 @@ __all__ = ['differential_evolution']
 _MACHEPS = np.finfo(np.float64).eps
 
 
-@_transition_to_rng("seed", position_num=10)
+@_transition_to_rng("seed", position_num=9)
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, rng=None,
