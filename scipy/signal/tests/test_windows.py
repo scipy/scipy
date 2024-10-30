@@ -11,7 +11,7 @@ from scipy.conftest import array_api_compatible
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
 from scipy._lib._array_api import (
-     xp_assert_close, xp_assert_equal, array_namespace, is_torch
+     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax
 )
 
 pytestmark = [array_api_compatible,
@@ -106,6 +106,7 @@ class TestBlackmanHarris:
                          6.0e-05])
 
 
+@skip_xp_backends('jax.numpy', reason='item assignment')
 class TestTaylor:
 
     def test_normalized(self, xp):
@@ -245,6 +246,7 @@ cheb_even_true = array([0.203894, 0.107279, 0.133904,
                         0.133904, 0.107279, 0.203894])
 
 
+@skip_xp_backends('jax.numpy', reason='item assignment')
 class TestChebWin:
 
     def test_basic(self, xp):
@@ -716,12 +718,14 @@ class TestGetWindow:
         w = windows.get_window(('boxcar',), 16, xp=xp)
         assert_array_equal(w, np.ones_like(w))
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_cheb_odd(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             w = windows.get_window(('chebwin', -40), 53, fftbins=False, xp=xp)
         assert_array_almost_equal(w, cheb_odd_true, decimal=4)
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_cheb_even(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
@@ -782,6 +786,9 @@ class TestGetWindow:
 def test_windowfunc_basics(xp):
     for window_name, params in window_funcs:
         window = getattr(windows, window_name)
+        if is_jax(xp) and window_name in ['taylor', 'chebwin']:
+            pytest.skip(reason=f'{window_name = }: item assignment')
+
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             # Check symmetry for odd and even lengths
@@ -844,29 +851,34 @@ def test_needs_params(xp):
         assert_raises(ValueError, get_window, winstr, 7, xp=xp)
 
 
-def test_not_needs_params(xp):
-    for winstr in ['barthann',
-                   'bartlett',
-                   'blackman',
-                   'blackmanharris',
-                   'bohman',
-                   'boxcar',
-                   'cosine',
-                   'flattop',
-                   'hamming',
-                   'nuttall',
-                   'parzen',
-                   'taylor',
-                   'exponential',
-                   'poisson',
-                   'tukey',
-                   'tuk',
-                   'triangle',
-                   'lanczos',
-                   'sinc',
-                   ]:
-        win = get_window(winstr, 7, xp=xp)
-        xp_assert_equal(win.shape[0], 7)
+_winstr = ['barthann',
+           'bartlett',
+           'blackman',
+           'blackmanharris',
+           'bohman',
+           'boxcar',
+           'cosine',
+           'flattop',
+           'hamming',
+           'nuttall',
+           'parzen',
+           'taylor',
+           'exponential',
+           'poisson',
+           'tukey',
+           'tuk',
+           'triangle',
+           'lanczos',
+           'sinc',
+]
+
+
+@pytest.mark.parametrize('winstr', _winstr)
+def test_not_needs_params(xp, winstr):
+    if is_jax(xp) and winstr in ['taylor']:
+        pytest.skip(reason=f'{winstr}: item assignment')
+    win = get_window(winstr, 7, xp=xp)
+    xp_assert_equal(win.shape[0], 7)
 
 
 def test_symmetric(xp):
@@ -876,9 +888,9 @@ def test_symmetric(xp):
         w = win(4096, xp=xp)
         flip = array_namespace(w).flip
         error = xp.max(xp.abs(w - flip(w)))
-        xp_assert_equal(error, xp.asarray(0.0, dtype=error.dtype))
+        xp_assert_equal(error, xp.asarray(0.0), check_dtype=False, check_0d=False)
 
         # Odd sampling points
         w = win(4097, xp=xp)
         error = xp.max(xp.abs(w - flip(w)))
-        xp_assert_equal(error, xp.asarray(0.0, dtype=error.dtype))
+        xp_assert_equal(error, xp.asarray(0.0), check_dtype=False, check_0d=False)
