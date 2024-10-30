@@ -1676,14 +1676,14 @@ class ShortTimeFFT:
         ...
         >>> fig, axx = plt.subplots(1, 2, tight_layout=True, figsize=(6., 4.))
         >>> for ax_, center_bins in zip(axx, (False, True)):
-        >>>     ax_.imshow(abs(Sxx), origin='lower', interpolation=None, aspect='equal',
-        >>>                cmap='viridis', extent=SFT.extent(n, 'tf', center_bins))
-        >>>     ax_.set_title(f"{center_bins=}")
-        >>>     ax_.set_xlabel(f"Time ({SFT.p_num(n)} points, Δt={SFT.delta_t})")
-        >>>     ax_.set_ylabel(f"Frequency ({SFT.f_pts} points, Δf={SFT.delta_f})")
-        >>>     ax_.set_xticks(SFT.t(n))  # vertical grid line are timestamps
-        >>>     ax_.set_yticks(SFT.f)  # horizontal grid line are frequency values
-        >>>     ax_.grid(True)
+        ...     ax_.imshow(abs(Sxx), origin='lower', interpolation=None, aspect='equal',
+        ...                cmap='viridis', extent=SFT.extent(n, 'tf', center_bins))
+        ...     ax_.set_title(f"{center_bins=}")
+        ...     ax_.set_xlabel(f"Time ({SFT.p_num(n)} points, Δt={SFT.delta_t})")
+        ...     ax_.set_ylabel(f"Frequency ({SFT.f_pts} points, Δf={SFT.delta_f})")
+        ...     ax_.set_xticks(SFT.t(n))  # vertical grid line are timestamps
+        ...     ax_.set_yticks(SFT.f)  # horizontal grid line are frequency values
+        ...     ax_.grid(True)
         >>> plt.show()
 
         Note that the step-like behavior with the constant colors is caused by passing
