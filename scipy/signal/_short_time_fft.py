@@ -1660,8 +1660,8 @@ class ShortTimeFFT:
         if self.onesided_fft:
             q0, q1 = 0, self.f_pts
         elif self.fft_mode == 'centered':
-            q0 = -self.mfft // 2
-            q1 = self.mfft // 2 - 1 if self.mfft % 2 == 0 else self.mfft // 2
+            q0 = -(self.mfft // 2)
+            q1 = self.mfft // 2 if self.mfft % 2 == 0 else self.mfft // 2 + 1
         else:
             raise ValueError(f"Attribute fft_mode={self.fft_mode} must be " +
                              "in ['centered', 'onesided', 'onesided2X']")
