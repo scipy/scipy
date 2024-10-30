@@ -8,7 +8,7 @@ import numpy as np
 
 from scipy import linalg, special, fft as sp_fft
 from scipy._lib.array_api_compat import numpy as np_compat
-from scipy._lib._array_api import xp_acos, xp_acosh, array_namespace
+from scipy._lib._array_api import xp_acos, xp_acosh, xp_sinc, array_namespace
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',
@@ -201,7 +201,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
         return xp.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    w = xp.ones(M, dtype=float)
+    w = xp.ones(M, dtype=xp.float64)
 
     return _asarray(_truncate(w, needs_trunc), xp, device=device)
 
@@ -269,7 +269,7 @@ def triang(M, sym=True, *, xp=None, device=None):
 
     concat = array_namespace(xp.ones(3)).concat
 
-    n = xp.arange(1, (M + 1) // 2 + 1)
+    n = xp.arange(1, (M + 1) // 2 + 1, dtype=xp.float64)
     if M % 2 == 0:
         w = (2 * n - 1.0) / M
         w = concat([w, w[::-1]])
@@ -792,8 +792,10 @@ def bartlett(M, sym=True, *, xp=None, device=None):
         return xp.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M)
-    w = xp.where(xp.less_equal(n, (M - 1) / 2.0),
+    n = xp.arange(0, M, dtype=xp.float64)
+
+    # cf https://github.com/data-apis/array-api-strict/issues/77
+    w = xp.where(n <= (M - 1) / 2.0,
                  2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1))
 
     return _asarray(_truncate(w, needs_trunc), xp, device=device)
@@ -957,13 +959,13 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
         return xp.ones(M)
 
     if alpha <= 0:
-        return xp.ones(M, dtype=float)
+        return xp.ones(M, dtype=xp.float64)
     elif alpha >= 1.0:
         return hann(M, sym=sym, xp=xp, device=device)
 
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M)
+    n = xp.arange(0, M, dtype=xp.float64)
     width = int(math.floor(alpha*(M-1)/2.0))
     n1 = n[0:width+1]
     n2 = n[width+1:M-width-1]
@@ -1035,7 +1037,7 @@ def barthann(M, sym=True, *, xp=None, device=None):
         return xp.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M)
+    n = xp.arange(0, M, dtype=xp.float64)
     fac = abs(n / (M - 1.0) - 0.5)
     w = 0.62 - 0.48 * fac + 0.38 * xp.cos(2 * xp.pi * fac)
 
@@ -1338,7 +1340,7 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
         return xp.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M)
+    n = xp.arange(0, M, dtype=xp.float64)
     alpha = (M - 1) / 2.0
     w = (special.i0(beta * xp.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
          special.i0(beta))
@@ -1507,7 +1509,7 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
         return xp.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M) - (M - 1.0) / 2.0
+    n = xp.arange(0, M, dtype=xp.float64) - (M - 1.0) / 2.0
     sig2 = 2 * std * std
     w = xp.exp(-n ** 2 / sig2)
 
@@ -1586,7 +1588,7 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
         return xp.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M) - (M - 1.0) / 2.0
+    n = xp.arange(0, M, dtype=xp.float64) - (M - 1.0) / 2.0
     w = xp.exp(-0.5 * abs(n / sig) ** (2 * p))
 
     return _asarray(_truncate(w, needs_trunc), xp, device=device)
@@ -1701,7 +1703,7 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     # compute the parameter beta
     order = M - 1.0
     beta = xp.cosh(1.0 / order * xp_acosh(10 ** (abs(at) / 20.), xp=xp))
-    k = xp.arange(M) * 1.0
+    k = xp.arange(M, dtype=xp.float64)
     x = beta * xp.cos(xp.pi * k / M)
     # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
@@ -1721,7 +1723,8 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
         w = w[:n]
         w = concat((w[n - 1:0:-1], w))
     else:
-        p = p * xp.exp(1.j * xp.pi / M * xp.arange(M))
+        I = xp.asarray(1j)
+        p = p * xp.exp(I * xp.pi / M * xp.arange(M, dtype=xp.float64))
         w = xp.real(sp_fft.fft(p))
         n = M // 2 + 1
         w = concat((w[n - 1:0:-1], w[1:n]))
@@ -1792,7 +1795,7 @@ def cosine(M, sym=True, *, xp=None, device=None):
         return xp.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    w = xp.sin(xp.pi / M * (xp.arange(M) + .5))
+    w = xp.sin(xp.pi / M * (xp.arange(M, dtype=xp.float64) + .5))
 
     return _asarray(_truncate(w, needs_trunc), xp, device=device)
 
@@ -1887,7 +1890,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     if center is None:
         center = (M-1) / 2
 
-    n = xp.arange(0, M)
+    n = xp.arange(0, M, dtype=xp.float64)
     w = xp.exp(-abs(n-center) / tau)
 
     return _asarray(_truncate(w, needs_trunc), xp, device=device)
@@ -1990,7 +1993,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     B = 10**(sll / 20)
     A = xp_acosh(B, xp=xp) / xp.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
-    ma = xp.arange(1, nbar)
+    ma = xp.arange(1, nbar, dtype=xp.float64)
 
     Fm = xp.empty(nbar-1)
     signs = xp.empty_like(ma)
@@ -2006,7 +2009,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
         return 1 + 2*xp.matmul(Fm, xp.cos(
             2*xp.pi*ma[:, xp.newaxis]*(n-M/2.+0.5)/M))
 
-    w = W(xp.arange(M))
+    w = W(xp.arange(M, dtype=xp.float64))
 
     # normalize (Note that this is not described in the original text [1])
     if norm:
@@ -2208,7 +2211,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
         raise ValueError('NW must be positive')
     M, needs_trunc = _extend(M, sym)
     W = float(NW) / M
-    nidx = xp.arange(M)
+    nidx = xp.arange(M, dtype=xp.float64)
 
     # Here we want to set up an optimization problem to find a sequence
     # whose energy is maximally concentrated within band [-W,W].
@@ -2228,7 +2231,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     # the main diagonal = ([M-1-2*t]/2)**2 cos(2PIW), t=[0,1,2,...,M-1]
     # and the first off-diagonal = t(M-t)/2, t=[1,2,...,M-1]
     # [see Percival and Walden, 1993]
-    d = ((M - 1 - 2 * nidx) / 2.) ** 2 * xp.cos(2 * xp.pi * W)
+    d = ((M - 1 - 2 * nidx) / 2.) ** 2 * xp.cos(xp.asarray(2 * xp.pi * W))
     e = nidx[1:] * (M - nidx[1:]) / 2.
 
     # only calculate the highest Kmax eigenvalues
@@ -2239,7 +2242,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
 
     # By convention (Percival and Walden, 1993 pg 379)
     # * symmetric tapers (k=0,2,4,...) should have a positive average.
-    fix_even = (windows[::2].sum(axis=1) < 0)
+    fix_even = (windows[::2, ...].sum(axis=1) < 0)
     for i, f in enumerate(fix_even):
         if f:
             windows[2 * i] *= -1
@@ -2250,15 +2253,15 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     #   algorithm that uses max(abs(w)), which is susceptible to numerical
     #   noise problems)
     thresh = max(1e-7, 1. / M)
-    for i, w in enumerate(windows[1::2]):
+    for i, w in enumerate(windows[1::2, ...]):
         if w[w * w > thresh][0] < 0:
             windows[2 * i + 1] *= -1
 
     # Now find the eigenvalues of the original spectral concentration problem
     # Use the autocorr sequence technique from Percival and Walden, 1993 pg 390
     if return_ratios:
-        dpss_rxx = _fftautocorr(windows)
-        r = 4 * W * xp.sinc(2 * W * nidx)
+        dpss_rxx = _fftautocorr(xp.asarray(windows))
+        r = 4 * W * xp_sinc(xp.asarray(2 * W * nidx), xp=xp)
         r[0] = 2 * W
         ratios = xp.matmul(dpss_rxx, r)
         if singleton:
@@ -2272,8 +2275,9 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
                 correction = M**2 / float(M**2 + NW)
             else:
                 s = sp_fft.rfft(windows[0])
-                shift = -(1 - 1./M) * xp.arange(1, M//2 + 1)
-                s[1:] *= 2 * xp.exp(-1j * xp.pi * shift)
+                shift = -(1 - 1./M) * xp.arange(1, M//2 + 1, dtype=xp.float64)
+                I = xp.asarray(1j)
+                s[1:] *= 2 * xp.exp(-I * xp.pi * shift)
                 correction = M / s.real.sum()
             windows *= correction
     # else we're already l2 normed, so do nothing
@@ -2378,7 +2382,7 @@ def lanczos(M, *, sym=True, xp=None, device=None):
     # half of the window and the flipped one which is the left hand half of
     # the window.
     def _calc_right_side_lanczos(n, m):
-        return xp.sinc(2. * xp.arange(n, m) / (m - 1) - 1.0)
+        return xp_sinc(2. * xp.arange(n, m, dtype=xp.float64) / (m - 1) - 1.0, xp=xp)
 
     concat = array_namespace(xp.ones(3)).concat
 
