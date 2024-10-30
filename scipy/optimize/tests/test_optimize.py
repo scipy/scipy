@@ -35,6 +35,8 @@ from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api_no_0d import xp_assert_equal
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
@@ -2438,11 +2440,17 @@ class TestRosen:
         xp_assert_equal(optimize.rosen(x),
                         xp.asarray(0.))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_rosen_der(self, xp):
         x = xp.asarray([1., 1., 1., 1.])
         xp_assert_equal(optimize.rosen_der(x),
                         xp.zeros_like(x))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_hess_prod(self, xp):
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
         x = xp.asarray([3, 4, 5])
