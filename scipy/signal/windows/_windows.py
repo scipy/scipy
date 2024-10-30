@@ -134,11 +134,11 @@ def general_cosine(M, a, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
-    fac = xp.linspace(-xp.pi, xp.pi, M)
-    w = xp.zeros(M)
+    fac = xp.linspace(-xp.pi, xp.pi, M, dtype=xp.float64)
+    w = xp.zeros(M, dtype=xp.float64)
     for k in range(len(a)):
         w += a[k] * xp.cos(k * fac)
 
@@ -198,7 +198,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     w = xp.ones(M, dtype=xp.float64)
@@ -264,18 +264,19 @@ def triang(M, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     concat = array_namespace(xp.ones(3)).concat
+    flip = array_namespace(xp.ones(3)).flip
 
     n = xp.arange(1, (M + 1) // 2 + 1, dtype=xp.float64)
     if M % 2 == 0:
         w = (2 * n - 1.0) / M
-        w = concat([w, w[::-1]])
+        w = concat([w, flip(w)])
     else:
         w = 2 * n / (M + 1.0)
-        w = concat([w, w[-2::-1]])
+        w = concat([w, flip(w[:-1])])
 
     return _asarray(_truncate(w, needs_trunc), xp, device=device)
 
@@ -338,10 +339,10 @@ def parzen(M, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(-(M - 1) / 2.0, (M - 1) / 2.0 + 0.5, 1.0)
+    n = xp.arange(-(M - 1) / 2.0, (M - 1) / 2.0 + 0.5, 1.0, dtype=xp.float64)
     w = xp.where(abs(n) <= (M - 1) / 4.0,
                  (1 - 6 * (abs(n) / (M / 2.0)) ** 2.0 +
                   6 * (abs(n) / (M / 2.0)) ** 3.0),
@@ -402,10 +403,10 @@ def bohman(M, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
-    fac = abs(xp.linspace(-1, 1, M)[1:-1])
+    fac = abs(xp.linspace(-1, 1, M, dtype=xp.float64)[1:-1])
     w = (1 - fac) * xp.cos(xp.pi * fac) + 1.0 / xp.pi * xp.sin(xp.pi * fac)
     concat = array_namespace(fac).concat
     w = concat([xp.zeros(1), w, xp.zeros(1)])
@@ -789,7 +790,7 @@ def bartlett(M, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     n = xp.arange(0, M, dtype=xp.float64)
@@ -956,7 +957,7 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
 
     if alpha <= 0:
         return xp.ones(M, dtype=xp.float64)
@@ -1034,7 +1035,7 @@ def barthann(M, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     n = xp.arange(0, M, dtype=xp.float64)
@@ -1337,7 +1338,7 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
 
     # Docstring adapted from NumPy's kaiser function
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     n = xp.arange(0, M, dtype=xp.float64)
@@ -1441,7 +1442,8 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     csum = cumulative_sum(kaiser_window)
     half_window = xp.sqrt(csum[:-1] / csum[-1])
     concat = array_namespace(half_window).concat
-    w = concat((half_window, half_window[::-1]), axis=0)
+    flip = array_namespace(half_window).flip
+    w = concat((half_window, flip(half_window)), axis=0)
     return _asarray(w, xp, device=device)
 
 
@@ -1506,7 +1508,7 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     n = xp.arange(0, M, dtype=xp.float64) - (M - 1.0) / 2.0
@@ -1585,7 +1587,7 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     n = xp.arange(0, M, dtype=xp.float64) - (M - 1.0) / 2.0
@@ -1697,23 +1699,25 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
                       "about 45 dB.",
                       stacklevel=2)
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     # compute the parameter beta
     order = M - 1.0
-    beta = xp.cosh(1.0 / order * xp_acosh(10 ** (abs(at) / 20.), xp=xp))
+    _val = xp.asarray(10 ** (abs(at) / 20.), dtype=xp.float64)
+    beta = xp.cosh(1.0 / order * xp_acosh(_val, xp=xp))
     k = xp.arange(M, dtype=xp.float64)
     x = beta * xp.cos(xp.pi * k / M)
     # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
     # from scipy.special. Using the expansion in scipy.special leads to errors.
-    p = xp.zeros(x.shape)
+    p = xp.zeros_like(x)
     p[x > 1] = xp.cosh(order * xp_acosh(x[x > 1], xp=xp))
     p[x < -1] = (2 * (M % 2) - 1) * xp.cosh(order * xp_acosh(-x[x < -1], xp=xp))
     p[abs(x) <= 1] = xp.cos(order * xp_acos(x[abs(x) <= 1], xp=xp))
 
     concat = array_namespace(p).concat
+    flip = array_namespace(p).flip
 
     # Appropriate IDFT and filling up
     # depending on even/odd M
@@ -1721,13 +1725,13 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
         w = xp.real(sp_fft.fft(p))
         n = (M + 1) // 2
         w = w[:n]
-        w = concat((w[n - 1:0:-1], w))
+        w = concat((flip(w[1:n]), w))
     else:
         I = xp.asarray(1j)
         p = p * xp.exp(I * xp.pi / M * xp.arange(M, dtype=xp.float64))
         w = xp.real(sp_fft.fft(p))
         n = M // 2 + 1
-        w = concat((w[n - 1:0:-1], w[1:n]))
+        w = concat((flip(w[1:n]), w[1:n]))
     w = w / xp.max(w)
 
     return _asarray(_truncate(w, needs_trunc), xp, device=device)
@@ -1792,7 +1796,7 @@ def cosine(M, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     w = xp.sin(xp.pi / M * (xp.arange(M, dtype=xp.float64) + .5))
@@ -1884,7 +1888,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     if sym and center is not None:
         raise ValueError("If sym==True, center must be None.")
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     if center is None:
@@ -1984,7 +1988,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     # Original text uses a negative sidelobe level parameter and then negates
@@ -1995,7 +1999,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
     ma = xp.arange(1, nbar, dtype=xp.float64)
 
-    Fm = xp.empty(nbar-1)
+    Fm = xp.empty(nbar - 1, dtype=xp.float64)
     signs = xp.empty_like(ma)
     signs[::2] = 1
     signs[1::2] = -1
@@ -2191,7 +2195,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     if norm is None:
         norm = 'approximate' if Kmax is None else 2
     known_norms = (2, 'approximate', 'subsample')
@@ -2375,7 +2379,7 @@ def lanczos(M, *, sym=True, xp=None, device=None):
     xp = np_compat if xp is None else xp
 
     if _len_guards(M):
-        return xp.ones(M)
+        return xp.ones(M, dtype=xp.float64)
     M, needs_trunc = _extend(M, sym)
 
     # To make sure that the window is symmetric, we concatenate the right hand
@@ -2385,13 +2389,14 @@ def lanczos(M, *, sym=True, xp=None, device=None):
         return xp_sinc(2. * xp.arange(n, m, dtype=xp.float64) / (m - 1) - 1.0, xp=xp)
 
     concat = array_namespace(xp.ones(3)).concat
+    flip = array_namespace(xp.ones(3)).flip
 
     if M % 2 == 0:
         wh = _calc_right_side_lanczos(M/2, M)
-        w = concat([xp.flip(wh), wh])
+        w = concat([flip(wh), wh])
     else:
         wh = _calc_right_side_lanczos((M+1)/2, M)
-        w = concat([xp.flip(wh), xp.ones(1), wh])
+        w = concat([flip(wh), xp.ones(1), wh])
 
     return _asarray(_truncate(w, needs_trunc), xp, device=device)
 
