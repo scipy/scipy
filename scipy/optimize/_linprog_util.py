@@ -1215,7 +1215,7 @@ def _get_Abc(lp, c0):
     if sparse:
         b = b.reshape(-1, 1)
         A = A.tocsc()
-        b -= (A[:, i_shift] * sps.diags(lb_shift)).sum(axis=1)
+        b -= (A[:, i_shift] @ sps.diags(lb_shift)).sum(axis=1)
         b = b.ravel()
     else:
         b -= (A[:, i_shift] * lb_shift).sum(axis=1)
