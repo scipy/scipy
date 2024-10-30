@@ -1039,6 +1039,39 @@ class TestTransforms:
         with pytest.raises(NotImplementedError, match=message):
             1 / Y
 
+    @pytest.mark.fail_slow(20)  # Moments require integration
+    def test_order_statistics(self):
+        rng = np.random.default_rng(7546349802439582)
+        X = _Uniform(a=0, b=1)
+        n = 5
+        r = np.asarray([[1], [3], [5]])
+        Y = stats.OrderStatisticDistribution(X, n=n, r=r)
+        Y0 = stats.beta(r, n + 1 - r)
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        # log methods need some attention before merge
+        assert_allclose(np.exp(Y.logentropy()), Y0.entropy())
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.skewness(), Y0.stats('s'), atol=1e-15)
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3, atol=1e-15)
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y, method='formula'), Y.cdf(y, method='quadrature'))
+        assert_allclose(Y.ccdf(y, method='formula'), Y.ccdf(y, method='quadrature'))
+        assert_allclose(Y.icdf(p, method='formula'), Y.icdf(p, method='inversion'))
+        assert_allclose(Y.iccdf(p, method='formula'), Y.iccdf(p, method='inversion'))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        with np.errstate(invalid='ignore', divide='ignore'):
+            assert_allclose(Y.ilogcdf(np.log(p),), Y0.ppf(p))
+            assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+
 
 class TestFullCoverage:
     # Adds tests just to get to 100% test coverage; this way it's more obvious
