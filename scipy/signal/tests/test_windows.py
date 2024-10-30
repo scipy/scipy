@@ -12,8 +12,12 @@ from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+pytestmark = [array_api_compatible,
+              pytest.mark.usefixtures("skip_xp_backends"),
+              pytest.mark.usefixtures("xfail_xp_backends")
+]
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 window_funcs = [
@@ -324,7 +328,7 @@ def test_exponential(xp):
             assert_raises(ValueError, windows.exponential, *k, xp=xp)
         else:
             win = windows.exponential(*k, xp=xp)
-            xp_assert_close(win, v, rtol=1e-14)
+            xp_assert_close(win, xp.asarray(v), rtol=1e-14)
 
 
 class TestFlatTop:
@@ -578,7 +582,7 @@ class TestTukey:
                 assert_raises(ValueError, windows.tukey, *k, xp=xp)
             else:
                 win = windows.tukey(*k, xp=xp)
-                xp_assert_close(win, v, rtol=1e-15, atol=1e-15)
+                xp_assert_close(win, xp.asarray(v), rtol=1e-15, atol=1e-15)
 
     def test_extremes(self, xp):
         # Test extremes of alpha correspond to boxcar and hann
@@ -602,6 +606,7 @@ dpss_data = {
 }
 
 
+@skip_xp_backends(np_only=True, reason='banded linear algebra is numpy-only')
 class TestDPSS:
 
     def test_basic(self, xp):
@@ -681,8 +686,8 @@ class TestLanczos:
 
     def test_array_size(self, xp):
         for n in [0, 10, 11]:
-            xp_assert_equal(len(windows.lanczos(n, sym=False, xp=xp)), n)
-            xp_assert_equal(len(windows.lanczos(n, sym=True, xp=xp)), n)
+            xp_assert_equal(windows.lanczos(n, sym=False, xp=xp).shape[0], n)
+            xp_assert_equal(windows.lanczos(n, sym=True, xp=xp).shape[0], n)
 
 
 class TestGetWindow:
@@ -724,6 +729,7 @@ class TestGetWindow:
         # Unknown window type error
         assert_raises(ValueError, windows.get_window, 'broken', 4, xp=xp)
 
+    @xfail_xp_backends(np_only=True, reason='TODO: make resample array API ready')
     def test_array_as_window(self, xp):
         # github issue 3603
         osfactor = 128
@@ -772,10 +778,10 @@ def test_windowfunc_basics(xp):
             xp_assert_close(w1[:-1], w2)
 
             # Check that functions run and output lengths are correct
-            xp_assert_equal(len(window(6, *params, sym=True, xp=xp)), 6)
-            xp_assert_equal(len(window(6, *params, sym=False, xp=xp)), 6)
-            xp_assert_equal(len(window(7, *params, sym=True, xp=xp)), 7)
-            xp_assert_equal(len(window(7, *params, sym=False, xp=xp)), 7)
+            xp_assert_equal(window(6, *params, sym=True, xp=xp).shape[0], 6)
+            xp_assert_equal(window(6, *params, sym=False, xp=xp).shape[0], 6)
+            xp_assert_equal(window(7, *params, sym=True, xp=xp).shape[0], 7)
+            xp_assert_equal(window(7, *params, sym=False, xp=xp).shape[0], 7)
 
             # Check invalid lengths
             assert_raises(ValueError, window, 5.5, *params, xp=xp)
@@ -788,12 +794,12 @@ def test_windowfunc_basics(xp):
             assert_array_equal(window(1, *params, sym=False, xp=xp), [1])
 
             # Check dtype
-            assert_(window(0, *params, sym=True, xp=xp).dtype == 'float')
-            assert_(window(0, *params, sym=False, xp=xp).dtype == 'float')
-            assert_(window(1, *params, sym=True, xp=xp).dtype == 'float')
-            assert_(window(1, *params, sym=False, xp=xp).dtype == 'float')
-            assert_(window(6, *params, sym=True, xp=xp).dtype == 'float')
-            assert_(window(6, *params, sym=False, xp=xp).dtype == 'float')
+            assert window(0, *params, sym=True, xp=xp).dtype == xp.float64
+            assert window(0, *params, sym=False, xp=xp).dtype == xp.float64
+            assert window(1, *params, sym=True, xp=xp).dtype == xp.float64
+            assert window(1, *params, sym=False, xp=xp).dtype == xp.float64
+            assert window(6, *params, sym=True, xp=xp).dtype == xp.float64
+            assert window(6, *params, sym=False, xp=xp).dtype == xp.float64
 
             # Check normalization
             assert_array_less(window(10, *params, sym=True, xp=xp), 1.01)
@@ -802,10 +808,12 @@ def test_windowfunc_basics(xp):
             assert_array_less(window(9, *params, sym=False, xp=xp), 1.01)
 
             # Check that DFT-even spectrum is purely real for odd and even
-            res = fft(window(10, *params, sym=False, xp=xp)).imag
+            res = fft(window(10, *params, sym=False, xp=xp))
+            res = xp.imag(res)
             xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
-            res = fft(window(11, *params, sym=False, xp=xp)).imag
+            res = fft(window(11, *params, sym=False, xp=xp))
+            res = xp.imag(res)
             xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
 
@@ -842,7 +850,7 @@ def test_not_needs_params(xp):
                    'sinc',
                    ]:
         win = get_window(winstr, 7, xp=xp)
-        xp_assert_equal(len(win), 7)
+        xp_assert_equal(win.shape[0], 7)
 
 
 def test_symmetric(xp):
