@@ -550,6 +550,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_shape += (M,)
         if o_ndim == 2:
             new_shape += (N,)
+        faux_shape = (M if self.ndim == 2 else 1, N if o_ndim == 2 else 1)
 
         major_dim = self._swap((M, N))[0]
         other = self.__class__(other)  # convert to this format
@@ -587,7 +588,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         if new_shape == ():
             return np.array(data[0])
-        return self.__class__((data, indices, indptr), shape=new_shape)
+        res = self.__class__((data, indices, indptr), shape=faux_shape)
+        if faux_shape != new_shape:
+            if res.format != 'csr':
+                res = res.tocsr()
+            res = res.reshape(new_shape)
+        return res
 
     def diagonal(self, k=0):
         rows, cols = self.shape
