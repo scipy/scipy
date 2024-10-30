@@ -10,7 +10,9 @@ from pytest import raises as assert_raises
 from scipy.conftest import array_api_compatible
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api import (
+     xp_assert_close, xp_assert_equal, array_namespace, is_torch
+)
 
 pytestmark = [array_api_compatible,
               pytest.mark.usefixtures("skip_xp_backends"),
@@ -111,17 +113,19 @@ class TestTaylor:
         documentation for the Taylor window for more information on
         normalization.
         """
-        xp_assert_close(windows.taylor(1, 2, 15, xp=xp), xp.asarray([1.0]))
+        xp_assert_close(windows.taylor(1, 2, 15, xp=xp),
+                        xp.asarray([1.0], dtype=xp.float64))
         xp_assert_close(
             windows.taylor(5, 2, 15, xp=xp),
-            xp.asarray([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341])
+            xp.asarray([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341],
+                       dtype=xp.float64)
         )
         xp_assert_close(
             windows.taylor(6, 2, 15, xp=xp),
             xp.asarray([
                 0.7504082, 0.86624416, 0.98208011, 0.98208011, 0.86624416,
                 0.7504082
-            ])
+            ], dtype=xp.float64)
         )
 
     def test_non_normalized(self, xp):
@@ -133,15 +137,16 @@ class TestTaylor:
             windows.taylor(5, 2, 15, norm=False, xp=xp),
             xp.asarray([
                 0.87508054, 1.04771499, 1.15440894, 1.04771499, 0.87508054
-            ])
+            ], dtype=xp.float64)
         )
         xp_assert_close(
             windows.taylor(6, 2, 15, norm=False, xp=xp),
             xp.asarray([
                 0.86627793, 1.0, 1.13372207, 1.13372207, 1.0, 0.86627793
-            ])
+            ], dtype=xp.float64)
         )
 
+    @skip_xp_backends(cpu_only=True)
     def test_correctness(self, xp):
         """This test ensures the correctness of the implemented Taylor
         Windowing function. A Taylor Window of 1024 points is created, its FFT
@@ -164,11 +169,13 @@ class TestTaylor:
         # changes the sidelobe level from the desired value.
         w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False, xp=xp)
         f = fft(w, N_fft)
-        spec = 20 * np.log10(np.abs(f / np.amax(f)))
+
+        f_np = np.asarray(f)
+        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
 
         first_zero = np.argmax(np.diff(spec) > 0)
 
-        PSLL = np.amax(spec[first_zero:-first_zero])
+        PSLL = np.max(spec[first_zero:-first_zero])
 
         BW_3dB = 2*np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
         BW_18dB = 2*np.argmax(spec <= -18.061799739838872) / N_fft * M_win
@@ -196,11 +203,11 @@ class TestBoxcar:
 
     def test_basic(self, xp):
         xp_assert_close(windows.boxcar(6, xp=xp),
-                        xp.asarray([1.0, 1, 1, 1, 1, 1]))
+                        xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
         xp_assert_close(windows.boxcar(7, xp=xp),
-                        xp.asarray([1.0, 1, 1, 1, 1, 1, 1]))
+                        xp.asarray([1.0, 1, 1, 1, 1, 1, 1], dtype=xp.float64))
         xp_assert_close(windows.boxcar(6, False, xp=xp),
-                        xp.asarray([1.0, 1, 1, 1, 1, 1]))
+                        xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
 
 
 cheb_odd_true = array([0.200938, 0.107729, 0.134941, 0.165348,
@@ -245,7 +252,9 @@ class TestChebWin:
             sup.filter(UserWarning, "This window is not suitable")
             xp_assert_close(windows.chebwin(6, 100, xp=xp),
                             [0.1046401879356917, 0.5075781475823447, 1.0, 1.0,
-                             0.5075781475823447, 0.1046401879356917])
+                             0.5075781475823447, 0.1046401879356917],
+                            atol=1e-8
+            )
             xp_assert_close(windows.chebwin(7, 100, xp=xp),
                             [0.05650405062850233, 0.316608530648474,
                              0.7601208123539079, 1.0, 0.7601208123539079,
@@ -455,6 +464,7 @@ class TestKaiser:
                          0.5985765418119844])
 
 
+@skip_xp_backends("torch", reason="implementation needs 2023.12 standard")
 class TestKaiserBesselDerived:
 
     def test_basic(self, xp):
@@ -581,8 +591,14 @@ class TestTukey:
             if v is None:
                 assert_raises(ValueError, windows.tukey, *k, xp=xp)
             else:
+                if is_torch(xp) and k in [(6,), (6, .75), (7, .75), (6,1)]:
+                     atol_rtol = {'rtol': 3e-8, 'atol': 1e-8}
+                else:
+                     atol_rtol = {'rtol': 1e-15, 'atol': 1e-15 }
+
                 win = windows.tukey(*k, xp=xp)
-                xp_assert_close(win, xp.asarray(v), rtol=1e-15, atol=1e-15)
+                xp_assert_close(win, xp.asarray(v),
+                                check_dtype=False, **atol_rtol)
 
     def test_extremes(self, xp):
         # Test extremes of alpha correspond to boxcar and hann
@@ -858,10 +874,11 @@ def test_symmetric(xp):
     for win in [windows.lanczos]:
         # Even sampling points
         w = win(4096, xp=xp)
-        error = np.max(np.abs(w-np.flip(w)))
-        xp_assert_equal(error, 0.0)
+        flip = array_namespace(w).flip
+        error = xp.max(xp.abs(w - flip(w)))
+        xp_assert_equal(error, xp.asarray(0.0, dtype=error.dtype))
 
         # Odd sampling points
         w = win(4097, xp=xp)
-        error = np.max(np.abs(w-np.flip(w)))
-        xp_assert_equal(error, 0.0)
+        error = xp.max(xp.abs(w - flip(w)))
+        xp_assert_equal(error, xp.asarray(0.0, dtype=error.dtype))
