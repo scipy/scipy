@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
@@ -105,14 +107,14 @@ class TestTaylor:
         documentation for the Taylor window for more information on
         normalization.
         """
-        xp_assert_close(windows.taylor(1, 2, 15, xp=xp), 1.0)
+        xp_assert_close(windows.taylor(1, 2, 15, xp=xp), xp.asarray([1.0]))
         xp_assert_close(
             windows.taylor(5, 2, 15, xp=xp),
-            np.array([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341])
+            xp.asarray([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341])
         )
         xp_assert_close(
             windows.taylor(6, 2, 15, xp=xp),
-            np.array([
+            xp.asarray([
                 0.7504082, 0.86624416, 0.98208011, 0.98208011, 0.86624416,
                 0.7504082
             ])
@@ -125,13 +127,13 @@ class TestTaylor:
         """
         xp_assert_close(
             windows.taylor(5, 2, 15, norm=False, xp=xp),
-            np.array([
+            xp.asarray([
                 0.87508054, 1.04771499, 1.15440894, 1.04771499, 0.87508054
             ])
         )
         xp_assert_close(
             windows.taylor(6, 2, 15, norm=False, xp=xp),
-            np.array([
+            xp.asarray([
                 0.86627793, 1.0, 1.13372207, 1.13372207, 1.0, 0.86627793
             ])
         )
@@ -189,9 +191,12 @@ class TestBohman:
 class TestBoxcar:
 
     def test_basic(self, xp):
-        xp_assert_close(windows.boxcar(6, xp=xp), [1, 1, 1, 1, 1, 1])
-        xp_assert_close(windows.boxcar(7, xp=xp), [1, 1, 1, 1, 1, 1, 1])
-        xp_assert_close(windows.boxcar(6, False, xp=xp), [1, 1, 1, 1, 1, 1])
+        xp_assert_close(windows.boxcar(6, xp=xp),
+                        xp.asarray([1.0, 1, 1, 1, 1, 1]))
+        xp_assert_close(windows.boxcar(7, xp=xp),
+                        xp.asarray([1.0, 1, 1, 1, 1, 1, 1]))
+        xp_assert_close(windows.boxcar(6, False, xp=xp),
+                        xp.asarray([1.0, 1, 1, 1, 1, 1]))
 
 
 cheb_odd_true = array([0.200938, 0.107729, 0.134941, 0.165348,
@@ -456,15 +461,17 @@ class TestKaiserBesselDerived:
         xp_assert_close(w, w2)
 
         # Test for Princen-Bradley condition
-        xp_assert_close(w[:M // 2] ** 2 + w[-M // 2:] ** 2, 1.)
+        actual = w[:M // 2] ** 2 + w[-M // 2:] ** 2
+        xp_assert_close(actual, xp.ones(actual.shape, dtype=actual.dtype))
 
         # Test actual values from other implementations
         # M = 2:  sqrt(2) / 2
         # M = 4:  0.518562710536, 0.855039598640
         # M = 6:  0.436168993154, 0.707106781187, 0.899864772847
         # Ref:https://github.com/scipy/scipy/pull/4747#issuecomment-172849418
-        xp_assert_close(windows.kaiser_bessel_derived(2, beta=np.pi / 2, xp=xp)[:1],
-                        np.sqrt(2) / 2)
+        actual = windows.kaiser_bessel_derived(2, beta=np.pi / 2, xp=xp)[:1]
+        desired = xp.ones_like(actual) * math.sqrt(2) / 2.0
+        xp_assert_close(actual, desired)
 
         xp_assert_close(windows.kaiser_bessel_derived(4, beta=np.pi / 2, xp=xp)[:2],
                         [0.518562710536, 0.855039598640])
@@ -547,10 +554,10 @@ tukey_data = {
                            1.0, 0.69134171618254492, 0.0]),
     (5, 1.0, True): array([0.0, 0.5, 1.0, 0.5, 0.0]),
 
-    (6, 0): [1, 1, 1, 1, 1, 1],
-    (7, 0): [1, 1, 1, 1, 1, 1, 1],
-    (6, .25): [0, 1, 1, 1, 1, 0],
-    (7, .25): [0, 1, 1, 1, 1, 1, 0],
+    (6, 0): [1.0, 1, 1, 1, 1, 1],
+    (7, 0): [1.0, 1, 1, 1, 1, 1, 1],
+    (6, .25): [0.0, 1, 1, 1, 1, 0],
+    (7, .25): [0.0, 1, 1, 1, 1, 1, 0],
     (6,): [0, 0.9045084971874737, 1.0, 1.0, 0.9045084971874735, 0],
     (7,): [0, 0.75, 1.0, 1.0, 1.0, 0.75, 0],
     (6, .75): [0, 0.5522642316338269, 1.0, 1.0, 0.5522642316338267, 0],
@@ -628,11 +635,11 @@ class TestDPSS:
     def test_extremes(self, xp):
         # Test extremes of alpha
         lam = windows.dpss(31, 6, 4, return_ratios=True, xp=xp)[1]
-        xp_assert_close(lam, 1.)
+        xp_assert_close(lam, xp.ones_like(lam))
         lam = windows.dpss(31, 7, 4, return_ratios=True, xp=xp)[1]
-        xp_assert_close(lam, 1.)
+        xp_assert_close(lam, xp.ones_like(lam))
         lam = windows.dpss(31, 8, 4, return_ratios=True, xp=xp)[1]
-        xp_assert_close(lam, 1.)
+        xp_assert_close(lam, xp.ones_like(lam))
 
     def test_degenerate(self, xp):
         # Test failures
@@ -795,10 +802,11 @@ def test_windowfunc_basics(xp):
             assert_array_less(window(9, *params, sym=False, xp=xp), 1.01)
 
             # Check that DFT-even spectrum is purely real for odd and even
-            xp_assert_close(fft(window(10, *params, sym=False, xp=xp)).imag,
-                            0, atol=1e-14)
-            xp_assert_close(fft(window(11, *params, sym=False, xp=xp)).imag,
-                            0, atol=1e-14)
+            res = fft(window(10, *params, sym=False, xp=xp)).imag
+            xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
+
+            res = fft(window(11, *params, sym=False, xp=xp)).imag
+            xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
 
 def test_needs_params(xp):
