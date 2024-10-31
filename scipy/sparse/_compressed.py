@@ -964,17 +964,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.data[offsets] = x
             return
 
-        mask = (offsets <= -1)
+        mask = (offsets >= 0)
         # Boundary between csc and convert to coo
         # The value 0.001 is justified in gh-19962#issuecomment-1920499678
-        if mask.sum() < self.nnz * 0.001:
+        if self.nnz - mask.sum() < self.nnz * 0.001:
+            # replace existing entries
+            self.data[offsets[mask]] = x[mask]
             # create new entries
+            mask = ~mask
             i = i[mask]
             j = j[mask]
             self._insert_many(i, j, x[mask])
-            # replace existing entries
-            mask = ~mask
-            self.data[offsets[mask]] = x[mask]
         else:
             # convert to coo for _set_diag
             coo = self.tocoo()
