@@ -545,6 +545,12 @@ class TestDifferentialEvolutionSolver:
                                    seed=1,
                                    rng=1,
                                    tol=0.5)
+            # use of rng=RandomState should give rise to an error.
+            differential_evolution(self.quadratic,
+                                   [(-100, 100)],
+                                   polish=False,
+                                   rng=np.random.RandomState(),
+                                   tol=0.5)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs

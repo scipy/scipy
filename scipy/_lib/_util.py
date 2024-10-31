@@ -407,32 +407,6 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None):
     return decorator
 
 
-def check_random_state_spec007(rng=None):
-    """Turn `rng` into a `numpy.random.Generator` instance.
-
-    Parameters
-    ----------
-    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `rng` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(rng)``.
-        If `rng` is already a ``Generator`` or ``RandomState`` instance, then
-        the provided instance is used.
-
-    Returns
-    -------
-    seed : {`numpy.random.Generator`, `numpy.random.RandomState`}
-        Random number generator.
-
-    """
-    if rng is None or isinstance(rng, (numbers.Integral, np.integer)):
-        return np.random.default_rng(rng)
-    elif isinstance(rng, (np.random.RandomState, np.random.Generator)):
-        return rng
-    else:
-        raise ValueError(f'{rng!r} cannot be used to seed a'
-                         ' numpy.random.Generator instance')
-
-
 # copy-pasted from scikit-learn utils/validation.py
 def check_random_state(seed):
     """Turn `seed` into a `np.random.RandomState` instance.

@@ -7,9 +7,8 @@ import warnings
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize._optimize import _status_message, _wrap_callback
-from scipy._lib._util import (MapWrapper, _FunctionWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper, _FunctionWrapper,
                               rng_integers, _transition_to_rng)
-from scipy._lib._util import check_random_state_spec007 as check_random_state
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
@@ -127,16 +126,28 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         to progress into the next generation, but at the risk of population
         stability.
     rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `rng` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(rng)``.
-        If `rng` is already a ``Generator`` or ``RandomState`` instance, then
-        the provided instance is used.
-
-        Specify `rng` for repeatable minimizations.
         
         ..versionchanged:: 1.15.0
-            the keyword was changed from `seed` to `rng`
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
+            For an interim period both keywords will continue to work (only specify
+            one of them). After the interim period using the `seed` keyword will emit
+            warnings. The behaviour of the `seed` and `rng` keywords is outlined below.
+            
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new `RandomState` instance is used,
+        seeded with `seed`.
+        If `seed` is already a `Generator` or `RandomState` instance then
+        that instance is used.
         
+        If `rng` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(rng)``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used.
+        
+        Specify `seed`/`rng` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
@@ -599,16 +610,28 @@ class DifferentialEvolutionSolver:
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `rng` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(rng)``.
-        If `rng` is already a ``Generator`` or ``RandomState`` instance, then
-        the provided instance is used.
-        Specify `rng` for repeatable minimizations.
         
         ..versionchanged:: 1.15.0
-            the keyword was changed from `seed` to `rng`
-
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
+            For an interim period both keywords will continue to work (only specify
+            one of them). After the interim period using the `seed` keyword will emit
+            warnings. The behaviour of the `seed` and `rng` keywords is outlined below.
+            
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new `RandomState` instance is used,
+        seeded with `seed`.
+        If `seed` is already a `Generator` or `RandomState` instance then
+        that instance is used.
+        
+        If `rng` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(rng)``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used.
+        
+        Specify `seed`/`rng` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
