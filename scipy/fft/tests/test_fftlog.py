@@ -180,7 +180,7 @@ def test_array_like(xp, op):
          [[1.0, 1.0], [1.0, 1.0]]]
     xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))
 
-@pytest.mark.parameterize('n', [128, 129])
+@pytest.mark.parametrize('n', [128, 129])
 def test_gh_21661(xp, n):
     one = xp.asarray(1.0)
     xp_test = array_namespace(one)
