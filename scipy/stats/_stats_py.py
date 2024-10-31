@@ -4612,15 +4612,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
                    '`MonteCarloMethod`, or None.')
         raise ValueError(message)
 
-    if n == 2:
-        r = (xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))
-        r = r[()] if r.ndim == 0 else r
-        pvalue = xp.ones_like(r)
-        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-        result = PearsonRResult(statistic=r, pvalue=pvalue, n=n,
-                                alternative=alternative, x=x, y=y, axis=axis)
-        return result
-
     xmean = xp.mean(x, axis=axis, keepdims=True)
     ymean = xp.mean(y, axis=axis, keepdims=True)
     xm = x - xmean
@@ -4657,11 +4648,18 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r = xp.asarray(xp.clip(r, -one, one))
     r[const_xy] = xp.nan
 
-    # As explained in the docstring, the distribution of `r` under the null
-    # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-    ab = xp.asarray(n/2 - 1)
-    dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
-    pvalue = _get_pvalue(r, dist, alternative, xp=xp)
+    # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
+    # in the docs.
+    if n == 2:
+        r = xp.round(r)
+        one = xp.asarray(1, dtype=dtype)
+        pvalue = xp.where(xp.asarray(xp.isnan(r)), xp.nan*one, one)
+    else:
+        # As explained in the docstring, the distribution of `r` under the null
+        # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
+        ab = xp.asarray(n/2 - 1)
+        dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
+        pvalue = _get_pvalue(r, dist, alternative, xp=xp)
 
     r = r[()] if r.ndim == 0 else r
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue

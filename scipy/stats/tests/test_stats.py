@@ -500,6 +500,7 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(0.351312332103289, dtype=xp.float64))
         xp_assert_close(p, xp.asarray(0.648687667896711, dtype=xp.float64))
 
+    @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
     def test_length_two_pos1(self, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
@@ -514,6 +515,7 @@ class TestPearsonr:
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
+    @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
     def test_length_two_neg1(self, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
@@ -527,6 +529,19 @@ class TestPearsonr:
         low, high = res.confidence_interval()
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
+
+    @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
+    def test_length_two_constant_input(self, xp):
+        # Zero variance input
+        # See https://github.com/scipy/scipy/issues/3728
+        # and https://github.com/scipy/scipy/issues/7730
+        msg = "An input array is constant"
+        with pytest.warns(stats.ConstantInputWarning, match=msg):
+            x = xp.asarray([0.667, 0.667])
+            y = xp.asarray([0.123, 0.456])
+            r, p = stats.pearsonr(x, y)
+            xp_assert_close(r, xp.asarray(xp.nan))
+            xp_assert_close(p, xp.asarray(xp.nan))
 
     # Expected values computed with R 3.6.2 cor.test, e.g.
     # options(digits=16)
