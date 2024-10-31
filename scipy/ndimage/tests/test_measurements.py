@@ -5,7 +5,6 @@ import numpy as np
 from numpy.testing import suppress_warnings
 
 from scipy._lib._array_api import (
-    is_jax,
     is_torch,
     array_namespace,
     xp_assert_equal,
@@ -569,7 +568,7 @@ def test_value_indices03(xp):
         assert list(vi.keys()) == list(trueKeys)
         for k in [int(x) for x in trueKeys]:
             trueNdx = xp.nonzero(a == k, **nnz_kwd)
-            assert vi[k].shape[0] == trueNdx.shape[0]
+            assert len(vi[k]) == len(trueNdx)
             for vik, true_vik in zip(vi[k], trueNdx):
                 xp_assert_equal(vik, true_vik)
 
