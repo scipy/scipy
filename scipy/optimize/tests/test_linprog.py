@@ -521,7 +521,7 @@ class LinprogCommonTests:
         ub = x_valid + np.random.rand(n)
         lb = x_valid - np.random.rand(n)
         bounds = np.column_stack((lb, ub))
-        b_eq = A_eq * x_valid
+        b_eq = A_eq @ x_valid
 
         if self.method in {'simplex', 'revised simplex'}:
             # simplex and revised simplex should raise error
