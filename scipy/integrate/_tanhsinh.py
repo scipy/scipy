@@ -947,16 +947,16 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
 
 
 def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
-    r"""Evaluate a convergent, monotonically decreasing finite or infinite series.
+    r"""Evaluate a convergent finite or infinite series.
 
     For finite `a` and `b`, this evaluates::
 
         f(a + np.arange(n)*step).sum()
 
     where ``n = int((b - a) / step) + 1``, where `f` is smooth, positive, and
-    monotone decreasing. `b` may be very large or infinite, in which case
-    a partial sum is evaluated directly and the remainder is approximated using
-    integration.
+    unimodal. The number of terms in the sum may be very large or infinite,
+    in which case a partial sum is evaluated directly and the remainder is
+    approximated using integration.
 
     Parameters
     ----------
@@ -974,19 +974,11 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         array ``x`` or the arrays in ``args``, and it must return NaN where
         the argument is NaN.
         
-        `f` must represent a smooth, positive, and monotone decreasing
-        function of `x` defined at *all reals* between `a` and `b`.          
-        `nsum` performs no checks to verify that these conditions
-        are met and may return erroneous results if they are violated.
+        `f` must represent a smooth, positive, unimodal function of `x` defined at
+        *all reals* between `a` and `b`.
     a, b : float array_like
         Real lower and upper limits of summed terms. Must be broadcastable.
         Each element of `a` must be less than the corresponding element in `b`.
-        
-        - If `a` is infinite, the series must be monotone increasing from `a` to `b`.
-        - If `b` is infinite, the series must be monotone decreasing from `a` to `b`.
-        - If `a` and `b` are infinite, the series must be monotone increasing from
-          `a` to the origin and monotone decreasing from the origin to `b`.
-
     step : float array_like
         Finite, positive, real step between summed terms. Must be broadcastable
         with `a` and `b`. Note that the number of terms included in the sum will
@@ -1037,6 +1029,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
             - ``-4`` : The magnitude of the last term of the partial sum exceeds
               the tolerances, so the error estimate exceeds the tolerances.
               Consider increasing `maxterms` or loosening `tolerances`.
+              Alternatively, the callable may not be unimodal, or the limits of
+              summation may be too far from the function maximum. Consider
+              increasing `maxterms` or breaking the sum into pieces.
 
         sum : float array
             An estimate of the sum.
@@ -1081,12 +1076,20 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     that appear in the sum has little effect. If there is not a natural
     extension of the function to all reals, consider using linear interpolation,
     which is easy to evaluate and preserves monotonicity.
-    
+
     The approach described above is generalized for non-unit
     `step` and finite `b` that is too large for direct evaluation of the sum,
-    i.e. ``b - a + 1 > maxterms``.
+    i.e. ``b - a + 1 > maxterms``. It is further generalized to unimodal
+    functions by directly summing terms surrounding the maximum.
+    This strategy may fail:
 
-    Although the callable `f` must be non-negative and monotonically decreasing,
+    - If the left limit is finite and the maximum is far from it.
+    - If the right limit is finite and the maximum is far from it.
+    - If both limits are finite and the maximum is far from the origin.
+
+    In these cases, accuracy may be poor, and `nsum` may return status code ``4``.
+
+    Although the callable `f` must be non-negative and unimodal,
     `nsum` can be used to evaluate more general forms of series. For instance, to
     evaluate an alternating series, pass a callable that returns the difference
     between pairs of adjacent terms, and adjust `step` accordingly. See Examples.
@@ -1307,17 +1310,20 @@ def _integral_bound(f, a, b, step, args, constants):
     # Find the location of a term that is less than the tolerance (if possible)
     log2maxterms = np.floor(np.log2(maxterms)) if maxterms else 0
     n_steps = np.concatenate([2**np.arange(0, log2maxterms), [maxterms]], dtype=dtype)
-    nfev = len(n_steps)
+    nfev = len(n_steps) * 2
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
-    n_fk_insufficient = np.sum(fks > tol[:, np.newaxis], axis=-1)
+    fksp1 = f(ks + step2, *args2)  # check that the function is decreasing
+    fk_insufficient = (fks > tol[:, np.newaxis]) | (fksp1 > fks)
+    n_fk_insufficient = np.sum(fk_insufficient, axis=-1)
     nt = np.minimum(n_fk_insufficient, n_steps.shape[-1]-1)
     n_steps = n_steps[nt]
 
-    # If `maxterms` is insufficient (i.e. the magnitude of the last term of the
-    # partial sum exceeds the tolerance), we can finish the calculation and report
-    # valid sum and error estimates, but we'll have nonzero status.
-    i_fk_insufficient = (n_fk_insufficient == nfev)
+    # If `maxterms` is insufficient (i.e. either the magnitude of the last term of the
+    # partial sum exceeds the tolerance or the function is not decreasing), finish the
+    # calculation, but report nonzero status. (Improvement: separate the status codes
+    # for these two cases.)
+    i_fk_insufficient = (n_fk_insufficient == nfev//2)
 
     # Directly evaluate the sum up to this term
     k = a + n_steps * step

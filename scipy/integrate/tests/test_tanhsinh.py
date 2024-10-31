@@ -995,6 +995,27 @@ class TestNSum:
         ref = np.log(special.zeta(3)) if log else special.zeta(3)
         assert_allclose(res.sum, ref)
 
+    def test_decreasing_check(self):
+        # Test accuracy when we start sum on an uphill slope.
+        # Without the decreasing check, the terms would look small enough to
+        # use the integral approximation. Because the function is not decreasing,
+        # the error is not bounded by the magnitude of the last term of the
+        # partial sum. In this case, the error would be  ~1e-4, causing the test
+        # to fail.
+        def f(x):
+            return np.exp(-x ** 2)
+
+        res = nsum(f, -25, np.inf)
+
+        # Reference computed with mpmath:
+        # from mpmath import mp
+        # mp.dps = 50
+        # def fmp(x): return mp.exp(-x**2)
+        # ref = mp.nsum(fmp, (-25, 0)) + mp.nsum(fmp, (1, mp.inf))
+        ref = 1.772637204826652
+
+        np.testing.assert_allclose(res.sum, ref, rtol=1e-15)
+
     def test_special_case(self):
         # test equal lower/upper limit
         f = self.f1
