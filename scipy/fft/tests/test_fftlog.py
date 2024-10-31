@@ -185,7 +185,7 @@ def test_gh_21661(xp):
     xp_test = array_namespace(one)
     mu = 0.0
     r = np.logspace(-7, 1, 129)
-    dln = np.log(r[1] / r[0])
+    dln = math.log(r[1] / r[0])
     offset = fhtoffset(dln, initial=-6 * np.log(10), mu=mu)
     r = xp.asarray(r, dtype=one.dtype)
     k = math.exp(offset) / xp_test.flip(r, axis=-1)
