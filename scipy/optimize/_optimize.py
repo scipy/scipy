@@ -1387,8 +1387,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     k = 0
     N = len(x0)
-    I = np.eye(N, dtype=int)
-    Hk = I if hess_inv0 is None else hess_inv0
+    Hk = np.eye(N, dtype=x0.dtype) if hess_inv0 is None else hess_inv0
 
     # Sets the initial step guess to dx ~ 1
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
@@ -1454,10 +1453,18 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         else:
             rhok = 1. / rhok_inv
 
-        A1 = I - sk[:, np.newaxis] * yk[np.newaxis, :] * rhok
-        A2 = I - yk[:, np.newaxis] * sk[np.newaxis, :] * rhok
-        Hk = np.dot(A1, np.dot(Hk, A2)) + (rhok * sk[:, np.newaxis] *
-                                                 sk[np.newaxis, :])
+        # BFGS update formula
+        # https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm
+        # Hk+1 = Hk
+        #        + (sk @ yk + yk @ Hk @ yk) / (sk @ yk)**2 * (sk @ sk^T)
+        #        - (Hk @ yk @ sk^T + sk @ yk^T @ Hk) / (sk @ yk)
+        Hk_yk = np.dot(Hk, yk)
+        Hk = (
+            Hk
+            + (1 + np.dot(yk, Hk_yk) * rhok) * rhok * sk[:, None] @ sk[None, :]
+            - (Hk_yk[:, None] @ sk[None, :] + sk[:, None] @ Hk_yk[None, :])
+            * rhok
+        )
 
     fval = old_fval
 
