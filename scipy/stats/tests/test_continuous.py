@@ -1197,9 +1197,10 @@ class TestMixture:
         X = Mixture(components, weights=weights)
 
         # Replacing properties doesn't work
-        with pytest.raises(AttributeError, match="...'Mixture' object has no setter"):
+        # Different version of Python have different messages
+        with pytest.raises(AttributeError):
             X.components = 10
-        with pytest.raises(AttributeError, match="...'Mixture' object has no setter"):
+        with pytest.raises(AttributeError):
             X.weights = 10
 
         # Mutation doesn't work
