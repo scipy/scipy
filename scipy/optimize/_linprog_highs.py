@@ -26,7 +26,6 @@ from ._highspy._core import(
 )
 from ._highspy._core.simplex_constants import (
     SimplexStrategy,
-    SimplexCrashStrategy,
     SimplexEdgeWeightStrategy,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
@@ -336,7 +335,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'simplex_dual_edge_weight_strategy':
             simplex_dual_edge_weight_strategy_enum,
         'simplex_strategy': SimplexStrategy.kSimplexStrategyDual,
-        'simplex_crash_strategy': SimplexCrashStrategy.kSimplexCrashStrategyOff,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
         'mip_rel_gap': mip_rel_gap,
