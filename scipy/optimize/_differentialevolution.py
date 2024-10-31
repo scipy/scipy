@@ -144,11 +144,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         behavior is:
         
         - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
+          singleton is used.
         - If `seed` is an int, a new `RandomState` instance is used,
-        seeded with `seed`.
+          seeded with `seed`.
         - If `seed` is already a `Generator` or `RandomState` instance then
-        that instance is used.
+          that instance is used.
         
         Specify `seed`/`rng` for repeatable minimizations.
     disp : bool, optional
@@ -622,19 +622,22 @@ class DifferentialEvolutionSolver:
             `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
             For an interim period both keywords will continue to work (only specify
             one of them). After the interim period using the `seed` keyword will emit
-            warnings. The behaviour of the `seed` and `rng` keywords is outlined below.
- 
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new `RandomState` instance is used,
-        seeded with `seed`.
-        If `seed` is already a `Generator` or `RandomState` instance then
-        that instance is used.
-        
-        If `rng` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(rng)``.
-        If `rng` is already a ``Generator`` instance, then the provided instance is
+            warnings. The behavior of the `seed` and `rng` keywords is outlined below.
+
+        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a `Generator`.
+        If `rng` is already a `Generator` instance, then the provided instance is
         used.
+        
+        If this argument is passed by position or `seed` is passed by keyword, the
+        behavior is:
+        
+        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `seed` is an int, a new `RandomState` instance is used,
+          seeded with `seed`.
+        - If `seed` is already a `Generator` or `RandomState` instance then
+          that instance is used.
         
         Specify `seed`/`rng` for repeatable minimizations.
     disp : bool, optional
