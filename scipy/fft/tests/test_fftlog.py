@@ -180,11 +180,12 @@ def test_array_like(xp, op):
          [[1.0, 1.0], [1.0, 1.0]]]
     xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))
 
-def test_gh_21661(xp):
+@pytest.mark.parameterize('n', [128, 129])
+def test_gh_21661(xp, n):
     one = xp.asarray(1.0)
     xp_test = array_namespace(one)
     mu = 0.0
-    r = np.logspace(-7, 1, 129)
+    r = np.logspace(-7, 1, n)
     dln = math.log(r[1] / r[0])
     offset = fhtoffset(dln, initial=-6 * np.log(10), mu=mu)
     r = xp.asarray(r, dtype=one.dtype)
