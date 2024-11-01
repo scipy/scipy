@@ -1653,6 +1653,41 @@ class ShortTimeFFT:
         --------
         :func:`matplotlib.pyplot.imshow`: Display data as an image.
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
+
+        Examples
+        --------
+        The following two plots illustrate the effect of the parameter `center_bins`:
+        The grid lines represent the three time and the four frequency values of the
+        STFT.
+        The left plot, where ``(t0, t1, f0, f1) = (0, 3, 0, 4)`` is passed as parameter
+        ``extent`` to `~matplotlib.pyplot.imshow`, shows the standard behavior of the
+        time and frequency values being at the lower edge of the corrsponding bin.
+        The right plot, with ``(t0, t1, f0, f1) = (-0.5, 2.5, -0.5, 3.5)``, shows that
+        the bins are centered over the respective values when passing
+        ``center_bins=True``.
+
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from scipy.signal import ShortTimeFFT
+        ...
+        >>> n, m = 12, 6
+        >>> SFT = ShortTimeFFT.from_window('hann', fs=m, nperseg=m, noverlap=0)
+        >>> Sxx = SFT.stft(np.cos(np.arange(n)))  # produces a colorful plot
+        ...
+        >>> fig, axx = plt.subplots(1, 2, tight_layout=True, figsize=(6., 4.))
+        >>> for ax_, center_bins in zip(axx, (False, True)):
+        ...     ax_.imshow(abs(Sxx), origin='lower', interpolation=None, aspect='equal',
+        ...                cmap='viridis', extent=SFT.extent(n, 'tf', center_bins))
+        ...     ax_.set_title(f"{center_bins=}")
+        ...     ax_.set_xlabel(f"Time ({SFT.p_num(n)} points, Δt={SFT.delta_t})")
+        ...     ax_.set_ylabel(f"Frequency ({SFT.f_pts} points, Δf={SFT.delta_f})")
+        ...     ax_.set_xticks(SFT.t(n))  # vertical grid line are timestamps
+        ...     ax_.set_yticks(SFT.f)  # horizontal grid line are frequency values
+        ...     ax_.grid(True)
+        >>> plt.show()
+
+        Note that the step-like behavior with the constant colors is caused by passing
+        ``interpolation=None`` to `~matplotlib.pyplot.imshow`.
         """
         if axes_seq not in ('tf', 'ft'):
             raise ValueError(f"Parameter {axes_seq=} not in ['tf', 'ft']!")
@@ -1660,8 +1695,8 @@ class ShortTimeFFT:
         if self.onesided_fft:
             q0, q1 = 0, self.f_pts
         elif self.fft_mode == 'centered':
-            q0 = -self.mfft // 2
-            q1 = self.mfft // 2 - 1 if self.mfft % 2 == 0 else self.mfft // 2
+            q0 = -(self.mfft // 2)
+            q1 = self.mfft // 2 if self.mfft % 2 == 0 else self.mfft // 2 + 1
         else:
             raise ValueError(f"Attribute fft_mode={self.fft_mode} must be " +
                              "in ['centered', 'onesided', 'onesided2X']")
