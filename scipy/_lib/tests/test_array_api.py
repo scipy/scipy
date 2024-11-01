@@ -187,6 +187,9 @@ class TestArrayAPI:
         xp_assert_equal_no_0d(0., xp.asarray(0.))
         xp_assert_equal_no_0d(42, xp.asarray(42))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('n', range(1, 10))
     @pytest.mark.parametrize('offset', range(1, 10))
