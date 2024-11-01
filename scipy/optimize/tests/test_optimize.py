@@ -33,7 +33,7 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api_no_0d import xp_assert_equal
+from scipy._lib._array_api_no_0d import xp_assert_equal, array_namespace
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -2445,18 +2445,21 @@ class TestRosen:
                       reasons=["JAX arrays do not support item assignment"])
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_rosen_der(self, xp):
-        x = xp.asarray([1., 1., 1., 1.])
+        x = xp.asarray([1, 1, 1, 1])
         xp_assert_equal(optimize.rosen_der(x),
-                        xp.zeros_like(x))
+                        xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_hess_prod(self, xp):
+        one = xp.asarray(1.)
+        xp_test = array_namespace(one)
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
         x = xp.asarray([3, 4, 5])
         p = xp.asarray([2, 2, 2])
         hp = optimize.rosen_hess_prod(x, p)
+        p = xp_test.astype(p, one.dtype)
         dothp = optimize.rosen_hess(x) @ p
         xp_assert_equal(hp, dothp)
 

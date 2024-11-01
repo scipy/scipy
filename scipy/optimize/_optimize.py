@@ -398,6 +398,8 @@ def rosen_der(x):
     """
     xp = array_namespace(x)
     x = xp.asarray(x)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
@@ -441,6 +443,8 @@ def rosen_hess(x):
     """
     xp = array_namespace(x)
     x = xp_atleast_nd(x, ndim=1, xp=xp)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
     H = (xp_create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
          - xp_create_diagonal(400 * x[:-1], offset=-1, xp=xp))
     diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
@@ -483,6 +487,9 @@ def rosen_hess_prod(x, p):
     """
     xp = array_namespace(x, p)
     x = xp_atleast_nd(x, ndim=1, xp=xp)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
+    p = xp.asarray(p, dtype=x.dtype)
     Hp = xp.zeros(x.shape[0], dtype=x.dtype)
     Hp[0] = (1200 * x[0]**2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1]
     Hp[1:-1] = (-400 * x[:-2] * p[:-2] +
