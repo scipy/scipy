@@ -124,9 +124,6 @@ tracker = "https://github.com/scipy/scipy/issues"
 [tool.doit]
 dodoFile = "dev.py"
 
-[tool.meson-python]
-meson = 'vendored-meson/meson/meson.py'
-
 [tool.meson-python.args]
 install = ['--tags=runtime,python-runtime,tests,devel']
 
@@ -176,7 +173,8 @@ PKG_CONFIG_PATH = "{project}"
 [tool.spin.commands]
 "Build" = [
   ".spin/cmds.py:build",
-  ".spin/cmds.py:test"
+  ".spin/cmds.py:test",
+  ".spin/cmds.py:bench"
 ]
 "Environments" = [
   "spin.cmds.meson.run",
