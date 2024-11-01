@@ -149,17 +149,28 @@ def test_quat_double_cover():
                     [0, 0, 0, -1], atol=2e-16)
 
 
-def test_malformed_1d_from_quat():
-    with pytest.raises(ValueError):
+def test_from_quat_wrong_shape():
+    # Wrong shape 1d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
         Rotation.from_quat(np.array([1, 2, 3]))
 
-
-def test_malformed_2d_from_quat():
-    with pytest.raises(ValueError):
+    # Wrong shape 2d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
         Rotation.from_quat(np.array([
             [1, 2, 3, 4, 5],
             [4, 5, 6, 7, 8]
             ]))
+
+    # 3d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
+        Rotation.from_quat(np.array([
+            [[1, 2, 3, 4]],
+            [[4, 5, 6, 7]]
+            ]))
+
+    # 0-length 2d array
+    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
+        Rotation.from_quat(np.array([]).reshape((0, 4)))
 
 
 def test_zero_norms_from_quat():
@@ -1758,6 +1769,17 @@ def test_concatenate():
     result = Rotation.concatenate(split)
     assert_equal(rotation.as_quat(), result.as_quat())
 
+    # Test Rotation input for multiple rotations
+    result = Rotation.concatenate(rotation)
+    assert_equal(rotation.as_quat(), result.as_quat())
+
+    # Test that a copy is returned
+    assert rotation is not result
+
+    # Test Rotation input for single rotations
+    result = Rotation.concatenate(Rotation.identity())
+    assert_equal(Rotation.identity().as_quat(), result.as_quat())
+
 
 def test_concatenate_wrong_type():
     with pytest.raises(TypeError, match='Rotation objects only'):
@@ -1766,19 +1788,16 @@ def test_concatenate_wrong_type():
 
 # Regression test for gh-16663
 def test_len_and_bool():
-    rotation_multi_empty = Rotation(np.empty((0, 4)))
     rotation_multi_one = Rotation([[0, 0, 0, 1]])
     rotation_multi = Rotation([[0, 0, 0, 1], [0, 0, 0, 1]])
     rotation_single = Rotation([0, 0, 0, 1])
 
-    assert len(rotation_multi_empty) == 0
     assert len(rotation_multi_one) == 1
     assert len(rotation_multi) == 2
     with pytest.raises(TypeError, match="Single rotation has no len()."):
         len(rotation_single)
 
     # Rotation should always be truthy. See gh-16663
-    assert rotation_multi_empty
     assert rotation_multi_one
     assert rotation_multi
     assert rotation_single
