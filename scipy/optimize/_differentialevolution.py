@@ -143,7 +143,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         
         Specify `seed` or `rng` for repeatable minimizations.
         
-        ..versionchanged:: 1.15.0
+        .. versionchanged:: 1.15.0
             As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
             transition from use of `numpy.random.RandomState` to
             `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
