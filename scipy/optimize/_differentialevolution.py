@@ -126,15 +126,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         to progress into the next generation, but at the risk of population
         stability.
     rng : {None, int, `numpy.random.Generator`}, optional
-
-        ..versionchanged:: 1.15.0
-            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
-            transition from use of `numpy.random.RandomState` to
-            `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
-            For an interim period both keywords will continue to work (only specify
-            one of them). After the interim period using the `seed` keyword will emit
-            warnings. The behavior of the `seed` and `rng` keywords is outlined below.
-
         If `rng` is passed by keyword, types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
         If `rng` is already a ``Generator`` instance, then the provided instance is
@@ -151,6 +142,15 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
           that instance is used.
         
         Specify `seed` or `rng` for repeatable minimizations.
+        
+        ..versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
+            For an interim period both keywords will continue to work (only specify
+            one of them). After the interim period using the `seed` keyword will emit
+            warnings. The behavior of the `seed` and `rng` keywords is outlined above.
+
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
