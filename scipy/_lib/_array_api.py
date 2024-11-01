@@ -653,9 +653,6 @@ def xp_create_diagonal(x: Array, /, *, offset: int = 0,
         xp = array_namespace(x)
     n = x.shape[0] + abs(offset)
     diag = xp.zeros(n**2, dtype=x.dtype)
-    if offset >= 0:
-        i = offset
-    else:
-        i = abs(offset) * n
+    i = offset if offset >= 0 else abs(offset) * n
     diag[i:n*(n-offset):n+1] = x
     return xp.reshape(diag, (n, n))
