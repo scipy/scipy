@@ -649,8 +649,7 @@ def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
 
 def xp_create_diagonal(x: Array, /, *, offset: int = 0,
                        xp: ModuleType | None = None) -> Array:
-    if xp is None:
-        xp = array_namespace(x)
+    xp = array_namespace(x) if xp is None else xp
     n = x.shape[0] + abs(offset)
     diag = xp.zeros(n**2, dtype=x.dtype)
     i = offset if offset >= 0 else abs(offset) * n
