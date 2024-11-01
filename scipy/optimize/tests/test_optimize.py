@@ -2436,7 +2436,8 @@ def test_powell_output():
 @array_api_compatible
 class TestRosen:
     def test_rosen(self, xp):
-        x = xp.asarray([1., 1., 1.])
+        # integer input should be promoted to the default floating type
+        x = xp.asarray([1, 1, 1])
         xp_assert_equal(optimize.rosen(x),
                         xp.asarray(0.))
 

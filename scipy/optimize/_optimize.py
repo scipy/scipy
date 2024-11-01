@@ -362,6 +362,8 @@ def rosen(x):
     """
     xp = array_namespace(x)
     x = xp.asarray(x)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
     r = xp.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
                axis=0, dtype=x.dtype)
     return r
