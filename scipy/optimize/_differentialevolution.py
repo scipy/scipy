@@ -136,8 +136,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             warnings. The behavior of the `seed` and `rng` keywords is outlined below.
 
         If `rng` is passed by keyword, types other than `numpy.random.Generator` are
-        passed to `numpy.random.default_rng` to instantiate a `Generator`.
-        If `rng` is already a `Generator` instance, then the provided instance is
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
         used.
         
         If this argument is passed by position or `seed` is passed by keyword, the
@@ -145,12 +145,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         
         - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
           singleton is used.
-        - If `seed` is an int, a new `RandomState` instance is used,
+        - If `seed` is an int, a new ``RandomState`` instance is used,
           seeded with `seed`.
-        - If `seed` is already a `Generator` or `RandomState` instance then
+        - If `seed` is already a ``Generator`` or ``RandomState`` instance then
           that instance is used.
         
-        Specify `seed`/`rng` for repeatable minimizations.
+        Specify `seed` or `rng` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
