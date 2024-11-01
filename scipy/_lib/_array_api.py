@@ -657,5 +657,5 @@ def xp_create_diagonal(x: Array, /, *, offset: int = 0,
         i = offset
     else:
         i = -offset * n
-    diag[i::n+1] = x
+    diag[i:n*(n-offset):n+1] = x
     return xp.reshape(diag, (n, n))
