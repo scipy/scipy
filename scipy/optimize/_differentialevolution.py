@@ -126,7 +126,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         to progress into the next generation, but at the risk of population
         stability.
     rng : {None, int, `numpy.random.Generator`}, optional
-        
+
         ..versionchanged:: 1.15.0
             As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
             transition from use of `numpy.random.RandomState` to
