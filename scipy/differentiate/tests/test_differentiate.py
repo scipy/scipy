@@ -1,7 +1,6 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
@@ -12,9 +11,9 @@ from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
 
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
+
 @pytest.mark.skip_xp_backends('array_api_strict',
                               reason='Currently uses fancy indexing assignment.')
 @pytest.mark.skip_xp_backends('jax.numpy',
@@ -46,7 +45,7 @@ class TestDerivative:
         x = dist.median() + 0.1
         res = derivative(dist.cdf, x)
         ref = dist.pdf(x)
-        assert_allclose(res.df, ref, atol=1e-10)
+        xp_assert_close(res.df, ref, atol=1e-10)
 
     @pytest.mark.parametrize('order', [1, 6])
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
@@ -440,21 +439,21 @@ class TestDerivative:
         atol = 1e-16
         res = derivative(*case, step_direction=[-1, 0, 1], atol=atol)
         assert np.all(res.success)
-        assert_allclose(res.df, 0, atol=atol)
+        xp_assert_close(res.df, 0, atol=atol)
 
 
 class JacobianHessianTest:
-    def test_iv(self):
+    def test_iv(self, xp):
         jh_func = self.jh_func.__func__
 
         # Test input validation
         message = "Argument `x` must be at least 1-D."
         with pytest.raises(ValueError, match=message):
-            jh_func(np.sin, 1, tolerances=dict(atol=-1))
+            jh_func(xp.sin, 1, tolerances=dict(atol=-1))
 
         # Confirm that other parameters are being passed to `derivative`,
         # which raises an appropriate error message.
-        x = np.ones(3)
+        x = xp.ones(3)
         func = optimize.rosen
         message = 'Tolerances and step parameters must be non-negative scalars.'
         with pytest.raises(ValueError, match=message):
@@ -473,113 +472,120 @@ class JacobianHessianTest:
             jh_func(func, x, maxiter=-1)
 
 
+@pytest.mark.skip_xp_backends('array_api_strict',
+                              reason='Currently uses fancy indexing assignment.')
+@pytest.mark.skip_xp_backends('jax.numpy',
+                              reason='JAX arrays do not support item assignment.')
+@pytest.mark.skip_xp_backends('cupy',
+                              reason='cupy/cupy#8391')
 class TestJacobian(JacobianHessianTest):
     jh_func = jacobian
 
     # Example functions and Jacobians from Wikipedia:
     # https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant#Examples
 
-    def f1(z):
+    def f1(z, xp):
         x, y = z
-        return [x ** 2 * y, 5 * x + np.sin(y)]
+        return [x ** 2 * y, 5 * x + xp.sin(y)]
 
-    def df1(z):
+    def df1(z, xp):
         x, y = z
-        return [[2 * x * y, x ** 2], [np.full_like(x, 5), np.cos(y)]]
+        return [[2 * x * y, x ** 2], [xp.full_like(x, 5), xp.cos(y)]]
 
     f1.mn = 2, 2  # type: ignore[attr-defined]
     f1.ref = df1  # type: ignore[attr-defined]
 
-    def f2(z):
+    def f2(z, xp):
         r, phi = z
-        return [r * np.cos(phi), r * np.sin(phi)]
+        return [r * xp.cos(phi), r * xp.sin(phi)]
 
-    def df2(z):
+    def df2(z, xp):
         r, phi = z
-        return [[np.cos(phi), -r * np.sin(phi)],
-                [np.sin(phi), r * np.cos(phi)]]
+        return [[xp.cos(phi), -r * xp.sin(phi)],
+                [xp.sin(phi), r * xp.cos(phi)]]
 
     f2.mn = 2, 2  # type: ignore[attr-defined]
     f2.ref = df2  # type: ignore[attr-defined]
 
-    def f3(z):
+    def f3(z, xp):
         r, phi, th = z
-        return [r * np.sin(phi) * np.cos(th), r * np.sin(phi) * np.sin(th),
-                r * np.cos(phi)]
+        return [r * xp.sin(phi) * xp.cos(th), r * xp.sin(phi) * xp.sin(th),
+                r * xp.cos(phi)]
 
-    def df3(z):
+    def df3(z, xp):
         r, phi, th = z
-        return [[np.sin(phi) * np.cos(th), r * np.cos(phi) * np.cos(th),
-                 -r * np.sin(phi) * np.sin(th)],
-                [np.sin(phi) * np.sin(th), r * np.cos(phi) * np.sin(th),
-                 r * np.sin(phi) * np.cos(th)],
-                [np.cos(phi), -r * np.sin(phi), np.zeros_like(r)]]
+        return [[xp.sin(phi) * xp.cos(th), r * xp.cos(phi) * xp.cos(th),
+                 -r * xp.sin(phi) * xp.sin(th)],
+                [xp.sin(phi) * xp.sin(th), r * xp.cos(phi) * xp.sin(th),
+                 r * xp.sin(phi) * xp.cos(th)],
+                [xp.cos(phi), -r * xp.sin(phi), xp.zeros_like(r)]]
 
     f3.mn = 3, 3  # type: ignore[attr-defined]
     f3.ref = df3  # type: ignore[attr-defined]
 
-    def f4(x):
+    def f4(x, xp):
         x1, x2, x3 = x
-        return [x1, 5 * x3, 4 * x2 ** 2 - 2 * x3, x3 * np.sin(x1)]
+        return [x1, 5 * x3, 4 * x2 ** 2 - 2 * x3, x3 * xp.sin(x1)]
 
-    def df4(x):
+    def df4(x, xp):
         x1, x2, x3 = x
-        one = np.ones_like(x1)
+        one = xp.ones_like(x1)
         return [[one, 0 * one, 0 * one],
                 [0 * one, 0 * one, 5 * one],
                 [0 * one, 8 * x2, -2 * one],
-                [x3 * np.cos(x1), 0 * one, np.sin(x1)]]
+                [x3 * xp.cos(x1), 0 * one, xp.sin(x1)]]
 
     f4.mn = 3, 4  # type: ignore[attr-defined]
     f4.ref = df4  # type: ignore[attr-defined]
 
-    def f5(x):
+    def f5(x, xp):
         x1, x2, x3 = x
-        return [5 * x2, 4 * x1 ** 2 - 2 * np.sin(x2 * x3), x2 * x3]
+        return [5 * x2, 4 * x1 ** 2 - 2 * xp.sin(x2 * x3), x2 * x3]
 
-    def df5(x):
+    def df5(x, xp):
         x1, x2, x3 = x
-        one = np.ones_like(x1)
+        one = xp.ones_like(x1)
         return [[0 * one, 5 * one, 0 * one],
-                [8 * x1, -2 * x3 * np.cos(x2 * x3), -2 * x2 * np.cos(x2 * x3)],
+                [8 * x1, -2 * x3 * xp.cos(x2 * x3), -2 * x2 * xp.cos(x2 * x3)],
                 [0 * one, x3, x2]]
 
     f5.mn = 3, 3  # type: ignore[attr-defined]
     f5.ref = df5  # type: ignore[attr-defined]
 
-    rosen = optimize.rosen
+    def rosen(x, xp): return optimize.rosen(x)
     rosen.mn = 5, 1  # type: ignore[attr-defined]
-    rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
+    def ref(x, xp): optimize.rosen_der(x)
+    rosen.ref = ref  # type: ignore[attr-defined]
 
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
     @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
-    def test_examples(self, size, func):
+    def test_examples(self, size, func, xp):
         rng = np.random.default_rng(458912319542)
         m, n = func.mn
-        x = rng.random(size=(m,) + size)
+        x = xp.asarray(rng.random(size=(m,) + size), dtype=xp.asarray(1.).dtype)
         res = jacobian(func, x)
         ref = func.ref(x)
-        np.testing.assert_allclose(res.df, ref, atol=1e-10)
+        xp_assert_close(res.df, ref, atol=1e-10)
 
-    def test_attrs(self):
+    def test_attrs(self, xp):
         # Test attributes of result object
-        z = np.asarray([0.5, 0.25])
+        z = xp.asarray([0.5, 0.25])
 
         # case in which some elements of the Jacobian are harder
         # to calculate than others
         def df1(z):
             x, y = z
-            return [np.cos(0.5*x) * np.cos(y), np.sin(2*x) * y**2]
+            return [xp.cos(0.5*x) * xp.cos(y), xp.sin(2*x) * y**2]
 
         def df1_0xy(x, y):
-            return np.cos(0.5*x) * np.cos(y)
+            return xp.cos(0.5*x) * xp.cos(y)
 
         def df1_1xy(x, y):
-            return np.sin(2*x) * y**2
+            return xp.sin(2*x) * y**2
 
         res = jacobian(df1, z, initial_step=10)
-        assert len(np.unique(res.nit)) == 4
-        assert len(np.unique(res.nfev)) == 4
+        assert len(xp.unique_all(res.nit).values) == 4
+        assert len(xp.unique_all(res.nfev).values) == 4
 
         res00 = jacobian(lambda x: df1_0xy(x, z[1]), z[0:1], initial_step=10)
         res01 = jacobian(lambda y: df1_0xy(z[0], y), z[1:2], initial_step=10)
@@ -587,21 +593,21 @@ class TestJacobian(JacobianHessianTest):
         res11 = jacobian(lambda y: df1_1xy(z[0], y), z[1:2], initial_step=10)
         ref = optimize.OptimizeResult()
         for attr in ['success', 'status', 'df', 'nit', 'nfev']:
-            ref[attr] = np.squeeze([[getattr(res00, attr), getattr(res01, attr)],
+            ref[attr] = xp.squeeze([[getattr(res00, attr), getattr(res01, attr)],
                                     [getattr(res10, attr), getattr(res11, attr)]])
-            np.testing.assert_allclose(res[attr], ref[attr], rtol=1.5e-14)
+            xp_assert_close(res[attr], ref[attr], rtol=1.5e-14)
 
-    def test_step_direction_size(self):
+    def test_step_direction_size(self, xp):
         # Check that `step_direction` and `initial_step` can be used to ensure that
         # the usable domain of a function is respected.
         rng = np.random.default_rng(23892589425245)
-        b = rng.random(3)
+        b = xp.asarray(rng.random(3), dtype=xp.asarray(1.))
 
         def f(x):
-            x[0, x[0] < b[0]] = np.nan
-            x[0, x[0] > b[0] + 0.25] = np.nan
-            x[1, x[1] > b[1]] = np.nan
-            x[1, x[1] < b[1] - 0.1] = np.nan
+            x[0, x[0] < b[0]] = xp.nan
+            x[0, x[0] > b[0] + 0.25] = xp.nan
+            x[1, x[1] > b[1]] = xp.nan
+            x[1, x[1] < b[1] - 0.1] = xp.nan
             return TestJacobian.f5(x)
 
         dir = [1, -1, 0]
@@ -609,41 +615,47 @@ class TestJacobian(JacobianHessianTest):
         atol = {'atol': 1e-8}
         res = jacobian(f, b, initial_step=h0, step_direction=dir, tolerances=atol)
         ref = TestJacobian.df5(b)
-        np.testing.assert_allclose(res.df, ref, atol=1e-8)
-        assert np.all(np.isfinite(ref))
+        xp_assert_close(res.df, ref, atol=1e-8)
+        assert xp.all(xp.isfinite(ref))
 
 
+@pytest.mark.skip_xp_backends('array_api_strict',
+                              reason='Currently uses fancy indexing assignment.')
+@pytest.mark.skip_xp_backends('jax.numpy',
+                              reason='JAX arrays do not support item assignment.')
+@pytest.mark.skip_xp_backends('cupy',
+                              reason='cupy/cupy#8391')
 class TestHessian(JacobianHessianTest):
     jh_func = hessian
 
     @pytest.mark.parametrize('shape', [(), (4,), (2, 4)])
-    def test_example(self, shape):
+    def test_example(self, shape, xp):
         rng = np.random.default_rng(458912319542)
         m = 3
-        x = rng.random((m,) + shape)
+        x = xp.asarray(rng.random((m,) + shape), dtype=xp.asarray(1.).dtype)
         res = hessian(optimize.rosen, x)
         if shape:
-            x = np.reshape(x, (m, -1))
+            x = xp.reshape(x, (m, -1))
             ref = [optimize.rosen_hess(xi) for xi in x.T]
-            ref = np.moveaxis(ref, 0, -1)
-            ref = np.reshape(ref, (m, m,) + shape)
+            ref = xp.moveaxis(ref, 0, -1)
+            ref = xp.reshape(ref, (m, m,) + shape)
         else:
             ref = optimize.rosen_hess(x)
-        assert_allclose(res.ddf, ref, atol=1e-8)
+        xp_assert_close(res.ddf, ref, atol=1e-8)
 
         # # Removed symmetry enforcement; consider adding back in as a feature
         # # check symmetry
         # for key in ['ddf', 'error', 'nfev', 'success', 'status']:
         #     assert_equal(res[key], np.swapaxes(res[key], 0, 1))
 
-    def test_nfev(self):
+    def test_nfev(self, xp):
         def f1(z):
-            x, y = np.broadcast_arrays(*z)
-            f1.nfev = f1.nfev + (np.prod(x.shape[2:]) if x.ndim > 2 else 1)
-            return np.sin(x) * y ** 3
+            x, y = xp.broadcast_arrays(*z)
+            f1.nfev = f1.nfev + (xp.prod(x.shape[2:]) if x.ndim > 2 else 1)
+            return xp.sin(x) * y ** 3
         f1.nfev = 0
 
-        z = np.asarray([0.5, 0.25])
+        z = xp.asarray([0.5, 0.25])
         res = hessian(f1, z, initial_step=10)
         f1.nfev = 0
         res00 = hessian(lambda x: f1([x[0], z[1]]), z[0:1], initial_step=10)
@@ -657,7 +669,10 @@ class TestHessian(JacobianHessianTest):
         # assert_equal(res.nfev, res.nfev.T)  # check symmetry
         # assert np.unique(res.nfev).size == 3
 
-    def test_small_rtol_warning(self):
+
+    @pytest.mark.skip_xp_backends(np_only=True,
+                                  reason='Python list input uses NumPy backend')
+    def test_small_rtol_warning(self, xp):
         message = 'The specified `rtol=1e-15`, but...'
         with pytest.warns(RuntimeWarning, match=message):
-            hessian(np.sin, [1.], tolerances=dict(rtol=1e-15))
+            hessian(xp.sin, [1.], tolerances=dict(rtol=1e-15))
