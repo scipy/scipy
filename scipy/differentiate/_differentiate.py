@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_sign
+from scipy._lib._array_api import array_namespace, xp_sign, xp_copy
 
 _EERRORINCREASE = -1  # used in derivative
 
@@ -896,10 +896,10 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
 
     def wrapped(x):
         p = () if x.ndim == x0.ndim else (x.shape[-1],)  # number of abscissae
-        new_dims = (1,) if x.ndim == x0.ndim else (1, -1)
+        new_dims = 1 if x.ndim == x0.ndim else (1, -1)
         new_shape = (m, m) + x0.shape[1:] + p
         xph = xp.expand_dims(x0, axis=new_dims)
-        xph = xp.broadcast_to(xph, new_shape).copy()
+        xph = xp_copy(xp.broadcast_to(xph, new_shape), xp=xp)
         xph[i, i] = x
         return f(xph)
 
