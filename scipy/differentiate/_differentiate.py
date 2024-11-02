@@ -1070,9 +1070,10 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     atol = tolerances.get('atol', None)
     rtol = tolerances.get('rtol', None)
 
-    x = np.asarray(x)
-    dtype = x.dtype if np.issubdtype(x.dtype, np.inexact) else np.float64
-    finfo = np.finfo(dtype)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    dtype = x.dtype if not xp.isdtype(x.dtype, 'integral') else xp.asarray(1.).dtype
+    finfo = xp.finfo(dtype)
     rtol = finfo.eps**0.5 if rtol is None else rtol  # keep same as `derivative`
 
     # tighten the inner tolerance to make the inner error negligible
@@ -1092,8 +1093,8 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     nfev = []  # track inner function evaluations
     res = jacobian(df, x, tolerances=tolerances, **kwargs)  # jacobian of jacobian
 
-    nfev = np.cumsum(nfev, axis=0)
-    res.nfev = np.take_along_axis(nfev, res.nit[np.newaxis, ...], axis=0)[0]
+    nfev = xp.cumulative_sum(nfev, axis=0)
+    res.nfev = xp.take_along_axis(nfev, res.nit[xp.newaxis, ...], axis=0)[0]
     res.ddf = res.df
     del res.df  # this is renamed to ddf
     del res.nit  # this is only the outer-jacobian nit
