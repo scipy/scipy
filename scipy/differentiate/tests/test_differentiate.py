@@ -601,20 +601,20 @@ class TestJacobian(JacobianHessianTest):
         # Check that `step_direction` and `initial_step` can be used to ensure that
         # the usable domain of a function is respected.
         rng = np.random.default_rng(23892589425245)
-        b = xp.asarray(rng.random(3), dtype=xp.asarray(1.))
+        b = xp.asarray(rng.random(3), dtype=xp.asarray(1.).dtype)
 
         def f(x):
             x[0, x[0] < b[0]] = xp.nan
             x[0, x[0] > b[0] + 0.25] = xp.nan
             x[1, x[1] > b[1]] = xp.nan
             x[1, x[1] < b[1] - 0.1] = xp.nan
-            return TestJacobian.f5(x)
+            return TestJacobian.f5(x, xp)
 
         dir = [1, -1, 0]
         h0 = [0.25, 0.1, 0.5]
         atol = {'atol': 1e-8}
         res = jacobian(f, b, initial_step=h0, step_direction=dir, tolerances=atol)
-        ref = TestJacobian.df5(b)
+        ref = TestJacobian.df5(b, xp)
         xp_assert_close(res.df, ref, atol=1e-8)
         assert xp.all(xp.isfinite(ref))
 
