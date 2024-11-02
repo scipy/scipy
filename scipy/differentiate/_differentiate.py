@@ -882,23 +882,24 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     True
 
     """
-    x = np.asarray(x)
-    int_dtype = np.issubdtype(x.dtype, np.integer)
-    x0 = np.asarray(x, dtype=float) if int_dtype else x
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    int_dtype = xp.istype(x.dtype, 'integral')
+    x0 = xp.asarray(x, dtype=xp.asarray(1.0).dtype) if int_dtype else x
 
     if x0.ndim < 1:
         message = "Argument `x` must be at least 1-D."
         raise ValueError(message)
 
     m = x0.shape[0]
-    i = np.arange(m)
+    i = xp.arange(m)
 
     def wrapped(x):
         p = () if x.ndim == x0.ndim else (x.shape[-1],)  # number of abscissae
         new_dims = (1,) if x.ndim == x0.ndim else (1, -1)
         new_shape = (m, m) + x0.shape[1:] + p
-        xph = np.expand_dims(x0, new_dims)
-        xph = np.broadcast_to(xph, new_shape).copy()
+        xph = xp.expand_dims(x0, axis=new_dims)
+        xph = xp.broadcast_to(xph, new_shape).copy()
         xph[i, i] = x
         return f(xph)
 
