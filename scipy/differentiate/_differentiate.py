@@ -884,7 +884,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     """
     xp = array_namespace(x)
     x = xp.asarray(x)
-    int_dtype = xp.istype(x.dtype, 'integral')
+    int_dtype = xp.isdtype(x.dtype, 'integral')
     x0 = xp.asarray(x, dtype=xp.asarray(1.0).dtype) if int_dtype else x
 
     if x0.ndim < 1:
