@@ -307,8 +307,6 @@ npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z);
 double xsf_bdtr(double k, int n, double p);
 double xsf_bdtri(double k, int n, double y);
 double xsf_bdtrc(double k, int n, double p);
-double xsf_btdtri(double aa, double bb, double yy0);
-double xsf_btdtr(double a, double b, double x);
 double xsf_chdtr(double df, double x);
 double xsf_chdtrc(double df, double x);
 double xsf_chdtri(double df, double y);
