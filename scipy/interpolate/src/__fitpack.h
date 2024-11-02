@@ -94,7 +94,7 @@ struct Array2D
 
 
 // Flip boundschecking on/off here
-constexpr bool BOUNDS_CHECK = true;
+constexpr bool BOUNDS_CHECK = false;
 
 typedef Array2D<double, BOUNDS_CHECK> RealArray2D;
 typedef Array1D<double, BOUNDS_CHECK> RealArray1D;
