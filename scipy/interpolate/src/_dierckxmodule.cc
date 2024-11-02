@@ -2,7 +2,7 @@
 #include <Python.h>
 #include <iostream>
 #include <string>
-#include <memory>
+#include <vector>
 #include "numpy/arrayobject.h"
 #include "__fitpack.h"
 
@@ -31,19 +31,6 @@ check_array(PyObject *obj, npy_intp ndim, int typenum) {
     }
     return 1;
 }
-
-
-/*
- * RAII malloc-d work arrays
- */
-struct malloc_deleter {
-    void operator()(void *p) const { std::free(p); }
-};
-
-template <typename T>
-using unique_fptr = std::unique_ptr<T, malloc_deleter>;
-
-
 
 
 /*
@@ -261,11 +248,9 @@ py_data_matrix(PyObject *self, PyObject *args)
     PyArrayObject *a_A = (PyArrayObject*)PyArray_EMPTY(2, dims, NPY_DOUBLE, 0);
     // np.zeros(m, dtype=np.intp)
     PyArrayObject *a_offs = (PyArrayObject*)PyArray_ZEROS(1, dims, NPY_INT64, 0);
+    std::vector<double> wrk(2*k + 2);
 
-    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
-
-
-    if ((a_A == NULL) || (a_offs == NULL) || (wrk.get() == NULL)) {
+    if ((a_A == NULL) || (a_offs == NULL) || (wrk.data() == NULL)) {
         PyErr_NoMemory();
         Py_XDECREF(a_A);
         Py_XDECREF(a_offs);
@@ -283,7 +268,7 @@ py_data_matrix(PyObject *self, PyObject *args)
             static_cast<double *>(PyArray_DATA(a_A)),     // output: (A, offset, nc)
             static_cast<int64_t*>(PyArray_DATA(a_offs)),
             &nc,
-            wrk.get()
+            wrk.data()
         );
 
         // np.asarray(A), np.asarray(offset), int(nc)
@@ -360,7 +345,7 @@ py_coloc(PyObject *self, PyObject *args)
     PyArrayObject *a_abT = (PyArrayObject *)py_abT;
 
     // allocate the temp storage
-    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
+    std::vector<double> wrk(2*k + 2);
 
     // heavy lifting happens here
     try {
@@ -371,7 +356,7 @@ py_coloc(PyObject *self, PyObject *args)
             // abT.shape[1] is nbands because ab.shape == (nbands, nt) and abT is ab.T
             static_cast<double *>(PyArray_DATA(a_abT)), PyArray_DIM(a_abT, 1),
             offset,
-            wrk.get()
+            wrk.data()
         );
 
         Py_RETURN_NONE;
@@ -454,7 +439,7 @@ py_norm_eq_lsq(PyObject *self, PyObject *args)
     PyArrayObject *a_rhs = (PyArrayObject *)py_rhs;
 
     // allocate temp storage
-    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
+    std::vector<double> wrk(2*k + 2);
 
     // heavy lifting happens here
     try {
@@ -466,7 +451,7 @@ py_norm_eq_lsq(PyObject *self, PyObject *args)
             static_cast<const double*>(PyArray_DATA(a_w)),
             static_cast<double*>(PyArray_DATA(a_abT)),
             static_cast<double*>(PyArray_DATA(a_rhs)),
-            wrk.get()
+            wrk.data()
         );
 
         Py_RETURN_NONE;
@@ -546,7 +531,7 @@ py_evaluate_spline(PyObject *self, PyObject *args)
     }
 
     // allocate temp storage
-    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
+    std::vector<double> wrk(2*k + 2);
 
     // heavy lifting happens here
     try {
@@ -558,7 +543,7 @@ py_evaluate_spline(PyObject *self, PyObject *args)
             nu,
             i_extrap,
             static_cast<double*>(PyArray_DATA(a_out)),
-            wrk.get()
+            wrk.data()
         );
 
         Py_RETURN_NONE;
@@ -642,7 +627,7 @@ py_evaluate_all_bspl(PyObject* self, PyObject* args)
     PyArrayObject *a_t = (PyArrayObject *)py_t;
 
     // allocate temp storage
-    unique_fptr<double> wrk( (double*)malloc((2*k+2)*sizeof(double)) );
+    std::vector<double> wrk(2*k + 2);
 
     // compute non-zero bsplines
     fitpack::_deBoor_D(
@@ -651,7 +636,7 @@ py_evaluate_all_bspl(PyObject* self, PyObject* args)
         k,
         m,
         nu,
-        wrk.get()
+        wrk.data()
     );
 
     // allocate and fill the output
@@ -662,7 +647,7 @@ py_evaluate_all_bspl(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    memcpy(PyArray_DATA(arr), wrk.get(), (k+1)*sizeof(double));
+    memcpy(PyArray_DATA(arr), wrk.data(), (k+1)*sizeof(double));
     return (PyObject *)arr;
 }
 
