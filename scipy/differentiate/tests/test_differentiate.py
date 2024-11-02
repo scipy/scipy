@@ -554,7 +554,7 @@ class TestJacobian(JacobianHessianTest):
 
     def rosen(x, xp): return optimize.rosen(x)
     rosen.mn = 5, 1  # type: ignore[attr-defined]
-    def ref(x, xp): optimize.rosen_der(x)
+    def ref(x, xp): return optimize.rosen_der(x)
     rosen.ref = ref  # type: ignore[attr-defined]
 
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
