@@ -61,8 +61,6 @@ def _find_matrix_structure(a):
         kind = 'upper triangular'
     elif n_above <= 1 and n_below <= 1 and n > 3:
         kind = 'tridiagonal'
-    elif n_above <= n/10 and n_below <= n/10:
-        kind = 'banded'
     elif np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
         kind = 'hermitian'
     elif issymmetric(a):
