@@ -21,12 +21,15 @@ highs_incdirs = highs_proj.get_variable('_incdirs')
 highs_cpp_suppressions = highs_proj.get_variable('_highs_cpp_suppressions')
 highs_c_suppressions = highs_proj.get_variable('_highs_c_suppressions')
 
+highspy_cpp = highs_proj.get_variable('highspy_cpp')
+highs_conf_file = highs_proj.get_variable('highs_conf_file')
+
 _highslib = static_library(
     'highs',
-    highslib_srcs,
+    [highs_conf_file, highslib_srcs],
     dependencies: highs_deps,
-    cpp_args: highs_cpp_suppressions,
-    c_args: highs_c_suppressions,
+    cpp_args: highs_cpp_suppressions + highs_args,
+    c_args: highs_c_suppressions + highs_args,
     include_directories: highs_incdirs,
     # Ensure that if we link a static library into a shared library,
     # private symbols don't get re-exported.
@@ -42,9 +45,6 @@ _highs_dep = declare_dependency(
     include_directories: highs_incdirs,
 )
 
-highspy_cpp = highs_proj.get_variable('highspy_cpp')
-highs_conf_file = highs_proj.get_variable('highs_conf_file')
-
 scipy_highspy_dep = [py3_dep, pybind11_dep, _highs_dep, thread_dep, atomic_dep]
 
 py3.install_sources(
@@ -54,7 +54,7 @@ py3.install_sources(
 
 py3.extension_module(
     '_core',
-    sources: highspy_cpp + highs_conf_file,
+    sources: [highspy_cpp, highs_conf_file],
     dependencies: scipy_highspy_dep,
     link_args: version_link_args,
     gnu_symbol_visibility: 'hidden',  # default
