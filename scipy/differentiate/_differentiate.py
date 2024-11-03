@@ -901,7 +901,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
         xph = xp.expand_dims(x0, axis=new_dims)
         xph = xp_copy(xp.broadcast_to(xph, new_shape), xp=xp)
         xph[i, i] = x
-        return f(xph)
+        return xp.stack(f(xph))
 
     res = derivative(wrapped, x, tolerances=tolerances,
                      maxiter=maxiter, order=order, initial_step=initial_step,
