@@ -17,7 +17,8 @@ from scipy.sparse import (dia_array, SparseEfficiencyWarning, csc_array,
         csr_array, eye_array, issparse, dok_array, lil_array, bsr_array, kron)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
-        MatrixRankWarning, _superlu, spsolve_triangular, factorized)
+        MatrixRankWarning, _superlu, spsolve_triangular, factorized,
+        is_sptriangular, spbandwidth)
 import scipy.sparse
 
 from scipy._lib._testutils import check_free_memory
@@ -879,4 +880,30 @@ class TestSpsolveTriangular:
         assert_allclose(A.dot(x), b, atol=1.5e-6)
 
 
+@sup_sparse_efficiency
+@pytest.mark.parametrize("nnz", [10, 10**2, 10^3])
+@pytest.mark.parametrize("fmt", ["csr", "csc"])
+def test_is_sptriangular_and_spbandwidth(nnz, fmt):
+    rng = np.random.default_rng(42)
+    random_array = scipy.sparse.random_array
+    eye_array = scipy.sparse.eye_array
+    triu = scipy.sparse.triu
+    tril = scipy.sparse.tril
 
+    nshp = nnz // 2
+    dens = 0.1
+    A = random_array((nshp, nshp), density=dens, format=fmt, random_state=rng)
+    A[1, 3] = A[3, 1] = 22  # ensure not upper or lower
+    AU = triu(A, format=fmt)
+    AL = tril(A, format=fmt)
+    D = 0.1 * eye_array(nshp, format=fmt)
+
+    assert is_sptriangular(A) == (False, False)
+    assert is_sptriangular(AL) == (True, False)
+    assert is_sptriangular(AU) == (False, True)
+    assert is_sptriangular(D) == (True, True)
+
+    assert spbandwidth(A) == scipy.linalg.bandwidth(A.toarray())
+    assert spbandwidth(AU) == scipy.linalg.bandwidth(AU.toarray())
+    assert spbandwidth(AL) == scipy.linalg.bandwidth(AL.toarray())
+    assert spbandwidth(D) == scipy.linalg.bandwidth(D.toarray())

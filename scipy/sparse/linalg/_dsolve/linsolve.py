@@ -19,7 +19,7 @@ except ImportError:
 useUmfpack = not noScikit
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
-           'MatrixRankWarning', 'spsolve_triangular']
+           'MatrixRankWarning', 'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
 class MatrixRankWarning(UserWarning):
@@ -738,3 +738,113 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     return x
 
+
+def is_sptriangular(A):
+    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``
+
+    Checks for triangular structure in ``A``. The result is summarized in
+    two boolean values ``lower`` and ``upper`` to designate whether ``A`` is
+    lower triangular or upper triangular respectively. Diagonal ``A`` will
+    result in both being True. Non-triangular structure results in False for both.
+
+    This function will convert a copy of ``A`` to CSC format if it is not already
+    CSR or CSC format. So it may be more efficient to convert it yourself if you
+    have other uses for the CSR/CSC version.
+
+    If ``A`` is not square, the portions outside the upper left square of the
+    matrix do not affect its triangular structure. You probably want to work
+    with the square portion of the matrix, though it is not requred here.
+
+    Parameters
+    ----------
+    A : SciPy sparse array or matrix
+        A sparse matrix preferrably in CSR or CSC format.
+
+    Returns
+    -------
+    lower, upper : 2-tuple of bool
+
+        .. versionadded:: 1.15.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_array, eye_array
+    >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> scipy.sparse.linalg.is_sptriangular(A)
+    (True, False)
+    >>> D = eye_array((3,3), format='csr')
+    >>> scipy.sparse.linalg.is_sptriangular(D)
+    (True, True)
+    """
+    if not (issparse(A) and A.format in ("csc", "csr")):
+        warn('CSC or CSR matrix format is required. Converting to CSC matrix.',
+             SparseEfficiencyWarning, stacklevel=2)
+        A = csc_matrix(A)
+
+    N = len(A.indptr) - 1
+    indptr, indices = A.indptr, A.indices
+
+    lower, upper = True, True
+    # check middle, 1st, last col (treat as CSC and switch at end if CSR)
+    for col in [N // 2, 0, -1]:
+        rows = indices[indptr[col]:indptr[col + 1]]
+        upper = upper and (col >= rows).all()
+        lower = lower and (col <= rows).all()
+        if not upper and not lower:
+            return False, False
+    # check all cols
+    cols = np.repeat(np.arange(N), np.diff(indptr))
+    rows = indices
+    upper = upper and (cols >= rows).all()
+    lower = lower and (cols <= rows).all()
+    if A.format == 'csr':
+        return upper, lower
+    return lower, upper
+
+
+def spbandwidth(A):
+    """Return the lower and upper bandwidth of a 2D numeric array.
+
+    Computes the lower and upper limits on the bandwidth of the
+    sparse 2D array ``A``. The result is summarized as a 2-tuple
+    of positive integers ``(lo, hi)``. A zero denotes no sub/super
+    diagonal entries on that side (tringular). The maximum value
+    for ``lo``(``hi``) is one less than the number of rows(cols).
+
+    Parameters
+    ----------
+    A : SciPy sparse array or matrix
+        A sparse matrix preferrably in CSR or CSC format.
+
+    Returns
+    -------
+    below, above : 2-tuple of int
+        The distance to the farthest non-zero diagonal below/above the
+        main diagonal.
+
+        .. versionadded:: 1.15.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_array, eye_array
+    >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> scipy.sparse.linalg.spbandwidth(A)
+    (2, 0)
+    >>> D = eye_array((3,3), format='csr')
+    >>> scipy.sparse.linalg.spbandwidth(D)
+    (0, 0)
+    """
+    if not (issparse(A) and A.format in ("csc", "csr")):
+        warn('CSC or CSR matrix format is required. Converting to CSC matrix.',
+             SparseEfficiencyWarning, stacklevel=2)
+        A = csc_matrix(A)
+
+    indptr, indices = A.indptr, A.indices
+    N = len(indptr) - 1
+    gap = np.repeat(np.arange(N), np.diff(indptr)) - indices
+    below, above = max(-np.min(gap), 0), max(np.max(gap), 0)
+    if A.format == 'csr':
+        return above, below
+    return below, above
