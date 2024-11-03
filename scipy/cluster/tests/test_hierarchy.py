@@ -964,6 +964,10 @@ class TestDendrogram:
 
         plt.close()
 
+    @skip_xp_backends('torch',
+         reason='MPL 3.9.2 & torch DeprecationWarning from __array_wrap__'
+                ' and NumPy 2.0'
+    )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_plot(self, xp):
         for orientation in ['top', 'bottom', 'left', 'right']:
@@ -1031,6 +1035,10 @@ class TestDendrogram:
         R2['dcoord'] = np.asarray(R2['dcoord'])
         assert_equal(R2, expected)
 
+    @skip_xp_backends('torch',
+          reason='MPL 3.9.2 & torch DeprecationWarning from __array_wrap__'
+                 ' and NumPy 2.0'
+     )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_truncate_mode(self, xp):
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
