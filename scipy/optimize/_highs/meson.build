@@ -18,13 +18,15 @@ highs_args = highs_proj.get_variable('_args')
 highs_deps = highs_proj.get_variable('_deps')
 highslib_srcs = highs_proj.get_variable('highslib_srcs')
 highs_incdirs = highs_proj.get_variable('_incdirs')
+highs_cpp_suppressions = highs_proj.get_variable('_highs_cpp_suppressions')
+highs_c_suppressions = highs_proj.get_variable('_highs_c_suppressions')
 
 _highslib = static_library(
     'highs',
     highslib_srcs,
     dependencies: highs_deps,
-    cpp_args: highs_args,
-    c_args: highs_args,
+    cpp_args: highs_cpp_suppressions,
+    c_args: highs_c_suppressions,
     include_directories: highs_incdirs,
     # Ensure that if we link a static library into a shared library,
     # private symbols don't get re-exported.
@@ -54,8 +56,6 @@ py3.extension_module(
     '_core',
     sources: highspy_cpp + highs_conf_file,
     dependencies: scipy_highspy_dep,
-    c_args: [Wno_unused_variable, Wno_unused_but_set_variable],
-    cpp_args: [_cpp_Wno_unused_variable, _cpp_Wno_unused_but_set_variable],
     link_args: version_link_args,
     gnu_symbol_visibility: 'hidden',  # default
     install: true,
@@ -66,8 +66,6 @@ py3.extension_module(
     '_highs_options',
     sources: [highs_conf_file, 'highs_options.cpp'],
     dependencies: scipy_highspy_dep,
-    c_args: [Wno_unused_variable, Wno_unused_but_set_variable],
-    cpp_args: [_cpp_Wno_unused_variable, _cpp_Wno_unused_but_set_variable],
     link_args: version_link_args,
     gnu_symbol_visibility: 'hidden',  # default
     install: true,
