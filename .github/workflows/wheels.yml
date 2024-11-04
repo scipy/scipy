@@ -211,7 +211,6 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@7940a4c0e76eb2030e473a5f864f291f63ee879b # v2.21.3
-        if: ${{ matrix.python[0] != 'cp313t' || runner.os != 'Windows' }}
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
