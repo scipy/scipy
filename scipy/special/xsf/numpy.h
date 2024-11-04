@@ -14,14 +14,37 @@
 
 #include <numpy/arrayobject.h>
 #include <numpy/npy_3kcompat.h>
+#include <numpy/npy_math.h>
 #include <numpy/ufuncobject.h>
 
 #include "dual.h"
-#include "sf_error.h"
+#include "error.h"
 #include "third_party/kokkos/mdspan.hpp"
 
 namespace xsf {
 namespace numpy {
+
+    // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
+    // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
+    // already in such a context.
+    extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
+
+    void set_error_check_fpe(const char *func_name) {
+	int status = wrap_PyUFunc_getfperr();
+	if (status & NPY_FPE_DIVIDEBYZERO) {
+	    xsf::set_error(func_name, SF_ERROR_SINGULAR, "floating point division by zero");
+	}
+	if (status & NPY_FPE_OVERFLOW) {
+	    xsf::set_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
+	}
+	if (status & NPY_FPE_UNDERFLOW) {
+	    xsf::set_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
+	}
+	if (status & NPY_FPE_INVALID) {
+	    xsf::set_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");
+	}
+    }
+
     namespace detail {
 
         // This is std::accumulate, but that is not constexpr until C++20
@@ -778,7 +801,7 @@ namespace numpy {
             }
 
             const char *name = static_cast<ufunc_data<Func> *>(data)->name;
-            sf_error_check_fpe(name);
+	    set_error_check_fpe(name);
         }
     };
 
@@ -811,7 +834,7 @@ namespace numpy {
             }
 
             const char *name = static_cast<ufunc_data<Func> *>(data)->name;
-            sf_error_check_fpe(name);
+	    set_error_check_fpe(name);
         }
     };
 
