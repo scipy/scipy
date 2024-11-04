@@ -342,6 +342,27 @@ class TestCommon1D:
             # test broadcasting
             assert_equal(dat[:1] - datsp, dat[:1] - dat)
 
+    def test_matmul_basic(self, spcreator):
+        A = np.array([[2, 0, 3.0], [0, 0, 0], [0, 1, 2]])
+        v = np.array([1, 0, 3])
+        Asp = spcreator(A)
+        vsp = spcreator(v)
+
+        # sparse result when both args are sparse and result not scalar
+        assert_equal((Asp @ vsp).toarray(), A @ v)
+        assert_equal(A @ vsp, A @ v)
+        assert_equal(Asp @ v, A @ v)
+        assert_equal((vsp @ Asp).toarray(), v @ A)
+        assert_equal(vsp @ A, v @ A)
+        assert_equal(v @ Asp, v @ A)
+
+        assert_equal(vsp @ vsp, v @ v)
+        assert_equal(v @ vsp, v @ v)
+        assert_equal(vsp @ v, v @ v)
+        assert_equal((Asp @ Asp).toarray(), A @ A)
+        assert_equal(A @ Asp, A @ A)
+        assert_equal(Asp @ A, A @ A)
+
     def test_matvec(self, spcreator):
         A = np.array([2, 0, 3.0])
         Asp = spcreator(A)
@@ -360,7 +381,7 @@ class TestCommon1D:
         bad_vecs = [np.array([1, 2]), np.array([1, 2, 3, 4]), np.array([[1], [2]])]
         for x in bad_vecs:
             with pytest.raises(ValueError, match='dimension mismatch'):
-                Asp.__matmul__(x)
+                Asp @ x
 
         # The current relationship between sparse matrix products and array
         # products is as follows:
