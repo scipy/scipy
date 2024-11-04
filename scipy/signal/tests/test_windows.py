@@ -11,7 +11,8 @@ from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
 from scipy._lib._array_api import (
      xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
-     assert_array_almost_equal
+     assert_array_almost_equal,
+     SCIPY_DEVICE,
 )
 
 pytestmark = [array_api_compatible,
@@ -732,7 +733,7 @@ class TestGetWindow:
             w = windows.get_window(('chebwin', 40), 54, fftbins=False, xp=xp)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
 
-    @skip_xp_backends('cupy', reason='dpss not implemented in CuPy')
+    @skip_xp_backends(cpu_only=True, reason='eigh_tridiagonal is CPU-only')
     def test_dpss(self, xp):
         win1 = windows.get_window(('dpss', 3), 64, fftbins=False, xp=xp)
         win2 = windows.dpss(64, 3, xp=xp)
@@ -789,8 +790,11 @@ def test_windowfunc_basics(xp):
         window = getattr(windows, window_name)
         if is_jax(xp) and window_name in ['taylor', 'chebwin']:
             pytest.skip(reason=f'{window_name = }: item assignment')
-        if is_cupy(xp) and window_name in ['dpss']:
-            pytest.skip(reason='dpss window is not implemented for cupy')
+        if window_name in ['dpss']:
+            if is_cupy(xp):
+                pytest.skip(reason='dpss window is not implemented for cupy')
+            if is_torch(xp) and SCIPY_DEVICE != 'cpu':
+                pytest.skip(reason='needs eight_tridiagonal which is CPU only')
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
