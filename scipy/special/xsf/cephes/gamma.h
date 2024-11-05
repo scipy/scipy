@@ -149,8 +149,21 @@ namespace cephes {
         int sgngam = 1;
 
         if (!std::isfinite(x)) {
-            return x;
+	    if (x > 0) {
+		// gamma(+inf) = +inf
+		return x;
+	    }
+	    // gamma(NaN) and gamma(-inf) both should equal NaN.
+            return std::numeric_limits<double>::quiet_NaN();
         }
+
+	if (x == 0) {
+	    /* For pole at zero, value depends on sign of zero.
+	     * +inf when approaching from right, -inf when approaching
+	     * from left. */
+	    return std::copysign(std::numeric_limits<double>::infinity(), x);
+	}
+
         q = std::abs(x);
 
         if (q > 33.0) {
@@ -158,8 +171,8 @@ namespace cephes {
                 p = std::floor(q);
                 if (p == q) {
                 gamnan:
-                    set_error("Gamma", SF_ERROR_OVERFLOW, NULL);
-                    return (std::numeric_limits<double>::infinity());
+                    set_error("Gamma", SF_ERROR_SINGULAR, NULL);
+                    return (std::numeric_limits<double>::quiet_NaN());
                 }
                 i = p;
                 if ((i & 1) == 0) {
@@ -215,6 +228,7 @@ namespace cephes {
 
     small:
         if (x == 0.0) {
+	    /* For this to have happened, x must have started as a negative integer. */
             goto gamnan;
         } else
             return (z / ((1.0 + 0.5772156649015329 * x) * x));
