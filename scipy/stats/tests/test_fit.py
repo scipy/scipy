@@ -376,7 +376,7 @@ class TestFit:
     tols = {'atol': atol, 'rtol': rtol}
 
     def opt(self, *args, **kwds):
-        return differential_evolution(*args, seed=0, **kwds)
+        return differential_evolution(*args, rng=1, **kwds)
 
     def test_dist_iv(self):
         message = "`dist` must be an instance of..."
@@ -1023,7 +1023,7 @@ class TestFitResult:
         data = stats.norm.rvs(0, 1, size=100, random_state=rng)
 
         def optimizer(*args, **kwargs):
-            return differential_evolution(*args, **kwargs, seed=rng)
+            return differential_evolution(*args, **kwargs, rng=rng)
 
         bounds = [(0, 30), (0, 1)]
         res = stats.fit(stats.norm, data, bounds, optimizer=optimizer)
