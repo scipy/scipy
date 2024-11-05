@@ -564,7 +564,7 @@ class TestJacobian(JacobianHessianTest):
         m, n = func.mn
         x = xp.asarray(rng.random(size=(m,) + size), dtype=xp.asarray(1.).dtype)
         res = jacobian(lambda x: func(x, xp), x)
-        ref = func.ref(x, xp)
+        ref = xp.asarray(func.ref(x, xp))
         xp_assert_close(res.df, ref, atol=1e-10)
 
     def test_attrs(self, xp):
