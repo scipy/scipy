@@ -881,22 +881,18 @@ class TestSpsolveTriangular:
 
 
 @sup_sparse_efficiency
-@pytest.mark.parametrize("nnz", [10, 10**2, 10^3])
+@pytest.mark.parametrize("nnz", [10, 10**2, 10**3])
 @pytest.mark.parametrize("fmt", ["csr", "csc"])
 def test_is_sptriangular_and_spbandwidth(nnz, fmt):
     rng = np.random.default_rng(42)
-    random_array = scipy.sparse.random_array
-    eye_array = scipy.sparse.eye_array
-    triu = scipy.sparse.triu
-    tril = scipy.sparse.tril
 
-    nshp = nnz // 2
+    N = nnz // 2
     dens = 0.1
-    A = random_array((nshp, nshp), density=dens, format=fmt, random_state=rng)
+    A = scipy.sparse.random_array((N, N), density=dens, format=fmt, random_state=rng)
     A[1, 3] = A[3, 1] = 22  # ensure not upper or lower
-    AU = triu(A, format=fmt)
-    AL = tril(A, format=fmt)
-    D = 0.1 * eye_array(nshp, format=fmt)
+    AU = scipy.sparse.triu(A, format=fmt)
+    AL = scipy.sparse.tril(A, format=fmt)
+    D = 0.1 * scipy.sparse.eye_array(N, format=fmt)
 
     assert is_sptriangular(A) == (False, False)
     assert is_sptriangular(AL) == (True, False)
