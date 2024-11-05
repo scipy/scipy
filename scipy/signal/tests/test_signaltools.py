@@ -2135,6 +2135,11 @@ def test_correlation_lags(mode, behind, input_size):
     assert_equal(lags.shape, correlation.shape)
 
 
+def test_correlation_lags_invalid_mode():
+    with pytest.raises(ValueError, match="Mode asdfgh is invalid"):
+        correlation_lags(100, 100, mode="asdfgh")
+
+
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble,
                                 pytest.param(np.clongdouble, marks=_pmf)])
 class TestCorrelateComplex:
