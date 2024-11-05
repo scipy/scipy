@@ -961,8 +961,19 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             has_nan = has_nan.any(axis=tuple(range(has_nan.ndim-1)))
             has_nan |= np.isnan(ydata)
 
+            # Store the size of ydata before purging the nan values
+            prev_ydata_size = ydata.size
+
             xdata = xdata[..., ~has_nan]
             ydata = ydata[~has_nan]
+
+            # Also omit the corresponding entries form sigma
+            if sigma is not None:
+                sigma = np.asarray(sigma)
+                if sigma.shape == (prev_ydata_size, ):
+                    sigma = sigma[~has_nan]
+                if sigma.shape == (prev_ydata_size, prev_ydata_size):
+                    sigma = sigma[~has_nan, ~has_nan]
 
     # Determine type of sigma
     if sigma is not None:
