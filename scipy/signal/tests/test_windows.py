@@ -387,9 +387,12 @@ class TestGaussian:
 class TestGeneralCosine:
 
     def test_basic(self, xp):
-        xp_assert_close(windows.general_cosine(5, [0.5, 0.3, 0.2], xp=xp),
+        a = xp.asarray([0.5, 0.3, 0.2])
+        xp_assert_close(windows.general_cosine(5, a),
                         [0.4, 0.3, 1, 0.3, 0.4])
-        xp_assert_close(windows.general_cosine(4, [0.5, 0.3, 0.2], sym=False, xp=xp),
+
+        a = xp.asarray([0.5, 0.3, 0.2])
+        xp_assert_close(windows.general_cosine(4, a, sym=False),
                         [0.4, 0.3, 1, 0.3])
 
 
@@ -762,11 +765,14 @@ class TestGetWindow:
             resample(sig, len(sig) * osfactor, window=win)
 
     def test_general_cosine(self, xp):
-        xp_assert_close(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4, xp=xp),
+        xp_assert_close(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4),
                         [0.4, 0.3, 1, 0.3])
         xp_assert_close(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4,
-                                   fftbins=False, xp=xp),
+                                   fftbins=False),
                         [0.4, 0.55, 0.55, 0.4])
+
+        with pytest.raises(ValueError):
+            get_window(('general_cosine', [0.5, 0.3, 0.2]), 4, xp=xp)
 
     def test_general_hamming(self, xp):
         xp_assert_close(get_window(('general_hamming', 0.7), 5, xp=xp),

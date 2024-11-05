@@ -49,7 +49,28 @@ def _namespace(xp):
     return np_compat if xp is None else array_namespace(xp.empty(0))
 
 
-def general_cosine(M, a, sym=True, *, xp=None, device=None):
+def _device(a, xp):
+    """A shim for a.device / xp.device"""
+    try:
+        return a.device
+    except AttributeError:
+        return xp.device(a)
+
+
+def _general_cosine_impl(M, a, xp, device, sym=True):
+    if _len_guards(M):
+        return xp.ones(M, dtype=xp.float64, device=device)
+    M, needs_trunc = _extend(M, sym)
+
+    fac = xp.linspace(-xp.pi, xp.pi, M, dtype=xp.float64, device=device)
+    w = xp.zeros(M, dtype=xp.float64, device=device)
+    for k in range(a.shape[0]):
+        w += a[k] * xp.cos(k * fac)
+
+    return _truncate(w, needs_trunc)
+
+
+def general_cosine(M, a, sym=True):
     r"""
     Generic weighted sum of cosine terms window
 
@@ -65,10 +86,6 @@ def general_cosine(M, a, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optionaloptional array API namespace (default: numpy)
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
 
     Returns
     -------
@@ -129,18 +146,10 @@ def general_cosine(M, a, sym=True, *, xp=None, device=None):
     >>> plt.axhline(-90.2, color='red')
     >>> plt.show()
     """
-    xp = _namespace(xp)
-
-    if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
-    M, needs_trunc = _extend(M, sym)
-
-    fac = xp.linspace(-xp.pi, xp.pi, M, dtype=xp.float64)
-    w = xp.zeros(M, dtype=xp.float64)
-    for k in range(len(a)):
-        w += a[k] * xp.cos(k * fac)
-
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    xp = array_namespace(a)
+    a = xp.asarray(a)
+    device = _device(a, xp)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
 def boxcar(M, sym=True, *, xp=None, device=None):
@@ -196,12 +205,12 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    w = xp.ones(M, dtype=xp.float64)
+    w = xp.ones(M, dtype=xp.float64, device=device)
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def triang(M, sym=True, *, xp=None, device=None):
@@ -262,21 +271,18 @@ def triang(M, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    concat = array_namespace(xp.ones(3)).concat
-    flip = array_namespace(xp.ones(3)).flip
-
-    n = xp.arange(1, (M + 1) // 2 + 1, dtype=xp.float64)
+    n = xp.arange(1, (M + 1) // 2 + 1, dtype=xp.float64, device=device)
     if M % 2 == 0:
         w = (2 * n - 1.0) / M
-        w = concat([w, flip(w)])
+        w = xp.concat([w, xp.flip(w)])
     else:
         w = 2 * n / (M + 1.0)
-        w = concat([w, flip(w[:-1])])
+        w = xp.concat([w, xp.flip(w[:-1])])
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def parzen(M, sym=True, *, xp=None, device=None):
@@ -337,15 +343,16 @@ def parzen(M, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(-(M - 1) / 2.0, (M - 1) / 2.0 + 0.5, 1.0, dtype=xp.float64)
+    n = xp.arange(-(M - 1) / 2.0, (M - 1) / 2.0 + 0.5, 1.0,
+                  dtype=xp.float64, device=device)
     w = xp.where(abs(n) <= (M - 1) / 4.0,
                  (1 - 6 * (abs(n) / (M / 2.0)) ** 2.0 +
                   6 * (abs(n) / (M / 2.0)) ** 3.0),
                  2 * (1 - abs(n) / (M / 2.0)) ** 3.0)
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def bohman(M, sym=True, *, xp=None, device=None):
@@ -401,15 +408,15 @@ def bohman(M, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    fac = abs(xp.linspace(-1, 1, M, dtype=xp.float64)[1:-1])
+    fac = abs(xp.linspace(-1, 1, M, dtype=xp.float64, device=device)[1:-1])
     w = (1 - fac) * xp.cos(xp.pi * fac) + 1.0 / xp.pi * xp.sin(xp.pi * fac)
-    concat = array_namespace(fac).concat
-    w = concat([xp.zeros(1), w, xp.zeros(1)])
+    one = xp.zeros(1, dtype=xp.float64, device=device)
+    w = xp.concat([one, w, one])
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def blackman(M, sym=True, *, xp=None, device=None):
@@ -500,8 +507,10 @@ def blackman(M, sym=True, *, xp=None, device=None):
 
     """
     # Docstring adapted from NumPy's blackman function
-    return general_cosine(M, [0.42, 0.50, 0.08], sym,
-                          xp=xp, device=device)
+    xp = _namespace(xp)
+    a = xp.asarray([0.42, 0.50, 0.08], dtype=xp.float64, device=device)
+    device = _device(a, xp)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
 def nuttall(M, sym=True, *, xp=None, device=None):
@@ -566,8 +575,12 @@ def nuttall(M, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    return general_cosine(M, [0.3635819, 0.4891775, 0.1365995, 0.0106411], sym,
-                          xp=xp, device=device)
+    xp = _namespace(xp)
+    a = xp.asarray(
+        [0.3635819, 0.4891775, 0.1365995, 0.0106411], dtype=xp.float64, device=device
+    )
+    device = _device(a, xp)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
 def blackmanharris(M, sym=True, *, xp=None, device=None):
@@ -620,8 +633,12 @@ def blackmanharris(M, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    return general_cosine(M, [0.35875, 0.48829, 0.14128, 0.01168], sym,
-                          xp=xp, device=device)
+    xp = _namespace(xp)
+    a = xp.asarray(
+        [0.35875, 0.48829, 0.14128, 0.01168], dtype=xp.float64, device=device
+    )
+    device = _device(a, xp)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
 def flattop(M, sym=True, *, xp=None, device=None):
@@ -688,8 +705,13 @@ def flattop(M, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    a = [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368]
-    return general_cosine(M, a, sym, xp=xp, device=device)
+    xp = _namespace(xp)
+    a = xp.asarray(
+        [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368],
+        dtype=xp.float64, device=device
+    )
+    device = _device(a, xp)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
 def bartlett(M, sym=True, *, xp=None, device=None):
@@ -788,16 +810,16 @@ def bartlett(M, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M, dtype=xp.float64)
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
 
     # cf https://github.com/data-apis/array-api-strict/issues/77
     w = xp.where(n <= (M - 1) / 2.0,
                  2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1))
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def hann(M, sym=True, *, xp=None, device=None):
@@ -955,29 +977,28 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
 
     if alpha <= 0:
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     elif alpha >= 1.0:
         return hann(M, sym=sym, xp=xp, device=device)
 
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M, dtype=xp.float64)
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
     width = int(math.floor(alpha*(M-1)/2.0))
     n1 = n[0:width+1]
     n2 = n[width+1:M-width-1]
     n3 = n[M-width-1:]
 
     w1 = 0.5 * (1 + xp.cos(xp.pi * (-1 + 2.0*n1/alpha/(M-1))))
-    w2 = xp.ones(n2.shape)
+    w2 = xp.ones(n2.shape, device=device)
     w3 = 0.5 * (1 + xp.cos(xp.pi * (-2.0/alpha + 1 + 2.0*n3/alpha/(M-1))))
 
-    concat = array_namespace(w1).concat
-    w = concat((w1, w2, w3))
+    w = xp.concat((w1, w2, w3))
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def barthann(M, sym=True, *, xp=None, device=None):
@@ -1033,14 +1054,14 @@ def barthann(M, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M, dtype=xp.float64)
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
     fac = abs(n / (M - 1.0) - 0.5)
     w = 0.62 - 0.48 * fac + 0.38 * xp.cos(2 * xp.pi * fac)
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
@@ -1134,7 +1155,10 @@ def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     >>> spatial_plot.legend(loc="upper right")
 
     """
-    return general_cosine(M, [alpha, 1. - alpha], sym, xp=xp, device=device)
+    xp = _namespace(xp)
+    a = xp.asarray([alpha, 1. - alpha], dtype=xp.float64, device=device)
+    device = _device(a, xp)
+    return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
 def hamming(M, sym=True, *, xp=None, device=None):
@@ -1336,15 +1360,15 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
 
     # Docstring adapted from NumPy's kaiser function
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M, dtype=xp.float64)
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
     alpha = (M - 1) / 2.0
     w = (special.i0(beta * xp.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
          special.i0(beta))
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
@@ -1420,9 +1444,6 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     """
     xp = _namespace(xp)
 
-    # cumulative_sum added in the 2023.12 Array API standard
-    cumulative_sum = xp.cumulative_sum if hasattr(xp, "cumulative_sum") else xp.cumsum
-
     if not sym:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for symmetric "
@@ -1437,11 +1458,9 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
         )
 
     kaiser_window = kaiser(M // 2 + 1, beta, xp=xp, device=device)
-    csum = cumulative_sum(kaiser_window)
+    csum = xp.cumulative_sum(kaiser_window)
     half_window = xp.sqrt(csum[:-1] / csum[-1])
-    concat = array_namespace(half_window).concat
-    flip = array_namespace(half_window).flip
-    w = concat((half_window, flip(half_window)), axis=0)
+    w = xp.concat((half_window, xp.flip(half_window)), axis=0)
     return xp.asarray(w, device=device)
 
 
@@ -1506,14 +1525,14 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M, dtype=xp.float64) - (M - 1.0) / 2.0
+    n = xp.arange(0, M, dtype=xp.float64, device=device) - (M - 1.0) / 2.0
     sig2 = 2 * std * std
     w = xp.exp(-n ** 2 / sig2)
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
@@ -1585,13 +1604,13 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    n = xp.arange(0, M, dtype=xp.float64) - (M - 1.0) / 2.0
+    n = xp.arange(0, M, dtype=xp.float64, device=device) - (M - 1.0) / 2.0
     w = xp.exp(-0.5 * abs(n / sig) ** (2 * p))
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 # `chebwin` contributed by Kumar Appaiah.
@@ -1697,14 +1716,14 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
                       "about 45 dB.",
                       stacklevel=2)
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
     # compute the parameter beta
     order = M - 1.0
-    _val = xp.asarray(10 ** (abs(at) / 20.), dtype=xp.float64)
+    _val = xp.asarray(10 ** (abs(at) / 20.), dtype=xp.float64, device=device)
     beta = xp.cosh(1.0 / order * xp.acosh(_val))
-    k = xp.arange(M, dtype=xp.float64)
+    k = xp.arange(M, dtype=xp.float64, device=device)
     x = beta * xp.cos(xp.pi * k / M)
     # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
@@ -1714,25 +1733,22 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     p[x < -1] = (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(-x[x < -1]))
     p[abs(x) <= 1] = xp.cos(order * xp.acos(x[abs(x) <= 1]))
 
-    concat = array_namespace(p).concat
-    flip = array_namespace(p).flip
-
     # Appropriate IDFT and filling up
     # depending on even/odd M
     if M % 2:
         w = xp.real(sp_fft.fft(p))
         n = (M + 1) // 2
         w = w[:n]
-        w = concat((flip(w[1:n]), w))
+        w = xp.concat((xp.flip(w[1:n]), w))
     else:
-        I = xp.asarray(1j)
-        p = p * xp.exp(I * xp.pi / M * xp.arange(M, dtype=xp.float64))
+        I = xp.asarray(1j, device=device)
+        p = p * xp.exp(I * xp.pi / M * xp.arange(M, dtype=xp.float64, device=device))
         w = xp.real(sp_fft.fft(p))
         n = M // 2 + 1
-        w = concat((flip(w[1:n]), w[1:n]))
+        w = xp.concat((xp.flip(w[1:n]), w[1:n]))
     w = w / xp.max(w)
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def cosine(M, sym=True, *, xp=None, device=None):
@@ -1794,12 +1810,12 @@ def cosine(M, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
-    w = xp.sin(xp.pi / M * (xp.arange(M, dtype=xp.float64) + .5))
+    w = xp.sin(xp.pi / M * (xp.arange(M, dtype=xp.float64, device=device) + .5))
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
@@ -1886,16 +1902,16 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     if sym and center is not None:
         raise ValueError("If sym==True, center must be None.")
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
     if center is None:
         center = (M-1) / 2
 
-    n = xp.arange(0, M, dtype=xp.float64)
+    n = xp.arange(0, M, dtype=xp.float64, device=device)
     w = xp.exp(-abs(n-center) / tau)
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
@@ -1986,18 +2002,18 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
     # Original text uses a negative sidelobe level parameter and then negates
     # it in the calculation of B. To keep consistent with other methods we
     # assume the sidelobe level parameter to be positive.
-    B = xp.asarray(10**(sll / 20))
+    B = xp.asarray(10**(sll / 20), device=device)
     A = xp.acosh(B) / xp.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
-    ma = xp.arange(1, nbar, dtype=xp.float64)
+    ma = xp.arange(1, nbar, dtype=xp.float64, device=device)
 
-    Fm = xp.empty(nbar - 1, dtype=xp.float64)
+    Fm = xp.empty(nbar - 1, dtype=xp.float64, device=device)
     signs = xp.empty_like(ma)
     signs[::2] = 1
     signs[1::2] = -1
@@ -2011,14 +2027,14 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
         return 1 + 2*xp.matmul(Fm, xp.cos(
             2*xp.pi*ma[:, xp.newaxis]*(n-M/2.+0.5)/M))
 
-    w = W(xp.arange(M, dtype=xp.float64))
+    w = W(xp.arange(M, dtype=xp.float64, device=device))
 
     # normalize (Note that this is not described in the original text [1])
     if norm:
         scale = 1.0 / W((M - 1) / 2)
         w *= scale
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
@@ -2193,7 +2209,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     if norm is None:
         norm = 'approximate' if Kmax is None else 2
     known_norms = (2, 'approximate', 'subsample')
@@ -2213,7 +2229,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
         raise ValueError('NW must be positive')
     M, needs_trunc = _extend(M, sym)
     W = float(NW) / M
-    nidx = xp.arange(M, dtype=xp.float64)
+    nidx = xp.arange(M, dtype=xp.float64, device=device)
 
     # Here we want to set up an optimization problem to find a sequence
     # whose energy is maximally concentrated within band [-W,W].
@@ -2377,7 +2393,7 @@ def lanczos(M, *, sym=True, xp=None, device=None):
     xp = _namespace(xp)
 
     if _len_guards(M):
-        return xp.ones(M, dtype=xp.float64)
+        return xp.ones(M, dtype=xp.float64, device=device)
     M, needs_trunc = _extend(M, sym)
 
     # To make sure that the window is symmetric, we concatenate the right hand
@@ -2386,17 +2402,14 @@ def lanczos(M, *, sym=True, xp=None, device=None):
     def _calc_right_side_lanczos(n, m):
         return xp_sinc(2. * xp.arange(n, m, dtype=xp.float64) / (m - 1) - 1.0, xp=xp)
 
-    concat = array_namespace(xp.ones(3)).concat
-    flip = array_namespace(xp.ones(3)).flip
-
     if M % 2 == 0:
         wh = _calc_right_side_lanczos(M/2, M)
-        w = concat([flip(wh), wh])
+        w = xp.concat([xp.flip(wh), wh])
     else:
         wh = _calc_right_side_lanczos((M+1)/2, M)
-        w = concat([flip(wh), xp.ones(1), wh])
+        w = xp.concat([xp.flip(wh), xp.ones(1), wh])
 
-    return xp.asarray(_truncate(w, needs_trunc), device=device)
+    return _truncate(w, needs_trunc)
 
 
 def _fftautocorr(x):
@@ -2559,6 +2572,11 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
             raise ValueError(
                 f"{str(type(window))} as window type is not supported.") from e
 
+        if winstr == 'general_cosine' and (xp is not None or device is not None):
+            raise ValueError(
+                'general_cosine window does not accept xp and device kwargs '
+            )
+
         try:
             winfunc = _win_equiv[winstr]
         except KeyError as e:
@@ -2572,4 +2590,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
         winfunc = kaiser
         params = (Nx, beta)
 
-    return winfunc(*params, sym=sym, xp=xp, device=device)
+    if winfunc == general_cosine:
+        return winfunc(*params, sym=sym)
+    else:
+        return winfunc(*params, sym=sym, xp=xp, device=device)
