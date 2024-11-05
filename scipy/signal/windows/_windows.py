@@ -4,11 +4,10 @@ import math
 import operator
 import warnings
 
-import numpy as np
 
 from scipy import linalg, special, fft as sp_fft
 from scipy._lib.array_api_compat import numpy as np_compat
-from scipy._lib._array_api import xp_acos, xp_acosh, xp_sinc, array_namespace, is_cupy
+from scipy._lib._array_api import xp_sinc, array_namespace
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',
@@ -41,14 +40,13 @@ def _truncate(w, needed):
         return w
 
 
-def _asarray(x, xp, *, device=None):
-    """A shim for the `device` arg of `np.asarray(x, device=device)` not recognized
-       in NumPy < 2.
+def _namespace(xp):
+    """A shim for the `device` arg of `np.asarray(x, device=device)` and acos/arccos.
+
+    Will be able to replace with `np_compat if xp is None else xp` when we drop
+    support for numpy 1.x and cupy 13.x
     """
-    if xp == np or is_cupy(xp):
-        return xp.asarray(x)
-    else:
-        return xp.asarray(x, device=device)
+    return np_compat if xp is None else array_namespace(xp.empty(0))
 
 
 def general_cosine(M, a, sym=True, *, xp=None, device=None):
@@ -131,7 +129,7 @@ def general_cosine(M, a, sym=True, *, xp=None, device=None):
     >>> plt.axhline(-90.2, color='red')
     >>> plt.show()
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -142,7 +140,7 @@ def general_cosine(M, a, sym=True, *, xp=None, device=None):
     for k in range(len(a)):
         w += a[k] * xp.cos(k * fac)
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def boxcar(M, sym=True, *, xp=None, device=None):
@@ -195,7 +193,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -203,7 +201,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
 
     w = xp.ones(M, dtype=xp.float64)
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def triang(M, sym=True, *, xp=None, device=None):
@@ -261,7 +259,7 @@ def triang(M, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -278,7 +276,7 @@ def triang(M, sym=True, *, xp=None, device=None):
         w = 2 * n / (M + 1.0)
         w = concat([w, flip(w[:-1])])
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def parzen(M, sym=True, *, xp=None, device=None):
@@ -336,7 +334,7 @@ def parzen(M, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -347,7 +345,7 @@ def parzen(M, sym=True, *, xp=None, device=None):
                  (1 - 6 * (abs(n) / (M / 2.0)) ** 2.0 +
                   6 * (abs(n) / (M / 2.0)) ** 3.0),
                  2 * (1 - abs(n) / (M / 2.0)) ** 3.0)
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def bohman(M, sym=True, *, xp=None, device=None):
@@ -400,7 +398,7 @@ def bohman(M, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -411,7 +409,7 @@ def bohman(M, sym=True, *, xp=None, device=None):
     concat = array_namespace(fac).concat
     w = concat([xp.zeros(1), w, xp.zeros(1)])
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def blackman(M, sym=True, *, xp=None, device=None):
@@ -787,7 +785,7 @@ def bartlett(M, sym=True, *, xp=None, device=None):
 
     """
     # Docstring adapted from NumPy's bartlett function
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -799,7 +797,7 @@ def bartlett(M, sym=True, *, xp=None, device=None):
     w = xp.where(n <= (M - 1) / 2.0,
                  2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1))
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def hann(M, sym=True, *, xp=None, device=None):
@@ -954,7 +952,7 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -979,7 +977,7 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     concat = array_namespace(w1).concat
     w = concat((w1, w2, w3))
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def barthann(M, sym=True, *, xp=None, device=None):
@@ -1032,7 +1030,7 @@ def barthann(M, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -1042,7 +1040,7 @@ def barthann(M, sym=True, *, xp=None, device=None):
     fac = abs(n / (M - 1.0) - 0.5)
     w = 0.62 - 0.48 * fac + 0.38 * xp.cos(2 * xp.pi * fac)
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
@@ -1334,7 +1332,7 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     # Docstring adapted from NumPy's kaiser function
     if _len_guards(M):
@@ -1346,7 +1344,7 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
     w = (special.i0(beta * xp.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
          special.i0(beta))
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
@@ -1420,7 +1418,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     >>> fig.tight_layout()
     >>> fig.show()
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     # cumulative_sum added in the 2023.12 Array API standard
     cumulative_sum = xp.cumulative_sum if hasattr(xp, "cumulative_sum") else xp.cumsum
@@ -1444,7 +1442,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     concat = array_namespace(half_window).concat
     flip = array_namespace(half_window).flip
     w = concat((half_window, flip(half_window)), axis=0)
-    return _asarray(w, xp, device=device)
+    return xp.asarray(w, device=device)
 
 
 def gaussian(M, std, sym=True, *, xp=None, device=None):
@@ -1505,7 +1503,7 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -1515,7 +1513,7 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
     sig2 = 2 * std * std
     w = xp.exp(-n ** 2 / sig2)
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
@@ -1584,7 +1582,7 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -1593,7 +1591,7 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
     n = xp.arange(0, M, dtype=xp.float64) - (M - 1.0) / 2.0
     w = xp.exp(-0.5 * abs(n / sig) ** (2 * p))
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 # `chebwin` contributed by Kumar Appaiah.
@@ -1688,7 +1686,7 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if abs(at) < 45:
         warnings.warn("This window is not suitable for spectral analysis "
@@ -1705,16 +1703,16 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     # compute the parameter beta
     order = M - 1.0
     _val = xp.asarray(10 ** (abs(at) / 20.), dtype=xp.float64)
-    beta = xp.cosh(1.0 / order * xp_acosh(_val, xp=xp))
+    beta = xp.cosh(1.0 / order * xp.acosh(_val))
     k = xp.arange(M, dtype=xp.float64)
     x = beta * xp.cos(xp.pi * k / M)
     # Find the window's DFT coefficients
     # Use analytic definition of Chebyshev polynomial instead of expansion
     # from scipy.special. Using the expansion in scipy.special leads to errors.
     p = xp.zeros_like(x)
-    p[x > 1] = xp.cosh(order * xp_acosh(x[x > 1], xp=xp))
-    p[x < -1] = (2 * (M % 2) - 1) * xp.cosh(order * xp_acosh(-x[x < -1], xp=xp))
-    p[abs(x) <= 1] = xp.cos(order * xp_acos(x[abs(x) <= 1], xp=xp))
+    p[x > 1] = xp.cosh(order * xp.acosh(x[x > 1]))
+    p[x < -1] = (2 * (M % 2) - 1) * xp.cosh(order * xp.acosh(-x[x < -1]))
+    p[abs(x) <= 1] = xp.cos(order * xp.acos(x[abs(x) <= 1]))
 
     concat = array_namespace(p).concat
     flip = array_namespace(p).flip
@@ -1734,7 +1732,7 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
         w = concat((flip(w[1:n]), w[1:n]))
     w = w / xp.max(w)
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def cosine(M, sym=True, *, xp=None, device=None):
@@ -1793,7 +1791,7 @@ def cosine(M, sym=True, *, xp=None, device=None):
     >>> plt.show()
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -1801,7 +1799,7 @@ def cosine(M, sym=True, *, xp=None, device=None):
 
     w = xp.sin(xp.pi / M * (xp.arange(M, dtype=xp.float64) + .5))
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
@@ -1883,7 +1881,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     >>> plt.ylabel("Amplitude")
     >>> plt.xlabel("Sample")
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if sym and center is not None:
         raise ValueError("If sym==True, center must be None.")
@@ -1897,7 +1895,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     n = xp.arange(0, M, dtype=xp.float64)
     w = xp.exp(-abs(n-center) / tau)
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
@@ -1985,7 +1983,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """  # noqa: E501
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -1994,8 +1992,8 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     # Original text uses a negative sidelobe level parameter and then negates
     # it in the calculation of B. To keep consistent with other methods we
     # assume the sidelobe level parameter to be positive.
-    B = 10**(sll / 20)
-    A = xp_acosh(B, xp=xp) / xp.pi
+    B = xp.asarray(10**(sll / 20))
+    A = xp.acosh(B) / xp.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
     ma = xp.arange(1, nbar, dtype=xp.float64)
 
@@ -2020,7 +2018,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
         scale = 1.0 / W((M - 1) / 2)
         w *= scale
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
@@ -2192,7 +2190,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     >>> fig.tight_layout()
 
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -2270,7 +2268,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
         ratios = xp.matmul(dpss_rxx, r)
         if singleton:
             ratios = ratios[0]
-        ratios = _asarray(ratios, xp, device=device)
+        ratios = xp.asarray(ratios, device=device)
     # Deal with sym and Kmax=None
     if norm != 2:
         windows /= windows.max()
@@ -2289,7 +2287,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
         windows = windows[:, :-1]
     if singleton:
         windows = windows[0]
-    windows = _asarray(windows, xp, device=device)
+    windows = xp.asarray(windows, device=device)
     return (windows, ratios) if return_ratios else windows
 
 
@@ -2376,7 +2374,7 @@ def lanczos(M, *, sym=True, xp=None, device=None):
     >>> fig.tight_layout()
     >>> plt.show()
     """
-    xp = np_compat if xp is None else xp
+    xp = _namespace(xp)
 
     if _len_guards(M):
         return xp.ones(M, dtype=xp.float64)
@@ -2398,7 +2396,7 @@ def lanczos(M, *, sym=True, xp=None, device=None):
         wh = _calc_right_side_lanczos((M+1)/2, M)
         w = concat([flip(wh), xp.ones(1), wh])
 
-    return _asarray(_truncate(w, needs_trunc), xp, device=device)
+    return xp.asarray(_truncate(w, needs_trunc), device=device)
 
 
 def _fftautocorr(x):
