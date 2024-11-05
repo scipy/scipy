@@ -24,9 +24,9 @@
 namespace xsf {
 namespace numpy {
 
-    // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
-    // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
-    // already in such a context.
+    /* PyUFunc_getfperr gets bits for current floating point error (fpe) status codes so we
+     * can check for floating point errors and make proper calls to set_error in ufunc loops.
+     * Define a wrapper so it can be given C linkage within this C++ header. */
     extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
     void set_error_check_fpe(const char *func_name) {
