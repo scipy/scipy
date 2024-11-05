@@ -29,7 +29,7 @@ import math
 import warnings
 import sys
 import inspect
-from numpy import atleast_1d, eye, argmin, zeros, shape, asarray, sqrt
+from numpy import eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
 from scipy.sparse.linalg import LinearOperator
@@ -41,6 +41,8 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
+from scipy._lib._array_api import (array_namespace, xp_atleast_nd,
+                                   xp_create_diagonal)
 
 
 # standard status messages of optimizers
@@ -358,9 +360,12 @@ def rosen(x):
     >>> ax.plot_surface(X, Y, rosen([X, Y]))
     >>> plt.show()
     """
-    x = asarray(x)
-    r = np.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
-                  axis=0)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
+    r = xp.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
+               axis=0, dtype=x.dtype)
     return r
 
 
@@ -391,11 +396,14 @@ def rosen_der(x):
     array([ -2. ,  10.6,  15.6,  13.4,   6.4,  -3. , -12.4, -19.4,  62. ])
 
     """
-    x = asarray(x)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
-    der = np.zeros_like(x)
+    der = xp.zeros_like(x)
     der[1:-1] = (200 * (xm - xm_m1**2) -
                  400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm))
     der[0] = -400 * x[0] * (x[1] - x[0]**2) - 2 * (1 - x[0])
@@ -433,14 +441,17 @@ def rosen_hess(x):
            [  0.,   0., -80., 200.]])
 
     """
-    x = atleast_1d(x)
-    H = np.diag(-400 * x[:-1], 1) - np.diag(400 * x[:-1], -1)
-    diagonal = np.zeros(len(x), dtype=x.dtype)
+    xp = array_namespace(x)
+    x = xp_atleast_nd(x, ndim=1, xp=xp)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
+    H = (xp_create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
+         - xp_create_diagonal(400 * x[:-1], offset=-1, xp=xp))
+    diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
     diagonal[0] = 1200 * x[0]**2 - 400 * x[1] + 2
     diagonal[-1] = 200
     diagonal[1:-1] = 202 + 1200 * x[1:-1]**2 - 400 * x[2:]
-    H = H + np.diag(diagonal)
-    return H
+    return H + xp_create_diagonal(diagonal, xp=xp)
 
 
 def rosen_hess_prod(x, p):
@@ -474,8 +485,12 @@ def rosen_hess_prod(x, p):
     array([  -0.,   27.,  -10.,  -95., -192., -265., -278., -195., -180.])
 
     """
-    x = atleast_1d(x)
-    Hp = np.zeros(len(x), dtype=x.dtype)
+    xp = array_namespace(x, p)
+    x = xp_atleast_nd(x, ndim=1, xp=xp)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
+    p = xp.asarray(p, dtype=x.dtype)
+    Hp = xp.zeros(x.shape[0], dtype=x.dtype)
     Hp[0] = (1200 * x[0]**2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1]
     Hp[1:-1] = (-400 * x[:-2] * p[:-2] +
                 (202 + 1200 * x[1:-1]**2 - 400 * x[2:]) * p[1:-1] -

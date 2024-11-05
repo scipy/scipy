@@ -69,6 +69,8 @@ Recommended steps for migration
       and ``isspmatrix_csr(G)`` with ``issparse(G) and G.format == "csr"``.
       Moreover ``isspmatrix_csr(G) or isspmatrix_csc(G)`` becomes
       ``issparse(G) and G.format in ['csr', 'csc']``.
+   -  Convert all ``spdiags`` calls to ``dia_matrix``.
+      See docs in :func:`spdiags<scipy.sparse.spdiags>`.
    -  Run all your tests on the resulting code. You are still using
       spmatrix, not sparray. But your code and tests are prepared for
       the change.
@@ -135,7 +137,7 @@ Functions that changed names for the migration
    eye         eye_array
    identity    eye_array
    diags       diags_array
-   spdiags     diags_array
+   spdiags     dia_array
    bmat        block
    rand        random_array
    random      random_array

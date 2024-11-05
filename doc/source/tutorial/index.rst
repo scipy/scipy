@@ -14,37 +14,42 @@ high-level commands and classes for manipulating and visualizing data.
 
 .. _NumPy: https://numpy.org
 
-Subpackages
------------
+Subpackages and User Guides
+---------------------------
 
 SciPy is organized into subpackages covering different scientific
-computing domains. These are summarized in the following table:
+computing domains. These are summarized in the following table, with
+their API reference linked in the Subpackage column, and user guide (if available)
+linked in the Description column:
 
-==================  ======================================================
-Subpackage          Description
-==================  ======================================================
+==================  ========================================
+Subpackage          Description and User Guide
+==================  ========================================
 `cluster`           Clustering algorithms
 `constants`         Physical and mathematical constants
 `differentiate`     Finite difference differentiation tools
-`fft`               Discrete Fourier transforms
+`fft`               :doc:`./fft`
 `fftpack`           Fast Fourier Transform routines (legacy)
-`integrate`         Integration and ordinary differential equation solvers
-`interpolate`       Interpolation and smoothing splines
-`io`                Input and Output
-`linalg`            Linear algebra
-`ndimage`           N-dimensional image processing
+`integrate`         :doc:`./integrate`
+`interpolate`       :doc:`./interpolate`
+`io`                :doc:`./io`
+`linalg`            :doc:`./linalg`
+`ndimage`           :doc:`./ndimage`
 `odr`               Orthogonal distance regression
-`optimize`          Optimization and root-finding routines
-`signal`            Signal processing
-`sparse`            Sparse matrices and associated routines
-`spatial`           Spatial data structures and algorithms
-`special`           Special functions
-`stats`             Statistical distributions and functions
-==================  ======================================================
+`optimize`          :doc:`./optimize`
+`signal`            :doc:`./signal`
+`sparse`            :doc:`./sparse`
+`spatial`           :doc:`./spatial`
+`special`           :doc:`./special`
+`stats`             :doc:`./stats`
+==================  ========================================
+
+There are also additional user guides for these topics:
+
+- :doc:`./arpack` - Eigenvalue problem solver using iterative methods
+- :doc:`./csgraph` - Compressed Sparse Graph Routines
 
 For guidance on organizing and importing functions from SciPy subpackages, refer to the `Guidelines for Importing Functions from SciPy <https://scipy.github.io/devdocs/reference/index.html#guidelines-for-importing-functions-from-scipy>`_.
-
-Below, you can find the complete user guide organized by subpackages.
 
 .. raw:: latex
 
@@ -53,21 +58,22 @@ Below, you can find the complete user guide organized by subpackages.
 .. toctree::
    :caption: User guide
    :maxdepth: 1
+   :hidden:
 
-   special
-   integrate
-   optimize
-   interpolate
    fft
-   signal
+   integrate
+   interpolate
+   io
    linalg
+   ndimage
+   optimize
+   signal
    sparse
+   spatial
+   special
+   stats
    arpack
    csgraph
-   spatial
-   stats
-   ndimage
-   io
 
 .. raw:: latex
 

@@ -120,9 +120,8 @@ class dual<T, Order> {
 
     dual &operator/=(const dual &other) {
         for (size_t i = 0; i <= Order; ++i) {
-            // General Leibniz Rule
             for (size_t j = 1; j <= i; ++j) {
-                data[i] -= detail::fast_binom<T>(i, j) * other.data[j] * data[i - j];
+                data[i] -= detail::fast_binom<T>(i - 1, j) * other.data[j] * data[i - j];
             }
 
             data[i] /= other.data[0];
@@ -250,9 +249,8 @@ class dual<T, Order0, Order1, Orders...> {
 
     dual &operator/=(const dual &other) {
         for (size_t i = 0; i <= Order0; ++i) {
-            // General Leibniz Rule
             for (size_t j = 1; j <= i; ++j) {
-                data[i] -= detail::fast_binom<T>(i, j) * other.data[j] * data[i - j];
+                data[i] -= detail::fast_binom<T>(i - 1, j) * other.data[j] * data[i - j];
             }
 
             data[i] /= other.data[0];

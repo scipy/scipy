@@ -7,9 +7,10 @@ import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
+from scipy import special
 from scipy._lib._util import check_random_state, _lazywhere
 from scipy.linalg.blas import drot, get_blas_funcs
-from ._continuous_distns import norm
+from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
 from . import _mvn, _covariance, _rcont
 from ._qmvnt import _qmvt
@@ -31,7 +32,8 @@ __all__ = ['multivariate_normal',
            'multivariate_hypergeom',
            'random_table',
            'uniform_direction',
-           'vonmises_fisher']
+           'vonmises_fisher',
+           'normal_inverse_gamma']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -2985,7 +2987,7 @@ class invwishart_gen(wishart_gen):
                 A[index] = trmm(1., CA, CA, side=1, lower=True, trans_a=True)
             else:
                 A[index][0, 0] = (C[0, 0] / A[index][0, 0])**2
-                
+
         return A
 
     def rvs(self, df, scale, size=1, random_state=None):
@@ -6978,3 +6980,323 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
         """
         return self._dist._entropy(self.dim, self.kappa)
+
+
+class normal_inverse_gamma_gen(multi_rv_generic):
+    r"""Normal-inverse-gamma distribution.
+
+    The normal-inverse-gamma distribution is the conjugate prior of a normal
+    distribution with unknown mean and variance.
+
+    Methods
+    -------
+    pdf(x, s2, mu=0, lmbda=1, a=1, b=1)
+        Probability density function.
+    logpdf(x, s2, mu=0, lmbda=1, a=1, b=1)
+        Log of the probability density function.
+    mean(mu=0, lmbda=1, a=1, b=1)
+        Distribution mean.
+    var(mu=0, lmbda=1, a=1, b=1)
+        Distribution variance.
+    rvs(mu=0, lmbda=1, a=1, b=1, size=None, random_state=None)
+        Draw random samples.
+
+    Parameters
+    ----------
+    mu, lmbda, a, b  : array_like
+        Shape parameters of the distribution. See notes.
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
+
+    See Also
+    --------
+    norm
+    invgamma
+
+    Notes
+    -----
+
+    The probability density function of `normal_inverse_gamma` is:
+
+    .. math::
+
+        f(x, \sigma^2; \mu, \lambda, \alpha, \beta) =
+            \frac{\sqrt{\lambda}}{\sqrt{2 \pi \sigma^2}}
+            \frac{\beta^\alpha}{\Gamma(\alpha)}
+            \left( \frac{1}{\sigma^2} \right)^{\alpha + 1}
+            \exp \left(- \frac{2 \beta + \lambda (x - \mu)^2} {2 \sigma^2} \right)
+
+    where all parameters are real and finite, and :math:`\sigma^2 > 0`,
+    :math:`\lambda > 0`, :math:`\alpha > 0`, and :math:`\beta > 0`.
+
+    Methods ``normal_inverse_gamma.pdf`` and ``normal_inverse_gamma.logpdf``
+    accept `x` and `s2` for arguments :math:`x` and :math:`\sigma^2`.
+    All methods accept `mu`, `lmbda`, `a`, and `b` for shape parameters
+    :math:`\mu`, :math:`\lambda`, :math:`\alpha`, and :math:`\beta`,
+    respectively.
+
+    .. versionadded:: 1.15
+
+    References
+    ----------
+    .. [1] Normal-inverse-gamma distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Normal-inverse-gamma_distribution
+
+    Examples
+    --------
+    Suppose we wish to investigate the relationship between the
+    normal-inverse-gamma distribution and the inverse gamma distribution.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(527484872345)
+    >>> mu, lmbda, a, b = 0, 1, 20, 20
+    >>> norm_inv_gamma = stats.normal_inverse_gamma(mu, lmbda, a, b)
+    >>> inv_gamma = stats.invgamma(a, scale=b)
+
+    One approach is to compare the distribution of the `s2` elements of
+    random variates against the PDF of an inverse gamma distribution.
+
+    >>> _, s2 = norm_inv_gamma.rvs(size=10000, random_state=rng)
+    >>> bins = np.linspace(s2.min(), s2.max(), 50)
+    >>> plt.hist(s2, bins=bins, density=True, label='Frequency density')
+    >>> s2 = np.linspace(s2.min(), s2.max(), 300)
+    >>> plt.plot(s2, inv_gamma.pdf(s2), label='PDF')
+    >>> plt.xlabel(r'$\sigma^2$')
+    >>> plt.ylabel('Frequency density / PMF')
+    >>> plt.show()
+
+    Similarly, we can compare the marginal distribution of `s2` against
+    an inverse gamma distribution.
+
+    >>> from scipy.integrate import quad_vec
+    >>> from scipy import integrate
+    >>> s2 = np.linspace(0.5, 3, 6)
+    >>> res = quad_vec(lambda x: norm_inv_gamma.pdf(x, s2), -np.inf, np.inf)[0]
+    >>> np.allclose(res, inv_gamma.pdf(s2))
+    True
+
+    The sample mean is comparable to the mean of the distribution.
+
+    >>> x, s2 = norm_inv_gamma.rvs(size=10000, random_state=rng)
+    >>> x.mean(), s2.mean()
+    (np.float64(-0.005254750127304425), np.float64(1.050438111436508))
+    >>> norm_inv_gamma.mean()
+    (np.float64(0.0), np.float64(1.0526315789473684))
+
+    Similarly, for the variance:
+
+    >>> x.var(ddof=1), s2.var(ddof=1)
+    (np.float64(1.0546150578185023), np.float64(0.061829865266330754))
+    >>> norm_inv_gamma.var()
+    (np.float64(1.0526315789473684), np.float64(0.061557402277623886))
+
+    """
+    def rvs(self, mu=0, lmbda=1, a=1, b=1, size=None, random_state=None):
+        """Draw random samples from the distribution.
+
+        Parameters
+        ----------
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda`, `a`, and `b` must be greater
+            than zero.
+        size : int or tuple of ints, optional
+            Shape of samples to draw.
+        random_state : {None, int, np.random.RandomState, np.random.Generator}, optional
+            Used for drawing random variates.
+            If `random_state` is `None`, the `~np.random.RandomState` singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is used, seeded
+            with `random_state`.
+            If `random_state` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
+            Default is `None`.
+
+        Returns
+        -------
+        x, s2 : ndarray
+            Random variates.
+
+        """
+        random_state = self._get_random_state(random_state)
+        s2 = invgamma(a, scale=b).rvs(size=size, random_state=random_state)
+        scale = (s2 / lmbda)**0.5
+        x = norm(loc=mu, scale=scale).rvs(size=size, random_state=random_state)
+        dtype = np.result_type(1.0, mu, lmbda, a, b)
+        return x.astype(dtype), s2.astype(dtype)
+
+    def _logpdf(self, x, s2, mu, lmbda, a, b):
+        t1 = 0.5 * (np.log(lmbda) - np.log(2 * np.pi * s2))
+        t2 = a*np.log(b) - special.gammaln(a).astype(a.dtype)
+        t3 = -(a + 1) * np.log(s2)
+        t4 = -(2*b + lmbda*(x - mu)**2) / (2*s2)
+        return t1 + t2 + t3 + t4
+
+    def logpdf(self, x, s2, mu=0, lmbda=1, a=1, b=1):
+        """Log of the probability density function.
+
+        Parameters
+        ----------
+        x, s2 : array_like
+            Arguments. `s2` must be greater than zero.
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda`, `a`, and `b` must be greater
+            than zero.
+
+        Returns
+        -------
+        logpdf : ndarray or scalar
+            Log of the probability density function.
+
+        """
+        invalid, args = self._process_parameters_pdf(x, s2, mu, lmbda, a, b)
+        s2 = args[1]
+        # Keep it simple for now; lazyselect later, perhaps.
+        with np.errstate(all='ignore'):
+            logpdf = np.asarray(self._logpdf(*args))
+        logpdf[s2 <= 0] = -np.inf
+        logpdf[invalid] = np.nan
+        return logpdf[()]
+
+    def _pdf(self, x, s2, mu, lmbda, a, b):
+        t1 = np.sqrt(lmbda / (2 * np.pi * s2))
+        t2 = b**a / special.gamma(a).astype(a.dtype)
+        t3 = (1 / s2)**(a + 1)
+        t4 = np.exp(-(2*b + lmbda*(x - mu)**2) / (2*s2))
+        return t1 * t2 * t3 * t4
+
+    def pdf(self, x, s2, mu=0, lmbda=1, a=1, b=1):
+        """The probability density function.
+
+        Parameters
+        ----------
+        x, s2 : array_like
+            Arguments. `s2` must be greater than zero.
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda`, `a`, and `b` must be greater
+            than zero.
+
+        Returns
+        -------
+        logpdf : ndarray or scalar
+            The probability density function.
+
+        """
+        invalid, args = self._process_parameters_pdf(x, s2, mu, lmbda, a, b)
+        s2 = args[1]
+        # Keep it simple for now; lazyselect later, perhaps.
+        with np.errstate(all='ignore'):
+            pdf = np.asarray(self._pdf(*args))
+        pdf[s2 <= 0] = 0
+        pdf[invalid] = np.nan
+        return pdf[()]
+
+    def mean(self, mu=0, lmbda=1, a=1, b=1):
+        """The mean of the distribution.
+
+        Parameters
+        ----------
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda` and `b` must be greater
+            than zero, and `a` must be greater than one.
+
+        Returns
+        -------
+        x, s2 : ndarray
+            The mean of the distribution.
+
+        """
+        invalid, args = self._process_shapes(mu, lmbda, a, b)
+        mu, lmbda, a, b = args
+        invalid |= ~(a > 1)
+        mean_x = np.asarray(mu).copy()
+        mean_s2 = np.asarray(b / (a - 1))
+        mean_x[invalid] = np.nan
+        mean_s2[invalid] = np.nan
+        return mean_x[()], mean_s2[()]
+
+    def var(self, mu=0, lmbda=1, a=1, b=1):
+        """The variance of the distribution.
+
+        Parameters
+        ----------
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda` and `b` must be greater
+            than zero, and `a` must be greater than two.
+
+        Returns
+        -------
+        x, s2 : ndarray
+            The variance of the distribution.
+
+        """
+        invalid, args = self._process_shapes(mu, lmbda, a, b)
+        mu, lmbda, a, b = args
+        invalid_x = invalid | ~(a > 1)
+        invalid_s2 = invalid | ~(a > 2)
+        var_x = b / ((a - 1) * lmbda)
+        var_s2 = b**2 / ((a - 1)**2 * (a - 2))
+        var_x, var_s2 = np.asarray(var_x), np.asarray(var_s2)
+        var_x[invalid_x] = np.nan
+        var_s2[invalid_s2] = np.nan
+        return var_x[()], var_s2[()]
+
+    def _process_parameters_pdf(self, x, s2, mu, lmbda, a, b):
+        args = np.broadcast_arrays(x, s2, mu, lmbda, a, b)
+        dtype = np.result_type(1.0, *(arg.dtype for arg in args))
+        args = [arg.astype(dtype, copy=False) for arg in args]
+        x, s2, mu, lmbda, a, b = args
+        invalid = ~((lmbda > 0) & (a > 0) & (b > 0))
+        return invalid, args
+
+    def _process_shapes(self, mu, lmbda, a, b):
+        args = np.broadcast_arrays(mu, lmbda, a, b)
+        dtype = np.result_type(1.0, *(arg.dtype for arg in args))
+        args = [arg.astype(dtype, copy=False) for arg in args]
+        mu, lmbda, a, b = args
+        invalid = ~((lmbda > 0) & (a > 0) & (b > 0))
+        return invalid, args
+
+    def __call__(self, mu=0, lmbda=1, a=1, b=1, seed=None):
+        return normal_inverse_gamma_frozen(mu, lmbda, a, b, seed=seed)
+
+
+normal_inverse_gamma = normal_inverse_gamma_gen()
+
+
+class normal_inverse_gamma_frozen(multi_rv_frozen):
+
+    def __init__(self, mu=0, lmbda=1, a=1, b=1, seed=None):
+        self._dist = normal_inverse_gamma_gen(seed)
+        self._shapes = mu, lmbda, a, b
+
+    def logpdf(self, x, s2):
+        return self._dist.logpdf(x, s2, *self._shapes)
+
+    def pdf(self, x, s2):
+        return self._dist.pdf(x, s2, *self._shapes)
+
+    def mean(self):
+        return self._dist.mean(*self._shapes)
+
+    def var(self):
+        return self._dist.var(*self._shapes)
+
+    def rvs(self, size=None, random_state=None):
+        return self._dist.rvs(*self._shapes, size=size, random_state=random_state)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# normal_inverse_gamma_gen and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'mean', 'var', 'rvs']:
+    method = normal_inverse_gamma_gen.__dict__[name]
+    method_frozen = normal_inverse_gamma_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(method.__doc__,
+                                             mvn_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_params)

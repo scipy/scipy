@@ -85,7 +85,7 @@ fortranobject_c = incdir_f2py / 'fortranobject.c'
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.13.1')
+pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -236,7 +236,7 @@ else
   cblas = []
 endif
 
-if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
+if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name == 'scipy-openblas'
   # For these libraries we know that they contain LAPACK, and it's desirable to
   # use that - no need to run the full detection twice.
   lapack = blas

@@ -10,10 +10,25 @@ from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
 from scipy.special import logsumexp, softmax
+from scipy.special._logsumexp import _wrap_radians
 
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
+
+
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('jax.numpy',
+                              reason="JAX arrays do not support item assignment")
+def test_wrap_radians(xp):
+    x = xp.asarray([-math.pi-1, -math.pi, -1, -1e-300,
+                    0, 1e-300, 1, math.pi, math.pi+1])
+    ref = xp.asarray([math.pi-1, math.pi, -1, -1e-300,
+                    0, 1e-300, 1, math.pi, -math.pi+1])
+    res = _wrap_radians(x, xp)
+    xp_assert_close(res, ref, atol=0)
+
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
@@ -228,6 +243,19 @@ class TestLogSumExp:
         xp_assert_less(xp.abs(xp.imag(sgn)), max)
         xp_assert_close(out, xp.real(xp.log(ref)))
         xp_assert_close(sgn, ref/xp.abs(ref))
+
+    def test_gh21709_small_imaginary(self, xp):
+        # Test that `logsumexp` does not lose relative precision of
+        # small imaginary components
+        x = xp.asarray([0, 0.+2.2204460492503132e-17j])
+        res = logsumexp(x)
+        # from mpmath import mp
+        # mp.dps = 100
+        # x, y = mp.mpc(0), mp.mpc('0', '2.2204460492503132e-17')
+        # ref = complex(mp.log(mp.exp(x) + mp.exp(y)))
+        ref = xp.asarray(0.6931471805599453+1.1102230246251566e-17j)
+        xp_assert_close(xp.real(res), xp.real(ref))
+        xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
 
 class TestSoftmax:

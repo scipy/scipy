@@ -81,7 +81,7 @@ jobs:
         # so easier to separate out here.
         - [ubuntu-22.04, manylinux, x86_64, "", ""]
         - [ubuntu-22.04, musllinux, x86_64, "", ""]
-        - [macos-12, macosx, x86_64, openblas, "10.13"]
+        - [macos-13, macosx, x86_64, openblas, "10.13"]
         - [macos-13, macosx, x86_64, accelerate, "14.0"]
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]
@@ -134,8 +134,8 @@ jobs:
             LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
           fi
           if [[ ${{ matrix.buildplat[4] }} == '10.13' ]]; then
-            # 20240621 macos-12 images span Xcode 13.1-->14.2
-            XCODE_VER='13.4.1'
+            # 20241017 macos-13 images span Xcode 14.1-->15.2
+            XCODE_VER='14.1'
           else
             XCODE_VER='15.2'
           fi
