@@ -7175,10 +7175,11 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
     """Perform Pearson's chi-squared test.
 
-    Pearson's chi-squared test [1]_ assesses the null hypothesis that the observed
-    frequencies (counts) are a sample from a multinomial distribution; that is,
-    they are the counts after *N* total observations are taken from a categorical
-    distribution.
+    Pearson's chi-squared test [1]_ is a goodness-of-fit test for a multinomial
+    distribution with given probabilities; that is, it assesses the null hypothesis
+    that the observed frequencies (counts) are obtained by independent
+    sampling of *N* observations from a categorical distribution with given
+    expected frequencies.
 
     Parameters
     ----------
