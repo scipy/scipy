@@ -90,14 +90,14 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> import numpy as np
     >>> from scipy.stats import ortho_group
-    >>> from scipy.sparse import csc_matrix, diags
+    >>> from scipy.sparse import csc_array, diags_array
     >>> from scipy.sparse.linalg import svds
     >>> rng = np.random.default_rng()
-    >>> orthogonal = csc_matrix(ortho_group.rvs(10, random_state=rng))
+    >>> orthogonal = csc_array(ortho_group.rvs(10, random_state=rng))
     >>> s = [0.0001, 0.001, 3, 4, 5]  # singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
-    >>> A = u @ diags(s) @ vT
+    >>> A = u @ diags_array(s) @ vT
 
     With only three singular values/vectors, the SVD approximates the original
     matrix.
@@ -220,14 +220,14 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> import numpy as np
     >>> from scipy.stats import ortho_group
-    >>> from scipy.sparse import csc_matrix, diags
+    >>> from scipy.sparse import csc_array, diags_array
     >>> from scipy.sparse.linalg import svds
     >>> rng = np.random.default_rng()
-    >>> orthogonal = csc_matrix(ortho_group.rvs(10, random_state=rng))
+    >>> orthogonal = csc_array(ortho_group.rvs(10, random_state=rng))
     >>> s = [0.0001, 0.001, 3, 4, 5]  # singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
-    >>> A = u @ diags(s) @ vT
+    >>> A = u @ diags_array(s) @ vT
 
     With only three singular values/vectors, the SVD approximates the original
     matrix.
@@ -357,14 +357,14 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> import numpy as np
     >>> from scipy.stats import ortho_group
-    >>> from scipy.sparse import csc_matrix, diags
+    >>> from scipy.sparse import csc_array, diags_array
     >>> from scipy.sparse.linalg import svds
     >>> rng = np.random.default_rng()
-    >>> orthogonal = csc_matrix(ortho_group.rvs(10, random_state=rng))
+    >>> orthogonal = csc_array(ortho_group.rvs(10, random_state=rng))
     >>> s = [0.0001, 0.001, 3, 4, 5]  # singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
-    >>> A = u @ diags(s) @ vT
+    >>> A = u @ diags_array(s) @ vT
 
     With only three singular values/vectors, the SVD approximates the original
     matrix.

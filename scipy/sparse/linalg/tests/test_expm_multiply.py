@@ -143,13 +143,13 @@ class TestExpmActionSimple:
         assert_allclose(observed, expected)
 
     def test_sparse_expm_multiply(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = 40
         k = 3
         nsamples = 10
         for i in range(nsamples):
-            A = scipy.sparse.rand(n, n, density=0.05)
-            B = np.random.randn(n, k)
+            A = scipy.sparse.random_array((n, n), density=0.05, random_state=rng)
+            B = rng.standard_normal((n, k))
             observed = expm_multiply(A, B)
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
@@ -180,16 +180,16 @@ class TestExpmActionInterval:
 
     @pytest.mark.fail_slow(20)
     def test_sparse_expm_multiply_interval(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         start = 0.1
         stop = 3.2
         n = 40
         k = 3
         endpoint = True
         for num in (14, 13, 2):
-            A = scipy.sparse.rand(n, n, density=0.05)
-            B = np.random.randn(n, k)
-            v = np.random.randn(n)
+            A = scipy.sparse.random_array((n, n), density=0.05, random_state=rng)
+            B = rng.standard_normal((n, k))
+            v = rng.standard_normal((n,))
             for target in (B, v):
                 X = expm_multiply(A, target, start=start, stop=stop,
                                   num=num, endpoint=endpoint)
@@ -249,21 +249,21 @@ class TestExpmActionInterval:
 
     def test_sparse_expm_multiply_interval_dtypes(self):
         # Test A & B int
-        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
         B = np.ones(5, dtype=int)
-        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
+        Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
 
         # Test A complex, B int
-        A = scipy.sparse.diags(-1j*np.arange(5),format='csr', dtype=complex)
+        A = scipy.sparse.diags_array(-1j*np.arange(5),format='csr', dtype=complex)
         B = np.ones(5, dtype=int)
-        Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)),format='csr')
+        Aexpm = scipy.sparse.diags_array(np.exp(-1j*np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
 
         # Test A int, B complex
-        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
         B = np.full(5, 1j, dtype=complex)
-        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
+        Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
 
     def test_expm_multiply_interval_status_0(self):
