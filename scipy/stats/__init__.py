@@ -465,9 +465,9 @@ Random Variables
 .. autosummary::
    :toctree: generated/
 
-   ContinuousDistribution
    Normal
    Mixture
+   make_distribution
 
 Quasi-Monte Carlo
 =================
@@ -637,9 +637,8 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
-from ._distribution_infrastructure import Mixture
+from ._distribution_infrastructure import Mixture, make_distribution
 from ._new_distributions import Normal
-from ._distribution_infrastructure import ContinuousDistribution
 from ._mgc import multiscale_graphcorr
 
 

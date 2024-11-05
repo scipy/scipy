@@ -916,8 +916,10 @@ class TestAttributes:
         Y.mu[0] = 10
         assert Y.mu[0] == 2
 
+
+class TestMakeDistribution:
     @pytest.mark.parametrize('i, distdata', enumerate(distcont))
-    def test_from_rv_continuous(self, i, distdata):
+    def test_make_distribution(self, i, distdata):
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
@@ -953,7 +955,7 @@ class TestAttributes:
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
         rng = np.random.default_rng(7548723590230982)
-        CustomDistribution = stats.ContinuousDistribution.from_rv_continuous(dist)
+        CustomDistribution = stats.make_distribution(dist)
         X = CustomDistribution(**params)
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
@@ -988,6 +990,9 @@ class TestAttributes:
                 if distname not in skip_standardized:
                     assert_allclose(X.moment(order, kind='standardized'),
                                     Y.stats('mvsk'[order-1]), atol=atol)
+            seed = 845298245687345
+            assert_allclose(X.sample(shape=10, rng=seed),
+                            Y.rvs(size=10, random_state=np.random.default_rng(seed)))
 
 
 class TestTransforms:
