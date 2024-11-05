@@ -223,25 +223,6 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     return _asarray(x, copy=True, xp=xp)
 
 
-def xp_acosh(x: Array, *, xp: ModuleType | None = None):
-    """A shim for np.accosh on numpy < 2 and xp.acosh otherwise."""
-    if xp is None:
-        xp = array_namespace(x)
-    if (xp == np and np.__version__ < '2') or is_cupy(xp):
-        return xp.arccosh(x)
-    else:
-        return xp.acosh(xp.asarray(x))
-
-
-def xp_acos(x: Array, *, xp: ModuleType | None = None):
-    """A shim for np.accos on numpy < 2 and xp.acos otherwise."""
-    if xp is None:
-        xp = array_namespace(x)
-    if (xp == np and np.__version__ < '2') or is_cupy(xp):
-        return xp.arccos(x)
-    else:
-        return xp.acos(xp.asarray(x))
-
 def xp_sinc(x: Array, *, xp=None):
     """`xp.sinc` replacement. Looking at you, array_api_strict.
     """
