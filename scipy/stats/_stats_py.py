@@ -7072,6 +7072,10 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
 
     """
+    return _power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis, lambda_=lambda_)
+
+
+def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     xp = array_namespace(f_obs)
     default_float = xp.asarray(1.).dtype
 
@@ -7110,21 +7114,23 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = _m_broadcast_to(f_obs_float, bshape, xp=xp)
         f_exp = _m_broadcast_to(f_exp, bshape, xp=xp)
-        dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
-        rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
-        with np.errstate(invalid='ignore'):
-            f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
-            f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
-            relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
-                             xp.minimum(f_obs_sum, f_exp_sum))
-            diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
-        if diff_gt_tol:
-            msg = (f"For each axis slice, the sum of the observed "
-                   f"frequencies must agree with the sum of the "
-                   f"expected frequencies to a relative tolerance "
-                   f"of {rtol}, but the percent differences are:\n"
-                   f"{relative_diff}")
-            raise ValueError(msg)
+
+        if sum_check:
+            dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
+            rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
+            with np.errstate(invalid='ignore'):
+                f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
+                f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
+                relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
+                                 xp.minimum(f_obs_sum, f_exp_sum))
+                diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
+            if diff_gt_tol:
+                msg = (f"For each axis slice, the sum of the observed "
+                       f"frequencies must agree with the sum of the "
+                       f"expected frequencies to a relative tolerance "
+                       f"of {rtol}, but the percent differences are:\n"
+                       f"{relative_diff}")
+                raise ValueError(msg)
 
     else:
         # Ignore 'invalid' errors so the edge case of a data set with length 0
@@ -7164,29 +7170,36 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     return Power_divergenceResult(stat, pvalue)
 
 
-def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
-    """Calculate a one-way chi-square test.
+def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
+    """Perform Pearson's chi-squared test.
 
-    The chi-square test tests the null hypothesis that the categorical data
-    has the given frequencies.
+    Pearson's chi-squared test [1]_ is a goodness-of-fit test for a multinomial
+    distribution with given probabilities; that is, it assesses the null hypothesis
+    that the observed frequencies (counts) are obtained by independent
+    sampling of *N* observations from a categorical distribution with given
+    expected frequencies.
 
     Parameters
     ----------
     f_obs : array_like
         Observed frequencies in each category.
     f_exp : array_like, optional
-        Expected frequencies in each category.  By default the categories are
+        Expected frequencies in each category. By default, the categories are
         assumed to be equally likely.
     ddof : int, optional
         "Delta degrees of freedom": adjustment to the degrees of freedom
         for the p-value.  The p-value is computed using a chi-squared
-        distribution with ``k - 1 - ddof`` degrees of freedom, where `k`
-        is the number of observed frequencies.  The default value of `ddof`
-        is 0.
+        distribution with ``k - 1 - ddof`` degrees of freedom, where ``k``
+        is the number of categories.  The default value of `ddof` is 0.
     axis : int or None, optional
         The axis of the broadcast result of `f_obs` and `f_exp` along which to
         apply the test.  If axis is None, all values in `f_obs` are treated
         as a single data set.  Default is 0.
+    sum_check : bool, optional
+        Whether to perform a check that ``sum(f_obs) - sum(f_exp) == 0``. If True,
+        (default) raise an error when the relative difference exceeds the square root
+        of the precision of the data type. See Notes for rationale and possible
+        exceptions.
 
     Returns
     -------
@@ -7212,14 +7225,10 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5. According to [3]_, the
-    total number of samples is recommended to be greater than 13,
+    and expected frequencies should be at least 5. According to [2]_, the
+    total number of observations is recommended to be greater than 13,
     otherwise exact tests (such as Barnard's Exact test) should be used
     because they do not overreject.
-
-    Also, the sum of the observed and expected frequencies must be the same
-    for the test to be valid; `chisquare` raises an error if the sums do not
-    agree within a relative tolerance of ``1e-8``.
 
     The default degrees of freedom, k-1, are for the case when no parameters
     of the distribution are estimated. If p parameters are estimated by
@@ -7229,13 +7238,23 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     the asymptotic distribution is not chi-square, in which case this test
     is not appropriate.
 
+    For Pearson's chi-squared test, the total observed and expected counts must match
+    for the p-value to accurately reflect the probability of observing such an extreme
+    value of the statistic under the null hypothesis.
+    This function may be used to perform other statistical tests that do not require
+    the total counts to be equal. For instance, to test the null hypothesis that
+    ``f_obs[i]`` is Poisson-distributed with expectation ``f_exp[i]``, set ``ddof=-1``
+    and ``sum_check=False``. This test follows from the fact that a Poisson random
+    variable with mean and variance ``f_exp[i]`` is approximately normal with the
+    same mean and variance; the chi-squared statistic standardizes, squares, and sums
+    the observations; and the sum of ``n`` squared standard normal variables follows
+    the chi-squared distribution with ``n`` degrees of freedom.
+
     References
     ----------
-    .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
-           Statistics". Chapter 8.
-           https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
-    .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
-    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable
+    .. [1] "Pearson's chi-squared test".
+           *Wikipedia*. https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+    .. [2] Pearson, Karl. "On the criterion that a given system of deviations from the probable
            in the case of a correlated system of variables is such that it can be reasonably
            supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
@@ -7295,8 +7314,8 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     For a more detailed example, see :ref:`hypothesis_chisquare`.
     """  # noqa: E501
-    return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
-                            lambda_="pearson")
+    return _power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
+                             lambda_="pearson", sum_check=sum_check)
 
 
 KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
