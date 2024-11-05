@@ -532,7 +532,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
     >>> rng = np.random.default_rng(767585560716548)
     >>> def optimizer(fun, bounds, *, integrality):
     ...     return differential_evolution(fun, bounds, strategy='best2bin',
-    ...                                   seed=rng, integrality=integrality)
+    ...                                   rng=rng, integrality=integrality)
     >>> bounds = [(0, 30), (0, 1)]
     >>> res4 = stats.fit(dist, data, bounds, optimizer=optimizer)
     >>> res4.params
