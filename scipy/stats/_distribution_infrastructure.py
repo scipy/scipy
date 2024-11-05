@@ -3311,7 +3311,7 @@ def make_distribution(dist):
         parameters.append(param)
         names.append(shape_info.name)
 
-    _x_support = _RealDomain(endpoints=support)
+    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
     class CustomDistribution(ContinuousDistribution):
