@@ -780,7 +780,7 @@ def is_sptriangular(A):
     if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok", "lil")):
         warn('is_sptriangular needs sparse and not BSR format. Converting to CSR.',
              SparseEfficiencyWarning, stacklevel=2)
-        A = csr_matrix(A)
+        A = csr_array(A)
 
     # bsr and lil are better off converting to csr
     if A.format == "dia":
@@ -852,7 +852,7 @@ def spbandwidth(A):
     if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok")):
         warn('spbandwidth needs sparse format not LIL and BSR. Converting to CSR.',
              SparseEfficiencyWarning, stacklevel=2)
-        A = csr_matrix(A)
+        A = csr_array(A)
 
     # bsr and lil are better off converting to csr
     if A.format == "dia":
