@@ -1103,7 +1103,6 @@ def _cdf2_input_validation(f):
         if func_name in {'_cdf2', '_ccdf2'}:
             res = np.clip(res, 0., 1.)
         else:
-            res = res.real  # exp(res) > 0
             res = np.clip(res, None, 0.)  # exp(res) < 1
 
         # Transform the result to account for swapped argument order
@@ -2299,7 +2298,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     @_cdf2_input_validation
     def _logcdf2(self, x, y, *, method):
-        return self._logcdf2_dispatch(x, y, method=method, **self._parameters)
+        out = self._logcdf2_dispatch(x, y, method=method, **self._parameters)
+        return (out + 0j) if not np.issubdtype(out.dtype, np.complexfloating) else out
 
     @_dispatch
     def _logcdf2_dispatch(self, x, y, *, method=None, **params):
@@ -2335,7 +2335,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         log_tail = np.logaddexp(logcdf_x, logccdf_y)[case_central]
         log_mass[case_central] = _log1mexp(log_tail)
         log_mass[flip_sign] += np.pi * 1j
-        return np.real_if_close(log_mass[()])
+        return log_mass[()]
 
     def _logcdf2_logexp(self, x, y, **params):
         expres = self._cdf2_dispatch(x, y, **params)
