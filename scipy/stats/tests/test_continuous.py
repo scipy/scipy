@@ -267,6 +267,28 @@ class TestDistributions:
         assert x1[0] != x2[0]
         assert_allclose(func(x1[0]), p[0], rtol=X.tol)
 
+    def test_subtraction_safe(self):
+        X = stats.Normal()
+        X.tol = 1e-12
+
+        # Regular subtraction is fine in either tail (and of course, across tails)
+        x = [-11, -10, 10, 11]
+        y = [-10, -11, 11, 10]
+        p0 = X.cdf(x, y, method='quadrature')
+        p1 = X.cdf(x, y, method='subtraction_safe')
+        p2 = X.cdf(x, y, method='subtraction')
+        assert_equal(p2, p1)
+        assert_allclose(p1, p0, rtol=X.tol)
+
+        # Safe subtraction is needed in special cases
+        x = np.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
+        y = np.asarray([-1e-21, -1e-20, 1e-21, 1e-20, 1e-20])
+        p0 = X.pdf(0)*(y-x)
+        p1 = X.cdf(x, y, method='subtraction_safe')
+        p2 = X.cdf(x, y, method='subtraction')
+        assert_equal(p2, 0)
+        assert_allclose(p1, p0, rtol=X.tol)
+
 
 def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
     full_shape = sample_shape + result_shape

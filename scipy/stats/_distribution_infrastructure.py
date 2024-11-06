@@ -2395,9 +2395,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         elif (self._overrides('_logcdf_formula')
               or self._overrides('_logccdf_formula')):
             method = self._cdf2_logexp
-        elif _isnull(self.tol) and (self._overrides('_cdf_formula')
-                                    or self._overrides('_ccdf_formula')):
-            method = self._cdf2_subtraction
+        elif self._overrides('_cdf_formula') or self._overrides('_ccdf_formula'):
+            method = self._cdf2_subtraction_safe
         else:
             method = self._cdf2_quadrature
         return method
@@ -2416,8 +2415,32 @@ class ContinuousDistribution(_ProbabilityDistribution):
         cdf_y = self._cdf_dispatch(y, **params)
         ccdf_x = self._ccdf_dispatch(x, **params)
         ccdf_y = self._ccdf_dispatch(y, **params)
-        i = (cdf_x < 0.5) & (cdf_y < 0.5)
-        return np.where(i, cdf_y-cdf_x, ccdf_x-ccdf_y)
+        i = (ccdf_x < 0.5) & (ccdf_y < 0.5)
+        return np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
+
+    def _cdf2_subtraction_safe(self, x, y, **params):
+        cdf_x = self._cdf_dispatch(x, **params)
+        cdf_y = self._cdf_dispatch(y, **params)
+        ccdf_x = self._ccdf_dispatch(x, **params)
+        ccdf_y = self._ccdf_dispatch(y, **params)
+        i = (ccdf_x < 0.5) & (ccdf_y < 0.5)
+        out = np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
+
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+
+        cdf_max = np.maximum(cdf_x, cdf_y)
+        ccdf_max = np.maximum(ccdf_x, ccdf_y)
+        spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
+
+        with np.errstate(divide='ignore'):
+            mask = tol < abs(spacing/out)
+
+        if np.any(mask):
+            params_mask = {key:val[mask] for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._cdf2_quadrature(x[mask], y[mask], *params_mask)
+        return out[()]
 
     def _cdf2_quadrature(self, x, y, **params):
         return self._quadrature(self._pdf_dispatch, limits=(x, y), params=params)
@@ -2451,8 +2474,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         out = self._cdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol < eps/out
-        print(tol, eps, out, mask)
+        with np.errstate(divide='ignore'):
+             mask = tol < eps/out
         if np.any(mask):
             params_mask = {key:val[mask] for key, val in params.items()}
             out = np.asarray(out)
@@ -2578,7 +2601,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         out = self._ccdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol < eps/out
+        with np.errstate(divide='ignore'):
+            mask = tol < eps/out
         if np.any(mask):
             params_mask = {key:val[mask] for key, val in params.items()}
             out = np.asarray(out)
