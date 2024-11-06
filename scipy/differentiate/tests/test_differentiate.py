@@ -565,7 +565,7 @@ class TestJacobian(JacobianHessianTest):
         m, n = func.mn
         x = rng.random(size=(m,) + size)
         res = jacobian(lambda x: func(x , xp), xp.asarray(x, dtype=one.dtype))
-        ref = xp.asarray(func.ref(x), dtype=one.dtype)
+        ref = xp.asarray(np.asarray(func.ref(x)), dtype=one.dtype)
         xp_assert_close(res.df, ref, atol=1e-10)
 
     def test_attrs(self, xp):
@@ -599,10 +599,11 @@ class TestJacobian(JacobianHessianTest):
             xp_assert_close(res[attr], ref[attr], rtol=1.5e-14)
 
     def test_step_direction_size(self, xp):
+        one = xp.asarray(1.)
         # Check that `step_direction` and `initial_step` can be used to ensure that
         # the usable domain of a function is respected.
         rng = np.random.default_rng(23892589425245)
-        b = xp.asarray(rng.random(3), dtype=xp.asarray(1.).dtype)
+        b = rng.random(3)
 
         def f(x):
             x[0, x[0] < b[0]] = xp.nan
@@ -614,8 +615,9 @@ class TestJacobian(JacobianHessianTest):
         dir = [1, -1, 0]
         h0 = [0.25, 0.1, 0.5]
         atol = {'atol': 1e-8}
-        res = jacobian(f, b, initial_step=h0, step_direction=dir, tolerances=atol)
-        ref = TestJacobian.df5(b, xp)
+        res = jacobian(f, xp.asarray(b, dtype=one.dtype), initial_step=h0,
+                       step_direction=dir, tolerances=atol)
+        ref = xp.asarray(TestJacobian.df5(b), dtype=one.dtype)
         xp_assert_close(res.df, ref, atol=1e-8)
         assert xp.all(xp.isfinite(ref))
 
