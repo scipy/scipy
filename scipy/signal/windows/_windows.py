@@ -3,11 +3,11 @@
 import math
 import operator
 import warnings
-
+from scipy._lib import doccer
 
 from scipy import linalg, special, fft as sp_fft
 from scipy._lib.array_api_compat import numpy as np_compat
-from scipy._lib._array_api import xp_sinc, array_namespace
+from scipy._lib._array_api import xp_sinc, array_namespace, xp_device
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',
@@ -47,14 +47,6 @@ def _namespace(xp):
     support for numpy 1.x and cupy 13.x
     """
     return np_compat if xp is None else array_namespace(xp.empty(0))
-
-
-def _device(a, xp):
-    """A shim for a.device / xp.device"""
-    try:
-        return a.device
-    except AttributeError:
-        return xp.device(a)
 
 
 def _general_cosine_impl(M, a, xp, device, sym=True):
@@ -148,7 +140,7 @@ def general_cosine(M, a, sym=True):
     """
     xp = array_namespace(a)
     a = xp.asarray(a)
-    device = _device(a, xp)
+    device = xp_device(a)
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
@@ -165,11 +157,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
         is returned. An exception is thrown when it is negative.
     sym : bool, optional
         Whether the window is symmetric. (Has no effect for boxcar.)
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -225,11 +213,7 @@ def triang(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -297,11 +281,7 @@ def parzen(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -367,11 +347,7 @@ def bohman(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -437,11 +413,7 @@ def blackman(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -509,7 +481,7 @@ def blackman(M, sym=True, *, xp=None, device=None):
     # Docstring adapted from NumPy's blackman function
     xp = _namespace(xp)
     a = xp.asarray([0.42, 0.50, 0.08], dtype=xp.float64, device=device)
-    device = _device(a, xp)
+    device = xp_device(a)
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
@@ -527,11 +499,7 @@ def nuttall(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -579,7 +547,7 @@ def nuttall(M, sym=True, *, xp=None, device=None):
     a = xp.asarray(
         [0.3635819, 0.4891775, 0.1365995, 0.0106411], dtype=xp.float64, device=device
     )
-    device = _device(a, xp)
+    device = xp_device(a)
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
@@ -595,11 +563,7 @@ def blackmanharris(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -637,7 +601,7 @@ def blackmanharris(M, sym=True, *, xp=None, device=None):
     a = xp.asarray(
         [0.35875, 0.48829, 0.14128, 0.01168], dtype=xp.float64, device=device
     )
-    device = _device(a, xp)
+    device = xp_device(a)
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
@@ -653,11 +617,7 @@ def flattop(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -710,7 +670,7 @@ def flattop(M, sym=True, *, xp=None, device=None):
         [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368],
         dtype=xp.float64, device=device
     )
-    device = _device(a, xp)
+    device = xp_device(a)
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
@@ -732,11 +692,7 @@ def bartlett(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -838,11 +794,7 @@ def hann(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -927,11 +879,7 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1013,11 +961,7 @@ def barthann(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1081,11 +1025,7 @@ def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1157,7 +1097,7 @@ def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     """
     xp = _namespace(xp)
     a = xp.asarray([alpha, 1. - alpha], dtype=xp.float64, device=device)
-    device = _device(a, xp)
+    device = xp_device(a)
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
@@ -1176,11 +1116,7 @@ def hamming(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1262,11 +1198,7 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1388,11 +1320,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
         the other window functions and to be callable by `get_window`.
         When True (default), generates a symmetric window, for use in filter
         design.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1478,11 +1406,7 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1552,11 +1476,7 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1628,11 +1548,7 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1763,11 +1679,7 @@ def cosine(M, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1838,11 +1750,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -1947,11 +1855,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -2072,11 +1976,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     return_ratios : bool, optional
         If True, also return the concentration ratios in addition to the
         windows.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -2134,12 +2034,12 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     ...     for win, c in ((win_dpss, 'k'), (win_kaiser, 'r')):
     ...         win /= win.sum()
     ...         axes[ai, 0].plot(win, color=c, lw=1.)
-    ...         axes[ai, 0].set(xlim=[0, M-1], title=r'$\\alpha$ = %s' % alpha,
+    ...         axes[ai, 0].set(xlim=[0, M-1], title=rf'$\\alpha$ = {alpha}',
     ...                         ylabel='Amplitude')
     ...         w, h = freqz(win)
     ...         axes[ai, 1].plot(w, 20 * np.log10(np.abs(h)), color=c, lw=1.)
     ...         axes[ai, 1].set(xlim=[0, np.pi],
-    ...                         title=r'$\\beta$ = %0.2f' % beta,
+    ...                         title=rf'$\\beta$ = {beta:0.2f}',
     ...                         ylabel='Magnitude (dB)')
     >>> for ax in axes.ravel():
     ...     ax.grid(True)
@@ -2156,8 +2056,8 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     >>> fig, ax = plt.subplots(1)
     >>> ax.plot(win.T, linewidth=1.)
     >>> ax.set(xlim=[0, M-1], ylim=[-0.1, 0.1], xlabel='Samples',
-    ...        title='DPSS, M=%d, NW=%0.1f' % (M, NW))
-    >>> ax.legend(['win[%d] (%0.4f)' % (ii, ratio)
+    ...        title=f'DPSS, {M:d}, {NW:0.1f}')
+    >>> ax.legend([f'win[{ii}] ({ratio:0.4f})'
     ...            for ii, ratio in enumerate(eigvals)])
     >>> fig.tight_layout()
     >>> plt.show()
@@ -2319,11 +2219,7 @@ def lanczos(M, *, sym=True, xp=None, device=None):
         When True (default), generates a symmetric window, for use in filter
         design.
         When False, generates a periodic window, for use in spectral analysis.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -2482,11 +2378,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
         `ifftshift` and be multiplied by the result of an FFT (see also
         :func:`~scipy.fft.fftfreq`).
         If False, create a "symmetric" window, for use in filter design.
-    xp : module, optional
-        Optional array API namespace. defaults to NumPy.
-    device: any
-        optional device specification for output. Should match one of the
-        supported device specification in ``xp``.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -2594,3 +2486,24 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
         return winfunc(*params, sym=sym)
     else:
         return winfunc(*params, sym=sym, xp=xp, device=device)
+
+
+########## complete the docstrings, on import
+_xp_device_snippet = {'xp_device_snippet':
+"""\
+xp : array_namespace, optional
+    Optional array namespace.
+    Should be compatible with the array API standard, or supported by array-api-compat.
+    Default: ``numpy``
+device: any
+    optional device specification for output. Should match one of the
+    supported device specification in ``xp``.
+"""
+}
+
+
+_names = [x for x in __all__ if x != 'general_cosine']
+for name in _names:
+    window = vars()[name]
+    window.__doc__ = doccer.docformat(window.__doc__, _xp_device_snippet)
+
