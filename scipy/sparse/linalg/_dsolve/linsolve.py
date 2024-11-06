@@ -3,7 +3,8 @@ from warnings import warn, catch_warnings, simplefilter
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse,
-                          SparseEfficiencyWarning, csc_array, eye_array, diags_array)
+from scipy.sparse import (issparse, SparseEfficiencyWarning,
+                          csr_array, csc_array, eye_array, diags_array)
 from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
 from scipy.linalg import LinAlgError
 import copy
@@ -777,13 +778,26 @@ def is_sptriangular(A):
     >>> scipy.sparse.linalg.is_sptriangular(D)
     (True, True)
     """
-    if not (issparse(A) and A.format in ("csc", "csr")):
-        warn('CSC or CSR matrix format is required. Converting to CSC matrix.',
+    if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok", "lil")):
+        warn('is_sptriangular needs sparse and not BSR format. Converting to CSR.',
              SparseEfficiencyWarning, stacklevel=2)
-        A = csc_matrix(A)
+        A = csr_matrix(A)
 
-    N = len(A.indptr) - 1
+    # bsr and lil are better off converting to csr
+    if A.format == "dia":
+        return A.offsets.max() <= 0, A.offsets.min() >= 0
+    elif A.format == "coo":
+        rows, cols = A.coords
+        return (cols <= rows).all(), (cols >= rows).all()
+    elif A.format == "dok":
+        return all(c <= r for r, c in A.keys()), all(c >= r for r, c in A.keys())
+    elif A.format == "lil":
+        lower = all(col <= row for row, cols in enumerate(A.rows) for col in cols)
+        upper = all(col >= row for row, cols in enumerate(A.rows) for col in cols)
+        return lower, upper
+    # format in ("csc", "csr")
     indptr, indices = A.indptr, A.indices
+    N = len(indptr) - 1
 
     lower, upper = True, True
     # check middle, 1st, last col (treat as CSC and switch at end if CSR)
@@ -836,15 +850,23 @@ def spbandwidth(A):
     >>> scipy.sparse.linalg.spbandwidth(D)
     (0, 0)
     """
-    if not (issparse(A) and A.format in ("csc", "csr")):
-        warn('CSC or CSR matrix format is required. Converting to CSC matrix.',
+    if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok")):
+        warn('spbandwidth needs sparse format not LIL and BSR. Converting to CSR.',
              SparseEfficiencyWarning, stacklevel=2)
-        A = csc_matrix(A)
+        A = csr_matrix(A)
 
-    indptr, indices = A.indptr, A.indices
-    N = len(indptr) - 1
-    gap = np.repeat(np.arange(N), np.diff(indptr)) - indices
-    below, above = max(-np.min(gap), 0), max(np.max(gap), 0)
-    if A.format == 'csr':
-        return above, below
-    return below, above
+    # bsr and lil are better off converting to csr
+    if A.format == "dia":
+        return max(0, -A.offsets.min().item()), max(0, A.offsets.max().item())
+    if A.format in ("csc", "csr"):
+        indptr, indices = A.indptr, A.indices
+        N = len(indptr) - 1
+        gap = np.repeat(np.arange(N), np.diff(indptr)) - indices
+        if A.format == 'csr':
+            gap = -gap
+    elif A.format == "coo":
+        gap = A.coords[1] - A.coords[0]
+    elif A.format == "dok":
+        gap = [(c - r) for r, c in A.keys()] + [0]
+        return -min(gap), max(gap)
+    return max(-np.min(gap).item(), 0), max(np.max(gap).item(), 0)
