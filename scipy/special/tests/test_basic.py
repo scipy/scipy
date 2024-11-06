@@ -2718,6 +2718,24 @@ class TestGamma:
         assert_(np.isinf(special.gamma(-1)))
         assert_equal(special.rgamma(-1), 0)
 
+    @pytest.mark.parametrize(
+        "x,expected",
+        [
+            # infinities
+            ([-np.inf, np.inf], [np.nan, np.inf]),
+            # zeros
+            ([-0.0, 0.0], [-np.inf, np.inf]),
+            # small poles
+            (range(-32, 0), np.full(32, np.nan)),
+            # medium sized poles
+            (range(-1024, -32, 99), np.full(11, np.nan)),
+            # large pole
+            ([-4.141512231792294e+16], [np.nan]),
+        ]
+    )
+    def test_poles(self, x, expected):
+        assert_array_equal(special.gamma(x), expected)
+
 
 class TestHankel:
 
