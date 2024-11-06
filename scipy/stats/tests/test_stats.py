@@ -38,7 +38,7 @@ from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWar
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _moment,
-                                   LinregressResult, _xp_mean, _xp_var)
+                                   LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, xp_copy, is_numpy,
@@ -4327,7 +4327,7 @@ class TestPowerDivergence:
 
 @array_api_compatible
 class TestChisquare:
-    def test_gh_chisquare_12282(self, xp):
+    def test_chisquare_12282a(self, xp):
         # Currently `chisquare` is implemented via power_divergence
         # in case that ever changes, perform a basic test like
         # test_power_divergence_gh_12282
@@ -4335,6 +4335,25 @@ class TestChisquare:
             f_obs = xp.asarray([10., 20.])
             f_exp = xp.asarray([30., 60.])
             stats.chisquare(f_obs=f_obs, f_exp=f_exp)
+
+    def test_chisquare_12282b(self, xp):
+        # Check that users can now disable the sum check tested in
+        # test_chisquare_12282a. Also, confirm that statistic and p-value
+        # are as expected.
+        rng = np.random.default_rng(3843874358728234)
+        n = 10
+        lam = rng.uniform(1000, 2000, size=n)
+        x = rng.poisson(lam)
+        lam = xp.asarray(lam)
+        x = xp.asarray(x, dtype=lam.dtype)
+        res = stats.chisquare(f_obs=x, f_exp=lam, ddof=-1, sum_check=False)
+        # Poisson is approximately normal with mean and variance lam
+        z = (x - lam) / xp.sqrt(lam)
+        statistic = xp.sum(z**2)
+        xp_assert_close(res.statistic, statistic)
+        # Sum of `n` squared standard normal variables follows chi2 with `n` DoF
+        X2 = _SimpleChi2(xp.asarray(n, dtype=statistic.dtype))
+        xp_assert_close(res.pvalue, X2.sf(statistic))
 
     @pytest.mark.parametrize("n, dtype", [(200, 'uint8'), (1000000, 'int32')])
     def test_chiquare_data_types_attributes(self, n, dtype, xp):

@@ -3044,12 +3044,12 @@ def factorial(n, exact=False):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if n is None or np.isnan(n):
-            return np.nan
-        elif not _is_subdtype(type(n), ["i", "f"]):
+        if not _is_subdtype(type(n), ["i", "f", type(None)]):
             raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
+        elif n is None or np.isnan(n):
+            return np.float64("nan")
         elif n < 0:
-            return 0
+            return 0 if exact else np.float64(0)
         elif exact and _is_subdtype(type(n), "i"):
             return math.factorial(n)
         elif exact:
@@ -3060,9 +3060,7 @@ def factorial(n, exact=False):
 
     # arrays & array-likes
     n = asarray(n)
-    if n.size == 0:
-        # return empty arrays unchanged
-        return n
+
     if not _is_subdtype(n.dtype, ["i", "f"]):
         raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
     if exact and not _is_subdtype(n.dtype, "i"):
@@ -3070,7 +3068,10 @@ def factorial(n, exact=False):
                "support non-integral arrays")
         raise ValueError(msg)
 
-    if exact:
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    elif exact:
         return _factorialx_array_exact(n, k=1)
     return _factorialx_array_approx(n, k=1)
 
@@ -3117,9 +3118,7 @@ def factorial2(n, exact=False):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if n is None or np.isnan(n):
-            return np.nan
-        elif not _is_subdtype(type(n), "i"):
+        if not _is_subdtype(type(n), "i"):
             raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
         elif n < 0:
             return 0
@@ -3129,14 +3128,17 @@ def factorial2(n, exact=False):
         if exact:
             return _range_prod(1, n, k=2)
         return _factorialx_approx_core(n, k=2)
+
     # arrays & array-likes
     n = asarray(n)
+
+    if not _is_subdtype(n.dtype, "i"):
+        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
+
     if n.size == 0:
         # return empty arrays unchanged
         return n
-    if not _is_subdtype(n.dtype, "i"):
-        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
-    if exact:
+    elif exact:
         return _factorialx_array_exact(n, k=2)
     return _factorialx_array_approx(n, k=2)
 
@@ -3227,9 +3229,7 @@ def factorialk(n, k, exact=None):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if n is None or np.isnan(n):
-            return np.nan
-        elif not _is_subdtype(type(n), "i"):
+        if not _is_subdtype(type(n), "i"):
             raise ValueError(msg_wrong_dtype.format(dtype=type(n)) + helpmsg)
         elif n < 0:
             return 0
@@ -3239,14 +3239,17 @@ def factorialk(n, k, exact=None):
         if exact:
             return _range_prod(1, n, k=k)
         return _factorialx_approx_core(n, k=k)
+
     # arrays & array-likes
     n = asarray(n)
+
+    if not _is_subdtype(n.dtype, "i"):
+        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype) + helpmsg)
+
     if n.size == 0:
         # return empty arrays unchanged
         return n
-    if not _is_subdtype(n.dtype, "i"):
-        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype) + helpmsg)
-    if exact:
+    elif exact:
         return _factorialx_array_exact(n, k=k)
     return _factorialx_array_approx(n, k=k)
 
