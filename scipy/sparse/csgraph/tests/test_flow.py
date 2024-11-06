@@ -5,7 +5,7 @@ import pytest
 from scipy.sparse import csr_array, csc_array
 from scipy.sparse.csgraph import maximum_flow
 from scipy.sparse.csgraph._flow import (
-    _add_reverse_edges, _make_edge_pointers, _make_tails, _safe_downcast_indices,
+    _add_reverse_edges, _make_edge_pointers, _make_tails
 )
 
 methods = ['edmonds_karp', 'dinic']
@@ -171,12 +171,7 @@ def test_add_reverse_edges(a, b_data_expected):
     as expected.
     """
     a = csr_array(a, dtype=np.int32, shape=(len(a), len(a)))
-    at = csr_array(a.transpose())
-    a_indices, a_indptr = _safe_downcast_indices(a)
-    at_indices, at_indptr = _safe_downcast_indices(at)
-    b = _add_reverse_edges(
-        a.shape, a.data, a_indices, a_indptr, a.nnz, at_indices, at_indptr,
-    )
+    b = _add_reverse_edges(a)
     assert_array_equal(b.data, b_data_expected)
 
 

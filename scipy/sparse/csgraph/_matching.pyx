@@ -6,7 +6,7 @@ cimport numpy as np
 from libc.math cimport INFINITY
 
 
-from scipy.sparse import issparse
+from scipy.sparse import issparse, csr_array
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 from ._tools import _safe_downcast_indices
 
@@ -475,14 +475,18 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     if not np.all(biadjacency.data):
         warnings.warn('explicit zero weights are removed before matching')
 
-    biadjacency.indices, biadjacency.indptr = _safe_downcast_indices(biadjacency)
-
     biadjacency.data[np.isposinf(biadjacency.data)] = 0
     biadjacency.eliminate_zeros()
 
     i, j = biadjacency.shape
 
     a = np.arange(np.min(biadjacency.shape))
+
+    biadj_indices, biadj_indptr = _safe_downcast_indices(biadjacency)
+    if biadj_indices is not biadjacency.indices:
+        # create a new object without copying data
+        biadjacency = csr_array((biadjacency.data, biadj_indices, biadj_indptr),
+                            shape=biadjacency.shape, dtype=biadjacency.dtype)
 
     # The algorithm expects more columns than rows in the graph, so
     # we use the transpose if that is not already the case. We also
