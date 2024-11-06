@@ -1809,7 +1809,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return ShiftedScaledDistribution(self, loc=loc)
 
     def __sub__(self, loc):
-        return ShiftedScaledDistribution(self, loc=-self.loc)
+        return ShiftedScaledDistribution(self, loc=-loc)
 
     def __mul__(self, scale):
         return ShiftedScaledDistribution(self, scale=scale)
