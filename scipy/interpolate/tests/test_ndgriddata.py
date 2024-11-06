@@ -27,18 +27,18 @@ class TestGriddata:
         yi = griddata(x, y, [(1,1), (1,2), (0,0)])
         xp_assert_equal(yi, [np.nan, np.nan, 1])
 
-    def test_alternative_call(self):
+    @pytest.mark.parametrize('method', ('nearest', 'linear', 'cubic'))
+    def test_alternative_call(self, method):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
                      dtype=np.float64)
         y = (np.arange(x.shape[0], dtype=np.float64)[:,None]
              + np.array([0,1])[None,:])
 
-        for method in ('nearest', 'linear', 'cubic'):
-            for rescale in (True, False):
-                msg = repr((method, rescale))
-                yi = griddata((x[:,0], x[:,1]), y, (x[:,0], x[:,1]), method=method,
-                              rescale=rescale)
-                xp_assert_close(y, yi, atol=1e-14, err_msg=msg)
+        for rescale in (True, False):
+            msg = repr((method, rescale))
+            yi = griddata((x[:,0], x[:,1]), y, (x[:,0], x[:,1]), method=method,
+                          rescale=rescale)
+            xp_assert_close(y, yi, atol=1e-14, err_msg=msg)
 
     def test_multivalue_2d(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
