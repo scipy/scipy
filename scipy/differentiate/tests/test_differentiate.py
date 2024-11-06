@@ -488,9 +488,9 @@ class TestJacobian(JacobianHessianTest):
         x, y = z
         return [x ** 2 * y, 5 * x + xp.sin(y)]
 
-    def df1(z, xp):
+    def df1(z):
         x, y = z
-        return [[2 * x * y, x ** 2], [xp.full_like(x, 5), xp.cos(y)]]
+        return [[2 * x * y, x ** 2], [np.full_like(x, 5), np.cos(y)]]
 
     f1.mn = 2, 2  # type: ignore[attr-defined]
     f1.ref = df1  # type: ignore[attr-defined]
@@ -499,10 +499,10 @@ class TestJacobian(JacobianHessianTest):
         r, phi = z
         return [r * xp.cos(phi), r * xp.sin(phi)]
 
-    def df2(z, xp):
+    def df2(z):
         r, phi = z
-        return [[xp.cos(phi), -r * xp.sin(phi)],
-                [xp.sin(phi), r * xp.cos(phi)]]
+        return [[np.cos(phi), -r * np.sin(phi)],
+                [np.sin(phi), r * np.cos(phi)]]
 
     f2.mn = 2, 2  # type: ignore[attr-defined]
     f2.ref = df2  # type: ignore[attr-defined]
@@ -512,13 +512,13 @@ class TestJacobian(JacobianHessianTest):
         return [r * xp.sin(phi) * xp.cos(th), r * xp.sin(phi) * xp.sin(th),
                 r * xp.cos(phi)]
 
-    def df3(z, xp):
+    def df3(z):
         r, phi, th = z
-        return [[xp.sin(phi) * xp.cos(th), r * xp.cos(phi) * xp.cos(th),
-                 -r * xp.sin(phi) * xp.sin(th)],
-                [xp.sin(phi) * xp.sin(th), r * xp.cos(phi) * xp.sin(th),
-                 r * xp.sin(phi) * xp.cos(th)],
-                [xp.cos(phi), -r * xp.sin(phi), xp.zeros_like(r)]]
+        return [[np.sin(phi) * np.cos(th), r * np.cos(phi) * np.cos(th),
+                 -r * np.sin(phi) * np.sin(th)],
+                [np.sin(phi) * np.sin(th), r * np.cos(phi) * np.sin(th),
+                 r * np.sin(phi) * np.cos(th)],
+                [np.cos(phi), -r * np.sin(phi), np.zeros_like(r)]]
 
     f3.mn = 3, 3  # type: ignore[attr-defined]
     f3.ref = df3  # type: ignore[attr-defined]
@@ -527,13 +527,13 @@ class TestJacobian(JacobianHessianTest):
         x1, x2, x3 = x
         return [x1, 5 * x3, 4 * x2 ** 2 - 2 * x3, x3 * xp.sin(x1)]
 
-    def df4(x, xp):
+    def df4(x):
         x1, x2, x3 = x
-        one = xp.ones_like(x1)
+        one = np.ones_like(x1)
         return [[one, 0 * one, 0 * one],
                 [0 * one, 0 * one, 5 * one],
                 [0 * one, 8 * x2, -2 * one],
-                [x3 * xp.cos(x1), 0 * one, xp.sin(x1)]]
+                [x3 * np.cos(x1), 0 * one, np.sin(x1)]]
 
     f4.mn = 3, 4  # type: ignore[attr-defined]
     f4.ref = df4  # type: ignore[attr-defined]
@@ -542,29 +542,30 @@ class TestJacobian(JacobianHessianTest):
         x1, x2, x3 = x
         return [5 * x2, 4 * x1 ** 2 - 2 * xp.sin(x2 * x3), x2 * x3]
 
-    def df5(x, xp):
+    def df5(x):
         x1, x2, x3 = x
-        one = xp.ones_like(x1)
+        one = np.ones_like(x1)
         return [[0 * one, 5 * one, 0 * one],
-                [8 * x1, -2 * x3 * xp.cos(x2 * x3), -2 * x2 * xp.cos(x2 * x3)],
+                [8 * x1, -2 * x3 * np.cos(x2 * x3), -2 * x2 * np.cos(x2 * x3)],
                 [0 * one, x3, x2]]
 
     f5.mn = 3, 3  # type: ignore[attr-defined]
     f5.ref = df5  # type: ignore[attr-defined]
 
-    def rosen(x, xp): return optimize.rosen(x)
+    def rosen(x, _): optimize.rosen(x)
     rosen.mn = 5, 1  # type: ignore[attr-defined]
-    def ref(x, xp): return optimize.rosen_der(x)
-    rosen.ref = ref  # type: ignore[attr-defined]
+    rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
 
+    @pytest.mark.filterwarnings("ignore::UserWarning")
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
     @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
     def test_examples(self, size, func, xp):
+        one = xp.asarray(1.)
         rng = np.random.default_rng(458912319542)
         m, n = func.mn
-        x = xp.asarray(rng.random(size=(m,) + size), dtype=xp.asarray(1.).dtype)
-        res = jacobian(lambda x: func(x, xp), x)
-        ref = xp.asarray(func.ref(x, xp))
+        x = rng.random(size=(m,) + size)
+        res = jacobian(lambda x: func(x , xp), xp.asarray(x, dtype=one.dtype))
+        ref = xp.asarray(func.ref(x), dtype=one.dtype)
         xp_assert_close(res.df, ref, atol=1e-10)
 
     def test_attrs(self, xp):
