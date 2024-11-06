@@ -243,8 +243,8 @@ class TestDistributions:
     @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
     def test_complement_safe(self, method_name):
         X = stats.Normal()
-        X.tol = 1e-8
-        p = np.asarray([1e-9, 1e-7])
+        X.tol = 1e-12
+        p = np.asarray([1e-4, 1e-3])
         func = getattr(X, method_name)
         ifunc = getattr(X, 'i'+method_name)
         x = ifunc(p, method='formula')
@@ -253,6 +253,19 @@ class TestDistributions:
         assert_equal(p1[1], p2[1])
         assert p1[0] != p2[0]
         assert_allclose(p1[0], p[0], rtol=X.tol)
+
+    @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
+    def test_icomplement_safe(self, method_name):
+        X = stats.Normal()
+        X.tol = 1e-12
+        p = np.asarray([1e-4, 1e-3])
+        func = getattr(X, method_name)
+        ifunc = getattr(X, 'i'+method_name)
+        x1 = ifunc(p, method='complement_safe')
+        x2 = ifunc(p, method='complement')
+        assert_equal(x1[1], x2[1])
+        assert x1[0] != x2[0]
+        assert_allclose(func(x1[0]), p[0], rtol=X.tol)
 
 
 def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):

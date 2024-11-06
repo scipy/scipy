@@ -2448,12 +2448,15 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return 1 - self._ccdf_dispatch(x, **params)
 
     def _cdf_complement_safe(self, x, **params):
-        out = np.asarray(self._cdf_complement(x, **params))
+        out = self._cdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
         mask = tol < eps/out
-        params_mask = {key:val[mask] for key, val in params.items()}
-        out[mask] = self._cdf_quadrature(x[mask], *params_mask)
+        print(tol, eps, out, mask)
+        if np.any(mask):
+            params_mask = {key:val[mask] for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._cdf_quadrature(x[mask], *params_mask)
         return out[()]
 
     def _cdf_quadrature(self, x, **params):
@@ -2572,12 +2575,14 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return 1 - self._cdf_dispatch(x, **params)
 
     def _ccdf_complement_safe(self, x, **params):
-        out = np.asarray(self._ccdf_complement(x, **params))
+        out = self._ccdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
         mask = tol < eps/out
-        params_mask = {key:val[mask] for key, val in params.items()}
-        out[mask] = self._ccdf_quadrature(x[mask], *params_mask)
+        if np.any(mask):
+            params_mask = {key:val[mask] for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._ccdf_quadrature(x[mask], *params_mask)
         return out[()]
 
     def _ccdf_quadrature(self, x, **params):
@@ -2618,8 +2623,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _icdf_dispatch(self, x, method=None, **params):
         if self._overrides('_icdf_formula'):
             method = self._icdf_formula
-        elif _isnull(self.tol) and self._overrides('_iccdf_formula'):
-            method = self._icdf_complement
+        elif self._overrides('_iccdf_formula'):
+            method = self._icdf_complement_safe
         else:
             method = self._icdf_inversion
         return method
@@ -2629,6 +2634,17 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _icdf_complement(self, x, **params):
         return self._iccdf_dispatch(1 - x, **params)
+
+    def _icdf_complement_safe(self, x, **params):
+        out = self._icdf_complement(x, **params)
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+        mask = tol < eps/x
+        if np.any(mask):
+            params_mask = {key:val[mask] for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._icdf_inversion(x[mask], *params_mask)
+        return out[()]
 
     def _icdf_inversion(self, x, **params):
         return self._solve_bounded(self._cdf_dispatch, x, params=params)
@@ -2664,8 +2680,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _iccdf_dispatch(self, x, method=None, **params):
         if self._overrides('_iccdf_formula'):
             method = self._iccdf_formula
-        elif _isnull(self.tol) and self._overrides('_icdf_formula'):
-            method = self._iccdf_complement
+        elif self._overrides('_icdf_formula'):
+            method = self._iccdf_complement_safe
         else:
             method = self._iccdf_inversion
         return method
@@ -2675,6 +2691,17 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _iccdf_complement(self, x, **params):
         return self._icdf_dispatch(1 - x, **params)
+
+    def _iccdf_complement_safe(self, x, **params):
+        out = self._iccdf_complement(x, **params)
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+        mask = tol < eps/x
+        if np.any(mask):
+            params_mask = {key:val[mask] for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._iccdf_inversion(x[mask], *params_mask)
+        return out[()]
 
     def _iccdf_inversion(self, x, **params):
         return self._solve_bounded(self._ccdf_dispatch, x, params=params)
