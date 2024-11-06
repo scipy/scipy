@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <complex>
 #include <map>
+#include <cstdint>
 #include <string>
 
 namespace fast_matrix_market {
@@ -88,6 +90,13 @@ namespace fast_matrix_market {
         bool generalize_symmetry = true;
 
         /**
+         * If true, perform symmetry generalization in the application binding as a post-processing step.
+         * If supported by the binding this method can avoid extra diagonal elements.
+         * If false or unsupported, diagonals are handled according to `generalize_coordinate_diagnonal_values`.
+         */
+        bool generalize_symmetry_app = true;
+
+        /**
          * Generalize Symmetry:
          * How to handle a value on the diagonal of a symmetric coordinate matrix.
          *  - DuplicateElement: Duplicate the diagonal element
@@ -143,5 +152,22 @@ namespace fast_matrix_market {
          * Whether to always write a comment line even if comment is empty.
          */
         bool always_comment = false;
+
+        /**
+         * Whether to determine header field type based on the supplied datastructure.
+         *
+         * If true then set header.field using `get_field_type()`. The only exception is
+         * if field == pattern then it is left unchanged.
+         *
+         * Possible reasons to set to false:
+         *  - Using a custom type, such as std::string, where `get_field_type()` would return the wrong type
+         *  - Writing integer structures as real
+         */
+        bool fill_header_field_type = true;
     };
+
+    template<class T> struct is_complex : std::false_type {};
+    template<class T> struct is_complex<std::complex<T>> : std::true_type {};
+
+    template<class T> struct can_read_complex : is_complex<T> {};
 }

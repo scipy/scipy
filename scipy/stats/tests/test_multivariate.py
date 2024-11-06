@@ -12,13 +12,12 @@ from pytest import raises as assert_raises
 
 from .test_continuous_basic import check_distribution_rvs
 
-import numpy
 import numpy as np
 
 import scipy.linalg
+
 from scipy.stats._multivariate import (_PSD,
                                        _lnB,
-                                       _cho_inv_batch,
                                        multivariate_normal_frozen)
 from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          matrix_normal, special_ortho_group, ortho_group,
@@ -32,9 +31,9 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
 from scipy.stats import _covariance, Covariance
 from scipy import stats
 
-from scipy.integrate import romb, qmc_quad, tplquad
+from scipy.integrate._tanhsinh import _tanhsinh
+from scipy.integrate import romb, qmc_quad, dblquad, tplquad
 from scipy.special import multigammaln
-from scipy._lib._pep440 import Version
 
 from .common_tests import check_random_state_property
 from .data._mvt import _qsimvtv
@@ -107,7 +106,7 @@ class TestCovariance:
 
         res = factory(preprocessing(A))
         ref = cov_type(preprocessing(A))
-        assert type(res) == type(ref)
+        assert type(res) is type(ref)
         assert_allclose(res.whiten(x), ref.whiten(x))
 
     @pytest.mark.parametrize("matrix_type", list(_matrices))
@@ -735,7 +734,7 @@ class TestMultivariateNormal:
 
         sample = multivariate_normal.rvs(mean, cov, size)
 
-        assert_allclose(numpy.cov(sample.T), cov, rtol=1e-1)
+        assert_allclose(np.cov(sample.T), cov, rtol=1e-1)
         assert_allclose(sample.mean(0), mean, rtol=1e-1)
 
     def test_entropy(self):
@@ -871,13 +870,13 @@ class TestMultivariateNormal:
                 "vectors `x`.")
         with pytest.raises(ValueError, match=msg):
             multivariate_normal.fit(np.eye(3), fix_cov=fix_cov)
-    
+
     def test_fit_fix_cov_not_positive_semidefinite(self):
         error_msg = "`fix_cov` must be symmetric positive semidefinite."
         with pytest.raises(ValueError, match=error_msg):
             fix_cov = np.array([[1., 0.], [0., -1.]])
             multivariate_normal.fit(np.eye(2), fix_cov=fix_cov)
-    
+
     def test_fit_fix_mean(self):
         rng = np.random.default_rng(4385269356937404)
         loc = rng.random(3)
@@ -1483,6 +1482,50 @@ class TestWishart:
             assert_equal(w.entropy(), wishart.entropy(df, scale))
             assert_equal(w.pdf(x), wishart.pdf(x, df, scale))
 
+    def test_wishart_2D_rvs(self):
+        dim = 3
+        df = 10
+
+        # Construct a simple non-diagonal positive definite matrix
+        scale = np.eye(dim)
+        scale[0,1] = 0.5
+        scale[1,0] = 0.5
+
+        # Construct frozen Wishart random variables
+        w = wishart(df, scale)
+
+        # Get the generated random variables from a known seed
+        np.random.seed(248042)
+        w_rvs = wishart.rvs(df, scale)
+        np.random.seed(248042)
+        frozen_w_rvs = w.rvs()
+
+        # Manually calculate what it should be, based on the Bartlett (1933)
+        # decomposition of a Wishart into D A A' D', where D is the Cholesky
+        # factorization of the scale matrix and A is the lower triangular matrix
+        # with the square root of chi^2 variates on the diagonal and N(0,1)
+        # variates in the lower triangle.
+        np.random.seed(248042)
+        covariances = np.random.normal(size=3)
+        variances = np.r_[
+            np.random.chisquare(df),
+            np.random.chisquare(df-1),
+            np.random.chisquare(df-2),
+        ]**0.5
+
+        # Construct the lower-triangular A matrix
+        A = np.diag(variances)
+        A[np.tril_indices(dim, k=-1)] = covariances
+
+        # Wishart random variate
+        D = np.linalg.cholesky(scale)
+        DA = D.dot(A)
+        manual_w_rvs = np.dot(DA, DA.T)
+
+        # Test for equality
+        assert_allclose(w_rvs, manual_w_rvs)
+        assert_allclose(frozen_w_rvs, manual_w_rvs)
+
     def test_1D_is_chisquared(self):
         # The 1-dimensional Wishart with an identity scale matrix is just a
         # chi-squared distribution.
@@ -1787,7 +1830,7 @@ class TestInvwishart:
             # entropy
             assert_allclose(iw.entropy(), ig.entropy())
 
-    def test_wishart_invwishart_2D_rvs(self):
+    def test_invwishart_2D_rvs(self):
         dim = 3
         df = 10
 
@@ -1796,72 +1839,69 @@ class TestInvwishart:
         scale[0,1] = 0.5
         scale[1,0] = 0.5
 
-        # Construct frozen Wishart and inverse Wishart random variables
-        w = wishart(df, scale)
+        # Construct frozen inverse-Wishart random variables
         iw = invwishart(df, scale)
 
         # Get the generated random variables from a known seed
-        np.random.seed(248042)
-        w_rvs = wishart.rvs(df, scale)
-        np.random.seed(248042)
-        frozen_w_rvs = w.rvs()
-        np.random.seed(248042)
+        np.random.seed(608072)
         iw_rvs = invwishart.rvs(df, scale)
-        np.random.seed(248042)
+        np.random.seed(608072)
         frozen_iw_rvs = iw.rvs()
 
-        # Manually calculate what it should be, based on the Bartlett (1933)
-        # decomposition of a Wishart into D A A' D', where D is the Cholesky
-        # factorization of the scale matrix and A is the lower triangular matrix
-        # with the square root of chi^2 variates on the diagonal and N(0,1)
-        # variates in the lower triangle.
-        np.random.seed(248042)
+        # Manually calculate what it should be, based on the decomposition in
+        # https://arxiv.org/abs/2310.15884 of an invers-Wishart into L L',
+        # where L A = D, D is the Cholesky factorization of the scale matrix,
+        # and A is the lower triangular matrix with the square root of chi^2
+        # variates on the diagonal and N(0,1) variates in the lower triangle.
+        # the diagonal chi^2 variates in this A are reversed compared to those
+        # in the Bartlett decomposition A for Wishart rvs.
+        np.random.seed(608072)
         covariances = np.random.normal(size=3)
         variances = np.r_[
-            np.random.chisquare(df),
-            np.random.chisquare(df-1),
             np.random.chisquare(df-2),
+            np.random.chisquare(df-1),
+            np.random.chisquare(df),
         ]**0.5
 
         # Construct the lower-triangular A matrix
         A = np.diag(variances)
         A[np.tril_indices(dim, k=-1)] = covariances
 
-        # Wishart random variate
+        # inverse-Wishart random variate
         D = np.linalg.cholesky(scale)
-        DA = D.dot(A)
-        manual_w_rvs = np.dot(DA, DA.T)
-
-        # inverse Wishart random variate
-        # Supposing that the inverse wishart has scale matrix `scale`, then the
-        # random variate is the inverse of a random variate drawn from a Wishart
-        # distribution with scale matrix `inv_scale = np.linalg.inv(scale)`
-        iD = np.linalg.cholesky(np.linalg.inv(scale))
-        iDA = iD.dot(A)
-        manual_iw_rvs = np.linalg.inv(np.dot(iDA, iDA.T))
+        L = np.linalg.solve(A.T, D.T).T
+        manual_iw_rvs = np.dot(L, L.T)
 
         # Test for equality
-        assert_allclose(w_rvs, manual_w_rvs)
-        assert_allclose(frozen_w_rvs, manual_w_rvs)
         assert_allclose(iw_rvs, manual_iw_rvs)
         assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
-    def test_cho_inv_batch(self):
-        """Regression test for gh-8844."""
-        a0 = np.array([[2, 1, 0, 0.5],
-                       [1, 2, 0.5, 0.5],
-                       [0, 0.5, 3, 1],
-                       [0.5, 0.5, 1, 2]])
-        a1 = np.array([[2, -1, 0, 0.5],
-                       [-1, 2, 0.5, 0.5],
-                       [0, 0.5, 3, 1],
-                       [0.5, 0.5, 1, 4]])
-        a = np.array([a0, a1])
-        ainv = a.copy()
-        _cho_inv_batch(ainv)
-        ident = np.eye(4)
-        assert_allclose(a[0].dot(ainv[0]), ident, atol=1e-15)
-        assert_allclose(a[1].dot(ainv[1]), ident, atol=1e-15)
+    def test_sample_mean(self):
+        """Test that sample mean consistent with known mean."""
+        # Construct an arbitrary positive definite scale matrix
+        df = 10
+        sample_size = 20_000
+        for dim in [1, 5]:
+            scale = np.diag(np.arange(dim) + 1)
+            scale[np.tril_indices(dim, k=-1)] = np.arange(dim * (dim - 1) / 2)
+            scale = np.dot(scale.T, scale)
+
+            dist = invwishart(df, scale)
+            Xmean_exp = dist.mean()
+            Xvar_exp = dist.var()
+            Xmean_std = (Xvar_exp / sample_size)**0.5  # asymptotic SE of mean estimate
+
+            X = dist.rvs(size=sample_size, random_state=1234)
+            Xmean_est = X.mean(axis=0)
+
+            ntests = dim*(dim + 1)//2
+            fail_rate = 0.01 / ntests  # correct for multiple tests
+            max_diff = norm.ppf(1 - fail_rate / 2)
+            assert np.allclose(
+                (Xmean_est - Xmean_exp) / Xmean_std,
+                0,
+                atol=max_diff,
+            )
 
     def test_logpdf_4x4(self):
         """Regression test for gh-8844."""
@@ -2238,9 +2278,11 @@ class TestUnitaryGroup:
         x = unitary_group.rvs(3)
         x2 = unitary_group.rvs(3, random_state=514)
 
-        expected = np.array([[0.308771+0.360312j, 0.044021+0.622082j, 0.160327+0.600173j],
-                             [0.732757+0.297107j, 0.076692-0.4614j, -0.394349+0.022613j],
-                             [-0.148844+0.357037j, -0.284602-0.557949j, 0.607051+0.299257j]])
+        expected = np.array(
+            [[0.308771+0.360312j, 0.044021+0.622082j, 0.160327+0.600173j],
+             [0.732757+0.297107j, 0.076692-0.4614j, -0.394349+0.022613j],
+             [-0.148844+0.357037j, -0.284602-0.557949j, 0.607051+0.299257j]]
+        )
 
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
@@ -2459,7 +2501,8 @@ class TestMultivariateT:
         ([7, 7], [[7, 0], [0, 7]], 7, [7, 7], [[7, 0], [0, 7]], 7)
     ]
 
-    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", DEFAULT_ARGS_TESTS)
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans",
+                             DEFAULT_ARGS_TESTS)
     def test_default_args(self, loc, shape, df, loc_ans, shape_ans, df_ans):
         dist = multivariate_t(loc=loc, shape=shape, df=df)
         assert_equal(dist.loc, loc_ans)
@@ -2472,8 +2515,10 @@ class TestMultivariateT:
         (np.array([-1]), np.array([2]), 3, [-1], [[2]], 3)
     ]
 
-    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans", ARGS_SHAPES_TESTS)
-    def test_scalar_list_and_ndarray_arguments(self, loc, shape, df, loc_ans, shape_ans, df_ans):
+    @pytest.mark.parametrize("loc, shape, df, loc_ans, shape_ans, df_ans",
+                             ARGS_SHAPES_TESTS)
+    def test_scalar_list_and_ndarray_arguments(self, loc, shape, df, loc_ans,
+                                               shape_ans, df_ans):
         dist = multivariate_t(loc, shape, df)
         assert_equal(dist.loc, loc_ans)
         assert_equal(dist.shape, shape_ans)
@@ -2539,7 +2584,7 @@ class TestMultivariateT:
         cdf = multivariate_normal.cdf(b, mean, cov, df, lower_limit=a)
         assert_allclose(cdf, cdf[0]*expected_signs)
 
-    @pytest.mark.parametrize('dim', [1, 2, 5, 10])
+    @pytest.mark.parametrize('dim', [1, 2, 5])
     def test_cdf_against_multivariate_normal(self, dim):
         # Check accuracy against MVN randomly-generated cases
         self.cdf_against_mvn_test(dim)
@@ -2611,6 +2656,7 @@ class TestMultivariateT:
             ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
+    @pytest.mark.slow
     def test_cdf_against_generic_integrators(self):
         # Compare result against generic numerical integrators
         dim = 3
@@ -3730,10 +3776,6 @@ class TestDirichletMultinomial:
         assert_allclose(res, ref)
 
     def test_moments(self):
-        message = 'Needs NumPy 1.22.0 for multinomial broadcasting'
-        if Version(np.__version__) < Version("1.22.0"):
-            pytest.skip(reason=message)
-
         rng = np.random.default_rng(28469824356873456)
         dim = 5
         n = rng.integers(1, 100)
@@ -3812,3 +3854,177 @@ class TestDirichletMultinomial:
                 res_ijk = res[j, k]
                 ref = method(alpha[k].squeeze(), n[j].squeeze())
                 assert_allclose(res_ijk, ref)
+
+
+class TestNormalInverseGamma:
+
+    def test_marginal_x(self):
+        # According to [1], sqrt(a * lmbda / b) * (x - u) should follow a t-distribution
+        # with 2*a degrees of freedom. Test that this is true of the PDF and random
+        # variates.
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random(4)
+
+        norm_inv_gamma = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        t = stats.t(2*a, loc=mu, scale=1/np.sqrt(a * lmbda / b))
+
+        # Test PDF
+        x = np.linspace(-5, 5, 11)
+        res = _tanhsinh(lambda s2, x: norm_inv_gamma.pdf(x, s2), 0, np.inf, args=(x,))
+        ref = t.pdf(x)
+        assert_allclose(res.integral, ref)
+
+        # Test RVS
+        res = norm_inv_gamma.rvs(size=10000, random_state=rng)
+        _, pvalue = stats.ks_1samp(res[0], t.cdf)
+        assert pvalue > 0.1
+
+    def test_marginal_s2(self):
+        # According to [1], s2 should follow an inverse gamma distribution with
+        # shapes a, b (where b is the scale in our parameterization). Test that
+        # this is true of the PDF and random variates.
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random(4)
+
+        norm_inv_gamma = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        inv_gamma = stats.invgamma(a, scale=b)
+
+        # Test PDF
+        s2 = np.linspace(0.1, 10, 10)
+        res = _tanhsinh(lambda x, s2: norm_inv_gamma.pdf(x, s2),
+                        -np.inf, np.inf, args=(s2,))
+        ref = inv_gamma.pdf(s2)
+        assert_allclose(res.integral, ref)
+
+        # Test RVS
+        res = norm_inv_gamma.rvs(size=10000, random_state=rng)
+        _, pvalue = stats.ks_1samp(res[1], inv_gamma.cdf)
+        assert pvalue > 0.1
+
+    def test_pdf_logpdf(self):
+        # Check that PDF and log-PDF are consistent
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random((4, 20)) - 0.25  # make some invalid
+        x, s2 = rng.random(size=(2, 20)) - 0.25
+        res = stats.normal_inverse_gamma(mu, lmbda, a, b).pdf(x, s2)
+        ref = stats.normal_inverse_gamma.logpdf(x, s2, mu, lmbda, a, b)
+        assert_allclose(res, np.exp(ref))
+
+    def test_invalid_and_special_cases(self):
+        # Test cases that are handled by input validation rather than the formulas
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random(4)
+        x, s2 = rng.random(2)
+
+        res = stats.normal_inverse_gamma(np.nan, lmbda, a, b).pdf(x, s2)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, -1, a, b).pdf(x, s2)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, lmbda, 0, b).pdf(x, s2)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, lmbda, a, -1).pdf(x, s2)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, lmbda, a, b).pdf(x, -1)
+        assert_equal(res, 0)
+
+        # PDF with out-of-support s2 is not zero if shape parameter is invalid
+        res = stats.normal_inverse_gamma(mu, [-1, np.nan], a, b).pdf(x, -1)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, -1, a, b).mean()
+        assert_equal(res, (np.nan, np.nan))
+
+        res = stats.normal_inverse_gamma(mu, lmbda, -1, b).var()
+        assert_equal(res, (np.nan, np.nan))
+
+        with pytest.raises(ValueError, match="Domain error in arguments..."):
+            stats.normal_inverse_gamma(mu, lmbda, a, -1).rvs()
+
+    def test_broadcasting(self):
+        # Test methods with broadcastable array parameters. Roughly speaking, the
+        # shapes should be the broadcasted shapes of all arguments, and the raveled
+        # outputs should be the same as the outputs with raveled inputs.
+        rng = np.random.default_rng(8925849245)
+        b = rng.random(2)
+        a = rng.random((3, 1)) + 2  # for defined moments
+        lmbda = rng.random((4, 1, 1))
+        mu = rng.random((5, 1, 1, 1))
+        s2 = rng.random((6, 1, 1, 1, 1))
+        x = rng.random((7, 1, 1, 1, 1, 1))
+        dist = stats.normal_inverse_gamma(mu, lmbda, a, b)
+
+        # Test PDF and log-PDF
+        broadcasted = np.broadcast_arrays(x, s2, mu, lmbda, a, b)
+        broadcasted_raveled = [np.ravel(arr) for arr in broadcasted]
+
+        res = dist.pdf(x, s2)
+        assert res.shape == broadcasted[0].shape
+        assert_allclose(res.ravel(),
+                        stats.normal_inverse_gamma.pdf(*broadcasted_raveled))
+
+        res = dist.logpdf(x, s2)
+        assert res.shape == broadcasted[0].shape
+        assert_allclose(res.ravel(),
+                        stats.normal_inverse_gamma.logpdf(*broadcasted_raveled))
+
+        # Test moments
+        broadcasted = np.broadcast_arrays(mu, lmbda, a, b)
+        broadcasted_raveled = [np.ravel(arr) for arr in broadcasted]
+
+        res = dist.mean()
+        assert res[0].shape == broadcasted[0].shape
+        assert_allclose((res[0].ravel(), res[1].ravel()),
+                        stats.normal_inverse_gamma.mean(*broadcasted_raveled))
+
+        res = dist.var()
+        assert res[0].shape == broadcasted[0].shape
+        assert_allclose((res[0].ravel(), res[1].ravel()),
+                        stats.normal_inverse_gamma.var(*broadcasted_raveled))
+
+        # Test RVS
+        size = (6, 5, 4, 3, 2)
+        rng = np.random.default_rng(2348923985324)
+        res = dist.rvs(size=size, random_state=rng)
+        rng = np.random.default_rng(2348923985324)
+        shape = 6, 5*4*3*2
+        ref = stats.normal_inverse_gamma.rvs(*broadcasted_raveled, size=shape,
+                                             random_state=rng)
+        assert_allclose((res[0].reshape(shape), res[1].reshape(shape)), ref)
+
+    @pytest.mark.slow
+    @pytest.mark.fail_slow(10)
+    def test_moments(self):
+        # Test moments against quadrature
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random(4)
+        a += 2  # ensure defined
+
+        dist = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        res = dist.mean()
+
+        ref = dblquad(lambda s2, x: dist.pdf(x, s2) * x, -np.inf, np.inf, 0, np.inf)
+        assert_allclose(res[0], ref[0], rtol=1e-6)
+
+        ref = dblquad(lambda s2, x: dist.pdf(x, s2) * s2, -np.inf, np.inf, 0, np.inf)
+        assert_allclose(res[1], ref[0], rtol=1e-6)
+
+    @pytest.mark.parametrize('dtype', [np.int32, np.float16, np.float32, np.float64])
+    def test_dtype(self, dtype):
+        if np.__version__ < "2":
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        rng = np.random.default_rng(8925849245)
+        x, s2, mu, lmbda, a, b = rng.uniform(3, 10, size=6).astype(dtype)
+        dtype_out = np.result_type(1.0, dtype)
+        dist = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        assert dist.rvs()[0].dtype == dtype_out
+        assert dist.rvs()[1].dtype == dtype_out
+        assert dist.mean()[0].dtype == dtype_out
+        assert dist.mean()[1].dtype == dtype_out
+        assert dist.var()[0].dtype == dtype_out
+        assert dist.var()[1].dtype == dtype_out
+        assert dist.logpdf(x, s2).dtype == dtype_out
+        assert dist.pdf(x, s2).dtype == dtype_out

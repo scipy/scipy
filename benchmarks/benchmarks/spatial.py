@@ -139,7 +139,9 @@ class Query(LimitedParamBenchmark):
         self.T.query(self.queries, p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_query.version = "327bc0627d5387347e9cdcf4c52a550c813bb80a859eeb0f3e5bfe6650a8a1db"
+    time_query.version = (
+        "327bc0627d5387347e9cdcf4c52a550c813bb80a859eeb0f3e5bfe6650a8a1db"
+    )
 
 
 class Radius(LimitedParamBenchmark):
@@ -184,8 +186,12 @@ class Radius(LimitedParamBenchmark):
         self.T.query_pairs(probe_radius, p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_query_ball_point.version = "e0c2074b35db7e5fca01a43b0fba8ab33a15ed73d8573871ea6feb57b3df4168"
-    time_query_pairs.version = "cf669f7d619e81e4a09b28bb3fceaefbdd316d30faf01524ab33d41661a53f56"
+    time_query_ball_point.version = (
+        "e0c2074b35db7e5fca01a43b0fba8ab33a15ed73d8573871ea6feb57b3df4168"
+    )
+    time_query_pairs.version = (
+        "cf669f7d619e81e4a09b28bb3fceaefbdd316d30faf01524ab33d41661a53f56"
+    )
 
 
 class Neighbors(LimitedParamBenchmark):
@@ -202,7 +208,8 @@ class Neighbors(LimitedParamBenchmark):
     num_param_combinations = 17
 
     def setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
-        LimitedParamBenchmark.setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls)
+        LimitedParamBenchmark.setup(self, mn1n2, p, probe_radius,
+                                    boxsize, leafsize, cls)
 
         m, n1, n2 = mn1n2
 
@@ -215,7 +222,8 @@ class Neighbors(LimitedParamBenchmark):
         self.T1 = cKDTree(self.data1, boxsize=boxsize, leafsize=leafsize)
         self.T2 = cKDTree(self.data2, boxsize=boxsize, leafsize=leafsize)
 
-    def time_sparse_distance_matrix(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
+    def time_sparse_distance_matrix(self, mn1n2, p, probe_radius,
+                                    boxsize, leafsize, cls):
         self.T1.sparse_distance_matrix(self.T2, probe_radius, p=p)
 
     def time_count_neighbors(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
@@ -227,11 +235,16 @@ class Neighbors(LimitedParamBenchmark):
         if cls != 'cKDTree_weighted':
             self.T1.count_neighbors(self.T2, probe_radius, p=p)
         else:
-            self.T1.count_neighbors(self.T2, probe_radius, weights=(self.w1, self.w2), p=p)
+            self.T1.count_neighbors(self.T2, probe_radius,
+                                    weights=(self.w1, self.w2), p=p)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_sparse_distance_matrix.version = "9aa921dce6da78394ab29d949be27953484613dcf9c9632c01ae3973d4b29596"
-    time_count_neighbors.version = "830287f1cf51fa6ba21854a60b03b2a6c70b2f2485c3cdcfb19a360e0a7e2ca2"
+    time_sparse_distance_matrix.version = (
+        "9aa921dce6da78394ab29d949be27953484613dcf9c9632c01ae3973d4b29596"
+    )
+    time_count_neighbors.version = (
+        "830287f1cf51fa6ba21854a60b03b2a6c70b2f2485c3cdcfb19a360e0a7e2ca2"
+    )
 
 
 class CNeighbors(Benchmark):
@@ -375,6 +388,38 @@ class Xdist(Benchmark):
         distance.pdist(self.points, self.metric, **self.kwargs)
 
 
+class SingleDist(Benchmark):
+    params = (['euclidean', 'minkowski', 'cityblock',
+               'seuclidean', 'sqeuclidean', 'cosine', 'correlation',
+               'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
+               'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulczynski1',
+               'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
+               'minkowski-P3'])
+    param_names = ['metric']
+
+    def setup(self, metric):
+        rng = np.random.default_rng(123)
+        self.points = rng.random((2, 3))
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0}
+            self.metric = 'minkowski'
+        elif metric == 'mahalanobis':
+            self.kwargs = {'VI': [[1, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 0.5, 1]]}
+        elif metric == 'seuclidean':
+            self.kwargs = {'V': [1, 0.1, 0.1]}
+        else:
+            self.kwargs = {}
+
+    def time_dist(self, metric):
+        """Time distance metrics individually (without batching with
+        cdist or pdist).
+        """
+        getattr(distance, self.metric)(self.points[0], self.points[1],
+                                       **self.kwargs)
+
+
 class XdistWeighted(Benchmark):
     params = (
         [10, 20, 100],
@@ -404,6 +449,32 @@ class XdistWeighted(Benchmark):
     def time_pdist(self, num_points, metric):
         """Time scipy.spatial.distance.pdist for weighted distance metrics."""
         distance.pdist(self.points, self.metric, w=self.weights, **self.kwargs)
+
+
+class SingleDistWeighted(Benchmark):
+    params = (['euclidean', 'minkowski', 'cityblock', 'sqeuclidean', 'cosine',
+               'correlation', 'hamming', 'jaccard', 'chebyshev', 'canberra',
+               'braycurtis', 'yule', 'dice', 'kulczynski1', 'rogerstanimoto',
+               'russellrao', 'sokalmichener', 'sokalsneath', 'minkowski-P3'])
+    param_names = ['metric']
+
+    def setup(self, metric):
+        rng = np.random.default_rng(123)
+        self.points = rng.random((2, 3))
+        self.metric = metric
+        if metric == 'minkowski-P3':
+            # p=2 is just the euclidean metric, try another p value as well
+            self.kwargs = {'p': 3.0, 'w': np.ones(3)}
+            self.metric = 'minkowski'
+        else:
+            self.kwargs = {'w': np.ones(3)}
+
+    def time_dist_weighted(self, metric):
+        """Time weighted distance metrics individually (without batching
+        with cdist or pdist).
+        """
+        getattr(distance, self.metric)(self.points[0], self.points[1],
+                                       **self.kwargs)
 
 
 class ConvexHullBench(Benchmark):

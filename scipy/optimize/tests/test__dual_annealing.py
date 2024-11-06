@@ -110,6 +110,7 @@ class TestDualAnnealing:
         assert_allclose(ret.fun, 0., atol=1e-12)
         assert ret.success
 
+    @pytest.mark.fail_slow(10)
     def test_high_dim(self):
         ret = dual_annealing(self.func, self.hd_bounds, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-12)
@@ -120,6 +121,7 @@ class TestDualAnnealing:
                              no_local_search=True, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-4)
 
+    @pytest.mark.fail_slow(10)
     def test_high_dim_no_ls(self):
         ret = dual_annealing(self.func, self.hd_bounds,
                              no_local_search=True, seed=self.seed)
@@ -138,6 +140,7 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.weirdfunc,
                       self.ld_bounds)
 
+    @pytest.mark.fail_slow(10)
     def test_reproduce(self):
         res1 = dual_annealing(self.func, self.ld_bounds, seed=self.seed)
         res2 = dual_annealing(self.func, self.ld_bounds, seed=self.seed)
@@ -251,6 +254,7 @@ class TestDualAnnealing:
     @pytest.mark.parametrize('method, atol', [
         ('Nelder-Mead', 2e-5),
         ('COBYLA', 1e-5),
+        ('COBYQA', 1e-8),
         ('Powell', 1e-8),
         ('CG', 1e-8),
         ('BFGS', 1e-8),
@@ -278,6 +282,7 @@ class TestDualAnnealing:
                              seed=self.seed)
         assert ret.njev == self.ngev
 
+    @pytest.mark.fail_slow(10)
     def test_from_docstring(self):
         def func(x):
             return np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
@@ -333,6 +338,7 @@ class TestDualAnnealing:
 
         assert_allclose(rate, accept_rate)
 
+    @pytest.mark.fail_slow(10)
     def test_bounds_class(self):
         # test that result does not depend on the bounds type
         def func(x):
@@ -361,9 +367,12 @@ class TestDualAnnealing:
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
 
-    def test_callable_jac_with_args_gh11052(self):
+    @pytest.mark.fail_slow(10)
+    def test_callable_jac_hess_with_args_gh11052(self):
         # dual_annealing used to fail when `jac` was callable and `args` were
         # used; check that this is resolved. Example is from gh-11052.
+
+        # extended to hess as part of closing gh20614
         rng = np.random.default_rng(94253637693657847462)
         def f(x, power):
             return np.sum(np.exp(x ** power))
@@ -371,9 +380,27 @@ class TestDualAnnealing:
         def jac(x, power):
             return np.exp(x ** power) * power * x ** (power - 1)
 
+        def hess(x, power):
+            # calculated using WolframAlpha as d^2/dx^2 e^(x^p)
+            return np.diag(
+                power * np.exp(x ** power) * x ** (power - 2) *
+                (power * x ** power + power - 1)
+            )
+
+        def hessp(x, p, power):
+            return hess(x, power) @ p
+
         res1 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B'))
         res2 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B',
                                                     jac=jac))
+        res3 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='newton-cg',
+                                                    jac=jac, hess=hess))
+        res4 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='newton-cg',
+                                                    jac=jac, hessp=hessp))
         assert_allclose(res1.fun, res2.fun, rtol=1e-6)
+        assert_allclose(res3.fun, res2.fun, rtol=1e-6)
+        assert_allclose(res4.fun, res2.fun, rtol=1e-6)

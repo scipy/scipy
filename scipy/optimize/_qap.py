@@ -60,9 +60,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
             ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
             where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : {None, int, `numpy.random.Generator`,
-               `numpy.random.RandomState`}, optional
-
+        rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -286,9 +284,7 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``, where
         ``m`` is not greater than the number of nodes, :math:`n`.
 
-    rng : {None, int, `numpy.random.Generator`,
-           `numpy.random.RandomState`}, optional
-
+    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -582,9 +578,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     -------
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
-    rng : {None, int, `numpy.random.Generator`,
-           `numpy.random.RandomState`}, optional
-
+    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -598,6 +592,10 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_match[i, 0]`` of `A` is matched to node
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
+
+        .. note::
+             `partial_match` must be sorted by the first column.
+
     partial_guess : 2-D array of integers, optional (default: None)
         A guess for the matching between the two matrices. Unlike
         `partial_match`, `partial_guess` does not fix the indices; they are
@@ -607,6 +605,9 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_guess[i, 0]`` of `A` is matched to node
         ``partial_guess[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
+
+        .. note::
+                `partial_guess` must be sorted by the first column.
 
     Returns
     -------

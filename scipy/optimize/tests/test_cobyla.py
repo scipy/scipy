@@ -1,7 +1,8 @@
 import math
-import numpy as np
 
+import numpy as np
 from numpy.testing import assert_allclose, assert_, assert_array_equal
+import pytest
 
 from scipy.optimize import fmin_cobyla, minimize, Bounds
 
@@ -22,7 +23,8 @@ class TestCobyla:
     def con2(self, x):
         return -self.con1(x)
 
-    def test_simple(self):
+    @pytest.mark.xslow(True, reason='not slow, but noisy so only run rarely')
+    def test_simple(self, capfd):
         # use disp=True as smoke test for gh-8118
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
                         rhoend=1e-5, maxfun=100, disp=True)
@@ -52,8 +54,11 @@ class TestCobyla:
         assert_(sol.fun < self.fun(self.solution) + 1e-3, sol)
         assert_(sol.nfev == callback.n_calls,
                 "Callback is not called exactly once for every function eval.")
-        assert_array_equal(sol.x, callback.last_x,
-                           "Last design vector sent to the callback is not equal to returned value.")
+        assert_array_equal(
+            sol.x,
+            callback.last_x,
+            "Last design vector sent to the callback is not equal to returned value.",
+        )
 
     def test_minimize_constraint_violation(self):
         np.random.seed(1234)

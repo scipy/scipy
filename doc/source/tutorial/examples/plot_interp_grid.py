@@ -44,7 +44,7 @@ for ax, order in zip(axes, orders):
     yc = np.tile(np.arange(starty, starty + order + 1)[np.newaxis, :],
                  (order + 1, 1)).ravel()
     ax.plot(xc, -yc, 'ko')
-    ax.set_title("Interpolation (order = {})".format(order),
+    ax.set_title(f"Interpolation (order = {order})",
                  fontdict=dict(size=16, weight='bold'))
 
     # set limits and ticks for 0, 0 voxel at upper left

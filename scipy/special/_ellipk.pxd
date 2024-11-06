@@ -1,5 +1,6 @@
-from ._cephes cimport ellpk
+cdef extern from "xsf_wrappers.h" nogil:
+    double cephes_ellpk_wrap(double x)
 
 
 cdef inline double ellipk(double m) noexcept nogil:
-    return ellpk(1.0 - m)
+    return cephes_ellpk_wrap(1.0 - m)

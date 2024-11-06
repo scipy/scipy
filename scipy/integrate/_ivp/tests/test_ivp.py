@@ -7,7 +7,7 @@ import numpy as np
 from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
-from scipy.integrate._ivp.common import num_jac
+from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
 
@@ -260,6 +260,7 @@ def test_integration_complex():
         assert np.all(e < 5)
 
 
+@pytest.mark.fail_slow(5)
 def test_integration_sparse_difference():
     n = 200
     t_span = [0, 20]
@@ -438,7 +439,8 @@ def test_events():
         assert_(np.all(e < 5))
 
         # Test that the y_event matches solution
-        assert np.allclose(sol_rational(res.t_events[0][0]), res.y_events[0][0], rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[0][0]), res.y_events[0][0],
+                           rtol=1e-3, atol=1e-6)
 
     # Test in backward direction.
     event_rational_1.direction = 0
@@ -515,8 +517,49 @@ def test_events():
         e = compute_error(yc, yc_true, 1e-3, 1e-6)
         assert_(np.all(e < 5))
 
-        assert np.allclose(sol_rational(res.t_events[1][0]), res.y_events[1][0], rtol=1e-3, atol=1e-6)
-        assert np.allclose(sol_rational(res.t_events[2][0]), res.y_events[2][0], rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[1][0]), res.y_events[1][0],
+                           rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[2][0]), res.y_events[2][0],
+                           rtol=1e-3, atol=1e-6)
+
+
+def _get_harmonic_oscillator():
+    def f(t, y):
+        return [y[1], -y[0]]
+
+    def event(t, y):
+        return y[0]
+
+    return f, event
+
+
+@pytest.mark.parametrize('n_events', [3, 4])
+def test_event_terminal_integer(n_events):
+    f, event = _get_harmonic_oscillator()
+    event.terminal = n_events
+    res = solve_ivp(f, (0, 100), [1, 0], events=event)
+    assert len(res.t_events[0]) == n_events
+    assert len(res.y_events[0]) == n_events
+    assert_allclose(res.y_events[0][:, 0], 0, atol=1e-14)
+
+
+def test_event_terminal_iv():
+    f, event = _get_harmonic_oscillator()
+    args = (f, (0, 100), [1, 0])
+
+    event.terminal = None
+    res = solve_ivp(*args, events=event)
+    event.terminal = 0
+    ref = solve_ivp(*args, events=event)
+    assert_allclose(res.t_events, ref.t_events)
+
+    message = "The `terminal` attribute..."
+    event.terminal = -1
+    with pytest.raises(ValueError, match=message):
+        solve_ivp(*args, events=event)
+    event.terminal = 3.5
+    with pytest.raises(ValueError, match=message):
+        solve_ivp(*args, events=event)
 
 
 def test_max_step():
@@ -555,7 +598,7 @@ def test_max_step():
                 solver = method(fun_rational, t_span[0], y0, t_span[1],
                                 rtol=rtol, atol=atol, max_step=1e-20)
                 message = solver.step()
-
+                message = solver.step()  # First step succeeds but second step fails.
                 assert_equal(solver.status, 'failed')
                 assert_("step size is less" in message)
                 assert_raises(RuntimeError, solver.step)
@@ -1085,9 +1128,117 @@ def test_args_single_value():
     sol = solve_ivp(fun_with_arg, (0, 0.1), [1], args=(-1,))
     assert_allclose(sol.y[0, -1], np.exp(-0.1))
 
+
 @pytest.mark.parametrize("f0_fill", [np.nan, np.inf])
 def test_initial_state_finiteness(f0_fill):
     # regression test for gh-17846
     msg = "All components of the initial state `y0` must be finite."
     with pytest.raises(ValueError, match=msg):
         solve_ivp(fun_zero, [0, 10], np.full(3, f0_fill))
+
+
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
+def test_zero_interval(method):
+    # Case where upper and lower limits of integration are the same
+    # Result of integration should match initial state.
+    # f[y(t)] = 2y(t)
+    def f(t, y):
+        return 2 * y
+    res = solve_ivp(f, (0.0, 0.0), np.array([1.0]), method=method)
+    assert res.success
+    assert_allclose(res.y[0, -1], 1.0)
+    
+
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
+def test_tbound_respected_small_interval(method):
+    """Regression test for gh-17341"""
+    SMALL = 1e-4
+
+    # f[y(t)] = 2y(t) on t in [0,SMALL]
+    #           undefined otherwise 
+    def f(t, y):
+        if t > SMALL:
+            raise ValueError("Function was evaluated outside interval")
+        return 2 * y
+    res = solve_ivp(f, (0.0, SMALL), np.array([1]), method=method)
+    assert res.success
+
+
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
+def test_tbound_respected_larger_interval(method):
+    """Regression test for gh-8848"""
+    def V(r):
+        return -11/r + 10 * r / (0.05 + r**2)
+
+    def func(t, p):
+        if t < -17 or t > 2:
+            raise ValueError("Function was evaluated outside interval")
+        P = p[0]
+        Q = p[1]
+        r = np.exp(t)
+        dPdr = r * Q
+        dQdr = -2.0 * r * ((-0.2 - V(r)) * P + 1 / r * Q)
+        return np.array([dPdr, dQdr])
+
+    result = solve_ivp(func, 
+                       (-17, 2),
+                       y0=np.array([1, -11]),
+                       max_step=0.03,
+                       vectorized=False,
+                       t_eval=None,
+                       atol=1e-8, 
+                       rtol=1e-5)
+    assert result.success
+
+
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
+def test_tbound_respected_oscillator(method):
+    "Regression test for gh-9198"
+    def reactions_func(t, y):
+        if (t > 205): 
+            raise ValueError("Called outside interval")
+        yprime = np.array([1.73307544e-02, 
+                           6.49376470e-06, 
+                           0.00000000e+00, 
+                           0.00000000e+00])
+        return yprime
+
+    def run_sim2(t_end, n_timepoints=10, shortest_delay_line=10000000):
+        init_state = np.array([134.08298555, 138.82348612, 100., 0.])
+        t0 = 100.0
+        t1 = 200.0
+        return solve_ivp(reactions_func,
+                         (t0, t1),
+                         init_state.copy(), 
+                         dense_output=True, 
+                         max_step=t1 - t0)
+    result = run_sim2(1000, 100, 100)
+    assert result.success
+
+
+def test_inital_maxstep():
+    """Verify that select_inital_step respects max_step"""
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = np.array([1/3, 2/9])
+    for (t0, t_bound) in ((5, 9), (5, 1)):
+        for method_order in [RK23.error_estimator_order,
+                            RK45.error_estimator_order,
+                            DOP853.error_estimator_order,
+                            3, #RADAU
+                            1 #BDF
+                            ]:
+            step_no_max = select_initial_step(fun_rational, t0, y0, t_bound,
+                                            np.inf,
+                                            fun_rational(t0,y0), 
+                                            np.sign(t_bound - t0),
+                                            method_order,
+                                            rtol, atol)
+            max_step = step_no_max/2
+            step_with_max = select_initial_step(fun_rational, t0, y0, t_bound,
+                                            max_step,
+                                            fun_rational(t0, y0),
+                                            np.sign(t_bound - t0),
+                                            method_order, 
+                                            rtol, atol)
+            assert_equal(max_step, step_with_max)

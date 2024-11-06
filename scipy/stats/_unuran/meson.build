@@ -221,7 +221,7 @@ unuran_cython_gen = generator(cython,
   depends : [_cython_tree, _lib_pxd, _stats_pxd, _unuran_pxd]
 )
 
-statlib = py3.extension_module('unuran_wrapper',
+py3.extension_module('unuran_wrapper',
   [
     unuran_cython_gen.process('unuran_wrapper.pyx'),
     unuran_sources

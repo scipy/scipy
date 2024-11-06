@@ -274,7 +274,7 @@ cpdef _pad_test(np.ndarray[DTYPE_t] data, np.intp_t npre=0, np.intp_t npost=0,
     return np.asarray(out)
 
 
-def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
+def _apply(np.ndarray data, const DTYPE_t [::1] h_trans_flip, np.ndarray out,
            np.intp_t up, np.intp_t down, np.intp_t axis, np.intp_t mode,
            DTYPE_t cval):
     cdef ArrayInfo data_info, output_info

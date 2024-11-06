@@ -292,7 +292,7 @@ same first derivative to an input signal:
     >>> evals_all_imag[-4:]
     array([-0.95105652, 0.95105652, -0.98768834, 0.98768834])
     >>> evals_large_imag
-    array([0.95105652, -0.95105652, 0.98768834, -0.98768834])
+    array([0.95105652, -0.95105652, 0.98768834, -0.98768834]) # may vary
 
 Note that the eigenvalues of this operator are all imaginary. Moreover,
 the keyword ``which='LI'`` of :func:`scipy.sparse.linalg.eigs` produces

@@ -24,7 +24,7 @@ except ImportError:
 
 __all__ = ['fmin_cobyla']
 
-# Workarund as _cobyla.minimize is not threadsafe
+# Workaround as _cobyla.minimize is not threadsafe
 # due to an unknown f2py bug and can segfault,
 # see gh-9658.
 _module_lock = RLock()
@@ -248,8 +248,8 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
             raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype != 'ineq':
-                raise ValueError("Constraints of type '%s' not handled by "
-                                 "COBYLA." % con['type'])
+                raise ValueError(f"Constraints of type '{con['type']}' not handled by "
+                                 "COBYLA.")
 
         # check function
         if 'fun' not in con:

@@ -132,14 +132,18 @@ class _csc_base(_cs_matrix):
         return self._major_index_fancy(col)._minor_slice(row)
 
     def _get_arrayXint(self, row, col):
-        return self._get_submatrix(major=col)._minor_index_fancy(row)
+        res = self._get_submatrix(major=col)._minor_index_fancy(row)
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_arrayXslice(self, row, col):
         return self._major_slice(col)._minor_index_fancy(row)
 
     # these functions are used by the parent class (_cs_matrix)
     # to remove redundancy between csc_array and csr_matrix
-    def _swap(self, x):
+    @staticmethod
+    def _swap(x):
         """swap the members of x if this is a column-oriented matrix
         """
         return x[1], x[0]

@@ -142,7 +142,8 @@ def test_type_errors():
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[("hi")]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, "")]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, "")]))
-    assert_raises(TypeError, _clean_inputs, lp._replace(bounds=[(1, date(2020, 2, 29))]))
+    assert_raises(TypeError, _clean_inputs,
+                  lp._replace(bounds=[(1, date(2020, 2, 29))]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[[[1, 2]]]))
 
 
@@ -249,11 +250,13 @@ def test_bad_bounds():
         sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
         assert_raises(ValueError, _clean_inputs,
                       lp._replace(bounds=[(1, 2), (1, 2, 2)]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2), (1, 2)]))
+    assert_raises(ValueError, _clean_inputs,
+                  lp._replace(bounds=[(1, 2), (1, 2), (1, 2)]))
 
     lp = _LPProblem(c=[1, 2, 3, 4])
 
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 3, 4), (1, 2, 3, 4)]))
+    assert_raises(ValueError, _clean_inputs,
+                  lp._replace(bounds=[(1, 2, 3, 4), (1, 2, 3, 4)]))
 
 
 def test_good_bounds():
@@ -300,5 +303,8 @@ def test_good_bounds():
     lp_cleaned = _clean_inputs(lp._replace(bounds=[(None, 1)]))
     assert_equal(lp_cleaned.bounds, [(-np.inf, 1)] * 4)
 
-    lp_cleaned = _clean_inputs(lp._replace(bounds=[(None, None), (-np.inf, None), (None, np.inf), (-np.inf, np.inf)]))
+    lp_cleaned = _clean_inputs(lp._replace(bounds=[(None, None),
+                                                   (-np.inf, None),
+                                                   (None, np.inf),
+                                                   (-np.inf, np.inf)]))
     assert_equal(lp_cleaned.bounds, [(-np.inf, np.inf)] * 4)

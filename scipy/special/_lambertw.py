@@ -1,5 +1,7 @@
 from ._ufuncs import _lambertw
 
+import numpy as np
+
 
 def lambertw(z, k=0, tol=1e-8):
     r"""
@@ -141,4 +143,7 @@ def lambertw(z, k=0, tol=1e-8):
     >>> -lambertw(-np.log(0.5)) / np.log(0.5)
     (0.64118574450498589+0j)
     """
+    # TODO: special expert should inspect this
+    # interception; better place to do it?
+    k = np.asarray(k, dtype=np.dtype("long"))
     return _lambertw(z, k, tol)

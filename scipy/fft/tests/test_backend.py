@@ -56,7 +56,7 @@ mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
 @pytest.mark.parametrize("func, np_func, mock", zip(funcs, np_funcs, mocks))
 def test_backend_call(func, np_func, mock):
     x = np.arange(20).reshape((10,2))
-    answer = np_func(x)
+    answer = np_func(x.astype(np.float64))
     assert_allclose(func(x), answer, atol=1e-10)
 
     with set_backend(mock_backend, only=True):

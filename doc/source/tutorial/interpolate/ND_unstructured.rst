@@ -15,6 +15,7 @@ that do not form a regular grid.
 
     Suppose we want to interpolate the 2-D function
 
+    >>> import numpy as np
     >>> def func(x, y):
     ...     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
 
@@ -114,21 +115,21 @@ classes from the `scipy.interpolate` module.
     >>> ius = InterpolatedUnivariateSpline(x, y)
     >>> yi = ius(xi)
 
-    >>> plt.subplot(2, 1, 1)
-    >>> plt.plot(x, y, 'bo')
-    >>> plt.plot(xi, yi, 'g')
-    >>> plt.plot(xi, np.sin(xi), 'r')
-    >>> plt.title('Interpolation using univariate spline')
+    >>> fix, (ax1, ax2) = plt.subplots(2, 1)
+    >>> ax1.plot(x, y, 'bo')
+    >>> ax1.plot(xi, yi, 'g')
+    >>> ax1.plot(xi, np.sin(xi), 'r')
+    >>> ax1.set_title('Interpolation using univariate spline')
 
     >>> # use RBF method
     >>> rbf = RBFInterpolator(x, y)
     >>> fi = rbf(xi)
 
-    >>> plt.subplot(2, 1, 2)
-    >>> plt.plot(x, y, 'bo')
-    >>> plt.plot(xi, fi, 'g')
-    >>> plt.plot(xi, np.sin(xi), 'r')
-    >>> plt.title('Interpolation using RBF - multiquadrics')
+    >>> ax2.plot(x, y, 'bo')
+    >>> ax2.plot(xi, fi, 'g')
+    >>> ax2.plot(xi, np.sin(xi), 'r')
+    >>> ax2.set_title('Interpolation using RBF - multiquadrics')
+    >>> plt.tight_layout()
     >>> plt.show()
 
 ..   :caption: Example of a 1-D RBF interpolation.

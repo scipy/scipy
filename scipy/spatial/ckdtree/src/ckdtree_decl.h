@@ -2,11 +2,11 @@
 #define CKDTREE_CPP_DECL
 
 /*
- * Use numpy to provide some platform independency.
+ * Use numpy to provide some platform independence.
  * Define these functions for your platform
  * */
-#include <cmath>
 #include <numpy/npy_common.h>
+#include <cmath>
 #define CKDTREE_LIKELY(x) NPY_LIKELY(x)
 #define CKDTREE_UNLIKELY(x)  NPY_UNLIKELY(x)
 #define CKDTREE_PREFETCH(x, rw, loc)  NPY_PREFETCH(x, rw, loc)

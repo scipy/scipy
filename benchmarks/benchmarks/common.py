@@ -136,7 +136,7 @@ def run_monitored_proc(code):
         if ret is not None:
             break
 
-        with open('/proc/%d/status' % process.pid, 'r') as f:
+        with open('/proc/%d/status' % process.pid) as f:
             procdata = f.read()
 
         m = re.search(r'VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)

@@ -14,6 +14,7 @@ from numpy import float32, float64, complex64, complex128, arange, triu, \
                   nonzero
 
 from numpy.random import rand, seed
+import scipy
 from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
 
 try:
@@ -1092,3 +1093,22 @@ def test_trsm():
         Al[arange(m), arange(m)] = dtype(1)
         x2 = solve(Al.conj().T, alpha*B2.conj().T)
         assert_allclose(x1, x2.conj().T, atol=tol)
+
+
+@pytest.mark.xfail(run=False,
+                   reason="gh-16930")
+def test_gh_169309():
+    x = np.repeat(10, 9)
+    actual = scipy.linalg.blas.dnrm2(x, 5, 3, -1)
+    expected = math.sqrt(500)
+    assert_allclose(actual, expected)
+
+
+def test_dnrm2_neg_incx():
+    # check that dnrm2(..., incx < 0) raises
+    # XXX: remove the test after the lowest supported BLAS implements
+    # negative incx (new in LAPACK 3.10)
+    x = np.repeat(10, 9)
+    incx = -1
+    with assert_raises(fblas.__fblas_error):
+        scipy.linalg.blas.dnrm2(x, 5, 3, incx)

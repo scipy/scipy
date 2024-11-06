@@ -1,4 +1,4 @@
-import os
+import math
 import numpy as np
 
 from .arpack import _arpack  # type: ignore[attr-defined]
@@ -7,11 +7,7 @@ from . import eigsh
 from scipy._lib._util import check_random_state
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
-if os.environ.get("SCIPY_USE_PROPACK"):
-    from scipy.sparse.linalg._svdp import _svdp
-    HAS_PROPACK = True
-else:
-    HAS_PROPACK = False
+from scipy.sparse.linalg._svdp import _svdp
 from scipy.linalg import svd
 
 arpack_int = _arpack.timing.nbx.dtype
@@ -34,11 +30,10 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
 
     # input validation/standardization for `A`
     A = aslinearoperator(A)  # this takes care of some input validation
-    if not (np.issubdtype(A.dtype, np.complexfloating)
-            or np.issubdtype(A.dtype, np.floating)):
-        message = "`A` must be of floating or complex floating data type."
+    if not np.issubdtype(A.dtype, np.number):
+        message = "`A` must be of numeric data type."
         raise ValueError(message)
-    if np.prod(A.shape) == 0:
+    if math.prod(A.shape) == 0:
         message = "`A` must not be empty."
         raise ValueError(message)
 
@@ -298,7 +293,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> rng = np.random.RandomState(0)
     >>> X_dense = rng.random(size=(100, 100))
     >>> X_dense[:, 2 * np.arange(50)] = 0
-    >>> X = sparse.csr_matrix(X_dense)
+    >>> X = sparse.csr_array(X_dense)
     >>> _, singular_values, _ = svds(X, k=5, random_state=rng)
     >>> print(singular_values)
     [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
@@ -307,7 +302,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ever explicitly constructed.
 
     >>> rng = np.random.default_rng(102524723947864966825913730119128190974)
-    >>> G = sparse.rand(8, 9, density=0.5, random_state=rng)
+    >>> G = sparse.random_array((8, 9), density=0.5, random_state=rng)
     >>> Glo = aslinearoperator(G)
     >>> _, singular_values_svds, _ = svds(Glo, k=5, random_state=rng)
     >>> _, singular_values_svd, _ = linalg.svd(G.toarray())
@@ -436,7 +431,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ...                              np.arange(1, 4)) / n)
     >>> np.allclose(s, se, atol=1e-3)
     True
-    >>> print(np.allclose(np.abs(u), np.abs(ue), atol=1e-6))
+    >>> np.allclose(np.abs(u), np.abs(ue), atol=1e-6)
     True
 
     """
@@ -488,12 +483,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                            largest=largest)
 
     elif solver == 'propack':
-        if not HAS_PROPACK:
-            raise ValueError("`solver='propack'` is opt-in due "
-                             "to potential issues on Windows, "
-                             "it can be enabled by setting the "
-                             "`SCIPY_USE_PROPACK` environment "
-                             "variable before importing scipy")
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
         irl_mode = (which == 'SM')

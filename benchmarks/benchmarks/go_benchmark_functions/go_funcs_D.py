@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy import abs, cos, exp, arange, pi, sin, sqrt, sum, zeros, tanh
 from numpy.testing import assert_almost_equal
@@ -404,8 +403,8 @@ class DeVilliersGlasser02(Benchmark):
     r"""
     DeVilliers-Glasser 2 objective function.
 
-    This class defines the DeVilliers-Glasser 2 [1]_ function global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the DeVilliers-Glasser 2 [1]_ function global optimization
+    problem. This is a multimodal minimization problem defined as follows:
 
     .. math::
 

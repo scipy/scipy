@@ -21,7 +21,8 @@ interpolation* can be summarized as follows:
 +------------------+-------------------------+------------------------------+------------------------+---------------------------------------+
 |                  | **kind**                | **routine**                  | **continuity**         | **comment**                           |
 +==================+=========================+==============================+========================+=======================================+
-|                  | linear                  | `numpy.interp`               | piecewise continuous   | comes from numpy                      |
+|                  | linear                  | `numpy.interp`               | piecewise continuous   | Alternatively,                        |
+|                  |                         |                              |                        | ``make_interp_spline(..., k=1)``      |
 +                  +-------------------------+------------------------------+------------------------+---------------------------------------+
 |                  | cubic spline            | `CubicSpline`                | 2nd derivative         |                                       |
 +                  +-------------------------+------------------------------+------------------------+---------------------------------------+
@@ -68,4 +69,4 @@ Further details are given in the links below.
    interpolate/ND_regular_grid
    interpolate/ND_unstructured
    interpolate/extrapolation_examples
-
+   interpolate/interp_transition_guide.md

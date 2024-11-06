@@ -25,7 +25,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
     const double *data = self->raw_data;
     ckdtree_intp_t *indices = (intptr_t *)(self->raw_indices);
 
-    ckdtreenode new_node, *n, *root;
+    ckdtreenode new_node = {}, *n, *root;
     ckdtree_intp_t node_index, _less, _greater;
     ckdtree_intp_t i, j, p, d;
     double size, split, minval, maxval;

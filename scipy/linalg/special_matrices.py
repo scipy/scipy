@@ -5,10 +5,10 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
-    'tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
+    'toeplitz', 'circulant', 'hankel',
     'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
     'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
-    'fiedler', 'fiedler_companion', 'convolution_matrix', 'as_strided'
+    'fiedler', 'fiedler_companion', 'convolution_matrix'
 ]
 
 

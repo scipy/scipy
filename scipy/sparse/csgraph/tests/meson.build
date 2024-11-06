@@ -5,6 +5,7 @@ python_sources = [
   'test_flow.py',
   'test_graph_laplacian.py',
   'test_matching.py',
+  'test_pydata_sparse.py',
   'test_reordering.py',
   'test_shortest_path.py',
   'test_spanning_tree.py',
@@ -14,5 +15,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/sparse/csgraph/tests'
+  subdir: 'scipy/sparse/csgraph/tests',
+  install_tag: 'tests'
 )

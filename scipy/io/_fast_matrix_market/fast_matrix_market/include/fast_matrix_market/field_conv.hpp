@@ -6,6 +6,7 @@
 
 #include <charconv>
 #include <cmath>
+#include <cstring>
 #include <complex>
 #include <limits>
 #include <iomanip>
@@ -179,7 +180,7 @@ namespace fast_matrix_market {
                     throw out_of_range("Floating-point overflow");
                 } else {
                     // std::from_chars does not return a best match on under/overflow, so fall back to strtod
-                    out = std::strtod(pos, nullptr);
+                    out = static_cast<FT>(std::strtod(pos, nullptr));
                 }
             } else {
                 throw invalid_mm("Invalid floating-point value.");
@@ -231,13 +232,22 @@ namespace fast_matrix_market {
 
     template <typename FT>
     const char* read_float(const char* pos, const char* end, FT& out, out_of_range_behavior oorb) {
+        constexpr bool have_fast_float =
 #ifdef FMM_USE_FAST_FLOAT
-        return read_float_fast_float(pos, end, out, oorb);
-#elif defined(FMM_FROM_CHARS_DOUBLE_SUPPORTED)
-        return read_float_from_chars(pos, end, out, oorb);
+        true;
 #else
-        return read_float_fallback(pos, end, out, oorb);
+        false;
 #endif
+
+        if constexpr (have_fast_float && (std::is_same_v<FT, float> || std::is_same_v<FT, double>)) {
+            return read_float_fast_float(pos, end, out, oorb);
+        } else {
+#if defined(FMM_FROM_CHARS_DOUBLE_SUPPORTED)
+            return read_float_from_chars(pos, end, out, oorb);
+#else
+            return read_float_fallback(pos, end, out, oorb);
+#endif
+        }
     }
 
 #ifdef FMM_FROM_CHARS_LONG_DOUBLE_SUPPORTED
@@ -315,15 +325,8 @@ namespace fast_matrix_market {
         return ret;
     }
 
-    inline const char* read_value(const char* pos, const char* end, float& out, const read_options& options = {}) {
-        return read_float(pos, end, out, options.float_out_of_range_behavior);
-    }
-
-    inline const char* read_value(const char* pos, const char* end, double& out, const read_options& options = {}) {
-        return read_float(pos, end, out, options.float_out_of_range_behavior);
-    }
-
-    inline const char* read_value(const char* pos, const char* end, long double& out, const read_options& options = {}) {
+    template <typename T, typename std::enable_if<std::is_floating_point_v<T>, int>::type = 0>
+    const char* read_value(const char* pos, const char* end, T& out, const read_options& options = {}) {
         return read_float(pos, end, out, options.float_out_of_range_behavior);
     }
 
@@ -389,11 +392,8 @@ namespace fast_matrix_market {
         return value ? "1" : "0";
     }
 
-    inline std::string value_to_string(const int32_t & value, [[maybe_unused]] int precision) {
-        return int_to_string(value);
-    }
-
-    inline std::string value_to_string(const int64_t & value, [[maybe_unused]] int precision) {
+    template <typename T, typename std::enable_if<std::is_integral_v<T>, int>::type = 0>
+    std::string value_to_string(const T& value, [[maybe_unused]] int precision) {
         return int_to_string(value);
     }
 
@@ -404,7 +404,17 @@ namespace fast_matrix_market {
     std::string value_to_string_fallback(const T& value, int precision) {
         if (precision < 0) {
             // shortest representation
-            return std::to_string(value);
+            if constexpr (std::is_floating_point_v<T>
+                            && !std::is_same_v<T, float>
+                            && !std::is_same_v<T, double>
+                            && !std::is_same_v<T, long double>) {
+                // std::to_string is faster but does not support fixed-width floating point types.
+                std::ostringstream oss;
+                oss << value;
+                return oss.str();
+            } else {
+                return std::to_string(value);
+            }
         } else {
             std::ostringstream oss;
             oss << std::setprecision(precision) << value;
@@ -523,8 +533,9 @@ namespace fast_matrix_market {
 #endif
 
 #ifdef FMM_TO_CHARS_DOUBLE_SUPPORTED
-    inline std::string value_to_string_to_chars(const float& value, int precision) {
-        std::string ret(16, ' ');
+    template <typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+    inline std::string value_to_string_to_chars(const T& value, int precision) {
+        std::string ret(100, ' ');
         std::to_chars_result result{};
         if (precision < 0) {
             // shortest representation
@@ -541,23 +552,6 @@ namespace fast_matrix_market {
         }
     }
 
-    inline std::string value_to_string_to_chars(const double& value, int precision) {
-        std::string ret(25, ' ');
-        std::to_chars_result result{};
-        if (precision < 0) {
-            // shortest representation
-            result = std::to_chars(ret.data(), ret.data() + ret.size(), value);
-        } else {
-            // explicit precision
-            result = std::to_chars(ret.data(), ret.data() + ret.size(), value, std::chars_format::general, precision);
-        }
-        if (result.ec == std::errc()) {
-            ret.resize(result.ptr - ret.data());
-            return ret;
-        } else {
-            return value_to_string_fallback(value, precision);
-        }
-    }
 #endif
 
 #ifdef FMM_TO_CHARS_LONG_DOUBLE_SUPPORTED
@@ -581,50 +575,6 @@ namespace fast_matrix_market {
 #endif
 
     /**
-     * float to string.
-     *
-     * Preference order: Dragonbox (no precision support), to_chars, Ryu, fallback.
-     */
-    inline std::string value_to_string(const float& value, int precision) {
-#ifdef FMM_USE_DRAGONBOX
-        if (precision < 0) {
-            // Shortest representation. Dragonbox is fastest.
-            return value_to_string_dragonbox(value);
-        }
-#endif
-
-#if defined(FMM_TO_CHARS_DOUBLE_SUPPORTED)
-        return value_to_string_to_chars(value, precision);
-#elif defined(FMM_USE_RYU)
-        return value_to_string_ryu(value, precision);
-#else
-        return value_to_string_fallback(value, precision);
-#endif
-    }
-
-    /**
-     * double to string.
-     *
-     * Preference order: Dragonbox (no precision support), to_chars, Ryu, fallback.
-     */
-    inline std::string value_to_string(const double& value, int precision) {
-#ifdef FMM_USE_DRAGONBOX
-        if (precision < 0) {
-            // Shortest representation. Dragonbox is fastest.
-            return value_to_string_dragonbox(value);
-        }
-#endif
-
-#if defined(FMM_TO_CHARS_DOUBLE_SUPPORTED)
-        return value_to_string_to_chars(value, precision);
-#elif defined(FMM_USE_RYU)
-        return value_to_string_ryu(value, precision);
-#else
-        return value_to_string_fallback(value, precision);
-#endif
-    }
-
-    /**
      * long double to string.
      *
      * Preference order: to_chars, fallback.
@@ -639,22 +589,52 @@ namespace fast_matrix_market {
 #endif
     }
 
-    inline std::string value_to_string(const std::complex<float>& value, int precision) {
-        return value_to_string(value.real(), precision) + " " + value_to_string(value.imag(), precision);
+
+    /**
+     * floating-point to string.
+     *
+     * Preference order: Dragonbox (fast but no precision support), to_chars, Ryu, fallback.
+     *
+     * Dragonbox and Ryu only support float and double types.
+     */
+    template <typename T, typename std::enable_if<std::is_floating_point_v<T> && !std::is_same_v<T, long double>, int>::type = 0>
+    std::string value_to_string(const T& value, int precision) {
+#ifdef FMM_USE_DRAGONBOX
+        if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+            if (precision < 0) {
+                // Shortest representation. Dragonbox is fastest.
+                return value_to_string_dragonbox(value);
+            }
+        }
+#endif
+
+#ifdef FMM_TO_CHARS_DOUBLE_SUPPORTED
+        return value_to_string_to_chars(value, precision);
+#else
+        constexpr bool have_ryu =
+#ifdef FMM_USE_RYU
+            true;
+#else
+            false;
+#endif
+
+        if constexpr (have_ryu && (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
+            return value_to_string_ryu(value, precision);
+        } else {
+            return value_to_string_fallback(value, precision);
+        }
+#endif
     }
 
-    inline std::string value_to_string(const std::complex<double>& value, int precision) {
-        return value_to_string(value.real(), precision) + " " + value_to_string(value.imag(), precision);
-    }
-
-    inline std::string value_to_string(const std::complex<long double>& value, int precision) {
+    template <typename COMPLEX, typename std::enable_if<is_complex<COMPLEX>::value, int>::type = 0>
+    inline std::string value_to_string(const COMPLEX& value, int precision) {
         return value_to_string(value.real(), precision) + " " + value_to_string(value.imag(), precision);
     }
 
     /**
      * Catchall
      */
-    template <typename T>
+    template <typename T, typename std::enable_if<!std::is_integral_v<T> && !std::is_floating_point_v<T> && !is_complex<T>::value, int>::type = 0>
     std::string value_to_string(const T& value, int precision) {
         return value_to_string_fallback(value, precision);
     }

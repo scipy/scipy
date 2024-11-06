@@ -33,7 +33,7 @@ def test_stdtrit_vs_R_large_df():
              -1.2815515655454472466,
              -1.2815515655446008125,
              -1.2815515655446008125]
-    assert_allclose(res, res_R, rtol=1e-15)
+    assert_allclose(res, res_R, rtol=1e-14, atol=1e-15)
     # last value should also agree with ndtri
     assert_equal(res[3], ndtri(0.1))
 

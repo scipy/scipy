@@ -32,7 +32,7 @@ import ast
 import os
 from pathlib import Path
 import sys
-from typing import Iterator, Sequence
+from collections.abc import Iterator, Sequence
 import itertools
 
 PRAGMA = "# skip name check"
@@ -71,7 +71,9 @@ def is_misnamed_test_func(
         and node.name
         not in ("teardown_method", "setup_method",
                 "teardown_class", "setup_class",
-                "setup_module", "teardown_module")
+                "setup_module", "teardown_module",
+                "_test_dependency",  # array_api_compat.tests.test_no_dependencies
+            )
     )
 
 

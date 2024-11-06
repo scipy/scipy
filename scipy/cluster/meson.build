@@ -1,4 +1,4 @@
-slib = py3.extension_module('_hierarchy',
+py3.extension_module('_hierarchy',
   linalg_cython_gen.process('_hierarchy.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
@@ -7,7 +7,7 @@ slib = py3.extension_module('_hierarchy',
   subdir: 'scipy/cluster'
 )
 
-slib = py3.extension_module('_optimal_leaf_ordering',
+py3.extension_module('_optimal_leaf_ordering',
   linalg_cython_gen.process('_optimal_leaf_ordering.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
@@ -16,7 +16,7 @@ slib = py3.extension_module('_optimal_leaf_ordering',
   subdir: 'scipy/cluster'
 )
 
-slib = py3.extension_module('_vq',
+py3.extension_module('_vq',
   linalg_cython_gen.process('_vq.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,

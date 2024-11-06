@@ -175,9 +175,6 @@ class LTI(Benchmark):
     def time_lsim(self):
         signal.lsim(self.system, self.u, self.t)
 
-    def time_lsim2(self):
-        signal.lsim2(self.system, self.u, self.t)
-
     def time_step(self):
         signal.step(self.system, T=self.t)
 

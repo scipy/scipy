@@ -23,7 +23,7 @@ from typing import cast, get_args, Literal
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_equal
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 from scipy.fft import fftshift
 from scipy.stats import norm as normal_distribution  # type: ignore
 from scipy.signal import get_window, welch, stft, istft, spectrogram
@@ -44,7 +44,7 @@ def test__calc_dual_canonical_window_roundtrip():
     win = gaussian(51, std=10, sym=True)
     d_win = _calc_dual_canonical_window(win, 10)
     win2 = _calc_dual_canonical_window(d_win, 10)
-    assert_allclose(win2, win)
+    xp_assert_close(win2, win)
 
 
 def test__calc_dual_canonical_window_exceptions():
@@ -155,8 +155,8 @@ def test_exceptions_properties_methods():
 
 @pytest.mark.parametrize('m', ('onesided', 'onesided2X'))
 def test_exceptions_fft_mode_complex_win(m: FFT_MODE_TYPE):
-    """Verify hat one-sided spectra are not allowed with complex-valued
-    windows.
+    """Verify that one-sided spectra are not allowed with complex-valued
+    windows or with complex-valued signals.
 
     The reason being, the `rfft` function only accepts real-valued input.
     """
@@ -168,6 +168,13 @@ def test_exceptions_fft_mode_complex_win(m: FFT_MODE_TYPE):
     with pytest.raises(ValueError,
                        match=f"One-sided spectra, i.e., fft_mode='{m}'.*"):
         SFT.fft_mode = m
+
+    SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1, scale_to='psd', fft_mode='onesided')
+    with pytest.raises(ValueError, match="Complex-valued `x` not allowed for self.*"):
+        SFT.stft(np.ones(8)*1j)
+    SFT.fft_mode = 'onesided2X'
+    with pytest.raises(ValueError, match="Complex-valued `x` not allowed for self.*"):
+        SFT.stft(np.ones(8)*1j)
 
 
 def test_invalid_fft_mode_RuntimeError():
@@ -207,8 +214,8 @@ def test_from_window(win_params, Nx: int):
                                     symmetric_win=False, fft_mode='twosided',
                                     scale_to='psd', phase_shift=1)
     # Be informative when comparing instances:
-    assert_equal(SFT1.win, SFT0.win)
-    assert_allclose(SFT2.win, w_per / np.sqrt(sum(w_per**2) * fs))
+    xp_assert_equal(SFT1.win, SFT0.win)
+    xp_assert_close(SFT2.win, w_per / np.sqrt(sum(w_per**2) * fs))
     for n_ in ('hop', 'T', 'fft_mode', 'mfft', 'scaling', 'phase_shift'):
         v0, v1, v2 = (getattr(SFT_, n_) for SFT_ in (SFT0, SFT1, SFT2))
         assert v1 == v0, f"SFT1.{n_}={v1} does not equal SFT0.{n_}={v0}"
@@ -227,7 +234,7 @@ def test_dual_win_roundtrip():
               phase_shift=2)
     SFT0 = ShortTimeFFT(np.ones(4), **kw)
     SFT1 = ShortTimeFFT.from_dual(SFT0.dual_win, **kw)
-    assert_allclose(SFT1.dual_win, SFT0.win)
+    xp_assert_close(SFT1.dual_win, SFT0.win)
 
 
 @pytest.mark.parametrize('scale_to, fac_psd, fac_mag',
@@ -253,11 +260,11 @@ def test_scaling(scale_to: Literal['magnitude', 'psd'], fac_psd, fac_mag):
 
     SFT.scale_to('magnitude')
     x_mag = SFT.istft(Sx_mag, k1=len(x))
-    assert_allclose(x_mag, x)
+    xp_assert_close(x_mag, x)
 
     SFT.scale_to('psd')
     x_psd = SFT.istft(Sx_psd, k1=len(x))
-    assert_allclose(x_psd, x)
+    xp_assert_close(x_psd, x)
 
 
 def test_scale_to():
@@ -281,7 +288,7 @@ def test_scale_to():
         dual_win = SFT.dual_win.copy()
 
         SFT.scale_to(cast(Literal['magnitude', 'psd'], scale))
-        assert_allclose(SFT.dual_win, dual_win * s_fac)
+        xp_assert_close(SFT.dual_win, dual_win * s_fac)
 
 
 def test_x_slices_padding():
@@ -303,7 +310,8 @@ def test_x_slices_padding():
     for p_, xx in d.items():
         gen = SFT._x_slices(np.array(x), 0, 0, 2, padding=cast(PAD_TYPE, p_))
         yy = np.array([y_.copy() for y_ in gen])  # due to inplace copying
-        assert_equal(yy, xx, err_msg=f"Failed '{p_}' padding.")
+        xx = np.asarray(xx, dtype=np.float64)
+        xp_assert_equal(yy, xx, err_msg=f"Failed '{p_}' padding.")
 
 
 def test_invertible():
@@ -350,8 +358,8 @@ def test_t():
     assert SFT.fs == 2.
     assert SFT.delta_t == 4 * 1/2
     t_stft = np.arange(0, SFT.p_max(10)) * SFT.delta_t
-    assert_equal(SFT.t(10), t_stft)
-    assert_equal(SFT.t(10, 1, 3), t_stft[1:3])
+    xp_assert_equal(SFT.t(10), t_stft)
+    xp_assert_equal(SFT.t(10, 1, 3), t_stft[1:3])
     SFT.T = 1/4
     assert SFT.T == 1/4
     assert SFT.fs == 4
@@ -369,19 +377,28 @@ def test_f(fft_mode: FFT_MODE_TYPE, f):
     """Verify the frequency values property `f`."""
     SFT = ShortTimeFFT(np.ones(5), hop=4, fs=5, fft_mode=fft_mode,
                        scale_to='psd')
-    assert_equal(SFT.f, f)
+    xp_assert_equal(SFT.f, f)
 
 
-def test_extent():
+@pytest.mark.parametrize('n', [20, 21])
+@pytest.mark.parametrize('m', [5, 6])
+@pytest.mark.parametrize('fft_mode', ['onesided', 'centered'])
+def test_extent(n, m, fft_mode: FFT_MODE_TYPE):
     """Ensure that the `extent()` method is correct. """
-    SFT = ShortTimeFFT(np.ones(32), hop=4, fs=32, fft_mode='onesided')
-    assert SFT.extent(100, 'tf', False) == (-0.375, 3.625, 0.0, 17.0)
-    assert SFT.extent(100, 'ft', False) == (0.0, 17.0, -0.375, 3.625)
-    assert SFT.extent(100, 'tf', True) == (-0.4375, 3.5625, -0.5, 16.5)
-    assert SFT.extent(100, 'ft', True) == (-0.5, 16.5, -0.4375, 3.5625)
+    SFT = ShortTimeFFT(np.ones(m), hop=m, fs=m, fft_mode=fft_mode)
 
-    SFT = ShortTimeFFT(np.ones(32), hop=4, fs=32, fft_mode='centered')
-    assert SFT.extent(100, 'tf', False) == (-0.375, 3.625, -16.0, 15.0)
+    t0 = SFT.t(n)[0]  # first timestamp
+    t1 = SFT.t(n)[-1] + SFT.delta_t  # last timestamp + 1
+    t0c, t1c = t0 - SFT.delta_t / 2, t1 - SFT.delta_t / 2  # centered timestamps
+
+    f0 = SFT.f[0]  # first frequency
+    f1 = SFT.f[-1] + SFT.delta_f  # last frequency + 1
+    f0c, f1c = f0 - SFT.delta_f / 2, f1 - SFT.delta_f / 2  # centered frequencies
+
+    assert SFT.extent(n, 'tf', False) == (t0, t1, f0, f1)
+    assert SFT.extent(n, 'ft', False) == (f0, f1, t0, t1)
+    assert SFT.extent(n, 'tf', True) == (t0c, t1c, f0c, f1c)
+    assert SFT.extent(n, 'ft', True) == (f0c, f1c, t0c, t1c)
 
 
 def test_spectrogram():
@@ -389,8 +406,8 @@ def test_spectrogram():
     SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1)
     x, y = np.ones(10), np.arange(10)
     X, Y = SFT.stft(x), SFT.stft(y)
-    assert_allclose(SFT.spectrogram(x), X.real**2+X.imag**2)
-    assert_allclose(SFT.spectrogram(x, y), X * Y.conj())
+    xp_assert_close(SFT.spectrogram(x), X.real**2+X.imag**2)
+    xp_assert_close(SFT.spectrogram(x, y), X * Y.conj())
 
 
 @pytest.mark.parametrize('n', [8, 9])
@@ -413,7 +430,8 @@ def test_fft_func_roundtrip(n: int):
                            scale_to=scaling, phase_shift=phase_shift)
         X0 = SFT._fft_func(x0)
         x1 = SFT._ifft_func(X0)
-        assert_allclose(x0, x1, err_msg="_fft_func() roundtrip failed for " +
+        xp_assert_close(x0.astype(x1.dtype), x1,
+                        err_msg="_fft_func() roundtrip failed for " +
                         f"{f_typ=}, {mfft=}, {scaling=}, {phase_shift=}")
 
     SFT = ShortTimeFFT(w, h_n, fs=1)
@@ -440,21 +458,21 @@ def test_impulse_roundtrip(i):
     Sx1 = SFT.stft(x[n_q:], padding='zeros')
     q0_ub = SFT.upper_border_begin(n_q)[1] - SFT.p_min
     q1_le = SFT.lower_border_end[1] - SFT.p_min
-    assert_allclose(Sx0[:, :q0_ub], Sx[:, :q0_ub], err_msg=f"{i=}")
-    assert_allclose(Sx1[:, q1_le:], Sx[:, q1_le-Sx1.shape[1]:],
+    xp_assert_close(Sx0[:, :q0_ub], Sx[:, :q0_ub], err_msg=f"{i=}")
+    xp_assert_close(Sx1[:, q1_le:], Sx[:, q1_le-Sx1.shape[1]:],
                     err_msg=f"{i=}")
 
     Sx01 = np.hstack((Sx0[:, :q0_ub],
                       Sx0[:, q0_ub:] + Sx1[:, :q1_le],
                       Sx1[:, q1_le:]))
-    assert_allclose(Sx, Sx01, atol=1e-8, err_msg=f"{i=}")
+    xp_assert_close(Sx, Sx01, atol=1e-8, err_msg=f"{i=}")
 
     y = SFT.istft(Sx, 0, n)
-    assert_allclose(y, x, atol=1e-8, err_msg=f"{i=}")
+    xp_assert_close(y, x, atol=1e-8, err_msg=f"{i=}")
     y0 = SFT.istft(Sx, 0, n//2)
-    assert_allclose(x[:n//2], y0, atol=1e-8, err_msg=f"{i=}")
+    xp_assert_close(x[:n//2], y0, atol=1e-8, err_msg=f"{i=}")
     y1 = SFT.istft(Sx, n // 2, n)
-    assert_allclose(x[n // 2:], y1, atol=1e-8, err_msg=f"{i=}")
+    xp_assert_close(x[n // 2:], y1, atol=1e-8, err_msg=f"{i=}")
 
 
 @pytest.mark.parametrize('hop', [1, 7, 8])
@@ -469,7 +487,7 @@ def test_asymmetric_window_roundtrip(hop: int):
     x = 10 * np.random.randn(64)
     Sx = SFT.stft(x)
     x1 = SFT.istft(Sx, k1=len(x))
-    assert_allclose(x1, x1, err_msg="Roundtrip for asymmetric window with " +
+    xp_assert_close(x1, x1, err_msg="Roundtrip for asymmetric window with " +
                                     f" {hop=} failed!")
 
 
@@ -481,7 +499,7 @@ def test_minimal_length_signal(m_num):
     x = np.ones(n)
     Sx = SFT.stft(x)
     x1 = SFT.istft(Sx, k1=n)
-    assert_allclose(x1, x, err_msg=f"Roundtrip minimal length signal ({n=})" +
+    xp_assert_close(x1, x, err_msg=f"Roundtrip minimal length signal ({n=})" +
                                    f" for {m_num} sample window failed!")
     with pytest.raises(ValueError, match=rf"len\(x\)={n-1} must be >= ceil.*"):
         SFT.stft(x[:-1])
@@ -541,20 +559,20 @@ def test_tutorial_stft_legacy_stft():
                                    scale_to='magnitude', phase_shift=None)
     Sz1 = SFT.stft(z)
 
-    assert_allclose(Sz0, Sz1[:, 2:-1])
+    xp_assert_close(Sz0, Sz1[:, 2:-1])
 
-    assert_allclose((abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()),
+    xp_assert_close((abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()),
                     (6.925060911593139e-07, 8.00271269218721e-07))
 
     t0_r, z0_r = istft(Sz0_u, fs, win, nperseg, noverlap, input_onesided=False,
                        scaling='spectrum')
     z1_r = SFT.istft(Sz1, k1=N)
     assert len(z0_r) == N + 9
-    assert_allclose(z0_r[:N], z)
-    assert_allclose(z1_r, z)
+    xp_assert_close(z0_r[:N], z)
+    xp_assert_close(z1_r, z)
 
     #  Spectrogram is just the absolute square of th STFT:
-    assert_allclose(SFT.spectrogram(z), abs(Sz1) ** 2)
+    xp_assert_close(SFT.spectrogram(z), abs(Sz1) ** 2)
 
 
 def test_tutorial_stft_legacy_spectrogram():
@@ -585,9 +603,9 @@ def test_tutorial_stft_legacy_spectrogram():
     Sz3 = SFT.stft(z, p0=0, p1=(N-noverlap) // SFT.hop, k_offset=nperseg // 2)
     t3 = SFT.t(N, p0=0, p1=(N-noverlap) // SFT.hop, k_offset=nperseg // 2)
 
-    assert_allclose(t2, t3)
-    assert_allclose(f2, SFT.f)
-    assert_allclose(Sz2, Sz3)
+    xp_assert_close(t2, t3)
+    xp_assert_close(f2, SFT.f)
+    xp_assert_close(Sz2, Sz3)
 
 
 def test_permute_axes():
@@ -595,7 +613,7 @@ def test_permute_axes():
     shape. """
     n = 25
     SFT = ShortTimeFFT(np.ones(8)/8, hop=3, fs=n)
-    x0 = np.arange(n)
+    x0 = np.arange(n, dtype=np.float64)
     Sx0 = SFT.stft(x0)
     Sx0 = Sx0.reshape((Sx0.shape[0], 1, 1, 1, Sx0.shape[-1]))
     SxT = np.moveaxis(Sx0, (0, -1), (-1, 0))
@@ -604,19 +622,57 @@ def test_permute_axes():
     for i in range(4):
         y = np.reshape(x0, np.roll((n, 1, 1, 1), i))
         Sy = SFT.stft(y, axis=i)
-        assert_allclose(Sy, np.moveaxis(Sx0, 0, i))
+        xp_assert_close(Sy, np.moveaxis(Sx0, 0, i))
 
         yb0 = SFT.istft(Sy, k1=n, f_axis=i)
-        assert_allclose(yb0, y, atol=atol)
+        xp_assert_close(yb0, y, atol=atol)
         # explicit t-axis parameter (for coverage):
         yb1 = SFT.istft(Sy, k1=n, f_axis=i, t_axis=Sy.ndim-1)
-        assert_allclose(yb1, y, atol=atol)
+        xp_assert_close(yb1, y, atol=atol)
 
         SyT = np.moveaxis(Sy, (i, -1), (-1, i))
-        assert_allclose(SyT, np.moveaxis(SxT, 0, i))
+        xp_assert_close(SyT, np.moveaxis(SxT, 0, i))
 
         ybT = SFT.istft(SyT, k1=n, t_axis=i, f_axis=-1)
-        assert_allclose(ybT, y, atol=atol)
+        xp_assert_close(ybT, y, atol=atol)
+
+
+@pytest.mark.parametrize("fft_mode",
+                         ('twosided', 'centered', 'onesided', 'onesided2X'))
+def test_roundtrip_multidimensional(fft_mode: FFT_MODE_TYPE):
+    """Test roundtrip of a multidimensional input signal versus its components.
+
+    This test can uncover potential problems with `fftshift()`.
+    """
+    n = 9
+    x = np.arange(4*n*2, dtype=np.float64).reshape(4, n, 2)
+    SFT = ShortTimeFFT(get_window('hann', 4), hop=2, fs=1,
+                       scale_to='magnitude', fft_mode=fft_mode)
+    Sx = SFT.stft(x, axis=1)
+    y = SFT.istft(Sx, k1=n, f_axis=1, t_axis=-1)
+    xp_assert_close(y, x.astype(y.dtype), err_msg='Multidim. roundtrip failed!')
+
+    for i, j in product(range(x.shape[0]), range(x.shape[2])):
+        y_ = SFT.istft(Sx[i, :, j, :], k1=n)
+        xp_assert_close(y_, x[i, :, j].astype(y_.dtype),
+                        err_msg="Multidim. roundtrip for component " +
+                        f"x[{i}, :, {j}] and {fft_mode=} failed!")
+
+@pytest.mark.parametrize("phase_shift", (0, 4,  None))
+def test_roundtrip_two_dimensional(phase_shift: int|None):
+    """Test roundtrip of a 2 channel input signal with `mfft` set with different
+    values for `phase_shift`
+
+    Tests for Issue https://github.com/scipy/scipy/issues/21671
+    """
+    n = 21
+    SFT = ShortTimeFFT.from_window('hann', fs=1, nperseg=13, noverlap=7,
+                                   mfft=16, phase_shift=phase_shift)
+    x = np.arange(2*n, dtype=float).reshape(2, n)
+    Sx = SFT.stft(x)
+    y = SFT.istft(Sx, k1=n)
+    xp_assert_close(y, x, atol=2 * np.finfo(SFT.win.dtype).resolution,
+                    err_msg='2-dim. roundtrip failed!')
 
 
 @pytest.mark.parametrize('window, n, nperseg, noverlap',
@@ -648,17 +704,21 @@ def test_roundtrip_windows(window, n: int, nperseg: int, noverlap: int):
     z = 10 * np.random.randn(n) + 10j * np.random.randn(n)
     Sz = SFT.stft(z)
     z1 = SFT.istft(Sz, k1=len(z))
-    assert_allclose(z, z1, err_msg="Roundtrip for complex values failed")
+    xp_assert_close(z, z1, err_msg="Roundtrip for complex values failed")
 
     x = 10 * np.random.randn(n)
     Sx = SFT.stft(x)
     x1 = SFT.istft(Sx, k1=len(z))
-    assert_allclose(x, x1, err_msg="Roundtrip for float values failed")
+    xp_assert_close(x.astype(np.complex128), x1,
+                    err_msg="Roundtrip for float values failed")
 
     x32 = x.astype(np.float32)
     Sx32 = SFT.stft(x32)
     x32_1 = SFT.istft(Sx32, k1=len(x32))
-    assert_allclose(x32, x32_1,
+    x32_1_r = x32_1.real
+    xp_assert_close(x32, x32_1_r.astype(np.float32),
+                    err_msg="Roundtrip for 32 Bit float values failed")
+    xp_assert_close(x32.imag, np.zeros_like(x32.imag),
                     err_msg="Roundtrip for 32 Bit float values failed")
 
 
@@ -678,7 +738,7 @@ def test_roundtrip_complex_window(signal_type):
         z = z + 2j * z
     Sz = SFT.stft(z)
     z1 = SFT.istft(Sz, k1=len(z))
-    assert_allclose(z, z1,
+    xp_assert_close(z.astype(np.complex128), z1,
                     err_msg="Roundtrip for complex-valued window failed")
 
 
@@ -701,8 +761,8 @@ def test_average_all_segments():
     P = SFT.spectrogram(x, detr='constant', p0=0,
                         p1=(len(x)-noverlap)//SFT.hop, k_offset=nperseg//2)
 
-    assert_allclose(SFT.f, fw)
-    assert_allclose(np.mean(P, axis=-1), Pw)
+    xp_assert_close(SFT.f, fw)
+    xp_assert_close(np.mean(P, axis=-1), Pw)
 
 
 @pytest.mark.parametrize('window, N, nperseg, noverlap, mfft',
@@ -735,12 +795,12 @@ def test_stft_padding_roundtrip(window, N: int, nperseg: int, noverlap: int,
                                    fft_mode='twosided', mfft=mfft)
     Sx = SFT.stft(x, padding=padding)
     x1 = SFT.istft(Sx, k1=N)
-    assert_allclose(x1, x,
+    xp_assert_close(x1, x.astype(np.complex128),
                     err_msg=f"Failed real roundtrip with '{padding}' padding")
 
     Sz = SFT.stft(z, padding=padding)
     z1 = SFT.istft(Sz, k1=N)
-    assert_allclose(z1, z, err_msg="Failed complex roundtrip with " +
+    xp_assert_close(z1, z, err_msg="Failed complex roundtrip with " +
                     f" '{padding}' padding")
 
 
@@ -780,13 +840,13 @@ def test_energy_conservation(N_x: int, w_size: int, t_step: int, f_c: float):
     assert X.shape[1] == SFT.f_pts
     assert np.all(SFT.f >= 0.)
     assert np.abs(max_freq - f_c) < 1.
-    assert_allclose(x, xp, atol=atol)
+    xp_assert_close(x, xp, atol=atol)
 
     # check L2-norm squared (i.e., energy) conservation:
     E_x = np.sum(x**2, axis=-1) * SFT.T  # numerical integration
     aX2 = X.real**2 + X.imag.real**2
     E_X = np.sum(np.sum(aX2, axis=-1) * SFT.delta_t, axis=-1) * SFT.delta_f
-    assert_allclose(E_X, E_x, atol=atol)
+    xp_assert_close(E_X, E_x, atol=atol)
 
     # Test with random signal
     np.random.seed(2392795)
@@ -797,13 +857,13 @@ def test_energy_conservation(N_x: int, w_size: int, t_step: int, f_c: float):
     assert X.shape[1] == SFT.f_pts
     assert np.all(SFT.f >= 0.)
     assert np.abs(max_freq - f_c) < 1.
-    assert_allclose(x, xp, atol=atol)
+    xp_assert_close(x, xp, atol=atol)
 
     # check L2-norm squared (i.e., energy) conservation:
     E_x = np.sum(x**2, axis=-1) * SFT.T  # numeric integration
     aX2 = X.real ** 2 + X.imag.real ** 2
     E_X = np.sum(np.sum(aX2, axis=-1) * SFT.delta_t, axis=-1) * SFT.delta_f
-    assert_allclose(E_X, E_x, atol=atol)
+    xp_assert_close(E_X, E_x, atol=atol)
 
     # Try with empty array
     x = np.zeros((0, N_x))

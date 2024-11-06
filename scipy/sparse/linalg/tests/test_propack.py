@@ -1,12 +1,11 @@
 import os
 import pytest
-import sys
 
 import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.sparse.linalg._svdp import _svdp
-from scipy.sparse import csr_matrix, csc_matrix
+from scipy.sparse import csr_array, csc_array
 
 
 # dtype_flavour to tolerance
@@ -22,26 +21,11 @@ def is_complex_type(dtype):
     return np.dtype(dtype).kind == "c"
 
 
-def is_32bit():
-    return sys.maxsize <= 2**32  # (usually 2**31-1 on 32-bit)
-
-
-def is_windows():
-    return 'win32' in sys.platform
-
-
 _dtypes = []
 for dtype_flavour in TOLS.keys():
     marks = []
     if is_complex_type(dtype_flavour):
-        if is_32bit():
-            # PROPACK has issues w/ complex on 32-bit; see gh-14433
-            marks = [pytest.mark.skip]
-        elif is_windows() and np.dtype(dtype_flavour).itemsize == 16:
-            # windows crashes for complex128 (so don't xfail); see gh-15108
-            marks = [pytest.mark.skip]
-        else:
-            marks = [pytest.mark.slow]  # type: ignore[list-item]
+        marks = [pytest.mark.slow]
     _dtypes.append(pytest.param(dtype_flavour, marks=marks,
                                 id=dtype_flavour.__name__))
 _dtypes = tuple(_dtypes)  # type: ignore[assignment]
@@ -49,7 +33,7 @@ _dtypes = tuple(_dtypes)  # type: ignore[assignment]
 
 def generate_matrix(constructor, n, m, f,
                     dtype=float, rseed=0, **kwargs):
-    """Generate a random sparse matrix"""
+    """Generate a random sparse array"""
     rng = np.random.RandomState(rseed)
     if is_complex_type(dtype):
         M = (- 5 + 10 * rng.rand(n, m)
@@ -90,7 +74,7 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
     assert_orthogonal(vt1.T, vt2.T, rtol=tol, atol=tol)
 
 
-@pytest.mark.parametrize('ctor', (np.array, csr_matrix, csc_matrix))
+@pytest.mark.parametrize('ctor', (np.array, csr_array, csc_array))
 @pytest.mark.parametrize('dtype', _dtypes)
 @pytest.mark.parametrize('irl', (True, False))
 @pytest.mark.parametrize('which', ('LM', 'SM'))
@@ -102,14 +86,10 @@ def test_svdp(ctor, dtype, irl, which):
         with assert_raises(ValueError, match=message):
             check_svdp(n, m, ctor, dtype, k, irl, which)
     else:
-        if is_32bit() and is_complex_type(dtype):
-            message = 'PROPACK complex-valued SVD methods not available '
-            with assert_raises(TypeError, match=message):
-                check_svdp(n, m, ctor, dtype, k, irl, which)
-        else:
-            check_svdp(n, m, ctor, dtype, k, irl, which)
+        check_svdp(n, m, ctor, dtype, k, irl, which)
 
 
+@pytest.mark.xslow
 @pytest.mark.parametrize('dtype', _dtypes)
 @pytest.mark.parametrize('irl', (False, True))
 @pytest.mark.timeout(120)  # True, complex64 > 60 s: prerel deps cov 64bit blas
@@ -129,12 +109,11 @@ def test_examples(dtype, irl):
     # PROPACK 2.1: http://sun.stanford.edu/~rmunk/PROPACK/
     relative_path = "propack_test_data.npz"
     filename = os.path.join(path_prefix, relative_path)
-    data = np.load(filename, allow_pickle=True)
-
-    if is_complex_type(dtype):
-        A = data['A_complex'].item().astype(dtype)
-    else:
-        A = data['A_real'].item().astype(dtype)
+    with np.load(filename, allow_pickle=True) as data:
+        if is_complex_type(dtype):
+            A = data['A_complex'].item().astype(dtype)
+        else:
+            A = data['A_real'].item().astype(dtype)
 
     k = 200
     u, s, vh, _ = _svdp(A, k, irl_mode=irl, random_state=0)

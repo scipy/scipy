@@ -74,7 +74,7 @@ c          on exit with ier<=0, this array will contain the knots of the
 c          spline,i.e. the position of the interior knots t(5),t(6),...,
 c          t(n-4) as well as the position of the additional knots
 c          t(1)=t(2)=t(3)=t(4)=x(1) and t(n-3)=t(n-2)=t(n-1)=t(n)=x(m)
-c          needed for the the b-spline representation.
+c          needed for the b-spline representation.
 c          if the computation mode iopt=1 is used, the values of t(1),
 c          t(2),...,t(n) should be left unchanged between subsequent
 c          calls.

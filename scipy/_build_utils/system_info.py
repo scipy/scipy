@@ -30,8 +30,7 @@ def combine_dict(*dicts, **kw):
                 elif value == old_value:
                     continue
 
-                raise ValueError("Conflicting configuration dicts: {!r} {!r}"
-                                 "".format(new_dict, d))
+                raise ValueError(f"Conflicting configuration dicts: {new_dict!r} {d!r}")
             else:
                 new_dict[key] = value
 

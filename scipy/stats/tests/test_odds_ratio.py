@@ -105,6 +105,7 @@ class TestOddsRatio:
         ci = result.confidence_interval(confidence_level, alternative)
         assert_allclose([ci.low, ci.high], [ref_low, ref_high], rtol=1e-6)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_sample_odds_ratio_one_sided_ci(self, alternative):
         # can't find a good reference for one-sided CI, so bump up the sample

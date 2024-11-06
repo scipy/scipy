@@ -1,9 +1,10 @@
 import pytest
 import itertools
 
-from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam, zipf, zipfian, binom, nbinom,
-                         nchypergeom_fisher, nchypergeom_wallenius, randint)
+from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
+                         bernoulli, boltzmann, skellam, zipf, zipfian, binom,
+                         nbinom, nchypergeom_fisher, nchypergeom_wallenius,
+                         randint, poisson_binom)
 
 import numpy as np
 from numpy.testing import (
@@ -236,6 +237,13 @@ def test_issue_6682():
     assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
 
 
+def test_issue_19747():
+    # test that negative k does not raise an error in nbinom.logcdf
+    result = nbinom.logcdf([5, -1, 1], 5, 0.5)
+    reference = [-0.47313352, -np.inf, -2.21297293]
+    assert_allclose(result, reference)
+
+
 def test_boost_divide_by_zero_issue_15101():
     n = 1000
     p = 0.01
@@ -343,8 +351,16 @@ class TestZipfian:
         assert_allclose(zipfian.stats(a, n, moments="mvsk"),
                         [mean, var, skew, kurtosis])
 
+    def test_pmf_integer_k(self):
+        k = np.arange(0, 1000)
+        k_int32 = k.astype(np.int32)
+        dist = zipfian(111, 22)
+        pmf = dist.pmf(k)
+        pmf_k_int32 = dist.pmf(k_int32)
+        assert_equal(pmf, pmf_k_int32)
 
-class TestNCH():
+
+class TestNCH:
     np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
     shape = (2, 4, 3)
     max_m = 100
@@ -574,3 +590,96 @@ def test_gh_17146():
     assert_allclose(pmf[-1], p)
     assert_allclose(pmf[0], 1-p)
     assert_equal(pmf[~i], 0)
+
+
+class TestBetaNBinom:
+    @pytest.mark.parametrize('x, n, a, b, ref',
+                            [[5, 5e6, 5, 20, 1.1520944824139114e-107],
+                            [100, 50, 5, 20, 0.002855762954310226],
+                            [10000, 1000, 5, 20, 1.9648515726019154e-05]])
+    def test_betanbinom_pmf(self, x, n, a, b, ref):
+        # test that PMF stays accurate in the distribution tails
+        # reference values computed with mpmath
+        # from mpmath import mp
+        # mp.dps = 500
+        # def betanbinom_pmf(k, n, a, b):
+        #     k = mp.mpf(k)
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     n = mp.mpf(n)
+        #     return float(mp.binomial(n + k - mp.one, k)
+        #                  * mp.beta(a + n, b + k) / mp.beta(a, b))
+        assert_allclose(betanbinom.pmf(x, n, a, b), ref, rtol=1e-10)
+
+
+    @pytest.mark.parametrize('n, a, b, ref',
+                            [[10000, 5000, 50, 0.12841520515722202],
+                            [10, 9, 9, 7.9224400871459695],
+                            [100, 1000, 10, 1.5849602176622748]])
+    def test_betanbinom_kurtosis(self, n, a, b, ref):
+        # reference values were computed via mpmath
+        # from mpmath import mp
+        # def kurtosis_betanegbinom(n, a, b):
+        #     n = mp.mpf(n)
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     four = mp.mpf(4.)
+        #     mean = n * b / (a - mp.one)
+        #     var = (n * b * (n + a - 1.) * (a + b - 1.)
+        #            / ((a - 2.) * (a - 1.)**2.))
+        #     def f(k):
+        #         return (mp.binomial(n + k - mp.one, k)
+        #                 * mp.beta(a + n, b + k) / mp.beta(a, b)
+        #                 * (k - mean)**four)
+        #      fourth_moment = mp.nsum(f, [0, mp.inf])
+        #      return float(fourth_moment/var**2 - 3.)
+        assert_allclose(betanbinom.stats(n, a, b, moments="k"),
+                        ref, rtol=3e-15)
+
+
+class TestZipf:
+    def test_gh20692(self):
+        # test that int32 data for k generates same output as double
+        k = np.arange(0, 1000)
+        k_int32 = k.astype(np.int32)
+        dist = zipf(9)
+        pmf = dist.pmf(k)
+        pmf_k_int32 = dist.pmf(k_int32)
+        assert_equal(pmf, pmf_k_int32)
+
+
+class TestPoissonBinomial:
+    def test_pmf(self):
+        # Test pmf against R `poisbinom` to confirm that this is indeed the Poisson
+        # binomial distribution. Consistency of other methods and all other behavior
+        # should be covered by generic tests. (If not, please add a generic test.)
+        # Like many other distributions, no special attempt is made to be more
+        # accurate than the usual formulas provide, so we use default tolerances.
+        #
+        # library(poisbinom)
+        # options(digits=16)
+        # k = c(0, 1, 2, 3, 4)
+        # p = c(0.9480654803913988, 0.052428488100509374,
+        #       0.25863527358887417, 0.057764076043633206)
+        # dpoisbinom(k, p)
+        rng = np.random.default_rng(259823598254)
+        n = rng.integers(10)  # 4
+        k = np.arange(n + 1)
+        p = rng.random(n)  #  [0.9480654803913988, 0.052428488100509374,
+                           #   0.25863527358887417, 0.057764076043633206]
+        res = poisson_binom.pmf(k, p)
+        ref = [0.0343763443678060318, 0.6435428452689714307, 0.2936345519235536994,
+               0.0277036647503902354, 0.0007425936892786034]
+        assert_allclose(res, ref)
+
+
+class TestRandInt:
+    def test_gh19759(self):
+        # test zero PMF values within the support reported by gh-19759
+        a = -354
+        max_range = abs(a)
+        all_b_1 = [a + 2 ** 31 + i for i in range(max_range)]
+        res = randint.pmf(325, a, all_b_1)
+        assert (res > 0).all()
+        ref = 1 / (np.asarray(all_b_1, dtype=np.float64) - a)
+        assert_allclose(res, ref)

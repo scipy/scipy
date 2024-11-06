@@ -57,6 +57,7 @@ derivative works thereof, in binary and source code form.
 
 #pragma once
 
+#include <Python.h>
 #include <pybind11/pybind11.h>
 
 #include <streambuf>

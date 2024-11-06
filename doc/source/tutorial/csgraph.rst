@@ -35,7 +35,8 @@ first create this list. The system word lists consist of a file with one
 word per line. The following should be modified to use the particular word
 list you have available::
 
-    >>> word_list = open('/usr/share/dict/words').readlines()
+    >>> with open('/usr/share/dict/words') as f:
+    ...    word_list = f.readlines()
     >>> word_list = map(str.strip, word_list)
 
 We want to look at words of length 3, so let's select just those words of the

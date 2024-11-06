@@ -127,7 +127,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
                       "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "
-                      "correct for J={},...,N".format(info-1), LinAlgWarning,
+                      f"correct for J={info-1},...,N", LinAlgWarning,
                       stacklevel=3)
     elif info == a_n+1:
         raise LinAlgError("Something other than QZ iteration failed")

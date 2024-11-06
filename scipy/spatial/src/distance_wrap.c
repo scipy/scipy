@@ -629,7 +629,8 @@ static PyObject *pdist_weighted_minkowski_double_wrap(
 static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) 
 {
   PyArrayObject *M_, *v_;
-  int n, elsize;
+  int n;
+  npy_intp elsize;
   if (!PyArg_ParseTuple(args, "O!O!",
             &PyArray_Type, &M_,
             &PyArray_Type, &v_)) {
@@ -637,7 +638,7 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
   }
   NPY_BEGIN_ALLOW_THREADS;
   n = PyArray_DIMS(M_)[0];
-  elsize = PyArray_DESCR(M_)->elsize;
+  elsize = PyArray_ITEMSIZE(M_);
   if (elsize == 8) {
     dist_to_squareform_from_vector_double(
         (double*)PyArray_DATA(M_), (const double*)PyArray_DATA(v_), n);
@@ -652,7 +653,8 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args)
 static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) 
 {
   PyArrayObject *M_, *v_;
-  int n, s;
+  int n;
+  npy_intp s;
   char *v;
   const char *M;
   if (!PyArg_ParseTuple(args, "O!O!",
@@ -665,7 +667,7 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
     M = (const char*)PyArray_DATA(M_);
     v = (char*)PyArray_DATA(v_);
     n = PyArray_DIMS(M_)[0];
-    s = PyArray_DESCR(M_)->elsize;
+    s = PyArray_ITEMSIZE(M_);
     dist_to_vector_from_squareform(M, v, n, s);
     NPY_END_ALLOW_THREADS;
   }
@@ -842,6 +844,17 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__distance_wrap(void)
 {
+    PyObject *module;
+
     import_array();
-    return PyModule_Create(&moduledef);
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }

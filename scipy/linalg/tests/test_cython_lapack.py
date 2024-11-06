@@ -15,3 +15,8 @@ class TestLamch:
             assert_allclose(cython_lapack._test_dlamch(c),
                             lapack.dlamch(c))
 
+    def test_complex_ladiv(self):
+        cx = .5 + 1.j
+        cy = .875 + 2.j
+        assert_allclose(cython_lapack._test_zladiv(cy, cx), 1.95+0.1j)
+        assert_allclose(cython_lapack._test_cladiv(cy, cx), 1.95+0.1j)

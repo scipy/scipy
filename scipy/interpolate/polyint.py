@@ -10,8 +10,6 @@ __all__ = [  # noqa: F822
     'KroghInterpolator',
     'approximate_taylor_polynomial',
     'barycentric_interpolate',
-    'factorial',
-    'float_factorial',
     'krogh_interpolate',
 ]
 

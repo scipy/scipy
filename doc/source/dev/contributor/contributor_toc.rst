@@ -47,10 +47,13 @@ Editing SciPy
 
 .. _unit-tests:
 
-Unit tests
-----------
-- :doc:`numpy:reference/testing` is the definitive guide to writing unit tests of NumPy or SciPy code (part of the NumPy documentation)
-- :ref:`devpy-test` documents ``dev.py test``, the command to build SciPy and run tests locally
+Testing
+-------
+- :doc:`numpy:reference/testing` is the definitive guide to writing unit tests
+  of NumPy or SciPy code (part of the NumPy documentation)
+- :ref:`devpy-test` documents ``dev.py test``, the command to build SciPy and
+  run tests locally
+- :ref:`debugging-linalg-issues` 
 
 .. _docs:
 
@@ -91,7 +94,6 @@ Compiled code
     development_workflow
     pep8
     ../gitwash/gitwash
-    ../../reference/index
     reviewing_prs
     ../triage
     adding_new
@@ -99,6 +101,7 @@ Compiled code
     ../missing-bits
     NumPy testing guidelines <https://numpy.org/devdocs/reference/testing.html>
     devpy_test
+    debugging_linalg_issues
     How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>
     rendering_documentation
     benchmarking

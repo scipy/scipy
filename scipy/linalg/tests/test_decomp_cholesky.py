@@ -1,10 +1,12 @@
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+import pytest
+import numpy as np
+from numpy.testing import assert_array_almost_equal
 from pytest import raises as assert_raises
 
 from numpy import array, transpose, dot, conjugate, zeros_like, empty
 from numpy.random import random
-from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded, \
-     cho_factor, cho_solve
+from scipy.linalg import (cholesky, cholesky_banded, cho_solve_banded,
+     cho_factor, cho_solve)
 
 from scipy.linalg._testutils import assert_no_overwrite
 
@@ -64,6 +66,50 @@ class TestCholesky:
             c = transpose(c)
             a = dot(c, transpose(conjugate(c)))
             assert_array_almost_equal(cholesky(a, lower=1), c)
+
+    @pytest.mark.xslow
+    def test_int_overflow(self):
+       # regression test for
+       # https://github.com/scipy/scipy/issues/17436
+       # the problem was an int overflow in zeroing out
+       # the unused triangular part
+       n = 47_000
+       x = np.eye(n, dtype=np.float64, order='F')
+       x[:4, :4] = np.array([[4, -2, 3, -1],
+                             [-2, 4, -3, 1],
+                             [3, -3, 5, 0],
+                             [-1, 1, 0, 5]])
+
+       cholesky(x, check_finite=False, overwrite_a=True)  # should not segfault
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt, dt_b):
+        a = empty((0, 0), dtype=dt)
+
+        c = cholesky(a)
+        assert c.shape == (0, 0)
+        assert c.dtype == cholesky(np.eye(2, dtype=dt)).dtype
+
+        c_and_lower = (c, True)
+        b = np.asarray([], dtype=dt_b)
+        x = cho_solve(c_and_lower, b)
+        assert x.shape == (0,)
+        assert x.dtype == cho_solve((np.eye(2, dtype=dt), True),
+                                     np.ones(2, dtype=dt_b)).dtype
+
+        b = empty((0, 0), dtype=dt_b)
+        x = cho_solve(c_and_lower, b)
+        assert x.shape == (0, 0)
+        assert x.dtype == cho_solve((np.eye(2, dtype=dt), True),
+                                     np.ones(2, dtype=dt_b)).dtype
+
+        a1 = array([])
+        a2 = array([[]])
+        a3 = []
+        a4 = [[]]
+        for x in ([a1, a2, a3, a4]):
+            assert_raises(ValueError, cholesky, x)
 
 
 class TestCholeskyBanded:
@@ -164,6 +210,30 @@ class TestCholeskyBanded:
         x = cho_solve_banded((c, True), b)
         assert_array_almost_equal(x, [0.0, 0.0, 1.0j, 1.0])
 
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt, dt_b):
+        ab = empty((0, 0), dtype=dt)
+
+        cb = cholesky_banded(ab)
+        assert cb.shape == (0, 0)
+
+        m = cholesky_banded(np.array([[0, 0], [1, 1]], dtype=dt))
+        assert cb.dtype == m.dtype
+
+        cb_and_lower = (cb, True)
+        b = np.asarray([], dtype=dt_b)
+        x = cho_solve_banded(cb_and_lower, b)
+        assert x.shape == (0,)
+
+        dtype_nonempty = cho_solve_banded((m, True), np.ones(2, dtype=dt_b)).dtype
+        assert x.dtype == dtype_nonempty
+
+        b = empty((0, 0), dtype=dt_b)
+        x = cho_solve_banded(cb_and_lower, b)
+        assert x.shape == (0, 0)
+        assert x.dtype == dtype_nonempty
+
 
 class TestOverwrite:
     def test_cholesky(self):
@@ -186,17 +256,13 @@ class TestOverwrite:
         assert_no_overwrite(lambda b: cho_solve_banded((xcho, False), b),
                             [(3,)])
 
+class TestChoFactor:
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        x, lower = cho_factor(a)
 
-class TestEmptyArray:
-    def test_cho_factor_empty_square(self):
-        a = empty((0, 0))
-        b = array([])
-        c = array([[]])
-        d = []
-        e = [[]]
+        assert x.shape == (0, 0)
 
-        x, _ = cho_factor(a)
-        assert_array_equal(x, a)
-
-        for x in ([b, c, d, e]):
-            assert_raises(ValueError, cho_factor, x)
+        xx, lower = cho_factor(np.eye(2, dtype=dt))
+        assert x.dtype == xx.dtype

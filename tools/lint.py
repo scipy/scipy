@@ -2,6 +2,7 @@
 import os
 import sys
 import subprocess
+import packaging.version
 from argparse import ArgumentParser
 
 
@@ -71,7 +72,7 @@ def run_ruff(files, fix):
         return 0, ""
     args = ['--fix', '--exit-non-zero-on-fix'] if fix else []
     res = subprocess.run(
-        ['ruff', f'--config={CONFIG}'] + args + list(files),
+        ['ruff', 'check', f'--config={CONFIG}'] + args + list(files),
         stdout=subprocess.PIPE,
         encoding='utf-8'
     )
@@ -89,7 +90,20 @@ def run_cython_lint(files):
     return res.returncode, res.stdout
 
 
+def check_ruff_version():
+    min_version = packaging.version.parse('0.0.292')
+    res = subprocess.run(
+        ['ruff', '--version'],
+        stdout=subprocess.PIPE,
+        encoding='utf-8'
+    )
+    version = res.stdout.replace('ruff ', '')
+    if packaging.version.parse(version) < min_version:
+        raise RuntimeError("Linting requires `ruff>=0.0.292`. Please upgrade `ruff`.")
+
+
 def main():
+    check_ruff_version()
     parser = ArgumentParser(description="Also see `pre-commit-hook.py` which "
                                         "lints all files staged in git.")
     # In Python 3.9, can use: argparse.BooleanOptionalAction

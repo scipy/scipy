@@ -30,7 +30,7 @@ if sphinx.__version__ < '1.0.1':
     raise RuntimeError("Sphinx 1.0.1 or newer is required")
 
 from numpydoc.numpydoc import mangle_docstrings
-from docutils.statemachine import ViewList
+from docutils.statemachine import StringList
 from sphinx.domains.python import PythonDomain
 from scipy._lib._util import getfullargspec_no_self
 
@@ -60,7 +60,8 @@ class ScipyOptimizeInterfaceDomain(PythonDomain):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self.directives = dict(self.directives)
-        self.directives['function'] = wrap_mangling_directive(self.directives['function'])
+        function_directive = self.directives['function']
+        self.directives['function'] = wrap_mangling_directive(function_directive)
 
 
 BLURB = """
@@ -80,7 +81,7 @@ def wrap_mangling_directive(base_directive):
             # Implementation function
             impl_name = self.options['impl']
             impl_obj = _import_object(impl_name)
-            impl_args, impl_varargs, impl_keywords, impl_defaults = getfullargspec_no_self(impl_obj)[:4]
+            impl_args, _, _, impl_defaults = getfullargspec_no_self(impl_obj)[:4]
 
             # Format signature taking implementation into account
             args = list(args)
@@ -105,7 +106,7 @@ def wrap_mangling_directive(base_directive):
                 if opt_name in args:
                     continue
                 if j >= len(impl_args) - len(impl_defaults):
-                    options.append((opt_name, impl_defaults[len(impl_defaults) - (len(impl_args) - j)]))
+                    options.append((opt_name, impl_defaults[-len(impl_args) + j]))
                 else:
                     options.append((opt_name, None))
             set_default('options', dict(options))
@@ -148,7 +149,8 @@ def wrap_mangling_directive(base_directive):
                     new_lines.append(':Options:')
                 else:
                     new_lines.append(line)
-            self.content = ViewList(new_lines, self.content.parent)
+
+            self.content = StringList(new_lines, parent=self.content.parent)
             return base_directive.run(self)
 
         option_spec = dict(base_directive.option_spec)

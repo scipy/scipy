@@ -57,6 +57,7 @@ below the specified tolerance `u_resolution`. Refinement stops when the required
 tolerance is achieved or when the number of mesh intervals after the next
 refinement could exceed the maximum allowed number of intervals (100000).
 
+    >>> import numpy as np
     >>> from scipy.stats.sampling import NumericalInverseHermite
     >>> from scipy.stats import norm, genexpon
     >>> from scipy.special import ndtr
@@ -97,6 +98,7 @@ the same random state.
 To check that the random variates closely follow the given distribution, we can
 look at its histogram:
 
+    >>> import matplotlib.pyplot as plt
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = NumericalInverseHermite(dist, random_state=urng)

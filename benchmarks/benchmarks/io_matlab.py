@@ -62,10 +62,10 @@ class MemUsage(Benchmark):
         savemat(self.filename, dict(x=x), do_compression=compressed, oned_as='row')
         del x
 
-        code = """
+        code = f"""
         from scipy.io import loadmat
-        loadmat('%s')
-        """ % (self.filename,)
+        loadmat('{self.filename}')
+        """
         time, peak_mem = run_monitored(code)
 
         return peak_mem / size

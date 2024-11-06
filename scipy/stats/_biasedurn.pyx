@@ -1,23 +1,21 @@
 from ._biasedurn cimport CFishersNCHypergeometric, StochasticLib3
 cimport numpy as np
 import numpy as np
+from libc.stdint cimport uint32_t, uint64_t
 from libcpp.memory cimport unique_ptr
 
 np.import_array()
 
-from numpy.random cimport bitgen_t
 from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
 
-# If this were C code we could do this:
-#     from numpy.random.c_distributions cimport random_normal
-# But this is C++, so we need to wrap the include with an extern "C"
-# to prevent name-mangling -- this is probably a Cython bug.
-cdef extern from *:
-    """
-    extern "C" {
-      #include "numpy/random/distributions.h"
-    }
-    """
+cdef extern from "distributions.h":
+    ctypedef struct bitgen_t:
+        void *state
+        uint64_t (*next_uint64)(void *st) nogil
+        uint32_t (*next_uint32)(void *st) nogil
+        double (*next_double)(void *st) nogil
+        uint64_t (*next_raw)(void *st) nogil
+
     double random_normal(bitgen_t*, double, double) nogil
 
 cdef class _PyFishersNCHypergeometric:

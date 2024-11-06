@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import (abs, asarray, cos, exp, log, arange, pi, prod, sin, sqrt,
                    sum, tan)
 from .go_benchmark import Benchmark, safe_import
@@ -328,8 +327,8 @@ class Mishra03(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return ((0.01 * (x[0] + x[1])
-                + sqrt(abs(cos(sqrt(abs(x[0] ** 2 + x[1] ** 2)))))))
+        return (0.01 * (x[0] + x[1])
+                + sqrt(abs(cos(sqrt(abs(x[0] ** 2 + x[1] ** 2))))))
 
 
 class Mishra04(Benchmark):
@@ -368,8 +367,8 @@ class Mishra04(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return ((0.01 * (x[0] + x[1])
-                + sqrt(abs(sin(sqrt(abs(x[0] ** 2 + x[1] ** 2)))))))
+        return (0.01 * (x[0] + x[1])
+                + sqrt(abs(sin(sqrt(abs(x[0] ** 2 + x[1] ** 2))))))
 
 
 class Mishra05(Benchmark):

@@ -12,7 +12,7 @@ from scipy import interpolate
 from scipy.interpolate import RectBivariateSpline
 import scipy.special as sc
 from scipy._lib._util import _lazywhere
-from .._distn_infrastructure import rv_continuous, _ShapeInfo
+from .._distn_infrastructure import rv_continuous, _ShapeInfo, rv_continuous_frozen
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
 from .levyst import Nolan
 from scipy._lib.doccer import inherit_docstring_from
@@ -220,9 +220,9 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate pdf using Nolan's methods as detailed in [NO].
-    """
+def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate pdf using Nolan's methods as detailed in [NO]."""
 
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
@@ -341,9 +341,9 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate cdf using Nolan's methods as detailed in [NO].
-    """
+def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate cdf using Nolan's methods as detailed in [NO]."""
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
     xi = _nolan.xi
@@ -816,6 +816,11 @@ class levy_stable_gen(rv_continuous):
     pdf_fft_interpolation_level = 3
     pdf_fft_interpolation_degree = 3
 
+    def __call__(self, *args, **params):
+        dist = levy_stable_frozen(self, *args, **params)
+        dist.parameterization = self.parameterization
+        return dist
+
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
 
@@ -837,8 +842,8 @@ class levy_stable_gen(rv_continuous):
     def rvs(self, *args, **kwds):
         X1 = super().rvs(*args, **kwds)
 
-        discrete = kwds.pop("discrete", None)  # noqa
-        rndm = kwds.pop("random_state", None)  # noqa
+        kwds.pop("discrete", None)
+        kwds.pop("random_state", None)
         (alpha, beta), delta, gamma, size = self._parse_args_rvs(*args, **kwds)
 
         # shift location for this parameterisation (S1)
@@ -953,7 +958,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Density calculations experimental for FFT method."
                     + " Use combination of piecewise and dni methods instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
@@ -1093,7 +1098,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Cumulative density calculations experimental for FFT"
                     + " method. Use piecewise method instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
@@ -1222,3 +1227,13 @@ def pdf_from_cf_with_fft(cf, h=0.01, q=9, level=3):
 
 
 levy_stable = levy_stable_gen(name="levy_stable")
+
+
+class levy_stable_frozen(rv_continuous_frozen):
+    @property
+    def parameterization(self):
+        return self.dist.parameterization
+
+    @parameterization.setter
+    def parameterization(self, value):
+        self.dist.parameterization = value

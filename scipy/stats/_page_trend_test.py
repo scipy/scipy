@@ -313,7 +313,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     if method not in methods:
         raise ValueError(f"`method` must be in {set(methods)}")
 
-    ranks = np.array(data, copy=False)
+    ranks = np.asarray(data)
     if ranks.ndim != 2:  # TODO: relax this to accept 3d arrays?
         raise ValueError("`data` must be a 2d array.")
 
@@ -340,7 +340,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     if predicted_ranks is None:
         predicted_ranks = np.arange(1, n+1)
     else:
-        predicted_ranks = np.array(predicted_ranks, copy=False)
+        predicted_ranks = np.asarray(predicted_ranks)
         if (predicted_ranks.ndim < 1 or
                 (set(predicted_ranks) != set(range(1, n+1)) or
                  len(predicted_ranks) != n)):

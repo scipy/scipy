@@ -65,7 +65,7 @@ def _monomial_powers(ndim, degree):
 
     """
     nmonos = comb(degree + ndim, ndim, exact=True)
-    out = np.zeros((nmonos, ndim), dtype=int)
+    out = np.zeros((nmonos, ndim), dtype=np.dtype("long"))
     count = 0
     for deg in range(degree + 1):
         for mono in combinations_with_replacement(range(ndim), deg):
@@ -342,14 +342,15 @@ class RBFInterpolator:
             degree = int(degree)
             if degree < -1:
                 raise ValueError("`degree` must be at least -1.")
-            elif degree < min_degree:
+            elif -1 < degree < min_degree:
                 warnings.warn(
-                    f"`degree` should not be below {min_degree} when `kernel` "
-                    f"is '{kernel}'. The interpolant may not be uniquely "
-                    "solvable, and the smoothing parameter may have an "
-                    "unintuitive effect.",
-                    UserWarning
-                    )
+                    f"`degree` should not be below {min_degree} except -1 "
+                    f"when `kernel` is '{kernel}'."
+                    f"The interpolant may not be uniquely "
+                    f"solvable, and the smoothing parameter may have an "
+                    f"unintuitive effect.",
+                    UserWarning, stacklevel=2
+                )
 
         if neighbors is None:
             nobs = ny
@@ -511,6 +512,7 @@ class RBFInterpolator:
             # neighborhood.
             yindices = np.sort(yindices, axis=1)
             yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
+            inv = np.reshape(inv, (-1,))  # flatten, we need 1-D indices
             # `inv` tells us which neighborhood will be used by each evaluation
             # point. Now we find which evaluation points will be using each
             # neighborhood.

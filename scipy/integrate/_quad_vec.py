@@ -3,6 +3,7 @@ import copy
 import heapq
 import collections
 import functools
+import warnings
 
 import numpy as np
 
@@ -97,12 +98,14 @@ class _Bunch:
         self.__dict__.update(**kwargs)
 
     def __repr__(self):
-        return "_Bunch({})".format(", ".join(f"{k}={repr(self.__dict__[k])}"
-                                             for k in self.__keys))
+        key_value_pairs = ', '.join(
+            f'{k}={repr(self.__dict__[k])}' for k in self.__keys
+        )
+        return f"_Bunch({key_value_pairs})"
 
 
-def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
-             workers=1, points=None, quadrature=None, full_output=False,
+def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
+             limit=10000, workers=1, points=None, quadrature=None, full_output=False,
              *, args=()):
     r"""Adaptive integration of a vector-valued function.
 
@@ -220,6 +223,23 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
     >>> plt.ylabel(r"$\int_{0}^{2} x^\alpha dx$")
     >>> plt.show()
 
+    When using the argument `workers`, one should ensure
+    that the main module is import-safe, for instance
+    by rewriting the example above as:
+
+    .. code-block:: python
+
+        from scipy.integrate import quad_vec
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        alpha = np.linspace(0.0, 2.0, num=30)
+        x0, x1 = 0, 2
+        def f(x):
+            return x**alpha
+
+        if __name__ == "__main__":
+            y, err = quad_vec(f, x0, x1, workers=2)
     """
     a = float(a)
     b = float(b)
@@ -294,6 +314,12 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                        'trapezoid': _quadrature_trapezoid}[quadrature]
     except KeyError as e:
         raise ValueError(f"unknown quadrature {quadrature!r}") from e
+
+    if quadrature == "trapz":
+        msg = ("`quadrature='trapz'` is deprecated in favour of "
+               "`quadrature='trapezoid' and will raise an error from SciPy 1.16.0 "
+               "onwards.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     # Initial interval set
     if points is None:
@@ -377,11 +403,14 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
                 neg_old_err, a, b = interval
                 old_int = interval_cache.pop((a, b), None)
-                to_process.append(((-neg_old_err, a, b, old_int), f, norm_func, _quadrature))
+                to_process.append(
+                    ((-neg_old_err, a, b, old_int), f, norm_func, _quadrature)
+                )
                 err_sum += -neg_old_err
 
             # Subdivide intervals
-            for dint, derr, dround_err, subint, dneval in mapwrapper(_subdivide_interval, to_process):
+            for parts in mapwrapper(_subdivide_interval, to_process):
+                dint, derr, dround_err, subint, dneval = parts
                 neval += dneval
                 global_integral += dint
                 global_error += derr

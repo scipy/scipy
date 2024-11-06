@@ -1,10 +1,10 @@
-from warnings import warn
+from warnings import warn, catch_warnings, simplefilter
 
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse,
-                          SparseEfficiencyWarning, csc_matrix, csr_matrix)
-from scipy.sparse._sputils import is_pydata_spmatrix
+                          SparseEfficiencyWarning, csc_array, eye_array, diags_array)
+from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
 from scipy.linalg import LinAlgError
 import copy
 
@@ -77,9 +77,9 @@ def use_solver(**kwargs):
     --------
     >>> import numpy as np
     >>> from scipy.sparse.linalg import use_solver, spsolve
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> R = np.random.randn(5, 5)
-    >>> A = csc_matrix(R)
+    >>> A = csc_array(R)
     >>> b = np.random.randn(5)
     >>> use_solver(useUmfpack=False) # enforce superLU over UMFPACK
     >>> x = spsolve(A, b)
@@ -112,9 +112,8 @@ def _get_umf_family(A):
         family = _families[(f_type, i_type)]
 
     except KeyError as e:
-        msg = 'only float64 or complex128 matrices with int32 or int64' \
-            ' indices are supported! (got: matrix: %s, indices: %s)' \
-            % (f_type, i_type)
+        msg = ('only float64 or complex128 matrices with int32 or int64 '
+               f'indices are supported! (got: matrix: {f_type}, indices: {i_type})')
         raise ValueError(msg) from e
 
     # See gh-8278. Considered converting only if
@@ -122,8 +121,8 @@ def _get_umf_family(A):
     # but that didn't always fix the issue.
     family = family[0] + "l"
     A_new = copy.copy(A)
-    A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
-    A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
+    A_new.indptr = np.asarray(A.indptr, dtype=np.int64)
+    A_new.indices = np.asarray(A.indices, dtype=np.int64)
 
     return family, A_new
 
@@ -147,9 +146,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     Parameters
     ----------
-    A : ndarray or sparse matrix
+    A : ndarray or sparse array or matrix
         The square matrix A will be converted into CSC or CSR form
-    b : ndarray or sparse matrix
+    b : ndarray or sparse array or matrix
         The matrix or vector representing the right hand side of the equation.
         If a vector, b.shape must be (n,) or (n, 1).
     permc_spec : str, optional
@@ -168,7 +167,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     Returns
     -------
-    x : ndarray or sparse matrix
+    x : ndarray or sparse array or matrix
         the solution of the sparse linear equation.
         If b is a vector, then x is a vector of size A.shape[1]
         If b is a matrix, then x is a matrix of size (A.shape[1], b.shape[1])
@@ -216,25 +215,26 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import spsolve
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
-    >>> B = csc_matrix([[2, 0], [-1, 0], [2, 0]], dtype=float)
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> B = csc_array([[2, 0], [-1, 0], [2, 0]], dtype=float)
     >>> x = spsolve(A, B)
     >>> np.allclose(A.dot(x).toarray(), B.toarray())
     True
     """
-
-    if is_pydata_spmatrix(A):
-        A = A.to_scipy_sparse().tocsc()
+    is_pydata_sparse = is_pydata_spmatrix(b)
+    pydata_sparse_cls = b.__class__ if is_pydata_sparse else None
+    A = convert_pydata_sparse_to_scipy(A)
+    b = convert_pydata_sparse_to_scipy(b)
 
     if not (issparse(A) and A.format in ("csc", "csr")):
-        A = csc_matrix(A)
+        A = csc_array(A)
         warn('spsolve requires A be CSC or CSR matrix format',
-                SparseEfficiencyWarning)
+             SparseEfficiencyWarning, stacklevel=2)
 
     # b is a vector only if b have shape (n,) or (n, 1)
-    b_is_sparse = issparse(b) or is_pydata_spmatrix(b)
+    b_is_sparse = issparse(b)
     if not b_is_sparse:
         b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
@@ -254,8 +254,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         raise ValueError(f"matrix must be square (has shape {(M, N)})")
 
     if M != b.shape[0]:
-        raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
-                         % (A.shape, b.shape[0]))
+        raise ValueError(f"matrix - rhs dimension mismatch ({A.shape} - {b.shape[0]})")
 
     use_umfpack = use_umfpack and useUmfpack
 
@@ -294,7 +293,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
             if info != 0:
-                warn("Matrix is exactly singular", MatrixRankWarning)
+                warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
                 x.fill(np.nan)
             if b_is_vector:
                 x = x.ravel()
@@ -304,8 +303,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
             if not (b.format == "csc" or is_pydata_spmatrix(b)):
                 warn('spsolve is more efficient when sparse b '
-                     'is in the CSC matrix format', SparseEfficiencyWarning)
-                b = csc_matrix(b)
+                     'is in the CSC matrix format',
+                     SparseEfficiencyWarning, stacklevel=2)
+                b = csc_array(b)
 
             # Create a sparse output matrix by repeatedly applying
             # the sparse factorization to solve columns of b.
@@ -313,11 +313,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             row_segs = []
             col_segs = []
             for j in range(b.shape[1]):
-                # TODO: replace this with
-                # bj = b[:, j].toarray().ravel()
-                # once 1D sparse arrays are supported.
-                # That is a slightly faster code path.
-                bj = b[:, [j]].toarray().ravel()
+                bj = b[:, j].toarray().ravel()
                 xj = Afactsolve(bj)
                 w = np.flatnonzero(xj)
                 segment_length = w.shape[0]
@@ -330,21 +326,21 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             x = A.__class__((sparse_data, (sparse_row, sparse_col)),
                            shape=b.shape, dtype=A.dtype)
 
-            if is_pydata_spmatrix(b):
-                x = b.__class__(x)
+            if is_pydata_sparse:
+                x = pydata_sparse_cls.from_scipy_sparse(x)
 
     return x
 
 
 def splu(A, permc_spec=None, diag_pivot_thresh=None,
-         relax=None, panel_size=None, options=dict()):
+         relax=None, panel_size=None, options=None):
     """
     Compute the LU decomposition of a sparse, square matrix.
 
     Parameters
     ----------
-    A : sparse matrix
-        Sparse matrix to factorize. Most efficient when provided in CSC
+    A : sparse array or matrix
+        Sparse array to factorize. Most efficient when provided in CSC
         format. Other formats will be converted to CSC before factorization.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
@@ -391,9 +387,9 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import splu
-    >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
+    >>> A = csc_array([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
     >>> B = splu(A)
     >>> x = np.array([1., 2., 3.], dtype=float)
     >>> B.solve(x)
@@ -405,15 +401,17 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     """
 
     if is_pydata_spmatrix(A):
-        def csc_construct_func(*a, cls=type(A)):
-            return cls(csc_matrix(*a))
+        A_cls = type(A)
+        def csc_construct_func(*a, cls=A_cls):
+            return cls.from_scipy_sparse(csc_array(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
-        csc_construct_func = csc_matrix
+        csc_construct_func = csc_array
 
     if not (issparse(A) and A.format == "csc"):
-        A = csc_matrix(A)
-        warn('splu converted its input to CSC format', SparseEfficiencyWarning)
+        A = csc_array(A)
+        warn('splu converted its input to CSC format',
+             SparseEfficiencyWarning, stacklevel=2)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -449,7 +447,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Parameters
     ----------
     A : (N, N) array_like
-        Sparse matrix to factorize. Most efficient when provided in CSC format.
+        Sparse array to factorize. Most efficient when provided in CSC format.
         Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
@@ -485,9 +483,9 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import spilu
-    >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
+    >>> A = csc_array([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
     >>> B = spilu(A)
     >>> x = np.array([1., 2., 3.], dtype=float)
     >>> B.solve(x)
@@ -499,16 +497,17 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     """
 
     if is_pydata_spmatrix(A):
-        def csc_construct_func(*a, cls=type(A)):
-            return cls(csc_matrix(*a))
+        A_cls = type(A)
+        def csc_construct_func(*a, cls=A_cls):
+            return cls.from_scipy_sparse(csc_array(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
-        csc_construct_func = csc_matrix
+        csc_construct_func = csc_array
 
     if not (issparse(A) and A.format == "csc"):
-        A = csc_matrix(A)
+        A = csc_array(A)
         warn('spilu converted its input to CSC format',
-             SparseEfficiencyWarning)
+             SparseEfficiencyWarning, stacklevel=2)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -556,11 +555,11 @@ def factorized(A):
     --------
     >>> import numpy as np
     >>> from scipy.sparse.linalg import factorized
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> A = np.array([[ 3. ,  2. , -1. ],
     ...               [ 2. , -2. ,  4. ],
     ...               [-1. ,  0.5, -1. ]])
-    >>> solve = factorized(csc_matrix(A)) # Makes LU decomposition.
+    >>> solve = factorized(csc_array(A)) # Makes LU decomposition.
     >>> rhs1 = np.array([1, -2, 0])
     >>> solve(rhs1) # Uses the LU factors.
     array([ 1., -2., -2.])
@@ -574,9 +573,9 @@ def factorized(A):
             raise RuntimeError('Scikits.umfpack not installed.')
 
         if not (issparse(A) and A.format == "csc"):
-            A = csc_matrix(A)
+            A = csc_array(A)
             warn('splu converted its input to CSC format',
-                 SparseEfficiencyWarning)
+                 SparseEfficiencyWarning, stacklevel=2)
 
         A = A._asfptype()  # upcast to a floating point format
 
@@ -609,16 +608,15 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     Parameters
     ----------
-    A : (M, M) sparse matrix
-        A sparse square triangular matrix. Should be in CSR format.
+    A : (M, M) sparse array or matrix
+        A sparse square triangular matrix. Should be in CSR or CSC format.
     b : (M,) or (M, N) array_like
         Right-hand side matrix in ``A x = b``
     lower : bool, optional
         Whether `A` is a lower or upper triangular matrix.
         Default is lower triangular matrix.
     overwrite_A : bool, optional
-        Allow changing `A`. The indices of `A` are going to be sorted and zero
-        entries are going to be removed.
+        Allow changing `A`.
         Enabling gives a performance gain. Default is False.
     overwrite_b : bool, optional
         Allow overwriting data in `b`.
@@ -626,8 +624,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         If `overwrite_b` is True, it should be ensured that
         `b` has an appropriate dtype to be able to store the result.
     unit_diagonal : bool, optional
-        If True, diagonal elements of `a` are assumed to be 1 and will not be
-        referenced.
+        If True, diagonal elements of `a` are assumed to be 1.
 
         .. versionadded:: 1.4.0
 
@@ -651,9 +648,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import spsolve_triangular
-    >>> A = csr_matrix([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
     >>> B = np.array([[2, 0], [-1, 0], [2, 0]], dtype=float)
     >>> x = spsolve_triangular(A, B)
     >>> np.allclose(A.dot(x), B)
@@ -661,19 +658,41 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     """
 
     if is_pydata_spmatrix(A):
-        A = A.to_scipy_sparse().tocsr()
+        A = A.to_scipy_sparse().tocsc()
 
-    # Check the input for correct type and format.
-    if not (issparse(A) and A.format == "csr"):
-        warn('CSR matrix format is required. Converting to CSR matrix.',
-             SparseEfficiencyWarning)
-        A = csr_matrix(A)
+    trans = "N"
+    if issparse(A) and A.format == "csr":
+        A = A.T
+        trans = "T"
+        lower = not lower
+
+    if not (issparse(A) and A.format == "csc"):
+        warn('CSC or CSR matrix format is required. Converting to CSC matrix.',
+             SparseEfficiencyWarning, stacklevel=2)
+        A = csc_array(A)
     elif not overwrite_A:
         A = A.copy()
 
-    if A.shape[0] != A.shape[1]:
+
+    M, N = A.shape
+    if M != N:
         raise ValueError(
             f'A must be a square matrix but its shape is {A.shape}.')
+
+    if unit_diagonal:
+        with catch_warnings():
+            simplefilter('ignore', SparseEfficiencyWarning)
+            A.setdiag(1)
+    else:
+        diag = A.diagonal()
+        if np.any(diag == 0):
+            raise LinAlgError(
+                'A is singular: zero entry on diagonal.')
+        invdiag = 1/diag
+        if trans == "N":
+            A = A @ diags_array(invdiag)
+        else:
+            A = (A.T @ diags_array(invdiag)).T
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -683,61 +702,39 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     if b.ndim not in [1, 2]:
         raise ValueError(
             f'b must have 1 or 2 dims but its shape is {b.shape}.')
-    if A.shape[0] != b.shape[0]:
+    if M != b.shape[0]:
         raise ValueError(
             'The size of the dimensions of A must be equal to '
             'the size of the first dimension of b but the shape of A is '
-            '{} and the shape of b is {}.'.format(A.shape, b.shape))
+            f'{A.shape} and the shape of b is {b.shape}.'
+        )
 
-    # Init x as (a copy of) b.
-    x_dtype = np.result_type(A.data, b, np.float64)
-    if overwrite_b:
-        if np.can_cast(b.dtype, x_dtype, casting='same_kind'):
-            x = b
-        else:
-            raise ValueError(
-                'Cannot overwrite b (dtype {}) with result '
-                'of type {}.'.format(b.dtype, x_dtype))
-    else:
-        x = b.astype(x_dtype, copy=True)
+    result_dtype = np.promote_types(np.promote_types(A.dtype, np.float32), b.dtype)
+    if A.dtype != result_dtype:
+        A = A.astype(result_dtype)
+    if b.dtype != result_dtype:
+        b = b.astype(result_dtype)
+    elif not overwrite_b:
+        b = b.copy()
 
-    # Choose forward or backward order.
     if lower:
-        row_indices = range(len(b))
+        L = A
+        U = csc_array((N, N), dtype=result_dtype)
     else:
-        row_indices = range(len(b) - 1, -1, -1)
+        L = eye_array(N, dtype=result_dtype, format='csc')
+        U = A
+        U.setdiag(0)
 
-    # Fill x iteratively.
-    for i in row_indices:
+    x, info = _superlu.gstrs(trans,
+                             N, L.nnz, L.data, L.indices, L.indptr,
+                             N, U.nnz, U.data, U.indices, U.indptr,
+                             b)
+    if info:
+        raise LinAlgError('A is singular.')
 
-        # Get indices for i-th row.
-        indptr_start = A.indptr[i]
-        indptr_stop = A.indptr[i + 1]
-
-        if lower:
-            A_diagonal_index_row_i = indptr_stop - 1
-            A_off_diagonal_indices_row_i = slice(indptr_start, indptr_stop - 1)
-        else:
-            A_diagonal_index_row_i = indptr_start
-            A_off_diagonal_indices_row_i = slice(indptr_start + 1, indptr_stop)
-
-        # Check regularity and triangularity of A.
-        if not unit_diagonal and (indptr_stop <= indptr_start
-                                  or A.indices[A_diagonal_index_row_i] < i):
-            raise LinAlgError(
-                f'A is singular: diagonal {i} is zero.')
-        if not unit_diagonal and A.indices[A_diagonal_index_row_i] > i:
-            raise LinAlgError(
-                'A is not triangular: A[{}, {}] is nonzero.'
-                ''.format(i, A.indices[A_diagonal_index_row_i]))
-
-        # Incorporate off-diagonal entries.
-        A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]
-        A_values_in_row_i = A.data[A_off_diagonal_indices_row_i]
-        x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
-
-        # Compute i-th entry of x.
-        if not unit_diagonal:
-            x[i] /= A.data[A_diagonal_index_row_i]
+    if not unit_diagonal:
+        invdiag = invdiag.reshape(-1, *([1] * (len(x.shape) - 1)))
+        x = x * invdiag
 
     return x
+

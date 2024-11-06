@@ -327,7 +327,9 @@ class TestRelationalAttributeLong:
 
 class TestQuotedNominal:
     """
-    Regression test for issue #10232 : Exception in loadarff with quoted nominal attributes.
+    Regression test for issue #10232:
+    
+    Exception in loadarff with quoted nominal attributes.
     """
 
     def setup_method(self):
@@ -373,7 +375,9 @@ class TestQuotedNominal:
 
 class TestQuotedNominalSpaces:
     """
-    Regression test for issue #10232 : Exception in loadarff with quoted nominal attributes.
+    Regression test for issue #10232:
+    
+    Exception in loadarff with quoted nominal attributes.
     """
 
     def setup_method(self):

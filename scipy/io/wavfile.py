@@ -10,7 +10,7 @@ Functions
 """
 import io
 import sys
-import numpy
+import numpy as np
 import struct
 import warnings
 from enum import IntEnum
@@ -396,7 +396,7 @@ def _read_fmt_chunk(fid, is_big_endian):
             bit_depth)
 
 
-def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
+def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian, is_rf64,
                      block_align, mmap=False):
     """
     Notes
@@ -428,7 +428,16 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         fmt = '<'
 
     # Size of the data subchunk in bytes
-    size = struct.unpack(fmt+'I', fid.read(4))[0]
+    if not is_rf64:
+        size = struct.unpack(fmt+'I', fid.read(4))[0]
+    else:
+        pos = fid.tell()
+        # chunk size is stored in global file header for RF64
+        fid.seek(28)
+        size = struct.unpack('<Q', fid.read(8))[0]
+        fid.seek(pos)
+        # skip data chunk size as it is 0xFFFFFFF
+        fid.read(4)
 
     # Number of bytes per sample (sample container size)
     bytes_per_sample = block_align // channels
@@ -459,15 +468,15 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     if not mmap:
         try:
             count = size if dtype == 'V1' else n_samples
-            data = numpy.fromfile(fid, dtype=dtype, count=count)
+            data = np.fromfile(fid, dtype=dtype, count=count)
         except io.UnsupportedOperation:  # not a C-like file
             fid.seek(start, 0)  # just in case it seeked, though it shouldn't
-            data = numpy.frombuffer(fid.read(size), dtype=dtype)
+            data = np.frombuffer(fid.read(size), dtype=dtype)
 
         if dtype == 'V1':
             # Rearrange raw bytes into smallest compatible numpy dtype
             dt = f'{fmt}i4' if bytes_per_sample == 3 else f'{fmt}i8'
-            a = numpy.zeros((len(data) // bytes_per_sample, numpy.dtype(dt).itemsize),
+            a = np.zeros((len(data) // bytes_per_sample, np.dtype(dt).itemsize),
                             dtype='V1')
             if is_big_endian:
                 a[:, :bytes_per_sample] = data.reshape((-1, bytes_per_sample))
@@ -477,7 +486,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     else:
         if bytes_per_sample in {1, 2, 4, 8}:
             start = fid.tell()
-            data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
+            data = np.memmap(fid, dtype=dtype, mode='c', offset=start,
                                 shape=(n_samples,))
             fid.seek(start + size)
         else:
@@ -511,24 +520,42 @@ def _skip_unknown_chunk(fid, is_big_endian):
 def _read_riff_chunk(fid):
     str1 = fid.read(4)  # File signature
     if str1 == b'RIFF':
+        is_rf64 = False
         is_big_endian = False
         fmt = '<I'
     elif str1 == b'RIFX':
+        is_rf64 = False
         is_big_endian = True
         fmt = '>I'
+    elif str1 == b'RF64':
+        is_rf64 = True
+        is_big_endian = False
+        fmt = '<Q'
     else:
         # There are also .wav files with "FFIR" or "XFIR" signatures?
         raise ValueError(f"File format {repr(str1)} not understood. Only "
-                         "'RIFF' and 'RIFX' supported.")
-
+                         "'RIFF', 'RIFX', and 'RF64' supported.")
     # Size of entire file
-    file_size = struct.unpack(fmt, fid.read(4))[0] + 8
+    if not is_rf64:
+        file_size = struct.unpack(fmt, fid.read(4))[0] + 8
+        str2 = fid.read(4)
+    else:
+        # Skip 0xFFFFFFFF (-1) bytes
+        fid.read(4)
+        str2 = fid.read(4)
+        str3 = fid.read(4)
+        if str3 != b'ds64':
+            raise ValueError("Invalid RF64 file: ds64 chunk not found.")
+        ds64_size = struct.unpack("<I", fid.read(4))[0]
+        file_size = struct.unpack(fmt, fid.read(8))[0] + 8
+        # Ignore additional attributes of ds64 chunk like sample count, tables, etc.
+        # and just skip to the next chunk
+        fid.seek(ds64_size - 8, 1)
 
-    str2 = fid.read(4)
     if str2 != b'WAVE':
         raise ValueError(f"Not a WAV file. RIFF form type is {repr(str2)}.")
 
-    return file_size, is_big_endian
+    return file_size, is_big_endian, is_rf64
 
 
 def _handle_pad_byte(fid, size):
@@ -647,7 +674,7 @@ def read(filename, mmap=False):
         fid = open(filename, 'rb')
 
     try:
-        file_size, is_big_endian = _read_riff_chunk(fid)
+        file_size, is_big_endian, is_rf64 = _read_riff_chunk(fid)
         fmt_chunk_received = False
         data_chunk_received = False
         while fid.tell() < file_size:
@@ -658,9 +685,8 @@ def read(filename, mmap=False):
                 if data_chunk_received:
                     # End of file but data successfully read
                     warnings.warn(
-                        "Reached EOF prematurely; finished at {:d} bytes, "
-                        "expected {:d} bytes from header."
-                        .format(fid.tell(), file_size),
+                        f"Reached EOF prematurely; finished at {fid.tell():d} bytes, "
+                        f"expected {file_size:d} bytes from header.",
                         WavFileWarning, stacklevel=2)
                     break
                 else:
@@ -687,7 +713,7 @@ def read(filename, mmap=False):
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
-                                        is_big_endian, block_align, mmap)
+                                        is_big_endian, is_rf64, block_align, mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)
@@ -770,9 +796,10 @@ def write(filename, rate, data):
 
     try:
         dkind = data.dtype.kind
-        if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and
-                                                 data.dtype.itemsize == 1)):
-            raise ValueError("Unsupported data type '%s'" % data.dtype)
+        allowed_dtypes = ['float32', 'float64',
+                          'uint8', 'int16', 'int32', 'int64']
+        if data.dtype.name not in allowed_dtypes:
+            raise ValueError(f"Unsupported data type '{data.dtype}'")
 
         header_data = b''
 
@@ -803,30 +830,54 @@ def write(filename, rate, data):
         header_data += struct.pack('<I', len(fmt_chunk_data))
         header_data += fmt_chunk_data
 
+        # check data size (needs to be immediately before the data chunk)
+        # if too large for standard RIFF, use RF64 instead
+        resulting_file_size = len(header_data) + 4 + 4 + data.nbytes
+        is_rf64 = (resulting_file_size - 8) > 0xFFFFFFFF
+        if is_rf64:
+            header_data = b''
+            header_data += b'RF64'
+            header_data += b'\xFF\xFF\xFF\xFF'
+            header_data += b'WAVE'
+            header_data += b'ds64'
+            # size of ds64 chunk
+            header_data += struct.pack('<I', 28)
+            # will be filled later with real file size
+            header_data += struct.pack('<Q', 0)
+            header_data += struct.pack('<Q', data.nbytes)
+            header_data += struct.pack('<Q', data.shape[0])
+            # ignore 'table' field for now
+            header_data += struct.pack('<I', 0)
+            header_data += b'fmt '
+            header_data += struct.pack('<I', len(fmt_chunk_data))
+            header_data += fmt_chunk_data
+
         # fact chunk (non-PCM files)
         if not (dkind == 'i' or dkind == 'u'):
             header_data += b'fact'
             header_data += struct.pack('<II', 4, data.shape[0])
 
-        # check data size (needs to be immediately before the data chunk)
-        if ((len(header_data)-4-4) + (4+4+data.nbytes)) > 0xFFFFFFFF:
-            raise ValueError("Data exceeds wave file size limit")
-
         fid.write(header_data)
 
         # data chunk
         fid.write(b'data')
-        fid.write(struct.pack('<I', data.nbytes))
+        # write data chunk size, unless its too big in which case 0xFFFFFFFF is written
+        fid.write(struct.pack('<I', min(data.nbytes, 4294967295)))
+
         if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and
                                            sys.byteorder == 'big'):
             data = data.byteswap()
         _array_tofile(fid, data)
 
         # Determine file size and place it in correct
-        #  position at start of the file.
+        # position at start of the file or the data chunk.
         size = fid.tell()
-        fid.seek(4)
-        fid.write(struct.pack('<I', size-8))
+        if not is_rf64:
+            fid.seek(4)
+            fid.write(struct.pack('<I', size-8))
+        else:
+            fid.seek(20)
+            fid.write(struct.pack('<Q', size-8))
 
     finally:
         if not hasattr(filename, 'write'):

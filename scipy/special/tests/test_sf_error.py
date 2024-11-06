@@ -1,6 +1,7 @@
 import sys
 import warnings
 
+import numpy as np
 from numpy.testing import assert_, assert_equal, IS_PYPY
 import pytest
 from pytest import raises as assert_raises
@@ -29,6 +30,9 @@ _sf_error_actions = [
 
 
 def _check_action(fun, args, action):
+    # TODO: special expert should correct
+    # the coercion at the true location?
+    args = np.asarray(args, dtype=np.dtype("long"))
     if action == 'warn':
         with pytest.warns(sc.SpecialFunctionWarning):
             fun(*args)
@@ -101,6 +105,22 @@ def test_errstate_cpp_basic():
     with sc.errstate(underflow='raise'):
         with assert_raises(sc.SpecialFunctionError):
             sc.wrightomega(-1000)
+    assert_equal(olderr, sc.geterr())
+
+
+def test_errstate_cpp_scipy_special():
+    olderr = sc.geterr()
+    with sc.errstate(singular='raise'):
+        with assert_raises(sc.SpecialFunctionError):
+            sc.lambertw(0, 1)
+    assert_equal(olderr, sc.geterr())
+
+
+def test_errstate_cpp_alt_ufunc_machinery():
+    olderr = sc.geterr()
+    with sc.errstate(singular='raise'):
+        with assert_raises(sc.SpecialFunctionError):
+            sc.gammaln(0)
     assert_equal(olderr, sc.geterr())
 
 

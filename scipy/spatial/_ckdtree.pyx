@@ -9,6 +9,7 @@
 
 import numpy as np
 import scipy.sparse
+from scipy._lib._util import copy_if_needed
 
 cimport numpy as np
 
@@ -479,7 +480,7 @@ cdef class cKDTree:
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with `copy_data=True`.
+        with ``copy_data=True``.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.
@@ -551,10 +552,12 @@ cdef class cKDTree:
 
         self._python_tree = None
 
+        if not copy_data:
+            copy_data = copy_if_needed
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
         if data.ndim != 2:
-            raise ValueError("data must be of shape (n, m), where there are"
+            raise ValueError("data must be of shape (n, m), where there are "
                              "n points of dimension m")
 
         if not np.isfinite(data).all():
@@ -1281,7 +1284,7 @@ cdef class cKDTree:
 
         where the brackets represents counting pairs between two data sets
         in a finite bin around ``r`` (distance), corresponding to setting
-        `cumulative=False`, and ``f = float(len(D)) / float(len(R))`` is the
+        ``cumulative=False``, and ``f = float(len(D)) / float(len(R))`` is the
         ratio between number of objects from data and random.
 
         The algorithm implemented here is loosely based on the dual-tree
@@ -1624,7 +1627,7 @@ cdef np.intp_t num_points(np.ndarray x, np.intp_t pdim) except -1:
         n *= x.shape[i]
     return n
 
-cdef np.ndarray broadcast_contiguous(object x, tuple shape, object dtype) except +:
+cdef np.ndarray broadcast_contiguous(object x, tuple shape, object dtype):
     """Broadcast ``x`` to ``shape`` and make contiguous, possibly by copying"""
     # Avoid copying if possible
     try:
@@ -1633,7 +1636,7 @@ cdef np.ndarray broadcast_contiguous(object x, tuple shape, object dtype) except
     except AttributeError:
         pass
 
-    # Assignment will broadcast automatically
+    # Assignment will broadcast automatically (may raise ValueError)
     cdef np.ndarray ret = np.empty(shape, dtype)
     ret[...] = x
     return ret

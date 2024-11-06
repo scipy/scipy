@@ -26,7 +26,7 @@ class Covariance:
 
     Examples
     --------
-    The `Covariance` class is is used by calling one of its
+    The `Covariance` class is used by calling one of its
     factory methods to create a `Covariance` object, then pass that
     representation of the `Covariance` matrix as a shape parameter of a
     multivariate distribution.

@@ -69,6 +69,7 @@ Henkelmann; parts of the code for simplify_cells=True adapted from
 http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 '''
 
+import math
 import os
 import time
 import sys
@@ -310,11 +311,13 @@ class MatFile5Reader(MatFileReader):
             hdr, next_position = self.read_var_header()
             name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if name in mdict:
-                warnings.warn('Duplicate variable name "%s" in stream'
-                              ' - replacing previous with new\n'
-                              'Consider mio5.varmats_from_mat to split '
-                              'file into single variable files' % name,
-                              MatReadWarning, stacklevel=2)
+                msg = (
+                    f'Duplicate variable name "{name}" in stream'
+                    " - replacing previous with new\nConsider"
+                    "scipy.io.matlab._mio5.varmats_from_mat to split "
+                    "file into single variable files"
+                )
+                warnings.warn(msg, MatReadWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -330,10 +333,9 @@ class MatFile5Reader(MatFileReader):
                 res = self.read_var_array(hdr, process)
             except MatReadError as err:
                 warnings.warn(
-                    'Unreadable variable "%s", because "%s"' %
-                    (name, err),
+                    f'Unreadable variable "{name}", because "{err}"',
                     Warning, stacklevel=2)
-                res = "Read error: %s" % err
+                res = f"Read error: {err}"
             self.mat_stream.seek(next_position)
             mdict[name] = res
             if hdr.is_global:
@@ -652,8 +654,7 @@ class VarWriter5:
         # Try to convert things that aren't arrays
         narr = to_writeable(arr)
         if narr is None:
-            raise TypeError('Could not convert %s (type %s) to array'
-                            % (arr, type(arr)))
+            raise TypeError(f'Could not convert {arr} (type {type(arr)}) to array')
         if isinstance(narr, MatlabObject):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
@@ -730,7 +731,7 @@ class VarWriter5:
             # transpose here, because we're flattening the array, before
             # we write the bytes. The bytes have to be written in
             # Fortran order.
-            n_chars = np.prod(shape)
+            n_chars = math.prod(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr.T.copy())  # Fortran order
@@ -845,8 +846,8 @@ class MatFile5Writer:
     def write_file_header(self):
         # write header
         hdr = np.zeros((), NDT_FILE_HDR)
-        hdr['description'] = 'MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
-            % (os.name,time.asctime())
+        hdr['description'] = (f'MATLAB 5.0 MAT-file Platform: {os.name}, '
+                              f'Created on: {time.asctime()}')
         hdr['version'] = 0x0100
         hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',

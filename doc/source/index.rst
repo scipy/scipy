@@ -1,3 +1,5 @@
+:html_theme.sidebar_secondary.remove: true
+
 .. template taken from Pandas
 
 .. module:: scipy
@@ -15,18 +17,20 @@ SciPy documentation
 `Source Repository <https://github.com/scipy/scipy>`__ |
 `Issues & Ideas <https://github.com/scipy/scipy/issues>`__ |
 `Q&A Support <https://stackoverflow.com/questions/tagged/scipy>`__ |
-`Mailing List <https://mail.python.org/mailman3/lists/scipy-dev.python.org/>`__
+`Forum <https://discuss.scientific-python.org/c/contributor/scipy>`__
 
 **SciPy** (pronounced "Sigh Pie") is an open-source software for mathematics,
 science, and engineering.
 
-.. grid:: 2
+.. grid:: 1 1 2 2
+    :gutter: 2 3 4 4
 
     .. grid-item-card::
-        :img-top: _static/index_user_guide.png
+        :img-top: _static/index_user_guide.svg
+        :text-align: center
 
-        User guide
-        ^^^^^^^^^^
+        **User guide**
+        ^^^
 
         The user guide provides in-depth information on the
         key concepts of SciPy with useful background information and explanation.
@@ -34,17 +38,17 @@ science, and engineering.
         +++
 
         .. button-ref:: user_guide
-            :expand:
             :color: secondary
             :click-parent:
 
             To the user guide
 
     .. grid-item-card::
-        :img-top: _static/index_api.png
+        :img-top: _static/index_api.svg
+        :text-align: center
 
-        API reference
-        ^^^^^^^^^^^^^
+        **API reference**
+        ^^^
 
         The reference guide contains a detailed description of
         the SciPy API. The reference describes how the methods work and which parameters can
@@ -53,17 +57,17 @@ science, and engineering.
         +++
 
         .. button-ref:: scipy-api
-            :expand:
             :color: secondary
             :click-parent:
 
             To the reference guide
 
     .. grid-item-card::
-        :img-top: _static/index_getting_started.png
+        :img-top: _static/index_getting_started.svg
+        :text-align: center
 
-        Building from source
-        ^^^^^^^^^^^^^^^^^^^^
+        **Building from source**
+        ^^^
 
         Want to build from source rather than use a Python distribution or
         pre-built SciPy binary? This guide will describe how to set up your
@@ -73,17 +77,17 @@ science, and engineering.
         +++
 
         .. button-ref:: building-from-source
-            :expand:
             :color: secondary
             :click-parent:
 
             To the build guide
 
     .. grid-item-card::
-        :img-top: _static/index_contribute.png
+        :img-top: _static/index_contribute.svg
+        :text-align: center
 
-        Developer guide
-        ^^^^^^^^^^^^^^^
+        **Developer guide**
+        ^^^
 
         Saw a typo in the documentation? Want to improve
         existing functionalities? The contributing guidelines will guide
@@ -92,7 +96,6 @@ science, and engineering.
         +++
 
         .. button-ref:: scipy-development
-            :expand:
             :color: secondary
             :click-parent:
 

@@ -6,11 +6,11 @@ py3.install_sources([
 
 _levyst = static_library('_levyst',
   ['c_src/levyst.c', 'c_src/levyst.h'],
+  gnu_symbol_visibility: 'hidden',
 )
 
-levyst = py3.extension_module('levyst',
+py3.extension_module('levyst',
   cython_gen.process('levyst.pyx'),
-  c_args: numpy_nodepr_api,
   dependencies: np_dep,
   link_args: version_link_args,
   link_with: _levyst,

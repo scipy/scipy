@@ -9,7 +9,7 @@ from ._miobase import _get_matfile_version, docfiller
 from ._mio4 import MatFile4Reader, MatFile4Writer
 from ._mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
+__all__ = ['loadmat', 'savemat', 'whosmat']
 
 
 @contextmanager
@@ -80,7 +80,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         raise NotImplementedError('Please use HDF reader for matlab v7.3 '
                                   'files, e.g. h5py')
     else:
-        raise TypeError('Did not recognize version %s' % mjv)
+        raise TypeError(f'Did not recognize version {mjv}')
 
 
 @docfiller
@@ -287,7 +287,8 @@ def savemat(file_name, mdict,
     with _open_file_context(file_name, appendmat, 'wb') as file_stream:
         if format == '4':
             if long_field_names:
-                raise ValueError("Long field names are not available for version 4 files")
+                message = "Long field names are not available for version 4 files"
+                raise ValueError(message)
             MW = MatFile4Writer(file_stream, oned_as)
         elif format == '5':
             MW = MatFile5Writer(file_stream,
