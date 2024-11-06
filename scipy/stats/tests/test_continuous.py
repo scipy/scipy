@@ -240,6 +240,20 @@ class TestDistributions:
         ax = X.plot()
         assert ax == plt.gca()
 
+    @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
+    def test_complement_safe(self, method_name):
+        X = stats.Normal()
+        X.tol = 1e-8
+        p = np.asarray([1e-9, 1e-7])
+        func = getattr(X, method_name)
+        ifunc = getattr(X, 'i'+method_name)
+        x = ifunc(p, method='formula')
+        p1 = func(x, method='complement_safe')
+        p2 = func(x, method='complement')
+        assert_equal(p1[1], p2[1])
+        assert p1[0] != p2[0]
+        assert_allclose(p1[0], p[0], rtol=X.tol)
+
 
 def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
     full_shape = sample_shape + result_shape

@@ -2432,8 +2432,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
             method = self._cdf_formula
         elif self._overrides('_logcdf_formula'):
             method = self._cdf_logexp
-        elif _isnull(self.tol) and self._overrides('_ccdf_formula'):
-            method = self._cdf_complement
+        elif self._overrides('_ccdf_formula'):
+            method = self._cdf_complement_safe
         else:
             method = self._cdf_quadrature
         return method
@@ -2446,6 +2446,15 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _cdf_complement(self, x, **params):
         return 1 - self._ccdf_dispatch(x, **params)
+
+    def _cdf_complement_safe(self, x, **params):
+        out = np.asarray(self._cdf_complement(x, **params))
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+        mask = tol < eps/out
+        params_mask = {key:val[mask] for key, val in params.items()}
+        out[mask] = self._cdf_quadrature(x[mask], *params_mask)
+        return out[()]
 
     def _cdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
@@ -2547,8 +2556,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
             method = self._ccdf_formula
         elif self._overrides('_logccdf_formula'):
             method = self._ccdf_logexp
-        elif _isnull(self.tol) and self._overrides('_cdf_formula'):
-            method = self._ccdf_complement
+        elif self._overrides('_cdf_formula'):
+            method = self._ccdf_complement_safe
         else:
             method = self._ccdf_quadrature
         return method
@@ -2561,6 +2570,15 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _ccdf_complement(self, x, **params):
         return 1 - self._cdf_dispatch(x, **params)
+
+    def _ccdf_complement_safe(self, x, **params):
+        out = np.asarray(self._ccdf_complement(x, **params))
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+        mask = tol < eps/out
+        params_mask = {key:val[mask] for key, val in params.items()}
+        out[mask] = self._ccdf_quadrature(x[mask], *params_mask)
+        return out[()]
 
     def _ccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
