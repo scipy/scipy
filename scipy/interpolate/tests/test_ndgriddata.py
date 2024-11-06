@@ -15,6 +15,15 @@ parametrize_interpolators = pytest.mark.parametrize(
     "interpolator", [NearestNDInterpolator, LinearNDInterpolator,
                      CloughTocher2DInterpolator]
 )
+parametrize_methods = pytest.mark.parametrize(
+    'method',
+    ('nearest', 'linear', 'cubic'),
+)
+parametrize_rescale = pytest.mark.parametrize(
+    'rescale',
+    (True, False),
+)
+
 
 class TestGriddata:
     def test_fill_value(self):
@@ -27,8 +36,8 @@ class TestGriddata:
         yi = griddata(x, y, [(1,1), (1,2), (0,0)])
         xp_assert_equal(yi, [np.nan, np.nan, 1])
 
-    @pytest.mark.parametrize('method', ('nearest', 'linear', 'cubic'))
-    @pytest.mark.parametrize('rescale', (True, False))
+    @parametrize_methods
+    @parametrize_rescale
     def test_alternative_call(self, method, rescale):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
                      dtype=np.float64)
