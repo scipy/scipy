@@ -2,7 +2,6 @@ from warnings import warn, catch_warnings, simplefilter
 
 import numpy as np
 from numpy import asarray
-from scipy.sparse import (issparse,
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
                           csr_array, csc_array, eye_array, diags_array)
 from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
