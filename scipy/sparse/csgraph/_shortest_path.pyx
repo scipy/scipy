@@ -625,7 +625,7 @@ def dijkstra(csgraph, directed=True, indices=None,
                                dist_matrix, predecessor_matrix, limitf)
     else:
         csgraphT = csgraph.T.tocsr()
-        csgraphT.indices, csgraphT.indptr = _safe_downcast_indices(csgraphT)
+        csgraphT_indices, csgraphT_indptr = _safe_downcast_indices(csgraphT)
         if unweighted:
             csrT_data = csr_data
         else:
@@ -634,14 +634,14 @@ def dijkstra(csgraph, directed=True, indices=None,
             _dijkstra_undirected_multi(indices,
                                        csr_data, csgraph_indices,
                                        csgraph_indptr,
-                                       csrT_data, csgraphT.indices,
-                                       csgraphT.indptr,
+                                       csrT_data, csgraphT_indices,
+                                       csgraphT_indptr,
                                        dist_matrix, predecessor_matrix,
                                        source_matrix, limitf)
         else:
             _dijkstra_undirected(indices,
                                  csr_data, csgraph_indices, csgraph_indptr,
-                                 csrT_data, csgraphT.indices, csgraphT.indptr,
+                                 csrT_data, csgraphT_indices, csgraphT_indptr,
                                  dist_matrix, predecessor_matrix, limitf)
 
     if return_predecessors:

@@ -253,12 +253,16 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     if not csgraph.has_sorted_indices:
         csgraph = csgraph.sorted_indices()
 
-    csgraph.indices, csgraph.indptr = _safe_downcast_indices(csgraph)
+    csgraphT = csr_array(csgraph.transpose())
+    csgraph_indices, csgraph_indptr = _safe_downcast_indices(csgraph)
+    csgraphT_indices, csgraphT_indptr = _safe_downcast_indices(csgraphT)
 
     # Our maximum flow solvers assume that edges always exist
     # in both directions, so we start by adding the reversed edges whenever
     # they are missing.
-    m = _add_reverse_edges(csgraph)
+    #m = _add_reverse_edges(csgraph)
+    m = _add_reverse_edges(csgraph.shape, csgraph.data, csgraph_indices, csgraph_indptr,
+                           csgraph.nnz, csgraphT_indices, csgraphT_indptr)
     rev_edge_ptr = _make_edge_pointers(m)
     if method == 'edmonds_karp':
         tails = _make_tails(m)
@@ -277,7 +281,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     return MaximumFlowResult(source_flow.sum(), flow_matrix)
 
 
-def _add_reverse_edges(a):
+def _add_reverse_edges(shape, data, indices, indptr, nnz, at_indices, at_indptr):
     """Add reversed edges to all edges in a graph.
 
     This adds to a given directed weighted graph all edges in the reverse
@@ -295,19 +299,19 @@ def _add_reverse_edges(a):
         by explicit zeros.
 
     """
+    # Matrix attributes are input to allow easy downcasting before calling cython
     # Reference arrays of the input matrix.
-    cdef ITYPE_t n = a.shape[0]
-    cdef ITYPE_t[:] a_data_view = a.data
-    cdef ITYPE_t[:] a_indices_view = a.indices
-    cdef ITYPE_t[:] a_indptr_view = a.indptr
+    cdef ITYPE_t n = shape[0]
+    cdef ITYPE_t[:] a_data_view = data
+    cdef ITYPE_t[:] a_indices_view = indices
+    cdef ITYPE_t[:] a_indptr_view = indptr
 
     # Create the transpose with the intent of using the resulting index
     # arrays for the addition of reverse edges with zero capacity. In
     # particular, we do not actually use the values in the transpose;
     # only the fact that the indices exist.
-    at = csr_array(a.transpose())
-    cdef ITYPE_t[:] at_indices_view = at.indices
-    cdef ITYPE_t[:] at_indptr_view = at.indptr
+    cdef ITYPE_t[:] at_indices_view = at_indices
+    cdef ITYPE_t[:] at_indptr_view = at_indptr
 
     # Create arrays for the result matrix with added reverse edges. We
     # allocate twice the number of non-zeros in `a` for the data, which
@@ -315,9 +319,9 @@ def _add_reverse_edges(a):
     # some reverse edges already; in that case, over-allocating is not
     # a problem since csr_matrix implicitly truncates elements of data
     # and indices that go beyond the indices given by indptr.
-    res_data = np.zeros(2 * a.nnz, ITYPE)
+    res_data = np.zeros(2 * nnz, ITYPE)
     cdef ITYPE_t[:] res_data_view = res_data
-    res_indices = np.zeros(2 * a.nnz, ITYPE)
+    res_indices = np.zeros(2 * nnz, ITYPE)
     cdef ITYPE_t[:] res_indices_view = res_indices
     res_indptr = np.zeros(n + 1, ITYPE)
     cdef ITYPE_t[:] res_indptr_view = res_indptr
