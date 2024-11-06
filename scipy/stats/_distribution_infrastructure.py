@@ -2810,6 +2810,9 @@ class ContinuousDistribution(_ProbabilityDistribution):
         if moment is None and 'quadrature' in methods:
             moment = self._moment_integrate_pdf(order, center=self._zero, **params)
 
+        if moment is None and 'quadrature_icdf' in methods:
+            moment = self._moment_integrate_icdf(order, center=self._zero, **params)
+
         if moment is not None and self.cache_policy != _NO_CACHE:
             self._moment_raw_cache[order] = moment
 
@@ -2869,6 +2872,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
             mean = self._moment_raw_dispatch(self._one, **params,
                                              methods=self._moment_methods)
             moment = self._moment_integrate_pdf(order, center=mean, **params)
+
+        if moment is None and 'quadrature_icdf' in methods:
+            mean = self._moment_raw_dispatch(self._one, **params,
+                                             methods=self._moment_methods)
+            moment = self._moment_integrate_icdf(order, center=mean, **params)
 
         if moment is not None and self.cache_policy != _NO_CACHE:
             self._moment_central_cache[order] = moment
@@ -2959,6 +2967,13 @@ class ContinuousDistribution(_ProbabilityDistribution):
             pdf = self._pdf_dispatch(x, **params)
             return pdf*(x-center)**order
         return self._quadrature(integrand, args=(order, center), params=params)
+
+    def _moment_integrate_icdf(self, order, center, **params):
+        def integrand(x, order, center, **params):
+            x = self._icdf_dispatch(x, **params)
+            return (x-center)**order
+        return self._quadrature(integrand, limits=(0., 1.),
+                                args=(order, center), params=params)
 
     def _moment_transform_center(self, order, moment_as, a, b):
         a, b, *moment_as = np.broadcast_arrays(a, b, *moment_as)

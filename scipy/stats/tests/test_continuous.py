@@ -167,7 +167,7 @@ class TestDistributions:
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (1, 1, 1, 1)
+        proportions = (1, 0, 0, 0)
         tmp = draw_distribution_from_family(family, data, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
         sample_shape = data.draw(npst.array_shapes(min_dims=0, min_side=0,
@@ -204,7 +204,7 @@ class TestDistributions:
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (1, 1, 1, 1)
+        proportions = (1, 0, 0, 0)
         tmp = draw_distribution_from_family(family, data, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
@@ -515,7 +515,10 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'raw','cache', ref, success=True)  # cached now
         check(i, 'raw', 'formula', ref, success=has_formula(i, 'raw'))
-        check(i, 'raw', 'general', ref, i == 0)
+        check(i, 'raw', 'general', ref, success=(i == 0))
+        if dist.__class__ == stats.Normal:
+            check(i, 'raw', 'quadrature_icdf', ref, success=True)
+
 
     # Clearing caches to better check their behavior
     dist.reset_cache()
@@ -542,6 +545,8 @@ def check_moment_funcs(dist, result_shape):
         check(i, 'central', 'cache', ref, success=True)
         check(i, 'central', 'formula', ref, success=has_formula(i, 'central'))
         check(i, 'central', 'general', ref, success=i <= 1)
+        if dist.__class__ == stats.Normal:
+            check(i, 'central', 'quadrature_icdf', ref, success=True)
         check(i, 'central', 'transform', ref,
               success=has_formula(i, 'raw') or (i <= 1))
         if not has_formula(i, 'raw'):
@@ -562,7 +567,7 @@ def check_moment_funcs(dist, result_shape):
         dist.moment(i, 'standardized')  # build up the cache
         check(i, 'central', 'normalize', ref)
 
-    ### Check Standard Moments ###
+    ### Check Standardized Moments ###
 
     var = dist.moment(2, 'central', method='quadrature')
     dist.reset_cache()
