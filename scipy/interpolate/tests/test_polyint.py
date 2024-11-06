@@ -533,6 +533,19 @@ class TestBarycentric:
 
         _run_concurrent_barrier(10, worker_fn, P)
 
+    def test_rng_random_state_spec007(self):
+        # spec007 involves the transition of RandomState-->Generator
+        # rng is the new name
+        BarycentricInterpolator([0, 1], [0, 1], rng=1)
+        # should still be allowed to pass `random_state`
+        BarycentricInterpolator([0, 1], [0, 1], random_state=1)
+        with assert_raises(TypeError):
+            # can't pass both seed and rng
+            BarycentricInterpolator([0, 1], [1, 1], rng=2, random_state=1)
+        with assert_raises(TypeError):
+            # use of rng=RandomState should give rise to an error.
+            BarycentricInterpolator([0, 1], [1, 1], rng=np.random.RandomState())
+
 
 class TestPCHIP:
     def _make_random(self, npts=20):
