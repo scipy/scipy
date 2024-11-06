@@ -170,7 +170,7 @@ namespace cephes {
             if (x < 0.0) {
                 p = std::floor(q);
                 if (p == q) {
-                gamnan:
+		    // x is a negative integer. This is a pole.
                     set_error("Gamma", SF_ERROR_SINGULAR, NULL);
                     return (std::numeric_limits<double>::quiet_NaN());
                 }
@@ -229,7 +229,8 @@ namespace cephes {
     small:
         if (x == 0.0) {
 	    /* For this to have happened, x must have started as a negative integer. */
-            goto gamnan;
+	    set_error("Gamma", SF_ERROR_SINGULAR, NULL);
+	    return (std::numeric_limits<double>::quiet_NaN());
         } else
             return (z / ((1.0 + 0.5772156649015329 * x) * x));
     }
