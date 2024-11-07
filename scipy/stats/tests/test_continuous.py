@@ -167,7 +167,7 @@ class TestDistributions:
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (1, 0, 0, 0)
+        proportions = (1, 1, 1, 1)
         tmp = draw_distribution_from_family(family, data, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
         sample_shape = data.draw(npst.array_shapes(min_dims=0, min_side=0,
@@ -204,7 +204,7 @@ class TestDistributions:
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (1, 0, 0, 0)
+        proportions = (1, 1, 1, 1)
         tmp = draw_distribution_from_family(family, data, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
