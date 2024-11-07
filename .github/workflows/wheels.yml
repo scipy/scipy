@@ -182,7 +182,7 @@ jobs:
           echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
 
       # - name: Inject environment variable for python dev version
-      #   if: ${{ matrix.python[1] == '3.13' && !endsWith(matrix.python[0], 't')}}
+      #   if: ${{ matrix.python[1] == '3.14-dev'
       #   shell: bash
       #   run: |
       #     # For dev versions of python need to use wheels from scientific-python-nightly-wheels
