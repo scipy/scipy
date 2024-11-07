@@ -236,27 +236,27 @@ def cases_test_fit_mle():
                       'poisson_binom'}  # vector-valued shape parameter
 
     # Please keep this list in alphabetical order...
-    slow_basic_fit = {'alpha', 'betaprime', 'binom', 'bradford', 'burr12',
+    slow_basic_fit = {'alpha', 'arcsine', 'betaprime', 'binom', 'bradford', 'burr12',
                       'chi', 'crystalball', 'dweibull', 'erlang', 'exponnorm',
                       'exponpow', 'f', 'fatiguelife', 'fisk', 'foldcauchy', 'gamma',
                       'genexpon', 'genextreme', 'gennorm', 'genpareto',
                       'gompertz', 'halfgennorm', 'invgamma', 'invgauss', 'invweibull',
                       'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
                       'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
-                      'nakagami', 'nbinom', 'norminvgauss',
+                      'nbinom', 'norminvgauss',
                       'pareto', 'pearson3', 'powerlaw', 'powernorm',
                       'randint', 'rdist', 'recipinvgauss', 'rice', 'skewnorm',
                       't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy'}
 
     # Please keep this list in alphabetical order...
-    xslow_basic_fit = {'beta', 'betabinom', 'betanbinom', 'burr', 'exponweib',
+    xslow_basic_fit = {'betabinom', 'betanbinom', 'burr', 'exponweib',
                        'gausshyper', 'gengamma', 'genhalflogistic',
                        'genhyperbolic', 'geninvgauss',
                        'hypergeom', 'kappa4', 'loguniform',
                        'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'nct', 'ncx2', 'nhypergeom',
                        'powerlognorm', 'reciprocal', 'rel_breitwigner',
-                       'skellam', 'trapezoid', 'triang', 'truncnorm',
+                       'skellam', 'trapezoid', 'triang',
                        'tukeylambda', 'vonmises', 'zipfian'}
 
     for dist in dict(distdiscrete + distcont):
@@ -288,7 +288,7 @@ def cases_test_fit_mse():
                       }
 
     # Please keep this list in alphabetical order...
-    slow_basic_fit = {'alpha', 'anglit', 'arcsine', 'betabinom', 'bradford',
+    slow_basic_fit = {'alpha', 'anglit', 'betabinom', 'bradford',
                       'chi', 'chi2', 'crystalball', 'dweibull',
                       'erlang', 'exponnorm', 'exponpow', 'exponweib',
                       'fatiguelife', 'fisk', 'foldcauchy', 'foldnorm',
@@ -312,7 +312,7 @@ def cases_test_fit_mse():
                        'johnsonsb', 'kappa4', 'loguniform', 'mielke',
                        'nakagami', 'ncf', 'nchypergeom_fisher',
                        'nchypergeom_wallenius', 'nct', 'ncx2',
-                       'pearson3', 'powerlaw', 'powerlognorm',
+                       'pearson3', 'powerlognorm',
                        'rdist', 'reciprocal', 'rel_breitwigner', 'rice',
                        'trapezoid', 'truncnorm', 'truncweibull_min',
                        'vonmises_line', 'zipfian'}
@@ -537,6 +537,7 @@ class TestFit:
     def test_basic_fit_mse(self, dist_name):
         self.basic_fit_test(dist_name, "mse", rng=2)
 
+    @pytest.mark.slow
     def test_arcsine(self):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
@@ -567,6 +568,7 @@ class TestFit:
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols,
                                   nlff_name=nlff_name)
 
+    @pytest.mark.xslow
     def test_beta(self):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
@@ -610,6 +612,7 @@ class TestFit:
         assert_nlff_less_or_close(dist, data, res.params, shapes,
                                   nlff_name='nnlf', **self.tols)
 
+    @pytest.mark.slow
     def test_powerlaw(self):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
@@ -638,7 +641,7 @@ class TestFit:
 
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.slow
     def test_truncweibull_min(self):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
