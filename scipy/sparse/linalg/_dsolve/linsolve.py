@@ -747,6 +747,8 @@ def is_sptriangular(A):
     lower triangular or upper triangular respectively. Diagonal ``A`` will
     result in both being True. Non-triangular structure results in False for both.
 
+    Only the sparse structure is used here. Values are not checked for zeros.
+
     This function will convert a copy of ``A`` to CSC format if it is not already
     CSR or CSC format. So it may be more efficient to convert it yourself if you
     have other uses for the CSR/CSC version.
@@ -824,6 +826,8 @@ def spbandwidth(A):
     of positive integers ``(lo, hi)``. A zero denotes no sub/super
     diagonal entries on that side (tringular). The maximum value
     for ``lo``(``hi``) is one less than the number of rows(cols).
+
+    Only the sparse structure is used here. Values are not checked for zeros.
 
     Parameters
     ----------
