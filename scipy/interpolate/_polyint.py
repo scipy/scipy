@@ -571,7 +571,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         If `rng` is already a ``Generator`` instance, then the provided instance is
         used. Specify `rng` for repeatable interpolation.
 
-        If this argument is passed by `random_state` is passed by keyword,
+        If this argument `random_state` is passed by keyword,
         legacy behavior for the argument `random_state` applies:
 
         - If `random_state` is None (or `numpy.random`), the `numpy.random.RandomState`
