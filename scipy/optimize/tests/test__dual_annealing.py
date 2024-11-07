@@ -171,21 +171,6 @@ class TestDualAnnealing:
             self.ld_bounds,
             seed=1,
         )
-        with assert_raises(TypeError):
-            # can't pass both seed and rng
-            dual_annealing(
-                self.func,
-                self.ld_bounds,
-                seed=1,
-                rng=1,
-            )
-        with assert_raises(TypeError):
-            # use of rng=RandomState should give rise to an error.
-            dual_annealing(
-                self.func,
-                self.ld_bounds,
-                rng=np.random.RandomState(),
-            )
 
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]

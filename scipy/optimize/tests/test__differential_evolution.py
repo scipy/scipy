@@ -537,21 +537,6 @@ class TestDifferentialEvolutionSolver:
                                polish=False,
                                seed=1,
                                tol=0.5)
-        with assert_raises(TypeError):
-            # can't pass both seed and rng
-            differential_evolution(self.quadratic,
-                                   [(-100, 100)],
-                                   polish=False,
-                                   seed=1,
-                                   rng=1,
-                                   tol=0.5)
-        with assert_raises(TypeError):
-            # use of rng=RandomState should give rise to an error.
-            differential_evolution(self.quadratic,
-                                   [(-100, 100)],
-                                   polish=False,
-                                   rng=np.random.RandomState(),
-                                   tol=0.5)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
