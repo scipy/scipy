@@ -532,7 +532,6 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     return np.poly1d((d/factorial(np.arange(degree+1)))[::-1])
 
 
-@_transition_to_rng("random_state")
 class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     r"""Interpolating polynomial for a set of points.
 
@@ -570,7 +569,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         If `rng` is passed by keyword, types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
         If `rng` is already a ``Generator`` instance, then the provided instance is
-        used. Specify `rng` for repeatable minimizations.
+        used. Specify `rng` for repeatable interpolation.
 
         If this argument is passed by `random_state` is passed by keyword,
         legacy behavior for the argument `random_state` applies:
@@ -637,6 +636,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> plt.show()
     """ # numpy/numpydoc#87  # noqa: E501
 
+    @_transition_to_rng("random_state")
     def __init__(self, xi, yi=None, axis=0, *, wi=None, rng=None):
         super().__init__(xi, yi, axis)
 
