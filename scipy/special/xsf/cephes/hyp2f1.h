@@ -75,6 +75,7 @@
 
 #include "const.h"
 #include "gamma.h"
+#include "rgamma.h"
 #include "psi.h"
 
 namespace xsf {
@@ -252,9 +253,9 @@ namespace cephes {
                     /* sum for t = 0 */
                     y = xsf::cephes::psi(1.0) + xsf::cephes::psi(1.0 + e) - xsf::cephes::psi(a + d1) -
                         xsf::cephes::psi(b + d1) - ax;
-                    y /= xsf::cephes::Gamma(e + 1.0);
+                    y *= xsf::cephes::rgamma(e + 1.0);
 
-                    p = (a + d1) * (b + d1) * s / xsf::cephes::Gamma(e + 2.0); /* Poch for t=1 */
+                    p = (a + d1) * (b + d1) * s * xsf::cephes::rgamma(e + 2.0); /* Poch for t=1 */
                     t = 1.0;
                     do {
                         r = xsf::cephes::psi(1.0 + t) + xsf::cephes::psi(1.0 + t + e) -
