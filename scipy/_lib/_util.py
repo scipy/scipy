@@ -258,7 +258,7 @@ _rng_desc = (
     - If `{old_name}` is None (or `numpy.random`), the `numpy.random.RandomState`
       singleton is used.
     - If `{old_name}` is an int, a new ``RandomState`` instance is used,
-      seeded with `seed`.
+      seeded with `{old_name}`.
     - If `{old_name}` is already a ``Generator`` or ``RandomState`` instance then
       that instance is used.
 

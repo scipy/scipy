@@ -129,7 +129,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Pseudorandom number generator state. When `rng` is None, a new
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
-        passed to `numpy.random.default_rng` to instantiate a `Generator`.
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
