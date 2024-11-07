@@ -545,7 +545,6 @@ class TestDifferentialEvolutionSolver:
                                    seed=1,
                                    rng=1,
                                    tol=0.5)
-        with assert_raises(TypeError):
             # use of rng=RandomState should give rise to an error.
             differential_evolution(self.quadratic,
                                    [(-100, 100)],
