@@ -509,32 +509,15 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    rng : {None, int, `numpy.random.Generator`}, optional
-        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
-        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
-        If `rng` is already a ``Generator`` instance, then the provided instance is
-        used. Specify `rng` for repeatable minimizations. The random numbers
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a `Generator`.
+
+        Specify `rng` for repeatable minimizations. The random numbers
         generated only affect the visiting distribution function
         and new coordinates generation.
-
-        If this argument is passed by position or `seed` is passed by keyword,
-        legacy behavior for the argument `seed` applies:
-
-        - If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
-          singleton is used.
-        - If `seed` is an int, a new ``RandomState`` instance is used,
-          seeded with `seed`.
-        - If `seed` is already a ``Generator`` or ``RandomState`` instance then
-          that instance is used.
-
-        .. versionchanged:: 1.15.0
-            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
-            transition from use of `numpy.random.RandomState` to
-            `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
-            For an interim period, both keywords will continue to work (only specify
-            one of them). After the interim period using the `seed` keyword will emit
-            warnings. The behavior of the `seed` and `rng` keywords is outlined above.
-
     no_local_search : bool, optional
         If `no_local_search` is set to True, a traditional Generalized
         Simulated Annealing will be performed with no local search
