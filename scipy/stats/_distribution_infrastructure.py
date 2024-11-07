@@ -2094,8 +2094,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _logentropy_dispatch(self, method=None, **params):
         if self._overrides('_logentropy_formula'):
             method = self._logentropy_formula
-        elif _isnull(self.tol) and self._overrides('_entropy_formula'):
-            method = self._logentropy_logexp
+        elif self._overrides('_entropy_formula'):
+            method = self._logentropy_logexp_safe
         else:
             method = self._logentropy_quadrature
         return method
@@ -2106,6 +2106,15 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _logentropy_logexp(self, **params):
         res = np.log(self._entropy_dispatch(**params)+0j)
         return _log_real_standardize(res)
+
+    def _logentropy_logexp_safe(self, **params):
+        out = self._logentropy_logexp(**params)
+        mask = np.isinf(out.real)
+        if np.any(mask):
+            params_mask = {key:val[mask] for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._logentropy_quadrature(**params_mask)
+        return out[()]
 
     def _logentropy_quadrature(self, **params):
         def logintegrand(x, **params):
@@ -2310,9 +2319,9 @@ class ContinuousDistribution(_ProbabilityDistribution):
         elif (self._overrides('_logcdf_formula')
               or self._overrides('_logccdf_formula')):
             method = self._logcdf2_subtraction
-        elif _isnull(self.tol) and (self._overrides('_cdf_formula')
-                                    or self._overrides('_ccdf_formula')):
-            method = self._logcdf2_logexp
+        elif (self._overrides('_cdf_formula')
+              or self._overrides('_ccdf_formula')):
+            method = self._logcdf2_logexp_safe
         else:
             method = self._logcdf2_quadrature
         return method
@@ -2342,6 +2351,16 @@ class ContinuousDistribution(_ProbabilityDistribution):
         expres = expres + 0j if np.any(x > y) else expres
         return np.log(expres)
 
+    def _logcdf2_logexp_safe(self, x, y, **params):
+        out = self._logcdf2_logexp(x, y, **params)
+        mask = np.isinf(out.real)
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._logcdf2_quadrature(x[mask], y[mask], **params_mask)
+        return out[()]
+
     def _logcdf2_quadrature(self, x, y, **params):
         logres = self._quadrature(self._logpdf_dispatch, limits=(x, y),
                                   log=True, params=params)
@@ -2355,10 +2374,10 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _logcdf_dispatch(self, x, *, method=None, **params):
         if self._overrides('_logcdf_formula'):
             method = self._logcdf_formula
-        elif _isnull(self.tol) and self._overrides('_cdf_formula'):
-            method = self._logcdf_logexp
         elif self._overrides('_logccdf_formula'):
             method = self._logcdf_complement
+        elif self._overrides('_cdf_formula'):
+            method = self._logcdf_logexp_safe
         else:
             method = self._logcdf_quadrature
         return method
@@ -2366,11 +2385,21 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _logcdf_formula(self, x, **params):
         raise NotImplementedError(self._not_implemented)
 
+    def _logcdf_complement(self, x, **params):
+        return _log1mexp(self._logccdf_dispatch(x, **params))
+
     def _logcdf_logexp(self, x, **params):
         return np.log(self._cdf_dispatch(x, **params))
 
-    def _logcdf_complement(self, x, **params):
-        return _log1mexp(self._logccdf_dispatch(x, **params))
+    def _logcdf_logexp_safe(self, x, **params):
+        out = self._logcdf_logexp(x, **params)
+        mask = np.isinf(out)
+        if np.any(mask):
+            params_mask = {key:np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._logcdf_quadrature(x[mask], **params_mask)
+        return out[()]
 
     def _logcdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
@@ -2437,7 +2466,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
             mask = tol < abs(spacing/out)
 
         if np.any(mask):
-            params_mask = {key:val[mask] for key, val in params.items()}
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
             out = np.asarray(out)
             out[mask] = self._cdf2_quadrature(x[mask], y[mask], *params_mask)
         return out[()]
@@ -2477,7 +2507,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         with np.errstate(divide='ignore'):
              mask = tol < eps/out
         if np.any(mask):
-            params_mask = {key:val[mask] for key, val in params.items()}
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
             out = np.asarray(out)
             out[mask] = self._cdf_quadrature(x[mask], *params_mask)
         return out[()]
@@ -2523,10 +2554,10 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _logccdf_dispatch(self, x, method=None, **params):
         if self._overrides('_logccdf_formula'):
             method = self._logccdf_formula
-        elif _isnull(self.tol) and self._overrides('_ccdf_formula'):
-            method = self._logccdf_logexp
         elif self._overrides('_logcdf_formula'):
             method = self._logccdf_complement
+        elif self._overrides('_ccdf_formula'):
+            method = self._logccdf_logexp_safe
         else:
             method = self._logccdf_quadrature
         return method
@@ -2534,11 +2565,21 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _logccdf_formula(self):
         raise NotImplementedError(self._not_implemented)
 
+    def _logccdf_complement(self, x, **params):
+        return _log1mexp(self._logcdf_dispatch(x, **params))
+
     def _logccdf_logexp(self, x, **params):
         return np.log(self._ccdf_dispatch(x, **params))
 
-    def _logccdf_complement(self, x, **params):
-        return _log1mexp(self._logcdf_dispatch(x, **params))
+    def _logccdf_logexp_safe(self, x, **params):
+        out = self._logccdf_logexp(x, **params)
+        mask = np.isinf(out)
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._logccdf_quadrature(x[mask], **params_mask)
+        return out[()]
 
     def _logccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
@@ -2604,7 +2645,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         with np.errstate(divide='ignore'):
             mask = tol < eps/out
         if np.any(mask):
-            params_mask = {key:val[mask] for key, val in params.items()}
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
             out = np.asarray(out)
             out[mask] = self._ccdf_quadrature(x[mask], *params_mask)
         return out[()]
@@ -2665,7 +2707,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
         mask = tol < eps/x
         if np.any(mask):
-            params_mask = {key:val[mask] for key, val in params.items()}
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
             out = np.asarray(out)
             out[mask] = self._icdf_inversion(x[mask], *params_mask)
         return out[()]
@@ -2722,7 +2765,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
         mask = tol < eps/x
         if np.any(mask):
-            params_mask = {key:val[mask] for key, val in params.items()}
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
             out = np.asarray(out)
             out[mask] = self._iccdf_inversion(x[mask], *params_mask)
         return out[()]
@@ -3767,7 +3811,7 @@ class Mixture(_ProbabilityDistribution):
         self._shape = np.broadcast_shapes(*(var._shape for var in components))
         self._dtype, self._components = dtype, components
         self._weights = np.full(n, 1/n, dtype=dtype) if weights is None else weights
-        self.validation_policy = None  # needed for
+        self.validation_policy = None
 
     @property
     def components(self):

@@ -289,6 +289,55 @@ class TestDistributions:
         assert_equal(p2, 0)
         assert_allclose(p1, p0, rtol=X.tol)
 
+    def test_logentropy_safe(self):
+        # simulate an `entropy` calculation over/underflowing with extreme parameters
+        class _Normal(stats.Normal):
+            def _entropy_formula(self, **params):
+                out = np.asarray(super()._entropy_formula(**params))
+                out[0] = 0
+                out[-1] = np.inf
+                return out
+
+        X = _Normal(sigma=[1, 2, 3])
+        with np.errstate(divide='ignore'):
+            res1 = X.logentropy(method='logexp_safe')
+            res2 = X.logentropy(method='logexp')
+        ref = X.logentropy(method='quadrature')
+        i_fl = [0, -1]  # first and last
+        assert np.isinf(res2[i_fl]).all()
+        assert res1[1] == res2[1]
+        assert res1[1] != ref[1]
+        assert_equal(res1[i_fl], ref[i_fl])
+
+    def test_logcdf2_safe(self):
+        # test what happens when 2-arg `cdf` underflows
+        X = stats.Normal(sigma=[1, 2, 3])
+        x = [-301, 1, 300]
+        y = [-300, 2, 301]
+        with np.errstate(divide='ignore'):
+            res1 = X.logcdf(x, y, method='logexp_safe')
+            res2 = X.logcdf(x, y, method='logexp')
+        ref = X.logcdf(x, y, method='quadrature')
+        i_fl = [0, -1]  # first and last
+        assert np.isinf(res2[i_fl]).all()
+        assert res1[1] == res2[1]
+        assert res1[1] != ref[1]
+        assert_equal(res1[i_fl], ref[i_fl])
+
+    @pytest.mark.parametrize('method_name', ['logcdf', 'logccdf'])
+    def test_logexp_safe(self, method_name):
+        # test what happens when `cdf`/`ccdf` underflows
+        X = stats.Normal(sigma=2)
+        x = [-301, 1] if method_name == 'logcdf' else [301, 1]
+        func = getattr(X, method_name)
+        with np.errstate(divide='ignore'):
+            res1 = func(x, method='logexp_safe')
+            res2 = func(x, method='logexp')
+        ref = func(x, method='quadrature')
+        assert res1[0] == ref[0]
+        assert res1[0] != res2[0]
+        assert res1[1] == res2[1]
+        assert res1[1] != ref[1]
 
 def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
     full_shape = sample_shape + result_shape
@@ -900,22 +949,6 @@ class TestAttributes:
         assert_allclose(res1, ref, rtol=X1.tol)
         assert_allclose(res2, ref, rtol=X2.tol)
         assert abs(res2 - ref) > abs(res1 - ref)
-
-        # Test the tolerance logic in one dispatch method
-        # When tol is set, quadrature should be used -> correct entropy.
-        # When tol is not set, logexp should be used -> incorrect entropy.
-        wrong_entropy = 1.23456
-
-        class TestDist(ContinuousDistribution):
-            _variable = _RealParameter('x', domain=_RealDomain(endpoints=(0, 0.5)))
-            def _logpdf_formula(self, x, *args, **kwargs):
-                return np.full_like(x, np.log(2.))
-            def _entropy_formula(self, *args, **kwargs):
-                return wrong_entropy
-
-        X0 = _Uniform(a=0., b=0.5)
-        assert_allclose(TestDist(tol=1e-10).logentropy(), X0.logentropy())
-        assert_allclose(TestDist().logentropy(), np.log(wrong_entropy))
 
 
     def test_iv_policy(self):
