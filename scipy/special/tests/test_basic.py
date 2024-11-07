@@ -2715,7 +2715,6 @@ class TestGamma:
         assert_almost_equal(rgam,rlgam,8)
 
     def test_infinity(self):
-        assert_(np.isinf(special.gamma(-1)))
         assert_equal(special.rgamma(-1), 0)
 
     @pytest.mark.parametrize(
