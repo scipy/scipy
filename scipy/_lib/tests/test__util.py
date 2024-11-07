@@ -397,16 +397,16 @@ def _f_seed(o, rng=None):
 
 def test__transition_to_rng():
     # SPEC-007 changes
-    v = _f_seed(1, rng=1)
-    v = _f_seed(1, rng=np.random.default_rng())
-    v = _f_seed(1, seed=1)
-    v = _f_seed(1, seed=np.random.RandomState())
+    _f_seed(1, rng=1)
+    _f_seed(1, rng=np.random.default_rng())
+    _f_seed(1, seed=1)
+    _f_seed(1, seed=np.random.RandomState())
     with assert_raises(TypeError):
         # can't pass both seed and rng
-        v = _f_seed(1, seed=1234, rng=1234)
+        _f_seed(1, seed=1234, rng=1234)
     with assert_raises(TypeError):
         # use of rng=RandomState should give rise to an error.
-        v = _f_seed(rng=np.random.RandomState())
+        _f_seed(rng=np.random.RandomState())
 
 
 class TestLazywhere:
