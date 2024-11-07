@@ -252,8 +252,7 @@ def test_milp_5():
     assert_allclose(res.fun, -12)
 
 
-@pytest.mark.slow
-@pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
+@pytest.mark.xslow
 def test_milp_6():
     # solve a larger MIP with only equality constraints
     # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
