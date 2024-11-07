@@ -682,7 +682,10 @@ class TestConstructUtils:
                           [0, 0, 6, 0],
                           [0, 0, 0, 7]])
 
-        assert_equal(construct.block_diag((A, B, C)).toarray(), expected)
+        ABC = construct.block_diag((A, B, C))
+        assert_equal(ABC.toarray(), expected)
+        assert ABC.coords[0].dtype == np.int32
+
 
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
@@ -795,6 +798,10 @@ class TestConstructUtils:
         arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int,
                                      rng=0)
         assert arr.shape == (10, 10, 10, 10, 10)
+
+    def test_random_array_idx_dtype(self):
+        A = construct.random_array((10, 10))
+        assert A.coords[0].dtype == np.int32
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.

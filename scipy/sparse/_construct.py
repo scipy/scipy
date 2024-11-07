@@ -536,21 +536,18 @@ def kron(A, B, format=None):
             return coo_sparse(output_shape).asformat(format)
 
         # expand entries of a into blocks
-        row = A.row.repeat(B.nnz)
-        col = A.col.repeat(B.nnz)
+        idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
+        row = A.coords[0].astype(idx_dtype, copy=False).repeat(B.nnz)
+        col = A.coords[1].astype(idx_dtype, copy=False).repeat(B.nnz)
         data = A.data.repeat(B.nnz)
-
-        if max(A.shape[0]*B.shape[0], A.shape[1]*B.shape[1]) > np.iinfo('int32').max:
-            row = row.astype(np.int64)
-            col = col.astype(np.int64)
 
         row *= B.shape[0]
         col *= B.shape[1]
 
         # increment block indices
         row,col = row.reshape(-1,B.nnz),col.reshape(-1,B.nnz)
-        row += B.row
-        col += B.col
+        row += B.coords[0]
+        col += B.coords[1]
         row,col = row.reshape(-1),col.reshape(-1)
 
         # compute block entries
@@ -691,9 +688,9 @@ def _stack_along_minor_axis(blocks, axis):
     idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
     stack_dim_cat = np.array([b._shape_as_2d[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
-        indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
+        indptr_cat = np.concatenate(indptr_list).astype(idx_dtype, copy=False)
         indices_cat = (np.concatenate([b.indices for b in blocks])
-                       .astype(idx_dtype))
+                       .astype(idx_dtype, copy=False))
         indptr = np.empty(constant_dim + 1, dtype=idx_dtype)
         indices = np.empty_like(indices_cat)
         data = np.empty_like(data_cat)
@@ -938,7 +935,7 @@ def _block(blocks, format, dtype, return_spmatrix=False):
         # stack along rows (axis 0):
         A = _compressed_sparse_stack(blocks[:, 0], 0, return_spmatrix)
         if dtype is not None:
-            A = A.astype(dtype)
+            A = A.astype(dtype, copy=False)
         return A
     elif (format in (None, 'csc') and
           all(issparse(b) and b.format == 'csc' for b in blocks.flat)
@@ -951,7 +948,7 @@ def _block(blocks, format, dtype, return_spmatrix=False):
         # stack along columns (axis 1):
         A = _compressed_sparse_stack(blocks[0, :], 1, return_spmatrix)
         if dtype is not None:
-            A = A.astype(dtype)
+            A = A.astype(dtype, copy=False)
         return A
 
     block_mask = np.zeros(blocks.shape, dtype=bool)
@@ -1088,9 +1085,13 @@ def block_diag(mats, format=None, dtype=None):
     row = np.concatenate(row)
     col = np.concatenate(col)
     data = np.concatenate(data)
-    return container((data, (row, col)),
-                      shape=(r_idx, c_idx),
-                      dtype=dtype).asformat(format)
+    new_shape = (r_idx, c_idx)
+
+    # downcast if safe before calling coo_array
+    idx_dtype = get_index_dtype(maxval=max(new_shape))
+    row = row.astype(idx_dtype, copy=False)
+    col = col.astype(idx_dtype, copy=False)
+    return container((data, (row, col)), shape=new_shape, dtype=dtype).asformat(format)
 
 
 @_transition_to_rng("random_state")
@@ -1187,6 +1188,10 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     if rng is None:
         rng = np.random.default_rng()
     data, ind = _random(shape, density, format, dtype, rng, data_sampler)
+
+    # downcast, if safe, before calling coo_constructor
+    idx_dtype = get_index_dtype(maxval=max(shape))
+    ind = tuple(co.astype(idx_dtype, copy=False) for co in ind)
     return coo_array((data, ind), shape=shape).asformat(format)
 
 
@@ -1218,7 +1223,7 @@ def _random(shape, density=0.01, format=None, dtype=None,
             data_sampler = rng.uniform
 
     # rng.choice uses int64 if first arg is an int
-    if tot_prod < np.iinfo(np.int64).max:
+    if tot_prod <= np.iinfo(np.int64).max:
         raveled_ind = rng.choice(tot_prod, size=size, replace=False)
         ind = np.unravel_index(raveled_ind, shape=shape, order='F')
     else:
