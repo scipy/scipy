@@ -375,16 +375,18 @@ namespace cephes {
         }
         if (x > 0) {
             return 1.0;
-        } else {
-            fx = std::floor(x);
-            if (x - fx == 0.0) {
-                return 0.0;
-            } else if (static_cast<int>(fx) % 2) {
-                return -1.0;
-            } else {
-                return 1.0;
-            }
-        }
+	}
+	if (x == 0) {
+	    return std::copysign(1.0, x);
+	}
+	fx = std::floor(x);
+	if (x - fx == 0.0) {
+	    return std::numeric_limits<double>::quiet_NaN();
+	}
+	if (static_cast<int>(fx) % 2) {
+	    return -1.0;
+	}
+	return 1.0;
     }
 
 } // namespace cephes
