@@ -3707,7 +3707,7 @@ class TestParabolicCylinder:
     def test_pbdv_points(self):
         # simple case
         eta = np.linspace(-10, 10, 5)
-        z = 2**(eta/2)*np.sqrt(np.pi)/special.gamma(.5-.5*eta)
+        z = 2**(eta/2)*np.sqrt(np.pi)*special.rgamma(.5-.5*eta)
         assert_allclose(special.pbdv(eta, 0.)[0], z, rtol=1e-14, atol=1e-14)
 
         # some points
