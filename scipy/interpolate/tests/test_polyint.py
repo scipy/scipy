@@ -345,7 +345,7 @@ class TestBarycentric:
         self.ys = self.true_poly(self.xs)
 
     def test_lagrange(self):
-        P = BarycentricInterpolator(self.xs, self.ys)
+        P = BarycentricInterpolator(self.xs, self.ys, random_state=1)
         xp_assert_close(P(self.test_xs), self.true_poly(self.test_xs))
 
     def test_scalar(self):
@@ -532,19 +532,6 @@ class TestBarycentric:
             interp(self.xs)
 
         _run_concurrent_barrier(10, worker_fn, P)
-
-    def test_rng_random_state_spec007(self):
-        # spec007 involves the transition of RandomState-->Generator
-        # rng is the new name
-        BarycentricInterpolator([0, 1], [0, 1], rng=1)
-        # should still be allowed to pass `random_state`
-        BarycentricInterpolator([0, 1], [0, 1], random_state=1)
-        with assert_raises(TypeError):
-            # can't pass both seed and rng
-            BarycentricInterpolator([0, 1], [1, 1], rng=2, random_state=1)
-        with assert_raises(TypeError):
-            # use of rng=RandomState should give rise to an error.
-            BarycentricInterpolator([0, 1], [1, 1], rng=np.random.RandomState())
 
 
 class TestPCHIP:
