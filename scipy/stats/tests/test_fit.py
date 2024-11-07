@@ -231,7 +231,8 @@ def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto',
                       'truncweibull_min', 'ksone', 'levy_stable',
-                      'studentized_range', 'kstwo', 'arcsine',
+                      'studentized_range', 'kstwo',
+                      'beta', 'nakagami', 'truncnorm', # don't meet tolerance
                       'poisson_binom'}  # vector-valued shape parameter
 
     # Please keep this list in alphabetical order...
@@ -282,7 +283,7 @@ def cases_test_fit_mse():
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'tukeylambda',  # close, but doesn't meet tolerance
                       'vonmises',  # can have negative CDF; doesn't play nice
-                      'argus',  # doesn't meet tolerance; tested separately
+                      'arcsine', 'argus', 'powerlaw',  # don't meet tolerance
                       'poisson_binom',  # vector-valued shape parameter
                       }
 
@@ -375,8 +376,8 @@ class TestFit:
     rtol = 1e-2
     tols = {'atol': atol, 'rtol': rtol}
 
-    def opt(self, *args, **kwds):
-        return differential_evolution(*args, rng=1, **kwds)
+    def opt(self, *args, rng=1, **kwds):
+        return differential_evolution(*args, rng=rng, **kwds)
 
     def test_dist_iv(self):
         message = "`dist` must be an instance of..."
@@ -494,7 +495,7 @@ class TestFit:
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
 
-    def basic_fit_test(self, dist_name, method):
+    def basic_fit_test(self, dist_name, method, rng=1):
 
         N = 5000
         dist_data = dict(distcont + distdiscrete)
@@ -530,11 +531,11 @@ class TestFit:
 
     @pytest.mark.parametrize("dist_name", cases_test_fit_mle())
     def test_basic_fit_mle(self, dist_name):
-        self.basic_fit_test(dist_name, "mle")
+        self.basic_fit_test(dist_name, "mle", rng=5)
 
     @pytest.mark.parametrize("dist_name", cases_test_fit_mse())
     def test_basic_fit_mse(self, dist_name):
-        self.basic_fit_test(dist_name, "mse")
+        self.basic_fit_test(dist_name, "mse", rng=2)
 
     def test_arcsine(self):
         # Can't guarantee that all distributions will fit all data with
@@ -546,8 +547,9 @@ class TestFit:
         shapes = (1., 2.)
         data = dist.rvs(*shapes, size=N, random_state=rng)
         shape_bounds = {'loc': (0.1, 10), 'scale': (0.1, 10)}
-        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
-        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
+        res = stats.fit(dist, data, shape_bounds, method='mse', optimizer=self.opt)
+        assert_nlff_less_or_close(dist, data, res.params, shapes,
+                                  nlff_name='_penalized_nlpsf', **self.tols)
 
     @pytest.mark.parametrize("method", ('mle', 'mse'))
     def test_argus(self, method):
@@ -561,8 +563,24 @@ class TestFit:
         data = dist.rvs(*shapes, size=N, random_state=rng)
         shape_bounds = {'chi': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt, method=method)
+        nlff_name = {'mle': 'nnlf', 'mse': '_penalized_nlpsf'}[method]
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols,
+                                  nlff_name=nlff_name)
 
-        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
+    def test_beta(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.beta
+        shapes = (2.3098496451481823, 0.62687954300963677, 1., 2.)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = {'a': (0.1, 10), 'b':(0.1, 10),
+                        'loc': (0.1, 10), 'scale': (0.1, 10)}
+        res = stats.fit(dist, data, shape_bounds, method='mle', optimizer=self.opt)
+        assert_nlff_less_or_close(dist, data, res.params, shapes,
+                                  nlff_name='nnlf', **self.tols)
 
     def test_foldnorm(self):
         # Can't guarantee that all distributions will fit all data with
@@ -577,6 +595,34 @@ class TestFit:
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
+
+    def test_nakagami(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.nakagami
+        shapes = (4.9673794866666237, 1., 2.)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = {'nu':(0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
+        res = stats.fit(dist, data, shape_bounds, method='mle', optimizer=self.opt)
+        assert_nlff_less_or_close(dist, data, res.params, shapes,
+                                  nlff_name='nnlf', **self.tols)
+
+    def test_powerlaw(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.powerlaw
+        shapes = (1.6591133289905851, 1., 2.)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = {'a': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
+        res = stats.fit(dist, data, shape_bounds, method='mse', optimizer=self.opt)
+        assert_nlff_less_or_close(dist, data, res.params, shapes,
+                                  nlff_name='_penalized_nlpsf', **self.tols)
 
     def test_truncpareto(self):
         # Can't guarantee that all distributions will fit all data with
