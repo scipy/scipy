@@ -640,7 +640,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     def __init__(self, xi, yi=None, axis=0, *, wi=None, rng=None):
         super().__init__(xi, yi, axis)
 
-        random_state = check_random_state(rng)
+        rng = check_random_state(rng)
 
         self.xi = np.asarray(xi, dtype=np.float64)
         self.set_yi(yi)
@@ -661,7 +661,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             # these numerical stability improvements will be able to provide all
             # the points to the constructor.
             self._inv_capacity = 4.0 / (np.max(self.xi) - np.min(self.xi))
-            permute = random_state.permutation(self.n, )
+            permute = rng.permutation(self.n, )
             inv_permute = np.zeros(self.n, dtype=np.int32)
             inv_permute[permute] = np.arange(self.n)
             self.wi = np.zeros(self.n)
