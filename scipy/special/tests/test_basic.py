@@ -398,8 +398,12 @@ class TestCephes:
         cephes.gammaln(10)
 
     def test_gammasgn(self):
-        vals = np.array([-4, -3.5, -2.3, -0.0, 0.0, 1, 4.2], np.float64)
-        reference = np.array([np.nan, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0], np.float64)
+        vals = np.array(
+            [-np.inf, -4, -3.5, -2.3, -0.0, 0.0, 1, 4.2, np.inf], np.float64
+        )
+        reference = np.array(
+            [np.nan, np.nan, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0], np.float64
+        )
         assert_array_equal(cephes.gammasgn(vals), reference)
 
     def test_gdtr(self):
