@@ -84,7 +84,7 @@ namespace cephes {
 	    return 0.0;
 	}
 
-	if (std::abs(x) > 2.5) {
+	if (std::abs(x) > 4.0) {
 	    return 1.0 / Gamma(x);
 	}
 
