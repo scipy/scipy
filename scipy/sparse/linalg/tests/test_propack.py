@@ -92,7 +92,6 @@ def test_svdp(ctor, dtype, irl, which):
 @pytest.mark.xslow
 @pytest.mark.parametrize('dtype', _dtypes)
 @pytest.mark.parametrize('irl', (False, True))
-@pytest.mark.timeout(120)  # True, complex64 > 60 s: prerel deps cov 64bit blas
 def test_examples(dtype, irl):
     # Note: atol for complex64 bumped from 1e-4 to 1e-3 due to test failures
     # with BLIS, Netlib, and MKL+AVX512 - see
