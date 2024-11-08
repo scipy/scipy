@@ -532,6 +532,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     return np.poly1d((d/factorial(np.arange(degree+1)))[::-1])
 
 
+@_transition_to_rng("random_state")
 class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     r"""Interpolating polynomial for a set of points.
 
@@ -618,7 +619,6 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> plt.show()
     """ # numpy/numpydoc#87  # noqa: E501
 
-    @_transition_to_rng("random_state")
     def __init__(self, xi, yi=None, axis=0, *, wi=None, rng=None):
         super().__init__(xi, yi, axis)
 
