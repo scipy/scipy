@@ -133,22 +133,35 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if lapack_driver not in ('gesdd', 'gesvd'):
         message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
         raise ValueError(message)
+    funcs = (lapack_driver, lapack_driver + '_lwork')
+    try:
+        gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64=True)
+        ilp64_enabled = True
+    except RuntimeError:
+        # some debug warning here
+        gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64=False)
+        ilp64_enabled = False
 
-    if lapack_driver == 'gesdd' and compute_uv:
+    if compute_uv and not ilp64_enabled:
         # XXX: revisit int32 when ILP64 lapack becomes a thing
         max_mn, min_mn = (m, n) if m > n else (n, m)
         if full_matrices:
             if max_mn*max_mn > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
-                                  " would incur integer overflow in LAPACK.")
+                                  "would incur integer overflow in LAPACK. "
+                                  "A possible workaround is to 1. build NumPy "
+                                  "against ILP64 LAPACK (see https://numpy.org"
+                                  "/doc/stable/building/blas_lapack.html) "
+                                  "and then 2. use numpy.linalg.svd instead.")
         else:
             sz = max(m * min_mn, n * min_mn)
             if max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix of {sz} elements would "
-                                  "incur an in integer overflow in LAPACK.")
-
-    funcs = (lapack_driver, lapack_driver + '_lwork')
-    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
+                                  "incur an in integer overflow in LAPACK. "
+                                  "A possible workaround is to 1. build NumPy "
+                                  "against ILP64 LAPACK (see https://numpy.org"
+                                  "/doc/stable/building/blas_lapack.html) "
+                                  "and then 2. use numpy.linalg.svd instead.")
 
     # compute optimal lwork
     lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
