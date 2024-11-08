@@ -231,10 +231,8 @@ Beta distribution
 .. autosummary::
    :toctree: generated/
 
-   btdtr        -- Cumulative distribution function of the beta distribution.
-   btdtri       -- The `p`-th quantile of the beta distribution.
-   btdtria      -- Inverse of `btdtr` with respect to `a`.
-   btdtrib      -- btdtria(a, p, x).
+   btdtria      -- Inverse of `betainc` with respect to `a`.
+   btdtrib      -- Inverse of `betainc` with respect to `b`.
 
 F distribution
 ^^^^^^^^^^^^^^
@@ -433,7 +431,6 @@ Gamma and related functions
    digamma      -- psi(x[, out]).
    poch         -- Rising factorial (z)_m.
 
-
 Error function and Fresnel integrals
 ------------------------------------
 
@@ -470,17 +467,28 @@ Legendre functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated Legendre function of integer order and real degree.
-   sph_harm -- Compute spherical harmonics.
+   legendre_p                 -- Legendre polynomials of the first kind.
+   legendre_p_all             -- All Legendre polynomials of the first kind up to a specified order.
+   assoc_legendre_p           -- Associated Legendre polynomials of the first kind.
+   assoc_legendre_p_all       -- All associated Legendre polynomials of the first kind up to a specified order and degree.
+   sph_legendre_p             -- Spherical Legendre polynomials of the first kind.
+   sph_legendre_p_all         -- All spherical Legendre polynomials of the first kind up to a specified order and degree.
+   sph_harm_y                 -- Spherical harmonics.
+   sph_harm_y_all             -- All spherical harmonics up to a specified order and degree.
+
+The following functions are in the process of being deprecated in favor of the above,
+which provide a more flexible and consistent interface.
 
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- Associated Legendre function of the first kind for complex arguments.
-   lpn   -- Legendre function of the first kind.
-   lqn   -- Legendre function of the second kind.
-   lpmn  -- Sequence of associated Legendre functions of the first kind.
-   lqmn  -- Sequence of associated Legendre functions of the second kind.
+   lpmv                       -- Associated Legendre function of integer order and real degree.
+   sph_harm                   -- Compute spherical harmonics.
+   clpmn                      -- Associated Legendre function of the first kind for complex arguments.
+   lpn                        -- Legendre function of the first kind.
+   lqn                        -- Legendre function of the second kind.
+   lpmn                       -- Sequence of associated Legendre functions of the first kind.
+   lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal harmonics
 ---------------------
@@ -531,7 +539,7 @@ orthogonal polynomials:
    roots_jacobi      -- Gauss-Jacobi quadrature.
    roots_laguerre    -- Gauss-Laguerre quadrature.
    roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
-   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermite     -- Gauss-Hermite (physicist's) quadrature.
    roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
    roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
    roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.
@@ -740,6 +748,7 @@ Other special functions
    spence      -- Spence's function, also known as the dilogarithm.
    zeta        -- Riemann zeta function.
    zetac       -- Riemann zeta function minus 1.
+   softplus    -- Softplus function.
 
 Convenience functions
 ---------------------
@@ -818,6 +827,9 @@ from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
+from . import _multiufuncs
+from ._multiufuncs import *
+
 from . import _orthogonal
 from ._orthogonal import *
 
@@ -841,7 +853,7 @@ from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 # We replace some function definitions from _ufuncs with those from
 # _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
 # so there is no need to consider _support_alternative_backends.__all__ here.
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + _multiufuncs.__all__
 __all__ += [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
@@ -862,27 +874,6 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-
-_depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
-             'removed in SciPy 1.14.0.  Use scipy.special.{} instead.')
-
-
-def btdtr(*args, **kwargs):  # type: ignore [no-redef]
-    warnings.warn(_depr_msg.format('betainc'), category=DeprecationWarning,
-                  stacklevel=2)
-    return _ufuncs.btdtr(*args, **kwargs)
-
-
-btdtr.__doc__ = _ufuncs.btdtr.__doc__  # type: ignore [misc]
-
-
-def btdtri(*args, **kwargs):  # type: ignore [no-redef]
-    warnings.warn(_depr_msg.format('betaincinv'), category=DeprecationWarning,
-                  stacklevel=2)
-    return _ufuncs.btdtri(*args, **kwargs)
-
-
-btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
 
 
 def _get_include():

@@ -15,9 +15,8 @@ The :mod:`scipy.optimize` package provides several commonly used
 optimization algorithms. A detailed listing is available:
 :mod:`scipy.optimize` (can also be found by ``help(scipy.optimize)``).
 
-
-Unconstrained minimization of multivariate scalar functions (:func:`minimize`)
-------------------------------------------------------------------------------
+Local minimization of multivariate scalar functions (:func:`minimize`)
+----------------------------------------------------------------------
 
 The :func:`minimize` function provides a common interface to unconstrained
 and constrained minimization algorithms for multivariate scalar functions
@@ -40,8 +39,11 @@ and must return a float value. The exact calling signature must be
 ``f(x, *args)`` where ``x`` represents a numpy array and ``args``
 a tuple of additional arguments supplied to the objective function.
 
+Unconstrained minimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Nelder-Mead Simplex algorithm (``method='Nelder-Mead'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 In the example below, the :func:`minimize` routine is used
 with the *Nelder-Mead* simplex algorithm (selected through the ``method``
@@ -125,7 +127,7 @@ Another alternative is to use :py:func:`functools.partial`.
     [1.         1.         1.         1.         0.99999999]
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 In order to converge more quickly to the solution, this routine uses
 the gradient of the objective function. If the gradient is not given
@@ -177,8 +179,7 @@ through the ``jac`` parameter as illustrated below.
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Avoiding Redundant Calculation
-""""""""""""""""""""""""""""""
+**Avoiding Redundant Calculation**
 
 It is common for the objective function and its gradient to share parts of the
 calculation. For instance, consider the following problem.
@@ -244,7 +245,7 @@ simple situations, this can be accomplished with the
 
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Newton-Conjugate Gradient algorithm is a modified Newton's
 method and uses a conjugate gradient algorithm to (approximately) invert
@@ -275,8 +276,7 @@ or a function to compute the product of the Hessian with an arbitrary
 vector.
 
 
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
 The Hessian of the Rosenbrock function is
 
@@ -324,8 +324,7 @@ the function using Newton-CG method is shown in the following example:
     array([1.,  1.,  1.,  1.,  1.])
 
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
 For larger minimization problems, storing the entire Hessian matrix can
 consume considerable time and memory. The Newton-CG algorithm only needs
@@ -378,7 +377,7 @@ according to the authors, deals more effectively with this problematic situation
 and will be described next.
 
 Trust-Region Newton-Conjugate-Gradient Algorithm (``method='trust-ncg'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 The ``Newton-CG`` method is a line search method: it finds a direction
 of search minimizing a quadratic approximation of the function and then uses
@@ -401,9 +400,7 @@ model with the real function. This family of methods is known as trust-region me
 The ``trust-ncg`` algorithm is a trust-region method that uses a conjugate gradient algorithm
 to solve the trust-region subproblem [NW]_.
 
-
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
     ...                jac=rosen_der, hess=rosen_hess,
@@ -417,8 +414,7 @@ Full Hessian example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
     ...                jac=rosen_der, hessp=rosen_hess_p,
@@ -433,7 +429,7 @@ Hessian product example:
     array([1., 1., 1., 1., 1.])
 
 Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``method='trust-krylov'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
 suitable for large-scale problems as it uses the hessian only as linear
@@ -455,8 +451,7 @@ For indefinite problems it is usually better to use this method as it reduces
 the number of nonlinear iterations at the expense of few more matrix-vector
 products per subproblem solve in comparison to the ``trust-ncg`` method.
 
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
     ...                jac=rosen_der, hess=rosen_hess,
@@ -470,8 +465,7 @@ Full Hessian example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
     ...                jac=rosen_der, hessp=rosen_hess_p,
@@ -496,7 +490,7 @@ Hessian product example:
 
 
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
 large-scale problems (problems with thousands of variables). That is because the conjugate
@@ -537,15 +531,15 @@ example using the Rosenbrock function follows:
 
 .. _tutorial-sqlsp:
 
-Constrained minimization of multivariate scalar functions (:func:`minimize`)
-----------------------------------------------------------------------------
+Constrained minimization
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :func:`minimize` function provides algorithms for constrained minimization,
+The :func:`minimize` function provides several algorithms for constrained minimization,
 namely ``'trust-constr'`` ,  ``'SLSQP'``, ``'COBYLA'``, and ``'COBYQA'``. They require the constraints
 to be defined using slightly different structures. The methods ``'trust-constr'`` and ``'COBYQA'`` require
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
 :func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
-require constraints to be defined  as a sequence of dictionaries, with keys
+require constraints to be defined as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 
 As an example let us consider the constrained minimization of the Rosenbrock function:
@@ -566,7 +560,7 @@ for which only the first and fourth constraints are active.
 
 
 Trust-Region Constrained Algorithm (``method='trust-constr'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 The trust-region constrained method deals with constrained minimization problems of the form:
 
@@ -585,9 +579,7 @@ The implementation is based on [EQSQP]_ for equality-constraint problems and on 
 for problems with inequality constraints. Both are trust-region type algorithms suitable
 for large-scale problems.
 
-
-Defining Bounds Constraints:
-""""""""""""""""""""""""""""
+**Defining Bounds Constraints**
 
 The bound constraints  :math:`0 \leq  x_0  \leq 1` and :math:`-0.5 \leq  x_1  \leq 2.0`
 are defined using a :func:`Bounds` object.
@@ -595,8 +587,7 @@ are defined using a :func:`Bounds` object.
     >>> from scipy.optimize import Bounds
     >>> bounds = Bounds([0, -0.5], [1.0, 2.0])
 
-Defining Linear Constraints:
-""""""""""""""""""""""""""""
+**Defining Linear Constraints**
 
 The constraints :math:`x_0 + 2 x_1 \leq 1`
 and :math:`2 x_0 + x_1 = 1` can be written in the linear constraint standard format:
@@ -614,8 +605,7 @@ and defined using a :func:`LinearConstraint` object.
     >>> from scipy.optimize import LinearConstraint
     >>> linear_constraint = LinearConstraint([[1, 2], [2, 1]], [-np.inf, 1], [1, 1])
 
-Defining Nonlinear Constraints:
-"""""""""""""""""""""""""""""""
+**Defining Nonlinear Constraints**
 The nonlinear constraint:
 
 .. math::
@@ -691,9 +681,7 @@ be provided by the user or defined using :class:`HessianUpdateStrategy`.
 
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac='2-point', hess=BFGS())
 
-
-Solving the Optimization Problem:
-"""""""""""""""""""""""""""""""""
+**Solving the Optimization Problem**
 The optimization problem is solved using:
 
     >>> x0 = np.array([0.5, 0])
@@ -755,7 +743,7 @@ and the gradient with finite differences.
     optimization. SIAM Journal on Optimization 8.3: 682-706.
 
 Sequential Least SQuares Programming (SLSQP) Algorithm (``method='SLSQP'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 The SLSQP method deals with constrained minimization problems of the form:
 
 .. math::
@@ -800,6 +788,108 @@ And the optimization problem is solved with:
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
+
+Local minimization solver comparison
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Find a solver that meets your requirements using the table below.
+If there are multiple candidates, try several and see which ones best
+meet your needs (e.g. execution time, objective function value).
+
+.. list-table::
+   :widths: 15 20 20 15 15 15
+   :header-rows: 1
+
+   * - Solver
+     - Bounds Constraints
+     - Nonlinear Constraints
+     - Uses Gradient
+     - Uses Hessian
+     - Utilizes Sparsity
+   * - CG
+     -
+     -
+     - ✓
+     -
+     -
+   * - BFGS
+     -
+     -
+     - ✓
+     -
+     -
+   * - dogleg
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-ncg
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-krylov
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-exact
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - Newton-CG
+     -
+     -
+     - ✓
+     - ✓
+     - ✓
+   * - Nelder-Mead
+     - ✓
+     -
+     -
+     -
+     -
+   * - Powell
+     - ✓
+     -
+     -
+     -
+     -
+   * - L-BFGS-B
+     - ✓
+     -
+     - ✓
+     -
+     -
+   * - TNC
+     - ✓
+     -
+     - ✓
+     -
+     -
+   * - COBYLA
+     - ✓
+     - ✓
+     -
+     -
+     -
+   * - SLSQP
+     - ✓
+     - ✓
+     - ✓
+     -
+     -
+   * - trust-constr
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
 
 Global optimization
 -------------------
@@ -915,6 +1005,50 @@ We'll now plot all found minima on a heatmap of the function::
    :align: center
    :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
+
+Comparison of Global Optimizers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Find a solver that meets your requirements using the table below.
+If there are multiple candidates, try several and see which ones best
+meet your needs (e.g. execution time, objective function value).
+
+.. list-table::
+   :widths: 20 15 15 20 20
+   :header-rows: 1
+
+   * - Solver
+     - Bounds Constraints
+     - Nonlinear Constraints
+     - Uses Gradient
+     - Uses Hessian
+   * - basinhopping
+     -
+     -
+     - (✓)
+     - (✓)
+   * - direct
+     - ✓
+     -
+     -
+     -
+   * - dual_annealing
+     - ✓
+     -
+     - (✓)
+     - (✓)
+   * - differential_evolution
+     - ✓
+     - ✓
+     -
+     -
+   * - shgo
+     - ✓
+     - ✓
+     - (✓)
+     - (✓)
+
+(✓) = Depending on the chosen local minimizer
 
 Least-squares minimization (:func:`least_squares`)
 --------------------------------------------------
@@ -1104,6 +1238,7 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
     >>> res = minimize_scalar(j1, bounds=(4, 7), method='bounded')
     >>> res.x
     5.33144184241
+
 
 
 Custom minimizers

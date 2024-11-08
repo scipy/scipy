@@ -5,6 +5,7 @@ python_sources = [
   'test_boxcox.py',
   'test_cdflib.py',
   'test_cdft_asymptotic.py',
+  'test_cephes_intp_cast.py',
   'test_cosine_distr.py',
   'test_cython_special.py',
   'test_data.py',
@@ -22,6 +23,7 @@ python_sources = [
   'test_iv_ratio.py',
   'test_kolmogorov.py',
   'test_lambertw.py',
+  'test_legendre.py',
   'test_log_softmax.py',
   'test_loggamma.py',
   'test_logit.py',
@@ -53,7 +55,8 @@ python_sources = [
   'test_wright_bessel.py',
   'test_wrightomega.py',
   'test_zeta.py',
-  'test_boost_ufuncs.py'
+  'test_boost_ufuncs.py',
+  'test_xsf_cuda.py',
 ]
 
 

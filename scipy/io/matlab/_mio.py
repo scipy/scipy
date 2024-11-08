@@ -80,7 +80,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         raise NotImplementedError('Please use HDF reader for matlab v7.3 '
                                   'files, e.g. h5py')
     else:
-        raise TypeError('Did not recognize version %s' % mjv)
+        raise TypeError(f'Did not recognize version {mjv}')
 
 
 @docfiller

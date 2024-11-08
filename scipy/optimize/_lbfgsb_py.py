@@ -46,6 +46,49 @@ from scipy.sparse.linalg import LinearOperator
 __all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
 
 
+status_messages = {
+    0 : "START",
+    1 : "NEW_X",
+    2 : "RESTART",
+    3 : "FG",
+    4 : "CONVERGENCE",
+    5 : "STOP",
+    6 : "WARNING",
+    7 : "ERROR",
+    8 : "ABNORMAL"
+}
+
+
+task_messages = {
+    0 : "",
+    301 : "",
+    302 : "",
+    401 : "NORM OF PROJECTED GRADIENT <= PGTOL",
+    402 : "RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    501 : "CPU EXCEEDING THE TIME LIMIT",
+    502 : "TOTAL NO. OF F,G EVALUATIONS EXCEEDS LIMIT",
+    503 : "PROJECTED GRADIENT IS SUFFICIENTLY SMALL",
+    504 : "TOTAL NO. OF ITERATIONS REACHED LIMIT",
+    505 : "CALLBACK REQUESTED HALT",
+    601 : "ROUNDING ERRORS PREVENT PROGRESS",
+    602 : "STP = STPMAX",
+    603 : "STP = STPMIN",
+    604 : "XTOL TEST SATISFIED",
+    701 : "NO FEASIBLE SOLUTION",
+    702 : "FACTR < 0",
+    703 : "FTOL < 0",
+    704 : "GTOL < 0",
+    705 : "XTOL < 0",
+    706 : "STP < STPMIN",
+    707 : "STP > STPMAX",
+    708 : "STPMIN < 0",
+    709 : "STPMAX < STPMIN",
+    710 : "INITIAL G >= 0",
+    711 : "M <= 0",
+    712 : "N <= 0",
+    713 : "INVALID NBD",
+}
+
 def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   approx_grad=0,
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
@@ -96,15 +139,21 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         Step size used when `approx_grad` is True, for numerically
         calculating the gradient
     iprint : int, optional
-        Controls the frequency of output. ``iprint < 0`` means no output;
-        ``iprint = 0``    print only one line at the last iteration;
-        ``0 < iprint < 99`` print also f and ``|proj g|`` every iprint iterations;
-        ``iprint = 99``   print details of every iteration except n-vectors;
-        ``iprint = 100``  print also the changes of active set and final x;
-        ``iprint > 100``  print details of every iteration including x and g.
+        Deprecated option that previously controlled the text printed on the
+        screen during the problem solution. Now the code does not emit any
+        output and this keyword has no function.
+
+        .. deprecated:: 1.15.0
+            This keyword is deprecated and will be removed from SciPy 1.17.0.
+
     disp : int, optional
-        If zero, then no output. If a positive number, then this over-rides
-        `iprint` (i.e., `iprint` gets the value of `disp`).
+        Deprecated option that previously controlled the text printed on the
+        screen during the problem solution. Now the code does not emit any
+        output and this keyword has no function.
+
+        .. deprecated:: 1.15.0
+            This keyword is deprecated and will be removed from SciPy 1.17.0.
+
     maxfun : int, optional
         Maximum number of function evaluations. Note that this function
         may violate the limit because of evaluating gradients by numerical
@@ -147,17 +196,10 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Notes
     -----
-    License of L-BFGS-B (FORTRAN code):
-
-    The version included here (in fortran code) is 3.0
-    (released April 25, 2011). It was written by Ciyou Zhu, Richard Byrd,
-    and Jorge Nocedal <nocedal@ece.nwu.edu>. It carries the following
-    condition for use:
-
-    This software is freely available, but we expect that all publications
-    describing work using this software, or all commercial products using it,
-    quote at least one of the references given below. This software is released
-    under the BSD License.
+    SciPy uses a C-translated and modified version of the Fortran code,
+    L-BFGS-B v3.0 (released April 25, 2011, BSD-3 licensed). Original Fortran
+    version was written by Ciyou Zhu, Richard Byrd, Jorge Nocedal and,
+    Jose Luis Morales.
 
     References
     ----------
@@ -173,11 +215,11 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     Examples
     --------
-    Solve a linear regression problem via `fmin_l_bfgs_b`. To do this, first we define
-    an objective function ``f(m, b) = (y - y_model)**2``, where `y` describes the
-    observations and `y_model` the prediction of the linear model as
-    ``y_model = m*x + b``. The bounds for the parameters, ``m`` and ``b``, are arbitrarily
-    chosen as ``(0,5)`` and ``(5,10)`` for this example.
+    Solve a linear regression problem via `fmin_l_bfgs_b`. To do this, first we
+    define an objective function ``f(m, b) = (y - y_model)**2``, where `y`
+    describes the observations and `y_model` the prediction of the linear model
+    as ``y_model = m*x + b``. The bounds for the parameters, ``m`` and ``b``,
+    are arbitrarily chosen as ``(0,5)`` and ``(5,10)`` for this example.
 
     >>> import numpy as np
     >>> from scipy.optimize import fmin_l_bfgs_b
@@ -201,14 +243,14 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     array([1.99999999, 3.00000006]), 1.7746231151323805e-14  # may vary
 
     The optimized parameters in ``x_opt`` agree with the ground truth parameters
-    ``m`` and ``b``. Next, let us perform a bound contrained optimization using the `bounds`
-    parameter. 
+    ``m`` and ``b``. Next, let us perform a bound constrained optimization using
+    the `bounds` parameter.
 
     >>> bounds = [(0, 5), (5, 10)]
     >>> x_opt, f_op, info = fmin_l_bfgs_b(func, x0=initial_values, args=(X, Y),
     ...                                   approx_grad=True, bounds=bounds)
     >>> x_opt, f_opt
-    array([1.65990508, 5.31649385]), 15.721334516453945  # may vary    
+    array([1.65990508, 5.31649385]), 15.721334516453945  # may vary
     """
     # handle fprime/approx_grad
     if approx_grad:
@@ -223,9 +265,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     # build options
     callback = _wrap_callback(callback)
-    opts = {'disp': disp,
-            'iprint': iprint,
-            'maxcor': m,
+    opts = {'maxcor': m,
             'ftol': factr * np.finfo(float).eps,
             'gtol': pgtol,
             'eps': epsilon,
@@ -259,9 +299,13 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     Options
     -------
     disp : None or int
-        If `disp is None` (the default), then the supplied version of `iprint`
-        is used. If `disp is not None`, then it overrides the supplied version
-        of `iprint` with the behaviour you outlined.
+        Deprecated option that previously controlled the text printed on the
+        screen during the problem solution. Now the code does not emit any
+        output and this keyword has no function.
+
+        .. deprecated:: 1.15.0
+            This keyword is deprecated and will be removed from SciPy 1.17.0.
+
     maxcor : int
         The maximum number of variable metric corrections used to
         define the limited memory matrix. (The limited memory BFGS
@@ -284,16 +328,17 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     maxiter : int
         Maximum number of iterations.
     iprint : int, optional
-        Controls the frequency of output. ``iprint < 0`` means no output;
-        ``iprint = 0``    print only one line at the last iteration;
-        ``0 < iprint < 99`` print also f and ``|proj g|`` every iprint iterations;
-        ``iprint = 99``   print details of every iteration except n-vectors;
-        ``iprint = 100``  print also the changes of active set and final x;
-        ``iprint > 100``  print details of every iteration including x and g.
+        Deprecated option that previously controlled the text printed on the
+        screen during the problem solution. Now the code does not emit any
+        output and this keyword has no function.
+
+        .. deprecated:: 1.15.0
+            This keyword is deprecated and will be removed from SciPy 1.17.0.
+
     maxls : int, optional
         Maximum number of line search steps (per iteration). Default is 20.
     finite_diff_rel_step : None or array_like, optional
-        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
@@ -337,12 +382,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         # approx_derivative will cause problems
         x0 = np.clip(x0, bounds[0], bounds[1])
 
-    if disp is not None:
-        if disp == 0:
-            iprint = -1
-        else:
-            iprint = disp
-
     # _prepare_scalar_function can use bounds=None to represent no bounds
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
                                   bounds=bounds,
@@ -350,9 +389,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     func_and_grad = sf.fun_and_grad
 
-    fortran_int = _lbfgsb.types.intvar.dtype
-
-    nbd = zeros(n, fortran_int)
+    nbd = zeros(n, np.int32)
     low_bnd = zeros(n, float64)
     upper_bnd = zeros(n, float64)
     bounds_map = {(-np.inf, np.inf): 0,
@@ -362,66 +399,64 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     if bounds is not None:
         for i in range(0, n):
-            l, u = bounds[0, i], bounds[1, i]
-            if not np.isinf(l):
-                low_bnd[i] = l
-                l = 1
-            if not np.isinf(u):
-                upper_bnd[i] = u
-                u = 1
-            nbd[i] = bounds_map[l, u]
+            L, U = bounds[0, i], bounds[1, i]
+            if not np.isinf(L):
+                low_bnd[i] = L
+                L = 1
+            if not np.isinf(U):
+                upper_bnd[i] = U
+                U = 1
+            nbd[i] = bounds_map[L, U]
 
     if not maxls > 0:
         raise ValueError('maxls must be positive.')
 
-    x = array(x0, float64)
-    f = array(0.0, float64)
-    g = zeros((n,), float64)
+    x = array(x0, dtype=np.float64)
+    f = array(0.0, dtype=np.int32)
+    g = zeros((n,), dtype=np.int32)
     wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
-    iwa = zeros(3*n, fortran_int)
-    task = zeros(1, 'S60')
-    csave = zeros(1, 'S60')
-    lsave = zeros(4, fortran_int)
-    isave = zeros(44, fortran_int)
-    dsave = zeros(29, float64)
-
-    task[:] = 'START'
+    iwa = zeros(3*n, dtype=np.int32)
+    task = zeros(2, dtype=np.int32)
+    ln_task = zeros(2, dtype=np.int32)
+    lsave = zeros(4, dtype=np.int32)
+    isave = zeros(44, dtype=np.int32)
+    dsave = zeros(29, dtype=float64)
 
     n_iterations = 0
 
-    while 1:
+    while True:
         # g may become float32 if a user provides a function that calculates
-        # the Jacobian in float32 (see gh-18730). The underlying Fortran code
-        # expects float64, so upcast it
+        # the Jacobian in float32 (see gh-18730). The underlying code expects
+        # float64, so upcast it
         g = g.astype(np.float64)
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
-        _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
-                       pgtol, wa, iwa, task, iprint, csave, lsave,
-                       isave, dsave, maxls)
-        task_str = task.tobytes()
-        if task_str.startswith(b'FG'):
+        _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr, pgtol, wa,
+                       iwa, task, lsave, isave, dsave, maxls, ln_task)
+
+        if task[0] == 3:
             # The minimization routine wants f and g at the current x.
             # Note that interruptions due to maxfun are postponed
             # until the completion of the current minimization iteration.
             # Overwrite f and g:
             f, g = func_and_grad(x)
-        elif task_str.startswith(b'NEW_X'):
+        elif task[0] == 1:
             # new iteration
             n_iterations += 1
 
             intermediate_result = OptimizeResult(x=x, fun=f)
             if _call_callback_maybe_halt(callback, intermediate_result):
-                task[:] = 'STOP: CALLBACK REQUESTED HALT'
+                task[0] = 5
+                task[1] = 505
             if n_iterations >= maxiter:
-                task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
+                task[0] = 5
+                task[1] = 504
             elif sf.nfev > maxfun:
-                task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
-                           'EXCEEDS LIMIT')
+                task[0] = 5
+                task[1] = 502
         else:
             break
 
-    task_str = task.tobytes().strip(b'\x00').strip()
-    if task_str.startswith(b'CONV'):
+    if task[0] == 4:
         warnflag = 0
     elif sf.nfev > maxfun or n_iterations >= maxiter:
         warnflag = 1
@@ -429,21 +464,21 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         warnflag = 2
 
     # These two portions of the workspace are described in the mainlb
-    # subroutine in lbfgsb.f. See line 363.
+    # function docstring in "__lbfgsb.c", ws and wy arguments.
     s = wa[0: m*n].reshape(m, n)
     y = wa[m*n: 2*m*n].reshape(m, n)
 
-    # See lbfgsb.f line 160 for this portion of the workspace.
-    # isave(31) = the total number of BFGS updates prior the current iteration;
+    # isave(31) = the total number of BFGS updates prior the current iteration.
     n_bfgs_updates = isave[30]
 
     n_corrs = min(n_bfgs_updates, maxcor)
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
-    task_str = task_str.decode()
+    msg = status_messages[task[0]] + ": " + task_messages[task[1]]
+
     return OptimizeResult(fun=f, jac=g, nfev=sf.nfev,
                           njev=sf.ngev,
-                          nit=n_iterations, status=warnflag, message=task_str,
+                          nit=n_iterations, status=warnflag, message=msg,
                           x=x, success=(warnflag == 0), hess_inv=hess_inv)
 
 
@@ -531,12 +566,12 @@ class LbfgsInvHessProduct(LinearOperator):
 
         """
         s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
-        I = np.eye(*self.shape, dtype=self.dtype)
-        Hk = I
+        I_arr = np.eye(*self.shape, dtype=self.dtype)
+        Hk = I_arr
 
         for i in range(n_corrs):
-            A1 = I - s[i][:, np.newaxis] * y[i][np.newaxis, :] * rho[i]
-            A2 = I - y[i][:, np.newaxis] * s[i][np.newaxis, :] * rho[i]
+            A1 = I_arr - s[i][:, np.newaxis] * y[i][np.newaxis, :] * rho[i]
+            A2 = I_arr - y[i][:, np.newaxis] * s[i][np.newaxis, :] * rho[i]
 
             Hk = np.dot(A1, np.dot(Hk, A2)) + (rho[i] * s[i][:, np.newaxis] *
                                                         s[i][np.newaxis, :])

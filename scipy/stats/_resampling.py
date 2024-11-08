@@ -8,8 +8,7 @@ from dataclasses import dataclass
 import inspect
 
 from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
-from scipy._lib._array_api import (array_namespace, is_numpy, xp_minimum,
-                                   xp_clip, xp_moveaxis_to_end)
+from scipy._lib._array_api import array_namespace, is_numpy, xp_moveaxis_to_end
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -366,7 +365,9 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         a vectorized statistic typically reduces computation time.
     paired : bool, default: ``False``
         Whether the statistic treats corresponding elements of the samples
-        in `data` as paired.
+        in `data` as paired. If True, `bootstrap` resamples an array of
+        *indices* and uses the same indices for all arrays in `data`; otherwise,
+        `bootstrap` independently resamples the elements of each array.
     axis : int, default: ``0``
         The axis of the samples in `data` along which the `statistic` is
         calculated.
@@ -996,7 +997,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     def two_sided(null_distribution, observed):
         pvalues_less = less(null_distribution, observed)
         pvalues_greater = greater(null_distribution, observed)
-        pvalues = xp_minimum(pvalues_less, pvalues_greater) * 2
+        pvalues = xp.minimum(pvalues_less, pvalues_greater) * 2
         return pvalues
 
     compare = {"less": less,
@@ -1004,7 +1005,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
-    pvalues = xp_clip(pvalues, 0., 1., xp=xp)
+    pvalues = xp.clip(pvalues, 0., 1.)
 
     return MonteCarloTestResult(observed, pvalues, null_distribution)
 
@@ -1503,7 +1504,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
         exact_test = True
         n_permutations = n_max
         batch = batch or int(n_permutations)
-        # cartesian product of the sets of all permutations of indices
+        # Cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
         batched_perm_generator = _batch_generator(perm_generator, batch=batch)

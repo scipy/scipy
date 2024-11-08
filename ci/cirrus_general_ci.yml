@@ -1,4 +1,4 @@
-# Regular CI for testing musllinux, linux_aarch64 and macosx_arm64 natively
+# Regular CI for testing linux_aarch64 natively
 # This only runs if cirrus is not building wheels. The rationale is that
 # cibuildwheel also runs tests during the wheel build process, so there's no need
 # to have duplication.

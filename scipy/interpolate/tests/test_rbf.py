@@ -2,10 +2,13 @@
 """ Test functions for rbf module """
 
 import numpy as np
-from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_almost_equal)
+
+from scipy._lib._array_api import assert_array_almost_equal, assert_almost_equal
+
 from numpy import linspace, sin, cos, random, exp, allclose
 from scipy.interpolate._rbf import Rbf
+from scipy._lib._testutils import _run_concurrent_barrier
+
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')
@@ -18,7 +21,7 @@ def check_rbf1d_interpolation(function):
     rbf = Rbf(x, y, function=function)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
-    assert_almost_equal(rbf(float(x[0])), y[0])
+    assert_almost_equal(rbf(float(x[0])), y[0], check_0d=False)
 
 
 def check_rbf2d_interpolation(function):
@@ -105,8 +108,8 @@ def check_rbf1d_regularity(function, atol):
     rbf = Rbf(x, y, function=function)
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
-    msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
-    assert_(allclose(yi, sin(xi), atol=atol), msg)
+    msg = f"abs-diff: {abs(yi - sin(xi)).max():f}"
+    assert allclose(yi, sin(xi), atol=atol), msg
 
 
 def test_rbf_regularity():
@@ -133,8 +136,8 @@ def check_2drbf1d_regularity(function, atol):
     rbf = Rbf(x, y, function=function, mode='N-D')
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
-    msg = "abs-diff: %f" % abs(yi - np.vstack([sin(xi), cos(xi)]).T).max()
-    assert_(allclose(yi, np.vstack([sin(xi), cos(xi)]).T, atol=atol), msg)
+    msg = f"abs-diff: {abs(yi - np.vstack([sin(xi), cos(xi)]).T).max():f}"
+    assert allclose(yi, np.vstack([sin(xi), cos(xi)]).T, atol=atol), msg
 
 
 def test_2drbf_regularity():
@@ -165,7 +168,7 @@ def check_rbf1d_stability(function):
     yi = rbf(xi)
 
     # subtract the linear trend and make sure there no spikes
-    assert_(np.abs(yi-xi).max() / np.abs(z-x).max() < 1.1)
+    assert np.abs(yi-xi).max() / np.abs(z-x).max() < 1.1
 
 def test_rbf_stability():
     for function in FUNCTIONS:
@@ -219,4 +222,18 @@ def test_rbf_epsilon_none_collinear():
     y = [4, 4, 4]
     z = [5, 6, 7]
     rbf = Rbf(x, y, z, epsilon=None)
-    assert_(rbf.epsilon > 0)
+    assert rbf.epsilon > 0
+
+
+def test_rbf_concurrency():
+    x = linspace(0, 10, 100)
+    y0 = sin(x)
+    y1 = cos(x)
+    y = np.vstack([y0, y1]).T
+    rbf = Rbf(x, y, mode='N-D')
+
+    def worker_fn(_, interp, xp):
+        interp(xp)
+
+    _run_concurrent_barrier(10, worker_fn, rbf, x)
+

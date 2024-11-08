@@ -421,7 +421,7 @@ class Jacobian:
                  "matmat", "todense", "shape", "dtype"]
         for name, value in kw.items():
             if name not in names:
-                raise ValueError("Unknown keyword argument %s" % name)
+                raise ValueError(f"Unknown keyword argument {name}")
             if value is not None:
                 setattr(self, name, kw[name])
 
@@ -451,6 +451,26 @@ class Jacobian:
 
 
 class InverseJacobian:
+    """
+    A simple wrapper that inverts the Jacobian using the `solve` method.
+
+    .. legacy:: class
+
+        See the newer, more consistent interfaces in :mod:`scipy.optimize`.
+
+    Parameters
+    ----------
+    jacobian : Jacobian
+        The Jacobian to invert.
+    
+    Attributes
+    ----------
+    shape
+        Matrix dimensions (M, N)
+    dtype
+        Data type of the matrix.
+
+    """
     def __init__(self, jacobian):
         self.jacobian = jacobian
         self.matvec = jacobian.solve
@@ -806,12 +826,12 @@ _doc_parts['broyden_params'] = """
 
         Methods available:
 
-            - ``restart``: drop all matrix columns. Has no extra parameters.
-            - ``simple``: drop oldest matrix column. Has no extra parameters.
-            - ``svd``: keep only the most significant SVD components.
-              Takes an extra parameter, ``to_retain``, which determines the
-              number of SVD components to retain when rank reduction is done.
-              Default is ``max_rank - 2``.
+        - ``restart``: drop all matrix columns. Has no extra parameters.
+        - ``simple``: drop oldest matrix column. Has no extra parameters.
+        - ``svd``: keep only the most significant SVD components.
+          Takes an extra parameter, ``to_retain``, which determines the
+          number of SVD components to retain when rank reduction is done.
+          Default is ``max_rank - 2``.
 
     max_rank : int, optional
         Maximum rank for the Broyden matrix.
@@ -820,10 +840,10 @@ _doc_parts['broyden_params'] = """
 
 
 class BroydenFirst(GenericBroyden):
-    r"""
+    """
     Find a root of a function, using Broyden's first Jacobian approximation.
 
-    This method is also known as \"Broyden's good method\".
+    This method is also known as "Broyden's good method".
 
     Parameters
     ----------
@@ -840,21 +860,20 @@ class BroydenFirst(GenericBroyden):
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
 
-    .. math:: H_+ = H + (dx - H df) dx^\dagger H / ( dx^\dagger H df)
+    .. math:: H_+ = H + (dx - H df) dx^\\dagger H / ( dx^\\dagger H df)
 
     which corresponds to Broyden's first Jacobian update
 
-    .. math:: J_+ = J + (df - J dx) dx^\dagger / dx^\dagger dx
+    .. math:: J_+ = J + (df - J dx) dx^\\dagger / dx^\\dagger dx
 
 
     References
     ----------
     .. [1] B.A. van der Rotten, PhD thesis,
-       \"A limited memory Broyden method to solve high-dimensional
-       systems of nonlinear equations\". Mathematisch Instituut,
+       "A limited memory Broyden method to solve high-dimensional
+       systems of nonlinear equations". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
-
-       https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+       https://math.leidenuniv.nl/scripties/Rotten.pdf
 
     Examples
     --------
@@ -896,8 +915,7 @@ class BroydenFirst(GenericBroyden):
         elif reduction_method == 'restart':
             self._reduce = lambda: self.Gm.restart_reduce(*reduce_params)
         else:
-            raise ValueError("Unknown rank reduction method '%s'" %
-                             reduction_method)
+            raise ValueError(f"Unknown rank reduction method '{reduction_method}'")
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
@@ -1331,7 +1349,7 @@ class ExcitingMixing(GenericBroyden):
 #------------------------------------------------------------------------------
 
 class KrylovJacobian(Jacobian):
-    r"""
+    """
     Find a root of a function, using Krylov approximation for inverse Jacobian.
 
     This method is suitable for solving large-scale problems.
@@ -1390,7 +1408,7 @@ class KrylovJacobian(Jacobian):
     method. These methods require only evaluating the Jacobian-vector
     products, which are conveniently approximated by a finite difference:
 
-    .. math:: J v \approx (f(x + \omega*v/|v|) - f(x)) / \omega
+    .. math:: J v \\approx (f(x + \\omega*v/|v|) - f(x)) / \\omega
 
     Due to the use of iterative matrix inverses, these methods can
     deal with large nonlinear problems.
@@ -1476,7 +1494,7 @@ class KrylovJacobian(Jacobian):
 
         for key, value in kw.items():
             if not key.startswith('inner_'):
-                raise ValueError("Unknown parameter %s" % key)
+                raise ValueError(f"Unknown parameter {key}")
             self.method_kw[key[6:]] = value
 
     def _update_diff_step(self):
@@ -1551,7 +1569,7 @@ def _nonlin_wrapper(name, jac):
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
     if kwonlyargs:
-        raise ValueError('Unexpected signature %s' % signature)
+        raise ValueError(f'Unexpected signature {signature}')
 
     # Construct the wrapper function so that its keyword arguments
     # are visible in pydoc.help etc.

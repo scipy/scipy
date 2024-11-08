@@ -11,6 +11,11 @@ scipy.constants:
   - any-glob-to-any-file:
     - scipy/constants/**
 
+scipy.differentiate:
+- changed-files:
+  - any-glob-to-any-file:
+    - scipy/differentiate/**
+
 scipy.fft:
 - changed-files:
   - any-glob-to-any-file:
@@ -73,8 +78,11 @@ scipy.signal:
 
 scipy.sparse:
 - changed-files:
-  - any-glob-to-any-file:
+  - all-globs-to-any-file:
     - scipy/sparse/**
+    # don't match the `csgraph` or `linalg` submodules
+    - '!scipy/sparse/csgraph/**'
+    - '!scipy/sparse/linalg/**'
 
 scipy.sparse.csgraph:
 - changed-files:

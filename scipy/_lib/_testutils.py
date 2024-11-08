@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import threading
 from importlib.util import module_from_spec, spec_from_file_location
 
 import numpy as np
@@ -93,18 +94,6 @@ class PytestTester:
         module_path = os.path.abspath(module.__path__[0])
 
         pytest_args = ['--showlocals', '--tb=short']
-
-        if doctests:
-            pytest_args += [
-                "--doctest-modules",
-                "--ignore=scipy/interpolate/_interpnd_info.py",
-                "--ignore=scipy/_lib/array_api_compat",
-                "--ignore=scipy/_lib/highs",
-                "--ignore=scipy/_lib/unuran",
-                "--ignore=scipy/_lib/_gcutils.py",
-                "--ignore=scipy/_lib/doccer.py",
-                "--ignore=scipy/_lib/_uarray",
-            ]
 
         if extra_argv:
             pytest_args += list(extra_argv)
@@ -335,3 +324,43 @@ def _test_cython_extension(tmp_path, srcdir):
 
     # test that the module can be imported
     return load("extending"), load("extending_cpp")
+
+
+def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
+    """
+    Run a given function concurrently across a given number of threads.
+
+    This is equivalent to using a ThreadPoolExecutor, but using the threading
+    primitives instead. This function ensures that the closure passed by
+    parameter gets called concurrently by setting up a barrier before it gets
+    called before any of the threads.
+
+    Arguments
+    ---------
+    n_workers: int
+        Number of concurrent threads to spawn.
+    fn: callable
+        Function closure to execute concurrently. Its first argument will
+        be the thread id.
+    *args: tuple
+        Variable number of positional arguments to pass to the function.
+    **kwargs: dict
+        Keyword arguments to pass to the function.
+    """
+    barrier = threading.Barrier(n_workers)
+
+    def closure(i, *args, **kwargs):
+        barrier.wait()
+        fn(i, *args, **kwargs)
+
+    workers = []
+    for i in range(0, n_workers):
+        workers.append(threading.Thread(
+            target=closure,
+            args=(i,) + args, kwargs=kwargs))
+
+    for worker in workers:
+        worker.start()
+
+    for worker in workers:
+        worker.join()

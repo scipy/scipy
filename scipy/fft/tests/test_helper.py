@@ -12,7 +12,7 @@ import numpy as np
 import sys
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    xp_assert_close, get_xp_devices, device, array_namespace
+    xp_assert_close, get_xp_devices, xp_device, array_namespace
 )
 from scipy import fft
 
@@ -449,6 +449,7 @@ class TestFFTShift:
             x = xp.asarray(np.random.random((n,)))
             xp_assert_close(fft.ifftshift(fft.fftshift(x)), x)
 
+    @skip_xp_backends('cupy', reason='cupy/cupy#8393')
     def test_axes_keyword(self, xp):
         freqs = xp.asarray([[0., 1, 2], [3, 4, -4], [-3, -2, -1]])
         shifted = xp.asarray([[-1., -3, -2], [2, 0, 1], [-4, 3, 4]])
@@ -460,6 +461,7 @@ class TestFFTShift:
         xp_assert_close(fft.fftshift(freqs), shifted)
         xp_assert_close(fft.ifftshift(shifted), freqs)
     
+    @skip_xp_backends('cupy', reason='cupy/cupy#8393')
     def test_uneven_dims(self, xp):
         """ Test 2D input, which has uneven dimension sizes """
         freqs = xp.asarray([
@@ -506,9 +508,10 @@ class TestFFTShift:
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
-@skip_xp_backends("cupy", "jax.numpy",
-                  reasons=["CuPy has not implemented the `device` param",
-                           "JAX has not implemented the `device` param"])
+@skip_xp_backends("cupy",
+                  reason="CuPy has not implemented the `device` param")
+@skip_xp_backends("jax.numpy",
+                  reason="JAX has not implemented the `device` param")
 class TestFFTFreq:
 
     def test_definition(self, xp):
@@ -535,12 +538,13 @@ class TestFFTFreq:
         for d in devices:
             y = fft.fftfreq(9, xp=xp, device=d)
             x = xp_test.empty(0, device=d)
-            assert device(y) == device(x)
+            assert xp_device(y) == xp_device(x)
 
 
-@skip_xp_backends("cupy", "jax.numpy",
-                  reasons=["CuPy has not implemented the `device` param",
-                           "JAX has not implemented the `device` param"])
+@skip_xp_backends("cupy",
+                  reason="CuPy has not implemented the `device` param")
+@skip_xp_backends("jax.numpy",
+                  reason="JAX has not implemented the `device` param")
 class TestRFFTFreq:
 
     def test_definition(self, xp):
@@ -567,4 +571,4 @@ class TestRFFTFreq:
         for d in devices:
             y = fft.rfftfreq(9, xp=xp, device=d)
             x = xp_test.empty(0, device=d)
-            assert device(y) == device(x)
+            assert xp_device(y) == xp_device(x)

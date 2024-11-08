@@ -433,7 +433,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         The object has the following method:
 
         nllf(params=None, data=None)
-            By default, the negative log-likehood function at the fitted
+            By default, the negative log-likelihood function at the fitted
             `params` for the given `data`. Accepts a tuple containing
             alternative shapes, location, and scale of the distribution and
             an array of alternative data.
@@ -532,7 +532,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
     >>> rng = np.random.default_rng(767585560716548)
     >>> def optimizer(fun, bounds, *, integrality):
     ...     return differential_evolution(fun, bounds, strategy='best2bin',
-    ...                                   seed=rng, integrality=integrality)
+    ...                                   rng=rng, integrality=integrality)
     >>> bounds = [(0, 30), (0, 1)]
     >>> res4 = stats.fit(dist, data, bounds, optimizer=optimizer)
     >>> res4.params
@@ -1240,9 +1240,10 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max(axis=-1)
 
 
-def _kolmogorov_smirnov(dist, data, axis):
-    x = np.sort(data, axis=-1)
+def _kolmogorov_smirnov(dist, data, axis=-1):
+    x = np.sort(data, axis=axis)
     cdfvals = dist.cdf(x)
+    cdfvals = np.moveaxis(cdfvals, axis, -1)
     Dplus = _compute_dplus(cdfvals)  # always works along last axis
     Dminus = _compute_dminus(cdfvals)
     return np.maximum(Dplus, Dminus)

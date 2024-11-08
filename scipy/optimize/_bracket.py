@@ -123,7 +123,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     Notes
     -----
     This function generalizes an algorithm found in pieces throughout
-    `scipy.stats`. The strategy is to iteratively grow the bracket `(l, r)`
+    `scipy.stats`. The strategy is to iteratively grow the bracket ``(l, r)``
      until ``func(l) < 0 < func(r)``. The bracket grows to the left as follows.
 
     - If `xmin` is not provided, the distance between `xl0` and `l` is iteratively

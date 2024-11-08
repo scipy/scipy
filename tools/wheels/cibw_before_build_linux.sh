@@ -23,8 +23,7 @@ cat $PROJECT_DIR/tools/wheels/LICENSE_linux.txt >> $PROJECT_DIR/LICENSE.txt
 FREE_THREADED_BUILD="$(python -c"import sysconfig; print(bool(sysconfig.get_config_var('Py_GIL_DISABLED')))")"
 if [[ $FREE_THREADED_BUILD == "True" ]]; then
     python -m pip install -U --pre pip
-    python -m pip install git+https://github.com/cython/cython
-    python -m pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+    python -m pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy cython
     # python -m pip install git+https://github.com/serge-sans-paille/pythran
     python -m pip install ninja meson-python pybind11 pythran
 fi

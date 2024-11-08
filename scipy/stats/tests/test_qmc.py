@@ -4,7 +4,8 @@ from itertools import combinations, product
 
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_array_equal
+from numpy.testing import (assert_allclose, assert_equal, assert_array_equal, 
+    assert_array_less)
 
 from scipy.spatial import distance
 from scipy.stats import shapiro
@@ -937,6 +938,54 @@ class TestPoisson(QMCEngineTests):
         # circle packing problem is np complex
         assert l2_norm(sample) >= radius
 
+    @pytest.mark.parametrize("l_bounds", [[-1, -2, -1], [1, 2, 1]])
+    def test_sample_inside_lower_bounds(self, l_bounds):
+        radius = 0.2
+        u_bounds=[3, 3, 2]
+        engine = self.qmce(
+            d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds
+        )
+        sample = engine.random(30)
+
+        for point in sample:
+            assert_array_less(point, u_bounds) 
+            assert_array_less(l_bounds, point) 
+
+    @pytest.mark.parametrize("u_bounds", [[-1, -2, -1], [1, 2, 1]])
+    def test_sample_inside_upper_bounds(self, u_bounds):
+        radius = 0.2
+        l_bounds=[-3, -3, -2]
+        engine = self.qmce(
+            d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds
+        )
+        sample = engine.random(30)
+
+        for point in sample:
+            assert_array_less(point, u_bounds) 
+            assert_array_less(l_bounds, point) 
+
+    def test_inconsistent_bound_value(self):
+        radius = 0.2
+        l_bounds=[3, 2, 1]
+        u_bounds=[-1, -2, -1]
+        with pytest.raises(
+            ValueError, 
+            match="Bounds are not consistent 'l_bounds' < 'u_bounds'"):
+            self.qmce(d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
+
+    @pytest.mark.parametrize("u_bounds", [[-1, -2, -1], [-1, -2]])
+    @pytest.mark.parametrize("l_bounds", [[3, 2]])
+    def test_inconsistent_bounds(self, u_bounds, l_bounds):
+        radius = 0.2
+        with pytest.raises(
+            ValueError, 
+            match="'l_bounds' and 'u_bounds' must be broadcastable and respect" 
+            " the sample dimension"):
+            self.qmce(
+                d=3, radius=radius, 
+                l_bounds=l_bounds, u_bounds=u_bounds
+            )
+        
     def test_raises(self):
         message = r"'toto' is not a valid hypersphere sampling"
         with pytest.raises(ValueError, match=message):

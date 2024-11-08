@@ -480,7 +480,7 @@ cdef class cKDTree:
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with `copy_data=True`.
+        with ``copy_data=True``.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.
@@ -1284,7 +1284,7 @@ cdef class cKDTree:
 
         where the brackets represents counting pairs between two data sets
         in a finite bin around ``r`` (distance), corresponding to setting
-        `cumulative=False`, and ``f = float(len(D)) / float(len(R))`` is the
+        ``cumulative=False``, and ``f = float(len(D)) / float(len(R))`` is the
         ratio between number of objects from data and random.
 
         The algorithm implemented here is loosely based on the dual-tree

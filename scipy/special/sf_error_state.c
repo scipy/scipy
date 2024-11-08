@@ -19,13 +19,13 @@ static volatile sf_action_t sf_error_actions[] = {
 };
 
 
-void scipy_sf_error_set_action(sf_error_t code, sf_action_t action)
+SCIPY_DLL void scipy_sf_error_set_action(sf_error_t code, sf_action_t action)
 {
     sf_error_actions[(int)code] = action;
 }
 
 
-sf_action_t scipy_sf_error_get_action(sf_error_t code)
+SCIPY_DLL sf_action_t scipy_sf_error_get_action(sf_error_t code)
 {
     return sf_error_actions[(int)code];
 }

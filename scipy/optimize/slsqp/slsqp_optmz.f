@@ -37,7 +37,7 @@ C
       SUBROUTINE slsqp (m, meq, la, n, x, xl, xu, f, c, g, a,
      *                  acc, iter, mode, w, l_w, jw, l_jw,
      *                  alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     *                  iexact, incons, ireset, itermx, line, 
+     *                  iexact, incons, ireset, itermx, line,
      *                  n1, n2, n3)
 
 C   SLSQP       S EQUENTIAL  L EAST  SQ UARES  P ROGRAMMING
@@ -263,15 +263,15 @@ C   PREPARE DATA FOR CALLING SQPBDY  -  INITIAL ADDRESSES IN W
       CALL slsqpb  (m, meq, la, n, x, xl, xu, f, c, g, a, acc, iter,
      * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw,
      * alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     * iexact, incons, ireset, itermx, line, 
+     * iexact, incons, ireset, itermx, line,
      * n1, n2, n3)
- 
+
       END
 
       SUBROUTINE slsqpb (m, meq, la, n, x, xl, xu, f, c, g, a, acc,
      *                   iter, mode, r, l, x0, mu, s, u, v, w, iw,
      *                   alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     *                   iexact, incons, ireset, itermx, line, 
+     *                   iexact, incons, ireset, itermx, line,
      *                   n1, n2, n3)
 
 C   NONLINEAR PROGRAMMING BY SOLVING SEQUENTIALLY QUADRATIC PROGRAMS
@@ -283,6 +283,7 @@ C                      BODY SUBROUTINE FOR SLSQP
       INTEGER          iw(*), i, iexact, incons, ireset, iter, itermx,
      *                 k, j, la, line, m, meq, mode, n, n1, n2, n3
       LOGICAL          badlin
+
 
       DOUBLE PRECISION a(la,n+1), c(la), g(n+1), l((n+1)*(n+2)/2),
      *                 mu(la), r(m+n+n+2), s(n+1), u(n+1), v(n+1), w(*),
@@ -631,6 +632,7 @@ C               7: RANK DEFECT IN HFTI
 c     coded            Dieter Kraft, april 1987
 c     revised                        march 1989
 
+
       DOUBLE PRECISION l,g,a,b,w,xl,xu,x,y,
      .                 diag,ZERO,one,ddot_sl,xnorm
 
@@ -674,7 +676,7 @@ C  RECOVER MATRIX E AND VECTOR F FROM L AND G
          CALL dcopy_ (i1-n2, l(i2), 1, w(i3), n)
          CALL dscal_sl (i1-n2,     diag, w(i3), n)
          w(i3) = diag
-         w(IF-1+i) = (g(i) - ddot_sl (i-1, w(i4), 1, w(IF), 1))/diag
+         w(IF-1+i) = (g(i) - ddot_sl(i-1, w(i4), 1, w(IF), 1))/diag
          i2 = i2 + i1 - n2
          i3 = i3 + n1
          i4 = i4 + n
@@ -842,6 +844,7 @@ C     20.3.1987, DIETER KRAFT, DFVLR OBERPFAFFENHOFEN
 
       INTEGER          jw(*),i,ie,IF,ig,iw,j,k,krank,l,lc,LE,lg,
      .                 mc,mc1,me,mg,mode,n
+
       DOUBLE PRECISION c(lc,n),e(LE,n),g(lg,n),d(lc),f(LE),h(lg),x(n),
      .                 w(*),t,ddot_sl,xnrm,rnorm(1),dnrm2_,epmach,ZERO
       DATA             epmach/2.22d-16/,ZERO/0.0d+00/
@@ -971,6 +974,7 @@ C     03.01.1980, DIETER KRAFT: CODED
 C     20.03.1987, DIETER KRAFT: REVISED TO FORTRAN 77
 
       INTEGER          i,j,LE,lg,me,mg,mode,n,jw(lg)
+
       DOUBLE PRECISION e(LE,n),f(LE),g(lg,n),h(lg),x(n),w(*),
      .                 ddot_sl,xnorm,dnrm2_,epmach,t,one
       DATA             epmach/2.22d-16/,one/1.0d+00/
@@ -1045,6 +1049,7 @@ C          MODE=1: SUCCESSFUL COMPUTATION
 C               2: ERROR RETURN BECAUSE OF WRONG DIMENSIONS (N.LE.0)
 C               3: ITERATION COUNT EXCEEDED BY NNLS
 C               4: INEQUALITY CONSTRAINTS INCOMPATIBLE
+
 
       DOUBLE PRECISION g,h,x,xnorm,w,u,v,
      .                 ZERO,one,fac,rnorm,dnrm2_,ddot_sl,diff
@@ -1337,6 +1342,7 @@ C                      RECORDING PERMUTATION INDICES OF COLUMN VECTORS
 
       INTEGER          i,j,jb,k,kp1,krank,l,ldiag,lmax,m,
      .                 mda,mdb,n,nb,ip(n)
+
       DOUBLE PRECISION a(mda,n),b(mdb,nb),h(n),g(n),rnorm(nb),factor,
      .                 tau,ZERO,hmax,diff,tmp,ddot_sl,dnrm2_,u,v
       diff(u,v)=       u-v

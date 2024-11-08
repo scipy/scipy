@@ -221,7 +221,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             H = lagr_hess(x, v)
             # Set Flag
             last_iteration_failed = False
-            # Otimality values
+            # Optimality values
             optimality = norm(c + A.T.dot(v), np.inf)
             constr_violation = norm(b, np.inf) if len(b) > 0 else 0
         else:

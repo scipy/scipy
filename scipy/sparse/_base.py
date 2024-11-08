@@ -65,6 +65,7 @@ class _spbase:
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
+    _allow_nd = (2,)
 
     @property
     def ndim(self) -> int:
@@ -157,8 +158,8 @@ class _spbase:
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
-        is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_1d=is_array)
+        # Don't restrict ndim on this first call. That happens in constructor
+        shape = check_shape(args, self.shape, allow_nd=range(1, 65))
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
             if copy:
@@ -252,8 +253,9 @@ class _spbase:
                 if self.dtype <= np.dtype(fp_type):
                     return self.astype(fp_type)
 
-            raise TypeError('cannot upcast [%s] to a floating '
-                            'point format' % self.dtype.name)
+            raise TypeError(
+                f'cannot upcast [{self.dtype.name}] to a floating point format'
+            )
 
     def __iter__(self):
         for r in range(self.shape[0]):
@@ -333,8 +335,8 @@ class _spbase:
         --------
         count_nonzero : Number of non-zero entries
         """
-        raise NotImplementedError("getnnz not implemented for %s." %
-                                  self.__class__.__name__)
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"getnnz not implemented for {clsname}.")
 
     @property
     def nnz(self) -> int:
@@ -498,6 +500,12 @@ class _spbase:
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
 
+    def _broadcast_to(self, shape, copy=False):
+        if self.shape == shape:
+            return self.copy() if copy else self
+        else:
+            return self.tocsr()._broadcast_to(shape, copy)
+
     def __eq__(self, other):
         return self.tocsr().__eq__(other)
 
@@ -610,7 +618,7 @@ class _spbase:
             elif other.shape == (N, 1):
                 result = self._matmul_vector(other.ravel())
                 if self.ndim == 1:
-                    return result
+                    return result.reshape(1)
                 return result.reshape(M, 1)
             elif other.ndim == 2 and other.shape[0] == N:
                 return self._matmul_multivector(other)
@@ -619,9 +627,12 @@ class _spbase:
             # scalar value
             return self._mul_scalar(other)
 
+        err_prefix = "matmul: dimension mismatch with signature"
         if issparse(other):
-            if self.shape[-1] != other.shape[0]:
-                raise ValueError('dimension mismatch')
+            if N != other.shape[0]:
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},m)->(n,m)"
+                )
             return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
@@ -639,8 +650,10 @@ class _spbase:
 
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
-            if other.shape != (N,) and other.shape != (N, 1):
-                raise ValueError('dimension mismatch')
+            if other.shape[0] != N:
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},1?)->(n,1?)"
+                )
 
             result = self._matmul_vector(np.ravel(other))
 
@@ -649,7 +662,10 @@ class _spbase:
 
             if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, reshape the result
-                result = result.reshape(-1, 1)
+                if self.ndim == 1:
+                    result = result.reshape(1)
+                else:
+                    result = result.reshape(-1, 1)
 
             return result
 
@@ -658,7 +674,9 @@ class _spbase:
             # dense 2D array or matrix ("multivector")
 
             if other.shape[0] != N:
-                raise ValueError('dimension mismatch')
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},m)->(n,m)"
+                )
 
             result = self._matmul_multivector(np.asarray(other))
 
@@ -886,7 +904,7 @@ class _spbase:
         # convert to COOrdinate format
         A = self.tocoo()
         nz_mask = A.data != 0
-        return (A.row[nz_mask], A.col[nz_mask])
+        return tuple(idx[nz_mask] for idx in A.coords)
 
     def _getcol(self, j):
         """Returns a copy of column j of the array, as an (m x 1) sparse
@@ -1157,8 +1175,13 @@ class _spbase:
                 np.ones((N, 1), dtype=res_dtype)
             )
 
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
+        if out is not None:
+            if isinstance(self, sparray):
+                ret_shape = ret.shape[:axis] + ret.shape[axis + 1:]
+            else:
+                ret_shape = ret.shape
+            if out.shape != ret_shape:
+                raise ValueError("dimensions do not match")
 
         return ret.sum(axis=axis, dtype=dtype, out=out)
 
@@ -1387,6 +1410,11 @@ def issparse(x):
     -------
     bool
         True if `x` is a sparse array or a sparse matrix, False otherwise
+
+    Notes
+    -----
+    Use `isinstance(x, sp.sparse.sparray)` to check between an array or matrix.
+    Use `a.format` to check the sparse format, e.g. `a.format == 'csr'`.
 
     Examples
     --------

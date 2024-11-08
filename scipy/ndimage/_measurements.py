@@ -143,7 +143,7 @@ def label(input, structure=None, output=None):
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 3, 0],
-           [0, 0, 0, 4, 0, 0]])
+           [0, 0, 0, 4, 0, 0]], dtype=int32)
 
     Generate a structuring element that will consider features connected even
     if they touch diagonally:
@@ -169,7 +169,7 @@ def label(input, structure=None, output=None):
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 1, 0],
-           [0, 0, 0, 1, 0, 0]])
+           [0, 0, 0, 1, 0, 0]], dtype=int32)
 
     """
     input = np.asarray(input)
@@ -413,6 +413,7 @@ def value_indices(arr, *, ignore_value=None):
     # Cope with ignore_value being None, without too much extra complexity
     # in the C code. If not None, the value is passed in as a numpy array
     # with the same dtype as arr.
+    arr = np.asarray(arr)
     ignore_value_arr = np.zeros((1,), dtype=arr.dtype)
     ignoreIsNone = (ignore_value is None)
     if not ignoreIsNone:
@@ -506,6 +507,8 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default,
             return func(input.ravel())
         else:
             return func(input.ravel(), positions.ravel())
+
+    labels = np.asarray(labels)
 
     try:
         input, labels = np.broadcast_arrays(input, labels)
@@ -623,6 +626,7 @@ def _stats(input, labels=None, index=None, centered=False):
         else:
             return vals.size, vals.sum()
 
+    input = np.asarray(input)
     if labels is None:
         return single_group(input)
 
@@ -957,6 +961,8 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
             masked_positions = positions[mask]
         return single_group(input[mask], masked_positions)
 
+    index = np.asarray(index)
+
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
     if (not _safely_castable_to_int(labels.dtype) or
@@ -1077,13 +1083,13 @@ def minimum(input, labels=None, index=None):
     array([[1, 1, 0, 0],
            [1, 1, 0, 2],
            [0, 0, 0, 2],
-           [3, 3, 0, 0]])
+           [3, 3, 0, 0]], dtype=int32)
     >>> ndimage.minimum(a, labels=labels, index=np.arange(1, labels_nb + 1))
-    [1.0, 4.0, 3.0]
+    [1, 4, 3]
     >>> ndimage.minimum(a)
-    0.0
+    0
     >>> ndimage.minimum(a, labels=labels)
-    1.0
+    1
 
     """
     return _select(input, labels, index, find_min=True)[0]
@@ -1146,11 +1152,11 @@ def maximum(input, labels=None, index=None):
            [0, 2, 2, 0]])
     >>> from scipy import ndimage
     >>> ndimage.maximum(a)
-    15.0
+    15
     >>> ndimage.maximum(a, labels=labels, index=[1,2])
-    [5.0, 14.0]
+    [5, 14]
     >>> ndimage.maximum(a, labels=labels)
-    14.0
+    14
 
     >>> b = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
@@ -1161,9 +1167,9 @@ def maximum(input, labels=None, index=None):
     array([[1, 1, 0, 0],
            [1, 1, 0, 2],
            [0, 0, 0, 2],
-           [3, 3, 0, 0]])
+           [3, 3, 0, 0]], dtype=int32)
     >>> ndimage.maximum(b, labels=labels, index=np.arange(1, labels_nb + 1))
-    [5.0, 7.0, 9.0]
+    [5, 7, 9]
 
     """
     return _select(input, labels, index, find_max=True)[0]
@@ -1219,7 +1225,7 @@ def median(input, labels=None, index=None):
     array([[1, 1, 0, 2],
            [1, 1, 0, 2],
            [0, 0, 0, 2],
-           [3, 3, 0, 0]])
+           [3, 3, 0, 0]], dtype=int32)
     >>> ndimage.median(a, labels=labels, index=np.arange(1, labels_nb + 1))
     [2.5, 4.0, 6.0]
     >>> ndimage.median(a)
@@ -1535,10 +1541,11 @@ def center_of_mass(input, labels=None, index=None):
     >>> ndimage.center_of_mass(d)
     (inf,)
     """
-    normalizer = sum(input, labels, index)
+    input = np.asarray(input)
+    normalizer = sum_labels(input, labels, index)
     grids = np.ogrid[[slice(0, i) for i in input.shape]]
 
-    results = [sum(input * grids[dir].astype(float), labels, index) / normalizer
+    results = [sum_labels(input * grids[dir].astype(float), labels, index) / normalizer
                for dir in range(input.ndim)]
 
     if np.isscalar(results[0]):

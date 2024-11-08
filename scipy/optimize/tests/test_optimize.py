@@ -5,9 +5,6 @@ Authors:
    Ed Schofield, Nov 2005
    Andrew Straw, April 2008
 
-To run it in its simplest form::
-  nosetests test_optimize.py
-
 """
 import itertools
 import platform
@@ -19,6 +16,7 @@ from numpy.testing import (assert_allclose, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 
+import scipy
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import (MINIMIZE_METHODS,
@@ -34,6 +32,11 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api_no_0d import xp_assert_equal, array_namespace
+
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
@@ -1103,7 +1106,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_equal(res.status, 1)
         assert res.success is False
         assert_equal(res.message,
-                     'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
+                     'STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT')
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
@@ -2423,15 +2426,42 @@ def test_powell_limits():
     optimize.minimize(fun=func, x0=[0.5], method='powell', bounds=bounds)
 
 
-class TestRosen:
+def test_powell_output():
+    funs = [rosen, lambda x: np.array(rosen(x)), lambda x: np.array([rosen(x)])]
+    for fun in funs:
+        res = optimize.minimize(fun, x0=[0.6, 20], method='Powell')
+        assert np.isscalar(res.fun)
 
-    def test_hess(self):
+
+@array_api_compatible
+class TestRosen:
+    def test_rosen(self, xp):
+        # integer input should be promoted to the default floating type
+        x = xp.asarray([1, 1, 1])
+        xp_assert_equal(optimize.rosen(x),
+                        xp.asarray(0.))
+
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_rosen_der(self, xp):
+        x = xp.asarray([1, 1, 1, 1])
+        xp_assert_equal(optimize.rosen_der(x),
+                        xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
+
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_hess_prod(self, xp):
+        one = xp.asarray(1.)
+        xp_test = array_namespace(one)
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
-        x = np.array([3, 4, 5])
-        p = np.array([2, 2, 2])
+        x = xp.asarray([3, 4, 5])
+        p = xp.asarray([2, 2, 2])
         hp = optimize.rosen_hess_prod(x, p)
-        dothp = np.dot(optimize.rosen_hess(x), p)
-        assert_equal(hp, dothp)
+        p = xp_test.astype(p, one.dtype)
+        dothp = optimize.rosen_hess(x) @ p
+        xp_assert_equal(hp, dothp)
 
 
 def himmelblau(p):
@@ -2915,6 +2945,9 @@ eb_data = setup_test_equal_bounds()
 
 # This test is about handling fixed variables, not the accuracy of the solvers
 @pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
+@pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name'] ==
+                   "intel-llvm",
+                   reason="Failures due to floating point issues, not logic")
 @pytest.mark.parametrize('method', eb_data["methods"])
 @pytest.mark.parametrize('kwds', eb_data["kwds"])
 @pytest.mark.parametrize('bound_type', eb_data["bound_types"])

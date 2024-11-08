@@ -48,6 +48,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
+    'sphinx_copybutton',
     'sphinx_design',
     'scipyoptdoc',
     'doi_role',
@@ -73,7 +74,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-%s, The SciPy community' % date.today().year
+copyright = f'2008-{date.today().year}, The SciPy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -184,12 +185,10 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
-# TODO: remove after gh-19228 resolved:
-warnings.filterwarnings(
-    'ignore',
-    message=r'.*path is deprecated.*',
-    category=DeprecationWarning,
-)
+# See https://github.com/sphinx-doc/sphinx/issues/12589
+suppress_warnings = [
+    'autosummary.import_cycle',
+]
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -201,7 +200,7 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_sidebars = {
-    "index": "search-button-field",
+    "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
 
@@ -269,6 +268,10 @@ html_file_suffix = '.html'
 htmlhelp_basename = 'scipy'
 
 mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
+
+# sphinx-copybutton configurations
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.{3,}: | {5,8}: "
+copybutton_prompt_is_regexp = True
 
 # -----------------------------------------------------------------------------
 # Intersphinx configuration
@@ -520,8 +523,9 @@ class LegacyDirective(Directive):
             # Argument is empty; use default text
             obj = "submodule"
         text = (f"This {obj} is considered legacy and will no longer receive "
-                "updates. This could also mean it will be removed in future "
-                "SciPy versions.")
+                "updates. While we currently have no plans to remove it, "
+                "we recommend that new code uses more modern alternatives instead."
+        )
 
         try:
             self.content[0] = text+" "+self.content[0]

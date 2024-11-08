@@ -118,9 +118,10 @@ def test_warning_calls_filters(warning_calls):
         os.path.join('stats', '_discrete_distns.py'),  # gh-14901
         os.path.join('stats', '_continuous_distns.py'),
         os.path.join('stats', '_binned_statistic.py'),  # gh-19345
+        os.path.join('stats', '_stats_py.py'),  # gh-20743
         os.path.join('stats', 'tests', 'test_axis_nan_policy.py'),  # gh-20694
         os.path.join('_lib', '_util.py'),  # gh-19341
-        os.path.join('sparse', 'linalg', '_dsolve', 'linsolve.py'), # gh-17924
+        os.path.join('sparse', 'linalg', '_dsolve', 'linsolve.py'),  # gh-17924
         "conftest.py",
     )
     bad_filters = [item for item in bad_filters if item.split(':')[0] not in

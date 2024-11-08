@@ -25,7 +25,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-           'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
+           'sosfreqz', 'freqz_sos', 'iirnotch', 'iirpeak', 'bilinear_zpk',
            'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
            'gammatone', 'iircomb']
 
@@ -169,7 +169,7 @@ def freqs(b, a, worN=200, plot=None):
 
     >>> import matplotlib.pyplot as plt
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
-    >>> plt.xlabel('Frequency')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude response [dB]')
     >>> plt.grid(True)
     >>> plt.show()
@@ -245,7 +245,7 @@ def freqs_zpk(z, p, k, worN=200):
 
     >>> import matplotlib.pyplot as plt
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
-    >>> plt.xlabel('Frequency')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude response [dB]')
     >>> plt.grid(True)
     >>> plt.show()
@@ -339,7 +339,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     See Also
     --------
     freqz_zpk
-    sosfreqz
+    freqz_sos
 
     Notes
     -----
@@ -366,21 +366,23 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     --------
     >>> from scipy import signal
     >>> import numpy as np
-    >>> b = signal.firwin(80, 0.5, window=('kaiser', 8))
+    >>> taps, f_c = 80, 1.0  # number of taps and cut-off frequency
+    >>> b = signal.firwin(taps, f_c, window=('kaiser', 8), fs=2*np.pi)
     >>> w, h = signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, ax1 = plt.subplots()
-    >>> ax1.set_title('Digital filter frequency response')
-
-    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
-    >>> ax1.set_ylabel('Amplitude [dB]', color='b')
-    >>> ax1.set_xlabel('Frequency [rad/sample]')
+    >>> fig, ax1 = plt.subplots(tight_layout=True)
+    >>> ax1.set_title(f"Frequency Response of {taps} tap FIR Filter" +
+    ...               f"($f_c={f_c}$ rad/sample)")
+    >>> ax1.axvline(f_c, color='black', linestyle=':', linewidth=0.8)
+    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'C0')
+    >>> ax1.set_ylabel("Amplitude in dB", color='C0')
+    >>> ax1.set(xlabel="Frequency in rad/sample", xlim=(0, np.pi))
 
     >>> ax2 = ax1.twinx()
-    >>> angles = np.unwrap(np.angle(h))
-    >>> ax2.plot(w, angles, 'g')
-    >>> ax2.set_ylabel('Angle (radians)', color='g')
+    >>> phase = np.unwrap(np.angle(h))
+    >>> ax2.plot(w, phase, 'C1')
+    >>> ax2.set_ylabel('Phase [rad]', color='C1')
     >>> ax2.grid(True)
     >>> ax2.axis('tight')
     >>> plt.show()
@@ -563,9 +565,9 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     >>> ax1.grid(True)
 
     >>> ax2 = ax1.twinx()
-    >>> angles = np.unwrap(np.angle(h))
-    >>> ax2.plot(w, angles, 'g')
-    >>> ax2.set_ylabel('Angle [radians]', color='g')
+    >>> phase = np.unwrap(np.angle(h))
+    >>> ax2.plot(w, phase, 'g')
+    >>> ax2.set_ylabel('Phase [rad]', color='g')
 
     >>> plt.axis('tight')
     >>> plt.show()
@@ -705,16 +707,16 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     if np.any(singular):
         gd[singular] = 0
         warnings.warn(
-            "The group delay is singular at frequencies [{}], setting to 0".
-            format(", ".join(f"{ws:.3f}" for ws in w[singular])),
+            "The group delay is singular at frequencies "
+            f"[{', '.join(f'{ws:.3f}' for ws in w[singular])}], setting to 0",
             stacklevel=2
         )
 
     elif np.any(near_singular):
         warnings.warn(
-            "The filter's denominator is extremely small at frequencies [{}], \
-            around which a singularity may be present".
-            format(", ".join(f"{ws:.3f}" for ws in w[near_singular])),
+            "The filter's denominator is extremely small at frequencies "
+            f"[{', '.join(f'{ws:.3f}' for ws in w[near_singular])}], "
+            "around which a singularity may be present",
             stacklevel=2
         )
 
@@ -736,7 +738,7 @@ def _validate_sos(sos):
     return sos, n_sections
 
 
-def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
+def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     r"""
     Compute the frequency response of a digital filter in SOS format.
 
@@ -802,7 +804,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
 
     Compute the frequency response at 1500 points from DC to Nyquist.
 
-    >>> w, h = signal.sosfreqz(sos, worN=1500)
+    >>> w, h = signal.freqz_sos(sos, worN=1500)
 
     Plot the response.
 
@@ -858,6 +860,17 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
         w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole, fs=fs)
         h *= rowh
     return w, h
+
+
+def sosfreqz(*args, **kwargs):
+    """
+    Compute the frequency response of a digital filter in SOS format.
+
+    .. warning:: This function is an alias, provided for backward
+                 compatibility. New code should use the function
+                 :func:`scipy.signal.freqz_sos`.
+    """
+    return freqz_sos(*args, **kwargs)
 
 
 def _cplxreal(z, tol=None):
@@ -1096,17 +1109,17 @@ def tf2zpk(b, a):
 
     Examples
     --------
-    Find the zeroes, poles and gain of 
+    Find the zeroes, poles and gain of
     a filter with the transfer function
 
     .. math::
-    
+
         H(s) = \frac{3s^2}{s^2 + 5s + 13}
-        
+
     >>> from scipy.signal import tf2zpk
     >>> tf2zpk([3, 0, 0], [1, 5, 13])
-    (   array([ 0.               ,  0.              ]), 
-        array([ -2.5+2.59807621j ,  -2.5-2.59807621j]), 
+    (   array([ 0.               ,  0.              ]),
+        array([ -2.5+2.59807621j ,  -2.5-2.59807621j]),
         3.0)
     """
     b, a = normalize(b, a)
@@ -1143,9 +1156,9 @@ def zpk2tf(z, p, k):
     --------
     Find the polynomial representation of a transfer function H(s)
     using its 'zpk' (Zero-Pole-Gain) representation.
-    
+
     .. math::
-            
+
         H(z) = 5 \frac
         { (s - 2)(s - 6) }
         { (s - 1)(s - 8) }
@@ -1237,11 +1250,11 @@ def tf2sos(b, a, pairing=None, *, analog=False):
     --------
     Find the 'sos' (second-order sections) of the transfer function H(s)
     using its polynomial representation.
-    
+
     .. math::
-    
+
         H(s) = \frac{s^2 - 3.5s - 2}{s^4 + 3s^3 - 15s^2 - 19s + 30}
-        
+
     >>> from scipy.signal import tf2sos
     >>> tf2sos([1, -3.5, -2], [1, 3, -15, -19, 30], analog=True)
     array([[  0. ,   0. ,   1. ,   1. ,   2. , -15. ],
@@ -1274,9 +1287,9 @@ def sos2tf(sos):
 
     Examples
     --------
-    Find the polynomial representation of an elliptic filter 
+    Find the polynomial representation of an elliptic filter
     using its 'sos' (second-order sections) format.
-   
+
     >>> from scipy.signal import sos2tf
     >>> from scipy import signal
     >>> sos = signal.ellip(1, 0.001, 50, 0.1, output='sos')
@@ -1875,7 +1888,7 @@ def lp2lp(b, a, wo=1.0):
     >>> plt.semilogx()
     >>> plt.grid(True)
     >>> plt.xlabel('Frequency [rad/s]')
-    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.ylabel('Amplitude [dB]')
     >>> plt.legend()
 
     """
@@ -1949,7 +1962,7 @@ def lp2hp(b, a, wo=1.0):
     >>> plt.semilogx()
     >>> plt.grid(True)
     >>> plt.xlabel('Frequency [rad/s]')
-    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.ylabel('Amplitude [dB]')
     >>> plt.legend()
 
     """
@@ -2035,7 +2048,7 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     >>> plt.semilogx()
     >>> plt.grid(True)
     >>> plt.xlabel('Frequency [rad/s]')
-    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.ylabel('Amplitude [dB]')
     >>> plt.legend()
     """
 
@@ -2123,7 +2136,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     >>> plt.semilogx()
     >>> plt.grid(True)
     >>> plt.xlabel('Frequency [rad/s]')
-    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.ylabel('Amplitude [dB]')
     >>> plt.legend()
     """
     a, b = map(atleast_1d, (a, b))
@@ -2206,7 +2219,7 @@ def bilinear(b, a, fs=1.0):
     ...              label=r'$|H(j \omega)|$')
     >>> plt.legend()
     >>> plt.xlabel('Frequency [Hz]')
-    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.ylabel('Amplitude [dB]')
     >>> plt.grid(True)
     """
     fs = _validate_fs(fs, allow_none=False)
@@ -2277,7 +2290,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
         Note, that for bandpass and bandstop filters passband must lie strictly
-        inside stopband or vice versa.
+        inside stopband or vice versa. Also note that the cutoff at the band edges 
+        for IIR filters is defined as half-power, so -3dB, not half-amplitude (-6dB)
+        like for `scipy.signal.fiwin`.
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -2365,9 +2380,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     >>> ax1.grid(True)
     >>> ax1.set_ylim([-120, 20])
     >>> ax2 = ax1.twinx()
-    >>> angles = np.unwrap(np.angle(h))
-    >>> ax2.plot(w, angles, 'g')
-    >>> ax2.set_ylabel('Angle (radians)', color='g')
+    >>> phase = np.unwrap(np.angle(h))
+    >>> ax2.plot(w, phase, 'g')
+    >>> ax2.set_ylabel('Phase [rad]', color='g')
     >>> ax2.grid(True)
     >>> ax2.axis('tight')
     >>> ax2.set_ylim([-6, 1])
@@ -2379,10 +2394,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     try:
         ordfunc = filter_dict[ftype][1]
     except KeyError as e:
-        raise ValueError("Invalid IIR filter type: %s" % ftype) from e
+        raise ValueError(f"Invalid IIR filter type: {ftype}") from e
     except IndexError as e:
-        raise ValueError(("%s does not have order selection. Use "
-                          "iirfilter function.") % ftype) from e
+        raise ValueError(f"{ftype} does not have order selection. "
+                         "Use iirfilter function.") from e
 
     _validate_gpass_gstop(gpass, gstop)
 
@@ -2547,7 +2562,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
     ...                        analog=False, ftype='cheby2', fs=2000,
     ...                        output='sos')
-    >>> w, h = signal.sosfreqz(sos, 2000, fs=2000)
+    >>> w, h = signal.freqz_sos(sos, 2000, fs=2000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(1, 1, 1)
     >>> ax.semilogx(w, 20 * np.log10(np.maximum(abs(h), 1e-5)))
@@ -2576,15 +2591,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     try:
         btype = band_dict[btype]
     except KeyError as e:
-        raise ValueError("'%s' is an invalid bandtype for filter." % btype) from e
+        raise ValueError(f"'{btype}' is an invalid bandtype for filter.") from e
 
     try:
         typefunc = filter_dict[ftype][0]
     except KeyError as e:
-        raise ValueError("'%s' is not a valid basic IIR filter." % ftype) from e
+        raise ValueError(f"'{ftype}' is not a valid basic IIR filter.") from e
 
     if output not in ['ba', 'zpk', 'sos']:
-        raise ValueError("'%s' is not a valid output form." % output)
+        raise ValueError(f"'{output}' is not a valid output form.")
 
     if rp is not None and rp < 0:
         raise ValueError("passband ripple (rp) must be positive")
@@ -2613,7 +2628,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
                              "elliptic filter.")
         z, p, k = typefunc(N, rp, rs)
     else:
-        raise NotImplementedError("'%s' not implemented in iirfilter." % ftype)
+        raise NotImplementedError(f"'{ftype}' not implemented in iirfilter.")
 
     # Pre-warp frequencies for digital filter design
     if not analog:
@@ -2651,7 +2666,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         elif btype == 'bandstop':
             z, p, k = lp2bs_zpk(z, p, k, wo=wo, bw=bw)
     else:
-        raise NotImplementedError("'%s' not implemented in iirfilter." % btype)
+        raise NotImplementedError(f"'{btype}' not implemented in iirfilter.")
 
     # Find discrete equivalent if necessary
     if not analog:
@@ -2737,7 +2752,7 @@ def bilinear_zpk(z, p, k, fs):
     ...              label=r'$|H(j \omega)|$')
     >>> plt.legend()
     >>> plt.xlabel('Frequency [Hz]')
-    >>> plt.ylabel('Magnitude [dB]')
+    >>> plt.ylabel('Amplitude [dB]')
     >>> plt.grid(True)
     """
     z = atleast_1d(z)
@@ -2806,7 +2821,7 @@ def lp2lp_zpk(z, p, k, wo=1.0):
 
     Examples
     --------
-    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to
     transform it to a new 'zpk' representation associated with a cutoff frequency wo.
 
     >>> from scipy.signal import lp2lp_zpk
@@ -2878,12 +2893,12 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     logarithmic scale.
 
     .. versionadded:: 1.1.0
-    
+
     Examples
     --------
-    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to
     transform it to a highpass filter with a cutoff frequency wo.
-    
+
     >>> from scipy.signal import lp2hp_zpk
     >>> z   = [ -2 + 3j ,  -0.5 - 0.8j ]
     >>> p   = [ -1      ,  -4          ]
@@ -2961,13 +2976,13 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     geometric (log frequency) symmetry about `wo`.
 
     .. versionadded:: 1.1.0
-    
+
     Examples
     --------
-    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to
     transform it to a bandpass filter with a center frequency wo and
     bandwidth bw.
-    
+
     >>> from scipy.signal import lp2bp_zpk
     >>> z   = [ 5 + 2j ,  5 - 2j ]
     >>> p   = [ 7      ,  -16    ]
@@ -2976,7 +2991,7 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     >>> bw  = 15
     >>> lp2bp_zpk(z, p, k, wo, bw)
     (   array([7.49955815e+01+3.00017676e+01j, 7.49955815e+01-3.00017676e+01j,
-               4.41850748e-03-1.76761126e-03j, 4.41850748e-03+1.76761126e-03j]), 
+               4.41850748e-03-1.76761126e-03j, 4.41850748e-03+1.76761126e-03j]),
         array([1.04996339e+02+0.j, -1.60167736e-03+0.j,  3.66108003e-03+0.j,
                -2.39998398e+02+0.j]), 0.8)
     """
@@ -3060,10 +3075,10 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
 
     Examples
     --------
-    Transform a low-pass filter represented in 'zpk' (Zero-Pole-Gain) form 
+    Transform a low-pass filter represented in 'zpk' (Zero-Pole-Gain) form
     into a bandstop filter represented in 'zpk' form, with a center frequency wo and
     bandwidth bw.
-    
+
     >>> from scipy.signal import lp2bs_zpk
     >>> z   = [             ]
     >>> p   = [ 0.7 ,    -1 ]
@@ -3071,8 +3086,8 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     >>> wo  = 0.5
     >>> bw  = 10
     >>> lp2bs_zpk(z, p, k, wo, bw)
-    (   array([0.+0.5j, 0.+0.5j, 0.-0.5j, 0.-0.5j]), 
-        array([14.2681928 +0.j, -0.02506281+0.j,  0.01752149+0.j, -9.97493719+0.j]), 
+    (   array([0.+0.5j, 0.+0.5j, 0.-0.5j, 0.-0.5j]),
+        array([14.2681928 +0.j, -0.02506281+0.j,  0.01752149+0.j, -9.97493719+0.j]),
         -12.857142857142858)
     """
     z = atleast_1d(z)
@@ -3197,7 +3212,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> w, h = signal.freqs(b, a)
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.title('Butterworth filter frequency response')
-    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
@@ -3223,7 +3238,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> ax2.plot(t, filtered)
     >>> ax2.set_title('After 15 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
-    >>> ax2.set_xlabel('Time [seconds]')
+    >>> ax2.set_xlabel('Time [s]')
     >>> plt.tight_layout()
     >>> plt.show()
     """
@@ -3314,7 +3329,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> w, h = signal.freqs(b, a)
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.title('Chebyshev Type I frequency response (rp=5)')
-    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
@@ -3341,7 +3356,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> ax2.plot(t, filtered)
     >>> ax2.set_title('After 15 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
-    >>> ax2.set_xlabel('Time [seconds]')
+    >>> ax2.set_xlabel('Time [s]')
     >>> plt.tight_layout()
     >>> plt.show()
     """
@@ -3427,7 +3442,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> w, h = signal.freqs(b, a)
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.title('Chebyshev Type II frequency response (rs=40)')
-    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
@@ -3454,7 +3469,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> ax2.plot(t, filtered)
     >>> ax2.set_title('After 17 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
-    >>> ax2.set_xlabel('Time [seconds]')
+    >>> ax2.set_xlabel('Time [s]')
     >>> plt.show()
     """
     return iirfilter(N, Wn, rs=rs, btype=btype, analog=analog,
@@ -3550,7 +3565,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> w, h = signal.freqs(b, a)
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.title('Elliptic filter frequency response (rp=5, rs=40)')
-    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
@@ -3578,7 +3593,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> ax2.plot(t, filtered)
     >>> ax2.set_title('After 17 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
-    >>> ax2.set_xlabel('Time [seconds]')
+    >>> ax2.set_xlabel('Time [s]')
     >>> plt.tight_layout()
     >>> plt.show()
     """
@@ -3695,7 +3710,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     >>> w, h = signal.freqs(b, a)
     >>> plt.semilogx(w, 20 * np.log10(np.abs(h)))
     >>> plt.title('Bessel filter magnitude response (with Butterworth)')
-    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
@@ -3709,8 +3724,8 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     >>> plt.axvline(100, color='green')  # cutoff frequency
     >>> plt.axhline(-np.pi, color='red')  # phase midpoint
     >>> plt.title('Bessel filter phase response')
-    >>> plt.xlabel('Frequency [radians / second]')
-    >>> plt.ylabel('Phase [radians]')
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Phase [rad]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
     >>> plt.show()
@@ -3722,8 +3737,8 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     >>> plt.semilogx(w, 20 * np.log10(np.abs(h)))
     >>> plt.axhline(-3, color='red')  # -3 dB magnitude
     >>> plt.axvline(10, color='green')  # cutoff frequency
-    >>> plt.title('Magnitude-normalized Bessel filter frequency response')
-    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.title('Amplitude-normalized Bessel filter frequency response')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
@@ -3738,8 +3753,8 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     >>> plt.semilogx(w[1:], -np.diff(np.unwrap(np.angle(h)))/np.diff(w))
     >>> plt.axhline(0.1, color='red')  # 0.1 seconds group delay
     >>> plt.title('Bessel filter group delay')
-    >>> plt.xlabel('Frequency [radians / second]')
-    >>> plt.ylabel('Group delay [seconds]')
+    >>> plt.xlabel('Frequency [rad/s]')
+    >>> plt.ylabel('Group delay [s]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
     >>> plt.show()
@@ -3785,6 +3800,30 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     n : scalar
         Filter order (possibly non-integer).
 
+    Notes
+    -----
+    Band-stop filters are used in applications where certain frequency
+    components need to be blocked while others are allowed; for instance,
+    removing noise at specific frequencies while allowing the desired signal
+    to pass through. The order of a filter often determines its complexity and
+    accuracy. Determining the right order can be a challenge. This function
+    aims to provide an appropriate order for an analog band stop filter.
+    
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.signal import band_stop_obj
+    >>> wp = 2
+    >>> ind = 1
+    >>> passb = np.array([1, 3])
+    >>> stopb = np.array([0.5, 4])
+    >>> gstop = 30
+    >>> gpass = 3
+    >>> filter_type = 'butter'
+    >>> band_stop_obj(wp, ind, passb, stopb, gpass, gstop, filter_type)
+    np.float64(-2.758504160760643)
+
     """
 
     _validate_gpass_gstop(gpass, gstop)
@@ -3812,7 +3851,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
         d1 = special.ellipk([arg1 ** 2, 1 - arg1 ** 2])
         n = (d0[0] * d1[1] / (d0[1] * d1[0]))
     else:
-        raise ValueError("Incorrect type: %s" % type)
+        raise ValueError(f"Incorrect type: {type}")
     return n
 
 
@@ -3951,7 +3990,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> w, h = signal.freqs(b, a, np.logspace(1, 2, 500))
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.title('Butterworth bandpass filter fit to constraints')
-    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.grid(which='both', axis='both')
     >>> plt.fill([1,  14,  14,   1], [-40, -40, 99, 99], '0.9', lw=0) # stop
@@ -4001,7 +4040,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
                    passb[0] * passb[1]))
         WN = np.sort(abs(WN))
     else:
-        raise ValueError("Bad type: %s" % filter_type)
+        raise ValueError(f"Bad type: {filter_type}")
 
     wn = _postprocess_wn(WN, analog, fs)
 
@@ -4293,7 +4332,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> w, h = signal.freqs(b, a, np.logspace(0, 3, 500))
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.title('Elliptical highpass filter fit to constraints')
-    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.grid(which='both', axis='both')
     >>> plt.fill([.1, 10,  10,  .1], [1e4, 1e4, -60, -60], '0.9', lw=0) # stop
@@ -4999,13 +5038,13 @@ def iirnotch(w0, Q, fs=2.0):
     >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
     >>> ax[0].plot(freq, 20*np.log10(abs(h)), color='blue')
     >>> ax[0].set_title("Frequency Response")
-    >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
+    >>> ax[0].set_ylabel("Amplitude [dB]", color='blue')
     >>> ax[0].set_xlim([0, 100])
     >>> ax[0].set_ylim([-25, 10])
     >>> ax[0].grid(True)
     >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
-    >>> ax[1].set_ylabel("Angle (degrees)", color='green')
-    >>> ax[1].set_xlabel("Frequency (Hz)")
+    >>> ax[1].set_ylabel("Phase [deg]", color='green')
+    >>> ax[1].set_xlabel("Frequency [Hz]")
     >>> ax[1].set_xlim([0, 100])
     >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
     >>> ax[1].set_ylim([-90, 90])
@@ -5080,13 +5119,13 @@ def iirpeak(w0, Q, fs=2.0):
     >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
     >>> ax[0].plot(freq, 20*np.log10(np.maximum(abs(h), 1e-5)), color='blue')
     >>> ax[0].set_title("Frequency Response")
-    >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
+    >>> ax[0].set_ylabel("Amplitude [dB]", color='blue')
     >>> ax[0].set_xlim([0, 500])
     >>> ax[0].set_ylim([-50, 10])
     >>> ax[0].grid(True)
     >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
-    >>> ax[1].set_ylabel("Angle (degrees)", color='green')
-    >>> ax[1].set_xlabel("Frequency (Hz)")
+    >>> ax[1].set_ylabel("Phase [deg]", color='green')
+    >>> ax[1].set_xlabel("Frequency [Hz]")
     >>> ax[1].set_xlim([0, 500])
     >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
     >>> ax[1].set_ylim([-90, 90])
@@ -5262,13 +5301,13 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
     >>> ax[0].plot(freq, 20*np.log10(abs(response)), color='blue')
     >>> ax[0].set_title("Frequency Response")
-    >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
+    >>> ax[0].set_ylabel("Amplitude [dB]", color='blue')
     >>> ax[0].set_xlim([0, 100])
     >>> ax[0].set_ylim([-30, 10])
     >>> ax[0].grid(True)
     >>> ax[1].plot(freq, (np.angle(h)*180/np.pi+180)%360 - 180, color='green')
-    >>> ax[1].set_ylabel("Angle (degrees)", color='green')
-    >>> ax[1].set_xlabel("Frequency (Hz)")
+    >>> ax[1].set_ylabel("Phase [deg]", color='green')
+    >>> ax[1].set_xlabel("Frequency [Hz]")
     >>> ax[1].set_xlim([0, 100])
     >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
     >>> ax[1].set_ylim([-90, 90])
@@ -5293,13 +5332,13 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
     >>> ax[0].plot(freq, 20*np.log10(np.maximum(abs(h), 1e-5)), color='blue')
     >>> ax[0].set_title("Frequency Response")
-    >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
+    >>> ax[0].set_ylabel("Amplitude [dB]", color='blue')
     >>> ax[0].set_xlim([0, 500])
     >>> ax[0].set_ylim([-80, 10])
     >>> ax[0].grid(True)
     >>> ax[1].plot(freq, (np.angle(h)*180/np.pi+180)%360 - 180, color='green')
-    >>> ax[1].set_ylabel("Angle (degrees)", color='green')
-    >>> ax[1].set_xlabel("Frequency (Hz)")
+    >>> ax[1].set_ylabel("Phase [deg]", color='green')
+    >>> ax[1].set_xlabel("Frequency [Hz]")
     >>> ax[1].set_xlim([0, 500])
     >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
     >>> ax[1].set_ylim([-90, 90])
@@ -5316,7 +5355,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     ftype = ftype.lower()
     if not 0 < w0 < fs / 2:
         raise ValueError(f"w0 must be between 0 and {fs / 2}"
-                         f" (nyquist), but given {w0}.")
+                         f" (Nyquist), but given {w0}.")
     if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
@@ -5460,16 +5499,17 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
 
-    >>> b, a = signal.gammatone(440, 'iir', fs=16000)
+    >>> fc, fs = 440, 16000
+    >>> b, a = signal.gammatone(fc, 'iir', fs=fs)
     >>> w, h = signal.freqz(b, a)
-    >>> plt.plot(w / ((2 * np.pi) / 16000), 20 * np.log10(abs(h)))
+    >>> plt.plot(w * fs / (2 * np.pi), 20 * np.log10(abs(h)))
     >>> plt.xscale('log')
     >>> plt.title('Gammatone filter frequency response')
-    >>> plt.xlabel('Frequency')
+    >>> plt.xlabel('Frequency [Hz]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
-    >>> plt.axvline(440, color='green') # cutoff frequency
+    >>> plt.axvline(fc, color='green') # cutoff frequency
     >>> plt.show()
     """
     # Converts freq to float
@@ -5485,7 +5525,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     filter_types = ['fir', 'iir']
     if not 0 < freq < fs / 2:
         raise ValueError(f"The frequency must be between 0 and {fs / 2}"
-                         f" (nyquist), but given {freq}.")
+                         f" (Nyquist), but given {freq}.")
     if ftype not in filter_types:
         raise ValueError('ftype must be either fir or iir.')
 

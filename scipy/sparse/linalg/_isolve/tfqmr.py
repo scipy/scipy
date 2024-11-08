@@ -13,7 +13,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -30,7 +30,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
         Default is ``min(10000, ndofs * 10)``, where ``ndofs = A.shape[0]``.
-    M : {sparse matrix, ndarray, LinearOperator}
+    M : {sparse array, ndarray, LinearOperator}
         Inverse of the preconditioner of A.  M should approximate the
         inverse of A and be easy to solve for (see Notes).  Effective
         preconditioning dramatically improves the rate of convergence,
@@ -38,7 +38,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         error tolerance.  By default, no preconditioner is used.
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
-        as `callback(xk)`, where `xk` is the current solution vector.
+        as ``callback(xk)``, where ``xk`` is the current solution vector.
     show : bool, optional
         Specify ``show = True`` to show the convergence, ``show = False`` is
         to close the output of the convergence.
@@ -78,9 +78,9 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import tfqmr
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
     >>> x, exitCode = tfqmr(A, b, atol=0.0)
     >>> print(exitCode)            # 0 indicates successful convergence

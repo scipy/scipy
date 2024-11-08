@@ -110,35 +110,35 @@ def norm(a, ord=None, axis=None, keepdims=False, check_finite=True):
     >>> norm(b, 'fro')
     7.745966692414834
     >>> norm(a, np.inf)
-    4
+    4.0
     >>> norm(b, np.inf)
-    9
+    9.0
     >>> norm(a, -np.inf)
-    0
+    0.0
     >>> norm(b, -np.inf)
-    2
+    2.0
 
     >>> norm(a, 1)
-    20
+    20.0
     >>> norm(b, 1)
-    7
+    7.0
     >>> norm(a, -1)
     -4.6566128774142013e-010
     >>> norm(b, -1)
-    6
+    6.0
     >>> norm(a, 2)
     7.745966692414834
     >>> norm(b, 2)
     7.3484692283495345
 
     >>> norm(a, -2)
-    0
+    0.0
     >>> norm(b, -2)
     1.8570331885190563e-016
     >>> norm(a, 3)
     5.8480354764257312
     >>> norm(a, -3)
-    0
+    0.0
 
     """
     # Differs from numpy only in non-finite handling and the use of blas.

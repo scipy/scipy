@@ -96,8 +96,8 @@ class HBInfo:
             elif values.dtype.kind in np.typecodes["AllFloat"]:
                 tp = "real"
             else:
-                raise NotImplementedError("type %s for values not implemented"
-                                          % values.dtype)
+                raise NotImplementedError(
+                    f"type {values.dtype} for values not implemented")
             mxtype = HBMatrixType(tp, "unsymmetric", "assembled")
         else:
             raise ValueError("mxtype argument not handled yet.")
@@ -138,7 +138,7 @@ class HBInfo:
         line = fid.readline().strip("\n")
         if not len(line) > 72:
             raise ValueError("Expected at least 72 characters for first line, "
-                             "got: \n%s" % line)
+                             f"got: \n{line}")
         title = line[:72]
         key = line[72:]
 
@@ -146,7 +146,7 @@ class HBInfo:
         line = fid.readline().strip("\n")
         if not len(line.rstrip()) >= 56:
             raise ValueError("Expected at least 56 characters for second line, "
-                             "got: \n%s" % line)
+                             f"got: \n{line}")
         total_nlines = _expect_int(line[:14])
         pointer_nlines = _expect_int(line[14:28])
         indices_nlines = _expect_int(line[28:42])
@@ -164,8 +164,8 @@ class HBInfo:
         # Third line
         line = fid.readline().strip("\n")
         if not len(line) >= 70:
-            raise ValueError("Expected at least 72 character for third line, got:\n"
-                             "%s" % line)
+            raise ValueError(f"Expected at least 72 character for third line, "
+                             f"got:\n{line}")
 
         mxtype_s = line[:3].upper()
         if not len(mxtype_s) == 3:
@@ -174,15 +174,15 @@ class HBInfo:
         mxtype = HBMatrixType.from_fortran(mxtype_s)
         if mxtype.value_type not in ["real", "integer"]:
             raise ValueError("Only real or integer matrices supported for "
-                             "now (detected %s)" % mxtype)
+                             f"now (detected {mxtype})")
         if not mxtype.structure == "unsymmetric":
             raise ValueError("Only unsymmetric matrices supported for "
-                             "now (detected %s)" % mxtype)
+                             f"now (detected {mxtype})")
         if not mxtype.storage == "assembled":
             raise ValueError("Only assembled matrices supported for now")
 
         if not line[3:14] == " " * 11:
-            raise ValueError("Malformed data for third line: %s" % line)
+            raise ValueError(f"Malformed data for third line: {line}")
 
         nrows = _expect_int(line[14:28])
         ncols = _expect_int(line[28:42])
@@ -197,7 +197,7 @@ class HBInfo:
 
         ct = line.split()
         if not len(ct) == 3:
-            raise ValueError("Expected 3 formats, got %s" % ct)
+            raise ValueError(f"Expected 3 formats, got {ct}")
 
         return cls(title, key,
                    total_nlines, pointer_nlines, indices_nlines, values_nlines,
@@ -219,7 +219,7 @@ class HBInfo:
         if key is None:
             key = "|No Key"
         if len(key) > 8:
-            warnings.warn("key is > 8 characters (key is %s)" % key,
+            warnings.warn(f"key is > 8 characters (key is {key})",
                           LineOverflow, stacklevel=3)
         self.title = title
         self.key = key
@@ -232,13 +232,13 @@ class HBInfo:
         parser = FortranFormatParser()
         pointer_format = parser.parse(pointer_format_str)
         if not isinstance(pointer_format, IntFormat):
-            raise ValueError("Expected int format for pointer format, got %s"
-                             % pointer_format)
+            raise ValueError("Expected int format for pointer format, got "
+                             f"{pointer_format}")
 
         indices_format = parser.parse(indices_format_str)
         if not isinstance(indices_format, IntFormat):
-            raise ValueError("Expected int format for indices format, got %s" %
-                             indices_format)
+            raise ValueError("Expected int format for indices format, got "
+                             f"{indices_format}")
 
         values_format = parser.parse(values_format_str)
         if isinstance(values_format, ExpFormat):
@@ -395,7 +395,7 @@ class HBMatrixType:
             storage = cls._f2q_storage[fmt[2]]
             return cls(value_type, structure, storage)
         except KeyError as e:
-            raise ValueError("Unrecognized format %s" % fmt) from e
+            raise ValueError(f"Unrecognized format {fmt}") from e
 
     def __init__(self, value_type, structure, storage="assembled"):
         self.value_type = value_type
@@ -403,11 +403,11 @@ class HBMatrixType:
         self.storage = storage
 
         if value_type not in self._q2f_type:
-            raise ValueError("Unrecognized type %s" % value_type)
+            raise ValueError(f"Unrecognized type {value_type}")
         if structure not in self._q2f_structure:
-            raise ValueError("Unrecognized structure %s" % structure)
+            raise ValueError(f"Unrecognized structure {structure}")
         if storage not in self._q2f_storage:
-            raise ValueError("Unrecognized storage %s" % storage)
+            raise ValueError(f"Unrecognized storage {storage}")
 
     @property
     def fortran_format(self):
@@ -498,9 +498,12 @@ def hb_read(path_or_open_file):
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb"))  # read a hb file
-    (np.int32(0), np.int32(0))	1.0
-    (np.int32(1), np.int32(1))	1.0
-    (np.int32(2), np.int32(2))	1.0
+    <Compressed Sparse Column sparse matrix of dtype 'float64'
+        with 3 stored elements and shape (3, 3)>
+        Coords	Values
+        (0, 0)	1.0
+        (1, 1)	1.0
+        (2, 2)	1.0
     """
     def _get_matrix(fid):
         hb = HBFile(fid)
@@ -548,9 +551,12 @@ def hb_write(path_or_open_file, m, hb_info=None):
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
     >>> print(hb_read("data.hb"))  # read a hb file
-    (np.int32(0), np.int32(0))	1.0
-    (np.int32(1), np.int32(1))	1.0
-    (np.int32(2), np.int32(2))	1.0
+    <Compressed Sparse Column sparse matrix of dtype 'float64'
+        with 3 stored elements and shape (3, 3)>
+        Coords	Values
+        (0, 0)	1.0
+        (1, 1)	1.0
+        (2, 2)	1.0
     """
     m = m.tocsc(copy=False)
 

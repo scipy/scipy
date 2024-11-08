@@ -262,7 +262,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             terminal: bool or int, optional
                 When boolean, whether to terminate integration if this event occurs.
                 When integral, termination occurs after the specified the number of
-                occurences of this event.
+                occurrences of this event.
                 Implicitly False if not assigned.
             direction: float, optional
                 Direction of a zero crossing. If `direction` is positive,

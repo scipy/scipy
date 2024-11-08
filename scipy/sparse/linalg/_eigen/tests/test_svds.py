@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
 from scipy.linalg import svd, null_space
-from scipy.sparse import csc_matrix, issparse, spdiags, random
+from scipy.sparse import csc_array, issparse, dia_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg import svds
 from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
@@ -131,12 +131,12 @@ class SVDSCommonTests:
     # some of these IV tests could run only once, say with solver=None
 
     _A_empty_msg = "`A` must not be empty."
-    _A_dtype_msg = "`A` must be of floating or complex floating data type"
+    _A_dtype_msg = "`A` must be of numeric data type"
     _A_type_msg = "type not understood"
     _A_ndim_msg = "array must have ndim <= 2"
     _A_validation_inputs = [
         (np.asarray([[]]), ValueError, _A_empty_msg),
-        (np.asarray([[1, 2], [3, 4]]), ValueError, _A_dtype_msg),
+        (np.array([['a', 'b'], ['c', 'd']], dtype='object'), ValueError, _A_dtype_msg),
         ("hi", TypeError, _A_type_msg),
         (np.asarray([[[1., 2.], [3., 4.]]]), ValueError, _A_ndim_msg)]
 
@@ -145,6 +145,44 @@ class SVDSCommonTests:
         A, error_type, message = args
         with pytest.raises(error_type, match=message):
             svds(A, k=1, solver=self.solver)
+
+    @pytest.mark.parametrize("which", ["LM", "SM"])
+    def test_svds_int_A(self, which):
+        A = np.asarray([[1, 2], [3, 4]])
+        if self.solver == 'lobpcg':
+            with pytest.warns(UserWarning, match="The problem size"):
+                res = svds(A, k=1, which=which, solver=self.solver,
+                           random_state=0)
+        else:
+            res = svds(A, k=1, which=which, solver=self.solver,
+                       random_state=0)
+        _check_svds(A, 1, *res, which=which, atol=8e-10)
+
+    def test_svds_diff0_docstring_example(self):
+        def diff0(a):
+            return np.diff(a, axis=0)
+        def diff0t(a):
+            if a.ndim == 1:
+                a = a[:,np.newaxis]  # Turn 1D into 2D array
+            d = np.zeros((a.shape[0] + 1, a.shape[1]), dtype=a.dtype)
+            d[0, :] = - a[0, :]
+            d[1:-1, :] = a[0:-1, :] - a[1:, :]
+            d[-1, :] = a[-1, :]
+            return d
+        def diff0_func_aslo_def(n):
+            return LinearOperator(matvec=diff0,
+                                  matmat=diff0,
+                                  rmatvec=diff0t,
+                                  rmatmat=diff0t,
+                                  shape=(n - 1, n))
+        n = 100
+        diff0_func_aslo = diff0_func_aslo_def(n)
+        u, s, _ = svds(diff0_func_aslo, k=3, which='SM')
+        se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
+        ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
+                                     np.arange(1, 4)) / n)
+        assert_allclose(s, se, atol=1e-3)
+        assert_allclose(np.abs(u), np.abs(ue), atol=1e-6)
 
     @pytest.mark.parametrize("k", [-1, 0, 3, 4, 5, 1.5, "1"])
     def test_svds_input_validation_k_1(self, k):
@@ -288,7 +326,7 @@ class SVDSCommonTests:
         _, s, _ = svd(A)  # calculate ground truth
 
         # calculate the error as a function of `tol`
-        A = csc_matrix(A)
+        A = csc_array(A)
 
         def err(tol):
             _, s2, _ = svds(A, k=k, v0=np.ones(n), maxiter=1000,
@@ -526,7 +564,7 @@ class SVDSCommonTests:
     @pytest.mark.parametrize('real', (True, False))
     @pytest.mark.parametrize('transpose', (False, True))
     # In gh-14299, it was suggested the `svds` should _not_ work with lists
-    @pytest.mark.parametrize('lo_type', (np.asarray, csc_matrix,
+    @pytest.mark.parametrize('lo_type', (np.asarray, csc_array,
                                          aslinearoperator))
     def test_svd_simple(self, A, k, real, transpose, lo_type):
 
@@ -579,7 +617,7 @@ class SVDSCommonTests:
                 with pytest.warns(UserWarning, match="The problem size"):
                     U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver,
                                                random_state=0))
-                    U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver, 
+                    U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver,
                                                random_state=0))
             else:
                 U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver,
@@ -664,12 +702,12 @@ class SVDSCommonTests:
         rng = np.random.default_rng(0)
         k = 5
         (m, n) = shape
-        S = random(m, n, density=0.1, random_state=rng)
-        if dtype == complex:
-            S = + 1j * random(m, n, density=0.1, random_state=rng)
+        S = random_array(shape=(m, n), density=0.1, random_state=rng)
+        if dtype is complex:
+            S = + 1j * random_array(shape=(m, n), density=0.1, random_state=rng)
         e = np.ones(m)
         e[0:5] *= 1e1 ** np.arange(-5, 0, 1)
-        S = spdiags(e, 0, m, m) @ S
+        S = dia_array((e, 0), shape=(m, m)) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000,
                         random_state=0)
@@ -714,6 +752,9 @@ class SVDSCommonTests:
         k = 1
         n, m = shape
         A = np.zeros((n, m), dtype=dtype)
+
+        if (self.solver == 'arpack'):
+            pytest.skip('See gh-21110.')
 
         if (self.solver == 'arpack' and dtype is complex
                 and k == min(A.shape) - 1):
@@ -781,7 +822,7 @@ class SVDSCommonTests:
         assert_allclose(mat @ vh[-dim:, :].T, 0, atol=1e-6, rtol=1e0)
 
         # Smallest singular values should be 0
-        sp_mat = csc_matrix(mat)
+        sp_mat = csc_array(mat)
         su, ss, svh = svds(sp_mat, k=dim, which='SM', solver=self.solver,
                            random_state=0)
         # Smallest dim singular values are 0:

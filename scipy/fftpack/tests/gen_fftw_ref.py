@@ -15,7 +15,7 @@ def gen_data(dt):
     elif dt == np.float32:
         pg = './fftw_single'
     else:
-        raise ValueError("unknown: %s" % dt)
+        raise ValueError(f"unknown: {dt}")
     # Generate test data using FFTW for reference
     for type in [1, 2, 3, 4, 5, 6, 7, 8]:
         arrays[type] = {}

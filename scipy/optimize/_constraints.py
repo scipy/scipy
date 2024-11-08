@@ -46,8 +46,10 @@ class NonlinearConstraint:
         where element (i, j) is the partial derivative of f[i] with
         respect to x[j]).  The keywords {'2-point', '3-point',
         'cs'} select a finite difference scheme for the numerical estimation.
-        A callable must have the following signature:
-        ``jac(x) -> {ndarray, sparse matrix}, shape (m, n)``.
+        A callable must have the following signature::
+
+            jac(x) -> {ndarray, sparse matrix}, shape (m, n)
+
         Default is '2-point'.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy, None}, optional
         Method for computing the Hessian matrix. The keywords
@@ -56,8 +58,8 @@ class NonlinearConstraint:
         `HessianUpdateStrategy` interface can be used to approximate the
         Hessian. Currently available implementations are:
 
-            - `BFGS` (default option)
-            - `SR1`
+        - `BFGS` (default option)
+        - `SR1`
 
         A callable must return the Hessian matrix of ``dot(fun, v)`` and
         must have the following signature:
@@ -103,9 +105,11 @@ class NonlinearConstraint:
     >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
 
     """
-    def __init__(self, fun, lb, ub, jac='2-point', hess=BFGS(),
+    def __init__(self, fun, lb, ub, jac='2-point', hess=None,
                  keep_feasible=False, finite_diff_rel_step=None,
                  finite_diff_jac_sparsity=None):
+        if hess is None:
+            hess = BFGS()
         self.fun = fun
         self.lb = lb
         self.ub = ub
@@ -564,7 +568,7 @@ def old_constraint_to_new(ic, con):
         raise TypeError("Constraint's type must be a string.") from e
     else:
         if ctype not in ['eq', 'ineq']:
-            raise ValueError("Unknown constraint type '%s'." % con['type'])
+            raise ValueError(f"Unknown constraint type '{con['type']}'.")
     if 'fun' not in con:
         raise ValueError('Constraint %d has no function defined.' % ic)
 

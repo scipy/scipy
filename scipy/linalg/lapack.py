@@ -345,6 +345,9 @@ All functions
    chetrf_lwork
    zhetrf_lwork
 
+   chetrs
+   zhetrs
+
    chfrk
    zhfrk
 
@@ -355,6 +358,11 @@ All functions
    dlange
    clange
    zlange
+
+   slantr
+   dlantr
+   clantr
+   zlantr
 
    slarf
    dlarf
@@ -660,6 +668,11 @@ All functions
    csytrf_lwork
    zsytrf_lwork
 
+   ssytrs
+   dsytrs
+   csytrs
+   zsytrs
+
    stbtrs
    dtbtrs
    ctbtrs
@@ -707,6 +720,11 @@ All functions
    dtpttr
    ctpttr
    ztpttr
+
+   strcon
+   dtrcon
+   ctrcon
+   ztrcon
 
    strexc
    dtrexc
@@ -793,6 +811,11 @@ All functions
    cgttrs
    zgttrs
 
+   sgtcon
+   dgtcon
+   cgtcon
+   zgtcon
+
    stpqrt
    dtpqrt
    ctpqrt
@@ -863,10 +886,9 @@ p2 = regex_compile(r'Default: (?P<d>.*?)\n')
 
 def backtickrepl(m):
     if m.group('s'):
-        return ('with bounds ``{}`` with ``{}`` storage\n'
-                ''.format(m.group('b'), m.group('s')))
+        return (f"with bounds ``{m.group('b')}`` with ``{m.group('s')}`` storage\n")
     else:
-        return 'with bounds ``{}``\n'.format(m.group('b'))
+        return f"with bounds ``{m.group('b')}``\n"
 
 
 for routine in [ssyevr, dsyevr, cheevr, zheevr,

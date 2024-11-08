@@ -89,8 +89,8 @@ Filter design
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
+   freqz_sos     -- Digital filter frequency response for SOS format filter.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
-   sosfreqz      -- Digital filter frequency response for SOS format filter.
    gammatone     -- FIR and IIR gammatone filter design.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
@@ -298,8 +298,7 @@ from ._spline import (
     sepfir2d
 )
 
-from ._splines import *
-from ._bsplines import *
+from ._spline_filters import *
 from ._filter_design import *
 from ._fir_filter_design import *
 from ._ltisys import *

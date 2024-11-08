@@ -46,10 +46,10 @@ and LAPACK. E.g.::
     found:  True
     version:  0.3.23
     detection method:  pkgconfig
-    include directory:  /home/user/mambaforge/envs/scipy-dev/include
-    lib directory:  /home/user/mambaforge/envs/scipy-dev/lib
+    include directory:  /home/user/miniforge/envs/scipy-dev/include
+    lib directory:  /home/user/miniforge/envs/scipy-dev/lib
     openblas configuration:  USE_64BITINT=0 DYNAMIC_ARCH=1 DYNAMIC_OLDER= NO_CBLAS= NO_LAPACK=0 NO_LAPACKE= NO_AFFINITY=1 USE_OPENMP=0 PRESCOTT MAX_THREADS=128
-    pc file directory:  /home/user/mambaforge/envs/scipy-dev/lib/pkgconfig
+    pc file directory:  /home/user/miniforge/envs/scipy-dev/lib/pkgconfig
 
 This method will be correct for SciPy wheels and for local dev builds. It *may*
 be correct for other installs, however keep in mind that distros like
@@ -68,7 +68,7 @@ on plain Netlib BLAS, see
         "user_api": "blas",
         "internal_api": "openblas",
         "prefix": "libopenblas",
-        "filepath": "/home/user/mambaforge/envs/dev/lib/libopenblasp-r0.3.21.so",
+        "filepath": "/home/user/miniforge/envs/dev/lib/libopenblasp-r0.3.21.so",
         "version": "0.3.21",
         "threading_layer": "pthreads",
         "architecture": "SkylakeX",
@@ -89,7 +89,7 @@ Other ways of introspecting that can be helpful in local dev environments includ
 
        $ ldd build/scipy/linalg/_fblas.cpython-*.so
        ...
-       libopenblas.so.0 => /home/user/mambaforge/envs/scipy-dev/lib/libopenblas.so.0 (0x0000780d6d000000)
+       libopenblas.so.0 => /home/user/miniforge/envs/scipy-dev/lib/libopenblas.so.0 (0x0000780d6d000000)
 
   .. tab-item:: macOS
     :sync: macos
@@ -112,7 +112,7 @@ Other ways of introspecting that can be helpful in local dev environments includ
 
     ::
 
-        $ nm -gD ~/mambaforge/envs/scipy-dev/lib/libblas.so | rg openblas_set_num_threads
+        $ nm -gD ~/miniforge/envs/scipy-dev/lib/libblas.so | rg openblas_set_num_threads
         0000000000362990 T openblas_set_num_threads
 
   .. tab-item:: macOS
@@ -120,7 +120,7 @@ Other ways of introspecting that can be helpful in local dev environments includ
 
     ::
 
-        % nm ~/mambaforge/envs/scipy-dev/lib/libblas.3.dylib | rg openblas_set_num_threads
+        % nm ~/miniforge/envs/scipy-dev/lib/libblas.3.dylib | rg openblas_set_num_threads
         000000000015b6b0 T _openblas_set_num_threads
 
 
@@ -527,7 +527,7 @@ Here is an example ``gdb`` session::
     (Pdb) c     # continue execution until the C breakpoint
 
     Thread 1 "python" hit Breakpoint 1, 0x00007ffff4c48820 in dpotrf_ ()
-       from /home/br/mambaforge/envs/scipy-dev/lib/python3.10/site-packages/numpy/core/../../../../libcblas.so.3
+       from /home/br/miniforge/envs/scipy-dev/lib/python3.10/site-packages/numpy/core/../../../../libcblas.so.3
     (gdb) s     # step through the C function
     Single stepping until exit from function dpotrf_,
     which has no line number information.
