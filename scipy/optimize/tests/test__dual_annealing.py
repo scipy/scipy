@@ -118,7 +118,7 @@ class TestDualAnnealing:
 
     def test_low_dim_no_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds,
-                             no_local_search=True, rng=self.seed)
+                             no_local_search=True, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-4)
 
     @pytest.mark.fail_slow(10)
@@ -162,15 +162,6 @@ class TestDualAnnealing:
         # If we have reproducible results, x components found has to
         # be exactly the same, which is not the case with no seeding
         assert_equal(res1.x, res2.x)
-
-    def test_rng_seed_spec007(self):
-        # spec007 involves the transition of RandomState-->Generator
-        # should still be allowed to pass `seed`
-        dual_annealing(
-            self.func,
-            self.ld_bounds,
-            seed=1,
-        )
 
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]

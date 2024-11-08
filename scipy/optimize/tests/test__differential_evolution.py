@@ -493,7 +493,8 @@ class TestDifferentialEvolutionSolver:
         # test the quadratic function from differential_evolution function
         differential_evolution(self.quadratic,
                                [(-100, 100)],
-                               tol=0.02)
+                               tol=0.02,
+                               seed=1)
 
     def test_rng_gives_repeatability(self):
         result = differential_evolution(self.quadratic,
@@ -522,21 +523,6 @@ class TestDifferentialEvolutionSolver:
                                    rng=rng,
                                    tol=0.5,
                                    init=init)
-
-    def test_rng_seed_spec007(self):
-        # spec007 involves the transition of RandomState-->Generator
-        # rng is the new name
-        differential_evolution(self.quadratic,
-                               [(-100, 100)],
-                               polish=False,
-                               rng=1,
-                               tol=0.5)
-        # should still be allowed to pass `seed`
-        differential_evolution(self.quadratic,
-                               [(-100, 100)],
-                               polish=False,
-                               seed=1,
-                               tol=0.5)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
