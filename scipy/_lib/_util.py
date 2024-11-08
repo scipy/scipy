@@ -443,10 +443,11 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
         if replace_doc:
             doc = FunctionDoc(wrapper)
             parameter_names = [param.name for param in doc['Parameters']]
-            _type = "{None, int, `numpy.random.Generator`}, optional"
-            _desc = _rng_desc.replace("{old_name}", old_name)
-            _rng_parameter_doc = Parameter('rng', _type, [_desc])
-            doc['Parameters'][parameter_names.index('rng')] = _rng_parameter_doc
+            if 'rng' in parameter_names:
+                _type = "{None, int, `numpy.random.Generator`}, optional"
+                _desc = _rng_desc.replace("{old_name}", old_name)
+                _rng_parameter_doc = Parameter('rng', _type, [_desc])
+                doc['Parameters'][parameter_names.index('rng')] = _rng_parameter_doc
             doc = str(doc).split("\n", 1)[1]  # remove signature
             wrapper.__doc__ = str(doc)
         return wrapper
