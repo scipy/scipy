@@ -210,8 +210,8 @@ def vq(obs, code_book, check_finite=True):
     c_code_book = xp.astype(code_book, ct, copy=False)
 
     if xp.isdtype(ct, kind='real floating'):
-        c_obs = np.asarray(c_obs)
-        c_code_book = np.asarray(c_code_book)
+        c_obs = _asarray(c_obs, xp_in=xp, xp_out=np)
+        c_code_book = _asarray(c_code_book, xp_in=xp, xp_out=np)
         result = _vq.vq(c_obs, c_code_book)
         return xp.asarray(result[0]), xp.asarray(result[1])
     return py_vq(obs, code_book, check_finite=False)
@@ -313,8 +313,8 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
         obs_code, distort = vq(obs, code_book, check_finite=False)
         prev_avg_dists.append(xp.mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
-        obs = np.asarray(obs)
-        obs_code = np.asarray(obs_code)
+        obs = _asarray(obs, xp_in=xp, xp_out=np)
+        obs_code = _asarray(obs_code, xp_in=xp, xp_out=np)
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
                                                           code_book.shape[0])
         obs = xp.asarray(obs)
@@ -548,7 +548,7 @@ def _krandinit(data, k, rng, xp):
 
     """
     mu = xp.mean(data, axis=0)
-    k = np.asarray(k)
+    k = _asarray(k, xp_in=xp, xp_out=np)
 
     if data.ndim == 1:
         _cov = xp_cov(data)
@@ -817,8 +817,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             rng = check_random_state(seed)
             code_book = init_meth(data, code_book, rng, xp)
 
-    data = np.asarray(data)
-    code_book = np.asarray(code_book)
+    data = _asarray(data, xp_in=xp, xp_out=np)
+    code_book = _asarray(code_book, xp_in=xp, xp_out=np)
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book, check_finite=check_finite)[0]

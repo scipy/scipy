@@ -114,6 +114,7 @@ from collections.abc import Callable
 from functools import partial
 from scipy._lib._util import _asarray_validated
 from scipy._lib.deprecation import _deprecated
+from scipy._lib._array_api import _asarray
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -2268,6 +2269,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
+    X = _asarray(X, xp_out=np)
     X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
                            check_finite=False)
 
@@ -2623,7 +2625,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     False
 
     """
-    y = np.asarray(y, order='c')
+    y = _asarray(y, order='c', xp_out=np)
     valid = True
     try:
         if len(y.shape) != 1:
@@ -2708,7 +2710,7 @@ def num_obs_y(Y):
     >>> num_obs_y(Y)
     4
     """
-    Y = np.asarray(Y, order='c')
+    Y = _asarray(Y, order='c', xp_out=np)
     is_valid_y(Y, throw=True, name='Y')
     k = Y.shape[0]
     if k == 0:
@@ -3067,8 +3069,8 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
     # between all pairs of vectors in XA and XB using the distance metric 'abc'
     # but with a more succinct, verifiable, but less efficient implementation.
 
-    XA = np.asarray(XA)
-    XB = np.asarray(XB)
+    XA = _asarray(XA, xp_out=np)
+    XB = _asarray(XB, xp_out=np)
 
     s = XA.shape
     sB = XB.shape

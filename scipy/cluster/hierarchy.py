@@ -1033,7 +1033,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     n = int(distance.num_obs_y(y))
     method_code = _LINKAGE_METHODS[method]
 
-    y = np.asarray(y)
+    y = _asarray(y, xp_in=xp, xp_out=np)
     if method == 'single':
         result = _hierarchy.mst_single_linkage(y, n)
     elif method in ['complete', 'average', 'weighted', 'ward']:
@@ -1740,7 +1740,7 @@ def inconsistent(Z, d=2):
     n = Z.shape[0] + 1
     R = np.zeros((n - 1, 4), dtype=np.float64)
 
-    Z = np.asarray(Z)
+    Z = _asarray(Z, xp_in=xp, xp_out=np)
     _hierarchy.inconsistent(Z, R, int(n), int(d))
     R = xp.asarray(R)
     return R
@@ -2548,10 +2548,11 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     T = np.zeros((n,), dtype='i')
 
     if monocrit is not None:
-        monocrit = np.asarray(monocrit, order='C', dtype=np.float64)
+        monocrit = _asarray(monocrit, order='C', dtype=np.float64, xp_out=np)
+    else:
+        monocrit = np.asarray(monocrit)
 
-    Z = np.asarray(Z)
-    monocrit = np.asarray(monocrit)
+    Z = _asarray(Z, xp_in=xp, xp_out=np)
     if criterion == 'inconsistent':
         if R is None:
             R = inconsistent(Z, depth)
@@ -2560,7 +2561,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
             is_valid_im(R, throw=True, name='R')
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
-            R = np.asarray(R)
+            R = _asarray(R, xp_in=xp, xp_out=np)
         _hierarchy.cluster_in(Z, R, T, float(t), int(n))
     elif criterion == 'distance':
         _hierarchy.cluster_dist(Z, T, float(t), int(n))
@@ -3840,7 +3841,7 @@ def maxdists(Z):
 
     n = Z.shape[0] + 1
     MD = np.zeros((n - 1,))
-    Z = np.asarray(Z)
+    Z = _asarray(Z, xp_in=xp, xp_out=np)
     _hierarchy.get_max_dist_for_each_cluster(Z, MD, int(n))
     MD = xp.asarray(MD)
     return MD

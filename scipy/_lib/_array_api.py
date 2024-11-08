@@ -155,6 +155,8 @@ def _asarray(
         copy: bool | None = None,
         *,
         xp: ModuleType | None = None,
+        xp_out: ModuleType | None = None,
+        xp_in: ModuleType | None = None,
         check_finite: bool = False,
         subok: bool = False,
     ) -> Array:
@@ -172,9 +174,14 @@ def _asarray(
     `subok` is included to allow this function to preserve the behaviour of
     `np.asanyarray` for NumPy based inputs.
     """
-    if xp is None:
-        xp = array_namespace(array)
-    if is_numpy(xp):
+    if xp is not None:
+        assert xp_out is xp_in is None
+        xp_out = xp_in = xp
+    
+    xp_out = array_namespace(array) if xp_out is None else xp_out
+    xp_in = array_namespace(array) if xp_in is None else xp_in
+
+    if is_numpy(xp_out) and is_numpy(xp_in):
         # Use NumPy API to support order
         if copy is True:
             array = np.array(array, order=order, dtype=dtype, subok=subok)
@@ -183,14 +190,12 @@ def _asarray(
         else:
             array = np.asarray(array, order=order, dtype=dtype)
     else:
-        try:
-            array = xp.asarray(array, dtype=dtype, copy=copy)
-        except TypeError:
-            coerced_xp = array_namespace(xp.asarray(3))
-            array = coerced_xp.asarray(array, dtype=dtype, copy=copy)
+        array = xp_in.asarray(array)
+        xp_out = np_compat if xp_out is np else xp_out
+        array = xp_out.from_dlpack(array)
 
     if check_finite:
-        _check_finite(array, xp)
+        _check_finite(array, xp_out)
 
     return array
 
@@ -317,13 +322,15 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
                                        check_dtype=False, msg=err_msg)
     # JAX uses `np.testing`
+    actual = _asarray(actual, xp_in=xp, xp_out=np)
+    desired = _asarray(desired, xp_in=xp, xp_out=np)
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
 def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
                     check_dtype=True, check_shape=True, check_0d=True,
                     err_msg='', xp=None):
-    __tracebackhide__ = True  # Hide traceback for py.test
+    # __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
 
@@ -350,6 +357,8 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
                                        equal_nan=True, check_dtype=False, msg=err_msg)
     # JAX uses `np.testing`
+    actual = _asarray(actual, xp_in=xp, xp_out=np)
+    desired = _asarray(desired, xp_in=xp, xp_out=np)
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
 
@@ -375,6 +384,8 @@ def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
         if desired.device.type != 'cpu':
             desired = desired.cpu()
     # JAX uses `np.testing`
+    actual = _asarray(actual, xp_in=xp, xp_out=np)
+    desired = _asarray(desired, xp_in=xp, xp_out=np)
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
