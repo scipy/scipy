@@ -486,7 +486,7 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     if biadj_indices is not biadjacency.indices:
         # create a new object without copying data
         biadjacency = csr_array((biadjacency.data, biadj_indices, biadj_indptr),
-                            shape=biadjacency.shape, dtype=biadjacency.dtype)
+                                shape=biadjacency.shape, dtype=biadjacency.dtype)
 
     # The algorithm expects more columns than rows in the graph, so
     # we use the transpose if that is not already the case. We also
