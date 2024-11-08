@@ -10279,7 +10279,7 @@ def _prk(r, k):
 
 
 @_axis_nan_policy_factory(  # noqa: E302
-    _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
+    _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
 )
 def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
