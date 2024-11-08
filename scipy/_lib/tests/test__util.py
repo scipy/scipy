@@ -389,7 +389,7 @@ def test__rng_html_rewrite():
     assert res == ref
 
 
-@_transition_to_rng("seed", position_num=1)
+@_transition_to_rng("seed", position_num=1, replace_doc=False)
 def _f_seed(o, rng=None):
     rg = check_random_state(rng)
     return rg.uniform(size=o)
