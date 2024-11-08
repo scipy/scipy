@@ -136,6 +136,7 @@ axis_nan_policy_cases = [
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
+    (stats.lmoment, tuple(), dict(), 1, 4, False, lambda x: tuple(x)),
     (combine_pvalues_weighted, tuple(), {}, 2, 2, True, None),
     (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
