@@ -1022,7 +1022,7 @@ def fiedler(a):
     a = np.atleast_1d(a)
 
     if a.ndim > 1:
-        return np.apply_along_axis(lambda a: fiedler(a), -1, a)
+        return np.apply_along_axis(fiedler, -1, a)
 
     if a.size == 0:
         return np.array([], dtype=float)
@@ -1044,7 +1044,7 @@ def fiedler_companion(a):
     a : (..., N) array_like
         1-D array of polynomial coefficients in descending order with a nonzero
         leading coefficient. For ``N < 2``, an empty array is returned.
-        M-dimensional arrays are treated as a batch: each slice along the last
+        N-dimensional arrays are treated as a batch: each slice along the last
         axis is a 1-D array of polynomial coefficients.
 
     Returns
@@ -1091,7 +1091,7 @@ def fiedler_companion(a):
     a = np.atleast_1d(a)
 
     if a.ndim > 1:
-        return np.apply_along_axis(lambda a: fiedler_companion(a), -1, a)
+        return np.apply_along_axis(fiedler_companion, -1, a)
 
     if a.size <= 2:
         if a.size == 2:
