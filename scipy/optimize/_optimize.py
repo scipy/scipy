@@ -39,7 +39,7 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
-                              _call_callback_maybe_halt)
+                              _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy._lib._array_api import (array_namespace, xp_atleast_nd,
                                    xp_create_diagonal)
@@ -1031,9 +1031,10 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
                              args=args, f0=f0)
 
 
+@_transition_to_rng("seed", position_num=6)
 def check_grad(func, grad, x0, *args, epsilon=_epsilon,
-                direction='all', seed=None):
-    """Check the correctness of a gradient function by comparing it against a
+                direction='all', rng=None):
+    r"""Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
     Parameters
@@ -1056,17 +1057,15 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         using `func`. By default it is ``'all'``, in which case, all
         the one hot direction vectors are considered to check `grad`.
         If `func` is a vector valued function then only ``'all'`` can be used.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        Specify `seed` for reproducing the return value from this function.
-        The random numbers generated with this seed affect the random vector
-        along which gradients are computed to check ``grad``. Note that `seed`
-        is only used when `direction` argument is set to `'random'`.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        The random numbers generated affect the random vector along which gradients
+        are computed to check ``grad``. Note that `rng` is only used when `direction`
+        argument is set to `'random'`.
 
     Returns
     -------
@@ -1106,8 +1105,8 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         if _grad.ndim > 1:
             raise ValueError("'random' can only be used with scalar valued"
                              " func")
-        random_state = check_random_state(seed)
-        v = random_state.normal(0, 1, size=(x0.shape))
+        rng_gen = check_random_state(rng)
+        v = rng_gen.standard_normal(size=(x0.shape))
         _args = (func, x0, v) + args
         _func = g
         vars = np.zeros((1,))
