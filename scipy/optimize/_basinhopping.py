@@ -417,7 +417,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
-    rng : {None, int, `numpy.random.Generator`}, optional
+    rng : `numpy.random.Generator`, optional
         Pseudorandom number generator state. When `rng` is None, a new
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
