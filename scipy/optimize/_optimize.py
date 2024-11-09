@@ -1078,9 +1078,10 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
             transition from use of `numpy.random.RandomState` to
             `numpy.random.Generator`, this keyword was changed from `seed` to `rng`.
             For an interim period, both keywords will continue to work, although only one
-            may be specified at a time. After the interim period, function calls using the
-            `seed` keyword will emit warnings. The behavior of both `seed` and
-            `rng` are outlined above, but only the `rng` keyword should be used in new code.
+            may be specified at a time. After the interim period, function calls using
+            the `seed` keyword will emit warnings. The behavior of both `seed` and
+            `rng` are outlined above, but only the `rng` keyword should be used in new
+            code.
 
         The random numbers generated with this seed affect the random vector
         along which gradients are computed to check ``grad``. Note that `seed`
