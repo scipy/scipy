@@ -1057,7 +1057,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         using `func`. By default it is ``'all'``, in which case, all
         the one hot direction vectors are considered to check `grad`.
         If `func` is a vector valued function then only ``'all'`` can be used.
-    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+    rng : {None, int, `numpy.random.Generator`}, optional
         If `rng` is passed by keyword, types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
         If `rng` is already a ``Generator`` instance, then the provided instance is
