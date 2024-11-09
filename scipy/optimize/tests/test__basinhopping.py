@@ -448,7 +448,13 @@ class Test_Metropolis:
         limit = 50  # Constrain to func value >= 50
         con = {'type': 'ineq', 'fun': lambda x: func(x) - limit},
         seed = np.random.RandomState(1234)
-        res = basinhopping(func, x0, 30, seed=1234, minimizer_kwargs={'constraints': con})
+        res = basinhopping(
+            func,
+            x0,
+            30,
+            seed=1234,
+            minimizer_kwargs={'constraints': con}
+        )
         assert res.success
         assert_allclose(res.fun, limit, rtol=1e-6)
 
