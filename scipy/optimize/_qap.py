@@ -3,10 +3,11 @@ import operator
 from . import (linear_sum_assignment, OptimizeResult)
 from ._optimize import _check_unknown_options
 
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _transition_to_rng
 import itertools
 
 QUADRATIC_ASSIGNMENT_METHODS = ['faq', '2opt']
+
 
 def quadratic_assignment(A, B, method="faq", options=None):
     r"""
@@ -60,13 +61,18 @@ def quadratic_assignment(A, B, method="faq", options=None):
             ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
             where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance then
-            that instance is used.
+        rng : {None, int, `numpy.random.Generator`}
+            Pseudorandom number generator state. When `rng` is None, a new
+            `numpy.random.Generator` is created using entropy from the
+            operating system. Types other than `numpy.random.Generator` are
+            passed to `numpy.random.default_rng` to instantiate a ``Generator.
+
+            .. versionchanged:: 1.15.0
+                As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+                transition from use of `numpy.random.RandomState` to
+                `numpy.random.Generator` is occurring. For an interim period you can
+                continue to supply `np.random.RandomState` to this function. After this
+                period using `np.random.RandomState` will raise an exception.
 
         For method-specific options, see
         :func:`show_options('quadratic_assignment') <show_options>`.
@@ -232,6 +238,7 @@ def _common_input_validation(A, B, partial_match):
     return A, B, partial_match
 
 
+@_transition_to_rng("rng", position_num=4)
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
                               P0="barycenter", shuffle_input=False, maxiter=30,
@@ -284,13 +291,11 @@ def _quadratic_assignment_faq(A, B,
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``, where
         ``m`` is not greater than the number of nodes, :math:`n`.
 
-    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : {None, int, `numpy.random.Generator`}, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
         Initial position. Must be a doubly-stochastic matrix [3]_.
 
@@ -535,6 +540,7 @@ def _doubly_stochastic(P, tol=1e-3):
     return P_eps
 
 
+@_transition_to_rng("rng", position_num=3)
 def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
                                partial_match=None,
                                partial_guess=None,
@@ -578,13 +584,11 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     -------
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
-    rng : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : {None, int, `numpy.random.Generator`}, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.
 
