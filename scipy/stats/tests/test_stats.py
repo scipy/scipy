@@ -2256,6 +2256,7 @@ class TestRegression:
     def test_nist_norris(self):
         # If this causes a lint failure in the future, please note the history of
         # requests to allow extra whitespace in table formatting (e.g. gh-12367).
+        # Also see https://github.com/scipy/scipy/wiki/Why-do-we-not-use-an-auto%E2%80%90formatter%3F  # noqa: E501 
         x = [  0.2, 337.4, 118.2, 884.6, 10.1,  226.5,
              666.3, 996.3, 448.6, 777.0, 558.2,   0.4,
                0.6, 775.5, 666.9, 338.0, 447.5,  11.6,
