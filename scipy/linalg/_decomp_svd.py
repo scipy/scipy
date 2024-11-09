@@ -149,19 +149,13 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
             if max_mn*max_mn > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
                                   "would incur integer overflow in LAPACK. "
-                                  "A possible workaround is to 1. build NumPy "
-                                  "against ILP64 LAPACK (see https://numpy.org"
-                                  "/doc/stable/building/blas_lapack.html) "
-                                  "and then 2. use numpy.linalg.svd instead.")
+                                  "Try using numpy.linalg.svd instead.")
         else:
             sz = max(m * min_mn, n * min_mn)
             if max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix of {sz} elements would "
                                   "incur an in integer overflow in LAPACK. "
-                                  "A possible workaround is to 1. build NumPy "
-                                  "against ILP64 LAPACK (see https://numpy.org"
-                                  "/doc/stable/building/blas_lapack.html) "
-                                  "and then 2. use numpy.linalg.svd instead.")
+                                  "Try using numpy.linalg.svd instead.")
 
     # compute optimal lwork
     lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
