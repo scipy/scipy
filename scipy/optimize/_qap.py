@@ -65,7 +65,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
             Pseudorandom number generator state. When `rng` is None, a new
             `numpy.random.Generator` is created using entropy from the
             operating system. Types other than `numpy.random.Generator` are
-            passed to `numpy.random.default_rng` to instantiate a ``Generator.
+            passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
             .. versionchanged:: 1.15.0
                 As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
