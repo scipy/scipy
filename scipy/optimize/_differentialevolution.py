@@ -125,7 +125,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    rng : {None, int, `numpy.random.Generator`}, optional
+    rng : `numpy.random.Generator`, optional
         Pseudorandom number generator state. When `rng` is None, a new
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
