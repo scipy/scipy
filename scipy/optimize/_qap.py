@@ -3,7 +3,7 @@ import operator
 from . import (linear_sum_assignment, OptimizeResult)
 from ._optimize import _check_unknown_options
 
-from scipy._lib._util import check_random_state, _transition_to_rng
+from scipy._lib._util import check_random_state
 import itertools
 
 QUADRATIC_ASSIGNMENT_METHODS = ['faq', '2opt']
@@ -238,7 +238,6 @@ def _common_input_validation(A, B, partial_match):
     return A, B, partial_match
 
 
-@_transition_to_rng("rng", position_num=4)
 def _quadratic_assignment_faq(A, B,
                               maximize=False, partial_match=None, rng=None,
                               P0="barycenter", shuffle_input=False, maxiter=30,
@@ -296,6 +295,14 @@ def _quadratic_assignment_faq(A, B,
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` is occurring. For an interim period you can
+            continue to supply `np.random.RandomState` to this function. After this
+            period using `np.random.RandomState` will raise an exception.
+
     P0 : 2-D array, "barycenter", or "randomized" (default: "barycenter")
         Initial position. Must be a doubly-stochastic matrix [3]_.
 
@@ -540,7 +547,6 @@ def _doubly_stochastic(P, tol=1e-3):
     return P_eps
 
 
-@_transition_to_rng("rng", position_num=3)
 def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
                                partial_match=None,
                                partial_guess=None,
@@ -589,6 +595,14 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` is occurring. For an interim period you can
+            continue to supply `np.random.RandomState` to this function. After this
+            period using `np.random.RandomState` will raise an exception.
+
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.
 
