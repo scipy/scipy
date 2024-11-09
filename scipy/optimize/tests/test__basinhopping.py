@@ -339,10 +339,8 @@ class TestBasinHopping:
         # test 1-D minimizations with gradient and T=0
         i = 0
 
-        # SPEC-007 use seed keyword to check it still works after
-        # start of transition period.
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
-                           niter=self.niter, disp=self.disp, T=0, seed=1)
+                           niter=self.niter, disp=self.disp, T=0)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
@@ -449,7 +447,8 @@ class Test_Metropolis:
         x0 = -4
         limit = 50  # Constrain to func value >= 50
         con = {'type': 'ineq', 'fun': lambda x: func(x) - limit},
-        res = basinhopping(func, x0, 30, minimizer_kwargs={'constraints': con})
+        seed = np.random.RandomState(1234)
+        res = basinhopping(func, x0, 30, seed=1234, minimizer_kwargs={'constraints': con})
         assert res.success
         assert_allclose(res.fun, limit, rtol=1e-6)
 
