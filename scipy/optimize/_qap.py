@@ -580,18 +580,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
     maximize : bool (default: False)
         Maximizes the objective function if ``True``.
     rng : {None, int, `numpy.random.Generator`}, optional
-        Pseudorandom number generator state. When `rng` is None, a new
-        `numpy.random.Generator` is created using entropy from the
-        operating system. Types other than `numpy.random.Generator` are
-        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
-
-        .. versionchanged:: 1.15.0
-            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
-            transition from use of `numpy.random.RandomState` to
-            `numpy.random.Generator` is occurring. For an interim period you can
-            continue to supply `np.random.RandomState` to this function. After this
-            period using `np.random.RandomState` will raise an exception.
-
+        Pseudorandom number generator state. See `quadratic_assignment` for details.
     partial_match : 2-D array of integers, optional (default: None)
         Fixes part of the matching. Also known as a "seed" [2]_.
 
