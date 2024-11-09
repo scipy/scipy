@@ -55,7 +55,7 @@ class TestConstructUtils:
             )
         ):
             cls(0)
-    
+
     @pytest.mark.parametrize("cls", [
         csc_matrix, csr_matrix, coo_matrix,
         bsr_matrix, dia_matrix, lil_matrix
@@ -800,6 +800,19 @@ class TestConstructUtils:
         # for the dtype
         construct.random(10, 10, dtype='d')
         construct.random_array((10, 10), dtype='d')
+        construct.random_array((10, 10, 10), dtype='d')
+        construct.random_array((10, 10, 10, 10, 10), dtype='d')
+
+    def test_random_array_maintains_array_shape(self):
+        arr = construct.random_array((0, 4), density=0.3, dtype=int)
+        assert arr.shape == (0, 4)
+
+        arr = construct.random_array((10, 10, 10), density=0.3, dtype=int)
+        assert arr.shape == (10, 10, 10)
+
+        arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int)
+        assert arr.shape == (10, 10, 10, 10, 10)
+
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
@@ -814,6 +827,16 @@ class TestConstructUtils:
         shape = (2**33, 2**33)
         sparse_array = construct.random_array(shape, density=2.7105e-17)
         assert_equal(sparse_array.count_nonzero(),2000)
+
+        # for n-D
+        # check random_array
+        sparse_array = construct.random_array((10, 10, 10, 10), density=0.12658)
+        assert_equal(sparse_array.count_nonzero(),1266)
+        assert isinstance(sparse_array, sparray)
+        # check big size
+        shape = (2**33, 2**33, 2**33)
+        sparse_array = construct.random_array(shape, density=2.7105e-28)
+        assert_equal(sparse_array.count_nonzero(),172)
 
 
 def test_diags_array():

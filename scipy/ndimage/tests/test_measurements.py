@@ -3,13 +3,16 @@ import os.path
 
 import numpy as np
 from numpy.testing import suppress_warnings
+
 from scipy._lib._array_api import (
+    is_jax,
+    is_torch,
+    array_namespace,
     xp_assert_equal,
     xp_assert_close,
     assert_array_almost_equal,
     assert_almost_equal,
 )
-from scipy._lib._array_api import is_jax, is_torch, array_namespace
 
 import pytest
 from pytest import raises as assert_raises
@@ -26,7 +29,7 @@ pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
 IS_WINDOWS_AND_NP1 = os.name == 'nt' and np.__version__ < '2'
 
 
-@skip_xp_backends(np_only=True, reasons=['test internal numpy-only helpers'])
+@skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
 class Test_measurements_stats:
     """ndimage._measurements._stats() is a utility used by other functions.
 
@@ -279,7 +282,7 @@ def test_label11(xp):
         assert n == 4
 
 
-@skip_xp_backends(np_only=True, reasons=['inplace output is numpy-specific'])
+@skip_xp_backends(np_only=True, reason='inplace output is numpy-specific')
 def test_label11_inplace(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -338,7 +341,7 @@ def test_label13(xp):
         assert n == 1
 
 
-@skip_xp_backends(np_only=True, reasons=['output=dtype is numpy-specific'])
+@skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
 def test_label_output_typed(xp):
     data = xp.ones([5])
     for t in types:
@@ -350,7 +353,7 @@ def test_label_output_typed(xp):
         assert n == 1
 
 
-@skip_xp_backends(np_only=True, reasons=['output=dtype is numpy-specific'])
+@skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
 def test_label_output_dtype(xp):
     data = xp.ones([5])
     for t in types:
@@ -397,8 +400,8 @@ def test_label_structuring_elements(xp):
             r += 1
 
 @skip_xp_backends("cupy",
-                  reasons=["`cupyx.scipy.ndimage` does not have `find_objects`"],
-                  cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+                  reason="`cupyx.scipy.ndimage` does not have `find_objects`"
+)
 def test_ticket_742(xp):
     def SE(img, thresh=.7, size=4):
         mask = img > thresh
@@ -429,8 +432,7 @@ def test_gh_issue_3025(xp):
     assert ndimage.label(d, xp.ones((3, 3)))[1] == 1
 
 
-@skip_xp_backends("cupy", reasons=["cupyx.scipy.ndimage does not have find_object"],
-                  cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+@skip_xp_backends("cupy", reason="cupyx.scipy.ndimage does not have find_object")
 class TestFindObjects:
     def test_label_default_dtype(self, xp):
         test_array = np.random.rand(10, 10)
@@ -592,7 +594,7 @@ def test_sum03(xp):
         dtype = getattr(xp, type)
         input = xp.ones([], dtype=dtype)
         output = ndimage.sum(input)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_sum04(xp):
@@ -600,7 +602,7 @@ def test_sum04(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 2], dtype=dtype)
         output = ndimage.sum(input)
-        assert_almost_equal(output, xp.asarray(3.0))
+        assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
 def test_sum05(xp):
@@ -608,7 +610,7 @@ def test_sum05(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input)
-        assert_almost_equal(output, xp.asarray(10.0))
+        assert_almost_equal(output, xp.asarray(10.0), check_0d=False)
 
 
 def test_sum06(xp):
@@ -648,7 +650,7 @@ def test_sum09(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input, labels=labels)
-        assert_almost_equal(output, xp.asarray(4.0))
+        assert_almost_equal(output, xp.asarray(4.0), check_0d=False)
 
 
 def test_sum10(xp):
@@ -658,7 +660,7 @@ def test_sum10(xp):
     labels = xp.asarray(labels)
     input = xp.asarray(input)
     output = ndimage.sum(input, labels=labels)
-    assert_almost_equal(output, xp.asarray(2.0))
+    assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
 def test_sum11(xp):
@@ -668,7 +670,7 @@ def test_sum11(xp):
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.sum(input, labels=labels,
                              index=2)
-        assert_almost_equal(output, xp.asarray(6.0))
+        assert_almost_equal(output, xp.asarray(6.0), check_0d=False)
 
 
 def test_sum12(xp):
@@ -700,7 +702,7 @@ def test_mean01(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.mean(input, labels=labels)
-        assert_almost_equal(output, xp.asarray(2.0))
+        assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
 def test_mean02(xp):
@@ -710,7 +712,7 @@ def test_mean02(xp):
     labels = xp.asarray(labels)
     input = xp.asarray(input)
     output = ndimage.mean(input, labels=labels)
-    assert_almost_equal(output, xp.asarray(1.0))
+    assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_mean03(xp):
@@ -720,7 +722,7 @@ def test_mean03(xp):
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.mean(input, labels=labels,
                               index=2)
-        assert_almost_equal(output, xp.asarray(3.0))
+        assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
 def test_mean04(xp):
@@ -745,7 +747,7 @@ def test_minimum01(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.minimum(input, labels=labels)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_minimum02(xp):
@@ -755,7 +757,7 @@ def test_minimum02(xp):
     labels = xp.asarray(labels)
     input = xp.asarray(input)
     output = ndimage.minimum(input, labels=labels)
-    assert_almost_equal(output, xp.asarray(1.0))
+    assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_minimum03(xp):
@@ -766,7 +768,7 @@ def test_minimum03(xp):
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.minimum(input, labels=labels,
                                  index=2)
-        assert_almost_equal(output, xp.asarray(2.0))
+        assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
 def test_minimum04(xp):
@@ -786,7 +788,7 @@ def test_maximum01(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.maximum(input, labels=labels)
-        assert_almost_equal(output, xp.asarray(3.0))
+        assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
 def test_maximum02(xp):
@@ -795,7 +797,7 @@ def test_maximum02(xp):
     labels = xp.asarray(labels)
     input = xp.asarray(input)
     output = ndimage.maximum(input, labels=labels)
-    assert_almost_equal(output, xp.asarray(1.0))
+    assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_maximum03(xp):
@@ -805,7 +807,7 @@ def test_maximum03(xp):
         input = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         output = ndimage.maximum(input, labels=labels,
                                  index=2)
-        assert_almost_equal(output, xp.asarray(4.0))
+        assert_almost_equal(output, xp.asarray(4.0), check_0d=False)
 
 
 def test_maximum04(xp):
@@ -843,7 +845,7 @@ def test_median02(xp):
                     [0, 0, 0, 7],
                     [9, 3, 0, 0]])
     output = ndimage.median(a)
-    assert_almost_equal(output, xp.asarray(1.0))
+    assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_median03(xp):
@@ -856,7 +858,7 @@ def test_median03(xp):
                          [0, 0, 0, 2],
                          [3, 3, 0, 0]])
     output = ndimage.median(a, labels=labels)
-    assert_almost_equal(output, xp.asarray(3.0))
+    assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
 def test_median_gh12836_bool(xp):
@@ -890,7 +892,7 @@ def test_variance02(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1], dtype=dtype)
         output = ndimage.variance(input)
-        assert_almost_equal(output, xp.asarray(0.0))
+        assert_almost_equal(output, xp.asarray(0.0), check_0d=False)
 
 
 def test_variance03(xp):
@@ -898,14 +900,14 @@ def test_variance03(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 3], dtype=dtype)
         output = ndimage.variance(input)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_variance04(xp):
     input = np.asarray([1, 0], dtype=bool)
     input = xp.asarray(input)
     output = ndimage.variance(input)
-    assert_almost_equal(output, xp.asarray(0.25))
+    assert_almost_equal(output, xp.asarray(0.25), check_0d=False)
 
 
 def test_variance05(xp):
@@ -915,7 +917,7 @@ def test_variance05(xp):
 
         input = xp.asarray([1, 3, 8], dtype=dtype)
         output = ndimage.variance(input, labels, 2)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_variance06(xp):
@@ -944,7 +946,7 @@ def test_standard_deviation02(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1], dtype=dtype)
         output = ndimage.standard_deviation(input)
-        assert_almost_equal(output, xp.asarray(0.0))
+        assert_almost_equal(output, xp.asarray(0.0), check_0d=False)
 
 
 def test_standard_deviation03(xp):
@@ -952,14 +954,14 @@ def test_standard_deviation03(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 3], dtype=dtype)
         output = ndimage.standard_deviation(input)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_standard_deviation04(xp):
     input = np.asarray([1, 0], dtype=bool)
     input = xp.asarray(input)
     output = ndimage.standard_deviation(input)
-    assert_almost_equal(output, xp.asarray(0.5))
+    assert_almost_equal(output, xp.asarray(0.5), check_0d=False)
 
 
 def test_standard_deviation05(xp):
@@ -968,7 +970,7 @@ def test_standard_deviation05(xp):
         dtype = getattr(xp, type)
         input = xp.asarray([1, 3, 8], dtype=dtype)
         output = ndimage.standard_deviation(input, labels, 2)
-        assert_almost_equal(output, xp.asarray(1.0))
+        assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
 def test_standard_deviation06(xp):
@@ -1331,7 +1333,7 @@ def test_histogram02(xp):
     assert_array_almost_equal(output, expected)
 
 
-@skip_xp_backends(np_only=True, reasons=['object arrays'])
+@skip_xp_backends(np_only=True, reason='object arrays')
 def test_histogram03(xp):
     labels = xp.asarray([1, 0, 1, 1, 2, 2, 2, 2])
     expected1 = xp.asarray([0, 1, 0, 1, 1])
@@ -1367,8 +1369,7 @@ def test_stat_funcs_2d(xp):
     xp_assert_equal(max, xp.asarray([9, 5]), check_dtype=False)
 
 
-@skip_xp_backends("cupy", reasons=["no watershed_ift on CuPy"],
-                  cpu_only=True, exceptions=['cupy', 'jax.numpy'],)
+@skip_xp_backends("cupy", reason="no watershed_ift on CuPy")
 class TestWatershedIft:
 
     def test_watershed_ift01(self, xp):
@@ -1539,7 +1540,7 @@ class TestWatershedIft:
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, xp.asarray(expected))
 
-    @skip_xp_backends(np_only=True, reasons=["inplace ops are numpy-specific"])
+    @skip_xp_backends(np_only=True, reason="inplace ops are numpy-specific")
     def test_watershed_ift07(self, xp):
         shape = (7, 6)
         data = np.zeros(shape, dtype=np.uint8)
@@ -1572,10 +1573,7 @@ class TestWatershedIft:
                     [-1, -1, -1, -1, -1, -1, -1]]
         assert_array_almost_equal(out, xp.asarray(expected))
 
-    @skip_xp_backends(
-        "cupy", "pytorch", reasons=["no watershed_ift on CuPy", "torch.uint16"],
-        cpu_only=True, exceptions=['cupy', 'jax.numpy'],
-    )
+    @skip_xp_backends("cupy", reason="no watershed_ift on CuPy")
     def test_watershed_ift08(self, xp):
         # Test cost larger than uint8. See gh-10069.
         data = xp.asarray([[256, 0],
@@ -1587,10 +1585,7 @@ class TestWatershedIft:
                     [1, 1]]
         assert_array_almost_equal(out, xp.asarray(expected))
 
-    @skip_xp_backends(
-        "cupy", "pytorch", reasons=["no watershed_ift on CuPy", "torch.uint16"],
-        cpu_only=True, exceptions=['cupy', 'jax.numpy'],
-    )
+    @skip_xp_backends("cupy", reason="no watershed_ift on CuPy"	)
     def test_watershed_ift09(self, xp):
         # Test large cost. See gh-19575
         data = xp.asarray([[xp.iinfo(xp.uint16).max, 0],

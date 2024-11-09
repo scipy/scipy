@@ -51,23 +51,24 @@ def _solve_check(n, info, lamch=None, rcond=None):
 
 def _find_matrix_structure(a):
     n = a.shape[0]
-    below, above = bandwidth(a)
+    n_below, n_above = bandwidth(a)
 
-    if below == above == 0:
-        return 'diagonal'
-    elif above == 0:
-        return 'lower triangular'
-    elif below == 0:
-        return 'upper triangular'
-    elif above <= 1 and below <= 1 and n > 3:
-        return 'tridiagonal'
-
-    if np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
-        return 'hermitian'
+    if n_below == n_above == 0:
+        kind = 'diagonal'
+    elif n_above == 0:
+        kind = 'lower triangular'
+    elif n_below == 0:
+        kind = 'upper triangular'
+    elif n_above <= 1 and n_below <= 1 and n > 3:
+        kind = 'tridiagonal'
+    elif np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
+        kind = 'hermitian'
     elif issymmetric(a):
-        return 'symmetric'
+        kind = 'symmetric'
+    else:
+        kind = 'general'
 
-    return 'general'
+    return kind, n_below, n_above
 
 
 def solve(a, b, lower=False, overwrite_a=False,
@@ -84,6 +85,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     ===================  ================================
      diagonal             'diagonal'
      tridiagonal          'tridiagonal'
+     banded               'banded'
      upper triangular     'upper triangular'
      lower triangular     'lower triangular'
      symmetric            'symmetric' (or 'sym')
@@ -170,8 +172,9 @@ def solve(a, b, lower=False, overwrite_a=False,
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
 
-    a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
-    b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    # check finite after determining structure
+    a1 = atleast_2d(_asarray_validated(a, check_finite=False))
+    b1 = atleast_1d(_asarray_validated(b, check_finite=False))
     a1, b1 = _ensure_dtype_cdsz(a1, b1)
     n = a1.shape[0]
 
@@ -200,7 +203,7 @@ def solve(a, b, lower=False, overwrite_a=False,
             b1 = b1[:, None]
         b_is_1D = True
 
-    if assume_a not in {None, 'diagonal', 'tridiagonal', 'lower triangular',
+    if assume_a not in {None, 'diagonal', 'tridiagonal', 'banded', 'lower triangular',
                         'upper triangular', 'symmetric', 'hermitian',
                         'positive definite', 'general', 'sym', 'her', 'pos', 'gen'}:
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
@@ -210,8 +213,9 @@ def solve(a, b, lower=False, overwrite_a=False,
     if assume_a in {'hermitian', 'her'} and not np.iscomplexobj(a1):
         assume_a = 'symmetric'
 
+    n_below, n_above = None, None
     if assume_a is None:
-        assume_a = _find_matrix_structure(a1)
+        assume_a, n_below, n_above = _find_matrix_structure(a1)
 
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
@@ -225,11 +229,13 @@ def solve(a, b, lower=False, overwrite_a=False,
     #   lansy, lanpo, lanhe.
     # However, in any case they only reduce computations slightly...
     if assume_a == 'diagonal':
-        lange = _lange_diagonal
+        _matrix_norm = _matrix_norm_diagonal
     elif assume_a == 'tridiagonal':
-        lange = _lange_tridiagonal
+        _matrix_norm = _matrix_norm_tridiagonal
+    elif assume_a in {'lower triangular', 'upper triangular'}:
+        _matrix_norm = _matrix_norm_triangular(assume_a)
     else:
-        lange = get_lapack_funcs('lange', (a1,))
+        _matrix_norm = _matrix_norm_general
 
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
@@ -246,7 +252,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         trans = 0
         norm = '1'
 
-    anorm = lange(norm, a1)
+    anorm = _matrix_norm(norm, a1, check_finite)
 
     info, rcond = 0, np.inf
 
@@ -292,13 +298,34 @@ def solve(a, b, lower=False, overwrite_a=False,
     elif assume_a == 'tridiagonal':
         a1 = a1.T if transposed else a1
         dl, d, du = np.diag(a1, -1), np.diag(a1, 0), np.diag(a1, 1)
-        _gtsv = get_lapack_funcs('gtsv', (a1, b1))
-        x, info = _gtsv(dl, d, du, b1, False, False, False, overwrite_b)[3:]
+        _gttrf, _gttrs, _gtcon = get_lapack_funcs(('gttrf', 'gttrs', 'gtcon'), (a1, b1))
+        dl, d, du, du2, ipiv, info = _gttrf(dl, d, du)
+        _solve_check(n, info)
+        x, info = _gttrs(dl, d, du, du2, ipiv, b1, overwrite_b=overwrite_b)
+        _solve_check(n, info)
+        rcond, info = _gtcon(dl, d, du, du2, ipiv, anorm)
+    # Banded case
+    elif assume_a == 'banded':
+        a1, n_below, n_above = ((a1.T, n_above, n_below) if transposed
+                                else (a1, n_below, n_above))
+        n_below, n_above = bandwidth(a1) if n_below is None else (n_below, n_above)
+        ab = _to_banded(n_below, n_above, a1)
+        gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
+        # Next two lines copied from `solve_banded`
+        a2 = np.zeros((2*n_below + n_above + 1, ab.shape[1]), dtype=gbsv.dtype)
+        a2[n_below:, :] = ab
+        _, _, x, info = gbsv(n_below, n_above, a2, b1,
+                             overwrite_ab=True, overwrite_b=overwrite_b)
+        _solve_check(n, info)
+        # TODO: wrap gbcon and use to get rcond
     # Triangular case
     elif assume_a in {'lower triangular', 'upper triangular'}:
         lower = assume_a == 'lower triangular'
-        x = _solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
-                              trans=transposed)
+        x, info = _solve_triangular(a1, b1, lower=lower, overwrite_b=overwrite_b,
+                                    trans=transposed)
+        _solve_check(n, info)
+        _trcon = get_lapack_funcs(('trcon'), (a1, b1))
+        rcond, info = _trcon(a1, uplo='L' if lower else 'U')
     # Positive definite case 'posv'
     else:
         pocon, posv = get_lapack_funcs(('pocon', 'posv'),
@@ -317,21 +344,52 @@ def solve(a, b, lower=False, overwrite_a=False,
     return x
 
 
-def _lange_diagonal(_, a):
+def _matrix_norm_diagonal(_, a, check_finite):
     # Equivalent of dlange for diagonal matrix, assuming
     # norm is either 'I' or '1' (really just not the Frobenius norm)
-    return np.abs(np.diag(a)).max()
+    d = np.diag(a)
+    d = np.asarray_chkfinite(d) if check_finite else d
+    return np.abs(d).max()
 
 
-def _lange_tridiagonal(norm, a):
+def _matrix_norm_tridiagonal(norm, a, check_finite):
     # Equivalent of dlange for tridiagonal matrix, assuming
     # norm is either 'I' or '1'
     if norm == 'I':
         a = a.T
-    d = np.abs(np.diag(a))
-    d[1:] += np.abs(np.diag(a, 1))
-    d[:-1] += np.abs(np.diag(a, -1))
+    # Context to avoid warning before error in cases like -inf + inf
+    with np.errstate(invalid='ignore'):
+        d = np.abs(np.diag(a))
+        d[1:] += np.abs(np.diag(a, 1))
+        d[:-1] += np.abs(np.diag(a, -1))
+    d = np.asarray_chkfinite(d) if check_finite else d
     return d.max()
+
+
+def _matrix_norm_triangular(structure):
+    def fun(norm, a, check_finite):
+        a = np.asarray_chkfinite(a) if check_finite else a
+        lantr = get_lapack_funcs('lantr', (a,))
+        return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
+    return fun
+
+
+def _matrix_norm_general(norm, a, check_finite):
+    a = np.asarray_chkfinite(a) if check_finite else a
+    lange = get_lapack_funcs('lange', (a,))
+    return lange(norm, a)
+
+
+def _to_banded(n_below, n_above, a):
+    n = a.shape[0]
+    rows = n_above + n_below + 1
+    ab = np.zeros((rows, n), dtype=a.dtype)
+    ab[n_above] = np.diag(a)
+    for i in range(1, n_above + 1):
+        ab[n_above - i, i:] = np.diag(a, i)
+    for i in range(1, n_below + 1):
+        ab[n_above + i, :-i] = np.diag(a, -i)
+    return ab
 
 
 def _ensure_dtype_cdsz(*arrays):
@@ -436,7 +494,8 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
-    return _solve_triangular(a1, b1, trans, lower, unit_diagonal, overwrite_b)
+    x, _ = _solve_triangular(a1, b1, trans, lower, unit_diagonal, overwrite_b)
+    return x
 
 
 # solve_triangular without the input validation
@@ -454,7 +513,7 @@ def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
                         trans=not trans, unitdiag=unit_diagonal)
 
     if info == 0:
-        return x
+        return x, info
     if info > 0:
         raise LinAlgError("singular matrix: resolution failed at diagonal %d" %
                           (info-1))
@@ -1137,9 +1196,9 @@ def det(a, overwrite_a=False, check_finite=True):
     input with LAPACK routine 'getrf', and then calculating the product of
     diagonal entries of the U factor.
 
-    Even the input array is single precision (float32 or complex64), the result
-    will be returned in double precision (float64 or complex128) to prevent
-    overflows.
+    Even if the input array is single precision (float32 or complex64), the
+    result will be returned in double precision (float64 or complex128) to
+    prevent overflows.
 
     Examples
     --------
@@ -1195,17 +1254,13 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Scalar case
     if a1.shape[-2:] == (1, 1):
-        # Either ndarray with spurious singletons or a single element
-        if max(*a1.shape) > 1:
-            temp = np.squeeze(a1)
-            if a1.dtype.char in 'dD':
-                return temp
-            else:
-                return (temp.astype('d') if a1.dtype.char == 'f' else
-                        temp.astype('D'))
-        else:
-            return (np.float64(a1.item()) if a1.dtype.char in 'fd' else
-                    np.complex128(a1.item()))
+        a1 = a1[..., 0, 0]
+        if a1.ndim == 0:
+            a1 = a1[()]
+        # Convert float32 to float64, and complex64 to complex128.
+        if a1.dtype.char in 'dD':
+            return a1
+        return a1.astype('d') if a1.dtype.char == 'f' else a1.astype('D')
 
     # Then check overwrite permission
     if not _datacopied(a1, a):  # "a"  still alive through "a1"

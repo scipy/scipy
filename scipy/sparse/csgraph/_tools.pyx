@@ -268,7 +268,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     The reason for this difference is to allow a compressed sparse graph to
     represent multiple edges between any two nodes.  As most sparse graph
     algorithms are concerned with the single lowest-cost edge between any
-    two nodes, the default scipy.sparse behavior of summming multiple weights
+    two nodes, the default scipy.sparse behavior of summing multiple weights
     does not make sense in this context.
 
     The other reason for using this routine is to allow for graphs with

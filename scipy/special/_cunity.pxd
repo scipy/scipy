@@ -21,7 +21,7 @@ cdef extern from "dd_real_wrappers.h":
     double dd_to_double(const double2* a) nogil
 
 cdef extern from "xsf_wrappers.h" nogil:
-    double cephes_cosm1_wrap(double x)
+    double xsf_cosm1(double x)
     double cephes_expm1_wrap(double x)
     double cephes_log1p_wrap(double x)
 
@@ -108,7 +108,7 @@ cdef inline double complex cexpm1(double complex z) noexcept nogil:
         x = -1.0
     else:
         ezr = cephes_expm1_wrap(zr)
-        x = ezr*cos(zi) + cephes_cosm1_wrap(zi)
+        x = ezr*cos(zi) + xsf_cosm1(zi)
     # don't compute exp(zr) too, unless necessary
     if zr > -1.0:
         y = (ezr + 1.0)*sin(zi)

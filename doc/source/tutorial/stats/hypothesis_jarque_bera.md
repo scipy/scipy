@@ -119,7 +119,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 jb_plot(ax)
 ax.hist(res.null_distribution, np.linspace(0, 10, 50),
         density=True)
-ax.legend(['aymptotic approximation (many observations)',
+ax.legend(['asymptotic approximation (many observations)',
            'Monte Carlo approximation (11 observations)'])
 plt.show()
 ```

@@ -4,7 +4,6 @@
 #define PyInt_AsLong PyLong_AsLong
 
 static PyObject *fitpack_error;
-#include "__fitpack.h"
 
 #ifdef HAVE_ILP64
 

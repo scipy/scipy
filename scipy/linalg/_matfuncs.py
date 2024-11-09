@@ -1,6 +1,7 @@
 #
 # Author: Travis Oliphant, March 2002
 #
+import warnings
 from itertools import product
 
 import numpy as np
@@ -152,7 +153,7 @@ def logm(A, disp=True):
     A : (N, N) array_like
         Matrix whose logarithm to evaluate
     disp : bool, optional
-        Print warning if error in the result is estimated large
+        Emit warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
 
     Returns
@@ -195,17 +196,19 @@ def logm(A, disp=True):
            [ 1.,  4.]])
 
     """
-    A = _asarray_square(A)
+    A = np.asarray(A)  # squareness checked in `_logm`
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
     F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     F = _maybe_real(A, F)
     errtol = 1000*eps
     # TODO use a better error approximation
-    errest = norm(expm(F)-A, 1) / norm(A, 1)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        errest = norm(expm(F)-A, 1) / np.asarray(norm(A, 1), dtype=A.dtype).real[()]
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print("logm result may be inaccurate, approximate err =", errest)
+            message = f"logm result may be inaccurate, approximate err = {errest}"
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
         return F
     else:
         return F, errest
@@ -321,13 +324,26 @@ def expm(A):
 
         # Generic/triangular case; copy the slice into scratch and send.
         # Am will be mutated by pick_pade_structure
+        # If s != 0, scaled Am will be returned from pick_pade_structure.
         Am[0, :, :] = aw
         m, s = pick_pade_structure(Am)
-
-        if s != 0:  # scaling needed
-            Am[:4] *= [[[2**(-s)]], [[4**(-s)]], [[16**(-s)]], [[64**(-s)]]]
-
-        pade_UV_calc(Am, n, m)
+        if (m < 0):
+            raise MemoryError("scipy.linalg.expm could not allocate sufficient"
+                              " memory while trying to compute the Pade "
+                              f"structure (error code {m}).")
+        info = pade_UV_calc(Am, m)
+        if info != 0:
+            if info <= -11:
+                # We raise it from failed mallocs; negative LAPACK codes > -7
+                raise MemoryError("scipy.linalg.expm could not allocate "
+                              "sufficient memory while trying to compute the "
+                              f"exponential (error code {info}).")
+            else:
+                # LAPACK wrong argument error or exact singularity.
+                # Neither should happen.
+                raise RuntimeError("scipy.linalg.expm got an internal LAPACK "
+                                   "error during the exponential computation "
+                                   f"(error code {info})")
         eAw = Am[0]
 
         if s != 0:  # squaring needed
@@ -802,10 +818,6 @@ def khatri_rao(a, b):
     -------
     c:  (n*m, k) ndarray
         Khatri-rao product of `a` and `b`.
-
-    See Also
-    --------
-    kron : Kronecker product
 
     Notes
     -----

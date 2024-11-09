@@ -9,12 +9,12 @@ import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import (
-    Callable,
     ClassVar,
     Literal,
     overload,
     TYPE_CHECKING,
 )
+from collections.abc import Callable
 
 import numpy as np
 
@@ -1117,7 +1117,7 @@ class Halton(QMCEngine):
     The Halton sequence has severe striping artifacts for even modestly
     large dimensions. These can be ameliorated by scrambling. Scrambling
     also supports replication-based error estimates and extends
-    applicabiltiy to unbounded integrands.
+    applicability to unbounded integrands.
 
     References
     ----------

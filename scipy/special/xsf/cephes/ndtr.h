@@ -259,7 +259,7 @@ namespace cephes {
         x = a * M_SQRT1_2;
         z = std::abs(x);
 
-        if (z < M_SQRT1_2) {
+        if (z < 1.0) {
             y = 0.5 + 0.5 * erf(x);
         } else {
             y = 0.5 * erfc(z);

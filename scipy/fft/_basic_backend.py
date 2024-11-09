@@ -1,5 +1,5 @@
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, xp_unsupported_param_msg, is_complex
+    array_namespace, is_numpy, xp_unsupported_param_msg, is_complex, xp_float_to_complex
 )
 from . import _pocketfft
 import numpy as np
@@ -14,6 +14,9 @@ def _validate_fft_args(workers, plan, norm):
         norm = 'backward'
     return norm
 
+
+# these functions expect complex input in the fft standard extension
+complex_funcs = {'fft', 'ifft', 'fftn', 'ifftn', 'hfft', 'irfft', 'irfftn'}
 
 # pocketfft is used whenever SCIPY_ARRAY_API is not set,
 # or x is a NumPy array or array-like.
@@ -32,6 +35,13 @@ def _execute_1D(func_str, pocketfft_func, x, n, axis, norm, overwrite_x, workers
     norm = _validate_fft_args(workers, plan, norm)
     if hasattr(xp, 'fft'):
         xp_func = getattr(xp.fft, func_str)
+        if func_str in complex_funcs:
+            try:
+                res = xp_func(x, n=n, axis=axis, norm=norm)
+            except: # backends may require complex input  # noqa: E722
+                x = xp_float_to_complex(x, xp)
+                res = xp_func(x, n=n, axis=axis, norm=norm)
+            return res
         return xp_func(x, n=n, axis=axis, norm=norm)
 
     x = np.asarray(x)
@@ -50,6 +60,13 @@ def _execute_nD(func_str, pocketfft_func, x, s, axes, norm, overwrite_x, workers
     norm = _validate_fft_args(workers, plan, norm)
     if hasattr(xp, 'fft'):
         xp_func = getattr(xp.fft, func_str)
+        if func_str in complex_funcs:
+            try:
+                res = xp_func(x, s=s, axes=axes, norm=norm)
+            except: # backends may require complex input  # noqa: E722
+                x = xp_float_to_complex(x, xp)
+                res = xp_func(x, s=s, axes=axes, norm=norm)
+            return res
         return xp_func(x, s=s, axes=axes, norm=norm)
 
     x = np.asarray(x)

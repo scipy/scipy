@@ -405,6 +405,8 @@ def correlation_lags(in1_len, in2_len, mode='full'):
             lags = np.arange(lag_bound + 1)
         else:
             lags = np.arange(lag_bound, 1)
+    else:
+        raise ValueError(f"Mode {mode} is invalid")
     return lags
 
 
@@ -696,7 +698,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
 
 
 def _calc_oa_lens(s1, s2):
-    """Calculate the optimal FFT lengths for overlapp-add convolution.
+    """Calculate the optimal FFT lengths for overlap-add convolution.
 
     The calculation is done for a single dimension.
 
@@ -3405,7 +3407,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
-    if isinstance(window, (list, np.ndarray)):
+    if isinstance(window, (list | np.ndarray)):
         window = np.array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
@@ -3416,8 +3418,12 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
-        h = firwin(2 * half_len + 1, f_c,
-                   window=window).astype(x.dtype)  # match dtype of x
+        if np.issubdtype(x.dtype, np.floating):
+            h = firwin(2 * half_len + 1, f_c,
+                       window=window).astype(x.dtype)  # match dtype of x
+        else:
+            h = firwin(2 * half_len + 1, f_c,
+                       window=window)
     h *= up
 
     # Zero-pad our filter to put the output samples at the center
@@ -3575,7 +3581,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     Notes
     -----
-    Detrending can be interpreted as subtracting a least squares fit polyonimial:
+    Detrending can be interpreted as subtracting a least squares fit polynomial:
     Setting the parameter `type` to 'constant' corresponds to fitting a zeroth degree
     polynomial, 'linear' to a first degree polynomial. Consult the example below.
 
@@ -4344,7 +4350,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See Also
     --------
-    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, sosfreqz
+    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, freqz_sos
 
     Notes
     -----
@@ -4374,6 +4380,11 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    _reject_objects(sos, 'sosfilt')
+    _reject_objects(x, 'sosfilt')
+    if zi is not None:
+        _reject_objects(zi, 'sosfilt')
+
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
     x_zi_shape = list(x.shape)
@@ -4461,7 +4472,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    filtfilt, sosfilt, sosfilt_zi, sosfreqz
+    filtfilt, sosfilt, sosfilt_zi, freqz_sos
 
     Notes
     -----

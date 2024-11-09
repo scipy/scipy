@@ -4,7 +4,7 @@ import itertools
 from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
                          bernoulli, boltzmann, skellam, zipf, zipfian, binom,
                          nbinom, nchypergeom_fisher, nchypergeom_wallenius,
-                         randint)
+                         randint, poisson_binom)
 
 import numpy as np
 from numpy.testing import (
@@ -646,6 +646,31 @@ class TestZipf:
         pmf = dist.pmf(k)
         pmf_k_int32 = dist.pmf(k_int32)
         assert_equal(pmf, pmf_k_int32)
+
+
+class TestPoissonBinomial:
+    def test_pmf(self):
+        # Test pmf against R `poisbinom` to confirm that this is indeed the Poisson
+        # binomial distribution. Consistency of other methods and all other behavior
+        # should be covered by generic tests. (If not, please add a generic test.)
+        # Like many other distributions, no special attempt is made to be more
+        # accurate than the usual formulas provide, so we use default tolerances.
+        #
+        # library(poisbinom)
+        # options(digits=16)
+        # k = c(0, 1, 2, 3, 4)
+        # p = c(0.9480654803913988, 0.052428488100509374,
+        #       0.25863527358887417, 0.057764076043633206)
+        # dpoisbinom(k, p)
+        rng = np.random.default_rng(259823598254)
+        n = rng.integers(10)  # 4
+        k = np.arange(n + 1)
+        p = rng.random(n)  #  [0.9480654803913988, 0.052428488100509374,
+                           #   0.25863527358887417, 0.057764076043633206]
+        res = poisson_binom.pmf(k, p)
+        ref = [0.0343763443678060318, 0.6435428452689714307, 0.2936345519235536994,
+               0.0277036647503902354, 0.0007425936892786034]
+        assert_allclose(res, ref)
 
 
 class TestRandInt:

@@ -5,8 +5,7 @@ from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
-                                   xp_real, is_numpy, is_cupy, is_torch,
-                                   xp_take_along_axis)
+                                   xp_real, xp_take_along_axis)
 
 
 __all__ = ['nsum']
@@ -412,7 +411,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         fjwj, Sn = _euler_maclaurin_sum(fj, work, xp)
         if work.Sk.shape[-1]:
             Snm1 = work.Sk[:, -1]
-            Sn = (_logsumexp(xp.stack([Snm1 - math.log(2), Sn]), axis=0, xp=xp) if log
+            Sn = (special.logsumexp(xp.stack([Snm1 - math.log(2), Sn]), axis=0) if log
                   else Snm1 / 2 + Sn)
 
         work.fjwj = fjwj
@@ -425,9 +424,11 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         # Terminate before first iteration if integration limits are equal
         if work.nit == 0:
             i = xp_ravel(work.a == work.b)  # ravel singleton dimension
-            zero = -xp.inf if log else 0
-            work.Sn[i] = zero
-            work.aerr[i] = zero
+            zero = xp.asarray(-xp.inf if log else 0.)
+            zero = xp.full(work.Sn.shape, zero, dtype=Sn.dtype)
+            zero[xp.isnan(Sn)] = xp.nan
+            work.Sn[i] = zero[i]
+            work.aerr[i] = zero[i]
             work.status[i] = eim._ECONVERGED
             stop[i] = True
         else:
@@ -691,7 +692,7 @@ def _euler_maclaurin_sum(fj, work, xp):
     fjwj = fj + xp.log(work.wj) if work.log else fj * work.wj
 
     # update integral estimate
-    Sn = (_logsumexp(fjwj + xp.log(work.h), axis=-1, xp=xp) if work.log
+    Sn = (special.logsumexp(fjwj + xp.log(work.h), axis=-1) if work.log
           else xp.sum(fjwj, axis=-1) * work.h)
 
     work.xr0, work.fr0, work.wr0 = xr0, fr0, wr0
@@ -726,7 +727,7 @@ def _estimate_error(work, xp):
         fjwj_rl = xp.reshape(work.fjwj, (n_active, 2, -1))
         fjwj = xp.reshape(fjwj_rl[:, :, :n_x], (n_active, 2*n_x))
         # Compute the Euler-Maclaurin sum at this level
-        Snm1 = (_logsumexp(fjwj, xp=xp, **axis_kwargs) + xp.log(h) if work.log
+        Snm1 = (special.logsumexp(fjwj, **axis_kwargs) + xp.log(h) if work.log
                 else xp.sum(fjwj, **axis_kwargs) * h)
         work.Sk = xp.concat((Snm1, work.Sk), axis=-1)
 
@@ -745,7 +746,7 @@ def _estimate_error(work, xp):
         fjwj_rl = xp.reshape(work.fjwj, (work.Sn.shape[0], 2, -1))
         fjwj = xp.reshape(fjwj_rl[..., :n_x], (n_active, 2*n_x))
         # Compute the Euler-Maclaurin sum at this level
-        Snm2 = (_logsumexp(fjwj, xp=xp, **axis_kwargs) + xp.log(h) if work.log
+        Snm2 = (special.logsumexp(fjwj, **axis_kwargs) + xp.log(h) if work.log
                 else xp.sum(fjwj, **axis_kwargs) * h)
         work.Sk = xp.concat((Snm2, work.Sk), axis=-1)
 
@@ -760,8 +761,8 @@ def _estimate_error(work, xp):
         # complex values have imaginary part in increments of pi*j, which just
         # carries sign information of the original integral, so use of
         # `xp.real` here is equivalent to absolute value in real scale.
-        d1 = xp_real(_logsumexp(xp.stack([work.Sn, Snm1 + work.pi*1j]), axis=0, xp=xp))
-        d2 = xp_real(_logsumexp(xp.stack([work.Sn, Snm2 + work.pi*1j]), axis=0, xp=xp))
+        d1 = xp_real(special.logsumexp(xp.stack([work.Sn, Snm1 + work.pi*1j]), axis=0))
+        d2 = xp_real(special.logsumexp(xp.stack([work.Sn, Snm2 + work.pi*1j]), axis=0))
         d3 = log_e1 + xp.max(xp_real(work.fjwj), axis=-1)
         d4 = work.d4
         ds = xp.stack([d1 ** 2 / d2, 2 * d1, d3, d4])
@@ -784,11 +785,14 @@ def _estimate_error(work, xp):
 
 
 def _transform_integrals(a, b, xp):
-    # Transform integrals to a form with finite a < b
+    # Transform integrals to a form with finite a <= b
+    # For b == a (even infinite), we ensure that the limits remain equal
     # For b < a, we reverse the limits and will multiply the final result by -1
     # For infinite limit on the right, we use the substitution x = 1/t - 1 + a
     # For infinite limit on the left, we substitute x = -x and treat as above
     # For infinite limits, we substitute x = t / (1-t**2)
+    ab_same = (a == b)
+    a[ab_same], b[ab_same] = 1, 1
 
     # `a, b` may have complex dtype but have zero imaginary part
     negative = xp_real(b) < xp_real(a)
@@ -883,28 +887,6 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
 
     return (f, a, b, log, maxfun, maxlevel, minlevel,
             atol, rtol, args, preserve_shape, callback, xp)
-
-
-def _logsumexp(x, /, *, axis=0, keepdims=False, xp=None):
-    # Dispatcher for _logsumexp until scipy/scipy#21149 merges
-    # Also, logsumexp raises with empty array; don't do that.
-    xp = array_namespace(x) if xp is None else xp
-    x = xp.asarray(x)
-    shape = list(x.shape)
-    if shape[axis] == 0:
-        shape.pop(axis)
-        return xp.full(shape, fill_value=-xp.inf, dtype=x.dtype)
-
-    if is_numpy(xp):
-        return special.logsumexp(x, axis=axis, keepdims=keepdims)
-    elif is_cupy(xp):
-        from cupyx.scipy.special import logsumexp  # type: ignore[import-not-found]
-        return logsumexp(x, axis=axis, keepdims=keepdims)
-    elif is_torch(xp):
-        # Torch doesn't support complex
-        x = np.asarray(x)
-        y = special.logsumexp(x, axis=axis, keepdims=keepdims)[()]
-        return xp.asarray(y)
 
 
 def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
@@ -1251,7 +1233,7 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
     # like this. This is an optimization that can be added later.
     fs[i_nan] = zero
     nfev = max_steps - i_nan.sum(axis=-1)
-    S = _logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
+    S = special.logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
     # Rough, non-conservative error estimate. See gh-19667 for improvement ideas.
     E = np.real(S) + np.log(eps) if log else eps * abs(S)
     return S, E, nfev
@@ -1265,7 +1247,10 @@ def _integral_bound(f, a, b, step, args, constants):
     # Get a lower bound on the sum and compute effective absolute tolerance
     lb = _tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
     tol = np.broadcast_to(atol, lb.integral.shape)
-    tol = _logsumexp((tol, rtol + lb.integral)) if log else tol + rtol*lb.integral
+    if log:
+        tol = special.logsumexp((tol, rtol + lb.integral), axis=0)
+    else:
+        tol = tol + rtol*lb.integral
     i_skip = lb.status < 0  # avoid unnecessary f_evals if integral is divergent
     tol[i_skip] = np.nan
     status = lb.status
@@ -1323,9 +1308,9 @@ def _integral_bound(f, a, b, step, args, constants):
     if log:
         log_step = np.log(step)
         S_terms = (left, right.integral - log_step, fk - log2, fb - log2)
-        S = _logsumexp(S_terms, axis=0)
+        S = special.logsumexp(S_terms, axis=0)
         E_terms = (left_error, right.error - log_step, fk-log2, fb-log2+np.pi*1j)
-        E = _logsumexp(E_terms, axis=0).real
+        E = special.logsumexp(E_terms, axis=0).real
     else:
         S = left + right.integral/step + fk/2 + fb/2
         E = left_error + right.error/step + fk/2 - fb/2

@@ -106,7 +106,7 @@ import importlib
 import importlib.util
 import errno
 import contextlib
-from sysconfig import get_path
+import sysconfig
 import math
 import traceback
 from concurrent.futures.process import _MAX_WINDOWS_WORKERS
@@ -326,22 +326,14 @@ class Dirs:
         return dist_packages path or site_packages path.
         """
         if sys.version_info >= (3, 12):
-            plat_path = Path(get_path('platlib'))
+            plat_path = Path(sysconfig.get_path('platlib'))
         else:
-            # distutils is required to infer meson install path
-            # for python < 3.12 in debian patched python
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning)
-                from distutils import dist
-                from distutils.command.install import INSTALL_SCHEMES
-            if 'deb_system' in INSTALL_SCHEMES:
-                # debian patched python in use
-                install_cmd = dist.Distribution().get_command_obj('install')
-                install_cmd.select_scheme('deb_system')
-                install_cmd.finalize_options()
-                plat_path = Path(install_cmd.install_platlib)
+            # infer meson install path for python < 3.12 in
+            # debian patched python
+            if 'deb_system' in sysconfig.get_scheme_names():
+                plat_path = Path(sysconfig.get_path('platlib', 'deb_system'))
             else:
-                plat_path = Path(get_path('platlib'))
+                plat_path = Path(sysconfig.get_path('platlib'))
         return self.installed / plat_path.relative_to(sys.exec_prefix)
 
 
@@ -681,7 +673,7 @@ class Test(Task):
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
     $ python dev.py test -s cluster -m full --durations 20
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
-    $ python dev.py test -b numpy -b pytorch -s cluster
+    $ python dev.py test -b numpy -b torch -s cluster
     ```
     """
     ctx = CONTEXT
@@ -718,7 +710,7 @@ class Test(Task):
         multiple=True,
         help=(
             "Array API backend "
-            "('all', 'numpy', 'pytorch', 'cupy', 'array_api_strict', 'jax.numpy')."
+            "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', 'jax.numpy')."
         )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`

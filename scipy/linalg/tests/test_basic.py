@@ -1,5 +1,4 @@
 import itertools
-import warnings
 
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
@@ -533,6 +532,7 @@ class TestSolveHBanded:
         assert x.shape == (0, 0)
         assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
+
 class TestSolve:
     def setup_method(self):
         np.random.seed(1234)
@@ -772,15 +772,19 @@ class TestSolve:
         b = np.arange(9)[:, None]
         assert_raises(LinAlgError, solve, a, b)
 
-    def test_ill_condition_warning(self):
-        a = np.array([[1, 1, 1],
-                      [1+1e-16, 1-1e-16, 1],
-                      [1-1e-16, 1+1e-16, 1],
-                      ])
-        b = np.ones(3)
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            assert_raises(LinAlgWarning, solve, a, b)
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', None))
+    def test_ill_condition_warning(self, structure):
+        rng = np.random.default_rng(234859349452)
+        n = 10
+        d = np.logspace(0, 50, n)
+        A = np.diag(d)
+        b = rng.random(size=n)
+        message = "Ill-conditioned matrix..."
+        with pytest.warns(LinAlgWarning, match=message):
+            solve(A, b, assume_a=structure)
 
     def test_multiple_rhs(self):
         a = np.eye(2)
@@ -878,10 +882,11 @@ class TestSolve:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
-    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'lower triangular',
-                                          'upper triangular', 'symmetric', 'hermitian',
-                                          'positive definite', 'general',
-                                          'sym', 'her', 'pos', 'gen'])
+    # "pos" and "positive definite" need to be added
+    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
+                                          'lower triangular', 'upper triangular',
+                                          'symmetric', 'hermitian',
+                                          'general', 'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
     @pytest.mark.parametrize('transposed', [True, False])
     @pytest.mark.parametrize('overwrite', [True, False])
@@ -889,7 +894,7 @@ class TestSolve:
     def test_structure_detection(self, dtype, assume_a, nrhs, transposed,
                                  overwrite, fortran):
         rng = np.random.default_rng(982345982439826)
-        n = 5
+        n = 5 if not assume_a == 'banded' else 20
         b = rng.random(size=(n,) + nrhs)
         A = rng.random(size=(n, n))
 
@@ -907,6 +912,8 @@ class TestSolve:
             A = (np.diag(np.diag(A))
                  + np.diag(np.diag(A, -1), -1)
                  + np.diag(np.diag(A, 1), 1))
+        elif assume_a == 'banded':
+            A = np.triu(np.tril(A, 2), -1)
         elif assume_a in {'symmetric', 'sym'}:
             A = A + A.T
         elif assume_a in {'hermitian', 'her'}:
@@ -929,19 +936,21 @@ class TestSolve:
             return
 
         res = solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
-                    transposed=transposed)
+                    transposed=transposed, assume_a=assume_a)
 
+        # Check that solution this solution is *correct*
+        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
+        assert_allclose(res, ref)
+
+        # Check that `solve` correctly identifies the structure and returns
+        # *exactly* the same solution whether `assume_a` is specified or not
+        if assume_a != 'banded':  # structure detection removed for banded
+            assert_equal(solve(A_copy, b_copy, transposed=transposed), res)
+
+        # Check that overwrite was respected
         if not overwrite:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
-
-        assume_a = 'sym' if assume_a in {'positive definite', 'pos'} else assume_a
-
-        ref = solve(A_copy, b_copy, assume_a=assume_a, transposed=transposed)
-        assert_equal(res, ref)
-
-        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
-        assert_allclose(res, ref)
 
 
 class TestSolveTriangular:
@@ -1089,13 +1098,13 @@ class TestDet:
         a = np.array([[[[1]]]], dtype='f')
         deta = det(a)
         assert deta.dtype.char == 'd'
-        assert np.isscalar(deta)
-        assert deta == 1.
+        assert deta.shape == (1, 1)
+        assert_equal(deta, [[1.0]])
         a = np.array([[[1 + 3.j]]], dtype=np.complex64)
         deta = det(a)
         assert deta.dtype.char == 'D'
-        assert np.isscalar(deta)
-        assert deta == 1.+3.j
+        assert deta.shape == (1,)
+        assert_equal(deta, [1.+3.j])
 
     def test_1by1_stacked_input_output(self):
         a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
@@ -1163,7 +1172,7 @@ class TestDet:
     def test_sample_compatible_dtype_input(self, typ):
         n = 4
         a = self.rng.random([n, n]).astype(typ)  # value is not important
-        assert isinstance(det(a), (np.float64, np.complex128))
+        assert isinstance(det(a), (np.float64 | np.complex128))
 
     def test_incompatible_dtype_input(self):
         # Double backslashes needed for escaping pytest regex.
@@ -1536,6 +1545,7 @@ class TestLstsq:
         dt_nonempty = lstsq(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b))[0].dtype
         assert x.dtype == dt_nonempty
 
+
 class TestPinv:
     def setup_method(self):
         np.random.seed(1234)
@@ -1661,7 +1671,7 @@ class TestPinvSymmetric:
     def test_zero_eigenvalue(self):
         # https://github.com/scipy/scipy/issues/12515
         # the SYEVR eigh driver may give the zero eigenvalue > eps
-        a = np.array([[1,-1, 0], [-1, 2, -1], [0, -1, 1]])
+        a = np.array([[1, -1, 0], [-1, 2, -1], [0, -1, 1]])
         p = pinvh(a)
         assert_allclose(p @ a @ p, p, atol=1e-15)
         assert_allclose(a @ p @ a, a, atol=1e-15)
@@ -2034,7 +2044,6 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert t.dtype == t_n.dtype
 
-
         b, (scale, perm) = matrix_balance(a, separate=True)
         assert b.size == 0
         assert scale.size == 0
@@ -2044,4 +2053,3 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
-

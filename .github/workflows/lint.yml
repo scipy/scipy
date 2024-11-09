@@ -27,13 +27,13 @@ jobs:
         python-version: ['3.11']
 
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       with:
         fetch-depth: 0  # previous commits used in tools/lint.py
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
       with:
         python-version: ${{ matrix.python-version }}
 
