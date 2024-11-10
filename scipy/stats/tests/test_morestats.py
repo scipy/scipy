@@ -1692,14 +1692,15 @@ class TestWilcoxon:
 
         # n <= 50: if there are zeros in d = x-y, use PermutationMethod
         pm = stats.PermutationMethod()
-        d = np.arange(0, 13)
+        d = np.arange(0, 5)
         w, p = stats.wilcoxon(d)
         # rerunning the test gives the same results since n_resamples
         # is large enough to get deterministic results if n <= 13
-        # so we do not need to use a seed
+        # so we do not need to use a seed. to avoid longer runtimes of the
+        # test, use n=5 only. For n=13, see test_auto_permutation_edge_case
         assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
-        # for larger vectors with ties/zeros, use asymptotic test
+        # for larger vectors (n > 13) with ties/zeros, use asymptotic test
         d = np.arange(0, 14)
         w, p = stats.wilcoxon(d)
         assert_equal((w, p), stats.wilcoxon(d, method="asymptotic"))
@@ -1708,6 +1709,14 @@ class TestWilcoxon:
         d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="asymptotic"))
 
+    @pytest.mark.xslow
+    def test_auto_permutation_edge_case(self):
+        # n <= 50: if there are zeros in d = x-y, use PermutationMethod
+        # this is a slower test to show that results are deterministic if n=13
+        pm = stats.PermutationMethod()
+        d = np.arange(0, 13)
+        w, p = stats.wilcoxon(d)
+        assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
     @pytest.mark.parametrize('size', [3, 5, 10])
     def test_permutation_method(self, size):

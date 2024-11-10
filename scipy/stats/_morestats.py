@@ -3666,7 +3666,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     >>> d = [-0.025, 0.05, 0.05, -0.05]
     >>> ref = wilcoxon(d, alternative='greater')
     >>> ref
-    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+    WilcoxonResult(statistic=6.0, pvalue=0.5)
 
     The substantial difference is due to roundoff error in the results of
     ``x-y``:
@@ -3683,7 +3683,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     >>> d2 = np.around(x - y, decimals=3)
     >>> wilcoxon(d2, alternative='greater')
-    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+    WilcoxonResult(statistic=6.0, pvalue=0.5)
 
     """
     # replace approx by asymptotic to ensure backwards compatability
