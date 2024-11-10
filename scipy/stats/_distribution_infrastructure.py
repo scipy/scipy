@@ -1,17 +1,20 @@
 import functools
 from abc import ABC, abstractmethod
 from functools import cached_property
+import math
+from copy import deepcopy
 
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _lazywhere
+from scipy._lib._util import _lazywhere, _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special
 from scipy.integrate._tanhsinh import _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
 from scipy.stats._probability_distribution import _ProbabilityDistribution
+from scipy.stats import qmc
 
 # in case we need to distinguish between None and not specified
 # Typically this is used to determine whether the tolerance has been set by the
@@ -2672,7 +2675,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # Common keyword options include:
     # method - a string that indicates which method should be used to compute
     #          the quantity (e.g. a formula or numerical integration).
-    # rng - the NumPy Generator object to used for drawing random numbers.
+    # rng - the NumPy Generator/SciPy QMCEnging object to used for drawing numbers.
     #
     # Input/output validation is included in each function, since there is
     # little code to be shared.
@@ -2689,12 +2692,15 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # See the note corresponding with the "Distribution Parameters" for more
     # information.
 
+    # TODO:
+    #  - pass qrng to _sample_formula or not?
+    #  - should we accept a QRNG with `d != 1`?
     def sample(self, shape=(), *, method=None, rng=None):
         # needs output validation to ensure that developer returns correct
         # dtype and shape
         sample_shape = (shape,) if not np.iterable(shape) else tuple(shape)
         full_shape = sample_shape + self._shape
-        rng = np.random.default_rng(rng)
+        rng = np.random.default_rng(rng) if not isinstance(rng, qmc.QMCEngine) else rng
         res = self._sample_dispatch(sample_shape, full_shape, method=method,
                                     rng=rng, **self._parameters)
 
@@ -2713,8 +2719,37 @@ class ContinuousDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _sample_inverse_transform(self, sample_shape, full_shape, *, rng, **params):
-        uniform = rng.random(size=full_shape, dtype=self._dtype)
+        if isinstance(rng, qmc.QMCEngine):
+            uniform = self._qmc_uniform(sample_shape, full_shape, qrng=rng, **params)
+        else:
+            uniform = rng.random(size=full_shape, dtype=self._dtype)
         return self._icdf_dispatch(uniform, **params)
+
+    def _qmc_uniform(self, sample_shape, full_shape, *, qrng, **params):
+        # Determine the number of independent sequences and the length of each.
+        n_low_discrepancy = sample_shape[0] if sample_shape else 1
+        n_independent = math.prod(full_shape[1:] if sample_shape else full_shape)
+
+        # For each independent sequence, we'll need a new QRNG of the appropriate class
+        # with its own RNG. (If scramble=False, we don't really need all the separate
+        # rngs, but I'm not going to add a special code path right now.)
+        rngs = _rng_spawn(qrng.rng, n_independent)
+        qrng_class = qrng.__class__
+        kwargs = dict(d=1, scramble=qrng.scramble, optimization=qrng._optimization)
+        if isinstance(qrng, qmc.Sobol):
+            kwargs['bits'] = qrng.bits
+
+        # Draw uniform low-discrepancy sequences scrambled with each RNG
+        uniforms = []
+        for rng in rngs:
+            qrng = qrng_class(seed=rng, **kwargs)
+            uniform = qrng.random(n_low_discrepancy)
+            uniform = uniform.reshape(n_low_discrepancy if sample_shape else ())[()]
+            uniforms.append(uniform)
+
+        # Reorder the axes and ensure that the shape is correct
+        uniform = np.moveaxis(np.stack(uniforms), -1, 0)
+        return uniform.reshape(full_shape)
 
     ### Moments
     # The `moment` method accepts two positional arguments - the order and kind
