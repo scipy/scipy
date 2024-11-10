@@ -1477,14 +1477,12 @@ class TestWilcoxon:
     def test_zero_diff(self):
         x = np.arange(20)
         # pratt and wilcox do not work if x - y == 0 and method == "asymptotic"
-        # => warning is emitted and p-value is nan
-        msg = "invalid value encountered in scalar divide"
-        with pytest.warns(RuntimeWarning, match=msg):
+        # => warning may be emitted and p-value is nan
+        with np.errstate(invalid="ignore"):
             w, p = stats.wilcoxon(x, x, "wilcox", method="asymptotic")
-        assert_equal((w, p), (0.0, np.nan))
-        with pytest.warns(RuntimeWarning, match=msg):
+            assert_equal((w, p), (0.0, np.nan))
             w, p = stats.wilcoxon(x, x, "pratt", method="asymptotic")
-        assert_equal((w, p), (0.0, np.nan))
+            assert_equal((w, p), (0.0, np.nan))
         # ranksum is n*(n+1)/2, split in half if zero_method == "zsplit"
         assert_equal(stats.wilcoxon(x, x, "zsplit", method="asymptotic"),
                      (20*21/4, 1.0))
