@@ -76,10 +76,11 @@ def quadratic_assignment(A, B, method="faq", options=None):
                 `np.random.RandomState` to this function will now emit a
                 `DeprecationWarning`. In SciPy 1.17 its use will raise an exception.
                 In addition relying on global state using `np.random.seed`
-                will emit a `FutureWarning`, in SciPy 1.17 the global random number
-                generator will no longer be used. Use of an int-like seed will raise a
-                `FutureWarning`, in SciPy 1.17 it will be normalized via
-                `np.random.default_rng` rather than `np.random.RandomState`.
+                will emit a `FutureWarning`. In SciPy 1.17 the global random number
+                generator will no longer be used.
+                Use of an int-like seed will raise a `FutureWarning`, in SciPy 1.17 it
+                will be normalized via `np.random.default_rng` rather than
+                `np.random.RandomState`.
 
         For method-specific options, see
         :func:`show_options('quadratic_assignment') <show_options>`.
