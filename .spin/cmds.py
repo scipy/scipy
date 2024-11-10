@@ -579,3 +579,26 @@ def docs(ctx, list_targets, clean, first_build, parallel, *args, **kwargs):
     ctx.params["sphinx_target"] = "html"
 
     ctx.forward(meson.docs)
+
+@click.command(context_settings={
+    'ignore_unknown_options': True
+})
+@click.argument("python_args", metavar='', nargs=-1)
+@click.option(
+    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
+    help='Paths to prepend to PYTHONPATH')
+@click.pass_context
+def python(ctx, python_args, *args, **kwargs):
+    """🐍 Launch Python shell with PYTHONPATH set
+
+    OPTIONS are passed through directly to Python, e.g.:
+
+    spin python -c 'import sys; print(sys.path)'
+    """
+    env = os.environ
+    env['PYTHONWARNINGS'] = env.get('PYTHONWARNINGS', 'all')
+    pythonpath = ctx.params.pop('pythonpath')
+    if pythonpath:
+        for p in reversed(pythonpath.split(os.pathsep)):
+            sys.path.insert(0, p)
+    ctx.forward(meson.python)
