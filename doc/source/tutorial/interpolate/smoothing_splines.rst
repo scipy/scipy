@@ -46,7 +46,7 @@ which minimizes
 
 where :math:`\lambda \geqslant 0` is a non-negative penalty parameter, and :math:`g^{(2)}(x)`
 is the second derivative of :math:`g(x)`. The summation in the first term runs
-of the data points, :math:`(x_j, y_j)`, and the integral in the second term is
+over the data points, :math:`(x_j, y_j)`, and the integral in the second term is
 over the whole interval :math:`x \in [x_1, x_n]`.
 
 Here the first term penalizes the deviation of the spline function from the data,
