@@ -1600,7 +1600,7 @@ const char *gamma_doc = R"(
     ----------
     .. [dlmf] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/5.2#E1
-    .. [isoc99]_ https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
+    .. [isoc99] https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 
     Examples
     --------
