@@ -1530,14 +1530,6 @@ class TestWilcoxon:
         assert_allclose(T, 327)
         assert_allclose(p, 0.00641346115861)
 
-        # removed keyword argument "approx" is still accepted
-        msg = "`approx` has been renamed"
-        with pytest.warns(DeprecationWarning, match=msg):
-            T, p = stats.wilcoxon(x, y, "wilcox", mode="approx",
-                                  correction=False)
-        assert_allclose(T, 327)
-        assert_allclose(p, 0.00641346115861)
-
         # Test the 'correction' option, using values computed in R with:
         # > wilcox.test(x, y, paired=TRUE, exact=FALSE, correct={FALSE,TRUE})
         x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
@@ -1548,6 +1540,14 @@ class TestWilcoxon:
         T, p = stats.wilcoxon(x, y, correction=True, mode="asymptotic")
         assert_equal(T, 34)
         assert_allclose(p, 0.7240817, rtol=1e-6)
+
+    def test_approx_method(self):
+        # removed keyword argument "approx" is still accepted
+        x = np.array([3, 5, 23, 7, 243, 58, 98, 2, 8, -3, 9, 11])
+        y = np.array([2, -2, 1, 23, 0, 5, 12, 18, 99, 12, 17, 27])
+        T1, p1 = stats.wilcoxon(x, y, "wilcox", mode="approx")
+        T2, p2 = stats.wilcoxon(x, y, "wilcox", mode="asymptotic")
+        assert_array_equal((T1, p1), (T2, p2))
 
     def test_wilcoxon_result_attributes(self):
         x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
