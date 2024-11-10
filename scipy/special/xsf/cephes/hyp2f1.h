@@ -293,10 +293,10 @@ namespace cephes {
                     }
                 nosum:
                     p = xsf::cephes::Gamma(c);
-                    y1 *= xsf::cephes::Gamma(e) * p /
-                          (xsf::cephes::Gamma(a + d1) * xsf::cephes::Gamma(b + d1));
+                    y1 *= xsf::cephes::Gamma(e) * p *
+                          (xsf::cephes::rgamma(a + d1) * xsf::cephes::rgamma(b + d1));
 
-                    y *= p / (xsf::cephes::Gamma(a + d2) * xsf::cephes::Gamma(b + d2));
+                    y *= p * (xsf::cephes::rgamma(a + d2) * xsf::cephes::rgamma(b + d2));
                     if ((aid & 1) != 0)
                         y = -y;
 
@@ -494,8 +494,8 @@ namespace cephes {
             p *= std::pow(-x, -a);
             q *= std::pow(-x, -b);
             t1 = Gamma(c);
-            s = t1 * Gamma(b - a) / (Gamma(b) * Gamma(c - a));
-            y = t1 * Gamma(a - b) / (Gamma(a) * Gamma(c - b));
+            s = t1 * Gamma(b - a) * (rgamma(b) * rgamma(c - a));
+            y = t1 * Gamma(a - b) * (rgamma(a) * rgamma(c - b));
             return s * p + y * q;
         } else if (x < -1.0) {
             if (std::abs(a) < std::abs(b)) {
@@ -533,7 +533,7 @@ namespace cephes {
                 }
                 if (d <= 0.0)
                     goto hypdiv;
-                y = Gamma(c) * Gamma(d) / (Gamma(p) * Gamma(r));
+                y = Gamma(c) * Gamma(d) * (rgamma(p) * rgamma(r));
                 goto hypdon;
             }
             if (d <= -1.0)

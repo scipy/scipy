@@ -207,7 +207,7 @@ namespace detail {
          * chosen empirically based on the relevant benchmarks in
          * scipy/special/_precompute/hyp2f1_data.py */
         if (std::abs(u) <= 100 && std::abs(v) <= 100 && std::abs(w) <= 100 && std::abs(x) <= 100) {
-            result = cephes::Gamma(u) * cephes::Gamma(v) / (cephes::Gamma(w) * cephes::Gamma(x));
+            result = cephes::Gamma(u) * cephes::Gamma(v) * (cephes::rgamma(w) * cephes::rgamma(x));
             if (std::isfinite(result) && result != 0.0) {
                 return result;
             }
@@ -486,8 +486,8 @@ namespace detail {
             auto series_generator1 = HypergeometricSeriesGenerator(a + m, b + m, 1 + m, 1.0 - z);
             result *= series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0},
                                                static_cast<std::uint64_t>(-m));
-            double prefactor = std::pow(-1.0, m + 1) * xsf::cephes::Gamma(c) /
-                               (xsf::cephes::Gamma(a + m) * xsf::cephes::Gamma(b + m));
+            double prefactor = std::pow(-1.0, m + 1) * xsf::cephes::Gamma(c) *
+                               (xsf::cephes::rgamma(a + m) * xsf::cephes::rgamma(b + m));
             auto series_generator2 = Hyp2f1Transform1LimitSeriesGenerator(a, b, -m, z);
             result += prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS,
                                               hyp2f1_MAXITER, "hyp2f1");
@@ -503,7 +503,7 @@ namespace detail {
         std::complex<double> result = cephes::Gamma(c) * cephes::rgamma(a) * std::pow(-z, -b);
         result *=
             series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
-        std::complex<double> prefactor = cephes::Gamma(c) / (cephes::Gamma(a) * cephes::Gamma(c - b) * std::pow(-z, a));
+        std::complex<double> prefactor = cephes::Gamma(c) * (cephes::rgamma(a) * cephes::rgamma(c - b) * std::pow(-z, -a));
         double n = c - a;
         if (abs(n - std::round(n)) < hyp2f1_EPS) {
             auto series_generator2 = Hyp2f1Transform2LimitSeriesCminusAIntGenerator(a, b, c, m, n, z);
