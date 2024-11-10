@@ -2506,6 +2506,7 @@ class TestHyp2f1:
         ]
     )
     def test_miscellaneous(self, hyp2f1_test_case ):
+        a, b, c, z, expected, rtol = hyp2f1_test_case
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.slow
