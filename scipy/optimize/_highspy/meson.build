@@ -12,6 +12,11 @@ highs_opts = {
     'do_install': false,
 }
 
+# Hacky workaround to not check cpu_family for 32 bit identifiers
+is_32bit = target_machine.cpu_family() in ['arc', 'arm', 'csky', 'ft32', 'mips', 'ppc', 'riscv32', 'rx', 'sparc', 'wasm32', 'x86']
+_float_store = cc.get_supported_arguments('-ffloat-store')
+_cpp_float_store = cpp.get_supported_arguments('-ffloat-store')
+
 highs_proj = subproject('highs', default_options: highs_opts)
 
 highs_args = highs_proj.get_variable('_args')
@@ -20,6 +25,10 @@ highslib_srcs = highs_proj.get_variable('highslib_srcs')
 highs_incdirs = highs_proj.get_variable('_incdirs')
 highs_cpp_suppressions = highs_proj.get_variable('_highs_cpp_suppressions')
 highs_c_suppressions = highs_proj.get_variable('_highs_c_suppressions')
+
+if is_32bit
+  highs_args += _float_store + _cpp_float_store
+endif
 
 highspy_cpp = highs_proj.get_variable('highspy_cpp')
 highs_conf_file = highs_proj.get_variable('highs_conf_file')
