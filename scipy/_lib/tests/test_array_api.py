@@ -196,7 +196,7 @@ class TestArrayAPI:
     def test_create_diagonal(self, n, offset, xp):
         rng = np.random.default_rng(2347823)
         one = xp.asarray(1.)
-        x = xp.asarray(rng.random(n), dtype=one.dtype)
-        A = xp_create_diagonal(x, offset=offset, xp=xp)
+        x = rng.random(n)
+        A = xp_create_diagonal(xp.asarray(x, dtype=one.dtype), offset=offset, xp=xp)
         B = xp.asarray(np.diag(x, offset), dtype=one.dtype)
         xp_assert_equal(A, B)
