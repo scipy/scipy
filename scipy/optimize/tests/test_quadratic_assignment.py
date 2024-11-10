@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from numpy.random import default_rng
 from scipy.optimize import quadratic_assignment, OptimizeWarning
 from scipy.optimize._qap import _calc_score as _score
 from numpy.testing import assert_equal, assert_, assert_warns
@@ -77,7 +78,7 @@ class QAPCommonTests:
             A,
             B,
             method=self.method,
-            options={"rng": np.random.default_rng(1234), "maximize": True}
+            options={"rng": default_rng(1234), "maximize": True}
         )
 
         if self.method == 'faq':
@@ -92,7 +93,7 @@ class QAPCommonTests:
             A,
             B,
             method=self.method,
-            options={"rng": np.random.default_rng(1234), "maximize": True}
+            options={"rng": default_rng(1234), "maximize": True}
         )
 
     # Test global optima of problem from Umeyama IIIB
@@ -115,7 +116,7 @@ class QAPCommonTests:
             A,
             B,
             method=self.method,
-            options={"rng": np.random.default_rng(123), "maximize": False}
+            options={"rng": default_rng(123), "maximize": False}
         )
 
         if self.method == 'faq':
@@ -130,7 +131,7 @@ class QAPCommonTests:
             A,
             B,
             method=self.method,
-            options={"rng": np.random.default_rng(123), "maximize": True}
+            options={"rng": default_rng(123), "maximize": True}
         )
         assert_equal(res.fun, 286)
         assert_equal(res.col_ind, np.array([2, 3, 0, 1]))
@@ -144,7 +145,7 @@ class QAPCommonTests:
             A,
             B,
             method=self.method,
-            options={"rng": np.random.default_rng(1234)}
+            options={"rng": default_rng(1234)}
         )
         assert_(11156 <= res.fun < 21000)
         assert_equal(res.fun, _score(A, B, res.col_ind))
@@ -154,7 +155,7 @@ class QAPCommonTests:
             A,
             B,
             method=self.method,
-            options={"rng": np.random.default_rng(1234), 'maximize': True}
+            options={"rng": default_rng(1234), 'maximize': True}
         )
         assert_(74000 <= res.fun < 85000)
         assert_equal(res.fun, _score(A, B, res.col_ind))
@@ -178,7 +179,7 @@ class QAPCommonTests:
         # check performance with zero sized matrix inputs
         empty = np.empty((0, 0))
         res = quadratic_assignment(empty, empty, method=self.method,
-                                   options={"rng": np.random.default_rng(1234)})
+                                   options={"rng": default_rng(1234)})
         assert_equal(res.nit, 0)
         assert_equal(res.fun, 0)
 
@@ -213,7 +214,7 @@ class TestFAQ(QAPCommonTests):
         res = quadratic_assignment(
             A,
             B,
-            options={'rng': np.random.default_rng(123), 'P0': "randomized"}
+            options={'rng': default_rng(123), 'P0': "randomized"}
         )
         assert_(11156 <= res.fun < 21000)
 
@@ -271,12 +272,12 @@ class Test2opt(QAPCommonTests):
 
     def test_deterministic(self):
         n = 20
-        rng = np.random.default_rng(51982908)
+        rng = default_rng(51982908)
         A = rng.random(size=(n, n))
         B = rng.random(size=(n, n))
         res1 = quadratic_assignment(A, B, method=self.method, options={'rng': rng})
 
-        rng = np.random.default_rng(51982908)
+        rng = default_rng(51982908)
         A = rng.random(size=(n, n))
         B = rng.random(size=(n, n))
         res2 = quadratic_assignment(A, B, method=self.method, options={'rng': rng})
@@ -285,7 +286,7 @@ class Test2opt(QAPCommonTests):
 
     def test_partial_guess(self):
         n = 5
-        rng = np.random.default_rng(51982908)
+        rng = default_rng(51982908)
 
         A = rng.random(size=(n, n))
         B = rng.random(size=(n, n))
@@ -294,14 +295,14 @@ class Test2opt(QAPCommonTests):
             A,
             B,
             method=self.method,
-            options={'rng': np.random.default_rng(123)}
+            options={'rng': default_rng(123)}
         )
         guess = np.array([np.arange(5), res1.col_ind]).T
         res2 = quadratic_assignment(
             A,
             B,
             method=self.method,
-            options={'rng': np.random.default_rng(123), 'partial_guess': guess}
+            options={'rng': default_rng(123), 'partial_guess': guess}
         )
         fix = [2, 4]
         match = np.array([np.arange(5)[fix], res1.col_ind[fix]]).T
@@ -310,7 +311,7 @@ class Test2opt(QAPCommonTests):
             B,
             method=self.method,
             options={
-                'rng': np.random.default_rng(123),
+                'rng': default_rng(123),
                 'partial_guess': guess,
                 'partial_match': match
             }
@@ -371,7 +372,7 @@ class TestQAPOnce:
 
     # these don't need to be repeated for each method
     def test_common_input_validation(self):
-        rng = np.random.default_rng(12349038)
+        rng = default_rng(12349038)
         # test that non square matrices return error
         with pytest.raises(ValueError, match="`A` must be square"):
             quadratic_assignment(
