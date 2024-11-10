@@ -1583,8 +1583,8 @@ const char *gamma_doc = R"(
 
     Prior to SciPy version 1.15, ``scipy.special.gamma(z)`` returned ``+inf``
     at each pole. This was fixed in version 1.15, but with the following
-    consequence. Expressions where gamma appears in the denominator of an
-    expression such as
+    consequence. Expressions where gamma appears in the denominator
+    such as
 
     ``gamma(u) * gamma(v) / (gamma(w) * gamma(x))``
 
