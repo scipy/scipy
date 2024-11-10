@@ -19,8 +19,7 @@ py3.extension_module('_minpack',
     '__minpack.h',
     '__minpack.c',
   ],
-  include_directories: '../_lib/src',
-  dependencies: np_dep,
+  dependencies: [np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/optimize'
 )

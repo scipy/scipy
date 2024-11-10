@@ -31,10 +31,12 @@ lib_cython_gen = generator(cython,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _lib_pxd])
 
+ccallback_dep = declare_dependency(include_directories: ['..', 'src'])
+
 py3.extension_module('_ccallback_c',
   lib_cython_gen.process('_ccallback_c.pyx'),
   c_args: [cython_c_args, Wno_discarded_qualifiers],
-  include_directories: 'src',
+  dependencies: ccallback_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
@@ -42,7 +44,7 @@ py3.extension_module('_ccallback_c',
 
 py3.extension_module('_test_ccallback',
   'src/_test_ccallback.c',
-  include_directories: 'src',
+  dependencies: ccallback_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib',
