@@ -17,7 +17,8 @@ from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan, _rng_html_rewrite, _lazywhere)
+                              _contains_nan, _rng_html_rewrite, _lazywhere,
+                              _transition_to_rng)
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -386,6 +387,26 @@ def test__rng_html_rewrite():
     ]
 
     assert res == ref
+
+
+@_transition_to_rng("seed", position_num=1, replace_doc=False)
+def _f_seed(o, rng=None):
+    rg = check_random_state(rng)
+    return rg.uniform(size=o)
+
+
+def test__transition_to_rng():
+    # SPEC-007 changes
+    _f_seed(1, rng=1)
+    _f_seed(1, rng=np.random.default_rng())
+    _f_seed(1, seed=1)
+    _f_seed(1, seed=np.random.RandomState())
+    with assert_raises(TypeError):
+        # can't pass both seed and rng
+        _f_seed(1, seed=1234, rng=1234)
+    with assert_raises(TypeError):
+        # use of rng=RandomState should give rise to an error.
+        _f_seed(rng=np.random.RandomState())
 
 
 class TestLazywhere:

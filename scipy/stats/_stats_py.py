@@ -103,7 +103,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'combine_pvalues', 'quantile_test',
            'wasserstein_distance', 'wasserstein_distance_nd', 'energy_distance',
            'brunnermunzel', 'alexandergovern',
-           'expectile']
+           'expectile', 'lmoment']
 
 
 def _chk_asarray(a, axis, *, xp=None):
@@ -961,11 +961,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 
-def _moment_outputs(kwds):
-    order = np.atleast_1d(kwds.get('order', 1))
-    if order.size == 0:
-        raise ValueError("'order' must be a scalar or a non-empty 1D "
-                         "list/array.")
+def _moment_outputs(kwds, default_order=1):
+    order = np.atleast_1d(kwds.get('order', default_order))
+    message = "`order` must be a scalar or a non-empty 1D array."
+    if order.size == 0 or order.ndim > 1:
+        raise ValueError(message)
     return len(order)
 
 
@@ -1094,7 +1094,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
         # is a non-NumPy array, so we need to check again. When the decorator is
         # updated for array API compatibility, we can remove this second check.
-        raise ValueError("'order' must be a scalar or a non-empty 1D list/array.")
+        raise ValueError("`order` must be a scalar or a non-empty 1D array.")
     if xp.any(order != xp.round(order)):
         raise ValueError("All elements of `order` must be integral.")
     order = order[()] if order.ndim == 0 else order
@@ -4612,15 +4612,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
                    '`MonteCarloMethod`, or None.')
         raise ValueError(message)
 
-    if n == 2:
-        r = (xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))
-        r = r[()] if r.ndim == 0 else r
-        pvalue = xp.ones_like(r)
-        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
-        result = PearsonRResult(statistic=r, pvalue=pvalue, n=n,
-                                alternative=alternative, x=x, y=y, axis=axis)
-        return result
-
     xmean = xp.mean(x, axis=axis, keepdims=True)
     ymean = xp.mean(y, axis=axis, keepdims=True)
     xm = x - xmean
@@ -4657,11 +4648,18 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r = xp.asarray(xp.clip(r, -one, one))
     r[const_xy] = xp.nan
 
-    # As explained in the docstring, the distribution of `r` under the null
-    # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-    ab = xp.asarray(n/2 - 1)
-    dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
-    pvalue = _get_pvalue(r, dist, alternative, xp=xp)
+    # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
+    # in the docs.
+    if n == 2:
+        r = xp.round(r)
+        one = xp.asarray(1, dtype=dtype)
+        pvalue = xp.where(xp.asarray(xp.isnan(r)), xp.nan*one, one)
+    else:
+        # As explained in the docstring, the distribution of `r` under the null
+        # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
+        ab = xp.asarray(n/2 - 1)
+        dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
+        pvalue = _get_pvalue(r, dist, alternative, xp=xp)
 
     r = r[()] if r.ndim == 0 else r
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
@@ -7074,6 +7072,10 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
 
     """
+    return _power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis, lambda_=lambda_)
+
+
+def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     xp = array_namespace(f_obs)
     default_float = xp.asarray(1.).dtype
 
@@ -7112,21 +7114,23 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = _m_broadcast_to(f_obs_float, bshape, xp=xp)
         f_exp = _m_broadcast_to(f_exp, bshape, xp=xp)
-        dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
-        rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
-        with np.errstate(invalid='ignore'):
-            f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
-            f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
-            relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
-                             xp.minimum(f_obs_sum, f_exp_sum))
-            diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
-        if diff_gt_tol:
-            msg = (f"For each axis slice, the sum of the observed "
-                   f"frequencies must agree with the sum of the "
-                   f"expected frequencies to a relative tolerance "
-                   f"of {rtol}, but the percent differences are:\n"
-                   f"{relative_diff}")
-            raise ValueError(msg)
+
+        if sum_check:
+            dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
+            rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
+            with np.errstate(invalid='ignore'):
+                f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
+                f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
+                relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
+                                 xp.minimum(f_obs_sum, f_exp_sum))
+                diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
+            if diff_gt_tol:
+                msg = (f"For each axis slice, the sum of the observed "
+                       f"frequencies must agree with the sum of the "
+                       f"expected frequencies to a relative tolerance "
+                       f"of {rtol}, but the percent differences are:\n"
+                       f"{relative_diff}")
+                raise ValueError(msg)
 
     else:
         # Ignore 'invalid' errors so the edge case of a data set with length 0
@@ -7166,29 +7170,36 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     return Power_divergenceResult(stat, pvalue)
 
 
-def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
-    """Calculate a one-way chi-square test.
+def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
+    """Perform Pearson's chi-squared test.
 
-    The chi-square test tests the null hypothesis that the categorical data
-    has the given frequencies.
+    Pearson's chi-squared test [1]_ is a goodness-of-fit test for a multinomial
+    distribution with given probabilities; that is, it assesses the null hypothesis
+    that the observed frequencies (counts) are obtained by independent
+    sampling of *N* observations from a categorical distribution with given
+    expected frequencies.
 
     Parameters
     ----------
     f_obs : array_like
         Observed frequencies in each category.
     f_exp : array_like, optional
-        Expected frequencies in each category.  By default the categories are
+        Expected frequencies in each category. By default, the categories are
         assumed to be equally likely.
     ddof : int, optional
         "Delta degrees of freedom": adjustment to the degrees of freedom
         for the p-value.  The p-value is computed using a chi-squared
-        distribution with ``k - 1 - ddof`` degrees of freedom, where `k`
-        is the number of observed frequencies.  The default value of `ddof`
-        is 0.
+        distribution with ``k - 1 - ddof`` degrees of freedom, where ``k``
+        is the number of categories.  The default value of `ddof` is 0.
     axis : int or None, optional
         The axis of the broadcast result of `f_obs` and `f_exp` along which to
         apply the test.  If axis is None, all values in `f_obs` are treated
         as a single data set.  Default is 0.
+    sum_check : bool, optional
+        Whether to perform a check that ``sum(f_obs) - sum(f_exp) == 0``. If True,
+        (default) raise an error when the relative difference exceeds the square root
+        of the precision of the data type. See Notes for rationale and possible
+        exceptions.
 
     Returns
     -------
@@ -7214,14 +7225,10 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     -----
     This test is invalid when the observed or expected frequencies in each
     category are too small.  A typical rule is that all of the observed
-    and expected frequencies should be at least 5. According to [3]_, the
-    total number of samples is recommended to be greater than 13,
+    and expected frequencies should be at least 5. According to [2]_, the
+    total number of observations is recommended to be greater than 13,
     otherwise exact tests (such as Barnard's Exact test) should be used
     because they do not overreject.
-
-    Also, the sum of the observed and expected frequencies must be the same
-    for the test to be valid; `chisquare` raises an error if the sums do not
-    agree within a relative tolerance of ``1e-8``.
 
     The default degrees of freedom, k-1, are for the case when no parameters
     of the distribution are estimated. If p parameters are estimated by
@@ -7231,13 +7238,23 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     the asymptotic distribution is not chi-square, in which case this test
     is not appropriate.
 
+    For Pearson's chi-squared test, the total observed and expected counts must match
+    for the p-value to accurately reflect the probability of observing such an extreme
+    value of the statistic under the null hypothesis.
+    This function may be used to perform other statistical tests that do not require
+    the total counts to be equal. For instance, to test the null hypothesis that
+    ``f_obs[i]`` is Poisson-distributed with expectation ``f_exp[i]``, set ``ddof=-1``
+    and ``sum_check=False``. This test follows from the fact that a Poisson random
+    variable with mean and variance ``f_exp[i]`` is approximately normal with the
+    same mean and variance; the chi-squared statistic standardizes, squares, and sums
+    the observations; and the sum of ``n`` squared standard normal variables follows
+    the chi-squared distribution with ``n`` degrees of freedom.
+
     References
     ----------
-    .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
-           Statistics". Chapter 8.
-           https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
-    .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
-    .. [3] Pearson, Karl. "On the criterion that a given system of deviations from the probable
+    .. [1] "Pearson's chi-squared test".
+           *Wikipedia*. https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+    .. [2] Pearson, Karl. "On the criterion that a given system of deviations from the probable
            in the case of a correlated system of variables is such that it can be reasonably
            supposed to have arisen from random sampling", Philosophical Magazine. Series 5. 50
            (1900), pp. 157-175.
@@ -7297,8 +7314,8 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     For a more detailed example, see :ref:`hypothesis_chisquare`.
     """  # noqa: E501
-    return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
-                            lambda_="pearson")
+    return _power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
+                             lambda_="pearson", sum_check=sum_check)
 
 
 KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
@@ -10206,6 +10223,146 @@ def expectile(a, alpha=0.5, *, weights=None):
     # finding a wrong root.
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
+
+
+def _lmoment_iv(sample, order, axis, sorted, standardize):
+    # input validation/standardization for `lmoment`
+    sample = np.asarray(sample)
+    message = "`sample` must be an array of real numbers."
+    if np.issubdtype(sample.dtype, np.integer):
+        sample = sample.astype(np.float64)
+    if not np.issubdtype(sample.dtype, np.floating):
+        raise ValueError(message)
+
+    message = "`order` must be a scalar or a non-empty array of positive integers."
+    order = np.arange(1, 5) if order is None else np.asarray(order)
+    if not np.issubdtype(order.dtype, np.integer) or np.any(order <= 0):
+        raise ValueError(message)
+
+    axis = np.asarray(axis)[()]
+    message = "`axis` must be an integer."
+    if not np.issubdtype(axis.dtype, np.integer) or axis.ndim != 0:
+        raise ValueError(message)
+
+    sorted = np.asarray(sorted)[()]
+    message = "`sorted` must be True or False."
+    if not np.issubdtype(sorted.dtype, np.bool_) or sorted.ndim != 0:
+        raise ValueError(message)
+
+    standardize = np.asarray(standardize)[()]
+    message = "`standardize` must be True or False."
+    if not np.issubdtype(standardize.dtype, np.bool_) or standardize.ndim != 0:
+        raise ValueError(message)
+
+    sample = np.moveaxis(sample, axis, -1)
+    sample = np.sort(sample, axis=-1) if not sorted else sample
+
+    return sample, order, axis, sorted, standardize
+
+
+def _br(x, *, r=0):
+    n = x.shape[-1]
+    x = np.expand_dims(x, axis=-2)
+    x = np.broadcast_to(x, x.shape[:-2] + (len(r), n))
+    x = np.triu(x)
+    j = np.arange(n, dtype=x.dtype)
+    n = np.asarray(n, dtype=x.dtype)[()]
+    return (np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1)
+            / special.binom(n-1, r) / n)
+
+
+def _prk(r, k):
+    # Writen to match [1] Equation 27 closely to facilitate review.
+    # This does not protect against overflow, so improvements to
+    # robustness would be a welcome follow-up.
+    return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
+
+
+@_axis_nan_policy_factory(  # noqa: E302
+    _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
+    n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
+)
+def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
+    r"""Compute L-moments of a sample from a continuous distribution
+
+    The L-moments of a probability distribution are summary statistics with
+    uses similar to those of conventional moments, but they are defined in
+    terms of the expected values of order statistics.
+    Sample L-moments are defined analogously to population L-moments, and
+    they can serve as estimators of population L-moments. They tend to be less
+    sensitive to extreme observations than conventional moments.
+
+    Parameters
+    ----------
+    sample : array_like
+        The real-valued sample whose L-moments are desired.
+    order : array_like, optional
+        The (positive integer) orders of the desired L-moments.
+        Must be a scalar or non-empty 1D array. Default is [1, 2, 3, 4].
+    axis : int or None, default=0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If None, the input will be
+        raveled before computing the statistic.
+    sorted : bool, default=False
+        Whether `sample` is already sorted in increasing order along `axis`.
+        If False (default), `sample` will be sorted.
+    standardize : bool, default=True
+        Whether to return L-moment ratios for orders 3 and higher.
+        L-moment ratios are analogous to standardized conventional
+        moments: they are the non-standardized L-moments divided
+        by the L-moment of order 2.
+
+    Returns
+    -------
+    lmoments : ndarray
+        The sample L-moments of order `order`.
+
+    See Also
+    --------
+    moment
+
+    References
+    ----------
+    .. [1] D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of
+           Statistical Data Analysis". Journal of Applied Mathematics and
+           Physics. 2014. :doi:`10.4236/jamp.2014.210104`
+    .. [2] J. R. M. Hosking. "L-Moments: Analysis and Estimation of Distributions
+           Using Linear Combinations of Order Statistics". Journal of the Royal
+           Statistical Society. 1990. :doi:`10.1111/j.2517-6161.1990.tb01775.x`
+    .. [3] "L-moment". *Wikipedia*. https://en.wikipedia.org/wiki/L-moment.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(328458568356392)
+    >>> sample = rng.exponential(size=100000)
+    >>> stats.lmoment(sample)
+    array([1.00124272, 0.50111437, 0.3340092 , 0.16755338])
+
+    Note that the first four standardized population L-moments of the standard
+    exponential distribution are 1, 1/2, 1/3, and 1/6; the sample L-moments
+    provide reasonable estimates.
+
+    """
+    args = _lmoment_iv(sample, order, axis, sorted, standardize)
+    sample, order, axis, sorted, standardize = args
+
+    n_moments = np.max(order)
+    k = np.arange(n_moments, dtype=sample.dtype)
+    prk = _prk(np.expand_dims(k, tuple(range(1, sample.ndim+1))), k)
+    bk = _br(sample, r=k)
+
+    n = sample.shape[-1]
+    bk[..., n:] = 0  # remove NaNs due to n_moments > n
+
+    lmoms = np.sum(prk * bk, axis=-1)
+    if standardize and n_moments > 2:
+        lmoms[2:] /= lmoms[1]
+
+    lmoms[n:] = np.nan  # add NaNs where appropriate
+    return lmoms[order-1]
 
 
 LinregressResult = _make_tuple_bunch('LinregressResult',

@@ -3044,12 +3044,12 @@ def factorial(n, exact=False):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if n is None or np.isnan(n):
-            return np.nan
-        elif not _is_subdtype(type(n), ["i", "f"]):
+        if not _is_subdtype(type(n), ["i", "f", type(None)]):
             raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
+        elif n is None or np.isnan(n):
+            return np.float64("nan")
         elif n < 0:
-            return 0
+            return 0 if exact else np.float64(0)
         elif exact and _is_subdtype(type(n), "i"):
             return math.factorial(n)
         elif exact:
@@ -3060,9 +3060,7 @@ def factorial(n, exact=False):
 
     # arrays & array-likes
     n = asarray(n)
-    if n.size == 0:
-        # return empty arrays unchanged
-        return n
+
     if not _is_subdtype(n.dtype, ["i", "f"]):
         raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
     if exact and not _is_subdtype(n.dtype, "i"):
@@ -3070,7 +3068,10 @@ def factorial(n, exact=False):
                "support non-integral arrays")
         raise ValueError(msg)
 
-    if exact:
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    elif exact:
         return _factorialx_array_exact(n, k=1)
     return _factorialx_array_approx(n, k=1)
 
@@ -3117,9 +3118,7 @@ def factorial2(n, exact=False):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if n is None or np.isnan(n):
-            return np.nan
-        elif not _is_subdtype(type(n), "i"):
+        if not _is_subdtype(type(n), "i"):
             raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
         elif n < 0:
             return 0
@@ -3129,14 +3128,17 @@ def factorial2(n, exact=False):
         if exact:
             return _range_prod(1, n, k=2)
         return _factorialx_approx_core(n, k=2)
+
     # arrays & array-likes
     n = asarray(n)
+
+    if not _is_subdtype(n.dtype, "i"):
+        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
+
     if n.size == 0:
         # return empty arrays unchanged
         return n
-    if not _is_subdtype(n.dtype, "i"):
-        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
-    if exact:
+    elif exact:
         return _factorialx_array_exact(n, k=2)
     return _factorialx_array_approx(n, k=2)
 
@@ -3227,9 +3229,7 @@ def factorialk(n, k, exact=None):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if n is None or np.isnan(n):
-            return np.nan
-        elif not _is_subdtype(type(n), "i"):
+        if not _is_subdtype(type(n), "i"):
             raise ValueError(msg_wrong_dtype.format(dtype=type(n)) + helpmsg)
         elif n < 0:
             return 0
@@ -3239,14 +3239,17 @@ def factorialk(n, k, exact=None):
         if exact:
             return _range_prod(1, n, k=k)
         return _factorialx_approx_core(n, k=k)
+
     # arrays & array-likes
     n = asarray(n)
+
+    if not _is_subdtype(n.dtype, "i"):
+        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype) + helpmsg)
+
     if n.size == 0:
         # return empty arrays unchanged
         return n
-    if not _is_subdtype(n.dtype, "i"):
-        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype) + helpmsg)
-    if exact:
+    elif exact:
         return _factorialx_array_exact(n, k=k)
     return _factorialx_array_approx(n, k=k)
 
@@ -3393,10 +3396,14 @@ def zeta(x, q=None, out=None):
 
     Parameters
     ----------
-    x : array_like of float
-        Input data, must be real
+    x : array_like of float or complex.
+        Input data
     q : array_like of float, optional
-        Input data, must be real.  Defaults to Riemann zeta.
+        Input data, must be real.  Defaults to Riemann zeta. When `q` is
+        ``None``, complex inputs `x` are supported. If `q` is not ``None``,
+        then currently only real inputs `x` with ``x >= 1`` are supported,
+        even when ``q = 1.0`` (corresponding to the Riemann zeta function).
+        
     out : ndarray, optional
         Output array for the computed values.
 
@@ -3420,6 +3427,10 @@ def zeta(x, q=None, out=None):
     see [dlmf]_ for details. The Riemann zeta function corresponds to
     the case when ``q = 1``.
 
+    For complex inputs with ``q = None``, points with
+    ``abs(z.imag) > 1e9`` and ``0 <= abs(z.real) < 2.5`` are currently not
+    supported due to slow convergence causing excessive runtime.
+
     References
     ----------
     .. [dlmf] NIST, Digital Library of Mathematical Functions,
@@ -3437,6 +3448,11 @@ def zeta(x, q=None, out=None):
 
     >>> zeta(4), np.pi**4/90
     (1.0823232337111381, 1.082323233711138)
+
+    First nontrivial zero:
+
+    >>> zeta(0.5 + 14.134725141734695j)
+    0 + 0j
 
     Relation to the `polygamma` function:
 

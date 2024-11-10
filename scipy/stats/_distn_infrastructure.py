@@ -3065,34 +3065,47 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     _a, _b = self._get_support(*args)
     b = _b
     a = _a
+
+    step = 10
     if isinf(b):            # Be sure ending point is > q
-        b = int(max(100*q, 10))
+        b = float(max(100*q, 10))
         while 1:
             if b >= _b:
                 qb = 1.0
                 break
             qb = self._cdf(b, *args)
             if (qb < q):
-                b += 10
+                b += step
+                step *= 2
             else:
                 break
     else:
         qb = 1.0
+
+    step = 10
     if isinf(a):    # be sure starting point < q
-        a = int(min(-100*q, -10))
+        a = float(min(-100*q, -10))
         while 1:
             if a <= _a:
                 qb = 0.0
                 break
             qa = self._cdf(a, *args)
             if (qa > q):
-                a -= 10
+                a -= step
+                step *= 2
             else:
                 break
     else:
         qa = self._cdf(a, *args)
 
-    while 1:
+    if np.isinf(a) or np.isinf(b):
+        message = "Arguments that bracket the requested quantile could not be found."
+        raise RuntimeError(message)
+
+    # maximum number of bisections within the normal float64s
+    # maxiter = int(np.log2(finfo.max) - np.log2(finfo.smallest_normal))
+    maxiter = 2046
+    for i in range(maxiter):
         if (qa == q):
             return a
         if (qb == q):

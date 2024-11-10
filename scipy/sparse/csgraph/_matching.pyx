@@ -18,7 +18,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     r"""
     maximum_bipartite_matching(graph, perm_type='row')
 
-    Returns a matching of a bipartite graph whose cardinality is as least that
+    Returns a matching of a bipartite graph whose cardinality is at least that
     of any given matching of the graph.
 
     Parameters

@@ -365,7 +365,9 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         a vectorized statistic typically reduces computation time.
     paired : bool, default: ``False``
         Whether the statistic treats corresponding elements of the samples
-        in `data` as paired.
+        in `data` as paired. If True, `bootstrap` resamples an array of
+        *indices* and uses the same indices for all arrays in `data`; otherwise,
+        `bootstrap` independently resamples the elements of each array.
     axis : int, default: ``0``
         The axis of the samples in `data` along which the `statistic` is
         calculated.
