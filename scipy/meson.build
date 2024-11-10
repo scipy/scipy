@@ -136,11 +136,51 @@ fortranobject_dep = declare_dependency(
   link_with: fortranobject_lib,
   include_directories: [inc_np, inc_f2py],
 )
-# Workaround for numpy#24761 on numpy<1.26.1 (see also gh-20515)
-_f2py_c_args = []
-if is_mingw
-  _f2py_c_args = '-DNPY_OS_MINGW'
+
+cdata = configuration_data()
+
+# Test variable attribute to use for thread-local storage;
+# Adapted from `numpy/_core/meson.build`.
+check_tls_attrs = [
+  ['thread_local', 'HAVE_THREAD_LOCAL'],    # C23
+  ['_Thread_local', 'HAVE__THREAD_LOCAL'],  # C11/C17
+  ['__thread', 'HAVE__THREAD'],
+]
+if is_windows and not is_mingw
+  check_tls_attrs += ['__declspec(thread)', 'HAVE___DECLSPEC_THREAD_']
 endif
+f2py_tls_define = ''
+foreach tls_attrs: check_tls_attrs
+  attr = tls_attrs[0]
+  code = f'''
+    #pragma GCC diagnostic error "-Wattributes"
+    #pragma clang diagnostic error "-Wattributes"
+
+    int @attr@ foo;
+  '''
+  code += '''
+    int
+    main()
+    {
+      return 0;
+    }
+  '''
+  if cc.compiles(code, name: tls_attrs[0])
+    cdata.set10(tls_attrs[1], true)
+    f2py_tls_define = tls_attrs[0]
+  endif
+endforeach
+
+# Contains only TLS check results for now - name chosen for when more compiler
+# checks need adding in the future.
+scipy_config_h = configure_file(
+  input: 'scipy_config.h.in',
+  output: 'scipy_config.h',
+  configuration: cdata,
+  install: false
+)
+
+_f2py_c_args = [f'-DF2PY_THREAD_LOCAL_DECL=@f2py_tls_define@']
 fortranobject_dep = declare_dependency(
   dependencies: fortranobject_dep,
   compile_args: _f2py_c_args,
