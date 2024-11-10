@@ -387,6 +387,7 @@ namespace cephes {
 	if (x - fx == 0.0) {
 	    return std::numeric_limits<double>::quiet_NaN();
 	}
+	// sign of gamma for x in (-n, -n+1) for positive integer n is (-1)^n.
 	if (static_cast<int>(fx) % 2) {
 	    return -1.0;
 	}

@@ -2727,7 +2727,7 @@ class TestGamma:
         [
             # infinities
             ([-np.inf, np.inf], [np.nan, np.inf]),
-            # zeros
+            # negative and positive zero
             ([-0.0, 0.0], [-np.inf, np.inf]),
             # small poles
             (range(-32, 0), np.full(32, np.nan)),
