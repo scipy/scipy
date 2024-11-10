@@ -106,6 +106,7 @@ Continuous distributions
    ksone             -- Distribution of Kolmogorov-Smirnov one-sided test statistic
    kstwo             -- Distribution of Kolmogorov-Smirnov two-sided test statistic
    kstwobign         -- Limiting Distribution of scaled Kolmogorov-Smirnov two-sided test statistic.
+   landau            -- Landau
    laplace           -- Laplace
    laplace_asymmetric    -- Asymmetric Laplace
    levy              -- Levy
@@ -187,6 +188,7 @@ Multivariate distributions
    random_correlation     -- random correlation matrices
    multivariate_t         -- Multivariate t-distribution
    multivariate_hypergeom -- Multivariate hypergeometric distribution
+   normal_inverse_gamma   -- Normal-inverse-gamma distribution
    random_table           -- Distribution of random tables with given marginals
    uniform_direction      -- Uniform distribution on S(N-1)
    vonmises_fisher        -- Von Mises-Fisher distribution
@@ -221,6 +223,7 @@ Discrete distributions
    nhypergeom               -- Negative Hypergeometric
    planck                   -- Planck (Discrete Exponential)
    poisson                  -- Poisson
+   poisson_binom            -- Poisson Binomial
    randint                  -- Discrete Uniform
    skellam                  -- Skellam
    yulesimon                -- Yule-Simon
@@ -244,6 +247,7 @@ Summary statistics
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
+   lmoment
    expectile         -- Expectile
    skew              -- Skewness
    kstat             --
@@ -456,6 +460,15 @@ tests) are listed above.
 The following functions are related to the tests above but do not belong in the
 above categories.
 
+Random Variables
+================
+
+.. autosummary::
+   :toctree: generated/
+
+   Normal
+   Mixture
+
 Quasi-Monte Carlo
 =================
 
@@ -624,6 +637,8 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
+from ._distribution_infrastructure import Mixture
+from ._new_distributions import Normal
 from ._mgc import multiscale_graphcorr
 
 

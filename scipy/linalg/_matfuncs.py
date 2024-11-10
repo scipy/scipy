@@ -1,6 +1,7 @@
 #
 # Author: Travis Oliphant, March 2002
 #
+import warnings
 from itertools import product
 
 import numpy as np
@@ -16,6 +17,7 @@ from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
+from ._linalg_pythran import _funm_loops  # type: ignore[import-not-found]
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
@@ -151,7 +153,7 @@ def logm(A, disp=True):
     A : (N, N) array_like
         Matrix whose logarithm to evaluate
     disp : bool, optional
-        Print warning if error in the result is estimated large
+        Emit warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
 
     Returns
@@ -194,17 +196,19 @@ def logm(A, disp=True):
            [ 1.,  4.]])
 
     """
-    A = _asarray_square(A)
+    A = np.asarray(A)  # squareness checked in `_logm`
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
     F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     F = _maybe_real(A, F)
     errtol = 1000*eps
     # TODO use a better error approximation
-    errest = norm(expm(F)-A, 1) / norm(A, 1)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        errest = norm(expm(F)-A, 1) / np.asarray(norm(A, 1), dtype=A.dtype).real[()]
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print("logm result may be inaccurate, approximate err =", errest)
+            message = f"logm result may be inaccurate, approximate err = {errest}"
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
         return F
     else:
         return F, errest
@@ -285,10 +289,11 @@ def expm(A):
         raise LinAlgError('The input array must be at least two-dimensional')
     if a.shape[-1] != a.shape[-2]:
         raise LinAlgError('Last 2 dimensions of the array must be square')
-    n = a.shape[-1]
+
     # Empty array
     if min(*a.shape) == 0:
-        return np.empty_like(a)
+        dtype = expm(np.eye(2, dtype=a.dtype)).dtype
+        return np.empty_like(a, dtype=dtype)
 
     # Scalar case
     if a.shape[-2:] == (1, 1):
@@ -319,13 +324,26 @@ def expm(A):
 
         # Generic/triangular case; copy the slice into scratch and send.
         # Am will be mutated by pick_pade_structure
+        # If s != 0, scaled Am will be returned from pick_pade_structure.
         Am[0, :, :] = aw
         m, s = pick_pade_structure(Am)
-
-        if s != 0:  # scaling needed
-            Am[:4] *= [[[2**(-s)]], [[4**(-s)]], [[16**(-s)]], [[64**(-s)]]]
-
-        pade_UV_calc(Am, n, m)
+        if (m < 0):
+            raise MemoryError("scipy.linalg.expm could not allocate sufficient"
+                              " memory while trying to compute the Pade "
+                              f"structure (error code {m}).")
+        info = pade_UV_calc(Am, m)
+        if info != 0:
+            if info <= -11:
+                # We raise it from failed mallocs; negative LAPACK codes > -7
+                raise MemoryError("scipy.linalg.expm could not allocate "
+                              "sufficient memory while trying to compute the "
+                              f"exponential (error code {info}).")
+            else:
+                # LAPACK wrong argument error or exact singularity.
+                # Neither should happen.
+                raise RuntimeError("scipy.linalg.expm got an internal LAPACK "
+                                   "error during the exponential computation "
+                                   f"(error code {info})")
         eAw = Am[0]
 
         if s != 0:  # squaring needed
@@ -684,18 +702,7 @@ def funm(A, func, disp=True):
 
     # implement Algorithm 11.1.1 from Golub and Van Loan
     #                 "matrix Computations."
-    for p in range(1, n):
-        for i in range(1, n-p+1):
-            j = i + p
-            s = T[i-1, j-1] * (F[j-1, j-1] - F[i-1, i-1])
-            ksl = slice(i, j-1)
-            val = dot(T[i-1, ksl], F[ksl, j-1]) - dot(F[i-1, ksl], T[ksl, j-1])
-            s = s + val
-            den = T[j-1, j-1] - T[i-1, i-1]
-            if den != 0.0:
-                s = s / den
-            F[i-1, j-1] = s
-            minden = min(minden, abs(den))
+    F, minden = _funm_loops(F, T, n, minden)
 
     F = dot(dot(Z, F), transpose(conjugate(Z)))
     F = _maybe_real(A, F)
@@ -811,10 +818,6 @@ def khatri_rao(a, b):
     -------
     c:  (n*m, k) ndarray
         Khatri-rao product of `a` and `b`.
-
-    See Also
-    --------
-    kron : Kronecker product
 
     Notes
     -----

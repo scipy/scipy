@@ -246,7 +246,7 @@ case NPY_##_TYPE:                                    \
 int _get_spline_boundary_mode(int mode)
 {
     if ((mode == NI_EXTEND_CONSTANT) || (mode == NI_EXTEND_WRAP))
-        // Modes without an anlaytic prefilter or explicit prepadding use
+        // Modes without an analytic prefilter or explicit prepadding use
         // mirror extension.
         return NI_EXTEND_MIRROR;
     return mode;

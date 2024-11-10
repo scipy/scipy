@@ -7,11 +7,11 @@ from ._complexstuff cimport (
     double_complex_from_npy_cdouble)
 
 cdef extern from "xsf_wrappers.h" nogil:
-    double cephes_iv_wrap(double v, double x)
+    double xsf_iv(double v, double x)
     double cephes_jv_wrap(double v, double x)
-    double cephes_gamma_wrap(double x)
-    double cephes_lgam_wrap(double x)
-    double cephes_gammasgn_wrap(double x)
+    double xsf_gamma(double x)
+    double xsf_gammaln(double x)
+    double xsf_gammasgn(double x)
 
 cdef extern from "float.h":
     double DBL_MAX, DBL_MIN
@@ -20,7 +20,7 @@ cdef extern from "float.h":
 cdef extern from "xsf_wrappers.h":
     np.npy_cdouble special_ccyl_bessel_i(double v, np.npy_cdouble z) nogil
     np.npy_cdouble special_ccyl_bessel_j(double v, np.npy_cdouble z) nogil
-    double special_sinpi(double x) nogil
+    double xsf_sinpi(double x) nogil
 
 cdef extern from "numpy/npy_math.h":
     double npy_creal(np.npy_cdouble z) nogil
@@ -43,17 +43,17 @@ cdef inline double _hyp0f1_real(double v, double z) noexcept nogil:
 
     if z > 0:
         arg = sqrt(z)
-        arg_exp = xlogy(1.0-v, arg) + cephes_lgam_wrap(v)
-        bess_val = cephes_iv_wrap(v-1, 2.0*arg)
+        arg_exp = xlogy(1.0-v, arg) + xsf_gammaln(v)
+        bess_val = xsf_iv(v-1, 2.0*arg)
 
         if (arg_exp > log(DBL_MAX) or bess_val == 0 or   # overflow
             arg_exp < log(DBL_MIN) or isinf(bess_val)):  # underflow
             return _hyp0f1_asy(v, z)
         else:
-            return exp(arg_exp) * cephes_gammasgn_wrap(v) * bess_val
+            return exp(arg_exp) * xsf_gammasgn(v) * bess_val
     else:
         arg = sqrt(-z)
-        return pow(arg, 1.0 - v) * cephes_gamma_wrap(v) * cephes_jv_wrap(v - 1, 2*arg)
+        return pow(arg, 1.0 - v) * xsf_gamma(v) * cephes_jv_wrap(v - 1, 2*arg)
 
 
 cdef inline double _hyp0f1_asy(double v, double z) noexcept nogil:
@@ -74,8 +74,8 @@ cdef inline double _hyp0f1_asy(double v, double z) noexcept nogil:
 
     arg_exp_i = -0.5*log(p1)
     arg_exp_i -= 0.5*log(2.0*M_PI*v1)
-    arg_exp_i += cephes_lgam_wrap(v)
-    gs = cephes_gammasgn_wrap(v)
+    arg_exp_i += xsf_gammaln(v)
+    gs = xsf_gammasgn(v)
 
     arg_exp_k = arg_exp_i
     arg_exp_i += v1 * eta
@@ -95,7 +95,7 @@ cdef inline double _hyp0f1_asy(double v, double z) noexcept nogil:
     if v - 1 < 0:
         # DLMF 10.27.2: I_{-v} = I_{v} + (2/pi) sin(pi*v) K_v
         u_corr_k = 1.0 - u1/v1 + u2/(v1*v1) - u3/(v1*v1*v1)
-        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * special_sinpi(v1) * u_corr_k
+        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * xsf_sinpi(v1) * u_corr_k
 
     return result
 
@@ -133,4 +133,4 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) noexcept no
         s = 2.0 * arg
         r = special_ccyl_bessel_j(v-1.0, npy_cdouble_from_double_complex(s))
 
-    return double_complex_from_npy_cdouble(r) * cephes_gamma_wrap(v) * zpow(arg, 1.0 - v)
+    return double_complex_from_npy_cdouble(r) * xsf_gamma(v) * zpow(arg, 1.0 - v)

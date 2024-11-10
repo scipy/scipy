@@ -610,6 +610,36 @@ stop-band attenuation of :math:`\approx 60` dB.
    >>> plt.grid()
    >>> plt.show()
 
+.. note::
+
+    It is important to note that the cutoffs for :func:`firwin` and :func:`iirfilter` 
+    are defined differently. For :func:`firwin`, the cutoff-frequency is at 
+    half-amplitude (i.e. -6dB). For :func:`iirfilter`, the cutoff is at half-power
+    (i.e. -3dB).
+
+    .. plot::
+        :alt: "This code generates an example plot displaying the differences in cutoff frequency between FIR and IIR filters. FIR filters have a cutoff frequency at half-amplitude, while IIR filter cutoffs are at half-power."
+
+        >>> import numpy as np
+        >>> from matplotlib import pyplot as plt
+        >>> from scipy import signal as sig
+
+        >>> fs = 16000
+        >>> b = sig.firwin(101, 2500, fs=fs)
+        >>> f, h_fft = sig.freqz(b, fs=fs)
+        >>> h_amp = 20 * np.log10(np.abs(h_fft))
+        >>> _, ax = plt.subplots(layout="constrained")
+        >>> ax.plot(f, h_amp, label="FIR")
+        >>> ax.grid(True)
+
+        >>> b, a = sig.iirfilter(15, 2500, btype="low", fs=fs)
+        >>> f, h_fft = sig.freqz(b, a, fs=fs)
+        >>> h_amp = 20 * np.log10(np.abs(h_fft))
+        >>> ax.plot(f, h_amp, label="IIR")
+        >>> ax.set(xlim=[2100, 2900], ylim=[-10, 2])
+        >>> ax.set(xlabel="Frequency (Hz)", ylabel="Amplitude Response [dB]")
+        >>> ax.legend()
+
 Filter Coefficients
 """""""""""""""""""
 
@@ -1081,7 +1111,7 @@ For real-valued signals the so-called "onesided" spectral representation is ofte
 It only uses the non-negative frequencies (due to :math:`X(-f)= \conj{X}(f)` if
 :math:`x(t)\in\IR`). Sometimes the values of the negative frequencies are added to their
 positive counterparts. Then the amplitude spectrum allows to read off the full (not
-half) amplitude sine  of :math:`x(t)` at :math:`f_z` and the area of an interval in
+half) amplitude sine  of :math:`x(t)` at :math:`f_x` and the area of an interval in
 the PSD represents its full (not half) power. Note that for amplitude spectral
 densities the positive values are not doubled but multiplied by :math:`\sqrt{2}`, since
 it is the square root of the PSD. Furthermore, there is no canonical way for naming a
@@ -1089,13 +1119,13 @@ doubled spectrum.
 
 The following plot shows three different spectral representations of four sine signals
 :math:`x(t)` of Eq. :math:numref:`eq_SpectA_sine` with different amplitudes :math:`a`
-and durations :math:`\tau`. For less clutter, the spectra are centered at :math:`f_z`
+and durations :math:`\tau`. For less clutter, the spectra are centered at :math:`f_x`
 and being are plotted next to each other:
 
 .. plot:: tutorial/examples/signal_SpectralAnalysis_ContinuousSpectralRepresentations.py
 
 Note that depending on the representation, the height of the peaks vary. Only the
-interpretation of the magnitude spectrum is straightforward: The peak at :math:`f_z` in
+interpretation of the magnitude spectrum is straightforward: The peak at :math:`f_x` in
 the second plot represents half the magnitude :math:`|a|` of the sine signal. For all other
 representations the duration :math:`\tau` needs to be taken into account to extract
 information about the signal's amplitude.
@@ -1379,41 +1409,9 @@ time offset :math:`\tau` is given by
     \tan 2\omega\tau = \frac{\sum_{j}^{N_{t}}\sin 2\omega t_{j}}{\sum_{j}^{N_{t}}\cos 2\omega t_{j}}.
 
 The :func:`lombscargle` function calculates the periodogram using a slightly
-modified algorithm due to Townsend [#Townsend2010]_, which allows the periodogram to be
-calculated using only a single pass through the input arrays for each
-frequency.
-
-The equation is refactored as:
-
-.. math::
-
-    P_{n}(f) = \frac{1}{2}\left[\frac{(c_{\tau}XC + s_{\tau}XS)^{2}}{c_{\tau}^{2}CC + 2c_{\tau}s_{\tau}CS + s_{\tau}^{2}SS} + \frac{(c_{\tau}XS - s_{\tau}XC)^{2}}{c_{\tau}^{2}SS - 2c_{\tau}s_{\tau}CS + s_{\tau}^{2}CC}\right]
-
-and
-
-.. math::
-
-    \tan 2\omega\tau = \frac{2CS}{CC-SS}.
-
-Here,
-
-.. math::
-
-    c_{\tau} = \cos\omega\tau,\qquad s_{\tau} = \sin\omega\tau,
-
-while the sums are
-
-.. math::
-
-    XC &= \sum_{j}^{N_{t}} X_{j}\cos\omega t_{j}\\
-    XS &= \sum_{j}^{N_{t}} X_{j}\sin\omega t_{j}\\
-    CC &= \sum_{j}^{N_{t}} \cos^{2}\omega t_{j}\\
-    SS &= \sum_{j}^{N_{t}} \sin^{2}\omega t_{j}\\
-    CS &= \sum_{j}^{N_{t}} \cos\omega t_{j}\sin\omega t_{j}.
-
-This requires :math:`N_{f}(2N_{t}+3)` trigonometric function evaluations
-giving a factor of :math:`\sim 2` speed increase over the straightforward
-implementation.
+modified algorithm created by Zechmeister and Kürster [#Zechmeister2009]_, which 
+allows for the weighting of individual samples and calculating an unknown offset 
+(also called a "floating-mean") for each frequency independently.
 
 
 
@@ -1478,7 +1476,7 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
        x_p[m] = x\!\big[m - \lfloor M/2\rfloor + h p\big]\, \conj{w[m]}\ ,
                 \quad m = 0, \ldots M-1\ ,
 
-   where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e, it is
+   where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e., it is
    the mid point of the window (`m_num_mid`). For notational convenience,
    :math:`x[k]:=0` for :math:`k\not\in\{0, 1, \ldots, N-1\}` is assumed. In the
    subsection :ref:`tutorial_stft_sliding_win` the indexing of the slices is
@@ -1719,7 +1717,7 @@ due to :math:`\vb{F}` being unitary. Furthermore
 
 shows that :math:`\vb{D}_p` is a diagonal matrix with non-negative entries.
 Hence, summing :math:`\vb{D}_p` preserves that property. This allows to
-simplify Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e,
+simplify Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e.,
 
 .. math::
     :label: eq_STFT_istftM
@@ -2123,9 +2121,9 @@ Some further reading and related software:
        Statistical aspects of spectral analysis of unevenly spaced data",
        The Astrophysical Journal, vol 263, pp. 835-853, 1982
 
-.. [#Townsend2010] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
-       periodogram using graphics processing units.", The Astrophysical
-       Journal Supplement Series, vol 191, pp. 247-253, 2010
+.. [#Zechmeister2009] M. Zechmeister and M. Kürster, "The generalised Lomb-Scargle 
+        periodogram. A new formalism for the floating-mean and Keplerian 
+        periodograms," Astronomy and Astrophysics, vol. 496, pp. 577-584, 2009
 
 .. [#Groechenig2001] Karlheinz Gröchenig: "Foundations of Time-Frequency Analysis",
        Birkhäuser Boston 2001, :doi:`10.1007/978-1-4612-0003-1`

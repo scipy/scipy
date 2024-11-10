@@ -61,7 +61,7 @@ def _normalize_sequence(input, rank):
     check if its length is equal to the length of array.
     """
     is_str = isinstance(input, str)
-    if not is_str and isinstance(input, Iterable):
+    if not is_str and np.iterable(input):
         normalized = list(input)
         if len(normalized) != rank:
             err = "sequence argument must have length equal to input rank"

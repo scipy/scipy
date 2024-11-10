@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from itertools import product
@@ -63,8 +63,6 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.binom, cython_special.binom, ('dd',), None),
     (special.boxcox, cython_special.boxcox, ('dd',), None),
     (special.boxcox1p, cython_special.boxcox1p, ('dd',), None),
-    (special.btdtr, cython_special.btdtr, ('ddd',), None),
-    (special.btdtri, cython_special.btdtri, ('ddd',), None),
     (special.btdtria, cython_special.btdtria, ('ddd',), None),
     (special.btdtrib, cython_special.btdtrib, ('ddd',), None),
     (special.cbrt, cython_special.cbrt, ('d',), None),
@@ -263,13 +261,13 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.rgamma, cython_special.rgamma, ('d', 'D'), None),
     (special.round, cython_special.round, ('d',), None),
     (special.spherical_jn, cython_special.spherical_jn, ('ld', 'ldb', 'lD', 'lDb'),
-     None),
+     "Python version supports negative reals; Cython version doesn't - see gh-21629"),
     (special.spherical_yn, cython_special.spherical_yn, ('ld', 'ldb', 'lD', 'lDb'),
-     None),
+     "Python version supports negative reals; Cython version doesn't - see gh-21629"),
     (special.spherical_in, cython_special.spherical_in, ('ld', 'ldb', 'lD', 'lDb'),
-     None),
+     "Python version supports negative reals; Cython version doesn't - see gh-21629"),
     (special.spherical_kn, cython_special.spherical_kn, ('ld', 'ldb', 'lD', 'lDb'),
-     None),
+     "Python version supports negative reals; Cython version doesn't - see gh-21629"),
     (special.shichi, cython_special._shichi_pywrap, ('d', 'D'), None),
     (special.sici, cython_special._sici_pywrap, ('d', 'D'), None),
     (special.sindg, cython_special.sindg, ('d',), None),

@@ -1,1 +1,1 @@
-scipy-openblas32==0.3.27.63.1
+scipy-openblas32==0.3.28.0.2

@@ -12,7 +12,7 @@ __all__ = [  # noqa: F822
     'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
     'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
     'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-    'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
+    'sosfreqz', 'freqz_sos', 'iirnotch', 'iirpeak', 'bilinear_zpk',
     'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk',
     'gammatone', 'iircomb',
 ]

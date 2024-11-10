@@ -18,7 +18,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     r"""
     maximum_bipartite_matching(graph, perm_type='row')
 
-    Returns a matching of a bipartite graph whose cardinality is as least that
+    Returns a matching of a bipartite graph whose cardinality is at least that
     of any given matching of the graph.
 
     Parameters
@@ -187,7 +187,7 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
 
     # Similarly, we use a stack for our depth-first search. As above, we only
     # represent vertices in the left partition, and since no augmenting path
-    # will visit more than i of thse before encountering an unmatched vertex
+    # will visit more than i of these before encountering an unmatched vertex
     # (as represented by i), the stack capacity can be limited to i + 1.
     # Elements will be pushed to stack_head and popped from stack_head - 1.
     cdef ITYPE_t[:] stack = np.empty(i + 1, dtype=ITYPE)

@@ -98,7 +98,7 @@ namespace cephes {
             }
 
             if (x > detail::tandg_lossth) {
-                sf_error("tandg", SF_ERROR_NO_RESULT, NULL);
+                set_error("tandg", SF_ERROR_NO_RESULT, NULL);
                 return 0.0;
             }
 

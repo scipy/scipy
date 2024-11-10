@@ -289,3 +289,12 @@ class TestHessianUpdateStrategy(TestCase):
         hess.update(s, y)
         B_updated = np.copy(hess.get_matrix())
         assert_array_equal(B, B_updated)
+
+
+@pytest.mark.parametrize('strategy', [BFGS, SR1])
+@pytest.mark.parametrize('approx_type', ['hess', 'inv_hess'])
+def test_matmul_equals_dot(strategy, approx_type):
+    H = strategy(init_scale=1)
+    H.initialize(2, approx_type)
+    v = np.array([1, 2])
+    assert_array_equal(H @ v, H.dot(v))

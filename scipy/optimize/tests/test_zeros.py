@@ -495,7 +495,7 @@ class TestNewton(TestScalarRootFinders):
     @pytest.mark.parametrize('method', ['secant', 'newton'])
     def test_int_x0_gh19280(self, method):
         # Originally, `newton` ensured that only floats were passed to the
-        # callable. This was indadvertently changed by gh-17669. Check that
+        # callable. This was inadvertently changed by gh-17669. Check that
         # it has been changed back.
         def f(x):
             # an integer raised to a negative integer power would fail

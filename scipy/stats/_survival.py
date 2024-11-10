@@ -391,7 +391,7 @@ def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> res.cdf.plot(ax)
+    >>> res.sf.plot(ax)
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()

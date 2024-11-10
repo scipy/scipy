@@ -49,8 +49,15 @@ def spdiags(data, diags, m=None, n=None, format=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``diags_array`` to take advantage
+        You are encouraged to use ``dia_array`` to take advantage
         of the sparse array functionality.
+
+    Notes
+    -----
+    This function can be replaced by an equivalent call to ``dia_matrix``
+    as::
+
+        dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
     See Also
     --------
@@ -88,7 +95,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         Sequence of arrays containing the array diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
-        Diagonals to set:
+        Diagonals to set (repeated offsets are not allowed):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
@@ -104,13 +111,19 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
 
     Notes
     -----
+    Repeated diagonal offsets are disallowed.
+
     The result from `diags_array` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    Repeated diagonal offsets are disallowed.
+    ``diags_array`` differs from `dia_array` in the way it handles off-diagonals.
+    Specifically, `dia_array` assumes the data input includes padding
+    (ignored values) at the start/end of the rows for positive/negative
+    offset, while ``diags_array` assumes the input data has no padding.
+    Each value in the input ``diagonals`` is used.
 
     .. versionadded:: 1.11
 
@@ -119,10 +132,10 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     >>> from scipy.sparse import diags_array
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
     >>> diags_array(diagonals, offsets=[0, -1, 2]).toarray()
-    array([[1, 0, 1, 0],
-           [1, 2, 0, 2],
-           [0, 2, 3, 0],
-           [0, 0, 3, 4]])
+    array([[1., 0., 1., 0.],
+           [1., 2., 0., 2.],
+           [0., 2., 3., 0.],
+           [0., 0., 3., 4.]])
 
     Broadcasting of scalars is supported (but shape needs to be
     specified):
@@ -142,6 +155,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
+
     """
     # if offsets is not a sequence, assume that there's only one diagonal
     if isscalarlike(offsets):
@@ -213,7 +227,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         Sequence of arrays containing the matrix diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
-        Diagonals to set:
+        Diagonals to set (repeated offsets are not allowed):
           - k = 0  the main diagonal (default)
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
@@ -234,8 +248,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
 
     Notes
     -----
-    This function differs from `spdiags` in the way it handles
-    off-diagonals.
+    Repeated diagonal offsets are disallowed.
 
     The result from `diags` is the sparse equivalent of::
 
@@ -243,7 +256,11 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    Repeated diagonal offsets are disallowed.
+    ``diags`` differs from ``dia_matrix`` in the way it handles off-diagonals.
+    Specifically, `dia_matrix` assumes the data input includes padding
+    (ignored values) at the start/end of the rows for positive/negative
+    offset, while ``diags` assumes the input data has no padding.
+    Each value in the input ``diagonals`` is used.
 
     .. versionadded:: 0.11
 
@@ -252,10 +269,10 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     >>> from scipy.sparse import diags
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
     >>> diags(diagonals, [0, -1, 2]).toarray()
-    array([[1, 0, 1, 0],
-           [1, 2, 0, 2],
-           [0, 2, 3, 0],
-           [0, 0, 3, 4]])
+    array([[1., 0., 1., 0.],
+           [1., 2., 0., 2.],
+           [0., 2., 3., 0.],
+           [0., 0., 3., 4.]])
 
     Broadcasting of scalars is supported (but shape needs to be
     specified):
@@ -275,6 +292,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
+
     """
     A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
     return dia_matrix(A).asformat(format)
@@ -602,23 +620,23 @@ def _compressed_sparse_stack(blocks, axis, return_spmatrix):
     """
     other_axis = 1 if axis == 0 else 0
     data = np.concatenate([b.data for b in blocks])
-    constant_dim = blocks[0].shape[other_axis]
+    constant_dim = blocks[0]._shape_as_2d[other_axis]
     idx_dtype = get_index_dtype(arrays=[b.indptr for b in blocks],
                                 maxval=max(data.size, constant_dim))
     indices = np.empty(data.size, dtype=idx_dtype)
-    indptr = np.empty(sum(b.shape[axis] for b in blocks) + 1, dtype=idx_dtype)
+    indptr = np.empty(sum(b._shape_as_2d[axis] for b in blocks) + 1, dtype=idx_dtype)
     last_indptr = idx_dtype(0)
     sum_dim = 0
     sum_indices = 0
     for b in blocks:
-        if b.shape[other_axis] != constant_dim:
+        if b._shape_as_2d[other_axis] != constant_dim:
             raise ValueError(f'incompatible dimensions for axis {other_axis}')
         indices[sum_indices:sum_indices+b.indices.size] = b.indices
         sum_indices += b.indices.size
-        idxs = slice(sum_dim, sum_dim + b.shape[axis])
+        idxs = slice(sum_dim, sum_dim + b._shape_as_2d[axis])
         indptr[idxs] = b.indptr[:-1]
         indptr[idxs] += last_indptr
-        sum_dim += b.shape[axis]
+        sum_dim += b._shape_as_2d[axis]
         last_indptr += b.indptr[-1]
     indptr[-1] = last_indptr
     # TODO remove this if-structure when sparse matrices removed
@@ -652,7 +670,7 @@ def _stack_along_minor_axis(blocks, axis):
 
     # check for incompatible dimensions
     other_axis = 1 if axis == 0 else 0
-    other_axis_dims = {b.shape[other_axis] for b in blocks}
+    other_axis_dims = {b._shape_as_2d[other_axis] for b in blocks}
     if len(other_axis_dims) > 1:
         raise ValueError(f'Mismatching dimensions along axis {other_axis}: '
                          f'{other_axis_dims}')
@@ -668,10 +686,10 @@ def _stack_along_minor_axis(blocks, axis):
     # - The max value in indptr is the number of non-zero entries. This is
     #   exceedingly unlikely to require int64, but is checked out of an
     #   abundance of caution.
-    sum_dim = sum(b.shape[axis] for b in blocks)
+    sum_dim = sum(b._shape_as_2d[axis] for b in blocks)
     nnz = sum(len(b.indices) for b in blocks)
     idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
-    stack_dim_cat = np.array([b.shape[axis] for b in blocks], dtype=idx_dtype)
+    stack_dim_cat = np.array([b._shape_as_2d[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
         indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
         indices_cat = (np.concatenate([b.indices for b in blocks])
@@ -1051,7 +1069,7 @@ def block_diag(mats, format=None, dtype=None):
     r_idx = 0
     c_idx = 0
     for a in mats:
-        if isinstance(a, (list, numbers.Number)):
+        if isinstance(a, (list | numbers.Number)):
             a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()

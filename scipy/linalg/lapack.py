@@ -359,6 +359,11 @@ All functions
    clange
    zlange
 
+   slantr
+   dlantr
+   clantr
+   zlantr
+
    slarf
    dlarf
    clarf
@@ -715,6 +720,11 @@ All functions
    dtpttr
    ctpttr
    ztpttr
+
+   strcon
+   dtrcon
+   ctrcon
+   ztrcon
 
    strexc
    dtrexc

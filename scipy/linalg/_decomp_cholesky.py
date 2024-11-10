@@ -56,11 +56,12 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
         Matrix to be decomposed
     lower : bool, optional
         Whether to compute the upper- or lower-triangular Cholesky
-        factorization.  Default is upper-triangular.
+        factorization. During decomposition, only the selected half of the
+        matrix is referenced. Default is upper-triangular.
     overwrite_a : bool, optional
         Whether to overwrite data in `a` (may improve performance).
     check_finite : bool, optional
-        Whether to check that the input matrix contains only finite numbers.
+        Whether to check that the entire input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
@@ -72,6 +73,16 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     Raises
     ------
     LinAlgError : if decomposition fails.
+
+    Notes
+    -----
+    During the finiteness check (if selected), the entire matrix `a` is
+    checked. During decomposition, `a` is assumed to be symmetric or Hermitian
+    (as applicable), and only the half selected by option `lower` is referenced.
+    Consequently, if `a` is asymmetric/non-Hermitian, `cholesky` may still
+    succeed if the symmetric/Hermitian matrix represented by the selected half
+    is positive definite, yet it may fail if an element in the other half is
+    non-finite.
 
     Examples
     --------
@@ -110,12 +121,13 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     a : (M, M) array_like
         Matrix to be decomposed
     lower : bool, optional
-        Whether to compute the upper or lower triangular Cholesky factorization
+        Whether to compute the upper or lower triangular Cholesky factorization.
+        During decomposition, only the selected half of the matrix is referenced.
         (Default: upper-triangular)
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
     check_finite : bool, optional
-        Whether to check that the input matrix contains only finite numbers.
+        Whether to check that the entire input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
@@ -136,6 +148,16 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     --------
     cho_solve : Solve a linear set equations using the Cholesky factorization
                 of a matrix.
+
+    Notes
+    -----
+    During the finiteness check (if selected), the entire matrix `a` is
+    checked. During decomposition, `a` is assumed to be symmetric or Hermitian
+    (as applicable), and only the half selected by option `lower` is referenced.
+    Consequently, if `a` is asymmetric/non-Hermitian, `cholesky` may still
+    succeed if the symmetric/Hermitian matrix represented by the selected half
+    is positive definite, yet it may fail if an element in the other half is
+    non-finite.
 
     Examples
     --------

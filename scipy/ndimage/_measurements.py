@@ -143,7 +143,7 @@ def label(input, structure=None, output=None):
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 3, 0],
-           [0, 0, 0, 4, 0, 0]])
+           [0, 0, 0, 4, 0, 0]], dtype=int32)
 
     Generate a structuring element that will consider features connected even
     if they touch diagonally:
@@ -169,7 +169,7 @@ def label(input, structure=None, output=None):
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 1, 0],
-           [0, 0, 0, 1, 0, 0]])
+           [0, 0, 0, 1, 0, 0]], dtype=int32)
 
     """
     input = np.asarray(input)
@@ -1083,13 +1083,13 @@ def minimum(input, labels=None, index=None):
     array([[1, 1, 0, 0],
            [1, 1, 0, 2],
            [0, 0, 0, 2],
-           [3, 3, 0, 0]])
+           [3, 3, 0, 0]], dtype=int32)
     >>> ndimage.minimum(a, labels=labels, index=np.arange(1, labels_nb + 1))
-    [1.0, 4.0, 3.0]
+    [1, 4, 3]
     >>> ndimage.minimum(a)
-    0.0
+    0
     >>> ndimage.minimum(a, labels=labels)
-    1.0
+    1
 
     """
     return _select(input, labels, index, find_min=True)[0]
@@ -1152,11 +1152,11 @@ def maximum(input, labels=None, index=None):
            [0, 2, 2, 0]])
     >>> from scipy import ndimage
     >>> ndimage.maximum(a)
-    15.0
+    15
     >>> ndimage.maximum(a, labels=labels, index=[1,2])
-    [5.0, 14.0]
+    [5, 14]
     >>> ndimage.maximum(a, labels=labels)
-    14.0
+    14
 
     >>> b = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
@@ -1167,9 +1167,9 @@ def maximum(input, labels=None, index=None):
     array([[1, 1, 0, 0],
            [1, 1, 0, 2],
            [0, 0, 0, 2],
-           [3, 3, 0, 0]])
+           [3, 3, 0, 0]], dtype=int32)
     >>> ndimage.maximum(b, labels=labels, index=np.arange(1, labels_nb + 1))
-    [5.0, 7.0, 9.0]
+    [5, 7, 9]
 
     """
     return _select(input, labels, index, find_max=True)[0]
@@ -1225,7 +1225,7 @@ def median(input, labels=None, index=None):
     array([[1, 1, 0, 2],
            [1, 1, 0, 2],
            [0, 0, 0, 2],
-           [3, 3, 0, 0]])
+           [3, 3, 0, 0]], dtype=int32)
     >>> ndimage.median(a, labels=labels, index=np.arange(1, labels_nb + 1))
     [2.5, 4.0, 6.0]
     >>> ndimage.median(a)

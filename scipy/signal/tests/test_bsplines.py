@@ -1,8 +1,9 @@
 # pylint: disable=missing-docstring
 import numpy as np
-from numpy import array
-from numpy.testing import (assert_allclose, assert_array_equal,
-                           assert_almost_equal)
+
+from scipy._lib._array_api import (
+    assert_almost_equal, xp_assert_close, xp_assert_equal
+)
 import pytest
 from pytest import raises
 
@@ -19,13 +20,13 @@ class TestBSplines:
     def test_spline_filter(self):
         np.random.seed(12457)
         # Test the type-error branch
-        raises(TypeError, bsp.spline_filter, array([0]), 0)
+        raises(TypeError, bsp.spline_filter, np.asarray([0]), 0)
         # Test the real branch
         np.random.seed(12457)
         data_array_real = np.random.rand(12, 12)
         # make the magnitude exceed 1, and make some negative
         data_array_real = 10*(1-2*data_array_real)
-        result_array_real = array(
+        result_array_real = np.asarray(
             [[-.463312621, 8.33391222, .697290949, 5.28390836,
               5.92066474, 6.59452137, 9.84406950, -8.78324188,
               7.20675750, -8.17222994, -4.38633345, 9.89917069],
@@ -62,7 +63,7 @@ class TestBSplines:
              [9.86326886, 1.05134482, -7.75950607, -3.64429655,
               7.81848957, -9.02270373, 3.73399754, -4.71962549,
               -7.71144306, 3.78263161, 6.46034818, -4.43444731]])
-        assert_allclose(bsp.spline_filter(data_array_real, 0),
+        xp_assert_close(bsp.spline_filter(data_array_real, 0),
                         result_array_real)
 
     def test_spline_filter_complex(self):
@@ -70,7 +71,7 @@ class TestBSplines:
         data_array_complex = np.random.rand(7, 7) + np.random.rand(7, 7)*1j
         # make the magnitude exceed 1, and make some negative
         data_array_complex = 10*(1+1j-2*data_array_complex)
-        result_array_complex = array(
+        result_array_complex = np.asarray(
             [[-4.61489230e-01-1.92994022j, 8.33332443+6.25519943j,
               6.96300745e-01-9.05576038j, 5.28294849+3.97541356j,
               5.92165565+7.68240595j, 6.59493160-1.04542804j,
@@ -102,86 +103,95 @@ class TestBSplines:
         # FIXME: for complex types, the computations are done in
         # single precision (reason unclear). When this is changed,
         # this test needs updating.
-        assert_allclose(bsp.spline_filter(data_array_complex, 0),
+        xp_assert_close(bsp.spline_filter(data_array_complex, 0),
                         result_array_complex, rtol=1e-6)
 
     def test_gauss_spline(self):
         np.random.seed(12459)
         assert_almost_equal(bsp.gauss_spline(0, 0), 1.381976597885342)
-        assert_allclose(bsp.gauss_spline(array([1.]), 1), array([0.04865217]))
+        xp_assert_close(bsp.gauss_spline(np.asarray([1.]), 1),
+                        np.asarray([0.04865217]), atol=1e-9
+        )
 
     def test_gauss_spline_list(self):
         # regression test for gh-12152 (accept array_like)
         knots = [-1.0, 0.0, -1.0]
         assert_almost_equal(bsp.gauss_spline(knots, 3),
-                            array([0.15418033, 0.6909883, 0.15418033]))
+                            np.asarray([0.15418033, 0.6909883, 0.15418033])
+        )
 
     def test_cspline1d(self):
         np.random.seed(12462)
-        assert_array_equal(bsp.cspline1d(array([0])), [0.])
-        c1d = array([1.21037185, 1.86293902, 2.98834059, 4.11660378,
-                     4.78893826])
+        xp_assert_equal(bsp.cspline1d(np.asarray([0])), [0.])
+        c1d = np.asarray([1.21037185, 1.86293902, 2.98834059, 4.11660378,
+                          4.78893826])
         # test lamda != 0
-        assert_allclose(bsp.cspline1d(array([1., 2, 3, 4, 5]), 1), c1d)
-        c1d0 = array([0.78683946, 2.05333735, 2.99981113, 3.94741812,
-                      5.21051638])
-        assert_allclose(bsp.cspline1d(array([1., 2, 3, 4, 5])), c1d0)
+        xp_assert_close(bsp.cspline1d(np.asarray([1., 2, 3, 4, 5]), 1), c1d)
+        c1d0 = np.asarray([0.78683946, 2.05333735, 2.99981113, 3.94741812,
+                           5.21051638])
+        xp_assert_close(bsp.cspline1d(np.asarray([1., 2, 3, 4, 5])), c1d0)
 
     def test_qspline1d(self):
         np.random.seed(12463)
-        assert_array_equal(bsp.qspline1d(array([0])), [0.])
+        xp_assert_equal(bsp.qspline1d(np.asarray([0])), [0.])
         # test lamda != 0
-        raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), 1.)
-        raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), -1.)
-        q1d0 = array([0.85350007, 2.02441743, 2.99999534, 3.97561055,
-                      5.14634135])
-        assert_allclose(bsp.qspline1d(array([1., 2, 3, 4, 5])), q1d0)
+        raises(ValueError, bsp.qspline1d, np.asarray([1., 2, 3, 4, 5]), 1.)
+        raises(ValueError, bsp.qspline1d, np.asarray([1., 2, 3, 4, 5]), -1.)
+        q1d0 = np.asarray([0.85350007, 2.02441743, 2.99999534, 3.97561055,
+                           5.14634135])
+        xp_assert_close(bsp.qspline1d(np.asarray([1., 2, 3, 4, 5])), q1d0)
 
     def test_cspline1d_eval(self):
         np.random.seed(12464)
-        assert_allclose(bsp.cspline1d_eval(array([0., 0]), [0.]), array([0.]))
-        assert_array_equal(bsp.cspline1d_eval(array([1., 0, 1]), []),
-                           array([]))
+        xp_assert_close(bsp.cspline1d_eval(np.asarray([0., 0]), [0.]),
+                        np.asarray([0.])
+        )
+        xp_assert_equal(bsp.cspline1d_eval(np.asarray([1., 0, 1]), []),
+                        np.asarray([])
+        )
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
-        dx = x[1]-x[0]
+        dx = x[1] - x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,
                 -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6.,
                 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12.,
                 12.5]
-        y = array([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
-                   1.396, 4.094])
+        y = np.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
+                        1.396, 4.094])
         cj = bsp.cspline1d(y)
-        newy = array([6.203, 4.41570658, 3.514, 5.16924703, 6.864, 6.04643068,
-                      4.21600281, 6.04643068, 6.864, 5.16924703, 3.514,
-                      4.41570658, 6.203, 6.80717667, 6.759, 6.98971173, 7.433,
-                      7.79560142, 7.874, 7.41525761, 5.879, 3.18686814, 1.396,
-                      2.24889482, 4.094, 2.24889482, 1.396, 3.18686814, 5.879,
-                      7.41525761, 7.874, 7.79560142, 7.433, 6.98971173, 6.759,
-                      6.80717667, 6.203, 4.41570658])
-        assert_allclose(bsp.cspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
+        newy = np.asarray([6.203, 4.41570658, 3.514, 5.16924703, 6.864, 6.04643068,
+                           4.21600281, 6.04643068, 6.864, 5.16924703, 3.514,
+                           4.41570658, 6.203, 6.80717667, 6.759, 6.98971173, 7.433,
+                           7.79560142, 7.874, 7.41525761, 5.879, 3.18686814, 1.396,
+                           2.24889482, 4.094, 2.24889482, 1.396, 3.18686814, 5.879,
+                           7.41525761, 7.874, 7.79560142, 7.433, 6.98971173, 6.759,
+                           6.80717667, 6.203, 4.41570658])
+        xp_assert_close(bsp.cspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
 
     def test_qspline1d_eval(self):
         np.random.seed(12465)
-        assert_allclose(bsp.qspline1d_eval(array([0., 0]), [0.]), array([0.]))
-        assert_array_equal(bsp.qspline1d_eval(array([1., 0, 1]), []),
-                           array([]))
+        xp_assert_close(bsp.qspline1d_eval(np.asarray([0., 0]), [0.]),
+                        np.asarray([0.])
+        )
+        xp_assert_equal(bsp.qspline1d_eval(np.asarray([1., 0, 1]), []),
+                        np.asarray([])
+        )
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1]-x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,
                 -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6.,
                 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12.,
                 12.5]
-        y = array([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
-                   1.396, 4.094])
+        y = np.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
+                        1.396, 4.094])
         cj = bsp.qspline1d(y)
-        newy = array([6.203, 4.49418159, 3.514, 5.18390821, 6.864, 5.91436915,
-                      4.21600002, 5.91436915, 6.864, 5.18390821, 3.514,
-                      4.49418159, 6.203, 6.71900226, 6.759, 7.03980488, 7.433,
-                      7.81016848, 7.874, 7.32718426, 5.879, 3.23872593, 1.396,
-                      2.34046013, 4.094, 2.34046013, 1.396, 3.23872593, 5.879,
-                      7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
-                      6.71900226, 6.203, 4.49418159])
-        assert_allclose(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
+        newy = np.asarray([6.203, 4.49418159, 3.514, 5.18390821, 6.864, 5.91436915,
+                           4.21600002, 5.91436915, 6.864, 5.18390821, 3.514,
+                           4.49418159, 6.203, 6.71900226, 6.759, 7.03980488, 7.433,
+                           7.81016848, 7.874, 7.32718426, 5.879, 3.23872593, 1.396,
+                           2.34046013, 4.094, 2.34046013, 1.396, 3.23872593, 5.879,
+                           7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
+                           6.71900226, 6.203, 4.49418159])
+        xp_assert_close(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
 
 
 # i/o dtypes with scipy 1.9.1, likely fixed by backwards compat
@@ -231,21 +241,19 @@ class TestSepfir2d:
         h1 = [0.5, 1, 0.5]
         h2 = [1]
         result = signal.sepfir2d(a, h1, h2)
-        expected = array([[2.5, 4. , 5.5, 5.5, 4. , 2.5],
-                          [2.5, 4. , 5.5, 5.5, 4. , 2.5],
-                          [2.5, 4. , 5.5, 5.5, 4. , 2.5],
-                          [2.5, 4. , 5.5, 5.5, 4. , 2.5]])
-
-        assert_allclose(result, expected, atol=1e-16)
-        assert result.dtype == sepfir_dtype_map[dtyp]
+        dt = sepfir_dtype_map[dtyp]
+        expected = np.asarray([[2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                               [2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                               [2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                               [2.5, 4. , 5.5, 5.5, 4. , 2.5]], dtype=dt)
+        xp_assert_close(result, expected, atol=1e-16)
 
         result = signal.sepfir2d(a, h2, h1)
-        expected = array([[2., 4., 6., 6., 4., 2.],
-                          [2., 4., 6., 6., 4., 2.],
-                          [2., 4., 6., 6., 4., 2.],
-                          [2., 4., 6., 6., 4., 2.]])
-        assert_allclose(result, expected, atol=1e-16)
-        assert result.dtype == sepfir_dtype_map[dtyp]
+        expected = np.asarray([[2., 4., 6., 6., 4., 2.],
+                               [2., 4., 6., 6., 4., 2.],
+                               [2., 4., 6., 6., 4., 2.],
+                               [2., 4., 6., 6., 4., 2.]], dtype=dt)
+        xp_assert_close(result, expected, atol=1e-16)
 
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
@@ -258,7 +266,7 @@ class TestSepfir2d:
         h1, h2 = [0.5, 1, 0.5], [1]
         result_strided = signal.sepfir2d(a[:, ::2], h1, h2)
         result_contig = signal.sepfir2d(a[:, ::2].copy(), h1, h2)
-        assert_allclose(result_strided, result_contig, atol=1e-15)
+        xp_assert_close(result_strided, result_contig, atol=1e-15)
         assert result_strided.dtype == result_contig.dtype
 
     @pytest.mark.xfail(reason="XXX: filt.size > image.shape: flaky")
@@ -269,11 +277,11 @@ class TestSepfir2d:
         filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0, 3.0, 2.0])
         image = np.random.rand(4, 4)
 
-        expected = np.array([[36.018162, 30.239061, 38.71187 , 43.878183],
-                             [38.180999, 35.824583, 43.525247, 43.874945],
-                             [43.269533, 40.834018, 46.757772, 44.276423],
-                             [49.120928, 39.681844, 43.596067, 45.085854]])
-        assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
+        expected = np.asarray([[36.018162, 30.239061, 38.71187 , 43.878183],
+                                [38.180999, 35.824583, 43.525247, 43.874945],
+                                [43.269533, 40.834018, 46.757772, 44.276423],
+                                [49.120928, 39.681844, 43.596067, 45.085854]])
+        xp_assert_close(signal.sepfir2d(image, filt, filt[::3]), expected)
 
     @pytest.mark.xfail(reason="XXX: flaky. pointers OOB on some platforms")
     @pytest.mark.parametrize('dtyp',
@@ -284,28 +292,30 @@ class TestSepfir2d:
         # unsafe casting errors for many combinations. Historically, dtype handling
         # in `sepfir2d` is a tad baroque; fixing it is an enhancement.
         filt = np.array([1, 2, 4, 2, 1, 3, 2], dtype=dtyp)
-        image = np.array([[0, 3, 0, 1, 2],
-                          [2, 2, 3, 3, 3],
-                          [0, 1, 3, 0, 3],
-                          [2, 3, 0, 1, 3],
-                          [3, 3, 2, 1, 2]], dtype=dtyp)
+        image = np.asarray([[0, 3, 0, 1, 2],
+                            [2, 2, 3, 3, 3],
+                            [0, 1, 3, 0, 3],
+                            [2, 3, 0, 1, 3],
+                            [3, 3, 2, 1, 2]], dtype=dtyp)
 
-        expected = array([[123., 101.,  91., 136., 127.],
-             [133., 125., 126., 152., 160.],
-             [136., 137., 150., 162., 177.],
-             [133., 124., 132., 148., 147.],
-             [173., 158., 152., 164., 141.]])
+        expected = [[123., 101.,  91., 136., 127.],
+                    [133., 125., 126., 152., 160.],
+                    [136., 137., 150., 162., 177.],
+                    [133., 124., 132., 148., 147.],
+                    [173., 158., 152., 164., 141.]]
+        expected = np.asarray(expected)
         result = signal.sepfir2d(image, filt, filt[::3])
-        assert_allclose(result, expected, atol=1e-15)
+        xp_assert_close(result, expected, atol=1e-15)
         assert result.dtype == sepfir_dtype_map[dtyp]
 
-        expected = array([[22., 35., 41., 31., 47.],
-             [27., 39., 48., 47., 55.],
-             [33., 42., 49., 53., 59.],
-             [39., 44., 41., 36., 48.],
-             [67., 62., 47., 34., 46.]])
+        expected = [[22., 35., 41., 31., 47.],
+                    [27., 39., 48., 47., 55.],
+                    [33., 42., 49., 53., 59.],
+                    [39., 44., 41., 36., 48.],
+                    [67., 62., 47., 34., 46.]]
+        expected = np.asarray(expected)
         result = signal.sepfir2d(image, filt[::3], filt[::3])
-        assert_allclose(result, expected, atol=1e-15)
+        xp_assert_close(result, expected, atol=1e-15)
         assert result.dtype == sepfir_dtype_map[dtyp]
 
 

@@ -3,6 +3,7 @@
 #
 
 from functools import reduce
+import random
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -650,6 +651,47 @@ class TestTbtrs:
         assert_raises(Exception, tbtrs, ab, b)
 
 
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['I', '1', 'O'])
+@pytest.mark.parametrize('uplo', ['U', 'L'])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('n', [3, 10])
+def test_trcon(dtype, norm, uplo, diag, n):
+    # Simple way to get deterministic (unlike `hash`) integer seed based on arguments
+    random.seed(f"{dtype}{norm}{uplo}{diag}{n}")
+    rng = np.random.default_rng(random.randint(0, 9999999999999))
+
+    A = rng.random(size=(n, n)) + rng.random(size=(n, n))*1j
+    # make the condition numbers more interesting
+    offset = rng.permuted(np.logspace(0, rng.integers(0, 10), n))
+    A += offset
+    A = A.real if np.issubdtype(dtype, np.floating) else A
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        A /= np.diag(A)[:, np.newaxis]
+    A = A.astype(dtype)
+
+    trcon = get_lapack_funcs('trcon', (A,))
+    res, _ = trcon(A, norm=norm, uplo=uplo, diag=diag)
+
+    if norm == 'I':
+        norm_A = np.linalg.norm(A, ord=np.inf)
+        norm_inv_A = np.linalg.norm(np.linalg.inv(A), ord=np.inf)
+        ref = 1 / (norm_A * norm_inv_A)
+    else:
+        anorm = np.abs(A).sum(axis=0).max()
+        gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+        lu, ipvt, info = getrf(A)
+        ref, _ = gecon(lu, anorm, norm=norm)
+
+    # This is an estimate of reciprocal condition number; we just need order of
+    # magnitude. In testing, we observed that much smaller rtol is OK in almost
+    # all cases... but sometimes it isn't.
+    rtol = 1  # np.finfo(dtype).eps**0.75
+    assert_allclose(res, ref, rtol=rtol)
+
+
 def test_lartg():
     for dtype in 'fdFD':
         lartg = get_lapack_funcs('lartg', dtype=dtype)
@@ -1205,7 +1247,7 @@ def test_ormrz_unmrz():
 
 def test_tfttr_trttf():
     """
-    Test conversion routines between the Rectengular Full Packed (RFP) format
+    Test conversion routines between the Rectangular Full Packed (RFP) format
     and Standard Triangular Array (TR)
     """
     seed(1234)
@@ -1263,7 +1305,7 @@ def test_tfttr_trttf():
 
 def test_tpttr_trttp():
     """
-    Test conversion routines between the Rectengular Full Packed (RFP) format
+    Test conversion routines between the Rectangular Full Packed (RFP) format
     and Standard Triangular Array (TR)
     """
     seed(1234)
@@ -1304,7 +1346,7 @@ def test_tpttr_trttp():
 
 def test_pftrf():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array
     """
     seed(1234)
@@ -1331,7 +1373,7 @@ def test_pftrf():
 
 def test_pftri():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array to find its inverse
     """
     seed(1234)
@@ -1363,7 +1405,7 @@ def test_pftri():
 
 def test_pftrs():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
+    Test Cholesky factorization of a positive definite Rectangular Full
     Packed (RFP) format array and solve a linear system
     """
     seed(1234)
@@ -2950,7 +2992,7 @@ def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
                                      [1 - 1j, 2 + 1j]]))])
 def test_ptsvx_NAG(d, e, b, x):
     # test to assure that wrapper is consistent with NAG Manual Mark 26
-    # example problemss: f07jbf, f07jpf
+    # example problems: f07jbf, f07jpf
     # (Links expire, so please search for "NAG Library Manual Mark 26" online)
 
     # obtain routine with correct type based on e.dtype
@@ -3439,3 +3481,24 @@ def test_sy_hetrs(mtype, dtype, lower):
     assert info == 0
     eps = np.finfo(dtype).eps
     assert_allclose(A@x, b, atol=100*n*eps)
+
+
+@pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
+@pytest.mark.parametrize('uplo, m, n', [('U', 5, 10), ('U', 10, 10),
+                                        ('L', 10, 5), ('L', 10, 10)])
+@pytest.mark.parametrize('diag', ['N', 'U'])
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_lantr(norm, uplo, m, n, diag, dtype):
+    rng = np.random.default_rng(98426598246982456)
+    A = rng.random(size=(m, n)).astype(dtype)
+    lantr, lange = get_lapack_funcs(('lantr', 'lange'), (A,))
+    res = lantr(norm, A, uplo=uplo, diag=diag)
+
+    # now modify the matrix according to assumptions made by `lantr`
+    A = np.triu(A) if uplo == 'U' else np.tril(A)
+    if diag == 'U':
+        i = np.arange(min(m, n))
+        A[i, i] = 1
+    ref = lange(norm, A)
+
+    assert_allclose(res, ref, rtol=2e-6)

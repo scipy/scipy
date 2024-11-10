@@ -5,6 +5,7 @@ py3.install_sources([
     'test_binned_statistic.py',
     'test_censored_data.py',
     'test_contingency.py',
+    'test_continuous.py',
     'test_continuous_basic.py',
     'test_continuous_fit_censored.py',
     'test_crosstab.py',
