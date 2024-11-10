@@ -6,7 +6,7 @@ from scipy import stats
 from scipy.stats._axis_nan_policy import SmallSampleWarning
 
 
-class TestXiCorrelation:
+class TestChatterjeeXi:
     @pytest.mark.parametrize('case', [
         dict(y_cont=True, statistic=-0.303030303030303, pvalue=0.9351329808526656),
         dict(y_cont=False, statistic=0.07407407407407396, pvalue=0.3709859367123997)])
@@ -29,7 +29,7 @@ class TestXiCorrelation:
 
         y = (rng.random(size=10) if case['y_cont']
              else rng.integers(0, 5, size=10))
-        res = stats.xi_correlation(x, y, y_continuous=case['y_cont'])
+        res = stats.chatterjeexi(x, y, y_continuous=case['y_cont'])
 
         assert_allclose(res.statistic, case['statistic'])
         assert_allclose(res.pvalue, case['pvalue'])
@@ -45,9 +45,9 @@ class TestXiCorrelation:
         y = (rng.random(size=shape) if y_continuous
              else rng.integers(0, 10, size=shape))
         method = stats.PermutationMethod(random_state=rng)
-        res = stats.xi_correlation(x, y, method=method,
-                                   y_continuous=y_continuous, axis=-1)
-        ref = stats.xi_correlation(x, y, y_continuous=y_continuous, axis=-1)
+        res = stats.chatterjeexi(x, y, method=method,
+                                 y_continuous=y_continuous, axis=-1)
+        ref = stats.chatterjeexi(x, y, y_continuous=y_continuous, axis=-1)
         np.testing.assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         np.testing.assert_allclose(res.pvalue, ref.pvalue, rtol=2e-2)
 
@@ -57,24 +57,24 @@ class TestXiCorrelation:
 
         message = 'shape mismatch: objects cannot be broadcast...'
         with pytest.raises(ValueError, match=message):
-            stats.xi_correlation(x, y[:-1])
+            stats.chatterjeexi(x, y[:-1])
 
         message = '`axis` is out of bounds for array...'
         with pytest.raises(ValueError, match=message):
-            stats.xi_correlation(x, y, axis=10)
+            stats.chatterjeexi(x, y, axis=10)
 
         message = '`y_continuous` must be boolean.'
         with pytest.raises(ValueError, match=message):
-            stats.xi_correlation(x, y, y_continuous='a herring')
+            stats.chatterjeexi(x, y, y_continuous='a herring')
 
         message = "`method` must be 'asymptotic' or"
         with pytest.raises(ValueError, match=message):
-            stats.xi_correlation(x, y, method='ekki ekii')
+            stats.chatterjeexi(x, y, method='ekki ekii')
 
     def test_special_cases(self):
         message = 'One or more sample arguments is too small...'
         with pytest.warns(SmallSampleWarning, match=message):
-            res = stats.xi_correlation([1], [2])
+            res = stats.chatterjeexi([1], [2])
 
         assert np.isnan(res.statistic)
         assert np.isnan(res.pvalue)

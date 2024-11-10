@@ -4,7 +4,7 @@ from scipy.stats._stats_py import _SimpleNormal, SignificanceResult, _get_pvalue
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
 
-__all__ = ['xi_correlation']
+__all__ = ['chatterjeexi']
 
 
 # TODO:
@@ -65,8 +65,8 @@ def _xi_std(r, l, y_continuous):
     return np.sqrt(tau2) / np.sqrt(n)
 
 
-def _xi_correlation_iv(y_continuous, method):
-    # Input validation for `xi_correlation`
+def _chatterjeexi_iv(y_continuous, method):
+    # Input validation for `chatterjeexi`
     # x, y, `axis` input validation taken care of by decorator
 
     if y_continuous not in {True, False}:
@@ -87,7 +87,7 @@ def _unpack(res):
 
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
-def xi_correlation(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
+def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     r"""Compute the xi correlation and perform a test of independence
 
     The xi correlation coefficient is a measure of association between two
@@ -159,7 +159,7 @@ def xi_correlation(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     >>> rng = np.random.default_rng(348932549825235)
     >>> x = rng.uniform(0, 10, size=100)
     >>> y = np.sin(x)
-    >>> res = stats.xi_correlation(x, y)
+    >>> res = stats.chatterjeexi(x, y)
     >>> res.statistic
     np.float64(0.9012901290129013)
 
@@ -172,7 +172,7 @@ def xi_correlation(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     As noise is introduced, the correlation coefficient decreases.
 
     >>> noise = rng.normal(scale=[[0.1], [0.5], [1]], size=(3, 100))
-    >>> res = stats.xi_correlation(x, y + noise, axis=-1)
+    >>> res = stats.chatterjeexi(x, y + noise, axis=-1)
     >>> res.statistic
     array([0.79507951, 0.41824182, 0.16651665])
 
@@ -180,13 +180,13 @@ def xi_correlation(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     ``y_continuous=True``. The statistic is identical, and the p-value
     (not shown) is only slightly different.
 
-    >>> stats.xi_correlation(x, y + noise, y_continuous=True, axis=-1).statistic
+    >>> stats.chatterjeexi(x, y + noise, y_continuous=True, axis=-1).statistic
     array([0.79507951, 0.41824182, 0.16651665])
 
     """
     # x, y, `axis` input validation taken care of by decorator
     # In fact, `axis` is guaranteed to be -1
-    y_continuous, method = _xi_correlation_iv(y_continuous, method)
+    y_continuous, method = _chatterjeexi_iv(y_continuous, method)
 
     # A highly negative statistic is possible, e.g.
     # x = np.arange(100.), y = (x % 2 == 0)
