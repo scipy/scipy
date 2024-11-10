@@ -603,7 +603,7 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     Notes
     -----
-    The 1D case is also known as the Kronecker delta.
+    The 1D case is also known as the Dirac delta.
 
     .. versionadded:: 0.19.0
 
