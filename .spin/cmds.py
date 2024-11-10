@@ -421,7 +421,7 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
     '--submodule', '-s', default=None, metavar='MODULE_NAME',
     help="Submodule whose tests to run (cluster, constants, ...)")
 @click.option(
-    '--tests', '-t', default=None, multiple=True, metavar='TESTS',
+    '--tests', '-t', default=None, metavar='TESTS',
     help='Specify tests to run')
 @click.option(
     '--mode', '-m', default='not slow', metavar='MODE', show_default=True,
@@ -469,6 +469,9 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
     For more, see `pytest --help`.
     """  # noqa: E501
     tests = ctx.params['tests']
+    if ctx.params["submodule"]:
+        tests = PROJECT_MODULE + "." + ctx.params["submodule"]
+
     markexpr = ctx.params['mode']
     if (not pytest_args) and (not tests):
         pytest_args = ('scipy',)
@@ -484,15 +487,8 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
     if (n_jobs != 1) and ('-n' not in pytest_args):
         pytest_args = ('-n', str(n_jobs)) + pytest_args
 
-    if ctx.params["submodule"]:
-        tests = PROJECT_MODULE + "." + ctx.params["submodule"]
-    elif ctx.params["tests"]:
-        tests = ctx.params["tests"]
-    else:
-        tests = PROJECT_MODULE
-
     if tests and '--pyargs' not in pytest_args:
-        pytest_args = ('--pyargs', tests) + pytest_args
+        pytest_args += ('--pyargs', tests)
 
     if verbose:
         pytest_args = ('-v',) + pytest_args
