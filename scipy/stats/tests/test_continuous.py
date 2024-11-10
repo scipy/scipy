@@ -306,7 +306,8 @@ class TestDistributions:
         i_fl = [0, -1]  # first and last
         assert np.isinf(res2[i_fl]).all()
         assert res1[1] == res2[1]
-        assert res1[1] != ref[1]
+        # quadrature happens to be perfectly accurate on some platforms
+        # assert res1[1] != ref[1]
         assert_equal(res1[i_fl], ref[i_fl])
 
     def test_logcdf2_safe(self):
