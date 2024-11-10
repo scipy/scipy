@@ -41,7 +41,7 @@ which minimizes
 
 .. math::
 
-        \sum\limits_{i=1}^n w_i \left\lvert y_i - g(x_i) \right\rvert^2 +
+        \sum\limits_{j=1}^n w_j \left\lvert y_j - g(x_j) \right\rvert^2 +
         \lambda\int\limits_{x_1}^{x_n} \left( g^{(2)}(u) \right)^2 d u
 
 where :math:`\lambda \geqslant 0` is a non-negative penalty parameter, and :math:`g^{(2)}(x)`
@@ -51,7 +51,7 @@ over the whole interval :math:`x \in [x_1, x_n]`.
 
 Here the first term penalizes the deviation of the spline function from the data,
 and the second term penalizes large values of the second derivative---which is
-taken as the main criterion for smoothness of a curve.
+taken as the criterion for the smoothness of a curve.
 
 The target function, :math:`g(x)`, is taken to be a natural cubic spline *with
 knots at the data points*, :math:`x_j`, and the minimization is carried over
@@ -87,7 +87,7 @@ sine curve with some noise:
    >>> import numpy as np
    >>> from scipy.interpolate import make_smoothing_spline
 
-   Generate some noisy data
+   Generate some noisy data:
 
    >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/16)
    >>> rng = np.random.default_rng()
@@ -128,7 +128,7 @@ these differ from `make_smoothing_spline` in several ways:
 - instead of the penalty parameter :math:`\lambda`, a smoothness parameter :math:`s`
   is used;
 - these routines automatically construct the knot vector; depending on inputs,
-  resulting splines may have much less knots than data points.
+  resulting splines may have much fewer knots than data points.
 - by default boundary conditions differ: while `make_smoothing_spline` constructs
   natural cubic splines, these routines use the not-a-knot boundary conditions by default. 
 
@@ -207,7 +207,7 @@ step. In pseudocode::
     with the not-a-knot boundary condition instead of iterating.
 
 The iterative procedure of constructing a knot vector is available through the
-generator function ``generate_knots``. To illustrate:
+generator function `generate_knots`. To illustrate:
 
 >>> import numpy as np
 >>> from scipy.interpolate import generate_knots
@@ -301,7 +301,7 @@ Smoothing spline curves in :math:`d>1`
 
 So far we considered constructing smoothing spline functions, :math:`g(x)` given
 data arrays ``x`` and ``y``. We now consider a related problem of constructing
-a smoothing spline *curve*, where the we consider the data as points on a plane,
+a smoothing spline *curve*, where we consider the data as points on a plane,
 :math:`\mathbf{p}_j = (x_j, y_j)`, and we want to construct a parametric function
 :math:`\mathbf{g}(\mathbf{p}) = (g_x(u), g_y(u))`, where the values of the
 parameter :math:`u_j` correspond to :math:`x_j` and :math:`y_j`.
@@ -311,7 +311,7 @@ we simply have :math:`d` data arrays and construct a parametric function with
 :math:`d` components.
 
 Also note that the choice of parametrization cannot be automated, and different
-parametrizations can lead to very different curves for the same data,
+parameterizations can lead to very different curves for the same data,
 even for :ref:`interpolating curves<tutorial-interpolate_parametric>`.
 
 Once a specific form of parametrization is chosen, the problem of constructing a
