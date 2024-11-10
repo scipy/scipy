@@ -2139,10 +2139,12 @@ def assert_really_equal(x, y, rtol=None):
 
 
 class TestFactorialFunctions:
-    def factorialk_approx_ref(self, n, k, extend):
+    def factorialk_ref(self, n, k, exact, extend):
+        if exact:
+            return special.factorialk(n, k=k, exact=True)
         # for details / explanation see factorialk-docstring
         r = np.mod(n, k) if extend == "zero" else 1
-        vals = np.power(k, (n - r)/k) * special.gamma(n/k + 1) / special.gamma(r/k + 1)
+        vals = np.power(k, (n - r)/k) * special.gamma(n/k + 1) * special.rgamma(r/k + 1)
         # np.maximum is element-wise, which is what we want
         return vals * np.maximum(r, 1)
 
@@ -2628,8 +2630,8 @@ class TestFactorialFunctions:
             expected = np.complex128("nan+nanj") if complexify else np.float64("nan")
             assert_really_equal(special.factorial2(n, **kw), expected)
         else:
-            expected = self.factorialk_approx_ref(n, k=2, extend=extend)
-            assert_equal(special.factorial2(n, **kw), expected)
+            expected = self.factorialk_ref(n, k=2, **kw)
+            assert_really_equal(special.factorial2(n, **kw), expected, rtol=1e-15)
 
     @pytest.mark.parametrize("k", range(1, 5))
     # note that n=170 is the last integer such that factorial(n) fits float64;
@@ -2774,8 +2776,8 @@ class TestFactorialFunctions:
             expected = np.complex128("nan+nanj") if complexify else np.float64("nan")
             assert_really_equal(special.factorialk(n, **kw), expected)
         else:
-            expected = self.factorialk_approx_ref(n, k=k, extend=extend)
-            assert_equal(special.factorialk(n, **kw), expected)
+            expected = self.factorialk_ref(n, **kw)
+            assert_really_equal(special.factorialk(n, **kw), expected, rtol=1e-15)
 
     @pytest.mark.parametrize("k", range(1, 5))
     def test_factorialk_deprecation_exact(self, k):

@@ -11,7 +11,7 @@ from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 
 from . import _ufuncs
-from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
+from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 
@@ -2931,27 +2931,29 @@ def _factorialx_array_approx(n, k, extend):
     return result
 
 
+def _gamma1p(vals):
+    """
+    returns gamma(n+1), though with NaN at -1 instead of inf, c.f. #21827
+    """
+    res = gamma(vals + 1)
+    # replace infinities at -1 (from gamma function at 0) with nan
+    # gamma only returns inf for real inputs; can ignore complex case
+    if isinstance(res, np.ndarray):
+        if not _is_subdtype(vals.dtype, "c"):
+            res[vals == -1] = np.nan
+    elif np.isinf(res) and vals == -1:
+        res = np.float64("nan")
+    return res
+
+
 def _factorialx_approx_core(n, k, extend):
     """
     Core approximation to multifactorial for array n and integer k.
     """
-    def _gamma_no_inf(vals):
-        res = gamma(vals)
-        # replace infinities coming from gamma function with nan, see #19071;
-        # gamma only returns inf for real inputs, so no fix needed for complex inputs
-        if isinstance(res, np.ndarray):
-            if not _is_subdtype(vals.dtype, "c"):
-                # we _do_ keep infinity where input itself was +∞
-                keep_as_inf = np.isinf(vals) & (vals > 0)
-                res[np.isinf(res) & ~keep_as_inf] = np.nan
-        elif np.isinf(res) and not (np.isinf(vals) and (vals > 0)):
-            res = np.float64("nan")
-        return res
-
     if k == 1:
         # shortcut for k=1; same for both extensions, because we assume the
         # handling of extend == 'zero' happens in _factorialx_array_approx
-        result = _gamma_no_inf(n + 1)
+        result = _gamma1p(n)
         if isinstance(n, np.ndarray):
             # gamma does not maintain 0-dim arrays; fix it
             result = np.array(result)
@@ -2963,8 +2965,8 @@ def _factorialx_approx_core(n, k, extend):
         with warnings.catch_warnings():
             # do not warn about 0 * inf, nan / nan etc.; the results are correct
             warnings.simplefilter("ignore", RuntimeWarning)
-            result = np.power(k, (n - 1) / k, dtype=p_dtype) * _gamma_no_inf(n / k + 1)
-            result /= _gamma_no_inf(1 / k + 1)
+            result = np.power(k, (n - 1) / k, dtype=p_dtype) * _gamma1p(n / k)
+            result *= rgamma(1 / k + 1)
         if isinstance(n, np.ndarray):
             # ensure we keep array-ness for 0-dim inputs; already n/k above loses it
             result = np.array(result)
@@ -3212,7 +3214,7 @@ def factorial2(n, exact=False, extend="zero"):
         elif extend == "zero" and n < 0:
             return 0 if exact else np.float64(0)
         elif n in {0, 1}:
-            return 1
+            return 1 if exact else np.float64(1)
 
         if exact:
             # general integer case
@@ -3372,7 +3374,7 @@ def factorialk(n, k, exact=None, extend="zero"):
         elif extend == "zero" and n < 0:
             return 0 if exact else np.float64(0)
         elif n in {0, 1}:
-            return 1
+            return 1 if exact else np.float64(1)
 
         if exact:
             # general integer case
