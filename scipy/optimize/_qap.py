@@ -1,5 +1,7 @@
 import numpy as np
 import operator
+import warnings
+import numbers
 from . import (linear_sum_assignment, OptimizeResult)
 from ._optimize import _check_unknown_options
 
@@ -61,7 +63,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
             ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
             where ``m`` is not greater than the number of nodes, :math:`n`.
 
-        rng : {None, int, `numpy.random.Generator`}
+        rng : `numpy.random.Generator`, optional
             Pseudorandom number generator state. When `rng` is None, a new
             `numpy.random.Generator` is created using entropy from the
             operating system. Types other than `numpy.random.Generator` are
@@ -70,9 +72,14 @@ def quadratic_assignment(A, B, method="faq", options=None):
             .. versionchanged:: 1.15.0
                 As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
                 transition from use of `numpy.random.RandomState` to
-                `numpy.random.Generator` is occurring. For an interim period you can
-                continue to supply `np.random.RandomState` to this function. After this
-                period using `np.random.RandomState` will raise an exception.
+                `numpy.random.Generator` is occurring. Supplying
+                `np.random.RandomState` to this function will now emit a
+                `DeprecationWarning`. In SciPy 1.17 its use will raise an exception.
+                In addition relying on global state using `np.random.seed`
+                will emit a `FutureWarning`, in SciPy 1.17 the global random number
+                generator will no longer be used. Use of an int-like seed will raise a
+                `FutureWarning`, in SciPy 1.17 it will be normalized via
+                `np.random.default_rng` rather than `np.random.RandomState`.
 
         For method-specific options, see
         :func:`show_options('quadratic_assignment') <show_options>`.
@@ -192,8 +199,34 @@ def quadratic_assignment(A, B, method="faq", options=None):
                "2opt": _quadratic_assignment_2opt}
     if method not in methods:
         raise ValueError(f"method {method} must be in {methods}.")
+
+    _spec007_transition(options.get("rng", None))
     res = methods[method](A, B, **options)
     return res
+
+
+def _spec007_transition(rng):
+    if isinstance(rng, np.random.RandomState):
+        warnings.warn(
+            "Use of `RandomState` with `quadratic_assignment`is being phased out"
+            " and will result in an Exception in SciPy 1.17",
+            DeprecationWarning,
+            stacklevel=2
+        )
+    if rng is None and np.random.mtrand._rand._bit_generator._seed_seq is None:
+        warnings.warn(
+            "The NumPy global RNG was seeded by calling `np.random.seed`."
+            " From SciPy 1.17, this function will no longer use the global RNG.",
+            FutureWarning,
+            stacklevel=2
+        )
+    if isinstance(rng, numbers.Integral | np.integer):
+        warnings.warn(
+            "From SciPy 1.17, use of an integer seed will be normalized via"
+            " `np.random.default_rng`, rather than `np.random.RandomState`",
+            FutureWarning,
+            stacklevel=2
+        )
 
 
 def _calc_score(A, B, perm):
