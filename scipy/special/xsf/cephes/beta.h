@@ -53,6 +53,7 @@
 #include "../config.h"
 #include "const.h"
 #include "gamma.h"
+#include "rgamma.h"
 
 namespace xsf {
 namespace cephes {
@@ -155,17 +156,18 @@ namespace cephes {
             return (sign * std::exp(y));
         }
 
-        y = Gamma(y);
+        y = rgamma(y);
         a = Gamma(a);
         b = Gamma(b);
-        if (y == 0.0)
+        if (std::isinf(y)) {
             goto overflow;
+	}
 
-        if (std::abs(std::abs(a) - std::abs(y)) > std::abs(std::abs(b) - std::abs(y))) {
-            y = b / y;
+        if (std::abs(std::abs(a*y) - 1.0) > std::abs(std::abs(b*y) - 1.0)) {
+            y = b * y;
             y *= a;
         } else {
-            y = a / y;
+            y = a * y;
             y *= b;
         }
 
@@ -228,20 +230,20 @@ namespace cephes {
             return (y);
         }
 
-        y = Gamma(y);
+        y = rgamma(y);
         a = Gamma(a);
         b = Gamma(b);
-        if (y == 0.0) {
+        if (std::isinf(y)) {
         over:
             set_error("lbeta", SF_ERROR_OVERFLOW, NULL);
             return (sign * std::numeric_limits<double>::infinity());
         }
 
-        if (std::abs(std::abs(a) - std::abs(y)) > std::abs(std::abs(b) - std::abs(y))) {
-            y = b / y;
+        if (std::abs(std::abs(a*y) - 1.0) > std::abs(std::abs(b*y) - 1.0)) {
+            y = b * y;
             y *= a;
         } else {
-            y = a / y;
+            y = a * y;
             y *= b;
         }
 

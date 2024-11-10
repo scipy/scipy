@@ -75,6 +75,7 @@
 
 #include "const.h"
 #include "gamma.h"
+#include "rgamma.h"
 #include "psi.h"
 
 namespace xsf {
@@ -252,9 +253,9 @@ namespace cephes {
                     /* sum for t = 0 */
                     y = xsf::cephes::psi(1.0) + xsf::cephes::psi(1.0 + e) - xsf::cephes::psi(a + d1) -
                         xsf::cephes::psi(b + d1) - ax;
-                    y /= xsf::cephes::Gamma(e + 1.0);
+                    y *= xsf::cephes::rgamma(e + 1.0);
 
-                    p = (a + d1) * (b + d1) * s / xsf::cephes::Gamma(e + 2.0); /* Poch for t=1 */
+                    p = (a + d1) * (b + d1) * s * xsf::cephes::rgamma(e + 2.0); /* Poch for t=1 */
                     t = 1.0;
                     do {
                         r = xsf::cephes::psi(1.0 + t) + xsf::cephes::psi(1.0 + t + e) -
@@ -292,10 +293,10 @@ namespace cephes {
                     }
                 nosum:
                     p = xsf::cephes::Gamma(c);
-                    y1 *= xsf::cephes::Gamma(e) * p /
-                          (xsf::cephes::Gamma(a + d1) * xsf::cephes::Gamma(b + d1));
+                    y1 *= xsf::cephes::Gamma(e) * p *
+                          (xsf::cephes::rgamma(a + d1) * xsf::cephes::rgamma(b + d1));
 
-                    y *= p / (xsf::cephes::Gamma(a + d2) * xsf::cephes::Gamma(b + d2));
+                    y *= p * (xsf::cephes::rgamma(a + d2) * xsf::cephes::rgamma(b + d2));
                     if ((aid & 1) != 0)
                         y = -y;
 
@@ -493,8 +494,8 @@ namespace cephes {
             p *= std::pow(-x, -a);
             q *= std::pow(-x, -b);
             t1 = Gamma(c);
-            s = t1 * Gamma(b - a) / (Gamma(b) * Gamma(c - a));
-            y = t1 * Gamma(a - b) / (Gamma(a) * Gamma(c - b));
+            s = t1 * Gamma(b - a) * (rgamma(b) * rgamma(c - a));
+            y = t1 * Gamma(a - b) * (rgamma(a) * rgamma(c - b));
             return s * p + y * q;
         } else if (x < -1.0) {
             if (std::abs(a) < std::abs(b)) {
@@ -532,7 +533,7 @@ namespace cephes {
                 }
                 if (d <= 0.0)
                     goto hypdiv;
-                y = Gamma(c) * Gamma(d) / (Gamma(p) * Gamma(r));
+                y = Gamma(c) * Gamma(d) * (rgamma(p) * rgamma(r));
                 goto hypdon;
             }
             if (d <= -1.0)

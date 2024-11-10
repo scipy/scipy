@@ -398,8 +398,13 @@ class TestCephes:
         cephes.gammaln(10)
 
     def test_gammasgn(self):
-        vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)
-        assert_array_equal(cephes.gammasgn(vals), np.sign(cephes.rgamma(vals)))
+        vals = np.array(
+            [-np.inf, -4, -3.5, -2.3, -0.0, 0.0, 1, 4.2, np.inf], np.float64
+        )
+        reference = np.array(
+            [np.nan, np.nan, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0], np.float64
+        )
+        assert_array_equal(cephes.gammasgn(vals), reference)
 
     def test_gdtr(self):
         assert_equal(cephes.gdtr(1,1,0),0.0)
@@ -2715,8 +2720,25 @@ class TestGamma:
         assert_almost_equal(rgam,rlgam,8)
 
     def test_infinity(self):
-        assert_(np.isinf(special.gamma(-1)))
         assert_equal(special.rgamma(-1), 0)
+
+    @pytest.mark.parametrize(
+        "x,expected",
+        [
+            # infinities
+            ([-np.inf, np.inf], [np.nan, np.inf]),
+            # negative and positive zero
+            ([-0.0, 0.0], [-np.inf, np.inf]),
+            # small poles
+            (range(-32, 0), np.full(32, np.nan)),
+            # medium sized poles
+            (range(-1024, -32, 99), np.full(11, np.nan)),
+            # large pole
+            ([-4.141512231792294e+16], [np.nan]),
+        ]
+    )
+    def test_poles(self, x, expected):
+        assert_array_equal(special.gamma(x), expected)
 
 
 class TestHankel:
@@ -3690,7 +3712,7 @@ class TestParabolicCylinder:
     def test_pbdv_points(self):
         # simple case
         eta = np.linspace(-10, 10, 5)
-        z = 2**(eta/2)*np.sqrt(np.pi)/special.gamma(.5-.5*eta)
+        z = 2**(eta/2)*np.sqrt(np.pi)*special.rgamma(.5-.5*eta)
         assert_allclose(special.pbdv(eta, 0.)[0], z, rtol=1e-14, atol=1e-14)
 
         # some points
