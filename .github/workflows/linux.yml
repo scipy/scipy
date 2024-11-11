@@ -483,8 +483,8 @@ jobs:
         pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple cython numpy
     - name: Install Python dependencies
       run: |
-        pip install git+https://github.com/serge-sans-paille/pythran
-        pip install ninja meson-python pybind11 click rich_click pydevtool
+        # pip install git+https://github.com/serge-sans-paille/pythran
+        pip install pythran ninja meson-python pybind11 click rich_click pydevtool
         pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis
         pip install -r requirements/openblas.txt
         echo "N_TEST_WORKERS=2" >> "$GITHUB_ENV"
