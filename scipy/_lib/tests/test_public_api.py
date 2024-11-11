@@ -50,7 +50,6 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "linalg.lapack",
     "linalg.cython_lapack",
     "linalg.interpolative",
-    "misc",
     "ndimage",
     "odr",
     "optimize",
@@ -123,8 +122,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.linalg.matfuncs',
     'scipy.linalg.misc',
     'scipy.linalg.special_matrices',
-    'scipy.misc.common',
-    'scipy.misc.doccer',
     'scipy.ndimage.filters',
     'scipy.ndimage.fourier',
     'scipy.ndimage.interpolation',
@@ -382,7 +379,6 @@ def test_api_importable():
                           ('scipy.linalg.matfuncs', None),
                           ('scipy.linalg.misc', None),
                           ('scipy.linalg.special_matrices', None),
-                          ('scipy.misc.common', None),
                           ('scipy.ndimage.filters', None),
                           ('scipy.ndimage.fourier', None),
                           ('scipy.ndimage.interpolation', None),
@@ -461,35 +457,5 @@ def test_private_but_present_deprecation(module_name, correct_module):
     # Attributes that were not in `module_name` get an error notifying the user
     # that the attribute is not in `module_name` and that `module_name` is deprecated.
     message = f"`{module_name}` is deprecated..."
-    with pytest.raises(AttributeError, match=message):
-        getattr(module, "ekki")
-
-
-@pytest.mark.thread_unsafe
-def test_misc_doccer_deprecation():
-    # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
-    # for imports from private modules were misleading.
-    # Check that this is resolved.
-    # `test_private_but_present_deprecation` cannot be used since `correct_import`
-    # is a different subpackage (`_lib` instead of `misc`).
-    module = import_module('scipy.misc.doccer')
-    correct_import = import_module('scipy._lib.doccer')
-
-    # Attributes that were formerly in `scipy.misc.doccer` can still be imported from
-    # `scipy.misc.doccer`, albeit with a deprecation warning. The specific message
-    # depends on whether the attribute is in `scipy._lib.doccer` or not.
-    for attr_name in module.__all__:
-        attr = getattr(correct_import, attr_name, None)
-        if attr is None:
-            message = f"`scipy.misc.{attr_name}` is deprecated..."
-        else:
-            message = f"Please import `{attr_name}` from the `scipy._lib.doccer`..."
-        with pytest.deprecated_call(match=message):
-            getattr(module, attr_name)
-
-    # Attributes that were not in `scipy.misc.doccer` get an error
-    # notifying the user that the attribute is not in `scipy.misc.doccer`
-    # and that `scipy.misc.doccer` is deprecated.
-    message = "`scipy.misc.doccer` is deprecated..."
     with pytest.raises(AttributeError, match=message):
         getattr(module, "ekki")
