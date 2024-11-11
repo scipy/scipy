@@ -175,6 +175,7 @@ PKG_CONFIG_PATH = "{project}"
 "Environments" = [
   "spin.cmds.meson.run",
   ".spin/cmds.py:python",
+  ".spin/cmds.py:ipython",
   "spin.cmds.meson.gdb",
   "spin.cmds.meson.lldb"
 ]

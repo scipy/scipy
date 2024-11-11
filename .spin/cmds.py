@@ -580,6 +580,15 @@ def docs(ctx, list_targets, clean, first_build, parallel, *args, **kwargs):
 
     ctx.forward(meson.docs)
 
+def _python(ctx, python_args, pythonpath, ctx_target):
+    env = os.environ
+    env['PYTHONWARNINGS'] = env.get('PYTHONWARNINGS', 'all')
+
+    if pythonpath:
+        for p in reversed(pythonpath.split(os.pathsep)):
+            sys.path.insert(0, p)
+    ctx.forward(ctx_target)
+
 @click.command(context_settings={
     'ignore_unknown_options': True
 })
@@ -595,10 +604,31 @@ def python(ctx, python_args, *args, **kwargs):
 
     spin python -c 'import sys; print(sys.path)'
     """
-    env = os.environ
-    env['PYTHONWARNINGS'] = env.get('PYTHONWARNINGS', 'all')
-    pythonpath = ctx.params.pop('pythonpath')
-    if pythonpath:
-        for p in reversed(pythonpath.split(os.pathsep)):
-            sys.path.insert(0, p)
-    ctx.forward(meson.python)
+    _python(
+        ctx,
+        python_args,
+        ctx.params.pop('pythonpath'),
+        meson.python
+    )
+
+@click.command(context_settings={
+    'ignore_unknown_options': True
+})
+@click.argument("ipython_args", metavar='', nargs=-1)
+@click.option(
+    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
+    help='Paths to prepend to PYTHONPATH')
+@click.pass_context
+def ipython(ctx, ipython_args, *args, **kwargs):
+    """💻 Launch IPython shell with PYTHONPATH set
+
+    OPTIONS are passed through directly to IPython, e.g.:
+
+    spin ipython -i myscript.py
+    """
+    _python(
+        ctx,
+        ipython_args,
+        ctx.params.pop('pythonpath'),
+        meson.ipython
+    )
