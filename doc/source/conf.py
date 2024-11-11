@@ -27,9 +27,6 @@ old_isdesc = inspect.isdescriptor
 inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
 
-# Currently required to build scipy.fft docs
-os.environ['_SCIPY_BUILDING_DOC'] = 'True'
-
 # -----------------------------------------------------------------------------
 # General configuration
 # -----------------------------------------------------------------------------
