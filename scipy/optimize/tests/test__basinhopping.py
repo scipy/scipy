@@ -391,7 +391,7 @@ class Test_RandomDisplacement:
         # note these tests are random, they will fail from time to time
         rng = np.random.RandomState(0)
         x0 = np.zeros([self.N])
-        displace = RandomDisplacement(stepsize=self.stepsize, random_gen=rng)
+        displace = RandomDisplacement(stepsize=self.stepsize, rng=rng)
         x = displace(x0)
         v = (2. * self.stepsize) ** 2 / 12
         assert_almost_equal(np.mean(x), 0., 1)
