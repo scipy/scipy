@@ -1,3 +1,4 @@
+import contextlib
 import os
 import sys
 import importlib
@@ -10,12 +11,25 @@ import subprocess
 from copy import deepcopy
 
 import click
+from rich.console import Console
+from rich.theme import Theme
 from spin import util
 from spin.cmds import meson
 
 from pathlib import Path
 
 PROJECT_MODULE = "scipy"
+
+console_theme = Theme({
+    "cmd": "italic gray50",
+})
+
+if sys.platform == 'win32':
+    class EMOJI:
+        cmd = ">"
+else:
+    class EMOJI:
+        cmd = ":computer:"
 
 
 # # Check that the meson git submodule is present
@@ -450,8 +464,7 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
     To run tests on a directory or file:
 
      \b
-     spin test numpy/linalg
-     spin test numpy/linalg/tests/test_linalg.py
+     spin test scipy/linalg
 
     To report the durations of the N slowest tests:
 
@@ -517,7 +530,7 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
     "first_build",
     default=True,
     is_flag=True,
-    help="Build numpy before generating docs",
+    help="Build scipy before generating docs",
 )
 @click.option(
         '--list-targets', '-t', default=False, is_flag=True,
@@ -657,3 +670,61 @@ def shell(ctx, shell_args, *args, **kwargs):
         ctx.params.pop('pythonpath'),
         meson.shell
     )
+
+@contextlib.contextmanager
+def working_dir(new_dir):
+    current_dir = os.getcwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(current_dir)
+
+def emit_cmdstr(cmd):
+    """Print the command that's being run to stdout
+
+    Note: cannot use this in the below tasks (yet), because as is these command
+    strings are always echoed to the console, even if the command isn't run
+    (but for example the `build` command is run).
+    """
+    console = Console(theme=console_theme)
+    # The [cmd] square brackets controls the font styling, typically in italics
+    # to differentiate it from other stdout content
+    console.print(f"{EMOJI.cmd} [cmd] {cmd}")
+
+@click.command(context_settings={"ignore_unknown_options": True})
+@meson.build_dir_option
+@click.pass_context
+def mypy(ctx, build_dir=None):
+    """🦆 Run Mypy tests for SciPy
+    """
+    click.secho(
+            "Invoking `build` prior to running mypy tests:",
+            bold=True, fg="bright_green"
+        )
+    ctx.invoke(build)
+
+    try:
+        import mypy.api
+    except ImportError as e:
+        raise RuntimeError(
+            "Mypy not found. Please install it by running "
+            "pip install -r mypy_requirements.txt from the repo root"
+        ) from e
+
+    build_dir = os.path.abspath(build_dir)
+    root = Path(build_dir).parent
+    install_dir = meson._get_site_packages(build_dir)
+    config = os.path.join(root, "mypy.ini")
+    check_path = PROJECT_MODULE
+
+    with working_dir(install_dir):
+        os.environ['MYPY_FORCE_COLOR'] = '1'
+        emit_cmdstr(f"mypy.api.run --config-file {config} {check_path}")
+        report, errors, status = mypy.api.run([
+            "--config-file",
+            str(config),
+            check_path,
+        ])
+    print(report, end='')
+    print(errors, end='', file=sys.stderr)

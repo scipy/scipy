@@ -170,7 +170,8 @@ PKG_CONFIG_PATH = "{project}"
 [tool.spin.commands]
 "Build" = [
   ".spin/cmds.py:build",
-  ".spin/cmds.py:test"
+  ".spin/cmds.py:test",
+  ".spin/cmds.py:mypy"
 ]
 "Environments" = [
   "spin.cmds.meson.run",
