@@ -1931,8 +1931,8 @@ class TestSolveCirculant:
         x = solve_circulant(c, b, baxis=1)
         assert_equal(x.shape, (4, 2, 3))
         expected = np.empty_like(x)
-        expected[:, 0, :] = solve(circulant(c[0]), b.T)
-        expected[:, 1, :] = solve(circulant(c[1]), b.T)
+        expected[:, 0, :] = solve(circulant(c[0].ravel()), b.T)
+        expected[:, 1, :] = solve(circulant(c[1].ravel()), b.T)
         assert_allclose(x, expected)
 
         x = solve_circulant(c, b, baxis=1, outaxis=-1)

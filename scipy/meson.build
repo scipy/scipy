@@ -199,6 +199,9 @@ if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
   endif
+  if cc.get_id() != 'clang'
+    warning('accelerate may not be properly detected with non-native Apple compiler due to https://github.com/mesonbuild/meson/issues/13608')
+  endif
   _args_blas_lapack += ['-DACCELERATE_NEW_LAPACK']
   generate_blas_wrappers = true
   accelerate_flag = '-a'

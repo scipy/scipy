@@ -17,9 +17,10 @@ import warnings
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import csr_array, issparse
 from scipy.sparse.csgraph._validation import validate_graph
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
+from ._tools import _safe_downcast_indices
 
 cimport cython
 
@@ -610,12 +611,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     else:
         csr_data = csgraph.data
 
-    csgraph_indices = csgraph.indices
-    csgraph_indptr = csgraph.indptr
-    if csgraph_indices.dtype != ITYPE:
-        csgraph_indices = csgraph_indices.astype(ITYPE)
-    if csgraph_indptr.dtype != ITYPE:
-        csgraph_indptr = csgraph_indptr.astype(ITYPE)
+    csgraph_indices, csgraph_indptr = _safe_downcast_indices(csgraph)
     if directed:
         if min_only:
             _dijkstra_directed_multi(indices,
@@ -629,6 +625,7 @@ def dijkstra(csgraph, directed=True, indices=None,
                                dist_matrix, predecessor_matrix, limitf)
     else:
         csgraphT = csgraph.T.tocsr()
+        csgraphT_indices, csgraphT_indptr = _safe_downcast_indices(csgraphT)
         if unweighted:
             csrT_data = csr_data
         else:
@@ -637,14 +634,14 @@ def dijkstra(csgraph, directed=True, indices=None,
             _dijkstra_undirected_multi(indices,
                                        csr_data, csgraph_indices,
                                        csgraph_indptr,
-                                       csrT_data, csgraphT.indices,
-                                       csgraphT.indptr,
+                                       csrT_data, csgraphT_indices,
+                                       csgraphT_indptr,
                                        dist_matrix, predecessor_matrix,
                                        source_matrix, limitf)
         else:
             _dijkstra_undirected(indices,
                                  csr_data, csgraph_indices, csgraph_indptr,
-                                 csrT_data, csgraphT.indices, csgraphT.indptr,
+                                 csrT_data, csgraphT_indices, csgraphT_indptr,
                                  dist_matrix, predecessor_matrix, limitf)
 
     if return_predecessors:
@@ -1078,15 +1075,17 @@ def bellman_ford(csgraph, directed=True, indices=None,
     else:
         csr_data = csgraph.data
 
+    csgraph_indices, csgraph_indptr = _safe_downcast_indices(csgraph)
+
     if directed:
         ret = _bellman_ford_directed(indices,
-                                     csr_data, csgraph.indices,
-                                     csgraph.indptr,
+                                     csr_data, csgraph_indices,
+                                     csgraph_indptr,
                                      dist_matrix, predecessor_matrix)
     else:
         ret = _bellman_ford_undirected(indices,
-                                       csr_data, csgraph.indices,
-                                       csgraph.indptr,
+                                       csr_data, csgraph_indices,
+                                       csgraph_indptr,
                                        dist_matrix, predecessor_matrix)
 
     if ret >= 0:
@@ -1325,36 +1324,37 @@ def johnson(csgraph, directed=True, indices=None,
     dist_array = np.zeros(N, dtype=DTYPE)
 
     csr_data = csgraph.data.copy()
+    csgraph_indices, csgraph_indptr = _safe_downcast_indices(csgraph)
 
     #------------------------------
     # here we first add a single node to the graph, connected by a
     # directed edge of weight zero to each node, and perform bellman-ford
     if directed:
-        ret = _johnson_directed(csr_data, csgraph.indices,
-                                csgraph.indptr, dist_array)
+        ret = _johnson_directed(csr_data, csgraph_indices,
+                                csgraph_indptr, dist_array)
     else:
-        ret = _johnson_undirected(csr_data, csgraph.indices,
-                                  csgraph.indptr, dist_array)
+        ret = _johnson_undirected(csr_data, csgraph_indices,
+                                  csgraph_indptr, dist_array)
 
     if ret >= 0:
         raise NegativeCycleError("Negative cycle detected on node %i" % ret)
 
     #------------------------------
     # add the bellman-ford weights to the data
-    _johnson_add_weights(csr_data, csgraph.indices,
-                         csgraph.indptr, dist_array)
+    _johnson_add_weights(csr_data, csgraph_indices,
+                         csgraph_indptr, dist_array)
 
     if directed:
         _dijkstra_directed(indices,
-                           csr_data, csgraph.indices, csgraph.indptr,
+                           csr_data, csgraph_indices, csgraph_indptr,
                            dist_matrix, predecessor_matrix, np.inf)
     else:
-        csgraphT = csr_matrix((csr_data, csgraph.indices, csgraph.indptr),
+        csgraphT = csr_array((csr_data, csgraph_indices, csgraph_indptr),
                                csgraph.shape).T.tocsr()
         _johnson_add_weights(csgraphT.data, csgraphT.indices,
                              csgraphT.indptr, dist_array)
         _dijkstra_undirected(indices,
-                             csr_data, csgraph.indices, csgraph.indptr,
+                             csr_data, csgraph_indices, csgraph_indptr,
                              csgraphT.data, csgraphT.indices, csgraphT.indptr,
                              dist_matrix, predecessor_matrix, np.inf)
 

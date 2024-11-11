@@ -103,7 +103,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'rankdata', 'combine_pvalues', 'quantile_test',
            'wasserstein_distance', 'wasserstein_distance_nd', 'energy_distance',
            'brunnermunzel', 'alexandergovern',
-           'expectile']
+           'expectile', 'lmoment']
 
 
 def _chk_asarray(a, axis, *, xp=None):
@@ -961,11 +961,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 
-def _moment_outputs(kwds):
-    order = np.atleast_1d(kwds.get('order', 1))
-    if order.size == 0:
-        raise ValueError("'order' must be a scalar or a non-empty 1D "
-                         "list/array.")
+def _moment_outputs(kwds, default_order=1):
+    order = np.atleast_1d(kwds.get('order', default_order))
+    message = "`order` must be a scalar or a non-empty 1D array."
+    if order.size == 0 or order.ndim > 1:
+        raise ValueError(message)
     return len(order)
 
 
@@ -1094,7 +1094,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
         # is a non-NumPy array, so we need to check again. When the decorator is
         # updated for array API compatibility, we can remove this second check.
-        raise ValueError("'order' must be a scalar or a non-empty 1D list/array.")
+        raise ValueError("`order` must be a scalar or a non-empty 1D array.")
     if xp.any(order != xp.round(order)):
         raise ValueError("All elements of `order` must be integral.")
     order = order[()] if order.ndim == 0 else order
@@ -10223,6 +10223,146 @@ def expectile(a, alpha=0.5, *, weights=None):
     # finding a wrong root.
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
+
+
+def _lmoment_iv(sample, order, axis, sorted, standardize):
+    # input validation/standardization for `lmoment`
+    sample = np.asarray(sample)
+    message = "`sample` must be an array of real numbers."
+    if np.issubdtype(sample.dtype, np.integer):
+        sample = sample.astype(np.float64)
+    if not np.issubdtype(sample.dtype, np.floating):
+        raise ValueError(message)
+
+    message = "`order` must be a scalar or a non-empty array of positive integers."
+    order = np.arange(1, 5) if order is None else np.asarray(order)
+    if not np.issubdtype(order.dtype, np.integer) or np.any(order <= 0):
+        raise ValueError(message)
+
+    axis = np.asarray(axis)[()]
+    message = "`axis` must be an integer."
+    if not np.issubdtype(axis.dtype, np.integer) or axis.ndim != 0:
+        raise ValueError(message)
+
+    sorted = np.asarray(sorted)[()]
+    message = "`sorted` must be True or False."
+    if not np.issubdtype(sorted.dtype, np.bool_) or sorted.ndim != 0:
+        raise ValueError(message)
+
+    standardize = np.asarray(standardize)[()]
+    message = "`standardize` must be True or False."
+    if not np.issubdtype(standardize.dtype, np.bool_) or standardize.ndim != 0:
+        raise ValueError(message)
+
+    sample = np.moveaxis(sample, axis, -1)
+    sample = np.sort(sample, axis=-1) if not sorted else sample
+
+    return sample, order, axis, sorted, standardize
+
+
+def _br(x, *, r=0):
+    n = x.shape[-1]
+    x = np.expand_dims(x, axis=-2)
+    x = np.broadcast_to(x, x.shape[:-2] + (len(r), n))
+    x = np.triu(x)
+    j = np.arange(n, dtype=x.dtype)
+    n = np.asarray(n, dtype=x.dtype)[()]
+    return (np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1)
+            / special.binom(n-1, r) / n)
+
+
+def _prk(r, k):
+    # Writen to match [1] Equation 27 closely to facilitate review.
+    # This does not protect against overflow, so improvements to
+    # robustness would be a welcome follow-up.
+    return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
+
+
+@_axis_nan_policy_factory(  # noqa: E302
+    _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
+    n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
+)
+def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
+    r"""Compute L-moments of a sample from a continuous distribution
+
+    The L-moments of a probability distribution are summary statistics with
+    uses similar to those of conventional moments, but they are defined in
+    terms of the expected values of order statistics.
+    Sample L-moments are defined analogously to population L-moments, and
+    they can serve as estimators of population L-moments. They tend to be less
+    sensitive to extreme observations than conventional moments.
+
+    Parameters
+    ----------
+    sample : array_like
+        The real-valued sample whose L-moments are desired.
+    order : array_like, optional
+        The (positive integer) orders of the desired L-moments.
+        Must be a scalar or non-empty 1D array. Default is [1, 2, 3, 4].
+    axis : int or None, default=0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If None, the input will be
+        raveled before computing the statistic.
+    sorted : bool, default=False
+        Whether `sample` is already sorted in increasing order along `axis`.
+        If False (default), `sample` will be sorted.
+    standardize : bool, default=True
+        Whether to return L-moment ratios for orders 3 and higher.
+        L-moment ratios are analogous to standardized conventional
+        moments: they are the non-standardized L-moments divided
+        by the L-moment of order 2.
+
+    Returns
+    -------
+    lmoments : ndarray
+        The sample L-moments of order `order`.
+
+    See Also
+    --------
+    moment
+
+    References
+    ----------
+    .. [1] D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of
+           Statistical Data Analysis". Journal of Applied Mathematics and
+           Physics. 2014. :doi:`10.4236/jamp.2014.210104`
+    .. [2] J. R. M. Hosking. "L-Moments: Analysis and Estimation of Distributions
+           Using Linear Combinations of Order Statistics". Journal of the Royal
+           Statistical Society. 1990. :doi:`10.1111/j.2517-6161.1990.tb01775.x`
+    .. [3] "L-moment". *Wikipedia*. https://en.wikipedia.org/wiki/L-moment.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(328458568356392)
+    >>> sample = rng.exponential(size=100000)
+    >>> stats.lmoment(sample)
+    array([1.00124272, 0.50111437, 0.3340092 , 0.16755338])
+
+    Note that the first four standardized population L-moments of the standard
+    exponential distribution are 1, 1/2, 1/3, and 1/6; the sample L-moments
+    provide reasonable estimates.
+
+    """
+    args = _lmoment_iv(sample, order, axis, sorted, standardize)
+    sample, order, axis, sorted, standardize = args
+
+    n_moments = np.max(order)
+    k = np.arange(n_moments, dtype=sample.dtype)
+    prk = _prk(np.expand_dims(k, tuple(range(1, sample.ndim+1))), k)
+    bk = _br(sample, r=k)
+
+    n = sample.shape[-1]
+    bk[..., n:] = 0  # remove NaNs due to n_moments > n
+
+    lmoms = np.sum(prk * bk, axis=-1)
+    if standardize and n_moments > 2:
+        lmoms[2:] /= lmoms[1]
+
+    lmoms[n:] = np.nan  # add NaNs where appropriate
+    return lmoms[order-1]
 
 
 LinregressResult = _make_tuple_bunch('LinregressResult',

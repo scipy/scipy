@@ -15,6 +15,10 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     """
     Find the B-spline representation of an N-D curve.
 
+    .. legacy:: function
+
+        Specifically, we recommend using `make_splprep` in new code.
+
     Given a list of N rank-1 arrays, `x`, which represent a curve in
     N-dimensional space parametrized by `u`, find a smooth approximating
     spline curve g(`u`). Uses the FORTRAN routine parcur from FITPACK.
@@ -162,6 +166,11 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     """
     Find the B-spline representation of a 1-D curve.
 
+    .. legacy:: function
+
+        Specifically, we recommend using `make_splrep` in new code.
+
+
     Given the set of data points ``(x[i], y[i])`` determine a smooth spline
     approximation of degree k on the interval ``xb <= x <= xe``.
 
@@ -300,6 +309,11 @@ def splev(x, tck, der=0, ext=0):
     """
     Evaluate a B-spline or its derivatives.
 
+    .. legacy:: function
+
+        Specifically, we recommend constructing a `BSpline` object and using
+        its ``__call__`` method.
+
     Given the knots and coefficients of a B-spline representation, evaluate
     the value of the smoothing polynomial and its derivatives. This is a
     wrapper around the FORTRAN routines splev and splder of FITPACK.
@@ -385,6 +399,11 @@ def splint(a, b, tck, full_output=0):
     """
     Evaluate the definite integral of a B-spline between two given points.
 
+    .. legacy:: function
+
+        Specifically, we recommend constructing a `BSpline` object and using its
+        ``integrate`` method.
+
     Parameters
     ----------
     a, b : float
@@ -449,6 +468,11 @@ def splint(a, b, tck, full_output=0):
 def sproot(tck, mest=10):
     """
     Find the roots of a cubic B-spline.
+
+    .. legacy:: function
+
+        Specifically, we recommend constructing a `BSpline` object and using the
+        following pattern: `PPoly.from_spline(spl).roots()`.
 
     Given the knots (>=8) and coefficients of a cubic B-spline return the
     roots of the spline.
@@ -541,6 +565,11 @@ def spalde(x, tck):
     Evaluate a B-spline and all its derivatives at one point (or set of points) up
     to order k (the degree of the spline), being 0 the spline itself.
 
+    .. legacy:: function
+
+        Specifically, we recommend constructing a `BSpline` object and evaluate
+        its derivative in a loop or a list comprehension.
+
     Parameters
     ----------
     x : array_like
@@ -632,6 +661,11 @@ def spalde(x, tck):
 def insert(x, tck, m=1, per=0):
     """
     Insert knots into a B-spline.
+
+    .. legacy:: function
+
+        Specifically, we recommend constructing a `BSpline` object and using
+        its ``insert_knot`` method.
 
     Given the knots and coefficients of a B-spline representation, create a
     new B-spline with a knot inserted `m` times at point `x`.
@@ -729,6 +763,11 @@ def splder(tck, n=1):
     """
     Compute the spline representation of the derivative of a given spline
 
+    .. legacy:: function
+
+        Specifically, we recommend constructing a `BSpline` object and using its
+        ``derivative`` method.
+
     Parameters
     ----------
     tck : BSpline instance or tuple
@@ -790,6 +829,11 @@ def splder(tck, n=1):
 def splantider(tck, n=1):
     """
     Compute the spline for the antiderivative (integral) of a given spline.
+
+    .. legacy:: function
+
+        Specifically, we recommend constructing a `BSpline` object and using its
+        ``antiderivative`` method.
 
     Parameters
     ----------
