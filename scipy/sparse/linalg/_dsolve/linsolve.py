@@ -414,7 +414,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices, indptr = safely_cast_index_arrays(A, np.intc, "for SuperLU")
+    indices, indptr = safely_cast_index_arrays(A, np.intc, "SuperLU")
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -510,7 +510,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices, indptr = safely_cast_index_arrays(A, np.intc, "for SuperLU")
+    indices, indptr = safely_cast_index_arrays(A, np.intc, "SuperLU")
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,

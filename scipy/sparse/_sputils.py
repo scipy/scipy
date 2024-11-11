@@ -192,19 +192,19 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     ValueError : if the array has shape that would not fit in the new dtype.
     """
     if msg == "":
-        msg = f"dtype {idx_dtype}"
+        msg = f"for dtype {idx_dtype}"
     # check for safe downcasting
     max_value = np.iinfo(idx_dtype).max
 
     if A.format in ("csc", "csr"):
         # indptr[-1] is max b/c indptr always sorted
         if A.indptr[-1] > max_value:
-            raise ValueError("indptr values too large for", msg)
+            raise ValueError("indptr values too large", msg)
 
         # check shape vs dtype
         if max(*A.shape) > max_value:
             if np.any(A.indices > max_value):
-                raise ValueError("indices values too large for", msg)
+                raise ValueError("indices values too large", msg)
 
         indices = A.indices.astype(idx_dtype, copy=False)
         indptr = A.indptr.astype(idx_dtype, copy=False)
@@ -213,24 +213,24 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     elif A.format == "coo":
         if max(*A.shape) > max_value:
             if any(np.any(co > max_value) for co in A.coords):
-                raise ValueError("coords values too large for", msg)
+                raise ValueError("coords values too large", msg)
         coords = tuple(co.astype(idx_dtype, copy=False) for co in A.coords)
         return coords
 
     elif A.format == "dia":
         if max(*A.shape) > max_value:
             if np.any(A.offsets > max_value):
-                raise ValueError("offsets values too large for", msg)
+                raise ValueError("offsets values too large", msg)
         offsets = A.offsets.astype(idx_dtype, copy=False)
         return offsets
 
     elif A.format == 'bsr':
         R, C = A.blocksize
         if A.indptr[-1] * R > max_value:
-            raise ValueError("indptr values too large for", msg)
+            raise ValueError("indptr values too large", msg)
         if max(*A.shape) > max_value:
             if np.any(A.indices * C > max_value):
-                raise ValueError("indices values too large for", msg)
+                raise ValueError("indices values too large", msg)
         indices = A.indices.astype(idx_dtype, copy=False)
         indptr = A.indptr.astype(idx_dtype, copy=False)
         return indices, indptr
