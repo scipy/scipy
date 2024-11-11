@@ -612,7 +612,8 @@ class TestConvolutionMatrix:
 
 
 @pytest.mark.fail_slow(5)  # `leslie` has an import in the function
-@pytest.mark.parametrize('f, args', [(companion, ()),
+@pytest.mark.parametrize('f, args', [(circulant, ()),
+                                     (companion, ()),
                                      (convolution_matrix, (5, 'same')),
                                      (fiedler, ()),
                                      (fiedler_companion, ()),

@@ -3,8 +3,9 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 from typing import (
-    Callable, Literal, Protocol, TYPE_CHECKING
+    Literal, Protocol, TYPE_CHECKING
 )
+from collections.abc import Callable
 
 import numpy as np
 
