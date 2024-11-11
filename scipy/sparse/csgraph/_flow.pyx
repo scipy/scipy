@@ -2,8 +2,10 @@
 
 import numpy as np
 
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import csr_array, issparse, csr_matrix
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy, is_pydata_spmatrix
+
+from ._tools import _safe_downcast_indices
 
 cimport numpy as np
 
@@ -225,10 +227,11 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     modifying the capacities of the new graph appropriately.
 
     """
+    csgraph_orig = csgraph
     is_pydata_sparse = is_pydata_spmatrix(csgraph)
     if is_pydata_sparse:
         pydata_sparse_cls = csgraph.__class__
-    csgraph = convert_pydata_sparse_to_scipy(csgraph, target_format="csr")
+        csgraph = convert_pydata_sparse_to_scipy(csgraph, target_format="csr")
     if not (issparse(csgraph) and csgraph.format == "csr"):
         raise TypeError("graph must be in CSR format")
     if not issubclass(csgraph.dtype.type, np.integer):
@@ -251,6 +254,12 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     if not csgraph.has_sorted_indices:
         csgraph = csgraph.sorted_indices()
 
+    csgraph_indices, csgraph_indptr = _safe_downcast_indices(csgraph)
+    if csgraph_indices is not csgraph.indices:
+        # create a new object without copying data
+        csgraph = csr_array((csgraph.data, csgraph_indices, csgraph_indptr),
+                            shape=csgraph.shape, dtype=csgraph.dtype)
+
     # Our maximum flow solvers assume that edges always exist
     # in both directions, so we start by adding the reversed edges whenever
     # they are missing.
@@ -266,10 +275,11 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     else:
         raise ValueError('{} method is not supported yet.'.format(method))
     flow_array = np.asarray(flow)
-    flow_matrix = csr_matrix((flow_array, m.indices, m.indptr),
-                             shape=m.shape)
+    flow_matrix = csr_array((flow_array, m.indices, m.indptr), shape=m.shape)
     if is_pydata_sparse:
         flow_matrix = pydata_sparse_cls.from_scipy_sparse(flow_matrix)
+    elif isinstance(csgraph_orig, csr_matrix):
+        flow_matrix = csr_matrix(flow_matrix)
     source_flow = flow_array[m.indptr[source]:m.indptr[source + 1]]
     return MaximumFlowResult(source_flow.sum(), flow_matrix)
 
@@ -302,7 +312,7 @@ def _add_reverse_edges(a):
     # arrays for the addition of reverse edges with zero capacity. In
     # particular, we do not actually use the values in the transpose;
     # only the fact that the indices exist.
-    at = csr_matrix(a.transpose())
+    at = csr_array(a.transpose())
     cdef ITYPE_t[:] at_indices_view = at.indices
     cdef ITYPE_t[:] at_indptr_view = at.indptr
 
@@ -351,16 +361,15 @@ def _add_reverse_edges(a):
             res_ptr += 1
         i += 1
         res_indptr_view[i] = res_ptr
-    return csr_matrix((res_data, res_indices, res_indptr), shape=(n, n))
+    return csr_array((res_data, res_indices, res_indptr), shape=(n, n))
 
 
 def _make_edge_pointers(a):
     """Create for each edge pointers to its reverse."""
     cdef int n = a.shape[0]
     b_data = np.arange(a.data.shape[0], dtype=ITYPE)
-    b = csr_matrix(
-        (b_data, a.indices, a.indptr), shape=(n, n), dtype=ITYPE)
-    b = csr_matrix(b.transpose())
+    b = csr_array((b_data, a.indices, a.indptr), shape=(n, n), dtype=ITYPE)
+    b = csr_array(b.transpose())
     return b.data
 
 
