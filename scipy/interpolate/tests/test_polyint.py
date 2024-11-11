@@ -345,6 +345,7 @@ class TestBarycentric:
         self.ys = self.true_poly(self.xs)
 
     def test_lagrange(self):
+        # Ensure backwards compatible post SPEC7
         P = BarycentricInterpolator(self.xs, self.ys, random_state=1)
         xp_assert_close(P(self.test_xs), self.true_poly(self.test_xs))
 
