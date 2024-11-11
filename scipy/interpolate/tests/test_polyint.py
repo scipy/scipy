@@ -350,7 +350,7 @@ class TestBarycentric:
         xp_assert_close(P(self.test_xs), self.true_poly(self.test_xs))
 
     def test_scalar(self):
-        P = BarycentricInterpolator(self.xs, self.ys)
+        P = BarycentricInterpolator(self.xs, self.ys, rng=1)
         xp_assert_close(P(7), self.true_poly(7), check_0d=False)
         xp_assert_close(P(np.array(7)), self.true_poly(np.array(7)), check_0d=False)
 
