@@ -148,11 +148,9 @@ def circulant(c):
     n = c_ext.strides[-1]
     if c.ndim == 1:
         A = as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n))
-    elif c.ndim == 2:
+    else:
         m = c.shape[0]
         A = as_strided(c_ext[L-1:], shape=(m, L, L), strides=(n*(2*L-1), -n, n))
-    else:
-        raise ValueError('Argument must have either 1 or 2 dimensions.')
     return A.reshape(batch_shape + (N, N)).copy()
 
 
