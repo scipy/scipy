@@ -632,3 +632,28 @@ def ipython(ctx, ipython_args, *args, **kwargs):
         ctx.params.pop('pythonpath'),
         meson.ipython
     )
+
+@click.command(context_settings={
+    'ignore_unknown_options': True
+})
+@click.argument("shell_args", metavar='', nargs=-1)
+@click.option(
+    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
+    help='Paths to prepend to PYTHONPATH')
+@click.pass_context
+def shell(ctx, shell_args, *args, **kwargs):
+    """💻 Launch shell with PYTHONPATH set
+
+    SHELL_ARGS are passed through directly to the shell, e.g.:
+
+    spin shell -- -c 'echo $PYTHONPATH'
+
+    Ensure that your shell init file (e.g., ~/.zshrc) does not override
+    the PYTHONPATH.
+    """
+    _python(
+        ctx,
+        shell_args,
+        ctx.params.pop('pythonpath'),
+        meson.shell
+    )
