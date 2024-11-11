@@ -1691,16 +1691,20 @@ class TestWilcoxon:
 
         # n <= 50: if there are zeros in d = x-y, use PermutationMethod
         pm = stats.PermutationMethod()
-        d = np.arange(0, 5)
+        d = np.arange(-2, 5)
         w, p = stats.wilcoxon(d)
         # rerunning the test gives the same results since n_resamples
         # is large enough to get deterministic results if n <= 13
         # so we do not need to use a seed. to avoid longer runtimes of the
-        # test, use n=5 only. For n=13, see test_auto_permutation_edge_case
+        # test, use n=7 only. For n=13, see test_auto_permutation_edge_case
         assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
         # for larger vectors (n > 13) with ties/zeros, use asymptotic test
-        d = np.arange(0, 14)
+        d = np.arange(-5, 9)  # zero
+        w, p = stats.wilcoxon(d)
+        assert_equal((w, p), stats.wilcoxon(d, method="asymptotic"))
+
+        d[d == 0] = 1  # tie
         w, p = stats.wilcoxon(d)
         assert_equal((w, p), stats.wilcoxon(d, method="asymptotic"))
 
@@ -1710,12 +1714,17 @@ class TestWilcoxon:
 
     @pytest.mark.xslow
     def test_auto_permutation_edge_case(self):
-        # n <= 50: if there are zeros in d = x-y, use PermutationMethod
-        # this is a slower test to show that results are deterministic if n=13
-        pm = stats.PermutationMethod()
-        d = np.arange(0, 13)
-        w, p = stats.wilcoxon(d)
-        assert_equal((w, p), stats.wilcoxon(d, method=pm))
+        # Check that `PermutationMethod()` is used and results are deterministic when
+        # `method='auto'`, there are zeros or ties in `d = x-y`, and `len(d) <= 13`.
+        d = np.arange(-5, 8)  # zero
+        res = stats.wilcoxon(d)
+        ref = (27.5, 0.3955078125)  # stats.wilcoxon(d, method=PermutationMethod())
+        assert_equal(res, ref)
+
+        d[d == 0] = 1  # tie
+        res = stats.wilcoxon(d)
+        ref = (32, 0.3779296875)  # stats.wilcoxon(d, method=PermutationMethod())
+        assert_equal(res, ref)
 
     @pytest.mark.parametrize('size', [3, 5, 10])
     def test_permutation_method(self, size):
