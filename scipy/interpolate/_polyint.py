@@ -532,7 +532,6 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
     return np.poly1d((d/factorial(np.arange(degree+1)))[::-1])
 
 
-@_transition_to_rng("random_state")
 class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     r"""Interpolating polynomial for a set of points.
 
@@ -566,11 +565,29 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         If absent or None, the weights will be computed from `xi` (default).
         This allows for the reuse of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation.
-    rng : `numpy.random.Generator`, optional
-        Pseudorandom number generator state. When `rng` is None, a new
-        `numpy.random.Generator` is created using entropy from the
-        operating system. Types other than `numpy.random.Generator` are
+    rng : {None, int, `numpy.random.Generator`}, optional
+        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used. Specify `rng` for repeatable interpolation.
+
+        If this argument `random_state` is passed by keyword,
+        legacy behavior for the argument `random_state` applies:
+
+        - If `random_state` is None (or `numpy.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `random_state` is an int, a new ``RandomState`` instance is used,
+          seeded with `random_state`.
+        - If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+          that instance is used.
+
+        .. versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` this keyword was changed from `random_state` to `rng`.
+            For an interim period, both keywords will continue to work (only specify
+            one of them). After the interim period using the `random_state` keyword will emit
+            warnings. The behavior of the `random_state` and `rng` keywords is outlined above.
 
     Notes
     -----
@@ -619,6 +636,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> plt.show()
     """ # numpy/numpydoc#87  # noqa: E501
 
+    @_transition_to_rng("random_state", replace_doc=False)
     def __init__(self, xi, yi=None, axis=0, *, wi=None, rng=None):
         super().__init__(xi, yi, axis)
 
