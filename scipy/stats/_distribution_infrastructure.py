@@ -2461,9 +2461,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         cdf_max = np.maximum(cdf_x, cdf_y)
         ccdf_max = np.maximum(ccdf_x, ccdf_y)
         spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
-
-        with np.errstate(divide='ignore'):
-            mask = tol < abs(spacing/out)
+        mask = abs(tol * out) < spacing
 
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
@@ -2501,11 +2499,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return 1 - self._ccdf_dispatch(x, **params)
 
     def _cdf_complement_safe(self, x, **params):
-        out = self._cdf_complement(x, **params)
+        ccdf = self._ccdf_dispatch(x, **params)
+        out = 1 - ccdf
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        with np.errstate(divide='ignore'):
-             mask = tol < eps/out
+        mask = tol * out < np.spacing(ccdf)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2639,11 +2637,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return 1 - self._cdf_dispatch(x, **params)
 
     def _ccdf_complement_safe(self, x, **params):
-        out = self._ccdf_complement(x, **params)
+        cdf = self._cdf_dispatch(x, **params)
+        out = 1 - cdf
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        with np.errstate(divide='ignore'):
-            mask = tol < eps/out
+        mask = tol * out < np.spacing(cdf)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2705,7 +2703,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         out = self._icdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol < eps/x
+        mask = tol * x < np.spacing(1 - x)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
@@ -2763,7 +2761,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         out = self._iccdf_complement(x, **params)
         eps = np.finfo(self._dtype).eps
         tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
-        mask = tol < eps/x
+        mask = tol * x < np.spacing(1 - x)
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
