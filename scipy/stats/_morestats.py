@@ -3578,8 +3578,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
       execution time).
 
     - The default, ``method='auto'``, selects between the two:
-    ``method='exact'`` is used when ``len(d) <= 50``, and
-    ``method='asymptotic'`` is used otherwise.
+      ``method='exact'`` is used when ``len(d) <= 50``, and
+      ``method='asymptotic'`` is used otherwise.
 
     The presence of "ties" (i.e. not all elements of ``d`` are unique) or
     "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
