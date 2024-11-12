@@ -882,11 +882,11 @@ class LinprogCommonTests:
 
     def test_zero_row_4(self):
         m, n = 2, 4
-        rng = np.random.RandomState(1234)
-        c = rng.rand(n)
-        A_ub = rng.rand(m, n)
+        rng = np.random.default_rng(1982098)
+        c = rng.random(n)
+        A_ub = rng.random((m, n))
         A_ub[0, :] = 0
-        b_ub = -rng.rand(m)
+        b_ub = -rng.random(m)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
@@ -1068,10 +1068,10 @@ class LinprogCommonTests:
         # mostly a test of redundancy removal, which is carefully tested in
         # test__remove_redundancy.py
         m, n = 10, 10
-        rng = np.random.RandomState(0)
-        c = rng.rand(n)
-        A_eq = rng.rand(m, n)
-        b_eq = rng.rand(m)
+        rng = np.random.default_rng(2098098)
+        c = rng.random(n)
+        A_eq = rng.random((m, n))
+        b_eq = rng.random(m)
         A_eq[-1, :] = 2 * A_eq[-2, :]
         b_eq[-1] *= -1
         with suppress_warnings() as sup:
