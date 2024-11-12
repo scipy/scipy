@@ -152,7 +152,7 @@ def getdata(obj, dtype=None, copy=False) -> np.ndarray:
 
 
 def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
-    """Cast the index arrays of `A` to idx_dtype safely.
+    """Return cast index arrays of `A` to idx_dtype safely.
 
     Check the shape of `A` to determine if it is safe to cast its index
     arrays to dtype `idx_dtype`. If any dimension in shape is larger than
@@ -162,7 +162,7 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     attributes if desired or use the recast index arrays directly.
 
     If downcasting is not needed, no copy is made.
-    You can test ``orig is res`` to see if downcasting occurred.
+    You can test e.g. ``A.indptr is indptr`` to see if downcasting occurred.
 
     .. versionadded:: 1.15.0
 
@@ -204,7 +204,7 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
         # check shape vs dtype
         if max(*A.shape) > max_value:
             if np.any(A.indices > max_value):
-                raise ValueError("indices values too large", msg)
+                raise ValueError(f"indices values too large for {msg}")
 
         indices = A.indices.astype(idx_dtype, copy=False)
         indptr = A.indptr.astype(idx_dtype, copy=False)
@@ -213,31 +213,30 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     elif A.format == "coo":
         if max(*A.shape) > max_value:
             if any((co > max_value).any() for co in A.coords):
-                raise ValueError("coords values too large", msg)
+                raise ValueError(f"coords values too large for {msg}")
         return tuple(co.astype(idx_dtype, copy=False) for co in A.coords)
 
     elif A.format == "dia":
         if max(*A.shape) > max_value:
             if np.any(A.offsets > max_value):
-                raise ValueError("offsets values too large", msg)
+                raise ValueError(f"offsets values too large for {msg}")
         offsets = A.offsets.astype(idx_dtype, copy=False)
         return offsets
 
     elif A.format == 'bsr':
         R, C = A.blocksize
         if A.indptr[-1] * R > max_value:
-            raise ValueError("indptr values too large", msg)
+            raise ValueError("indptr values too large for {msg}")
         if max(*A.shape) > max_value:
             if np.any(A.indices * C > max_value):
-                raise ValueError("indices values too large", msg)
+                raise ValueError(f"indices values too large for {msg}")
         indices = A.indices.astype(idx_dtype, copy=False)
         indptr = A.indptr.astype(idx_dtype, copy=False)
         return indices, indptr
 
     else:
-        msg = (f'Format {A.format} is not associated with index arrays. '
-               'DOK and LIL have dict and list, not array.')
-        raise TypeError(msg)
+        raise TypeError(f'Format {A.format} is not associated with index arrays. '
+                        'DOK and LIL have dict and list, not array.')
 
 
 def get_index_dtype(arrays=(), maxval=None, check_contents=False):
