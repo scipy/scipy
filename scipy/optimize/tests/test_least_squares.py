@@ -9,7 +9,7 @@ from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 
-from scipy.optimize import least_squares, Bounds
+from scipy.optimize import least_squares, Bounds, minimize
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
 from scipy.optimize._lsq.common import EPS, make_strictly_feasible, CL_scaling_vector
 
@@ -77,7 +77,7 @@ def fun_bvp(x):
 
 class BroydenTridiagonal:
     def __init__(self, n=100, mode='sparse'):
-        np.random.seed(0)
+        rng = np.random.default_rng(123440)
 
         self.n = n
 
@@ -85,10 +85,10 @@ class BroydenTridiagonal:
         self.lb = np.linspace(-2, -1.5, n)
         self.ub = np.linspace(-0.8, 0.0, n)
 
-        self.lb += 0.1 * np.random.randn(n)
-        self.ub += 0.1 * np.random.randn(n)
+        self.lb += 0.1 * rng.standard_normal(n)
+        self.ub += 0.1 * rng.standard_normal(n)
 
-        self.x0 += 0.1 * np.random.randn(n)
+        self.x0 += 0.1 * rng.standard_normal(n)
         self.x0 = make_strictly_feasible(self.x0, self.lb, self.ub)
 
         if mode == 'sparse':
@@ -131,8 +131,8 @@ class ExponentialFittingProblem:
     y = a + exp(b * x) + noise."""
 
     def __init__(self, a, b, noise, n_outliers=1, x_range=(-1, 1),
-                 n_points=11, random_seed=None):
-        np.random.seed(random_seed)
+                 n_points=11, rng=None):
+        rng = np.random.default_rng(rng)
         self.m = n_points
         self.n = 2
 
@@ -140,10 +140,10 @@ class ExponentialFittingProblem:
         self.x = np.linspace(x_range[0], x_range[1], n_points)
 
         self.y = a + np.exp(b * self.x)
-        self.y += noise * np.random.randn(self.m)
+        self.y += noise * rng.standard_normal(self.m)
 
-        outliers = np.random.randint(0, self.m, n_outliers)
-        self.y[outliers] += 50 * noise * np.random.rand(n_outliers)
+        outliers = rng.integers(0, self.m, n_outliers)
+        self.y[outliers] += 50 * noise * rng.random(n_outliers)
 
         self.p_opt = np.array([a, b])
 
@@ -715,7 +715,7 @@ class LossFunctionMixin:
 
     def test_robustness(self):
         for noise in [0.1, 1.0]:
-            p = ExponentialFittingProblem(1, 0.1, noise, random_seed=0)
+            p = ExponentialFittingProblem(1, 0.1, noise, rng=12220903)
 
             for jac in ['2-point', '3-point', 'cs', p.jac]:
                 res_lsq = least_squares(p.fun, p.p0, jac=jac,
@@ -798,10 +798,10 @@ def test_small_tolerances_for_lm():
 def test_fp32_gh12991():
     # checks that smaller FP sizes can be used in least_squares
     # this is the minimum working example reported for gh12991
-    np.random.seed(1)
+    rng = np.random.default_rng(1978)
 
     x = np.linspace(0, 1, 100).astype("float32")
-    y = np.random.random(100).astype("float32")
+    y = rng.random(size=100, dtype=np.float32)
 
     def func(p, x):
         return p[0] + p[1] * x
@@ -809,15 +809,20 @@ def test_fp32_gh12991():
     def err(p, x, y):
         return func(p, x) - y
 
+    def mse(p, x, y):
+        return np.sum(err(p, x, y)**2)
+
     res = least_squares(err, [-1.0, -1.0], args=(x, y))
+    res2 = minimize(mse, [-1.0, -1.0], args=(x, y), method='nelder-mead')
     # previously the initial jacobian calculated for this would be all 0
     # and the minimize would terminate immediately, with nfev=1, would
     # report a successful minimization (it shouldn't have done), but be
     # unchanged from the initial solution.
     # It was terminating early because the underlying approx_derivative
     # used a step size for FP64 when the working space was FP32.
+    # compare output to solver that doesn't use derivatives
     assert res.nfev > 2
-    assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)
+    assert_allclose(res.x, res2.x, atol=5e-5)
 
 
 def test_gh_18793_and_19351():
