@@ -841,3 +841,64 @@ def refguide_check(ctx, build_dir=None, *args, **kwargs):
 
     os.environ['PYTHONPATH'] = install_dir
     util.run(cmd)
+
+@click.command()
+@click.argument("pytest_args", nargs=-1)
+@click.option(
+    '--tests', '-t', default=None, multiple=True, metavar='TESTS',
+    help='Specify *rst files to smoke test')
+@click.option(
+    '--verbose', '-v', default=False, is_flag=True, help="verbosity")
+@click.pass_context
+def smoke_tutorials(ctx, pytest_args, *args, **kwargs):
+    """🔧 Run doctests of user-facing rst tutorials.
+
+    To test all tutorials in the scipy doc/source/tutorial directory, use
+
+      spin smoke-tutorials
+
+    To run tests on a specific RST file:
+
+     \b
+     spin smoke-tutorials doc/source/reference/stats.rst
+     spin smoke-tutorials -t doc/source/reference/stats.rst
+
+    \b
+    Note:
+    -----
+
+    \b
+     - This command only runs doctests and skips everything under tests/
+     - This command only doctests public objects: those which are accessible
+       from the top-level `__init__.py` file.
+
+    """  # noqa: E501
+    # handle all of
+    #   - `spin check-tutorials` (pytest_args == ())
+    #   - `spin check-tutorials path/to/rst`, and
+    #   - `spin check-tutorials path/to/rst -- --durations=3`
+    doctest_args = tuple()
+    if ctx.params["tests"]:
+        pytest_args = ctx.params["tests"]
+        del ctx.params["tests"]
+    else:
+        # turn doctesting on:
+        doctest_args = (
+            '--doctest-glob=*rst',
+        )
+
+    if (not pytest_args) or all(arg.startswith('-') for arg in pytest_args):
+        pytest_args = ('doc/source/tutorial',) + pytest_args
+
+    # make all paths relative to the numpy source folder
+    curdir = Path(__file__).parent
+    pytest_args = tuple(
+        os.path.join(curdir, '..', arg) if not arg.startswith('-') else arg
+        for arg in pytest_args
+   )
+
+    pytest_args = pytest_args + doctest_args
+
+    ctx.params['pytest_args'] = pytest_args
+
+    ctx.forward(test)
