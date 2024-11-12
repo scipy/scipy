@@ -596,11 +596,12 @@ class TestSLSQP:
         # outside one of the lower/upper bounds. When this happens
         # approx_derivative complains because it's being asked to evaluate
         # a gradient outside its domain.
-        rng = np.random.default_rng(1)
+
+        # gh21872, removal of random initial position, replacing with specific
+        # starting point, because success/fail depends on the seed used.
         bounds = Bounds(np.array([0.1]), np.array([1.0]))
-        n_inputs = len(bounds.lb)
         x0 = np.array(bounds.lb + (bounds.ub - bounds.lb) *
-                      rng.random(n_inputs))
+                      0.417022004702574)
 
         def f(x):
             assert (x >= bounds.lb).all()
