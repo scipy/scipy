@@ -2904,7 +2904,7 @@ def test_gh12696():
 
 def setup_test_equal_bounds():
     # the success of test_equal_bounds depends on the exact seed
-    rng = np.random.default_rng(123)
+    rng = np.random.default_rng(12223)
     x0 = rng.random(4)
     lb = np.array([0, 2, -1, -1.0])
     ub = np.array([3, 2, 2, -1.0])
