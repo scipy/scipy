@@ -2,7 +2,6 @@ import functools
 from abc import ABC, abstractmethod
 from functools import cached_property
 import math
-from copy import deepcopy
 
 import numpy as np
 from numpy import inf
@@ -1047,7 +1046,7 @@ def _dispatch(f):
             method = getattr(self, method_name)
         else:
             method = f(self, *args, method=method, **kwargs)
-            if self.cache_policy != _NO_CACHE:
+            if func_name != '_sample_dispatch' and self.cache_policy != _NO_CACHE:
                 self._method_cache[func_name] = method
 
         try:
@@ -2675,7 +2674,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # Common keyword options include:
     # method - a string that indicates which method should be used to compute
     #          the quantity (e.g. a formula or numerical integration).
-    # rng - the NumPy Generator/SciPy QMCEnging object to used for drawing numbers.
+    # rng - the NumPy Generator/SciPy QMCEngine object to used for drawing numbers.
     #
     # Input/output validation is included in each function, since there is
     # little code to be shared.
@@ -2693,7 +2692,6 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # information.
 
     # TODO:
-    #  - pass qrng to _sample_formula or not?
     #  - should we accept a QRNG with `d != 1`?
     def sample(self, shape=(), *, method=None, rng=None):
         # needs output validation to ensure that developer returns correct
@@ -2709,7 +2707,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     @_dispatch
     def _sample_dispatch(self, sample_shape, full_shape, *, method, rng, **params):
         # make sure that tests catch if sample is 0d array
-        if self._overrides('_sample_formula'):
+        if self._overrides('_sample_formula') and not isinstance(rng, qmc.QMCEngine):
             method = self._sample_formula
         else:
             method = self._sample_inverse_transform
@@ -2726,6 +2724,9 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return self._icdf_dispatch(uniform, **params)
 
     def _qmc_uniform(self, sample_shape, full_shape, *, qrng, **params):
+        # Generate QMC uniform sample(s) on unit interval with specified shape;
+        # if `sample_shape != ()`, then each slice along axis 0 is independent.
+
         # Determine the number of independent sequences and the length of each.
         n_low_discrepancy = sample_shape[0] if sample_shape else 1
         n_independent = math.prod(full_shape[1:] if sample_shape else full_shape)
@@ -2748,7 +2749,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
             uniforms.append(uniform)
 
         # Reorder the axes and ensure that the shape is correct
-        uniform = np.moveaxis(np.stack(uniforms), -1, 0)
+        uniform = np.moveaxis(np.stack(uniforms), -1, 0) if uniforms else np.asarray([])
         return uniform.reshape(full_shape)
 
     ### Moments

@@ -132,9 +132,10 @@ class _ProbabilityDistribution(ABC):
 
             If `rng` is an instance of `scipy.stats.QMCEngine` configured to use
             scrambling and `shape` is not empty, then each slice along the zeroth
-            axis of the result is a quasi-independent, low-discrepancy sequence.
-            Separate calls to `sample` produce new quasi-independent, low-discrepancy
-            sequences.
+            axis of the result is a "quasi-independent", low-discrepancy sequence;
+            that is, they are distinct sequences that can be treated as statistically
+            independent for most practical purposes. Separate calls to `sample`
+            produce new quasi-independent, low-discrepancy sequences.
 
         References
         ----------
