@@ -1545,7 +1545,9 @@ class TestOptimizeSimple(CheckOptimize):
                                         'trust-exact', 'trust-krylov'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
-        rng = np.random.default_rng(1234)
+
+        # test is dependent on exact seed
+        rng = np.random.default_rng(123122)
 
         count = [0]
 
