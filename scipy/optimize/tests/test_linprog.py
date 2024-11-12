@@ -78,13 +78,13 @@ def _assert_success(res, desired_fun=None, desired_x=None,
                         rtol=rtol, atol=atol)
 
 
-def magic_square(n):
+def magic_square(n, rng=11322890):
     """
     Generates a linear program for which integer solutions represent an
     n x n magic square; binary decision variables represent the presence
     (or absence) of an integer 1 to n^2 in each position of the square.
     """
-    np.random.seed(0)
+    rng = np.random.default_rng(rng)
     M = n * (n**2 + 1) / 2
 
     numbers = np.arange(n**4) // n**2 + 1
@@ -138,7 +138,7 @@ def magic_square(n):
 
     A = np.array(np.vstack(A_list), dtype=float)
     b = np.array(b_list, dtype=float)
-    c = rng.rand(A.shape[1])
+    c = rng.random(A.shape[1])
 
     return A, b, c, numbers, M
 
@@ -1422,7 +1422,8 @@ class LinprogCommonTests:
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
 
-        desired_fun = 1.730550597
+        # this value depends on the seed used in magic_square
+        desired_fun = 1.751078777290465
         _assert_success(res, desired_fun=desired_fun)
         assert_allclose(A_eq.dot(res.x), b_eq)
         assert_array_less(np.zeros(res.x.size) - 1e-5, res.x)
@@ -1789,7 +1790,9 @@ class LinprogHiGHSTests(LinprogCommonTests):
         assert_warns(OptimizeWarning, f, options=options)
 
     def test_crossover(self):
-        A_eq, b_eq, c, _, _ = magic_square(4)
+        # this test is flaky, and depends on the exact seed provided
+        rng = np.random.default_rng(2212392)
+        A_eq, b_eq, c, _, _ = magic_square(4, rng=rng)
         bounds = (0, 1)
         res = linprog(c, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
@@ -2089,7 +2092,8 @@ class TestLinprogIPSparse(LinprogIPTests):
 
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=o)
-        _assert_success(res, desired_fun=1.730550597)
+        # depends on seed in magic_square
+        _assert_success(res, desired_fun=1.751078777290465)
 
     def test_sparse_solve_options(self):
         # checking that problem is solved with all column permutation options
@@ -2106,7 +2110,8 @@ class TestLinprogIPSparse(LinprogIPTests):
                 o["permc_spec"] = permc_spec
                 res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                               method=self.method, options=o)
-                _assert_success(res, desired_fun=1.730550597)
+                # depends on seed in magic_square
+                _assert_success(res, desired_fun=1.751078777290465)
 
 
 class TestLinprogIPSparsePresolve(LinprogIPTests):
@@ -2248,16 +2253,19 @@ class TestLinprogRSCommon(LinprogRSTests):
         assert_equal(res.status, 6)
 
     def test_redundant_constraints_with_guess(self):
-        A, b, c, _, _ = magic_square(3)
-        p = np.random.rand(*c.shape)
+        rng = np.random.default_rng(2223)
+        A, b, c, _, _ = magic_square(3, rng=rng)
+        p = rng.random(c.shape)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             sup.filter(RuntimeWarning, "invalid value encountered")
             sup.filter(LinAlgWarning)
+            print(self.method)
             res = linprog(c, A_eq=A, b_eq=b, method=self.method)
             res2 = linprog(c, A_eq=A, b_eq=b, method=self.method, x0=res.x)
             res3 = linprog(c + p, A_eq=A, b_eq=b, method=self.method, x0=res.x)
-        _assert_success(res2, desired_fun=1.730550597)
+        # depends on seed in magic_square
+        _assert_success(res2, desired_fun=1.7202966205799293)
         assert_equal(res2.nit, 0)
         _assert_success(res3)
         assert_(res3.nit < res.nit)  # hot start reduces iterations
