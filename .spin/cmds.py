@@ -916,3 +916,181 @@ def lint(ctx, fix):
     if fix:
         cmd += ['--fix']
     util.run(cmd)
+
+# From scipy: benchmarks/benchmarks/common.py
+def _set_mem_rlimit(max_mem=None):
+    """
+    Set address space rlimit
+    """
+    import resource
+    import psutil
+
+    mem = psutil.virtual_memory()
+
+    if max_mem is None:
+        max_mem = int(mem.total * 0.7)
+    cur_limit = resource.getrlimit(resource.RLIMIT_AS)
+    if cur_limit[0] > 0:
+        max_mem = min(max_mem, cur_limit[0])
+
+    try:
+        resource.setrlimit(resource.RLIMIT_AS, (max_mem, cur_limit[1]))
+    except ValueError:
+        # on macOS may raise: current limit exceeds maximum limit
+        pass
+
+def _run_asv(cmd):
+    # Always use ccache, if installed
+    PATH = os.environ['PATH']
+    EXTRA_PATH = os.pathsep.join([
+        '/usr/lib/ccache', '/usr/lib/f90cache',
+        '/usr/local/lib/ccache', '/usr/local/lib/f90cache'
+    ])
+    env = os.environ
+    env['PATH'] = f'{EXTRA_PATH}{os.pathsep}{PATH}'
+
+    # Control BLAS/LAPACK threads
+    env['OPENBLAS_NUM_THREADS'] = '1'
+    env['MKL_NUM_THREADS'] = '1'
+
+    # Limit memory usage
+    try:
+        _set_mem_rlimit()
+    except (ImportError, RuntimeError):
+        pass
+
+    util.run(cmd, cwd='benchmarks', env=env)
+
+def _commit_to_sha(commit):
+    p = util.run(['git', 'rev-parse', commit], output=False, echo=False)
+    if p.returncode != 0:
+        raise(
+            click.ClickException(
+                f'Could not find SHA matching commit `{commit}`'
+            )
+        )
+
+    return p.stdout.decode('ascii').strip()
+
+
+def _dirty_git_working_dir():
+    # Changes to the working directory
+    p0 = util.run(['git', 'diff-files', '--quiet'])
+
+    # Staged changes
+    p1 = util.run(['git', 'diff-index', '--quiet', '--cached', 'HEAD'])
+
+    return (p0.returncode != 0 or p1.returncode != 0)
+
+@click.command()
+@click.option(
+    '--tests', '-t',
+    default=None, metavar='TESTS', multiple=True,
+    help="Which tests to run"
+)
+@click.option(
+    '--submodule', '-s', default=None, metavar='SUBMODULE',
+    help="Submodule whose tests to run (cluster, constants, ...)")
+@click.option(
+    '--compare', '-c',
+    is_flag=True,
+    default=False,
+    help="Compare benchmarks between the current branch and main "
+         "(unless other branches specified). "
+         "The benchmarks are each executed in a new isolated "
+         "environment."
+)
+@click.option(
+    '--verbose', '-v', is_flag=True, default=False
+)
+@click.option(
+    '--quick', '-q', is_flag=True, default=False,
+    help="Run each benchmark only once (timings won't be accurate)"
+)
+@click.argument(
+    'commits', metavar='',
+    required=False,
+    nargs=-1
+)
+@meson.build_dir_option
+@click.pass_context
+def bench(ctx, tests, submodule, compare, verbose, quick, commits, build_dir=None, *args, **kwargs):
+    """:wrench: Run benchmarks.
+
+    \b
+    ```python
+     Examples:
+
+    $ spin bench -t integrate.SolveBVP
+    $ spin bench -t linalg.Norm
+    $ spin bench --compare main
+    ```
+    """
+    build_dir = os.path.abspath(build_dir)
+    if not commits:
+        commits = ('main', 'HEAD')
+    elif len(commits) == 1:
+        commits = commits + ('HEAD',)
+    elif len(commits) > 2:
+        raise click.ClickException(
+            'Need a maximum of two revisions to compare'
+        )
+
+    bench_args = []
+    if submodule:
+        submodule = (submodule, )
+    else:
+        submodule = tuple()
+    for t in tests + submodule:
+        bench_args += ['--bench', t]
+
+    if verbose:
+        bench_args = ['-v'] + bench_args
+
+    if quick:
+        bench_args = ['--quick'] + bench_args
+
+    if not compare:
+        # No comparison requested; we build and benchmark the current version
+
+        click.secho(
+            "Invoking `build` prior to running benchmarks:",
+            bold=True, fg="bright_green"
+        )
+        ctx.invoke(build)
+
+        meson._set_pythonpath(build_dir)
+
+        p = util.run(
+            ['python', '-c', 'import scipy as sp; print(sp.__version__)'],
+            cwd='benchmarks',
+            echo=False,
+            output=False
+        )
+        os.chdir('..')
+
+        np_ver = p.stdout.strip().decode('ascii')
+        click.secho(
+            f'Running benchmarks on SciPy {np_ver}',
+            bold=True, fg="bright_green"
+        )
+        cmd = [
+            'asv', 'run', '--dry-run',
+            '--show-stderr', '--python=same',
+            '--quick'] + bench_args
+        _run_asv(cmd)
+    else:
+        # Ensure that we don't have uncommited changes
+        commit_a, commit_b = [_commit_to_sha(c) for c in commits]
+
+        if commit_b == 'HEAD' and _dirty_git_working_dir():
+            click.secho(
+                "WARNING: you have uncommitted changes --- "
+                "these will NOT be benchmarked!",
+                fg="red"
+            )
+
+        cmd_compare = [
+            'asv', 'continuous', '--factor', '1.05', '--quick'
+        ] + bench_args + [commit_a, commit_b]
+        _run_asv(cmd_compare)
