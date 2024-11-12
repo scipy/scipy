@@ -47,6 +47,7 @@ def chr12c():
     return A, B, opt_perm
 
 
+@pytest.mark.filterwarnings("ignore:The NumPy global RNG was seeded by calling")
 class QAPCommonTests:
     """
     Base class for `quadratic_assignment` tests.
@@ -368,6 +369,7 @@ class Test2opt(QAPCommonTests):
             )
 
 
+@pytest.mark.filterwarnings("ignore:The NumPy global RNG was seeded by calling")
 class TestQAPOnce:
 
     # these don't need to be repeated for each method
