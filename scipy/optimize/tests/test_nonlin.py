@@ -299,14 +299,14 @@ class TestLinear:
     some methods find the exact solution in a finite number of steps"""
 
     def _check(self, jac, N, maxiter, complex=False, **kw):
-        np.random.seed(123)
+        rng = np.random.default_rng(123)
 
-        A = np.random.randn(N, N)
+        A = rng.standard_normal((N, N))
         if complex:
-            A = A + 1j*np.random.randn(N, N)
-        b = np.random.randn(N)
+            A = A + 1j*rng.standard_normal((N, N))
+        b = rng.standard_normal(N)
         if complex:
-            b = b + 1j*np.random.randn(N)
+            b = b + 1j*rng.standard_normal(N)
 
         def func(x):
             return dot(A, x) - b
@@ -372,14 +372,14 @@ class TestJacobianDotSolve:
         return x**2 - 1 + np.dot(A, x)
 
     def _check_dot(self, jac_cls, complex=False, tol=1e-6, **kw):
-        rng = np.random.RandomState(123)
+        rng = np.random.default_rng(123)
 
         N = 7
 
         def rand(*a):
-            q = rng.rand(*a)
+            q = rng.random(a)
             if complex:
-                q = q + 1j*rng.rand(*a)
+                q = q + 1j*rng.random(a)
             return q
 
         def assert_close(a, b, msg):
@@ -391,7 +391,7 @@ class TestJacobianDotSolve:
         A = rand(N, N)
 
         # initialize
-        x0 = rng.rand(N)
+        x0 = rng.random(N)
         jac = jac_cls(**kw)
         jac.setup(x0, self._func(x0, A), partial(self._func, A=A))
 
