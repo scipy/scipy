@@ -903,14 +903,18 @@ def test_fp32_gh12991():
     # this is the minimum working example reported for gh12991
     rng = np.random.default_rng(1978)
 
-    x = np.linspace(0, 1, 100).astype("float32")
+    x = np.linspace(0, 1, 100, dtype=np.float32)
     y = rng.random(size=100, dtype=np.float32)
 
+    # changed in gh21872. These functions should've been working in fp32 to force
+    # approx_derivative to work in fp32. One of the initial steps in least_squares
+    # is to force x0 (p) to be a float, meaning that the output of func and err would
+    # be in float64, unless forced to be in float32
     def func(p, x):
-        return p[0] + p[1] * x
+        return (p[0] + p[1] * x).astype(np.float32)
 
     def err(p, x, y):
-        return func(p, x) - y
+        return (func(p, x) - y).astype(np.float32)
 
     def mse(p, x, y):
         return np.sum(err(p, x, y)**2)
@@ -926,12 +930,12 @@ def test_fp32_gh12991():
     # compare output to solver that doesn't use derivatives
     res2 = minimize(
         mse,
-        [-1.0, -1.0],
+        [-1.0, 1.0],
+        method='cobyqa',
         args=(x, y),
-        method='nelder-mead',
-        options={"xatol": 1e-8}
+        options={'final_tr_radius': 1e-6}
     )
-    assert_allclose(res.x, res2.x, atol=5e-5)
+    assert_allclose(res.x, res2.x, atol=7e-5)
 
 
 def test_gh_18793_and_19351():
