@@ -191,15 +191,15 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     ------
     ValueError : if the array has shape that would not fit in the new dtype.
     """
-    if msg == "":
-        msg = f"for dtype {idx_dtype}"
+    if not msg:
+        msg = f"dtype {idx_dtype}"
     # check for safe downcasting
     max_value = np.iinfo(idx_dtype).max
 
     if A.format in ("csc", "csr"):
         # indptr[-1] is max b/c indptr always sorted
         if A.indptr[-1] > max_value:
-            raise ValueError("indptr values too large", msg)
+            raise ValueError(f"indptr values too large for {msg}")
 
         # check shape vs dtype
         if max(*A.shape) > max_value:
@@ -212,10 +212,9 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
 
     elif A.format == "coo":
         if max(*A.shape) > max_value:
-            if any(np.any(co > max_value) for co in A.coords):
+            if any((co > max_value).any() for co in A.coords):
                 raise ValueError("coords values too large", msg)
-        coords = tuple(co.astype(idx_dtype, copy=False) for co in A.coords)
-        return coords
+        return tuple(co.astype(idx_dtype, copy=False) for co in A.coords)
 
     elif A.format == "dia":
         if max(*A.shape) > max_value:
