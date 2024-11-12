@@ -1566,7 +1566,9 @@ class TestOptimizeSimple(CheckOptimize):
             pytest.skip('COBYQA does not support concurrent execution')
 
         # Check nan values result to failed exit status
-        rng = np.random.default_rng(1234)
+
+        # test is dependent on exact seed
+        rng = np.random.default_rng(123122)
 
         count = [0]
 
