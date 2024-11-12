@@ -1845,7 +1845,8 @@ class dpareto_lognorm_gen(rv_continuous):
         \phi\left( \frac{\log x - \mu}{\sigma} \right)
         \left( R(y_1) + R(y_2) \right)
 
-    where :math:`R(t) = \frac{1 - \Phi(t)}{\phi(t)}` is a Mills' ratio,
+    where :math:`R(t) = \frac{1 - \Phi(t)}{\phi(t)}`,
+    :math:`phi` and :math:`Phi` are the normal PDF and CDF, respectively,
     :math:`y_1 = \alpha \sigma - \frac{\log x - \mu}{\sigma}`,
     and :math:`y_2 = \beta \sigma + \frac{\log x - \mu}{\sigma}`
     for real numbers :math:`x` and :math:`\mu`, :math:`\sigma > 0`,
@@ -1901,20 +1902,13 @@ class dpareto_lognorm_gen(rv_continuous):
         return (s > 0) & (a > 0) & (b > 0)
 
     def _rvs(self, u, s, a, b, size=None, random_state=None):
+        # From [1] after Equation (12): "To generate pseudo-random
+        # deviates from the dPlN distribution, one can exponentiate
+        # pseudo-random deviates from NL generated using (6)."
         Z = random_state.normal(u, s, size=size)
         E1 = random_state.standard_exponential(size=size)
         E2 = random_state.standard_exponential(size=size)
         return np.exp(Z + E1 / a - E2 / b)
-
-    # def _pdf(self, x, u, s, a, b):
-        # log_y, m = np.log(x), u  # compare against [1] Eq. 1
-        # z = (log_y - m) / s
-        # x1 = a * s - z
-        # x2 = b * s + z
-        # t1 = a * b / ((a + b) * x)
-        # t2 = self._phi(z)
-        # t3 = self._R(x1) + self._R(x2)
-        # return t1 * t2 * t3
 
     def _logpdf(self, x, u, s, a, b):
         with np.errstate(invalid='ignore', divide='ignore'):
@@ -1922,22 +1916,11 @@ class dpareto_lognorm_gen(rv_continuous):
             z = (log_y - m) / s
             x1 = a * s - z
             x2 = b * s + z
-            t1 = np.log(a) + np.log(b) - np.log(a + b) - log_y
-            t2 = self._logphi(z)
-            t3 = np.logaddexp(self._logR(x1), self._logR(x2))
-            out = np.asarray(t1 + t2 + t3)
+            out = np.asarray(np.log(a) + np.log(b) - np.log(a + b) - log_y)
+            out += self._logphi(z)
+            out += np.logaddexp(self._logR(x1), self._logR(x2))
         out[(x == 0) | np.isinf(x)] = -np.inf
         return out[()]
-
-    # def _cdf(self, x, u, s, a, b):
-    #     log_y, m = np.log(x), u  # compare against [1] Eq. 2
-    #     z = (log_y - m) / s
-    #     x1 = a * s - z
-    #     x2 = b * s + z
-    #     t1 = self._Phi(z)
-    #     t2 = self._phi(z)
-    #     t3 = (b * self._R(x1) - a * self._R(x2)) / (a + b)
-    #     return t1 - t2 * t3
 
     def _logcdf(self, x, u, s, a, b):
         log_y, m = np.log(x), u  # compare against [1] Eq. 2
