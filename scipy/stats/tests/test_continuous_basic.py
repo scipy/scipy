@@ -55,22 +55,21 @@ slow_fit_mle = {'exponweib', 'genexpon', 'genhyperbolic', 'johnsonsb',
                 'kappa4', 'powerlognorm', 'tukeylambda'}
 xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'recipinvgauss', 'vonmises_line'}
 xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto', 'irwinhall'}
-skip_fit_mle = {'dpareto_lognorm',  # temporary skip
-                'levy_stable', 'studentized_range'}  # far too slow (>10min)
+skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 slow_fit_mm = {'chi2', 'expon', 'lognorm', 'loguniform', 'powerlaw', 'reciprocal'}
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
                 'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'truncnorm',
                 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
-                'crystalball', 'exponweib', 'f', 'fisk', 'foldcauchy', 'genextreme',
-                'genpareto', 'halfcauchy', 'invgamma', 'irwinhall', 'jf_skew_t',
-                'johnsonsu', 'kappa3', 'kappa4', 'landau', 'levy', 'levy_l',
-                'loglaplace', 'lomax', 'mielke', 'ncf', 'nct', 'pareto', 'powerlognorm',
-                'powernorm', 'rel_breitwigner',  'skewcauchy', 't', 'trapezoid',
-                'truncexpon', 'truncpareto', 'tukeylambda', 'vonmises', 'vonmises_line'}
+                'crystalball', 'dpareto_lognorm', 'exponweib', 'f', 'fisk',
+                'foldcauchy', 'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
+                'irwinhall', 'jf_skew_t', 'johnsonsu', 'kappa3', 'kappa4', 'landau',
+                'levy', 'levy_l', 'loglaplace', 'lomax', 'mielke', 'ncf', 'nct',
+                'pareto', 'powerlognorm', 'powernorm', 'rel_breitwigner',
+                'skewcauchy', 't', 'trapezoid', 'truncexpon', 'truncpareto',
+                'tukeylambda', 'vonmises', 'vonmises_line'}
 skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
-               'dpareto_lognorm',  # temporary skip
                'recipinvgauss', 'studentized_range'}  # far too slow (>10min)
 
 # These distributions fail the complex derivative test below.
