@@ -84,8 +84,7 @@ def magic_square(n):
     n x n magic square; binary decision variables represent the presence
     (or absence) of an integer 1 to n^2 in each position of the square.
     """
-
-    rng = np.random.RandomState(0)
+    np.random.seed(0)
     M = n * (n**2 + 1) / 2
 
     numbers = np.arange(n**4) // n**2 + 1
@@ -171,18 +170,18 @@ def lpgen_2d(m, n):
     return A, b, c.ravel()
 
 
-def very_random_gen(seed=0):
-    rng = np.random.RandomState(seed)
+def very_random_gen(rng=89056489347897):
+    rng = np.random.default_rng(rng)
     m_eq, m_ub, n = 10, 20, 50
-    c = rng.rand(n)-0.5
-    A_ub = rng.rand(m_ub, n)-0.5
-    b_ub = rng.rand(m_ub)-0.5
-    A_eq = rng.rand(m_eq, n)-0.5
-    b_eq = rng.rand(m_eq)-0.5
-    lb = -rng.rand(n)
-    ub = rng.rand(n)
-    lb[lb < -rng.rand()] = -np.inf
-    ub[ub > rng.rand()] = np.inf
+    c = rng.random(n)-0.5
+    A_ub = rng.random((m_ub, n))-0.5
+    b_ub = rng.random(m_ub)-0.5
+    A_eq = rng.random((m_eq, n))-0.5
+    b_eq = rng.random(m_eq)-0.5
+    lb = -rng.random(n)
+    ub = rng.random(n)
+    lb[lb < -rng.random()] = -np.inf
+    ub[ub > rng.random()] = np.inf
     bounds = np.vstack((lb, ub)).T
     return c, A_ub, b_ub, A_eq, b_eq, bounds
 
@@ -551,7 +550,6 @@ class LinprogCommonTests:
             [3, 2.5, 8, 0, -1, 0],
             [8, 10, 4, 0, 0, -1]]
         b = [185, 155, 600]
-        np.random.seed(0)
         maxiter = 3
         res = linprog(c, A_eq=A, b_eq=b, method=self.method,
                       options={"maxiter": maxiter})
@@ -1268,7 +1266,7 @@ class LinprogCommonTests:
 
     def test_optimize_result(self):
         # check all fields in OptimizeResult
-        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(0)
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(123)
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         assert_(res.success)
@@ -1801,7 +1799,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
     def test_marginals(self):
         # Ensure lagrange multipliers are correct by comparing the derivative
         # w.r.t. b_ub/b_eq/ub/lb to the reported duals.
-        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=0)
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(rng=2348939208234908)
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         lb, ub = bounds.T
@@ -1849,7 +1847,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
 
     def test_dual_feasibility(self):
         # Ensure solution is dual feasible using marginals
-        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=42)
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(rng=42)
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
 
@@ -1863,7 +1861,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
 
     def test_complementary_slackness(self):
         # Ensure that the complementary slackness condition is satisfied.
-        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(seed=42)
+        c, A_ub, b_ub, A_eq, b_eq, bounds = very_random_gen(rng=42)
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
 
