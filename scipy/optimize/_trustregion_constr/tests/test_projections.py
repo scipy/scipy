@@ -107,15 +107,15 @@ class TestProjections(TestCase):
         D = np.diag(range(1, 101))
         A = np.hstack([D, D, D, D])
         A_sparse = csc_array(A)
-        np.random.seed(0)
+        rng = np.random.default_rng(123)
 
         Z, LS, Y = projections(A)
         Z_sparse, LS_sparse, Y_sparse = projections(A_sparse)
         for k in range(20):
-            z = np.random.normal(size=(400,))
+            z = rng.standard_normal(size=(400,))
             assert_array_almost_equal(Z.dot(z), Z_sparse.dot(z))
             assert_array_almost_equal(LS.dot(z), LS_sparse.dot(z))
-            x = np.random.normal(size=(100,))
+            x = rng.standard_normal(size=(100,))
             assert_array_almost_equal(Y.dot(x), Y_sparse.dot(x))
 
     def test_compare_dense_and_sparse2(self):
@@ -124,15 +124,15 @@ class TestProjections(TestCase):
         D3 = np.diag([-0.3, -1.5, 2])
         A = np.hstack([D1, D2, D3])
         A_sparse = csc_array(A)
-        np.random.seed(0)
+        rng = np.random.default_rng(123)
 
         Z, LS, Y = projections(A)
         Z_sparse, LS_sparse, Y_sparse = projections(A_sparse)
         for k in range(1):
-            z = np.random.normal(size=(9,))
+            z = rng.standard_normal(size=(9,))
             assert_array_almost_equal(Z.dot(z), Z_sparse.dot(z))
             assert_array_almost_equal(LS.dot(z), LS_sparse.dot(z))
-            x = np.random.normal(size=(3,))
+            x = rng.standard_normal(size=(3,))
             assert_array_almost_equal(Y.dot(x), Y_sparse.dot(x))
 
     def test_iterative_refinements_dense(self):
