@@ -30,7 +30,7 @@ def csgraph_from_masked(graph):
 
     Returns
     -------
-    csgraph : csr_matrix
+    csgraph : csr_array
         Compressed sparse representation of graph,
 
     Examples
@@ -194,7 +194,7 @@ def csgraph_from_dense(graph,
 
     Returns
     -------
-    csgraph : csr_matrix
+    csgraph : csr_array
         Compressed sparse representation of graph,
 
     Examples
@@ -230,7 +230,7 @@ def csgraph_to_dense(csgraph, null_value=0):
 
     Parameters
     ----------
-    csgraph : csr_matrix, csc_matrix, or lil_matrix
+    csgraph : csr_array, csc_array, or lil_array
         Sparse representation of a graph.
     null_value : float, optional
         The value used to indicate null edges in the dense representation.
@@ -253,12 +253,12 @@ def csgraph_to_dense(csgraph, null_value=0):
     graph with multiple edges from node 0 to node 1, of weights 2 and 3.
     This illustrates the difference in behavior:
 
-    >>> from scipy.sparse import csr_matrix, csgraph
+    >>> from scipy.sparse import csr_array, csgraph
     >>> import numpy as np
     >>> data = np.array([2, 3])
     >>> indices = np.array([1, 1])
     >>> indptr = np.array([0, 2, 2])
-    >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
+    >>> M = csr_array((data, indices, indptr), shape=(2, 2))
     >>> M.toarray()
     array([[0, 5],
            [0, 0]])
@@ -276,11 +276,11 @@ def csgraph_to_dense(csgraph, null_value=0):
     zero-weight edges.  Let's look at the example of a two-node directed
     graph, connected by an edge of weight zero:
 
-    >>> from scipy.sparse import csr_matrix, csgraph
+    >>> from scipy.sparse import csr_array, csgraph
     >>> data = np.array([0.0])
     >>> indices = np.array([1])
     >>> indptr = np.array([0, 1, 1])
-    >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
+    >>> M = csr_array((data, indices, indptr), shape=(2, 2))
     >>> M.toarray()
     array([[0., 0.],
            [0., 0.]])
@@ -294,17 +294,17 @@ def csgraph_to_dense(csgraph, null_value=0):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import csgraph_to_dense
 
-    >>> graph = csr_matrix( [
+    >>> graph = csr_array( [
     ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ])
     >>> graph
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
         with 4 stored elements and shape (4, 4)>
 
     >>> csgraph_to_dense(graph)
@@ -348,7 +348,7 @@ def csgraph_to_masked(csgraph):
 
     Parameters
     ----------
-    csgraph : csr_matrix, csc_matrix, or lil_matrix
+    csgraph : csr_array, csc_array, or lil_array
         Sparse representation of a graph.
 
     Returns
@@ -358,17 +358,17 @@ def csgraph_to_masked(csgraph):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import csgraph_to_masked
 
-    >>> graph = csr_matrix( [
+    >>> graph = csr_array( [
     ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ])
     >>> graph
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
         with 4 stored elements and shape (4, 4)>
 
     >>> csgraph_to_masked(graph)
@@ -422,7 +422,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix
+    csgraph : array_like or sparse array or matrix
         The N x N matrix representing the directed or undirected graph
         from which the predecessors are drawn.
     predecessors : array_like, one dimension
@@ -443,7 +443,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import reconstruct_path
 
     >>> graph = [
@@ -452,9 +452,9 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 4 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -466,10 +466,10 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     >>> cstree = reconstruct_path(csgraph=graph, predecessors=pred, directed=False)
     >>> cstree.todense()
-    matrix([[0., 1., 2., 0.],
-            [0., 0., 0., 1.],
-            [0., 0., 0., 0.],
-            [0., 0., 0., 0.]])
+    array([[0., 1., 2., 0.],
+           [0., 0., 0., 1.],
+           [0., 0., 0., 0.],
+           [0., 0., 0., 0.]])
 
     """
     from ._validation import validate_graph
@@ -567,7 +567,7 @@ def construct_dist_matrix(graph,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import construct_dist_matrix
 
     >>> graph = [
@@ -576,9 +576,9 @@ def construct_dist_matrix(graph,
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 4 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1

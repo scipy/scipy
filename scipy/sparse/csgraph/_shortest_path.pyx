@@ -57,7 +57,7 @@ def shortest_path(csgraph, method='auto',
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     method : string ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
@@ -138,7 +138,7 @@ def shortest_path(csgraph, method='auto',
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import shortest_path
 
     >>> graph = [
@@ -147,9 +147,9 @@ def shortest_path(csgraph, method='auto',
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -244,7 +244,7 @@ def floyd_warshall(csgraph, directed=True,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -289,7 +289,7 @@ def floyd_warshall(csgraph, directed=True,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import floyd_warshall
 
     >>> graph = [
@@ -298,9 +298,9 @@ def floyd_warshall(csgraph, directed=True,
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -437,7 +437,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of non-negative distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -518,7 +518,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import dijkstra
 
     >>> graph = [
@@ -527,9 +527,9 @@ def dijkstra(csgraph, directed=True, indices=None,
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 4 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -962,7 +962,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -1011,7 +1011,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import bellman_ford
 
     >>> graph = [
@@ -1020,9 +1020,9 @@ def bellman_ford(csgraph, directed=True, indices=None,
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -1204,7 +1204,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -1253,7 +1253,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import johnson
 
     >>> graph = [
@@ -1262,9 +1262,9 @@ def johnson(csgraph, directed=True, indices=None,
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -1723,7 +1723,7 @@ def yen(
 
     Parameters
     ----------
-    csgraph : array or sparse array, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     source : int
         The index of the starting node for the paths.
@@ -1787,7 +1787,7 @@ def yen(
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import yen
 
     >>> graph = [
@@ -1796,9 +1796,9 @@ def yen(
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
