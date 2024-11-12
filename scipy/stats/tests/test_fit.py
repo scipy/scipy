@@ -21,6 +21,7 @@ thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 mle_failing_fits = [
+        'dpareto_lognorm',
         'gausshyper',
         'genexpon',
         'gengamma',
@@ -61,8 +62,8 @@ mle_use_floc0 = [
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
-                   'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
-                   'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
+                   'chi2', 'crystalball', 'dgamma', 'dpareto_lognorm', 'dweibull',
+                   'f', 'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
                    'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
                    'halfcauchy', 'invgamma', 'invweibull', 'irwinhall', 'jf_skew_t',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'landau', 'levy', 'levy_l',
@@ -89,7 +90,6 @@ fail_interval_censored = {"truncpareto"}
 skip_fit = [
     'erlang',  # Subclass of gamma, generates a warning.
     'genhyperbolic', 'norminvgauss',  # too slow
-    'dpareto_lognorm',  # temporarily skip
 ]
 
 
@@ -232,7 +232,6 @@ def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto',
                       'truncweibull_min', 'ksone', 'levy_stable',
-                      'dpareto_lognorm',  # temporarily skip
                       'studentized_range', 'kstwo',
                       'beta', 'nakagami', 'truncnorm', # don't meet tolerance
                       'poisson_binom'}  # vector-valued shape parameter
@@ -287,7 +286,6 @@ def cases_test_fit_mse():
                       'vonmises',  # can have negative CDF; doesn't play nice
                       'arcsine', 'argus', 'powerlaw',  # don't meet tolerance
                       'poisson_binom',  # vector-valued shape parameter
-                      'dpareto_lognorm',  # temporarily skip
                       }
 
     # Please keep this list in alphabetical order...
