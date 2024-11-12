@@ -1087,12 +1087,13 @@ class TestInterop:
         for b in [self.b, self.b2]:
             # pad the c array (FITPACK convention)
             ct = len(b.t) - len(b.c)
+            b_c = b.c.copy()
             if ct > 0:
-                b.c = np.r_[b.c, np.zeros((ct,) + b.c.shape[1:])]
+                b_c = np.r_[b_c, np.zeros((ct,) + b_c.shape[1:])]
 
             for n in [1, 2, 3]:
                 bd = splder(b)
-                tck_d = _impl.splder((b.t.copy(), b.c, b.k))
+                tck_d = _impl.splder((b.t.copy(), b_c, b.k))
                 xp_assert_close(bd.t, tck_d[0], atol=1e-15)
                 xp_assert_close(bd.c, tck_d[1], atol=1e-15)
                 assert bd.k == tck_d[2]
@@ -1103,12 +1104,13 @@ class TestInterop:
         for b in [self.b, self.b2]:
             # pad the c array (FITPACK convention)
             ct = len(b.t) - len(b.c)
+            b_c = b.c.copy()
             if ct > 0:
-                b.c = np.r_[b.c, np.zeros((ct,) + b.c.shape[1:])]
+                b_c = np.r_[b_c, np.zeros((ct,) + b_c.shape[1:])]
 
             for n in [1, 2, 3]:
                 bd = splantider(b)
-                tck_d = _impl.splantider((b.t.copy(), b.c, b.k))
+                tck_d = _impl.splantider((b.t.copy(), b_c, b.k))
                 xp_assert_close(bd.t, tck_d[0], atol=1e-15)
                 xp_assert_close(bd.c, tck_d[1], atol=1e-15)
                 assert bd.k == tck_d[2]

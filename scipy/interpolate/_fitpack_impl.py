@@ -745,7 +745,6 @@ def splder(tck, n=1):
         return splantider(tck, -n)
 
     t, c, k = tck
-    c = c.copy()
 
     if n > k:
         raise ValueError(f"Order of derivative (n = {n!r}) must be <= "
@@ -784,7 +783,6 @@ def splantider(tck, n=1):
         return splder(tck, -n)
 
     t, c, k = tck
-    c = c.copy()
 
     # Extra axes for the trailing dims of the `c` array:
     sh = (slice(None),) + (None,)*len(c.shape[1:])
