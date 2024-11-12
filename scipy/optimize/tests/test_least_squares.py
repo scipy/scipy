@@ -916,15 +916,21 @@ def test_fp32_gh12991():
         return np.sum(err(p, x, y)**2)
 
     res = least_squares(err, [-1.0, -1.0], args=(x, y))
-    res2 = minimize(mse, [-1.0, -1.0], args=(x, y), method='nelder-mead')
     # previously the initial jacobian calculated for this would be all 0
     # and the minimize would terminate immediately, with nfev=1, would
     # report a successful minimization (it shouldn't have done), but be
     # unchanged from the initial solution.
     # It was terminating early because the underlying approx_derivative
     # used a step size for FP64 when the working space was FP32.
-    # compare output to solver that doesn't use derivatives
     assert res.nfev > 2
+    # compare output to solver that doesn't use derivatives
+    res2 = minimize(
+        mse,
+        [-1.0, -1.0],
+        args=(x, y),
+        method='nelder-mead',
+        options={"xatol": 1e-8}
+    )
     assert_allclose(res.x, res2.x, atol=5e-5)
 
 
