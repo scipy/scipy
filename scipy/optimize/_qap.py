@@ -209,8 +209,8 @@ def quadratic_assignment(A, B, method="faq", options=None):
 def _spec007_transition(rng):
     if isinstance(rng, np.random.RandomState):
         warnings.warn(
-            "Use of `RandomState` with `quadratic_assignment`is being phased out"
-            " and will result in an Exception in SciPy 1.17",
+            "Use of `RandomState` with `quadratic_assignment` is deprecated"
+            " and will result in an exception in SciPy 1.17",
             DeprecationWarning,
             stacklevel=2
         )
