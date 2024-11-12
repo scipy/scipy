@@ -511,14 +511,14 @@ class LinprogCommonTests:
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=self.options)
 
-        np.random.seed(0)
+        rng = np.random.default_rng(198089)
         m = 100
         n = 150
-        A_eq = scipy.sparse.rand(m, n, 0.5)
-        x_valid = np.random.randn(n)
-        c = np.random.randn(n)
-        ub = x_valid + np.random.rand(n)
-        lb = x_valid - np.random.rand(n)
+        A_eq = scipy.sparse.rand(m, n, 0.5, random_state=rng)
+        x_valid = rng.standard_normal(n)
+        c = rng.standard_normal(n)
+        ub = x_valid + rng.random(n)
+        lb = x_valid - rng.random(n)
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq @ x_valid
 
