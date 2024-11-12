@@ -198,7 +198,7 @@ invdistcont = [
     ['cosine', ()],
     ['crystalball', (-1, 2)],
     ['dgamma', (-1, )],
-    ['dpareto_lognorm', (-3, 1.2, 1.5, 2)],
+    ['dpareto_lognorm', (3, -1.2, 1.5, 2)],
     ['dweibull', (-1, )],
     ['erlang', (-1, )],
     ['expon', ()],
