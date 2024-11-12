@@ -728,3 +728,83 @@ def mypy(ctx, build_dir=None):
         ])
     print(report, end='')
     print(errors, end='', file=sys.stderr)
+
+@click.command()
+@click.argument("pytest_args", nargs=-1)
+@click.option(
+    '--verbose', '-v', default=False, is_flag=True,
+    help="more verbosity")
+@click.option(
+    '--durations', '-d', default=None, metavar="NUM_TESTS",
+    help="Show timing for the given number of slowest tests"
+)
+@click.option(
+    '--submodule', '-s', default=None, metavar='MODULE_NAME',
+    help="Submodule whose tests to run (cluster, constants, ...)")
+@click.option(
+    '--tests', '-t', default=None, multiple=True, metavar='TESTS',
+    help='Specify tests to run')
+@click.option(
+    '--parallel', '-j', default=1, metavar='N_JOBS',
+    help="Number of parallel jobs for testing"
+)
+@click.pass_context
+def smoke_docs(ctx, pytest_args, *args, **kwargs):
+    """🔧 Run doctests of objects in the public API.
+
+    PYTEST_ARGS are passed through directly to pytest, e.g.:
+
+      spin smoke-docs -- --pdb
+
+    To run tests on a directory:
+
+     \b
+     spin smoke-docs scipy/linalg
+
+    To report the durations of the N slowest doctests:
+
+      spin smoke-docs -- --durations=N
+
+    To run doctests that match a given pattern:
+
+     \b
+     spin smoke-docs -- -k "slogdet"
+     spin smoke-docs scipy/linalg -- -k "det and not slogdet"
+
+    \b
+    Note:
+    -----
+
+    \b
+     - This command only runs doctests and skips everything under tests/
+     - This command only doctests public objects: those which are accessible
+       from the top-level `__init__.py` file.
+
+    """  # noqa: E501
+    try:
+        # prevent obscure error later
+        import scipy_doctest
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError("scipy-doctest not installed") from e
+
+    tests = ctx.params["tests"]
+    if ctx.params["submodule"]:
+        tests = PROJECT_MODULE + "." + ctx.params["submodule"]
+
+    if not pytest_args and not tests:
+        pytest_args = ('scipy', )
+
+    # turn doctesting on:
+    doctest_args = (
+        '--doctest-modules',
+        '--doctest-collect=api'
+    )
+
+    if not tests:
+        doctest_args += ('--doctest-collect=api', )
+
+    pytest_args = pytest_args + doctest_args
+
+    ctx.params['pytest_args'] = pytest_args
+
+    ctx.forward(test)
