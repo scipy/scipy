@@ -808,35 +808,36 @@ class LinprogCommonTests:
 
     def test_zero_column_1(self):
         m, n = 3, 4
-        rng = np.random.RandomState(0)
-        c = rng.rand(n)
+        rng = np.random.default_rng(1)
+        c = rng.random(n)
         c[1] = 1
-        A_eq = rng.rand(m, n)
+        A_eq = rng.random((m, n))
         A_eq[:, 1] = 0
-        b_eq = rng.rand(m)
+        b_eq = rng.random(m)
         A_ub = [[1, 0, 1, 1]]
         b_ub = 3
         bounds = [(-10, 10), (-10, 10), (-10, None), (None, None)]
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
-        _assert_success(res, desired_fun=-9.7087836730413404)
+        # desired_fun depends on the seed used
+        _assert_success(res, desired_fun=-9.750225158185795)
 
     def test_zero_column_2(self):
         if self.method in {'highs-ds', 'highs-ipm'}:
             # See upstream issue https://github.com/ERGO-Code/HiGHS/issues/648
             pytest.xfail()
-
-        rng = np.random.RandomState(0)
+        rng = np.random.default_rng(83498798237)
         m, n = 2, 4
-        c = rng.rand(n)
+        c = rng.random(n)
         c[1] = -1
-        A_eq = rng.rand(m, n)
+        A_eq = rng.random((m, n))
         A_eq[:, 1] = 0
-        b_eq = rng.rand(m)
+        b_eq = rng.random(m)
 
-        A_ub = rng.rand(m, n)
+        A_ub = rng.random((m, n))
         A_ub[:, 1] = 0
-        b_ub = rng.rand(m)
+        b_ub = rng.random(m)
+
         bounds = (None, None)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
@@ -866,11 +867,11 @@ class LinprogCommonTests:
 
     def test_zero_row_3(self):
         m, n = 2, 4
-        rng = np.random.RandomState(1234)
-        c = rng.rand(n)
-        A_eq = rng.rand(m, n)
+        rng = np.random.default_rng(12309)
+        c = rng.random(n)
+        A_eq = rng.random((m, n))
         A_eq[0, :] = 0
-        b_eq = rng.rand(m)
+        b_eq = rng.random(m)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
