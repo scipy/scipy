@@ -184,4 +184,5 @@ PKG_CONFIG_PATH = "{project}"
 "Documentation" = [
   ".spin/cmds.py:docs",
   ".spin/cmds.py:smoke_docs",
+  ".spin/cmds.py:refguide_check",
 ]

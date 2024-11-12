@@ -808,3 +808,36 @@ def smoke_docs(ctx, pytest_args, *args, **kwargs):
     ctx.params['pytest_args'] = pytest_args
 
     ctx.forward(test)
+
+@click.command()
+@click.option(
+    '--verbose', '-v', default=False, is_flag=True,
+    help="more verbosity")
+@click.option(
+    '--submodule', '-s', default=None, metavar='MODULE_NAME',
+    help="Submodule whose tests to run (cluster, constants, ...)")
+@meson.build_dir_option
+@click.pass_context
+def refguide_check(ctx, build_dir=None, *args, **kwargs):
+    """:wrench: Run refguide check."""
+    click.secho(
+            "Invoking `build` prior to running refguide-check:",
+            bold=True, fg="bright_green"
+        )
+    ctx.invoke(build)
+
+    build_dir = os.path.abspath(build_dir)
+    root = Path(build_dir).parent
+    install_dir = meson._get_site_packages(build_dir)
+
+    cmd = [f'{sys.executable}',
+            os.path.join(root, 'tools', 'refguide_check.py')]
+
+    if ctx.params["verbose"]:
+        cmd += ['-vvv']
+
+    if ctx.params["submodule"]:
+        cmd += [ctx.params["submodule"]]
+
+    os.environ['PYTHONPATH'] = install_dir
+    util.run(cmd)
