@@ -24,7 +24,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
     Parameters
     ----------
-    graph : sparse array
+    graph : sparse array or matrix
         Input sparse in CSR format whose rows represent one partition of the
         graph and whose columns represent the other partition. An edge between
         two vertices is indicated by the corresponding entry in the matrix

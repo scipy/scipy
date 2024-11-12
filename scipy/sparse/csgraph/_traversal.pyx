@@ -29,7 +29,7 @@ def connected_components(csgraph, directed=True, connection='weak',
 
     Parameters
     ----------
-    csgraph : array_like or sparse array
+    csgraph : array_like or sparse array or matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
     directed : bool, optional
@@ -134,7 +134,7 @@ def breadth_first_tree(csgraph, i_start, directed=True):
 
     Parameters
     ----------
-    csgraph : array_like or sparse array
+    csgraph : array_like or sparse array or matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
     i_start : int
@@ -210,7 +210,7 @@ def depth_first_tree(csgraph, i_start, directed=True):
 
     Parameters
     ----------
-    csgraph : array_like or sparse array
+    csgraph : array_like or sparse array or matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
     i_start : int

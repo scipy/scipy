@@ -57,7 +57,7 @@ def shortest_path(csgraph, method='auto',
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse array or matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     method : string ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
@@ -244,7 +244,7 @@ def floyd_warshall(csgraph, directed=True,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse array or matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -437,7 +437,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse array or matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of non-negative distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -962,7 +962,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse array or matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -1204,7 +1204,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse array or matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -1723,7 +1723,7 @@ def yen(
 
     Parameters
     ----------
-    csgraph : array or sparse array, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     source : int
         The index of the starting node for the paths.

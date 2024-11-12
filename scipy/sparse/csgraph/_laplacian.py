@@ -26,7 +26,7 @@ def laplacian(
 
     Parameters
     ----------
-    csgraph : array_like or sparse array, 2 dimensions
+    csgraph : array_like or sparse array or matrix, 2 dimensions
         compressed-sparse graph, with shape (N, N).
     normed : bool, optional
         If True, then compute symmetrically normalized Laplacian.
@@ -72,7 +72,7 @@ def laplacian(
 
     Returns
     -------
-    lap : ndarray, or sparse array, or `LinearOperator`
+    lap : ndarray, or sparse array or matrix, or `LinearOperator`
         The N x N Laplacian of csgraph. It will be a NumPy array (dense)
         if the input was dense, or a sparse array otherwise, or
         the format of a function or `LinearOperator` if
