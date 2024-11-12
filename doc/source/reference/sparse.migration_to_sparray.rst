@@ -41,6 +41,16 @@ Overview and big picture
    -  Scalar exponents, e.g. ``A**2``, use elementwise power for sparray and
       matrix power for spmatrix. To get matrix power for sparrays use
       ``scipy.sparse.linalg.matrix_power(A, n)``.
+-  When index arrays are provided to the constructor functions, spmatrix
+   selects a dtype based on dtype and values of the incoming arrays, while
+   sparray only bases on the dtype of the incoming arrays. For example,
+   ``M=csr_matrix((data, indices, indptr))`` results in ``int32`` dtype for
+   ``M.indices`` so long as the values in ``indices`` and ``indptr`` are small,
+   even if the ``dtype`` of the incoming arrays are ``int64``. In contrast,
+   ``A=csr_array((data, indices, indptr))`` results in ``int64`` dtype for
+   ``A.indices`` when the input arrays are ``int64``. This provides more
+   predictable, often larger, index dtypes in sparrays and less casting
+   to match dtypes.
 
 -  Checking the sparse type and format:
 
@@ -48,30 +58,29 @@ Overview and big picture
    -  ``isspmatrix(M)`` returns ``True`` for any sparse matrix.
    -  ``isspmatrix_csr(M)`` checks for a sparse matrix with specific format.
       It should be replaced with an array compatible version such as:
-   -  ``issparse(A) and A.format == 'csr'`` looks for a CSR sparse
+   -  ``issparse(A) and A.format == 'csr'`` which checks for a CSR sparse
       array/matrix.
 
--  Handling your library's API for sparse output:
+-  Handling your software package API with sparse input/output:
 
-   -  Inputs are fairly easy to accommodate either spmatrix or sparray. So
+   -  Inputs are fairly easy to make work with either spmatrix or sparray. So
       long as you use ``A.multiply(B)`` for elementwise and ``A @ B`` for matrix
       multiplication, and you use ``sparse.linalg.matrix_power`` for matrix
       power, you should be fine after you complete the "first pass" of the
       migration steps described in the next section. Your code will handle
       both types of inputs interchangeably.
-   -  Output types from your library's functions require a little more thought.
+   -  Migrating sparse outputs from your functions requires a little more thought.
       Make a list of all your public functions that return spmatrix objects.
       Check whether you feel OK returning sparrays instead. That depends on
       your library and its users. If you want to allow these functions to
-      continue to return spmatrix objects with a user's existing code, you
-      can do that most of the time. Often there is an sparse input that
-      you can use as a signal for what type of output should be returned.
-      Design the function to return the type that was input. That can be
-      extended to dense inputs. If the input is an np.matrix or a masked array
-      with np.matrix as its ``._baseclass`` attribute, then return spmatrix.
-      Otherwise return an sparray. Without those inputs, two other approaches
-      are to create a keyword argument to determine which to return, or to
-      create a new function (like we have done with, e.g. ``eye_array``) that
+      continue to return spmatrix or sparray objects, you can often do that
+      using a sparse input that also serves as a signal for what type of output
+      should be returned. Design your function to return the type that was input.
+      That approach can be extended to dense inputs. If the input is an np.matrix
+      or a masked array with np.matrix as its ``._baseclass`` attribute, then
+      return spmatrix. Otherwise return an sparray. Without those inputs, two
+      other approaches are to create a keyword argument to signal which to return,
+      or create a new function (like we have done with, e.g. ``eye_array``) that
       has the same basic syntax, but returns sparray. Which method you choose
       should depend on your library and your users and your preferences.
 
@@ -93,7 +102,7 @@ Recommended steps for migration
       and ``isspmatrix_csr(G)`` with ``issparse(G) and G.format == "csr"``.
       Moreover ``isspmatrix_csr(G) or isspmatrix_csc(G)`` becomes
       ``issparse(G) and G.format in ['csr', 'csc']``.
-      The git search idiom ``git grep 'isspm[a-z_]*('`` should be helpful.
+      The git search idiom ``git grep 'isspm[a-z_]*('`` can help find these.
    -  Convert all ``spdiags`` calls to ``dia_matrix``.
       See docs in :func:`spdiags<scipy.sparse.spdiags>`.
       A search for ``spdiags`` is all you need here.
@@ -106,22 +115,34 @@ Recommended steps for migration
 
    -  Convert construction functions like ``diags`` and ``triu`` to the
       array version (see :ref:`sparse-migration-construction` below).
+   -  Rename all ``*_matrix`` constructor calls to ``*_array``.
    -  Check all functions/methods for which migration causes 1D return
       values. These are mostly indexing and the reduction functions
       (see :ref:`sparse-migration-shapes-reductions` below).
-   -  If you use sparse libraries that only accept ``int32`` index arrays
-      for sparse representations, you may need to convert the index arrays
-      to ``int32`` just before calling the library. ``sparray`` tries
-      to select index dtype based in input dtype instead of dtype-by-value.
-      Using just-in-time conversion is a good approach to index dtype issues.
-      Convert to ``int32`` just before you call the code that requires ``int32``.
    -  Check all places where you iterate over spmatrices and change them
       to account for the sparrays yielding 1D sparrays rather than 2D spmatrices.
    -  Find and change places where your code makes use of ``np.matrix``
       features. Convert those to ``np.ndarray`` features.
-   -  Rename all ``*_matrix`` constructor calls to ``*_array``.
-   -  Test your code. And **read** your code. You have migrated to
-      sparray.
+   -  If you use sparse libraries that only accept ``int32`` index arrays
+      for sparse representations, we suggest using just-in-time conversion.
+      Convert to ``int32`` just before you call the code that requires ``int32``.
+      The helper functions ``scipy.sparse.safely_cast_index_arrays(A, np.int32)``
+      and ``get_index_dtype(arrays, maxval, check_contents)`` can help with that.
+   -  ``sparray`` selects index dtype based on the dtype of the input array instead
+      of the values in the array. So if you want your index arrays to be ``int32``,
+      you will need to ensure an ``int32`` dtype for each index array like ``indptr``
+      that you pass to ``csr_array``. With ``spmatrix`` it is tempting to use the
+      default int64 dtype for numpy arrays and rely on the sparse constructor
+      to downcast if the values were small. But this downcasting leads to extra
+      recasting when working with other matrices, slices or arithmetic expressions.
+      For ``sparray`` you can still rely on the constructors to choose dtypes. But
+      you are also given the power to choose your index dtype via the dtype of the
+      incoming index arrays rather than their values. So, if you want ``int32``,
+      set the dtype, e.g. ``indices = np.array([1,3,6], dtype=np.int32)`` or
+      ``indptr = np.arange(9, dtype=np.int32)``, when creating the index arrays.
+      In many settings, the index array dtype isn't crucial and you can just let
+      the constructors choose the dtype for both sparray and spmatrix.
+   -  Test your code. And **read** your code. You have migrated to sparray.
 
 .. _sparse-migration-construction:
 
@@ -199,10 +220,10 @@ Details: shape changes and reductions
 
 -  Construction using 1d-list of values:
 
-   -  ``csr_matrix([1, 2, 3]).shape == (1, 3)`` creates a 2D matrix.
-   -  ``csr_array([1, 2, 3]).shape == (3,)`` creates a 1D array
+   -  ``csr_array([1, 2, 3]).shape == (3,)`` 1D input makes a 1D array.
+   -  ``csr_matrix([1, 2, 3]).shape == (1, 3)`` 1D input makes a 2D matrix.
 
--  Indexing:
+-  Indexing and iteration:
 
    -  Indexing of sparray allows 1D objects which can be made 2D using
       ``np.newaxis`` or ``None``. E.g., ``A[3, None, :]`` gives a 2D
@@ -378,22 +399,71 @@ Use tests to find * and ** spots
         scipy.sparse.lil_matrix = scipy.sparse._lil.lil_matrix = _strict_lil_matrix
         scipy.sparse.dia_matrix = scipy.sparse._dia.dia_matrix = _strict_dia_matrix
 
+        scipy.sparse._compressed.csr_matrix = _strict_csr_matrix
+
+        scipy.sparse._construct.bsr_matrix = _strict_bsr_matrix
+        scipy.sparse._construct.coo_matrix = _strict_coo_matrix
+        scipy.sparse._construct.csc_matrix = _strict_csc_matrix
+        scipy.sparse._construct.csr_matrix = _strict_csr_matrix
+        scipy.sparse._construct.dia_matrix = _strict_dia_matrix
+
+        scipy.sparse._extract.coo_matrix = _strict_coo_matrix
+
+        scipy.sparse._matrix.bsr_matrix = _strict_bsr_matrix
+        scipy.sparse._matrix.coo_matrix = _strict_coo_matrix
+        scipy.sparse._matrix.csc_matrix = _strict_csc_matrix
+        scipy.sparse._matrix.csr_matrix = _strict_csr_matrix
+        scipy.sparse._matrix.dia_matrix = _strict_dia_matrix
+        scipy.sparse._matrix.dok_matrix = _strict_dok_matrix
+        scipy.sparse._matrix.lil_matrix = _strict_lil_matrix
+
+
+Index Array DTypes
+------------------
+
+If you provide compressed indices to a constructor,
+e.g. ``csr_array((data, indices, indptr))`` sparse arrays set the index
+dtype by only checking the index arrays dtype, while sparse matrices check the
+index values too and may downcast to int32
+(see `gh-18509 <https://github.com/scipy/scipy/pull/18509>`__ for more details).
+This means you may get int64 indexing when you used to get int32.
+You can control this by setting the ``dtype`` before instantiating, or by
+recasting after construction.
+
+Two sparse utility functions can help with handling the index dtype.
+Use ``get_index_dtype(arrays, maxval, check_contents)`` while creating indices
+to find an appropriate dtype (int32 or int64) to use for your compressed indices.
+
+Use ``scipy.sparse.safely_cast_index_arrays`` for recasting after construction,
+while making sure you con't create overflows during downcasting.
+This function doesn't actually change the input array. The cast arrays are returned.
+And copies are only made when needed. So you can check if casting was done using
+``if indices is not A.indices:``
+
+The function signatures are::
+
+    def get_index_dtype(arrays=(), maxval=None, check_contents=False):
+    def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
+
+Example idioms include the following::
+
+   .. code-block:: python
+
+       # select index dtype before construction based on shape
+       shape = (3, 3)
+       idx_dtype = scipy.sparse.get_index_dtype(maxval=max(shape))
+       indices = np.array([0, 1, 0], dtype=idx_dtype)
+       indptr = np.arange(3, dtype=idx_dtype)
+       A = csr_array((data, indices, indptr), shape=shape)
+
+       # rescast after construction, raising exception before overflow
+       indices, indptr = scipy.sparse.safely_cast_index_arrays(B, np.int32)
+       B.indices, B.indptr = indices, indptr
 
 Other
 -----
 
--  If you provide compressed data to a constructor,
-   e.g. ``csr_array((data, indices, indptr))`` sparse arrays set the index
-   dtype by only checking the index arrays dtype, while sparse matrices check the
-   index values too and may downcast to int32
-   (see `gh-18509 <https://github.com/scipy/scipy/pull/18509>`__ for more details).
-
-   This means you may get int64 indexing when you used to get int32.
-   You can recast manually if you need to: ``A.indices = A.indices.astype('int32')``
-   and simiarly for ``indptr``.
-
--  Binary operations with operators ``+, -, *, /, @, !=, >`` and sparse and/or
-   dense operands:
+-  Binary operators ``+, -, *, /, @, !=, >`` act on sparse and/or dense operands:
 
    -  If all inputs are sparse, the output is usually sparse as well. The
       exception being ``/`` which returns dense (dividing by the default
@@ -404,8 +474,7 @@ Other
       which is not implemented for ``dense / sparse``, and returns sparse for
       ``sparse / dense``.
 
--  Binary operations with operators ``+, -, *, /, @, !=, >`` and array
-   and/or matrix operands:
+-  Binary operators ``+, -, *, /, @, !=, >`` with array and/or matrix operands:
 
    -  If all inputs are arrays, the outputs are arrays and the same is true for
       matrices.
