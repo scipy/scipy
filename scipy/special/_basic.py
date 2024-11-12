@@ -3134,22 +3134,24 @@ def factorial(n, exact=False, extend="zero"):
 
     Parameters
     ----------
-    n : int or array_like of ints
-        Input values.  If ``n < 0``, the return value is 0.
+    n : int or float or complex (or array_like thereof)
+        Input values for ``n!``. Complex values require ``extend='complex'``.
+        By default, the return value for ``n < 0`` is 0.
     exact : bool, optional
-        If True, calculate the answer exactly using long integer arithmetic.
-        If False, result is approximated in floating point rapidly using the
-        `gamma` function.
+        If ``exact`` is set to True, calculate the answer exactly using
+        integer arithmetic, otherwise approximate using the gamma function
+        (faster, but yields floats instead of integers).
         Default is False.
     extend : string, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
-        complex extension of the factorial (the Gamma function).
+        complex extension of the factorial (see below).
 
     Returns
     -------
-    nf : float or int or ndarray
-        Factorial of `n`, as integer or float depending on `exact`.
+    nf : int or float or complex or ndarray
+        Factorial of ``n``, as integer, float or complex (depending on ``exact``
+        and ``extend``). Array inputs are returned as arrays.
 
     Notes
     -----
@@ -3158,7 +3160,7 @@ def factorial(n, exact=False, extend="zero"):
     The output dtype is increased to ``int64`` or ``object`` if necessary.
 
     With ``exact=False`` the factorial is approximated using the gamma
-    function:
+    function (which is also the definition of the complex extension):
 
     .. math:: n! = \\Gamma(n+1)
 
@@ -3188,16 +3190,18 @@ def factorial2(n, exact=False, extend="zero"):
           = 2 ** (n / 2) * gamma(n / 2 + 1)                 n even
           = 2 ** (n / 2) * (n / 2)!                         n even
 
-    The formula for `n odd` is the basis for the complex extension.
+    The formula for odd ``n`` is the basis for the complex extension.
 
     Parameters
     ----------
-    n : int or array_like
-        Calculate ``n!!``.  If ``n < 0``, the return value is 0.
+    n : int or float or complex (or array_like thereof)
+        Input values for ``n!!``. Non-integer values require ``extend='complex'``.
+        By default, the return value for ``n < 0`` is 0.
     exact : bool, optional
-        The result can be approximated rapidly using the gamma-formula
-        above (default).  If `exact` is set to True, calculate the
-        answer exactly using integer arithmetic.
+        If ``exact`` is set to True, calculate the answer exactly using
+        integer arithmetic, otherwise use above approximation (faster,
+        but yields floats instead of integers).
+        Default is False.
     extend : string, optional
         One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
         are handled - by default they are 0, but it is possible to opt into the
@@ -3212,9 +3216,9 @@ def factorial2(n, exact=False, extend="zero"):
 
     Returns
     -------
-    nff : float or int
-        Double factorial of `n`, as an int or a float depending on
-        `exact`.
+    nf : int or float or complex or ndarray
+        Double factorial of ``n``, as integer, float or complex (depending on
+        ``exact`` and ``extend``). Array inputs are returned as arrays.
 
     Examples
     --------
@@ -3247,16 +3251,18 @@ def factorialk(n, k, exact=False, extend="zero"):
 
     Parameters
     ----------
-    n : int or array_like
-        Calculate multifactorial. If ``n < 0``, the return value is 0.
-    k : int
-        Order of multifactorial.
+    n : int or float or complex (or array_like thereof)
+        Input values for multifactorial. Non-integer values require
+        ``extend='complex'``. By default, the return value for ``n < 0`` is 0.
+    n : int or float or complex (or array_like thereof)
+        Order of multifactorial. Non-integer values require ``extend='complex'``.
     exact : bool, optional
-        If exact is set to True, calculate the answer exactly using
+        If ``exact`` is set to True, calculate the answer exactly using
         integer arithmetic, otherwise use an approximation (faster,
         but yields floats instead of integers)
+        Default is False.
     extend : string, optional
-        One of ``'zero'`` or ``'complex'``; this determines how values `n<0` are
+        One of ``'zero'`` or ``'complex'``; this determines how values ``n<0`` are
         handled - by default they are 0, but it is possible to opt into the complex
         extension of the multifactorial. This enables passing complex values,
         not only to ``n`` but also to ``k``.
@@ -3269,8 +3275,9 @@ def factorialk(n, k, exact=False, extend="zero"):
 
     Returns
     -------
-    val : int
-        Multifactorial of `n`.
+    nf : int or float or complex or ndarray
+        Multifactorial (order ``k``) of ``n``, as integer, float or complex (depending
+        on ``exact`` and ``extend``). Array inputs are returned as arrays.
 
     Examples
     --------
