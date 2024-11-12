@@ -200,7 +200,7 @@ def nontrivial_problem():
     return c, A_ub, b_ub, A_eq, b_eq, x_star, f_star
 
 
-def l1_regression_prob(seed=0, m=8, d=9, n=100):
+def l1_regression_prob(rng=12932983, m=8, d=9, n=100):
     '''
     Training data is {(x0, y0), (x1, y2), ..., (xn-1, yn-1)}
         x in R^d
@@ -210,10 +210,10 @@ def l1_regression_prob(seed=0, m=8, d=9, n=100):
     phi: feature map R^d -> R^m
     m: dimension of feature space
     '''
-    rng = np.random.RandomState(seed)
-    phi = rng.normal(0, 1, size=(m, d))  # random feature mapping
-    w_true = rng.randn(m)
-    x = rng.normal(0, 1, size=(d, n))  # features
+    rng = np.random.default_rng(rng)
+    phi = rng.standard_normal(size=(m, d))  # random feature mapping
+    w_true = rng.standard_normal(m)
+    x = rng.standard_normal(size=(d, n))  # features
     y = w_true @ (phi @ x) + rng.normal(0, 1e-5, size=n)  # measurements
 
     # construct the problem
