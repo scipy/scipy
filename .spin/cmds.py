@@ -902,3 +902,17 @@ def smoke_tutorials(ctx, pytest_args, *args, **kwargs):
     ctx.params['pytest_args'] = pytest_args
 
     ctx.forward(test)
+
+@click.command()
+@click.option(
+    '--fix', default=False, is_flag=True, help='Attempt to auto-fix errors'
+)
+@click.pass_context
+def lint(ctx, fix):
+    """:dash: Run linter on modified files and check for
+    disallowed Unicode characters and possibly-invalid test names."""
+    root = Path(__file__).parent.parent
+    cmd = [os.path.join(root, 'tools', 'lint.py'), '--diff-against=main']
+    if fix:
+        cmd += ['--fix']
+    util.run(cmd)
