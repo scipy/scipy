@@ -467,13 +467,13 @@ class TestBarycentric:
         assert np.shape(P.derivatives([0, 1])) == (n, 2, 3)
 
     def test_wrapper(self):
-        P = BarycentricInterpolator(self.xs, self.ys)
+        P = BarycentricInterpolator(self.xs, self.ys, rng=1)
         bi = barycentric_interpolate
-        xp_assert_close(P(self.test_xs), bi(self.xs, self.ys, self.test_xs))
+        xp_assert_close(P(self.test_xs), bi(self.xs, self.ys, self.test_xs, rng=1))
         xp_assert_close(P.derivative(self.test_xs, 2),
-                            bi(self.xs, self.ys, self.test_xs, der=2))
+                        bi(self.xs, self.ys, self.test_xs, der=2, rng=1))
         xp_assert_close(P.derivatives(self.test_xs, 2),
-                            bi(self.xs, self.ys, self.test_xs, der=[0, 1]))
+                        bi(self.xs, self.ys, self.test_xs, der=[0, 1], rng=1))
 
     def test_int_input(self):
         x = 1000 * np.arange(1, 11)  # np.prod(x[-1] - x[:-1]) overflows
