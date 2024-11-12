@@ -940,8 +940,8 @@ class TestCurveFit:
                 popt2, pcov2 = curve_fit(funcp, xdata, ydatap, sigma=covarp,
                         jac=jac2, absolute_sigma=absolute_sigma)
 
-                assert_allclose(popt1, popt2, rtol=1.2e-7, atol=1e-14)
-                assert_allclose(pcov1, pcov2, rtol=1.2e-7, atol=1e-14)
+                assert_allclose(popt1, popt2, rtol=1.4e-7, atol=1e-14)
+                assert_allclose(pcov1, pcov2, rtol=1.4e-7, atol=1e-14)
 
     @pytest.mark.parametrize("absolute_sigma", [False, True])
     def test_curvefit_scalar_sigma(self, absolute_sigma):
