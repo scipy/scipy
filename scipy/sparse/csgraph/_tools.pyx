@@ -652,18 +652,3 @@ cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
                 k2 = k1
             if null_path and i != j:
                 dist[i, j] = null_value
-
-
-def _safe_downcast_indices(A):
-    # check for safe downcasting to ITYPE (==int32 set in parameters.pxi)
-    max_value = np.iinfo(ITYPE).max
-
-    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
-        raise ValueError("indptr values too large for csgraph")
-    if max(*A.shape) > max_value:  # only check large enough arrays
-        if np.any(A.indices > max_value):
-            raise ValueError("indices values too large for csgraph")
-
-    indices = A.indices.astype(ITYPE, copy=False)
-    indptr = A.indptr.astype(ITYPE, copy=False)
-    return indices, indptr
