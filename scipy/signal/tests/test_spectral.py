@@ -1273,8 +1273,8 @@ class TestLombscargle:
         offset = 2  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a cos wave for the selected times
@@ -1307,8 +1307,8 @@ class TestLombscargle:
         offset = 2.15  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times

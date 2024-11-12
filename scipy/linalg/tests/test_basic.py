@@ -865,6 +865,7 @@ class TestSolve:
                                 rtol=tol * size,
                                 err_msg=err_msg)
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt_a, dt_b):

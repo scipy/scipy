@@ -252,6 +252,7 @@ class TestLogM:
         assert log_a.shape == (0, 0)
         assert log_a.dtype == log_a0.dtype
 
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.parametrize('dtype', [int, float, np.float32, complex, np.complex64])
     def test_no_ZeroDivisionError(self, dtype):
         # gh-17136 reported inconsistent behavior in `logm` depending on input dtype:
@@ -264,9 +265,9 @@ class TestLogM:
 
 class TestSqrtM:
     def test_round_trip_random_float(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         for n in range(1, 6):
-            M_unscaled = np.random.randn(n, n)
+            M_unscaled = rng.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_sqrtm, info = sqrtm(M, disp=False)
@@ -274,9 +275,9 @@ class TestSqrtM:
                 assert_allclose(M_sqrtm_round_trip, M)
 
     def test_round_trip_random_complex(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         for n in range(1, 6):
-            M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+            M_unscaled = rng.randn(n, n) + 1j * rng.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_sqrtm, info = sqrtm(M, disp=False)

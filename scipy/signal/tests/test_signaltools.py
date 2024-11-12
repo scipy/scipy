@@ -3586,6 +3586,7 @@ class TestSOSFilt:
         _, zf = sosfilt(sos, np.ones(40, dt), zi=zi.tolist())
         assert_allclose_cast(zf, zi, rtol=1e-13)
 
+    @pytest.mark.parallel_threads(1)
     def test_dtype_deprecation(self, dt):
         # gh-21211
         sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)
