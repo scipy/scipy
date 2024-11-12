@@ -64,10 +64,14 @@ def _broadcast_shapes(shapes, axis=None):
     # input validation
     if axis is not None:
         axis = np.atleast_1d(axis)
-        axis_int = axis.astype(int)
+        message = '`axis` must be an integer, a tuple of integers, or `None`.'
+        try:
+            with np.errstate(invalid='ignore'):
+                axis_int = axis.astype(int)
+        except ValueError as e:
+            raise AxisError(message) from e
         if not np.array_equal(axis_int, axis):
-            raise AxisError('`axis` must be an integer, a '
-                            'tuple of integers, or `None`.')
+            raise AxisError(message)
         axis = axis_int
 
     # First, ensure all shapes have same number of dimensions by prepending 1s.

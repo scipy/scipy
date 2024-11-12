@@ -129,14 +129,6 @@ Available functions
 
         double boxcox1p(double, double)
 
-- :py:func:`~scipy.special.btdtr`::
-
-        double btdtr(double, double, double)
-
-- :py:func:`~scipy.special.btdtri`::
-
-        double btdtri(double, double, double)
-
 - :py:func:`~scipy.special.btdtria`::
 
         double btdtria(double, double, double)
@@ -1334,8 +1326,6 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_bdtr(double k, int n, double p) nogil
     double xsf_bdtri(double k, int n, double y) nogil
     double xsf_bdtrc(double k, int n, double p) nogil
-    double xsf_btdtri(double aa, double bb, double yy0) nogil
-    double xsf_btdtr(double a, double b, double x) nogil
     double xsf_chdtr(double df, double x) nogil
     double xsf_chdtrc(double df, double x) nogil
     double xsf_chdtri(double df, double y) nogil
@@ -2014,14 +2004,6 @@ cpdef double boxcox(double x0, double x1) noexcept nogil:
 cpdef double boxcox1p(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.boxcox1p"""
     return _func_boxcox1p(x0, x1)
-
-cpdef double btdtr(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.btdtr"""
-    return xsf_btdtr(x0, x1, x2)
-
-cpdef double btdtri(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.btdtri"""
-    return xsf_btdtri(x0, x1, x2)
 
 cpdef double btdtria(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.btdtria"""
@@ -3458,7 +3440,7 @@ cpdef double rel_entr(double x0, double x1) noexcept nogil:
 cpdef Dd_number_t rgamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.rgamma"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(special_crgamma(_complexstuff.npy_cdouble_from_double_complex(x0))) 
+        return _complexstuff.double_complex_from_npy_cdouble(special_crgamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return special_rgamma(x0)
     else:

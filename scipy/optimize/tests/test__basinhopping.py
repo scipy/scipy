@@ -118,9 +118,6 @@ class TestBasinHopping:
         self.niter = 100
         self.disp = False
 
-        # fix random seed
-        np.random.seed(1234)
-
         self.kwargs = {"method": "L-BFGS-B", "jac": True}
         self.kwargs_nograd = {"method": "L-BFGS-B"}
 
@@ -301,8 +298,8 @@ class TestBasinHopping:
         basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                      niter=0, disp=self.disp)
 
-    def test_seed_reproducibility(self):
-        # seed should ensure reproducibility between runs
+    def test_rng_reproducibility(self):
+        # rng should ensure reproducibility between runs
         minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
 
         f_1 = []
@@ -311,7 +308,7 @@ class TestBasinHopping:
             f_1.append(f)
 
         basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
-                     niter=10, callback=callback, seed=10)
+                     niter=10, callback=callback, rng=10)
 
         f_2 = []
 
@@ -319,7 +316,7 @@ class TestBasinHopping:
             f_2.append(f)
 
         basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
-                     niter=10, callback=callback2, seed=10)
+                     niter=10, callback=callback2, rng=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
     def test_random_gen(self):
@@ -330,17 +327,18 @@ class TestBasinHopping:
 
         res1 = basinhopping(func2d, [1.0, 1.0],
                             minimizer_kwargs=minimizer_kwargs,
-                            niter=10, seed=rng)
+                            niter=10, rng=rng)
 
         rng = np.random.default_rng(1)
         res2 = basinhopping(func2d, [1.0, 1.0],
                             minimizer_kwargs=minimizer_kwargs,
-                            niter=10, seed=rng)
+                            niter=10, rng=rng)
         assert_equal(res1.x, res2.x)
 
     def test_monotonic_basin_hopping(self):
         # test 1-D minimizations with gradient and T=0
         i = 0
+
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp, T=0)
         assert_almost_equal(res.x, self.sol[i], self.tol)
@@ -449,7 +447,13 @@ class Test_Metropolis:
         x0 = -4
         limit = 50  # Constrain to func value >= 50
         con = {'type': 'ineq', 'fun': lambda x: func(x) - limit},
-        res = basinhopping(func, x0, 30, minimizer_kwargs={'constraints': con})
+        res = basinhopping(
+            func,
+            x0,
+            30,
+            seed=np.random.RandomState(1234),
+            minimizer_kwargs={'constraints': con}
+        )
         assert res.success
         assert_allclose(res.fun, limit, rtol=1e-6)
 

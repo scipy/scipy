@@ -5,7 +5,7 @@
 import numpy as np
 cimport numpy as np
 from warnings import warn
-from scipy.sparse import csr_matrix, issparse, SparseEfficiencyWarning
+from scipy.sparse import csr_array, issparse, SparseEfficiencyWarning
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 from . import maximum_bipartite_matching
 
@@ -76,7 +76,7 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     if not issparse(graph):
         raise TypeError("Input graph must be sparse")
     if graph.format not in ("csc", "csr"):
-        raise TypeError('Input must be in CSC or CSR sparse matrix format.')
+        raise TypeError('Input must be in CSC or CSR sparse format.')
     nrows = graph.shape[0]
     if not symmetric_mode:
         graph = graph+graph.transpose()
@@ -236,12 +236,12 @@ def structural_rank(graph):
     """
     graph = convert_pydata_sparse_to_scipy(graph)
     if not issparse(graph):
-        raise TypeError('Input must be a sparse matrix')
+        raise TypeError('Input must be sparse')
     if graph.format != "csr":
         if graph.format not in ("csc", "coo"):
             warn('Input matrix should be in CSC, CSR, or COO matrix format',
                     SparseEfficiencyWarning)
-        graph = csr_matrix(graph)
+        graph = csr_array(graph)
     # If A is a tall matrix, then transpose.
     if graph.shape[0] > graph.shape[1]:
         graph = graph.T.tocsr()

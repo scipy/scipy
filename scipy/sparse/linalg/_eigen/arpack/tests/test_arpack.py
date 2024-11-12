@@ -15,7 +15,7 @@ import pytest
 
 from numpy import dot, conj, random
 from scipy.linalg import eig, eigh
-from scipy.sparse import csc_matrix, csr_matrix, diags, rand
+from scipy.sparse import csc_array, csr_array, diags_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.arpack import (eigs, eigsh, arpack,
                                               ArpackNoConvergence)
@@ -36,7 +36,7 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
     ----------
     type_char : {'f', 'd', 'F', 'D'}
         Data type in ARPACK eigenvalue problem
-    mattype : {csr_matrix, aslinearoperator, asarray}, optional
+    mattype : {csr_array, aslinearoperator, asarray}, optional
         Linear operator type
 
     Returns
@@ -63,7 +63,10 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
         tol = 30 * np.finfo(np.float32).eps
         rtol *= 5
 
-    if mattype is csr_matrix and type_char in ('f', 'F'):
+    if (
+        isinstance(mattype, type) and issubclass(mattype, csr_array)
+        and type_char in ('f', 'F')
+    ):
         # sparse in single precision: worse errors
         rtol *= 5
 
@@ -122,11 +125,11 @@ def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
     if pos_definite:
         Id = N * np.eye(N)
         if sparse:
-            M = csr_matrix(M)
+            M = csr_array(M)
         M += Id
     else:
         if sparse:
-            M = csr_matrix(M)
+            M = csr_array(M)
 
     return M
 
@@ -287,7 +290,7 @@ class SymmetricParams:
     def __init__(self):
         self.eigs = eigsh
         self.which = ['LM', 'SM', 'LA', 'SA', 'BE']
-        self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
+        self.mattypes = [csr_array, aslinearoperator, np.asarray]
         self.sigmas_modes = {None: ['normal'],
                              0.5: ['normal', 'buckling', 'cayley']}
 
@@ -347,7 +350,7 @@ class NonSymmetricParams:
     def __init__(self):
         self.eigs = eigs
         self.which = ['LM', 'LR', 'LI']  # , 'SM', 'LR', 'SR', 'LI', 'SI']
-        self.mattypes = [csr_matrix, aslinearoperator, np.asarray]
+        self.mattypes = [csr_array, aslinearoperator, np.asarray]
         self.sigmas_OPparts = {None: [None],
                                0.1: ['r'],
                                0.1 + 0.1j: ['r', 'i']}
@@ -518,13 +521,13 @@ def test_standard_nonsymmetric_no_convergence():
 
 def test_eigen_bad_shapes():
     # A is not square.
-    A = csc_matrix(np.zeros((2, 3)))
+    A = csc_array(np.zeros((2, 3)))
     assert_raises(ValueError, eigs, A)
 
 
 def test_eigen_bad_kwargs():
     # Test eigen on wrong keyword argument
-    A = csc_matrix(np.zeros((8, 8)))
+    A = csc_array(np.zeros((8, 8)))
     assert_raises(ValueError, eigs, A, which='XX')
 
 
@@ -555,7 +558,7 @@ def test_linearoperator_deallocation():
     # running out of memory if eigs/eigsh are called in a tight loop.
 
     M_d = np.eye(10)
-    M_s = csc_matrix(M_d)
+    M_s = csc_array(M_d)
     M_o = aslinearoperator(M_d)
 
     with assert_deallocated(lambda: arpack.SpLuInv(M_s)):
@@ -574,7 +577,7 @@ def test_parallel_threads():
     v0 = np.random.rand(50)
 
     def worker():
-        x = diags([1, -2, 1], [-1, 0, 1], shape=(50, 50))
+        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=3, v0=v0)
         results.append(w)
 
@@ -596,7 +599,7 @@ def test_parallel_threads():
 def test_reentering():
     # Just some linear operator that calls eigs recursively
     def A_matvec(x):
-        x = diags([1, -2, 1], [-1, 0, 1], shape=(50, 50))
+        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=1)
         return v / w[0]
     A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
@@ -615,7 +618,7 @@ def test_regression_arpackng_1315():
         np.random.seed(1234)
 
         w0 = np.arange(1, 1000+1).astype(dtype)
-        A = diags([w0], [0], shape=(1000, 1000))
+        A = diags_array([w0], offsets=[0], shape=(1000, 1000))
 
         v0 = np.random.rand(1000).astype(dtype)
         w, v = eigs(A, k=9, ncv=2*9+1, which="LM", v0=v0)
@@ -626,7 +629,7 @@ def test_regression_arpackng_1315():
 
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
-    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
     A = generate_matrix(4, sparse=False)
     M_dense = np.random.random((4, 4))
     M_sparse = generate_matrix(4, sparse=True)
@@ -652,7 +655,7 @@ def test_eigs_for_k_greater():
 
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
-    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
     A = generate_matrix(4, sparse=False)
     M_dense = generate_matrix_symmetric(4, pos_definite=True)
     M_sparse = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
@@ -676,12 +679,13 @@ def test_eigsh_for_k_greater():
 
 
 def test_real_eigs_real_k_subset():
-    np.random.seed(2)
+    rng = np.random.default_rng(2)
 
     n = 10
-    A = rand(n, n, density=0.5)
+    A = random_array(shape=(n, n), density=0.5, random_state=rng)
     A.data *= 2
     A.data -= 1
+    A += A.T  # make symmetric to test real eigenvalues
 
     v0 = np.ones(n)
 

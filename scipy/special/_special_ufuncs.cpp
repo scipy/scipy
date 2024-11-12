@@ -169,11 +169,6 @@ extern const char *yv_doc;
 extern const char *yve_doc;
 extern const char *zetac_doc;
 
-// This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
-// It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
-// already in such a context.
-extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
-
 static PyModuleDef _special_ufuncs_def = {
     PyModuleDef_HEAD_INIT, "_special_ufuncs", NULL, -1, NULL, NULL, NULL, NULL, NULL};
 
@@ -216,7 +211,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_sinpi", _sinpi);
 
     PyObject *_zeta = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::ff_f>(xsf::zeta), static_cast<xsf::numpy::dd_d>(xsf::zeta)}, "_zeta", _zeta_doc);
+	{static_cast<xsf::numpy::ff_f>(xsf::zeta), static_cast<xsf::numpy::Ff_F>(xsf::zeta),
+	 static_cast<xsf::numpy::dd_d>(xsf::zeta), static_cast<xsf::numpy::Dd_D>(xsf::zeta)}, "_zeta", _zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_zeta", _zeta);
 
     PyObject *airy =
@@ -847,7 +843,9 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
 
     PyObject *_riemann_zeta = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::f_f>(xsf::riemann_zeta)},
+	 {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::D_D>(xsf::riemann_zeta),
+	 static_cast<xsf::numpy::f_f>(xsf::riemann_zeta), static_cast<xsf::numpy::F_F>(xsf::riemann_zeta)
+	},
         "_riemann_zeta", _riemann_zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_riemann_zeta", _riemann_zeta);
 

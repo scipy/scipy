@@ -6,8 +6,9 @@ cimport numpy as np
 from libc.math cimport INFINITY
 
 
-from scipy.sparse import issparse
+from scipy.sparse import issparse, csr_array
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
+from ._tools import _safe_downcast_indices
 
 np.import_array()
 
@@ -141,7 +142,8 @@ def maximum_bipartite_matching(graph, perm_type='row'):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
     graph = graph.tocsr()
     i, j = graph.shape
-    x, y = _hopcroft_karp(graph.indices, graph.indptr, i, j)
+    indices, indptr = _safe_downcast_indices(graph)
+    x, y = _hopcroft_karp(indices, indptr, i, j)
     return np.asarray(x if perm_type == 'column' else y)
 
 
@@ -285,9 +287,9 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
     return x, y
 
 
-def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
+def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     r"""
-    min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False)
+    min_weight_full_bipartite_matching(biadjacency, maximize=False)
 
     Returns the minimum weight full matching of a bipartite graph.
 
@@ -295,7 +297,7 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
 
     Parameters
     ----------
-    biadjacency_matrix : sparse matrix
+    biadjacency : sparse matrix
         Biadjacency matrix of the bipartite graph: A sparse matrix in CSR, CSC,
         or COO format whose rows represent one partition of the graph and whose
         columns represent the other partition. An edge between two vertices is
@@ -376,11 +378,11 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
 
     Let us first consider an example in which all weights are equal:
 
-    >>> biadjacency_matrix = csr_matrix([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
+    >>> biadjacency = csr_matrix([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
 
     Here, all we get is a perfect matching of the graph:
 
-    >>> print(min_weight_full_bipartite_matching(biadjacency_matrix)[1])
+    >>> print(min_weight_full_bipartite_matching(biadjacency)[1])
     [2 0 1]
 
     That is, the first, second, and third rows are matched with the third,
@@ -452,33 +454,39 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     28.0
 
     """
-    biadjacency_matrix = convert_pydata_sparse_to_scipy(biadjacency_matrix)
-    if not issparse(biadjacency_matrix):
+    biadjacency = convert_pydata_sparse_to_scipy(biadjacency)
+    if not issparse(biadjacency):
         raise TypeError("graph must be sparse")
-    if biadjacency_matrix.format not in ("csr", "csc", "coo"):
+    if biadjacency.format not in ("csr", "csc", "coo"):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
 
-    if not (np.issubdtype(biadjacency_matrix.dtype, np.number) or
-            biadjacency_matrix.dtype == np.dtype(np.bool_)):
+    if not (np.issubdtype(biadjacency.dtype, np.number) or
+            biadjacency.dtype == np.dtype(np.bool_)):
         raise ValueError("expected a matrix containing numerical entries, " +
-                         "got %s" % (biadjacency_matrix.dtype,))
+                         "got %s" % (biadjacency.dtype,))
 
-    biadjacency_matrix = biadjacency_matrix.astype(np.double)
+    biadjacency = biadjacency.astype(np.double)
 
     if maximize:
-        biadjacency_matrix = -biadjacency_matrix
+        biadjacency = -biadjacency
 
     # Change all infinities to zeros, then remove those zeros, but warn the
     # user if any zeros were present in the first place.
-    if not np.all(biadjacency_matrix.data):
+    if not np.all(biadjacency.data):
         warnings.warn('explicit zero weights are removed before matching')
 
-    biadjacency_matrix.data[np.isposinf(biadjacency_matrix.data)] = 0
-    biadjacency_matrix.eliminate_zeros()
+    biadjacency.data[np.isposinf(biadjacency.data)] = 0
+    biadjacency.eliminate_zeros()
 
-    i, j = biadjacency_matrix.shape
+    i, j = biadjacency.shape
 
-    a = np.arange(np.min(biadjacency_matrix.shape))
+    a = np.arange(np.min(biadjacency.shape))
+
+    biadj_indices, biadj_indptr = _safe_downcast_indices(biadjacency)
+    if biadj_indices is not biadjacency.indices:
+        # create a new object without copying data
+        biadjacency = csr_array((biadjacency.data, biadj_indices, biadj_indptr),
+                                shape=biadjacency.shape, dtype=biadjacency.dtype)
 
     # The algorithm expects more columns than rows in the graph, so
     # we use the transpose if that is not already the case. We also
@@ -487,33 +495,33 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     # checking for infeasibility during the execution of _lapjvsp below
     # instead, but some cases are not yet handled there.
     if j < i:
-        biadjacency_matrix_t = biadjacency_matrix.T
-        if biadjacency_matrix_t.format != "csr":
-            biadjacency_matrix_t = biadjacency_matrix_t.tocsr()
-        matching, _ = _hopcroft_karp(biadjacency_matrix_t.indices,
-                                     biadjacency_matrix_t.indptr,
+        biadjacency_t = biadjacency.T
+        if biadjacency_t.format != "csr":
+            biadjacency_t = biadjacency_t.tocsr()
+        matching, _ = _hopcroft_karp(biadjacency_t.indices,
+                                     biadjacency_t.indptr,
                                      j, i)
         matching = np.asarray(matching)
         if np.sum(matching != -1) != min(i, j):
             raise ValueError('no full matching exists')
-        b = np.asarray(_lapjvsp(biadjacency_matrix_t.indptr,
-                                biadjacency_matrix_t.indices,
-                                biadjacency_matrix_t.data,
+        b = np.asarray(_lapjvsp(biadjacency_t.indptr,
+                                biadjacency_t.indices,
+                                biadjacency_t.data,
                                 j, i))
         indices = np.argsort(b)
         return (b[indices], a[indices])
     else:
-        if biadjacency_matrix.format != "csr":
-            biadjacency_matrix = biadjacency_matrix.tocsr()
-        matching, _ = _hopcroft_karp(biadjacency_matrix.indices,
-                                     biadjacency_matrix.indptr,
+        if biadjacency.format != "csr":
+            biadjacency = biadjacency.tocsr()
+        matching, _ = _hopcroft_karp(biadjacency.indices,
+                                     biadjacency.indptr,
                                      i, j)
         matching = np.asarray(matching)
         if np.sum(matching != -1) != min(i, j):
             raise ValueError('no full matching exists')
-        b = np.asarray(_lapjvsp(biadjacency_matrix.indptr,
-                                biadjacency_matrix.indices,
-                                biadjacency_matrix.data,
+        b = np.asarray(_lapjvsp(biadjacency.indptr,
+                                biadjacency.indices,
+                                biadjacency.data,
                                 i, j))
         return (a, b)
 

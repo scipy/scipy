@@ -100,7 +100,6 @@ class TestLeslie:
 
     def test_bad_shapes(self):
         assert_raises(ValueError, leslie, [[1, 1], [2, 2]], [3, 4, 5])
-        assert_raises(ValueError, leslie, [3, 4, 5], [[1, 1], [2, 2]])
         assert_raises(ValueError, leslie, [1, 2], [1, 2])
         assert_raises(ValueError, leslie, [1], [])
 
@@ -585,11 +584,6 @@ class TestConvolutionMatrix:
         with pytest.raises(ValueError, match='n must be a positive integer'):
             convolution_matrix([1, 2, 3], 0)
 
-    def test_bad_first_arg(self):
-        # first arg must be a 1d array, otherwise ValueError
-        with pytest.raises(ValueError, match='one-dimensional'):
-            convolution_matrix(1, 4)
-
     def test_empty_first_arg(self):
         # first arg must have at least one value
         with pytest.raises(ValueError, match=r'len\(a\)'):
@@ -615,3 +609,30 @@ class TestConvolutionMatrix:
             A = convolution_matrix(a, nv, mode)
         y2 = A @ v
         assert_array_almost_equal(y1, y2)
+
+
+@pytest.mark.fail_slow(5)  # `leslie` has an import in the function
+@pytest.mark.parametrize('f, args', [(circulant, ()),
+                                     (companion, ()),
+                                     (convolution_matrix, (5, 'same')),
+                                     (fiedler, ()),
+                                     (fiedler_companion, ()),
+                                     (leslie, (np.arange(9),)),
+                                     (toeplitz, (np.arange(9),)),
+                                     ])
+def test_batch(f, args):
+    rng = np.random.default_rng(283592436523456)
+    batch_shape = (2, 3)
+    m = 10
+    A = rng.random(batch_shape + (m,))
+
+    if f in {toeplitz}:
+        message = "Beginning in SciPy 1.17, multidimensional input will be..."
+        with pytest.warns(FutureWarning, match=message):
+            f(A, *args)
+        return
+
+    res = f(A, *args)
+    ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
+    ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
+    assert_allclose(res, ref)
