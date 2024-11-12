@@ -987,7 +987,8 @@ class TestOptimizeSimple(CheckOptimize):
     def test_bfgs_numerical_jacobian(self):
         # BFGS with numerical Jacobian and a vector epsilon parameter.
         # define the epsilon parameter using a random vector
-        epsilon = np.sqrt(np.spacing(1.)) * np.random.rand(len(self.solution))
+        rng = np.random.default_rng(1234)
+        epsilon = np.sqrt(np.spacing(1.)) * rng.random(len(self.solution))
 
         params = optimize.fmin_bfgs(self.func, self.startparams,
                                     epsilon=epsilon, args=(),
@@ -1501,7 +1502,8 @@ class TestOptimizeSimple(CheckOptimize):
             return 2*(x-c)
 
         c = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])
-        xinit = np.random.randn(len(c))
+        rng = np.random.default_rng(1234)
+        xinit = rng.standard_normal(len(c))
         optimize.minimize(Y, xinit, jac=dY_dx, args=(c), method="BFGS")
 
     def test_initial_step_scaling(self):
@@ -1564,7 +1566,7 @@ class TestOptimizeSimple(CheckOptimize):
             pytest.skip('COBYQA does not support concurrent execution')
 
         # Check nan values result to failed exit status
-        rng = np.random.RandomState(1234)
+        rng = np.random.default_rng(1234)
 
         count = [0]
 
@@ -1576,7 +1578,7 @@ class TestOptimizeSimple(CheckOptimize):
             if count[0] > 2:
                 return np.nan
             else:
-                return rng.rand()
+                return rng.random()
 
         def grad(x):
             return np.array([1.0])
@@ -2034,7 +2036,6 @@ class TestOptimizeScalar:
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
-        np.random.seed(1234)
 
         count = [0]
 
@@ -2900,9 +2901,9 @@ def test_gh12696():
 # --- Test minimize with equal upper and lower bounds --- #
 
 def setup_test_equal_bounds():
-
-    rng = np.random.RandomState(0)
-    x0 = rng.rand(4)
+    # the success of test_equal_bounds depends on the exact seed
+    rng = np.random.default_rng(123)
+    x0 = rng.random(4)
     lb = np.array([0, 2, -1, -1.0])
     ub = np.array([3, 2, 2, -1.0])
     i_eb = (lb == ub)
