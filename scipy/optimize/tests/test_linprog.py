@@ -143,12 +143,12 @@ def magic_square(n, rng=11322890):
     return A, b, c, numbers, M
 
 
-def lpgen_2d(m, n):
+def lpgen_2d(m, n, rng=1929098):
     """ -> A b c LP test: m*n vars, m+n constraints
         row sums == n/m, col sums == 1
         https://gist.github.com/denis-bz/8647461
     """
-    rng = np.random.RandomState(0)
+    rng = np.random.default_rng(rng)
     c = - rng.exponential(size=(m, n))
     Arow = np.zeros((m, m * n))
     brow = np.zeros(m)
@@ -383,7 +383,8 @@ class LinprogCommonTests:
         A, b, c = lpgen_2d(20, 20)
         res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                       options={"disp": True})
-        _assert_success(res, desired_fun=-64.049494229)
+        # exact value depends on seed used for problem
+        _assert_success(res, desired_fun=-72.8901644589377)
 
     def test_docstring_example(self):
         # Example from linprog docstring.
@@ -1103,7 +1104,8 @@ class LinprogCommonTests:
             sup.filter(LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
-        _assert_success(res, desired_fun=-64.049494229)
+        # exact value depends on seed used for problem
+        _assert_success(res, desired_fun=-72.8901644589377)
 
     def test_network_flow(self):
         # A network flow problem with supply and demand at nodes
@@ -2171,7 +2173,8 @@ class TestLinprogIPSpecific:
         A, b, c = lpgen_2d(20, 20)
         res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                       options={"cholesky": True})  # only for dense
-        _assert_success(res, desired_fun=-64.049494229)
+        # exact value depends on seed used for problem
+        _assert_success(res, desired_fun=-72.8901644589377)
 
     def test_alternate_initial_point(self):
         # use "improved" initial point
@@ -2183,7 +2186,8 @@ class TestLinprogIPSpecific:
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                           options={"ip": True, "disp": True})
             # ip code is independent of sparse/dense
-        _assert_success(res, desired_fun=-64.049494229)
+        # exact value depends on seed used for problem
+        _assert_success(res, desired_fun=-72.8901644589377)
 
     def test_bug_8664(self):
         # interior-point has trouble with this when presolve is off
