@@ -537,7 +537,7 @@ class TestSolve:
     def setup_method(self):
         np.random.seed(1234)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_20Feb04_bug(self):
         a = [[1, 1], [1.0, 0]]  # ok
         x0 = solve(a, [1, 0j])
@@ -773,7 +773,7 @@ class TestSolve:
         b = np.arange(9)[:, None]
         assert_raises(LinAlgError, solve, a, b)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('structure',
                              ('diagonal', 'tridiagonal', 'lower triangular',
                               'upper triangular', 'symmetric', 'hermitian',
@@ -865,7 +865,7 @@ class TestSolve:
                                 rtol=tol * size,
                                 err_msg=err_msg)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt_a, dt_b):

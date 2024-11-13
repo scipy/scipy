@@ -1306,7 +1306,7 @@ class TestZoom:
         )
 
     @pytest.mark.parametrize('mode', ['constant', 'wrap'])
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_zoom_grid_mode_warnings(self, mode, xp):
         # Warn on use of non-grid modes when grid_mode is True
         x = xp.reshape(xp.arange(9, dtype=xp.float64), (3, 3))

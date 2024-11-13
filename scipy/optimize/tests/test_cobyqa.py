@@ -11,7 +11,7 @@ from scipy.optimize import (
 )
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 class TestCOBYQA:
 
     def setup_method(self):

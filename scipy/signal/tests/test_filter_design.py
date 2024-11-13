@@ -253,7 +253,7 @@ class TestSos2Zpk:
         xp_assert_close(_cplxpair(p2), p)
         assert k2 == k
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_fewer_zeros(self):
         """Test not the expected number of p/z (effectively at origin)."""
         sos = butter(3, 0.1, output='sos')
@@ -1637,7 +1637,7 @@ class TestButtord:
             buttord([20, 50], [14, 60], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_runtime_warnings(self):
         msg = "Order is zero.*|divide by zero encountered"
         with pytest.warns(RuntimeWarning, match=msg):
@@ -4218,7 +4218,7 @@ class TestGroupDelay:
                               0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_singular(self):
         # Let's create a filter with zeros and poles on the unit circle and
         # check if warnings are raised at those frequencies.

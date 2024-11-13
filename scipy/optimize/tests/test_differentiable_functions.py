@@ -287,7 +287,7 @@ class TestScalarFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # Scalar_Function should not store references to arrays, it should
         # store copies - this checks that updating an array in-place causes
@@ -629,7 +629,7 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # VectorFunction should not store references to arrays, it should
         # store copies - this checks that updating an array in-place causes

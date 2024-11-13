@@ -18,7 +18,7 @@ class TestSciPyConfigs:
         "Python Information",
     ]
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @patch("scipy.__config__._check_pyyaml")
     def test_pyyaml_not_found(self, mock_yaml_importer):
         mock_yaml_importer.side_effect = ModuleNotFoundError()

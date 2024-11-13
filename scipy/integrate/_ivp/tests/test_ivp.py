@@ -1127,7 +1127,7 @@ def test_args():
     assert_allclose(zfinalevents[2], [zfinal])
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_array_rtol():
     # solve_ivp had a bug with array_like `rtol`; see gh-15482
     # check that it's fixed

@@ -202,7 +202,7 @@ class TestLogM:
                 A_logm, info = logm(A, disp=False)
                 assert_(np.issubdtype(A_logm.dtype, np.complexfloating))
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
         B = np.asarray([[1, 1], [0, 0]])
@@ -212,7 +212,7 @@ class TestLogM:
             E = expm(L)
             assert_allclose(E, M, atol=1e-14)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_nearly_singular(self):
         M = np.array([[1e-100]])
         expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
@@ -252,7 +252,7 @@ class TestLogM:
         assert log_a.shape == (0, 0)
         assert log_a.dtype == log_a0.dtype
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('dtype', [int, float, np.float32, complex, np.complex64])
     def test_no_ZeroDivisionError(self, dtype):
         # gh-17136 reported inconsistent behavior in `logm` depending on input dtype:
@@ -765,7 +765,7 @@ class TestExpM:
         a.flags.writeable = False
         expm(a)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(5)
     def test_gh18086(self):
         A = np.zeros((400, 400), dtype=float)

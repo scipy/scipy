@@ -400,7 +400,7 @@ class TestKMean:
         res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++', rng=rng)
         xp_assert_close(res, prev_res)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_high_dim(self, xp):

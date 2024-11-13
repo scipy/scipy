@@ -163,7 +163,7 @@ class QAPCommonTests:
         assert_equal(res.nit, 0)
         assert_equal(res.fun, 0)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
 
@@ -172,7 +172,7 @@ class QAPCommonTests:
                                  options={"ekki-ekki": True})
         assert_warns(OptimizeWarning, f)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_deprecation_future_warnings(self):
         # May be removed after SPEC-7 transition is complete in SciPy 1.17
         A = np.arange(16).reshape((4, 4))
@@ -266,7 +266,7 @@ class TestFAQ(QAPCommonTests):
 class Test2opt(QAPCommonTests):
     method = "2opt"
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_deterministic(self):
         n = 20
         rng = default_rng(51982908)

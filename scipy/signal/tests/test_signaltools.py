@@ -249,7 +249,7 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, [1], [[2]])
         assert_raises(ValueError, convolve, [3], 2)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_dtype_deprecation(self):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -804,7 +804,7 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         assert_allclose(out, expected, atol=1e-10)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_fft_nan(self):
         n = 1000
         rng = np.random.default_rng(43876432987)
@@ -1270,7 +1270,7 @@ class TestResample:
         y = signal.resample(x, ny)
         assert_allclose(y, [1] * ny)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_mutable_window(self, padtype):
         # Test that a mutable window is not modified
@@ -1864,7 +1864,7 @@ class _TestLinearFilter:
             lfilter(np.array([1.0]), np.array([1.0]), data),
             lfilter(b, a, data))
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_dtype_deprecation(self):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -2103,7 +2103,7 @@ class TestCorrelate:
         assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
         assert_allclose(correlate(a, b, mode='valid'), [32])
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_dtype_deprecation(self):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -2514,7 +2514,7 @@ def test_choose_conv_method():
         assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_choose_conv_dtype_deprecation():
     # gh-21211
     a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -3586,7 +3586,7 @@ class TestSOSFilt:
         _, zf = sosfilt(sos, np.ones(40, dt), zi=zi.tolist())
         assert_allclose_cast(zf, zi, rtol=1e-13)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_dtype_deprecation(self, dt):
         # gh-21211
         sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)

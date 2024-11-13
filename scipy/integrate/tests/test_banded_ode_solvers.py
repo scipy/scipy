@@ -125,7 +125,7 @@ def _analytical_solution(a, y0, t):
     return sol
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_banded_ode_solvers():
     # Test the "lsoda", "vode" and "zvode" solvers of the `ode` class
     # with a system that has a banded Jacobian matrix.

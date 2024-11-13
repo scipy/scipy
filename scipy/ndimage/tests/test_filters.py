@@ -613,7 +613,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate_complex_kernel(self, dtype_input, dtype_kernel,
                                       dtype_output, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -633,7 +633,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     @pytest.mark.parametrize('mode', ['grid-constant', 'constant'])
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate_complex_kernel_cval(self, dtype_input, dtype_kernel,
                                            dtype_output, mode, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -655,7 +655,7 @@ class TestNdimageFilters:
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
                                                    dtype_kernel, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -676,7 +676,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate1d_complex_kernel(self, dtype_input, dtype_kernel,
                                         dtype_output, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -691,7 +691,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate1d_complex_kernel_cval(self, dtype_input, dtype_kernel,
                                              dtype_output, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -707,7 +707,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate_complex_input(self, dtype_input, dtype_kernel,
                                      dtype_output, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -724,7 +724,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate1d_complex_input(self, dtype_input, dtype_kernel,
                                        dtype_output, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -742,7 +742,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate1d_complex_input_cval(self, dtype_input, dtype_kernel,
                                             dtype_output, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -757,7 +757,7 @@ class TestNdimageFilters:
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp):
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
@@ -774,7 +774,7 @@ class TestNdimageFilters:
                       exceptions=['cupy'],)
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate_complex_input_and_kernel_cval(self, dtype,
                                                      dtype_output, xp):
         dtype = getattr(xp, dtype)
@@ -790,7 +790,7 @@ class TestNdimageFilters:
     @skip_xp_backends(np_only=True, reason="output=dtype is numpy-specific")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp):
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
@@ -801,7 +801,7 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_correlate1d_complex_input_and_kernel_cval(self, dtype,
                                                        dtype_output, xp):
         if not (is_numpy(xp) or is_cupy(xp)):

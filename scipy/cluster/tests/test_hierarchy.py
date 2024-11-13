@@ -1162,7 +1162,7 @@ def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
     return B
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 @skip_xp_backends(cpu_only=True)
 def test_unsupported_uncondensed_distance_matrix_linkage_warning(xp):
     assert_warns(ClusterWarning, linkage, xp.asarray([[0, 1], [1, 0]]))

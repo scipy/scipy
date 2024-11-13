@@ -58,13 +58,13 @@ class TestMMIOArray:
         b = mmread(self.fn)
         assert_equal(a, b)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_integer(self, typeval, dtype):
         self.check_exact(array([[1, 2], [3, 4]], dtype=dtype),
                          (2, 2, 4, 'array', typeval, 'general'))
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_32bit_integer(self, typeval, dtype):
         a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=dtype)

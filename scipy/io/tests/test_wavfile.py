@@ -362,7 +362,7 @@ def test_read_unknown_wave_format():
                 wavfile.read(fp, mmap=mmap)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_read_early_eof_with_data():
     # File ends inside 'data' chunk, but we keep incomplete data
     for mmap in [False, True]:

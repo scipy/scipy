@@ -344,7 +344,7 @@ class TestBasinHopping:
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 class Test_Storage:
     def setup_method(self):
         self.x0 = np.array(1)

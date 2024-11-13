@@ -9,7 +9,7 @@ import pytest
 from pytest import raises as assert_raises, warns
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_args():
     A = eye(3)
     # Nonsquare array

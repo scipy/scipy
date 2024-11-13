@@ -60,6 +60,10 @@ def pytest_configure(config):
             'markers',
             'parallel_threads(n): run the given test function in parallel '
             'using `n` threads.')
+        config.addinivalue_line(
+            "markers",
+            "thread_unsafe: mark the test function as single-threaded",
+        )
 
 
 def pytest_runtest_setup(item):

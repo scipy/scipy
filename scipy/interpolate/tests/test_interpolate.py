@@ -2394,7 +2394,7 @@ class TestNdPPoly:
         paz = p.antiderivative((0, 0, 1))
         xp_assert_close(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
 

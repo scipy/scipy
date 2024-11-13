@@ -212,7 +212,7 @@ class TestFBLAS1Simple:
     # XXX: need tests for rot,rotm,rotg,rotmg
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 class TestFBLAS2Simple:
 
     def test_gemv(self):

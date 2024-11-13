@@ -187,7 +187,7 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_deprecated_local_search_options_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))
@@ -200,7 +200,7 @@ class TestDualAnnealing:
                 bounds=bounds,
                 minimizer_kwargs={"method": "CG", "bounds": bounds})
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_minimizer_kwargs_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))

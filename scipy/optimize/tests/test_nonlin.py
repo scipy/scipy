@@ -455,7 +455,7 @@ class TestJacobianDotSolve:
         self._check_dot(nonlin.ExcitingMixing, complex=False)
         self._check_dot(nonlin.ExcitingMixing, complex=True)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_krylov(self):
         self._check_dot(nonlin.KrylovJacobian, complex=False, tol=1e-3)
         self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-3)

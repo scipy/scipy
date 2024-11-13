@@ -144,7 +144,7 @@ class TestOde(TestODEClass):
                 continue
             self._do_problem(problem, 'dop853')
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_concurrent_fail(self):
         for sol in ('vode', 'zvode', 'lsoda'):
             def f(t, y):
@@ -657,7 +657,7 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega)
         self._check_solver(solver)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_warns_on_failure(self):
         # Set nsteps small to ensure failure
         solver = self._get_solver(f, jac)

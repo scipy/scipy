@@ -459,7 +459,7 @@ class TestBSpline:
         spl1 = BSpline(t, c[1], k)
         xp_assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_design_matrix_bc_types(self):
         '''
         Splines with different boundary conditions are built on different
@@ -634,7 +634,7 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         xp_assert_close(b(xx), np.ones_like(xx) * 3.0)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to BSpline
         b = _make_random_spline()
@@ -2721,7 +2721,7 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
         k = 3
@@ -3243,7 +3243,7 @@ index 1afb1900f1..d817e51ad8 100644
 
         xp_assert_close(tt, t, atol=1e-15)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_s_too_small(self):
         n = 14
         x = np.arange(n)
@@ -3474,7 +3474,7 @@ class TestMakeSplrep:
 
         xp_assert_close(spl.c, spl_i.c, atol=1e-15)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_s_too_small(self):
         # both splrep and make_splrep warn that "s too small": ier=2
         n = 14

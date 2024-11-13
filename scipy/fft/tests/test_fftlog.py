@@ -116,7 +116,7 @@ def fht_lock():
     return threading.Lock()
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_fht_special_cases(xp, fht_lock):
     rng = np.random.RandomState(3491349965)
 
