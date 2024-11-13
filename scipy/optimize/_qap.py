@@ -126,11 +126,12 @@ def quadratic_assignment(A, B, method="faq", options=None):
     --------
     >>> import numpy as np
     >>> from scipy.optimize import quadratic_assignment
+    >>> rng = np.random.default_rng()
     >>> A = np.array([[0, 80, 150, 170], [80, 0, 130, 100],
     ...               [150, 130, 0, 120], [170, 100, 120, 0]])
     >>> B = np.array([[0, 5, 2, 7], [0, 0, 3, 8],
     ...               [0, 0, 0, 3], [0, 0, 0, 0]])
-    >>> res = quadratic_assignment(A, B)
+    >>> res = quadratic_assignment(A, B, options={'rng': rng})
     >>> print(res)
          fun: 3260
      col_ind: [0 3 2 1]
@@ -173,7 +174,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
     ...               [8, 5, 0, 2], [6, 1, 2, 0]])
     >>> B = np.array([[0, 1, 8, 4], [1, 0, 5, 2],
     ...               [8, 5, 0, 5], [4, 2, 5, 0]])
-    >>> res = quadratic_assignment(A, B)
+    >>> res = quadratic_assignment(A, B, options={'rng': rng})
     >>> print(res)
          fun: 178
      col_ind: [1 0 3 2]
@@ -184,7 +185,7 @@ def quadratic_assignment(A, B, method="faq", options=None):
 
     >>> guess = np.array([np.arange(len(A)), res.col_ind]).T
     >>> res = quadratic_assignment(A, B, method="2opt",
-    ...                            options = {'partial_guess': guess})
+    ...     options = {'rng': rng, 'partial_guess': guess})
     >>> print(res)
          fun: 176
      col_ind: [1 2 3 0]
@@ -380,19 +381,21 @@ def _quadratic_assignment_faq(A, B,
     As mentioned above, a barycenter initialization often results in a better
     solution than a single random initialization.
 
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> from scipy.optimize import quadratic_assignment
+    >>> import numpy as np
+    >>> rng = np.random.default_rng()
     >>> n = 15
     >>> A = rng.random((n, n))
     >>> B = rng.random((n, n))
-    >>> res = quadratic_assignment(A, B)  # FAQ is default method
+    >>> options = {"rng": rng}
+    >>> res = quadratic_assignment(A, B, options=options)  # FAQ is default method
     >>> print(res.fun)
-    46.871483385480545  # may vary
+    47.797048706380636  # may vary
 
-    >>> options = {"P0": "randomized"}  # use randomized initialization
+    >>> options = {"rng": rng, "P0": "randomized"}  # use randomized initialization
     >>> res = quadratic_assignment(A, B, options=options)
     >>> print(res.fun)
-    47.224831071310625 # may vary
+    47.37287069769966 # may vary
 
     However, consider running from several randomized initializations and
     keeping the best result.
@@ -400,14 +403,14 @@ def _quadratic_assignment_faq(A, B,
     >>> res = min([quadratic_assignment(A, B, options=options)
     ...            for i in range(30)], key=lambda x: x.fun)
     >>> print(res.fun)
-    46.671852533681516 # may vary
+    46.55974835248574 # may vary
 
-    The '2-opt' method can be used to further refine the results.
+    The '2-opt' method can be used to attempt to refine the results.
 
-    >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T}
+    >>> options = {"partial_guess": np.array([np.arange(n), res.col_ind]).T, "rng": rng}
     >>> res = quadratic_assignment(A, B, method="2opt", options=options)
     >>> print(res.fun)
-    46.47160735721583 # may vary
+    46.55974835248574 # may vary
 
     References
     ----------
