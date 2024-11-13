@@ -30,6 +30,7 @@ env:
     -t scipy.optimize.tests.test_optimize
     -t scipy.stats
     -t scipy.ndimage
+    -t scipy.integrate.tests.test_quadrature
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
