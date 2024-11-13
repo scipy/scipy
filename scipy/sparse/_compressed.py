@@ -17,7 +17,7 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
                        getdtype, isscalarlike, isintlike, downcast_intp_index,
-                       get_sum_dtype, check_shape, is_pydata_spmatrix)
+                       get_sum_dtype, check_shape, get_index_dtype, is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -470,8 +470,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 data = np.multiply(ret.data, other2d[:, ret.col])
             else:
                 raise ValueError("inconsistent shapes")
-            row = np.repeat(np.arange(other2d.shape[0]), ret.nnz)
-            col = np.tile(ret.col, other2d.shape[0])
+            idx_dtype = self._get_index_dtype(ret.col, maxval=ret.nnz * other2d.shape[0])
+            row = np.repeat(np.arange(other2d.shape[0], dtype=idx_dtype), ret.nnz)
+            col = np.tile(ret.col.astype(idx_dtype, copy=False), other2d.shape[0])
             return self._coo_container(
                 (data.view(np.ndarray).ravel(), (row, col)),
                 shape=(other2d.shape[0], self.shape[-1]),
@@ -485,8 +486,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 data = np.multiply(ret.data[:, None], other2d[ret.row])
             else:
                 raise ValueError("inconsistent shapes")
-            row = np.repeat(ret.row, other2d.shape[1])
-            col = np.tile(np.arange(other2d.shape[1]), len(ret.col))
+            idx_dtype = self._get_index_dtype(ret.row, maxval=ret.nnz * other2d.shape[1])
+            row = np.repeat(ret.row.astype(idx_dtype, copy=False), other2d.shape[1])
+            col = np.tile(np.arange(other2d.shape[1], dtype=idx_dtype), ret.nnz)
             return self._coo_container(
                 (data.view(np.ndarray).ravel(), (row, col)),
                 shape=(self.shape[0], other2d.shape[1]),
@@ -1470,7 +1472,8 @@ def _make_diagonal_csr(data, is_array=False):
     csr_array = csr_array if is_array else csr_matrix
 
     N = len(data)
-    indptr = np.arange(N + 1)
+    idx_dtype = get_index_dtype(maxval=N)
+    indptr = np.arange(N + 1, dtype=idx_dtype)
     indices = indptr[:-1]
 
     return csr_array((data, indices, indptr), shape=(N, N))

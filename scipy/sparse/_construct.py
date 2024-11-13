@@ -537,8 +537,8 @@ def kron(A, B, format=None):
 
         # expand entries of a into blocks
         idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
-        row = A.coords[0].astype(idx_dtype, copy=False).repeat(B.nnz)
-        col = A.coords[1].astype(idx_dtype, copy=False).repeat(B.nnz)
+        row = np.asarray(A.row, dtype=idx_dtype).repeat(B.nnz)
+        col = np.asarray(A.col, dtype=idx_dtype).repeat(B.nnz)
         data = A.data.repeat(B.nnz)
 
         row *= B.shape[0]
@@ -546,8 +546,8 @@ def kron(A, B, format=None):
 
         # increment block indices
         row,col = row.reshape(-1,B.nnz),col.reshape(-1,B.nnz)
-        row += B.coords[0]
-        col += B.coords[1]
+        row += B.row
+        col += B.col
         row,col = row.reshape(-1),col.reshape(-1)
 
         # compute block entries
@@ -688,9 +688,8 @@ def _stack_along_minor_axis(blocks, axis):
     idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
     stack_dim_cat = np.array([b._shape_as_2d[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
-        indptr_cat = np.concatenate(indptr_list).astype(idx_dtype, copy=False)
-        indices_cat = (np.concatenate([b.indices for b in blocks])
-                       .astype(idx_dtype, copy=False))
+        indptr_cat = np.concatenate(indptr_list, dtype=idx_dtype)
+        indices_cat = np.concatenate([b.indices for b in blocks], dtype=idx_dtype)
         indptr = np.empty(constant_dim + 1, dtype=idx_dtype)
         indices = np.empty_like(indices_cat)
         data = np.empty_like(data_cat)
@@ -1082,15 +1081,12 @@ def block_diag(mats, format=None, dtype=None):
             data.append(a.ravel())
         r_idx += nrows
         c_idx += ncols
-    row = np.concatenate(row)
-    col = np.concatenate(col)
+    idx_dtype = get_index_dtype(maxval=max(r_idx, c_idx))
+    row = np.concatenate(row, dtype=idx_dtype)
+    col = np.concatenate(col, dtype=idx_dtype)
     data = np.concatenate(data)
     new_shape = (r_idx, c_idx)
 
-    # downcast if safe before calling coo_array
-    idx_dtype = get_index_dtype(maxval=max(new_shape))
-    row = row.astype(idx_dtype, copy=False)
-    col = col.astype(idx_dtype, copy=False)
     return container((data, (row, col)), shape=new_shape, dtype=dtype).asformat(format)
 
 
@@ -1191,7 +1187,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
 
     # downcast, if safe, before calling coo_constructor
     idx_dtype = get_index_dtype(maxval=max(shape))
-    ind = tuple(co.astype(idx_dtype, copy=False) for co in ind)
+    ind = tuple(np.asarray(co, dtype=idx_dtype) for co in ind)
     return coo_array((data, ind), shape=shape).asformat(format)
 
 
@@ -1222,10 +1218,12 @@ def _random(shape, density=0.01, format=None, dtype=None,
         else:
             data_sampler = rng.uniform
 
+    idx_dtype = get_index_dtype(maxval=max(shape))
     # rng.choice uses int64 if first arg is an int
     if tot_prod <= np.iinfo(np.int64).max:
         raveled_ind = rng.choice(tot_prod, size=size, replace=False)
         ind = np.unravel_index(raveled_ind, shape=shape, order='F')
+        ind = tuple(np.asarray(co, idx_dtype) for co in ind)
     else:
         # for ravel indices bigger than dtype max, use sets to remove duplicates
         ndim = len(shape)
@@ -1233,7 +1231,7 @@ def _random(shape, density=0.01, format=None, dtype=None,
         while len(seen) < size:
             dsize = size - len(seen)
             seen.update(map(tuple, rng_integers(rng, shape, size=(dsize, ndim))))
-        ind = tuple(np.array(list(seen)).T)
+        ind = tuple(np.array(list(seen), dtype=idx_dtype).T)
 
     # size kwarg allows eg data_sampler=partial(np.random.poisson, lam=5)
     vals = data_sampler(size=size).astype(dtype, copy=False)

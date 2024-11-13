@@ -4,7 +4,8 @@ import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
                           csr_array, csc_array, eye_array, diags_array)
-from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
+from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
+                                   get_index_dtype)
 from scipy.linalg import LinAlgError
 import copy
 
@@ -321,8 +322,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 col_segs.append(np.full(segment_length, j, dtype=int))
                 data_segs.append(np.asarray(xj[w], dtype=A.dtype))
             sparse_data = np.concatenate(data_segs)
-            sparse_row = np.concatenate(row_segs)
-            sparse_col = np.concatenate(col_segs)
+            idx_dtype = get_index_dtype(maxval=max(b.shape))
+            sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
+            sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
             x = A.__class__((sparse_data, (sparse_row, sparse_col)),
                            shape=b.shape, dtype=A.dtype)
 
@@ -784,7 +786,7 @@ def is_sptriangular(A):
              SparseEfficiencyWarning, stacklevel=2)
         A = csr_array(A)
 
-    # bsr and lil are better off converting to csr
+    # bsr is better off converting to csr
     if A.format == "dia":
         return A.offsets.max() <= 0, A.offsets.min() >= 0
     elif A.format == "coo":
