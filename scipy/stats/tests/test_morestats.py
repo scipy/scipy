@@ -2024,7 +2024,7 @@ class TestBoxcox_llf:
         xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
 
 
-# This is the data from github user Qukaiyi, given as an example
+# This is the data from GitHub user Qukaiyi, given as an example
 # of a data set that caused boxcox to fail.
 _boxcox_data = [
     15957, 112079, 1039553, 711775, 173111, 307382, 183155, 53366, 760875,
