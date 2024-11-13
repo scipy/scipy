@@ -182,7 +182,7 @@ class DunnettResult:
         return self._ci
 
 
-@_transition_to_rng('random_state')
+@_transition_to_rng('random_state', replace_doc=False)
 def dunnett(
     *samples: npt.ArrayLike,  # noqa: D417
     control: npt.ArrayLike,
