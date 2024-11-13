@@ -13,7 +13,7 @@ class TestClarksonWoodruffTransform:
     Testing the Clarkson Woodruff Transform
     """
     # set seed for generating test matrices
-    rng = np.random.RandomState(seed=1179103485)
+    rng = np.random.default_rng(1179103485)
 
     # Test matrix parameters
     n_rows = 2000
@@ -27,7 +27,7 @@ class TestClarksonWoodruffTransform:
     seeds = [1755490010, 934377150, 1391612830, 1752708722, 2008891431,
              1302443994, 1521083269, 1501189312, 1126232505, 1533465685]
 
-    A_dense = rng.randn(n_rows, n_cols)
+    A_dense = rng.random((n_rows, n_cols))
     A_csc = rand(
         n_rows, n_cols, density=density, format='csc', random_state=rng,
     )
@@ -44,11 +44,12 @@ class TestClarksonWoodruffTransform:
     ]
 
     # Test vector with norm ~1
-    x = rng.randn(n_rows, 1) / np.sqrt(n_rows)
+    x = rng.random((n_rows, 1)) / np.sqrt(n_rows)
 
     def test_sketch_dimensions(self):
         for A in self.test_matrices:
             for seed in self.seeds:
+                # seed to ensure backwards compatibility post SPEC7
                 sketch = clarkson_woodruff_transform(
                     A, self.n_sketch_rows, seed=seed
                 )
@@ -57,10 +58,10 @@ class TestClarksonWoodruffTransform:
     def test_seed_returns_identical_transform_matrix(self):
         for seed in self.seeds:
             S1 = cwt_matrix(
-                self.n_sketch_rows, self.n_rows, seed=seed
+                self.n_sketch_rows, self.n_rows, rng=seed
             ).toarray()
             S2 = cwt_matrix(
-                self.n_sketch_rows, self.n_rows, seed=seed
+                self.n_sketch_rows, self.n_rows, rng=seed
             ).toarray()
             assert_equal(S1, S2)
 
@@ -68,10 +69,10 @@ class TestClarksonWoodruffTransform:
         for A in self.test_matrices:
             for seed in self.seeds:
                 sketch1 = clarkson_woodruff_transform(
-                    A, self.n_sketch_rows, seed=seed
+                    A, self.n_sketch_rows, rng=seed
                 )
                 sketch2 = clarkson_woodruff_transform(
-                    A, self.n_sketch_rows, seed=seed
+                    A, self.n_sketch_rows, rng=seed
                 )
                 if issparse(sketch1):
                     sketch1 = sketch1.toarray()
@@ -91,7 +92,7 @@ class TestClarksonWoodruffTransform:
                 true_norm = np.linalg.norm(A)
             for seed in self.seeds:
                 sketch = clarkson_woodruff_transform(
-                    A, self.n_sketch_rows, seed=seed,
+                    A, self.n_sketch_rows, rng=seed,
                 )
                 if issparse(sketch):
                     sketch_norm = norm(sketch)
@@ -108,7 +109,7 @@ class TestClarksonWoodruffTransform:
         true_norm = np.linalg.norm(self.x)
         for seed in self.seeds:
             sketch = clarkson_woodruff_transform(
-                self.x, n_sketch_rows, seed=seed,
+                self.x, n_sketch_rows, rng=seed,
             )
             sketch_norm = np.linalg.norm(sketch)
 
