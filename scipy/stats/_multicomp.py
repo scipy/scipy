@@ -224,10 +224,11 @@ def dunnett(
 
             As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
             transition from use of `numpy.random.RandomState` to
-            `numpy.random.Generator`, this keyword was changed from `random_state` to `rng`.
-            For an interim period, both keywords will continue to work, although only one
-            may be specified at a time. After the interim period, function calls using the
-            `random_state` keyword will emit warnings.
+            `numpy.random.Generator`, this keyword was changed from `random_state` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `random_state` keyword will emit warnings. Following a
+            deprecation period, the `random_state` keyword will be removed.
 
     Returns
     -------
