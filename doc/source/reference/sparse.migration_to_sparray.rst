@@ -39,7 +39,7 @@ Overview and big picture
       ``*`` or ``@`` for matrix multiplication. Either can use
       ``A.multiply(B)`` for elementwise multiplication.
    -  Scalar exponents, e.g. ``A**2``, use elementwise power for sparray and
-      matrix power for spmatrix. To get matrix power for sparrays use
+      matrix power for spmatrix. Matrix power for sparrays uses
       ``scipy.sparse.linalg.matrix_power(A, n)``.
 -  When index arrays are provided to the constructor functions, spmatrix
    selects a dtype based on dtype and values of the incoming arrays, while
