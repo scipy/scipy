@@ -350,7 +350,7 @@ def _quadratic_assignment_faq(A, B,
         Integer specifying the max number of Frank-Wolfe iterations performed.
     tol : float (default: 0.03)
         Tolerance for termination. Frank-Wolfe iteration terminates when
-        :math:`\frac{||P_{i}-P_{i+1}||_F}{\sqrt{m')}} \leq tol`,
+        :math:`\frac{||P_{i}-P_{i+1}||_F}{\sqrt{m'}} \leq tol`,
         where :math:`i` is the iteration number.
 
     Returns
