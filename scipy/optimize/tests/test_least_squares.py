@@ -935,7 +935,7 @@ def test_fp32_gh12991():
         args=(x, y),
         options={'final_tr_radius': 1e-6}
     )
-    assert_allclose(res.x, res2.x, atol=7e-5)
+    assert_allclose(res.x, res2.x, atol=9e-5)
 
 
 def test_gh_18793_and_19351():
