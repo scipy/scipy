@@ -214,7 +214,7 @@ def _spec007_transition(rng):
             DeprecationWarning,
             stacklevel=2
         )
-    if rng is None and np.random.mtrand._rand._bit_generator._seed_seq is None:
+    if (rng is None or rng is np.random) and np.random.mtrand._rand._bit_generator._seed_seq is None:
         warnings.warn(
             "The NumPy global RNG was seeded by calling `np.random.seed`."
             " From SciPy 1.17, this function will no longer use the global RNG.",
