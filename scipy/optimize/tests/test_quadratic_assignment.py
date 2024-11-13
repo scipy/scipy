@@ -172,6 +172,7 @@ class QAPCommonTests:
                                  options={"ekki-ekki": True})
         assert_warns(OptimizeWarning, f)
 
+    @pytest.mark.parallel_threads(1)
     def test_deprecation_future_warnings(self):
         # May be removed after SPEC-7 transition is complete in SciPy 1.17
         A = np.arange(16).reshape((4, 4))
