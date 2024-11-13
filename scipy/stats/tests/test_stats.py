@@ -631,7 +631,7 @@ class TestPearsonr:
         size = (2, 100) if method == 'permutation' else (2, 1000)
         x = rng.normal(size=size)
         y = rng.normal(size=size)
-        methods = {'permutation': stats.PermutationMethod(random_state=rng),
+        methods = {'permutation': stats.PermutationMethod(rng=rng),
                    'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2)}
         method = methods[method]
         res = stats.pearsonr(x, y, alternative=alternative, method=method, axis=-1)
