@@ -68,17 +68,26 @@ class QAPCommonTests:
              [0, 2, 0, 2],
              [0, 1, 2, 0]]
 
-        with assert_warns(FutureWarning):
+        with pytest.warns(DeprecationWarning, match="Use of `RandomState`*"):
+            quadratic_assignment(
+                A,
+                B,
+                method=self.method,
+                options={"rng": np.random.RandomState(0), "maximize": False}
+            )
+        with pytest.warns(FutureWarning, match="The NumPy global RNG was seeded*"):
+            np.random.seed(0)
+            quadratic_assignment(A, B, method=self.method,
+                                 options={"maximize": False})
+
+        with pytest.warns(FutureWarning, match="The behavior when the rng option*"):
             res = quadratic_assignment(A, B, method=self.method,
                                        options={"rng": 0, "maximize": False})
 
         assert_equal(res.fun, 10)
         assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
 
-        res = quadratic_assignment(
-            A,
-            B,
-            method=self.method,
+        res = quadratic_assignment(A, B, method=self.method,
             options={"rng": default_rng(1234), "maximize": True}
         )
 
@@ -90,10 +99,7 @@ class QAPCommonTests:
             assert_equal(res.fun, 40)
             assert_equal(res.col_ind, np.array([0, 3, 1, 2]))
 
-        quadratic_assignment(
-            A,
-            B,
-            method=self.method,
+        quadratic_assignment(A, B, method=self.method,
             options={"rng": default_rng(1234), "maximize": True}
         )
 

@@ -223,8 +223,9 @@ def _spec007_transition(rng):
         )
     if isinstance(rng, numbers.Integral | np.integer):
         warnings.warn(
-            "From SciPy 1.17, use of an integer seed will be normalized via"
-            " `np.random.default_rng`, rather than `np.random.RandomState`",
+            "The behavior when the rng option is an integer is changing: the value"
+            " will be normalized using np.random.default_rng beginning in SciPy 1.17,"
+            " and the resulting Generator will be used to generate random numbers.",
             FutureWarning,
             stacklevel=2
         )
