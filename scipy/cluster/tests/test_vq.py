@@ -380,28 +380,29 @@ class TestKMean:
                       reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
+        rng = np.random.default_rng(2358792345678234568)
         prev_res = xp.asarray([[-1.95266667, 0.898],
                                [-3.153375, 3.3945]], dtype=xp.float64)
-        np.random.seed(42)
-        res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++')
+        res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++', rng=rng)
         xp_assert_close(res, prev_res)
 
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
+        rng = np.random.default_rng(23587923456834568)
         n_dim = 100
         size = 10
         centers = np.vstack([5 * np.ones(n_dim),
                              -5 * np.ones(n_dim)])
-        np.random.seed(42)
+
         data = np.vstack([
-            np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
-            np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
+            rng.multivariate_normal(centers[0], np.eye(n_dim), size=size),
+            rng.multivariate_normal(centers[1], np.eye(n_dim), size=size)
         ])
 
         data = xp.asarray(data)
-        res, _ = kmeans2(data, 2, minit='++')
+        res, _ = kmeans2(data, 2, minit='++', rng=rng)
         xp_assert_equal(xp.sign(res), xp.sign(xp.asarray(centers)))
 
     def test_kmeans_diff_convergence(self, xp):
