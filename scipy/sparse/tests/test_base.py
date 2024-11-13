@@ -1462,7 +1462,7 @@ class _TestCommon:
         for dtype in self.math_dtypes:
             check(dtype)
 
-    # github issue #15210
+    # GitHub issue #15210
     def test_rmul_scalar_type_error(self):
         datsp = self.datsp_dtypes[np.float64]
         with assert_raises(TypeError):
@@ -2502,7 +2502,7 @@ class _TestGetSet:
             check(np.dtype(dtype))
 
     def test_negative_index_assignment(self):
-        # Regression test for github issue 4428.
+        # Regression test for GitHub issue 4428.
 
         def check(dtype):
             A = self.spcreator((3, 10), dtype=dtype)
@@ -5055,7 +5055,7 @@ class TestBSR(sparse_test_class(getset=False,
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.toarray(), bsp.toarray())
 
-    # github issue #9687
+    # GitHub issue #9687
     def test_eliminate_zeros_all_zero(self):
         np.random.seed(0)
         m = self.bsr_container(np.random.random((12, 12)), blocksize=(2, 3))
