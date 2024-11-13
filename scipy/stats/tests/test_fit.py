@@ -828,16 +828,16 @@ class TestGoodnessOfFit:
         with pytest.raises(TypeError, match=message):
             goodness_of_fit(dist, x, n_mc_samples=1000.5)
 
-        message = "'herring' cannot be used to seed a"
-        with pytest.raises(ValueError, match=message):
-            goodness_of_fit(dist, x, random_state='herring')
+        message = "SeedSequence expects int or sequence"
+        with pytest.raises(TypeError, match=message):
+            goodness_of_fit(dist, x, rng='herring')
 
     def test_against_ks(self):
         rng = np.random.default_rng(8517426291317196949)
         x = examgrades
         known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
         res = goodness_of_fit(stats.norm, x, known_params=known_params,
-                              statistic='ks', random_state=rng)
+                              statistic='ks', rng=rng)
         ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
         assert_allclose(res.statistic, ref.statistic)  # ~0.0848
         assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)  # ~0.335
@@ -845,6 +845,7 @@ class TestGoodnessOfFit:
     def test_against_lilliefors(self):
         rng = np.random.default_rng(2291803665717442724)
         x = examgrades
+        # preserve use of old random_state during SPEC 7 transition
         res = goodness_of_fit(stats.norm, x, statistic='ks', random_state=rng)
         known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
         ref = stats.kstest(x, stats.norm(**known_params).cdf, method='exact')
@@ -856,7 +857,7 @@ class TestGoodnessOfFit:
         x = examgrades
         known_params = {'loc': np.mean(x), 'scale': np.std(x, ddof=1)}
         res = goodness_of_fit(stats.norm, x, known_params=known_params,
-                              statistic='cvm', random_state=rng)
+                              statistic='cvm', rng=rng)
         ref = stats.cramervonmises(x, stats.norm(**known_params).cdf)
         assert_allclose(res.statistic, ref.statistic)  # ~0.090
         assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)  # ~0.636
@@ -868,7 +869,7 @@ class TestGoodnessOfFit:
         # loc that produced critical value of statistic found w/ root_scalar
         known_params = {'loc': 45.01575354024957, 'scale': 30}
         res = goodness_of_fit(stats.norm, x, known_params=known_params,
-                              statistic='ad', random_state=rng)
+                              statistic='ad', rng=rng)
         assert_allclose(res.statistic, 2.492)  # See [1] Table 1A 1.0
         assert_allclose(res.pvalue, 0.05, atol=5e-3)
 
@@ -879,7 +880,7 @@ class TestGoodnessOfFit:
         # scale that produced critical value of statistic found w/ root_scalar
         known_params = {'scale': 29.957112639101933}
         res = goodness_of_fit(stats.norm, x, known_params=known_params,
-                              statistic='ad', random_state=rng)
+                              statistic='ad', rng=rng)
         assert_allclose(res.statistic, 0.908)  # See [1] Table 1B 1.1
         assert_allclose(res.pvalue, 0.1, atol=5e-3)
 
@@ -890,7 +891,7 @@ class TestGoodnessOfFit:
         # loc that produced critical value of statistic found w/ root_scalar
         known_params = {'loc': 44.5680212261933}
         res = goodness_of_fit(stats.norm, x, known_params=known_params,
-                              statistic='ad', random_state=rng)
+                              statistic='ad', rng=rng)
         assert_allclose(res.statistic, 2.904)  # See [1] Table 1B 1.2
         assert_allclose(res.pvalue, 0.025, atol=5e-3)
 
@@ -900,7 +901,7 @@ class TestGoodnessOfFit:
         # c that produced critical value of statistic found w/ root_scalar
         x = stats.skewnorm.rvs(1.4477847789132101, loc=1, scale=2, size=100,
                                random_state=rng)
-        res = goodness_of_fit(stats.norm, x, statistic='ad', random_state=rng)
+        res = goodness_of_fit(stats.norm, x, statistic='ad', rng=rng)
         assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
         assert_allclose(res.pvalue, 0.15, atol=5e-3)
 
@@ -911,7 +912,7 @@ class TestGoodnessOfFit:
         x = stats.genextreme(0.051896837188595134, loc=0.5,
                              scale=1.5).rvs(size=1000, random_state=rng)
         res = goodness_of_fit(stats.gumbel_r, x, statistic='ad',
-                              random_state=rng)
+                              rng=rng)
         ref = stats.anderson(x, dist='gumbel_r')
         assert_allclose(res.statistic, ref.critical_values[0])
         assert_allclose(res.pvalue, ref.significance_level[0]/100, atol=5e-3)
@@ -922,7 +923,7 @@ class TestGoodnessOfFit:
         y = [6, 1, -4, 8, -2, 5, 0]
         known_params = {'loc': 0, 'scale': 1}
         res = stats.goodness_of_fit(stats.norm, y, known_params=known_params,
-                                    statistic="filliben", random_state=rng)
+                                    statistic="filliben", rng=rng)
         # Slight discrepancy presumably due to roundoff in Filliben's
         # calculation. Using exact order statistic medians instead of
         # Filliben's approximation doesn't account for it.
@@ -944,10 +945,10 @@ class TestGoodnessOfFit:
         rng = np.random.default_rng(8535677809395478813)
         x = rng.normal(loc=10, scale=0.5, size=100)
         res = stats.goodness_of_fit(stats.norm, x,
-                                    statistic="filliben", random_state=rng)
+                                    statistic="filliben", rng=rng)
         known_params = {'loc': 0, 'scale': 1}
         ref = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
-                                    statistic="filliben", random_state=rng)
+                                    statistic="filliben", rng=rng)
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
 
     @pytest.mark.parametrize('case', [(25, [.928, .937, .950, .958, .966]),
@@ -960,7 +961,7 @@ class TestGoodnessOfFit:
         x = rng.random(n)
         known_params = {'loc': 0, 'scale': 1}
         res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
-                                    statistic="filliben", random_state=rng)
+                                    statistic="filliben", rng=rng)
         percentiles = np.array([0.005, 0.01, 0.025, 0.05, 0.1])
         res = stats.scoreatpercentile(res.null_distribution, percentiles*100)
         assert_allclose(res, ref, atol=2e-3)
@@ -980,7 +981,7 @@ class TestGoodnessOfFit:
         rng = np.random.default_rng(7777775561439803116)
         x = rng.normal(size=n)
         res = stats.goodness_of_fit(stats.rayleigh, x, statistic="filliben",
-                                    random_state=rng)
+                                    rng=rng)
         assert_allclose(res.statistic, ref_statistic, rtol=1e-4)
         assert_allclose(res.pvalue, ref_pvalue, atol=1.5e-2)
 
@@ -1000,7 +1001,7 @@ class TestGoodnessOfFit:
         res1 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
                                guessed_params=guessed_params,
                                fit_params=fit_params,
-                               known_params=known_params, random_state=rng)
+                               known_params=known_params, rng=rng)
         assert not np.allclose(res1.fit_result.params.c, 13.4)
         assert_equal(res1.fit_result.params.scale, 13.73)
         assert_equal(res1.fit_result.params.loc, -13.85)
@@ -1012,7 +1013,7 @@ class TestGoodnessOfFit:
         res2 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
                                guessed_params=guessed_params,
                                fit_params=fit_params,
-                               known_params=known_params, random_state=rng)
+                               known_params=known_params, rng=rng)
         assert not np.allclose(res2.fit_result.params.c,
                                res1.fit_result.params.c, rtol=1e-8)
         assert not np.allclose(res2.null_distribution,
@@ -1028,7 +1029,7 @@ class TestGoodnessOfFit:
         res3 = goodness_of_fit(stats.weibull_min, x, n_mc_samples=2,
                                guessed_params=guessed_params,
                                fit_params=fit_params,
-                               known_params=known_params, random_state=rng)
+                               known_params=known_params, rng=rng)
         assert_equal(res3.fit_result.params.c, 13.4)
         assert_equal(res3.fit_result.params.scale, 13.73)
         assert_equal(res3.fit_result.params.loc, -13.85)
@@ -1058,7 +1059,7 @@ class TestGoodnessOfFit:
         data = stats.expon.rvs(size=5, random_state=rng)
         result = goodness_of_fit(stats.expon, data,
                                  known_params={'loc': 0, 'scale': 1},
-                                 statistic=greenwood, random_state=rng)
+                                 statistic=greenwood, rng=rng)
         p = [.01, .05, .1, .2, .3, .4, .5, .6, .7, .8, .9, .95, .99]
         exact_quantiles = [
             .183863, .199403, .210088, .226040, .239947, .253677, .268422,

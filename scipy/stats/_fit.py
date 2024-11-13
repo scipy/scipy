@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 import numpy as np
 from scipy import optimize, stats
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _transition_to_rng
 
 
 def _combine_bounds(name, user_bounds, shape_domain, integral):
@@ -738,9 +738,10 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
                                   'null_distribution'))
 
 
+@_transition_to_rng('random_state')
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', n_mc_samples=9999,
-                    random_state=None):
+                    rng=None):
     r"""
     Perform a goodness of fit test comparing data to a distribution family.
 
@@ -797,18 +798,11 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         The number of Monte Carlo samples drawn from the null hypothesized
         distribution to form the null distribution of the statistic. The
         sample size of each is the same as the given `data`.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate the Monte Carlo
-        samples.
-
-        If `random_state` is ``None`` (default), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance, then the provided instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -996,7 +990,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     >>> known_params = {'loc': loc, 'scale': scale}
     >>> res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
-    ...                             statistic='ks', random_state=rng)
+    ...                             statistic='ks', rng=rng)
     >>> res.statistic, res.pvalue
     (0.1119257570456813, 0.2788)
 
@@ -1030,7 +1024,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     as described above. This is where `goodness_of_fit` excels.
 
     >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ks',
-    ...                             random_state=rng)
+    ...                             rng=rng)
     >>> res.statistic, res.pvalue
     (0.1119257570456813, 0.0196)
 
@@ -1062,7 +1056,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     estimate it directly.
 
     >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ad',
-    ...                             random_state=rng)
+    ...                             rng=rng)
     >>> res.statistic, res.pvalue
     (1.2139573337497467, 0.0034)
 
@@ -1078,7 +1072,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     >>> rng = np.random.default_rng()
     >>> x = stats.chi(df=2.2, loc=0, scale=2).rvs(size=1000, random_state=rng)
     >>> res = stats.goodness_of_fit(stats.rayleigh, x, statistic='cvm',
-    ...                             known_params={'loc': 0}, random_state=rng)
+    ...                             known_params={'loc': 0}, rng=rng)
 
     This executes fairly quickly, but to check the reliability of the ``fit``
     method, we should inspect the fit result.
@@ -1118,9 +1112,9 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     """
     args = _gof_iv(dist, data, known_params, fit_params, guessed_params,
-                   statistic, n_mc_samples, random_state)
+                   statistic, n_mc_samples, rng)
     (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-     guessed_rfd_params, statistic, n_mc_samples_int, random_state) = args
+     guessed_rfd_params, statistic, n_mc_samples_int, rng) = args
 
     # Fit null hypothesis distribution to data
     nhd_fit_fun = _get_fit_fun(dist, data, guessed_nhd_params,
@@ -1129,7 +1123,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     nhd_dist = dist(*nhd_vals)
 
     def rvs(size):
-        return nhd_dist.rvs(size=size, random_state=random_state)
+        return nhd_dist.rvs(size=size, random_state=rng)
 
     # Define statistic
     fit_fun = _get_fit_fun(dist, data, guessed_rfd_params, fixed_rfd_params)
@@ -1299,7 +1293,7 @@ _compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
 
 
 def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
-            n_mc_samples, random_state):
+            n_mc_samples, rng):
 
     if not isinstance(dist, stats.rv_continuous):
         message = ("`dist` must be a (non-frozen) instance of "
@@ -1349,7 +1343,7 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
         message = "`n_mc_samples` must be an integer."
         raise TypeError(message)
 
-    random_state = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     return (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-            guessed_rfd_params, statistic, n_mc_samples_int, random_state)
+            guessed_rfd_params, statistic, n_mc_samples_int, rng)
