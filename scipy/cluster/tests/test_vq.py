@@ -248,20 +248,21 @@ class TestKMean:
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 
-        kmeans(xp.asarray(data), 2)
+        # use `seed` to ensure backwards compatibility after SPEC7
+        kmeans(xp.asarray(data), 2, seed=1)
 
     def test_kmeans_simple(self, xp):
-        np.random.seed(54321)
+        rng = np.random.default_rng(54321)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        code1 = kmeans(xp.asarray(X), xp.asarray(initc), iter=1)[0]
+        code1 = kmeans(xp.asarray(X), xp.asarray(initc), iter=1, rng=rng)[0]
         xp_assert_close(code1, xp.asarray(CODET2))
 
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
     def test_kmeans_simple_matrix(self, xp):
-        np.random.seed(54321)
+        rng = np.random.default_rng(54321)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        code1 = kmeans(matrix(X), matrix(initc), iter=1)[0]
+        code1 = kmeans(matrix(X), matrix(initc), iter=1, rng=rng)[0]
         xp_assert_close(code1, CODET2)
 
     def test_kmeans_lost_cluster(self, xp):
@@ -281,12 +282,12 @@ class TestKMean:
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
 
     def test_kmeans2_simple(self, xp):
-        np.random.seed(12345678)
+        rng = np.random.default_rng(12345678)
         initc = xp.asarray(np.concatenate([[X[0]], [X[1]], [X[2]]]))
         arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
-            code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
-            code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
+            code1 = kmeans2(tp(X), tp(initc), iter=1, rng=rng)[0]
+            code2 = kmeans2(tp(X), tp(initc), iter=2, rng=rng)[0]
 
             xp_assert_close(code1, xp.asarray(CODET1))
             xp_assert_close(code2, xp.asarray(CODET2))
@@ -294,10 +295,10 @@ class TestKMean:
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
     def test_kmeans2_simple_matrix(self, xp):
-        np.random.seed(12345678)
+        rng = np.random.default_rng(12345678)
         initc = xp.asarray(np.concatenate([[X[0]], [X[1]], [X[2]]]))
-        code1 = kmeans2(matrix(X), matrix(initc), iter=1)[0]
-        code2 = kmeans2(matrix(X), matrix(initc), iter=2)[0]
+        code1 = kmeans2(matrix(X), matrix(initc), iter=1, rng=rng)[0]
+        code2 = kmeans2(matrix(X), matrix(initc), iter=2, rng=rng)[0]
 
         xp_assert_close(code1, CODET1)
         xp_assert_close(code2, CODET2)
@@ -308,7 +309,9 @@ class TestKMean:
 
         initc = data1[:3]
         code = xp_copy(initc, xp=xp)
-        kmeans2(data1, code, iter=1)[0]
+        
+        # use `seed` to ensure backwards compatibility after SPEC7
+        kmeans2(data1, code, iter=1, seed=1)[0]
         kmeans2(data1, code, iter=2)[0]
 
     def test_kmeans2_rank1_2(self, xp):
@@ -326,21 +329,21 @@ class TestKMean:
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
     def test_kmeans2_init(self, xp):
-        np.random.seed(12345)
+        rng = np.random.default_rng(12345678)
         data = xp.asarray(TESTDATA_2D)
         k = 3
 
-        kmeans2(data, k, minit='points')
-        kmeans2(data[:, 1], k, minit='points')  # special case (1-D)
+        kmeans2(data, k, minit='points', rng=rng)
+        kmeans2(data[:, 1], k, minit='points', rng=rng)  # special case (1-D)
 
-        kmeans2(data, k, minit='++')
-        kmeans2(data[:, 1], k, minit='++')  # special case (1-D)
+        kmeans2(data, k, minit='++', rng=rng)
+        kmeans2(data[:, 1], k, minit='++', rng=rng)  # special case (1-D)
 
         # minit='random' can give warnings, filter those
         with suppress_warnings() as sup:
             sup.filter(message="One of the clusters is empty. Re-run.")
-            kmeans2(data, k, minit='random')
-            kmeans2(data[:, 1], k, minit='random')  # special case (1-D)
+            kmeans2(data, k, minit='random', rng=rng)
+            kmeans2(data[:, 1], k, minit='random', rng=rng)  # special case (1-D)
 
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
@@ -377,28 +380,29 @@ class TestKMean:
                       reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
+        rng = np.random.default_rng(2358792345678234568)
         prev_res = xp.asarray([[-1.95266667, 0.898],
                                [-3.153375, 3.3945]], dtype=xp.float64)
-        np.random.seed(42)
-        res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++')
+        res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++', rng=rng)
         xp_assert_close(res, prev_res)
 
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
+        rng = np.random.default_rng(23587923456834568)
         n_dim = 100
         size = 10
         centers = np.vstack([5 * np.ones(n_dim),
                              -5 * np.ones(n_dim)])
-        np.random.seed(42)
+
         data = np.vstack([
-            np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
-            np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
+            rng.multivariate_normal(centers[0], np.eye(n_dim), size=size),
+            rng.multivariate_normal(centers[1], np.eye(n_dim), size=size)
         ])
 
         data = xp.asarray(data)
-        res, _ = kmeans2(data, 2, minit='++')
+        res, _ = kmeans2(data, 2, minit='++', rng=rng)
         xp_assert_equal(xp.sign(res), xp.sign(xp.asarray(centers)))
 
     def test_kmeans_diff_convergence(self, xp):
