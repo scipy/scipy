@@ -58,6 +58,8 @@ class QAPCommonTests:
     # QAP minimum determined by brute force
     def test_accuracy_1(self):
         # besides testing accuracy, check that A and B can be lists
+        rng = np.random.default_rng(4358764578823597324)
+
         A = [[0, 3, 4, 2],
              [0, 0, 1, 2],
              [1, 0, 0, 1],
@@ -68,28 +70,14 @@ class QAPCommonTests:
              [0, 2, 0, 2],
              [0, 1, 2, 0]]
 
-        with pytest.warns(DeprecationWarning, match="Use of `RandomState`*"):
-            quadratic_assignment(
-                A,
-                B,
-                method=self.method,
-                options={"rng": np.random.RandomState(0), "maximize": False}
-            )
-        with pytest.warns(FutureWarning, match="The NumPy global RNG was seeded*"):
-            np.random.seed(0)
-            quadratic_assignment(A, B, method=self.method,
-                                 options={"maximize": False})
-
-        with pytest.warns(FutureWarning, match="The behavior when the rng option*"):
-            res = quadratic_assignment(A, B, method=self.method,
-                                       options={"rng": 0, "maximize": False})
+        res = quadratic_assignment(A, B, method=self.method,
+                                   options={"rng": rng, "maximize": False})
 
         assert_equal(res.fun, 10)
         assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
 
         res = quadratic_assignment(A, B, method=self.method,
-            options={"rng": default_rng(1234), "maximize": True}
-        )
+                                   options={"rng": rng, "maximize": True})
 
         if self.method == 'faq':
             # Global optimum is 40, but FAQ gets 37
@@ -100,14 +88,14 @@ class QAPCommonTests:
             assert_equal(res.col_ind, np.array([0, 3, 1, 2]))
 
         quadratic_assignment(A, B, method=self.method,
-            options={"rng": default_rng(1234), "maximize": True}
-        )
+                             options={"rng": rng, "maximize": True})
 
     # Test global optima of problem from Umeyama IIIB
     # https://pcl.sitehost.iu.edu/rgoldsto/papers/weighted%20graph%20match2.pdf
     # Graph matching maximum is in the paper
     # QAP minimum determined by brute force
     def test_accuracy_2(self):
+        rng = np.random.default_rng(4358764578823597324)
 
         A = np.array([[0, 5, 8, 6],
                       [5, 0, 5, 1],
@@ -119,12 +107,8 @@ class QAPCommonTests:
                       [8, 5, 0, 5],
                       [4, 2, 5, 0]])
 
-        res = quadratic_assignment(
-            A,
-            B,
-            method=self.method,
-            options={"rng": default_rng(123), "maximize": False}
-        )
+        res = quadratic_assignment(A, B, method=self.method,
+                                   options={"rng": rng, "maximize": False})
 
         if self.method == 'faq':
             # Global optimum is 176, but FAQ gets 178
@@ -134,36 +118,25 @@ class QAPCommonTests:
             assert_equal(res.fun, 176)
             assert_equal(res.col_ind, np.array([1, 2, 3, 0]))
 
-        res = quadratic_assignment(
-            A,
-            B,
-            method=self.method,
-            options={"rng": default_rng(123), "maximize": True}
-        )
+        res = quadratic_assignment(A, B, method=self.method,
+                                   options={"rng": rng, "maximize": True})
+
         assert_equal(res.fun, 286)
         assert_equal(res.col_ind, np.array([2, 3, 0, 1]))
 
     def test_accuracy_3(self):
-
+        rng = np.random.default_rng(4358764578823597324)
         A, B, opt_perm = chr12c()
 
         # basic minimization
-        res = quadratic_assignment(
-            A,
-            B,
-            method=self.method,
-            options={"rng": default_rng(1234)}
-        )
+        res = quadratic_assignment(A, B, method=self.method,
+                                   options={"rng": rng})
         assert_(11156 <= res.fun < 21000)
         assert_equal(res.fun, _score(A, B, res.col_ind))
 
         # basic maximization
-        res = quadratic_assignment(
-            A,
-            B,
-            method=self.method,
-            options={"rng": default_rng(1234), 'maximize': True}
-        )
+        res = quadratic_assignment(A, B, method=self.method,
+                                   options={"rng": rng, 'maximize': True})
         assert_(74000 <= res.fun < 85000)
         assert_equal(res.fun, _score(A, B, res.col_ind))
 
@@ -186,7 +159,7 @@ class QAPCommonTests:
         # check performance with zero sized matrix inputs
         empty = np.empty((0, 0))
         res = quadratic_assignment(empty, empty, method=self.method,
-                                   options={"rng": default_rng(1234)})
+                                   options={"rng": rng})
         assert_equal(res.nit, 0)
         assert_equal(res.fun, 0)
 
@@ -198,38 +171,52 @@ class QAPCommonTests:
                                  options={"ekki-ekki": True})
         assert_warns(OptimizeWarning, f)
 
+    def test_deprecation_future_warnings(self):
+        # May be removed after SPEC-7 transition is complete in SciPy 1.17
+        A = np.arange(16).reshape((4, 4))
+        B = np.arange(16).reshape((4, 4))
+
+        with pytest.warns(DeprecationWarning, match="Use of `RandomState`*"):
+            rng = np.random.RandomState(0)
+            quadratic_assignment(A, B, method=self.method,
+                                 options={"rng": rng, "maximize": False})
+
+        with pytest.warns(FutureWarning, match="The NumPy global RNG was seeded*"):
+            np.random.seed(0)
+            quadratic_assignment(A, B, method=self.method,
+                                 options={"maximize": False})
+
+        with pytest.warns(FutureWarning, match="The behavior when the rng option*"):
+            quadratic_assignment(A, B, method=self.method,
+                                 options={"rng": 0, "maximize": False})
+
 
 class TestFAQ(QAPCommonTests):
     method = "faq"
 
     def test_options(self):
         # cost and distance matrices of QAPLIB instance chr12c
+        rng = np.random.default_rng(4358764578823597324)
+
         A, B, opt_perm = chr12c()
         n = len(A)
 
         # check that max_iter is obeying with low input value
-        res = quadratic_assignment(A, B,
-                                   options={'maxiter': 5})
+        res = quadratic_assignment(A, B, options={'maxiter': 5})
         assert_equal(res.nit, 5)
 
         # test with shuffle
-        res = quadratic_assignment(A, B,
-                                   options={'shuffle_input': True})
+        res = quadratic_assignment(A, B, options={'shuffle_input': True})
         assert_(11156 <= res.fun < 21000)
 
         # test with randomized init
-        res = quadratic_assignment(
-            A,
-            B,
-            options={'rng': default_rng(123), 'P0': "randomized"}
-        )
+        res = quadratic_assignment(A, B, options={'rng': rng, 'P0': "randomized"})
         assert_(11156 <= res.fun < 21000)
 
         # check with specified P0
         K = np.ones((n, n)) / float(n)
         K = _doubly_stochastic(K)
-        res = quadratic_assignment(A, B,
-                                   options={'P0': K})
+        res = quadratic_assignment(A, B, options={'P0': K})
         assert_(11156 <= res.fun < 21000)
 
     def test_specific_input_validation(self):
@@ -293,36 +280,22 @@ class Test2opt(QAPCommonTests):
 
     def test_partial_guess(self):
         n = 5
-        rng = default_rng(51982908)
+        rng = np.random.default_rng(4358764578823597324)
 
         A = rng.random(size=(n, n))
         B = rng.random(size=(n, n))
 
-        res1 = quadratic_assignment(
-            A,
-            B,
-            method=self.method,
-            options={'rng': default_rng(123)}
-        )
+        res1 = quadratic_assignment(A, B, method=self.method,
+                                    options={'rng': rng})
         guess = np.array([np.arange(5), res1.col_ind]).T
-        res2 = quadratic_assignment(
-            A,
-            B,
-            method=self.method,
-            options={'rng': default_rng(123), 'partial_guess': guess}
+        res2 = quadratic_assignment(A, B, method=self.method,
+                                    options={'rng': rng, 'partial_guess': guess}
         )
         fix = [2, 4]
         match = np.array([np.arange(5)[fix], res1.col_ind[fix]]).T
-        res3 = quadratic_assignment(
-            A,
-            B,
-            method=self.method,
-            options={
-                'rng': default_rng(123),
-                'partial_guess': guess,
-                'partial_match': match
-            }
-        )
+        res3 = quadratic_assignment(A, B, method=self.method,
+                                    options={'rng': rng, 'partial_guess': guess,
+                                             'partial_match': match})
         assert_(res1.nit != n*(n+1)/2)
         assert_equal(res2.nit, n*(n+1)/2)      # tests each swap exactly once
         assert_equal(res3.nit, (n-2)*(n-1)/2)  # tests free swaps exactly once
