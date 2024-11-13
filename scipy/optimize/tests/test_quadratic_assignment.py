@@ -289,8 +289,7 @@ class Test2opt(QAPCommonTests):
                                     options={'rng': rng})
         guess = np.array([np.arange(5), res1.col_ind]).T
         res2 = quadratic_assignment(A, B, method=self.method,
-                                    options={'rng': rng, 'partial_guess': guess}
-        )
+                                    options={'rng': rng, 'partial_guess': guess})
         fix = [2, 4]
         match = np.array([np.arange(5)[fix], res1.col_ind[fix]]).T
         res3 = quadratic_assignment(A, B, method=self.method,
