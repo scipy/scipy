@@ -2205,7 +2205,7 @@ class PermutationMethod(ResamplingMethod):
         If `rng` is already a ``Generator`` instance, then the provided instance is
         used. Specify `rng` for repeatable behavior.
 
-        If this argument is passed by position or `random_state` is passed by keyword
+        If this argument is passed by position, if `random_state` is passed by keyword
         into the initializer, or if the `random_state` attribute is used directly,
         legacy behavior for `random_state` applies:
 
@@ -2228,8 +2228,8 @@ class PermutationMethod(ResamplingMethod):
             in new code.
 
     """
-    rng: int
-    _rng: int = field(init=False, repr=False, default=9999)
+    rng: int  # type: ignore[misc]
+    _rng: int = field(init=False, repr=False, default=None)
 
     @property
     def random_state(self):
@@ -2242,7 +2242,7 @@ class PermutationMethod(ResamplingMethod):
         self._rng = val
 
     @property
-    def rng(self):
+    def rng(self):  # type: ignore[no-redef]  # noqa: F811
         return self._rng
 
     @random_state.setter
