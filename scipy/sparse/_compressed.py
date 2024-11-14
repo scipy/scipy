@@ -470,7 +470,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 data = np.multiply(ret.data, other2d[:, ret.col])
             else:
                 raise ValueError("inconsistent shapes")
-            idx_dtype = self._get_index_dtype(ret.col, maxval=ret.nnz * other2d.shape[0])
+            idx_dtype = self._get_index_dtype(ret.col,
+                                              maxval=ret.nnz * other2d.shape[0])
             row = np.repeat(np.arange(other2d.shape[0], dtype=idx_dtype), ret.nnz)
             col = np.tile(ret.col.astype(idx_dtype, copy=False), other2d.shape[0])
             return self._coo_container(
@@ -486,7 +487,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 data = np.multiply(ret.data[:, None], other2d[ret.row])
             else:
                 raise ValueError("inconsistent shapes")
-            idx_dtype = self._get_index_dtype(ret.row, maxval=ret.nnz * other2d.shape[1])
+            idx_dtype = self._get_index_dtype(ret.row,
+                                              maxval=ret.nnz * other2d.shape[1])
             row = np.repeat(ret.row.astype(idx_dtype, copy=False), other2d.shape[1])
             col = np.tile(np.arange(other2d.shape[1], dtype=idx_dtype), ret.nnz)
             return self._coo_container(
