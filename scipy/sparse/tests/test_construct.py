@@ -32,12 +32,12 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
                             random_state, data_rvs)
 
 
-def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, rng=None):
     # Helper function for testing.
-    random_state = check_random_state(random_state)
-    data_sampler = random_state.standard_normal
+    rng = np.random.default_rng(rng)
+    data_sampler = rng.standard_normal
     return construct.random_array((m, n), density=density, format=format, dtype=dtype,
-                                  random_state=random_state, data_sampler=data_sampler)
+                                  rng=rng, data_sampler=data_sampler)
 
 
 class TestConstructUtils:
@@ -776,24 +776,22 @@ class TestConstructUtils:
             assert_(np.all(np.less_equal(0, x.data)))
             assert_(np.all(np.less_equal(x.data, 1)))
 
-    def test_randn(self):
+    @pytest.mark.parametrize("rng", [None, 4321, np.random.RandomState(4321),
+                                     np.random.default_rng(4321)])
+    def test_randn(self, rng):
         # Simple distributional checks for sparse.randn.
         # Statistically, some of these should be negative
         # and some should be greater than 1.
-        random_states = [None, 4321, np.random.RandomState()]
-        try:
-            gen = np.random.default_rng()
-            random_states.append(gen)
-        except AttributeError:
-            pass
+        x = _sprandn(10, 20, density=0.5, dtype=np.float64, random_state=rng)
+        assert_(np.any(np.less(x.data, 0)))
+        assert_(np.any(np.less(1, x.data)))
 
-        for rs in random_states:
-            x = _sprandn(10, 20, density=0.5, dtype=np.float64, random_state=rs)
-            assert_(np.any(np.less(x.data, 0)))
-            assert_(np.any(np.less(1, x.data)))
-            x = _sprandn_array(10, 20, density=0.5, dtype=np.float64, random_state=rs)
-            assert_(np.any(np.less(x.data, 0)))
-            assert_(np.any(np.less(1, x.data)))
+        if isinstance(rng, np.random.RandomState):  # not accepted by `rng`
+            return
+
+        x = _sprandn_array(10, 20, density=0.5, dtype=np.float64, rng=rng)
+        assert_(np.any(np.less(x.data, 0)))
+        assert_(np.any(np.less(1, x.data)))
 
     def test_random_accept_str_dtype(self):
         # anything that np.dtype can convert to a dtype should be accepted
@@ -804,10 +802,11 @@ class TestConstructUtils:
         construct.random_array((10, 10, 10, 10, 10), dtype='d')
 
     def test_random_array_maintains_array_shape(self):
-        arr = construct.random_array((0, 4), density=0.3, dtype=int)
+        # preserve use of old random_state during SPEC 7 transition
+        arr = construct.random_array((0, 4), density=0.3, dtype=int, random_state=0)
         assert arr.shape == (0, 4)
 
-        arr = construct.random_array((10, 10, 10), density=0.3, dtype=int)
+        arr = construct.random_array((10, 10, 10), density=0.3, dtype=int, rng=0)
         assert arr.shape == (10, 10, 10)
 
         arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int)
