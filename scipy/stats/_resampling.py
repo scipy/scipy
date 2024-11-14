@@ -2229,24 +2229,24 @@ class PermutationMethod(ResamplingMethod):
 
     """
     rng: int  # type: ignore[misc]
-    _rng: int = field(init=False, repr=False, default=None)
+    _rng: int = field(init=False, repr=False, default=None)  # type: ignore[assignment]
 
     @property
     def random_state(self):
-        # warnings.warn(_rs_deprecation, DeprecationWarning, level=2)
+        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         return self._rng
 
     @random_state.setter
     def random_state(self, val):
-        # warnings.warn(_rs_deprecation, DeprecationWarning, level=2)
+        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._rng = val
 
-    @property
-    def rng(self):  # type: ignore[no-redef]  # noqa: F811
+    @property  # type: ignore[no-redef]
+    def rng(self):  # noqa: F811
         return self._rng
 
     @random_state.setter
-    def rng(self, val):
+    def rng(self, val):  # noqa: F811
         self._rng = np.random.default_rng(val)
 
     @_transition_to_rng('random_state', position_num=3, replace_doc=False)
