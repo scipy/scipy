@@ -5427,7 +5427,7 @@ def lebedev_rule(n):
     >>> plt.semilogy(orders, err)
     >>> plt.xlabel('order $n$')
     >>> plt.ylabel('relative error')
-    >>> plt.title('Convergence for $f(x, y, z) = \exp(x)$')
+    >>> plt.title(r'Convergence for $f(x, y, z) = \exp(x)$')
     >>> plt.show()
 
     """
