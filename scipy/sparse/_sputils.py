@@ -156,7 +156,7 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
 
     Check the shape of `A` to determine if it is safe to cast its index
     arrays to dtype `idx_dtype`. If any dimension in shape is larger than
-    fits in the dtype, casting is unsafe so raise ``ValueError(msg)``.
+    fits in the dtype, casting is unsafe so raise ``ValueError``.
     If safe, cast the index arrays to `idx_dtype` and return the result
     without changing the input `A`. The caller can assign results to `A`
     attributes if desired or use the recast index arrays directly.
@@ -172,11 +172,12 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
         The array for which index arrays should be downcast.
     idx_dtype : dtype
         Desired dtype. Should be an integer dtype (default: ``np.int32``).
-    msg : string
+    msg : string, optional
         A string to be added to the end of the ValueError message
         if the array shape is too big to fit in `idx_dtype`.
-        It should indicate why the downcasting is needed and
-        defaults to f"dtype {idx_dtype}".
+        The error message is ``f"<index> values too large for {msg}"``
+        It should indicate why the downcasting is needed, e.g. "SuperLU",
+        and defaults to f"dtype {idx_dtype}".
 
     Returns
     -------
