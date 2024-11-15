@@ -579,7 +579,7 @@ def _sweep_poly_phase(t, poly):
 
 
 def unit_impulse(shape, idx=None, dtype=float):
-    """
+    r"""
     Unit impulse signal (discrete delta function) or unit basis vector.
 
     Parameters
@@ -603,7 +603,24 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     Notes
     -----
-    The 1D case is also known as the Kronecker delta.
+    In digital signal processing literature the unit impulse signal is often
+    represented by the Kronecker delta. [1]_ I.e., a signal :math:`u_k[n]`,
+    which is zero everywhere except being one at the :math:`k`-th sample,
+    can be expressed as
+
+    .. math::
+
+        u_k[n] = \delta[n-k] \equiv \delta_{n,k}\ .
+
+    Furthermore, the unit impulse is frequently interpreted as the discrete-time
+    version of the continuous-time Dirac distribution. [2]_
+
+    References
+    ----------
+    .. [1] "Kronecker delta", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Kronecker_delta#Digital_signal_processing
+    .. [2] "Dirac delta function" *Wikipedia*,
+           https://en.wikipedia.org/wiki/Dirac_delta_function#Relationship_to_the_Kronecker_delta
 
     .. versionadded:: 0.19.0
 

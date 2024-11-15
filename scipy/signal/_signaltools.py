@@ -405,6 +405,8 @@ def correlation_lags(in1_len, in2_len, mode='full'):
             lags = np.arange(lag_bound + 1)
         else:
             lags = np.arange(lag_bound, 1)
+    else:
+        raise ValueError(f"Mode {mode} is invalid")
     return lags
 
 

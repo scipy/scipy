@@ -742,11 +742,11 @@ add_newdoc("btdtria",
     r"""
     btdtria(p, b, x, out=None)
 
-    Inverse of `btdtr` with respect to `a`.
+    Inverse of `betainc` with respect to `a`.
 
-    This is the inverse of the beta cumulative distribution function, `btdtr`,
+    This is the inverse of the beta cumulative distribution function, `betainc`,
     considered as a function of `a`, returning the value of `a` for which
-    `btdtr(a, b, x) = p`, or
+    `betainc(a, b, x) = p`, or
 
     .. math::
         p = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
@@ -765,13 +765,11 @@ add_newdoc("btdtria",
     Returns
     -------
     a : scalar or ndarray
-        The value of the shape parameter `a` such that `btdtr(a, b, x) = p`.
+        The value of the shape parameter `a` such that `betainc(a, b, x) = p`.
 
     See Also
     --------
-    btdtr : Cumulative distribution function of the beta distribution.
-    btdtri : Inverse with respect to `x`.
-    btdtrib : Inverse with respect to `b`.
+    btdtrib : Inverse of the beta cumulative distribution function, with respect to `b`.
 
     Notes
     -----
@@ -797,11 +795,11 @@ add_newdoc("btdtrib",
     r"""
     btdtria(a, p, x, out=None)
 
-    Inverse of `btdtr` with respect to `b`.
+    Inverse of `betainc` with respect to `b`.
 
-    This is the inverse of the beta cumulative distribution function, `btdtr`,
+    This is the inverse of the beta cumulative distribution function, `betainc`,
     considered as a function of `b`, returning the value of `b` for which
-    `btdtr(a, b, x) = p`, or
+    `betainc(a, b, x) = p`, or
 
     .. math::
         p = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
@@ -820,13 +818,11 @@ add_newdoc("btdtrib",
     Returns
     -------
     b : scalar or ndarray
-        The value of the shape parameter `b` such that `btdtr(a, b, x) = p`.
+        The value of the shape parameter `b` such that `betainc(a, b, x) = p`.
 
     See Also
     --------
-    btdtr : Cumulative distribution function of the beta distribution.
-    btdtri : Inverse with respect to `x`.
-    btdtria : Inverse with respect to `a`.
+    btdtria : Inverse of the beta cumulative distribution function, with respect to `a`.
 
     Notes
     -----
@@ -1311,110 +1307,6 @@ add_newdoc("inv_boxcox1p",
     >>> y = boxcox1p([1, 4, 10], 2.5)
     >>> inv_boxcox1p(y, 2.5)
     array([1., 4., 10.])
-    """)
-
-add_newdoc("btdtr",
-    r"""
-    btdtr(a, b, x, out=None)
-
-    Cumulative distribution function of the beta distribution.
-
-    Returns the integral from zero to `x` of the beta probability density
-    function,
-
-    .. math::
-        I = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
-
-    where :math:`\Gamma` is the gamma function.
-
-    .. deprecated:: 1.12.0
-        This function is deprecated and will be removed from SciPy 1.14.0.
-        Use `scipy.special.betainc` instead.
-
-    Parameters
-    ----------
-    a : array_like
-        Shape parameter (a > 0).
-    b : array_like
-        Shape parameter (b > 0).
-    x : array_like
-        Upper limit of integration, in [0, 1].
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    I : scalar or ndarray
-        Cumulative distribution function of the beta distribution with
-        parameters `a` and `b` at `x`.
-
-    See Also
-    --------
-    betainc
-
-    Notes
-    -----
-    This function is identical to the incomplete beta integral function
-    `betainc`.
-
-    Wrapper for the Cephes [1]_ routine `btdtr`.
-
-    References
-    ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
-
-    """)
-
-add_newdoc("btdtri",
-    r"""
-    btdtri(a, b, p, out=None)
-
-    The `p`-th quantile of the beta distribution.
-
-    This function is the inverse of the beta cumulative distribution function,
-    `btdtr`, returning the value of `x` for which `btdtr(a, b, x) = p`, or
-
-    .. math::
-        p = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
-
-    .. deprecated:: 1.12.0
-        This function is deprecated and will be removed from SciPy 1.14.0.
-        Use `scipy.special.betaincinv` instead.
-
-    Parameters
-    ----------
-    a : array_like
-        Shape parameter (`a` > 0).
-    b : array_like
-        Shape parameter (`b` > 0).
-    p : array_like
-        Cumulative probability, in [0, 1].
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    x : scalar or ndarray
-        The quantile corresponding to `p`.
-
-    See Also
-    --------
-    betaincinv
-    btdtr
-
-    Notes
-    -----
-    The value of `x` is found by interval halving or Newton iterations.
-
-    Wrapper for the Cephes [1]_ routine `incbi`, which solves the equivalent
-    problem of finding the inverse of the incomplete beta integral.
-
-    References
-    ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
-
     """)
 
 add_newdoc("chdtr",

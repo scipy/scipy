@@ -3,8 +3,9 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 from typing import (
-    Callable, Literal, Protocol, TYPE_CHECKING
+    Literal, Protocol, TYPE_CHECKING
 )
+from collections.abc import Callable
 
 import numpy as np
 
@@ -12,6 +13,7 @@ from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
 from scipy.stats._resampling import BootstrapResult
 from scipy.stats import qmc, bootstrap
+from scipy._lib._util import _transition_to_rng
 
 
 if TYPE_CHECKING:
@@ -60,7 +62,7 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 def sample_A_B(
     n: IntNumber,
     dists: list[PPFDist],
-    random_state: SeedType = None
+    rng: SeedType = None
 ) -> np.ndarray:
     """Sample two matrices A and B.
 
@@ -79,7 +81,7 @@ def sample_A_B(
        :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
     d = len(dists)
-    A_B = qmc.Sobol(d=2*d, seed=random_state, bits=64).random(n).T
+    A_B = qmc.Sobol(d=2*d, seed=rng, bits=64).random(n).T
     A_B = A_B.reshape(2, d, -1)
     try:
         for d_, dist in enumerate(dists):
@@ -245,6 +247,7 @@ class PPFDist(Protocol):
         ...
 
 
+@_transition_to_rng('random_state', replace_doc=False)
 def sobol_indices(
     *,
     func: Callable[[np.ndarray], npt.ArrayLike] |
@@ -252,7 +255,7 @@ def sobol_indices(
     n: IntNumber,
     dists: list[PPFDist] | None = None,
     method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
-    random_state: SeedType = None
+    rng: SeedType = None
 ) -> SobolResult:
     r"""Global sensitivity indices of Sobol'.
 
@@ -308,11 +311,21 @@ def sobol_indices(
         The output is a tuple of the first and total indices with
         shape ``(s, d)``.
         This is an advanced feature and misuse can lead to wrong analysis.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `random_state` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(random_state)``.
-        If `random_state` is already a ``Generator`` instance, then the
-        provided instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `random_state` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `random_state` keyword will emit warnings. Following a
+            deprecation period, the `random_state` keyword will be removed.
 
     Returns
     -------
@@ -465,7 +478,7 @@ def sobol_indices(
     ...         uniform(loc=-np.pi, scale=2*np.pi),
     ...         uniform(loc=-np.pi, scale=2*np.pi)
     ...     ],
-    ...     random_state=rng
+    ...     rng=rng
     ... )
     >>> indices.first_order
     array([0.31637954, 0.43781162, 0.00318825])
@@ -586,7 +599,7 @@ def sobol_indices(
     conclude on high-order terms. Hence the benefit of using Sobol' indices.
 
     """
-    random_state = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     n_ = int(n)
     if not (n_ & (n_ - 1) == 0) or n != n_:
@@ -636,7 +649,7 @@ def sobol_indices(
         def wrapped_func(x):
             return np.atleast_2d(func(x))
 
-        A, B = sample_A_B(n=n, dists=dists, random_state=random_state)
+        A, B = sample_A_B(n=n, dists=dists, rng=rng)
         AB = sample_AB(A=A, B=B)
 
         f_A = wrapped_func(A)

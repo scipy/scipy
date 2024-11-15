@@ -22,6 +22,9 @@
 [submodule "scipy/_lib/cobyqa"]
 	path = scipy/_lib/cobyqa
 	url = https://github.com/cobyqa/cobyqa.git
+[submodule "scipy/_lib/array_api_extra"]
+	path = scipy/_lib/array_api_extra
+	url = https://github.com/lucascolley/array-api-extra.git
 # All submodules used as a Meson `subproject` are required to be under the
 # subprojects/ directory - see:
 # https://mesonbuild.com/Subprojects.html#why-must-all-subprojects-be-inside-a-single-directory

@@ -134,16 +134,6 @@
             "boxcox1p": "dd->d"
         }
     },
-    "btdtr": {
-        "xsf_wrappers.h": {
-            "xsf_btdtr": "ddd->d"
-        }
-    },
-    "btdtri": {
-        "xsf_wrappers.h": {
-            "xsf_btdtri": "ddd->d"
-        }
-    },
     "btdtria": {
         "_cdflib_wrappers.pxd": {
             "btdtria": "ddd->d"

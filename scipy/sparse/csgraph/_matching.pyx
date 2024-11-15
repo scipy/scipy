@@ -6,8 +6,9 @@ cimport numpy as np
 from libc.math cimport INFINITY
 
 
-from scipy.sparse import issparse
+from scipy.sparse import issparse, csr_array
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
+from ._tools import _safe_downcast_indices
 
 np.import_array()
 
@@ -23,7 +24,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
     Parameters
     ----------
-    graph : sparse matrix
+    graph : sparse array or matrix
         Input sparse in CSR format whose rows represent one partition of the
         graph and whose columns represent the other partition. An edge between
         two vertices is indicated by the corresponding entry in the matrix
@@ -71,7 +72,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import maximum_bipartite_matching
 
     As a simple example, consider a bipartite graph in which the partitions
@@ -79,12 +80,12 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     vertices labelled 0 and 1, and that the other partition contains vertices
     labelled A, B, and C. Suppose that there are edges connecting 0 and C,
     1 and A, and 1 and B. This graph would then be represented by the following
-    sparse matrix:
+    sparse array:
 
-    >>> graph = csr_matrix([[0, 0, 1], [1, 1, 0]])
+    >>> graph = csr_array([[0, 0, 1], [1, 1, 0]])
 
     Here, the 1s could be anything, as long as they end up being stored as
-    elements in the sparse matrix. We can now calculate maximum matchings as
+    elements in the sparse array. We can now calculate maximum matchings as
     follows:
 
     >>> print(maximum_bipartite_matching(graph, perm_type='column'))
@@ -103,7 +104,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     >>> data = [0, 0, 0]
     >>> indices = [2, 0, 1]
     >>> indptr = [0, 1, 3]
-    >>> graph = csr_matrix((data, indices, indptr))
+    >>> graph = csr_array((data, indices, indptr))
     >>> print(maximum_bipartite_matching(graph, perm_type='column'))
     [2 0]
     >>> print(maximum_bipartite_matching(graph, perm_type='row'))
@@ -112,20 +113,20 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     When one or both of the partitions are empty, the matching is empty as
     well:
 
-    >>> graph = csr_matrix((2, 0))
+    >>> graph = csr_array((2, 0))
     >>> print(maximum_bipartite_matching(graph, perm_type='column'))
     [-1 -1]
     >>> print(maximum_bipartite_matching(graph, perm_type='row'))
     []
 
-    When the input matrix is square, and the graph is known to admit a perfect
+    When the input array is square, and the graph is known to admit a perfect
     matching, i.e. a matching with the property that every vertex in the graph
     belongs to some edge in the matching, then one can view the output as the
-    permutation of rows (or columns) turning the input matrix into one with the
+    permutation of rows (or columns) turning the input array into one with the
     property that all diagonal elements are non-empty:
 
     >>> a = [[0, 1, 2, 0], [1, 0, 0, 1], [2, 0, 0, 3], [0, 1, 3, 0]]
-    >>> graph = csr_matrix(a)
+    >>> graph = csr_array(a)
     >>> perm = maximum_bipartite_matching(graph, perm_type='row')
     >>> print(graph[perm].toarray())
     [[1 0 0 1]
@@ -141,7 +142,8 @@ def maximum_bipartite_matching(graph, perm_type='row'):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
     graph = graph.tocsr()
     i, j = graph.shape
-    x, y = _hopcroft_karp(graph.indices, graph.indptr, i, j)
+    indices, indptr = _safe_downcast_indices(graph)
+    x, y = _hopcroft_karp(indices, indptr, i, j)
     return np.asarray(x if perm_type == 'column' else y)
 
 
@@ -285,9 +287,9 @@ cdef tuple _hopcroft_karp(const ITYPE_t[:] indices, const ITYPE_t[:] indptr,
     return x, y
 
 
-def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
+def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     r"""
-    min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False)
+    min_weight_full_bipartite_matching(biadjacency, maximize=False)
 
     Returns the minimum weight full matching of a bipartite graph.
 
@@ -295,8 +297,8 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
 
     Parameters
     ----------
-    biadjacency_matrix : sparse matrix
-        Biadjacency matrix of the bipartite graph: A sparse matrix in CSR, CSC,
+    biadjacency : sparse array or matrix
+        Biadjacency matrix of the bipartite graph: A sparse array in CSR, CSC,
         or COO format whose rows represent one partition of the graph and whose
         columns represent the other partition. An edge between two vertices is
         indicated by the corresponding entry in the matrix, and the weight of
@@ -371,16 +373,16 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import min_weight_full_bipartite_matching
 
     Let us first consider an example in which all weights are equal:
 
-    >>> biadjacency_matrix = csr_matrix([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
+    >>> biadjacency = csr_array([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
 
     Here, all we get is a perfect matching of the graph:
 
-    >>> print(min_weight_full_bipartite_matching(biadjacency_matrix)[1])
+    >>> print(min_weight_full_bipartite_matching(biadjacency)[1])
     [2 0 1]
 
     That is, the first, second, and third rows are matched with the third,
@@ -392,14 +394,14 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     :func:`maximum_bipartite_matching`:
 
     >>> from scipy.sparse.csgraph import maximum_bipartite_matching
-    >>> biadjacency = csr_matrix([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
+    >>> biadjacency = csr_array([[1, 1, 1], [1, 0, 0], [0, 1, 0]])
     >>> print(maximum_bipartite_matching(biadjacency, perm_type='column'))
     [2 0 1]
 
     When multiple edges are available, the ones with lowest weights are
     preferred:
 
-    >>> biadjacency = csr_matrix([[3, 3, 6], [4, 3, 5], [10, 1, 8]])
+    >>> biadjacency = csr_array([[3, 3, 6], [4, 3, 5], [10, 1, 8]])
     >>> row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     >>> print(col_ind)
     [0 2 1]
@@ -413,11 +415,11 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     cardinalities, the matching is as large as the smaller of the two
     partitions:
 
-    >>> biadjacency = csr_matrix([[0, 1, 1], [0, 2, 3]])
+    >>> biadjacency = csr_array([[0, 1, 1], [0, 2, 3]])
     >>> row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     >>> print(row_ind, col_ind)
     [0 1] [2 1]
-    >>> biadjacency = csr_matrix([[0, 1], [3, 1], [1, 4]])
+    >>> biadjacency = csr_array([[0, 1], [3, 1], [1, 4]])
     >>> row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     >>> print(row_ind, col_ind)
     [0 2] [1 0]
@@ -425,20 +427,20 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     When one or both of the partitions are empty, the matching is empty as
     well:
 
-    >>> biadjacency = csr_matrix((2, 0))
+    >>> biadjacency = csr_array((2, 0))
     >>> row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     >>> print(row_ind, col_ind)
     [] []
 
     In general, we will always reach the same sum of weights as if we had used
     :func:`scipy.optimize.linear_sum_assignment` but note that for that one,
-    missing edges are represented by a matrix entry of ``float('inf')``. Let us
-    generate a random sparse matrix with integer entries between 1 and 10:
+    missing edges are represented by a array entry of ``float('inf')``. Let us
+    generate a random sparse array with integer entries between 1 and 10:
 
     >>> import numpy as np
-    >>> from scipy.sparse import random
+    >>> from scipy.sparse import random_array
     >>> from scipy.optimize import linear_sum_assignment
-    >>> sparse = random(10, 10, random_state=42, density=.5, format='coo') * 10
+    >>> sparse = random_array((10, 10), random_state=42, density=.5, format='coo') * 10
     >>> sparse.data = np.ceil(sparse.data)
     >>> dense = sparse.toarray()
     >>> dense = np.full(sparse.shape, np.inf)
@@ -452,33 +454,39 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     28.0
 
     """
-    biadjacency_matrix = convert_pydata_sparse_to_scipy(biadjacency_matrix)
-    if not issparse(biadjacency_matrix):
+    biadjacency = convert_pydata_sparse_to_scipy(biadjacency)
+    if not issparse(biadjacency):
         raise TypeError("graph must be sparse")
-    if biadjacency_matrix.format not in ("csr", "csc", "coo"):
+    if biadjacency.format not in ("csr", "csc", "coo"):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
 
-    if not (np.issubdtype(biadjacency_matrix.dtype, np.number) or
-            biadjacency_matrix.dtype == np.dtype(np.bool_)):
+    if not (np.issubdtype(biadjacency.dtype, np.number) or
+            biadjacency.dtype == np.dtype(np.bool_)):
         raise ValueError("expected a matrix containing numerical entries, " +
-                         "got %s" % (biadjacency_matrix.dtype,))
+                         "got %s" % (biadjacency.dtype,))
 
-    biadjacency_matrix = biadjacency_matrix.astype(np.double)
+    biadjacency = biadjacency.astype(np.double)
 
     if maximize:
-        biadjacency_matrix = -biadjacency_matrix
+        biadjacency = -biadjacency
 
     # Change all infinities to zeros, then remove those zeros, but warn the
     # user if any zeros were present in the first place.
-    if not np.all(biadjacency_matrix.data):
+    if not np.all(biadjacency.data):
         warnings.warn('explicit zero weights are removed before matching')
 
-    biadjacency_matrix.data[np.isposinf(biadjacency_matrix.data)] = 0
-    biadjacency_matrix.eliminate_zeros()
+    biadjacency.data[np.isposinf(biadjacency.data)] = 0
+    biadjacency.eliminate_zeros()
 
-    i, j = biadjacency_matrix.shape
+    i, j = biadjacency.shape
 
-    a = np.arange(np.min(biadjacency_matrix.shape))
+    a = np.arange(np.min(biadjacency.shape))
+
+    biadj_indices, biadj_indptr = _safe_downcast_indices(biadjacency)
+    if biadj_indices is not biadjacency.indices:
+        # create a new object without copying data
+        biadjacency = csr_array((biadjacency.data, biadj_indices, biadj_indptr),
+                                shape=biadjacency.shape, dtype=biadjacency.dtype)
 
     # The algorithm expects more columns than rows in the graph, so
     # we use the transpose if that is not already the case. We also
@@ -487,33 +495,33 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     # checking for infeasibility during the execution of _lapjvsp below
     # instead, but some cases are not yet handled there.
     if j < i:
-        biadjacency_matrix_t = biadjacency_matrix.T
-        if biadjacency_matrix_t.format != "csr":
-            biadjacency_matrix_t = biadjacency_matrix_t.tocsr()
-        matching, _ = _hopcroft_karp(biadjacency_matrix_t.indices,
-                                     biadjacency_matrix_t.indptr,
+        biadjacency_t = biadjacency.T
+        if biadjacency_t.format != "csr":
+            biadjacency_t = biadjacency_t.tocsr()
+        matching, _ = _hopcroft_karp(biadjacency_t.indices,
+                                     biadjacency_t.indptr,
                                      j, i)
         matching = np.asarray(matching)
         if np.sum(matching != -1) != min(i, j):
             raise ValueError('no full matching exists')
-        b = np.asarray(_lapjvsp(biadjacency_matrix_t.indptr,
-                                biadjacency_matrix_t.indices,
-                                biadjacency_matrix_t.data,
+        b = np.asarray(_lapjvsp(biadjacency_t.indptr,
+                                biadjacency_t.indices,
+                                biadjacency_t.data,
                                 j, i))
         indices = np.argsort(b)
         return (b[indices], a[indices])
     else:
-        if biadjacency_matrix.format != "csr":
-            biadjacency_matrix = biadjacency_matrix.tocsr()
-        matching, _ = _hopcroft_karp(biadjacency_matrix.indices,
-                                     biadjacency_matrix.indptr,
+        if biadjacency.format != "csr":
+            biadjacency = biadjacency.tocsr()
+        matching, _ = _hopcroft_karp(biadjacency.indices,
+                                     biadjacency.indptr,
                                      i, j)
         matching = np.asarray(matching)
         if np.sum(matching != -1) != min(i, j):
             raise ValueError('no full matching exists')
-        b = np.asarray(_lapjvsp(biadjacency_matrix.indptr,
-                                biadjacency_matrix.indices,
-                                biadjacency_matrix.data,
+        b = np.asarray(_lapjvsp(biadjacency.indptr,
+                                biadjacency.indices,
+                                biadjacency.data,
                                 i, j))
         return (a, b)
 

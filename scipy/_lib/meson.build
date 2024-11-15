@@ -8,6 +8,9 @@ endif
 if not fs.exists('array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('array_api_extra/README.md')
+  error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
+endif
 if not fs.exists('pocketfft/README.md')
   error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -28,10 +31,12 @@ lib_cython_gen = generator(cython,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _lib_pxd])
 
+ccallback_dep = declare_dependency(include_directories: ['..', 'src'])
+
 py3.extension_module('_ccallback_c',
   lib_cython_gen.process('_ccallback_c.pyx'),
   c_args: [cython_c_args, Wno_discarded_qualifiers],
-  include_directories: 'src',
+  dependencies: ccallback_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
@@ -39,7 +44,7 @@ py3.extension_module('_ccallback_c',
 
 py3.extension_module('_test_ccallback',
   'src/_test_ccallback.c',
-  include_directories: 'src',
+  dependencies: ccallback_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib',
@@ -160,6 +165,7 @@ py3.install_sources(
     'array_api_compat/array_api_compat/cupy/__init__.py',
     'array_api_compat/array_api_compat/cupy/_aliases.py',
     'array_api_compat/array_api_compat/cupy/_typing.py',
+    'array_api_compat/array_api_compat/cupy/_info.py',
     'array_api_compat/array_api_compat/cupy/fft.py',
     'array_api_compat/array_api_compat/cupy/linalg.py',
   ],
@@ -177,6 +183,8 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/dask/array/__init__.py',
     'array_api_compat/array_api_compat/dask/array/_aliases.py',
+    'array_api_compat/array_api_compat/dask/array/_info.py',
+    'array_api_compat/array_api_compat/dask/array/fft.py',
     'array_api_compat/array_api_compat/dask/array/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/dask/array',
@@ -187,6 +195,7 @@ py3.install_sources(
     'array_api_compat/array_api_compat/numpy/__init__.py',
     'array_api_compat/array_api_compat/numpy/_aliases.py',
     'array_api_compat/array_api_compat/numpy/_typing.py',
+    'array_api_compat/array_api_compat/numpy/_info.py',
     'array_api_compat/array_api_compat/numpy/fft.py',
     'array_api_compat/array_api_compat/numpy/linalg.py',
   ],
@@ -197,10 +206,23 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/torch/__init__.py',
     'array_api_compat/array_api_compat/torch/_aliases.py',
+    'array_api_compat/array_api_compat/torch/_info.py',
     'array_api_compat/array_api_compat/torch/fft.py',
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/torch',
+)
+
+# `array_api_extra` install to simplify import path;
+# should be updated whenever new files are added to `array_api_extra`
+
+py3.install_sources(
+  [
+    'array_api_extra/src/array_api_extra/__init__.py',
+    'array_api_extra/src/array_api_extra/_funcs.py',
+    'array_api_extra/src/array_api_extra/_typing.py',
+  ],
+  subdir: 'scipy/_lib/array_api_extra',
 )
 
 py3.install_sources(

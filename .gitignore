@@ -107,7 +107,7 @@ doc/source/.jupyterlite.doit.db
 .cache/
 .pytest_cache/
 
-# github cache #
+# GitHub cache #
 ################
 gh_cache.json
 

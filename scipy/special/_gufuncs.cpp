@@ -11,11 +11,6 @@ extern const char *rctj_doc;
 extern const char *rcty_doc;
 extern const char *sph_harm_all_doc;
 
-// This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
-// It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
-// already in such a context.
-extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
-
 static PyModuleDef _gufuncs_def = {PyModuleDef_HEAD_INIT, "_gufuncs", NULL, -1, NULL, NULL, NULL, NULL, NULL};
 
 template <size_t NOut>
