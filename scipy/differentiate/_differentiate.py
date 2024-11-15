@@ -903,7 +903,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
             xph = xp.expand_dims(xph, axis=-1)
         xph = xp_copy(xp.broadcast_to(xph, new_shape), xp=xp)
         xph[i, i] = x
-        return xp.stack(f(xph))
+        return f(xph)
 
     res = derivative(wrapped, x, tolerances=tolerances,
                      maxiter=maxiter, order=order, initial_step=initial_step,
@@ -1096,7 +1096,7 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     nfev = []  # track inner function evaluations
     res = jacobian(df, x, tolerances=tolerances, **kwargs)  # jacobian of jacobian
 
-    nfev = xp.cumulative_sum(nfev, axis=0)
+    nfev = xp.cumulative_sum(xp.asarray(nfev), axis=0)
     res.nfev = xp.take_along_axis(nfev, res.nit[xp.newaxis, ...], axis=0)[0]
     res.ddf = res.df
     del res.df  # this is renamed to ddf

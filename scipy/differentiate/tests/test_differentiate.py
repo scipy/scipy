@@ -1,3 +1,4 @@
+import math
 import pytest
 
 import numpy as np
@@ -13,13 +14,11 @@ from scipy.differentiate._differentiate import _EERRORINCREASE
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 
+array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
+jax_skip_reason = 'JAX arrays do not support item assignment.'
 
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason='Currently uses fancy indexing assignment.')
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason='JAX arrays do not support item assignment.')
-@pytest.mark.skip_xp_backends('cupy',
-                              reason='cupy/cupy#8391')
+@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
 class TestDerivative:
 
     def f(self, x):
@@ -472,12 +471,8 @@ class JacobianHessianTest:
             jh_func(func, x, maxiter=-1)
 
 
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason='Currently uses fancy indexing assignment.')
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason='JAX arrays do not support item assignment.')
-@pytest.mark.skip_xp_backends('cupy',
-                              reason='cupy/cupy#8391')
+@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
 class TestJacobian(JacobianHessianTest):
     jh_func = jacobian
 
@@ -552,11 +547,10 @@ class TestJacobian(JacobianHessianTest):
     f5.mn = 3, 3  # type: ignore[attr-defined]
     f5.ref = df5  # type: ignore[attr-defined]
 
-    def rosen(x, _): optimize.rosen(x)
+    def rosen(x, _): return optimize.rosen(x)
     rosen.mn = 5, 1  # type: ignore[attr-defined]
     rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
 
-    @pytest.mark.filterwarnings("ignore::UserWarning")
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
     @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
     def test_examples(self, size, func, xp):
@@ -585,8 +579,9 @@ class TestJacobian(JacobianHessianTest):
             return xp.sin(2*x) * y**2
 
         res = jacobian(df1, z, initial_step=10)
-        assert len(xp.unique_all(res.nit).values) == 4
-        assert len(xp.unique_all(res.nfev).values) == 4
+        xp_test = array_namespace(z)
+        assert len(xp_test.unique_all(res.nit).values) == 4
+        assert len(xp_test.unique_all(res.nfev).values) == 4
 
         res00 = jacobian(lambda x: df1_0xy(x, z[1]), z[0:1], initial_step=10)
         res01 = jacobian(lambda y: df1_0xy(z[0], y), z[1:2], initial_step=10)
@@ -594,12 +589,13 @@ class TestJacobian(JacobianHessianTest):
         res11 = jacobian(lambda y: df1_1xy(z[0], y), z[1:2], initial_step=10)
         ref = optimize.OptimizeResult()
         for attr in ['success', 'status', 'df', 'nit', 'nfev']:
-            ref[attr] = xp.squeeze([[getattr(res00, attr), getattr(res01, attr)],
-                                    [getattr(res10, attr), getattr(res11, attr)]])
+            ref_attr = xp.asarray([[getattr(res00, attr), getattr(res01, attr)],
+                                   [getattr(res10, attr), getattr(res11, attr)]])
+            ref[attr] = xp.squeeze(ref_attr)
             xp_assert_close(res[attr], ref[attr], rtol=1.5e-14)
 
     def test_step_direction_size(self, xp):
-        one = xp.asarray(1.)
+        dtype = xp.asarray(1.).dtype
         # Check that `step_direction` and `initial_step` can be used to ensure that
         # the usable domain of a function is respected.
         rng = np.random.default_rng(23892589425245)
@@ -615,19 +611,15 @@ class TestJacobian(JacobianHessianTest):
         dir = [1, -1, 0]
         h0 = [0.25, 0.1, 0.5]
         atol = {'atol': 1e-8}
-        res = jacobian(f, xp.asarray(b, dtype=one.dtype), initial_step=h0,
+        res = jacobian(f, xp.asarray(b, dtype=dtype), initial_step=h0,
                        step_direction=dir, tolerances=atol)
-        ref = xp.asarray(TestJacobian.df5(b), dtype=one.dtype)
+        ref = xp.asarray(TestJacobian.df5(b), dtype=dtype)
         xp_assert_close(res.df, ref, atol=1e-8)
         assert xp.all(xp.isfinite(ref))
 
 
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason='Currently uses fancy indexing assignment.')
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason='JAX arrays do not support item assignment.')
-@pytest.mark.skip_xp_backends('cupy',
-                              reason='cupy/cupy#8391')
+@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
 class TestHessian(JacobianHessianTest):
     jh_func = hessian
 
@@ -639,7 +631,7 @@ class TestHessian(JacobianHessianTest):
         res = hessian(optimize.rosen, x)
         if shape:
             x = xp.reshape(x, (m, -1))
-            ref = [optimize.rosen_hess(xi) for xi in x.T]
+            ref = xp.asarray([optimize.rosen_hess(xi) for xi in x.T])
             ref = xp.moveaxis(ref, 0, -1)
             ref = xp.reshape(ref, (m, m,) + shape)
         else:
@@ -654,7 +646,7 @@ class TestHessian(JacobianHessianTest):
     def test_nfev(self, xp):
         def f1(z):
             x, y = xp.broadcast_arrays(*z)
-            f1.nfev = f1.nfev + (xp.prod(x.shape[2:]) if x.ndim > 2 else 1)
+            f1.nfev = f1.nfev + (math.prod(x.shape[2:]) if x.ndim > 2 else 1)
             return xp.sin(x) * y ** 3
         f1.nfev = 0
 
