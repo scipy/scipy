@@ -113,6 +113,7 @@ py3.install_sources([
     '_common.py',
     '_constants.py',
     '_continuous_distns.py',
+    '_correlation.py',
     '_covariance.py',
     '_crosstab.py',
     '_discrete_distns.py',

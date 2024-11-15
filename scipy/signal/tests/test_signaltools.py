@@ -3113,7 +3113,7 @@ class TestPartialFractionExpansion:
             residuez(1, [0, 1, 2, 3])
 
     def test_inverse_unique_roots_different_rtypes(self):
-        # This test was inspired by github issue 2496.
+        # This test was inspired by GitHub issue 2496.
         r = [3 / 10, -1 / 6, -2 / 15]
         p = [0, -2, -5]
         k = []

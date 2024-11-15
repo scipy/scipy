@@ -605,7 +605,7 @@ inline std::complex<double> cyl_bessel_je(double v, std::complex<double> z) {
     cy_y.real(NAN);
     cy_y.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy_j;
     }
     if (v < 0) {
@@ -658,7 +658,7 @@ inline std::complex<double> cyl_bessel_ye(double v, std::complex<double> z) {
     cy_y.real(NAN);
     cy_y.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy_y;
     }
     if (v < 0) {
@@ -711,7 +711,7 @@ inline std::complex<double> cyl_bessel_ie(double v, std::complex<double> z) {
     cy_k.real(NAN);
     cy_k.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v < 0) {
@@ -755,7 +755,7 @@ T cyl_bessel_ie(T v, T x) {
 
 inline std::complex<double> cyl_bessel_ke(double v, std::complex<double> z) {
     std::complex<double> cy{NAN, NAN};
-    if (isnan(v) || isnan(std::real(z)) || isnan(std::imag(z))) {
+    if (std::isnan(v) || std::isnan(std::real(z)) || std::isnan(std::imag(z))) {
         return cy;
     }
 
@@ -808,7 +808,7 @@ inline std::complex<double> cyl_hankel_1e(double v, std::complex<double> z) {
     cy.real(NAN);
     cy.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v < 0) {
@@ -836,7 +836,7 @@ inline std::complex<double> cyl_hankel_2e(double v, std::complex<double> z) {
     int sign = 1;
 
     std::complex<double> cy{NAN, NAN};
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
 
@@ -877,7 +877,7 @@ inline std::complex<double> cyl_bessel_j(double v, std::complex<double> z) {
     cy_y.real(NAN);
     cy_y.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy_j;
     }
     if (v < 0) {
@@ -935,7 +935,7 @@ inline std::complex<double> cyl_bessel_y(double v, std::complex<double> z) {
     cy_y.real(NAN);
     cy_y.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy_y;
     }
     if (v < 0) {
@@ -1022,7 +1022,7 @@ inline std::complex<double> cyl_bessel_i(double v, std::complex<double> z) {
     cy_k.real(NAN);
     cy_k.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v < 0) {
@@ -1139,7 +1139,7 @@ inline std::complex<double> cyl_hankel_1(double v, std::complex<double> z) {
     cy.real(NAN);
     cy.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v < 0) {
@@ -1169,7 +1169,7 @@ inline std::complex<double> cyl_hankel_2(double v, std::complex<double> z) {
     cy.real(NAN);
     cy.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v == 0 && z == 0.0) {

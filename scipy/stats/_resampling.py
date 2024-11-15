@@ -7,7 +7,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 import inspect
 
-from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
+from scipy._lib._util import (check_random_state, _rename_parameter, rng_integers,
+                              _transition_to_rng)
 from scipy._lib._array_api import array_namespace, is_numpy, xp_moveaxis_to_end
 from scipy.special import ndtr, ndtri, comb, factorial
 
@@ -60,12 +61,12 @@ def _jackknife_resample(sample, batch=None):
         yield resamples
 
 
-def _bootstrap_resample(sample, n_resamples=None, random_state=None):
+def _bootstrap_resample(sample, n_resamples=None, rng=None):
     """Bootstrap resample the sample."""
     n = sample.shape[-1]
 
     # bootstrap - each row is a random resample of original observations
-    i = rng_integers(random_state, 0, n, (n_resamples, n))
+    i = rng_integers(rng, 0, n, (n_resamples, n))
 
     resamples = sample[..., i]
     return resamples
@@ -159,7 +160,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
                   alternative, n_resamples, batch, method, bootstrap_result,
-                  random_state):
+                  rng):
     """Input validation and standardization for `bootstrap`."""
 
     if vectorized not in {True, False, None}:
@@ -261,11 +262,11 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             and n_resamples_int == 0):
         raise ValueError(message)
 
-    random_state = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     return (data_iv, statistic, vectorized, paired, axis_int,
             confidence_level_float, alternative, n_resamples_int, batch_iv,
-            method, bootstrap_result, random_state)
+            method, bootstrap_result, rng)
 
 
 @dataclass
@@ -291,10 +292,11 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
+@_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
               alternative='two-sided', method='BCa', bootstrap_result=None,
-              random_state=None):
+              rng=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -393,17 +395,11 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         distribution. This can be used, for example, to change
         `confidence_level`, change `method`, or see the effect of performing
         additional resampling without repeating computations.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -473,8 +469,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import bootstrap
     >>> data = (data,)  # samples must be in a sequence
-    >>> res = bootstrap(data, np.std, confidence_level=0.9,
-    ...                 random_state=rng)
+    >>> res = bootstrap(data, np.std, confidence_level=0.9, rng=rng)
     >>> fig, ax = plt.subplots()
     >>> ax.hist(res.bootstrap_distribution, bins=25)
     >>> ax.set_title('Bootstrap Distribution')
@@ -528,7 +523,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> for i in range(n_trials):
     ...    data = (dist.rvs(size=100, random_state=rng),)
     ...    res = bootstrap(data, np.std, confidence_level=0.9,
-    ...                    n_resamples=999, random_state=rng)
+    ...                    n_resamples=999, rng=rng)
     ...    ci = res.confidence_interval
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
@@ -540,7 +535,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 
     >>> data = (dist.rvs(size=(n_trials, 100), random_state=rng),)
     >>> res = bootstrap(data, np.std, axis=-1, confidence_level=0.9,
-    ...                 n_resamples=999, random_state=rng)
+    ...                 n_resamples=999, rng=rng)
     >>> ci_l, ci_u = res.confidence_interval
 
     Here, `ci_l` and `ci_u` contain the confidence interval for each of the
@@ -574,7 +569,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> sample1 = norm.rvs(scale=1, size=100, random_state=rng)
     >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
-    >>> res = bootstrap(data, my_statistic, method='basic', random_state=rng)
+    >>> res = bootstrap(data, my_statistic, method='basic', rng=rng)
     >>> print(my_statistic(sample1, sample2))
     0.16661030792089523
     >>> print(res.confidence_interval)
@@ -603,7 +598,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 
     We call `bootstrap` using ``paired=True``.
 
-    >>> res = bootstrap((x, y), my_statistic, paired=True, random_state=rng)
+    >>> res = bootstrap((x, y), my_statistic, paired=True, rng=rng)
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9941504301315878, high=0.996377412215445)
 
@@ -613,7 +608,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> len(res.bootstrap_distribution)
     9999
     >>> res = bootstrap((x, y), my_statistic, paired=True,
-    ...                 n_resamples=1000, random_state=rng,
+    ...                 n_resamples=1000, rng=rng,
     ...                 bootstrap_result=res)
     >>> len(res.bootstrap_distribution)
     10999
@@ -621,7 +616,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     or to change the confidence interval options:
 
     >>> res2 = bootstrap((x, y), my_statistic, paired=True,
-    ...                  n_resamples=0, random_state=rng, bootstrap_result=res,
+    ...                  n_resamples=0, rng=rng, bootstrap_result=res,
     ...                  method='percentile', confidence_level=0.9)
     >>> np.testing.assert_equal(res2.bootstrap_distribution,
     ...                         res.bootstrap_distribution)
@@ -634,10 +629,10 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
                          confidence_level, alternative, n_resamples, batch,
-                         method, bootstrap_result, random_state)
+                         method, bootstrap_result, rng)
     (data, statistic, vectorized, paired, axis, confidence_level,
      alternative, n_resamples, batch, method, bootstrap_result,
-     random_state) = args
+     rng) = args
 
     theta_hat_b = ([] if bootstrap_result is None
                    else [bootstrap_result.bootstrap_distribution])
@@ -650,7 +645,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         resampled_data = []
         for sample in data:
             resample = _bootstrap_resample(sample, n_resamples=batch_actual,
-                                           random_state=random_state)
+                                           rng=rng)
             resampled_data.append(resample)
 
         # Compute bootstrap distribution of statistic
@@ -1401,34 +1396,34 @@ def _batch_generator(iterable, batch):
 
 
 def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
-                               random_state):
+                               rng):
     # Returns a generator that yields arrays of size
     # `(batch, n_samples, n_obs_sample)`.
     # Each row is an independent permutation of indices 0 to `n_obs_sample`.
     batch = min(batch, n_permutations)
 
-    if hasattr(random_state, 'permuted'):
+    if hasattr(rng, 'permuted'):
         def batched_perm_generator():
             indices = np.arange(n_obs_sample)
             indices = np.tile(indices, (batch, n_samples, 1))
             for k in range(0, n_permutations, batch):
                 batch_actual = min(batch, n_permutations-k)
                 # Don't permute in place, otherwise results depend on `batch`
-                permuted_indices = random_state.permuted(indices, axis=-1)
+                permuted_indices = rng.permuted(indices, axis=-1)
                 yield permuted_indices[:batch_actual]
     else:  # RandomState and early Generators don't have `permuted`
         def batched_perm_generator():
             for k in range(0, n_permutations, batch):
                 batch_actual = min(batch, n_permutations-k)
                 size = (batch_actual, n_samples, n_obs_sample)
-                x = random_state.random(size=size)
+                x = rng.random(size=size)
                 yield np.argsort(x, axis=-1)[:batch_actual]
 
     return batched_perm_generator()
 
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
-                         random_state=None):
+                         rng=None):
     """
     Calculate null distribution for independent sample tests.
     """
@@ -1455,7 +1450,7 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
         # can permute axis-slices independently. If this feature is
         # added in the future, batches of the desired size should be
         # generated in a single call.
-        perm_generator = (random_state.permutation(n_obs)
+        perm_generator = (rng.permutation(n_obs)
                           for i in range(n_permutations))
 
     batch = batch or int(n_permutations)
@@ -1488,7 +1483,7 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
 
 
 def _calculate_null_pairings(data, statistic, n_permutations, batch,
-                             random_state=None):
+                             rng=None):
     """
     Calculate null distribution for association tests.
     """
@@ -1514,7 +1509,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
         # Separate random permutations of indices for each sample.
         # Again, it would be nice if RandomState/Generator.permutation
         # could permute each axis-slice separately.
-        args = n_permutations, n_samples, n_obs_sample, batch, random_state
+        args = n_permutations, n_samples, n_obs_sample, batch, rng
         batched_perm_generator = _pairings_permutations_gen(*args)
 
     null_distribution = []
@@ -1545,7 +1540,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
 
 
 def _calculate_null_samples(data, statistic, n_permutations, batch,
-                            random_state=None):
+                            rng=None):
     """
     Calculate null distribution for paired-sample tests.
     """
@@ -1572,11 +1567,11 @@ def _calculate_null_samples(data, statistic, n_permutations, batch,
         return statistic(*data, axis=axis)
 
     return _calculate_null_pairings(data, statistic_wrapped, n_permutations,
-                                    batch, random_state)
+                                    batch, rng)
 
 
 def _permutation_test_iv(data, statistic, permutation_type, vectorized,
-                         n_resamples, batch, alternative, axis, random_state):
+                         n_resamples, batch, alternative, axis, rng):
     """Input validation for `permutation_test`."""
 
     axis_int = int(axis)
@@ -1631,15 +1626,16 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
 
-    random_state = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     return (data_iv, statistic, permutation_type, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_int, random_state)
+            batch_iv, alternative, axis_int, rng)
 
 
+@_transition_to_rng('random_state')
 def permutation_test(data, statistic, *, permutation_type='independent',
                      vectorized=None, n_resamples=9999, batch=None,
-                     alternative="two-sided", axis=0, random_state=None):
+                     alternative="two-sided", axis=0, rng=None):
     r"""
     Performs a permutation test of a given statistic on provided data.
 
@@ -1738,17 +1734,11 @@ def permutation_test(data, statistic, *, permutation_type='independent',
         statistic. If samples have a different number of dimensions,
         singleton dimensions are prepended to samples with fewer dimensions
         before `axis` is considered.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate permutations.
-
-        If `random_state` is ``None`` (default), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -1980,7 +1970,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> y = norm.rvs(size=120, loc=0.2, random_state=rng)
     >>> res = permutation_test((x, y), statistic, n_resamples=9999,
     ...                        vectorized=True, alternative='less',
-    ...                        random_state=rng)
+    ...                        rng=rng)
     >>> print(res.statistic)
     -0.4230459671240913
     >>> print(res.pvalue)
@@ -2066,9 +2056,9 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     """
     args = _permutation_test_iv(data, statistic, permutation_type, vectorized,
                                 n_resamples, batch, alternative, axis,
-                                random_state)
+                                rng)
     (data, statistic, permutation_type, vectorized, n_resamples, batch,
-     alternative, axis, random_state) = args
+     alternative, axis, rng) = args
 
     observed = statistic(*data, axis=-1)
 
@@ -2076,7 +2066,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
                         "samples": _calculate_null_samples,
                         "independent": _calculate_null_both}
     null_calculator_args = (data, statistic, n_resamples,
-                            batch, random_state)
+                            batch, rng)
     calculate_null = null_calculators[permutation_type]
     null_distribution, n_resamples, exact_test = (
         calculate_null(*null_calculator_args))

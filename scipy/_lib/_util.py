@@ -14,6 +14,7 @@ from typing import (
 
 import numpy as np
 from scipy._lib._array_api import array_namespace, is_numpy, xp_size
+from scipy._lib._docscrape import FunctionDoc, Parameter
 
 
 AxisError: type[Exception]
@@ -245,8 +246,37 @@ def float_factorial(n: int) -> float:
     return float(math.factorial(n)) if n < 171 else np.inf
 
 
+_rng_desc = (
+    r"""If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+    passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+    If `rng` is already a ``Generator`` instance, then the provided instance is
+    used. Specify `rng` for repeatable function behavior.
+
+    If this argument is passed by position or `{old_name}` is passed by keyword,
+    legacy behavior for the argument `{old_name}` applies:
+
+    - If `{old_name}` is None (or `numpy.random`), the `numpy.random.RandomState`
+      singleton is used.
+    - If `{old_name}` is an int, a new ``RandomState`` instance is used,
+      seeded with `{old_name}`.
+    - If `{old_name}` is already a ``Generator`` or ``RandomState`` instance then
+      that instance is used.
+
+    .. versionchanged:: 1.15.0
+        As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+        transition from use of `numpy.random.RandomState` to
+        `numpy.random.Generator`, this keyword was changed from `{old_name}` to `rng`.
+        For an interim period, both keywords will continue to work, although only one
+        may be specified at a time. After the interim period, function calls using the
+        `{old_name}` keyword will emit warnings. The behavior of both `{old_name}` and
+        `rng` are outlined above, but only the `rng` keyword should be used in new code.
+        """
+)
+
+
 # SPEC 7
-def _transition_to_rng(old_name, *, position_num=None, end_version=None):
+def _transition_to_rng(old_name, *, position_num=None, end_version=None,
+                       replace_doc=True):
     """Example decorator to transition from old PRNG usage to new `rng` behavior
 
     Suppose the decorator is applied to a function that used to accept parameter
@@ -308,6 +338,15 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None):
         The full version number of the library when the behavior described in
         `DeprecationWarning`s and `FutureWarning`s will take effect. If left
         unspecified, no warnings will be emitted by the decorator.
+    replace_doc : bool, default: True
+        Whether the decorator should replace the documentation for parameter `rng` with
+        `_rng_desc` (defined above), which documents both new `rng` keyword behavior
+        and typical legacy `random_state`/`seed` behavior. If True, manually replace
+        the first paragraph of the function's old `random_state`/`seed` documentation
+        with the desired *final* `rng` documentation; this way, no changes to
+        documentation are needed when the decorator is removed. Documentation of `rng`
+        after the first blank line is preserved. Use False if the function's old
+        `random_state`/`seed` behavior does not match that described by `_rng_desc`.
 
     """
     NEW_NAME = "rng"
@@ -402,6 +441,19 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None):
 
             return fun(*args, **kwargs)
 
+        if replace_doc:
+            doc = FunctionDoc(wrapper)
+            parameter_names = [param.name for param in doc['Parameters']]
+            if 'rng' in parameter_names:
+                _type = "{None, int, `numpy.random.Generator`}, optional"
+                _desc = _rng_desc.replace("{old_name}", old_name)
+                old_doc = doc['Parameters'][parameter_names.index('rng')].desc
+                old_doc_keep = old_doc[old_doc.index("") + 1:] if "" in old_doc else []
+                new_doc = [_desc] + old_doc_keep
+                _rng_parameter_doc = Parameter('rng', _type, new_doc)
+                doc['Parameters'][parameter_names.index('rng')] = _rng_parameter_doc
+                doc = str(doc).split("\n", 1)[1]  # remove signature
+                wrapper.__doc__ = str(doc)
         return wrapper
 
     return decorator

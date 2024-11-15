@@ -2254,15 +2254,22 @@ class TestRegression:
         assert_almost_equal(result.intercept_stderr, 0.0)
 
     def test_nist_norris(self):
-        x = [0.2, 337.4, 118.2, 884.6, 10.1, 226.5, 666.3, 996.3, 448.6, 777.0,
-             558.2, 0.4, 0.6, 775.5, 666.9, 338.0, 447.5, 11.6, 556.0, 228.1,
-             995.8, 887.6, 120.2, 0.3, 0.3, 556.8, 339.1, 887.2, 999.0, 779.0,
-             11.1, 118.3, 229.2, 669.1, 448.9, 0.5]
+        # If this causes a lint failure in the future, please note the history of
+        # requests to allow extra whitespace in table formatting (e.g. gh-12367).
+        # Also see https://github.com/scipy/scipy/wiki/Why-do-we-not-use-an-auto%E2%80%90formatter%3F  # noqa: E501 
+        x = [  0.2, 337.4, 118.2, 884.6, 10.1,  226.5,
+             666.3, 996.3, 448.6, 777.0, 558.2,   0.4,
+               0.6, 775.5, 666.9, 338.0, 447.5,  11.6,
+             556.0, 228.1, 995.8, 887.6, 120.2,   0.3,
+               0.3, 556.8, 339.1, 887.2, 999.0, 779.0,
+              11.1, 118.3, 229.2, 669.1, 448.9,   0.5]
 
-        y = [0.1, 338.8, 118.1, 888.0, 9.2, 228.1, 668.5, 998.5, 449.1, 778.9,
-             559.2, 0.3, 0.1, 778.1, 668.8, 339.3, 448.9, 10.8, 557.7, 228.3,
-             998.0, 888.8, 119.6, 0.3, 0.6, 557.6, 339.3, 888.0, 998.5, 778.9,
-             10.2, 117.6, 228.9, 668.4, 449.2, 0.2]
+        y = [  0.1, 338.8, 118.1, 888.0, 9.2,   228.1,
+             668.5, 998.5, 449.1, 778.9, 559.2,   0.3,
+               0.1, 778.1, 668.8, 339.3, 448.9,  10.8,
+             557.7, 228.3, 998.0, 888.8, 119.6,   0.3,
+               0.6, 557.6, 339.3, 888.0, 998.5, 778.9,
+              10.2, 117.6, 228.9, 668.4, 449.2,   0.2]
 
         result = stats.linregress(x, y)
 
@@ -3505,8 +3512,8 @@ class TestMoments:
     @array_api_compatible
     def test_moment_empty_order(self, xp):
         # tests moment with empty `order` list
-        with pytest.raises(ValueError, match=r"'order' must be a scalar or a"
-                                             r" non-empty 1D list/array."):
+        with pytest.raises(ValueError, match=r"`order` must be a scalar or a"
+                                             r" non-empty 1D array."):
             stats.moment(xp.asarray([1, 2, 3, 4]), order=[])
 
     @array_api_compatible
@@ -9267,6 +9274,93 @@ class TestExpectile:
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
             e_list.append(stats.expectile(x, alpha=alpha))
         assert np.all(np.diff(e_list) > 0)
+
+
+class TestLMoment:
+    # data from https://github.com/scipy/scipy/issues/19460
+    data = [0.87, 0.87, 1.29, 1.5, 1.7, 0.66, 1.5, 0.5, 1., 1.25, 2.3,
+            1.03, 2.85, 0.68, 1.74, 1.94, 0.63, 2.04, 1.2, 0.64, 2.05, 0.97,
+            2.81, 1.02, 2.76, 0.86, 1.36, 1.29, 1.68, 0.72, 1.67, 1.15, 3.26,
+            0.93, 0.83, 0.91, 0.92, 2.32, 1.12, 3.21, 1.23, 1.22, 1.29, 2.08,
+            0.64, 2.83, 2.68, 1.77, 0.69, 1.69, 0.7, 1.83, 2.25, 1.23, 1.17,
+            0.94, 1.22, 0.76, 0.69, 0.48, 1.04, 2.49, 1.38, 1.57, 1.79, 1.59,
+            1.3, 1.54, 1.07, 1.03, 0.76, 2.35, 2.05, 2.02, 2.36, 1.59, 0.97,
+            1.63, 1.66, 0.94, 1.45, 1.26, 1.25, 0.68, 2.96, 0.8, 1.16, 0.82,
+            0.64, 0.87, 1.33, 1.28, 1.26, 1.19, 1.24, 1.12, 1.45, 1.03, 1.37,
+            1.4, 1.35, 1.28, 1.04, 1.31, 0.87, 0.96, 2.55, 1.72, 1.05, 1.15,
+            1.73, 1.03, 1.53, 2.41, 1.36, 2.08, 0.92, 0.73, 1.56, 1.94, 0.78]
+
+    not_integers = [1.5, [1, 2, 3.5], np.nan, np.inf, 'a duck']
+
+    def test_dtype_iv(self):
+        message = '`sample` must be an array of real numbers.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(np.array(self.data, dtype=np.complex128))
+
+    @skip_xp_invalid_arg
+    def test_dtype_iv_non_numeric(self):
+        message = '`sample` must be an array of real numbers.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(np.array(self.data, dtype=object))
+
+    @pytest.mark.parametrize('order', not_integers + [0, -1, [], [[1, 2, 3]]])
+    def test_order_iv(self, order):
+        message = '`order` must be a scalar or a non-empty...'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, order=order)
+
+    @pytest.mark.parametrize('axis', not_integers)
+    def test_axis_iv(self, axis):
+        message = '`axis` must be an integer, a tuple'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, axis=axis)
+
+    @pytest.mark.parametrize('sorted', not_integers)
+    def test_sorted_iv(self, sorted):
+        message = '`sorted` must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, sorted=sorted)
+
+    @pytest.mark.parametrize('standardize', not_integers)
+    def test_standardize_iv(self, standardize):
+        message = '`standardize` must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(self.data, standardize=standardize)
+
+    @pytest.mark.parametrize('order', [1, 4, [1, 2, 3, 4]])
+    @pytest.mark.parametrize('standardize', [False, True])
+    @pytest.mark.parametrize('sorted', [False, True])
+    def test_lmoment(self, order, standardize, sorted):
+        # Reference values from R package `lmom`
+        # options(digits=16)
+        # library(lmom)
+        # data= c(0.87, 0.87,..., 1.94, 0.78)
+        # samlmu(data)
+        ref = np.asarray([1.4087603305785130, 0.3415936639118458,
+                          0.2189964482831403, 0.1328186463415905])
+
+        if not standardize:
+            ref[2:] *= ref[1]
+
+        data = np.sort(self.data) if sorted else self.data
+
+        res = stats.lmoment(data, order, standardize=standardize, sorted=sorted)
+        assert_allclose(res, ref[np.asarray(order)-1])
+
+    def test_dtype(self):
+        dtype = np.float32
+        sample = np.asarray(self.data)
+        res = stats.lmoment(sample.astype(dtype))
+        ref = stats.lmoment(sample)
+        assert res.dtype.type == dtype
+        assert_allclose(res, ref, rtol=1e-4)
+
+        dtype = np.int64
+        sample = np.asarray([1, 2, 3, 4, 5])
+        res = stats.lmoment(sample.astype(dtype))
+        ref = stats.lmoment(sample.astype(np.float64))
+        assert res.dtype.type == np.float64
+        assert_allclose(res, ref, rtol=1e-15)
 
 
 @array_api_compatible

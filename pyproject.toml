@@ -83,7 +83,7 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
-    "array-api-strict>=2.0",
+    "array-api-strict>=2.0,<2.1.1",
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
