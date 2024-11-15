@@ -12,10 +12,10 @@ highs_opts = {
     'do_install': false,
 }
 
-# Hacky workaround to not check cpu_family for 32 bit identifiers
-is_32bit = target_machine.cpu_family() in ['arc', 'arm', 'csky', 'ft32', 'mips', 'ppc', 'riscv32', 'rx', 'sparc', 'wasm32', 'x86']
-_float_store = cc.get_supported_arguments('-ffloat-store')
-_cpp_float_store = cpp.get_supported_arguments('-ffloat-store')
+is_32bit = false
+if cc.sizeof('void*') <= 4
+  is_32bit = true
+endif
 
 highs_proj = subproject('highs', default_options: highs_opts)
 
@@ -27,6 +27,8 @@ highs_cpp_suppressions = highs_proj.get_variable('_highs_cpp_suppressions')
 highs_c_suppressions = highs_proj.get_variable('_highs_c_suppressions')
 
 if is_32bit
+  _float_store = cc.get_supported_arguments('-ffloat-store')
+  _cpp_float_store = cpp.get_supported_arguments('-ffloat-store')
   highs_args += _float_store + _cpp_float_store
 endif
 
@@ -54,7 +56,7 @@ _highs_dep = declare_dependency(
     include_directories: highs_incdirs,
 )
 
-scipy_highspy_dep = [py3_dep, pybind11_dep, _highs_dep, thread_dep, atomic_dep]
+scipy_highspy_dep = [pybind11_dep, _highs_dep, thread_dep, atomic_dep]
 
 py3.install_sources(
     ['__init__.py', '_highs_wrapper.py'],
@@ -66,7 +68,6 @@ py3.extension_module(
     sources: [highspy_cpp, highs_conf_file],
     dependencies: scipy_highspy_dep,
     link_args: version_link_args,
-    gnu_symbol_visibility: 'hidden',  # default
     install: true,
     subdir: 'scipy/optimize/_highspy',
 )
@@ -76,7 +77,6 @@ py3.extension_module(
     sources: [highs_conf_file, 'highs_options.cpp'],
     dependencies: scipy_highspy_dep,
     link_args: version_link_args,
-    gnu_symbol_visibility: 'hidden',  # default
     install: true,
     subdir: 'scipy/optimize/_highspy',
 )
