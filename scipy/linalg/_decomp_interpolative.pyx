@@ -132,7 +132,7 @@ __all__ = ['idd_estrank', 'idd_ldiv', 'idd_poweroftwo', 'idd_reconid', 'iddp_aid
            ]
 
 
-def idd_diffsnorm(A: LinearOperator, B: LinearOperator, rng, int its=20):
+def idd_diffsnorm(A: LinearOperator, B: LinearOperator, *, rng, int its=20):
     cdef int n = A.shape[1], j = 0, intone = 1
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] v1
@@ -160,7 +160,7 @@ def idd_diffsnorm(A: LinearOperator, B: LinearOperator, rng, int its=20):
     return snorm
 
 
-def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: float,
+def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: float, *,
                 rng):
     cdef int m = a.shape[0], n = a.shape[1]
     cdef int intone = 1, n2, nsteps = 3, row, r, nstep, cols, k, nulls
@@ -276,7 +276,7 @@ def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: fl
     return k, Fcopy
 
 
-def idd_findrank(A: LinearOperator, cnp.float64_t eps, rng):
+def idd_findrank(A: LinearOperator, cnp.float64_t eps, *, rng):
     # Estimate the rank of A by repeatedly using A.rmatvec(random vec)
 
     cdef int m = A.shape[0], n = A.shape[1], k = 0, kk = 0,r = n, krank
@@ -456,7 +456,7 @@ def idd_reconid(B, idx, proj):
     return approx
 
 
-def idd_snorm(A: LinearOperator, rng, int its=20):
+def idd_snorm(A: LinearOperator, *, rng, int its=20):
     cdef int n = A.shape[1]
     cdef int j = 0, intone = 1
     cdef cnp.float64_t snorm = 0.0
@@ -478,7 +478,7 @@ def idd_snorm(A: LinearOperator, rng, int its=20):
     return snorm
 
 
-def iddp_aid(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, rng):
+def iddp_aid(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, *, rng):
     krank, proj = idd_estrank(a, eps, rng=rng)
     if krank != 0:
         proj = proj[:krank, :]
@@ -487,7 +487,7 @@ def iddp_aid(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, rng):
     return iddp_id(a, eps=eps)
 
 
-def iddp_asvd(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, rng):
+def iddp_asvd(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float, *, rng):
     cdef int m = a.shape[0], n = a.shape[1]
     cdef int krank, info, ci
     cdef cnp.ndarray[cnp.float64_t, mode='fortran', ndim=2] C
@@ -670,12 +670,12 @@ def iddp_qrpiv(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a, cnp.float64_t eps
     return k + 1, taus, ind
 
 
-def iddp_rid(A: LinearOperator, cnp.float64_t eps, rng):
-    _, ret = idd_findrank(A, eps, rng)
+def iddp_rid(A: LinearOperator, cnp.float64_t eps, *, rng):
+    _, ret = idd_findrank(A, eps, rng=rng)
     return iddp_id(ret, eps)
 
 
-def iddp_rsvd(A: LinearOperator, cnp.float64_t eps, rng):
+def iddp_rsvd(A: LinearOperator, cnp.float64_t eps, *, rng):
     cdef int n = A.shape[1]
     cdef int krank, j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
@@ -683,7 +683,7 @@ def iddp_rsvd(A: LinearOperator, cnp.float64_t eps, rng):
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] col
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=1] x
 
-    krank, perms, proj = iddp_rid(A, eps, rng)
+    krank, perms, proj = iddp_rid(A, eps, rng=rng)
     if krank > 0:
         # idd_getcols
         col = cnp.PyArray_EMPTY(2, [n, krank], cnp.NPY_FLOAT64, 0)
@@ -733,7 +733,7 @@ def iddp_svd(cnp.ndarray[cnp.float64_t, ndim=2] a: NDArray, eps: float):
     return UU, S, V
 
 
-def iddr_aid(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank,
+def iddr_aid(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank, *,
              rng):
     cdef int m = a.shape[0], n = a.shape[1], n2, nsteps = 3, row, r, nstep, L
     cdef cnp.float64_t h, alpha, beta
@@ -885,7 +885,7 @@ def iddr_aid(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank,
     return perms, proj
 
 
-def iddr_asvd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank,
+def iddr_asvd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank, *,
               rng):
     cdef int m = a.shape[0], n = a.shape[1]
     cdef int info, ci
@@ -1044,7 +1044,7 @@ def iddr_qrpiv(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, krank: i
     return ind, taus
 
 
-def iddr_rid(A: LinearOperator, int krank, rng):
+def iddr_rid(A: LinearOperator, int krank, *, rng):
     cdef int m = A.shape[0], n = A.shape[1], k = 0
     cdef int L = min(krank+2, min(m, n))
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] r
@@ -1056,13 +1056,13 @@ def iddr_rid(A: LinearOperator, int krank, rng):
     return iddr_id(a=r, krank=krank)
 
 
-def iddr_rsvd(A: LinearOperator, int krank, rng):
+def iddr_rsvd(A: LinearOperator, int krank, *, rng):
     cdef int n = A.shape[1], j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
     cdef cnp.ndarray[cnp.float64_t, ndim=2] proj
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] col
 
-    perms, proj = iddr_rid(A, krank, rng)
+    perms, proj = iddr_rid(A, krank, rng=rng)
     # idd_getcols
     col = cnp.PyArray_EMPTY(2, [n, krank], cnp.NPY_FLOAT64, 0)
     x = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
@@ -1105,7 +1105,7 @@ def iddr_svd(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, int krank)
     return UU, S, V
 
 
-def idz_diffsnorm(A: LinearOperator, B: LinearOperator, rng, int its=20):
+def idz_diffsnorm(A: LinearOperator, B: LinearOperator, *, rng, int its=20):
     cdef int n = A.shape[1], j = 0, intone = 1
     cdef cnp.float64_t snorm = 0.0
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=1] v1
@@ -1133,7 +1133,7 @@ def idz_diffsnorm(A: LinearOperator, B: LinearOperator, rng, int its=20):
     return snorm
 
 
-def idz_estrank(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: float,
+def idz_estrank(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: float, *,
                 rng):
     cdef int m = a.shape[0], n = a.shape[1], n2, nsteps = 3, row, r, nstep, cols, k
     cdef cnp.float64_t h, alpha, beta
@@ -1223,7 +1223,7 @@ def idz_estrank(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps:
     return k, Fcopy
 
 
-def idz_findrank(A: LinearOperator, cnp.float64_t eps, rng):
+def idz_findrank(A: LinearOperator, cnp.float64_t eps, *, rng):
     # Estimate the rank of A by repeatedly using A.rmatvec(random vec)
 
     cdef int m = A.shape[0], n = A.shape[1], k = 0, kk = 0,r = n, krank
@@ -1392,7 +1392,7 @@ def idz_reconid(B, idx, proj):
     return approx
 
 
-def idz_snorm(A: LinearOperator, rng, int its=20):
+def idz_snorm(A: LinearOperator, *, rng, int its=20):
     cdef int n = A.shape[1]
     cdef int j = 0, intone = 1
     cdef cnp.float64_t snorm = 0.0
@@ -1414,7 +1414,7 @@ def idz_snorm(A: LinearOperator, rng, int its=20):
     return snorm
 
 
-def idzp_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: float,
+def idzp_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: float, *,
              rng):
     krank, proj = idz_estrank(a, eps=eps, rng=rng)
     if krank != 0:
@@ -1424,7 +1424,7 @@ def idzp_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, eps: fl
     return idzp_id(a, eps=eps)
 
 
-def idzp_asvd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t eps,
+def idzp_asvd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t eps, *,
               rng):
     cdef int m = a.shape[0], n = a.shape[1]
     cdef int krank, info, ci
@@ -1442,7 +1442,7 @@ def idzp_asvd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t e
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] p
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] col
 
-    krank, perms, proj = idzp_aid(a.copy(), eps, rng)
+    krank, perms, proj = idzp_aid(a.copy(), eps, rng=rng)
 
     if krank > 0:
         UU = cnp.PyArray_ZEROS(2, [m, krank], cnp.NPY_COMPLEX128, 0)
@@ -1592,12 +1592,12 @@ def idzp_qrpiv(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, cnp.float64_t 
     return k+1, taus, ind
 
 
-def idzp_rid(A: LinearOperator, cnp.float64_t eps, rng):
+def idzp_rid(A: LinearOperator, cnp.float64_t eps, *, rng):
     _, ret = idz_findrank(A, eps, rng=rng)
     return idzp_id(ret, eps=eps)
 
 
-def idzp_rsvd(A: LinearOperator, cnp.float64_t eps, rng):
+def idzp_rsvd(A: LinearOperator, cnp.float64_t eps, *, rng):
     cdef int n = A.shape[1]
     cdef int krank, j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
@@ -1654,7 +1654,7 @@ def idzp_svd(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a, cnp.float64_t ep
     return UU, S, V
 
 
-def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int krank,
+def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int krank, *,
              rng):
     cdef int m = a.shape[0], n2, L, nblock, nsteps = 3, mb
     cdef cnp.float64_t twopi = 2*np.pi, fact
@@ -1741,7 +1741,7 @@ def idzr_aid(cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] a: NDArray, int kra
     return idzr_id(V, krank)
 
 
-def idzr_asvd(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank, rng):
+def idzr_asvd(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank, *, rng):
     cdef int m = a.shape[0], n = a.shape[1]
     cdef int info, ci
     cdef cnp.ndarray[cnp.complex128_t, mode='fortran', ndim=2] C
@@ -1898,7 +1898,7 @@ def idzr_qrpiv(cnp.ndarray[cnp.complex128_t, mode="c", ndim=2] a, int krank):
     return ind, taus
 
 
-def idzr_rid(A: LinearOperator, int krank, rng):
+def idzr_rid(A: LinearOperator, int krank, *, rng):
     cdef int m = A.shape[0], n = A.shape[1], k = 0
     cdef int L = min(krank+2, min(m, n))
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] r
@@ -1910,13 +1910,13 @@ def idzr_rid(A: LinearOperator, int krank, rng):
     return idzr_id(a=r.conj(), krank=krank)
 
 
-def idzr_rsvd(A: LinearOperator, int krank, rng):
+def idzr_rsvd(A: LinearOperator, int krank, *, rng):
     cdef int n = A.shape[1], j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
     cdef cnp.ndarray[cnp.complex128_t, ndim=2] proj
     cdef cnp.ndarray[cnp.complex128_t, mode='c', ndim=2] col
 
-    perms, proj = idzr_rid(A, krank, rng)
+    perms, proj = idzr_rid(A, krank, rng=rng)
     # idd_getcols
     col = cnp.PyArray_EMPTY(2, [n, krank], cnp.NPY_COMPLEX128, 0)
     x = cnp.PyArray_ZEROS(1, [n], cnp.NPY_COMPLEX128, 0)
