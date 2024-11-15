@@ -582,8 +582,8 @@ class TestJacobian(JacobianHessianTest):
 
         res = jacobian(df1, z, initial_step=10)
         if is_numpy(xp):
-            assert len(np.unique_all(res.nit).values) == 4
-            assert len(np.unique_all(res.nfev).values) == 4
+            assert len(np.unique(res.nit)) == 4
+            assert len(np.unique(res.nfev)) == 4
 
         res00 = jacobian(lambda x: df1_0xy(x, z[1]), z[0:1], initial_step=10)
         res01 = jacobian(lambda y: df1_0xy(z[0], y), z[1:2], initial_step=10)
