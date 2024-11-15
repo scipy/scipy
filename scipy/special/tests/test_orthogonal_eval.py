@@ -19,6 +19,7 @@ def test_eval_chebyt_gh20129():
     # https://github.com/scipy/scipy/issues/20129
     assert _ufuncs.eval_chebyt(7, 2 + 0j) == 5042.0
 
+
 def test_eval_genlaguerre_restriction():
     # check it returns nan for alpha <= -1
     assert_(np.isnan(_ufuncs.eval_genlaguerre(0, -1, 0)))
@@ -40,7 +41,7 @@ class TestPolys:
 
     """
 
-    def check_poly(self, func, cls, param_ranges=[], x_range=[], nn=10,
+    def check_poly(self, func, cls, param_ranges=(), x_range=(), nn=10,
                    nparam=10, nx=10, rtol=1e-8):
         np.random.seed(1234)
 
@@ -145,7 +146,7 @@ class TestRecurrence:
 
     """
 
-    def check_poly(self, func, param_ranges=[], x_range=[], nn=10,
+    def check_poly(self, func, param_ranges=(), x_range=(), nn=10,
                    nparam=10, nx=10, rtol=1e-8):
         np.random.seed(1234)
 
@@ -170,8 +171,10 @@ class TestRecurrence:
         dataset = np.concatenate(dataset, axis=0)
 
         def polyfunc(*p):
-            p = (p[0].astype(int),) + p[1:]
-            kw = dict(sig='l'+(len(p)-1)*'d'+'->d')
+            p0 = p[0].astype(np.intp)
+            p = (p0,) + p[1:]
+            p0_type_char = p0.dtype.char
+            kw = dict(sig=p0_type_char + (len(p)-1)*'d' + '->d')
             return func(*p, **kw)
 
         with np.errstate(all='raise'):

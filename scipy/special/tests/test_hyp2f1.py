@@ -791,7 +791,7 @@ class TestHyp2f1:
                     c=2.0397202577726152,
                     z=(-0.3157894736842106+0.7368421052631575j),
                     expected=(54749.216391029935-23078.144720887536j),
-                    rtol=1e-15,
+                    rtol=2e-15,
                 ),
             ),
             pytest.param(
@@ -2093,7 +2093,7 @@ class TestHyp2f1:
                     c=-15.5,
                     z=(0.3413793103448277-0.9482758620689655j),
                     expected=(-1.0509834850116921-1.1145522325486075j),
-                    rtol=1e-14,
+                    rtol=1.1e-14,
                 ),
             ),
             pytest.param(
@@ -2183,7 +2183,7 @@ class TestHyp2f1:
                     c=16.088264119063613,
                     z=(0.26551724137931054+1.024137931034483j),
                     expected=(-0.18515160890991517+0.7959014164484782j),
-                    rtol=1.1e-15,
+                    rtol=2e-15,
                 ),
             ),
             pytest.param(
@@ -2486,6 +2486,27 @@ class TestHyp2f1:
             abs(z) > 1 and
             not (1 < abs(z) < 1.1 and abs(1 - z) >= 0.9 and z.real >= 0)
         )
+        assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
+
+
+    @pytest.mark.parametrize(
+        "hyp2f1_test_case",
+        [
+            # Broke when fixing gamma pole behavior in gh-21827
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=1.3,
+                    b=-0.2,
+                    c=0.3,
+                    z=-2.1,
+                    expected=1.8202169687521206,
+                    rtol=5e-15,
+                ),
+            ),
+        ]
+    )
+    def test_miscellaneous(self, hyp2f1_test_case ):
+        a, b, c, z, expected, rtol = hyp2f1_test_case
         assert_allclose(hyp2f1(a, b, c, z), expected, rtol=rtol)
 
     @pytest.mark.slow

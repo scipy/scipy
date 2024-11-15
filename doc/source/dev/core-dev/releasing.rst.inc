@@ -117,11 +117,9 @@ and PRs under the Milestone for the release
 (https://github.com/scipy/scipy/milestones), PRs labeled "backport-candidate",
 and that the release notes are up-to-date and included in the html docs.
 
-Then edit ``meson.build`` and ``tools/version_utils.py`` to get the correct version number (set
-``version:`` in the former, and ``ISRELEASED = True`` in the latter). It is
-also necessary to adjust the ``version`` in ``pyproject.toml``. Commit these
-changes with a message like ``REL: set version to <version-number>``.  Don't push
-this commit to the SciPy repo yet.
+Then update the ``version`` in ``pyproject.toml`` and commit the change with a
+message like ``REL: set version to <version-number>``.  Don't push this commit
+to the SciPy repo yet.
 
 Finally tag the release locally with ``git tag -s <v1.x.y>`` (the ``-s`` ensures
 the tag is signed). If ``gpg2`` is preferred, then
@@ -238,3 +236,14 @@ and test against their own code) and report issues on Github or Discourse.
 After the final release is done, port relevant changes to release notes, build
 scripts, author name mapping in ``tools/authors.py`` and any other changes that
 were only made on the maintenance branch to main.
+
+Enable interactive examples by editing the runtime configuration file,
+``try_examples.json``, in the root folder of the uploaded documentation on the
+release server. One must remove the regular expression pattern ``".*"`` from
+the ``ignore_patterns`` list.
+
+.. code-block:: console
+
+  $ ssh your-username@docs.scipy.org
+  $ cd /srv/docs_scipy_org/doc/scipy-1.13.1
+  $ vim try_examples.json  # edit the ignore list to remove: ".*"

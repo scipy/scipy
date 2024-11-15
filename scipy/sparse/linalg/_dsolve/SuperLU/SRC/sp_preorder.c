@@ -1,4 +1,4 @@
-/*! \file
+/*
 Copyright (c) 2003, The Regents of the University of California, through
 Lawrence Berkeley National Laboratory (subject to receipt of any required 
 approvals from U.S. Dept. of Energy) 
@@ -8,8 +8,10 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
-/*! @file sp_preorder.c
- * \brief Permute and performs functions on columns of orginal matrix
+/*! @file
+ * \brief Permute and performs functions on columns of original matrix
+ *
+ * \ingroup Common
  */
 #include "slu_ddefs.h"
 
@@ -76,7 +78,7 @@ sp_preorder(superlu_options_t *options,  SuperMatrix *A, int *perm_c,
     NCPformat *ACstore;
     int       *iwork, *post;
     register  int n, i;
-    extern int check_perm(char *what, int n, int *perm);
+    extern void check_perm(char *what, int n, int *perm);
 	
     n = A->ncol;
     

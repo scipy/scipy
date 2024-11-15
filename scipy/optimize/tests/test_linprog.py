@@ -315,7 +315,7 @@ def test_highs_status_message():
                   options=options, integrality=integrality)
     msg = "Time limit reached. (HiGHS Status 13:"
     assert res.status == 1
-    assert msg in res.message
+    assert res.message.startswith(msg)
 
     options = {"maxiter": 10}
     res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs-ds',
@@ -334,14 +334,13 @@ def test_highs_status_message():
     assert res.status == 3
     assert res.message.startswith(msg)
 
-    from scipy.optimize._linprog_highs import HighsStatusMapping
-    highs_mapper = HighsStatusMapping()
-    status, message = highs_mapper.get_scipy_status(58, "Hello!")
-    assert status == 4
+    from scipy.optimize._linprog_highs import _highs_to_scipy_status_message
+    status, message = _highs_to_scipy_status_message(58, "Hello!")
     msg = "The HiGHS status code was not recognized. (HiGHS Status 58:"
+    assert status == 4
     assert message.startswith(msg)
 
-    status, message = highs_mapper.get_scipy_status(None, None)
+    status, message = _highs_to_scipy_status_message(None, None)
     msg = "HiGHS did not provide a status code. (HiGHS Status None: None)"
     assert status == 4
     assert message.startswith(msg)
@@ -451,7 +450,7 @@ class LinprogCommonTests:
         b_ub = [10, 8, 4]
 
         def f(c, A_ub=None, b_ub=None, A_eq=None,
-              b_eq=None, bounds=None, options={}):
+              b_eq=None, bounds=None, options=None):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=options)
 
@@ -522,7 +521,7 @@ class LinprogCommonTests:
         ub = x_valid + np.random.rand(n)
         lb = x_valid - np.random.rand(n)
         bounds = np.column_stack((lb, ub))
-        b_eq = A_eq * x_valid
+        b_eq = A_eq @ x_valid
 
         if self.method in {'simplex', 'revised simplex'}:
             # simplex and revised simplex should raise error
@@ -1789,6 +1788,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
 
+    @pytest.mark.fail_slow(10)
     def test_marginals(self):
         # Ensure lagrange multipliers are correct by comparing the derivative
         # w.r.t. b_ub/b_eq/ub/lb to the reported duals.
@@ -1862,6 +1862,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # http://www.personal.psu.edu/cxg286/LPKKT.pdf modified for
         # non-zero RHS
         assert np.allclose(res.ineqlin.marginals @ (b_ub - A_ub @ res.x), 0)
+
 
     def test_bug_20336(self):
         """
@@ -2302,6 +2303,7 @@ class TestLinprogHiGHSMIP:
     method = "highs"
     options = {}
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.xfail(condition=(sys.maxsize < 2 ** 32 and
                        platform.system() == "Linux"),
                        run=False,
@@ -2403,8 +2405,7 @@ class TestLinprogHiGHSMIP:
         assert res.get("mip_dual_bound", None) is not None
         assert res.get("mip_gap", None) is not None
 
-    @pytest.mark.slow
-    @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
+    @pytest.mark.xslow
     def test_mip6(self):
         # solve a larger MIP with only equality constraints
         # source: https://www.mathworks.com/help/optim/ug/intlinprog.html

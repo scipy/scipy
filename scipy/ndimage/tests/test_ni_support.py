@@ -18,7 +18,7 @@ from .._ni_support import _get_output
 def test_get_output_basic(dtype):
     shape = (2, 3)
 
-    input_ = np.zeros(shape, 'float32')
+    input_ = np.zeros(shape, dtype='float32')
 
     # For None, derive dtype from input
     expected_dtype = 'float32' if dtype is None else dtype
@@ -34,7 +34,7 @@ def test_get_output_basic(dtype):
     assert result.dtype == np.dtype(expected_dtype)
 
     # Output is pre-allocated array, return directly
-    output = np.zeros(shape, dtype)
+    output = np.zeros(shape, dtype=dtype)
     result = _get_output(output, input_)
     assert result is output
 

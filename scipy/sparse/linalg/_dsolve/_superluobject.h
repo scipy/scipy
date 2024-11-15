@@ -56,6 +56,12 @@ int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
 int NCFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
+int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
+               PyArrayObject * nzvals,
+               PyArrayObject * indices,
+               PyArrayObject * pointers,
+               int typenum, Stype_t stype, Mtype_t mtype,
+               int* identity_col_to_sup, int* identity_sup_to_col);
 int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
                      PyObject **L_csc, PyObject **U_csc,
                      PyObject *py_csc_construct_func);
@@ -153,6 +159,13 @@ jmp_buf *superlu_python_jmpbuf(void);
 #define Create_CompCol_Matrix_ARGS Create_CompRow_Matrix_ARGS
 #define Create_CompCol_Matrix_ARGS_REF Create_CompRow_Matrix_ARGS_REF
 
+
+#define Create_SuperNode_Matrix_ARGS \
+    SuperMatrix *a, int b, int c, int d, \
+    void* e, int* f, int* g, int* h, int* i, int* j, \
+    Stype_t k, Dtype_t l, Mtype_t m
+#define Create_SuperNode_Matrix_ARGS_REF a,b,c,d,e,f,g,h,i,j,k,l,m
+
 TYPE_GENERIC_FUNC(gstrf, void);
 TYPE_GENERIC_FUNC(gsitrf, void);
 TYPE_GENERIC_FUNC(gstrs, void);
@@ -160,5 +173,6 @@ TYPE_GENERIC_FUNC(gssv, void);
 TYPE_GENERIC_FUNC(Create_Dense_Matrix, void);
 TYPE_GENERIC_FUNC(Create_CompRow_Matrix, void);
 TYPE_GENERIC_FUNC(Create_CompCol_Matrix, void);
+TYPE_GENERIC_FUNC(Create_SuperNode_Matrix, void);
 
 #endif				/* __SUPERLU_OBJECT */

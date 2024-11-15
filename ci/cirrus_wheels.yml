@@ -1,6 +1,6 @@
 build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   install_cibuildwheel_script:
-    - python -m pip install cibuildwheel==2.17.0
+    - python -m pip install cibuildwheel==2.20.0
   cibuildwheel_script:
     - cibuildwheel
   wheels_artifacts:
@@ -24,18 +24,17 @@ cirrus_wheels_linux_aarch64_task:
     # single task takes longer than 60 mins (the default time limit for a
     # cirrus-ci task).
     - env:
-        CIBW_BUILD: cp310-manylinux*
+        CIBW_BUILD: cp313-manylinux* cp310-manylinux*
     - env:
         CIBW_BUILD: cp311-manylinux* cp312-manylinux*
   env:
     CIBW_PRERELEASE_PYTHONS: True
-    # TODO remove the CIBW_BEFORE_BUILD_LINUX line once there are numpy2.0 wheels available on PyPI.
-    # Also remove/comment out PIP_NO_BUILD_ISOLATION, PIP_EXTRA_INDEX_URL flags.
-    CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
-    CIBW_ENVIRONMENT: >
-      PIP_PRE=1
-      PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-      PIP_NO_BUILD_ISOLATION=false
+    # The following settings are useful when targetting an unreleased Python version.
+    #CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+    #CIBW_ENVIRONMENT: >
+    #  PIP_PRE=1
+    #  PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+    #  PIP_NO_BUILD_ISOLATION=false
 
   build_script: |
     apt install -y python3-venv python-is-python3
@@ -63,9 +62,9 @@ cirrus_wheels_upload_task:
     platform: linux
 
   env:
-    # created as SCIPY_STAGING_UPLOAD_TOKEN_CIRRUS and SCIPY_NIGHTLY_UPLOAD_TOKEN_CIRRUS
-    SCIPY_STAGING_UPLOAD_TOKEN: ENCRYPTED[5940af5e589adf1647fb2832be2c912812de22b5b6551d93e177600da69b2103ffdf0ee1cf16671cf5e76f69a966bc30]
-    SCIPY_NIGHTLY_UPLOAD_TOKEN: ENCRYPTED[6e711cf90dfcf0e901f16a0be0bbc22b555ce6591cf60cb96e7edf133a7c7d42df5b9c3d7d4352d686756dc00f5c222a]
+    # created as SCIPY_STAGING_UPLOAD_TOKEN_CIRRUS and SCIPY_NIGHTLY_UPLOAD_TOKEN_CIRRUS (will expire 2028/07/08)
+    SCIPY_STAGING_UPLOAD_TOKEN: ENCRYPTED[!47775a024e7cd7a9bfc2dfcb0ac5ce3e22e5aac44e7a88ddf9008c0aa27b38f92b63014e50395c9d3cd355224be014d0!]
+    SCIPY_NIGHTLY_UPLOAD_TOKEN: ENCRYPTED[!818fdb1d46f9e75ca3a810c8905bfa0f8742090cba34869d4b113ee01cecf4d93cd96102c53274ed5003f79d8f42775b!]
 
   upload_script: |
     export IS_SCHEDULE_DISPATCH="false"
@@ -87,14 +86,14 @@ cirrus_wheels_upload_task:
         apt-get update
         apt-get install -y curl wget
 
-        # install miniconda in the home directory. For some reason HOME isn't set by Cirrus
+        # install miniforge in the home directory. For some reason HOME isn't set by Cirrus
         export HOME=$PWD
         
-        # install miniconda for uploading to anaconda
-        wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-        bash miniconda.sh -b -p $HOME/miniconda3
-        $HOME/miniconda3/bin/conda init bash
-        source $HOME/miniconda3/bin/activate
+        # install miniforge for uploading to anaconda
+        wget -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+        bash Miniforge3.sh -b -p "${HOME}/miniforge"
+        $HOME/miniforge/bin/conda init bash
+        source $HOME/miniforge/bin/activate
         conda install -y anaconda-client
         
         # The name of the zip file is derived from the `wheels_artifact` line.

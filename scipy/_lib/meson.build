@@ -8,8 +8,14 @@ endif
 if not fs.exists('array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('array_api_extra/README.md')
+  error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
+endif
 if not fs.exists('pocketfft/README.md')
   error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('cobyqa/README.rst')
+  error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
 
 _lib_pxd = [
@@ -25,10 +31,12 @@ lib_cython_gen = generator(cython,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _lib_pxd])
 
+ccallback_dep = declare_dependency(include_directories: ['..', 'src'])
+
 py3.extension_module('_ccallback_c',
   lib_cython_gen.process('_ccallback_c.pyx'),
   c_args: [cython_c_args, Wno_discarded_qualifiers],
-  include_directories: 'src',
+  dependencies: ccallback_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
@@ -36,10 +44,11 @@ py3.extension_module('_ccallback_c',
 
 py3.extension_module('_test_ccallback',
   'src/_test_ccallback.c',
-  include_directories: 'src',
+  dependencies: ccallback_dep,
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_fpumode',
@@ -56,7 +65,8 @@ py3.extension_module('_test_deprecation_call',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_test_deprecation_def',
@@ -65,7 +75,8 @@ py3.extension_module('_test_deprecation_def',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 # May be easier as a compile flag, but use a config header file to stay
@@ -78,7 +89,7 @@ py3.extension_module('_test_deprecation_def',
 conf_memstream = configuration_data()
 
 if meson.get_compiler('c').has_function('open_memstream',
-                                        prefix: '#include <stdio.h>')
+                                        prefix: '#define _POSIX_C_SOURCE 200809L\n#include <stdio.h>')
   conf_memstream.set('has_openmemstream', '1')
 else
   conf_memstream.set('has_openmemstream', '0')
@@ -102,6 +113,7 @@ py3.extension_module('messagestream',
 python_sources = [
   '__init__.py',
   '_array_api.py',
+  '_array_api_no_0d.py',
   '_bunch.py',
   '_ccallback.py',
   '_disjoint_set.py',
@@ -153,6 +165,7 @@ py3.install_sources(
     'array_api_compat/array_api_compat/cupy/__init__.py',
     'array_api_compat/array_api_compat/cupy/_aliases.py',
     'array_api_compat/array_api_compat/cupy/_typing.py',
+    'array_api_compat/array_api_compat/cupy/_info.py',
     'array_api_compat/array_api_compat/cupy/fft.py',
     'array_api_compat/array_api_compat/cupy/linalg.py',
   ],
@@ -170,6 +183,8 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/dask/array/__init__.py',
     'array_api_compat/array_api_compat/dask/array/_aliases.py',
+    'array_api_compat/array_api_compat/dask/array/_info.py',
+    'array_api_compat/array_api_compat/dask/array/fft.py',
     'array_api_compat/array_api_compat/dask/array/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/dask/array',
@@ -180,6 +195,7 @@ py3.install_sources(
     'array_api_compat/array_api_compat/numpy/__init__.py',
     'array_api_compat/array_api_compat/numpy/_aliases.py',
     'array_api_compat/array_api_compat/numpy/_typing.py',
+    'array_api_compat/array_api_compat/numpy/_info.py',
     'array_api_compat/array_api_compat/numpy/fft.py',
     'array_api_compat/array_api_compat/numpy/linalg.py',
   ],
@@ -190,10 +206,54 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/torch/__init__.py',
     'array_api_compat/array_api_compat/torch/_aliases.py',
+    'array_api_compat/array_api_compat/torch/_info.py',
     'array_api_compat/array_api_compat/torch/fft.py',
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/torch',
+)
+
+# `array_api_extra` install to simplify import path;
+# should be updated whenever new files are added to `array_api_extra`
+
+py3.install_sources(
+  [
+    'array_api_extra/src/array_api_extra/__init__.py',
+    'array_api_extra/src/array_api_extra/_funcs.py',
+    'array_api_extra/src/array_api_extra/_typing.py',
+  ],
+  subdir: 'scipy/_lib/array_api_extra',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/__init__.py',
+    'cobyqa/cobyqa/framework.py',
+    'cobyqa/cobyqa/main.py',
+    'cobyqa/cobyqa/models.py',
+    'cobyqa/cobyqa/problem.py',
+    'cobyqa/cobyqa/settings.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/subsolvers/__init__.py',
+    'cobyqa/cobyqa/subsolvers/geometry.py',
+    'cobyqa/cobyqa/subsolvers/optim.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa/subsolvers',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/utils/__init__.py',
+    'cobyqa/cobyqa/utils/exceptions.py',
+    'cobyqa/cobyqa/utils/math.py',
+    'cobyqa/cobyqa/utils/versions.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa/utils',
 )
 
 subdir('_uarray')

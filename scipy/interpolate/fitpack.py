@@ -9,7 +9,6 @@ __all__ = [  # noqa: F822
     'BSpline',
     'bisplev',
     'bisplrep',
-    'dblint',
     'insert',
     'spalde',
     'splantider',

@@ -4,11 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'MalformedHeader', 'hb_read', 'hb_write', 'HBInfo',
-    'HBFile', 'HBMatrixType', 'FortranFormatParser', 'IntFormat',
-    'ExpFormat', 'BadFortranFormat', 'hb'
-]
+__all__ = ["hb_read", "hb_write"]  # noqa: F822
 
 
 def __dir__():

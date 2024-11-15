@@ -1818,5 +1818,9 @@ PyMODINIT_FUNC PyInit__uarray(void) {
   if (!identifiers.init())
     return nullptr;
 
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m.get(), Py_MOD_GIL_NOT_USED);
+#endif
+
   return m.release();
 }

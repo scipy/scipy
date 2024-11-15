@@ -798,7 +798,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         * 'prominences', 'right_bases', 'left_bases'
               If `prominence` is given, these keys are accessible. See
               `peak_prominences` for a description of their content.
-        * 'width_heights', 'left_ips', 'right_ips'
+        * 'widths', 'width_heights', 'left_ips', 'right_ips'
               If `width` is given, these keys are accessible. See `peak_widths`
               for a description of their content.
         * 'plateau_sizes', left_edges', 'right_edges'
@@ -1255,8 +1255,6 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     See Also
     --------
-    cwt
-        Continuous wavelet transform.
     find_peaks
         Find peaks inside a signal based on peak properties.
 

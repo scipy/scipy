@@ -18,9 +18,9 @@ going and where help is needed most.
 
 General
 -------
-This roadmap will be evolving together with SciPy.  Updates can be submitted as
-pull requests.  For large or disruptive changes you may want to discuss
-those first on the scipy-dev mailing list.
+This roadmap will be evolving together with SciPy. Updates can be submitted as
+pull requests. For large or disruptive changes you may want to discuss
+those first on the scipy-dev forum.
 
 
 API changes
@@ -315,11 +315,6 @@ methods. This includes ltisys objects, an `lfiltic` equivalent, and numerically
 stable conversions to and from other filter representations. SOS filters could
 be considered as the default filtering method for ltisys objects, for their
 numerical stability.
-
-*Wavelets*: what's there now doesn't make much sense.  Continuous wavelets
-only at the moment - decide whether to completely rewrite or remove them.
-Discrete wavelet transforms are out of scope (PyWavelets does a good job
-for those).
 
 
 sparse

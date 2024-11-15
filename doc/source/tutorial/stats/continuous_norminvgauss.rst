@@ -15,7 +15,7 @@ The probability density function is given by:
 
 where :math:`x` is a real number, the parameter :math:`a` is the tail heaviness and :math:`b` is the asymmetry parameter satisfying :math:`a > 0` and :math:`|b| \leq a`. :math:`K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
 
-A normal inverse Gaussian random variable with parameters :math:`a` and :math:`b` can be expressed  as :math:`X = b V + \sqrt(V) X` where :math:`X` is `norm(0,1)` and :math:`V` is `invgauss(mu=1/sqrt(a**2 - b**2))`. Hence, the normal inverse Gaussian distribution is a special case of normal variance-mean mixtures.
+A normal inverse Gaussian random variable with parameters :math:`a` and :math:`b` can be expressed  as :math:`X = b V + \sqrt(V) X` where :math:`X` is ``norm(0,1)`` and :math:`V` is ``invgauss(mu=1/sqrt(a**2 - b**2))``. Hence, the normal inverse Gaussian distribution is a special case of normal variance-mean mixtures.
 
 Another common parametrization of the distribution is given by the following expression of the pdf:
 

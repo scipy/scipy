@@ -18,27 +18,6 @@ from hashlib import md5
 from hashlib import sha256
 from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(__file__))
-sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'tools'))
-
-try:
-    version_utils = __import__("version_utils")
-    FULLVERSION = version_utils.VERSION
-    # This is duplicated from tools/version_utils.py
-    if os.path.exists('.git'):
-        GIT_REVISION, _ = version_utils.git_version(
-            os.path.join(os.path.dirname(__file__), '..'))
-    else:
-        GIT_REVISION = "Unknown"
-
-    if not version_utils.ISRELEASED:
-        if GIT_REVISION == "Unknown":
-            FULLVERSION += '.dev0+Unknown'
-        else:
-            FULLVERSION += '.dev0+' + GIT_REVISION[:7]
-finally:
-    sys.path.pop(1)
-    sys.path.pop(0)
 
 try:
     # Ensure sensible file permissions
@@ -107,13 +86,13 @@ MD5
 ~~~
 
 """)
-        ftarget.writelines(['%s\n' % c for c in compute_md5(idirs)])
+        ftarget.writelines(['{c}\n' for c in compute_md5(idirs)])
         ftarget.writelines("""
 SHA256
 ~~~~~~
 
 """)
-        ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
+        ftarget.writelines([f'{c}\n' for c in compute_sha256(idirs)])
         print("Release README generated successfully")
 
 
@@ -123,7 +102,7 @@ def write_log_task(filename='Changelog'):
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = st.communicate()
     if not st.returncode == 0:
-        raise RuntimeError("%s failed" % str(error))
+        raise RuntimeError(f"{error} failed")
 
     out = st.communicate()[0].decode()
     with open(filename, 'w') as a:

@@ -2,6 +2,7 @@
 Unit test for Mixed Integer Linear Programming
 """
 import re
+import sys
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
@@ -11,6 +12,8 @@ from .test_linprog import magic_square
 from scipy.optimize import milp, Bounds, LinearConstraint
 from scipy import sparse
 
+
+_IS_32BIT = (sys.maxsize < 2**32)
 
 def test_milp_iv():
 
@@ -112,7 +115,6 @@ def test_result():
     assert not res.success
     msg = "Time limit reached. (HiGHS Status 13:"
     assert res.message.startswith(msg)
-    assert msg in res.message
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
 
@@ -253,8 +255,7 @@ def test_milp_5():
     assert_allclose(res.fun, -12)
 
 
-@pytest.mark.slow
-@pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
+@pytest.mark.xslow
 def test_milp_6():
     # solve a larger MIP with only equality constraints
     # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
@@ -291,15 +292,15 @@ def test_infeasible_prob_16609():
 
 
 _msg_time = "Time limit reached. (HiGHS Status 13:"
-_msg_sol = "Serious numerical difficulties encountered. (HiGHS Status 16:"
-
+_msg_iter = "Iteration limit reached. (HiGHS Status 14:"
 
 # See https://github.com/scipy/scipy/pull/19255#issuecomment-1778438888
 @pytest.mark.xfail(reason="Often buggy, revisit with callbacks, gh-19255")
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
                     reason="Unhandled 32-bit GCC FP bug")
+@pytest.mark.slow
 @pytest.mark.parametrize(["options", "msg"], [({"time_limit": 0.1}, _msg_time),
-                                              ({"node_limit": 1}, _msg_sol)])
+                                              ({"node_limit": 1}, _msg_iter)])
 def test_milp_timeout_16545(options, msg):
     # Ensure solution is not thrown away if MILP solver times out
     # -- see gh-16545
@@ -385,6 +386,7 @@ def test_mip_rel_gap_passdown():
     # check that differences between solution gaps are declining
     # monotonically with the mip_rel_gap parameter.
     assert np.all(np.diff(sol_mip_gaps) < 0)
+
 
 def test_large_numbers_gh20116():
     h = 10 ** 12

@@ -68,9 +68,11 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    _asarray, array_namespace, size, atleast_nd, copy, cov
+    _asarray, array_namespace, xp_size, xp_copy
 )
-from scipy._lib._util import check_random_state, rng_integers
+from scipy._lib._util import (check_random_state, rng_integers,
+                              _transition_to_rng)
+from scipy._lib import array_api_extra as xpx
 from scipy.spatial.distance import cdist
 
 from . import _vq
@@ -327,8 +329,9 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
     return code_book, prev_avg_dists[1]
 
 
+@_transition_to_rng("seed")
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
-           *, seed=None):
+           *, rng=None):
     """
     Performs k-means on a set of observation vectors forming k clusters.
 
@@ -374,16 +377,11 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
-
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        Seed for initializing the pseudo-random number generator.
-        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        The default is None.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -469,13 +467,12 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     obs = _asarray(obs, xp=xp, check_finite=check_finite)
     guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite)
     if iter < 1:
-        raise ValueError("iter must be at least 1, got %s" % iter)
+        raise ValueError(f"iter must be at least 1, got {iter}")
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
-    if size(guess) != 1:
-        if size(guess) < 1:
-            raise ValueError("Asked for 0 clusters. Initial book was %s" %
-                             guess)
+    if xp_size(guess) != 1:
+        if xp_size(guess) < 1:
+            raise ValueError(f"Asked for 0 clusters. Initial book was {guess}")
         return _kmeans(obs, guess, thresh=thresh, xp=xp)
 
     # k_or_guess is a scalar, now verify that it's an integer
@@ -485,7 +482,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     if k < 1:
         raise ValueError("Asked for %d clusters." % k)
 
-    rng = check_random_state(seed)
+    rng = check_random_state(rng)
 
     # initialize best distance value to a large value
     best_dist = xp.inf
@@ -552,23 +549,23 @@ def _krandinit(data, k, rng, xp):
     k = np.asarray(k)
 
     if data.ndim == 1:
-        _cov = cov(data)
+        _cov = xpx.cov(data, xp=xp)
         x = rng.standard_normal(size=k)
         x = xp.asarray(x)
         x *= xp.sqrt(_cov)
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
         _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
-        x = rng.standard_normal(size=(k, size(s)))
+        x = rng.standard_normal(size=(k, xp_size(s)))
         x = xp.asarray(x)
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1.))
         x = x @ sVh
     else:
-        _cov = atleast_nd(cov(data.T), ndim=2)
+        _cov = xpx.atleast_nd(xpx.cov(data.T, xp=xp), ndim=2, xp=xp)
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
-        x = rng.standard_normal(size=(k, size(mu)))
+        x = rng.standard_normal(size=(k, xp_size(mu)))
         x = xp.asarray(x)
         x = x @ xp.linalg.cholesky(_cov).T
 
@@ -646,8 +643,9 @@ def _missing_raise():
 _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 
+@_transition_to_rng("seed")
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
-            missing='warn', check_finite=True, *, seed=None):
+            missing='warn', check_finite=True, *, rng=None):
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 
@@ -698,15 +696,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        Seed for initializing the pseudo-random number generator.
-        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        The default is None.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -772,8 +766,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     """
     if int(iter) < 1:
-        raise ValueError("Invalid iter (%s), "
-                         "must be a positive integer." % iter)
+        raise ValueError(f"Invalid iter ({iter}), must be a positive integer.")
     try:
         miss_meth = _valid_miss_meth[missing]
     except KeyError as e:
@@ -784,7 +777,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     else:
         xp = array_namespace(data, k)
     data = _asarray(data, xp=xp, check_finite=check_finite)
-    code_book = copy(k, xp=xp)
+    code_book = xp_copy(k, xp=xp)
     if data.ndim == 1:
         d = 1
     elif data.ndim == 2:
@@ -792,11 +785,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     else:
         raise ValueError("Input of rank > 2 is not supported.")
 
-    if size(data) < 1 or size(code_book) < 1:
+    if xp_size(data) < 1 or xp_size(code_book) < 1:
         raise ValueError("Empty input is not supported.")
 
     # If k is not a single value, it should be compatible with data's shape
-    if minit == 'matrix' or size(code_book) > 1:
+    if minit == 'matrix' or xp_size(code_book) > 1:
         if data.ndim != code_book.ndim:
             raise ValueError("k array doesn't match data rank")
         nc = code_book.shape[0]
@@ -816,7 +809,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         except KeyError as e:
             raise ValueError(f"Unknown init method {minit!r}") from e
         else:
-            rng = check_random_state(seed)
+            rng = check_random_state(rng)
             code_book = init_meth(data, code_book, rng, xp)
 
     data = np.asarray(data)

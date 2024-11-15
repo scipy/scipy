@@ -478,7 +478,7 @@ def is_sym_her_complex_c(const np_complex_numeric_t[:, ::1]A):
     return s
 
 @cython.initializedcheck(False)
-def is_sym_her_complex_noncontig(np_complex_numeric_t[:, :]A):
+def is_sym_her_complex_noncontig(const np_complex_numeric_t[:, :]A):
     cdef bint s
     with nogil:
         s = is_sym_her_complex_noncontig_internal(A)

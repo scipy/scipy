@@ -22,7 +22,7 @@ np.import_array()
 __all__ = ['directed_hausdorff']
 
 @cython.boundscheck(False)
-def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
+def directed_hausdorff(const double[:,::1] ar1, const double[:,::1] ar2, seed=0):
 
     cdef double cmax, cmin, d = 0
     cdef Py_ssize_t N1 = ar1.shape[0]

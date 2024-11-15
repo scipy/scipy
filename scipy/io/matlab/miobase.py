@@ -4,13 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'MatFileReader', 'MatReadError', 'MatReadWarning',
-    'MatVarReader', 'MatWriteError', 'arr_dtype_number',
-    'arr_to_chars', 'convert_dtypes', 'doc_dict',
-    'docfiller', 'get_matfile_version',
-    'matdims', 'read_dtype', 'doccer', 'boc'
-]
+__all__ = ["MatReadError", "MatReadWarning", "MatWriteError"]  # noqa: F822
 
 def __dir__():
     return __all__

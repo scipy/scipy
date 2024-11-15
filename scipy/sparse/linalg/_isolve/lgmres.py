@@ -24,7 +24,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -40,7 +40,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}, optional
+    M : {sparse array, ndarray, LinearOperator}, optional
         Preconditioner for A.  The preconditioner should approximate the
         inverse of A.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
@@ -109,9 +109,9 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import lgmres
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
     >>> x, exitCode = lgmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
@@ -170,7 +170,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
         if inner_res_0 == 0:
             rnorm = nrm2(r_outer)
             raise RuntimeError("Preconditioner returned a zero vector; "
-                               "|v| ~ %.1g, |M v| = 0" % rnorm)
+                               f"|v| ~ {rnorm:.1g}, |M v| = 0")
 
         v0 = scal(1.0/inner_res_0, v0)
 

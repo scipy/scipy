@@ -5,6 +5,8 @@ First, we create some random variables. We set a seed so that in each run
 we get identical results to look at. As an example we take a sample from
 the Student t distribution:
 
+    >>> import numpy as np
+    >>> import scipy.stats as stats
     >>> x = stats.t.rvs(10, size=1000)
 
 Here, we set the required shape parameter of the t distribution, which

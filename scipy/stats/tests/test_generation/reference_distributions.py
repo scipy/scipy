@@ -35,7 +35,7 @@ class ReferenceDistribution:
     - moment accepts `order`, an integer that specifies the order of the (raw)
       moment, and `center`, which is the value about which the moment is
       taken. The default is to calculate the mean and use it to calculate
-      central moments; passing `0` results in a noncentral moment. For
+      central moments; passing ``0`` results in a noncentral moment. For
       efficiency, the mean can be passed explicitly if it is already known.
 
     Follow the example of SkewNormal to generate new reference distributions,

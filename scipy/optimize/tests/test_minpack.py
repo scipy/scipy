@@ -321,7 +321,7 @@ class TestLeastSq:
                               args=(self.y_meas, self.x),
                               full_output=True)
         params_fit, cov_x, infodict, mesg, ier = full_output
-        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
+        assert_(ier in (1,2,3,4), f'solution not found: {mesg}')
 
     def test_input_untouched(self):
         p0 = array([0,0,0],dtype=float64)
@@ -330,7 +330,7 @@ class TestLeastSq:
                               args=(self.y_meas, self.x),
                               full_output=True)
         params_fit, cov_x, infodict, mesg, ier = full_output
-        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
+        assert_(ier in (1,2,3,4), f'solution not found: {mesg}')
         assert_array_equal(p0, p0_copy)
 
     def test_wrong_shape_func_callable(self):
@@ -602,8 +602,9 @@ class TestCurveFit:
         assert_allclose(result_with_nan, result_without_nan)
 
         # not valid policy test
-        error_msg = ("nan_policy must be one of "
-                     "{'None', 'raise', 'omit'}")
+        # check for argument names in any order
+        error_msg = (r"nan_policy must be one of \{(?:'raise'|'omit'|None)"
+                     r"(?:, ?(?:'raise'|'omit'|None))*\}")
         with assert_raises(ValueError, match=error_msg):
             curve_fit(**kwargs, nan_policy="hi")
 
@@ -1044,6 +1045,17 @@ class TestCurveFit:
         p0 = np.array([1.0, 5.0])
         curve_fit(line, x, y, p0, method='lm', jac=jac)
 
+    @pytest.mark.parametrize('method', ['trf', 'dogbox'])
+    def test_gh20155_error_mentions_x0(self, method):
+        # `curve_fit` produced an error message that referred to an undocumented
+        # variable `x0`, which was really `p0`. Check that this is resolved.
+        def func(x,a):
+            return x**a
+        message = "Initial guess is outside of provided bounds"
+        with pytest.raises(ValueError, match=message):
+            curve_fit(func, self.x, self.y, p0=[1], bounds=(1000, 1001),
+                      method=method)
+
 
 class TestFixedPoint:
 
@@ -1106,7 +1118,7 @@ class TestFixedPoint:
         assert_allclose(xxroot, lambertw(1)/2)
 
     def test_no_acceleration(self):
-        # github issue 5460
+        # GitHub issue 5460
         ks = 2
         kl = 6
         m = 1.3

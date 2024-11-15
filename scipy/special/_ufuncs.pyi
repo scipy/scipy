@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -28,8 +28,6 @@ __all__ = [
     'binom',
     'boxcox',
     'boxcox1p',
-    'btdtr',
-    'btdtri',
     'btdtria',
     'btdtrib',
     'cbrt',
@@ -151,6 +149,7 @@ __all__ = [
     'log1p',
     'log_expit',
     'log_ndtr',
+    'log_wright_bessel',
     'loggamma',
     'logit',
     'lpmv',
@@ -241,8 +240,8 @@ __all__ = [
     'zetac'
 ]
 
-def geterr() -> Dict[str, str]: ...
-def seterr(**kwargs: str) -> Dict[str, str]: ...
+def geterr() -> dict[str, str]: ...
+def seterr(**kwargs: str) -> dict[str, str]: ...
 
 class errstate:
     def __init__(self, **kargs: str) -> None: ...
@@ -309,8 +308,6 @@ betaln: np.ufunc
 binom: np.ufunc
 boxcox1p: np.ufunc
 boxcox: np.ufunc
-btdtr: np.ufunc
-btdtri: np.ufunc
 btdtria: np.ufunc
 btdtrib: np.ufunc
 cbrt: np.ufunc
@@ -432,6 +429,7 @@ kve: np.ufunc
 log1p: np.ufunc
 log_expit: np.ufunc
 log_ndtr: np.ufunc
+log_wright_bessel: np.ufunc
 loggamma: np.ufunc
 logit: np.ufunc
 lpmv: np.ufunc

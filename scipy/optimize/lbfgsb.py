@@ -7,14 +7,8 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'LbfgsInvHessProduct',
-    'LinearOperator',
-    'MemoizeJac',
     'OptimizeResult',
-    'array',
-    'asarray',
-    'float64',
     'fmin_l_bfgs_b',
-    'old_bound_to_new',
     'zeros',
 ]
 

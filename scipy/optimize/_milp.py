@@ -2,10 +2,10 @@ import warnings
 import numpy as np
 from scipy.sparse import csc_array, vstack, issparse
 from scipy._lib._util import VisibleDeprecationWarning
-from ._highs._highs_wrapper import _highs_wrapper
+from ._highspy._highs_wrapper import _highs_wrapper  # type: ignore[import-not-found,import-untyped]
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
-from ._linprog_highs import HighsStatusMapping
+from ._linprog_highs import _highs_to_scipy_status_message
 
 
 def _constraints_to_components(constraints):
@@ -322,7 +322,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     >>> A = np.array([[-1, 1], [3, 2], [2, 3]])
     >>> b_u = np.array([1, 12, 12])
-    >>> b_l = np.full_like(b_u, -np.inf)
+    >>> b_l = np.full_like(b_u, -np.inf, dtype=float)
 
     Because there is no lower limit on these constraints, we have defined a
     variable ``b_l`` full of values representing negative infinity. This may
@@ -350,7 +350,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> from scipy.optimize import milp
     >>> res = milp(c=c, constraints=constraints, integrality=integrality)
     >>> res.x
-    [1.0, 2.0]
+    [2.0, 2.0]
 
     Note that had we solved the relaxed problem (without integrality
     constraints):
@@ -377,9 +377,8 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     # Convert to scipy-style status and message
     highs_status = highs_res.get('status', None)
     highs_message = highs_res.get('message', None)
-    hstat = HighsStatusMapping()
-    status, message = hstat.get_scipy_status(highs_status,
-                                             highs_message)
+    status, message = _highs_to_scipy_status_message(highs_status,
+                                                     highs_message)
     res['status'] = status
     res['message'] = message
     res['success'] = (status == 0)

@@ -9,10 +9,10 @@ import numpy as np
 from scipy._lib._util import copy_if_needed
 
 # good_size is exposed (and used) from this import
-from .pypocketfft import good_size
+from .pypocketfft import good_size, prev_good_size
 
 
-__all__ = ['good_size', 'set_workers', 'get_workers']
+__all__ = ['good_size', 'prev_good_size', 'set_workers', 'get_workers']
 
 _config = threading.local()
 _cpu_count = os.cpu_count()

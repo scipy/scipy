@@ -203,10 +203,6 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     yenv : ndarray
         Envelope of signal.  Only returned if `retenv` is True.
 
-    See Also
-    --------
-    scipy.signal.morlet
-
     Examples
     --------
     Plot real component, imaginary component, and envelope for a 5 Hz pulse,
@@ -221,12 +217,12 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 
     """
     if fc < 0:
-        raise ValueError("Center frequency (fc=%.2f) must be >=0." % fc)
+        raise ValueError(f"Center frequency (fc={fc:.2f}) must be >=0.")
     if bw <= 0:
-        raise ValueError("Fractional bandwidth (bw=%.2f) must be > 0." % bw)
+        raise ValueError(f"Fractional bandwidth (bw={bw:.2f}) must be > 0.")
     if bwr >= 0:
-        raise ValueError("Reference level for bandwidth (bwr=%.2f) must "
-                         "be < 0 dB" % bwr)
+        raise ValueError(f"Reference level for bandwidth (bwr={bwr:.2f}) "
+                         "must be < 0 dB")
 
     # exp(-a t^2) <->  sqrt(pi/a) exp(-pi^2/a * f^2)  = g(f)
 
@@ -465,9 +461,8 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
             phase = 2 * pi * (-sing * f0) * log(np.abs(1 - t/sing))
 
     else:
-        raise ValueError("method must be 'linear', 'quadratic', 'logarithmic',"
-                         " or 'hyperbolic', but a value of %r was given."
-                         % method)
+        raise ValueError("method must be 'linear', 'quadratic', 'logarithmic', "
+                         f"or 'hyperbolic', but a value of {method!r} was given.")
 
     return phase
 
@@ -584,7 +579,7 @@ def _sweep_poly_phase(t, poly):
 
 
 def unit_impulse(shape, idx=None, dtype=float):
-    """
+    r"""
     Unit impulse signal (discrete delta function) or unit basis vector.
 
     Parameters
@@ -608,7 +603,24 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     Notes
     -----
-    The 1D case is also known as the Kronecker delta.
+    In digital signal processing literature the unit impulse signal is often
+    represented by the Kronecker delta. [1]_ I.e., a signal :math:`u_k[n]`,
+    which is zero everywhere except being one at the :math:`k`-th sample,
+    can be expressed as
+
+    .. math::
+
+        u_k[n] = \delta[n-k] \equiv \delta_{n,k}\ .
+
+    Furthermore, the unit impulse is frequently interpreted as the discrete-time
+    version of the continuous-time Dirac distribution. [2]_
+
+    References
+    ----------
+    .. [1] "Kronecker delta", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Kronecker_delta#Digital_signal_processing
+    .. [2] "Dirac delta function" *Wikipedia*,
+           https://en.wikipedia.org/wiki/Dirac_delta_function#Relationship_to_the_Kronecker_delta
 
     .. versionadded:: 0.19.0
 

@@ -31,14 +31,8 @@ py3.extension_module('_ansari_swilk_statistics',
   subdir: 'scipy/stats'
 )
 
-mvn_module = custom_target('mvn_module',
-  output: ['_mvn-f2pywrappers.f', '_mvnmodule.c'],
-  input: 'mvn.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_mvn',
-  [mvn_module, 'mvndst.f'],
+  [f2py_gen.process('mvn.pyf'), 'mvndst.f'],
   # Wno-surprising is to suppress a pointless warning with GCC 10-12
   # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
   fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
@@ -119,10 +113,12 @@ py3.install_sources([
     '_common.py',
     '_constants.py',
     '_continuous_distns.py',
+    '_correlation.py',
     '_covariance.py',
     '_crosstab.py',
     '_discrete_distns.py',
     '_distn_infrastructure.py',
+    '_distribution_infrastructure.py',
     '_distr_params.py',
     '_entropy.py',
     '_fit.py',
@@ -130,19 +126,22 @@ py3.install_sources([
     '_kde.py',
     '_ksstats.py',
     '_mannwhitneyu.py',
+    '_mgc.py',
     '_morestats.py',
     '_mstats_basic.py',
     '_mstats_extras.py',
     '_multicomp.py',
     '_multivariate.py',
+    '_new_distributions.py',
+    '_new_distribution_docs.json',
     '_odds_ratio.py',
     '_page_trend_test.py',
+    '_probability_distribution.py',
     '_qmc.py',
     '_qmvnt.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',
-    '_rvs_sampling.py',
     '_sampling.py',
     '_sensitivity_analysis.py',
     '_stats_mstats_common.py',
