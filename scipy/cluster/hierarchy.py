@@ -3057,14 +3057,14 @@ def _reorder_leaves(Z, leaves_order):
     new_node_number = n
     l_pointer = 0          # goes through leaves_order
     v = leaves_order[0]    # v is a vertex which goes through T
-    color = np.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed
+    color = np.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed  # noqa: E501
     # note that v is a left child in F iff. color[p[v]] == 0 (during the algorithm)
     _left = -1
     _right = -1
     while l_pointer <= n:
         if v < n:  # v is a leaf
             color[v] = 1   # tiny trick
-        if color[v] == 0:  # left subtree of v in F must've been already processed by now
+        if color[v] == 0:  # left subtree of v in F must've been already processed by now  # noqa: E501
             if not(color[_left] == 2 and color[_right] == 0):
                 raise ValueError("Provided permutation results in a crossing!")
             color[v] = 1
@@ -3093,7 +3093,9 @@ def _reorder_leaves(Z, leaves_order):
         else:  # v is the right son in F
             left_pair = stack.pop()
             if v >= n:
-                new_Z[cnt] = [left_pair, new_node_number, height[p[v]-n], num_leaves[p[v]]]
+                new_Z[cnt] = [
+                    left_pair, new_node_number, height[p[v]-n], num_leaves[p[v]]
+                ]
                 new_node_number += 1
             else:
                 new_Z[cnt] = [left_pair, v, height[p[v]-n], num_leaves[p[v]]]
