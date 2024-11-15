@@ -152,7 +152,7 @@ def getdata(obj, dtype=None, copy=False) -> np.ndarray:
 
 
 def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
-    """Return cast index arrays of `A` to idx_dtype safely.
+    """Safely cast sparse array indices to `idx_dtype`.
 
     Check the shape of `A` to determine if it is safe to cast its index
     arrays to dtype `idx_dtype`. If any dimension in shape is larger than
@@ -161,8 +161,8 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     without changing the input `A`. The caller can assign results to `A`
     attributes if desired or use the recast index arrays directly.
 
-    If downcasting is not needed, no copy is made.
-    You can test e.g. ``A.indptr is indptr`` to see if downcasting occurred.
+    Unless downcasting is needed, the original index arrays are returned.
+    You can test e.g. ``A.indptr is new_indptr`` to see if downcasting occurred.
 
     .. versionadded:: 1.15.0
 
@@ -170,8 +170,8 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     ----------
     A : sparse array or matrix
         The array for which index arrays should be downcast.
-    idx_dtype : the index dtype desired to downcast to.
-        Should be an integer dtype. default: np.int32
+    idx_dtype : dtype
+        Desired dtype. Should be an integer dtype (default: ``np.int32``).
     msg : string
         A string to be added to the end of the ValueError message
         if the array shape is too big to fit in `idx_dtype`.
@@ -181,15 +181,16 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     Returns
     -------
     idx_arrays : ndarray or tuple of ndarrays
-        Based on ``A.format``, index arrays are returned after casting to idx_dtype.
+        Based on ``A.format``, index arrays are returned after casting to `idx_dtype`.
         For CSC/CSR, returns ``(indices, indptr)``.
         For COO, returns ``coords``.
         For DIA, returns ``offsets``.
-        For BSR, returns ``(indices, indtr)``.
+        For BSR, returns ``(indices, indptr)``.
 
     Raises
     ------
-    ValueError : if the array has shape that would not fit in the new dtype.
+    ValueError
+        If the array has shape that would not fit in the new dtype.
     """
     if not msg:
         msg = f"dtype {idx_dtype}"
