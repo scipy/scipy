@@ -22,7 +22,12 @@ from scipy._lib.array_api_compat import (
     is_array_api_obj,
     size as xp_size,
     numpy as np_compat,
-    device as xp_device
+    device as xp_device,
+    is_numpy_namespace as is_numpy,
+    is_cupy_namespace as is_cupy,
+    is_torch_namespace as is_torch,
+    is_jax_namespace as is_jax,
+    is_array_api_strict_namespace as is_array_api_strict
 )
 
 __all__ = [
@@ -232,26 +237,6 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
         xp = array_namespace(x)
 
     return _asarray(x, copy=True, xp=xp)
-
-
-def is_numpy(xp: ModuleType) -> bool:
-    return xp.__name__ in ('numpy', 'scipy._lib.array_api_compat.numpy')
-
-
-def is_cupy(xp: ModuleType) -> bool:
-    return xp.__name__ in ('cupy', 'scipy._lib.array_api_compat.cupy')
-
-
-def is_torch(xp: ModuleType) -> bool:
-    return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
-
-
-def is_jax(xp):
-    return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
-
-
-def is_array_api_strict(xp):
-    return xp.__name__ == 'array_api_strict'
 
 
 def _strict_check(actual, desired, xp, *,
