@@ -1095,7 +1095,8 @@ class TestDendrogram:
     def test_dendrogram_leaves_reorder_simple_mistakes(self, order, xp):
         X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
         Z = linkage(X, method='single')
-        assert_raises(ValueError, _reorder_leaves, Z, order)
+        with pytest.raises(ValueError):
+            _reorder_leaves(Z, order, xp=xp)
 
     @pytest.mark.parametrize("order", [
         [0, 3, 1, 2, 4, 5, 6],  # results in a crossing
@@ -1105,7 +1106,8 @@ class TestDendrogram:
     def test_dendrogram_leaves_reorder_crossings(self, order, xp):
         X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
         Z = linkage(X, method='single')
-        assert_raises(ValueError, _reorder_leaves, Z, leaves_order=order)
+        with pytest.raises(ValueError):
+            _reorder_leaves(Z, leaves_order=order, xp=xp)
 
     @pytest.mark.parametrize("order", [
         [4, 5, 6, 0, 1, 2, 3],  # no re-ordering
@@ -1116,7 +1118,7 @@ class TestDendrogram:
     def test_dendrogram_leaves_reorder_ok(self, order, xp):
         X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
         Z = linkage(X, method='single')
-        new_Z = _reorder_leaves(Z, order)
+        new_Z = _reorder_leaves(Z, order, xp=xp)
         assert xp.all(leaves_list(new_Z) == xp.asarray(order, dtype=xp.int32))
 
     def test_dendrogram_leaf_colors_zero_dist(self, xp):
