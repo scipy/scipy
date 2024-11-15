@@ -1092,8 +1092,8 @@ class TestDendrogram:
         [0, 1, 2, 1, 2, 5, 6],     # contains duplicates
         []  # empty reordering list
         ]) 
-    def test_dendrogram_leaves_reorder_simple_mistakes(self, order):
-        X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
+    def test_dendrogram_leaves_reorder_simple_mistakes(self, order, xp):
+        X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
         Z = linkage(X, method='single')
         assert_raises(ValueError, _reorder_leaves, Z, order)
 
@@ -1102,8 +1102,8 @@ class TestDendrogram:
         [0, 1, 5, 4, 2, 3, 6],  # results in a crossing
         [6, 0, 1, 2, 3, 5, 4]   # crossing at highest level
         ])
-    def test_dendrogram_leaves_reorder_crossings(self, order):
-        X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
+    def test_dendrogram_leaves_reorder_crossings(self, order, xp):
+        X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
         Z = linkage(X, method='single')
         assert_raises(ValueError, _reorder_leaves, Z, leaves_order=order)
 
@@ -1113,11 +1113,11 @@ class TestDendrogram:
         [5, 4, 6, 1, 0, 3, 2],  # swap one pair of leaves and two small trees
         [1, 0, 2, 3, 6, 4, 5]
         ])
-    def test_dendrogram_leaves_reorder_ok(self, order):
-        X = [[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]]
+    def test_dendrogram_leaves_reorder_ok(self, order, xp):
+        X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
         Z = linkage(X, method='single')
         new_Z = _reorder_leaves(Z, order)
-        assert (leaves_list(new_Z) == np.asarray(order, dtype='int32')).all()
+        assert xp.all(leaves_list(new_Z) == xp.asarray(order, dtype=xp.int32))
 
     def test_dendrogram_leaf_colors_zero_dist(self, xp):
         # tests that the colors of leafs are correct for tree

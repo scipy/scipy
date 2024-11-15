@@ -3002,7 +3002,7 @@ def _is_permutation(l, n):
     return True
 
 
-def _reorder_leaves(Z, leaves_order):
+def _reorder_leaves(Z, leaves_order, xp):
     """"
     Given a tree T, encoded az Z, builds a tree F
     and its encoding new_Z s.t. leaves(F) == leaves_order
@@ -3040,13 +3040,13 @@ def _reorder_leaves(Z, leaves_order):
     #  num_leaves[i] = number of leaves of a subtree rooted in a node i in T
 
     n = Z.shape[0] + 1
-    ch = np.zeros((n - 1, 2), dtype='int32')
-    p = np.zeros(2 * n - 1, dtype='int32')
-    new_Z = np.zeros((n - 1, 4), dtype=float)
-    height = np.zeros(n - 1, dtype=float)
-    num_leaves = np.ones(2 * n - 1)
+    ch = xp.zeros((n - 1, 2), dtype=xp.int32)
+    p = xp.zeros(2 * n - 1, dtype=xp.int32)
+    new_Z = xp.zeros((n - 1, 4), dtype=xp.float64)
+    height = xp.zeros(n - 1, dtype=xp.float64)
+    num_leaves = xp.ones(2 * n - 1)
     for i in range(n - 1):
-        ch[i] = (int(Z[i][0]), int(Z[i][1]))
+        ch[i] = xp.asarray([int(Z[i][0]), int(Z[i][1])])
         p[int(Z[i, 0])] = i + n
         p[int(Z[i, 1])] = i + n
         height[i] = Z[i][2]
@@ -3057,7 +3057,7 @@ def _reorder_leaves(Z, leaves_order):
     new_node_number = n
     l_pointer = 0          # goes through leaves_order
     v = leaves_order[0]    # v is a vertex which goes through T
-    color = np.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed  # noqa: E501
+    color = xp.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed  # noqa: E501
     # note that v is a left child in F iff. color[p[v]] == 0 (during the algorithm)
     _left = -1
     _right = -1
@@ -3394,7 +3394,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     xp = array_namespace(Z)
     Z = _asarray(Z, order='c', xp=xp)
     if leaves_order is not None:
-        Z = _reorder_leaves(Z, leaves_order)
+        Z = _reorder_leaves(Z, leaves_order, xp=xp)
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
