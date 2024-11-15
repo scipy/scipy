@@ -72,13 +72,13 @@ from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (
     _asarray,
     array_namespace,
-    xp_atleast_nd,
     is_numpy,
     xp_size,
     xp_moveaxis_to_end,
     xp_sign,
     xp_vector_norm,
 )
+from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
 
 
@@ -2613,7 +2613,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     if axis is None:
         a = xp.reshape(a, (-1,))
         axis = 0
-    a = xp_atleast_nd(a, ndim=1, xp=xp)
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
     n = a.shape[axis]
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s

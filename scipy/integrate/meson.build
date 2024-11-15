@@ -63,8 +63,7 @@ dop_lib = static_library('dop_lib',
 
 py3.extension_module('_quadpack',
   ['__quadpack.h', '__quadpack.c'],
-  include_directories: ['../_lib/src'],
-  dependencies: np_dep,
+  dependencies: [np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/integrate'
 )
