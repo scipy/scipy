@@ -8,7 +8,7 @@ Tools and utilities for working with compressed sparse graphs
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import csr_array, csr_matrix, spmatrix, issparse
 from scipy.sparse._sputils import is_pydata_spmatrix
 
 np.import_array()
@@ -30,7 +30,7 @@ def csgraph_from_masked(graph):
 
     Returns
     -------
-    csgraph : csr_matrix
+    csgraph : csr_array
         Compressed sparse representation of graph,
 
     Examples
@@ -51,13 +51,13 @@ def csgraph_from_masked(graph):
     ... fill_value = 0)
 
     >>> csgraph_from_masked(graph_masked)
-    <Compressed Sparse Row sparse matrix of dtype 'float64'
+    <Compressed Sparse Row sparse array of dtype 'float64'
         with 4 stored elements and shape (4, 4)>
 
     """
-    # check that graph is a square matrix
     graph = np.ma.asarray(graph)
 
+    # check that graph is a square matrix
     if graph.ndim != 2:
         raise ValueError("graph should have two dimensions")
     N = graph.shape[0]
@@ -77,7 +77,7 @@ def csgraph_from_masked(graph):
     indptr = np.zeros(N + 1, dtype=ITYPE)
     indptr[1:] = mask.sum(1).cumsum()
 
-    return csr_matrix((data, indices, indptr), (N, N))
+    return csr_array((data, indices, indptr), (N, N))
 
 
 def csgraph_masked_from_dense(graph,
@@ -194,7 +194,7 @@ def csgraph_from_dense(graph,
 
     Returns
     -------
-    csgraph : csr_matrix
+    csgraph : csr_array
         Compressed sparse representation of graph,
 
     Examples
@@ -209,14 +209,15 @@ def csgraph_from_dense(graph,
     ... ]
 
     >>> csgraph_from_dense(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'float64'
+    <Compressed Sparse Row sparse array of dtype 'float64'
         with 4 stored elements and shape (4, 4)>
 
     """
-    return csgraph_from_masked(csgraph_masked_from_dense(graph,
-                                                         null_value,
-                                                         nan_null,
-                                                         infinity_null))
+    res = csgraph_masked_from_dense(graph, null_value, nan_null, infinity_null)
+    res = csgraph_from_masked(res)
+    if isinstance(graph, np.matrix):
+        return csr_matrix(res, copy=False)
+    return res
 
 
 def csgraph_to_dense(csgraph, null_value=0):
@@ -229,7 +230,7 @@ def csgraph_to_dense(csgraph, null_value=0):
 
     Parameters
     ----------
-    csgraph : csr_matrix, csc_matrix, or lil_matrix
+    csgraph : csr_array, csc_array, or lil_array
         Sparse representation of a graph.
     null_value : float, optional
         The value used to indicate null edges in the dense representation.
@@ -252,12 +253,12 @@ def csgraph_to_dense(csgraph, null_value=0):
     graph with multiple edges from node 0 to node 1, of weights 2 and 3.
     This illustrates the difference in behavior:
 
-    >>> from scipy.sparse import csr_matrix, csgraph
+    >>> from scipy.sparse import csr_array, csgraph
     >>> import numpy as np
     >>> data = np.array([2, 3])
     >>> indices = np.array([1, 1])
     >>> indptr = np.array([0, 2, 2])
-    >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
+    >>> M = csr_array((data, indices, indptr), shape=(2, 2))
     >>> M.toarray()
     array([[0, 5],
            [0, 0]])
@@ -275,11 +276,11 @@ def csgraph_to_dense(csgraph, null_value=0):
     zero-weight edges.  Let's look at the example of a two-node directed
     graph, connected by an edge of weight zero:
 
-    >>> from scipy.sparse import csr_matrix, csgraph
+    >>> from scipy.sparse import csr_array, csgraph
     >>> data = np.array([0.0])
     >>> indices = np.array([1])
     >>> indptr = np.array([0, 1, 1])
-    >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
+    >>> M = csr_array((data, indices, indptr), shape=(2, 2))
     >>> M.toarray()
     array([[0., 0.],
            [0., 0.]])
@@ -293,17 +294,17 @@ def csgraph_to_dense(csgraph, null_value=0):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import csgraph_to_dense
 
-    >>> graph = csr_matrix( [
+    >>> graph = csr_array( [
     ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ])
     >>> graph
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
         with 4 stored elements and shape (4, 4)>
 
     >>> csgraph_to_dense(graph)
@@ -347,7 +348,7 @@ def csgraph_to_masked(csgraph):
 
     Parameters
     ----------
-    csgraph : csr_matrix, csc_matrix, or lil_matrix
+    csgraph : csr_array, csc_array, or lil_array
         Sparse representation of a graph.
 
     Returns
@@ -357,17 +358,17 @@ def csgraph_to_masked(csgraph):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import csgraph_to_masked
 
-    >>> graph = csr_matrix( [
+    >>> graph = csr_array( [
     ... [0, 1, 2, 0],
     ... [0, 0, 0, 1],
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ])
     >>> graph
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
         with 4 stored elements and shape (4, 4)>
 
     >>> csgraph_to_masked(graph)
@@ -421,7 +422,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix
+    csgraph : array_like or sparse array or matrix
         The N x N matrix representing the directed or undirected graph
         from which the predecessors are drawn.
     predecessors : array_like, one dimension
@@ -442,7 +443,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import reconstruct_path
 
     >>> graph = [
@@ -451,9 +452,9 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 4 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -465,17 +466,14 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     >>> cstree = reconstruct_path(csgraph=graph, predecessors=pred, directed=False)
     >>> cstree.todense()
-    matrix([[0., 1., 2., 0.],
-            [0., 0., 0., 1.],
-            [0., 0., 0., 0.],
-            [0., 0., 0., 0.]])
+    array([[0., 1., 2., 0.],
+           [0., 0., 0., 1.],
+           [0., 0., 0., 0.],
+           [0., 0., 0., 0.]])
 
     """
     from ._validation import validate_graph
-    is_pydata_sparse = is_pydata_spmatrix(csgraph)
-    if is_pydata_sparse:
-        pydata_sparse_cls = csgraph.__class__
-        pydata_sparse_fill_value = csgraph.fill_value
+    csgraph_orig = csgraph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
 
     N = csgraph.shape[0]
@@ -489,23 +487,30 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     data = csgraph[pind, indices]
 
     # Fix issue #4018:
-    # If `pind` and `indices` are empty arrays, `data` is a sparse matrix
+    # If `pind` and `indices` are empty arrays, `data` is sparse
     # (it is a numpy.matrix otherwise); handle this case separately.
     if issparse(data):
-        data = data.todense()
-    data = data.getA1()
+        data = data.toarray().ravel()
+    else:
+        data = np.asarray(data).ravel()
 
     if not directed:
         data2 = csgraph[indices, pind]
         if issparse(data2):
-            data2 = data2.todense()
-        data2 = data2.getA1()
+            data2 = data2.toarray().ravel()
+        else:
+            data2 = np.asarray(data2).ravel()
+
         data[data == 0] = np.inf
         data2[data2 == 0] = np.inf
         data = np.minimum(data, data2)
 
-    sctree = csr_matrix((data, indices, indptr), shape=(N, N))
-    if is_pydata_sparse:
+    if isinstance(csgraph_orig, spmatrix):
+        return csr_matrix((data, indices, indptr), shape=(N, N))
+    sctree = csr_array((data, indices, indptr), shape=(N, N))
+    if is_pydata_spmatrix(csgraph_orig):
+        pydata_sparse_cls = csgraph_orig.__class__
+        pydata_sparse_fill_value = csgraph_orig.fill_value
         # The `fill_value` keyword is new in PyData Sparse 0.15.4 (May 2024),
         # remove the `except` once the minimum supported version is >=0.15.4
         try:
@@ -562,7 +567,7 @@ def construct_dist_matrix(graph,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import construct_dist_matrix
 
     >>> graph = [
@@ -571,9 +576,9 @@ def construct_dist_matrix(graph,
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 4 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -647,3 +652,18 @@ cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
                 k2 = k1
             if null_path and i != j:
                 dist[i, j] = null_value
+
+
+def _safe_downcast_indices(A):
+    # check for safe downcasting to ITYPE (==int32 set in parameters.pxi)
+    max_value = np.iinfo(ITYPE).max
+
+    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
+        raise ValueError("indptr values too large for csgraph")
+    if max(*A.shape) > max_value:  # only check large enough arrays
+        if np.any(A.indices > max_value):
+            raise ValueError("indices values too large for csgraph")
+
+    indices = A.indices.astype(ITYPE, copy=False)
+    indptr = A.indptr.astype(ITYPE, copy=False)
+    return indices, indptr

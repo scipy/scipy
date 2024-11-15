@@ -1475,13 +1475,15 @@ class TestWilcoxon:
 
     def test_zero_diff(self):
         x = np.arange(20)
-        # pratt and wilcox do not work if x - y == 0
-        assert_raises(ValueError, stats.wilcoxon, x, x, "wilcox",
-                      mode="approx")
-        assert_raises(ValueError, stats.wilcoxon, x, x, "pratt",
-                      mode="approx")
+        # pratt and wilcox do not work if x - y == 0 and method == "asymptotic"
+        # => warning may be emitted and p-value is nan
+        with np.errstate(invalid="ignore"):
+            w, p = stats.wilcoxon(x, x, "wilcox", method="asymptotic")
+            assert_equal((w, p), (0.0, np.nan))
+            w, p = stats.wilcoxon(x, x, "pratt", method="asymptotic")
+            assert_equal((w, p), (0.0, np.nan))
         # ranksum is n*(n+1)/2, split in half if zero_method == "zsplit"
-        assert_equal(stats.wilcoxon(x, x, "zsplit", mode="approx"),
+        assert_equal(stats.wilcoxon(x, x, "zsplit", method="asymptotic"),
                      (20*21/4, 1.0))
 
     def test_pratt(self):
@@ -1491,7 +1493,8 @@ class TestWilcoxon:
         y = [1, 2, 3, 5]
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            res = stats.wilcoxon(x, y, zero_method="pratt", mode="approx")
+            res = stats.wilcoxon(x, y, zero_method="pratt", mode="asymptotic",
+                                 correction=False)
         assert_allclose(res, (0.0, 0.31731050786291415))
 
     def test_wilcoxon_arg_type(self):
@@ -1499,9 +1502,9 @@ class TestWilcoxon:
         # Address issue 6070.
         arr = [1, 2, 3, 0, -1, 3, 1, 2, 1, 1, 2]
 
-        _ = stats.wilcoxon(arr, zero_method="pratt", mode="approx")
-        _ = stats.wilcoxon(arr, zero_method="zsplit", mode="approx")
-        _ = stats.wilcoxon(arr, zero_method="wilcox", mode="approx")
+        _ = stats.wilcoxon(arr, zero_method="pratt", mode="asymptotic")
+        _ = stats.wilcoxon(arr, zero_method="zsplit", mode="asymptotic")
+        _ = stats.wilcoxon(arr, zero_method="wilcox", mode="asymptotic")
 
     def test_accuracy_wilcoxon(self):
         freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
@@ -1509,15 +1512,18 @@ class TestWilcoxon:
         x = np.concatenate([[u] * v for u, v in zip(nums, freq)])
         y = np.zeros(x.size)
 
-        T, p = stats.wilcoxon(x, y, "pratt", mode="approx")
+        T, p = stats.wilcoxon(x, y, "pratt", mode="asymptotic",
+                              correction=False)
         assert_allclose(T, 423)
         assert_allclose(p, 0.0031724568006762576)
 
-        T, p = stats.wilcoxon(x, y, "zsplit", mode="approx")
+        T, p = stats.wilcoxon(x, y, "zsplit", mode="asymptotic",
+                              correction=False)
         assert_allclose(T, 441)
         assert_allclose(p, 0.0032145343172473055)
 
-        T, p = stats.wilcoxon(x, y, "wilcox", mode="approx")
+        T, p = stats.wilcoxon(x, y, "wilcox", mode="asymptotic",
+                              correction=False)
         assert_allclose(T, 327)
         assert_allclose(p, 0.00641346115861)
 
@@ -1525,17 +1531,25 @@ class TestWilcoxon:
         # > wilcox.test(x, y, paired=TRUE, exact=FALSE, correct={FALSE,TRUE})
         x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
         y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
-        T, p = stats.wilcoxon(x, y, correction=False, mode="approx")
+        T, p = stats.wilcoxon(x, y, correction=False, mode="asymptotic")
         assert_equal(T, 34)
         assert_allclose(p, 0.6948866, rtol=1e-6)
-        T, p = stats.wilcoxon(x, y, correction=True, mode="approx")
+        T, p = stats.wilcoxon(x, y, correction=True, mode="asymptotic")
         assert_equal(T, 34)
         assert_allclose(p, 0.7240817, rtol=1e-6)
+
+    def test_approx_method(self):
+        # removed keyword argument "approx" is still accepted
+        x = np.array([3, 5, 23, 7, 243, 58, 98, 2, 8, -3, 9, 11])
+        y = np.array([2, -2, 1, 23, 0, 5, 12, 18, 99, 12, 17, 27])
+        T1, p1 = stats.wilcoxon(x, y, "wilcox", mode="approx")
+        T2, p2 = stats.wilcoxon(x, y, "wilcox", mode="asymptotic")
+        assert_array_equal((T1, p1), (T2, p2))
 
     def test_wilcoxon_result_attributes(self):
         x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
         y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
-        res = stats.wilcoxon(x, y, correction=False, mode="approx")
+        res = stats.wilcoxon(x, y, correction=False, mode="asymptotic")
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
@@ -1543,7 +1557,7 @@ class TestWilcoxon:
         rng = np.random.default_rng(89426135444)
         x, y = rng.random(15), rng.random(15)
 
-        res = stats.wilcoxon(x, y, mode="approx")
+        res = stats.wilcoxon(x, y, mode="asymptotic")
         ref = stats.norm.ppf(res.pvalue/2)
         assert_allclose(res.zstatistic, ref)
 
@@ -1562,12 +1576,14 @@ class TestWilcoxon:
         #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=TRUE)
         #   > result$p.value
         #   [1] 0.001904195
-        stat, p = stats.wilcoxon([0.1] * 10, mode="approx")
+        stat, p = stats.wilcoxon([0.1] * 10, mode="asymptotic",
+                                 correction=False)
         expected_p = 0.001565402
         assert_equal(stat, 0)
         assert_allclose(p, expected_p, rtol=1e-6)
 
-        stat, p = stats.wilcoxon([0.1] * 10, correction=True, mode="approx")
+        stat, p = stats.wilcoxon([0.1] * 10, correction=True,
+                                 mode="asymptotic")
         expected_p = 0.001904195
         assert_equal(stat, 0)
         assert_allclose(p, expected_p, rtol=1e-6)
@@ -1586,27 +1602,29 @@ class TestWilcoxon:
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            w, p = stats.wilcoxon(x, y, alternative="less", mode="approx")
+            w, p = stats.wilcoxon(x, y, alternative="less", mode="asymptotic",
+                                  correction=False)
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7031847, decimal=6)
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="less", correction=True,
-                                  mode="approx")
+                                  mode="asymptotic")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7233656, decimal=6)
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
-            w, p = stats.wilcoxon(x, y, alternative="greater", mode="approx")
+            w, p = stats.wilcoxon(x, y, alternative="greater",
+                                  mode="asymptotic", correction=False)
         assert_equal(w, 27)
         assert_almost_equal(p, 0.2968153, decimal=6)
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="greater", correction=True,
-                                  mode="approx")
+                                  mode="asymptotic")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.3176447, decimal=6)
 
@@ -1617,6 +1635,14 @@ class TestWilcoxon:
             assert_equal(n*(n+1)/2 + 1, len(pmf1))
             assert_equal(sum(pmf1), 1)
             assert_array_almost_equal(pmf1, pmf2)
+
+        # make sure invalid calculation of z due to division by 0 is skipped
+        # warning would cause a test failure
+        msg = "Exact p-value calculation does not work if there are zeros"
+        with pytest.warns(UserWarning, match=msg):
+            w, p = stats.wilcoxon(np.zeros(5), method="exact")
+        assert_equal((w, p), (0.0, 1.0))
+
 
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
@@ -1657,22 +1683,39 @@ class TestWilcoxon:
         assert_equal(p, 1)
 
     def test_auto(self):
-        # auto default to exact if there are no ties and n<= 25
-        x = np.arange(0, 25) + 0.5
-        y = np.arange(25, 0, -1)
+        # auto default to exact if there are no ties and n <= 50
+        x = np.arange(0, 50) + 0.5
+        y = np.arange(50, 0, -1)
         assert_equal(stats.wilcoxon(x, y),
                      stats.wilcoxon(x, y, mode="exact"))
 
-        # if there are ties (i.e. zeros in d = x-y), then switch to approx
-        d = np.arange(0, 13)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message="Exact p-value calculation")
-            w, p = stats.wilcoxon(d)
-        assert_equal(stats.wilcoxon(d, mode="approx"), (w, p))
+        # n <= 50: if there are zeros in d = x-y, use PermutationMethod
+        pm = stats.PermutationMethod()
+        d = np.arange(0, 5)
+        w, p = stats.wilcoxon(d)
+        # rerunning the test gives the same results since n_resamples
+        # is large enough to get deterministic results if n <= 13
+        # so we do not need to use a seed. to avoid longer runtimes of the
+        # test, use n=5 only. For n=13, see test_auto_permutation_edge_case
+        assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
-        # use approximation for samples > 25
+        # for larger vectors (n > 13) with ties/zeros, use asymptotic test
+        d = np.arange(0, 14)
+        w, p = stats.wilcoxon(d)
+        assert_equal((w, p), stats.wilcoxon(d, method="asymptotic"))
+
+        # use approximation for samples > 50
         d = np.arange(1, 52)
-        assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
+        assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="asymptotic"))
+
+    @pytest.mark.xslow
+    def test_auto_permutation_edge_case(self):
+        # n <= 50: if there are zeros in d = x-y, use PermutationMethod
+        # this is a slower test to show that results are deterministic if n=13
+        pm = stats.PermutationMethod()
+        d = np.arange(0, 13)
+        w, p = stats.wilcoxon(d)
+        assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
     @pytest.mark.parametrize('size', [3, 5, 10])
     def test_permutation_method(self, size):
@@ -1695,7 +1738,7 @@ class TestWilcoxon:
         assert_equal(res.pvalue, ref.pvalue)  # random_state used
 
     def test_method_auto_nan_propagate_ND_length_gt_50_gh20591(self):
-        # When method!='approx', nan_policy='propagate', and a slice of
+        # When method!='asymptotic', nan_policy='propagate', and a slice of
         # a >1 dimensional array input contained NaN, the result object of
         # `wilcoxon` could (under yet other conditions) return `zstatistic`
         # for some slices but not others. This resulted in an error because
@@ -1705,12 +1748,12 @@ class TestWilcoxon:
         A = rng.normal(size=(51, 2))  # length along slice > exact threshold
         A[5, 1] = np.nan
         res = stats.wilcoxon(A)
-        ref = stats.wilcoxon(A, method='approx')
+        ref = stats.wilcoxon(A, method='asymptotic')
         assert_allclose(res, ref)
         assert hasattr(ref, 'zstatistic')
         assert not hasattr(res, 'zstatistic')
 
-    @pytest.mark.parametrize('method', ['exact', 'approx'])
+    @pytest.mark.parametrize('method', ['exact', 'asymptotic'])
     def test_symmetry_gh19872_gh20752(self, method):
         # Check that one-sided exact tests obey required symmetry. Bug reported
         # in gh-19872 and again in gh-20752; example from gh-19872 is more concise:
@@ -1981,7 +2024,7 @@ class TestBoxcox_llf:
         xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
 
 
-# This is the data from github user Qukaiyi, given as an example
+# This is the data from GitHub user Qukaiyi, given as an example
 # of a data set that caused boxcox to fail.
 _boxcox_data = [
     15957, 112079, 1039553, 711775, 173111, 307382, 183155, 53366, 760875,

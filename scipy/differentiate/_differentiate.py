@@ -704,8 +704,8 @@ _derivative_weights.right = []
 _derivative_weights.fac = None
 
 
-def jacobian(f, x, *, tolerances=None, maxiter=10,
-             order=8, initial_step=0.5, step_factor=2.0):
+def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
+             step_factor=2.0, step_direction=0):
     r"""Evaluate the Jacobian of a function numerically.
 
     Parameters
@@ -733,21 +733,28 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
         `atol` is the smallest normal number of the appropriate dtype, and
         the default `rtol` is the square root of the precision of the
         appropriate dtype.
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform. See
+        Notes.
     order : int, default: 8
         The (positive integer) order of the finite difference formula to be
         used. Odd integers will be rounded up to the next even integer.
-    initial_step : float, default: 0.5
+    initial_step : float array_like, default: 0.5
         The (absolute) initial step size for the finite difference derivative
-        approximation.
+        approximation. Must be broadcastable with `x` and `step_direction`.
     step_factor : float, default: 2.0
         The factor by which the step size is *reduced* in each iteration; i.e.
         the step size in iteration 1 is ``initial_step/step_factor``. If
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
-    maxiter : int, default: 10
-        The maximum number of iterations of the algorithm to perform. See
-        Notes.
+    step_direction : integer array_like
+        An array representing the direction of the finite difference steps (e.g.
+        for use when `x` lies near to the boundary of the domain of the function.)
+        Must be broadcastable with `x` and `initial_step`.
+        Where 0 (default), central differences are used; where negative (e.g.
+        -1), steps are non-positive; and where positive (e.g. 1), all steps are
+        non-negative.
 
     Returns
     -------
@@ -897,7 +904,8 @@ def jacobian(f, x, *, tolerances=None, maxiter=10,
 
     res = derivative(wrapped, x, tolerances=tolerances,
                      maxiter=maxiter, order=order, initial_step=initial_step,
-                     step_factor=step_factor, preserve_shape=True)
+                     step_factor=step_factor, preserve_shape=True,
+                     step_direction=step_direction)
     del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
     return res
 

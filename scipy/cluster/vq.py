@@ -70,7 +70,8 @@ from collections import deque
 from scipy._lib._array_api import (
     _asarray, array_namespace, xp_size, xp_atleast_nd, xp_copy, xp_cov
 )
-from scipy._lib._util import check_random_state, rng_integers
+from scipy._lib._util import (check_random_state, rng_integers,
+                              _transition_to_rng)
 from scipy.spatial.distance import cdist
 
 from . import _vq
@@ -327,8 +328,9 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
     return code_book, prev_avg_dists[1]
 
 
+@_transition_to_rng("seed")
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
-           *, seed=None):
+           *, rng=None):
     """
     Performs k-means on a set of observation vectors forming k clusters.
 
@@ -374,16 +376,11 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
-
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        Seed for initializing the pseudo-random number generator.
-        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        The default is None.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -484,7 +481,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     if k < 1:
         raise ValueError("Asked for %d clusters." % k)
 
-    rng = check_random_state(seed)
+    rng = check_random_state(rng)
 
     # initialize best distance value to a large value
     best_dist = xp.inf
@@ -645,8 +642,9 @@ def _missing_raise():
 _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 
+@_transition_to_rng("seed")
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
-            missing='warn', check_finite=True, *, seed=None):
+            missing='warn', check_finite=True, *, rng=None):
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 
@@ -697,15 +695,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        Seed for initializing the pseudo-random number generator.
-        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        The default is None.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -814,7 +808,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         except KeyError as e:
             raise ValueError(f"Unknown init method {minit!r}") from e
         else:
-            rng = check_random_state(seed)
+            rng = check_random_state(rng)
             code_book = init_meth(data, code_book, rng, xp)
 
     data = np.asarray(data)

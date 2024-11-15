@@ -405,6 +405,8 @@ def correlation_lags(in1_len, in2_len, mode='full'):
             lags = np.arange(lag_bound + 1)
         else:
             lags = np.arange(lag_bound, 1)
+    else:
+        raise ValueError(f"Mode {mode} is invalid")
     return lags
 
 
@@ -4378,6 +4380,11 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    _reject_objects(sos, 'sosfilt')
+    _reject_objects(x, 'sosfilt')
+    if zi is not None:
+        _reject_objects(zi, 'sosfilt')
+
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
     x_zi_shape = list(x.shape)

@@ -1,4 +1,6 @@
 import warnings
+import math
+
 import numpy as np
 import pytest
 
@@ -6,7 +8,7 @@ from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import xp_assert_close, xp_assert_less, array_namespace
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -177,3 +179,23 @@ def test_array_like(xp, op):
          [[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]]]
     xp_assert_close(op(x, 1.0, 2.0), op(xp.asarray(x), 1.0, 2.0))
+
+@pytest.mark.parametrize('n', [128, 129])
+def test_gh_21661(xp, n):
+    one = xp.asarray(1.0)
+    xp_test = array_namespace(one)
+    mu = 0.0
+    r = np.logspace(-7, 1, n)
+    dln = math.log(r[1] / r[0])
+    offset = fhtoffset(dln, initial=-6 * np.log(10), mu=mu)
+    r = xp.asarray(r, dtype=one.dtype)
+    k = math.exp(offset) / xp_test.flip(r, axis=-1)
+
+    def f(x, mu):
+        return x**(mu + 1)*xp.exp(-x**2/2)
+
+    a_r = f(r, mu)
+    fht_val = fht(a_r, dln, mu=mu, offset=offset)
+    a_k = f(k, mu)
+    rel_err = xp.max(xp.abs((fht_val - a_k) / a_k))
+    xp_assert_less(rel_err, xp.asarray(7.28e+16)[()])

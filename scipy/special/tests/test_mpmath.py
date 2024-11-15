@@ -2152,6 +2152,8 @@ class TestSystematic:
             exception_to_nan(mp_spherical_jn),
             [IntArg(0, 200), Arg(-1e8, 1e8)],
             dps=300,
+            # underflow of `spherical_jn` is a bit premature; see gh-21629
+            param_filter=(None, lambda z: np.abs(z) > 1e-20),
         )
 
     def test_spherical_jn_complex(self):
