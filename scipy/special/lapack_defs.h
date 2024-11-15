@@ -2,29 +2,19 @@
  * Handle different Fortran conventions.
  */
 
-#if defined(NO_APPEND_FORTRAN)
-#if defined(UPPERCASE_FORTRAN)
-#define F_FUNC(f,F) F
-#else
-#define F_FUNC(f,F) f
-#endif
-#else
-#if defined(UPPERCASE_FORTRAN)
-#define F_FUNC(f,F) F##_
-#else
-#define F_FUNC(f,F) f##_
-#endif
-#endif
+#include "npy_cblas.h"
 
-extern void F_FUNC(dstevr,DSTEVR)(char *jobz, char *range, int *n, double *d, double *e,
-				  double *vl, double *vu, int *il, int *iu, double *abstol,
-				  int *m, double *w, double *z, int *ldz, int *isuppz,
-				  double *work, int *lwork, int *iwork, int *liwork, int *info);
+extern void BLAS_FUNC(dstevr)(char *jobz, char *range, CBLAS_INT *n, double *d, double *e,
+                              double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol,
+                              CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz,
+                              double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork,
+                              CBLAS_INT *info, size_t jobz_len, size_t range_len);
 
-static void c_dstevr(char *jobz, char *range, int *n, double *d, double *e,
-                     double *vl, double *vu, int *il, int *iu, double *abstol,
-                     int *m, double *w, double *z, int *ldz, int *isuppz,
-                     double *work, int *lwork, int *iwork, int *liwork, int *info) {
-    F_FUNC(dstevr,DSTEVR)(jobz, range, n, d, e, vl, vu, il, iu, abstol, m,
-			  w, z, ldz, isuppz, work, lwork, iwork, liwork, info);
+static void c_dstevr(char *jobz, char *range, CBLAS_INT *n, double *d, double *e,
+                     double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol,
+                     CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz,
+                     double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) {
+    BLAS_FUNC(dstevr)(jobz, range, n, d, e, vl, vu, il, iu, abstol, m,
+                      w, z, ldz, isuppz, work, lwork, iwork, liwork, info,
+                      1, 1);
 }

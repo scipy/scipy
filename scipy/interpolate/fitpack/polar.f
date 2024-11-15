@@ -1,5 +1,5 @@
-      subroutine polar(iopt,m,x,y,z,w,rad,s,nuest,nvest,eps,nu,tu,
-     *  nv,tv,u,v,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+      recursive subroutine polar(iopt,m,x,y,z,w,rad,s,nuest,nvest,
+     *  eps,nu,tu,nv,tv,u,v,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
       implicit none
 c  subroutine polar fits a smooth function f(x,y) to a set of data
 c  points (x(i),y(i),z(i)) scattered arbitrarily over an approximation

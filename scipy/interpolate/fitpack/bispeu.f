@@ -1,4 +1,6 @@
-      subroutine bispeu(tx,nx,ty,ny,c,kx,ky,x,y,z,m,wrk,lwrk, ier)
+      recursive subroutine bispeu(tx,nx,ty,ny,c,kx,ky,x,y,z,m,wrk,
+     *   lwrk, ier)
+      implicit none
 c  subroutine bispeu evaluates on a set of points (x(i),y(i)),i=1,...,m
 c  a bivariate spline s(x,y) of degrees kx and ky, given in the
 c  b-spline representation.

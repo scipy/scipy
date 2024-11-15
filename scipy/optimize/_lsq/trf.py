@@ -237,7 +237,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
     g_norm = norm(g * v, ord=np.inf)
 
-    f_augmented = np.zeros((m + n))
+    f_augmented = np.zeros(m + n)
     if tr_solver == 'exact':
         J_augmented = np.empty((m + n, n))
     elif tr_solver == 'lsmr':

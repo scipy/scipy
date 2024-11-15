@@ -1,6 +1,5 @@
 .. _deciding-on-new-features:
 
-========================
 Deciding on new features
 ========================
 The general decision rule to accept a proposed new feature has so far

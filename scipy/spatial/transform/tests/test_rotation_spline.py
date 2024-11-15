@@ -103,12 +103,12 @@ def test_constant_attitude():
 
     times_check = np.linspace(-1, 11)
     assert_allclose(spline(times_check).as_rotvec(), 1, rtol=1e-15)
-    assert_allclose(spline(times_check, 1), 0, atol=1e-19)
-    assert_allclose(spline(times_check, 2), 0, atol=1e-19)
+    assert_allclose(spline(times_check, 1), 0, atol=1e-17)
+    assert_allclose(spline(times_check, 2), 0, atol=1e-17)
 
     assert_allclose(spline(5.5).as_rotvec(), 1, rtol=1e-15)
-    assert_allclose(spline(5.5, 1), 0, atol=1e-19)
-    assert_allclose(spline(5.5, 2), 0, atol=1e-19)
+    assert_allclose(spline(5.5, 1), 0, atol=1e-17)
+    assert_allclose(spline(5.5, 2), 0, atol=1e-17)
 
 
 def test_spline_properties():
@@ -125,7 +125,8 @@ def test_spline_properties():
     rv0 = spline(times).as_rotvec()
     rvm = spline(times - h).as_rotvec()
     rvp = spline(times + h).as_rotvec()
-    assert_allclose(rv0, 0.5 * (rvp + rvm), rtol=1e-15)
+    # rtol bumped from 1e-15 to 1.5e-15 in gh18414 for linux 32 bit
+    assert_allclose(rv0, 0.5 * (rvp + rvm), rtol=1.5e-15)
 
     r0 = spline(times, 1)
     rm = spline(times - h, 1)

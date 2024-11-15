@@ -1,18 +1,27 @@
+import sys
+
 import numpy as np
-from numpy.testing import (assert_, assert_approx_equal,
+from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
 from scipy import signal
-from scipy.fft import fftfreq
-from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
-                          spectrogram, stft, istft, check_COLA, check_NOLA)
-from scipy.signal.spectral import _spectral_helper
+from scipy.fft import fftfreq, rfftfreq, fft, irfft
+from scipy.integrate import trapezoid
+from scipy.signal import (periodogram, welch, lombscargle, coherence,
+                          spectrogram, check_COLA, check_NOLA)
+from scipy.signal.windows import hann
+from scipy.signal._spectral_py import _spectral_helper
+
+# Compare ShortTimeFFT.stft() / ShortTimeFFT.istft() with stft() / istft():
+from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
+from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
+from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 
 
-class TestPeriodogram(object):
+class TestPeriodogram:
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -94,6 +103,10 @@ class TestPeriodogram(object):
         assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
                 scaling='foo')
 
+    @pytest.mark.skipif(
+        sys.maxsize <= 2**32,
+        reason="On some 32-bit tolerance issue"
+    )
     def test_nd_axis_m1(self):
         x = np.zeros(20, dtype=np.float64)
         x = x.reshape((2,1,10))
@@ -104,6 +117,10 @@ class TestPeriodogram(object):
         f0, p0 = periodogram(x[0,0,:])
         assert_array_almost_equal_nulp(p0[np.newaxis,:], p[1,:], 60)
 
+    @pytest.mark.skipif(
+        sys.maxsize <= 2**32,
+        reason="On some 32-bit tolerance issue"
+    )
     def test_nd_axis_0(self):
         x = np.zeros(20, dtype=np.float64)
         x = x.reshape((10,2,1))
@@ -215,8 +232,17 @@ class TestPeriodogram(object):
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
 
+    def test_shorter_window_error(self):
+        x = np.zeros(16)
+        x[0] = 1
+        win = signal.get_window('hann', 10)
+        expected_msg = ('the size of the window must be the same size '
+                        'of the input on the specified axis')
+        with assert_raises(ValueError, match=expected_msg):
+            periodogram(x, window=win)
 
-class TestWelch(object):
+
+class TestWelch:
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -329,7 +355,7 @@ class TestWelch(object):
     def test_detrend_external_nd_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.rollaxis(x, 2, 0)
+        x = np.moveaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
                      detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
@@ -390,7 +416,8 @@ class TestWelch(object):
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
+            msg = "nperseg = 256 is greater than input length  = 8, using nperseg = 8"
+            sup.filter(UserWarning, msg)
             f, p = welch(x,window='hann')  # default nperseg
             f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -462,7 +489,7 @@ class TestWelch(object):
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
-                'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
+                f'dtype mismatch, {p.dtype}, {q.dtype}')
 
     def test_padded_freqs(self):
         x = np.zeros(12)
@@ -501,7 +528,7 @@ class TestWelch(object):
             # Check peak height at signal frequency for 'spectrum'
             assert_allclose(p_spec[ii], A**2/2.0)
             # Check integrated spectrum RMS for 'density'
-            assert_allclose(np.sqrt(np.trapz(p_dens, freq)), A*np.sqrt(2)/2,
+            assert_allclose(np.sqrt(trapezoid(p_dens, freq)), A*np.sqrt(2)/2,
                             rtol=1e-3)
 
     def test_axis_rolling(self):
@@ -669,7 +696,7 @@ class TestCSD:
     def test_detrend_external_nd_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.rollaxis(x, 2, 0)
+        x = np.moveaxis(x, 2, 0)
         f, p = csd(x, x, nperseg=10, axis=0,
                    detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
@@ -752,7 +779,8 @@ class TestCSD:
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         with suppress_warnings() as sup:
-            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
+            msg = "nperseg = 256 is greater than input length  = 8, using nperseg = 8"
+            sup.filter(UserWarning, msg)
             f, p = csd(x, x, window='hann')  # default nperseg
             f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -827,7 +855,7 @@ class TestCSD:
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
-                'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
+                f'dtype mismatch, {p.dtype}, {q.dtype}')
 
     def test_padded_freqs(self):
         x = np.zeros(12)
@@ -848,7 +876,24 @@ class TestCSD:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
-class TestCoherence(object):
+    def test_copied_data(self):
+        x = np.random.randn(64)
+        y = x.copy()
+
+        _, p_same = csd(x, x, nperseg=8, average='mean',
+                        return_onesided=False)
+        _, p_copied = csd(x, y, nperseg=8, average='mean',
+                          return_onesided=False)
+        assert_allclose(p_same, p_copied)
+
+        _, p_same = csd(x, x, nperseg=8, average='median',
+                        return_onesided=False)
+        _, p_copied = csd(x, y, nperseg=8, average='median',
+                          return_onesided=False)
+        assert_allclose(p_same, p_copied)
+
+
+class TestCoherence:
     def test_identical_input(self):
         x = np.random.randn(20)
         y = np.copy(x)  # So `y is x` -> False
@@ -872,7 +917,7 @@ class TestCoherence(object):
         assert_allclose(C, C1)
 
 
-class TestSpectrogram(object):
+class TestSpectrogram:
     def test_average_all_segments(self):
         x = np.random.randn(1024)
 
@@ -914,7 +959,8 @@ class TestSpectrogram(object):
         f, _, p = spectrogram(x, fs, window=('tukey',0.25))  # default nperseg
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
-                       "nperseg = 1025 is greater than input length  = 1024, using nperseg = 1024")
+                       "nperseg = 1025 is greater than input length  = 1024, "
+                       "using nperseg = 1024",)
             f1, _, p1 = spectrogram(x, fs, window=('tukey',0.25),
                                     nperseg=1025)  # user-specified nperseg
         f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default
@@ -924,7 +970,7 @@ class TestSpectrogram(object):
         assert_allclose(f1, f3)
         assert_allclose(p1, p3)
 
-class TestLombscargle(object):
+class TestLombscargle:
     def test_frequency(self):
         """Test if frequency location of peak corresponds to frequency of
         generated input signal.
@@ -944,21 +990,30 @@ class TestLombscargle(object):
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        P = lombscargle(t, x, f)
+        P = lombscargle(t, y, f)
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         delta = f[1] - f[0]
-        assert_(w - f[np.argmax(P)] < (delta/2.))
+        assert(w - f[np.argmax(P)] < (delta/2.))
+
+        # also, check that it works with weights
+        P = lombscargle(t, y, f, weights=np.ones_like(t, dtype=f.dtype))
+
+        # Check if difference between found frequency maximum and input
+        # frequency is less than accuracy
+        delta = f[1] - f[0]
+        assert(w - f[np.argmax(P)] < (delta/2.))
+
 
     def test_amplitude(self):
-        # Test if height of peak in normalized Lomb-Scargle periodogram
+        # Test if height of peak in unnormalized Lomb-Scargle periodogram
         # corresponds to amplitude of the generated input signal.
 
         # Input parameters
@@ -975,23 +1030,24 @@ class TestLombscargle(object):
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f)
+        pgram = lombscargle(t, y, f)
 
-        # Normalize
+        # convert to the amplitude
         pgram = np.sqrt(4 * pgram / t.shape[0])
 
-        # Check if difference between found frequency maximum and input
-        # frequency is less than accuracy
-        assert_approx_equal(np.max(pgram), ampl, significant=2)
+        # Check if amplitude is correct (this will not exactly match, due to
+        # numerical differences when data is removed)
+        assert_allclose(np.max(pgram), ampl, rtol=5e-2)
 
     def test_precenter(self):
-        # Test if precenter gives the same result as manually precentering.
+        # Test if precenter gives the same result as manually precentering
+        # (for a very simple offset)
 
         # Input parameters
         ampl = 2.
@@ -1008,14 +1064,23 @@ class TestLombscargle(object):
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi) + offset
+        y = ampl * np.sin(w*t + phi) + offset
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f, precenter=True)
-        pgram2 = lombscargle(t, x - x.mean(), f, precenter=False)
+        pgram = lombscargle(t, y, f, precenter=True)
+        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False)
+
+        # check if centering worked
+        assert_allclose(pgram, pgram2)
+
+        # do this again, but with floating_mean=True
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, precenter=True, floating_mean=True)
+        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False, floating_mean=True)
 
         # check if centering worked
         assert_allclose(pgram, pgram2)
@@ -1037,76 +1102,326 @@ class TestLombscargle(object):
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f)
-        pgram2 = lombscargle(t, x, f, normalize=True)
+        pgram = lombscargle(t, y, f)
+        pgram2 = lombscargle(t, y, f, normalize=True)
+
+        # Calculate the scale to convert from unnormalized to normalized
+        weights = np.ones_like(t)/float(t.shape[0])
+        YY_hat = (weights * y * y).sum()
+        YY = YY_hat  # correct formula for floating_mean=False
+        scale_to_use = 2/(YY*t.shape[0])
 
         # check if normalization works as expected
-        assert_allclose(pgram * 2 / np.dot(x, x), pgram2)
-        assert_approx_equal(np.max(pgram2), 1.0, significant=2)
+        assert_allclose(pgram * scale_to_use, pgram2)
+        assert_allclose(np.max(pgram2), 1.0)
 
     def test_wrong_shape(self):
-        t = np.linspace(0, 1, 1)
-        x = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3)
-        assert_raises(ValueError, lombscargle, t, x, f)
 
-    def test_zero_division(self):
-        t = np.zeros(1)
-        x = np.zeros(1)
-        f = np.zeros(1)
-        assert_raises(ZeroDivisionError, lombscargle, t, x, f)
+        # different length t and y
+        t = np.linspace(0, 1, 1)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # t is 2D
+        t = np.expand_dims(np.linspace(0, 1, 2), 1)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # y is 2D
+        t = np.linspace(0, 1, 2)
+        y = np.expand_dims(np.linspace(0, 1, 2), 1)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # f is 2D
+        t = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
+        f = np.expand_dims(np.linspace(0, 1, 3) + 0.1, 1)
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # weights is 2D
+        t = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        weights = np.expand_dims(np.linspace(0, 1, 2), 1)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
     def test_lombscargle_atan_vs_atan2(self):
         # https://github.com/scipy/scipy/issues/3787
         # This raised a ZeroDivisionError.
         t = np.linspace(0, 10, 1000, endpoint=False)
-        x = np.sin(4*t)
+        y = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        lombscargle(t, x, f*2*np.pi)
+        lombscargle(t, y, f*2*np.pi)
+
+    def test_wrong_shape_weights(self):
+        # Weights must be the same shape as t
+
+        t = np.linspace(0, 1, 1)
+        y = np.linspace(0, 1, 1)
+        f = np.linspace(0, 1, 3) + 0.1
+        weights = np.linspace(1, 2, 2)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
+
+    def test_zero_division_weights(self):
+        # Weights cannot sum to 0
+
+        t = np.zeros(1)
+        y = np.zeros(1)
+        f = np.ones(1)
+        weights = np.zeros(1)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
+
+    def test_normalize_parameter(self):
+        # Test the validity of the normalize parameter input
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # check each of the valid inputs
+        pgram_false = lombscargle(t, y, f, normalize=False)
+        pgram_true = lombscargle(t, y, f, normalize=True)
+        pgram_power = lombscargle(t, y, f, normalize='power')
+        pgram_norm = lombscargle(t, y, f, normalize='normalize')
+        pgram_amp = lombscargle(t, y, f, normalize='amplitude')
+
+        # validate the results that should be the same
+        assert_allclose(pgram_false, pgram_power)
+        assert_allclose(pgram_true, pgram_norm)
+
+        # validate that the power and norm outputs are proper wrt each other
+        weights = np.ones_like(y)/float(y.shape[0])
+        YY_hat = (weights * y * y).sum()
+        YY = YY_hat  # correct formula for floating_mean=False
+        assert_allclose(pgram_power * 2.0 / (float(t.shape[0]) * YY), pgram_norm)
+
+        # validate that the amp output is correct for the given input
+        f_i = np.where(f==w)[0][0]
+        assert_allclose(np.abs(pgram_amp[f_i]), ampl)
+
+        # check invalid inputs
+        #  1) a string that is not allowed
+        assert_raises(ValueError, lombscargle, t, y, f, normalize='lomb')
+        #  2) something besides a bool or str
+        assert_raises(ValueError, lombscargle, t, y, f, normalize=2)
+
+    def test_offset_removal(self):
+        # Verify that the amplitude is the same, even with an offset
+        # must use floating_mean=True, otherwise it will not remove an offset
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2.15  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, floating_mean=True)
+        pgram_offset = lombscargle(t, y + offset, f, floating_mean=True)
+
+        # check if offset removal works as expected
+        assert_allclose(pgram, pgram_offset)
+
+    def test_floating_mean_false(self):
+        # Verify that when disabling the floating_mean, the calculations are correct
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0
+        nin = 1000
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a cos wave for the selected times
+        y = ampl * np.cos(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, normalize=True, floating_mean=False)
+        pgram_offset = lombscargle(t, y + offset, f, normalize=True,
+                                   floating_mean=False)
+
+        # check if disabling floating_mean works as expected
+        # nearly-zero for no offset, exact value will change based on seed
+        assert(pgram[0] < 0.01)
+        # significant value with offset, exact value will change based on seed
+        assert(pgram_offset[0] > 0.5)
+
+    def test_amplitude_is_correct(self):
+        # Verify that the amplitude is correct (when normalize='amplitude')
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.12
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2.15  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.cos(w*t + phi) + offset
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Get the index of where the exact result should be
+        f_indx = np.where(f==w)[0][0]
+
+        # Calculate Lomb-Scargle periodogram (amplitude + phase)
+        pgram = lombscargle(t, y, f, normalize='amplitude', floating_mean=True)
+
+        # Check if amplitude is correct
+        assert_allclose(np.abs(pgram[f_indx]), ampl)
+
+        # Check if phase is correct
+        # (phase angle is the negative of the phase offset)
+        assert_allclose(-np.angle(pgram[f_indx]), phi)
+
+    def test_negative_weight(self):
+        # Test that a negative weight produces an error
+
+        t = np.zeros(1)
+        y = np.zeros(1)
+        f = np.ones(1)
+        weights = -np.ones(1)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
 
-class TestSTFT(object):
+class TestSTFT:
     def test_input_validation(self):
-        assert_raises(ValueError, check_COLA, 'hann', -10, 0)
-        assert_raises(ValueError, check_COLA, 'hann', 10, 20)
-        assert_raises(ValueError, check_COLA, np.ones((2,2)), 10, 0)
-        assert_raises(ValueError, check_COLA, np.ones(20), 10, 0)
 
-        assert_raises(ValueError, check_NOLA, 'hann', -10, 0)
-        assert_raises(ValueError, check_NOLA, 'hann', 10, 20)
-        assert_raises(ValueError, check_NOLA, np.ones((2,2)), 10, 0)
-        assert_raises(ValueError, check_NOLA, np.ones(20), 10, 0)
-        assert_raises(ValueError, check_NOLA, 'hann', 64, -32)
+        def chk_VE(match):
+            """Assert for a ValueError matching regexp `match`.
+
+            This little wrapper allows a more concise code layout.
+            """
+            return pytest.raises(ValueError, match=match)
+
+        # Checks for check_COLA():
+        with chk_VE('nperseg must be a positive integer'):
+            check_COLA('hann', -10, 0)
+        with chk_VE('noverlap must be less than nperseg.'):
+            check_COLA('hann', 10, 20)
+        with chk_VE('window must be 1-D'):
+            check_COLA(np.ones((2, 2)), 10, 0)
+        with chk_VE('window must have length of nperseg'):
+            check_COLA(np.ones(20), 10, 0)
+
+        # Checks for check_NOLA():
+        with chk_VE('nperseg must be a positive integer'):
+            check_NOLA('hann', -10, 0)
+        with chk_VE('noverlap must be less than nperseg'):
+            check_NOLA('hann', 10, 20)
+        with chk_VE('window must be 1-D'):
+            check_NOLA(np.ones((2, 2)), 10, 0)
+        with chk_VE('window must have length of nperseg'):
+            check_NOLA(np.ones(20), 10, 0)
+        with chk_VE('noverlap must be a nonnegative integer'):
+            check_NOLA('hann', 64, -32)
 
         x = np.zeros(1024)
-        z = np.array(stft(x), dtype=object)
+        z = stft(x)[2]
 
-        assert_raises(ValueError, stft, x, window=np.ones((2,2)))
-        assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)
-        assert_raises(ValueError, stft, x, nperseg=-256)
-        assert_raises(ValueError, stft, x, nperseg=256, noverlap=1024)
-        assert_raises(ValueError, stft, x, nperseg=256, nfft=8)
+        # Checks for stft():
+        with chk_VE('window must be 1-D'):
+            stft(x, window=np.ones((2, 2)))
+        with chk_VE('value specified for nperseg is different ' +
+                    'from length of window'):
+            stft(x, window=np.ones(10), nperseg=256)
+        with chk_VE('nperseg must be a positive integer'):
+            stft(x, nperseg=-256)
+        with chk_VE('noverlap must be less than nperseg.'):
+            stft(x, nperseg=256, noverlap=1024)
+        with chk_VE('nfft must be greater than or equal to nperseg.'):
+            stft(x, nperseg=256, nfft=8)
 
-        assert_raises(ValueError, istft, x)  # Not 2d
-        assert_raises(ValueError, istft, z, window=np.ones((2,2)))
-        assert_raises(ValueError, istft, z, window=np.ones(10), nperseg=256)
-        assert_raises(ValueError, istft, z, nperseg=-256)
-        assert_raises(ValueError, istft, z, nperseg=256, noverlap=1024)
-        assert_raises(ValueError, istft, z, nperseg=256, nfft=8)
-        assert_raises(ValueError, istft, z, nperseg=256, noverlap=0,
-                      window='hann')  # Doesn't meet COLA
-        assert_raises(ValueError, istft, z, time_axis=0, freq_axis=0)
+        # Checks for istft():
+        with chk_VE('Input stft must be at least 2d!'):
+            istft(x)
+        with chk_VE('window must be 1-D'):
+            istft(z, window=np.ones((2, 2)))
+        with chk_VE('window must have length of 256'):
+            istft(z, window=np.ones(10), nperseg=256)
+        with chk_VE('nperseg must be a positive integer'):
+            istft(z, nperseg=-256)
+        with chk_VE('noverlap must be less than nperseg.'):
+            istft(z, nperseg=256, noverlap=1024)
+        with chk_VE('nfft must be greater than or equal to nperseg.'):
+            istft(z, nperseg=256, nfft=8)
+        with pytest.warns(UserWarning, match="NOLA condition failed, " +
+                          "STFT may not be invertible"):
+            istft(z, nperseg=256, noverlap=0, window='hann')
+        with chk_VE('Must specify differing time and frequency axes!'):
+            istft(z, time_axis=0, freq_axis=0)
 
-        assert_raises(ValueError, _spectral_helper, x, x, mode='foo')
-        assert_raises(ValueError, _spectral_helper, x[:512], x[512:],
-                      mode='stft')
-        assert_raises(ValueError, _spectral_helper, x, x, boundary='foo')
+        # Checks for _spectral_helper():
+        with chk_VE("Unknown value for mode foo, must be one of: " +
+                    r"\{'psd', 'stft'\}"):
+            _spectral_helper(x, x, mode='foo')
+        with chk_VE("x and y must be equal if mode is 'stft'"):
+            _spectral_helper(x[:512], x[512:], mode='stft')
+        with chk_VE("Unknown boundary option 'foo', must be one of: " +
+                    r"\['even', 'odd', 'constant', 'zeros', None\]"):
+            _spectral_helper(x, x, boundary='foo')
+
+        scaling = "not_valid"
+        with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
+            stft(x, scaling=scaling)
+        with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
+            istft(z, scaling=scaling)
 
     def test_check_COLA(self):
         settings = [
@@ -1121,7 +1436,7 @@ class TestSTFT(object):
                     ]
 
         for setting in settings:
-            msg = '{0}, {1}, {2}'.format(*setting)
+            msg = '{}, {}, {}'.format(*setting)
             assert_equal(True, check_COLA(*setting), err_msg=msg)
 
     def test_check_NOLA(self):
@@ -1142,7 +1457,7 @@ class TestSTFT(object):
                     ('hann', 256, 39),
                     ]
         for setting in settings_pass:
-            msg = '{0}, {1}, {2}'.format(*setting)
+            msg = '{}, {}, {}'.format(*setting)
             assert_equal(True, check_NOLA(*setting), err_msg=msg)
 
         w_fail = np.ones(16)
@@ -1152,7 +1467,7 @@ class TestSTFT(object):
                     ('hann', 64, 0),
         ]
         for setting in settings_fail:
-            msg = '{0}, {1}, {2}'.format(*setting)
+            msg = '{}, {}, {}'.format(*setting)
             assert_equal(False, check_NOLA(*setting), err_msg=msg)
 
     def test_average_all_segments(self):
@@ -1198,7 +1513,8 @@ class TestSTFT(object):
         assert_allclose(Z1, Z2[:, 0, 0, :])
         assert_allclose(x1, x2[:, 0, 0])
 
-    def test_roundtrip_real(self):
+    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
+    def test_roundtrip_real(self, scaling):
         np.random.seed(1234)
 
         settings = [
@@ -1215,12 +1531,13 @@ class TestSTFT(object):
             x = 10*np.random.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
-                            window=window, detrend=None, padded=False)
+                            window=window, detrend=None, padded=False,
+                            scaling=scaling)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window)
+                           window=window, scaling=scaling)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
@@ -1235,7 +1552,7 @@ class TestSTFT(object):
         ]
 
         for window, N, nperseg, noverlap in settings:
-            msg = '{0}, {1}, {2}, {3}'.format(window, N, nperseg, noverlap)
+            msg = f'{window}, {N}, {nperseg}, {noverlap}'
             assert not check_NOLA(window, nperseg, noverlap), msg
 
             t = np.arange(N)
@@ -1263,7 +1580,7 @@ class TestSTFT(object):
                     ]
 
         for window, N, nperseg, noverlap in settings:
-            msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+            msg = f'{window}, {nperseg}, {noverlap}'
             assert check_NOLA(window, nperseg, noverlap), msg
             assert not check_COLA(window, nperseg, noverlap), msg
 
@@ -1277,7 +1594,7 @@ class TestSTFT(object):
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
                            window=window, boundary=True)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             assert_allclose(t, tr[:len(t)], err_msg=msg)
             assert_allclose(x, xr[:len(x)], err_msg=msg)
 
@@ -1297,12 +1614,13 @@ class TestSTFT(object):
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
                            window=window)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             assert_allclose(t, t, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
 
-    def test_roundtrip_complex(self):
+    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
+    def test_roundtrip_complex(self, scaling):
         np.random.seed(1234)
 
         settings = [
@@ -1320,12 +1638,13 @@ class TestSTFT(object):
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
-                            return_onesided=False)
+                            return_onesided=False, scaling=scaling)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window, input_onesided=False)
+                           window=window, input_onesided=False,
+                           scaling=scaling)
 
-            msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+            msg = f'{window}, {nperseg}, {noverlap}'
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
@@ -1335,12 +1654,12 @@ class TestSTFT(object):
                        "Input data is complex, switching to return_onesided=False")
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
-                            return_onesided=True)
+                            return_onesided=True, scaling=scaling)
 
         tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                       window=window, input_onesided=False)
+                       window=window, input_onesided=False, scaling=scaling)
 
-        msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+        msg = f'{window}, {nperseg}, {noverlap}'
         assert_allclose(t, tr, err_msg=msg)
         assert_allclose(x, xr, err_msg=msg)
 
@@ -1373,7 +1692,7 @@ class TestSTFT(object):
                 _, xr_ext = istft(zz_ext, noverlap=noverlap, window=window,
                                 boundary=True)
 
-                msg = '{0}, {1}, {2}'.format(window, noverlap, boundary)
+                msg = f'{window}, {noverlap}, {boundary}'
                 assert_allclose(x, xr, err_msg=msg)
                 assert_allclose(x, xr_ext, err_msg=msg)
 
@@ -1394,7 +1713,7 @@ class TestSTFT(object):
 
             tr, xr = istft(zz, noverlap=noverlap, window=window)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             # Account for possible zero-padding at the end
             assert_allclose(t, tr[:t.size], err_msg=msg)
             assert_allclose(x, xr[:x.size], err_msg=msg)
@@ -1429,7 +1748,7 @@ class TestSTFT(object):
             tr, xcr = istft(zc, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
                             window=window, input_onesided=False)
 
-            msg = '{0}, {1}'.format(window, noverlap)
+            msg = f'{window}, {noverlap}'
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
             assert_allclose(xc, xcr, err_msg=msg)
@@ -1459,3 +1778,159 @@ class TestSTFT(object):
 
         assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
         assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')
+
+    def test_roundtrip_scaling(self):
+        """Verify behavior of scaling parameter. """
+        # Create 1024 sample cosine signal with amplitude 2:
+        X = np.zeros(513, dtype=complex)
+        X[256] = 1024
+        x = np.fft.irfft(X)
+        power_x = sum(x**2) / len(x)  # power of signal x is 2
+
+        # Calculate magnitude-scaled STFT:
+        Zs = stft(x, boundary='even', scaling='spectrum')[2]
+
+        # Test round trip:
+        x1 = istft(Zs, boundary=True, scaling='spectrum')[1]
+        assert_allclose(x1, x)
+
+        # For a Hann-windowed 256 sample length FFT, we expect a peak at
+        # frequency 64 (since it is 1/4 the length of X) with a height of 1
+        # (half the amplitude). A Hann window of a perfectly centered sine has
+        # the magnitude [..., 0, 0, 0.5, 1, 0.5, 0, 0, ...].
+        # Note that in this case the 'even' padding works for the beginning
+        # but not for the end of the STFT.
+        assert_allclose(abs(Zs[63, :-1]), 0.5)
+        assert_allclose(abs(Zs[64, :-1]), 1)
+        assert_allclose(abs(Zs[65, :-1]), 0.5)
+        # All other values should be zero:
+        Zs[63:66, :-1] = 0
+        # Note since 'rtol' does not have influence here, atol needs to be set:
+        assert_allclose(Zs[:, :-1], 0, atol=np.finfo(Zs.dtype).resolution)
+
+        # Calculate two-sided psd-scaled STFT:
+        #  - using 'even' padding since signal is axis symmetric - this ensures
+        #    stationary behavior on the boundaries
+        #  - using the two-sided transform allows determining the spectral
+        #    power by `sum(abs(Zp[:, k])**2) / len(f)` for the k-th time slot.
+        Zp = stft(x, return_onesided=False, boundary='even', scaling='psd')[2]
+
+        # Calculate spectral power of Zd by summing over the frequency axis:
+        psd_Zp = np.sum(Zp.real**2 + Zp.imag**2, axis=0) / Zp.shape[0]
+        # Spectral power of Zp should be equal to the signal's power:
+        assert_allclose(psd_Zp, power_x)
+
+        # Test round trip:
+        x1 = istft(Zp, input_onesided=False, boundary=True, scaling='psd')[1]
+        assert_allclose(x1, x)
+
+        # The power of the one-sided psd-scaled STFT can be determined
+        # analogously (note that the two sides are not of equal shape):
+        Zp0 = stft(x, return_onesided=True, boundary='even', scaling='psd')[2]
+
+        # Since x is real, its Fourier transform is conjugate symmetric, i.e.,
+        # the missing 'second side' can be expressed through the 'first side':
+        Zp1 = np.conj(Zp0[-2:0:-1, :])  # 'second side' is conjugate reversed
+        assert_allclose(Zp[:129, :], Zp0)
+        assert_allclose(Zp[129:, :], Zp1)
+
+        # Calculate the spectral power:
+        s2 = (np.sum(Zp0.real ** 2 + Zp0.imag ** 2, axis=0) +
+              np.sum(Zp1.real ** 2 + Zp1.imag ** 2, axis=0))
+        psd_Zp01 = s2 / (Zp0.shape[0] + Zp1.shape[0])
+        assert_allclose(psd_Zp01, power_x)
+
+        # Test round trip:
+        x1 = istft(Zp0, input_onesided=True, boundary=True, scaling='psd')[1]
+        assert_allclose(x1, x)
+
+
+class TestSampledSpectralRepresentations:
+    """Check energy/power relations from `Spectral Analysis` section in the user guide.
+
+    A 32 sample cosine signal is used to compare the numerical to the expected results
+    stated in :ref:`tutorial_SpectralAnalysis` in
+    file ``doc/source/tutorial/signal.rst``
+    """
+    n: int = 32  #: number of samples
+    T: float = 1/16  #: sampling interval
+    a_ref: float = 3  #: amplitude of reference
+    l_a: int = 3  #: index in fft for defining frequency of test signal
+
+    x_ref: np.ndarray  #: reference signal
+    X_ref: np.ndarray  #: two-sided FFT of x_ref
+    E_ref: float  #: energy of signal
+    P_ref: float  #: power of signal
+
+    def setup_method(self):
+        """Create Cosine signal with amplitude a from spectrum. """
+        f = rfftfreq(self.n, self.T)
+        X_ref = np.zeros_like(f)
+        self.l_a = 3
+        X_ref[self.l_a] = self.a_ref/2 * self.n  # set amplitude
+        self.x_ref = irfft(X_ref)
+        self.X_ref = fft(self.x_ref)
+
+        # Closed form expression for continuous-time signal:
+        self.E_ref = self.tau * self.a_ref**2 / 2  # energy of signal
+        self.P_ref = self.a_ref**2 / 2  # power of signal
+
+    @property
+    def tau(self) -> float:
+        """Duration of signal. """
+        return self.n * self.T
+
+    @property
+    def delta_f(self) -> float:
+        """Bin width """
+        return 1 / (self.n * self.T)
+
+    def test_reference_signal(self):
+        """Test energy and power formulas. """
+        # Verify that amplitude is a:
+        assert_allclose(2*self.a_ref, np.ptp(self.x_ref), rtol=0.1)
+        # Verify that energy expression for sampled signal:
+        assert_allclose(self.T * sum(self.x_ref ** 2), self.E_ref)
+
+        # Verify that spectral energy and power formulas are correct:
+        sum_X_ref_squared = sum(self.X_ref.real**2 + self.X_ref.imag**2)
+        assert_allclose(self.T/self.n * sum_X_ref_squared, self.E_ref)
+        assert_allclose(1/self.n**2 * sum_X_ref_squared, self.P_ref)
+
+    def test_windowed_DFT(self):
+        """Verify spectral representations of windowed DFT.
+
+        Furthermore, the scalings of `periodogram` and `welch` are verified.
+        """
+        w = hann(self.n, sym=False)
+        c_amp, c_rms = abs(sum(w)), np.sqrt(sum(w.real**2 + w.imag**2))
+        Xw = fft(self.x_ref*w)  # unnormalized windowed DFT
+
+        # Verify that the *spectrum* peak is consistent:
+        assert_allclose(self.tau * Xw[self.l_a] / c_amp, self.a_ref * self.tau / 2)
+        # Verify that the *amplitude spectrum* peak is consistent:
+        assert_allclose(Xw[self.l_a] / c_amp, self.a_ref/2)
+
+        # Verify spectral power/energy equals signal's power/energy:
+        X_ESD = self.tau * self.T * abs(Xw / c_rms)**2  # Energy Spectral Density
+        X_PSD = self.T * abs(Xw / c_rms)**2  # Power Spectral Density
+        assert_allclose(self.delta_f * sum(X_ESD), self.E_ref)
+        assert_allclose(self.delta_f * sum(X_PSD), self.P_ref)
+
+        # Verify scalings of periodogram:
+        kw = dict(fs=1/self.T, window=w, detrend=False, return_onesided=False)
+        _, P_mag = periodogram(self.x_ref, scaling='spectrum', **kw)
+        _, P_psd = periodogram(self.x_ref, scaling='density', **kw)
+
+        # Verify that periodogram calculates a squared magnitude spectrum:
+        float_res = np.finfo(P_mag.dtype).resolution
+        assert_allclose(P_mag, abs(Xw/c_amp)**2, atol=float_res*max(P_mag))
+        # Verify that periodogram calculates a PSD:
+        assert_allclose(P_psd, X_PSD, atol=float_res*max(P_psd))
+
+        # Ensure that scaling of welch is the same as of periodogram:
+        kw = dict(nperseg=len(self.x_ref), noverlap=0, **kw)
+        assert_allclose(welch(self.x_ref, scaling='spectrum', **kw)[1], P_mag,
+                        atol=float_res*max(P_mag))
+        assert_allclose(welch(self.x_ref, scaling='density', **kw)[1], P_psd,
+                        atol=float_res*max(P_psd))

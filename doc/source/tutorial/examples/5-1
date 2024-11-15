@@ -7,7 +7,7 @@ Optimization Tools
 
    fmin        --  Nelder-Mead Simplex algorithm
                      (uses only function calls)
-   fmin_powell --  Powell's (modified) level set method (uses only
+   fmin_powell --  Powell's (modified) conjugate direction method (uses only
                      function calls)
    fmin_cg     --  Non-linear (Polak-Ribiere) conjugate gradient algorithm
                      (can use function and gradient).

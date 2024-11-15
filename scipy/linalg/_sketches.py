@@ -5,14 +5,15 @@
 
 import numpy as np
 
-from scipy._lib._util import check_random_state
+from scipy._lib._util import (check_random_state, rng_integers,
+                              _transition_to_rng)
 from scipy.sparse import csc_matrix
 
 __all__ = ['clarkson_woodruff_transform']
 
 
-def cwt_matrix(n_rows, n_columns, seed=None):
-    r""""
+def cwt_matrix(n_rows, n_columns, rng=None):
+    r"""
     Generate a matrix S which represents a Clarkson-Woodruff transform.
 
     Given the desired size of matrix, the method returns a matrix S of size
@@ -22,16 +23,16 @@ def cwt_matrix(n_rows, n_columns, seed=None):
 
     Parameters
     ----------
-    n_rows: int
+    n_rows : int
         Number of rows of S
-    n_columns: int
+    n_columns : int
         Number of columns of S
-    seed : None or int or `numpy.random.RandomState` instance, optional
-        This parameter defines the ``RandomState`` object to use for drawing
-        random variates.
-        If None (or ``np.random``), the global ``np.random`` state is used.
-        If integer, it is used to seed the local ``RandomState`` instance.
-        Default is None.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
 
     Returns
     -------
@@ -44,16 +45,17 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     .. math:: \|SA\| = (1 \pm \epsilon)\|A\|
     Where the error epsilon is related to the size of S.
     """
-    rng = check_random_state(seed)
-    rows = rng.randint(0, n_rows, n_columns)
+    rng = check_random_state(rng)
+    rows = rng_integers(rng, 0, n_rows, n_columns)
     cols = np.arange(n_columns+1)
     signs = rng.choice([1, -1], n_columns)
-    S = csc_matrix((signs, rows, cols),shape=(n_rows, n_columns))
+    S = csc_matrix((signs, rows, cols), shape=(n_rows, n_columns))
     return S
 
 
-def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
-    r""""
+@_transition_to_rng("seed", position_num=2)
+def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
+    r"""
     Applies a Clarkson-Woodruff Transform/sketch to the input matrix.
 
     Given an input_matrix ``A`` of size ``(n, d)``, compute a matrix ``A'`` of
@@ -66,16 +68,15 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     Parameters
     ----------
-    input_matrix: array_like
+    input_matrix : array_like
         Input matrix, of shape ``(n, d)``.
-    sketch_size: int
+    sketch_size : int
         Number of rows for the sketch.
-    seed : None or int or `numpy.random.RandomState` instance, optional
-        This parameter defines the ``RandomState`` object to use for drawing
-        random variates.
-        If None (or ``np.random``), the global ``np.random`` state is used.
-        If integer, it is used to seed the local ``RandomState`` instance.
-        Default is None.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -105,13 +106,15 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     is in ``scipy.sparse.csc_matrix`` format gives the quickest
     computation time for sparse input.
 
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> from scipy import sparse
+    >>> rng = np.random.default_rng()
     >>> n_rows, n_columns, density, sketch_n_rows = 15000, 100, 0.01, 200
     >>> A = sparse.rand(n_rows, n_columns, density=density, format='csc')
     >>> B = sparse.rand(n_rows, n_columns, density=density, format='csr')
     >>> C = sparse.rand(n_rows, n_columns, density=density, format='coo')
-    >>> D = np.random.randn(n_rows, n_columns)
+    >>> D = rng.standard_normal((n_rows, n_columns))
     >>> SA = linalg.clarkson_woodruff_transform(A, sketch_n_rows) # fastest
     >>> SB = linalg.clarkson_woodruff_transform(B, sketch_n_rows) # fast
     >>> SC = linalg.clarkson_woodruff_transform(C, sketch_n_rows) # slower
@@ -120,47 +123,56 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     That said, this method does perform well on dense inputs, just slower
     on a relative scale.
 
+    References
+    ----------
+    .. [1] Kenneth L. Clarkson and David P. Woodruff. Low rank approximation
+           and regression in input sparsity time. In STOC, 2013.
+    .. [2] David P. Woodruff. Sketching as a tool for numerical linear algebra.
+           In Foundations and Trends in Theoretical Computer Science, 2014.
+
     Examples
     --------
-    Given a big dense matrix ``A``:
+    Create a big dense matrix ``A`` for the example:
 
+    >>> import numpy as np
     >>> from scipy import linalg
-    >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
-    >>> A = np.random.randn(n_rows, n_columns)
-    >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows)
+    >>> n_rows, n_columns  = 15000, 100
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((n_rows, n_columns))
+
+    Apply the transform to create a new matrix with 200 rows:
+
+    >>> sketch_n_rows = 200
+    >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows, seed=rng)
     >>> sketch.shape
     (200, 100)
-    >>> norm_A = np.linalg.norm(A)
-    >>> norm_sketch = np.linalg.norm(sketch)
 
-    Now with high probability, the true norm ``norm_A`` is close to
-    the sketched norm ``norm_sketch`` in absolute value.
+    Now with high probability, the true norm is close to the sketched norm
+    in absolute value.
+
+    >>> linalg.norm(A)
+    1224.2812927123198
+    >>> linalg.norm(sketch)
+    1226.518328407333
 
     Similarly, applying our sketch preserves the solution to a linear
     regression of :math:`\min \|Ax - b\|`.
 
-    >>> from scipy import linalg
-    >>> n_rows, n_columns, sketch_n_rows = 15000, 100, 200
-    >>> A = np.random.randn(n_rows, n_columns)
-    >>> b = np.random.randn(n_rows)
-    >>> x = np.linalg.lstsq(A, b, rcond=None)
-    >>> Ab = np.hstack((A, b.reshape(-1,1)))
-    >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_n_rows)
-    >>> SA, Sb = SAb[:,:-1], SAb[:,-1]
-    >>> x_sketched = np.linalg.lstsq(SA, Sb, rcond=None)
+    >>> b = rng.standard_normal(n_rows)
+    >>> x = linalg.lstsq(A, b)[0]
+    >>> Ab = np.hstack((A, b.reshape(-1, 1)))
+    >>> SAb = linalg.clarkson_woodruff_transform(Ab, sketch_n_rows, seed=rng)
+    >>> SA, Sb = SAb[:, :-1], SAb[:, -1]
+    >>> x_sketched = linalg.lstsq(SA, Sb)[0]
 
-    As with the matrix norm example, ``np.linalg.norm(A @ x - b)``
-    is close to ``np.linalg.norm(A @ x_sketched - b)`` with high
-    probability.
+    As with the matrix norm example, ``linalg.norm(A @ x - b)`` is close
+    to ``linalg.norm(A @ x_sketched - b)`` with high probability.
 
-    References
-    ----------
-    .. [1] Kenneth L. Clarkson and David P. Woodruff. Low rank approximation and
-           regression in input sparsity time. In STOC, 2013.
-
-    .. [2] David P. Woodruff. Sketching as a tool for numerical linear algebra.
-           In Foundations and Trends in Theoretical Computer Science, 2014.
+    >>> linalg.norm(A @ x - b)
+    122.83242365433877
+    >>> linalg.norm(A @ x_sketched - b)
+    166.58473879945151
 
     """
-    S = cwt_matrix(sketch_size, input_matrix.shape[0], seed)
+    S = cwt_matrix(sketch_size, input_matrix.shape[0], rng=rng)
     return S.dot(input_matrix)

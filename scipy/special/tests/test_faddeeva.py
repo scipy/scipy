@@ -6,7 +6,7 @@ import scipy.special as sc
 from scipy.special._testutils import FuncData
 
 
-class TestVoigtProfile(object):
+class TestVoigtProfile:
 
     @pytest.mark.parametrize('x, sigma, gamma', [
         (np.nan, 1, 1),

@@ -1,0 +1,70 @@
+==========================
+SciPy 1.7.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.7.2 is a bug-fix release with no new features
+compared to 1.7.1. Notably, the release includes wheels
+for Python 3.10, and wheels are now built with a newer
+version of OpenBLAS, 0.3.17. Python 3.10 wheels are provided
+for MacOS x86_64 (thin, not universal2 or arm64 at this time),
+and Windows/Linux 64-bit. Many wheels are now built with newer
+versions of manylinux, which may require newer versions of pip.
+
+Authors
+=======
+
+* Peter Bell
+* da-woods +
+* Isuru Fernando
+* Ralf Gommers
+* Matt Haberland
+* Nicholas McKibben
+* Ilhan Polat
+* Judah Rand +
+* Tyler Reddy
+* Pamphile Roy
+* Charles Harris
+* Matti Picus
+* Hugo van Kemenade
+* Jacob Vanderplas
+
+A total of 14 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.7.2
+-----------------------
+
+* `#6019 <https://github.com/scipy/scipy/issues/6019>`__: minimize_scalar doesn't seem to honor "disp" option
+* `#14321 <https://github.com/scipy/scipy/issues/14321>`__: BUG: Indexing of CSR matrices with many rows is much slower than...
+* `#14465 <https://github.com/scipy/scipy/issues/14465>`__: BUG: n-d interpolation parameter provided to geometric_slerp
+* `#14599 <https://github.com/scipy/scipy/issues/14599>`__: SciPy 1.7 builds as zipped egg, ruining imports
+* `#14606 <https://github.com/scipy/scipy/issues/14606>`__: BUG: crash / core dump when calling scipy.stats.beta.ppf with...
+* `#14732 <https://github.com/scipy/scipy/issues/14732>`__: CI, TST: pre-release failures for scipy/interpolate/tests/test_rbfinterp.py
+* `#14802 <https://github.com/scipy/scipy/issues/14802>`__: CI: Azure Main coverage job failure
+* `#14829 <https://github.com/scipy/scipy/issues/14829>`__: macOS CI failing with \`ld: library not found for -lSystem\`
+* `#14887 <https://github.com/scipy/scipy/issues/14887>`__: BUG: scipy.stats.multivariate_normal.logpdf mutates some inputs
+
+Pull requests for 1.7.2
+-----------------------
+
+* `#14207 <https://github.com/scipy/scipy/pull/14207>`__: DOC: stats: remove 'Methods' section from \`binomtest\` docstring...
+* `#14316 <https://github.com/scipy/scipy/pull/14316>`__: MAINT: Update \`openblas_support.py\` to support Apple Silicon
+* `#14323 <https://github.com/scipy/scipy/pull/14323>`__: BUG: Speed up sparse compressed indexing with very many rows
+* `#14333 <https://github.com/scipy/scipy/pull/14333>`__: MAINT: Use /usr/bin/linux32 so that sysconfig.get_platform()...
+* `#14478 <https://github.com/scipy/scipy/pull/14478>`__: BUG: geometric_slerp t ndim guard
+* `#14605 <https://github.com/scipy/scipy/pull/14605>`__: MAINT: Skip some interpolative decomposition tests
+* `#14616 <https://github.com/scipy/scipy/pull/14616>`__: REL: update build dependency versions in pyproject.toml for 1.7.2
+* `#14618 <https://github.com/scipy/scipy/pull/14618>`__: FIX: raise RuntimeWarning when Boost evaluation_error is encountered
+* `#14672 <https://github.com/scipy/scipy/pull/14672>`__: BLD: add \`zip_safe=False\` to the \`setup()\` call
+* `#14791 <https://github.com/scipy/scipy/pull/14791>`__: MAINT: SciPy 1.7.2 prep/backports
+* `#14803 <https://github.com/scipy/scipy/pull/14803>`__: MAINT: disable include/source coverage warning.
+* `#14813 <https://github.com/scipy/scipy/pull/14813>`__: Added missing np.import_array()
+* `#14831 <https://github.com/scipy/scipy/pull/14831>`__: CI: Add stdlib to LD_LIBRARY_PATH
+* `#14893 <https://github.com/scipy/scipy/pull/14893>`__: BUG: Fix alignment errors due to relaxed stride checking
+* `#14897 <https://github.com/scipy/scipy/pull/14897>`__: BUG: avoid mutating inputs in multivariate distributions
+* `#14921 <https://github.com/scipy/scipy/pull/14921>`__: MAINT: "backport" 3.10 support
+* `#14937 <https://github.com/scipy/scipy/pull/14937>`__: MAINT: backports for 1.7.2, plus update Pythran min version to...
+* `#14938 <https://github.com/scipy/scipy/pull/14938>`__: TST: silence test failures on macOS for \`beta.ppf\` overflow

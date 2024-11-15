@@ -3,12 +3,10 @@
 """
 import numpy as np
 
-try:
-    import scipy.linalg
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    import scipy.linalg
 
 
 class Sqrtm(Benchmark):

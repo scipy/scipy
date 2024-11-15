@@ -51,22 +51,12 @@ Contents :
 - example.c : A simple example
 - Makefile : Make file used to build the examples
 - moduleTNC.c : the source of the python module
-- tnc.py : the python module wrapper
-- example.py : an example for the python module
-- setup.py : the python installer
 
 Use is described in tnc.h. For more information, see the example.
 The example can be built and executed by doing :
   make test
 
 You may need to adjust the Makefile before building tnc.
-
-To install the module in the current directory, use:
- python setup.py build_ext --inplace
-To test it, execute:
-  python tnc.py
-To install it globaly, use:
- python setup.py install
 
 Thanks to eric jones <eric@enthought.com> for providing the setup script.
 

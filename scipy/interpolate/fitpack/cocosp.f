@@ -1,5 +1,6 @@
-      subroutine cocosp(m,x,y,w,n,t,e,maxtr,maxbin,c,sq,sx,bind,wrk,
-     * lwrk,iwrk,kwrk,ier)
+      recursive subroutine cocosp(m,x,y,w,n,t,e,maxtr,maxbin,c,sq,
+     * sx,bind,wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c  given the set of data points (x(i),y(i)) and the set of positive
 c  numbers w(i),i=1,2,...,m, subroutine cocosp determines the weighted
 c  least-squares cubic spline s(x) with given knots t(j),j=1,2,...,n

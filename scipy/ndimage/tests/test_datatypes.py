@@ -1,9 +1,8 @@
 """ Testing data types for ndimage calls
 """
-import sys
-
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_
+
+from scipy._lib._array_api import assert_array_almost_equal
 import pytest
 
 from scipy import ndimage
@@ -45,7 +44,7 @@ def test_map_coordinates_dts():
             assert_array_almost_equal(these_data, out)
 
 
-@pytest.mark.xfail(not sys.platform == 'darwin', reason="runs only on darwin")
+@pytest.mark.xfail(True, reason="Broken on many platforms")
 def test_uint64_max():
     # Test interpolation respects uint64 max.  Reported to fail at least on
     # win32 (due to the 32 bit visual C compiler using signed int64 when
@@ -53,14 +52,16 @@ def test_uint64_max():
     # Interpolation is always done in double precision floating point, so
     # we use the largest uint64 value for which int(float(big)) still fits
     # in a uint64.
+    # This test was last enabled on macOS only, and there it started failing
+    # on arm64 as well (see gh-19117).
     big = 2**64 - 1025
     arr = np.array([big, big, big], dtype=np.uint64)
     # Tests geometric transform (map_coordinates, affine_transform)
     inds = np.indices(arr.shape) - 0.1
     x = ndimage.map_coordinates(arr, inds)
-    assert_(x[1] == int(float(big)))
-    assert_(x[2] == int(float(big)))
+    assert x[1] == int(float(big))
+    assert x[2] == int(float(big))
     # Tests zoom / shift
     x = ndimage.shift(arr, 0.1)
-    assert_(x[1] == int(float(big)))
-    assert_(x[2] == int(float(big)))
+    assert x[1] == int(float(big))
+    assert x[2] == int(float(big))

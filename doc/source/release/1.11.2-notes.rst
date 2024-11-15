@@ -1,0 +1,82 @@
+==========================
+SciPy 1.11.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.11.2 is a bug-fix release with no new features
+compared to 1.11.1. Python 3.12 and musllinux wheels
+are provided with this release.
+
+
+
+Authors
+=======
+* Name (commits)
+* Evgeni Burovski (2)
+* CJ Carey (3)
+* Dieter Werthmüller (1)
+* elbarso (1) +
+* Ralf Gommers (2)
+* Matt Haberland (1)
+* jokasimr (1) +
+* Thilo Leitzbach (1) +
+* LemonBoy (1) +
+* Ellie Litwack (2) +
+* Sturla Molden (1)
+* Andrew Nelson (5)
+* Tyler Reddy (39)
+* Daniel Schmitz (6)
+* Dan Schult (2)
+* Albert Steppi (1)
+* Matus Valo (1)
+* Stefan van der Walt (1)
+
+A total of 18 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.11.2
+------------------------
+
+* `#4690 <https://github.com/scipy/scipy/issues/4690>`__: special.jn_zeros(281, 6) hangs
+* `#12247 <https://github.com/scipy/scipy/issues/12247>`__: Complex matrix square root of positive semi-definite matrix
+* `#18398 <https://github.com/scipy/scipy/issues/18398>`__: BUG: \`loadmat\` fails to load matlab structures with anonymous...
+* `#18603 <https://github.com/scipy/scipy/issues/18603>`__: BUG: Floating point CSC with int64 indices doesn't work with...
+* `#18730 <https://github.com/scipy/scipy/issues/18730>`__: BUG: \`scipy.optimize.minimize\` fails when \`dtype=float32\`...
+* `#18788 <https://github.com/scipy/scipy/issues/18788>`__: DOC: Broken link to installation instructions in README.rst
+* `#18792 <https://github.com/scipy/scipy/issues/18792>`__: BUG: Build failure with Cython 3.0.0b3 if scipy is already installed
+* `#18793 <https://github.com/scipy/scipy/issues/18793>`__: BUG: optimize.least_squares with method='trf' yields wrong result...
+* `#18800 <https://github.com/scipy/scipy/issues/18800>`__: BUG: cKDtree.query no longer accepts DataFrame as input
+* `#19002 <https://github.com/scipy/scipy/issues/19002>`__: Spalde error with scipy 1.10: 0-th dimension must be fixed
+* `#19022 <https://github.com/scipy/scipy/issues/19022>`__: BUG: <Compilation of scipy 1.11 falls with python3.12>
+* `#19026 <https://github.com/scipy/scipy/issues/19026>`__: BUG: Compilation of scipy 1.10.1 and 1.11.1 fails with Python...
+
+
+Pull requests for 1.11.2
+------------------------
+
+* `#17918 <https://github.com/scipy/scipy/pull/17918>`__: BUG: Fix error in linalg/_matfuncs_sqrtm.py
+* `#18644 <https://github.com/scipy/scipy/pull/18644>`__: BUG: sparse.linalg: Cast index arrays to intc before calling...
+* `#18784 <https://github.com/scipy/scipy/pull/18784>`__: Allow johnsonsu parameters to be floats
+* `#18785 <https://github.com/scipy/scipy/pull/18785>`__: MAINT: stats: fix NumPy DeprecationWarnings
+* `#18787 <https://github.com/scipy/scipy/pull/18787>`__: REL, MAINT: prep for 1.11.2
+* `#18790 <https://github.com/scipy/scipy/pull/18790>`__: DOC: Fix broken link to installation guide in README
+* `#18804 <https://github.com/scipy/scipy/pull/18804>`__: BUG: Ensure cKDtree.query does not pass Pandas DataFrame to np.isfinite
+* `#18809 <https://github.com/scipy/scipy/pull/18809>`__: CI, MAINT: 32-bit Pillow pin
+* `#18810 <https://github.com/scipy/scipy/pull/18810>`__: BLD: copy \`cython_optimize.pxd\` to build dir
+* `#18825 <https://github.com/scipy/scipy/pull/18825>`__: BUG: make \`L-BFGS-B\` optimizer work with single precision gradient
+* `#18831 <https://github.com/scipy/scipy/pull/18831>`__: BUG: io/matlab: Fix loading of mat files containing fn handles...
+* `#18859 <https://github.com/scipy/scipy/pull/18859>`__: BUG: make Bessel-roots function not hang and not skip roots
+* `#18894 <https://github.com/scipy/scipy/pull/18894>`__: DOC: linking interp1d docstring to tutorial
+* `#18896 <https://github.com/scipy/scipy/pull/18896>`__: BUG: lsq trf gives x=1e-10 if x0 is near a bound
+* `#18937 <https://github.com/scipy/scipy/pull/18937>`__: CI/BLD: create cp312 wheels
+* `#18961 <https://github.com/scipy/scipy/pull/18961>`__: DOC: Fix installation instructions using venv/pip
+* `#18985 <https://github.com/scipy/scipy/pull/18985>`__: CI: move the musllinux Cirrus job to GHA, optimize other jobs
+* `#18999 <https://github.com/scipy/scipy/pull/18999>`__: CI: reduce Cirrus CI usage during wheel builds
+* `#19004 <https://github.com/scipy/scipy/pull/19004>`__: BUG: interpolate: fix spalde with len(c) < len(t)
+* `#19025 <https://github.com/scipy/scipy/pull/19025>`__: BUG: pass unused xrtol in fmin_bfgs to _minimize_bfgs
+* `#19027 <https://github.com/scipy/scipy/pull/19027>`__: BLD: rename \`setup.py\` to \`_setup.py\` to signal it should...
+* `#19034 <https://github.com/scipy/scipy/pull/19034>`__: MAINT: NumPy 1.25.x deprecations
+* `#19054 <https://github.com/scipy/scipy/pull/19054>`__: MAINT: ensure cobyla objective returns scalar

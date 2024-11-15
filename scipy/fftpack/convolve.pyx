@@ -3,6 +3,8 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+np.import_array()
+
 __all__ = ['destroy_convolve_cache', 'convolve', 'convolve_z',
            'init_convolution_kernel']
 
@@ -161,7 +163,7 @@ def init_convolution_kernel(size_t n, object kernel_func,
     cdef:
         np.ndarray[np.float64_t, ndim=1] omega_arr
         double [::1] omega
-        size_t i, j, k, l
+        size_t j, k, l
         double scale_real, scale_imag, x
 
     if zero_nyquist is None:

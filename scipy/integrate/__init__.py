@@ -13,15 +13,15 @@ Integrating functions, given function object
 
    quad          -- General purpose integration
    quad_vec      -- General purpose integration of vector-valued functions
+   cubature      -- General purpose multi-dimensional integration of array-valued functions
    dblquad       -- General purpose double integration
    tplquad       -- General purpose triple integration
    nquad         -- General purpose N-D integration
    fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n
-   quadrature    -- Integrate with given tolerance using Gaussian quadrature
-   romberg       -- Integrate func using Romberg integration
-   quad_explain  -- Print information for use of quad
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
+   qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
+
 
 Integrating functions, given fixed samples
 ==========================================
@@ -29,16 +29,25 @@ Integrating functions, given fixed samples
 .. autosummary::
    :toctree: generated/
 
-   trapz         -- Use trapezoidal rule to compute integral.
-   cumtrapz      -- Use trapezoidal rule to cumulatively compute integral.
-   simps         -- Use Simpson's rule to compute integral from samples.
-   romb          -- Use Romberg Integration to compute integral from
-                 -- (2**k + 1) evenly-spaced samples.
+   trapezoid            -- Use trapezoidal rule to compute integral.
+   cumulative_trapezoid -- Use trapezoidal rule to cumulatively compute integral.
+   simpson              -- Use Simpson's rule to compute integral from samples.
+   cumulative_simpson   -- Use Simpson's rule to cumulatively compute integral from samples.
+   romb                 -- Use Romberg Integration to compute integral from
+                        -- (2**k + 1) evenly-spaced samples.
 
 .. seealso::
 
    :mod:`scipy.special` for orthogonal polynomials (special) for Gaussian
    quadrature roots and weights for other weighting factors and regions.
+
+Summation
+=========
+
+.. autosummary::
+   :toctree: generated/
+
+   nsum
 
 Solving initial value problems for ODE systems
 ==============================================
@@ -76,6 +85,7 @@ Fortran code. In some cases, it might be worth using this old API.
    odeint        -- General integration of ordinary differential equations.
    ode           -- Integrate ODE using VODE and ZVODE routines.
    complex_ode   -- Convert a complex-valued ODE to real-valued and integrate.
+   ODEintWarning -- Warning raised during the execution of `odeint`.
 
 
 Solving boundary value problems for ODE systems
@@ -85,15 +95,22 @@ Solving boundary value problems for ODE systems
    :toctree: generated/
 
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
-"""
-from .quadrature import *
-from .odepack import *
-from .quadpack import *
+"""  # noqa: E501
+
+
+from ._quadrature import *
+from ._odepack_py import *
+from ._quadpack_py import *
 from ._ode import *
 from ._bvp import solve_bvp
 from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
                    OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA)
 from ._quad_vec import quad_vec
+from ._tanhsinh import nsum
+from ._cubature import cubature
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import dop, lsoda, vode, odepack, quadpack
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

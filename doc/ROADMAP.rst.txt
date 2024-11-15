@@ -1,1 +1,0 @@
-The roadmap content has moved.  Please see http://scipy.github.io/devdocs/roadmap.html

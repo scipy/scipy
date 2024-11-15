@@ -1,12 +1,10 @@
 """Benchmarks for peak finding related functions."""
 
-try:
-    from scipy.signal import find_peaks, peak_prominences, peak_widths
-    from scipy.misc import electrocardiogram
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    from scipy.signal import find_peaks, peak_prominences, peak_widths
+    from scipy.datasets import electrocardiogram
 
 
 class FindPeaks(Benchmark):

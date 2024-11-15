@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy import abs, cos, exp, arange, pi, sin, sqrt, sum, zeros, tanh
 from numpy.testing import assert_almost_equal
@@ -112,7 +111,7 @@ class Deb03(Benchmark):
 
     .. math::
 
-        f_{\text{Deb02}}(x) = - \frac{1}{N} \sum_{i=1}^n \sin^6 \left[ 5 \pi
+        f_{\text{Deb03}}(x) = - \frac{1}{N} \sum_{i=1}^n \sin^6 \left[ 5 \pi
         \left ( x_i^{3/4} - 0.05 \right) \right ]
 
 
@@ -133,7 +132,8 @@ class Deb03(Benchmark):
 
         self.change_dimensionality = True
 
-        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
+        # lower limit changed to zero because of fractional power
+        self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.93388314, 0.68141781]]
         self.fglob = -1.0
@@ -403,8 +403,8 @@ class DeVilliersGlasser02(Benchmark):
     r"""
     DeVilliers-Glasser 2 objective function.
 
-    This class defines the DeVilliers-Glasser 2 [1]_ function global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the DeVilliers-Glasser 2 [1]_ function global optimization
+    problem. This is a multimodal minimization problem defined as follows:
 
     .. math::
 

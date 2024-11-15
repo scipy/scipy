@@ -22,6 +22,7 @@ Matrix Operations
    inv -- compute the sparse matrix inverse
    expm -- compute the sparse matrix exponential
    expm_multiply -- compute the product of a matrix exponential and a matrix
+   matrix_power -- compute the matrix power by raising a matrix to an exponent
 
 Matrix norms
 ------------
@@ -41,7 +42,7 @@ Direct methods for linear equation systems:
    :toctree: generated/
 
    spsolve -- Solve the sparse linear system Ax=b
-   spsolve_triangular -- Solve the sparse linear system Ax=b for a triangular matrix
+   spsolve_triangular -- Solve sparse linear system Ax=b for a triangular A.
    factorized -- Pre-factorize matrix to a function solving a linear system
    MatrixRankWarning -- Warning on exactly singular matrices
    use_solver -- Select direct solver to use
@@ -51,15 +52,16 @@ Iterative methods for linear equation systems:
 .. autosummary::
    :toctree: generated/
 
-   bicg -- Use BIConjugate Gradient iteration to solve A x = b
-   bicgstab -- Use BIConjugate Gradient STABilized iteration to solve A x = b
-   cg -- Use Conjugate Gradient iteration to solve A x = b
-   cgs -- Use Conjugate Gradient Squared iteration to solve A x = b
-   gmres -- Use Generalized Minimal RESidual iteration to solve A x = b
+   bicg -- Use BIConjugate Gradient iteration to solve Ax = b
+   bicgstab -- Use BIConjugate Gradient STABilized iteration to solve Ax = b
+   cg -- Use Conjugate Gradient iteration to solve Ax = b
+   cgs -- Use Conjugate Gradient Squared iteration to solve Ax = b
+   gmres -- Use Generalized Minimal RESidual iteration to solve Ax = b
    lgmres -- Solve a matrix equation using the LGMRES algorithm
    minres -- Use MINimum RESidual iteration to solve Ax = b
-   qmr -- Use Quasi-Minimal Residual iteration to solve A x = b
+   qmr -- Use Quasi-Minimal Residual iteration to solve Ax = b
    gcrotmk -- Solve a matrix equation using the GCROT(m,k) algorithm
+   tfqmr -- Use Transpose-Free Quasi-Minimal Residual iteration to solve Ax = b
 
 Iterative methods for least-squares problems:
 
@@ -88,6 +90,14 @@ Singular values problems:
 
    svds -- Compute k singular values/vectors for a sparse matrix
 
+The `svds` function supports the following solvers:
+
+.. toctree::
+
+    sparse.linalg.svds-arpack
+    sparse.linalg.svds-lobpcg
+    sparse.linalg.svds-propack
+
 Complete or incomplete LU factorizations
 
 .. autosummary::
@@ -96,6 +106,14 @@ Complete or incomplete LU factorizations
    splu -- Compute a LU decomposition for a sparse matrix
    spilu -- Compute an incomplete LU decomposition for a sparse matrix
    SuperLU -- Object representing an LU factorization
+
+Sparse arrays with structure
+----------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   LaplacianNd -- Laplacian on a uniform rectangular grid in ``N`` dimensions
 
 Exceptions
 ----------
@@ -108,14 +126,18 @@ Exceptions
 
 """
 
-from .isolve import *
-from .dsolve import *
-from .interface import *
-from .eigen import *
-from .matfuncs import *
+from ._isolve import *
+from ._dsolve import *
+from ._interface import *
+from ._eigen import *
+from ._matfuncs import *
 from ._onenormest import *
 from ._norm import *
 from ._expm_multiply import *
+from ._special_sparse_arrays import *
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import isolve, dsolve, interface, eigen, matfuncs
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

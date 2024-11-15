@@ -6,7 +6,7 @@ from pytest import raises as assert_raises
 from scipy.special import gammaln, multigammaln
 
 
-class TestMultiGammaLn(object):
+class TestMultiGammaLn:
 
     def test1(self):
         # A test of the identity
@@ -42,7 +42,7 @@ def _check_multigammaln_array_result(a, d):
 def test_multigammaln_array_arg():
     # Check that the array returned by multigammaln has the correct
     # shape and contains the correct values.  The cases have arrays
-    # with several differnent shapes.
+    # with several different shapes.
     # The cases include a regression test for ticket #1849
     # (a = np.array([2.0]), an array with a single element).
     np.random.seed(1234)

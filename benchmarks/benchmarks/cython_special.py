@@ -2,12 +2,10 @@ import re
 import numpy as np
 from scipy import special
 
-try:
-    from scipy.special import cython_special
-except ImportError:
-    pass
+from .common import with_attributes, safe_import
 
-from .common import with_attributes
+with safe_import():
+    from scipy.special import cython_special
 
 
 FUNC_ARGS = {
@@ -61,8 +59,8 @@ class _CythonSpecialMeta(type):
 
 class CythonSpecial(metaclass=_CythonSpecialMeta):
     def setup(self, name, args, N, api):
-        self.py_func = getattr(cython_special, '_bench_{}_py'.format(name))
-        self.cy_func = getattr(cython_special, '_bench_{}_cy'.format(name))
+        self.py_func = getattr(cython_special, f'_bench_{name}_py')
+        self.cy_func = getattr(cython_special, f'_bench_{name}_cy')
         m = re.match('^(.*)_[dDl]+$', name)
         self.np_func = getattr(special, m.group(1))
 

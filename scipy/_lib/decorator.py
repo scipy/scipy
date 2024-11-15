@@ -38,32 +38,14 @@ import operator
 import itertools
 import collections
 
+from inspect import getfullargspec
+
 __version__ = '4.0.5'
 
-if sys.version >= '3':
-    from inspect import getfullargspec
 
-    def get_init(cls):
-        return cls.__init__
-else:
-    class getfullargspec(object):
-        "A quick and dirty replacement for getfullargspec for Python 2.x"
-        def __init__(self, f):
-            self.args, self.varargs, self.varkw, self.defaults = \
-                inspect.getargspec(f)
-            self.kwonlyargs = []
-            self.kwonlydefaults = None
+def get_init(cls):
+    return cls.__init__
 
-        def __iter__(self):
-            yield self.args
-            yield self.varargs
-            yield self.varkw
-            yield self.defaults
-
-        getargspec = inspect.getargspec
-
-    def get_init(cls):
-        return cls.__init__.__func__
 
 # getargspec has been deprecated in Python 3.5
 ArgSpec = collections.namedtuple(
@@ -80,7 +62,7 @@ DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 
 
 # basic functionality
-class FunctionMaker(object):
+class FunctionMaker:
     """
     An object with the ability to create functions with a given signature.
     It has attributes name, doc, module, signature, defaults, dict, and
@@ -108,26 +90,21 @@ class FunctionMaker(object):
                     setattr(self, a, getattr(argspec, a))
                 for i, arg in enumerate(self.args):
                     setattr(self, 'arg%d' % i, arg)
-                if sys.version < '3':  # easy way
-                    self.shortsignature = self.signature = (
-                        inspect.formatargspec(
-                            formatvalue=lambda val: "", *argspec)[1:-1])
-                else:  # Python 3 way
-                    allargs = list(self.args)
-                    allshortargs = list(self.args)
-                    if self.varargs:
-                        allargs.append('*' + self.varargs)
-                        allshortargs.append('*' + self.varargs)
-                    elif self.kwonlyargs:
-                        allargs.append('*')  # single star syntax
-                    for a in self.kwonlyargs:
-                        allargs.append('%s=None' % a)
-                        allshortargs.append('%s=%s' % (a, a))
-                    if self.varkw:
-                        allargs.append('**' + self.varkw)
-                        allshortargs.append('**' + self.varkw)
-                    self.signature = ', '.join(allargs)
-                    self.shortsignature = ', '.join(allshortargs)
+                allargs = list(self.args)
+                allshortargs = list(self.args)
+                if self.varargs:
+                    allargs.append('*' + self.varargs)
+                    allshortargs.append('*' + self.varargs)
+                elif self.kwonlyargs:
+                    allargs.append('*')  # single star syntax
+                for a in self.kwonlyargs:
+                    allargs.append(f'{a}=None')
+                    allshortargs.append(f'{a}={a}')
+                if self.varkw:
+                    allargs.append('**' + self.varkw)
+                    allshortargs.append('**' + self.varkw)
+                self.signature = ', '.join(allargs)
+                self.shortsignature = ', '.join(allshortargs)
                 self.dict = func.__dict__.copy()
         # func=None happens when decorating a caller
         if name:
@@ -145,7 +122,7 @@ class FunctionMaker(object):
         # check existence required attributes
         assert hasattr(self, 'name')
         if not hasattr(self, 'signature'):
-            raise TypeError('You are decorating a non-function: %s' % func)
+            raise TypeError(f'You are decorating a non-function: {func}')
 
     def update(self, func, **kw):
         "Update the signature of func with the data in self"
@@ -170,13 +147,13 @@ class FunctionMaker(object):
         evaldict = evaldict or {}
         mo = DEF.match(src)
         if mo is None:
-            raise SyntaxError('not a valid function template\n%s' % src)
+            raise SyntaxError(f'not a valid function template\n{src}')
         name = mo.group(1)  # extract the function name
         names = set([name] + [arg.strip(' *') for arg in
                               self.shortsignature.split(',')])
         for n in names:
             if n in ('_func_', '_call_'):
-                raise NameError('%s is overridden in\n%s' % (n, src))
+                raise NameError(f'{n} is overridden in\n{src}')
         if not src.endswith('\n'):  # add a newline just for safety
             src += '\n'  # this is needed in old versions of Python
 
@@ -244,8 +221,8 @@ def decorator(caller, _func=None):
     if inspect.isclass(caller):
         name = caller.__name__.lower()
         callerfunc = get_init(caller)
-        doc = 'decorator(%s) converts functions/generators into ' \
-            'factories of %s objects' % (caller.__name__, caller.__name__)
+        doc = (f'decorator({caller.__name__}) converts functions/generators into ' 
+               f'factories of {caller.__name__} objects')
     elif inspect.isfunction(caller):
         if caller.__name__ == '<lambda>':
             name = '_lambda_'
@@ -261,7 +238,7 @@ def decorator(caller, _func=None):
     evaldict['_call_'] = caller
     evaldict['_decorate_'] = decorate
     return FunctionMaker.create(
-        '%s(func)' % name, 'return _decorate_(func, _call_)',
+        f'{name}(func)', 'return _decorate_(func, _call_)',
         evaldict, doc=doc, module=caller.__module__,
         __wrapped__=caller)
 
@@ -324,13 +301,13 @@ def dispatch_on(*dispatch_args):
     dispatching on the given arguments.
     """
     assert dispatch_args, 'No dispatch args passed'
-    dispatch_str = '(%s,)' % ', '.join(dispatch_args)
+    dispatch_str = f"({', '.join(dispatch_args)},)"
 
     def check(arguments, wrong=operator.ne, msg=''):
         """Make sure one passes the expected number of arguments"""
         if wrong(len(arguments), len(dispatch_args)):
-            raise TypeError('Expected %d arguments, got %d%s' %
-                            (len(dispatch_args), len(arguments), msg))
+            raise TypeError(f'Expected {len(dispatch_args)} arguments, '
+                            'got {len(arguments)}{msg}')
 
     def gen_func_dec(func):
         """Decorator turning a function into a generic function"""
@@ -338,7 +315,7 @@ def dispatch_on(*dispatch_args):
         # first check the dispatch arguments
         argset = set(getfullargspec(func).args)
         if not set(dispatch_args) <= argset:
-            raise NameError('Unknown dispatch arguments %s' % dispatch_str)
+            raise NameError(f'Unknown dispatch arguments {dispatch_str}')
 
         typemap = {}
 
@@ -364,7 +341,7 @@ def dispatch_on(*dispatch_args):
                 n_vas = len(vas)
                 if n_vas > 1:
                     raise RuntimeError(
-                        'Ambiguous dispatch for %s: %s' % (t, vas))
+                        f'Ambiguous dispatch for {t}: {vas}')
                 elif n_vas == 1:
                     va, = vas
                     mro = type('t', (t, va), {}).__mro__[1:]
@@ -413,7 +390,7 @@ def dispatch_on(*dispatch_args):
             return func(*args, **kw)
 
         return FunctionMaker.create(
-            func, 'return _f_(%s, %%(shortsignature)s)' % dispatch_str,
+            func, f'return _f_({dispatch_str}, %%(shortsignature)s)',
             dict(_f_=_dispatch), register=register, default=func,
             typemap=typemap, vancestors=vancestors, ancestors=ancestors,
             dispatch_info=dispatch_info, __wrapped__=func)

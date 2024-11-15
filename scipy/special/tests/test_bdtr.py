@@ -4,7 +4,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal, suppress_warnings
 
 
-class TestBdtr(object):
+class TestBdtr:
     def test(self):
         val = sc.bdtr(0, 1, 0.5)
         assert_allclose(val, 0.5)
@@ -34,7 +34,7 @@ class TestBdtr(object):
         assert np.isnan(val)
 
 
-class TestBdtrc(object):
+class TestBdtrc:
     def test_value(self):
         val = sc.bdtrc(0, 1, 0.5)
         assert_allclose(val, 0.5)
@@ -72,7 +72,7 @@ class TestBdtrc(object):
         assert_allclose(vals, [1.0, 1.0, 1.0])
 
 
-class TestBdtri(object):
+class TestBdtri:
     def test_value(self):
         val = sc.bdtri(0, 1, 0.5)
         assert_allclose(val, 0.5)

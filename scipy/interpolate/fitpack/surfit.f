@@ -1,5 +1,7 @@
-      subroutine surfit(iopt,m,x,y,z,w,xb,xe,yb,ye,kx,ky,s,nxest,nyest,
-     *  nmax,eps,nx,tx,ny,ty,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+      recursive subroutine surfit(iopt,m,x,y,z,w,xb,xe,yb,ye,kx,ky,s,
+     *  nxest,nyest,nmax,eps,nx,tx,ny,ty,c,fp,wrk1,lwrk1,wrk2,lwrk2,
+     *  iwrk,kwrk,ier)
+      implicit none
 c given the set of data points (x(i),y(i),z(i)) and the set of positive
 c numbers w(i),i=1,...,m, subroutine surfit determines a smooth bivar-
 c iate spline approximation s(x,y) of degrees kx and ky on the rect-

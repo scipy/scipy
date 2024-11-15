@@ -1,0 +1,99 @@
+==========================
+SciPy 1.10.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.10.1 is a bug-fix release with no new features
+compared to 1.10.0.
+
+
+
+Authors
+=======
+* Name (commits)
+* alice (1) +
+* Matt Borland (2) +
+* Evgeni Burovski (2)
+* CJ Carey (1)
+* Ralf Gommers (9)
+* Brett Graham (1) +
+* Matt Haberland (5)
+* Alex Herbert (1) +
+* Ganesh Kathiresan (2) +
+* Rishi Kulkarni (1) +
+* Loïc Estève (1)
+* Michał Górny (1) +
+* Jarrod Millman (1)
+* Andrew Nelson (4)
+* Tyler Reddy (50)
+* Pamphile Roy (2)
+* Eli Schwartz (2)
+* Tomer Sery (1) +
+* Kai Striega (1)
+* Jacopo Tissino (1) +
+* windows-server-2003 (1)
+
+A total of 21 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.10.1
+------------------------
+
+* `#14980 <https://github.com/scipy/scipy/issues/14980>`__: BUG: Johnson's algorithm fails without negative cycles
+* `#17670 <https://github.com/scipy/scipy/issues/17670>`__: Failed to install on Raspberry Pi (ARM) 32bit in 3.11.1
+* `#17715 <https://github.com/scipy/scipy/issues/17715>`__: scipy.stats.bootstrap broke with statistic returning multiple...
+* `#17716 <https://github.com/scipy/scipy/issues/17716>`__: BUG: interpolate.interpn fails with read only input
+* `#17718 <https://github.com/scipy/scipy/issues/17718>`__: BUG: RegularGridInterpolator 2D mixed precision crashes
+* `#17727 <https://github.com/scipy/scipy/issues/17727>`__: BUG: RegularGridInterpolator does not work on non-native byteorder...
+* `#17736 <https://github.com/scipy/scipy/issues/17736>`__: BUG: SciPy requires OpenBLAS even when building against a different...
+* `#17775 <https://github.com/scipy/scipy/issues/17775>`__: BUG: Asymptotic computation of ksone.sf has intermediate overflow
+* `#17782 <https://github.com/scipy/scipy/issues/17782>`__: BUG: Segfault in scipy.sparse.csgraph.shortest_path() with v1.10.0
+* `#17795 <https://github.com/scipy/scipy/issues/17795>`__: BUG: stats.pearsonr one-sided hypothesis yields incorrect p-value...
+* `#17801 <https://github.com/scipy/scipy/issues/17801>`__: BUG: stats.powerlaw.fit: raises OverflowError
+* `#17808 <https://github.com/scipy/scipy/issues/17808>`__: BUG: name of cython executable is hardcoded in _build_utils/cythoner.py
+* `#17811 <https://github.com/scipy/scipy/issues/17811>`__: CI job with numpy nightly build failing on missing \`_ArrayFunctionDispatcher.__code__\`
+* `#17839 <https://github.com/scipy/scipy/issues/17839>`__: BUG: 1.10.0 tests fail on i386 and other less common arches
+* `#17896 <https://github.com/scipy/scipy/issues/17896>`__: DOC: publicly expose \`multivariate_normal\` attributes \`mean\`...
+* `#17934 <https://github.com/scipy/scipy/issues/17934>`__: BUG: meson \`__config__\` generation - truncated unicode characters
+* `#17938 <https://github.com/scipy/scipy/issues/17938>`__: BUG: \`scipy.stats.qmc.LatinHypercube\` with \`optimization="random-cd"\`...
+
+
+Pull requests for 1.10.1
+------------------------
+
+* `#17712 <https://github.com/scipy/scipy/pull/17712>`__: REL, MAINT: prepare for 1.10.1
+* `#17717 <https://github.com/scipy/scipy/pull/17717>`__: BUG: allow readonly input to interpolate.interpn
+* `#17721 <https://github.com/scipy/scipy/pull/17721>`__: MAINT: update \`meson-python\` upper bound to <0.13.0
+* `#17726 <https://github.com/scipy/scipy/pull/17726>`__: BUG: interpolate/RGI: upcast float32 to float64
+* `#17735 <https://github.com/scipy/scipy/pull/17735>`__: MAINT: stats.bootstrap: fix BCa with vector-valued statistics
+* `#17743 <https://github.com/scipy/scipy/pull/17743>`__: DOC: improve the docs on using BLAS/LAPACK libraries with Meson
+* `#17777 <https://github.com/scipy/scipy/pull/17777>`__: BLD: link to libatomic if necessary
+* `#17783 <https://github.com/scipy/scipy/pull/17783>`__: BUG: Correct intermediate overflow in KS one asymptotic in SciPy.stats
+* `#17790 <https://github.com/scipy/scipy/pull/17790>`__: BUG: signal: fix check_malloc extern declaration type
+* `#17797 <https://github.com/scipy/scipy/pull/17797>`__: MAINT: stats.pearsonr: correct p-value with negative correlation...
+* `#17800 <https://github.com/scipy/scipy/pull/17800>`__: [sparse.csgraph] Fix a bug in dijkstra and johnson algorithm
+* `#17803 <https://github.com/scipy/scipy/pull/17803>`__: MAINT: add missing \`__init__.py\` in test folder
+* `#17806 <https://github.com/scipy/scipy/pull/17806>`__: MAINT: stats.powerlaw.fit: fix overflow when np.min(data)==0
+* `#17810 <https://github.com/scipy/scipy/pull/17810>`__: BLD: use Meson's found cython instead of a wrapper script
+* `#17831 <https://github.com/scipy/scipy/pull/17831>`__: MAINT, CI: GHA MacOS setup.py update
+* `#17850 <https://github.com/scipy/scipy/pull/17850>`__: MAINT: remove use of \`__code__\` in \`scipy.integrate\`
+* `#17854 <https://github.com/scipy/scipy/pull/17854>`__: TST: mark test for \`stats.kde.marginal\` as xslow
+* `#17855 <https://github.com/scipy/scipy/pull/17855>`__: BUG: Fix handling of \`powm1\` overflow errors
+* `#17859 <https://github.com/scipy/scipy/pull/17859>`__: TST: fix test failures on i386, s390x, ppc64, riscv64 (Debian)
+* `#17862 <https://github.com/scipy/scipy/pull/17862>`__: BLD: Meson \`__config__\` generation
+* `#17863 <https://github.com/scipy/scipy/pull/17863>`__: BUG: fix Johnson's algorithm
+* `#17872 <https://github.com/scipy/scipy/pull/17872>`__: BUG: fix powm1 overflow handling
+* `#17904 <https://github.com/scipy/scipy/pull/17904>`__: ENH: \`multivariate_normal_frozen\`: restore \`cov\` attribute
+* `#17910 <https://github.com/scipy/scipy/pull/17910>`__: CI: use nightly numpy musllinux_x86_64 wheel
+* `#17931 <https://github.com/scipy/scipy/pull/17931>`__: TST: test_location_scale proper 32bit Linux skip
+* `#17932 <https://github.com/scipy/scipy/pull/17932>`__: TST: 32-bit tol for test_pdist_jensenshannon_iris
+* `#17936 <https://github.com/scipy/scipy/pull/17936>`__: BUG: Use raw strings for paths in \`__config__.py.in\`
+* `#17940 <https://github.com/scipy/scipy/pull/17940>`__: BUG: \`rng_integers\` in \`_random_cd\` now samples on a closed...
+* `#17942 <https://github.com/scipy/scipy/pull/17942>`__: BLD: update classifiers for Python 3.11
+* `#17963 <https://github.com/scipy/scipy/pull/17963>`__: MAINT: backports/prep for SciPy 1.10.1
+* `#17981 <https://github.com/scipy/scipy/pull/17981>`__: BLD: make sure macosx_x86_64 10.9 tags are being made on maintenance/1.10.x
+* `#17984 <https://github.com/scipy/scipy/pull/17984>`__: DOC: update link of the logo in the readme
+* `#17997 <https://github.com/scipy/scipy/pull/17997>`__: BUG: at least one entry from trial should be used in exponential...

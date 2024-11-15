@@ -1,68 +1,17 @@
-''' Byteorder utilities for system - numpy byteorder encoding
+# This file is not meant for public use and will be removed in SciPy v2.0.0.
+# Use the `scipy.io.matlab` namespace for importing the functions
+# included below.
 
-Converts a variety of string codes for little endian, big endian,
-native byte order and swapped byte order to explicit NumPy endian
-codes - one of '<' (little endian) or '>' (big endian)
+from scipy._lib.deprecation import _sub_module_deprecation
 
-'''
-import sys
-
-sys_is_le = sys.byteorder == 'little'
-native_code = sys_is_le and '<' or '>'
-swapped_code = sys_is_le and '>' or '<'
-
-aliases = {'little': ('little', '<', 'l', 'le'),
-           'big': ('big', '>', 'b', 'be'),
-           'native': ('native', '='),
-           'swapped': ('swapped', 'S')}
+__all__: list[str] = []
 
 
-def to_numpy_code(code):
-    """
-    Convert various order codings to NumPy format.
+def __dir__():
+    return __all__
 
-    Parameters
-    ----------
-    code : str
-        The code to convert. It is converted to lower case before parsing.
-        Legal values are:
-        'little', 'big', 'l', 'b', 'le', 'be', '<', '>', 'native', '=',
-        'swapped', 's'.
 
-    Returns
-    -------
-    out_code : {'<', '>'}
-        Here '<' is the numpy dtype code for little endian,
-        and '>' is the code for big endian.
-
-    Examples
-    --------
-    >>> import sys
-    >>> sys_is_le == (sys.byteorder == 'little')
-    True
-    >>> to_numpy_code('big')
-    '>'
-    >>> to_numpy_code('little')
-    '<'
-    >>> nc = to_numpy_code('native')
-    >>> nc == '<' if sys_is_le else nc == '>'
-    True
-    >>> sc = to_numpy_code('swapped')
-    >>> sc == '>' if sys_is_le else sc == '<'
-    True
-
-    """
-    code = code.lower()
-    if code is None:
-        return native_code
-    if code in aliases['little']:
-        return '<'
-    elif code in aliases['big']:
-        return '>'
-    elif code in aliases['native']:
-        return native_code
-    elif code in aliases['swapped']:
-        return swapped_code
-    else:
-        raise ValueError(
-            'We cannot handle byte order %s' % code)
+def __getattr__(name):
+    return _sub_module_deprecation(sub_package="io.matlab", module="byteordercodes",
+                                   private_modules=["_byteordercodes"], all=__all__,
+                                   attribute=name)

@@ -1,4 +1,5 @@
-      subroutine fporde(x,y,m,kx,ky,tx,nx,ty,ny,nummer,index,nreg)
+      recursive subroutine fporde(x,y,m,kx,ky,tx,nx,ty,ny,nummer,
+     *   index,nreg)
 c  subroutine fporde sorts the data points (x(i),y(i)),i=1,2,...,m
 c  according to the panel tx(l)<=x<tx(l+1),ty(k)<=y<ty(k+1), they belong
 c  to. for each panel a stack is constructed  containing the numbers

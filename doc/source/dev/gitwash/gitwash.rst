@@ -1,5 +1,3 @@
-:orphan:
-
 .. _using-git:
 .. _git-development:
 
@@ -15,18 +13,14 @@ of getting stuff done with git_, but these should get you started.
 
 For general resources for learning git_ see :ref:`git-resources`.
 
-Have a look at the github_ install help pages available from `github help`_
-
-.. _install-git:
-
+Have a look at the github_ install help pages available from `github help`_ or
+from the `Git home page <https://git-scm.com/downloads>`__.
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-   git_intro
-   following_latest
    development_setup
    configure_git
    useful_git

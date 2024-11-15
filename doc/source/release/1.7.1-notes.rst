@@ -1,0 +1,56 @@
+==========================
+SciPy 1.7.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.7.1 is a bug-fix release with no new features
+compared to 1.7.0.
+
+Authors
+=======
+
+* Peter Bell
+* Evgeni Burovski
+* Justin Charlong +
+* Ralf Gommers
+* Matti Picus
+* Tyler Reddy
+* Pamphile Roy
+* Sebastian Wallkötter
+* Arthur Volant
+
+A total of 9 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.7.1
+-----------------------
+
+* `#14074 <https://github.com/scipy/scipy/issues/14074>`__: Segmentation fault when building cKDTree with Scipy 1.6.3.
+* `#14271 <https://github.com/scipy/scipy/issues/14271>`__: scipy.io.loadmat failure in 1.7.0
+* `#14273 <https://github.com/scipy/scipy/issues/14273>`__: \`scipy.signal.{medfilt,medfilt2d}\` hit "Windows fatal exception:...
+* `#14282 <https://github.com/scipy/scipy/issues/14282>`__: DOC, CI: stats skewtest refguide failure
+* `#14363 <https://github.com/scipy/scipy/issues/14363>`__: Huge stack allocation in _sobol.pyx may cause stack overvflow
+* `#14382 <https://github.com/scipy/scipy/issues/14382>`__: Memory leak in \`scipy.spatial.distance\` for \`cdist\`
+* `#14396 <https://github.com/scipy/scipy/issues/14396>`__: BUG: Sphinx 4.1 breaks the banner's logo
+* `#14444 <https://github.com/scipy/scipy/issues/14444>`__: DOC/FEAT Rotation.from_rotvec documents a degrees argument which...
+
+Pull requests for 1.7.1
+-----------------------
+
+* `#14178 <https://github.com/scipy/scipy/pull/14178>`__: DEV: Update Boschloo Exact test
+* `#14264 <https://github.com/scipy/scipy/pull/14264>`__: REL: prepare for SciPy 1.7.1
+* `#14283 <https://github.com/scipy/scipy/pull/14283>`__: BUG: fix refguide-check namedtuple handling
+* `#14303 <https://github.com/scipy/scipy/pull/14303>`__: FIX: Check for None before calling str methods
+* `#14327 <https://github.com/scipy/scipy/pull/14327>`__: BUG: medfilt can access beyond the end of an array
+* `#14355 <https://github.com/scipy/scipy/pull/14355>`__: BUG: KDTree balanced_tree is unbalanced for degenerate data
+* `#14368 <https://github.com/scipy/scipy/pull/14368>`__: BUG: avoid large cython global variable in function
+* `#14384 <https://github.com/scipy/scipy/pull/14384>`__: BUG: Reference count leak in distance_pybind
+* `#14397 <https://github.com/scipy/scipy/pull/14397>`__: DOC/CI: do not allow sphinx 4.1.
+* `#14417 <https://github.com/scipy/scipy/pull/14417>`__: DOC/CI: pin sphinx to !=4.1.0
+* `#14460 <https://github.com/scipy/scipy/pull/14460>`__: DOC: add required scipy version to kwarg
+* `#14466 <https://github.com/scipy/scipy/pull/14466>`__: MAINT: 1.7.1 backports (round 1)
+* `#14508 <https://github.com/scipy/scipy/pull/14508>`__: MAINT: bump scipy-mathjax
+* `#14509 <https://github.com/scipy/scipy/pull/14509>`__: MAINT: 1.7.1 backports (round 2)
+

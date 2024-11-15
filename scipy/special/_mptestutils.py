@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from itertools import zip_longest
 
 import numpy as np
 from numpy.testing import assert_
@@ -9,7 +10,7 @@ import pytest
 from scipy.special._testutils import assert_func_equal
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     pass
 
@@ -18,7 +19,7 @@ except ImportError:
 # Machinery for systematic tests with mpmath
 # ------------------------------------------------------------------------------
 
-class Arg(object):
+class Arg:
     """Generate a set of numbers on the real axis, concentrating on
     'interesting' regions and covering all orders of magnitude.
 
@@ -129,7 +130,7 @@ class Arg(object):
         return pts
 
 
-class FixedArg(object):
+class FixedArg:
     def __init__(self, values):
         self._values = np.asarray(values)
 
@@ -137,7 +138,7 @@ class FixedArg(object):
         return self._values
 
 
-class ComplexArg(object):
+class ComplexArg:
     def __init__(self, a=complex(-np.inf, -np.inf), b=complex(np.inf, np.inf)):
         self.real = Arg(a.real, b.real)
         self.imag = Arg(a.imag, b.imag)
@@ -149,7 +150,7 @@ class ComplexArg(object):
         return (x[:,None] + 1j*y[None,:]).ravel()
 
 
-class IntArg(object):
+class IntArg:
     def __init__(self, a=-1000, b=1000):
         self.a = a
         self.b = b
@@ -167,7 +168,9 @@ def get_args(argspec, n):
         args = argspec.copy()
     else:
         nargs = len(argspec)
-        ms = np.asarray([1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec])
+        ms = np.asarray(
+            [1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec]
+        )
         ms = (n**(ms/sum(ms))).astype(int) + 1
 
         args = [spec.values(m) for spec, m in zip(argspec, ms)]
@@ -176,7 +179,7 @@ def get_args(argspec, n):
     return args
 
 
-class MpmathData(object):
+class MpmathData:
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
                  dps=None, prec=None, n=None, rtol=1e-7, atol=1e-300,
                  ignore_inf_sign=False, distinguish_nan_and_inf=True,
@@ -206,7 +209,9 @@ class MpmathData(object):
         if isinstance(self.arg_spec, np.ndarray):
             self.is_complex = np.issubdtype(self.arg_spec.dtype, np.complexfloating)
         else:
-            self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
+            self.is_complex = any(
+                [isinstance(arg, ComplexArg) for arg in self.arg_spec]
+            )
         self.ignore_inf_sign = ignore_inf_sign
         self.distinguish_nan_and_inf = distinguish_nan_and_inf
         if not name or name == '<lambda>':
@@ -255,15 +260,18 @@ class MpmathData(object):
                 mpmath.mp.dps = dps
 
                 try:
-                    assert_func_equal(self.scipy_func,
-                                      lambda *a: pytype(self.mpmath_func(*map(mptype, a))),
-                                      argarr,
-                                      vectorized=False,
-                                      rtol=self.rtol, atol=self.atol,
-                                      ignore_inf_sign=self.ignore_inf_sign,
-                                      distinguish_nan_and_inf=self.distinguish_nan_and_inf,
-                                      nan_ok=self.nan_ok,
-                                      param_filter=self.param_filter)
+                    assert_func_equal(
+                        self.scipy_func,
+                        lambda *a: pytype(self.mpmath_func(*map(mptype, a))),
+                        argarr,
+                        vectorized=False,
+                        rtol=self.rtol,
+                        atol=self.atol,
+                        ignore_inf_sign=self.ignore_inf_sign,
+                        distinguish_nan_and_inf=self.distinguish_nan_and_inf,
+                        nan_ok=self.nan_ok,
+                        param_filter=self.param_filter
+                    )
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
@@ -277,9 +285,9 @@ class MpmathData(object):
 
     def __repr__(self):
         if self.is_complex:
-            return "<MpmathData: %s (complex)>" % (self.name,)
+            return f"<MpmathData: {self.name} (complex)>"
         else:
-            return "<MpmathData: %s>" % (self.name,)
+            return f"<MpmathData: {self.name}>"
 
 
 def assert_mpmath_equal(*a, **kw):
@@ -288,7 +296,9 @@ def assert_mpmath_equal(*a, **kw):
 
 
 def nonfunctional_tooslow(func):
-    return pytest.mark.skip(reason="    Test not yet functional (too slow), needs more work.")(func)
+    return pytest.mark.skip(
+        reason="    Test not yet functional (too slow), needs more work."
+    )(func)
 
 
 # ------------------------------------------------------------------------------
@@ -319,11 +329,11 @@ def trace_args(func):
             return float(x)
 
     def wrap(*a, **kw):
-        sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
+        sys.stderr.write(f"{tuple(map(tofloat, a))!r}: ")
         sys.stderr.flush()
         try:
             r = func(*a, **kw)
-            sys.stderr.write("-> %r" % r)
+            sys.stderr.write(f"-> {r!r}")
         finally:
             sys.stderr.write("\n")
             sys.stderr.flush()
@@ -332,7 +342,6 @@ def trace_args(func):
 
 
 try:
-    import posix
     import signal
     POSIX = ('setitimer' in dir(signal))
 except ImportError:
@@ -419,36 +428,26 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
     """
     Compare lists of mpmath.mpf's or mpmath.mpc's directly so that it
     can be done to higher precision than double.
-
     """
-    try:
-        len(res)
-    except TypeError:
-        res = list(res)
-
-    n = len(std)
-    if len(res) != n:
-        raise AssertionError("Lengths of inputs not equal.")
-
     failures = []
-    for k in range(n):
-        try:
-            assert_(mpmath.fabs(res[k] - std[k]) <= atol + rtol*mpmath.fabs(std[k]))
-        except AssertionError:
-            failures.append(k)
+    for k, (resval, stdval) in enumerate(zip_longest(res, std)):
+        if resval is None or stdval is None:
+            raise ValueError('Lengths of inputs res and std are not equal.')
+        if mpmath.fabs(resval - stdval) > atol + rtol*mpmath.fabs(stdval):
+            failures.append((k, resval, stdval))
 
-    ndigits = int(abs(np.log10(rtol)))
-    msg = [""]
-    msg.append("Bad results ({} out of {}) for the following points:"
-               .format(len(failures), n))
-    for k in failures:
-        resrep = mpmath.nstr(res[k], ndigits, min_fixed=0, max_fixed=0)
-        stdrep = mpmath.nstr(std[k], ndigits, min_fixed=0, max_fixed=0)
-        if std[k] == 0:
-            rdiff = "inf"
-        else:
-            rdiff = mpmath.fabs((res[k] - std[k])/std[k])
-            rdiff = mpmath.nstr(rdiff, 3)
-        msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep, rdiff))
-    if failures:
+    nfail = len(failures)
+    if nfail > 0:
+        ndigits = int(abs(np.log10(rtol)))
+        msg = [""]
+        msg.append(f"Bad results ({nfail} out of {k + 1}) for the following points:")
+        for k, resval, stdval in failures:
+            resrep = mpmath.nstr(resval, ndigits, min_fixed=0, max_fixed=0)
+            stdrep = mpmath.nstr(stdval, ndigits, min_fixed=0, max_fixed=0)
+            if stdval == 0:
+                rdiff = "inf"
+            else:
+                rdiff = mpmath.fabs((resval - stdval)/stdval)
+                rdiff = mpmath.nstr(rdiff, 3)
+            msg.append(f"{k}: {resrep} != {stdrep} (rdiff {rdiff})")
         assert_(False, "\n".join(msg))

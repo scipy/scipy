@@ -5,7 +5,7 @@ from numpy.testing import assert_array_almost_equal, assert_equal
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.fftpack.realtransforms import (
+from scipy.fftpack._realtransforms import (
     dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
 # Matlab reference data
@@ -26,7 +26,7 @@ FFTWDATA_SIZES = FFTWDATA_DOUBLE['sizes']
 def fftw_dct_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
-    if dt == np.double:
+    if dt == np.float64:
         data = FFTWDATA_DOUBLE
     elif dt == np.float32:
         data = FFTWDATA_SINGLE
@@ -39,7 +39,7 @@ def fftw_dct_ref(type, size, dt):
 def fftw_dst_ref(type, size, dt):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
-    if dt == np.double:
+    if dt == np.float64:
         data = FFTWDATA_DOUBLE
     elif dt == np.float32:
         data = FFTWDATA_SINGLE
@@ -154,7 +154,7 @@ def naive_dst4(x, norm=None):
     return y
 
 
-class TestComplex(object):
+class TestComplex:
     def test_dct_complex64(self):
         y = dct(1j*np.arange(5, dtype=np.complex64))
         x = 1j*dct(np.arange(5))
@@ -186,7 +186,7 @@ class TestComplex(object):
         assert_array_almost_equal(x, y)
 
 
-class _TestDCTBase(object):
+class _TestDCTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = 14
@@ -223,9 +223,9 @@ class _TestDCTBase(object):
 class _TestDCTIBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=1)
             y2 = naive_dct1(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -234,11 +234,9 @@ class _TestDCTIBase(_TestDCTBase):
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
         # Test correspondence with MATLAB (orthornomal mode).
-        for i in range(len(X)):
-            dt = np.result_type(np.float32, self.rdt)
-            x = np.array(X[i], dtype=dt)
-
-            yr = Y[i]
+        dt = np.result_type(np.float32, self.rdt)
+        for xr, yr in zip(X, Y):
+            x = np.array(xr, dtype=dt)
             y = dct(x, norm="ortho", type=2)
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y, yr, decimal=self.dec)
@@ -247,9 +245,9 @@ class _TestDCTIIBase(_TestDCTBase):
 class _TestDCTIIIBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=2)
             xi = dct(y, norm="ortho", type=3)
             assert_equal(xi.dtype, dt)
@@ -258,9 +256,9 @@ class _TestDCTIIIBase(_TestDCTBase):
 class _TestDCTIVBase(_TestDCTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dct(x, norm='ortho', type=4)
             y2 = naive_dct4(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -269,7 +267,7 @@ class _TestDCTIVBase(_TestDCTBase):
 
 class TestDCTIDouble(_TestDCTIBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 10
         self.type = 1
 
@@ -290,7 +288,7 @@ class TestDCTIInt(_TestDCTIBase):
 
 class TestDCTIIDouble(_TestDCTIIBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 10
         self.type = 2
 
@@ -311,7 +309,7 @@ class TestDCTIIInt(_TestDCTIIBase):
 
 class TestDCTIIIDouble(_TestDCTIIIBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 14
         self.type = 3
 
@@ -332,7 +330,7 @@ class TestDCTIIIInt(_TestDCTIIIBase):
 
 class TestDCTIVDouble(_TestDCTIVBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 12
         self.type = 3
 
@@ -351,7 +349,7 @@ class TestDCTIVInt(_TestDCTIVBase):
         self.type = 3
 
 
-class _TestIDCTBase(object):
+class _TestIDCTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = 14
@@ -376,7 +374,7 @@ class _TestIDCTBase(object):
 
 class TestIDCTIDouble(_TestIDCTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 10
         self.type = 1
 
@@ -397,7 +395,7 @@ class TestIDCTIInt(_TestIDCTBase):
 
 class TestIDCTIIDouble(_TestIDCTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 10
         self.type = 2
 
@@ -418,7 +416,7 @@ class TestIDCTIIInt(_TestIDCTBase):
 
 class TestIDCTIIIDouble(_TestIDCTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 14
         self.type = 3
 
@@ -438,7 +436,7 @@ class TestIDCTIIIInt(_TestIDCTBase):
 
 class TestIDCTIVDouble(_TestIDCTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 12
         self.type = 4
 
@@ -456,7 +454,7 @@ class TestIDCTIVInt(_TestIDCTBase):
         self.dec = 5
         self.type = 4
 
-class _TestDSTBase(object):
+class _TestDSTBase:
     def setup_method(self):
         self.rdt = None  # dtype
         self.dec = None  # number of decimals to match
@@ -478,9 +476,9 @@ class _TestDSTBase(object):
 class _TestDSTIBase(_TestDSTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dst(x, norm='ortho', type=1)
             y2 = naive_dst1(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -489,9 +487,9 @@ class _TestDSTIBase(_TestDSTBase):
 class _TestDSTIVBase(_TestDSTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
+        dt = np.result_type(np.float32, self.rdt)
+        for xr in X:
+            x = np.array(xr, dtype=self.rdt)
             y = dst(x, norm='ortho', type=4)
             y2 = naive_dst4(x, norm='ortho')
             assert_equal(y.dtype, dt)
@@ -499,7 +497,7 @@ class _TestDSTIVBase(_TestDSTBase):
 
 class TestDSTIDouble(_TestDSTIBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 12
         self.type = 1
 
@@ -520,7 +518,7 @@ class TestDSTIInt(_TestDSTIBase):
 
 class TestDSTIIDouble(_TestDSTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 14
         self.type = 2
 
@@ -541,7 +539,7 @@ class TestDSTIIInt(_TestDSTBase):
 
 class TestDSTIIIDouble(_TestDSTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 14
         self.type = 3
 
@@ -562,7 +560,7 @@ class TestDSTIIIInt(_TestDSTBase):
 
 class TestDSTIVDouble(_TestDSTIVBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 12
         self.type = 4
 
@@ -581,7 +579,7 @@ class TestDSTIVInt(_TestDSTIVBase):
         self.type = 4
 
 
-class _TestIDSTBase(object):
+class _TestIDSTBase:
     def setup_method(self):
         self.rdt = None
         self.dec = None
@@ -606,7 +604,7 @@ class _TestIDSTBase(object):
 
 class TestIDSTIDouble(_TestIDSTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 12
         self.type = 1
 
@@ -627,7 +625,7 @@ class TestIDSTIInt(_TestIDSTBase):
 
 class TestIDSTIIDouble(_TestIDSTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 14
         self.type = 2
 
@@ -648,7 +646,7 @@ class TestIDSTIIInt(_TestIDSTBase):
 
 class TestIDSTIIIDouble(_TestIDSTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 14
         self.type = 3
 
@@ -669,7 +667,7 @@ class TestIDSTIIIInt(_TestIDSTBase):
 
 class TestIDSTIVDouble(_TestIDSTBase):
     def setup_method(self):
-        self.rdt = np.double
+        self.rdt = np.float64
         self.dec = 12
         self.type = 4
 
@@ -688,7 +686,7 @@ class TestIDSTIVnt(_TestIDSTBase):
         self.type = 4
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     """Check input overwrite behavior."""
 
     real_dtypes = [np.float32, np.float64]
@@ -697,10 +695,10 @@ class TestOverwrite(object):
         x2 = x.copy()
         routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
 
-        sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
-            routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
+        sig = (f"{routine.__name__}({x.dtype}{x.shape!r}, {fftsize!r}, "
+               f"axis={axis!r}, overwrite_x={overwrite_x!r})")
         if not overwrite_x:
-            assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+            assert_equal(x2, x, err_msg=f"spurious overwrite in {sig}")
 
     def _check_1d(self, routine, dtype, shape, axis):
         np.random.seed(1234)
@@ -741,7 +739,7 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (2, 16), 1)
 
 
-class Test_DCTN_IDCTN(object):
+class Test_DCTN_IDCTN:
     dec = 14
     dct_type = [1, 2, 3, 4]
     norms = [None, 'ortho']

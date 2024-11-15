@@ -65,12 +65,14 @@ CALLERS = {
 FUNCS = {
     'python': lambda: callback_python,
     'capsule': lambda: _test_ccallback.test_get_plus1_capsule(),
-    'cython': lambda: LowLevelCallable.from_cython(_test_ccallback_cython, "plus1_cython"),
+    'cython': lambda: LowLevelCallable.from_cython(_test_ccallback_cython,
+                                                   "plus1_cython"),
     'ctypes': lambda: _test_ccallback_cython.plus1_ctypes,
     'cffi': lambda: _get_cffi_func(_test_ccallback_cython.plus1_ctypes,
                                    'double (*)(double, int *, void *)'),
     'capsule_b': lambda: _test_ccallback.test_get_plus1b_capsule(),
-    'cython_b': lambda: LowLevelCallable.from_cython(_test_ccallback_cython, "plus1b_cython"),
+    'cython_b': lambda: LowLevelCallable.from_cython(_test_ccallback_cython,
+                                                     "plus1b_cython"),
     'ctypes_b': lambda: _test_ccallback_cython.plus1b_ctypes,
     'cffi_b': lambda: _get_cffi_func(_test_ccallback_cython.plus1b_ctypes,
                                      'double (*)(double, double, int *, void *)'),
@@ -79,10 +81,13 @@ FUNCS = {
 # These functions have signatures the callers don't know
 BAD_FUNCS = {
     'capsule_bc': lambda: _test_ccallback.test_get_plus1bc_capsule(),
-    'cython_bc': lambda: LowLevelCallable.from_cython(_test_ccallback_cython, "plus1bc_cython"),
+    'cython_bc': lambda: LowLevelCallable.from_cython(_test_ccallback_cython,
+                                                      "plus1bc_cython"),
     'ctypes_bc': lambda: _test_ccallback_cython.plus1bc_ctypes,
-    'cffi_bc': lambda: _get_cffi_func(_test_ccallback_cython.plus1bc_ctypes,
-                                      'double (*)(double, double, double, int *, void *)'),
+    'cffi_bc': lambda: _get_cffi_func(
+        _test_ccallback_cython.plus1bc_ctypes,
+        'double (*)(double, double, double, int *, void *)'
+    ),
 }
 
 USER_DATAS = {
@@ -99,7 +104,8 @@ def test_callbacks():
         user_data = USER_DATAS[user_data]()
 
         if func is callback_python:
-            func2 = lambda x: func(x, 2.0)
+            def func2(x):
+                return func(x, 2.0)
         else:
             func2 = LowLevelCallable(func, user_data)
             func = LowLevelCallable(func)
@@ -126,7 +132,8 @@ def test_bad_callbacks():
         func = BAD_FUNCS[func]()
 
         if func is callback_python:
-            func2 = lambda x: func(x, 2.0)
+            def func2(x):
+                return func(x, 2.0)
         else:
             func2 = LowLevelCallable(func, user_data)
             func = LowLevelCallable(func)

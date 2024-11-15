@@ -57,7 +57,9 @@ typedef enum {
     NI_EXTEND_REFLECT = 2,
     NI_EXTEND_MIRROR = 3,
     NI_EXTEND_CONSTANT = 4,
-    NI_EXTEND_LAST = NI_EXTEND_CONSTANT,
+    NI_EXTEND_GRID_WRAP = 5,
+    NI_EXTEND_GRID_CONSTANT = 6,
+    NI_EXTEND_LAST = NI_EXTEND_GRID_WRAP,
     NI_EXTEND_DEFAULT = NI_EXTEND_MIRROR
 } NI_ExtendMode;
 
@@ -78,7 +80,7 @@ typedef struct {
 /* initialize iterations over single array elements: */
 int NI_InitPointIterator(PyArrayObject*, NI_Iterator*);
 
-/* initialize iterations over an arbritrary sub-space: */
+/* initialize iterations over an arbitrary sub-space: */
 int NI_SubspaceIterator(NI_Iterator*, npy_uint32);
 
 /* initialize iteration over array lines: */

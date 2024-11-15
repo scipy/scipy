@@ -1,4 +1,6 @@
-      subroutine fpseno(maxtr,up,left,right,info,merk,ibind,nbind)
+      recursive subroutine fpseno(maxtr,up,left,right,info,merk,
+     *    ibind,nbind)
+      implicit none
 c  subroutine fpseno fetches a branch of a triply linked tree the
 c  information of which is kept in the arrays up,left,right and info.
 c  the branch has a specified length nbind and is determined by the

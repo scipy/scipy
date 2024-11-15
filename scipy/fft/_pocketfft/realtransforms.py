@@ -6,14 +6,14 @@ import functools
 
 
 def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
-         overwrite_x=False, workers=None):
+         overwrite_x=False, workers=None, orthogonalize=None):
     """Forward or backward 1-D DCT/DST
 
     Parameters
     ----------
-    forward: bool
+    forward : bool
         Transform direction (determines type and normalisation)
-    transform: {pypocketfft.dct, pypocketfft.dst}
+    transform : {pypocketfft.dct, pypocketfft.dst}
         The transform to perform
     """
     tmp = _asfarray(x)
@@ -31,8 +31,7 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
         tmp, copied = _fix_shape_1d(tmp, n, axis)
         overwrite_x = overwrite_x or copied
     elif tmp.shape[axis] < 1:
-        raise ValueError("invalid number of data points ({0}) specified"
-                         .format(tmp.shape[axis]))
+        raise ValueError(f"invalid number of data points ({tmp.shape[axis]}) specified")
 
     out = (tmp if overwrite_x else None)
 
@@ -43,7 +42,7 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
         transform(tmp.imag, type, (axis,), norm, out.imag, workers)
         return out
 
-    return transform(tmp, type, (axis,), norm, out, workers)
+    return transform(tmp, type, (axis,), norm, out, workers, orthogonalize)
 
 
 dct = functools.partial(_r2r, True, pfft.dct)
@@ -58,14 +57,14 @@ idst.__name__ = 'idst'
 
 
 def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
-          overwrite_x=False, workers=None):
+          overwrite_x=False, workers=None, orthogonalize=None):
     """Forward or backward nd DCT/DST
 
     Parameters
     ----------
-    forward: bool
+    forward : bool
         Transform direction (determines type and normalisation)
-    transform: {pypocketfft.dct, pypocketfft.dst}
+    transform : {pypocketfft.dct, pypocketfft.dst}
         The transform to perform
     """
     tmp = _asfarray(x)
@@ -96,7 +95,7 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
         transform(tmp.imag, type, axes, norm, out.imag, workers)
         return out
 
-    return transform(tmp, type, axes, norm, out, workers)
+    return transform(tmp, type, axes, norm, out, workers, orthogonalize)
 
 
 dctn = functools.partial(_r2rn, True, pfft.dct)

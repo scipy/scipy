@@ -56,10 +56,10 @@ inline double
 sqeuclidean_distance_double(const double *u, const double *v, ckdtree_intp_t n)
 {
     double s;
-    ckdtree_intp_t i;
+    ckdtree_intp_t i = 0;
     // manually unrolled loop, might be vectorized
     double acc[4] = {0., 0., 0., 0.};
-    for (i = 0; i < n/4; i += 4) {
+    for (; i + 4 <= n; i += 4) {
         double _u[4] = {u[i], u[i + 1], u[i + 2], u[i + 3]};
         double _v[4] = {v[i], v[i + 1], v[i + 2], v[i + 3]};
         double diff[4] = {_u[0] - _v[0],

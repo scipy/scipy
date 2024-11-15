@@ -1,5 +1,6 @@
-      subroutine regrid(iopt,mx,x,my,y,z,xb,xe,yb,ye,kx,ky,s,
+      recursive subroutine regrid(iopt,mx,x,my,y,z,xb,xe,yb,ye,kx,ky,s,
      * nxest,nyest,nx,tx,ny,ty,c,fp,wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c given the set of values z(i,j) on the rectangular grid (x(i),y(j)),
 c i=1,...,mx;j=1,...,my, subroutine regrid determines a smooth bivar-
 c iate spline approximation s(x,y) of degrees kx and ky on the rect-

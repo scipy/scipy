@@ -1,0 +1,348 @@
+=========================
+SciPy 0.7.0 Release Notes
+=========================
+
+.. contents::
+
+SciPy 0.7.0 is the culmination of 16 months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a number of deprecations and
+API changes in this release, which are documented below.  All users
+are encouraged to upgrade to this release, as there are a large number
+of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.7.x branch, and on adding
+new features on the development trunk.  This release requires Python
+2.4 or 2.5 and NumPy 1.2 or greater.
+
+Please note that SciPy is still considered to have "Beta" status, as
+we work toward a SciPy 1.0.0 release.  The 1.0.0 release will mark a
+major milestone in the development of SciPy, after which changing the
+package structure or API will be much more difficult.  Whilst these
+pre-1.0 releases are considered to have "Beta" status, we are
+committed to making them as bug-free as possible.  For example, in
+addition to fixing numerous bugs in this release, we have also doubled
+the number of unit tests since the last release.
+
+However, until the 1.0 release, we are aggressively reviewing and
+refining the functionality, organization, and interface. This is being
+done in an effort to make the package as coherent, intuitive, and
+useful as possible.  To achieve this, we need help from the community
+of users.  Specifically, we need feedback regarding all aspects of the
+project - everything - from which algorithms we implement, to details
+about our function's call signatures.
+
+Over the last year, we have seen a rapid increase in community
+involvement, and numerous infrastructure improvements to lower the
+barrier to contributions (e.g., more explicit coding standards,
+improved testing infrastructure, better documentation tools).  Over
+the next year, we hope to see this trend continue and invite everyone
+to become more involved.
+
+Python 2.6 and 3.0
+==================
+
+A significant amount of work has gone into making SciPy compatible
+with Python 2.6; however, there are still some issues in this regard.
+The main issue with 2.6 support is NumPy.  On UNIX (including Mac OS
+X), NumPy 1.2.1 mostly works, with a few caveats.  On Windows, there
+are problems related to the compilation process.  The upcoming NumPy
+1.3 release will fix these problems.  Any remaining issues with 2.6
+support for SciPy 0.7 will be addressed in a bug-fix release.
+
+Python 3.0 is not supported at all; it requires NumPy to be ported to
+Python 3.0.  This requires immense effort, since a lot of C code has
+to be ported.  The transition to 3.0 is still under consideration;
+currently, we don't have any timeline or roadmap for this transition.
+
+Major documentation improvements
+================================
+
+SciPy documentation is greatly improved; you can view a HTML reference
+manual `online <https://docs.scipy.org/>`__ or download it as a PDF
+file. The new reference guide was built using the popular `Sphinx tool
+<http://www.sphinx-doc.org>`__.
+
+This release also includes an updated tutorial, which hadn't been
+available since SciPy was ported to NumPy in 2005.  Though not
+comprehensive, the tutorial shows how to use several essential parts
+of Scipy.  It also includes the ``ndimage`` documentation from the
+``numarray`` manual.
+
+Nevertheless, more effort is needed on the documentation front.
+Luckily, contributing to Scipy documentation is now easier than
+before: if you find that a part of it requires improvements, and want
+to help us out, please register a user name in our web-based
+documentation editor at https://docs.scipy.org/ and correct the issues.
+
+Running Tests
+=============
+
+NumPy 1.2 introduced a new testing framework based on `nose
+<http://somethingaboutorange.com/mrl/projects/nose/>`__.  Starting with
+this release, SciPy now uses the new NumPy test framework as well.
+Taking advantage of the new testing framework requires ``nose``
+version 0.10, or later.  One major advantage of the new framework is
+that it greatly simplifies writing unit tests - which has all ready
+paid off, given the rapid increase in tests.  To run the full test
+suite::
+
+    >>> import scipy
+    >>> scipy.test('full')
+
+For more information, please see `The NumPy/SciPy Testing Guide
+<https://github.com/numpy/numpy/blob/main/doc/TESTS.rst.txt>`__.
+
+We have also greatly improved our test coverage.  There were just over
+2,000 unit tests in the 0.6.0 release; this release nearly doubles
+that number, with just over 4,000 unit tests.
+
+Building SciPy
+==============
+
+Support for NumScons has been added. NumScons is a tentative new build
+system for NumPy/SciPy, using `SCons <https://www.scons.org/>`__ at its
+core.
+
+SCons is a next-generation build system, intended to replace the
+venerable ``Make`` with the integrated functionality of
+``autoconf``/``automake`` and ``ccache``.  Scons is written in Python
+and its configuration files are Python scripts.  NumScons is meant to
+replace NumPy's custom version of ``distutils`` providing more
+advanced functionality, such as ``autoconf``, improved fortran
+support, more tools, and support for ``numpy.distutils``/``scons``
+cooperation.
+
+Sandbox Removed
+===============
+
+While porting SciPy to NumPy in 2005, several packages and modules
+were moved into ``scipy.sandbox``.  The sandbox was a staging ground
+for packages that were undergoing rapid development and whose APIs
+were in flux.  It was also a place where broken code could live.  The
+sandbox has served its purpose well, but was starting to create
+confusion.  Thus ``scipy.sandbox`` was removed.  Most of the code was
+moved into ``scipy``, some code was made into a ``scikit``, and the
+remaining code was just deleted, as the functionality had been
+replaced by other code.
+
+Sparse Matrices
+===============
+
+Sparse matrices have seen extensive improvements.  There is now
+support for integer dtypes such ``int8``, ``uint32``, etc.  Two new
+sparse formats were added:
+
+* new class ``dia_matrix`` : the sparse DIAgonal format
+* new class ``bsr_matrix`` : the Block CSR format
+
+Several new sparse matrix construction functions were added:
+
+* ``sparse.kron`` : sparse Kronecker product
+* ``sparse.bmat`` : sparse version of ``numpy.bmat``
+* ``sparse.vstack`` : sparse version of ``numpy.vstack``
+* ``sparse.hstack`` : sparse version of ``numpy.hstack``
+
+Extraction of submatrices and nonzero values have been added:
+
+* ``sparse.tril`` : extract lower triangle
+* ``sparse.triu`` : extract upper triangle
+* ``sparse.find`` : nonzero values and their indices
+
+``csr_matrix`` and ``csc_matrix`` now support slicing and fancy
+indexing (e.g., ``A[1:3, 4:7]`` and ``A[[3,2,6,8],:]``).  Conversions
+among all sparse formats are now possible:
+
+* using member functions such as ``.tocsr()`` and ``.tolil()``
+* using the ``.asformat()`` member function, e.g. ``A.asformat('csr')``
+* using constructors ``A = lil_matrix([[1,2]]); B = csr_matrix(A)``
+
+All sparse constructors now accept dense matrices and lists of lists.
+For example:
+
+* ``A = csr_matrix( rand(3,3) )`` and ``B = lil_matrix( [[1,2],[3,4]] )``
+
+The handling of diagonals in the ``spdiags`` function has been changed.
+It now agrees with the MATLAB(TM) function of the same name.
+  
+Numerous efficiency improvements to format conversions and sparse
+matrix arithmetic have been made.  Finally, this release contains
+numerous bugfixes.
+
+Statistics package
+==================
+
+Statistical functions for masked arrays have been added, and are
+accessible through ``scipy.stats.mstats``. The functions are similar
+to their counterparts in ``scipy.stats`` but they have not yet been
+verified for identical interfaces and algorithms.
+
+Several bugs were fixed for statistical functions, of those,
+``kstest`` and ``percentileofscore`` gained new keyword arguments.
+
+Added deprecation warning for ``mean``, ``median``, ``var``, ``std``,
+``cov``, and ``corrcoef``. These functions should be replaced by their
+numpy counterparts.  Note, however, that some of the default options
+differ between the ``scipy.stats`` and numpy versions of these
+functions.
+
+Numerous bug fixes to ``stats.distributions``: all generic methods now
+work correctly, several methods in individual distributions were
+corrected. However, a few issues remain with higher moments (``skew``,
+``kurtosis``) and entropy.  The maximum likelihood estimator, ``fit``,
+does not work out-of-the-box for some distributions - in some cases,
+starting values have to be carefully chosen, in other cases, the
+generic implementation of the maximum likelihood method might not be
+the numerically appropriate estimation method.
+
+We expect more bugfixes, increases in numerical precision and
+enhancements in the next release of scipy.
+
+Reworking of IO package
+=======================
+
+The IO code in both NumPy and SciPy is being extensively
+reworked. NumPy will be where basic code for reading and writing NumPy
+arrays is located, while SciPy will house file readers and writers for
+various data formats (data, audio, video, images, matlab, etc.).
+
+Several functions in ``scipy.io`` have been deprecated and will be
+removed in the 0.8.0 release including ``npfile``, ``save``, ``load``,
+``create_module``, ``create_shelf``, ``objload``, ``objsave``,
+``fopen``, ``read_array``, ``write_array``, ``fread``, ``fwrite``,
+``bswap``, ``packbits``, ``unpackbits``, and ``convert_objectarray``.
+Some of these functions have been replaced by NumPy's raw reading and
+writing capabilities, memory-mapping capabilities, or array methods.
+Others have been moved from SciPy to NumPy, since basic array reading
+and writing capability is now handled by NumPy.
+
+The Matlab (TM) file readers/writers have a number of improvements:
+
+* default version 5
+* v5 writers for structures, cell arrays, and objects
+* v5 readers/writers for function handles and 64-bit integers
+* new struct_as_record keyword argument to ``loadmat``, which loads
+  struct arrays in matlab as record arrays in numpy
+* string arrays have ``dtype='U...'`` instead of ``dtype=object``
+* ``loadmat`` no longer squeezes singleton dimensions, i.e.
+  ``squeeze_me=False`` by default
+
+New Hierarchical Clustering module
+==================================
+
+This module adds new hierarchical clustering functionality to the
+``scipy.cluster`` package. The function interfaces are similar to the
+functions provided MATLAB(TM)'s Statistics Toolbox to help facilitate
+easier migration to the NumPy/SciPy framework. Linkage methods
+implemented include single, complete, average, weighted, centroid,
+median, and ward.
+
+In addition, several functions are provided for computing
+inconsistency statistics, cophenetic distance, and maximum distance
+between descendants. The ``fcluster`` and ``fclusterdata`` functions
+transform a hierarchical clustering into a set of flat clusters. Since
+these flat clusters are generated by cutting the tree into a forest of
+trees, the ``leaders`` function takes a linkage and a flat clustering,
+and finds the root of each tree in the forest. The ``ClusterNode``
+class represents a hierarchical clusterings as a field-navigable tree
+object. ``to_tree`` converts a matrix-encoded hierarchical clustering
+to a ``ClusterNode`` object. Routines for converting between MATLAB
+and SciPy linkage encodings are provided. Finally, a ``dendrogram``
+function plots hierarchical clusterings as a dendrogram, using
+matplotlib.
+
+New Spatial package
+===================
+
+The new spatial package contains a collection of spatial algorithms
+and data structures, useful for spatial statistics and clustering
+applications. It includes rapidly compiled code for computing exact
+and approximate nearest neighbors, as well as a pure-python kd-tree
+with the same interface, but that supports annotation and a variety of
+other algorithms. The API for both modules may change somewhat, as
+user requirements become clearer.
+
+It also includes a ``distance`` module, containing a collection of
+distance and dissimilarity functions for computing distances between
+vectors, which is useful for spatial statistics, clustering, and
+kd-trees.  Distance and dissimilarity functions provided include
+Bray-Curtis, Canberra, Chebyshev, City Block, Cosine, Dice, Euclidean,
+Hamming, Jaccard, Kulsinski, Mahalanobis, Matching, Minkowski,
+Rogers-Tanimoto, Russell-Rao, Squared Euclidean, Standardized
+Euclidean, Sokal-Michener, Sokal-Sneath, and Yule.
+
+The ``pdist`` function computes pairwise distance between all
+unordered pairs of vectors in a set of vectors. The ``cdist`` computes
+the distance on all pairs of vectors in the Cartesian product of two
+sets of vectors.  Pairwise distance matrices are stored in condensed
+form; only the upper triangular is stored. ``squareform`` converts
+distance matrices between square and condensed forms.
+
+Reworked fftpack package
+========================
+
+FFTW2, FFTW3, MKL and DJBFFT wrappers have been removed. Only (NETLIB)
+fftpack remains. By focusing on one backend, we hope to add new
+features - like float32 support - more easily.
+
+New Constants package
+=====================
+
+``scipy.constants`` provides a collection of physical constants and
+conversion factors.  These constants are taken from CODATA Recommended
+Values of the Fundamental Physical Constants: 2002. They may be found
+at physics.nist.gov/constants. The values are stored in the dictionary
+physical_constants as a tuple containing the value, the units, and the
+relative precision - in that order. All constants are in SI units,
+unless otherwise stated.  Several helper functions are provided.
+
+New Radial Basis Function module
+================================
+
+``scipy.interpolate`` now contains a Radial Basis Function module.
+Radial basis functions can be used for smoothing/interpolating
+scattered data in n-dimensions, but should be used with caution for
+extrapolation outside of the observed data range.
+
+New complex ODE integrator
+==========================
+
+``scipy.integrate.ode`` now contains a wrapper for the ZVODE
+complex-valued ordinary differential equation solver (by Peter
+N. Brown, Alan C. Hindmarsh, and George D. Byrne).
+
+New generalized symmetric and hermitian eigenvalue problem solver
+=================================================================
+
+``scipy.linalg.eigh`` now contains wrappers for more LAPACK symmetric
+and hermitian eigenvalue problem solvers. Users can now solve
+generalized problems, select a range of eigenvalues only, and choose
+to use a faster algorithm at the expense of increased memory
+usage. The signature of the ``scipy.linalg.eigh`` changed accordingly.
+
+Bug fixes in the interpolation package
+======================================
+
+The shape of return values from ``scipy.interpolate.interp1d`` used to
+be incorrect, if interpolated data had more than 2 dimensions and the
+axis keyword was set to a non-default value. This has been fixed.
+Moreover, ``interp1d`` returns now a scalar (0D-array) if the input
+is a scalar. Users of ``scipy.interpolate.interp1d`` may need to
+revise their code if it relies on the previous behavior.
+
+Weave clean up
+==============
+
+There were numerous improvements to ``scipy.weave``.  ``blitz++`` was
+relicensed by the author to be compatible with the SciPy license.
+``wx_spec.py`` was removed.
+
+Known problems
+==============
+
+Here are known problems with scipy 0.7.0:
+
+* weave test failures on windows: those are known, and are being revised.
+* weave test failure with gcc 4.3 (std::labs): this is a gcc 4.3 bug. A
+  workaround is to add #include <cstdlib> in
+  scipy/weave/blitz/blitz/funcs.h (line 27). You can make the change in
+  the installed scipy (in site-packages).

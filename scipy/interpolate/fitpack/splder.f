@@ -1,16 +1,18 @@
-      subroutine splder(t,n,c,k,nu,x,y,m,e,wrk,ier)
+      recursive subroutine splder(t,n,c,nc,k,nu,x,y,m,e,wrk,ier)
       implicit none  
 c  subroutine splder evaluates in a number of points x(i),i=1,2,...,m
 c  the derivative of order nu of a spline s(x) of degree k,given in
 c  its b-spline representation.
 c
 c  calling sequence:
-c     call splder(t,n,c,k,nu,x,y,m,e,wrk,ier)
+c     call splder(t,n,c,nc,k,nu,x,y,m,e,wrk,ier)
 c
 c  input parameters:
 c    t    : array,length n, which contains the position of the knots.
 c    n    : integer, giving the total number of knots of s(x).
-c    c    : array,length n, which contains the b-spline coefficients.
+c    c    : array,length nc, containing the b-spline coefficients.
+c           the length of the array, nc >= n - k -1.
+c           further coefficients are ignored.
 c    k    : integer, giving the degree of s(x).
 c    nu   : integer, specifying the order of the derivative. 0<=nu<=k
 c    x    : array,length m, which contains the points where the deriv-
@@ -60,9 +62,9 @@ c++   - removed the restriction of the orderness of x values
 c++   - fixed initialization of sp to double precision value
 c
 c  ..scalar arguments..
-      integer n,k,nu,m,e,ier
+      integer n,nc,k,nu,m,e,ier
 c  ..array arguments..
-      real*8 t(n),c(n),x(m),y(m),wrk(n)
+      real*8 t(n),c(nc),x(m),y(m),wrk(n)
 c  ..local scalars..
       integer i,j,kk,k1,k2,l,ll,l1,l2,nk1,nk2,nn
       real*8 ak,arg,fac,sp,tb,te

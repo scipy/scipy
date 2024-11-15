@@ -1,14 +1,16 @@
-      subroutine splev(t,n,c,k,x,y,m,e,ier)
+      recursive subroutine splev(t,n,c,nc,k,x,y,m,e,ier)
 c  subroutine splev evaluates in a number of points x(i),i=1,2,...,m
 c  a spline s(x) of degree k, given in its b-spline representation.
 c
 c  calling sequence:
-c     call splev(t,n,c,k,x,y,m,e,ier)
+c     call splev(t,n,c,nc,k,x,y,m,e,ier)
 c
 c  input parameters:
 c    t    : array,length n, which contains the position of the knots.
 c    n    : integer, giving the total number of knots of s(x).
-c    c    : array,length n, which contains the b-spline coefficients.
+c    c    : array,length nc, containing the b-spline coefficients.
+c           the length of the array, nc >= n - k -1.
+c           further coefficients are ignored.
 c    k    : integer, giving the degree of s(x).
 c    x    : array,length m, which contains the points where s(x) must
 c           be evaluated.
@@ -58,7 +60,7 @@ c
 c  ..scalar arguments..
       integer n, k, m, e, ier
 c  ..array arguments..
-      real*8 t(n), c(n), x(m), y(m)
+      real*8 t(n), c(nc), x(m), y(m)
 c  ..local scalars..
       integer i, j, k1, l, ll, l1, nk1
 c++..

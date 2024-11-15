@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 ==============================================================================
 `go_benchmark_functions` --  Problems for testing global optimization routines

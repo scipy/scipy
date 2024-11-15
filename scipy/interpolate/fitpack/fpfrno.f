@@ -1,5 +1,6 @@
-      subroutine fpfrno(maxtr,up,left,right,info,point,merk,n1,
-     * count,ier)
+      recursive subroutine fpfrno(maxtr,up,left,right,info,point,
+     *   merk,n1,count,ier)
+      implicit none
 c  subroutine fpfrno collects the free nodes (up field zero) of the
 c  triply linked tree the information of which is kept in the arrays
 c  up,left,right and info. the maximal length of the branches of the

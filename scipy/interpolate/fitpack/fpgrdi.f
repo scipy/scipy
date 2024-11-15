@@ -1,6 +1,7 @@
-      subroutine fpgrdi(ifsu,ifsv,ifbu,ifbv,iback,u,mu,v,mv,z,mz,dz,
-     * iop0,iop1,tu,nu,tv,nv,p,c,nc,sq,fp,fpu,fpv,mm,mvnu,spu,spv,
-     * right,q,au,av1,av2,bu,bv,aa,bb,cc,cosi,nru,nrv)
+      recursive subroutine fpgrdi(ifsu,ifsv,ifbu,ifbv,iback,u,mu,v,
+     * mv,z,mz,dz,iop0,iop1,tu,nu,tv,nv,p,c,nc,sq,fp,fpu,fpv,mm,
+     * mvnu,spu,spv,right,q,au,av1,av2,bu,bv,aa,bb,cc,cosi,nru,nrv)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 p,sq,fp

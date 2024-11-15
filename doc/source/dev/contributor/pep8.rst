@@ -1,12 +1,11 @@
-:orphan:
-
 .. _pep8-scipy:
 
 ==============
 PEP8 and SciPy
 ==============
 
-All SciPy Python code should adhere to `PEP8`_ style guidelines. It’s so
+All SciPy Python code should adhere to `PEP8`_ style guidelines, with the exception
+that line length should be limited to 88 characters rather than 79. It's so
 important that some continuous integration tests on GitHub will fail due
 to certain PEP8 violations. Here are a few tips for ensuring PEP8
 compliance before pushing your code:
@@ -19,34 +18,46 @@ compliance before pushing your code:
    Editor |rarr| Advanced Settings. This can help you fix PEP8 issues as you
    write your code.
 
--  You can also perform checks using the |flake8|_ tool. After
-   installing ``flake8``, navigate to the SciPy root directory in a
-   console window and try:
+-  Note, however, that SciPy's linting configuration may not match
+   that of your IDE exactly. See below on how to run the official
+   checks.
 
-   ::
+-  It is recommended to leave existing style issues alone
+   unless they exist in lines of code you are already modifying.
+   This practice ensures that the codebase is gradually cleaned up
+   without dedicating precious review time to style-only cleanups.
 
-      flake8 scipy/optimize/linprog.py
+-  Before sending a Pull Request, run the linter on changes made in
+   your feature branch. The checks will also be made during
+   continuous integration, but it's quicker to catch them early.
 
-   The absence of output indicates that there are no PEP8 issues with
-   the file. Unfortunately, there is also no output if you get the file
-   path wrong:
+   The easiest way to do so is to install our pre-commit hook (once)::
 
-   ::
+     cp tools/pre-commit-hook.py .git/hooks/pre-commit
 
-      flake8 scipy/optimize/linprog2.py
+   This will run linting checks before each commit is made.
 
-   (``linprog2.py`` doesn’t exist.) To make sure you have the path
-   right, consider introducing (and then removing) a small PEP8 issue in
-   the target file, such as a line that is over 79 characters long.
+   Alternatively, you can run the check manually from the SciPy root directory::
+
+      python dev.py lint
+
+   You can also run the linter on specific files, using the ``--files`` option::
+
+      python tools/lint.py --files scipy/odr/models.py scipy/ndimage
 
 -  If you have existing code with a lot of PEP8 issues, consider using
-   |autopep8|_ to automatically fix most of them.
+   |autopep8|_ to automatically fix them before incorporating the code into
+   SciPy.
+
+The line length limit of 88 characters was chosen to match the defaults of popular
+tools like `ruff`_ and `black`_. This strikes a balance between producing shorter
+files and reducing linter errors on the one hand, and maintaining reasonably short
+lines and the ability to view files side-by-side on the other.
 
 .. _PEP8: https://www.python.org/dev/peps/pep-0008/
 .. _enable Real-time code style analysis: https://stackoverflow.com/questions/51463223/how-to-use-pep8-module-using-spyder
-
-.. |flake8| replace:: ``flake8``
-.. _flake8: http://flake8.pycqa.org/en/latest/
+.. _ruff: https://pypi.org/project/ruff/
+.. _black: https://pypi.org/project/black/
 
 .. |autopep8| replace:: ``autopep8``
 .. _autopep8: https://pypi.org/project/autopep8/0.8/

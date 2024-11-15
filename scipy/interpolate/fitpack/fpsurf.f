@@ -1,7 +1,8 @@
-      subroutine fpsurf(iopt,m,x,y,z,w,xb,xe,yb,ye,kxx,kyy,s,nxest,
-     * nyest,eta,tol,maxit,nmax,km1,km2,ib1,ib3,nc,intest,nrest,
-     * nx0,tx,ny0,ty,c,fp,fp0,fpint,coord,f,ff,a,q,bx,by,spx,spy,h,
-     * index,nummer,wrk,lwrk,ier)
+      recursive subroutine fpsurf(iopt,m,x,y,z,w,xb,xe,yb,ye,kxx,kyy,
+     * s,nxest, nyest,eta,tol,maxit,nmax,km1,km2,ib1,ib3,nc,intest,
+     * nrest,nx0,tx,ny0,ty,c,fp,fp0,fpint,coord,f,ff,a,q,bx,by,spx,
+     * spy,h,index,nummer,wrk,lwrk,ier)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 xb,xe,yb,ye,s,eta,tol,fp,fp0

@@ -25,7 +25,7 @@ from numpy import pi
 from scipy.special._mptestutils import mpf2float
 
 try:
-    import mpmath as mp  # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     pass
 
@@ -36,7 +36,7 @@ def gammainc(a, x, dps=50, maxterms=10**8):
 
     mpmath/functions/expintegrals.py#L134
 
-    in the mpmath github repository.
+    in the mpmath GitHub repository.
 
     """
     with mp.workdps(dps):
@@ -58,7 +58,7 @@ def gammaincc(a, x, dps=50, maxterms=10**8):
 
     mpmath/functions/expintegrals.py#L187
 
-    in the mpmath github repository.
+    in the mpmath GitHub repository.
 
     """
     with mp.workdps(dps):
@@ -114,10 +114,10 @@ def main():
             dataset.append((a0, x0, func(a0, x0)))
         dataset = np.array(dataset)
         filename = os.path.join(pwd, '..', 'tests', 'data', 'local',
-                                '{}.txt'.format(func.__name__))
+                                f'{func.__name__}.txt')
         np.savetxt(filename, dataset)
 
-    print("{} minutes elapsed".format((time() - t0)/60))
+    print(f"{(time() - t0)/60} minutes elapsed")
 
 
 if __name__ == "__main__":
