@@ -2228,16 +2228,18 @@ class PermutationMethod(ResamplingMethod):
             in new code.
 
     """
-    rng: int  # type: ignore[misc]
-    _rng: int = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+    rng: object  # type: ignore[misc]
+    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
 
     @property
     def random_state(self):
+        # Uncomment in SciPy 1.7.0
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         return self._rng
 
     @random_state.setter
     def random_state(self, val):
+        # Uncomment in SciPy 1.7.0
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._rng = val
 
