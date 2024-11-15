@@ -44,7 +44,7 @@ class TestChatterjeeXi:
         x = rng.random(size=shape)
         y = (rng.random(size=shape) if y_continuous
              else rng.integers(0, 10, size=shape))
-        method = stats.PermutationMethod(random_state=rng)
+        method = stats.PermutationMethod(rng=rng)
         res = stats.chatterjeexi(x, y, method=method,
                                  y_continuous=y_continuous, axis=-1)
         ref = stats.chatterjeexi(x, y, y_continuous=y_continuous, axis=-1)
