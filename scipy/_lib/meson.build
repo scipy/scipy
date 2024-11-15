@@ -11,6 +11,9 @@ endif
 if not fs.exists('array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('array_api_extra/README.md')
+  error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
+endif
 if not fs.exists('pocketfft/README.md')
   error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -211,6 +214,18 @@ py3.install_sources(
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/torch',
+)
+
+# `array_api_extra` install to simplify import path;
+# should be updated whenever new files are added to `array_api_extra`
+
+py3.install_sources(
+  [
+    'array_api_extra/src/array_api_extra/__init__.py',
+    'array_api_extra/src/array_api_extra/_funcs.py',
+    'array_api_extra/src/array_api_extra/_typing.py',
+  ],
+  subdir: 'scipy/_lib/array_api_extra',
 )
 
 py3.install_sources(
