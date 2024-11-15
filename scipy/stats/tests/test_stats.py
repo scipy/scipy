@@ -647,11 +647,18 @@ class TestPearsonr:
         y = rng.normal(size=(2, 100))
         res = stats.pearsonr(x, y, alternative=alternative, axis=-1)
 
+        # preserve use of old random_state during SPEC 7 transition
+        rng = np.random.default_rng(724358723498249852)
         method = stats.BootstrapMethod(random_state=rng)
         res_ci = res.confidence_interval(method=method)
         ref_ci = res.confidence_interval()
-
         assert_allclose(res_ci, ref_ci, atol=1.5e-2)
+
+        # `rng` is the new argument name`
+        rng = np.random.default_rng(724358723498249852)
+        method = stats.BootstrapMethod(rng=rng)
+        res_ci2 = res.confidence_interval(method=method)
+        assert_allclose(res_ci2, res_ci)
 
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('axis', [0, 1])

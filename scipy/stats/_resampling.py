@@ -2199,6 +2199,8 @@ class PermutationMethod(ResamplingMethod):
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
     rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator used to perform resampling.
+
         If `rng` is passed by keyword to the initializer or the `rng` attribute is used
         directly, types other than `numpy.random.Generator` are passed to
         `numpy.random.default_rng` to instantiate a ``Generator``.
@@ -2233,13 +2235,13 @@ class PermutationMethod(ResamplingMethod):
 
     @property
     def random_state(self):
-        # Uncomment in SciPy 1.7.0
+        # Uncomment in SciPy 1.17.0
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         return self._rng
 
     @random_state.setter
     def random_state(self, val):
-        # Uncomment in SciPy 1.7.0
+        # Uncomment in SciPy 1.17.0
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
         self._rng = val
 
@@ -2277,25 +2279,72 @@ class BootstrapMethod(ResamplingMethod):
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator used to perform resampling.
 
-        Pseudorandom number generator state used to generate resamples.
+        If `rng` is passed by keyword to the initializer or the `rng` attribute is used
+        directly, types other than `numpy.random.Generator` are passed to
+        `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used. Specify `rng` for repeatable behavior.
 
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance, then that instance is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is ``None`` (default), the
-        `numpy.random.RandomState` singleton is used.
+        If this argument is passed by position, if `random_state` is passed by keyword
+        into the initializer, or if the `random_state` attribute is used directly,
+        legacy behavior for `random_state` applies:
 
-    method : {'bca', 'percentile', 'basic'}
+        - If `random_state` is None (or `numpy.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `random_state` is an int, a new ``RandomState`` instance is used,
+          seeded with `random_state`.
+        - If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+          that instance is used.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this attribute name was changed from
+            `random_state` to `rng`. For an interim period, both names will continue to
+            work, although only one may be specified at a time. After the interim
+            period, uses of `random_state` will emit warnings. The behavior of both
+            `random_state` and `rng` are outlined above, but only `rng` should be used
+            in new code.
+
+    method : {'BCa', 'percentile', 'basic'}
         Whether to use the 'percentile' bootstrap ('percentile'), the 'basic'
         (AKA 'reverse') bootstrap ('basic'), or the bias-corrected and
         accelerated bootstrap ('BCa', default).
+
     """
-    random_state: object = None
+    rng: object  # type: ignore[misc]
+    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
     method: str = 'BCa'
+
+    @property
+    def random_state(self):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        return self._rng
+
+    @random_state.setter
+    def random_state(self, val):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        self._rng = val
+
+    @property  # type: ignore[no-redef]
+    def rng(self):  # noqa: F811
+        return self._rng
+
+    @random_state.setter
+    def rng(self, val):  # noqa: F811
+        self._rng = np.random.default_rng(val)
+
+    @_transition_to_rng('random_state', position_num=3, replace_doc=False)
+    def __init__(self, n_resamples=9999, batch=None, rng=None, method='BCa'):
+        self._rng = rng  # don't validate with `default_rng` during SPEC 7 transition
+        self.method = method
+        super().__init__(n_resamples=n_resamples, batch=batch)
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
