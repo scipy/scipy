@@ -560,6 +560,7 @@ class TestJacobian(JacobianHessianTest):
         m, n = func.mn
         x = rng.random(size=(m,) + size)
         res = jacobian(lambda x: func(x , xp), xp.asarray(x, dtype=xp.float64))
+        # convert list of arrays to single array before converting to xp array
         ref = xp.asarray(np.asarray(func.ref(x)), dtype=xp.float64)
         xp_assert_close(res.df, ref, atol=1e-10)
 
@@ -624,16 +625,15 @@ class TestJacobian(JacobianHessianTest):
 class TestHessian(JacobianHessianTest):
     jh_func = hessian
 
-    @pytest.mark.skip_xp_backends('torch', reason=torch_skip_reason)
     @pytest.mark.parametrize('shape', [(), (4,), (2, 4)])
     def test_example(self, shape, xp):
         rng = np.random.default_rng(458912319542)
         m = 3
-        x = xp.asarray(rng.random((m,) + shape), dtype=xp.asarray(1.).dtype)
+        x = xp.asarray(rng.random((m,) + shape), dtype=xp.float64)
         res = hessian(optimize.rosen, x)
         if shape:
             x = xp.reshape(x, (m, -1))
-            ref = xp.asarray([optimize.rosen_hess(xi) for xi in x.T])
+            ref = xp.stack([optimize.rosen_hess(xi) for xi in x.T])
             ref = xp.moveaxis(ref, 0, -1)
             ref = xp.reshape(ref, (m, m,) + shape)
         else:
@@ -645,7 +645,6 @@ class TestHessian(JacobianHessianTest):
         # for key in ['ddf', 'error', 'nfev', 'success', 'status']:
         #     assert_equal(res[key], np.swapaxes(res[key], 0, 1))
 
-    @pytest.mark.skip_xp_backends('torch', reason=torch_skip_reason)
     def test_nfev(self, xp):
         z = xp.asarray([0.5, 0.25])
         xp_test = array_namespace(z)
