@@ -1178,14 +1178,14 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
 
     >>> def sp_stats_normal_squared(size=None, rng=rng):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
-    ...     return std_normal(size=size, rng=rng) ** 2
+    ...     return std_normal(size=size, random_state=rng) ** 2
     >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng,
     ...                            data_sampler=sp_stats_normal_squared)
 
     Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
-    ...     def _rvs(self,  size=None, rng=rng):
+    ...     def _rvs(self,  size=None, random_state=rng):
     ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X().rvs
