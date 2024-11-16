@@ -16,7 +16,6 @@ pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
 jax_skip_reason = 'JAX arrays do not support item assignment.'
-torch_skip_reason = 'Torch does not have `take_slong_axis`.'
 
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
