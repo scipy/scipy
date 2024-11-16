@@ -50,11 +50,7 @@ with the *Nelder-Mead* simplex algorithm (selected through the ``method``
 parameter):
 
     >>> import numpy as np
-    >>> from scipy.optimize import minimize
-
-    >>> def rosen(x):
-    ...     """The Rosenbrock function"""
-    ...     return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    >>> from scipy.optimize import minimize, rosen
 
     >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
     >>> res = minimize(rosen, x0, method='nelder-mead',
@@ -152,18 +148,9 @@ are
 
     \begin{eqnarray*} \frac{\partial f}{\partial x_{0}} & = & -400x_{0}\left(x_{1}-x_{0}^{2}\right)-2\left(1-x_{0}\right),\\ \frac{\partial f}{\partial x_{N-1}} & = & 200\left(x_{N-1}-x_{N-2}^{2}\right).\end{eqnarray*}
 
-A Python function which computes this gradient is constructed by the
-code-segment:
+A SciPy privides the function :func:`scipy.optimize.rosen_der` which computes this gradient.
 
-    >>> def rosen_der(x):
-    ...     xm = x[1:-1]
-    ...     xm_m1 = x[:-2]
-    ...     xm_p1 = x[2:]
-    ...     der = np.zeros_like(x)
-    ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
-    ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
-    ...     der[-1] = 200*(x[-1]-x[-2]**2)
-    ...     return der
+    >>> from scipy.optimize import rosen_der
 
 This gradient information is specified in the :func:`minimize` function
 through the ``jac`` parameter as illustrated below.
@@ -298,19 +285,10 @@ For example, the Hessian when :math:`N=5` is
 
     \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}+2\mkern-2em\\&1200x_{1}^{2}+202\mkern-2em\\&&1200x_{1}^{2}+202\mkern-2em\\&&&1200x_{3}^{2}+202\mkern-1em\\&&&&200\end{bmatrix}-400\begin{bmatrix} x_1 & x_0 \\ x_0 & x_2 & x_1 \\ & x_1 & x_3 & x_2\\ & & x_2 & x_4 & x_3 \\ & & & x_3 & 0\end{bmatrix}.
 
-The code which computes this Hessian along with the code to minimize
-the function using Newton-CG method is shown in the following example:
+The code the code to minimize the function using Newton-CG method
+and the Hessian is shown in the following example:
 
-    >>> def rosen_hess(x):
-    ...     x = np.asarray(x)
-    ...     H = np.diag(-400*x[:-1],1) - np.diag(400*x[:-1],-1)
-    ...     diagonal = np.zeros_like(x)
-    ...     diagonal[0] = 1200*x[0]**2-400*x[1]+2
-    ...     diagonal[-1] = 200
-    ...     diagonal[1:-1] = 202 + 1200*x[1:-1]**2 - 400*x[2:]
-    ...     H = H + np.diag(diagonal)
-    ...     return H
-
+    >>> from scipy.optimize import rosen_hess
     >>> res = minimize(rosen, x0, method='Newton-CG',
     ...                jac=rosen_der, hess=rosen_hess,
     ...                options={'xtol': 1e-8, 'disp': True})
@@ -348,17 +326,9 @@ elements:
 Code which makes use of this Hessian product to minimize the
 Rosenbrock function using :func:`minimize` follows:
 
-    >>> def rosen_hess_p(x, p):
-    ...     x = np.asarray(x)
-    ...     Hp = np.zeros_like(x)
-    ...     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
-    ...     Hp[1:-1] = -400*x[:-2]*p[:-2]+(202+1200*x[1:-1]**2-400*x[2:])*p[1:-1] \
-    ...                -400*x[1:-1]*p[2:]
-    ...     Hp[-1] = -400*x[-2]*p[-2] + 200*p[-1]
-    ...     return Hp
-
+    >>> from scipy.optimize import rosen_hess_prod
     >>> res = minimize(rosen, x0, method='Newton-CG',
-    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                jac=rosen_der, hessp=rosen_hess_prod,
     ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -417,7 +387,7 @@ to solve the trust-region subproblem [NW]_.
 **Hessian product example**
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
-    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                jac=rosen_der, hessp=rosen_hess_prod,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -468,7 +438,7 @@ products per subproblem solve in comparison to the ``trust-ncg`` method.
 **Hessian product example**
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
-    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                jac=rosen_der, hessp=rosen_hess_prod,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -698,7 +668,7 @@ When needed, the objective function Hessian can be defined using a :obj:`~scipy.
 
     >>> def rosen_hess_linop(x):
     ...     def matvec(p):
-    ...         return rosen_hess_p(x, p)
+    ...         return rosen_hess_prod(x, p)
     ...     return LinearOperator((2, 2), matvec=matvec)
     >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hess=rosen_hess_linop,
     ...                constraints=[linear_constraint, nonlinear_constraint],
@@ -711,7 +681,7 @@ When needed, the objective function Hessian can be defined using a :obj:`~scipy.
 
 or a Hessian-vector product through the parameter ``hessp``.
 
-    >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hessp=rosen_hess_p,
+    >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hessp=rosen_hess_prod,
     ...                constraints=[linear_constraint, nonlinear_constraint],
     ...                options={'verbose': 1}, bounds=bounds)
     # may vary
