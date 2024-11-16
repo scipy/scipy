@@ -73,35 +73,21 @@ namespace cephes {
 
     XSF_HOST_DEVICE double rgamma(double x) {
         double w, y, z;
-        int sign;
 
-        if (x > 34.84425627277176174) {
-            return std::exp(-lgam(x));
-        }
-        if (x < -34.034) {
-            w = -x;
-            z = sinpi(w);
-            if (z == 0.0) {
-                return 0.0;
-            }
-            if (z < 0.0) {
-                sign = 1;
-                z = -z;
-            } else {
-                sign = -1;
-            }
+	if (x == 0) {
+	    // This case is separate from below to get correct sign for zero.
+	    return x;
+	}
 
-            y = std::log(w * z) - std::log(M_PI) + lgam(w);
-            if (y < -detail::MAXLOG) {
-                set_error("rgamma", SF_ERROR_UNDERFLOW, NULL);
-                return (sign * 0.0);
-            }
-            if (y > detail::MAXLOG) {
-                set_error("rgamma", SF_ERROR_OVERFLOW, NULL);
-                return (sign * std::numeric_limits<double>::infinity());
-            }
-            return (sign * std::exp(y));
-        }
+	if (x < 0 && x == std::floor(x)) {
+	    // Gamma poles.
+	    return 0.0;
+	}
+
+	if (std::abs(x) > 4.0) {
+	    return 1.0 / Gamma(x);
+	}
+
         z = 1.0;
         w = x;
 

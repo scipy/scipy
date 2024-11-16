@@ -27,6 +27,7 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
 from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
     get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
+from scipy.stats._distribution_infrastructure import _log1mexp
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
@@ -1826,6 +1827,140 @@ class dgamma_gen(rv_continuous):
 
 
 dgamma = dgamma_gen(name='dgamma')
+
+
+class dpareto_lognorm_gen(rv_continuous):
+    r"""A double Pareto lognormal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `dpareto_lognorm` is:
+
+    .. math::
+
+        f(x, \mu, \sigma, \alpha, \beta) =
+        \frac{\alpha \beta}{(\alpha + \beta) x}
+        \phi\left( \frac{\log x - \mu}{\sigma} \right)
+        \left( R(y_1) + R(y_2) \right)
+
+    where :math:`R(t) = \frac{1 - \Phi(t)}{\phi(t)}`,
+    :math:`phi` and :math:`Phi` are the normal PDF and CDF, respectively,
+    :math:`y_1 = \alpha \sigma - \frac{\log x - \mu}{\sigma}`,
+    and :math:`y_2 = \beta \sigma + \frac{\log x - \mu}{\sigma}`
+    for real numbers :math:`x` and :math:`\mu`, :math:`\sigma > 0`,
+    :math:`\alpha > 0`, and :math:`\beta > 0` [1]_.
+
+    `dpareto_lognorm` takes
+    ``u`` as a shape parameter for :math:`\mu`,
+    ``s`` as a shape parameter for :math:`\sigma`,
+    ``a`` as a shape parameter for :math:`\alpha`, and
+    ``b`` as a shape parameter for :math:`\beta`.
+
+    A random variable :math:`X` distributed according to the PDF above
+    can be represented as :math:`X = U \frac{V_1}{V_2}` where :math:`U`,
+    :math:`V_1`, and :math:`V_2` are independent, :math:`U` is lognormally
+    distributed such that :math:`\log U \sim N(\mu, \sigma^2)`, and
+    :math:`V_1` and :math:`V_2` follow Pareto distributions with parameters
+    :math:`\alpha` and :math:`\beta`, respectively [2]_.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Hajargasht, Gholamreza, and William E. Griffiths. "Pareto-lognormal
+           distributions: Inequality, poverty, and estimation from grouped income
+           data." Economic Modelling 33 (2013): 593-604.
+    .. [2] Reed, William J., and Murray Jorgensen. "The double Pareto-lognormal
+           distribution - a new parametric model for size distributions."
+           Communications in Statistics - Theory and Methods 33.8 (2004): 1733-1753.
+
+    %(example)s
+
+    """
+    _logphi = norm._logpdf
+    _logPhi = norm._logcdf
+    _logPhic = norm._logsf
+    _phi = norm._pdf
+    _Phi = norm._cdf
+    _Phic = norm._sf
+
+    def _R(self, z):
+        return self._Phic(z) / self._phi(z)
+
+    def _logR(self, z):
+        return self._logPhic(z) - self._logphi(z)
+
+    def _shape_info(self):
+        return [_ShapeInfo("u", False, (-np.inf, np.inf), (False, False)),
+                _ShapeInfo("s", False, (0, np.inf), (False, False)),
+                _ShapeInfo("a", False, (0, np.inf), (False, False)),
+                _ShapeInfo("b", False, (0, np.inf), (False, False))]
+
+    def _argcheck(self, u, s, a, b):
+        return (s > 0) & (a > 0) & (b > 0)
+
+    def _rvs(self, u, s, a, b, size=None, random_state=None):
+        # From [1] after Equation (12): "To generate pseudo-random
+        # deviates from the dPlN distribution, one can exponentiate
+        # pseudo-random deviates from NL generated using (6)."
+        Z = random_state.normal(u, s, size=size)
+        E1 = random_state.standard_exponential(size=size)
+        E2 = random_state.standard_exponential(size=size)
+        return np.exp(Z + E1 / a - E2 / b)
+
+    def _logpdf(self, x, u, s, a, b):
+        with np.errstate(invalid='ignore', divide='ignore'):
+            log_y, m = np.log(x), u  # compare against [1] Eq. 1
+            z = (log_y - m) / s
+            x1 = a * s - z
+            x2 = b * s + z
+            out = np.asarray(np.log(a) + np.log(b) - np.log(a + b) - log_y)
+            out += self._logphi(z)
+            out += np.logaddexp(self._logR(x1), self._logR(x2))
+        out[(x == 0) | np.isinf(x)] = -np.inf
+        return out[()]
+
+    def _logcdf(self, x, u, s, a, b):
+        log_y, m = np.log(x), u  # compare against [1] Eq. 2
+        z = (log_y - m) / s
+        x1 = a * s - z
+        x2 = b * s + z
+        t1 = self._logPhi(z)
+        t2 = self._logphi(z)
+        t3 = (np.log(b) + self._logR(x1))
+        t4 = (np.log(a) + self._logR(x2))
+        t1, t2, t3, t4, one = np.broadcast_arrays(t1, t2, t3, t4, 1)
+        # t3 can be smaller than t4, so we have to consider log of negative number
+        # This would be much simpler, but `return_sign` is available, so use it?
+        # t5 =  sc.logsumexp([t3, t4 + np.pi*1j])
+        t5, sign =  sc.logsumexp([t3, t4], b=[one, -one], axis=0, return_sign=True)
+        return sc.logsumexp([t1, t2 + t5 - np.log(a + b)], b=[one, -one*sign], axis=0)
+
+    def _logsf(self, x, u, s, a, b):
+        return _log1mexp(self._logcdf(x, u, s, a, b))
+
+    # Infrastructure doesn't seem to do this, so...
+
+    def _pdf(self, x, u, s, a, b):
+        return np.exp(self._logpdf(x, u, s, a, b))
+
+    def _cdf(self, x, u, s, a, b):
+        return np.exp(self._logcdf(x, u, s, a, b))
+
+    def _sf(self, x, u, s, a, b):
+        return np.exp(self._logsf(x, u, s, a, b))
+
+    def _munp(self, n, u, s, a, b):
+        m, k = u, float(n)  # compare against [1] Eq. 6
+        out = (a * b) / ((a - k) * (b + k)) * np.exp(k * m + k ** 2 * s ** 2 / 2)
+        out = np.asarray(out)
+        out[a <= k] = np.nan
+        return out
+
+
+dpareto_lognorm = dpareto_lognorm_gen(a=0, name='dpareto_lognorm')
 
 
 class dweibull_gen(rv_continuous):

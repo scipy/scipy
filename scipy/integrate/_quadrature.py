@@ -1,14 +1,16 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Any, cast
+from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 import numpy.typing as npt
 import math
 import warnings
 from collections import namedtuple
+from collections.abc import Callable
 
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
+from scipy._lib._array_api import _asarray, array_namespace, xp_broadcast_promote
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -41,7 +43,7 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     dx : scalar, optional
         The spacing between sample points when `x` is None. The default is 1.
     axis : int, optional
-        The axis along which to integrate.
+        The axis along which to integrate. The default is the last axis.
 
     Returns
     -------
@@ -119,31 +121,39 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     >>> integrate.trapezoid(a, axis=1)
     array([2.,  8.])
     """
-    y = np.asanyarray(y)
-    if x is None:
-        d = dx
-    else:
-        x = np.asanyarray(x)
-        if x.ndim == 1:
-            d = np.diff(x)
-            # reshape to correct shape
-            shape = [1]*y.ndim
-            shape[axis] = d.shape[0]
-            d = d.reshape(shape)
-        else:
-            d = np.diff(x, axis=axis)
+    xp = array_namespace(y)
+    y = _asarray(y, xp=xp, subok=True)
+    # Cannot just use the broadcasted arrays that are returned
+    # because trapezoid does not follow normal broadcasting rules
+    # cf. https://github.com/scipy/scipy/pull/21524#issuecomment-2354105942
+    result_dtype = xp_broadcast_promote(y, force_floating=True, xp=xp)[0].dtype
     nd = y.ndim
     slice1 = [slice(None)]*nd
     slice2 = [slice(None)]*nd
     slice1[axis] = slice(1, None)
     slice2[axis] = slice(None, -1)
+    if x is None:
+        d = dx
+    else:
+        x = _asarray(x, xp=xp, subok=True)
+        # reshape to correct shape
+        shape = [1] * y.ndim
+        shape[axis] = y.shape[axis]
+        x = xp.reshape(x, shape)
+        d = x[tuple(slice1)] - x[tuple(slice2)]
     try:
-        ret = (d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0).sum(axis)
+        ret = xp.sum(
+            d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0,
+            axis=axis, dtype=result_dtype
+        )
     except ValueError:
         # Operations didn't work, cast to ndarray
-        d = np.asarray(d)
-        y = np.asarray(y)
-        ret = np.add.reduce(d * (y[tuple(slice1)]+y[tuple(slice2)])/2.0, axis)
+        d = xp.asarray(d)
+        y = xp.asarray(y)
+        ret = xp.sum(
+            d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0,
+            axis=axis, dtype=result_dtype
+        )
     return ret
 
 

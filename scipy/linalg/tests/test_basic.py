@@ -1,5 +1,4 @@
 import itertools
-import warnings
 
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
@@ -773,15 +772,19 @@ class TestSolve:
         b = np.arange(9)[:, None]
         assert_raises(LinAlgError, solve, a, b)
 
-    def test_ill_condition_warning(self):
-        a = np.array([[1, 1, 1],
-                      [1+1e-16, 1-1e-16, 1],
-                      [1-1e-16, 1+1e-16, 1],
-                      ])
-        b = np.ones(3)
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            assert_raises(LinAlgWarning, solve, a, b)
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', None))
+    def test_ill_condition_warning(self, structure):
+        rng = np.random.default_rng(234859349452)
+        n = 10
+        d = np.logspace(0, 50, n)
+        A = np.diag(d)
+        b = rng.random(size=n)
+        message = "Ill-conditioned matrix..."
+        with pytest.warns(LinAlgWarning, match=message):
+            solve(A, b, assume_a=structure)
 
     def test_multiple_rhs(self):
         a = np.eye(2)
@@ -879,10 +882,11 @@ class TestSolve:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
-    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'lower triangular',
-                                          'upper triangular', 'symmetric', 'hermitian',
-                                          'positive definite', 'general',
-                                          'sym', 'her', 'pos', 'gen'])
+    # "pos" and "positive definite" need to be added
+    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
+                                          'lower triangular', 'upper triangular',
+                                          'symmetric', 'hermitian',
+                                          'general', 'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
     @pytest.mark.parametrize('transposed', [True, False])
     @pytest.mark.parametrize('overwrite', [True, False])
@@ -890,7 +894,7 @@ class TestSolve:
     def test_structure_detection(self, dtype, assume_a, nrhs, transposed,
                                  overwrite, fortran):
         rng = np.random.default_rng(982345982439826)
-        n = 5
+        n = 5 if not assume_a == 'banded' else 20
         b = rng.random(size=(n,) + nrhs)
         A = rng.random(size=(n, n))
 
@@ -908,6 +912,8 @@ class TestSolve:
             A = (np.diag(np.diag(A))
                  + np.diag(np.diag(A, -1), -1)
                  + np.diag(np.diag(A, 1), 1))
+        elif assume_a == 'banded':
+            A = np.triu(np.tril(A, 2), -1)
         elif assume_a in {'symmetric', 'sym'}:
             A = A + A.T
         elif assume_a in {'hermitian', 'her'}:
@@ -930,19 +936,21 @@ class TestSolve:
             return
 
         res = solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
-                    transposed=transposed)
+                    transposed=transposed, assume_a=assume_a)
 
+        # Check that solution this solution is *correct*
+        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
+        assert_allclose(res, ref)
+
+        # Check that `solve` correctly identifies the structure and returns
+        # *exactly* the same solution whether `assume_a` is specified or not
+        if assume_a != 'banded':  # structure detection removed for banded
+            assert_equal(solve(A_copy, b_copy, transposed=transposed), res)
+
+        # Check that overwrite was respected
         if not overwrite:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
-
-        assume_a = 'sym' if assume_a in {'positive definite', 'pos'} else assume_a
-
-        ref = solve(A_copy, b_copy, assume_a=assume_a, transposed=transposed)
-        assert_equal(res, ref)
-
-        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
-        assert_allclose(res, ref)
 
 
 class TestSolveTriangular:
@@ -1923,8 +1931,8 @@ class TestSolveCirculant:
         x = solve_circulant(c, b, baxis=1)
         assert_equal(x.shape, (4, 2, 3))
         expected = np.empty_like(x)
-        expected[:, 0, :] = solve(circulant(c[0]), b.T)
-        expected[:, 1, :] = solve(circulant(c[1]), b.T)
+        expected[:, 0, :] = solve(circulant(c[0].ravel()), b.T)
+        expected[:, 1, :] = solve(circulant(c[1].ravel()), b.T)
         assert_allclose(x, expected)
 
         x = solve_circulant(c, b, baxis=1, outaxis=-1)
