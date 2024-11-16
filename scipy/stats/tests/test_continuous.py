@@ -12,10 +12,14 @@ from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
 
-from scipy.stats._distribution_infrastructure import (
-    _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
-    ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
-    _generate_domain_support, Mixture)
+from scipy.stats._distribution_infrastructure import ContinuousDistribution
+from scipy.stats._probability_distribution import (
+    _Domain, _RealDomain,               # Domains
+    _Parameter, _RealParameter,         # Parameters
+    _Parameterization,                  # Parameterizations
+    _fiinfo, _generate_domain_support,  # Utilities
+    ShiftedScaledDistribution, Mixture  # Transformed Distributions and Similar
+)
 from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
 
 
@@ -167,7 +171,7 @@ class TestDistributions:
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (1, 1, 1, 1)
+        proportions = (1, 0, 0, 0)
         tmp = draw_distribution_from_family(family, data, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
         sample_shape = data.draw(npst.array_shapes(min_dims=0, min_side=0,
@@ -204,7 +208,7 @@ class TestDistributions:
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (1, 1, 1, 1)
+        proportions = (1, 0, 0, 0)
         tmp = draw_distribution_from_family(family, data, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 

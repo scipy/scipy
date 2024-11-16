@@ -7,8 +7,11 @@ from numpy import inf
 
 from scipy import special
 from scipy.stats._distribution_infrastructure import (
-    ContinuousDistribution, _RealDomain, _RealParameter, _Parameterization,
-    _combine_docs)
+    ContinuousDistribution
+)
+from scipy.stats._probability_distribution import (
+    _RealDomain, _RealParameter, _Parameterization, _combine_docs
+)
 
 __all__ = ['Normal']
 
@@ -331,6 +334,7 @@ if __name__ == "__main__":
         docs[dist_name] = _combine_docs(_module[dist_name])
     with open(_docpath, 'w') as f:
         json.dump(docs, f, indent="    ")
+    print("Successfully exported documentation")
 
 # When imported, load the dictionary from the file, and assign to each distribution
 # class's `__doc__` attribute the corresponding docstring.
