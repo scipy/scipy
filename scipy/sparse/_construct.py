@@ -1244,15 +1244,16 @@ def _random(shape, density=0.01, format=None, dtype=None,
     return vals, ind
 
 
+@_transition_to_rng("random_state", position_num=5)
 def random(m, n, density=0.01, format='coo', dtype=None,
-           random_state=None, data_rvs=None):
+           rng=None, data_rvs=None):
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
     .. warning::
 
         Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
-        ``np.random.default_rng``) for ``random_state`` will lead to much
+        ``np.random.default_rng``) for ``rng`` will lead to much
         faster execution times.
 
         A much slower implementation is used by default for backwards
@@ -1275,15 +1276,11 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-          singleton is used.
-        - If `seed` is an int, a new ``RandomState`` instance is used,
-          seeded with `seed`.
-        - If `seed` is already a ``Generator`` or ``RandomState`` instance then
-          that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
         This random state will be used for sampling the sparsity structure, but
         not necessarily for sampling the values of the structurally nonzero
@@ -1313,12 +1310,12 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> import scipy as sp
     >>> import numpy as np
     >>> rng = np.random.default_rng()
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng)
 
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=rvs)
     >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1327,27 +1324,27 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Building a custom distribution.
     This example builds a squared normal from np.random:
 
-    >>> def np_normal_squared(size=None, random_state=rng):
-    ...     return random_state.standard_normal(size) ** 2
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+    >>> def np_normal_squared(size=None, rng=rng):
+    ...     return rng.standard_normal(size) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
     ...                      data_rvs=np_normal_squared)
 
     Or we can build it from sp.stats style rvs functions:
 
-    >>> def sp_stats_normal_squared(size=None, random_state=rng):
+    >>> def sp_stats_normal_squared(size=None, rng=rng):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
-    ...     return std_normal(size=size, random_state=random_state) ** 2
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+    ...     return std_normal(size=size, random_state=rng) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
     ...                      data_rvs=sp_stats_normal_squared)
 
     Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):
-    ...         return random_state.standard_normal(size) ** 2
+    ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=Y.rvs)
     """
     if n is None:
         n = m
@@ -1358,11 +1355,12 @@ def random(m, n, density=0.01, format='coo', dtype=None,
             return data_rvs(size)
     else:
         data_rvs_kw = None
-    vals, ind = _random((m, n), density, format, dtype, random_state, data_rvs_kw)
+    vals, ind = _random((m, n), density, format, dtype, rng, data_rvs_kw)
     return coo_matrix((vals, ind), shape=(m, n)).asformat(format)
 
 
-def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+@_transition_to_rng("random_state", position_num=5)
+def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     """Generate a sparse matrix of the given shape and density with uniformly
     distributed values.
 
@@ -1383,15 +1381,11 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -1409,7 +1403,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     Examples
     --------
     >>> from scipy.sparse import rand
-    >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
+    >>> matrix = rand(3, 4, density=0.25, format="csr", rng=42)
     >>> matrix
     <Compressed Sparse Row sparse matrix of dtype 'float64'
         with 3 stored elements and shape (3, 4)>
@@ -1419,4 +1413,4 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
            [0.        , 0.        , 0.        , 0.        ]])
 
     """
-    return random(m, n, density, format, dtype, random_state)
+    return random(m, n, density, format, dtype, rng)
