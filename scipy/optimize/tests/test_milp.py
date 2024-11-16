@@ -387,7 +387,7 @@ def test_mip_rel_gap_passdown():
     # monotonically with the mip_rel_gap parameter.
     assert np.all(np.diff(sol_mip_gaps) < 0)
 
-@pytest.mark.xfail(reason='Upstream / Wrapper issue, see gh-20589')
+@pytest.mark.xfail(reason='Upstream / Wrapper issue, see gh-20116')
 def test_large_numbers_gh20116():
     h = 10 ** 12
     A = np.array([[100.4534, h], [100.4534, -h]])
@@ -400,9 +400,6 @@ def test_large_numbers_gh20116():
     assert np.all(A @ res.x < b)
 
 
-@pytest.mark.skipif(_IS_32BIT,
-    reason="Fails on 32 bit.",
-)
 def test_presolve_gh18907():
     from scipy.optimize import milp
     import numpy as np
