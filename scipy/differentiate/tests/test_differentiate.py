@@ -553,16 +553,19 @@ class TestJacobian(JacobianHessianTest):
     rosen.mn = 5, 1  # type: ignore[attr-defined]
     rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
 
+    @pytest.mark.parametrize('dtype', ('float32', 'float64'))
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
     @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
-    def test_examples(self, size, func, xp):
+    def test_examples(self, dtype, size, func, xp):
+        atol = 1e-10 if dtype == 'float64' else 1e-3
+        dtype = getattr(xp, dtype)
         rng = np.random.default_rng(458912319542)
         m, n = func.mn
         x = rng.random(size=(m,) + size)
-        res = jacobian(lambda x: func(x , xp), xp.asarray(x, dtype=xp.float64))
+        res = jacobian(lambda x: func(x , xp), xp.asarray(x, dtype=dtype))
         # convert list of arrays to single array before converting to xp array
-        ref = xp.asarray(np.asarray(func.ref(x)), dtype=xp.float64)
-        xp_assert_close(res.df, ref, atol=1e-10)
+        ref = xp.asarray(np.asarray(func.ref(x)), dtype=dtype)
+        xp_assert_close(res.df, ref, atol=atol)
 
     def test_attrs(self, xp):
         # Test attributes of result object
@@ -644,6 +647,16 @@ class TestHessian(JacobianHessianTest):
         # # check symmetry
         # for key in ['ddf', 'error', 'nfev', 'success', 'status']:
         #     assert_equal(res[key], np.swapaxes(res[key], 0, 1))
+
+    def test_float32(self, xp):
+        rng = np.random.default_rng(458912319542)
+        x = xp.asarray(rng.random(3), dtype=xp.float32)
+        res = hessian(optimize.rosen, x)
+        ref = optimize.rosen_hess(x)
+        mask = (ref != 0)
+        xp_assert_close(res.ddf[mask], ref[mask])
+        atol = 1e-2 * xp.abs(xp.min(ref[mask]))
+        xp_assert_close(res.ddf[~mask], ref[~mask], atol=atol)
 
     def test_nfev(self, xp):
         z = xp.asarray([0.5, 0.25])
