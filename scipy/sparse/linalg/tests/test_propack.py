@@ -115,7 +115,7 @@ def test_examples(dtype, irl):
             A = data['A_real'].item().astype(dtype)
 
     k = 200
-    u, s, vh, _ = _svdp(A, k, irl_mode=irl, random_state=0)
+    u, s, vh, _ = _svdp(A, k, irl_mode=irl, rng=0)
 
     # complex example matrix has many repeated singular values, so check only
     # beginning non-repeated singular vectors to avoid permutations

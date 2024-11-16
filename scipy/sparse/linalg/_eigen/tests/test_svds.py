@@ -151,11 +151,9 @@ class SVDSCommonTests:
         A = np.asarray([[1, 2], [3, 4]])
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
-                res = svds(A, k=1, which=which, solver=self.solver,
-                           random_state=0)
+                res = svds(A, k=1, which=which, solver=self.solver, rng=0)
         else:
-            res = svds(A, k=1, which=which, solver=self.solver,
-                       random_state=0)
+            res = svds(A, k=1, which=which, solver=self.solver, rng=0)
         _check_svds(A, 1, *res, which=which, atol=8e-10)
 
     def test_svds_diff0_docstring_example(self):
@@ -191,7 +189,7 @@ class SVDSCommonTests:
 
         # propack can do complete SVD
         if self.solver == 'propack' and k == 3:
-            res = svds(A, k=k, solver=self.solver, random_state=0)
+            res = svds(A, k=k, solver=self.solver, rng=0)
             _check_svds(A, k, *res, check_usvh_A=True, check_svd=True)
             return
 
@@ -299,11 +297,9 @@ class SVDSCommonTests:
         A = rng.random((10, 10))
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
-                res = svds(A, k=k, which=which, solver=self.solver,
-                           random_state=0)
+                res = svds(A, k=k, which=which, solver=self.solver, rng=0)
         else:
-            res = svds(A, k=k, which=which, solver=self.solver,
-                       random_state=0)
+            res = svds(A, k=k, which=which, solver=self.solver, rng=0)
         _check_svds(A, k, *res, which=which, atol=1e-9, rtol=2e-13)
 
     @pytest.mark.filterwarnings("ignore:Exited",
@@ -330,7 +326,7 @@ class SVDSCommonTests:
 
         def err(tol):
             _, s2, _ = svds(A, k=k, v0=np.ones(n), maxiter=1000,
-                            solver=self.solver, tol=tol, random_state=0)
+                            solver=self.solver, tol=tol, rng=0)
             return np.linalg.norm((s2 - s[k-1::-1])/s[k-1::-1])
 
         tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
@@ -348,7 +344,7 @@ class SVDSCommonTests:
         n = 100
         k = 1
         # If k != 1, LOBPCG needs more initial vectors, which are generated
-        # with random_state, so it does not pass w/ k >= 2.
+        # with rng, so it does not pass w/ k >= 2.
         # For some other values of `n`, the AssertionErrors are not raised
         # with different v0s, which is reasonable.
 
@@ -356,18 +352,18 @@ class SVDSCommonTests:
         A = rng.random((n, n))
 
         # with the same v0, solutions are the same, and they are accurate
-        # v0 takes precedence over random_state
+        # v0 takes precedence over rng
         v0a = rng.random(n)
-        res1a = svds(A, k, v0=v0a, solver=self.solver, random_state=0)
-        res2a = svds(A, k, v0=v0a, solver=self.solver, random_state=1)
+        res1a = svds(A, k, v0=v0a, solver=self.solver, rng=0)
+        res2a = svds(A, k, v0=v0a, solver=self.solver, rng=1)
         for idx in range(3):
             assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
         # with the same v0, solutions are the same, and they are accurate
         v0b = rng.random(n)
-        res1b = svds(A, k, v0=v0b, solver=self.solver, random_state=2)
-        res2b = svds(A, k, v0=v0b, solver=self.solver, random_state=3)
+        res1b = svds(A, k, v0=v0b, solver=self.solver, rng=2)
+        res2b = svds(A, k, v0=v0b, solver=self.solver, rng=3)
         for idx in range(3):
             assert_allclose(res1b[idx], res2b[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1b)
@@ -377,8 +373,8 @@ class SVDSCommonTests:
         with pytest.raises(AssertionError, match=message):
             assert_equal(res1a, res1b)
 
-    def test_svd_random_state(self):
-        # check that the `random_state` parameter affects the solution
+    def test_svd_rng(self):
+        # check that the `rng` parameter affects the solution
         # Admittedly, `n` and `k` are chosen so that all solver pass all
         # these checks. That's a tall order, since LOBPCG doesn't want to
         # achieve the desired accuracy and ARPACK often returns the same
@@ -389,62 +385,62 @@ class SVDSCommonTests:
         rng = np.random.default_rng(0)
         A = rng.random((n, n))
 
-        # with the same random_state, solutions are the same and accurate
-        res1a = svds(A, k, solver=self.solver, random_state=0)
-        res2a = svds(A, k, solver=self.solver, random_state=0)
+        # with the same rng, solutions are the same and accurate
+        res1a = svds(A, k, solver=self.solver, rng=0)
+        res2a = svds(A, k, solver=self.solver, rng=0)
         for idx in range(3):
             assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
-        # with the same random_state, solutions are the same and accurate
-        res1b = svds(A, k, solver=self.solver, random_state=1)
-        res2b = svds(A, k, solver=self.solver, random_state=1)
+        # with the same rng, solutions are the same and accurate
+        res1b = svds(A, k, solver=self.solver, rng=1)
+        res2b = svds(A, k, solver=self.solver, rng=1)
         for idx in range(3):
             assert_allclose(res1b[idx], res2b[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1b)
 
-        # with different random_state, solutions can be numerically different
+        # with different rng, solutions can be numerically different
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
             assert_equal(res1a, res1b)
 
-    @pytest.mark.parametrize("random_state", (0, 1,
+    @pytest.mark.parametrize("rng", (0, 1,
                                               np.random.RandomState(0),
                                               np.random.default_rng(0)))
-    def test_svd_random_state_2(self, random_state):
+    def test_svd_rng(self, rng):
         n = 100
         k = 1
 
         rng = np.random.default_rng(0)
         A = rng.random((n, n))
 
-        random_state_2 = copy.deepcopy(random_state)
+        rng_2 = copy.deepcopy(rng)
 
-        # with the same random_state, solutions are the same and accurate
-        res1a = svds(A, k, solver=self.solver, random_state=random_state)
-        res2a = svds(A, k, solver=self.solver, random_state=random_state_2)
+        # with the same rng, solutions are the same and accurate
+        res1a = svds(A, k, solver=self.solver, rng=rng)
+        res2a = svds(A, k, solver=self.solver, rng=rng_2)
         for idx in range(3):
             assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
-    @pytest.mark.parametrize("random_state", (None,
+    @pytest.mark.parametrize("rng", (None,
                                               np.random.RandomState(0),
                                               np.random.default_rng(0)))
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
-    def test_svd_random_state_3(self, random_state):
+    def test_svd_rng_3(self, rng):
         n = 100
         k = 5
 
         rng = np.random.default_rng(0)
         A = rng.random((n, n))
 
-        random_state = copy.deepcopy(random_state)
+        rng = copy.deepcopy(rng)
 
-        # random_state in different state produces accurate - but not
+        # rng in different state produces accurate - but not
         # not necessarily identical - results
-        res1a = svds(A, k, solver=self.solver, random_state=random_state, maxiter=1000)
-        res2a = svds(A, k, solver=self.solver, random_state=random_state, maxiter=1000)
+        res1a = svds(A, k, solver=self.solver, rng=rng, maxiter=1000)
+        res2a = svds(A, k, solver=self.solver, rng=rng, maxiter=1000)
         _check_svds(A, k, *res1a, atol=2e-7)
         _check_svds(A, k, *res2a, atol=2e-7)
 
@@ -477,8 +473,7 @@ class SVDSCommonTests:
             with pytest.raises(np.linalg.LinAlgError, match=message):
                 svds(A, k, maxiter=1, solver=self.solver)
 
-        ud, sd, vhd = svds(A, k, solver=self.solver, maxiter=maxiter,
-                           random_state=0)
+        ud, sd, vhd = svds(A, k, solver=self.solver, maxiter=maxiter, rng=0)
         _check_svds(A, k, ud, sd, vhd, atol=1e-8)
         assert_allclose(np.abs(ud), np.abs(u), atol=1e-8)
         assert_allclose(np.abs(vhd), np.abs(vh), atol=1e-8)
@@ -501,23 +496,23 @@ class SVDSCommonTests:
             with pytest.warns(UserWarning, match="The problem size"):
                 if rsv is False:
                     s2 = svds(A, k, return_singular_vectors=rsv,
-                              solver=self.solver, random_state=rng)
+                              solver=self.solver, rng=rng)
                     assert_allclose(s2, s)
                 elif rsv == 'u' and respect_u:
                     u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                                       solver=self.solver, random_state=rng)
+                                       solver=self.solver, rng=rng)
                     assert_allclose(np.abs(u2), np.abs(u))
                     assert_allclose(s2, s)
                     assert vh2 is None
                 elif rsv == 'vh' and respect_vh:
                     u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                                       solver=self.solver, random_state=rng)
+                                       solver=self.solver, rng=rng)
                     assert u2 is None
                     assert_allclose(s2, s)
                     assert_allclose(np.abs(vh2), np.abs(vh))
                 else:
                     u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                                       solver=self.solver, random_state=rng)
+                                       solver=self.solver, rng=rng)
                     if u2 is not None:
                         assert_allclose(np.abs(u2), np.abs(u))
                     assert_allclose(s2, s)
@@ -526,23 +521,23 @@ class SVDSCommonTests:
         else:
             if rsv is False:
                 s2 = svds(A, k, return_singular_vectors=rsv,
-                          solver=self.solver, random_state=rng)
+                          solver=self.solver, rng=rng)
                 assert_allclose(s2, s)
             elif rsv == 'u' and respect_u:
                 u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                                   solver=self.solver, random_state=rng)
+                                   solver=self.solver, rng=rng)
                 assert_allclose(np.abs(u2), np.abs(u))
                 assert_allclose(s2, s)
                 assert vh2 is None
             elif rsv == 'vh' and respect_vh:
                 u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                                   solver=self.solver, random_state=rng)
+                                   solver=self.solver, rng=rng)
                 assert u2 is None
                 assert_allclose(s2, s)
                 assert_allclose(np.abs(vh2), np.abs(vh))
             else:
                 u2, s2, vh2 = svds(A, k, return_singular_vectors=rsv,
-                                   solver=self.solver, random_state=rng)
+                                   solver=self.solver, rng=rng)
                 if u2 is not None:
                     assert_allclose(np.abs(u2), np.abs(u))
                 assert_allclose(s2, s)
@@ -587,9 +582,9 @@ class SVDSCommonTests:
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
-                u, s, vh = svds(A2, k, solver=self.solver, random_state=0)
+                u, s, vh = svds(A2, k, solver=self.solver, rng=0)
         else:
-            u, s, vh = svds(A2, k, solver=self.solver, random_state=0)
+            u, s, vh = svds(A2, k, solver=self.solver, rng=0)
         _check_svds(A, k, u, s, vh, atol=atol)
 
     def test_svd_linop(self):
@@ -615,15 +610,11 @@ class SVDSCommonTests:
                 v0 = np.ones(min(A.shape))
             if solver == 'lobpcg':
                 with pytest.warns(UserWarning, match="The problem size"):
-                    U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver,
-                                               random_state=0))
-                    U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver,
-                                               random_state=0))
+                    U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver, rng=0))
+                    U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver, rng=0))
             else:
-                U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver,
-                                           random_state=0))
-                U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver,
-                                           random_state=0))
+                U1, s1, VH1 = reorder(svds(A, k, v0=v0, solver=solver, rng=0))
+                U2, s2, VH2 = reorder(svds(L, k, v0=v0, solver=solver, rng=0))
 
             assert_allclose(np.abs(U1), np.abs(U2))
             assert_allclose(s1, s2)
@@ -640,14 +631,14 @@ class SVDSCommonTests:
             if self.solver == 'lobpcg':
                 with pytest.warns(UserWarning, match="The problem size"):
                     U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver,
-                                               random_state=0, **kwargs))
+                                               rng=0, **kwargs))
                     U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver,
-                                               random_state=0, **kwargs))
+                                               rng=0, **kwargs))
             else:
                 U1, s1, VH1 = reorder(svds(A, k, which="SM", solver=solver,
-                                           random_state=0, **kwargs))
+                                           rng=0, **kwargs))
                 U2, s2, VH2 = reorder(svds(L, k, which="SM", solver=solver,
-                                           random_state=0, **kwargs))
+                                           rng=0, **kwargs))
 
             assert_allclose(np.abs(U1), np.abs(U2))
             assert_allclose(s1 + 1, s2 + 1)
@@ -666,18 +657,14 @@ class SVDSCommonTests:
                         with pytest.warns(UserWarning,
                                           match="The problem size"):
                             U1, s1, VH1 = reorder(svds(A, k, which="LM",
-                                                       solver=solver,
-                                                       random_state=0))
+                                                       solver=solver, rng=0))
                             U2, s2, VH2 = reorder(svds(L, k, which="LM",
-                                                       solver=solver,
-                                                       random_state=0))
+                                                       solver=solver, rng=0))
                     else:
                         U1, s1, VH1 = reorder(svds(A, k, which="LM",
-                                                   solver=solver,
-                                                   random_state=0))
+                                                   solver=solver, rng=0))
                         U2, s2, VH2 = reorder(svds(L, k, which="LM",
-                                                   solver=solver,
-                                                   random_state=0))
+                                                   solver=solver, rng=0))
 
                     assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
                     assert_allclose(s1, s2, rtol=eps)
@@ -709,8 +696,7 @@ class SVDSCommonTests:
         e[0:5] *= 1e1 ** np.arange(-5, 0, 1)
         S = dia_array((e, 0), shape=(m, m)) @ S
         S = S.astype(dtype)
-        u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000,
-                        random_state=0)
+        u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000, rng=0)
         c_svd = False  # partial SVD can be different from full SVD
         _check_svds_n(S, k, u, s, vh, which="SM", check_svd=c_svd, atol=2e-1)
 
@@ -727,9 +713,9 @@ class SVDSCommonTests:
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
-                U, s, VH = svds(A, k, solver=self.solver, random_state=0)
+                U, s, VH = svds(A, k, solver=self.solver, rng=0)
         else:
-            U, s, VH = svds(A, k, solver=self.solver, random_state=0)
+            U, s, VH = svds(A, k, solver=self.solver, rng=0)
 
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
@@ -765,9 +751,9 @@ class SVDSCommonTests:
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
-                U, s, VH = svds(A, k, solver=self.solver, random_state=0)
+                U, s, VH = svds(A, k, solver=self.solver, rng=0)
         else:
-            U, s, VH = svds(A, k, solver=self.solver, random_state=0)
+            U, s, VH = svds(A, k, solver=self.solver, rng=0)
 
         # Check some generic properties of svd.
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
@@ -791,7 +777,7 @@ class SVDSCommonTests:
         t = e**(-np.arange(len(vh))).astype(dtype)
         A = (u*t).dot(vh)
         k = 4
-        u, s, vh = svds(A, k, solver=self.solver, maxiter=100, random_state=0)
+        u, s, vh = svds(A, k, solver=self.solver, maxiter=100, rng=0)
         t = np.sum(s > 0)
         assert_equal(t, k)
         # LOBPCG needs larger atol and rtol to pass
@@ -823,8 +809,7 @@ class SVDSCommonTests:
 
         # Smallest singular values should be 0
         sp_mat = csc_array(mat)
-        su, ss, svh = svds(sp_mat, k=dim, which='SM', solver=self.solver,
-                           random_state=0)
+        su, ss, svh = svds(sp_mat, k=dim, which='SM', solver=self.solver, rng=0)
         # Smallest dim singular values are 0:
         assert_allclose(ss, 0, atol=1e-5, rtol=1e0)
         # Smallest singular vectors via svds in null space:
@@ -855,7 +840,7 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
         A = rng.random((6, 7))
         k = 3
         if ncv in {4, 5}:
-            u, s, vh = svds(A, k=k, ncv=ncv, solver=self.solver, random_state=0)
+            u, s, vh = svds(A, k=k, ncv=ncv, solver=self.solver, rng=0)
         # partial decomposition, so don't check that u@diag(s)@vh=A;
         # do check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
             _check_svds(A, k, u, s, vh)
