@@ -405,9 +405,9 @@ class SVDSCommonTests:
             assert_equal(res1a, res1b)
 
     @pytest.mark.parametrize("rng", (0, 1,
-                                              np.random.RandomState(0),
-                                              np.random.default_rng(0)))
-    def test_svd_rng(self, rng):
+                                     np.random.RandomState(0),
+                                     np.random.default_rng(0)))
+    def test_svd_rng_2(self, rng):
         n = 100
         k = 1
 
@@ -424,8 +424,8 @@ class SVDSCommonTests:
         _check_svds(A, k, *res1a)
 
     @pytest.mark.parametrize("rng", (None,
-                                              np.random.RandomState(0),
-                                              np.random.default_rng(0)))
+                                     np.random.RandomState(0),
+                                     np.random.default_rng(0)))
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
     def test_svd_rng_3(self, rng):

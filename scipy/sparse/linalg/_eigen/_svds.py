@@ -96,7 +96,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
             return_singular, solver, rng)
 
 
-@_transition_to_rng("random_state")
+@_transition_to_rng("random_state", position_num=9)
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
          solver='arpack', rng=None, options=None):
@@ -289,7 +289,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> X_dense = rng.random(size=(100, 100))
     >>> X_dense[:, 2 * np.arange(50)] = 0
     >>> X = sparse.csr_array(X_dense)
-    >>> _, singular_values, _ = svds(X, k=5, rng=rng)
+    >>> _, singular_values, _ = svds(X, k=5, random_state=rng)
     >>> print(singular_values)
     [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
 

@@ -79,7 +79,7 @@ class _AProd:
             return self.A.matvec(np.zeros(self.A.shape[1])).dtype
 
 
-@_transition_to_rng("random_state")
+@_transition_to_rng("random_state", position_num=18)
 def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
           compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
           delta=None, eta=None, anorm=0, cgs=False, elr=True,
