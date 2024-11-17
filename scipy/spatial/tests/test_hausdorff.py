@@ -127,7 +127,7 @@ class TestHausdorff:
         # the two cases from gh-11332
         ([(0,0)],
          [(0,1), (0,0)],
-         0,
+         np.int64(0),
          (0.0, 0, 1)),
         ([(0,0)],
          [(0,1), (0,0)],
