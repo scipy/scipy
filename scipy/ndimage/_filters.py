@@ -1557,7 +1557,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         mode = _ni_support._extend_mode_to_code(mode, is_filter=True)
         if input.ndim == 1:
             if input.dtype in (np.int64, np.float64, np.float32):
-                x = input.copy()
+                x = input
                 x_out = output
             elif input.dtype == np.float16:
                 x = input.astype('float32')

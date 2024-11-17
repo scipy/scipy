@@ -249,7 +249,7 @@ static PyObject *rank_filter(PyObject *self, PyObject *args) {
     return NULL;
   }
   PyArrayObject *in_arr = (PyArrayObject *)PyArray_FROM_OTF(
-      in_arr_obj, NPY_NOTYPE, NPY_ARRAY_INOUT_ARRAY2);
+      in_arr_obj, NPY_NOTYPE, NPY_ARRAY_IN_ARRAY);
   PyArrayObject *out_arr = (PyArrayObject *)PyArray_FROM_OTF(
       out_arr_obj, NPY_NOTYPE, NPY_ARRAY_INOUT_ARRAY2);
 
@@ -258,6 +258,7 @@ static PyObject *rank_filter(PyObject *self, PyObject *args) {
   }
   arr_len = PyArray_SIZE(in_arr);
   type = PyArray_TYPE(in_arr);
+
   switch (type) { // the considered types are float, double, int64
   case NPY_FLOAT: {
     float *c_in_arr = (float *)PyArray_DATA(in_arr);
