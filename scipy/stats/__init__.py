@@ -63,6 +63,7 @@ Continuous distributions
    cosine            -- Cosine
    crystalball       -- Crystalball
    dgamma            -- Double Gamma
+   dpareto_lognorm   -- Double Pareto Lognormal
    dweibull          -- Double Weibull
    erlang            -- Erlang
    expon             -- Exponential
@@ -247,6 +248,7 @@ Summary statistics
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
+   lmoment
    expectile         -- Expectile
    skew              -- Skewness
    kstat             --
@@ -356,6 +358,7 @@ coordinates of multivariate observations.
    spearmanr
    pointbiserialr
    kendalltau
+   chatterjeexi
    weightedtau
    somersd
    siegelslopes
@@ -466,6 +469,7 @@ Random Variables
    :toctree: generated/
 
    Normal
+   Mixture
 
 Quasi-Monte Carlo
 =================
@@ -635,8 +639,10 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
+from ._distribution_infrastructure import Mixture
 from ._new_distributions import Normal
 from ._mgc import multiscale_graphcorr
+from ._correlation import chatterjeexi
 
 
 # Deprecated namespaces, to be removed in v2.0.0

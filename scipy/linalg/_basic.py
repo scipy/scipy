@@ -51,23 +51,24 @@ def _solve_check(n, info, lamch=None, rcond=None):
 
 def _find_matrix_structure(a):
     n = a.shape[0]
-    below, above = bandwidth(a)
+    n_below, n_above = bandwidth(a)
 
-    if below == above == 0:
-        return 'diagonal'
-    elif above == 0:
-        return 'lower triangular'
-    elif below == 0:
-        return 'upper triangular'
-    elif above <= 1 and below <= 1 and n > 3:
-        return 'tridiagonal'
-
-    if np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
-        return 'hermitian'
+    if n_below == n_above == 0:
+        kind = 'diagonal'
+    elif n_above == 0:
+        kind = 'lower triangular'
+    elif n_below == 0:
+        kind = 'upper triangular'
+    elif n_above <= 1 and n_below <= 1 and n > 3:
+        kind = 'tridiagonal'
+    elif np.issubdtype(a.dtype, np.complexfloating) and ishermitian(a):
+        kind = 'hermitian'
     elif issymmetric(a):
-        return 'symmetric'
+        kind = 'symmetric'
+    else:
+        kind = 'general'
 
-    return 'general'
+    return kind, n_below, n_above
 
 
 def solve(a, b, lower=False, overwrite_a=False,
@@ -84,6 +85,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     ===================  ================================
      diagonal             'diagonal'
      tridiagonal          'tridiagonal'
+     banded               'banded'
      upper triangular     'upper triangular'
      lower triangular     'lower triangular'
      symmetric            'symmetric' (or 'sym')
@@ -201,7 +203,7 @@ def solve(a, b, lower=False, overwrite_a=False,
             b1 = b1[:, None]
         b_is_1D = True
 
-    if assume_a not in {None, 'diagonal', 'tridiagonal', 'lower triangular',
+    if assume_a not in {None, 'diagonal', 'tridiagonal', 'banded', 'lower triangular',
                         'upper triangular', 'symmetric', 'hermitian',
                         'positive definite', 'general', 'sym', 'her', 'pos', 'gen'}:
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
@@ -211,8 +213,9 @@ def solve(a, b, lower=False, overwrite_a=False,
     if assume_a in {'hermitian', 'her'} and not np.iscomplexobj(a1):
         assume_a = 'symmetric'
 
+    n_below, n_above = None, None
     if assume_a is None:
-        assume_a = _find_matrix_structure(a1)
+        assume_a, n_below, n_above = _find_matrix_structure(a1)
 
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
@@ -301,6 +304,20 @@ def solve(a, b, lower=False, overwrite_a=False,
         x, info = _gttrs(dl, d, du, du2, ipiv, b1, overwrite_b=overwrite_b)
         _solve_check(n, info)
         rcond, info = _gtcon(dl, d, du, du2, ipiv, anorm)
+    # Banded case
+    elif assume_a == 'banded':
+        a1, n_below, n_above = ((a1.T, n_above, n_below) if transposed
+                                else (a1, n_below, n_above))
+        n_below, n_above = bandwidth(a1) if n_below is None else (n_below, n_above)
+        ab = _to_banded(n_below, n_above, a1)
+        gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
+        # Next two lines copied from `solve_banded`
+        a2 = np.zeros((2*n_below + n_above + 1, ab.shape[1]), dtype=gbsv.dtype)
+        a2[n_below:, :] = ab
+        _, _, x, info = gbsv(n_below, n_above, a2, b1,
+                             overwrite_ab=True, overwrite_b=overwrite_b)
+        _solve_check(n, info)
+        # TODO: wrap gbcon and use to get rcond
     # Triangular case
     elif assume_a in {'lower triangular', 'upper triangular'}:
         lower = assume_a == 'lower triangular'
@@ -361,6 +378,18 @@ def _matrix_norm_general(norm, a, check_finite):
     a = np.asarray_chkfinite(a) if check_finite else a
     lange = get_lapack_funcs('lange', (a,))
     return lange(norm, a)
+
+
+def _to_banded(n_below, n_above, a):
+    n = a.shape[0]
+    rows = n_above + n_below + 1
+    ab = np.zeros((rows, n), dtype=a.dtype)
+    ab[n_above] = np.diag(a)
+    for i in range(1, n_above + 1):
+        ab[n_above - i, i:] = np.diag(a, i)
+    for i in range(1, n_below + 1):
+        ab[n_above + i, :-i] = np.diag(a, -i)
+    return ab
 
 
 def _ensure_dtype_cdsz(*arrays):

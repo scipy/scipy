@@ -27,9 +27,6 @@ old_isdesc = inspect.isdescriptor
 inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
 
-# Currently required to build scipy.fft docs
-os.environ['_SCIPY_BUILDING_DOC'] = 'True'
-
 # -----------------------------------------------------------------------------
 # General configuration
 # -----------------------------------------------------------------------------
@@ -523,8 +520,9 @@ class LegacyDirective(Directive):
             # Argument is empty; use default text
             obj = "submodule"
         text = (f"This {obj} is considered legacy and will no longer receive "
-                "updates. This could also mean it will be removed in future "
-                "SciPy versions.")
+                "updates. While we currently have no plans to remove it, "
+                "we recommend that new code uses more modern alternatives instead."
+        )
 
         try:
             self.content[0] = text+" "+self.content[0]
