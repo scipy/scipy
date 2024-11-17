@@ -975,7 +975,7 @@ nct_cdf_wrap(const Real v, const Real l, const Real x)
     if ((y < 0) || (y > 1)) {
 	/* Result must be between 0 and 1 to be a valid CDF value.
        Return NAN if the result is out of bounds because the answer cannot be trusted. */
-	sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
+	    sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     return y;
