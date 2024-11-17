@@ -23,7 +23,9 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
     factor = 2. if factor is None else factor
-    xl0, xr0, xmin, xmax, factor = xp.broadcast_arrays(xl0, xr0, xmin, xmax, factor)
+    xl0, xr0, xmin, xmax, factor = xp.broadcast_arrays(xl0, xp.asarray(xr0),
+                                                       xp.asarray(xmin), xp.asarray(xmax),
+                                                       xp.asarray(factor))
 
     if not xp.isdtype(xr0.dtype, "numeric") or xp.isdtype(xr0.dtype, "complex floating"):
         raise ValueError('`xr0` must be numeric and real.')
@@ -172,7 +174,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     x = xp.concat(xs)
     f = xp.concat(fs)
     invalid_bracket = xp.concat((invalid_bracket, invalid_bracket))
-    n = len(x) // 2
+    n = x.shape[0] // 2
 
     # `x_last` is the previous location of the moving end of the bracket. If
     # the signs of `f` and `f_last` are different, `x` and `x_last` form a
@@ -280,7 +282,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         j = xp.searchsorted(work.active, also_stop)
         # If the location exceeds the length of the `work.active`, they are
         # not there.
-        j = j[j < len(work.active)]
+        j = j[j < work.active.shape[0]]
         # Check whether they are still there.
         j = j[also_stop == work.active[j]]
         # Now convert these to boolean indices to use with `work.status`.
@@ -306,7 +308,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         pass
 
     def customize_result(res, shape):
-        n = len(res['x']) // 2
+        n = res['x'].shape[0] // 2
 
         # To avoid ambiguity, below we refer to `xl0`, the initial left endpoint
         # as `a` and `xr0`, the initial right endpoint, as `b`.
