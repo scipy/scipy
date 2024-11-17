@@ -254,7 +254,7 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
 
     >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
-     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
+    >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
     >>> res = chi2_contingency(obs)
     >>> res.statistic
     2.7777777777777777
@@ -323,8 +323,7 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
                          f"frequencies has a zero element at {zeropos}.")
 
     if method is not None:
-        return _chi2_resampling_methods(observed, expected, correction,
-                                        lambda_, method)
+        return _chi2_resampling_methods(observed, expected, correction, lambda_, method)
 
     # The degrees of freedom
     dof = expected.size - sum(expected.shape) + expected.ndim - 1
