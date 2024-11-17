@@ -144,7 +144,7 @@ class SVDSCommonTests:
     def test_svds_input_validation_A(self, args):
         A, error_type, message = args
         with pytest.raises(error_type, match=message):
-            svds(A, k=1, solver=self.solver)
+            svds(A, k=1, solver=self.solver, rng=0)
 
     @pytest.mark.parametrize("which", ["LM", "SM"])
     def test_svds_int_A(self, which):
@@ -175,7 +175,7 @@ class SVDSCommonTests:
                                   shape=(n - 1, n))
         n = 100
         diff0_func_aslo = diff0_func_aslo_def(n)
-        u, s, _ = svds(diff0_func_aslo, k=3, which='SM')
+        u, s, _ = svds(diff0_func_aslo, k=3, which='SM', rng=0)
         se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
         ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
                                      np.arange(1, 4)) / n)
@@ -195,31 +195,31 @@ class SVDSCommonTests:
 
         message = ("`k` must be an integer satisfying")
         with pytest.raises(ValueError, match=message):
-            svds(A, k=k, solver=self.solver)
+            svds(A, k=k, solver=self.solver, rng=0)
 
     def test_svds_input_validation_k_2(self):
         # I think the stack trace is reasonable when `k` can't be converted
         # to an int.
         message = "int() argument must be a"
         with pytest.raises(TypeError, match=re.escape(message)):
-            svds(np.eye(10), k=[], solver=self.solver)
+            svds(np.eye(10), k=[], solver=self.solver, rng=0)
 
         message = "invalid literal for int()"
         with pytest.raises(ValueError, match=message):
-            svds(np.eye(10), k="hi", solver=self.solver)
+            svds(np.eye(10), k="hi", solver=self.solver, rng=0)
 
     @pytest.mark.parametrize("tol", (-1, np.inf, np.nan))
     def test_svds_input_validation_tol_1(self, tol):
         message = "`tol` must be a non-negative floating point value."
         with pytest.raises(ValueError, match=message):
-            svds(np.eye(10), tol=tol, solver=self.solver)
+            svds(np.eye(10), tol=tol, solver=self.solver, rng=0)
 
     @pytest.mark.parametrize("tol", ([], 'hi'))
     def test_svds_input_validation_tol_2(self, tol):
         # I think the stack trace is reasonable here
         message = "'<' not supported between instances"
         with pytest.raises(TypeError, match=message):
-            svds(np.eye(10), tol=tol, solver=self.solver)
+            svds(np.eye(10), tol=tol, solver=self.solver, rng=0)
 
     @pytest.mark.parametrize("which", ('LA', 'SA', 'ekki', 0))
     def test_svds_input_validation_which(self, which):
@@ -228,7 +228,7 @@ class SVDSCommonTests:
         # Function was not checking for eigenvalue type and unintended
         # values could be returned.
         with pytest.raises(ValueError, match="`which` must be in"):
-            svds(np.eye(10), which=which, solver=self.solver)
+            svds(np.eye(10), which=which, solver=self.solver, rng=0)
 
     @pytest.mark.parametrize("transpose", (True, False))
     @pytest.mark.parametrize("n", range(4, 9))
@@ -245,44 +245,44 @@ class SVDSCommonTests:
                            else min(A.shape))
         if n != required_length:
             with pytest.raises(ValueError, match=message):
-                svds(A, k=k, v0=v0, solver=self.solver)
+                svds(A, k=k, v0=v0, solver=self.solver, rng=0)
 
     def test_svds_input_validation_v0_2(self):
         A = np.ones((10, 10))
         v0 = np.ones((1, 10))
         message = "`v0` must have shape"
         with pytest.raises(ValueError, match=message):
-            svds(A, k=1, v0=v0, solver=self.solver)
+            svds(A, k=1, v0=v0, solver=self.solver, rng=0)
 
     @pytest.mark.parametrize("v0", ("hi", 1, np.ones(10, dtype=int)))
     def test_svds_input_validation_v0_3(self, v0):
         A = np.ones((10, 10))
         message = "`v0` must be of floating or complex floating data type."
         with pytest.raises(ValueError, match=message):
-            svds(A, k=1, v0=v0, solver=self.solver)
+            svds(A, k=1, v0=v0, solver=self.solver, rng=0)
 
     @pytest.mark.parametrize("maxiter", (-1, 0, 5.5))
     def test_svds_input_validation_maxiter_1(self, maxiter):
         message = ("`maxiter` must be a positive integer.")
         with pytest.raises(ValueError, match=message):
-            svds(np.eye(10), maxiter=maxiter, solver=self.solver)
+            svds(np.eye(10), maxiter=maxiter, solver=self.solver, rng=0)
 
     def test_svds_input_validation_maxiter_2(self):
         # I think the stack trace is reasonable when `k` can't be converted
         # to an int.
         message = "int() argument must be a"
         with pytest.raises(TypeError, match=re.escape(message)):
-            svds(np.eye(10), maxiter=[], solver=self.solver)
+            svds(np.eye(10), maxiter=[], solver=self.solver, rng=0)
 
         message = "invalid literal for int()"
         with pytest.raises(ValueError, match=message):
-            svds(np.eye(10), maxiter="hi", solver=self.solver)
+            svds(np.eye(10), maxiter="hi", solver=self.solver, rng=0)
 
     @pytest.mark.parametrize("rsv", ('ekki', 10))
     def test_svds_input_validation_return_singular_vectors(self, rsv):
         message = "`return_singular_vectors` must be in"
         with pytest.raises(ValueError, match=message):
-            svds(np.eye(10), return_singular_vectors=rsv, solver=self.solver)
+            svds(np.eye(10), return_singular_vectors=rsv, solver=self.solver, rng=0)
 
     # --- Test Parameters ---
 
@@ -459,17 +459,17 @@ class SVDSCommonTests:
         if self.solver == 'arpack':
             message = "ARPACK error -1: No convergence"
             with pytest.raises(ArpackNoConvergence, match=message):
-                svds(A, k, ncv=3, maxiter=1, solver=self.solver)
+                svds(A, k, ncv=3, maxiter=1, solver=self.solver, rng=0)
         elif self.solver == 'lobpcg':
             # Set maxiter higher so test passes without changing
             # default and breaking backward compatibility (gh-20221)
             maxiter = 30
             with pytest.warns(UserWarning, match="Exited at iteration"):
-                svds(A, k, maxiter=1, solver=self.solver)
+                svds(A, k, maxiter=1, solver=self.solver, rng=0)
         elif self.solver == 'propack':
             message = "k=1 singular triplets did not converge within"
             with pytest.raises(np.linalg.LinAlgError, match=message):
-                svds(A, k, maxiter=1, solver=self.solver)
+                svds(A, k, maxiter=1, solver=self.solver, rng=0)
 
         ud, sd, vhd = svds(A, k, solver=self.solver, maxiter=maxiter, rng=0)
         _check_svds(A, k, ud, sd, vhd, atol=1e-8)
@@ -824,7 +824,7 @@ class Test_SVDS_once:
     def test_svds_input_validation_solver(self, solver):
         message = "solver must be one of"
         with pytest.raises(ValueError, match=message):
-            svds(np.ones((3, 4)), k=2, solver=solver)
+            svds(np.ones((3, 4)), k=2, solver=solver, rng=0)
 
 
 class Test_SVDS_ARPACK(SVDSCommonTests):
@@ -845,18 +845,18 @@ class Test_SVDS_ARPACK(SVDSCommonTests):
         else:
             message = ("`ncv` must be an integer satisfying")
             with pytest.raises(ValueError, match=message):
-                svds(A, k=k, ncv=ncv, solver=self.solver)
+                svds(A, k=k, ncv=ncv, solver=self.solver, rng=0)
 
     def test_svds_input_validation_ncv_2(self):
         # I think the stack trace is reasonable when `ncv` can't be converted
         # to an int.
         message = "int() argument must be a"
         with pytest.raises(TypeError, match=re.escape(message)):
-            svds(np.eye(10), ncv=[], solver=self.solver)
+            svds(np.eye(10), ncv=[], solver=self.solver, rng=0)
 
         message = "invalid literal for int()"
         with pytest.raises(ValueError, match=message):
-            svds(np.eye(10), ncv="hi", solver=self.solver)
+            svds(np.eye(10), ncv="hi", solver=self.solver, rng=0)
 
     # I can't see a robust relationship between `ncv` and relevant outputs
     # (e.g. accuracy, time), so no test of the parameter.

@@ -167,7 +167,8 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         ``full_output=True``.
 
     """
-    rng = np.random.default_rng(rng)
+    if not isinstance(rng, np.random.RandomState):
+        rng = np.random.default_rng(rng)
 
     which = which.upper()
     if which not in {'LM', 'SM'}:
