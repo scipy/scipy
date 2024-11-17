@@ -2016,6 +2016,38 @@ class TestNdimageFilters:
                                      origin=[-1, 0])
         assert_array_almost_equal(expected, output)
 
+    def test_rank16(self):
+        array = [3, 2, 5, 1, 4]
+        expected = np.asarray([3, 3, 2, 4, 4])
+        output = ndimage.rank_filter(array, -2, size=3)
+        assert_array_almost_equal(expected, output)
+
+    def test_rank17(self):
+        array = np.array([3, 2, 5, 1, 4])
+        array.flags.writeable = False
+        expected = np.asarray([3, 3, 2, 4, 4])
+        output = ndimage.rank_filter(array, -2, size=3)
+        assert_array_almost_equal(expected, output)
+
+    def test_rank18(self):
+        array = np.array([3, 2, 5, 1, 4])
+        tested_dtypes = [np.int8, np.int16, np.int32, np.int64, np.float32, np.float64,
+                         np.float16, np.uint8, np.uint16, np.uint32, np.uint64]
+        for dtype in tested_dtypes:
+            input = array.astype(dtype)
+            output = ndimage.rank_filter(input, -2, size=3)
+            assert(output.dtype == dtype)
+
+    def test_rank19(self):
+        array = np.array([[3, 2, 5, 1, 4], [3, 2, 5, 1, 4]])
+        # np.float16 is not supported
+        tested_dtypes = [np.int8, np.int16, np.int32, np.int64, np.float32, np.float64,
+                         np.uint8, np.uint16, np.uint32, np.uint64]
+        for dtype in tested_dtypes:
+            input = array.astype(dtype)
+            output = ndimage.rank_filter(input, -2, size=3)
+            assert(output.dtype == dtype)
+
     @skip_xp_backends(np_only=True, reason="off-by-ones on alt backends")
     @pytest.mark.parametrize('dtype', types)
     def test_generic_filter1d01(self, dtype, xp):
