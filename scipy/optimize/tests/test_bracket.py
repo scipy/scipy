@@ -7,7 +7,8 @@ from scipy.optimize._bracket import _ELIMITS
 from scipy.optimize.elementwise import bracket_root, bracket_minimum
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
-from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
+                                         xp_assert_less)
 from scipy.conftest import array_api_compatible
 
 
@@ -160,27 +161,31 @@ class TestBracketRoot:
             i = rng.random(size=shape) > 0.5
             xmin[i], xmax[i] = -np.inf, np.inf
         factor = rng.random(size=shape) + 1.5
+        refs = xp.asarray(bracket_root_single(xl0, xr0, xmin, xmax, factor, p).ravel())
+        xl0, xr0, xmin, xmax, factor = (xp.asarray(xl0), xp.asarray(xr0),
+                                        xp.asarray(xmin), xp.asarray(xmax),
+                                        xp.asarray(factor))
+        args = tuple(map(xp.asarray, args))
         res = _bracket_root(f, xl0, xr0, xmin=xmin, xmax=xmax, factor=factor,
                             args=args, maxiter=maxiter)
-        refs = bracket_root_single(xl0, xr0, xmin, xmax, factor, p).ravel()
 
         attrs = ['xl', 'xr', 'fl', 'fr', 'success', 'nfev', 'nit']
         for attr in attrs:
             ref_attr = [getattr(ref, attr) for ref in refs]
             res_attr = getattr(res, attr)
-            assert_allclose(res_attr.ravel(), ref_attr)
-            assert_equal(res_attr.shape, shape)
+            xp_assert_close(res_attr.ravel(), ref_attr)
+            xp_assert_equal(res_attr.shape, shape)
 
-        assert np.issubdtype(res.success.dtype, np.bool_)
+        assert xp.isdtype(res.success.dtype, "bool")
         if shape:
-            assert np.all(res.success[1:-1])
-        assert np.issubdtype(res.status.dtype, np.integer)
-        assert np.issubdtype(res.nfev.dtype, np.integer)
-        assert np.issubdtype(res.nit.dtype, np.integer)
-        assert_equal(np.max(res.nit), f.f_evals - 2)
-        assert_array_less(res.xl, res.xr)
-        assert_allclose(res.fl, self.f(res.xl, *args))
-        assert_allclose(res.fr, self.f(res.xr, *args))
+            assert xp.all(res.success[1:-1])
+        assert xp.isdtype(res.status.dtype, "integral")
+        assert xp.isdtype(res.nfev.dtype, "integral")
+        assert xp.isdtype(res.nit.dtype, "integral")
+        assert xp.max(res.nit) == f.f_evals - 2
+        xp_assert_less(res.xl, res.xr)
+        xp_assert_close(res.fl, self.f(res.xl, *args))
+        xp_assert_close(res.fr, self.f(res.xr, *args))
 
     def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
