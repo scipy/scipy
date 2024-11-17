@@ -21,7 +21,7 @@ features are:
 import warnings
 
 import numpy as np
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_array, csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
 __all__ = ["hb_read", "hb_write"]
@@ -48,7 +48,7 @@ class HBInfo:
 
         Parameters
         ----------
-        m : sparse matrix
+        m : sparse array or matrix
             the HBInfo instance will derive its parameters from m
         title : str
             Title to put in the HB header
@@ -323,11 +323,7 @@ def _read_hb_data(content, header):
     val = np.fromstring(val_string,
             dtype=header.values_dtype, sep=' ')
 
-    try:
-        return csc_matrix((val, ind-1, ptr-1),
-                          shape=(header.nrows, header.ncols))
-    except ValueError as e:
-        raise e
+    return csc_array((val, ind-1, ptr-1), shape=(header.nrows, header.ncols))
 
 
 def _write_data(m, fid, header):
@@ -466,19 +462,28 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file):
+def hb_read(path_or_open_file, sparray=None):
     """Read HB-format file.
+
+    .. deprecated:: 1.15.0
+        The default return type of ``csc_matrix`` has been deprecated
+        in favour of ``csc_array``. Default will be changed in SciPy 1.17.0.
+        Use new argument ``sparray=True`` to anticipate the future, or
+        ``False`` to silence the warning and return ``csc_matrix`` even
+        after the change in default.
 
     Parameters
     ----------
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
+    sparray : bool or None
+        If True, return sparse csc_array. Otherwise return csc_matrix.
 
     Returns
     -------
-    data : scipy.sparse.csc_matrix instance
-        The data read from the HB file as a sparse matrix.
+    data : csc_array or csc_matrix
+        The data read from the HB file as a sparse array.
 
     Notes
     -----
@@ -497,8 +502,8 @@ def hb_read(path_or_open_file):
     >>> from scipy.sparse import csr_array, eye
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb"))  # read a hb file
-    <Compressed Sparse Column sparse matrix of dtype 'float64'
+    >>> print(hb_read("data.hb", sparray=True))  # read a hb file
+    <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (3, 3)>
         Coords	Values
         (0, 0)	1.0
@@ -510,10 +515,21 @@ def hb_read(path_or_open_file):
         return hb.read_matrix()
 
     if hasattr(path_or_open_file, 'read'):
-        return _get_matrix(path_or_open_file)
+        data = _get_matrix(path_or_open_file)
     else:
         with open(path_or_open_file) as f:
-            return _get_matrix(f)
+            data = _get_matrix(f)
+    if not sparray:
+        if sparray is None:
+            msg = ("The default return type, ``csc_matrix``, has been"
+                   " deprecated in favour of ``csc_array``."
+                   " Default will be changed in SciPy 1.17.0."
+                   " Use new argument ``sparray=True`` to anticipate"
+                   " the future, or ``False`` to silence the warning and"
+                   " return ``csc_matrix`` even after the change in default.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        return csc_matrix(data)
+    return data
 
 
 def hb_write(path_or_open_file, m, hb_info=None):
@@ -524,8 +540,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before writing.
-    m : sparse-matrix
-        the sparse matrix to write
+    m : sparse array or matrix
+        the sparse array to write
     hb_info : HBInfo
         contains the meta-data for write
 
@@ -550,8 +566,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
     >>> from scipy.sparse import csr_array, eye
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb"))  # read a hb file
-    <Compressed Sparse Column sparse matrix of dtype 'float64'
+    >>> print(hb_read("data.hb", sparray=True))  # read a hb file
+    <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (3, 3)>
         Coords	Values
         (0, 0)	1.0

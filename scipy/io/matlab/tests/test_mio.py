@@ -72,14 +72,14 @@ case_table4.append(
 case_table4.append(
     {'name': 'sparse',
      'classes': {'testsparse': 'sparse'},
-     'expected': {'testsparse': SP.coo_matrix(A)},
+     'expected': {'testsparse': SP.coo_array(A)},
      })
 B = A.astype(complex)
 B[0,0] += 1j
 case_table4.append(
     {'name': 'sparsecomplex',
      'classes': {'testsparsecomplex': 'sparse'},
-     'expected': {'testsparsecomplex': SP.coo_matrix(B)},
+     'expected': {'testsparsecomplex': SP.coo_array(B)},
      })
 case_table4.append(
     {'name': 'multi',
@@ -207,12 +207,12 @@ case_table5.append(
 case_table5.append(
     {'name': 'sparse',
      'classes': {'testsparse': 'sparse'},
-     'expected': {'testsparse': SP.coo_matrix(A)},
+     'expected': {'testsparse': SP.coo_array(A)},
      })
 case_table5.append(
     {'name': 'sparsecomplex',
      'classes': {'testsparsecomplex': 'sparse'},
-     'expected': {'testsparsecomplex': SP.coo_matrix(B)},
+     'expected': {'testsparsecomplex': SP.coo_array(B)},
      })
 case_table5.append(
     {'name': 'bool',
@@ -372,7 +372,7 @@ def test_gzip_simple():
     xdense = np.zeros((20,20))
     xdense[2,3] = 2.3
     xdense[4,5] = 4.5
-    x = SP.csc_matrix(xdense)
+    x = SP.csc_array(xdense)
 
     name = 'gzip_test'
     expected = {'x':x}
@@ -996,7 +996,7 @@ def test_mat_dtype():
 def test_sparse_in_struct():
     # reproduces bug found by DC where Cython code was insisting on
     # ndarray return type, but getting sparse matrix
-    st = {'sparsefield': SP.coo_matrix(np.eye(4))}
+    st = {'sparsefield': SP.eye_array(4)}
     stream = BytesIO()
     savemat(stream, {'a':st})
     d = loadmat(stream, struct_as_record=True)
@@ -1159,7 +1159,7 @@ def test_logical_sparse():
     # ValueError: indices and data should have the same size
     d = loadmat(filename, struct_as_record=True)
     log_sp = d['sp_log_5_4']
-    assert_(isinstance(log_sp, SP.csc_matrix))
+    assert_(SP.issparse(log_sp) and log_sp.format == "csc")
     assert_equal(log_sp.dtype.type, np.bool_)
     assert_array_equal(log_sp.toarray(),
                        [[True, True, True, False],
@@ -1173,7 +1173,7 @@ def test_empty_sparse():
     # Can we read empty sparse matrices?
     sio = BytesIO()
     import scipy.sparse
-    empty_sparse = scipy.sparse.csr_matrix([[0,0],[0,0]])
+    empty_sparse = scipy.sparse.csr_array([[0,0],[0,0]])
     savemat(sio, dict(x=empty_sparse))
     sio.seek(0)
     res = loadmat(sio)

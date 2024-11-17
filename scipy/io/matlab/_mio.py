@@ -88,6 +88,12 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     """
     Load MATLAB file.
 
+    .. deprecated:: 1.15.0
+        The default sparse return type of ``coo_matrix`` has been deprecated
+        in favour of ``coo_array``. Default will be changed in SciPy 1.17.0.
+        Use new argument ``sparray=True`` to anticipate the future, or
+        ``False`` to return ``coo_matrix`` after the deprecation.
+
     Parameters
     ----------
     file_name : str
@@ -143,12 +149,13 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         set to other values such as 'ascii', 'latin1', and 'utf-8'. This
         parameter is relevant only for files stored as v6 and above, and not
         for files stored as v4.
+    sparray : bool or None
+        If True and sparse mat, return sparse array. Otherwise return sparse matrix.
 
     Returns
     -------
     mat_dict : dict
-       dictionary with variable names as keys, and loaded matrices as
-       values.
+       dictionary with variable names as keys, and loaded matrices as values.
 
     Notes
     -----
@@ -227,10 +234,24 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     array([ 1.41421356+1.41421356j,  2.71828183+2.71828183j,
         3.14159265+3.14159265j])
     """
+    sparray = kwargs.pop('sparray', None)
     variable_names = kwargs.pop('variable_names', None)
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
-        matfile_dict = MR.get_variables(variable_names)
+    matfile_dict = MR.get_variables(variable_names)
+    if not sparray:
+        import scipy.sparse as sparse
+        for name, var in list(matfile_dict.items()):
+            if isinstance(var, sparse.sparray):
+                matfile_dict[name] = sparse.coo_matrix(var)
+                if sparray is None:
+                    msg = ("The default sparse return type, sparse matrix has been"
+                           " deprecated in favour of sparse array."
+                           " Default will be changed in SciPy 1.17.0."
+                           " Use new argument ``sparray=True`` to anticipate"
+                           " the future, or ``False`` to silence this warning and"
+                           " return sparse matrix even after the change in default.")
+                    warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
     if mdict is not None:
         mdict.update(matfile_dict)
