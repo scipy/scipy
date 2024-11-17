@@ -1557,7 +1557,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         mode = _ni_support._extend_mode_to_code(mode, is_filter=True)
         if input.ndim == 1:
             if input.dtype in (np.int64, np.float64, np.float32):
-                x = input
+                x = input.copy()
                 x_out = output
             elif input.dtype == np.float16:
                 x = input.astype('float32')
@@ -1572,8 +1572,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             else:
                 raise RuntimeError('Unsupported array type')
             cval = x.dtype.type(cval)
-            _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
-                                        origin)
+            _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval, origin)
             if input.dtype not in (np.int64, np.float64, np.float32):
                 np.copyto(output, x_out, casting='unsafe')
         else:
