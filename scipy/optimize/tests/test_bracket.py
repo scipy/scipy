@@ -8,7 +8,7 @@ from scipy.optimize.elementwise import bracket_root, bracket_minimum
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
-                                         xp_assert_less)
+                                         xp_assert_less, array_namespace)
 from scipy.conftest import array_api_compatible
 
 
@@ -135,8 +135,8 @@ class TestBracketRoot:
     @pytest.mark.parametrize('factor', [1.2, 2])
     def test_basic(self, p, xmin, xmax, factor, xp):
         # Test basic functionality to bracket root (distribution PPF)
-        res = _bracket_root(self.f, -0.01, 0.01, xmin=xmin, xmax=xmax,
-                            factor=factor, args=(p,))
+        res = _bracket_root(self.f, xp.asarray(-0.01), 0.01, xmin=xmin, xmax=xmax,
+                            factor=factor, args=(xp.asarray(p),))
         xp_assert_equal(-xp.sign(res.fl), xp.sign(res.fr))
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
@@ -212,12 +212,12 @@ class TestBracketRoot:
                             xmax=[xp.inf, 1, xp.inf, xp.inf, 2],
                             args=args, maxiter=3)
 
-        ref_flags = xp.array([eim._ECONVERGED,
-                              _ELIMITS,
-                              eim._ECONVERR,
-                              eim._EVALUEERR,
-                              eim._EINPUTERR],
-                             dtype=res.status.dtype)
+        ref_flags = xp.asarray([eim._ECONVERGED,
+                                _ELIMITS,
+                                eim._ECONVERR,
+                                eim._EVALUEERR,
+                                eim._EINPUTERR],
+                               dtype=res.status.dtype)
 
         xp_assert_equal(res.status, ref_flags)
 
@@ -228,12 +228,13 @@ class TestBracketRoot:
     def test_dtype(self, root, xmin, xmax, dtype, xp):
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
+        xp_test = array_namespace(xp.asarray(1.))
 
-        xmin = xmin if xmin is None else dtype(xmin)
-        xmax = xmax if xmax is None else dtype(xmax)
-        root = dtype(root)
+        xmin = xmin if xmin is None else xp.asarray(xmin, dtype=dtype)
+        xmax = xmax if xmax is None else xp.asarray(xmax, dtype=dtype)
+        root = xp.asarray(root, dtype=dtype)
         def f(x, root):
-            return ((x - root) ** 3).astype(dtype)
+            return xp_test.astype((x - root) ** 3, dtype)
 
         bracket = xp.asarray([-0.01, 0.01], dtype=dtype)
         res = _bracket_root(f, *bracket, xmin=xmin, xmax=xmax, args=(root,))
@@ -264,9 +265,9 @@ class TestBracketRoot:
         with pytest.raises(ValueError, match=message):
             _bracket_root(lambda x: x, -4, 4, factor=0.5)
 
-        message = "shape mismatch: objects cannot be broadcast"
-        # raised by `np.broadcast, but the traceback is readable IMO
-        with pytest.raises(ValueError, match=message):
+        message = "broadcast"
+        # raised by `xp.broadcast, but the traceback is readable IMO
+        with pytest.raises(Exception, match=message):
             _bracket_root(lambda x: x, xp.asarray([-2, -3]), xp.asarray([3, 4, 5]))
         # Consider making this give a more readable error message
         # with pytest.raises(ValueError, match=message):
