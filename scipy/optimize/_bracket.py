@@ -209,7 +209,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     d[i] = x[i] - x0[i]
     d[ni] = limit[ni] - x[ni]
 
-    status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int8)  # in progress
+    status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     status[invalid_bracket] = eim._EINPUTERR
     nit, nfev = 0, 1  # one function evaluation per side performed above
 
