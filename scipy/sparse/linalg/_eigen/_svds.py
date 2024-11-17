@@ -285,13 +285,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     The next example follows that of 'sklearn.decomposition.TruncatedSVD'.
 
-    >>> rng = np.random.RandomState(0)
+    >>> rng = np.random.default_rng(0)
     >>> X_dense = rng.random(size=(100, 100))
     >>> X_dense[:, 2 * np.arange(50)] = 0
     >>> X = sparse.csr_array(X_dense)
-    >>> _, singular_values, _ = svds(X, k=5, random_state=rng)
+    >>> _, singular_values, _ = svds(X, k=5, rng=rng)
     >>> print(singular_values)
-    [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
+    [ 4.3221...  4.4043...  4.4907...  4.5858... 35.4549...]
 
     The function can be called without the transpose of the input matrix
     ever explicitly constructed.
@@ -483,7 +483,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         irl_mode = (which == 'SM')
         res = _svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
                     compute_u=jobu, compute_v=jobv, irl_mode=irl_mode,
-                    kmax=maxiter, v0=v0, random_state=rng)
+                    kmax=maxiter, v0=v0, rng=rng)
 
         u, s, vh, _ = res  # but we'll ignore bnd, the last output
 

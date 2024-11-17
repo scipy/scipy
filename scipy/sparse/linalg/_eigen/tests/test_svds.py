@@ -153,7 +153,7 @@ class SVDSCommonTests:
             with pytest.warns(UserWarning, match="The problem size"):
                 res = svds(A, k=1, which=which, solver=self.solver, rng=0)
         else:
-            res = svds(A, k=1, which=which, solver=self.solver, rng=0)
+            res = svds(A, k=1, which=which, solver=self.solver, random_state=0)
         _check_svds(A, 1, *res, which=which, atol=8e-10)
 
     def test_svds_diff0_docstring_example(self):
@@ -405,14 +405,13 @@ class SVDSCommonTests:
             assert_equal(res1a, res1b)
 
     @pytest.mark.parametrize("rng", (0, 1,
-                                     np.random.RandomState(0),
                                      np.random.default_rng(0)))
     def test_svd_rng_2(self, rng):
         n = 100
         k = 1
 
-        rng = np.random.default_rng(0)
-        A = rng.random((n, n))
+        tmp_rng = np.random.default_rng(0)
+        A = tmp_rng.random((n, n))
 
         rng_2 = copy.deepcopy(rng)
 
@@ -424,7 +423,6 @@ class SVDSCommonTests:
         _check_svds(A, k, *res1a)
 
     @pytest.mark.parametrize("rng", (None,
-                                     np.random.RandomState(0),
                                      np.random.default_rng(0)))
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
@@ -432,8 +430,8 @@ class SVDSCommonTests:
         n = 100
         k = 5
 
-        rng = np.random.default_rng(0)
-        A = rng.random((n, n))
+        tmp_rng = np.random.default_rng(0)
+        A = tmp_rng.random((n, n))
 
         rng = copy.deepcopy(rng)
 

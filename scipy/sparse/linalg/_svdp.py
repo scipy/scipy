@@ -17,7 +17,6 @@ __all__ = ['_svdp']
 
 import numpy as np
 
-from scipy._lib._util import check_random_state, _transition_to_rng
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
@@ -79,7 +78,6 @@ class _AProd:
             return self.A.matvec(np.zeros(self.A.shape[1])).dtype
 
 
-@_transition_to_rng("random_state", position_num=18)
 def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
           compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
           delta=None, eta=None, anorm=0, cgs=False, elr=True,
@@ -169,8 +167,6 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         ``full_output=True``.
 
     """
-    rng = check_random_state(rng)
-
     which = which.upper()
     if which not in {'LM', 'SM'}:
         raise ValueError("`which` must be either 'LM' or 'SM'")
