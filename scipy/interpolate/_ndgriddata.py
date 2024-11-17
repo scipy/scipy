@@ -5,8 +5,8 @@ Convenience interface to N-D interpolation
 
 """
 import numpy as np
-from .interpnd import LinearNDInterpolator, NDInterpolatorBase, \
-     CloughTocher2DInterpolator, _ndim_coords_from_arrays
+from ._interpnd import (LinearNDInterpolator, NDInterpolatorBase,
+     CloughTocher2DInterpolator, _ndim_coords_from_arrays)
 from scipy.spatial import cKDTree
 
 __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',

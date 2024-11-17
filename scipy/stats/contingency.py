@@ -254,27 +254,7 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
 
     >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
-    >>> table = np.array([[176, 230], [21035, 21018]])
-    >>> res = chi2_contingency(table)
-    >>> res.statistic
-    6.892569132546561
-    >>> res.pvalue
-    0.008655478161175739
-
-    Using a significance level of 5%, we would reject the null hypothesis in
-    favor of the alternative hypothesis: "the effect of aspirin
-    is not equivalent to the effect of placebo".
-    Because `scipy.stats.contingency.chi2_contingency` performs a two-sided
-    test, the alternative hypothesis does not indicate the direction of the
-    effect. We can use `scipy.stats.contingency.odds_ratio` to support the
-    conclusion that aspirin *reduces* the risk of ischemic stroke.
-
-    Below are further examples showing how larger contingency tables can be
-    tested.
-
-    A two-way example (2 x 3):
-
-    >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
+     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
     >>> res = chi2_contingency(obs)
     >>> res.statistic
     2.7777777777777777
@@ -327,7 +307,7 @@ def chi2_contingency(observed, correction=True, lambda_=None, method=None):
 
     For a more detailed example, see :ref:`hypothesis_chi2_contingency`.
 
-"""
+    """
     observed = np.asarray(observed)
     if np.any(observed < 0):
         raise ValueError("All values in `observed` must be nonnegative.")

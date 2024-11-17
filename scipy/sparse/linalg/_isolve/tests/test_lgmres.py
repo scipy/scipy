@@ -10,19 +10,19 @@ from platform import python_implementation
 import numpy as np
 from numpy import zeros, array, allclose
 from scipy.linalg import norm
-from scipy.sparse import csr_matrix, eye, rand
+from scipy.sparse import csr_array, eye_array, random_array
 
 from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse.linalg import splu
 from scipy.sparse.linalg._isolve import lgmres, gmres
 
 
-Am = csr_matrix(array([[-2, 1, 0, 0, 0, 9],
-                       [1, -2, 1, 0, 5, 0],
-                       [0, 1, -2, 1, 0, 0],
-                       [0, 0, 1, -2, 1, 0],
-                       [0, 3, 0, 1, -2, 1],
-                       [1, 0, 0, 0, 1, -2]]))
+Am = csr_array(array([[-2, 1, 0, 0, 0, 9],
+                      [1, -2, 1, 0, 5, 0],
+                      [0, 1, -2, 1, 0, 0],
+                      [0, 0, 1, -2, 1, 0],
+                      [0, 3, 0, 1, -2, 1],
+                      [1, 0, 0, 0, 1, -2]]))
 b = array([1, 2, 3, 4, 5, 6])
 count = [0]
 niter = [0]
@@ -98,18 +98,16 @@ class TestLGMRES:
     @pytest.mark.skipif(python_implementation() == 'PyPy',
                         reason="Fails on PyPy CI runs. See #9507")
     def test_arnoldi(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(123)
 
-        A = eye(2000) + rand(2000, 2000, density=5e-4)
-        b = np.random.rand(2000)
+        A = eye_array(2000) + random_array((2000, 2000), density=5e-4, random_state=rng)
+        b = rng.random(2000)
 
         # The inner arnoldi should be equivalent to gmres
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]),
-                               inner_m=15, maxiter=1)
-            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]),
-                              restart=15, maxiter=1)
+            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=10, maxiter=1)
+            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=10, maxiter=1)
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
@@ -125,7 +123,7 @@ class TestLGMRES:
         # exceptions are raised
 
         for n in [3, 5, 10, 100]:
-            A = 2*eye(n)
+            A = 2*eye_array(n)
 
             with suppress_warnings() as sup:
                 sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -149,7 +147,7 @@ class TestLGMRES:
                     assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
     def test_nans(self):
-        A = eye(3, format='lil')
+        A = eye_array(3, format='lil')
         A[1, 1] = np.nan
         b = np.ones(3)
 

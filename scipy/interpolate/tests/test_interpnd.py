@@ -8,7 +8,7 @@ import pytest
 from scipy._lib._array_api import xp_assert_close, assert_almost_equal
 
 from scipy._lib._testutils import check_free_memory
-import scipy.interpolate.interpnd as interpnd
+import scipy.interpolate._interpnd as interpnd
 import scipy.spatial._qhull as qhull
 
 import pickle
