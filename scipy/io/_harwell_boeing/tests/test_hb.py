@@ -45,7 +45,7 @@ def assert_csc_almost_equal(r, l):
 
 class TestHBReader:
     def test_simple(self):
-        m = hb_read(StringIO(SIMPLE))
+        m = hb_read(StringIO(SIMPLE), sparray=True)
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
 
 
@@ -55,7 +55,7 @@ class TestHBReadWrite:
         with tempfile.NamedTemporaryFile(mode='w+t') as file:
             hb_write(file, value)
             file.file.seek(0)
-            value_loaded = hb_read(file)
+            value_loaded = hb_read(file, sparray=True)
         assert_csc_almost_equal(value, value_loaded)
 
     def test_simple(self):

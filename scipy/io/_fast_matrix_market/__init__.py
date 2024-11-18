@@ -11,6 +11,7 @@ for information about the Matrix Market format.
 """
 import io
 import os
+import warnings
 
 import numpy as np
 import scipy.sparse as SP
@@ -359,7 +360,7 @@ def mmread(source, sparray=None):
     >>> import threadpoolctl
     >>>
     >>> with threadpoolctl.threadpool_limits(limits=2):
-    ...     m = mmread(StringIO(text))
+    ...     m = mmread(StringIO(text), sparray=True)
 
     """
     cursor, stream_to_close = _get_read_cursor(source)

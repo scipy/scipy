@@ -4,6 +4,7 @@ Module for reading and writing matlab (TM) .mat files
 # Authors: Travis Oliphant, Matthew Brett
 
 from contextlib import contextmanager
+import warnings
 
 from ._miobase import _get_matfile_version, docfiller
 from ._mio4 import MatFile4Reader, MatFile4Writer
@@ -177,7 +178,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
 
     Load the .mat file contents.
 
-    >>> mat_contents = sio.loadmat(mat_fname)
+    >>> mat_contents = sio.loadmat(mat_fname, sparray=True)
 
     The result is a dictionary, one key/value pair for each variable:
 
@@ -238,7 +239,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     variable_names = kwargs.pop('variable_names', None)
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
-    matfile_dict = MR.get_variables(variable_names)
+        matfile_dict = MR.get_variables(variable_names)
     if not sparray:
         import scipy.sparse as sparse
         for name, var in list(matfile_dict.items()):

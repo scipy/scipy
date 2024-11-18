@@ -11,6 +11,7 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 import os
+import warnings
 
 import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
@@ -596,7 +597,7 @@ class MMFile:
             if close_it:
                 stream.close()
         if not sparray and isinstance(data, coo_array):
-            data = SP.coo_matrix(data)
+            data = coo_matrix(data)
             if sparray is None:
                 msg = ("The default sparse return type, ``coo_matrix``, has"
                        " been deprecated in favour of ``coo_array``."
