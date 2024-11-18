@@ -125,10 +125,10 @@ def mmread(source, sparray=None):
 
     ``mmread(source)`` returns the data as sparse matrix in COO format.
 
-    >>> m = mmread(StringIO(text))
+    >>> m = mmread(StringIO(text), sparray=True)
     >>> m
-    <5x5 sparse matrix of type '<class 'numpy.float64'>'
-    with 7 stored elements in COOrdinate format>
+    <COOrdinate sparse array of dtype 'float64'
+         with 7 stored elements and shape (5, 5)>
     >>> m.toarray()
     array([[0., 0., 0., 0., 0.],
            [0., 0., 1., 0., 0.],
@@ -183,14 +183,14 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     %%MatrixMarket matrix array real general
     %
     2 4
-    1.0000000000000000e+00
-    0.0000000000000000e+00
-    0.0000000000000000e+00
-    2.5000000000000000e+00
-    0.0000000000000000e+00
-    0.0000000000000000e+00
-    0.0000000000000000e+00
-    6.2500000000000000e+00
+    1
+    0
+    0
+    2.5
+    0
+    0
+    0
+    6.25
 
     Add a comment to the output file, and set the precision to 3.
 
@@ -202,14 +202,14 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     % Some test data.
     %
     2 4
-    1.000e+00
-    0.000e+00
-    0.000e+00
-    2.500e+00
-    0.000e+00
-    0.000e+00
-    0.000e+00
-    6.250e+00
+    1.00e+00
+    0.00e+00
+    0.00e+00
+    2.50e+00
+    0.00e+00
+    0.00e+00
+    0.00e+00
+    6.25e+00
 
     Convert to a sparse matrix before calling ``mmwrite``.  This will
     result in the output format being ``'coordinate'`` rather than
@@ -241,12 +241,12 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     %%MatrixMarket matrix array complex hermitian
     %
     3 3
-    3.00e+00 0.00e+00
-    1.00e+00 -2.00e+00
-    4.00e+00 3.00e+00
-    1.00e+00 0.00e+00
-    0.00e+00 5.00e+00
-    2.50e+00 0.00e+00
+    3.0e+00 0.0e+00
+    1.0e+00 -2.0e+00
+    4.0e+00 3.0e+00
+    1.0e+00 0.0e+00
+    0.0e+00 5.0e+00
+    2.5e+00 0.0e+00
 
     """
     MMFile().write(target, a, comment, field, precision, symmetry)
