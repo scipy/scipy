@@ -2023,7 +2023,7 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     def test_rank17(self, xp):
-        array = xp.array([3, 2, 5, 1, 4])
+        array = xp.asarray([3, 2, 5, 1, 4])
         if not hasattr(array, 'flags'):
             return
         array.flags.writeable = False
