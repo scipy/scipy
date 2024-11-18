@@ -1846,7 +1846,7 @@ class dpareto_lognorm_gen(rv_continuous):
         \left( R(y_1) + R(y_2) \right)
 
     where :math:`R(t) = \frac{1 - \Phi(t)}{\phi(t)}`,
-    :math:`phi` and :math:`Phi` are the normal PDF and CDF, respectively,
+    :math:`\phi` and :math:`\Phi` are the normal PDF and CDF, respectively,
     :math:`y_1 = \alpha \sigma - \frac{\log x - \mu}{\sigma}`,
     and :math:`y_2 = \beta \sigma + \frac{\log x - \mu}{\sigma}`
     for real numbers :math:`x` and :math:`\mu`, :math:`\sigma > 0`,
@@ -1923,20 +1923,24 @@ class dpareto_lognorm_gen(rv_continuous):
         return out[()]
 
     def _logcdf(self, x, u, s, a, b):
-        log_y, m = np.log(x), u  # compare against [1] Eq. 2
-        z = (log_y - m) / s
-        x1 = a * s - z
-        x2 = b * s + z
-        t1 = self._logPhi(z)
-        t2 = self._logphi(z)
-        t3 = (np.log(b) + self._logR(x1))
-        t4 = (np.log(a) + self._logR(x2))
-        t1, t2, t3, t4, one = np.broadcast_arrays(t1, t2, t3, t4, 1)
-        # t3 can be smaller than t4, so we have to consider log of negative number
-        # This would be much simpler, but `return_sign` is available, so use it?
-        # t5 =  sc.logsumexp([t3, t4 + np.pi*1j])
-        t5, sign =  sc.logsumexp([t3, t4], b=[one, -one], axis=0, return_sign=True)
-        return sc.logsumexp([t1, t2 + t5 - np.log(a + b)], b=[one, -one*sign], axis=0)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            log_y, m = np.log(x), u  # compare against [1] Eq. 2
+            z = (log_y - m) / s
+            x1 = a * s - z
+            x2 = b * s + z
+            t1 = self._logPhi(z)
+            t2 = self._logphi(z)
+            t3 = (np.log(b) + self._logR(x1))
+            t4 = (np.log(a) + self._logR(x2))
+            t1, t2, t3, t4, one = np.broadcast_arrays(t1, t2, t3, t4, 1)
+            # t3 can be smaller than t4, so we have to consider log of negative number
+            # This would be much simpler, but `return_sign` is available, so use it?
+            # t5 =  sc.logsumexp([t3, t4 + np.pi*1j])
+            t5, sign =  sc.logsumexp([t3, t4], b=[one, -one], axis=0, return_sign=True)
+            temp = [t1, t2 + t5 - np.log(a + b)]
+            out = np.asarray(sc.logsumexp(temp, b=[one, -one*sign], axis=0))
+        out[x == 0] = -np.inf
+        return out[()]
 
     def _logsf(self, x, u, s, a, b):
         return _log1mexp(self._logcdf(x, u, s, a, b))
