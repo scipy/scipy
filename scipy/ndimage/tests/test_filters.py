@@ -2041,7 +2041,7 @@ class TestNdimageFilters:
             assert y.dtype == dtype
 
     def test_rank19(self, xp):
-        array = xp.array([[3, 2, 5, 1, 4], [3, 2, 5, 1, 4]])
+        array = xp.asarray([[3, 2, 5, 1, 4], [3, 2, 5, 1, 4]])
         # np.float16 is not supported
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
                          'uint8', 'uint16', 'uint32', 'uint64']
