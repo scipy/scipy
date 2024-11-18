@@ -642,6 +642,7 @@ class TestPearsonr:
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
 
         if method_name == 'monte_carlo2':
+            method = stats.MonteCarloMethod(rng=1294)
             res2 = stats.pearsonr(x, y, alternative=alternative, method=method, axis=-1)
             assert_equal(res2.statistic, res.statistic)
             assert_equal(res2.pvalue, res.pvalue)

@@ -404,13 +404,13 @@ def _chi2_monte_carlo_method(observed, expected, method):
     if method.pop('rvs', None) is not None:
         message = ('If the `method` argument of `chi2_contingency` is an '
                    'instance of `MonteCarloMethod`, its `rvs` attribute '
-                   'must be unspecified. Use the `random_state` attribute '
+                   'must be unspecified. Use the `MonteCarloMethod` `rng` argument '
                    'to control the random state.')
         raise ValueError(message)
 
-    random_state = check_random_state(method.pop('random_state', None))
+    rng = check_random_state(method.pop('rng', None))
     rowsums, colsums = stats.contingency.margins(observed)
-    X = stats.random_table(rowsums.ravel(), colsums.ravel(), seed=random_state)
+    X = stats.random_table(rowsums.ravel(), colsums.ravel(), seed=rng)
     def rvs(size):
         n_resamples = size[0]
         return X.rvs(size=n_resamples).reshape(size)

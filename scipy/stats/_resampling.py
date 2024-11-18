@@ -2131,7 +2131,6 @@ class ResamplingMethod:
     """  # noqa: E501
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
-    rng: object = None
 
 
 @dataclass
@@ -2369,4 +2368,4 @@ class BootstrapMethod(ResamplingMethod):
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
         return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    random_state=self.random_state, method=self.method)
+                    rng=self.rng, method=self.method)
