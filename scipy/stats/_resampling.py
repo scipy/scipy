@@ -2128,7 +2128,8 @@ class ResamplingMethod:
         `numpy.random.Generator` is created using entropy from the
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
-    """  # noqa: E501
+
+    """
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
 
@@ -2175,10 +2176,11 @@ class MonteCarloMethod(ResamplingMethod):
         if (rvs is not None) and (rng is not None):
             message = 'Use of `rvs` and `rng` are mutually exclusive.'
             raise ValueError(message)
-        self.rng = np.random.default_rng(rng)
+
         self.n_resamples = n_resamples
         self.batch = batch
         self.rvs = rvs
+        self.rng = np.random.default_rng(rng) if rng is not None else None
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.

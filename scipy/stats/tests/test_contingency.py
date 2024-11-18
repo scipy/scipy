@@ -223,16 +223,15 @@ class TestChi2Contingency:
         assert_allclose(res.pvalue, ref_pvalue, rtol=1e-15)
 
     @pytest.mark.slow
-    @pytest.mark.parametrize('method', (stats.PermutationMethod(),
-                                        stats.MonteCarloMethod()))
+    @pytest.mark.parametrize('method', (stats.PermutationMethod,
+                                        stats.MonteCarloMethod))
     def test_resampling_randomized(self, method):
         rng = np.random.default_rng(2592340925)
         # need to have big sum for asymptotic approximation to be good
         rows = [300, 1000, 800]
         cols = [200, 400, 800, 700]
         table = stats.random_table(rows, cols, seed=rng).rvs()
-        method.random_state = rng
-        res = chi2_contingency(table, correction=False, method=method)
+        res = chi2_contingency(table, correction=False, method=method(rng=rng))
         ref = chi2_contingency(table, correction=False)
         assert_equal(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue, atol=5e-3)

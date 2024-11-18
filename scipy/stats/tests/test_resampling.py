@@ -2032,7 +2032,7 @@ def test_parameter_vectorized(fun_name):
 
 class TestMonteCarloMethod:
     def test_rvs_and_random_state(self):
-        message = "Use of `rvs` and `random_state` are mutually exclusive."
+        message = "Use of `rvs` and `rng` are mutually exclusive."
         rng = np.random.default_rng(34982345)
         with pytest.raises(ValueError, match=message):
-            stats.MonteCarloMethod(rvs=rng.random, random_state=rng)
+            stats.MonteCarloMethod(rvs=rng.random, rng=rng)

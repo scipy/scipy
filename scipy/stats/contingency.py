@@ -390,7 +390,10 @@ def _untabulate(table):
 
 def _chi2_permutation_method(observed, expected, method):
     x, y = _untabulate(observed)
+    # `permutation_test` with `permutation_type='pairings' permutes the order of `x`,
+    # which pairs observations in `x` with different observations in `y`.
     def statistic(x):
+        # crosstab the resample and compute the statistic
         table = crosstab(x, y)[1]
         return np.sum((table - expected)**2/expected)
 
@@ -407,8 +410,10 @@ def _chi2_monte_carlo_method(observed, expected, method):
                    'must be unspecified. Use the `MonteCarloMethod` `rng` argument '
                    'to control the random state.')
         raise ValueError(message)
-
     rng = check_random_state(method.pop('rng', None))
+
+    # `random_table.rvs` produces random contingency tables with the given marginals
+    # under the null hypothesis of independence
     rowsums, colsums = stats.contingency.margins(observed)
     X = stats.random_table(rowsums.ravel(), colsums.ravel(), seed=rng)
     def rvs(size):
@@ -416,7 +421,6 @@ def _chi2_monte_carlo_method(observed, expected, method):
         return X.rvs(size=n_resamples).reshape(size)
 
     expected = expected.ravel()
-
     def statistic(table, axis):
         return np.sum((table - expected)**2/expected, axis=axis)
 
