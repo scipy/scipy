@@ -2032,7 +2032,7 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     def test_rank18(self, xp):
-        array = xp.array([3, 2, 5, 1, 4])
+        array = xp.asarray([3, 2, 5, 1, 4])
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
                          'float16', 'uint8', 'uint16', 'uint32', 'uint64']
         for dtype in tested_dtypes:
