@@ -462,7 +462,7 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file, sparray=None):
+def hb_read(path_or_open_file, *, sparray=None):
     """Read HB-format file.
 
     .. deprecated:: 1.15.0

@@ -294,7 +294,7 @@ def _validate_symmetry(symmetry):
     return symmetry
 
 
-def mmread(source, sparray=None):
+def mmread(source, *, sparray=None):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 

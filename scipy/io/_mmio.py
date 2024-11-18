@@ -82,7 +82,7 @@ def mminfo(source):
 # -----------------------------------------------------------------------------
 
 
-def mmread(source, sparray=None):
+def mmread(source, *, sparray=None):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -136,7 +136,7 @@ def mmread(source, sparray=None):
            [4., 5., 6., 7., 0.],
            [0., 0., 0., 0., 0.]])
     """
-    return MMFile().read(source, sparray)
+    return MMFile().read(source, sparray=sparray)
 
 # -----------------------------------------------------------------------------
 
@@ -569,7 +569,7 @@ class MMFile:
         self._init_attrs(**kwargs)
 
     # -------------------------------------------------------------------------
-    def read(self, source, sparray=False):
+    def read(self, source, *, sparray=None):
         """
         Reads the contents of a Matrix Market file-like 'source' into a matrix.
 

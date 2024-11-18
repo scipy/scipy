@@ -85,7 +85,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 
 
 @docfiller
-def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, *, sparray=None, **kwargs):
     """
     Load MATLAB file.
 
@@ -105,6 +105,8 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     appendmat : bool, optional
        True to append the .mat extension to the end of the given
        filename, if not already present. Default is True.
+    sparray : bool or None
+        If True and sparse mat, return sparse array. Otherwise return sparse matrix.
     byte_order : str or None, optional
        None by default, implying byte order guessed from mat
        file. Otherwise can be one of ('native', '=', 'little', '<',
@@ -150,8 +152,6 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         set to other values such as 'ascii', 'latin1', and 'utf-8'. This
         parameter is relevant only for files stored as v6 and above, and not
         for files stored as v4.
-    sparray : bool or None
-        If True and sparse mat, return sparse array. Otherwise return sparse matrix.
 
     Returns
     -------
@@ -235,7 +235,6 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     array([ 1.41421356+1.41421356j,  2.71828183+2.71828183j,
         3.14159265+3.14159265j])
     """
-    sparray = kwargs.pop('sparray', None)
     variable_names = kwargs.pop('variable_names', None)
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
