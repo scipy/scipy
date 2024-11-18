@@ -2018,7 +2018,7 @@ class TestNdimageFilters:
 
     def test_rank16(self, xp):
         array = [3, 2, 5, 1, 4]
-        expected = xp.asarray([3, 3, 2, 4, 4])
+        expected = np.asarray([3, 3, 2, 4, 4])
         output = ndimage.rank_filter(array, -2, size=3)
         xp_assert_equal(expected, output)
 
@@ -2032,21 +2032,19 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     def test_rank18(self, xp):
-        array = xp.asarray([3, 2, 5, 1, 4])
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
                          'float16', 'uint8', 'uint16', 'uint32', 'uint64']
         for dtype in tested_dtypes:
-            x = array.astype(dtype)
+            x = xp.asarray([3, 2, 5, 1, 4], dtype)
             y = ndimage.rank_filter(x, -2, size=3)
             assert y.dtype == dtype
 
     def test_rank19(self, xp):
-        array = xp.asarray([[3, 2, 5, 1, 4], [3, 2, 5, 1, 4]])
         # np.float16 is not supported
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
                          'uint8', 'uint16', 'uint32', 'uint64']
         for dtype in tested_dtypes:
-            x = array.astype(dtype)
+            x = xp.asarray([[3, 2, 5, 1, 4], [3, 2, 5, 1, 4]], dtype=dtype)
             y = ndimage.rank_filter(x, -2, size=3)
             assert y.dtype == dtype
 
