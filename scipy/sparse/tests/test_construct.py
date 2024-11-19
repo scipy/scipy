@@ -792,7 +792,8 @@ class TestConstructUtils:
         arr = construct.random_array((10, 10, 10), density=0.3, dtype=int, rng=0)
         assert arr.shape == (10, 10, 10)
 
-        arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int, rng=0)
+        arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int,
+                                     rng=0)
         assert arr.shape == (10, 10, 10, 10, 10)
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
