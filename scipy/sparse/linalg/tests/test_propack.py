@@ -58,7 +58,7 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
 
     u1, sigma1, vt1 = np.linalg.svd(M, full_matrices=False)
     u2, sigma2, vt2, _ = _svdp(Msp, k=k, which=which, irl_mode=irl_mode,
-                               tol=tol, rng=0)
+                               tol=tol, rng=np.random.default_rng(0))
 
     # check the which
     if which.upper() == 'SM':
@@ -115,7 +115,7 @@ def test_examples(dtype, irl):
             A = data['A_real'].item().astype(dtype)
 
     k = 200
-    u, s, vh, _ = _svdp(A, k, irl_mode=irl, rng=0)
+    u, s, vh, _ = _svdp(A, k, irl_mode=irl, rng=np.random.default_rng(0))
 
     # complex example matrix has many repeated singular values, so check only
     # beginning non-repeated singular vectors to avoid permutations

@@ -167,8 +167,8 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         ``full_output=True``.
 
     """
-    if not isinstance(rng, np.random.RandomState):
-        rng = np.random.default_rng(rng)
+    if not isinstance(rng, np.random.Generator):
+        raise ValueError("`rng` must be a normalized numpy.random.Generator instance")
 
     which = which.upper()
     if which not in {'LM', 'SM'}:

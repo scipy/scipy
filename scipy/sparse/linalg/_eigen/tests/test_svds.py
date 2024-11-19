@@ -153,7 +153,7 @@ class SVDSCommonTests:
             with pytest.warns(UserWarning, match="The problem size"):
                 res = svds(A, k=1, which=which, solver=self.solver, rng=0)
         else:
-            res = svds(A, k=1, which=which, solver=self.solver, random_state=0)
+            res = svds(A, k=1, which=which, solver=self.solver, rng=0)
         _check_svds(A, 1, *res, which=which, atol=8e-10)
 
     def test_svds_diff0_docstring_example(self):
@@ -175,7 +175,8 @@ class SVDSCommonTests:
                                   shape=(n - 1, n))
         n = 100
         diff0_func_aslo = diff0_func_aslo_def(n)
-        u, s, _ = svds(diff0_func_aslo, k=3, which='SM', rng=0)
+        # preserve a use of legacy keyword `random_state` during SPEC 7 transition
+        u, s, _ = svds(diff0_func_aslo, k=3, which='SM', random_state=0)
         se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
         ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
                                      np.arange(1, 4)) / n)
