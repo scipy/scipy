@@ -3,7 +3,7 @@
 import re
 import warnings
 import numpy as np
-from scipy._lib._util import check_random_state, _transition_to_rng
+from scipy._lib._util import check_random_state
 from ._rotation_groups import create_group
 
 cimport numpy as np
@@ -3185,8 +3185,7 @@ cdef class Rotation:
 
     @cython.embedsignature(True)
     @classmethod
-    @_transition_to_rng('random_state', position_num=2)
-    def random(cls, num=None, rng=None):
+    def random(cls, num=None, random_state=None):
         """Generate uniformly distributed rotations.
 
         Parameters
@@ -3194,11 +3193,15 @@ cdef class Rotation:
         num : int or None, optional
             Number of random rotations to generate. If None (default), then a
             single rotation is generated.
-        rng : `numpy.random.Generator`, optional
-            Pseudorandom number generator state. When `rng` is None, a new
-            `numpy.random.Generator` is created using entropy from the
-            operating system. Types other than `numpy.random.Generator` are
-            passed to `numpy.random.default_rng` to instantiate a `Generator`.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
 
         Returns
         -------
@@ -3235,12 +3238,12 @@ cdef class Rotation:
         scipy.stats.special_ortho_group
 
        """
-        rng = check_random_state(rng)
+        random_state = check_random_state(random_state)
 
         if num is None:
-            sample = rng.normal(size=4)
+            sample = random_state.normal(size=4)
         else:
-            sample = rng.normal(size=(num, 4))
+            sample = random_state.normal(size=(num, 4))
 
         return cls(sample)
 
