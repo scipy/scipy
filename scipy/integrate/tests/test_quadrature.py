@@ -328,6 +328,13 @@ class TestTrapezoid:
         out0 = np.linspace(200, 380, 10)
         assert_allclose(trapezoid(y, x=x, axis=0), out0)
         assert_allclose(trapezoid(y, x=np.array([0, 10., 20.]), axis=0), out0)
+        # x needs to be broadcastable against y
+        assert_allclose(trapezoid(y, x=np.array([[0, 10., 20.]]), axis=0), out0)
+
+        with pytest.raises(ValueError):
+            # x is not broadcastable against y
+            trapezoid(y, x=np.array([[0, 10., 20.]])[:, None], axis=0)
+
 
         out1 = np.array([ 40.5, 130.5, 220.5])
         assert_allclose(trapezoid(y, x=x, axis=1), out1)
@@ -335,6 +342,8 @@ class TestTrapezoid:
             trapezoid(y, x=np.array(np.linspace(0, 9, 10)), axis=1),
             out1
         )
+
+
 
     @skip_xp_invalid_arg
     def test_masked(self, xp):

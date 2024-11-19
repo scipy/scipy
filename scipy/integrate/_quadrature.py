@@ -143,6 +143,8 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
             slice3[axis] = slice(None)
             d = d[tuple(slice3)]
         else:
+            # if x is n-D it should be broadcastable to y
+            x = xp.broadcast_to(x, y.shape)
             d = x[tuple(slice1)] - x[tuple(slice2)]
     try:
         ret = xp.sum(
