@@ -123,6 +123,7 @@ class TestHausdorff:
         with pytest.raises(ValueError, match=msg):
             directed_hausdorff(A, B)
 
+    # preserve use of legacy keyword `seed` during SPEC 7 transition
     @pytest.mark.parametrize("A, B, seed, expected", [
         # the two cases from gh-11332
         ([(0,0)],
@@ -166,6 +167,11 @@ class TestHausdorff:
         assert_allclose(actual[0], expected[0])
         # check indices
         assert actual[1:] == expected[1:]
+
+        if not isinstance(seed, np.random.RandomState):
+            # Check that new `rng` keyword is also accepted
+            actual = directed_hausdorff(u=A, v=B, rng=seed)
+            assert_allclose(actual[0], expected[0])
 
 
 @pytest.mark.xslow
