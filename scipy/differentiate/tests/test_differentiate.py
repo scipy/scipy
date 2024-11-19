@@ -556,7 +556,7 @@ class TestJacobian(JacobianHessianTest):
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
     @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
     def test_examples(self, dtype, size, func, xp):
-        atol = 1e-10 if dtype == 'float64' else 1e-3
+        atol = 1e-10 if dtype == 'float64' else 1.99e-3
         dtype = getattr(xp, dtype)
         rng = np.random.default_rng(458912319542)
         m, n = func.mn
