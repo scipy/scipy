@@ -322,11 +322,11 @@ class TestTrapezoid:
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_gh21908(self, xp):
         # extended testing for n-dim arrays
-        x = np.linspace(0, 29, 30).reshape(3, 10)
-        y = np.linspace(0, 29, 30).reshape(3, 10)
+        x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
+        y = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
 
-        out0 = np.linspace(200, 380, 10)
-        assert_allclose(trapezoid(y, x=x, axis=0), out0)
+        out0 = xp.linspace(200, 380, 10)
+        xp_assert_close(trapezoid(y, x=x, axis=0), out0)
         assert_allclose(trapezoid(y, x=np.array([0, 10., 20.]), axis=0), out0)
         # x needs to be broadcastable against y
         assert_allclose(
