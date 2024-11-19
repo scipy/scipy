@@ -2034,19 +2034,21 @@ class TestNdimageFilters:
     def test_rank18(self, xp):
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
                          'float16', 'uint8', 'uint16', 'uint32', 'uint64']
-        for dtype in tested_dtypes:
-            x = xp.asarray([3, 2, 5, 1, 4], dtype)
+        for dtype_str in tested_dtypes:
+            dtype = getattr(xp, dtype_str)
+            x = xp.asarray([3, 2, 5, 1, 4], dtype=dtype)
             y = ndimage.rank_filter(x, -2, size=3)
-            assert y.dtype == dtype
+            assert y.dtype == x.dtype
 
     def test_rank19(self, xp):
         # np.float16 is not supported
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
                          'uint8', 'uint16', 'uint32', 'uint64']
-        for dtype in tested_dtypes:
+        for dtype_str in tested_dtypes:
+            dtype = getattr(xp, dtype_str)
             x = xp.asarray([[3, 2, 5, 1, 4], [3, 2, 5, 1, 4]], dtype=dtype)
             y = ndimage.rank_filter(x, -2, size=3)
-            assert y.dtype == dtype
+            assert y.dtype == x.dtype
 
     @skip_xp_backends(np_only=True, reason="off-by-ones on alt backends")
     @pytest.mark.parametrize('dtype', types)
