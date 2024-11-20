@@ -297,7 +297,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ever explicitly constructed.
 
     >>> rng = np.random.default_rng(102524723947864966825913730119128190974)
-    >>> G = sparse.random_array((8, 9), density=0.5, random_state=rng)
+    >>> G = sparse.random_array((8, 9), density=0.5, rng=rng)
     >>> Glo = aslinearoperator(G)
     >>> _, singular_values_svds, _ = svds(Glo, k=5, rng=rng)
     >>> _, singular_values_svd, _ = linalg.svd(G.toarray())

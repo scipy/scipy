@@ -148,7 +148,7 @@ class TestExpmActionSimple:
         k = 3
         nsamples = 10
         for i in range(nsamples):
-            A = scipy.sparse.random_array((n, n), density=0.05, random_state=rng)
+            A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
             B = rng.standard_normal((n, k))
             observed = expm_multiply(A, B)
             with suppress_warnings() as sup:
@@ -187,7 +187,7 @@ class TestExpmActionInterval:
         k = 3
         endpoint = True
         for num in (14, 13, 2):
-            A = scipy.sparse.random_array((n, n), density=0.05, random_state=rng)
+            A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
             B = rng.standard_normal((n, k))
             v = rng.standard_normal((n,))
             for target in (B, v):
