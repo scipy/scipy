@@ -19,6 +19,7 @@ from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere,
                               _transition_to_rng)
+from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -399,24 +400,130 @@ def test__rng_html_rewrite():
     assert res == ref
 
 
-@_transition_to_rng("seed", position_num=1, replace_doc=False)
-def _f_seed(o, rng=None):
-    rg = check_random_state(rng)
-    return rg.uniform(size=o)
+class TestTransitionToRNG:
+    def kmeans(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        return cluster.vq.kmeans2(rng.random(size=(20, 3)), 3, **kwargs)
 
+    def kmeans2(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        return cluster.vq.kmeans2(rng.random(size=(20, 3)), 3, **kwargs)
 
-def test__transition_to_rng():
-    # SPEC-007 changes
-    _f_seed(1, rng=1)
-    _f_seed(1, rng=np.random.default_rng())
-    _f_seed(1, seed=1)
-    _f_seed(1, seed=np.random.RandomState())
-    with assert_raises(TypeError):
-        # can't pass both seed and rng
-        _f_seed(1, seed=1234, rng=1234)
-    with assert_raises(TypeError):
-        # use of rng=RandomState should give rise to an error.
-        _f_seed(rng=np.random.RandomState())
+    def barycentric(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        x1, x2, y1 = rng.random((3, 10))
+        f = interpolate.BarycentricInterpolator(x1, y1, **kwargs)
+        return f(x2)
+
+    def clarkson_woodruff_transform(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        return linalg.clarkson_woodruff_transform(rng.random((10, 10)), 3, **kwargs)
+
+    def basinhopping(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        return optimize.basinhopping(optimize.rosen, rng.random(3), **kwargs).x
+
+    def opt(self, fun, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        bounds = optimize.Bounds(-rng.random(3) * 10, rng.random(3) * 10)
+        return fun(optimize.rosen, bounds, **kwargs).x
+
+    def differential_evolution(self, **kwargs):
+        return self.opt(optimize.differential_evolution, **kwargs)
+
+    def dual_annealing(self, **kwargs):
+        return self.opt(optimize.dual_annealing, **kwargs)
+
+    def check_grad(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        x = rng.random(3)
+        return optimize.check_grad(optimize.rosen, optimize.rosen_der, x,
+                                   direction='random', **kwargs)
+
+    def svds(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        A = rng.random((10, 10))
+        return sparse.linalg.svds(A, **kwargs)
+
+    def random_rotation(self, **kwargs):
+        return spatial.transform.Rotation.random(3, **kwargs).as_matrix()
+
+    def goodness_of_fit(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = rng.random(100)
+        return stats.goodness_of_fit(stats.laplace, data, **kwargs).pvalue
+
+    def permutation_test(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = tuple(rng.random((2, 100)))
+        def statistic(x, y, axis): return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+        return stats.permutation_test(data, statistic, **kwargs).pvalue
+
+    def bootstrap(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = (rng.random(100),)
+        return stats.bootstrap(data, np.mean, **kwargs).confidence_interval
+
+    def dunnett(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        x, y, control = rng.random((3, 100))
+        return stats.dunnett(x, y, control=control, **kwargs).pvalue
+
+    def sobol_indices(self, **kwargs):
+        def f_ishigami(x): return (np.sin(x[0]) + 7 * np.sin(x[1]) ** 2
+                                   + 0.1 * (x[2] ** 4) * np.sin(x[0]))
+        dists = [stats.uniform(loc=-np.pi, scale=2 * np.pi),
+                 stats.uniform(loc=-np.pi, scale=2 * np.pi),
+                 stats.uniform(loc=-np.pi, scale=2 * np.pi)]
+        res = stats.sobol_indices(func=f_ishigami, n=1024, dists=dists, **kwargs)
+        return res.first_order
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.slow
+    @pytest.mark.parametrize("method_name, arg_name", [
+        ("kmeans", "seed"),
+        ("kmeans2", "seed"),
+        ("barycentric", "random_state"),
+        ("clarkson_woodruff_transform", "seed"),
+        ("basinhopping", "seed"),
+        ("differential_evolution", "seed"),
+        ("dual_annealing", "seed"),
+        ("check_grad", "seed"),
+        ("svds", "random_state"),
+        ("random_rotation", "random_state"),
+        ("goodness_of_fit", "random_state"),
+        ("permutation_test", "random_state"),
+        ("bootstrap", "random_state"),
+        ("dunnett", "random_state"),
+        ("sobol_indices", "random_state")
+    ])
+    def test_rng_deterministic(self, method_name, arg_name):
+        np.random.seed(None)
+        seed = 2949672964
+        method = getattr(self, method_name)
+
+        rng = np.random.default_rng(seed)
+        res1 = method(rng=rng)
+        res2 = method(rng=seed)
+        assert_equal(res2, res1)
+
+        if method_name in ["dunnett", "sobol_indices"]:
+            # the two kwargs have essentially the same behavior for these functions
+            res3 = method(**{arg_name: seed})
+            assert_equal(res3, res1)
+            return
+
+        rng = np.random.RandomState(seed)
+        res1 = method(**{arg_name: rng})
+        res2 = method(**{arg_name: seed})
+        np.random.seed(seed)
+        res3 = method(**{arg_name: None})
+        assert_equal(res2, res1)
+        assert_equal(res3, res1)
+
+        message = "got multiple values for argument now known as `rng`"
+        with pytest.raises(TypeError, match=message):
+            method(**{'rng': rng, arg_name: seed})
 
 
 class TestLazywhere:
