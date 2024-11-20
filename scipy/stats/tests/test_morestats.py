@@ -1761,6 +1761,14 @@ class TestWilcoxon:
         assert_allclose(max_statistic - res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-15)
 
+    @pytest.mark.parametrize("method", ('exact', stats.PermutationMethod()))
+    def test_all_zeros_exact(self, method):
+        # previously, this raised a RuntimeWarning when calculating Z, even
+        # when the Z value was not needed. Confirm that this no longer
+        # occurs when `method` is 'exact' or a `PermutationMethod`.
+        res = stats.wilcoxon(np.zeros(5), method=method)
+        assert_allclose(res, [0, 1])
+
 
 # data for k-statistics tests from
 # https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf
