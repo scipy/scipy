@@ -808,11 +808,11 @@ class TestCurveFit:
         def exponential(x, a, b):
             return b * np.exp(a * x)
 
-        np.random.seed(0)
+        rng = np.random.default_rng(578285731148908)
         N = 100
         x = np.linspace(1, 10, N)
         sigma = x * 0.05
-        y = exponential(x, 0.2, 0.5) + np.random.normal(0, sigma, N)
+        y = exponential(x, 0.2, 0.5) + rng.normal(0, sigma, N)
 
         p0 = [0.1, 1.0]
 
