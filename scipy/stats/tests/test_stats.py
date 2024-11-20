@@ -5589,6 +5589,65 @@ class Test_ttest_ind_permutations:
         print(0.0 not in p_values)
         assert 0.0 not in p_values
 
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("shape", [(12,), (2, 12)])
+    def test_permutation_method(self, alternative, shape):
+        rng = np.random.default_rng(2348934579834565)
+        x = rng.random(size=shape)
+        y = rng.random(size=13)
+
+        kwargs = dict(n_resamples=999)
+
+        # Use ttest_ind with `method`
+        rng = np.random.default_rng(348934579834565)
+        method = stats.PermutationMethod(rng=rng, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+
+        # Use `permutation_test` directly
+        def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
+        rng =  np.random.default_rng(348934579834565)
+        ref = stats.permutation_test((x, y), statistic, axis=-1, rng=rng,
+                                     alternative=alternative, **kwargs)
+
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Sanity check against theoretical t-test
+        ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
+        assert_equal(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=3e-2)
+
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("shape", [(12,), (2, 12)])
+    def test_monte_carlo_method(self, alternative, shape):
+        rng = np.random.default_rng(2348934579834565)
+        x = rng.random(size=shape)
+        y = rng.random(size=13)
+
+        kwargs = dict(n_resamples=999)
+
+        # Use ttest_ind with `method`
+        rng = np.random.default_rng(348934579834565)
+        rvs = [rng.standard_normal, rng.standard_normal]
+        method = stats.MonteCarloMethod(rvs=rvs, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+
+        # Use `permutation_test` directly
+        def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
+        rng = np.random.default_rng(348934579834565)
+        rvs = [rng.standard_normal, rng.standard_normal]
+        ref = stats.monte_carlo_test((x, y), rvs=rvs, statistic=statistic, axis=-1,
+                                     alternative=alternative, **kwargs)
+
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Sanity check against theoretical t-test
+        ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
+        assert_equal(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=6e-2)
+
+
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,
                                   reason='Uses NumPy for pvalue, CI')

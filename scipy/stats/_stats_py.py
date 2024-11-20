@@ -58,7 +58,7 @@ from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
-                          _batch_generator)
+                          _batch_generator, ResamplingMethod)
 from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
                                _broadcast_concatenate, _broadcast_shapes,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
@@ -6204,7 +6204,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
               permutations=None, random_state=None, alternative="two-sided",
-              trim=0):
+              trim=0, *, method=None):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -6247,8 +6247,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         the pooled data, an exact test is performed instead (i.e. each
         distinct partition is used exactly once). See Notes for details.
 
-        .. versionadded:: 1.7.0
-
     random_state : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -6261,8 +6259,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
         Pseudorandom number generator state used to generate permutations
         (used only when `permutations` is not None).
-
-        .. versionadded:: 1.7.0
 
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
@@ -6277,16 +6273,22 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
           sample is greater than the mean of the distribution underlying
           the second sample.
 
-        .. versionadded:: 1.6.0
-
     trim : float, optional
         If nonzero, performs a trimmed (Yuen's) t-test.
         Defines the fraction of elements to be trimmed from each end of the
         input samples. If 0 (default), no elements will be trimmed from either
         side. The number of trimmed elements from each tail is the floor of the
         trim times the number of elements. Valid range is [0, .5).
+    method : ResamplingMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`/`MonteCarloMethod`, the p-value is
+        computed using
+        `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
+        provided configuration options and other appropriate settings.
+        Otherwise, the p-value is computed by comparing the test statistic
+        against a theoretical t-distribution.
 
-        .. versionadded:: 1.7
+        .. versionadded:: 1.15.0
 
     Returns
     -------
@@ -6479,6 +6481,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
+    if not isinstance(method, PermutationMethod | MonteCarloMethod | None):
+        message = ("`method` must be an instance of `PermutationMethod`, an instance "
+                   "of `MonteCarloMethod`, or None (default).")
+        raise ValueError(message)
+
+    if not is_numpy(xp) and method is not None:
+        message = "Use of resampling methods is compatible only with NumPy arrays."
+        raise NotImplementedError(message)
+
     result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
     NaN = xp.full(result_shape, _get_nan(a, b, xp=xp))
     NaN = NaN[()] if NaN.ndim == 0 else NaN
@@ -6531,8 +6542,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
-    t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
 
+    if method is None:
+        t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+    else:
+        t, prob = _ttest_resampling(a, b, axis, alternative, method)
+       
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = xp.broadcast_to(df, t.shape)
     df = df[()] if df.ndim ==0 else df
@@ -6540,6 +6555,18 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
                        standard_error=denom, estimate=estimate)
+
+
+def _ttest_resampling(x, y, axis, alternative, method):
+    def statistic(x, y, axis):
+        return ttest_ind(x, y, axis=axis).statistic
+
+    test = (permutation_test if isinstance(method, PermutationMethod)
+            else monte_carlo_test)
+    res = test((x, y,), statistic=statistic, axis=axis,
+               alternative=alternative, **method._asdict())
+
+    return res.statistic, res.pvalue
 
 
 def _ttest_trim_var_mean_len(a, trim, axis):
