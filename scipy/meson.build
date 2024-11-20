@@ -615,6 +615,8 @@ foreach name, dep : dependency_map
   endif
 endforeach
 
+conf_data.set('GCOV_FLAG', get_option('b_coverage').to_string())
+
 configure_file(
   input: '__config__.py.in',
   output: '__config__.py',

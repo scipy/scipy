@@ -722,6 +722,39 @@ class Test(Task):
         'task_dep': ['build'],
     }
 
+    @staticmethod
+    def run_lcov(dirs):
+        print("Capturing lcov info...")
+        LCOV_OUTPUT_FILE = os.path.join(dirs.build, "lcov.info")
+        LCOV_OUTPUT_DIR = os.path.join(dirs.build, "lcov")
+        lcov_cmd = [
+            "lcov", "--capture",
+            "--directory", dirs.build,
+            "--output-file", LCOV_OUTPUT_FILE]
+        lcov_cmd_str = " ".join(lcov_cmd)
+        emit_cmdstr(" ".join(lcov_cmd))
+        try:
+            subprocess.call(lcov_cmd)
+        except OSError as err:
+            if err.errno == errno.ENOENT:
+                print(f"Error when running '{lcov_cmd_str}': {err}\n")
+                print("You need to LCOV (https://lcov.readthedocs.io/en/latest/)")
+                print("to capture test coverage of C/C++/Fortran code in SciPy")
+                return 1
+            raise
+
+        print("Generating lcov HTML output...") # TODO: Add check for presense of genhtml
+        genhtml_cmd = [
+            "genhtml", "-q", LCOV_OUTPUT_FILE,
+            "--output-directory", LCOV_OUTPUT_DIR,
+            "--legend", "--highlight"]
+        emit_cmdstr(genhtml_cmd)
+        ret = subprocess.call(genhtml_cmd)
+        if ret != 0:
+            print("genhtml failed!")
+        else:
+            print("HTML output generated under build/lcov/")
+
     @classmethod
     def scipy_tests(cls, args, pytest_args):
         dirs = Dirs(args)
@@ -763,6 +796,32 @@ class Test(Task):
                   f"installed at:{mod_path}")
             # runner verbosity - convert bool to int
             verbose = int(args.verbose) + 1
+
+            scipy_code_fetching_gcov_flag = (
+                "import scipy;"
+                "print(scipy.show_config(mode='dicts')['Coverage Information']['GCOV'])")
+            was_built_with_gcov_flag = subprocess.run(["python", "-c",
+                                scipy_code_fetching_gcov_flag.format(lang="'c++'")],
+                                capture_output=True, encoding='utf-8').stdout.strip()
+            if was_built_with_gcov_flag == "true":
+                scipy_code_for_checking_compiler = (
+                    "import scipy;"
+                    "print(scipy.show_config(mode='dicts')['Compilers'][{lang}]['name'])")
+                cpp = subprocess.run(["python", "-c",
+                                      scipy_code_for_checking_compiler.format(lang="'c++'")],
+                                      capture_output=True, encoding='utf-8').stdout.strip()
+                c = subprocess.run(["python", "-c",
+                                    scipy_code_for_checking_compiler.format(lang="'c'")],
+                                    capture_output=True, encoding='utf-8').stdout.strip()
+                fortran = subprocess.run(["python", "-c",
+                                          scipy_code_for_checking_compiler.format(lang="'fortran'")],
+                                          capture_output=True, encoding='utf-8').stdout.strip()
+                if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
+                    print("SciPy was built with --gcov flag which required LCOV while running tests")
+                    print("Further, LCOV usage requires GCC for C, C++ and Fortran codes in SciPy")
+                    print(f"Compilers used currently are C: {c}, C++: {cpp}, Fortran: {fortran}")
+                    print("Therefore, exiting without running tests")
+                    exit(1) # Exit because tests won't succeed and will give missing symbol error
             result = runner(  # scipy._lib._testutils:PytestTester
                 args.mode,
                 verbose=verbose,
@@ -771,37 +830,11 @@ class Test(Task):
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)
-            if result and args.coverage: # To generate coverage reports, the tests should succeed
-                print("Capturing lcov info...")
-                LCOV_OUTPUT_FILE = os.path.join(dirs.build, "lcov.info")
-                LCOV_OUTPUT_DIR = os.path.join(dirs.build, "lcov")
-                lcov_cmd = [
-                    "lcov", "--capture",
-                    "--directory", dirs.build,
-                    "--output-file", LCOV_OUTPUT_FILE]
-                lcov_cmd_str = " ".join(lcov_cmd)
-                emit_cmdstr(" ".join(lcov_cmd))
-                try:
-                    subprocess.call(lcov_cmd)
-                except OSError as err:
-                    if err.errno == errno.ENOENT:
-                        print(f"Error when running '{lcov_cmd_str}': {err}\n")
-                        print("You need to LCOV (https://lcov.readthedocs.io/en/latest/)")
-                        print("to capture test coverage of C/C++/Fortran code in SciPy")
-                        return 1
-                    raise
+            if args.coverage and was_built_with_gcov_flag == "true":
+                if not result:
+                    print("Tests should succeed to generate coverage reports using LCOV")
 
-                print("Generating lcov HTML output...") # TODO: Add check for presense of genhtml
-                genhtml_cmd = [
-                    "genhtml", "-q", LCOV_OUTPUT_FILE,
-                    "--output-directory", LCOV_OUTPUT_DIR,
-                    "--legend", "--highlight"]
-                emit_cmdstr(genhtml_cmd)
-                ret = subprocess.call(genhtml_cmd)
-                if ret != 0:
-                    print("genhtml failed!")
-                else:
-                    print("HTML output generated under build/lcov/")
+                cls.run_lcov(dirs)
         return result
 
     @classmethod
