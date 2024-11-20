@@ -19,6 +19,7 @@ Integrating functions, given function object
    nquad         -- General purpose N-D integration
    fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
+   lebedev_rule
    qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
 
@@ -108,6 +109,7 @@ from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
 from ._quad_vec import quad_vec
 from ._tanhsinh import nsum
 from ._cubature import cubature
+from ._lebedev import lebedev_rule
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import dop, lsoda, vode, odepack, quadpack

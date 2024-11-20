@@ -99,13 +99,18 @@ def circulant(c):
 
     Parameters
     ----------
-    c : (N,) array_like
-        1-D array, the first column of the matrix.
+    c : (..., N,)  array_like
+        The first column(s) of the matrix. Multidimensional arrays are treated as a
+        batch: each slice along the last axis is the first column of an output matrix.
 
     Returns
     -------
-    A : (N, N) ndarray
-        A circulant matrix whose first column is `c`.
+    A : (..., N, N) ndarray
+        A circulant matrix whose first column is given by `c`.  For batch input, each
+        slice of shape ``(N, N)`` along the last two dimensions of the output
+        corresponds with a slice of shape ``(N,)`` along the last dimension of the
+        input.
+
 
     See Also
     --------
@@ -125,13 +130,28 @@ def circulant(c):
            [2, 1, 3],
            [3, 2, 1]])
 
+    >>> circulant([[1, 2, 3], [4, 5, 6]])
+    array([[[1, 3, 2],
+            [2, 1, 3],
+            [3, 2, 1]],
+           [[4, 6, 5],
+            [5, 4, 6],
+            [6, 5, 4]]])
     """
-    c = np.asarray(c).ravel()
+    c = np.atleast_1d(c)
+    batch_shape, N = c.shape[:-1], c.shape[-1]
+    # Need to use `prod(batch_shape)` instead of `-1` in case array has zero size
+    c = c.reshape(math.prod(batch_shape), N) if batch_shape else c
     # Form an extended array that could be strided to give circulant version
-    c_ext = np.concatenate((c[::-1], c[:0:-1]))
-    L = len(c)
-    n = c_ext.strides[0]
-    return as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n)).copy()
+    c_ext = np.concatenate((c[..., ::-1], c[..., :0:-1]), axis=-1).ravel()
+    L = c.shape[-1]
+    n = c_ext.strides[-1]
+    if c.ndim == 1:
+        A = as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n))
+    else:
+        m = c.shape[0]
+        A = as_strided(c_ext[L-1:], shape=(m, L, L), strides=(n*(2*L-1), -n, n))
+    return A.reshape(batch_shape + (N, N)).copy()
 
 
 def hankel(c, r=None):

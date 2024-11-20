@@ -137,6 +137,12 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         of the result and not its contents (which is identical for both output
         structures). If True, this automatically sets `struct_as_record` to
         False and `squeeze_me` to True, which is required to simplify cells.
+    uint16_codec : str, optional
+        The codec to use for decoding characters, which are stored as uint16
+        values. The default uses the system encoding, but this can be manually
+        set to other values such as 'ascii', 'latin1', and 'utf-8'. This
+        parameter is relevant only for files stored as v6 and above, and not
+        for files stored as v4.
 
     Returns
     -------

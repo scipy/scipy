@@ -33,7 +33,7 @@ directed_SP = [[0, 3, 3, 5, 7],
 directed_2SP_0_to_3 = [[-9999, 0, -9999, 1, -9999],
                        [-9999, 0, -9999, 4, 1]]
 
-directed_sparse_zero_G = scipy.sparse.csr_matrix(
+directed_sparse_zero_G = scipy.sparse.csr_array(
     (
         [0, 1, 2, 3, 1],
         ([0, 1, 2, 3, 4], [1, 2, 0, 4, 3]),
@@ -47,7 +47,7 @@ directed_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                       [np.inf, np.inf, np.inf, 0, 3],
                       [np.inf, np.inf, np.inf, 1, 0]]
 
-undirected_sparse_zero_G = scipy.sparse.csr_matrix(
+undirected_sparse_zero_G = scipy.sparse.csr_array(
     (
         [0, 0, 1, 1, 2, 2, 1, 1],
         ([0, 1, 1, 2, 2, 0, 3, 4], [1, 0, 2, 1, 0, 2, 4, 3])
@@ -197,8 +197,8 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
 @pytest.mark.parametrize('n', (10, 100, 1000))
 def test_dijkstra_min_only_random(n):
     np.random.seed(1234)
-    data = scipy.sparse.rand(n, n, density=0.5, format='lil',
-                             random_state=42, dtype=np.float64)
+    data = scipy.sparse.random_array((n, n), density=0.5, format='lil',
+                                     random_state=42, dtype=np.float64)
     data.setdiag(np.zeros(n, dtype=np.bool_))
     # choose some random vertices
     v = np.arange(n)
@@ -225,7 +225,7 @@ def test_dijkstra_random():
     data = [0.33629, 0.40458, 0.47493, 0.42757, 0.11497, 0.91653, 0.69084,
             0.64979, 0.62555, 0.743, 0.01724, 0.99945, 0.31095, 0.15557,
             0.02439, 0.65814, 0.23478, 0.24072]
-    graph = scipy.sparse.csr_matrix((data, indices, indptr), shape=(n, n))
+    graph = scipy.sparse.csr_array((data, indices, indptr), shape=(n, n))
     dijkstra(graph, directed=True, return_predecessors=True)
 
 
@@ -379,7 +379,7 @@ def test_buffer(method):
     #
     #     ValueError: buffer source array is read-only
     #
-    G = scipy.sparse.csr_matrix([[1.]])
+    G = scipy.sparse.csr_array([[1.]])
     G.data.flags['WRITEABLE'] = False
     shortest_path(G, method=method)
 
@@ -399,9 +399,9 @@ def test_sparse_matrices():
                         [0, 0, 0, 0, 4],
                         [0, 0, 0, 0, 0]], dtype=float)
     SP = shortest_path(G_dense)
-    G_csr = scipy.sparse.csr_matrix(G_dense)
-    G_csc = scipy.sparse.csc_matrix(G_dense)
-    G_lil = scipy.sparse.lil_matrix(G_dense)
+    G_csr = scipy.sparse.csr_array(G_dense)
+    G_csc = scipy.sparse.csc_array(G_dense)
+    G_lil = scipy.sparse.lil_array(G_dense)
     assert_array_almost_equal(SP, shortest_path(G_csr))
     assert_array_almost_equal(SP, shortest_path(G_csc))
     assert_array_almost_equal(SP, shortest_path(G_lil))
@@ -467,7 +467,7 @@ def test_yen_negative_weights():
 @pytest.mark.parametrize("indices", (None, [1]))
 def test_20904(min_only, directed, return_predecessors, index_dtype, indices):
     """Test two failures from gh-20904: int32 and indices-as-None."""
-    adj_mat = scipy.sparse.eye(4, format="csr")
+    adj_mat = scipy.sparse.eye_array(4, format="csr")
     adj_mat = scipy.sparse.csr_array(
         (
             adj_mat.data,
