@@ -771,6 +771,37 @@ class Test(Task):
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)
+            if result and args.coverage: # To generate coverage reports, the tests should succeed
+                print("Capturing lcov info...")
+                LCOV_OUTPUT_FILE = os.path.join(dirs.build, "lcov.info")
+                LCOV_OUTPUT_DIR = os.path.join(dirs.build, "lcov")
+                lcov_cmd = [
+                    "lcov", "--capture",
+                    "--directory", dirs.build,
+                    "--output-file", LCOV_OUTPUT_FILE]
+                lcov_cmd_str = " ".join(lcov_cmd)
+                emit_cmdstr(" ".join(lcov_cmd))
+                try:
+                    subprocess.call(lcov_cmd)
+                except OSError as err:
+                    if err.errno == errno.ENOENT:
+                        print(f"Error when running '{lcov_cmd_str}': {err}\n")
+                        print("You need to LCOV (https://lcov.readthedocs.io/en/latest/)")
+                        print("to capture test coverage of C/C++/Fortran code in SciPy")
+                        return 1
+                    raise
+
+                print("Generating lcov HTML output...") # TODO: Add check for presense of genhtml
+                genhtml_cmd = [
+                    "genhtml", "-q", LCOV_OUTPUT_FILE,
+                    "--output-directory", LCOV_OUTPUT_DIR,
+                    "--legend", "--highlight"]
+                emit_cmdstr(genhtml_cmd)
+                ret = subprocess.call(genhtml_cmd)
+                if ret != 0:
+                    print("genhtml failed!")
+                else:
+                    print("HTML output generated under build/lcov/")
         return result
 
     @classmethod
