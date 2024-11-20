@@ -967,10 +967,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             xdata = xdata[..., ~has_nan]
             ydata = ydata[~has_nan]
 
-            # Also omit the corresponding entries form sigma
+            # Also omit the corresponding entries from sigma
             if sigma is not None:
                 sigma = np.asarray(sigma)
-                if sigma.shape == (prev_ydata_size, ):
+                if sigma.shape == (prev_ydata_size,):
                     sigma = sigma[~has_nan]
                 if sigma.shape == (prev_ydata_size, prev_ydata_size):
                     sigma = sigma[~has_nan, ~has_nan]
@@ -980,7 +980,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         sigma = np.asarray(sigma)
 
         # if 1-D or a scalar, sigma are errors, define transform = 1/sigma
-        if sigma.size == 1 or sigma.shape == (ydata.size, ):
+        if sigma.size == 1 or sigma.shape == (ydata.size,):
             transform = 1.0 / sigma
         # if 2-D, sigma is the covariance matrix,
         # define transform = L such that L L^T = C

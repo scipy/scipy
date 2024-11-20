@@ -816,11 +816,12 @@ class TestCurveFit:
 
         p0 = [0.1, 1.0]
 
-        popt1, pcov1 = curve_fit(exponential, x, y, p0 = p0, sigma = sigma)
+        popt1, pcov1 = curve_fit(exponential, x, y, p0=p0, sigma=sigma)
 
         x[11] = np.nan
         y[22] = np.nan
-        popt2, pcov2 = curve_fit(exponential, x, y, p0 = p0, sigma = sigma, nan_policy = "omit")
+        popt2, pcov2 = curve_fit(exponential, x, y, p0=p0, sigma=sigma,
+                                 nan_policy="omit")
 
         assert_allclose(popt1, popt2, atol=1e-2)
         assert_allclose(pcov1, pcov2, atol=1e-2)
