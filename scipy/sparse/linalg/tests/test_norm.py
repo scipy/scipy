@@ -38,7 +38,7 @@ class TestNorm:
     def setup_method(self):
         a = np.arange(9) - 4
         b = a.reshape((3, 3))
-        self.b = scipy.sparse.csr_matrix(b)
+        self.b = scipy.sparse.csr_array(b)
 
     def test_matrix_norm(self):
 
@@ -55,7 +55,7 @@ class TestNorm:
             assert_allclose(spnorm(self.b.astype(np.float64), 2),
                             7.348469228349534)
 
-        # _multi_svd_norm is not implemented for sparse matrix
+        # _multi_svd_norm is not implemented for sparse array
         assert_raises(NotImplementedError, spnorm, self.b, -2)
 
     def test_matrix_norm_axis(self):
@@ -94,13 +94,13 @@ class TestNorm:
 
 class TestVsNumpyNorm:
     _sparse_types = (
-            scipy.sparse.bsr_matrix,
-            scipy.sparse.coo_matrix,
-            scipy.sparse.csc_matrix,
-            scipy.sparse.csr_matrix,
-            scipy.sparse.dia_matrix,
-            scipy.sparse.dok_matrix,
-            scipy.sparse.lil_matrix,
+            scipy.sparse.bsr_array,
+            scipy.sparse.coo_array,
+            scipy.sparse.csc_array,
+            scipy.sparse.csr_array,
+            scipy.sparse.dia_array,
+            scipy.sparse.dok_array,
+            scipy.sparse.lil_array,
             )
     _test_matrices = (
             (np.arange(9) - 4).reshape((3, 3)),

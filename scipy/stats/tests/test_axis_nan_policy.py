@@ -72,7 +72,7 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue)),
     (stats.wilcoxon, tuple(), dict(), 1, 2, True,
      lambda res: (res.statistic, res.pvalue)),
-    (stats.wilcoxon, tuple(), {'mode': 'approx'}, 1, 3, True,
+    (stats.wilcoxon, tuple(), {'method': 'asymptotic'}, 1, 3, True,
      lambda res: (res.statistic, res.pvalue, res.zstatistic)),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -136,10 +136,13 @@ axis_nan_policy_cases = [
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
+    (stats.lmoment, tuple(), dict(), 1, 4, False, lambda x: tuple(x)),
     (combine_pvalues_weighted, tuple(), {}, 2, 2, True, None),
     (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
 ]
 
 # If the message is one of those expected, put nans in

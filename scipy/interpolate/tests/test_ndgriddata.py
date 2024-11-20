@@ -15,6 +15,15 @@ parametrize_interpolators = pytest.mark.parametrize(
     "interpolator", [NearestNDInterpolator, LinearNDInterpolator,
                      CloughTocher2DInterpolator]
 )
+parametrize_methods = pytest.mark.parametrize(
+    'method',
+    ('nearest', 'linear', 'cubic'),
+)
+parametrize_rescale = pytest.mark.parametrize(
+    'rescale',
+    (True, False),
+)
+
 
 class TestGriddata:
     def test_fill_value(self):
@@ -27,48 +36,50 @@ class TestGriddata:
         yi = griddata(x, y, [(1,1), (1,2), (0,0)])
         xp_assert_equal(yi, [np.nan, np.nan, 1])
 
-    def test_alternative_call(self):
+    @parametrize_methods
+    @parametrize_rescale
+    def test_alternative_call(self, method, rescale):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
                      dtype=np.float64)
         y = (np.arange(x.shape[0], dtype=np.float64)[:,None]
              + np.array([0,1])[None,:])
 
-        for method in ('nearest', 'linear', 'cubic'):
-            for rescale in (True, False):
-                msg = repr((method, rescale))
-                yi = griddata((x[:,0], x[:,1]), y, (x[:,0], x[:,1]), method=method,
-                              rescale=rescale)
-                xp_assert_close(y, yi, atol=1e-14, err_msg=msg)
+        msg = repr((method, rescale))
+        yi = griddata((x[:,0], x[:,1]), y, (x[:,0], x[:,1]), method=method,
+                      rescale=rescale)
+        xp_assert_close(y, yi, atol=1e-14, err_msg=msg)
 
-    def test_multivalue_2d(self):
+    @parametrize_methods
+    @parametrize_rescale
+    def test_multivalue_2d(self, method, rescale):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
                      dtype=np.float64)
         y = (np.arange(x.shape[0], dtype=np.float64)[:,None]
              + np.array([0,1])[None,:])
 
-        for method in ('nearest', 'linear', 'cubic'):
-            for rescale in (True, False):
-                msg = repr((method, rescale))
-                yi = griddata(x, y, x, method=method, rescale=rescale)
-                xp_assert_close(y, yi, atol=1e-14, err_msg=msg)
+        msg = repr((method, rescale))
+        yi = griddata(x, y, x, method=method, rescale=rescale)
+        xp_assert_close(y, yi, atol=1e-14, err_msg=msg)
 
-    def test_multipoint_2d(self):
+    @parametrize_methods
+    @parametrize_rescale
+    def test_multipoint_2d(self, method, rescale):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
                      dtype=np.float64)
         y = np.arange(x.shape[0], dtype=np.float64)
 
         xi = x[:,None,:] + np.array([0,0,0])[None,:,None]
 
-        for method in ('nearest', 'linear', 'cubic'):
-            for rescale in (True, False):
-                msg = repr((method, rescale))
-                yi = griddata(x, y, xi, method=method, rescale=rescale)
+        msg = repr((method, rescale))
+        yi = griddata(x, y, xi, method=method, rescale=rescale)
 
-                assert yi.shape == (5, 3), msg
-                xp_assert_close(yi, np.tile(y[:,None], (1, 3)),
-                                atol=1e-14, err_msg=msg)
+        assert yi.shape == (5, 3), msg
+        xp_assert_close(yi, np.tile(y[:,None], (1, 3)),
+                        atol=1e-14, err_msg=msg)
 
-    def test_complex_2d(self):
+    @parametrize_methods
+    @parametrize_rescale
+    def test_complex_2d(self, method, rescale):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
                      dtype=np.float64)
         y = np.arange(x.shape[0], dtype=np.float64)
@@ -76,26 +87,24 @@ class TestGriddata:
 
         xi = x[:,None,:] + np.array([0,0,0])[None,:,None]
 
-        for method in ('nearest', 'linear', 'cubic'):
-            for rescale in (True, False):
-                msg = repr((method, rescale))
-                yi = griddata(x, y, xi, method=method, rescale=rescale)
+        msg = repr((method, rescale))
+        yi = griddata(x, y, xi, method=method, rescale=rescale)
 
-                assert yi.shape == (5, 3)
-                xp_assert_close(yi, np.tile(y[:,None], (1, 3)),
-                                atol=1e-14, err_msg=msg)
+        assert yi.shape == (5, 3)
+        xp_assert_close(yi, np.tile(y[:,None], (1, 3)),
+                        atol=1e-14, err_msg=msg)
 
-    def test_1d(self):
+    @parametrize_methods
+    def test_1d(self, method):
         x = np.array([1, 2.5, 3, 4.5, 5, 6])
         y = np.array([1, 2, 0, 3.9, 2, 1])
 
-        for method in ('nearest', 'linear', 'cubic'):
-            xp_assert_close(griddata(x, y, x, method=method), y,
-                            err_msg=method, atol=1e-14)
-            xp_assert_close(griddata(x.reshape(6, 1), y, x, method=method), y,
-                            err_msg=method, atol=1e-14)
-            xp_assert_close(griddata((x,), y, (x,), method=method), y,
-                            err_msg=method, atol=1e-14)
+        xp_assert_close(griddata(x, y, x, method=method), y,
+                        err_msg=method, atol=1e-14)
+        xp_assert_close(griddata(x.reshape(6, 1), y, x, method=method), y,
+                        err_msg=method, atol=1e-14)
+        xp_assert_close(griddata((x,), y, (x,), method=method), y,
+                        err_msg=method, atol=1e-14)
 
     def test_1d_borders(self):
         # Test for nearest neighbor case with xi outside
@@ -119,19 +128,20 @@ class TestGriddata:
                         err_msg=method,
                         atol=1e-14)
 
-    def test_1d_unsorted(self):
+    @parametrize_methods
+    def test_1d_unsorted(self, method):
         x = np.array([2.5, 1, 4.5, 5, 6, 3])
         y = np.array([1, 2, 0, 3.9, 2, 1])
 
-        for method in ('nearest', 'linear', 'cubic'):
-            xp_assert_close(griddata(x, y, x, method=method), y,
-                            err_msg=method, atol=1e-10)
-            xp_assert_close(griddata(x.reshape(6, 1), y, x, method=method), y,
-                            err_msg=method, atol=1e-10)
-            xp_assert_close(griddata((x,), y, (x,), method=method), y,
-                            err_msg=method, atol=1e-10)
+        xp_assert_close(griddata(x, y, x, method=method), y,
+                        err_msg=method, atol=1e-10)
+        xp_assert_close(griddata(x.reshape(6, 1), y, x, method=method), y,
+                        err_msg=method, atol=1e-10)
+        xp_assert_close(griddata((x,), y, (x,), method=method), y,
+                        err_msg=method, atol=1e-10)
 
-    def test_square_rescale_manual(self):
+    @parametrize_methods
+    def test_square_rescale_manual(self, method):
         points = np.array([(0,0), (0,100), (10,100), (10,0), (1, 5)], dtype=np.float64)
         points_rescaled = np.array([(0,0), (0,1), (1,1), (1,0), (0.1, 0.05)],
                                    dtype=np.float64)
@@ -143,16 +153,16 @@ class TestGriddata:
         yy = yy.ravel()
         xi = np.array([xx, yy]).T.copy()
 
-        for method in ('nearest', 'linear', 'cubic'):
-            msg = method
-            zi = griddata(points_rescaled, values, xi/np.array([10, 100.]),
-                          method=method)
-            zi_rescaled = griddata(points, values, xi, method=method,
-                                   rescale=True)
-            xp_assert_close(zi, zi_rescaled, err_msg=msg,
-                            atol=1e-12)
+        msg = method
+        zi = griddata(points_rescaled, values, xi/np.array([10, 100.]),
+                      method=method)
+        zi_rescaled = griddata(points, values, xi, method=method,
+                               rescale=True)
+        xp_assert_close(zi, zi_rescaled, err_msg=msg,
+                        atol=1e-12)
 
-    def test_xi_1d(self):
+    @parametrize_methods
+    def test_xi_1d(self, method):
         # Check that 1-D xi is interpreted as a coordinate
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
                      dtype=np.float64)
@@ -161,17 +171,16 @@ class TestGriddata:
 
         xi = np.array([0.5, 0.5])
 
-        for method in ('nearest', 'linear', 'cubic'):
-            p1 = griddata(x, y, xi, method=method)
-            p2 = griddata(x, y, xi[None,:], method=method)
-            xp_assert_close(p1, p2, err_msg=method)
+        p1 = griddata(x, y, xi, method=method)
+        p2 = griddata(x, y, xi[None,:], method=method)
+        xp_assert_close(p1, p2, err_msg=method)
 
-            xi1 = np.array([0.5])
-            xi3 = np.array([0.5, 0.5, 0.5])
-            assert_raises(ValueError, griddata, x, y, xi1,
-                          method=method)
-            assert_raises(ValueError, griddata, x, y, xi3,
-                          method=method)
+        xi1 = np.array([0.5])
+        xi3 = np.array([0.5, 0.5, 0.5])
+        assert_raises(ValueError, griddata, x, y, xi1,
+                      method=method)
+        assert_raises(ValueError, griddata, x, y, xi3,
+                      method=method)
 
 
 class TestNearestNDInterpolator:

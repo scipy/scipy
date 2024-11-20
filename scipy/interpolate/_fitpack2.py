@@ -72,6 +72,10 @@ class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
 
+    .. legacy:: class
+
+        Specifically, we recommend using `make_splrep` instead.
+
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `s`
     specifies the number of knots by specifying a smoothing condition.
 
@@ -644,6 +648,10 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     """
     1-D interpolating spline for a given set of data points.
 
+    .. legacy:: class
+
+        Specifically, we recommend using `make_interp_spline` instead.
+
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.
     Spline function passes through all provided points. Equivalent to
     `UnivariateSpline` with  `s` = 0.
@@ -760,6 +768,11 @@ This means that at least one of the following conditions is violated:
 class LSQUnivariateSpline(UnivariateSpline):
     """
     1-D spline with explicit internal knots.
+
+    .. legacy:: class
+
+        Specifically, we recommend using `make_lsq_spline` instead.
+
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `t`
     specifies the internal knots of the spline

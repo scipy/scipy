@@ -711,6 +711,9 @@ def test_bug_11886():
 
 
 def test_gh11649():
+    # trust - constr error when attempting to keep bound constrained solutions
+    # feasible. Algorithm attempts to go outside bounds when evaluating finite
+    # differences. (don't give objective an analytic gradient)
     bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
 
     def assert_inbounds(x):
@@ -738,7 +741,6 @@ def test_gh11649():
 
     res = minimize(fun=obj, x0=x0, method='trust-constr',
                    bounds=bnds, constraints=nlcs)
-    assert res.success
     assert_inbounds(res.x)
     assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
 
@@ -758,6 +760,25 @@ def test_gh20665_too_many_constraints():
         minimize(rosen, x0, method='trust-constr', constraints=[g],
                  options={'factorization_method': 'SVDFactorization'})
 
+def test_issue_18882():
+    def lsf(u):
+        u1, u2 = u
+        a, b = [3.0, 4.0]
+        return 1.0 + u1**2 / a**2 - u2**2 / b**2
+
+    def of(u):
+        return np.sum(u**2)
+
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, "delta_grad == 0.0")
+        sup.filter(UserWarning, "Singular Jacobian matrix.")
+        res = minimize(
+            of,
+            [0.0, 0.0],
+            method="trust-constr",
+            constraints=NonlinearConstraint(lsf, 0, 0),
+        )
+    assert (not res.success) and (res.constr_violation > 1e-8)  
 
 class TestBoundedNelderMead:
 

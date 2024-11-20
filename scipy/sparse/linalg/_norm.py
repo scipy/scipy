@@ -26,8 +26,8 @@ def norm(x, ord=None, axis=None):
 
     Parameters
     ----------
-    x : a sparse matrix
-        Input sparse matrix.
+    x : a sparse array
+        Input sparse array.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
         `inf` object.
@@ -45,7 +45,7 @@ def norm(x, ord=None, axis=None):
     Notes
     -----
     Some of the ord are not implemented because some associated functions like,
-    _multi_svd_norm, are not yet available for sparse matrix.
+    _multi_svd_norm, are not yet available for sparse array.
 
     This docstring is modified based on numpy.linalg.norm.
     https://github.com/numpy/numpy/blob/main/numpy/linalg/linalg.py
@@ -53,7 +53,7 @@ def norm(x, ord=None, axis=None):
     The following norms can be calculated:
 
     =====  ============================
-    ord    norm for sparse matrices
+    ord    norm for sparse arrays
     =====  ============================
     None   Frobenius norm
     'fro'  Frobenius norm
@@ -78,7 +78,7 @@ def norm(x, ord=None, axis=None):
 
     Examples
     --------
-    >>> from scipy.sparse import *
+    >>> from scipy.sparse import csr_array, diags_array
     >>> import numpy as np
     >>> from scipy.sparse.linalg import norm
     >>> a = np.arange(9) - 4
@@ -90,7 +90,7 @@ def norm(x, ord=None, axis=None):
            [-1, 0, 1],
            [ 2, 3, 4]])
 
-    >>> b = csr_matrix(b)
+    >>> b = csr_array(b)
     >>> norm(b)
     7.745966692414834
     >>> norm(b, 'fro')
@@ -107,7 +107,7 @@ def norm(x, ord=None, axis=None):
     The matrix 2-norm or the spectral norm is the largest singular
     value, computed approximately and with limitations.
 
-    >>> b = diags([-1, 1], [0, 1], shape=(9, 10))
+    >>> b = diags_array([-1, 1], [0, 1], shape=(9, 10))
     >>> norm(b, 2)
     1.9753...
     """

@@ -1817,19 +1817,19 @@ class TestBWSTest:
         x, y = rng.random(size=(2, 10))
 
         rng = np.random.default_rng(1520514347193347862)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res1 = stats.bws_test(x, y, method=method)
 
         assert len(res1.null_distribution) == 10
 
         rng = np.random.default_rng(1520514347193347862)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res2 = stats.bws_test(x, y, method=method)
 
         assert_allclose(res1.null_distribution, res2.null_distribution)
 
         rng = np.random.default_rng(5205143471933478621)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res3 = stats.bws_test(x, y, method=method)
 
         assert not np.allclose(res3.null_distribution, res1.null_distribution)

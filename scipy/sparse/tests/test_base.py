@@ -1462,7 +1462,7 @@ class _TestCommon:
         for dtype in self.math_dtypes:
             check(dtype)
 
-    # github issue #15210
+    # GitHub issue #15210
     def test_rmul_scalar_type_error(self):
         datsp = self.datsp_dtypes[np.float64]
         with assert_raises(TypeError):
@@ -2502,7 +2502,7 @@ class _TestGetSet:
             check(np.dtype(dtype))
 
     def test_negative_index_assignment(self):
-        # Regression test for github issue 4428.
+        # Regression test for GitHub issue 4428.
 
         def check(dtype):
             A = self.spcreator((3, 10), dtype=dtype)
@@ -2802,6 +2802,28 @@ class _TestSlicing:
         # These return ints
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
+
+    def test_ellipsis_fancy_bool(self):
+        numpy_a = self.asdense(arange(50).reshape(5, 10))
+        a = self.spcreator(numpy_a)
+
+        ix5 = [True, False, True, False, True]
+        ix10 = [False] * 5 + ix5  # same number of True values as ix5
+        ix10_6True = ix5 + ix5  # not same number of True values as ix5
+        full_ix = [ix10] * 5
+
+        assert_array_equal(toarray(a[full_ix, ...]), numpy_a[full_ix, ...])
+        assert_array_equal(toarray(a[..., full_ix]), numpy_a[..., full_ix])
+
+        assert_array_equal(toarray(a[ix5, ...]), numpy_a[ix5, ...])
+        assert_array_equal(toarray(a[..., ix10]), numpy_a[..., ix10])
+
+        assert_array_equal(toarray(a[ix5, ..., ix10]), numpy_a[ix5, ..., ix10])
+        assert_array_equal(toarray(a[..., ix5, ix10]), numpy_a[..., ix5, ix10])
+        assert_array_equal(toarray(a[ix5, ix10, ...]), numpy_a[ix5, ix10, ...])
+
+        with assert_raises(ValueError, match="shape mismatch"):
+            a[ix5, ix10_6True]
 
     def test_ellipsis_fancy_slicing(self):
         b = self.asdense(arange(50).reshape(5, 10))
@@ -4250,6 +4272,13 @@ class TestCSR(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
+    def test_setdiag_csr(self):
+        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
+        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
+        A = self.spcreator(D)
+        A.setdiag(5 * np.ones(A.shape[0]))
+        assert A[-1, -1] == 5
+
     def test_binop_explicit_zeros(self):
         # Check that binary ops don't introduce spurious explicit zeros.
         # See gh-9619 for context.
@@ -4418,6 +4447,13 @@ class TestCSC(sparse_test_class()):
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:
             x + x
+
+    def test_setdiag_csc(self):
+        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
+        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
+        A = self.spcreator(D)
+        A.setdiag(5 * np.ones(A.shape[0]))
+        assert A[-1, -1] == 5
 
 
 TestCSC.init_class()
@@ -5019,7 +5055,7 @@ class TestBSR(sparse_test_class(getset=False,
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.toarray(), bsp.toarray())
 
-    # github issue #9687
+    # GitHub issue #9687
     def test_eliminate_zeros_all_zero(self):
         np.random.seed(0)
         m = self.bsr_container(np.random.random((12, 12)), blocksize=(2, 3))

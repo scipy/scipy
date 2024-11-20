@@ -1118,7 +1118,7 @@ class TestFixedPoint:
         assert_allclose(xxroot, lambertw(1)/2)
 
     def test_no_acceleration(self):
-        # github issue 5460
+        # GitHub issue 5460
         ks = 2
         kl = 6
         m = 1.3

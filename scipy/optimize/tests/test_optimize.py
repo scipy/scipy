@@ -32,6 +32,11 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api_no_0d import xp_assert_equal, array_namespace
+
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
@@ -47,6 +52,7 @@ def test_check_grad():
 
     r = optimize.check_grad(expit, der_expit, x0)
     assert_almost_equal(r, 0)
+    # SPEC-007 leave one call with seed to check it still works
     r = optimize.check_grad(expit, der_expit, x0,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
@@ -54,14 +60,14 @@ def test_check_grad():
     r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6)
     assert_almost_equal(r, 0)
     r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6,
-                            direction='random', seed=1234)
+                            direction='random', rng=1234)
     assert_almost_equal(r, 0)
 
     # Check if the epsilon parameter is being considered.
     r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1) - 0)
     assert r > 1e-7
     r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1,
-                                direction='random', seed=1234) - 0)
+                                direction='random', rng=1234) - 0)
     assert r > 1e-7
 
     def x_sinx(x):
@@ -73,16 +79,16 @@ def test_check_grad():
     x0 = np.arange(0, 2, 0.2)
 
     r = optimize.check_grad(x_sinx, der_x_sinx, x0,
-                            direction='random', seed=1234)
+                            direction='random', rng=1234)
     assert_almost_equal(r, 0)
 
     assert_raises(ValueError, optimize.check_grad,
                   x_sinx, der_x_sinx, x0,
-                  direction='random_projection', seed=1234)
+                  direction='random_projection', rng=1234)
 
     # checking can be done for derivatives of vector valued functions
     r = optimize.check_grad(himmelblau_grad, himmelblau_hess, himmelblau_x0,
-                            direction='all', seed=1234)
+                            direction='all', rng=1234)
     assert r < 5e-7
 
 
@@ -2428,15 +2434,35 @@ def test_powell_output():
         assert np.isscalar(res.fun)
 
 
+@array_api_compatible
 class TestRosen:
+    def test_rosen(self, xp):
+        # integer input should be promoted to the default floating type
+        x = xp.asarray([1, 1, 1])
+        xp_assert_equal(optimize.rosen(x),
+                        xp.asarray(0.))
 
-    def test_hess(self):
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_rosen_der(self, xp):
+        x = xp.asarray([1, 1, 1, 1])
+        xp_assert_equal(optimize.rosen_der(x),
+                        xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
+
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_hess_prod(self, xp):
+        one = xp.asarray(1.)
+        xp_test = array_namespace(one)
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
-        x = np.array([3, 4, 5])
-        p = np.array([2, 2, 2])
+        x = xp.asarray([3, 4, 5])
+        p = xp.asarray([2, 2, 2])
         hp = optimize.rosen_hess_prod(x, p)
-        dothp = np.dot(optimize.rosen_hess(x), p)
-        assert_equal(hp, dothp)
+        p = xp_test.astype(p, one.dtype)
+        dothp = optimize.rosen_hess(x) @ p
+        xp_assert_equal(hp, dothp)
 
 
 def himmelblau(p):

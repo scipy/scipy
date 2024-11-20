@@ -74,6 +74,21 @@ namespace cephes {
 
     namespace detail {
 
+	/* Compute (u * v) * w, disabling optimizations for gcc on 32 bit systems.
+	 * Used below in incbet_pseries to prevent aggressive optimizations from
+	 * degrading accuracy.
+	 */
+#if defined(__GNUC__) && defined(__i386__)
+#pragma GCC push_options
+#pragma GCC optimize("00")
+#endif
+	XSF_HOST_DEVICE inline double triple_product(double u, double v, double w) {
+	    return (u * v) * w;
+	}
+#if defined(__GNUC__) && defined(__i386__)
+#pragma GCC pop_options
+#endif
+
         constexpr double incbet_big = 4.503599627370496e15;
         constexpr double incbet_biginv = 2.22044604925031308085e-16;
 
@@ -104,7 +119,7 @@ namespace cephes {
             u = a * std::log(x);
             if ((a + b) < MAXGAM && std::abs(u) < MAXLOG) {
                 t = 1.0 / beta(a, b);
-                s = s * t * std::pow(x, a);
+                s = triple_product(s, t, std::pow(x, a)); // (s * t) * std::pow(x, a)
             } else {
                 t = -lbeta(a, b) + u + std::log(s);
                 if (t < MINLOG) {

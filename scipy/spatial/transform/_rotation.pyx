@@ -3,7 +3,7 @@
 import re
 import warnings
 import numpy as np
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _transition_to_rng
 from ._rotation_groups import create_group
 
 cimport numpy as np
@@ -831,7 +831,9 @@ cdef class Rotation:
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
-        if quat.ndim not in [1, 2] or quat.shape[len(quat.shape) - 1] != 4:
+        if (quat.ndim not in [1, 2]
+            or quat.shape[len(quat.shape) - 1] != 4
+            or quat.shape[0] == 0):
             raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
                              f"got {quat.shape}.")
 
@@ -2354,7 +2356,8 @@ cdef class Rotation:
         Parameters
         ----------
         rotations : sequence of `Rotation` objects
-            The rotations to concatenate.
+            The rotations to concatenate. If a single `Rotation` object is
+            passed in, a copy is returned.
 
         Returns
         -------
@@ -2373,6 +2376,13 @@ cdef class Rotation:
         >>> rc.mean().as_rotvec()
         array([0., 0., 1.5])
 
+        Concatenation of a split rotation recovers the original object.
+
+        >>> rs = [r for r in rc]
+        >>> R.concatenate(rs).as_rotvec()
+        array([[0., 0., 1.],
+               [0., 0., 2.]])
+
         Note that it may be simpler to create the desired rotations by passing
         in a single list of the data during initialization, rather then by
         concatenating:
@@ -2385,6 +2395,9 @@ cdef class Rotation:
         -----
         .. versionadded:: 1.8.0
         """
+        if isinstance(rotations, Rotation):
+            return cls(rotations.as_quat(), normalize=False, copy=True)
+
         if not all(isinstance(x, Rotation) for x in rotations):
             raise TypeError("input must contain Rotation objects only")
 
@@ -3072,28 +3085,42 @@ cdef class Rotation:
         Examples
         --------
         >>> from scipy.spatial.transform import Rotation as R
-        >>> r = R.from_quat([
+        >>> rs = R.from_quat([
         ... [1, 1, 0, 0],
         ... [0, 1, 0, 1],
-        ... [1, 1, -1, 0]])
-        >>> r.as_quat()
+        ... [1, 1, -1, 0]])  # These quats are normalized
+        >>> rs.as_quat()
         array([[ 0.70710678,  0.70710678,  0.        ,  0.        ],
                [ 0.        ,  0.70710678,  0.        ,  0.70710678],
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
 
         Indexing using a single index:
 
-        >>> p = r[0]
-        >>> p.as_quat()
+        >>> a = rs[0]
+        >>> a.as_quat()
         array([0.70710678, 0.70710678, 0.        , 0.        ])
 
         Array slicing:
 
-        >>> q = r[1:3]
-        >>> q.as_quat()
+        >>> b = rs[1:3]
+        >>> b.as_quat()
         array([[ 0.        ,  0.70710678,  0.        ,  0.70710678],
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
 
+        List comprehension to split each rotation into its own object:
+
+        >>> c = [r for r in rs]
+        >>> print([r.as_quat() for r in c])
+        [array([ 0.70710678,  0.70710678,  0.        ,  0.        ]),
+         array([ 0.        ,  0.70710678,  0.        ,  0.70710678]),
+         array([ 0.57735027,  0.57735027, -0.57735027,  0.        ])]
+
+        Concatenation of split rotations will recover the original object:
+
+        >>> R.concatenate([a, b]).as_quat()
+        array([[ 0.70710678,  0.70710678,  0.        ,  0.        ],
+               [ 0.        ,  0.70710678,  0.        ,  0.70710678],
+               [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
         """
         if self._single:
             raise TypeError("Single rotation is not subscriptable.")
@@ -3158,7 +3185,8 @@ cdef class Rotation:
 
     @cython.embedsignature(True)
     @classmethod
-    def random(cls, num=None, random_state=None):
+    @_transition_to_rng('random_state', position_num=2)
+    def random(cls, num=None, rng=None):
         """Generate uniformly distributed rotations.
 
         Parameters
@@ -3166,15 +3194,11 @@ cdef class Rotation:
         num : int or None, optional
             Number of random rotations to generate. If None (default), then a
             single rotation is generated.
-        random_state : {None, int, `numpy.random.Generator`,
-                        `numpy.random.RandomState`}, optional
-
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance
-            then that instance is used.
+        rng : `numpy.random.Generator`, optional
+            Pseudorandom number generator state. When `rng` is None, a new
+            `numpy.random.Generator` is created using entropy from the
+            operating system. Types other than `numpy.random.Generator` are
+            passed to `numpy.random.default_rng` to instantiate a `Generator`.
 
         Returns
         -------
@@ -3211,12 +3235,12 @@ cdef class Rotation:
         scipy.stats.special_ortho_group
 
        """
-        random_state = check_random_state(random_state)
+        rng = check_random_state(rng)
 
         if num is None:
-            sample = random_state.normal(size=4)
+            sample = rng.normal(size=4)
         else:
-            sample = random_state.normal(size=(num, 4))
+            sample = rng.normal(size=(num, 4))
 
         return cls(sample)
 
