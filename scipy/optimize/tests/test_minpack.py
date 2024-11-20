@@ -804,6 +804,27 @@ class TestCurveFit:
         assert_allclose(popt1, 2, atol=1e-14)
         assert_allclose(popt2, 2, atol=1e-14)
 
+    def test_curvefit_omitnan(self):
+        def exponential(x, a, b):
+            return b * np.exp(a * x)
+
+        np.random.seed(0)
+        N = 100
+        x = np.linspace(1, 10, N)
+        sigma = x * 0.05
+        y = exponential(x, 0.2, 0.5) + np.random.normal(0, sigma, N)
+
+        p0 = [0.1, 1.0]
+
+        popt1, pcov1 = curve_fit(exponential, x, y, p0 = p0, sigma = sigma)
+
+        x[11] = np.nan
+        y[22] = np.nan
+        popt2, pcov2 = curve_fit(exponential, x, y, p0 = p0, sigma = sigma, nan_policy = "omit")
+
+        assert_allclose(popt1, popt2, atol=1e-2)
+        assert_allclose(pcov1, pcov2, atol=1e-2)
+
     def test_curvefit_simplecovariance(self):
 
         def func(x, a, b):
