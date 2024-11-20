@@ -801,7 +801,7 @@ class TestNSum:
             nsum(f, f.a, f.b, tolerances=dict(rtol=pytest))
 
         with np.errstate(all='ignore'):
-            res = nsum(f, [np.nan, -np.inf, np.inf], 1)
+            res = nsum(f, [np.nan, np.inf], 1)
             assert np.all((res.status == -1) & np.isnan(res.sum)
                           & np.isnan(res.error) & ~res.success & res.nfev == 1)
             res = nsum(f, 10, [np.nan, 1])
@@ -970,6 +970,51 @@ class TestNSum:
         ref = nsum(lambda k: 1 / k ** 2, [1, 4], np.inf)
         assert np.all(res.sum > (ref.sum - res.error))
         assert np.all(res.sum < (ref.sum + res.error))
+
+    @pytest.mark.parametrize('log', [True, False])
+    def test_infinite_bounds(self, log):
+        a = [1, -np.inf, -np.inf]
+        b = [np.inf, -1, np.inf]
+        c = [1, 2, 3]
+
+        def f(x, a):
+            return (np.log(np.tanh(a / 2)) - a*np.abs(x) if log
+                    else np.tanh(a/2) * np.exp(-a*np.abs(x)))
+
+        res = nsum(f, a, b, args=(c,), log=log)
+        ref = [stats.dlaplace.sf(0, 1), stats.dlaplace.sf(0, 2), 1]
+        ref = np.log(ref) if log else ref
+        atol = 1e-10 if log else 0
+        assert_allclose(res.sum, ref, atol=atol)
+
+        # Make sure the sign of `x` passed into `f` is correct.
+        def f(x, c):
+            return -3*np.log(c*x) if log else 1 / (c*x)**3
+
+        res = nsum(f, [1, -np.inf], [np.inf, -1], args=([1, -1],), log=log)
+        ref = np.log(special.zeta(3)) if log else special.zeta(3)
+        assert_allclose(res.sum, ref)
+
+    def test_decreasing_check(self):
+        # Test accuracy when we start sum on an uphill slope.
+        # Without the decreasing check, the terms would look small enough to
+        # use the integral approximation. Because the function is not decreasing,
+        # the error is not bounded by the magnitude of the last term of the
+        # partial sum. In this case, the error would be  ~1e-4, causing the test
+        # to fail.
+        def f(x):
+            return np.exp(-x ** 2)
+
+        res = nsum(f, -25, np.inf)
+
+        # Reference computed with mpmath:
+        # from mpmath import mp
+        # mp.dps = 50
+        # def fmp(x): return mp.exp(-x**2)
+        # ref = mp.nsum(fmp, (-25, 0)) + mp.nsum(fmp, (1, mp.inf))
+        ref = 1.772637204826652
+
+        np.testing.assert_allclose(res.sum, ref, rtol=1e-15)
 
     def test_special_case(self):
         # test equal lower/upper limit

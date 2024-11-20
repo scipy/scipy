@@ -902,10 +902,9 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     if not np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.complexfloating):
         raise ValueError(message)
 
-    valid_a = np.isfinite(a)
     valid_b = b >= a  # NaNs will be False
     valid_step = np.isfinite(step) & (step > 0)
-    valid_abstep = valid_a & valid_b & valid_step
+    valid_abstep = valid_b & valid_step
 
     message = '`log` must be True or False.'
     if log not in {True, False}:
@@ -948,16 +947,16 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
 
 
 def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
-    r"""Evaluate a convergent, monotonically decreasing finite or infinite series.
+    r"""Evaluate a convergent finite or infinite series.
 
-    For finite `b`, this evaluates::
+    For finite `a` and `b`, this evaluates::
 
         f(a + np.arange(n)*step).sum()
 
     where ``n = int((b - a) / step) + 1``, where `f` is smooth, positive, and
-    monotone decreasing. `b` may be very large or infinite, in which case
-    a partial sum is evaluated directly and the remainder is approximated using
-    integration.
+    unimodal. The number of terms in the sum may be very large or infinite,
+    in which case a partial sum is evaluated directly and the remainder is
+    approximated using integration.
 
     Parameters
     ----------
@@ -975,14 +974,11 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         array ``x`` or the arrays in ``args``, and it must return NaN where
         the argument is NaN.
         
-        `f` must represent a smooth, positive, and monotone decreasing
-        function of `x` defined at *all reals* between `a` and `b`.          
-        `nsum` performs no checks to verify that these conditions
-        are met and may return erroneous results if they are violated.
+        `f` must represent a smooth, positive, unimodal function of `x` defined at
+        *all reals* between `a` and `b`.
     a, b : float array_like
         Real lower and upper limits of summed terms. Must be broadcastable.
-        Each element of `a` must be finite and less than the corresponding
-        element in `b`, but elements of `b` may be infinite.
+        Each element of `a` must be less than the corresponding element in `b`.
     step : float array_like
         Finite, positive, real step between summed terms. Must be broadcastable
         with `a` and `b`. Note that the number of terms included in the sum will
@@ -1033,6 +1029,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
             - ``-4`` : The magnitude of the last term of the partial sum exceeds
               the tolerances, so the error estimate exceeds the tolerances.
               Consider increasing `maxterms` or loosening `tolerances`.
+              Alternatively, the callable may not be unimodal, or the limits of
+              summation may be too far from the function maximum. Consider
+              increasing `maxterms` or breaking the sum into pieces.
 
         sum : float array
             An estimate of the sum.
@@ -1077,12 +1076,20 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     that appear in the sum has little effect. If there is not a natural
     extension of the function to all reals, consider using linear interpolation,
     which is easy to evaluate and preserves monotonicity.
-    
+
     The approach described above is generalized for non-unit
     `step` and finite `b` that is too large for direct evaluation of the sum,
-    i.e. ``b - a + 1 > maxterms``.
+    i.e. ``b - a + 1 > maxterms``. It is further generalized to unimodal
+    functions by directly summing terms surrounding the maximum.
+    This strategy may fail:
 
-    Although the callable `f` must be non-negative and monotonically decreasing,
+    - If the left limit is finite and the maximum is far from it.
+    - If the right limit is finite and the maximum is far from it.
+    - If both limits are finite and the maximum is far from the origin.
+
+    In these cases, accuracy may be poor, and `nsum` may return status code ``4``.
+
+    Although the callable `f` must be non-negative and unimodal,
     `nsum` can be used to evaluate more general forms of series. For instance, to
     evaluate an alternating series, pass a callable that returns the difference
     between pairs of adjacent terms, and adjust `step` accordingly. See Examples.
@@ -1127,7 +1134,6 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     # Potential future work:
     # - improve error estimate of `_direct` sum
     # - add other methods for convergence acceleration (Richardson, epsilon)
-    # - support infinite lower limit?
     # - support negative monotone increasing functions?
     # - b < a / negative step?
     # - complex-valued function?
@@ -1147,7 +1153,8 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     step = np.broadcast_to(step, shape).ravel().astype(dtype)
     valid_abstep = np.broadcast_to(valid_abstep, shape).ravel()
     nterms = np.floor((b - a) / step)
-    b = a + nterms*step
+    finite_terms = np.isfinite(nterms)
+    b[finite_terms] = a[finite_terms] + nterms[finite_terms]*step[finite_terms]
 
     # Define constants
     eps = np.finfo(dtype).eps
@@ -1163,9 +1170,15 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     nfev = np.ones(len(a), dtype=int)  # one function evaluation above
 
     # Branch for direct sum evaluation / integral approximation / invalid input
-    i1 = (nterms + 1 <= maxterms) & valid_abstep
-    i2 = (nterms + 1 > maxterms) & valid_abstep
-    i3 = ~valid_abstep
+    i0 = ~valid_abstep                     # invalid
+    i1 = (nterms + 1 <= maxterms) & ~i0    # direct sum evaluation
+    i2 = np.isfinite(a) & ~i1 & ~i0        # infinite sum to the right
+    i3 = np.isfinite(b) & ~i2 & ~i1 & ~i0  # infinite sum to the left
+    i4 = ~i3 & ~i2 & ~i1 & ~i0             # infinite sum on both sides
+
+    if np.any(i0):
+        S[i0], E[i0] = np.nan, np.nan
+        status[i0] = -1
 
     if np.any(i1):
         args_direct = [arg[i1] for arg in args]
@@ -1181,8 +1194,40 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         nfev[i2] += tmp[-1]
 
     if np.any(i3):
-        S[i3], E[i3] = np.nan, np.nan
-        status[i3] = -1
+        args_indirect = [arg[i3] for arg in args]
+        def _f(x, *args): return f(-x, *args)
+        tmp = _integral_bound(_f, -b[i3], -a[i3], step[i3], args_indirect, constants)
+        S[i3], E[i3], status[i3] = tmp[:-1]
+        nfev[i3] += tmp[-1]
+
+    if np.any(i4):
+        args_indirect = [arg[i4] for arg in args]
+
+        # There are two obvious high-level strategies:
+        # - Do two separate half-infinite sums (e.g. from -inf to 0 and 1 to inf)
+        # - Make a callable that returns f(x) + f(-x) and do a single half-infinite sum
+        # I thought the latter would have about half the overhead, so I went that way.
+        # Then there are two ways of ensuring that f(0) doesn't get counted twice.
+        # - Evaluate the sum from 1 to inf and add f(0)
+        # - Evaluate the sum from 0 to inf and subtract f(0)
+        # - Evaluate the sum from 0 to inf, but apply a weight of 0.5 when `x = 0`
+        # The last option has more overhead, but is simpler to implement correctly
+        # (especially getting the status message right)
+        if log:
+            def _f(x, *args):
+                log_factor = np.where(x==0, np.log(0.5), 0)
+                out = np.stack([f(x, *args), f(-x, *args)], axis=0)
+                return special.logsumexp(out, axis=0) + log_factor
+
+        else:
+            def _f(x, *args):
+                factor = np.where(x==0, 0.5, 1)
+                return (f(x, *args) + f(-x, *args)) * factor
+
+        zero = np.zeros_like(a[i4])
+        tmp = _integral_bound(_f, zero, b[i4], step[i4], args_indirect, constants)
+        S[i4], E[i4], status[i4] = tmp[:-1]
+        nfev[i4] += 2*tmp[-1]
 
     # Return results
     S, E = S.reshape(shape)[()], E.reshape(shape)[()]
@@ -1265,17 +1310,20 @@ def _integral_bound(f, a, b, step, args, constants):
     # Find the location of a term that is less than the tolerance (if possible)
     log2maxterms = np.floor(np.log2(maxterms)) if maxterms else 0
     n_steps = np.concatenate([2**np.arange(0, log2maxterms), [maxterms]], dtype=dtype)
-    nfev = len(n_steps)
+    nfev = len(n_steps) * 2
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
-    n_fk_insufficient = np.sum(fks > tol[:, np.newaxis], axis=-1)
+    fksp1 = f(ks + step2, *args2)  # check that the function is decreasing
+    fk_insufficient = (fks > tol[:, np.newaxis]) | (fksp1 > fks)
+    n_fk_insufficient = np.sum(fk_insufficient, axis=-1)
     nt = np.minimum(n_fk_insufficient, n_steps.shape[-1]-1)
     n_steps = n_steps[nt]
 
-    # If `maxterms` is insufficient (i.e. the magnitude of the last term of the
-    # partial sum exceeds the tolerance), we can finish the calculation and report
-    # valid sum and error estimates, but we'll have nonzero status.
-    i_fk_insufficient = (n_fk_insufficient == nfev)
+    # If `maxterms` is insufficient (i.e. either the magnitude of the last term of the
+    # partial sum exceeds the tolerance or the function is not decreasing), finish the
+    # calculation, but report nonzero status. (Improvement: separate the status codes
+    # for these two cases.)
+    i_fk_insufficient = (n_fk_insufficient == nfev//2)
 
     # Directly evaluate the sum up to this term
     k = a + n_steps * step

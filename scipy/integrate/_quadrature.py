@@ -136,11 +136,16 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
         d = dx
     else:
         x = _asarray(x, xp=xp, subok=True)
-        # reshape to correct shape
-        shape = [1] * y.ndim
-        shape[axis] = y.shape[axis]
-        x = xp.reshape(x, shape)
-        d = x[tuple(slice1)] - x[tuple(slice2)]
+        if x.ndim == 1:
+            d = x[1:] - x[:-1]
+            # make d broadcastable to y
+            slice3 = [None] * nd
+            slice3[axis] = slice(None)
+            d = d[tuple(slice3)]
+        else:
+            # if x is n-D it should be broadcastable to y
+            x = xp.broadcast_to(x, y.shape)
+            d = x[tuple(slice1)] - x[tuple(slice2)]
     try:
         ret = xp.sum(
             d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0,

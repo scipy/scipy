@@ -15,8 +15,9 @@ from scipy.cluster import _vq
 from scipy.conftest import array_api_compatible
 from scipy.sparse._sputils import matrix
 
+from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, xp_copy, xp_cov, xp_assert_close, xp_assert_equal
+    SCIPY_ARRAY_API, array_namespace, xp_copy, xp_assert_close, xp_assert_equal
 )
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
@@ -352,11 +353,12 @@ class TestKMean:
         datas = [xp.reshape(data, (200, 2)),
                  xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
+        xp_test = array_namespace(data)
         for data in datas:
             rng = np.random.default_rng(1234)
-            init = _krandinit(data, k, rng, xp)
-            orig_cov = xp_cov(data.T)
-            init_cov = xp_cov(init.T)
+            init = _krandinit(data, k, rng, xp_test)
+            orig_cov = xpx.cov(data.T, xp=xp_test)
+            init_cov = xpx.cov(init.T, xp=xp_test)
             xp_assert_close(orig_cov, init_cov, atol=1.1e-2)
 
     def test_kmeans2_empty(self, xp):

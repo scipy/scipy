@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_sign
+from scipy._lib._array_api import array_namespace, xp_sign, xp_copy, xp_take_along_axis
 
 _EERRORINCREASE = -1  # used in derivative
 
@@ -882,23 +882,26 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     True
 
     """
-    x = np.asarray(x)
-    int_dtype = np.issubdtype(x.dtype, np.integer)
-    x0 = np.asarray(x, dtype=float) if int_dtype else x
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    int_dtype = xp.isdtype(x.dtype, 'integral')
+    x0 = xp.asarray(x, dtype=xp.asarray(1.0).dtype) if int_dtype else x
 
     if x0.ndim < 1:
         message = "Argument `x` must be at least 1-D."
         raise ValueError(message)
 
     m = x0.shape[0]
-    i = np.arange(m)
+    i = xp.arange(m)
 
     def wrapped(x):
         p = () if x.ndim == x0.ndim else (x.shape[-1],)  # number of abscissae
-        new_dims = (1,) if x.ndim == x0.ndim else (1, -1)
+
         new_shape = (m, m) + x0.shape[1:] + p
-        xph = np.expand_dims(x0, new_dims)
-        xph = np.broadcast_to(xph, new_shape).copy()
+        xph = xp.expand_dims(x0, axis=1)
+        if x.ndim != x0.ndim:
+            xph = xp.expand_dims(xph, axis=-1)
+        xph = xp_copy(xp.broadcast_to(xph, new_shape), xp=xp)
         xph[i, i] = x
         return f(xph)
 
@@ -906,6 +909,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
                      maxiter=maxiter, order=order, initial_step=initial_step,
                      step_factor=step_factor, preserve_shape=True,
                      step_direction=step_direction)
+
     del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
     return res
 
@@ -1069,9 +1073,10 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     atol = tolerances.get('atol', None)
     rtol = tolerances.get('rtol', None)
 
-    x = np.asarray(x)
-    dtype = x.dtype if np.issubdtype(x.dtype, np.inexact) else np.float64
-    finfo = np.finfo(dtype)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    dtype = x.dtype if not xp.isdtype(x.dtype, 'integral') else xp.asarray(1.).dtype
+    finfo = xp.finfo(dtype)
     rtol = finfo.eps**0.5 if rtol is None else rtol  # keep same as `derivative`
 
     # tighten the inner tolerance to make the inner error negligible
@@ -1091,8 +1096,9 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     nfev = []  # track inner function evaluations
     res = jacobian(df, x, tolerances=tolerances, **kwargs)  # jacobian of jacobian
 
-    nfev = np.cumsum(nfev, axis=0)
-    res.nfev = np.take_along_axis(nfev, res.nit[np.newaxis, ...], axis=0)[0]
+    nfev = xp.cumulative_sum(xp.stack(nfev), axis=0)
+    res_nit = xp.astype(res.nit[xp.newaxis, ...], xp.int64)  # appease torch
+    res.nfev = xp_take_along_axis(nfev, res_nit, axis=0)[0]
     res.ddf = res.df
     del res.df  # this is renamed to ddf
     del res.nit  # this is only the outer-jacobian nit

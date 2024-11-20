@@ -464,7 +464,7 @@ class TestAndersonKSamp:
         assert_allclose(p, 0.0041, atol=0.00025)
 
         rng = np.random.default_rng(6989860141921615054)
-        method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=9999, rng=rng)
         res = stats.anderson_ksamp(samples, midrank=False, method=method)
         assert_array_equal(res.statistic, Tk)
         assert_array_equal(res.critical_values, tm)
@@ -1728,14 +1728,15 @@ class TestWilcoxon:
 
         x = rng.random(size=size*10)
         rng = np.random.default_rng(59234803482850134)
-        pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
+        pm = stats.PermutationMethod(n_resamples=99, rng=rng)
         ref = stats.wilcoxon(x, method=pm)
+        # preserve use of old random_state during SPEC 7 transition
         rng = np.random.default_rng(59234803482850134)
         pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
         res = stats.wilcoxon(x, method=pm)
 
         assert_equal(np.round(res.pvalue, 2), res.pvalue)  # n_resamples used
-        assert_equal(res.pvalue, ref.pvalue)  # random_state used
+        assert_equal(res.pvalue, ref.pvalue)  # rng/random_state used
 
     def test_method_auto_nan_propagate_ND_length_gt_50_gh20591(self):
         # When method!='asymptotic', nan_policy='propagate', and a slice of

@@ -21,6 +21,7 @@ thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 mle_failing_fits = [
+        'dpareto_lognorm',
         'gausshyper',
         'genexpon',
         'gengamma',
@@ -61,8 +62,8 @@ mle_use_floc0 = [
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
-                   'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
-                   'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
+                   'chi2', 'crystalball', 'dgamma', 'dpareto_lognorm', 'dweibull',
+                   'f', 'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
                    'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
                    'halfcauchy', 'invgamma', 'invweibull', 'irwinhall', 'jf_skew_t',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'landau', 'levy', 'levy_l',
@@ -249,8 +250,8 @@ def cases_test_fit_mle():
                       't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy'}
 
     # Please keep this list in alphabetical order...
-    xslow_basic_fit = {'betabinom', 'betanbinom', 'burr', 'exponweib',
-                       'gausshyper', 'gengamma', 'genhalflogistic',
+    xslow_basic_fit = {'betabinom', 'betanbinom', 'burr', 'dpareto_lognorm',
+                       'exponweib', 'gausshyper', 'gengamma', 'genhalflogistic',
                        'genhyperbolic', 'geninvgauss',
                        'hypergeom', 'kappa4', 'loguniform',
                        'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
@@ -307,7 +308,7 @@ def cases_test_fit_mse():
 
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
-                       'dgamma', 'f', 'gengamma', 'gennorm',
+                       'dgamma', 'dpareto_lognorm', 'f', 'gengamma', 'gennorm',
                        'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t',
                        'johnsonsb', 'kappa4', 'loguniform', 'mielke',
                        'nakagami', 'ncf', 'nchypergeom_fisher',

@@ -41,8 +41,8 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import (array_namespace, xp_atleast_nd,
-                                   xp_create_diagonal)
+from scipy._lib._array_api import array_namespace, xp_create_diagonal
+from scipy._lib import array_api_extra as xpx
 
 
 # standard status messages of optimizers
@@ -442,7 +442,7 @@ def rosen_hess(x):
 
     """
     xp = array_namespace(x)
-    x = xp_atleast_nd(x, ndim=1, xp=xp)
+    x = xpx.atleast_nd(x, ndim=1, xp=xp)
     if xp.isdtype(x.dtype, 'integral'):
         x = xp.astype(x, xp.asarray(1.).dtype)
     H = (xp_create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
@@ -486,7 +486,7 @@ def rosen_hess_prod(x, p):
 
     """
     xp = array_namespace(x, p)
-    x = xp_atleast_nd(x, ndim=1, xp=xp)
+    x = xpx.atleast_nd(x, ndim=1, xp=xp)
     if xp.isdtype(x.dtype, 'integral'):
         x = xp.astype(x, xp.asarray(1.).dtype)
     p = xp.asarray(p, dtype=x.dtype)

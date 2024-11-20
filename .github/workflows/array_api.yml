@@ -57,12 +57,12 @@ jobs:
           - maintenance-branch: true
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'  # not using a path to also cache pytorch
@@ -94,7 +94,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+      uses:  actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}

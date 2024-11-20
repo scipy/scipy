@@ -63,6 +63,7 @@ Continuous distributions
    cosine            -- Cosine
    crystalball       -- Crystalball
    dgamma            -- Double Gamma
+   dpareto_lognorm   -- Double Pareto Lognormal
    dweibull          -- Double Weibull
    erlang            -- Erlang
    expon             -- Exponential
