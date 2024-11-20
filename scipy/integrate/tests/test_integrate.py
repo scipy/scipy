@@ -92,6 +92,7 @@ class TestOde(TestODEClass):
 
     ode_class = ode
 
+    @pytest.mark.thread_unsafe
     def test_vode(self):
         # Check the vode solver
         for problem_cls in PROBLEMS:
@@ -102,6 +103,7 @@ class TestOde(TestODEClass):
                 self._do_problem(problem, 'vode', 'adams')
             self._do_problem(problem, 'vode', 'bdf')
 
+    @pytest.mark.thread_unsafe
     def test_zvode(self):
         # Check the zvode solver
         for problem_cls in PROBLEMS:
@@ -110,6 +112,7 @@ class TestOde(TestODEClass):
                 self._do_problem(problem, 'zvode', 'adams')
             self._do_problem(problem, 'zvode', 'bdf')
 
+    @pytest.mark.thread_unsafe
     def test_lsoda(self, num_parallel_threads):
         # Check the lsoda solver
         if num_parallel_threads > 1:
@@ -203,6 +206,7 @@ class TestComplexOde(TestODEClass):
 
     ode_class = complex_ode
 
+    @pytest.mark.thread_unsafe
     def test_vode(self):
         # Check the vode solver
         for problem_cls in PROBLEMS:
@@ -212,6 +216,7 @@ class TestComplexOde(TestODEClass):
             else:
                 self._do_problem(problem, 'vode', 'bdf')
 
+    @pytest.mark.thread_unsafe
     def test_lsoda(self, num_parallel_threads):
         if num_parallel_threads > 1:
             pytest.skip(reason='LSODA does not allow for concurrent execution')
