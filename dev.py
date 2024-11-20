@@ -817,7 +817,7 @@ class Test(Task):
                                           scipy_code_for_checking_compiler.format(lang="'fortran'")],
                                           capture_output=True, encoding='utf-8').stdout.strip()
                 if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
-                    print("SciPy was built with --gcov flag which required LCOV while running tests")
+                    print("SciPy was built with --gcov flag which requires LCOV while running tests")
                     print("Further, LCOV usage requires GCC for C, C++ and Fortran codes in SciPy")
                     print(f"Compilers used currently are C: {c}, C++: {cpp}, Fortran: {fortran}")
                     print("Therefore, exiting without running tests")
