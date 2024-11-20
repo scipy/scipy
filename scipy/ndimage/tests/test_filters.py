@@ -2032,8 +2032,9 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     def test_rank18(self, xp):
+        # module 'array_api_strict' has no attribute 'float16'
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
-                         'float16', 'uint8', 'uint16', 'uint32', 'uint64']
+                         'uint8', 'uint16', 'uint32', 'uint64']
         for dtype_str in tested_dtypes:
             dtype = getattr(xp, dtype_str)
             x = xp.asarray([3, 2, 5, 1, 4], dtype=dtype)
@@ -2041,7 +2042,7 @@ class TestNdimageFilters:
             assert y.dtype == x.dtype
 
     def test_rank19(self, xp):
-        # np.float16 is not supported
+        # module 'array_api_strict' has no attribute 'float16'
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
                          'uint8', 'uint16', 'uint32', 'uint64']
         for dtype_str in tested_dtypes:
