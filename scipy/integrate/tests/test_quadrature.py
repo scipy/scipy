@@ -309,14 +309,6 @@ class TestTrapezoid:
         r = trapezoid(q, x=z[None, None,:], axis=2)
         xp_assert_close(r, qz)
 
-        # n-d `x` but not the same as `y`
-        r = trapezoid(q, x=xp.reshape(x[:, None, None], (3, 1)), axis=0)
-        xp_assert_close(r, qx)
-        r = trapezoid(q, x=xp.reshape(y[None,:, None], (8, 1)), axis=1)
-        xp_assert_close(r, qy)
-        r = trapezoid(q, x=xp.reshape(z[None, None,:], (13, 1)), axis=2)
-        xp_assert_close(r, qz)
-
         # 1-d `x`
         r = trapezoid(q, x=x, axis=0)
         xp_assert_close(r, qx)
@@ -324,6 +316,33 @@ class TestTrapezoid:
         xp_assert_close(r, qy)
         r = trapezoid(q, x=z, axis=2)
         xp_assert_close(r, qz)
+
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_gh21908(self, xp):
+        # extended testing for n-dim arrays
+        x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
+        y = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
+
+        out0 = xp.linspace(200, 380, 10)
+        xp_assert_close(trapezoid(y, x=x, axis=0), out0)
+        xp_assert_close(trapezoid(y, x=xp.asarray([0, 10., 20.]), axis=0), out0)
+        # x needs to be broadcastable against y
+        xp_assert_close(
+            trapezoid(y, x=xp.asarray([0, 10., 20.])[:, None], axis=0),
+            out0
+        )
+        with pytest.raises(Exception):
+            # x is not broadcastable against y
+            trapezoid(y, x=xp.asarray([0, 10., 20.])[None, :], axis=0)
+
+        out1 = xp.asarray([ 40.5, 130.5, 220.5])
+        xp_assert_close(trapezoid(y, x=x, axis=1), out1)
+        xp_assert_close(
+            trapezoid(y, x=xp.linspace(0, 9, 10), axis=1),
+            out1
+        )
 
     @skip_xp_invalid_arg
     def test_masked(self, xp):
