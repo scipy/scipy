@@ -42,6 +42,8 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
+from scipy._lib.deprecation import _deprecate_positional_args
+
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -58,7 +60,7 @@ from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
-                          _batch_generator, ResamplingMethod)
+                          _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
                                _broadcast_concatenate, _broadcast_shapes,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
@@ -6200,11 +6202,15 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
+_ttest_ind_dep_msg = "Use ``method`` to perform a permutation test."
+@_deprecate_positional_args(version='1.17.0',
+                            deprecated_args={'permutations', 'random_state'},
+                            custom_message=_ttest_ind_dep_msg)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
-def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
+def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
               permutations=None, random_state=None, alternative="two-sided",
-              trim=0, *, method=None):
+              trim=0, method=None):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -6547,7 +6553,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
     else:
         t, prob = _ttest_resampling(a, b, axis, alternative, method)
-       
+
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = xp.broadcast_to(df, t.shape)
     df = df[()] if df.ndim ==0 else df
