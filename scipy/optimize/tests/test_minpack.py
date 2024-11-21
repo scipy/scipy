@@ -824,7 +824,8 @@ class TestCurveFit:
 
         elif (sigma_dim == 2):
             # The covariance matrix must be symmetric positive-semidefinite
-            sigma = np.eye(N)
+            a = rng.normal(0, 2, (N, N))
+            sigma = a @ a.T
             y += rng.multivariate_normal(np.zeros_like(x), sigma)
         else:
             assert False, "The sigma must be a scalar, 1D array or 2D array."

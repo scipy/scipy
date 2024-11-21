@@ -970,7 +970,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
                 if sigma.ndim == 1:
                     sigma = sigma[~has_nan]
                 elif sigma.ndim == 2:
-                    sigma = sigma[~has_nan, ~has_nan]
+                    sigma = sigma[~has_nan, :]
+                    sigma = sigma[:, ~has_nan]
 
     # Determine type of sigma
     if sigma is not None:
