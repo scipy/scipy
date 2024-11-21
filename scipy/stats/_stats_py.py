@@ -6253,6 +6253,11 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
         the pooled data, an exact test is performed instead (i.e. each
         distinct partition is used exactly once). See Notes for details.
 
+        .. deprecated:: 1.17.0
+            `permutations` is deprecated and will be removed in SciPy 1.7.0.
+            Use the `n_resamples` argument of `PermutationMethod`, instead,
+            and pass the instance as the `method` argument.
+
     random_state : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -6265,6 +6270,11 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
         Pseudorandom number generator state used to generate permutations
         (used only when `permutations` is not None).
+
+        .. deprecated:: 1.17.0
+            `random_state` is deprecated and will be removed in SciPy 1.7.0.
+            Use the `rng` argument of `PermutationMethod`, instead,
+            and pass the instance as the `method` argument.
 
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
@@ -6342,6 +6352,11 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
     By default, the p-value is determined by comparing the t-statistic of the
     observed data against a theoretical t-distribution.
+
+    (In the following, note that the argument `permutations` itself is
+    deprecated, but a nearly identical test may be performed by creating
+    an instance of `scipy.stats.PermutationMethod` with ``n_resamples=permutuations``
+    and passing it as the `method` argument.)
     When ``1 < permutations < binom(n, k)``, where
 
     * ``k`` is the number of observations in `a`,
@@ -6450,16 +6465,6 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     TtestResult(statistic=-1.8686598649188084,
                 pvalue=0.06434714193919686,
                 df=109.32167496550137)
-
-    When performing a permutation test, more permutations typically yields
-    more accurate results. Use a ``np.random.Generator`` to ensure
-    reproducibility:
-
-    >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
-    ...                 random_state=rng)
-    TtestResult(statistic=-2.8415950600298774,
-                pvalue=0.0052994700529947,
-                df=nan)
 
     Take these two samples, one of which has an extreme tail.
 
