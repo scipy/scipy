@@ -4,7 +4,6 @@ Module for reading and writing matlab (TM) .mat files
 # Authors: Travis Oliphant, Matthew Brett
 
 from contextlib import contextmanager
-import warnings
 
 from ._miobase import _get_matfile_version, docfiller
 from ._mio4 import MatFile4Reader, MatFile4Writer
@@ -85,15 +84,9 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 
 
 @docfiller
-def loadmat(file_name, mdict=None, appendmat=True, *, sparray=None, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, *, sparray=False, **kwargs):
     """
     Load MATLAB file.
-
-    .. deprecated:: 1.15.0
-        The default sparse return type of ``coo_matrix`` has been deprecated
-        in favour of ``coo_array``. Default will be changed in SciPy 1.17.0.
-        Use new argument ``sparray=True`` to anticipate the future, or
-        ``False`` to return ``coo_matrix`` after the deprecation.
 
     Parameters
     ----------
@@ -244,14 +237,6 @@ def loadmat(file_name, mdict=None, appendmat=True, *, sparray=None, **kwargs):
         for name, var in list(matfile_dict.items()):
             if isinstance(var, sparse.sparray):
                 matfile_dict[name] = sparse.coo_matrix(var)
-                if sparray is None:
-                    msg = ("The default sparse return type, sparse matrix has been"
-                           " deprecated in favour of sparse array."
-                           " Default will be changed in SciPy 1.17.0."
-                           " Use new argument ``sparray=True`` to anticipate"
-                           " the future, or ``False`` to silence this warning and"
-                           " return sparse matrix even after the change in default.")
-                    warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
     if mdict is not None:
         mdict.update(matfile_dict)

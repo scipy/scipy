@@ -11,7 +11,6 @@ for information about the Matrix Market format.
 """
 import io
 import os
-import warnings
 
 import numpy as np
 import scipy.sparse as SP
@@ -294,16 +293,9 @@ def _validate_symmetry(symmetry):
     return symmetry
 
 
-def mmread(source, *, sparray=None):
+def mmread(source, *, sparray=False):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
-
-    .. deprecated:: 1.15.0
-        The default sparse return type of ``coo_matrix`` has been deprecated
-        in favour of ``coo_array``. Default will be changed in SciPy 1.17.0.
-        Use new argument ``sparray=True`` to anticipate the future, or
-        ``False`` to silence the warning and return ``coo_matrix`` even
-        after the change in default.
 
     Parameters
     ----------
@@ -375,14 +367,6 @@ def mmread(source, *, sparray=None):
         if stream_to_close:
             stream_to_close.close()
         if not sparray:
-            if sparray is None:
-                msg = ("The default sparse return type, ``coo_matrix``, has"
-                       " been deprecated in favour of ``coo_array``."
-                       " Default will be changed in SciPy 1.17.0."
-                       " Use new argument ``sparray=True`` to anticipate"
-                       " the future, or ``False`` to silence the warning and"
-                       " return ``coo_matrix`` even after the change in default.")
-                warnings.warn(msg, DeprecationWarning, stacklevel=2)
             return SP.coo_matrix(triplet, shape=shape)
         return SP.coo_array(triplet, shape=shape)
 

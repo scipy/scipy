@@ -462,15 +462,8 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file, *, sparray=None):
+def hb_read(path_or_open_file, *, sparray=False):
     """Read HB-format file.
-
-    .. deprecated:: 1.15.0
-        The default return type of ``csc_matrix`` has been deprecated
-        in favour of ``csc_array``. Default will be changed in SciPy 1.17.0.
-        Use new argument ``sparray=True`` to anticipate the future, or
-        ``False`` to silence the warning and return ``csc_matrix`` even
-        after the change in default.
 
     Parameters
     ----------
@@ -520,14 +513,6 @@ def hb_read(path_or_open_file, *, sparray=None):
         with open(path_or_open_file) as f:
             data = _get_matrix(f)
     if not sparray:
-        if sparray is None:
-            msg = ("The default return type, ``csc_matrix``, has been"
-                   " deprecated in favour of ``csc_array``."
-                   " Default will be changed in SciPy 1.17.0."
-                   " Use new argument ``sparray=True`` to anticipate"
-                   " the future, or ``False`` to silence the warning and"
-                   " return ``csc_matrix`` even after the change in default.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return csc_matrix(data)
     return data
 

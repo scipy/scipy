@@ -11,7 +11,6 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 import os
-import warnings
 
 import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
@@ -82,16 +81,9 @@ def mminfo(source):
 # -----------------------------------------------------------------------------
 
 
-def mmread(source, *, sparray=None):
+def mmread(source, *, sparray=False):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
-
-    .. deprecated:: 1.15.0
-        The default sparse return type of ``coo_matrix`` has been deprecated
-        in favour of ``coo_array``. Default will be changed in SciPy 1.17.0.
-        Use new argument ``sparray=True`` to anticipate the future, or
-        ``False`` to silence the warning and return ``coo_matrix`` even
-        after the change in default.
 
     Parameters
     ----------
@@ -598,14 +590,6 @@ class MMFile:
                 stream.close()
         if not sparray and isinstance(data, coo_array):
             data = coo_matrix(data)
-            if sparray is None:
-                msg = ("The default sparse return type, ``coo_matrix``, has"
-                       " been deprecated in favour of ``coo_array``."
-                       " Default will be changed in SciPy 1.17.0."
-                       " Use new argument ``sparray=True`` to anticipate"
-                       " the future, or ``False`` to silence the warning and"
-                       " return ``coo_matrix`` even after the change in default.")
-                warnings.warn(msg, DeprecationWarning, stacklevel=3)
         return data
 
 
