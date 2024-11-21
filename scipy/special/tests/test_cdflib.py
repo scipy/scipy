@@ -593,7 +593,7 @@ class TestNctdtr:
     #     return float(result)
 
     @pytest.mark.parametrize("df, nc, x, expected", [
-        [0.98, -3.8, 0.0015, 0.9999279987514815],
+        (0.98, -3.8, 0.0015, 0.9999279987514815),
         (0.98, -3.8, 0.15, 0.9999528361700505),
         (0.98, -3.8, 1.5, 0.9999908823016942),
         (0.98, -3.8, 15, 0.9999990264591945),
@@ -660,14 +660,13 @@ class TestNctdtr:
                         reason="Bug in underlying Boost math implementation")),
         (980, 38, 15, 5.407535300713606e-105)
     ])
-    def test_nctdtr_gh19896(self, df, nc, x, expected):
+    def test_gh19896(self, df, nc, x, expected):
         # test that gh-19896 is resolved.
         # Originally this was a regression test that used the old Fortran results
         # as a reference. The Fortran results were not accurate, so the reference
         # values were recomputed with mpmath.
         result = sp.nctdtr(df, nc, x)
         assert_allclose(result, expected, rtol=1e-13, atol=1e-303)
-
 
     def test_nctdtr_gh8344(self):
         # test that gh-8344 is resolved.
@@ -685,5 +684,5 @@ class TestNctdtr:
          [1., 1., -np.inf, 0.0, 0.0]
         ]
     )
-    def test_nctdtr_accuracy(self, df, nc, x, expected, rtol):
+    def test_accuracy(self, df, nc, x, expected, rtol):
         assert_allclose(sp.nctdtr(df, nc, x), expected, rtol=rtol)
