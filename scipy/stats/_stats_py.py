@@ -6557,7 +6557,9 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     if method is None:
         t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
     else:
-        t, prob = _ttest_resampling(a, b, axis, alternative, method)
+        # nan_policy is taken care of by axis_nan_policy decorator
+        ttest_kwargs = dict(equal_var=equal_var, trim=trim)
+        t, prob = _ttest_resampling(a, b, axis, alternative, ttest_kwargs, method)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = xp.broadcast_to(df, t.shape)
@@ -6568,9 +6570,9 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
                        standard_error=denom, estimate=estimate)
 
 
-def _ttest_resampling(x, y, axis, alternative, method):
+def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method):
     def statistic(x, y, axis):
-        return ttest_ind(x, y, axis=axis).statistic
+        return ttest_ind(x, y, axis=axis, **ttest_kwargs).statistic
 
     test = (permutation_test if isinstance(method, PermutationMethod)
             else monte_carlo_test)
