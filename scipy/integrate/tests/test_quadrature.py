@@ -11,7 +11,8 @@ from scipy.integrate import (romb, newton_cotes,
                              quad, simpson, fixed_quad,
                              qmc_quad, cumulative_simpson)
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
-from scipy import stats, special
+
+from scipy import stats, special, integrate
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api_no_0d import xp_assert_close
 
@@ -308,14 +309,6 @@ class TestTrapezoid:
         r = trapezoid(q, x=z[None, None,:], axis=2)
         xp_assert_close(r, qz)
 
-        # n-d `x` but not the same as `y`
-        r = trapezoid(q, x=xp.reshape(x[:, None, None], (3, 1)), axis=0)
-        xp_assert_close(r, qx)
-        r = trapezoid(q, x=xp.reshape(y[None,:, None], (8, 1)), axis=1)
-        xp_assert_close(r, qy)
-        r = trapezoid(q, x=xp.reshape(z[None, None,:], (13, 1)), axis=2)
-        xp_assert_close(r, qz)
-
         # 1-d `x`
         r = trapezoid(q, x=x, axis=0)
         xp_assert_close(r, qx)
@@ -323,6 +316,33 @@ class TestTrapezoid:
         xp_assert_close(r, qy)
         r = trapezoid(q, x=z, axis=2)
         xp_assert_close(r, qz)
+
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_gh21908(self, xp):
+        # extended testing for n-dim arrays
+        x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
+        y = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
+
+        out0 = xp.linspace(200, 380, 10)
+        xp_assert_close(trapezoid(y, x=x, axis=0), out0)
+        xp_assert_close(trapezoid(y, x=xp.asarray([0, 10., 20.]), axis=0), out0)
+        # x needs to be broadcastable against y
+        xp_assert_close(
+            trapezoid(y, x=xp.asarray([0, 10., 20.])[:, None], axis=0),
+            out0
+        )
+        with pytest.raises(Exception):
+            # x is not broadcastable against y
+            trapezoid(y, x=xp.asarray([0, 10., 20.])[None, :], axis=0)
+
+        out1 = xp.asarray([ 40.5, 130.5, 220.5])
+        xp_assert_close(trapezoid(y, x=x, axis=1), out1)
+        xp_assert_close(
+            trapezoid(y, x=xp.linspace(0, 9, 10), axis=1),
+            out1
+        )
 
     @skip_xp_invalid_arg
     def test_masked(self, xp):
@@ -677,3 +697,32 @@ class TestCumulativeSimpson:
         np.testing.assert_allclose(
             res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
         )
+
+class TestLebedev:
+    def test_input_validation(self):
+        # only certain rules are available
+        message = "Order n=-1 not available..."
+        with pytest.raises(NotImplementedError, match=message):
+            integrate.lebedev_rule(-1)
+
+    def test_quadrature(self):
+        # Test points/weights to integrate an example function
+
+        def f(x):
+            return np.exp(x[0])
+
+        x, w = integrate.lebedev_rule(15)
+        res = w @ f(x)
+        ref = 14.7680137457653  # lebedev_rule reference [3]
+        assert_allclose(res, ref, rtol=1e-14)
+        assert_allclose(np.sum(w), 4 * np.pi)
+
+    @pytest.mark.parametrize('order', list(range(3, 32, 2)) + list(range(35, 132, 6)))
+    def test_properties(self, order):
+        x, w = integrate.lebedev_rule(order)
+        # dispersion should be maximal; no clear spherical mean
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.directional_stats(x.T, axis=0)
+            assert_allclose(res.mean_resultant_length, 0, atol=1e-15)
+        # weights should sum to 4*pi (surface area of unit sphere)
+        assert_allclose(np.sum(w), 4*np.pi)

@@ -38,6 +38,7 @@ from scipy._lib._util import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
+from . import _rank_filter_1d
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -1553,9 +1554,30 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             raise RuntimeError(
                 "A sequence of modes is not supported by non-separable rank "
                 "filters")
-        mode = _ni_support._extend_mode_to_code(mode)
-        _nd_image.rank_filter(input, rank, footprint, output, mode, cval,
-                              origins)
+        mode = _ni_support._extend_mode_to_code(mode, is_filter=True)
+        if input.ndim == 1:
+            if input.dtype in (np.int64, np.float64, np.float32):
+                x = input
+                x_out = output
+            elif input.dtype == np.float16:
+                x = input.astype('float32')
+                x_out = np.empty(x.shape, dtype='float32')
+            elif np.result_type(input, np.int64) == np.int64:
+                x = input.astype('int64')
+                x_out = np.empty(x.shape, dtype='int64')
+            elif input.dtype.kind in 'biu':
+                # cast any other boolean, integer or unsigned type to int64
+                x = input.astype('int64')
+                x_out = np.empty(x.shape, dtype='int64')
+            else:
+                raise RuntimeError('Unsupported array type')
+            cval = x.dtype.type(cval)
+            _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
+                                        origin)
+            if input.dtype not in (np.int64, np.float64, np.float32):
+                np.copyto(output, x_out, casting='unsafe')
+        else:
+            _nd_image.rank_filter(input, rank, footprint, output, mode, cval, origins)
         if temp_needed:
             temp[...] = output
             output = temp

@@ -44,12 +44,12 @@ jobs:
             python-version: '3.12'
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -85,7 +85,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+      uses:  actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have a unique cache key for each workflow run
@@ -150,7 +150,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
@@ -209,7 +209,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
       - name: Configuring Test Environment
@@ -239,12 +239,12 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: "3.10"
 
@@ -297,12 +297,12 @@ jobs:
         python-version: ['3.10', '3.11']
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -312,7 +312,7 @@ jobs:
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
 
     - name: Caching Python dependencies
-      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
       id: cache
       with:
         path: ~/.cache/pip
@@ -336,7 +336,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+      uses:  actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -375,7 +375,7 @@ jobs:
     # entries. Unfortunately at this time options: does not seem to listen to
     # --platform linux/i386.
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
@@ -415,7 +415,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
@@ -455,12 +455,12 @@ jobs:
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
         fetch-tags: true
     # TODO: replace with setup-python when there is support
-    - uses: Quansight-Labs/setup-python@b9ab292c751a42bcd2bb465b7fa202ea2c3f5796  # v5.3.1
+    - uses: Quansight-Labs/setup-python@b9ab292c751a42bcd2bb465b7fa202ea2c3f5796 # v5.3.1
       with:
         python-version: '3.13t'
 
@@ -505,12 +505,12 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: "3.12"
 

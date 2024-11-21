@@ -1702,20 +1702,6 @@ class LinprogCommonTests:
                           method=self.method, options=o)
         assert_allclose(res.fun, -8589934560)
 
-    def test_bug_20584(self):
-        """
-        Test that when integrality is a list of all zeros, linprog gives the
-        same result as when it is an array of all zeros / integrality=None
-        """
-        c = [1, 1]
-        A_ub = [[-1, 0]]
-        b_ub = [-2.5]
-        res1 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=[0, 0])
-        res2 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=np.asarray([0, 0]))
-        res3 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=None)
-        assert_equal(res1.x, res2.x)
-        assert_equal(res1.x, res3.x)
-
 
 #########################
 # Method-specific Tests #
@@ -1876,6 +1862,74 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # http://www.personal.psu.edu/cxg286/LPKKT.pdf modified for
         # non-zero RHS
         assert np.allclose(res.ineqlin.marginals @ (b_ub - A_ub @ res.x), 0)
+
+    @pytest.mark.xfail(reason='Upstream / Wrapper issue, see gh-20589')
+    def test_bug_20336(self):
+        """
+        Test that `linprog` now solves a poorly-scaled problem
+        """
+        boundaries = [(10000.0, 9010000.0), (0.0, None), (10000.0, None),
+                     (0.0, 84.62623413258109), (10000.0, None), (10000.0, None),
+                     (10000.0, None), (10000.0, None), (10000.0, None),
+                     (10000.0, None), (10000.0, None), (10000.0, None),
+                     (10000.0, None), (None, None), (None, None), (None, None),
+                     (None, None), (None, None), (None, None), (None, None),
+                     (None, None), (None, None), (None, None), (None, None),
+                     (None, None), (None, None), (None, None), (None, None),
+                     (None, None), (None, None), (None, None), (None, None),
+                     (None, None)]
+        eq_entries = [-1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0,
+                      -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, 1.0, 1.0, -1.0, 0.001,
+                      -0.001, 3.7337777768059636e-10, 3.7337777768059636e-10, 1.0, -1.0,
+                      0.001, -0.001, 3.7337777768059636e-10, 3.7337777768059636e-10,
+                      1.0, -1.0, 0.001, -0.001, 3.7337777768059636e-10,
+                      3.7337777768059636e-10, 1.0, -1.0, 0.001, -0.001,
+                      3.7337777768059636e-10, 3.7337777768059636e-10, 1.0, -1.0, 0.001,
+                      -0.001, 3.7337777768059636e-10, 3.7337777768059636e-10, 1.0, -1.0,
+                      0.001, -0.001, 3.7337777768059636e-10, 3.7337777768059636e-10,
+                      1.0, -1.0, 0.001, -0.001, 3.7337777768059636e-10,
+                      3.7337777768059636e-10, 1.0,  -1.0, 0.001, -0.001,
+                      3.7337777768059636e-10, 3.7337777768059636e-10, 1.0, -1.0, 0.001,
+                      -0.001, 3.7337777768059636e-10,  3.7337777768059636e-10, 1.0,
+                      -1.0, 0.001, -0.001, 3.7337777768059636e-10,
+                      3.7337777768059636e-10, 1.0, -1.0]
+        eq_indizes = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10,
+                      11, 11, 12, 12, 12, 12, 13, 13, 14, 14, 14, 14, 15, 15, 16, 16,
+                      16, 16, 17, 17, 18, 18, 18, 18, 19, 19, 20, 20, 20, 20, 21, 21,
+                      22, 22, 22, 22, 23, 23, 24, 24, 24, 24, 25, 25, 26, 26, 26, 26,
+                      27, 27, 28, 28, 28, 28, 29, 29, 30, 30, 30, 30, 31, 31]
+        eq_vars = [15, 14, 17, 16, 19, 18, 21, 20, 23, 22, 25, 24, 27, 26, 29, 28, 31,
+                   30, 13, 1, 0, 32, 3, 14, 13, 4, 0, 4, 0, 32, 31, 2, 12, 2, 12, 16,
+                   15, 5, 4, 5, 4, 18, 17, 6, 5, 6, 5, 20, 19, 7, 6, 7, 6, 22, 21, 8,
+                   7, 8, 7, 24, 23, 9, 8, 9, 8, 26, 25, 10, 9, 10, 9, 28, 27, 11, 10,
+                   11, 10, 30, 29, 12, 11, 12, 11]
+        eq_values = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9000000.0, 0.0,
+                     0.006587392118285457, -5032.197406716549, 0.0041860502789104696,
+                     -7918.93439542944, 0.0063205763583549035, -5244.625751707402,
+                     0.006053760598424349, -5475.7793929428, 0.005786944838493795,
+                     -5728.248403917573, 0.0055201290785632405, -6005.123623538355,
+                     0.005253313318632687, -6310.123825488683, 0.004986497558702133,
+                     -6647.763714796453, 0.004719681798771578, -7023.578908071522,
+                     0.004452866038841024, -7444.431798646482]
+        coefficients = [0.0, 0.0, 0.0, -0.011816666666666668, 0.0, 0.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        np_eq_entries = np.asarray(eq_entries, dtype=np.float64)
+        np_eq_indizes = np.asarray(eq_indizes, dtype=np.int32)
+        np_eq_vars = np.asarray(eq_vars, dtype=np.int32)
+
+        a_eq=  scipy.sparse.csr_array((np_eq_entries,(np_eq_indizes, np_eq_vars)),
+                                      shape=(32, 33))
+        b_eq = np.asarray(eq_values, dtype=np.float64)
+        c = np.asarray(coefficients, dtype=np.float64)
+
+        result = scipy.optimize.linprog(c, A_ub=None, b_ub=None, A_eq=a_eq, b_eq=b_eq,
+                                        bounds=boundaries)
+        assert result.status==0
+        x = result.x
+        n_r_x = np.linalg.norm(a_eq @ x - b_eq)
+        n_r = np.linalg.norm(result.eqlin.residual)
+        assert_allclose(n_r, n_r_x)
 
 
 ################################
@@ -2422,6 +2476,20 @@ class TestLinprogHiGHSMIP:
 
         np.testing.assert_allclose(res.x, [0, 0, 1.5, 1])
         assert res.status == 0
+
+    def test_bug_20584(self):
+        """
+        Test that when integrality is a list of all zeros, linprog gives the
+        same result as when it is an array of all zeros / integrality=None
+        """
+        c = [1, 1]
+        A_ub = [[-1, 0]]
+        b_ub = [-2.5]
+        res1 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=[0, 0])
+        res2 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=np.asarray([0, 0]))
+        res3 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=None)
+        assert_equal(res1.x, res2.x)
+        assert_equal(res1.x, res3.x)
 
 
 ###########################
