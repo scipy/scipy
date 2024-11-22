@@ -1101,15 +1101,6 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     Returns a sparse array with the given shape and density
     where values are generated uniformly randomly in the range [0, 1).
 
-    .. warning::
-
-        Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
-        ``np.random.default_rng``) for ``rng`` will lead to much
-        faster execution times.
-
-        A much slower implementation is used by default for backwards
-        compatibility.
-
     Parameters
     ----------
     shape : int or tuple of ints
@@ -1249,15 +1240,6 @@ def random(m, n, density=0.01, format='coo', dtype=None,
            rng=None, data_rvs=None):
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
-
-    .. warning::
-
-        Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
-        ``np.random.default_rng``) for ``rng`` will lead to much
-        faster execution times.
-
-        A much slower implementation is used by default for backwards
-        compatibility.
 
     .. warning::
 
