@@ -1553,7 +1553,7 @@ class _TestCommon:
             check(dtype)
 
     def test_add_broadcasting(self):
-        if self.datsp.format == "dok":
+        if self.datsp.format in ("dok", "dia", "bsr"):
             return
 
         def check(dtype):
@@ -1566,16 +1566,11 @@ class _TestCommon:
             acol = a[:, [0]]
             arow = a[[0], :]
             bcol = self.spcreator(acol)
-#            print(f"{acol=} {bcol.toarray()=}")
             brow = self.spcreator(arow)
 
-#            print(f"{b=}")
-#            print(f"{bcol=}")
-#            print(f"{bcol.indptr=} {bcol.indices=} {bcol.data=}")
-#            print(f"{b.toarray()=} {bcol.toarray()=} {b.data=} {bcol.data=}")
             c = b + bcol
             assert_array_equal(c.toarray(), b.toarray() + bcol.toarray())
-            return 
+
             # test broadcasting dense
             c = b + a[0]
             assert_array_equal(c, b.toarray() + a[0])
@@ -1741,7 +1736,6 @@ class _TestCommon:
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue
-                print(f"{i.toarray()=} {j.toarray()=} {i.multiply(j).toarray()=}")
                 sp_mult = i.multiply(j)
                 assert_almost_equal(sp_mult.toarray(), dense_mult)
 
@@ -2283,11 +2277,12 @@ class _TestCommon:
         assert_array_equal(dsp.__add__(dsp).toarray(), d.__add__(d))
 
         # bad addition
-        print(f"{a.shape=} {d.shape=} {np.broadcast_shapes(a.shape, d.shape)=}")
-        assert_array_equal(asp.__add__(dsp).toarray(), a.__add__(d))
-        assert_array_equal(bsp.__add__(asp).toarray(), b.__add__(a))
-#        assert_raises(ValueError, asp.__add__, dsp)
-#        assert_raises(ValueError, bsp.__add__, asp)
+        if asp.format in ("csc", "csr", "coo", "lil"):
+            assert_array_equal(asp.__add__(dsp).toarray(), a.__add__(d))
+            assert_array_equal(bsp.__add__(asp).toarray(), b.__add__(a))
+        elif asp.format in ("dok", "dia", "bsr"):
+            assert_raises(ValueError, asp.__add__, dsp)
+            assert_raises(ValueError, bsp.__add__, asp)
 
     def test_size_zero_conversions(self):
         mat = array([])
@@ -4565,10 +4560,6 @@ class TestCSR(_CompressedMixin, sparse_test_class()):
         assert_equal(d.indptr.dtype, np.int64)
         assert_equal(e.indptr.dtype, np.int32)
         assert_equal(f.indptr.dtype, np.int64)
-
-        for x in [a, b, c, d, e, f]:
-            assert x.format == "csr"
-            print(f"{x.shape=} {x.indptr=} {x.indices=} {x.data=}", flush=True)
 
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:

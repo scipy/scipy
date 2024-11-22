@@ -551,12 +551,12 @@ def test_add_sparse_with_inf():
 @pytest.mark.parametrize(('a_shape', 'b_shape'), [((7,), (12,)),
                                                   ((6,4), (6,5)),
                                                   ((5,9,3,2), (9,5,2,3)),])
-def test_nd_add_sparse_with_inconsistent_shapes(a_shape, b_shape):
+def test_nd_add_sparse_with_bad_shapes(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
 
     arr_a = random_array((a_shape), density=0.6, rng=rng, dtype=int)
     arr_b = random_array((b_shape), density=0.6, rng=rng, dtype=int)
-    with pytest.raises(ValueError, match="inconsistent shapes"):
+    with pytest.raises(ValueError, match="Incompatible shapes|shape mismatch"):
         arr_a + arr_b
 
 

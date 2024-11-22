@@ -745,6 +745,10 @@ class _spbase(SparseABC):
             raise NotImplementedError('adding a nonzero scalar to a '
                                       'sparse array is not supported')
         elif issparse(other):
+            if self.format in ("dia", "dok", "bsr") and other.shape != self.shape:
+                msg = f"inconsistent shapes, no broadcasting for {self.format}"
+                raise ValueError(msg)
+
             return self._add_sparse(other)
         elif isdense(other):
             other = np.broadcast_to(other, self.shape)

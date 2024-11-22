@@ -267,7 +267,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if issparse(other):
             if self.shape == other.shape:
                 other = self.__class__(other)
-                print(f"sparse: {other.toarray()=}")
                 return self._binopt(other, '_elmul_')
             # Single element.
             if other.shape == (1, 1):
@@ -1215,11 +1214,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=maxnnz)
-        print()
-        print(f"Inside add: just about to call csr_plus_csr")
-        print(f"{M=} {N=} {maxnnz=}")
-        print(f"{self.indptr=} {self.indices=} {self.data=}")
-        print(f"{other.indptr=} {other.indices=} {other.data=}")
         indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(maxnnz, dtype=idx_dtype)
 
@@ -1238,11 +1232,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            other.data,
            indptr, indices, data)
 
-        print(f"About to create A: {indptr=} {indices=} {data=}", flush=True)
         A = self.__class__((data, indices, indptr), shape=new_shape)
-        print(f"Finished making A: {indptr=} {indices=} {data=}", flush=True)
         A.prune()
-        #assert False
 
         return A
 
