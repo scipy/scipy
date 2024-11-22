@@ -8,7 +8,7 @@ This package implements various spatial transformations. For now,
 rotations and translation are individually supported.
 
 Rotations and translation in 3 dimensions
--------------------------
+-----------------------------------------
 .. autosummary::
    :toctree: generated/
 
