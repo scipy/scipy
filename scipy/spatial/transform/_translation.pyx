@@ -3,6 +3,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Union, Sequence
 import numpy as np
+cimport numpy as np
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -39,6 +40,7 @@ cdef class Translation:
     random(random_state: Union[_IntegerType, np.random.Generator, np.random.RandomState, None] = None) -> Translation
         Returns a random translation.
     """
+    cdef np.ndarray _vector
 
     def __init__(self, vector: npt.ArrayLike, bint copy=True) -> None:
         """
