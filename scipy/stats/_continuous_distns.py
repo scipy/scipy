@@ -8102,8 +8102,7 @@ class nct_gen(rv_continuous):
         return scu._nct_pdf(x, df, nc)
 
     def _cdf(self, x, df, nc):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(scu._nct_cdf(x, df, nc), 0, 1)
+        return sc.nctdtr(df, nc, x)
 
     def _ppf(self, q, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
