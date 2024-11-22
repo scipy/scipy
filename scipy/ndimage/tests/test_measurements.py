@@ -164,7 +164,7 @@ def test_label02(xp):
     assert n == 0
 
 
-@pytest.mark.thread_unsafe  # due to Cython fused types, see cython#xxxx
+@pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
 def test_label03(xp):
     data = xp.ones([1])
     out, n = ndimage.label(data)
