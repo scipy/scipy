@@ -766,7 +766,6 @@ def test_to_writeable():
                  np.array([(2,)], dtype=[('f', '|O8')]))
 
 
-@pytest.mark.thread_unsafe
 def test_recarray():
     # check roundtrip of structured array
     dt = [('f1', 'f8'),
@@ -794,7 +793,6 @@ def test_recarray():
     assert_equal(a21['f2'], 'not perl')
 
 
-@pytest.mark.thread_unsafe
 def test_save_object():
     class C:
         pass

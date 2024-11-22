@@ -144,14 +144,14 @@ class QAPCommonTests:
         seed_cost = np.array([4, 8, 10])
         seed = np.asarray([seed_cost, opt_perm[seed_cost]]).T
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={'partial_match': seed})
+                                   options={'partial_match': seed, "rng": rng})
         assert_(11156 <= res.fun < 21000)
         assert_equal(res.col_ind[seed_cost], opt_perm[seed_cost])
 
         # check performance when partial match is the global optimum
         seed = np.asarray([np.arange(len(A)), opt_perm]).T
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={'partial_match': seed})
+                                   options={'partial_match': seed, "rng": rng})
         assert_equal(res.col_ind, seed[:, 1].T)
         assert_equal(res.fun, 11156)
         assert_equal(res.nit, 0)
@@ -266,7 +266,6 @@ class TestFAQ(QAPCommonTests):
 class Test2opt(QAPCommonTests):
     method = "2opt"
 
-    @pytest.mark.thread_unsafe
     def test_deterministic(self):
         n = 20
         rng = default_rng(51982908)

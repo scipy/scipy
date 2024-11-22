@@ -228,7 +228,7 @@ class _TestDCTBase:
 
 
 class _TestDCTIBase(_TestDCTBase):
-    def test_definition_ortho(self, dct_lock):
+    def test_definition_ortho(self):
         # Test orthornomal mode.
         dt = np.result_type(np.float32, self.rdt)
         for xr in X:

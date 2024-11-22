@@ -4179,7 +4179,7 @@ class TestIIRFilter:
         assert_array_almost_equal(sos, sos2)
 
     def test_wn1_ge_wn0(self):
-        # gh-15773: should | error if Wn[0] >= Wn[1]
+        # gh-15773: should raise error if Wn[0] >= Wn[1]
         with pytest.raises(ValueError,
                            match=r"Wn\[0\] must be less than Wn\[1\]"):
             iirfilter(2, [0.5, 0.5])

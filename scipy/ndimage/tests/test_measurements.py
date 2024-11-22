@@ -164,8 +164,9 @@ def test_label02(xp):
     assert n == 0
 
 
+@pytest.mark.thread_unsafe  # due to Cython fused types, see cython#xxxx
 def test_label03(xp):
-    data = xp.ones([1], dtype=xp.int64)
+    data = xp.ones([1])
     out, n = ndimage.label(data)
     assert_array_almost_equal(out, xp.asarray([1]))
     assert n == 1

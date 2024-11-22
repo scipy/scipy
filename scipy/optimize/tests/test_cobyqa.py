@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import threading
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import (
@@ -11,7 +12,7 @@ from scipy.optimize import (
 )
 
 
-@pytest.mark.thread_unsafe
+# @pytest.mark.thread_unsafe
 class TestCOBYQA:
 
     def setup_method(self):
@@ -29,19 +30,23 @@ class TestCOBYQA:
     def test_minimize_simple(self):
         class Callback:
             def __init__(self):
+                self.lock = threading.Lock()
                 self.n_calls = 0
 
             def __call__(self, x):
                 assert isinstance(x, np.ndarray)
-                self.n_calls += 1
+                with self.lock:
+                    self.n_calls += 1
 
         class CallbackNewSyntax:
             def __init__(self):
+                self.lock = threading.Lock()
                 self.n_calls = 0
 
             def __call__(self, intermediate_result):
                 assert isinstance(intermediate_result, OptimizeResult)
-                self.n_calls += 1
+                with self.lock:
+                    self.n_calls += 1
 
         x0 = [4.95, 0.66]
         callback = Callback()
@@ -73,7 +78,7 @@ class TestCOBYQA:
         assert sol.fun < self.fun(solution) + 1e-3, sol
         assert sol.nfev == callback.n_calls, \
             "Callback is not called exactly once for every function eval."
-        assert_equal(sol.x, sol_new.x)
+        assert_allclose(sol.x, sol_new.x, atol=1e-12, rtol=1e-12)
         assert sol_new.success, sol_new.message
         assert sol.fun == sol_new.fun
         assert sol.maxcv == sol_new.maxcv

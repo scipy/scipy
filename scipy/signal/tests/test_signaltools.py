@@ -1270,7 +1270,7 @@ class TestResample:
         y = signal.resample(x, ny)
         assert_allclose(y, [1] * ny)
 
-    @pytest.mark.thread_unsafe
+    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#xxxx
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_mutable_window(self, padtype):
         # Test that a mutable window is not modified

@@ -78,16 +78,11 @@ class TestUnivariateSpline:
         spl = UnivariateSpline(x, y, k=3)
         assert_almost_equal(spl.roots()[0], 1.050290639101332)
 
-    @pytest.fixture
-    def univariate_lock(self):
-        return Lock()
-
-    def test_roots_length(self, univariate_lock): # for gh18335
+    def test_roots_length(self): # for gh18335
         x = np.linspace(0, 50 * np.pi, 1000)
         y = np.cos(x)
         spl = UnivariateSpline(x, y, s=0)
-        with univariate_lock:
-            assert len(spl.roots()) == 50
+        assert len(spl.roots()) == 50
 
     def test_derivatives(self):
         x = [1, 3, 5, 7, 9]

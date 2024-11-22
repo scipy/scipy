@@ -471,7 +471,7 @@ class TestTrustRegionConstr:
     @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
                                       BFGS(exception_strategy='damp_update'),
                                       BFGS(exception_strategy='skip_update')))
-    def test_list_of_problems(self, prob, grad, hess, num_parallel_threads):
+    def test_list_of_problems(self, prob, grad, hess):
         grad = prob.grad if grad == "prob.grad" else grad
         hess = prob.hess if hess == "prob.hess" else hess
         # Remove exceptions

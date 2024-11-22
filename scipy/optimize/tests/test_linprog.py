@@ -1960,7 +1960,7 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
         pytest.skip("Simplex fails on this problem.")
 
     @pytest.mark.thread_unsafe
-    def test_bug_8174_low_tol(self, num_parallel_threads):
+    def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate warning is issued.
         self.options.update({'tol': 1e-12})

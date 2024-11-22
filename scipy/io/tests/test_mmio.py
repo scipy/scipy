@@ -42,10 +42,6 @@ class TestMMIOArray:
     def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
-    @pytest.fixture
-    def lock(self):
-        return threading.Lock()
-
     def check(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)

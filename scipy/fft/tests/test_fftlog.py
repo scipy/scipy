@@ -111,13 +111,10 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     xp_assert_close(a_, a, rtol=1.5e-7)
 
 
-@pytest.fixture
-def fht_lock():
-    return threading.Lock()
 
 
 @pytest.mark.thread_unsafe
-def test_fht_special_cases(xp, fht_lock):
+def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
 
     a = xp.asarray(rng.standard_normal(64))

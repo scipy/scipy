@@ -119,7 +119,6 @@ class TestBSplines:
                             np.asarray([0.15418033, 0.6909883, 0.15418033])
         )
 
-    @pytest.mark.thread_unsafe
     def test_cspline1d(self):
         np.random.seed(12462)
         xp_assert_equal(bsp.cspline1d(np.asarray([0])), [0.])

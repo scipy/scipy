@@ -430,8 +430,8 @@ class TestFftnSingle:
 
     @pytest.mark.parametrize('size', SMALL_COMPOSITE_SIZES + SMALL_PRIME_SIZES)
     def test_size_accuracy_small(self, size):
-        rand = np.random.default_rng(1234)
-        x = rand.random((size, size)) + 1j*rand.random((size, size))
+        rng = np.random.default_rng(1234)
+        x = rng.random((size, size)) + 1j*rng.random((size, size))
         y1 = fftn(x.real.astype(np.float32))
         y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
 
@@ -459,8 +459,8 @@ class TestFftnSingle:
 
     @pytest.mark.parametrize('size', SMALL_COMPOSITE_SIZES + SMALL_PRIME_SIZES)
     def test_float16_input_small(self, size):
-        rand = np.random.default_rng(1234)
-        x = rand.random((size, size)) + 1j * rand.random((size, size))
+        rng = np.random.default_rng(1234)
+        x = rng.random((size, size)) + 1j * rng.random((size, size))
         y1 = fftn(x.real.astype(np.float16))
         y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
 
@@ -469,8 +469,8 @@ class TestFftnSingle:
 
     @pytest.mark.parametrize('size', LARGE_COMPOSITE_SIZES + LARGE_PRIME_SIZES)
     def test_float16_input_large(self, size):
-        rand = np.random.default_rng(1234)
-        x = rand.random((size, 3)) + 1j*rand.random((size, 3))
+        rng = np.random.default_rng(1234)
+        x = rng.random((size, 3)) + 1j*rng.random((size, 3))
         y1 = fftn(x.real.astype(np.float16))
         y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
 
