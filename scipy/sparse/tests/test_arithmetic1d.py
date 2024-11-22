@@ -315,7 +315,7 @@ class TestArithmetic1D:
 
         asp = spcreator(a)
         dsp = spcreator(d)
-        # bad shape for addition
+        # addition
         assert_equal(asp + dsp, a + d)
 
         # matrix product.

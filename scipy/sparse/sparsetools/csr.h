@@ -704,30 +704,24 @@ void csr_binop_csr_general(const I n_row, const I n_col,
     std::vector<T> B_row(n_col, 0);
 
     I nnz = 0;
-    I j=0;
     Cp[0] = 0;
 
-//    printf("Inside Binopt: Bx[0]=%i Bx[1]=%i\n", int(Bx[0]), int(Bx[1]));
-//    printf("             : Bp[0]=%i Bp[1]=%i, Bp[2]=%i\n", int(Bp[0]), int(Bp[1]), int(Bp[2]));
-//    printf("Inside Binopt: n_row=%i n_Arow=%i n_Brow=%i\n", int(n_row), int(n_Arow), int(n_Brow));
-//    printf("             : n_col=%i n_Acol=%i n_Bcol=%i\n", int(n_col), int(n_Acol), int(n_Bcol));
     for(I i = 0; i < n_row; i++){
         I head   = -2;
         I length =  0;
-        I Ap_i = (n_Arow == 1) ? 0 : i;
 
         //add a row of A to A_row
+        I Ap_i = (n_Arow == 1) ? 0 : i;
         I i_start = Ap[Ap_i];
         I i_end   = Ap[Ap_i+1];
         if (n_Acol == 1){
             // if i_start == i_end, skip this A row
-//            printf(" if i_start == i_end, skip this A row. %ld == %ld\n", long(i_start), long(i_end));
             if (i_end > i_start){
                 T result = 0;
                 for (I j = i_start; j< i_end; j++){
                     result += Ax[j];
                 }
-                for (j = 0; j < n_col; j++){
+                for (I j = 0; j < n_col; j++){
                     A_row[j] = result;
 
                     if(next[j] == -1){
@@ -749,9 +743,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
                 length++;
             }
         }
-//        printf("Done move row of A. i=%i\n", int(i));
         }
-//        printf("A_row[0]=%i,A_row[1]=%i,A_row[2]=%i,A_row[3]=%i\n",int(A_row[0]),int(A_row[1]),int(A_row[2]),int(A_row[3]));
 
         //add a row of B to B_row
         I Bp_i = (n_Brow == 1) ? 0 : i;
@@ -759,14 +751,12 @@ void csr_binop_csr_general(const I n_row, const I n_col,
         i_end   = Bp[Bp_i+1];
         if (n_Bcol == 1){
             // is i_start == i_end, skip this B row
-//            printf("Bp_i=%i, Bp[Bp_i]=%i, i_start=%i, i_end=%i\n",int(Bp_i),int(Bp[Bp_i]),int(i_start), int(i_end));
-//            printf(" if i_start == i_end, skip this B row. %ld == %ld? Bx=%i\n", long(i_start), long(i_end), int(Bx[i_start]));
             if (i_end > i_start){
                 T result = 0;
                 for (I j = i_start; j < i_end; j++){
                     result += Bx[j];
                 }
-                for (j = 0; j < n_col; j++){
+                for (I j = 0; j < n_col; j++){
                     B_row[j] = result;
 
                     if(next[j] == -1){
@@ -789,18 +779,13 @@ void csr_binop_csr_general(const I n_row, const I n_col,
             }
         }
         }
-//        printf("Done move row of B. j=%i\n", int(j));
-//        printf("B_row[0]=%i,B_row[1]=%i,B_row[2]=%i,B_row[3]=%i\n",int(B_row[0]),int(B_row[1]),int(B_row[2]),int(B_row[3]));
-
 
         // scan through columns where A or B has
         // contributed a non-zero entry
-//        int jjj = 0;
         for(I jj = 0; jj < length; jj++){
             T result = op(A_row[head], B_row[head]);
 
             if(result != 0){
-                printf("result stored: row=%i, Cj=%i, Cx=%i\n", int(i),int(head),int(result)); 
                 Cj[nnz] = head;
                 Cx[nnz] = result;
                 nnz++;
@@ -812,14 +797,9 @@ void csr_binop_csr_general(const I n_row, const I n_col,
             next[temp]  = -1;
             A_row[temp] =  0;
             B_row[temp] =  0;
-//            printf("jjj=%i; \n",int(jjj++));
         }
 
         Cp[i + 1] = nnz;
-//        printf("A_row[0]=%i,A_row[1]=%i,A_row[2]=%i,A_row[3]=%i\n",int(A_row[0]),int(A_row[1]),int(A_row[2]),int(A_row[3]));
-//        printf("B_row[0]=%i,B_row[1]=%i,B_row[2]=%i,B_row[3]=%i\n",int(B_row[0]),int(B_row[1]),int(B_row[2]),int(B_row[3]));
-//        printf("next[0]=%i,next[1]=%i,next[2]=%i,next[3]=%i\n",int(next[0]),int(next[1]),int(next[2]),int(next[3]));
-//        printf("Done with row i=%i nnz=%i\n", int(i), int(nnz));
     }
 }
 
@@ -850,17 +830,13 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
 {
     //Method that works for canonical CSR matrices
 
-    T Xx, zero=0;
-    I Y_pos, Y_end;
-    const T* Yx;
-    const I* Yj;
     Cp[0] = 0;
     I nnz = 0;
 
     // Broadcast column?
-    // Note: cannot broadcast same axes of both A and B
     if (n_col > 1 && (n_Acol == 1 || n_Bcol == 1)){
         for(I i = 0; i < n_row; i++){
+            // Broadcast rows in these 6 lines
             I Ap_i = (n_Arow == 1) ? 0 : i;
             I Bp_i = (n_Brow == 1) ? 0 : i;
             I A_pos = Ap[Ap_i];
@@ -868,15 +844,21 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
             I A_end = Ap[Ap_i + 1];
             I B_end = Bp[Bp_i + 1];
 
+            T Xx, zero=0;
+            I Y_pos, Y_end;
+            const T* Yx;
+            const I* Yj;
+
+            // Note: cannot broadcast same axes of both A and B
             if (n_Acol == 1){
-            // Setup Broadcast A: (A,B)->(X,Y)
+                // Setup Broadcast columns of A: (A,B)->(X,Y)
                 Xx = (A_end > A_pos) ? Ax[A_pos] : zero;
                 Y_pos = B_pos;
                 Y_end = B_end;
                 Yx = Bx;
                 Yj = Bj;
             } else {
-            // Setup Broadcast B: (B,A)->(X,Y)
+                // Setup Broadcast columns of B: (B,A)->(X,Y)
                 Xx = (B_end > B_pos) ? Bx[B_pos] : zero;
                 Y_pos = A_pos;
                 Y_end = A_end;
@@ -911,6 +893,7 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
 
     // broadcast neither column:
     for(I i = 0; i < n_row; i++){
+        // Broadcast rows in these 6 lines
         I Ap_i = (n_Arow == 1) ? 0 : i;
         I Bp_i = (n_Brow == 1) ? 0 : i;
         I A_pos = Ap[Ap_i];
@@ -1026,7 +1009,6 @@ void csr_binop_csr(const I n_row,
                          T2 Cx[],
                    const binary_op& op)
 {
-    printf("A canon? %i B canon? %i\n", csr_has_canonical_format(n_row,Ap,Aj), csr_has_canonical_format(n_row,Bp,Bj));
     if (csr_has_canonical_format(n_row,Ap,Aj) && csr_has_canonical_format(n_row,Bp,Bj))
         csr_binop_csr_canonical(n_row, n_col, n_Arow, n_Acol, n_Brow, n_Bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     else
