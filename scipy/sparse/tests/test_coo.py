@@ -465,7 +465,7 @@ def test_nd_reshape(shape, new_shape):
     # reshaping a 4d sparse array
     rng = np.random.default_rng(23409823)
 
-    arr4d = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    arr4d = random_array(shape, density=0.6, rng=rng, dtype=int)
     assert arr4d.shape == shape
     den4d = arr4d.toarray()
 
@@ -480,7 +480,7 @@ def test_nd_reshape(shape, new_shape):
 def test_nd_nnz(shape):
     rng = np.random.default_rng(23409823)
 
-    arr = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    arr = random_array(shape, density=0.6, rng=rng, dtype=int)
     assert arr.nnz == np.count_nonzero(arr.toarray())
 
 
@@ -489,7 +489,7 @@ def test_nd_nnz(shape):
 def test_nd_transpose(shape):
     rng = np.random.default_rng(23409823)
 
-    arr = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    arr = random_array(shape, density=0.6, rng=rng, dtype=int)
     exp_arr = arr.toarray().T
     trans_arr = arr.transpose()
     assert trans_arr.shape == shape[::-1]
@@ -502,7 +502,7 @@ def test_nd_transpose(shape):
 def test_nd_transpose_with_axis(shape, axis_perm):
     rng = np.random.default_rng(23409823)
 
-    arr = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    arr = random_array(shape, density=0.6, rng=rng, dtype=int)
     trans_arr = arr.transpose(axes=axis_perm)
     assert_equal(trans_arr.toarray(), np.transpose(arr.toarray(), axes=axis_perm))
 
@@ -545,8 +545,8 @@ def test_nd_eliminate_zeros():
                                    (8,7,3), (7,9,3,2,4),])
 def test_nd_add_dense(shape):
     rng = np.random.default_rng(23409823)
-    sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    sp_x = random_array(shape, density=0.6, rng=rng, dtype=int)
+    sp_y = random_array(shape, density=0.6, rng=rng, dtype=int)
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x + den_y
     res = sp_x + den_y
@@ -558,8 +558,8 @@ def test_nd_add_dense(shape):
                                    (8,7,3), (7,9,3,2,4),])
 def test_nd_add_sparse(shape):
     rng = np.random.default_rng(23409823)
-    sp_x = random_array((shape), density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array((shape), density=0.6, random_state=rng, dtype=int)
+    sp_x = random_array((shape), density=0.6, rng=rng, dtype=int)
+    sp_y = random_array((shape), density=0.6, rng=rng, dtype=int)
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
 
     dense_sum = den_x + den_y
@@ -582,8 +582,8 @@ def test_add_sparse_with_inf():
 def test_nd_add_sparse_with_inconsistent_shapes(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
 
-    arr_a = random_array((a_shape), density=0.6, random_state=rng, dtype=int)
-    arr_b = random_array((b_shape), density=0.6, random_state=rng, dtype=int)
+    arr_a = random_array((a_shape), density=0.6, rng=rng, dtype=int)
+    arr_b = random_array((b_shape), density=0.6, rng=rng, dtype=int)
     with pytest.raises(ValueError, match="inconsistent shapes"):
         arr_a + arr_b
 
@@ -592,8 +592,8 @@ def test_nd_add_sparse_with_inconsistent_shapes(a_shape, b_shape):
                                    (8,7,3), (7,9,3,2,4),])
 def test_nd_sub_dense(shape):
     rng = np.random.default_rng(23409823)
-    sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    sp_x = random_array(shape, density=0.6, rng=rng, dtype=int)
+    sp_y = random_array(shape, density=0.6, rng=rng, dtype=int)
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x - den_y
     res = sp_x - den_y
@@ -606,8 +606,8 @@ def test_nd_sub_dense(shape):
 def test_nd_sub_sparse(shape):
     rng = np.random.default_rng(23409823)
 
-    sp_x = random_array(shape, density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array(shape, density=0.6, random_state=rng, dtype=int)
+    sp_x = random_array(shape, density=0.6, rng=rng, dtype=int)
+    sp_y = random_array(shape, density=0.6, rng=rng, dtype=int)
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
 
     dense_sum = den_x - den_y
@@ -630,8 +630,8 @@ def test_nd_sub_sparse_with_nan():
 def test_nd_sub_sparse_with_inconsistent_shapes(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
 
-    arr_a = random_array((a_shape), density=0.6, random_state=rng, dtype=int)
-    arr_b = random_array((b_shape), density=0.6, random_state=rng, dtype=int)
+    arr_a = random_array((a_shape), density=0.6, rng=rng, dtype=int)
+    arr_b = random_array((b_shape), density=0.6, rng=rng, dtype=int)
     with pytest.raises(ValueError, match="inconsistent shapes"):
         arr_a - arr_b
 
@@ -651,8 +651,8 @@ mat_vec_shapes = [
 def test_nd_matmul_vector(mat_shape, vec_shape):
     rng = np.random.default_rng(23409823)
 
-    sp_x = random_array(mat_shape, density=0.6, random_state=rng, dtype=int)
-    sp_y = random_array(vec_shape, density=0.6, random_state=rng, dtype=int)
+    sp_x = random_array(mat_shape, density=0.6, rng=rng, dtype=int)
+    sp_y = random_array(vec_shape, density=0.6, rng=rng, dtype=int)
     den_x, den_y = sp_x.toarray(), sp_y.toarray()
     exp = den_x @ den_y
     res = sp_x @ den_y
