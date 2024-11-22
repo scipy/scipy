@@ -18,11 +18,13 @@ Rotations in 3 dimensions
 """
 from ._rotation import Rotation, Slerp
 from ._rotation_spline import RotationSpline
+from ._translation import Translation
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import rotation
+from . import translation
 
-__all__ = ['Rotation', 'Slerp', 'RotationSpline']
+__all__ = ['Rotation', 'Slerp', 'RotationSpline', 'Translation']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
