@@ -40,8 +40,6 @@ cdef class Translation:
         Returns a random translation.
     """
 
-    cdef np.ndarray _vector
-
     def __init__(self, vector: npt.ArrayLike, bint copy=True) -> None:
         """
         Initializes the Translation object.
