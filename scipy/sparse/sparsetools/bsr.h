@@ -578,7 +578,7 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 
     if( R == 1 && C == 1 ){
         //use CSR for 1x1 blocksize
-        csr_binop_csr(n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
+        csr_binop_csr(n_brow, n_bcol, n_brow, n_bcol, n_brow, n_bcol, Ap, Aj, Ax, Bp, Bj, Bx, Cp, Cj, Cx, op);
     }
     else if ( csr_has_canonical_format(n_brow, Ap, Aj) && csr_has_canonical_format(n_brow, Bp, Bj) ){
         // prefer faster implementation
