@@ -5,9 +5,9 @@ Spatial Transformations (:mod:`scipy.spatial.transform`)
 .. currentmodule:: scipy.spatial.transform
 
 This package implements various spatial transformations. For now,
-only rotations are supported.
+rotations and translation are individually supported.
 
-Rotations in 3 dimensions
+Rotations and translation in 3 dimensions
 -------------------------
 .. autosummary::
    :toctree: generated/
@@ -15,6 +15,7 @@ Rotations in 3 dimensions
    Rotation
    Slerp
    RotationSpline
+   Translation
 """
 from ._rotation import Rotation, Slerp
 from ._rotation_spline import RotationSpline
