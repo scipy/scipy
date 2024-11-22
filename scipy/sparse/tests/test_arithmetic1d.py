@@ -316,8 +316,7 @@ class TestArithmetic1D:
         asp = spcreator(a)
         dsp = spcreator(d)
         # bad shape for addition
-        with pytest.raises(ValueError, match='inconsistent shapes'):
-            asp.__add__(dsp)
+        assert_equal(asp + dsp, a + d)
 
         # matrix product.
         assert_equal(asp.dot(asp), np.dot(a, a))
