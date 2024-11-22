@@ -12,7 +12,6 @@ from scipy.optimize import (
 )
 
 
-# @pytest.mark.thread_unsafe
 class TestCOBYQA:
 
     def setup_method(self):
@@ -78,7 +77,7 @@ class TestCOBYQA:
         assert sol.fun < self.fun(solution) + 1e-3, sol
         assert sol.nfev == callback.n_calls, \
             "Callback is not called exactly once for every function eval."
-        assert_allclose(sol.x, sol_new.x, atol=1e-12, rtol=1e-12)
+        assert_equal(sol.x, sol_new.x)
         assert sol_new.success, sol_new.message
         assert sol.fun == sol_new.fun
         assert sol.maxcv == sol_new.maxcv

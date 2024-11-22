@@ -3,7 +3,6 @@ import math
 
 import numpy as np
 import pytest
-import threading
 
 from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
