@@ -40,7 +40,7 @@ def test_threads():
         def run(self):
             b = a.copy()
             for j in range(niter):
-                _sparsetools.csr_plus_csr(n, n,
+                _sparsetools.csr_plus_csr(n, n, n, n, n, n,
                                           a.indptr, a.indices, a.data,
                                           a.indptr, a.indices, a.data,
                                           b.indptr, b.indices, b.data)
