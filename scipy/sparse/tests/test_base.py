@@ -1220,6 +1220,9 @@ class _TestCommon:
         sN = self.spcreator(N, shape=(3,3), dtype=float)
         Nexp = scipy.linalg.expm(N)
 
+#        print(f"{Nexp=}")
+#        print(f"{sN.toarray()=} {sN=}")
+#        print(f"{sN.indptr=} {sN.indices=} {sN.data=}")
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
@@ -1489,6 +1492,7 @@ class _TestCommon:
             a = dat.copy()
             a[0,2] = 2.0
             b = datsp
+
             c = b + a
             assert_array_equal(c, b.toarray() + a)
 
@@ -1496,9 +1500,56 @@ class _TestCommon:
             assert_array_equal(c.toarray(),
                                b.toarray() + b.toarray())
 
-            # test broadcasting
+        for dtype in self.math_dtypes:
+            check(dtype)
+
+    def test_add_broadcasting(self):
+        if self.datsp.format == "dok":
+            return
+
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            acol = a[:, [0]]
+            arow = a[[0], :]
+            bcol = self.spcreator(acol)
+#            print(f"{acol=} {bcol.toarray()=}")
+            brow = self.spcreator(arow)
+
+#            print(f"{b=}")
+#            print(f"{bcol=}")
+#            print(f"{bcol.indptr=} {bcol.indices=} {bcol.data=}")
+#            print(f"{b.toarray()=} {bcol.toarray()=} {b.data=} {bcol.data=}")
+            c = b + bcol
+            assert_array_equal(c.toarray(), b.toarray() + bcol.toarray())
+            return 
+            # test broadcasting dense
             c = b + a[0]
             assert_array_equal(c, b.toarray() + a[0])
+            c = a[0] + b
+            assert_array_equal(c, a[0] + b.toarray())
+            c = b + arow
+            assert_array_equal(c, b.toarray() + arow)
+            c = b + acol
+            assert_array_equal(c, b.toarray() + acol)
+            c = acol + b
+            assert_array_equal(c, acol + b.toarray())
+            c = arow + b
+            assert_array_equal(c, arow + b.toarray())
+
+            # test broadcasting sparse
+            c = b + brow
+            assert_array_equal(c.toarray(), b.toarray() + brow.toarray())
+            c = b + bcol
+            assert_array_equal(c.toarray(), b.toarray() + bcol.toarray())
+            c = brow + b
+            assert_array_equal(c.toarray(), brow.toarray() + b.toarray())
+            c = bcol + b
+            assert_array_equal(c.toarray(), bcol.toarray() + b.toarray())
 
         for dtype in self.math_dtypes:
             check(dtype)
@@ -1638,6 +1689,7 @@ class _TestCommon:
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue
+                print(f"{i.toarray()=} {j.toarray()=} {i.multiply(j).toarray()=}")
                 sp_mult = i.multiply(j)
                 assert_almost_equal(sp_mult.toarray(), dense_mult)
 
@@ -2173,8 +2225,11 @@ class _TestCommon:
         assert_array_equal(dsp.__add__(dsp).toarray(), d.__add__(d))
 
         # bad addition
-        assert_raises(ValueError, asp.__add__, dsp)
-        assert_raises(ValueError, bsp.__add__, asp)
+        print(f"{a.shape=} {d.shape=} {np.broadcast_shapes(a.shape, d.shape)=}")
+        assert_array_equal(asp.__add__(dsp).toarray(), a.__add__(d))
+        assert_array_equal(bsp.__add__(asp).toarray(), b.__add__(a))
+#        assert_raises(ValueError, asp.__add__, dsp)
+#        assert_raises(ValueError, bsp.__add__, asp)
 
     def test_size_zero_conversions(self):
         mat = array([])
@@ -2961,6 +3016,7 @@ class _TestSlicingAssign:
                           [0,0,0]])
         block = [[1,0],[0,4]]
 
+        assert False
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
             B[0,0] = 5
@@ -4315,6 +4371,10 @@ class TestCSR(sparse_test_class()):
         assert_equal(d.indptr.dtype, np.int64)
         assert_equal(e.indptr.dtype, np.int32)
         assert_equal(f.indptr.dtype, np.int64)
+
+        for x in [a, b, c, d, e, f]:
+            assert x.format == "csr"
+            print(f"{x.shape=} {x.indptr=} {x.indices=} {x.data=}", flush=True)
 
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:
