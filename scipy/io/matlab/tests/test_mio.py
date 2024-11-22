@@ -1347,3 +1347,6 @@ def test_large_m4():
              "Variable 'a' has byte length longer than largest possible")
     with pytest.raises(ValueError, match=match):
         loadmat(truncated_mat)
+
+def test_gh_19223():
+    from scipy.io.matlab import varmats_from_mat  # noqa: F401

@@ -1572,10 +1572,35 @@ const char *gamma_doc = R"(
     which, combined with the fact that :math:`\Gamma(1) = 1`, implies
     the above identity for :math:`z = n`.
 
+    The gamma function has poles at non-negative integers and the sign
+    of infinity as z approaches each pole depends upon the direction in
+    which the pole is approached. For this reason, the consistent thing
+    is for gamma(z) to return NaN at negative integers, and to return
+    -inf when x = -0.0 and +inf when x = 0.0, using the signbit of zero
+    to signify the direction in which the origin is being approached. This
+    is for instance what is recommended for the gamma function in annex F
+    entry 9.5.4 of the Iso C 99 standard [isoc99]_.
+
+    Prior to SciPy version 1.15, ``scipy.special.gamma(z)`` returned ``+inf``
+    at each pole. This was fixed in version 1.15, but with the following
+    consequence. Expressions where gamma appears in the denominator
+    such as
+
+    ``gamma(u) * gamma(v) / (gamma(w) * gamma(x))``
+
+    no longer evaluate to 0 if the numerator is well defined but there is a
+    pole in the denominator. Instead such expressions evaluate to NaN. We
+    recommend instead using the function `rgamma` for the reciprocal gamma
+    function in such cases. The above expression could for instance be written
+    as
+
+    ``gamma(u) * gamma(v) * (rgamma(w) * rgamma(x))``
+
     References
     ----------
     .. [dlmf] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/5.2#E1
+    .. [isoc99] https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 
     Examples
     --------
@@ -4762,6 +4787,42 @@ const char *mathieu_cem_doc = R"(
     --------
     mathieu_a, mathieu_b, mathieu_sem
 
+    Notes
+    -----
+    The even Mathieu functions are the solutions to Mathieu's differential equation
+
+    .. math::
+
+        \frac{d^2y}{dx^2} + (a_m - 2q \cos(2x))y = 0
+
+    for which the characteristic number :math:`a_m` (calculated with `mathieu_a`)
+    results in an odd, periodic solution :math:`y(x)` with period 180 degrees
+    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
+
+    References
+    ----------
+    .. [1] 'Mathieu function'. *Wikipedia*.
+           https://en.wikipedia.org/wiki/Mathieu_function
+
+    Examples
+    --------
+    Plot even Mathieu functions of orders ``2`` and ``4``.
+
+    >>> import numpy as np
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+    >>> m = np.asarray([2, 4])
+    >>> q = 50
+    >>> x = np.linspace(-180, 180, 300)[:, np.newaxis]
+    >>> y, _ = special.mathieu_cem(m, q, x)
+    >>> plt.plot(x, y)
+    >>> plt.xlabel('x (degrees)')
+    >>> plt.ylabel('y')
+    >>> plt.legend(('m = 2', 'm = 4'))
+
+    Because the orders ``2`` and
+    ``4`` are even, the period of each function is 180 degrees.
+
     )";
 
 const char *mathieu_modcem1_doc = R"(
@@ -4926,6 +4987,42 @@ const char *mathieu_sem_doc = R"(
     See Also
     --------
     mathieu_a, mathieu_b, mathieu_cem
+
+    Notes
+    -----
+    Odd Mathieu functions are the solutions to Mathieu's differential equation
+
+    .. math::
+
+        \frac{d^2y}{dx^2} + (b_m - 2q \cos(2x))y = 0
+
+    for which the characteristic number :math:`b_m` (calculated with `mathieu_b`)
+    results in an odd, periodic solution :math:`y(x)` with period 180 degrees
+    (for even :math:`m`) or 360 degrees (for odd :math:`m`).
+
+    References
+    ----------
+    .. [1] 'Mathieu function'. *Wikipedia*.
+           https://en.wikipedia.org/wiki/Mathieu_function
+
+    Examples
+    --------
+    Plot odd Mathieu functions of orders ``2`` and ``4``.
+
+    >>> import numpy as np
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+    >>> m = np.asarray([2, 4])
+    >>> q = 50
+    >>> x = np.linspace(-180, 180, 300)[:, np.newaxis]
+    >>> y, _ = special.mathieu_sem(m, q, x)
+    >>> plt.plot(x, y)
+    >>> plt.xlabel('x (degrees)')
+    >>> plt.ylabel('y')
+    >>> plt.legend(('m = 2', 'm = 4'))
+
+    Because the orders ``2`` and
+    ``4`` are even, the period of each function is 180 degrees.
 
     )";
 

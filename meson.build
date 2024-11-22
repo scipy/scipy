@@ -9,7 +9,6 @@ project(
     'b_ndebug=if-release',
     'c_std=c17',
     'cpp_std=c++17',
-    'fortran_std=legacy',
     'blas=openblas',
     'lapack=openblas'
   ],
@@ -80,6 +79,13 @@ endif
 # Adding at project level causes many spurious -lgfortran flags.
 add_languages('fortran', native: false)
 ff = meson.get_compiler('fortran')
+if ff.get_id() == 'gcc'
+  # -std=legacy is not supported by all Fortran compilers, but very useful with
+  # gfortran since it avoids a ton of warnings that we don't care about.
+  # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
+  add_project_arguments('-std=legacy', language: 'fortran')
+endif
+
 if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif

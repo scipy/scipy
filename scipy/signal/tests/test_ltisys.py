@@ -224,7 +224,7 @@ class TestPlacePoles:
         # should fail as ndim(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
-        #unctrollable system
+        # uncontrollable system
         assert_raises(ValueError, place_poles, np.ones((4,4)),
                       np.ones((4,2)), (1,2,3,4))
 

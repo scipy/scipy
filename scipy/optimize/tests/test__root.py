@@ -56,7 +56,7 @@ class TestRoot:
                 options={"tol_norm": norm})
 
     def test_minimize_scalar_coerce_args_param(self):
-        # github issue #3503
+        # GitHub issue #3503
         def func(z, f=1):
             x, y = z
             return np.array([x**3 - 1, y**3 - f])

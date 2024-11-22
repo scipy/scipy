@@ -300,7 +300,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
     # variables. Represents ``tau`` from [1]_ p.885, formula (3.18).
     BOUNDARY_PARAMETER = 0.995
     # BARRIER_DECAY_RATIO controls the decay of the barrier parameter
-    # and of the subproblem toloerance. Represents ``theta`` from [1]_ p.879.
+    # and of the subproblem tolerance. Represents ``theta`` from [1]_ p.879.
     BARRIER_DECAY_RATIO = 0.2
     # TRUST_ENLARGEMENT controls the enlargement on trust radius
     # after each iteration

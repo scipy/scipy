@@ -112,7 +112,8 @@ import dataclasses
 
 from collections.abc import Callable
 from functools import partial
-from scipy._lib._util import _asarray_validated
+from scipy._lib._util import _asarray_validated, _transition_to_rng
+from scipy._lib.deprecation import _deprecated
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -308,7 +309,8 @@ def _validate_weights(w, dtype=np.float64):
     return w
 
 
-def directed_hausdorff(u, v, seed=0):
+@_transition_to_rng('seed', position_num=2, replace_doc=False)
+def directed_hausdorff(u, v, rng=0):
     """
     Compute the directed Hausdorff distance between two 2-D arrays.
 
@@ -320,9 +322,35 @@ def directed_hausdorff(u, v, seed=0):
         Input array with M points in N dimensions.
     v : (O,N) array_like
         Input array with O points in N dimensions.
-    seed : int or None, optional
-        Local `numpy.random.RandomState` seed. Default is 0, a random
-        shuffling of u and v that guarantees reproducibility.
+    rng : int or `numpy.random.Generator` or None, optional
+        Pseudorandom number generator state. Default is 0 so the
+        shuffling of `u` and `v` is reproducible.
+
+        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used.
+
+        If this argument is passed by position or `seed` is passed by keyword,
+        legacy behavior for the argument `seed` applies:
+
+        - If `seed` is None, a new ``RandomState`` instance is used. The state is
+          initialized using data from ``/dev/urandom`` (or the Windows analogue)
+          if available or from the system clock otherwise.
+        - If `seed` is an int, a new ``RandomState`` instance is used,
+          seeded with `seed`.
+        - If `seed` is already a ``Generator`` or ``RandomState`` instance, then
+          that instance is used.
+
+        .. versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to `rng`.
+            For an interim period, both keywords will continue to work, although only
+            one may be specified at a time. After the interim period, function calls
+            using the `seed` keyword will emit warnings. The behavior of both `seed`
+            and `rng` are outlined above, but only the `rng` keyword should be used in
+            new code.
 
     Returns
     -------
@@ -405,7 +433,7 @@ def directed_hausdorff(u, v, seed=0):
     if u.shape[1] != v.shape[1]:
         raise ValueError('u and v need to have the same '
                          'number of columns')
-    result = _hausdorff.directed_hausdorff(u, v, seed)
+    result = _hausdorff.directed_hausdorff(u, v, rng)
     return result
 
 
@@ -890,9 +918,21 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else np.float64(0)
 
 
+_deprecated_kulczynski1 = _deprecated(
+    "The kulczynski1 metric is deprecated since SciPy 1.15.0 and will be "
+    "removed in SciPy 1.17.0.  Replace usage of 'kulczynski1(u, v)' with "
+    "'1/jaccard(u, v) - 1'."
+)
+
+
+@_deprecated_kulczynski1
 def kulczynski1(u, v, *, w=None):
     """
     Compute the Kulczynski 1 dissimilarity between two boolean 1-D arrays.
+
+    .. deprecated:: 1.15.0
+       This function is deprecated and will be removed in SciPy 1.17.0.
+       Replace usage of ``kulczynski1(u, v)`` with ``1/jaccard(u, v) - 1``.
 
     The Kulczynski 1 dissimilarity between two boolean 1-D arrays `u` and `v`
     of length ``n``, is defined as
@@ -1573,9 +1613,21 @@ def russellrao(u, v, w=None):
     return float(n - ntt) / n
 
 
+_deprecated_sokalmichener = _deprecated(
+    "The sokalmichener metric is deprecated since SciPy 1.15.0 and will be "
+    "removed in SciPy 1.17.0.  Replace usage of 'sokalmichener(u, v)' with "
+    "'rogerstanimoto(u, v)'."
+)
+
+
+@_deprecated_sokalmichener
 def sokalmichener(u, v, w=None):
     """
     Compute the Sokal-Michener dissimilarity between two boolean 1-D arrays.
+
+    .. deprecated:: 1.15.0
+       This function is deprecated and will be removed in SciPy 1.17.0.
+       Replace usage of ``sokalmichener(u, v)`` with ``rogerstanimoto(u, v)``.
 
     The Sokal-Michener dissimilarity between boolean 1-D arrays `u` and `v`,
     is defined as
@@ -1855,8 +1907,8 @@ _METRIC_INFOS = [
         aka={'kulczynski1'},
         types=['bool'],
         dist_func=kulczynski1,
-        cdist_func=_distance_pybind.cdist_kulczynski1,
-        pdist_func=_distance_pybind.pdist_kulczynski1,
+        cdist_func=_deprecated_kulczynski1(_distance_pybind.cdist_kulczynski1),
+        pdist_func=_deprecated_kulczynski1(_distance_pybind.pdist_kulczynski1),
     ),
     MetricInfo(
         canonical_name='mahalanobis',
@@ -1903,8 +1955,8 @@ _METRIC_INFOS = [
         aka={'sokalmichener'},
         types=['bool'],
         dist_func=sokalmichener,
-        cdist_func=_distance_pybind.cdist_sokalmichener,
-        pdist_func=_distance_pybind.pdist_sokalmichener,
+        cdist_func=_deprecated_sokalmichener(_distance_pybind.cdist_sokalmichener),
+        pdist_func=_deprecated_sokalmichener(_distance_pybind.pdist_sokalmichener),
     ),
     MetricInfo(
         canonical_name='sokalsneath',
@@ -2152,6 +2204,11 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the kulczynski1 distance between each pair of
         boolean vectors. (see kulczynski1 function documentation)
 
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``pdist(X, 'kulczynski1')`` with
+           ``1 / pdist(X, 'jaccard') - 1``.
+
     19. ``Y = pdist(X, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between each pair of
@@ -2166,6 +2223,11 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         Computes the Sokal-Michener distance between each pair of
         boolean vectors. (see sokalmichener function documentation)
+
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``pdist(X, 'sokalmichener')`` with
+           ``pdist(X, 'rogerstanimoto')``.
 
     22. ``Y = pdist(X, 'sokalsneath')``
 
@@ -2934,6 +2996,11 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         Computes the kulczynski distance between the boolean
         vectors. (see `kulczynski1` function documentation)
 
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``cdist(XA, XB, 'kulczynski1')`` with
+           ``1 / cdist(XA, XB, 'jaccard') - 1``.
+
     19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between the boolean
@@ -2948,6 +3015,11 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
 
         Computes the Sokal-Michener distance between the boolean
         vectors. (see `sokalmichener` function documentation)
+
+        .. deprecated:: 1.15.0
+           This metric is deprecated and will be removed in SciPy 1.17.0.
+           Replace usage of ``cdist(XA, XB, 'sokalmichener')`` with
+           ``cdist(XA, XB, 'rogerstanimoto')``.
 
     22. ``Y = cdist(XA, XB, 'sokalsneath')``
 

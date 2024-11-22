@@ -1414,6 +1414,15 @@ class TestResample:
                         x, up=1, down=down, window=weights)
                     assert_allclose(y_g[::down], y_s)
 
+    @pytest.mark.parametrize('dtype', [np.int32, np.float32])
+    def test_gh_15620(self, dtype):
+        data = np.array([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
+        actual = signal.resample_poly(data,
+                                      up=2,
+                                      down=1,
+                                      padtype='smooth')
+        assert np.count_nonzero(actual) > 0
+
 
 class TestCSpline1DEval:
 
@@ -2124,6 +2133,11 @@ def test_correlation_lags(mode, behind, input_size):
     assert_equal(lags[lag_index], expected)
     # Correlation and lags shape should match
     assert_equal(lags.shape, correlation.shape)
+
+
+def test_correlation_lags_invalid_mode():
+    with pytest.raises(ValueError, match="Mode asdfgh is invalid"):
+        correlation_lags(100, 100, mode="asdfgh")
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble,
@@ -3099,7 +3113,7 @@ class TestPartialFractionExpansion:
             residuez(1, [0, 1, 2, 3])
 
     def test_inverse_unique_roots_different_rtypes(self):
-        # This test was inspired by github issue 2496.
+        # This test was inspired by GitHub issue 2496.
         r = [3 / 10, -1 / 6, -2 / 15]
         p = [0, -2, -5]
         k = []
@@ -3564,6 +3578,13 @@ class TestSOSFilt:
         # zi as array-like
         _, zf = sosfilt(sos, np.ones(40, dt), zi=zi.tolist())
         assert_allclose_cast(zf, zi, rtol=1e-13)
+
+    def test_dtype_deprecation(self, dt):
+        # gh-21211
+        sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)
+        x = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
+            sosfilt(sos, x)
 
 
 class TestDeconvolve:

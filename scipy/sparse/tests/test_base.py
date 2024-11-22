@@ -1462,7 +1462,7 @@ class _TestCommon:
         for dtype in self.math_dtypes:
             check(dtype)
 
-    # github issue #15210
+    # GitHub issue #15210
     def test_rmul_scalar_type_error(self):
         datsp = self.datsp_dtypes[np.float64]
         with assert_raises(TypeError):
@@ -1873,7 +1873,7 @@ class _TestCommon:
         assert_array_almost_equal(a @ bsp, a @ b)
         assert_array_almost_equal(a2 @ bsp, a @ b)
 
-        # Now try performing cross-type multplication:
+        # Now try performing cross-type multiplication:
         csp = bsp.tocsc()
         c = b
         want = a @ c
@@ -2502,7 +2502,7 @@ class _TestGetSet:
             check(np.dtype(dtype))
 
     def test_negative_index_assignment(self):
-        # Regression test for github issue 4428.
+        # Regression test for GitHub issue 4428.
 
         def check(dtype):
             A = self.spcreator((3, 10), dtype=dtype)
@@ -2769,16 +2769,78 @@ class _TestSlicing:
         assert_array_equal(a[...].toarray(), b[...])
         assert_array_equal(a[...,].toarray(), b[...,])
 
-        assert_array_equal(a[1, ...].toarray(), b[1, ...])
-        assert_array_equal(a[..., 1].toarray(), b[..., 1])
+        assert_array_equal(a[4, ...].toarray(), b[4, ...])
+        assert_array_equal(a[..., 4].toarray(), b[..., 4])
+        assert_array_equal(a[..., 5].toarray(), b[..., 5])
+        with pytest.raises(IndexError, match='index .5. out of range'):
+            a[5, ...]
+        with pytest.raises(IndexError, match='index .10. out of range'):
+            a[..., 10]
+        with pytest.raises(IndexError, match='index .5. out of range'):
+            a.T[..., 5]
+
         assert_array_equal(a[1:, ...].toarray(), b[1:, ...])
         assert_array_equal(a[..., 1:].toarray(), b[..., 1:])
+        assert_array_equal(a[:2, ...].toarray(), b[:2, ...])
+        assert_array_equal(a[..., :2].toarray(), b[..., :2])
 
+        # check slice limit outside range
+        assert_array_equal(a[:5, ...].toarray(), b[:5, ...])
+        assert_array_equal(a[..., :5].toarray(), b[..., :5])
+        assert_array_equal(a[5:, ...].toarray(), b[5:, ...])
+        assert_array_equal(a[..., 5:].toarray(), b[..., 5:])
+        assert_array_equal(a[10:, ...].toarray(), b[10:, ...])
+        assert_array_equal(a[..., 10:].toarray(), b[..., 10:])
+
+        # ellipsis should be ignored
         assert_array_equal(a[1:, 1, ...].toarray(), b[1:, 1, ...])
         assert_array_equal(a[1, ..., 1:].toarray(), b[1, ..., 1:])
+        assert_array_equal(a[..., 1, 1:].toarray(), b[1, ..., 1:])
+        assert_array_equal(a[:2, 1, ...].toarray(), b[:2, 1, ...])
+        assert_array_equal(a[1, ..., :2].toarray(), b[1, ..., :2])
+        assert_array_equal(a[..., 1, :2].toarray(), b[1, ..., :2])
         # These return ints
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
+
+    def test_ellipsis_fancy_bool(self):
+        numpy_a = self.asdense(arange(50).reshape(5, 10))
+        a = self.spcreator(numpy_a)
+
+        ix5 = [True, False, True, False, True]
+        ix10 = [False] * 5 + ix5  # same number of True values as ix5
+        ix10_6True = ix5 + ix5  # not same number of True values as ix5
+        full_ix = [ix10] * 5
+
+        assert_array_equal(toarray(a[full_ix, ...]), numpy_a[full_ix, ...])
+        assert_array_equal(toarray(a[..., full_ix]), numpy_a[..., full_ix])
+
+        assert_array_equal(toarray(a[ix5, ...]), numpy_a[ix5, ...])
+        assert_array_equal(toarray(a[..., ix10]), numpy_a[..., ix10])
+
+        assert_array_equal(toarray(a[ix5, ..., ix10]), numpy_a[ix5, ..., ix10])
+        assert_array_equal(toarray(a[..., ix5, ix10]), numpy_a[..., ix5, ix10])
+        assert_array_equal(toarray(a[ix5, ix10, ...]), numpy_a[ix5, ix10, ...])
+
+        with assert_raises(ValueError, match="shape mismatch"):
+            a[ix5, ix10_6True]
+
+    def test_ellipsis_fancy_slicing(self):
+        b = self.asdense(arange(50).reshape(5, 10))
+        a = self.spcreator(b)
+
+        assert_array_equal(a[[4], ...].toarray(), b[[4], ...])
+        assert_array_equal(a[[2, 4], ...].toarray(), b[[2, 4], ...])
+        assert_array_equal(a[..., [4]].toarray(), b[..., [4]])
+        assert_array_equal(a[..., [2, 4]].toarray(), b[..., [2, 4]])
+
+        assert_array_equal(a[[4], 1, ...].toarray(), b[[4], 1, ...])
+        assert_array_equal(a[[2, 4], 1, ...].toarray(), b[[2, 4], 1, ...])
+        assert_array_equal(a[[4], ..., 1].toarray(), b[[4], ..., 1])
+        assert_array_equal(a[..., [4], 1].toarray(), b[..., [4], 1])
+        # fancy index gives dense
+        assert_array_equal(toarray(a[[2, 4], ..., [2, 4]]), b[[2, 4], ..., [2, 4]])
+        assert_array_equal(toarray(a[..., [2, 4], [2, 4]]), b[..., [2, 4], [2, 4]])
 
     def test_multiple_ellipsis_slicing(self):
         a = self.spcreator(arange(6).reshape(3, 2))
@@ -2962,9 +3024,11 @@ class _TestFancyIndexing:
         A = self.spcreator(B)
 
         # [i]
+        assert_equal(A[[3]].toarray(), B[[3]])
         assert_equal(A[[1, 3]].toarray(), B[[1, 3]])
 
         # [i,[1,2]]
+        assert_equal(A[3, [3]].toarray(), B[3, [3]])
         assert_equal(A[3, [1, 3]].toarray(), B[3, [1, 3]])
         assert_equal(A[-1, [2, -5]].toarray(), B[-1, [2, -5]])
         assert_equal(A[array(-1), [2, -5]].toarray(), B[-1, [2, -5]])
@@ -2978,6 +3042,7 @@ class _TestFancyIndexing:
         assert_equal(A[1:4, array([-1, -5])].toarray(), B[1:4, [-1, -5]])
 
         # [[1,2],j]
+        assert_equal(A[[3], 3].toarray(), B[[3], 3])
         assert_equal(A[[1, 3], 3].toarray(), B[[1, 3], 3])
         assert_equal(A[[2, -5], -4].toarray(), B[[2, -5], -4])
         assert_equal(A[array([2, -5]), -4].toarray(), B[[2, -5], -4])
@@ -2985,11 +3050,13 @@ class _TestFancyIndexing:
         assert_equal(A[array([2, -5]), array(-4)].toarray(), B[[2, -5], -4])
 
         # [[1,2],1:2]
+        assert_equal(A[[3], :].toarray(), B[[3], :])
         assert_equal(A[[1, 3], :].toarray(), B[[1, 3], :])
         assert_equal(A[[2, -5], 8:-1].toarray(), B[[2, -5], 8:-1])
         assert_equal(A[array([2, -5]), 8:-1].toarray(), B[[2, -5], 8:-1])
 
         # [[1,2],[1,2]]
+        assert_equal(toarray(A[[3], [4]]), B[[3], [4]])
         assert_equal(toarray(A[[1, 3], [2, 4]]), B[[1, 3], [2, 4]])
         assert_equal(toarray(A[[-1, -3], [2, -4]]), B[[-1, -3], [2, -4]])
         assert_equal(
@@ -3027,6 +3094,7 @@ class _TestFancyIndexing:
         assert_equal(A[array([-1, -3])].toarray(), B[[-1, -3]])
 
         # [[1,2],:][:,[1,2]]
+        assert_equal(A[[3], :][:, [4]].toarray(), B[[3], :][:, [4]])
         assert_equal(
             A[[1, 3], :][:, [2, 4]].toarray(), B[[1, 3], :][:, [2, 4]]
         )
@@ -3037,6 +3105,19 @@ class _TestFancyIndexing:
             A[array([-1, -3]), :][:, array([2, -4])].toarray(),
             B[[-1, -3], :][:, [2, -4]]
         )
+
+        # [1,[[1,2]]][[[1,2]],1]
+        assert_equal(
+            A[1, [[1, 3]]][[[0, 0]], 1].toarray(), B[1, [[1, 3]]][[[0, 0]], 1]
+        )
+        assert_equal(
+            A[1, [[-1, -3]]][[[0, -1]], 1].toarray(), B[1, [[-1, -3]]][[[0, -1]], 1]
+        )
+        # [:1,[[1,2]]][[[1,2]],:1]
+        with pytest.raises(IndexError, match="Only 1D or 2D arrays allowed"):
+            A[:1, [[1, 3]]]
+        with pytest.raises(IndexError, match="Only 1D or 2D arrays allowed"):
+            A[[[0, 0]], :1]
 
         # [:,[1,2]][[1,2],:]
         assert_equal(
@@ -4191,6 +4272,13 @@ class TestCSR(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
+    def test_setdiag_csr(self):
+        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
+        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
+        A = self.spcreator(D)
+        A.setdiag(5 * np.ones(A.shape[0]))
+        assert A[-1, -1] == 5
+
     def test_binop_explicit_zeros(self):
         # Check that binary ops don't introduce spurious explicit zeros.
         # See gh-9619 for context.
@@ -4359,6 +4447,13 @@ class TestCSC(sparse_test_class()):
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:
             x + x
+
+    def test_setdiag_csc(self):
+        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
+        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
+        A = self.spcreator(D)
+        A.setdiag(5 * np.ones(A.shape[0]))
+        assert A[-1, -1] == 5
 
 
 TestCSC.init_class()
@@ -4534,9 +4629,9 @@ class TestLIL(sparse_test_class(minmax=False)):
 
         # Ticket 1604.
         A = self.lil_container((1, 3), dtype=np.dtype('float64'))
-        B = array([0.1, 0.1, 0.1])
+        B = self.asdense([0.1, 0.1, 0.1])
         A[0, :] += B
-        assert_array_equal(A[0, :].toarray().squeeze(), B)
+        assert_array_equal(A[0, :].toarray(), B)
 
     def test_lil_iteration(self):
         row_data = [[1, 2, 3], [4, 5, 6]]
@@ -4960,7 +5055,7 @@ class TestBSR(sparse_test_class(getset=False,
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.toarray(), bsp.toarray())
 
-    # github issue #9687
+    # GitHub issue #9687
     def test_eliminate_zeros_all_zero(self):
         np.random.seed(0)
         m = self.bsr_container(np.random.random((12, 12)), blocksize=(2, 3))
@@ -5508,3 +5603,30 @@ class Test64BitMatrix(RunAll64Bit):
     @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
     def test_resiliency_all_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
+
+def test_broadcast_to():
+    a = np.array([[1, 0, 2]])
+    b = np.array([[1], [0], [2]])
+    c = np.array([[1, 0, 2], [0, 3, 0]])
+    d = np.array([[7]])
+    e = np.array([[0]])
+    f = np.array([[0,0,0,0]])
+    for container in (csc_matrix, csc_array, csr_matrix, csr_array):
+        res_a = container(a)._broadcast_to((2,3))
+        res_b = container(b)._broadcast_to((3,4))
+        res_c = container(c)._broadcast_to((2,3))
+        res_d = container(d)._broadcast_to((4,4))
+        res_e = container(e)._broadcast_to((5,6))
+        res_f = container(f)._broadcast_to((2,4))
+        assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
+        assert_array_equal(res_b.toarray(), np.broadcast_to(b, (3,4)))
+        assert_array_equal(res_c.toarray(), c)
+        assert_array_equal(res_d.toarray(), np.broadcast_to(d, (4,4)))
+        assert_array_equal(res_e.toarray(), np.broadcast_to(e, (5,6)))
+        assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
+
+        with pytest.raises(ValueError, match="cannot be broadcast"):
+            container([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
+
+        with pytest.raises(ValueError, match="cannot be broadcast"):
+            container([[0, 1, 2]])._broadcast_to(shape=(3, 2))
