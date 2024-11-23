@@ -206,7 +206,7 @@ class TestBracketRoot:
 
         args = (xp.arange(5, dtype=xp.int64),)
         res = _bracket_root(f,
-                            xl0=[-1, -1, -1, -1, 4],
+                            xl0=xp.asarray([-1., -1., -1., -1., 4.]),
                             xr0=[1, 1, 1, 1, -4],
                             xmin=[-xp.inf, -1, -xp.inf, -xp.inf, 6],
                             xmax=[xp.inf, 1, xp.inf, xp.inf, 2],
