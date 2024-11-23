@@ -216,7 +216,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     work = _RichResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
                        active=active, d=d, x_last=x_last, f_last=f_last,
                        nit=nit, nfev=nfev, status=status, args=args,
-                       xl=None, xr=None, fl=None, fr=None, n=n)
+                       xl=xp.nan, xr=xp.nan, fl=xp.nan, fr=xp.nan, n=n)
     res_work_pairs = [('status', 'status'), ('xl', 'xl'), ('xr', 'xr'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('fl', 'fl'),
                       ('fr', 'fr'), ('x', 'x'), ('f', 'f'),
