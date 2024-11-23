@@ -7,7 +7,8 @@ from scipy._lib import doccer
 
 from scipy import linalg, special, fft as sp_fft
 from scipy._lib.array_api_compat import numpy as np_compat
-from scipy._lib._array_api import xp_sinc, array_namespace, xp_device
+from scipy._lib._array_api import array_namespace, xp_device
+from scipy._lib import array_api_extra as xpx
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'barthann',
@@ -2179,7 +2180,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     # Use the autocorr sequence technique from Percival and Walden, 1993 pg 390
     if return_ratios:
         dpss_rxx = _fftautocorr(xp.asarray(windows))
-        r = 4 * W * xp_sinc(xp.asarray(2 * W * nidx), xp=xp)
+        r = 4 * W * xpx.sinc(xp.asarray(2 * W * nidx), xp=xp)
         r[0] = 2 * W
         ratios = xp.matmul(dpss_rxx, r)
         if singleton:
@@ -2296,7 +2297,7 @@ def lanczos(M, *, sym=True, xp=None, device=None):
     # half of the window and the flipped one which is the left hand half of
     # the window.
     def _calc_right_side_lanczos(n, m):
-        return xp_sinc(2. * xp.arange(n, m, dtype=xp.float64) / (m - 1) - 1.0, xp=xp)
+        return xpx.sinc(2. * xp.arange(n, m, dtype=xp.float64) / (m - 1) - 1.0, xp=xp)
 
     if M % 2 == 0:
         wh = _calc_right_side_lanczos(M/2, M)
