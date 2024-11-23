@@ -152,7 +152,8 @@ def compute_error(y, y_true, rtol, atol):
     return np.linalg.norm(e, axis=0) / np.sqrt(e.shape[0])
 
 
-def test_integration(num_parallel_threads):
+@pytest.mark.thread_unsafe
+def test_integration():
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
@@ -162,9 +163,6 @@ def test_integration(num_parallel_threads):
             ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'],
             [[5, 9], [5, 1]],
             [None, jac_rational, jac_rational_sparse]):
-
-        if method == 'LSODA' and num_parallel_threads > 1:
-            continue
 
         if vectorized:
             fun = fun_rational_vectorized
@@ -219,6 +217,7 @@ def test_integration(num_parallel_threads):
         assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
+@pytest.mark.thread_unsafe
 def test_integration_complex():
     rtol = 1e-3
     atol = 1e-6
@@ -746,7 +745,8 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
-def test_t_eval_early_event(num_parallel_threads):
+@pytest.mark.thread_unsafe
+def test_t_eval_early_event():
     def early_event(t, y):
         return t - 7
 
@@ -758,8 +758,6 @@ def test_t_eval_early_event(num_parallel_threads):
     t_span = [5, 9]
     t_eval = np.linspace(7.5, 9, 16)
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        if method == 'LSODA' and num_parallel_threads > 1:
-            continue
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
                        "The following arguments have no effect for a chosen "
@@ -821,22 +819,16 @@ def test_event_dense_output_LSODA(num_parallel_threads):
     assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
-def test_no_integration(num_parallel_threads):
+def test_no_integration():
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        if method == 'LSODA' and num_parallel_threads > 1:
-            continue
-
         sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3],
                         method=method, dense_output=True)
         assert_equal(sol.sol(4), [2, 3])
         assert_equal(sol.sol([4, 5, 6]), [[2, 2, 2], [3, 3, 3]])
 
 
-def test_no_integration_class(num_parallel_threads):
+def test_no_integration_class():
     for method in [RK23, RK45, DOP853, Radau, BDF, LSODA]:
-        if method is LSODA and num_parallel_threads > 1:
-            continue
-
         solver = method(lambda t, y: -y, 0.0, [10.0, 0.0], 0.0)
         solver.step()
         assert_equal(solver.status, 'finished')
@@ -852,25 +844,19 @@ def test_no_integration_class(num_parallel_threads):
         assert_equal(sol([0, 1, 2]), np.empty((0, 3)))
 
 
-def test_empty(num_parallel_threads):
+def test_empty():
     def fun(t, y):
         return np.zeros((0,))
 
     y0 = np.zeros((0,))
 
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        if method == 'LSODA' and num_parallel_threads > 1:
-            continue
-
         sol = assert_no_warnings(solve_ivp, fun, [0, 10], y0,
                                  method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
         assert_equal(sol.sol([1, 2, 3]), np.zeros((0, 3)))
 
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        if method == 'LSODA' and num_parallel_threads > 1:
-            continue
-
         sol = assert_no_warnings(solve_ivp, fun, [0, np.inf], y0,
                                  method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
@@ -887,12 +873,9 @@ def test_ConstantDenseOutput():
     assert_allclose(sol([1, 1.5, 2]), np.empty((0, 3)))
 
 
-def test_classes(num_parallel_threads):
+def test_classes():
     y0 = [1 / 3, 2 / 9]
     for cls in [RK23, RK45, DOP853, Radau, BDF, LSODA]:
-        if cls is LSODA and num_parallel_threads > 1:
-            continue
-
         solver = cls(fun_rational, 5, y0, np.inf)
         assert_equal(solver.n, 2)
         assert_equal(solver.status, 'running')

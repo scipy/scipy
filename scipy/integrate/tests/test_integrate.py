@@ -92,7 +92,6 @@ class TestOde(TestODEClass):
 
     ode_class = ode
 
-    @pytest.mark.thread_unsafe
     def test_vode(self):
         # Check the vode solver
         for problem_cls in PROBLEMS:
@@ -103,7 +102,6 @@ class TestOde(TestODEClass):
                 self._do_problem(problem, 'vode', 'adams')
             self._do_problem(problem, 'vode', 'bdf')
 
-    @pytest.mark.thread_unsafe
     def test_zvode(self):
         # Check the zvode solver
         for problem_cls in PROBLEMS:
@@ -112,11 +110,8 @@ class TestOde(TestODEClass):
                 self._do_problem(problem, 'zvode', 'adams')
             self._do_problem(problem, 'zvode', 'bdf')
 
-    @pytest.mark.thread_unsafe
-    def test_lsoda(self, num_parallel_threads):
+    def test_lsoda(self):
         # Check the lsoda solver
-        if num_parallel_threads > 1:
-            pytest.skip(reason='LSODA does not allow for concurrent execution')
         for problem_cls in PROBLEMS:
             problem = problem_cls()
             if problem.cmplx:
@@ -206,7 +201,6 @@ class TestComplexOde(TestODEClass):
 
     ode_class = complex_ode
 
-    @pytest.mark.thread_unsafe
     def test_vode(self):
         # Check the vode solver
         for problem_cls in PROBLEMS:
@@ -216,10 +210,7 @@ class TestComplexOde(TestODEClass):
             else:
                 self._do_problem(problem, 'vode', 'bdf')
 
-    @pytest.mark.thread_unsafe
-    def test_lsoda(self, num_parallel_threads):
-        if num_parallel_threads > 1:
-            pytest.skip(reason='LSODA does not allow for concurrent execution')
+    def test_lsoda(self):
 
         # Check the lsoda solver
         for problem_cls in PROBLEMS:
@@ -615,21 +606,11 @@ class ODECheckParameterUse:
         solver.integrate(pi)
         assert_array_almost_equal(solver.y, [-1.0, 0.0])
 
-    def test_no_params(self, num_parallel_threads):
-        if (self.solver_name in {'vode', 'lsoda', 'zvode'} and
-                num_parallel_threads > 1):
-            pytest.skip(reason=f'{self.solver_name} does not allow for '
-                        'concurrent execution')
-
+    def test_no_params(self):
         solver = self._get_solver(f, jac)
         self._check_solver(solver)
 
-    def test_one_scalar_param(self, num_parallel_threads):
-        if (self.solver_name in {'vode', 'lsoda', 'zvode'} and
-                num_parallel_threads > 1):
-            pytest.skip(reason=f'{self.solver_name} does not allow for '
-                        'concurrent execution')
-
+    def test_one_scalar_param(self):
         solver = self._get_solver(f1, jac1)
         omega = 1.0
         solver.set_f_params(omega)
@@ -637,11 +618,7 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega)
         self._check_solver(solver)
 
-    def test_two_scalar_params(self, num_parallel_threads):
-        if (self.solver_name in {'vode', 'lsoda', 'zvode'} and
-                num_parallel_threads > 1):
-            pytest.skip(reason=f'{self.solver_name} does not allow for '
-                        'concurrent execution')
+    def test_two_scalar_params(self):
         solver = self._get_solver(f2, jac2)
         omega1 = 1.0
         omega2 = 1.0
@@ -650,11 +627,7 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega1, omega2)
         self._check_solver(solver)
 
-    def test_vector_param(self, num_parallel_threads):
-        if (self.solver_name in {'vode', 'lsoda', 'zvode'} and
-                num_parallel_threads > 1):
-            pytest.skip(reason=f'{self.solver_name} does not allow for '
-                        'concurrent execution')
+    def test_vector_param(self):
         solver = self._get_solver(fv, jacv)
         omega = [1.0, 1.0]
         solver.set_f_params(omega)
