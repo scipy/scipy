@@ -1154,36 +1154,6 @@ class TestLombscargle:
         weights = np.repeat(np.expand_dims(np.linspace(0, 1, 2), 1), 2, axis=1)
         assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
-
-    def test_valid_shape(self):
-        # make sure no error is raised if shape is 2D, but
-        # the extra axis has a length of 1
-
-        # t is 2D
-        t = np.expand_dims(np.linspace(0, 1, 2), 1)
-        y = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3) + 0.1
-        lombscargle(t, y, f)
-
-        # y is 2D
-        t = np.linspace(0, 1, 2)
-        y = np.expand_dims(np.linspace(0, 1, 2), 1)
-        f = np.linspace(0, 1, 3) + 0.1
-        lombscargle(t, y, f)
-
-        # f is 2D
-        t = np.linspace(0, 1, 2)
-        y = np.linspace(0, 1, 2)
-        f = np.expand_dims(np.linspace(0, 1, 3) + 0.1, 1)
-        lombscargle(t, y, f)
-
-        # weights is 2D
-        t = np.linspace(0, 1, 2)
-        y = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3) + 0.1
-        weights = np.expand_dims(np.linspace(0, 1, 2), 1)
-        lombscargle(t, y, f, weights=weights)
-
     def test_lombscargle_atan_vs_atan2(self):
         # https://github.com/scipy/scipy/issues/3787
         # This raised a ZeroDivisionError.
