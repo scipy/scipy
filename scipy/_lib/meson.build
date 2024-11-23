@@ -17,6 +17,10 @@ endif
 if not fs.exists('cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('prima/README.md')
+  error('Missing the `prima` submodule! Run `git submodule update --init` to fix this.')
+endif
+
 
 _lib_pxd = [
   fs.copyfile('__init__.py'),
@@ -223,6 +227,14 @@ py3.install_sources(
     'array_api_extra/src/array_api_extra/_typing.py',
   ],
   subdir: 'scipy/_lib/array_api_extra',
+)
+
+py3.install_sources(
+  [
+    'prima/python/prima/_linear_constraints.py',
+    'prima/python/prima/_nonlinear_constraints.py',
+  ],
+  subdir: 'scipy/_lib/prima',
 )
 
 py3.install_sources(
