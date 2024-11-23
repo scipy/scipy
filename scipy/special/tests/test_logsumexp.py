@@ -69,7 +69,11 @@ class TestLogSumExp:
         nan = xp.asarray([xp.nan])
         xp_assert_equal(logsumexp(inf), inf[0])
         xp_assert_equal(logsumexp(-inf), -inf[0])
-        xp_assert_equal(logsumexp(nan), nan[0])
+        # catch warnings here for dasks state there's no way to suppress
+        # warnings just for dask
+        # https://github.com/dask/dask/issues/3245
+        with np.errstate(divide='ignore', invalid='ignore'):
+            xp_assert_equal(logsumexp(nan), nan[0])
         xp_assert_equal(logsumexp(xp.asarray([-xp.inf, -xp.inf])), -inf[0])
 
         # Handling an array with different magnitudes on the axes
