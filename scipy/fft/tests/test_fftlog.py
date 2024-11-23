@@ -110,6 +110,9 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     xp_assert_close(a_, a, rtol=1.5e-7)
 
 
+
+
+@pytest.mark.thread_unsafe
 def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
 
@@ -130,12 +133,14 @@ def test_fht_special_cases(xp):
         fht(a, dln, mu, bias=bias)
         assert not record, 'fht warned about a well-defined transform'
 
+    # with fht_lock:
     # case 3: x in M, y not in M => singular transform
     mu, bias = -3.5, 0.5
     with pytest.warns(Warning) as record:
         fht(a, dln, mu, bias=bias)
         assert record, 'fht did not warn about a singular transform'
 
+    # with fht_lock:
     # case 4: x not in M, y in M => singular inverse transform
     mu, bias = -2.5, 0.5
     with pytest.warns(Warning) as record:

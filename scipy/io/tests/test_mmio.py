@@ -2,6 +2,7 @@ from tempfile import mkdtemp
 import os
 import io
 import shutil
+import threading
 import textwrap
 
 import numpy as np
@@ -19,6 +20,8 @@ import scipy.io._fast_matrix_market as fmm
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
 
+pytestmark = pytest.mark.parallel_threads(1)
+
 
 # Run the entire test suite on both _mmio and _fast_matrix_market implementations
 @pytest.fixture(scope='module', params=(scipy.io._mmio, fmm), autouse=True)
@@ -33,7 +36,7 @@ def implementations(request):
 
 class TestMMIOArray:
     def setup_method(self):
-        self.tmpdir = mkdtemp()
+        self.tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
     def teardown_method(self):
@@ -51,11 +54,13 @@ class TestMMIOArray:
         b = mmread(self.fn)
         assert_equal(a, b)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_integer(self, typeval, dtype):
         self.check_exact(array([[1, 2], [3, 4]], dtype=dtype),
                          (2, 2, 4, 'array', typeval, 'general'))
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_32bit_integer(self, typeval, dtype):
         a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=dtype)
@@ -157,7 +162,7 @@ class TestMMIOArray:
 
 class TestMMIOSparseCSR(TestMMIOArray):
     def setup_method(self):
-        self.tmpdir = mkdtemp()
+        self.tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
     def teardown_method(self):
@@ -351,7 +356,7 @@ _over64bit_integer_sparse_example = '''\
 
 class TestMMIOReadLargeIntegers:
     def setup_method(self):
-        self.tmpdir = mkdtemp()
+        self.tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
     def teardown_method(self):
@@ -550,7 +555,7 @@ _empty_lines_example = '''\
 
 class TestMMIOCoordinate:
     def setup_method(self):
-        self.tmpdir = mkdtemp()
+        self.tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
     def teardown_method(self):

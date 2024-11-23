@@ -3,6 +3,7 @@ Unit tests for optimization routines from minpack.py.
 """
 import warnings
 import pytest
+import threading
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
@@ -260,8 +261,13 @@ class TestRootLM:
 
 
 class TestNfev:
+    def setup_method(self):
+        self.nfev = threading.local()
+
     def zero_f(self, y):
-        self.nfev += 1
+        if not hasattr(self.nfev, 'c'):
+            self.nfev.c = 0
+        self.nfev.c += 1
         return y**2-3
 
     @pytest.mark.parametrize('method', ['hybr', 'lm', 'broyden1',
@@ -270,14 +276,14 @@ class TestNfev:
                                         'excitingmixing', 'krylov',
                                         'df-sane'])
     def test_root_nfev(self, method):
-        self.nfev = 0
+        self.nfev.c = 0
         solution = optimize.root(self.zero_f, 100, method=method)
-        assert solution.nfev == self.nfev
+        assert solution.nfev == self.nfev.c
 
     def test_fsolve_nfev(self):
-        self.nfev = 0
+        self.nfev.c = 0
         x, info, ier, mesg = optimize.fsolve(self.zero_f, 100, full_output=True)
-        assert info['nfev'] == self.nfev
+        assert info['nfev'] == self.nfev.c
 
 
 class TestLeastSq:
@@ -557,6 +563,7 @@ class TestCurveFit:
         y = [3, 5, 7, 9]
         assert_allclose(curve_fit(f_linear, x, y)[0], [2, 1], atol=1e-10)
 
+    @pytest.mark.thread_unsafe
     def test_indeterminate_covariance(self):
         # Test that a warning is returned when pcov is indeterminate
         xdata = np.array([1, 2, 3, 4, 5, 6])
@@ -853,10 +860,10 @@ class TestCurveFit:
             e = np.exp(-b*x)
             return np.vstack((e, -a * x * e)).T
 
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         xdata = np.arange(1, 4)
         y = func(xdata, 2.5, 1.0)
-        ydata = y + 0.2 * np.random.normal(size=len(xdata))
+        ydata = y + 0.2 * rng.normal(size=len(xdata))
         sigma = np.zeros(len(xdata)) + 0.2
         covar = np.diag(sigma**2)
         # Get a rotation matrix, and obtain ydatap = R ydata

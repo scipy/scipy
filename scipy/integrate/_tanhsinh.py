@@ -373,7 +373,9 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         a=xp.reshape(a, (-1, 1)), b=xp.reshape(b, (-1, 1)),  # integration limits
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
         xr0=xr0, fr0=fr0, wr0=wr0, xl0=xl0, fl0=fl0, wl0=wl0, d4=d4,  # err est
-        ainf=ainf, binf=binf, abinf=abinf, a0=xp.reshape(a0, (-1, 1)))  # transforms
+        ainf=ainf, binf=binf, abinf=abinf, a0=xp.reshape(a0, (-1, 1)),  # transforms
+        pc_xjc=None, pc_wj=None, pc_indices=[0], pc_h0=None)  # pair cache
+
     # Constant scalars don't need to be put in `work` unless they need to be
     # passed outside `tanhsinh`. Examples: atol, rtol, h0, minlevel.
 
@@ -385,7 +387,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         # Determine abscissae at which to evaluate `f`
         work.h = h0 / 2**work.n
         xjc, wj = _get_pairs(work.n, h0, dtype=work.dtype,
-                             inclusive=(work.n == minlevel), xp=xp)
+                             inclusive=(work.n == minlevel), xp=xp, work=work)
         work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b, xp)
 
         # Perform abscissae substitutions for infinite limits of integration
@@ -544,46 +546,41 @@ def _compute_pair(k, h0, xp):
     return xjc, wj  # store at full precision
 
 
-def _pair_cache(k, h0, xp):
+def _pair_cache(k, h0, xp, work):
     # Cache the abscissa-weight pairs up to a specified level.
     # Abscissae and weights of consecutive levels are concatenated.
     # `index` records the indices that correspond with each level:
     # `xjc[index[k]:index[k+1]` extracts the level `k` abscissae.
-    if not isinstance(h0, type(_pair_cache.h0)) or h0 != _pair_cache.h0:
-        _pair_cache.xjc = xp.empty(0)
-        _pair_cache.wj = xp.empty(0)
-        _pair_cache.indices = [0]
+    if not isinstance(h0, type(work.pc_h0)) or h0 != work.pc_h0:
+        work.pc_xjc = xp.empty(0)
+        work.pc_wj = xp.empty(0)
+        work.pc_indices = [0]
 
-    xjcs = [_pair_cache.xjc]
-    wjs = [_pair_cache.wj]
+    xjcs = [work.pc_xjc]
+    wjs = [work.pc_wj]
 
-    for i in range(len(_pair_cache.indices)-1, k + 1):
+    for i in range(len(work.pc_indices)-1, k + 1):
         xjc, wj = _compute_pair(i, h0, xp)
         xjcs.append(xjc)
         wjs.append(wj)
-        _pair_cache.indices.append(_pair_cache.indices[-1] + xjc.shape[0])
+        work.pc_indices.append(work.pc_indices[-1] + xjc.shape[0])
 
-    _pair_cache.xjc = xp.concat(xjcs)
-    _pair_cache.wj = xp.concat(wjs)
-    _pair_cache.h0 = h0
-
-_pair_cache.xjc = None
-_pair_cache.wj = None
-_pair_cache.indices = [0]
-_pair_cache.h0 = None
+    work.pc_xjc = xp.concat(xjcs)
+    work.pc_wj = xp.concat(wjs)
+    work.pc_h0 = h0
 
 
-def _get_pairs(k, h0, inclusive, dtype, xp):
+def _get_pairs(k, h0, inclusive, dtype, xp, work):
     # Retrieve the specified abscissa-weight pairs from the cache
     # If `inclusive`, return all up to and including the specified level
-    if (len(_pair_cache.indices) <= k+2
-        or not isinstance (h0, type(_pair_cache.h0))
-        or h0 != _pair_cache.h0):
-            _pair_cache(k, h0, xp)
+    if (len(work.pc_indices) <= k+2
+        or not isinstance (h0, type(work.pc_h0))
+        or h0 != work.pc_h0):
+            _pair_cache(k, h0, xp, work)
 
-    xjc = _pair_cache.xjc
-    wj = _pair_cache.wj
-    indices = _pair_cache.indices
+    xjc = work.pc_xjc
+    wj = work.pc_wj
+    indices = work.pc_indices
 
     start = 0 if inclusive else indices[k]
     end = indices[k+1]
@@ -710,7 +707,7 @@ def _estimate_error(work, xp):
         nan = xp.full_like(work.Sn, xp.nan)
         return nan, nan
 
-    indices = _pair_cache.indices
+    indices = work.pc_indices
 
     n_active = work.Sn.shape[0]  # number of active elements
     axis_kwargs = dict(axis=-1, keepdims=True)
@@ -968,12 +965,12 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         where each element of ``x`` is a finite real and ``args`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
         with ``x``.
-         
+
         `f` must be an elementwise function: each element ``f(x)[i]``
         must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
         array ``x`` or the arrays in ``args``, and it must return NaN where
         the argument is NaN.
-        
+
         `f` must represent a smooth, positive, unimodal function of `x` defined at
         *all reals* between `a` and `b`.
     a, b : float array_like
@@ -997,9 +994,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         log of the sum and error. This is useful for summands for which
         numerical underflow or overflow would lead to inaccuracies.
     maxterms : int, default: 2**20
-        The maximum number of terms to evaluate for direct summation. 
+        The maximum number of terms to evaluate for direct summation.
         Additional function evaluations may be performed for input
-        validation and integral evaluation. 
+        validation and integral evaluation.
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: ``eps**0.5``, where ``eps`` is the precision of
@@ -1023,7 +1020,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
             - ``0`` : The algorithm converged to the specified tolerances.
             - ``-1`` : Element(s) of `a`, `b`, or `step` are invalid
-            - ``-2`` : Numerical integration reached its iteration limit; 
+            - ``-2`` : Numerical integration reached its iteration limit;
               the sum may be divergent.
             - ``-3`` : A non-finite value was encountered.
             - ``-4`` : The magnitude of the last term of the partial sum exceeds
@@ -1062,7 +1059,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     as a lower bound of the infinite sum. Then, it seeks a value :math:`c > a` such
     that :math:`f(c) < \epsilon_a + S_l \epsilon_r`, if it exists; otherwise,
     let :math:`c = a + n`. Then the infinite sum is approximated as
-    
+
     .. math::
 
         \sum_{k=a}^{c-1} f(k) + \int_c^\infty f(x) dx + f(c)/2
@@ -1102,7 +1099,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     Examples
     --------
     Compute the infinite sum of the reciprocals of squared integers.
-    
+
     >>> import numpy as np
     >>> from scipy.integrate import nsum
     >>> res = nsum(lambda k: 1/k**2, 1, np.inf, maxterms=1e3)
@@ -1113,10 +1110,10 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     -1.0104163408712734e-10
     >>> res.nfev  # number of points at which callable was evaluated
     1209
-    
+
     Compute the infinite sums of the reciprocals of integers raised to powers ``p``,
     where ``p`` is an array.
-    
+
     >>> from scipy import special
     >>> p = np.arange(2, 10)
     >>> res = nsum(lambda k, p: 1/k**p, 1, np.inf, maxterms=1e3, args=(p,))
@@ -1129,7 +1126,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     >>> res = nsum(lambda x: 1/x - 1/(x+1), 1, np.inf, step=2)
     >>> res.sum, res.sum - np.log(2)  # result, difference vs analytical sum
     (0.6931471805598691, -7.616129948928574e-14)
-    
+
     """ # noqa: E501
     # Potential future work:
     # - improve error estimate of `_direct` sum

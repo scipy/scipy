@@ -450,6 +450,12 @@ jobs:
 
   free-threaded:
     needs: get_commit_message
+    strategy:
+      matrix:
+        # Restore once parallel testing passes in CI
+        # parallel: ['0', '1']
+        parallel: ['0']
+
     runs-on: ubuntu-latest
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -477,10 +483,16 @@ jobs:
         pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple cython numpy
     - name: Install Python dependencies
       run: |
-        pip install git+https://github.com/serge-sans-paille/pythran
-        pip install ninja meson-python pybind11 click rich_click pydevtool
+        pip install pythran ninja meson-python pybind11 click rich_click pydevtool
         pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis
         pip install -r requirements/openblas.txt
+        echo "N_TEST_WORKERS=2" >> "$GITHUB_ENV"
+    - name: Install pytest-run-parallel
+      if: ${{ matrix.parallel == '1'}}
+      run: |
+        pip install pytest-run-parallel
+        echo "EXTRA_PYTEST_ARGS=--parallel-threads=5" >> "$GITHUB_ENV"
+        echo "N_TEST_WORKERS=1" >> "$GITHUB_ENV"
     - name: Build and run tests
       env:
         PYTHON_GIL: 0
@@ -493,7 +505,7 @@ jobs:
         python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > scipy-openblas.pc
         PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
-        PYTHON_GIL=0 python -m pytest --pyargs scipy -n2 --durations=10
+        PYTHON_GIL=0 python -m pytest --pyargs scipy -n$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
   #################################################################################
   clang-17-build-only:
     # Purpose is to check for warnings in builds with latest clang.

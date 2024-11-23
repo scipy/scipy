@@ -33,6 +33,7 @@ from scipy._lib._util import VisibleDeprecationWarning
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
+pytestmark = pytest.mark.parallel_threads(1)
 
 
 def mlarr(*args, **kwargs):

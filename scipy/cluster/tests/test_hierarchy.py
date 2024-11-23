@@ -51,6 +51,8 @@ from scipy.cluster._hierarchy import Heap
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 
+from threading import Lock
+
 from . import hierarchy_test_data
 
 
@@ -1071,20 +1073,26 @@ class TestDendrogram:
                          'leaves_color_list': ['C1', 'C1', 'C0', 'C0', 'C0'],
                          })
 
-    def test_dendrogram_colors(self, xp):
+    @pytest.fixture
+    def dendrogram_lock(self):
+        return Lock()
+
+    def test_dendrogram_colors(self, xp, dendrogram_lock):
         # Tests dendrogram plots with alternate colors
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
 
-        set_link_color_palette(['c', 'm', 'y', 'k'])
-        R = dendrogram(Z, no_plot=True,
-                       above_threshold_color='g', color_threshold=250)
-        set_link_color_palette(['g', 'r', 'c', 'm', 'y', 'k'])
+        with dendrogram_lock:
+            # Global color palette might be changed concurrently
+            set_link_color_palette(['c', 'm', 'y', 'k'])
+            R = dendrogram(Z, no_plot=True,
+                        above_threshold_color='g', color_threshold=250)
+            set_link_color_palette(['g', 'r', 'c', 'm', 'y', 'k'])
 
-        color_list = R['color_list']
-        assert_equal(color_list, ['c', 'm', 'g', 'g', 'g'])
+            color_list = R['color_list']
+            assert_equal(color_list, ['c', 'm', 'g', 'g', 'g'])
 
-        # reset color palette (global list)
-        set_link_color_palette(None)
+            # reset color palette (global list)
+            set_link_color_palette(None)
 
     def test_dendrogram_leaf_colors_zero_dist(self, xp):
         # tests that the colors of leafs are correct for tree
@@ -1154,6 +1162,7 @@ def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
     return B
 
 
+@pytest.mark.thread_unsafe
 @skip_xp_backends(cpu_only=True)
 def test_unsupported_uncondensed_distance_matrix_linkage_warning(xp):
     assert_warns(ClusterWarning, linkage, xp.asarray([[0, 1], [1, 0]]))
