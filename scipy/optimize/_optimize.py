@@ -41,7 +41,7 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace, xp_create_diagonal
+from scipy._lib._array_api import array_namespace
 from scipy._lib import array_api_extra as xpx
 
 
@@ -445,13 +445,13 @@ def rosen_hess(x):
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
     if xp.isdtype(x.dtype, 'integral'):
         x = xp.astype(x, xp.asarray(1.).dtype)
-    H = (xp_create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
-         - xp_create_diagonal(400 * x[:-1], offset=-1, xp=xp))
+    H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
+         - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
     diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
     diagonal[0] = 1200 * x[0]**2 - 400 * x[1] + 2
     diagonal[-1] = 200
     diagonal[1:-1] = 202 + 1200 * x[1:-1]**2 - 400 * x[2:]
-    return H + xp_create_diagonal(diagonal, xp=xp)
+    return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
 def rosen_hess_prod(x, p):
