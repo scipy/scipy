@@ -9,6 +9,7 @@ import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less, array_namespace)
+from scipy._lib._array_api import xp_ravel
 from scipy.conftest import array_api_compatible
 
 
@@ -141,6 +142,7 @@ class TestBracketRoot:
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
     def test_vectorization(self, shape, xp):
+        xp = array_namespace(xp.asarray(1.))
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
         p = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
@@ -176,9 +178,11 @@ class TestBracketRoot:
 
         attrs = ['xl', 'xr', 'fl', 'fr', 'success', 'nfev', 'nit']
         for attr in attrs:
-            ref_attr = [getattr(ref, attr) for ref in refs]
+            ref_attr = [getattr(ref, attr).tolist() for ref in refs]
             res_attr = getattr(res, attr)
-            xp_assert_close(res_attr.ravel(), ref_attr)
+            xp_assert_close(xp_ravel(res_attr, xp=xp),
+                            xp.asarray(ref_attr, dtype=res_attr.dtype),
+                            rtol=1e-5)
             xp_assert_equal(res_attr.shape, shape)
 
         assert xp.isdtype(res.success.dtype, "bool")
