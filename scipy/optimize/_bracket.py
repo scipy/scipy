@@ -16,27 +16,34 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
 
     xp = array_namespace(xl0)
     xl0 = xp.asarray(xl0)[()]
-    if not xp.isdtype(xl0.dtype, "numeric") or xp.isdtype(xl0.dtype, "complex floating"):
+    if (not xp.isdtype(xl0.dtype, "numeric")
+        or xp.isdtype(xl0.dtype, "complex floating")):
         raise ValueError('`xl0` must be numeric and real.')
 
     xr0 = xl0 + 1 if xr0 is None else xr0
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
     factor = 2. if factor is None else factor
-    xl0, xr0, xmin, xmax, factor = xp.broadcast_arrays(xl0, xp.asarray(xr0),
-                                                       xp.asarray(xmin), xp.asarray(xmax),
+    xl0, xr0, xmin, xmax, factor = xp.broadcast_arrays(xl0,
+                                                       xp.asarray(xr0),
+                                                       xp.asarray(xmin),
+                                                       xp.asarray(xmax),
                                                        xp.asarray(factor))
 
-    if not xp.isdtype(xr0.dtype, "numeric") or xp.isdtype(xr0.dtype, "complex floating"):
+    if (not xp.isdtype(xr0.dtype, "numeric")
+        or xp.isdtype(xr0.dtype, "complex floating")):
         raise ValueError('`xr0` must be numeric and real.')
 
-    if not xp.isdtype(xmin.dtype, "numeric") or xp.isdtype(xmin.dtype, "complex floating"):
+    if (not xp.isdtype(xmin.dtype, "numeric")
+        or xp.isdtype(xmin.dtype, "complex floating")):
         raise ValueError('`xmin` must be numeric and real.')
 
-    if not xp.isdtype(xmax.dtype, "numeric") or xp.isdtype(xmax.dtype, "complex floating"):
+    if (not xp.isdtype(xmax.dtype, "numeric")
+        or xp.isdtype(xmax.dtype, "complex floating")):
         raise ValueError('`xmax` must be numeric and real.')
 
-    if not xp.isdtype(factor.dtype, "numeric") or xp.isdtype(factor.dtype, "complex floating"):
+    if (not xp.isdtype(factor.dtype, "numeric")
+        or xp.isdtype(factor.dtype, "complex floating")):
         raise ValueError('`factor` must be numeric and real.')
     if not xp.all(factor > 1):
         raise ValueError('All elements of `factor` must be greater than 1.')
@@ -188,7 +195,8 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # moving end; it is never returned.
     limit = xp.concat((xmin, xmax))
 
-    factor = xp_ravel(xp.astype(xp.broadcast_to(factor, shape), dtype, copy=False), xp=xp)
+    factor = xp_ravel(xp.astype(xp.broadcast_to(factor, shape), dtype, copy=False),
+                      xp=xp)
     factor = xp.concat((factor, factor))
 
     active = xp.arange(2*n)
