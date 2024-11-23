@@ -26,6 +26,7 @@ env:
     -t scipy.differentiate.tests.test_differentiate
     -t scipy.integrate.tests.test_tanhsinh
     -t scipy.integrate.tests.test_cubature
+    -t scipy.optimize.tests.test_bracket
     -t scipy.optimize.tests.test_chandrupatla
     -t scipy.optimize.tests.test_optimize
     -t scipy.stats
