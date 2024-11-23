@@ -1025,8 +1025,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        rng = np.random.default_rng(12345)
-        r = rng.random(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1059,8 +1059,8 @@ class TestLombscargle:
         offset = 0.15  # Offset to be subtracted in pre-centering
 
         # Randomly select a fraction of an array with timesteps
-        rng = np.random.default_rng(12345)
-        r = rng.random(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1097,8 +1097,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        rng = np.random.default_rng(12345)
-        r = rng.random(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1273,8 +1273,8 @@ class TestLombscargle:
         offset = 2  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        rng = np.random.default_rng(12345)
-        r = rng.random(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a cos wave for the selected times
@@ -1307,8 +1307,8 @@ class TestLombscargle:
         offset = 2.15  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        rng = np.random.default_rng(12345)
-        r = rng.random(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
