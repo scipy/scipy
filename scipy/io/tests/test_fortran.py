@@ -11,9 +11,10 @@ import numpy as np
 import pytest
 
 from scipy.io import (FortranFile,
+                      _test_fortran,
                       FortranEOFError,
                       FortranFormattingError)
-from . import _test_fortran
+
 
 DATA_PATH = path.join(path.dirname(__file__), 'data')
 
