@@ -166,7 +166,7 @@ class TestBracketRoot:
             i = rng.random(size=shape) > 0.5
             xmin[i], xmax[i] = -np.inf, np.inf
         factor = rng.random(size=shape) + 1.5
-        refs = xp.asarray(bracket_root_single(xl0, xr0, xmin, xmax, factor, p).ravel())
+        refs = bracket_root_single(xl0, xr0, xmin, xmax, factor, p).ravel()
         xl0, xr0, xmin, xmax, factor = (xp.asarray(xl0), xp.asarray(xr0),
                                         xp.asarray(xmin), xp.asarray(xmax),
                                         xp.asarray(factor))
@@ -189,8 +189,8 @@ class TestBracketRoot:
         assert xp.isdtype(res.nit.dtype, "integral")
         assert xp.max(res.nit) == f.f_evals - 2
         xp_assert_less(res.xl, res.xr)
-        xp_assert_close(res.fl, self.f(res.xl, *args))
-        xp_assert_close(res.fr, self.f(res.xr, *args))
+        xp_assert_close(res.fl, xp.asarray(self.f(res.xl, *args)))
+        xp_assert_close(res.fr, xp.asarray(self.f(res.xr, *args)))
 
     def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
