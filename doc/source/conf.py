@@ -574,7 +574,8 @@ class ArrayAPIDirective(Directive):
         text = (f"This {obj} has experimental support for Python Array API Standard "
                 "compatible backends other than NumPy. Please consider testing this "
                 "feature by setting an environment variable ``SCIPY_ARRAY_API=1`` and "
-                "providing PyTorch, JAX, or CuPy arrays as array arguments.")
+                "providing PyTorch, JAX, or CuPy arrays as array arguments. See "
+                ":ref:`dev-arrayapi` for more information.")
 
         try:
             self.content[0] = text+" "+self.content[0]

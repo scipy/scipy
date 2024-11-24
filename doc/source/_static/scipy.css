@@ -56,6 +56,16 @@ div.admonition-arrayapi {
   border-color: var(--pst-color-primary);
 }
 
+.admonition>.admonition-title::after,
+div.admonition>.admonition-title::after {
+  color: var(--pst-color-primary);
+}
+
+.admonition>.admonition-title,
+div.admonition>.admonition-title {
+  background-color: var(--pst-color-surface);
+}
+
 /* JupyterLite "Try Examples" directive */
 
 .try_examples_button {
