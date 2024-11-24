@@ -289,7 +289,7 @@ class TestBracketRoot:
                                   reason="scalar inputs use NumPy backend.")
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
-        xp_dtype = array_namespace(xp.asarray(1.))
+        xp_test = array_namespace(xp.asarray(1.))
 
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
