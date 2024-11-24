@@ -11,7 +11,7 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not callable(func):
         raise ValueError('`func` must be callable.')
 
-    if not isinstance(args, tuple):
+    if not np.iterable(args):
         args = (args,)
 
     xp = array_namespace(xl0)

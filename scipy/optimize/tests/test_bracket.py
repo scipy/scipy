@@ -289,11 +289,12 @@ class TestBracketRoot:
                                   reason="scalar inputs use NumPy backend.")
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
+        xp_dtype = array_namespace(xp.asarray(1.))
 
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            assert xp.isdtype(x.dtype, "real floating")
+            assert xp_test.isdtype(x.dtype, "real floating")
             return x ** 99 - 1
 
         res = _bracket_root(f, -7, 5)
