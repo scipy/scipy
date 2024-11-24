@@ -5,6 +5,8 @@ Elementwise Scalar Optimization (:mod:`scipy.optimize.elementwise`)
 
 .. currentmodule:: scipy.optimize.elementwise
 
+.. arrayapi::
+
 This module provides a collection of functions for root finding and
 minimization of scalar, real-valued functions of one variable. Unlike their
 counterparts in the base :mod:`scipy.optimize` namespace, these functions work

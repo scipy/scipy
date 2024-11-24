@@ -50,6 +50,12 @@ div.admonition>.admonition-title {
   background-color: var(--pst-color-warning-bg);
 }
 
+/* Array API admonition */
+
+div.admonition-arrayapi {
+  border-color: var(--pst-color-primary);
+}
+
 /* JupyterLite "Try Examples" directive */
 
 .try_examples_button {

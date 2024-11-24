@@ -4286,6 +4286,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     producing datasets that have a Pearson correlation at least as extreme
     as the one computed from these datasets.
 
+    .. arrayapi:: function
+
     Parameters
     ----------
     x : array_like
