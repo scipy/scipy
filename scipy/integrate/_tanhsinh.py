@@ -1149,9 +1149,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     # Finish preparing `a`, `b`, and `step` arrays
     a = xs[0]
-    b = xp.broadcast_to(b, shape).ravel().astype(dtype)
-    step = xp.broadcast_to(step, shape).ravel().astype(dtype)
-    valid_abstep = xp.broadcast_to(valid_abstep, shape).ravel()
+    b = xp.astype(xp_ravel(xp.broadcast_to(b, shape)), dtype)
+    step = xp.astype(xp_ravel(xp.broadcast_to(step, shape)), dtype)
+    valid_abstep = xp_ravel(xp.broadcast_to(valid_abstep, shape))
     nterms = xp.floor((b - a) / step)
     finite_terms = xp.isfinite(nterms)
     b[finite_terms] = a[finite_terms] + nterms[finite_terms]*step[finite_terms]
@@ -1166,8 +1166,8 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     # Prepare result arrays
     S = xp.empty_like(a)
     E = xp.empty_like(a)
-    status = xp.zeros(len(a), dtype=int)
-    nfev = xp.ones(len(a), dtype=int)  # one function evaluation above
+    status = xp.zeros(len(a), dtype=xp.int32)
+    nfev = xp.ones(len(a), dtype=xp.int32)  # one function evaluation above
 
     # Branch for direct sum evaluation / integral approximation / invalid input
     i0 = ~valid_abstep                     # invalid
@@ -1185,18 +1185,20 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         tmp = _direct(f, a[i1], b[i1], step[i1], args_direct, constants, xp)
         S[i1], E[i1] = tmp[:-1]
         nfev[i1] += tmp[-1]
-        status[i1] = -3 * (~xp.isfinite(S[i1]))
+        status[i1] = -3 * xp.asarray(~xp.isfinite(S[i1]), dtype=xp.int32)
 
     if xp.any(i2):
         args_indirect = [arg[i2] for arg in args]
-        tmp = _integral_bound(f, a[i2], b[i2], step[i2], args_indirect, constants, xp)
+        tmp = _integral_bound(f, a[i2], b[i2], step[i2],
+                              args_indirect, constants, xp)
         S[i2], E[i2], status[i2] = tmp[:-1]
         nfev[i2] += tmp[-1]
 
     if xp.any(i3):
         args_indirect = [arg[i3] for arg in args]
         def _f(x, *args): return f(-x, *args)
-        tmp = _integral_bound(_f, -b[i3], -a[i3], step[i3], args_indirect, constants, xp)
+        tmp = _integral_bound(_f, -b[i3], -a[i3], step[i3],
+                              args_indirect, constants, xp)
         S[i3], E[i3], status[i3] = tmp[:-1]
         nfev[i3] += tmp[-1]
 
@@ -1287,7 +1289,7 @@ def _direct(f, a, b, step, args, constants, xp, inclusive=True):
 def _integral_bound(f, a, b, step, args, constants, xp):
     # Estimate the sum with integral approximation
     dtype, log, _, _, rtol, atol, maxterms = constants
-    log2 = xp.log(2, dtype=dtype)
+    log2 = xp.asarray(math.log(2), dtype=dtype)
 
     # Get a lower bound on the sum and compute effective absolute tolerance
     lb = _tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
@@ -1309,15 +1311,15 @@ def _integral_bound(f, a, b, step, args, constants, xp):
 
     # Find the location of a term that is less than the tolerance (if possible)
     log2maxterms = math.floor(math.log2(maxterms)) if maxterms else 0
-    n_steps = xp.concat([2**xp.arange(0, log2maxterms), xp.asarray([maxterms])],
-                        dtype=dtype)
+    n_steps = xp.concat((2**xp.arange(0, log2maxterms), xp.asarray([maxterms])))
+    n_steps = xp.astype(n_steps, dtype)
     nfev = len(n_steps) * 2
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
     fksp1 = f(ks + step2, *args2)  # check that the function is decreasing
     fk_insufficient = (fks > tol[:, xp.newaxis]) | (fksp1 > fks)
     n_fk_insufficient = xp.sum(fk_insufficient, axis=-1)
-    nt = xp.minimum(n_fk_insufficient, n_steps.shape[-1]-1)
+    nt = xp.minimum(n_fk_insufficient, xp.asarray(n_steps.shape[-1]-1))
     n_steps = n_steps[nt]
 
     # If `maxterms` is insufficient (i.e. either the magnitude of the last term of the

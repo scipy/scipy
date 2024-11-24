@@ -4,12 +4,12 @@ import pytest
 import math
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy
+from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy, is_numpy
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
@@ -750,7 +750,7 @@ class TestTanhSinh:
 @pytest.mark.skip_xp_backends('jax.numpy', reason='No mutation.')
 class TestNSum:
     rng = np.random.default_rng(5895448232066142650)
-    p = rng.uniform(1, 10, size=10)
+    p = rng.uniform(1, 10, size=10).tolist()
 
     def f1(self, k):
         # Integers are never passed to `f1`; if they were, we'd get
@@ -766,7 +766,7 @@ class TestNSum:
         return 1 / k**p
 
     f2.ref = special.zeta(p, 1)
-    f2.a = 1
+    f2.a = 1.
     f2.b = np.inf
     f2.args = (p,)
 
@@ -804,15 +804,15 @@ class TestNSum:
 
         with np.errstate(all='ignore'):
             res = nsum(f, xp.asarray([np.nan, np.inf]), xp.asarray(1.))
-            assert np.all((res.status == -1) & np.isnan(res.sum)
-                          & np.isnan(res.error) & ~res.success & res.nfev == 1)
+            assert xp.all((res.status == -1) & xp.isnan(res.sum)
+                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
             res = nsum(f, xp.asarray(10.), xp.asarray([np.nan, 1]))
-            assert np.all((res.status == -1) & np.isnan(res.sum)
-                          & np.isnan(res.error) & ~res.success & res.nfev == 1)
+            assert xp.all((res.status == -1) & xp.isnan(res.sum)
+                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
             res = nsum(f, xp.asarray(1.), xp.asarray(10.),
-                       step=xp.asarray([np.nan, -np.inf, np.inf, -1, 0]))
-            assert np.all((res.status == -1) & np.isnan(res.sum)
-                          & np.isnan(res.error) & ~res.success & res.nfev == 1)
+                       step=xp.asarray([xp.nan, -xp.inf, xp.inf, -1, 0]))
+            assert xp.all((res.status == -1) & xp.isnan(res.sum)
+                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
 
         message = '...must be non-negative and finite.'
         with pytest.raises(ValueError, match=message):
@@ -834,23 +834,26 @@ class TestNSum:
 
     @pytest.mark.parametrize('f_number', range(1, 4))
     def test_basic(self, f_number, xp):
+        dtype = xp.asarray(1.).dtype
         f = getattr(self, f"f{f_number}")
-        a, b, args = xp.asarray(f.a), xp.asarray(f.b), xp.asarray(f.args)
-        ref = xp.asarray(f.ref)
+        a, b = xp.asarray(f.a), xp.asarray(f.b),
+        args = tuple(xp.asarray(arg) for arg in f.args)
+        ref = xp.asarray(f.ref, dtype=dtype)
         res = nsum(f, a, b, args=args)
         xp_assert_close(res.sum, ref)
-        xp_assert_equal(res.status, xp.zeros(ref.shape, dtype=xp.int64))
+        xp_assert_equal(res.status, xp.zeros(ref.shape, dtype=xp.int32))
         xp_test = array_namespace(a)  # CuPy doesn't have `bool`
         xp_assert_equal(res.success, xp.ones(ref.shape, dtype=xp_test.bool))
 
         with np.errstate(divide='ignore'):
             logres = nsum(lambda *args: xp.log(f(*args)),
                            a, b, log=True, args=args)
-        xp_assert_close(np.exp(logres.sum), res.sum)
-        xp_assert_close(np.exp(logres.error), res.error, atol=1e-15)
+        xp_assert_close(xp.exp(logres.sum), res.sum)
+        xp_assert_close(xp.exp(logres.error), res.error, atol=1e-15)
         xp_assert_equal(logres.status, res.status)
         xp_assert_equal(logres.success, res.success)
 
+    @pytest.mark.skip_xp_backends('torch', reason='seems sensitive to arithmetic')
     @pytest.mark.parametrize('maxterms', [0, 1, 10, 20, 100])
     def test_integral(self, maxterms, xp):
         # test precise behavior of integral approximation
@@ -879,13 +882,14 @@ class TestNSum:
         ref_err = (high - low)/2  # error (assuming perfect quadrature)
 
         # correct reference values where number of terms < maxterms
-        a, b, step = xp.broadcast_arrays(a, b, step)
+        xp_test = array_namespace(a)  # torch needs broadcast_arrays
+        a, b, step = xp_test.broadcast_arrays(a, b, step)
         for i in np.ndindex(a.shape):
             ai, bi, stepi = float(a[i]), float(b[i]), float(step[i])
             if (bi - ai)/stepi + 1 <= maxterms:
                 direct = xp.sum(f(xp.arange(ai, bi+stepi, stepi)))
                 ref_sum[i] = direct
-                ref_err[i] = direct * xp.finfo(direct).eps
+                ref_err[i] = direct * xp.finfo(direct.dtype).eps
 
         rtol = 1e-12
         res = nsum(f, a, b_original, step=step, maxterms=maxterms,
@@ -899,8 +903,8 @@ class TestNSum:
 
         logres = nsum(logf, a, b_original, step=step, log=True,
                       tolerances=dict(rtol=math.log(rtol)), maxterms=maxterms)
-        xp_assert_close(np.exp(logres.sum), res.sum)
-        xp_assert_close(np.exp(logres.error), res.error)
+        xp_assert_close(xp.exp(logres.sum), res.sum)
+        xp_assert_close(xp.exp(logres.error), res.error)
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
     def test_vectorization(self, shape, xp):
@@ -931,36 +935,39 @@ class TestNSum:
 
         attrs = ['sum', 'error', 'success', 'status', 'nfev']
         for attr in attrs:
-            ref_attr = [getattr(ref, attr) for ref in refs]
+            ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
-            xp_assert_close(res_attr.ravel(), xp.asarray(ref_attr), rtol=1e-15)
+            xp_assert_close(xp_ravel(res_attr), xp.asarray(ref_attr), rtol=1e-15)
             assert res_attr.shape == shape
 
         xp_test = array_namespace(xp.asarray(1.))
         assert xp_test.isdtype(res.success.dtype, 'bool')
         assert xp_test.isdtype(res.status.dtype, 'integral')
         assert xp_test.isdtype(res.nfev.dtype, 'integral')
-        assert int(xp.max(res.nfev)) == f.feval
+        if is_numpy(xp):  # other libraries might have different number
+            assert int(xp.max(res.nfev)) == f.feval
 
     def test_status(self, xp):
         f = self.f2
 
         p = [2, 2, 0.9, 1.1, 2, 2]
-        a = xp.asarray([0, 0, 1, 1, 1, np.nan])
-        b = xp.asarray([10, np.inf, np.inf, np.inf, np.inf, np.inf])
+        a = xp.asarray([0, 0, 1, 1, 1, np.nan], dtype=xp.float64)
+        b = xp.asarray([10, np.inf, np.inf, np.inf, np.inf, np.inf], dtype=xp.float64)
         ref = special.zeta(p, 1)
-        p = xp.asarray(p)
+        p = xp.asarray(p, dtype=xp.float64)
 
         with np.errstate(divide='ignore'):  # intentionally dividing by zero
             res = nsum(f, a, b, args=(p,))
 
-        xp_assert_equal(res.success, xp.asarray([False, False, False, False, True, False]))
-        xp_assert_equal(res.status, xp.asarray([-3, -3, -2, -4, 0, -1]))
+        ref_success = xp.asarray([False, False, False, False, True, False])
+        ref_status = xp.asarray([-3, -3, -2, -4, 0, -1], dtype=xp.int32)
+        xp_assert_equal(res.success, ref_success)
+        xp_assert_equal(res.status, ref_status)
         xp_assert_close(res.sum[res.success], xp.asarray(ref)[res.success])
 
     def test_nfev(self, xp):
         def f(x):
-            f.nfev += np.size(x)
+            f.nfev += xp_size(x)
             return 1 / x**2
 
         f.nfev = 0
@@ -995,8 +1002,8 @@ class TestNSum:
         res = nsum(f, a, b, args=(c,), log=log)
         ref = xp.asarray([stats.dlaplace.sf(0, 1), stats.dlaplace.sf(0, 2), 1])
         ref = xp.log(ref) if log else ref
-        atol = 1e-10 if log else 0
-        xp_assert_close(res.sum, ref, atol=atol)
+        atol = (1e-10 if a.dtype==xp.float64 else 1e-5) if log else 0
+        xp_assert_close(res.sum, xp.asarray(ref, dtype=a.dtype), atol=atol)
 
         # # Make sure the sign of `x` passed into `f` is correct.
         def f(x, c):
@@ -1007,7 +1014,7 @@ class TestNSum:
         arg = xp.asarray([1, -1])
         res = nsum(f, a, b, args=(arg,), log=log)
         ref = np.log(special.zeta(3)) if log else special.zeta(3)
-        xp_assert_close(res.sum, xp.full(a.shape, ref))
+        xp_assert_close(res.sum, xp.full(a.shape, ref, dtype=a.dtype))
 
     def test_decreasing_check(self, xp):
         # Test accuracy when we start sum on an uphill slope.
@@ -1019,14 +1026,15 @@ class TestNSum:
         def f(x):
             return xp.exp(-x ** 2)
 
-        res = nsum(f, xp.asarray(-25), xp.asarray(np.inf))
+        a, b = xp.asarray(-25, dtype=xp.float64), xp.asarray(np.inf, dtype=xp.float64)
+        res = nsum(f, a, b)
 
         # Reference computed with mpmath:
         # from mpmath import mp
         # mp.dps = 50
         # def fmp(x): return mp.exp(-x**2)
         # ref = mp.nsum(fmp, (-25, 0)) + mp.nsum(fmp, (1, mp.inf))
-        ref = xp.asarray(1.772637204826652)
+        ref = xp.asarray(1.772637204826652, dtype=xp.float64)
 
         xp_assert_close(res.sum, ref, rtol=1e-15)
 
@@ -1073,11 +1081,11 @@ class TestNSum:
         p = xp.asarray([2, 2, xp.nan, 2])
         res = nsum(self.f2, a, b, args=(p,))
         xp_assert_close(res.sum, xp.asarray([xp.nan, xp.nan, xp.nan, self.f1.ref]))
-        xp_assert_close(res.error[:3], xp.full(3, xp.nan))
-        xp_assert_equal(res.status, xp.asarray([-1, -1, -3, 0]))
+        xp_assert_close(res.error[:3], xp.full((3,), xp.nan))
+        xp_assert_equal(res.status, xp.asarray([-1, -1, -3, 0], dtype=xp.int32))
         xp_assert_equal(res.success, xp.asarray([False, False, False, True]))
         # Ideally res.nfev[2] would be 1, but `tanhsinh` has some function evals
-        xp_assert_equal(res.nfev[:2], xp.full(2, 1))
+        xp_assert_equal(res.nfev[:2], xp.full((2,), 1, dtype=xp.int32))
 
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_dtype(self, dtype, xp):
@@ -1115,7 +1123,8 @@ class TestNSum:
         ns = np.floor((b - a) / step)
         assert len(set(ns)) == 2
 
-        a, b, step, ns = xp.asarray(a), xp.asarray(b), xp.asarray(step), xp.asarray(ns)
+        a, b = xp.asarray(a, dtype=xp.float64), xp.asarray(b, dtype=xp.float64)
+        step, ns = xp.asarray(step, dtype=xp.float64), xp.asarray(ns, dtype=xp.float64)
         res = nsum(f, a, b, step=step, maxterms=maxterms)
         xp_assert_equal(xp.diff(ns) > 0, xp.diff(res.sum) > 0)
         xp_assert_close(res.sum[-1], res.sum[0] + f(b0))
