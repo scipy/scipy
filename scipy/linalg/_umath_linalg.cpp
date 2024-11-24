@@ -8,7 +8,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#define NPY_NO_DEPRECATED_API NPY_API_VERSION
 #include "numpy/arrayobject.h"
 #include "numpy/ufuncobject.h"
 #include "numpy/npy_math.h"
@@ -130,22 +129,21 @@ FNAME(zgesv)(fortran_int *n, fortran_int *nrhs,
 static inline int
 get_fp_invalid_and_clear(void)
 {
-  // XXX
-  //  int status;
-  //  status = npy_clear_floatstatus_barrier((char*)&status);
-  //  return !!(status & NPY_FPE_INVALID);
+    int status;
+    status = npy_clear_floatstatus_barrier((char*)&status);
+    return !!(status & NPY_FPE_INVALID);
   return 42;
 }
 
 static inline void
 set_fp_invalid_or_clear(int error_occurred)
 {
-  //  if (error_occurred) {
-  //      npy_set_floatstatus_invalid();
-  //  }
-  //  else {
-  //      npy_clear_floatstatus_barrier((char*)&error_occurred);
-  //  }
+    if (error_occurred) {
+        npy_set_floatstatus_invalid();
+    }
+    else {
+        npy_clear_floatstatus_barrier((char*)&error_occurred);
+    }
 }
 
 

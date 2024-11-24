@@ -218,7 +218,7 @@ endif
 
 py3.extension_module('_umath_linalg',
     ['_umath_linalg.cpp'],
-    dependencies: [np_dep, lapack_dep, blas_dep],
+    dependencies: [np_dep, npymath_lib, lapack_dep, blas_dep],
     install: true,
     subdir: 'scipy/linalg'
 )
