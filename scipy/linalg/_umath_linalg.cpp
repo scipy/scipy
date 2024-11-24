@@ -85,6 +85,23 @@ typedef f2c_doublecomplex fortran_doublecomplex;
 
 
 extern "C" fortran_int
+BLAS_FUNC(scopy)(fortran_int *n,
+        float *sx, fortran_int *incx,
+        float *sy, fortran_int *incy);
+extern "C" fortran_int
+BLAS_FUNC(dcopy)(fortran_int *n,
+        double *sx, fortran_int *incx,
+        double *sy, fortran_int *incy);
+extern "C" fortran_int
+BLAS_FUNC(ccopy)(fortran_int *n,
+        f2c_complex *sx, fortran_int *incx,
+        f2c_complex *sy, fortran_int *incy);
+extern "C" fortran_int
+BLAS_FUNC(zcopy)(fortran_int *n,
+        f2c_doublecomplex *sx, fortran_int *incx,
+        f2c_doublecomplex *sy, fortran_int *incy);
+
+extern "C" fortran_int
 FNAME(sgesv)(fortran_int *n, fortran_int *nrhs,
              float a[], fortran_int *lda,
              fortran_int ipiv[],
@@ -408,47 +425,21 @@ update_pointers(npy_uint8** bases, ptrdiff_t* offsets, size_t count)
  *****************************************************************************
  */
 
-// XXX: numpy does not need extern "C" prototypes, and we seem to need them. Why?
-extern "C" fortran_int
-BLAS_FUNC(scopy)(fortran_int *n,
-        float *sx, fortran_int *incx,
-        float *sy, fortran_int *incy);
-
 static fortran_int copy(fortran_int *n,
         float *sx, fortran_int *incx,
         float *sy, fortran_int *incy) { return FNAME(scopy)(n, sx, incx,
             sy, incy);
 }
-
-
-extern "C" fortran_int
-BLAS_FUNC(dcopy)(fortran_int *n,
-        double *sx, fortran_int *incx,
-        double *sy, fortran_int *incy);
-
 static fortran_int copy(fortran_int *n,
         double *sx, fortran_int *incx,
         double *sy, fortran_int *incy) { return FNAME(dcopy)(n, sx, incx,
             sy, incy);
 }
-
-
-extern "C" fortran_int
-BLAS_FUNC(ccopy)(fortran_int *n,
-        f2c_complex *sx, fortran_int *incx,
-        f2c_complex *sy, fortran_int *incy);
-
 static fortran_int copy(fortran_int *n,
         f2c_complex *sx, fortran_int *incx,
         f2c_complex *sy, fortran_int *incy) { return FNAME(ccopy)(n, sx, incx,
             sy, incy);
 }
-
-extern "C" fortran_int
-BLAS_FUNC(zcopy)(fortran_int *n,
-        f2c_doublecomplex *sx, fortran_int *incx,
-        f2c_doublecomplex *sy, fortran_int *incy);
-
 static fortran_int copy(fortran_int *n,
         f2c_doublecomplex *sx, fortran_int *incx,
         f2c_doublecomplex *sy, fortran_int *incy) { return FNAME(zcopy)(n, sx, incx,
