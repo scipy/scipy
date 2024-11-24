@@ -1137,6 +1137,10 @@ def inv(a, overwrite_a=False, check_finite=True):
     t, result_t = a1.dtype, a1.dtype
 #    t, result_t = _commonType(a)   # XXX: float16; empty
 
+    if not issubclass(t.type, np.inexact):
+        a1 = a1.astype(np.float64)
+        t, result_t = a1.dtype, a1.dtype
+
     signature = ('D->D'
                  if issubclass(t.type, np.complexfloating)
                  else 'd->d')
