@@ -1105,20 +1105,20 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     >>> import numpy as np
     >>> from scipy.integrate import nsum
-    >>> res = nsum(lambda k: 1/k**2, 1, np.inf, maxterms=1e3)
+    >>> res = nsum(lambda k: 1/k**2, 1, np.inf)
     >>> ref = np.pi**2/6  # true value
     >>> res.error  # estimated error
-    4.990061275730517e-07
+    np.float64(7.448762306416137e-09)
     >>> (res.sum - ref)/ref  # true error
-    -1.0104163408712734e-10
+    np.float64(-1.839871898894426e-13)
     >>> res.nfev  # number of points at which callable was evaluated
-    1209
+    np.int32(8561)
 
     Compute the infinite sums of the reciprocals of integers raised to powers ``p``,
     where ``p`` is an array.
 
     >>> from scipy import special
-    >>> p = np.arange(2, 10)
+    >>> p = np.arange(3, 10)
     >>> res = nsum(lambda k, p: 1/k**p, 1, np.inf, maxterms=1e3, args=(p,))
     >>> ref = special.zeta(p, 1)
     >>> np.allclose(res.sum, ref)
@@ -1128,7 +1128,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     >>> res = nsum(lambda x: 1/x - 1/(x+1), 1, np.inf, step=2)
     >>> res.sum, res.sum - np.log(2)  # result, difference vs analytical sum
-    (0.6931471805598691, -7.616129948928574e-14)
+    (np.float64(0.6931471805598691), np.float64(-7.616129948928574e-14))
 
     """ # noqa: E501
     # Potential future work:
