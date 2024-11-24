@@ -1215,7 +1215,7 @@ class TestDet:
         a = np.empty((3, 0, 0), dtype=dt)
         d = det(a)
         assert d.shape == (3,)
-        assert d.dtype == det(np.empty((3, 1, 1), dtype=dt)).dtype
+        assert d.dtype == det(np.zeros((3, 1, 1), dtype=dt)).dtype
 
     def test_overwrite_a(self):
         # If all conditions are met then input should be overwritten;
