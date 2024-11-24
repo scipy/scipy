@@ -9,9 +9,11 @@ from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from .lapack import get_lapack_funcs, _compute_lwork
-from ._misc import LinAlgError, _datacopied, LinAlgWarning
-from ._decomp import _asarray_validated
+from ._misc import (LinAlgError, _datacopied, LinAlgWarning,
+                   _assert_stacked_2d, _assert_stacked_square, _raise_linalgerror_singular)
+from scipy._lib._util import _asarray_validated
 from . import _decomp, _decomp_svd
+from . import _umath_linalg
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
                                       ishermitian)
@@ -1129,6 +1131,24 @@ def inv(a, overwrite_a=False, check_finite=True):
            [ 0.,  1.]])
 
     """
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    _assert_stacked_2d(a1)
+    _assert_stacked_square(a1)
+    t, result_t = a1.dtype, a1.dtype
+#    t, result_t = _commonType(a)   # XXX: float16; empty
+
+    signature = ('D->D'
+                 if issubclass(t.type, np.complexfloating)
+                 else 'd->d')
+    kw = dict(invalid='call', over='ignore', divide='ignore', under='ignore')
+
+    with np.errstate(call=_raise_linalgerror_singular, **kw):
+        ainv = _umath_linalg.inv(a, signature=signature)
+
+    return ainv.astype(result_t, copy=False)
+
+
+    #########################
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')

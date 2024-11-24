@@ -216,6 +216,14 @@ else
 endif
 
 
+py3.extension_module('_umath_linalg',
+    ['_umath_linalg.cpp'],
+    dependencies: [np_dep, lapack_dep, blas_dep],
+    install: true,
+    subdir: 'scipy/linalg'
+)
+
+
 python_sources = [
   '__init__.py',
   '_basic.py',
