@@ -24,11 +24,8 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
     factor = 2. if factor is None else factor
-    xl0, xr0, xmin, xmax, factor = xp.broadcast_arrays(xl0,
-                                                       xp.asarray(xr0),
-                                                       xp.asarray(xmin),
-                                                       xp.asarray(xmax),
-                                                       xp.asarray(factor))
+    xl0, xr0, xmin, xmax, factor = xp.broadcast_arrays(
+        xl0, xp.asarray(xr0), xp.asarray(xmin), xp.asarray(xmax), xp.asarray(factor))
 
     if (not xp.isdtype(xr0.dtype, "numeric")
         or xp.isdtype(xr0.dtype, "complex floating")):
@@ -195,8 +192,8 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # moving end; it is never returned.
     limit = xp.concat((xmin, xmax))
 
-    factor = xp_ravel(xp.astype(xp.broadcast_to(factor, shape), dtype, copy=False),
-                      xp=xp)
+    factor = xp_ravel(xp.broadcast_to(factor, shape), xp=xp)
+    factor = xp.astype(factor, dtype, copy=False)
     factor = xp.concat((factor, factor))
 
     active = xp.arange(2*n)
@@ -381,8 +378,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         res['nfev'] = res['nfev'][:n] + res['nfev'][n:]
         # If the status on one side is zero, the status is zero. In any case,
         # report the status from one side only.
-        res['status'] = xp.zeros_like(sa)
-        res['status'][sa != 0] = sb[sa != 0]
+        res['status'] = xp.where(sa != 0, sb, sa)
         res['success'] = (res['status'] == 0)
 
         del res['x']

@@ -221,7 +221,7 @@ class TestBracketRoot:
                                 eim._ECONVERR,
                                 eim._EVALUEERR,
                                 eim._EINPUTERR],
-                               dtype=res.status.dtype)
+                               dtype=xp.int32)
 
         xp_assert_equal(res.status, ref_flags)
 
