@@ -142,7 +142,6 @@ class TestBracketRoot:
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
     def test_vectorization(self, shape, xp):
-        xp = array_namespace(xp.asarray(1.))
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
         p = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
@@ -185,12 +184,12 @@ class TestBracketRoot:
                             rtol=1e-5)
             xp_assert_equal(res_attr.shape, shape)
 
-        assert xp.isdtype(res.success.dtype, "bool")
+        assert res.success.dtype == xp.bool
         if shape:
             assert xp.all(res.success[1:-1])
-        assert xp.isdtype(res.status.dtype, "integral")
-        assert xp.isdtype(res.nfev.dtype, "integral")
-        assert xp.isdtype(res.nit.dtype, "integral")
+        assert res.status.dtype == xp.int32
+        assert res.nfev.dtype == xp.int32
+        assert res.nit.dtype == xp.int32
         assert xp.max(res.nit) == f.f_evals - 2
         xp_assert_less(res.xl, res.xr)
         xp_assert_close(res.fl, xp.asarray(self.f(res.xl, *args)))
@@ -285,8 +284,6 @@ class TestBracketRoot:
         with pytest.raises(ValueError, match=message):
             _bracket_root(lambda x: x, -4, 4, maxiter="shrubbery")
 
-    @pytest.mark.skip_xp_backends(np_only=True,
-                                  reason="scalar inputs use NumPy backend.")
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
         xp_test = array_namespace(xp.asarray(1.))
@@ -297,14 +294,14 @@ class TestBracketRoot:
             assert xp_test.isdtype(x.dtype, "real floating")
             return x ** 99 - 1
 
-        res = _bracket_root(f, -7, 5)
+        res = _bracket_root(f, xp.asarray(-7.), xp.asarray(5.))
         assert res.success
 
         # Test maxiter = 0. Should do nothing to bracket.
         def f(x):
             return x - 10
 
-        bracket = (-3, 5)
+        bracket = (xp.asarray(-3.), xp.asarray(5.))
         res = _bracket_root(f, *bracket, maxiter=0)
         assert res.xl, res.xr == bracket
         assert res.nit == 0
@@ -315,7 +312,8 @@ class TestBracketRoot:
         def f(x, c):
             return c*x - 1
 
-        res = _bracket_root(f, -1, 1, args=3)
+        res = _bracket_root(f, xp.asarray(-1.), xp.asarray(1.),
+                            args=xp.asarray(3.))
         assert res.success
         xp_assert_close(res.fl, f(res.xl, 3))
 
@@ -327,29 +325,33 @@ class TestBracketRoot:
 
         # 1. root lies within guess of bracket
         f.count = 0
-        _bracket_root(f, -10, 20)
+        _bracket_root(f, xp.asarray(-10), xp.asarray(20))
         assert f.count == 2
 
         # 2. bracket endpoint hits root exactly
         f.count = 0
-        res = _bracket_root(f, 5, 10, factor=2)
+        res = _bracket_root(f, xp.asarray(5.), xp.asarray(10.), 
+                            factor=2)
         bracket = (res.xl, res.xr)
         assert res.nfev == 4
         xp_assert_close(bracket, xp.asarray([0., 5.]), atol=1e-15)
 
         # 3. bracket limit hits root exactly
         with np.errstate(over='ignore'):
-            res = _bracket_root(f, 5, 10, xmin=0)
+            res = _bracket_root(f, xp.asarray(5.), xp.asarray(10.), 
+                                xmin=0)
         bracket = (res.xl, res.xr)
-        xp_assert_close(bracket[0], 0., atol=1e-15)
+        xp_assert_close(bracket[0], xp.asarray(0.), atol=1e-15)
         with np.errstate(over='ignore'):
-            res = _bracket_root(f, -10, -5, xmax=0)
+            res = _bracket_root(f, xp.asarray(-10.), xp.asarray(-5.), 
+                                xmax=0)
         bracket = (res.xl, res.xr)
-        xp_assert_close(bracket[1], 0., atol=1e-15)
+        xp_assert_close(bracket[1], xp.asarray(0.), atol=1e-15)
 
         # 4. bracket not within min, max
         with np.errstate(over='ignore'):
-            res = _bracket_root(f, 5, 10, xmin=1)
+            res = _bracket_root(f, xp.asarray(5.), xp.asarray(10.),
+                                xmin=1)
         assert not res.success
 
 
