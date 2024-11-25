@@ -659,13 +659,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
             # Don't use asarray unless we have to
             try:
                 o_ndim = other.ndim
-                perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
-                tr = other.transpose(perm)
             except AttributeError:
-                o_arr = np.asarray(other)
-                o_ndim = o_arr.ndim
-                perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
-                tr = o_arr.transpose(perm)
+                other = np.asarray(other)
+                o_ndim = other.ndim
+             perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
+             tr = other.transpose(perm)
             
             s_ndim = self.ndim
             perm = tuple(range(s_ndim)[:-2]) + tuple(range(s_ndim)[-2:][::-1])
