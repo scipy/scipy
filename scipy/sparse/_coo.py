@@ -952,11 +952,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         axes_self, axes_other = _process_axes(self.ndim, other.ndim, axes)
 
-        # Adjust negative axes for self
-        axes_self = [axis + self.ndim if axis < 0 else axis for axis in axes_self]
-        # Adjust negative axes for other
-        axes_other = [axis + other.ndim if axis < 0 else axis for axis in axes_other]
-
         # Check for shape compatibility along specified axes
         if any(self.shape[ax] != other.shape[bx]
                for ax, bx in zip(axes_self, axes_other)):
@@ -1212,7 +1207,10 @@ def _process_axes(ndim_a, ndim_b, axes):
     else:
         raise TypeError("axes must be an integer or a tuple/list of integers")
     
-    return list(axes_a), list(axes_b)
+    axes_a = [axis + ndim_a if axis < 0 else axis for axis in axes_a]
+    axes_b = [axis + ndim_b if axis < 0 else axis for axis in axes_b]
+    return axes_a, axes_b
+
 
 def _ravel_non_reduced_axes(coords, shape, axes):
     ndim = len(shape)
