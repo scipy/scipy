@@ -22,6 +22,7 @@ from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
 
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
+from scipy.conftest import mac_acclrt_gh21862
 
 import scipy.sparse as sps
 try:
@@ -40,7 +41,8 @@ REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
-from scipy.conftest import mac_acclrt_gh21862
+# gh21862 had failing tests on macOS accelerate for Sequoia <15.2.
+# Here we modify the parameterization of some of the tests.
 MODIFIED_DTYPES_GH21862 = list(DTYPES)
 MODIFIED_DTYPES_GH21862.remove(np.complex128)
 _p = pytest.param(
@@ -515,8 +517,8 @@ class TestDlasd4:
             res = lasd4(i, sgm, mvc)
             roots.append(res[1])
 
-            assert_((res[3] <= 0), "LAPACK root finding dlasd4 failed to find \
-                                    the singular value %i" % i)
+            assert (res[3] <= 0), "LAPACK root finding dlasd4 failed to find" \
+                                  f" the singular value {i}"
         roots = np.array(roots)[::-1]
 
         assert_((not np.any(np.isnan(roots)), "There are NaN roots"))

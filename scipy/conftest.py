@@ -1,4 +1,5 @@
 # Pytest customization
+import sys
 import json
 import os
 from platform import mac_ver
@@ -541,6 +542,8 @@ if HAVE_SCPDT:
 ############################################################################
 
 if sys.platform == "darwin":
-    mac_acclrt_gh21862 = ((15, 0) < _pep440._parse_local_version(mac_ver()[0]) < (15, 2))
+    mac_acclrt_gh21862 = (
+            (15, 0) < _pep440._parse_local_version(mac_ver()[0]) < (15, 2)
+    )
 else:
     mac_acclrt_gh21862 = False
