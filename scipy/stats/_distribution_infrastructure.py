@@ -2646,7 +2646,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._ccdf_quadrature(x[mask], *params_mask)
+            out[mask] = self._ccdf_quadrature(x[mask], **params_mask)
         return out[()]
 
     def _ccdf_quadrature(self, x, **params):
@@ -3397,6 +3397,13 @@ def make_distribution(dist):
     parameters as keyword arguments) before use. Once instantiated, the resulting
     object will have the same interface as any other instance of
     `ContinuousDistribution`; e.g., `scipy.stats.Normal`.
+
+    .. note::
+
+        `make_distribution` does not work with all instances of `rv_continuous`.
+        Known failures include 'genpareto', 'genextreme', 'genhalflogistic',
+        'irwinhall', 'kstwo', 'kappa4', 'levy_stable', 'norminvgauss',
+        'tukeylambda', and `vonmises`.
 
     Parameters
     ----------
