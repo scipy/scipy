@@ -895,8 +895,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
         shapes = (self_nonreduced_shape, other_nonreduced_shape)
-        iter_cs = zip(prod.coords, shapes)
-        prod_coords = sum((np.unravel_index(c, s) for c, s in iter_cs), start=())
+        prod_coords = []
+        for c, s in zip(prod.coords, shapes):
+            prod_coords.extend(np.unravel_index(c, s))
 
         prod_arr = coo_array((prod.data, prod_coords), combined_shape)
         
