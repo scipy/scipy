@@ -727,6 +727,7 @@ class Test(Task):
         print("Capturing lcov info...")
         LCOV_OUTPUT_FILE = os.path.join(dirs.build, "lcov.info")
         LCOV_OUTPUT_DIR = os.path.join(dirs.build, "lcov")
+        BUILD_DIR = str(dirs.build)
 
         try:
             os.unlink(LCOV_OUTPUT_FILE)
@@ -739,7 +740,7 @@ class Test(Task):
 
         lcov_cmd = [
             "lcov", "--capture",
-            "--directory", dirs.build,
+            "--directory", BUILD_DIR,
             "--output-file", LCOV_OUTPUT_FILE]
         lcov_cmd_str = " ".join(lcov_cmd)
         emit_cmdstr(" ".join(lcov_cmd))
