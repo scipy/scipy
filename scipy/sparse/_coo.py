@@ -1087,10 +1087,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         prod_block_diag = (self_block_diag @ other_block_diag).tocoo()
         
         # Convert the 2-D block diagonal array back to n-D
-        prod = _extract_block_diag(prod_block_diag, shape=(*broadcast_shape,
-                                                     self.shape[-2], other.shape[-1]))
-        
-        return prod
+        return _extract_block_diag(
+            prod_block_diag,
+            shape=(*broadcast_shape, self.shape[-2], other.shape[-1]),
+        )
 
 
     def _broadcast_to(self, new_shape, copy=False):
