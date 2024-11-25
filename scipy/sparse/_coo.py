@@ -1232,9 +1232,7 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     non_reduced_coords = tuple(coords[idx] for idx in non_reduced_axes)
     
     # Ravel the coordinates into 1D
-    raveled_coords = np.ravel_multi_index(non_reduced_coords, non_reduced_shape)
-    
-    return raveled_coords
+    return np.ravel_multi_index(non_reduced_coords, non_reduced_shape)
 
 
 def _ravel_coords(coords, shape, order='C'):
