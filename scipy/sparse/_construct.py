@@ -685,7 +685,7 @@ def _stack_along_minor_axis(blocks, axis):
     #   abundance of caution.
     sum_dim = sum(b._shape_as_2d[axis] for b in blocks)
     nnz = sum(len(b.indices) for b in blocks)
-    idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
+    idx_dtype = get_index_dtype(indptr_list, maxval=max(sum_dim - 1, nnz))
     stack_dim_cat = np.array([b._shape_as_2d[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
         indptr_cat = np.concatenate(indptr_list, dtype=idx_dtype)
@@ -990,7 +990,8 @@ def _block(blocks, format, dtype, return_spmatrix=False):
     shape = (row_offsets[-1], col_offsets[-1])
 
     data = np.empty(nnz, dtype=dtype)
-    idx_dtype = get_index_dtype(maxval=max(shape))
+    idx_dtype = get_index_dtype([b.coords[0] for b in blocks[block_mask]],
+                                maxval=max(shape))
     row = np.empty(nnz, dtype=idx_dtype)
     col = np.empty(nnz, dtype=idx_dtype)
 
@@ -1062,6 +1063,7 @@ def block_diag(mats, format=None, dtype=None):
     row = []
     col = []
     data = []
+    idx_arrays = []  # track idx_dtype of incoming sparse arrays
     r_idx = 0
     c_idx = 0
     for a in mats:
@@ -1069,6 +1071,8 @@ def block_diag(mats, format=None, dtype=None):
             a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()
+            if not idx_arrays and a.coords[0].dtype == np.int64:
+                idx_arrays.append(a.coords[0])
             nrows, ncols = a._shape_as_2d
             row.append(a.row + r_idx)
             col.append(a.col + c_idx)
@@ -1081,7 +1085,7 @@ def block_diag(mats, format=None, dtype=None):
             data.append(a.ravel())
         r_idx += nrows
         c_idx += ncols
-    idx_dtype = get_index_dtype(maxval=max(r_idx, c_idx))
+    idx_dtype = get_index_dtype(idx_arrays, maxval=max(r_idx, c_idx))
     row = np.concatenate(row, dtype=idx_dtype)
     col = np.concatenate(col, dtype=idx_dtype)
     data = np.concatenate(data)
