@@ -853,7 +853,6 @@ class TestNSum:
         xp_assert_equal(logres.status, res.status)
         xp_assert_equal(logres.success, res.success)
 
-    @pytest.mark.skip_xp_backends('torch', reason='seems sensitive to arithmetic')
     @pytest.mark.parametrize('maxterms', [0, 1, 10, 20, 100])
     def test_integral(self, maxterms, xp):
         # test precise behavior of integral approximation
@@ -865,9 +864,9 @@ class TestNSum:
         def F(x):
             return -1 / x
 
-        a = xp.asarray([1, 5])[:, xp.newaxis]
-        b = xp.asarray([20, 100, xp.inf])[:, xp.newaxis, xp.newaxis]
-        step = xp.asarray([0.5, 1, 2]).reshape((-1, 1, 1, 1))
+        a = xp.asarray([1, 5], dtype=xp.float64)[:, xp.newaxis]
+        b = xp.asarray([20, 100, xp.inf], dtype=xp.float64)[:, xp.newaxis, xp.newaxis]
+        step = xp.asarray([0.5, 1, 2], dtype=xp.float64).reshape((-1, 1, 1, 1))
         nsteps = xp.floor((b - a)/step)
         b_original = b
         b = a + nsteps*step
@@ -887,7 +886,7 @@ class TestNSum:
         for i in np.ndindex(a.shape):
             ai, bi, stepi = float(a[i]), float(b[i]), float(step[i])
             if (bi - ai)/stepi + 1 <= maxterms:
-                direct = xp.sum(f(xp.arange(ai, bi+stepi, stepi)))
+                direct = xp.sum(f(xp.arange(ai, bi+stepi, stepi, dtype=xp.float64)))
                 ref_sum[i] = direct
                 ref_err[i] = direct * xp.finfo(direct.dtype).eps
 
