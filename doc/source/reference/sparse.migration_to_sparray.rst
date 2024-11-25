@@ -103,7 +103,7 @@ Their signatures are::
    def block_array(blocks, format=None, dtype=None):
    def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None):
    def eye_array(m, n=None, *, k=0, dtype=float, format=None):
-   def random_array(m, n, density=0.01, format='coo', dtype=None, random_state=None, data_random_state=None):
+   def random_array(m, n, density=0.01, format='coo', dtype=None, rng=None, data_random_state=None):
 
 Existing functions that need careful migration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

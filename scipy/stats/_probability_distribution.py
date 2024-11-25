@@ -1285,6 +1285,11 @@ class _ProbabilityDistribution(ABC):
         Similarly, the term "logarithmic difference" of :math:`w` and :math:`z`
         is used here to mean :math:`\log(\exp(w)-\exp(z))`.
 
+        If ``y < x``, the CDF is negative, and therefore the log-CCDF
+        is complex with imaginary part :math:`\pi`. For
+        consistency, the result of this function always has complex dtype
+        when `y` is provided, regardless of the value of the imaginary part.
+
         References
         ----------
         .. [1] Cumulative distribution function, *Wikipedia*,
@@ -1477,7 +1482,6 @@ class _ProbabilityDistribution(ABC):
         is used here to mean the :math:`\log(\exp(w)+\exp(z))`, AKA
         :math:`\text{LogSumExp}(w, z)`.
 
-
         References
         ----------
         .. [1] Cumulative distribution function, *Wikipedia*,
@@ -1630,7 +1634,7 @@ class _ProbabilityDistribution(ABC):
         Notes
         -----
         If the entropy of a distribution is negative, then the log-entropy
-        is complex with imaginary part divisible by :math:`\pi`. For
+        is complex with imaginary part :math:`\pi`. For
         consistency, the result of this function always has complex dtype,
         regardless of the value of the imaginary part.
 

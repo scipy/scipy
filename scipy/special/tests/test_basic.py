@@ -398,8 +398,13 @@ class TestCephes:
         cephes.gammaln(10)
 
     def test_gammasgn(self):
-        vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)
-        assert_array_equal(cephes.gammasgn(vals), np.sign(cephes.rgamma(vals)))
+        vals = np.array(
+            [-np.inf, -4, -3.5, -2.3, -0.0, 0.0, 1, 4.2, np.inf], np.float64
+        )
+        reference = np.array(
+            [np.nan, np.nan, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0], np.float64
+        )
+        assert_array_equal(cephes.gammasgn(vals), reference)
 
     def test_gdtr(self):
         assert_equal(cephes.gdtr(1,1,0),0.0)
@@ -2128,28 +2133,39 @@ def assert_really_equal(x, y, rtol=None):
             assert_really_equal(elem_x, elem_y, rtol=rtol)
     elif np.isnan(x) and np.isnan(y) and _is_subdtype(type(x), "c"):
         assert_complex_nan(x) and assert_complex_nan(y)
+    # no need to consider complex infinities due to numpy/numpy#25493
     else:
         assert_func(x, y)
 
 
 class TestFactorialFunctions:
-    @pytest.mark.parametrize("exact", [True, False])
-    def test_factorialx_scalar_return_type(self, exact):
-        kw = {"exact": exact}
+    def factorialk_ref(self, n, k, exact, extend):
+        if exact:
+            return special.factorialk(n, k=k, exact=True)
+        # for details / explanation see factorialk-docstring
+        r = np.mod(n, k) if extend == "zero" else 1
+        vals = np.power(k, (n - r)/k) * special.gamma(n/k + 1) * special.rgamma(r/k + 1)
+        # np.maximum is element-wise, which is what we want
+        return vals * np.maximum(r, 1)
+
+    @pytest.mark.parametrize("exact,extend",
+                             [(True, "zero"), (False, "zero"), (False, "complex")])
+    def test_factorialx_scalar_return_type(self, exact, extend):
+        kw = {"exact": exact, "extend": extend}
         assert np.isscalar(special.factorial(1, **kw))
         assert np.isscalar(special.factorial2(1, **kw))
         assert np.isscalar(special.factorialk(1, k=3, **kw))
 
     @pytest.mark.parametrize("n", [-1, -2, -3])
     @pytest.mark.parametrize("exact", [True, False])
-    def test_factorialx_negative(self, exact, n):
+    def test_factorialx_negative_extend_zero(self, exact, n):
         kw = {"exact": exact}
         assert_equal(special.factorial(n, **kw), 0)
         assert_equal(special.factorial2(n, **kw), 0)
         assert_equal(special.factorialk(n, k=3, **kw), 0)
 
     @pytest.mark.parametrize("exact", [True, False])
-    def test_factorialx_negative_array(self, exact):
+    def test_factorialx_negative_extend_zero_array(self, exact):
         kw = {"exact": exact}
         rtol = 1e-15
         n = [-5, -4, 0, 1]
@@ -2159,41 +2175,112 @@ class TestFactorialFunctions:
         assert_really_equal(special.factorial2(n, **kw), expected, rtol=rtol)
         assert_really_equal(special.factorialk(n, k=3, **kw), expected, rtol=rtol)
 
+    @pytest.mark.parametrize("n", [-1.1, -2.2, -3.3])
+    def test_factorialx_negative_extend_complex(self, n):
+        kw = {"extend": "complex"}
+        exp_1 = {-1.1: -10.686287021193184771,
+                 -2.2:   4.8509571405220931958,
+                 -3.3:  -1.4471073942559181166}
+        exp_2 = {-1.1:  1.0725776858167496309,
+                 -2.2: -3.9777171783768419874,
+                 -3.3: -0.99588841846200555977}
+        exp_k = {-1.1:  0.73565345382163025659,
+                 -2.2:  1.1749163167190809498,
+                 -3.3: -2.4780584257450583713}
+        rtol = 3e-15
+        assert_allclose(special.factorial(n, **kw), exp_1[n], rtol=rtol)
+        assert_allclose(special.factorial2(n, **kw), exp_2[n], rtol=rtol)
+        assert_allclose(special.factorialk(n, k=3, **kw), exp_k[n], rtol=rtol)
+        assert_allclose(special.factorial([n], **kw)[0], exp_1[n], rtol=rtol)
+        assert_allclose(special.factorial2([n], **kw)[0], exp_2[n], rtol=rtol)
+        assert_allclose(special.factorialk([n], k=3, **kw)[0], exp_k[n], rtol=rtol)
+
+    @pytest.mark.parametrize("imag", [0, 0j])
+    @pytest.mark.parametrize("n_outer", [-1, -2, -3])
+    def test_factorialx_negative_extend_complex_poles(self, n_outer, imag):
+        kw = {"extend": "complex"}
+        def _check(n):
+            complexify = _is_subdtype(type(n), "c")
+            # like for gamma, we expect complex nans for complex inputs
+            complex_nan = np.complex128("nan+nanj")
+            exp = np.complex128("nan+nanj") if complexify else np.float64("nan")
+            # poles are at negative integers that are multiples of k
+            assert_really_equal(special.factorial(n, **kw), exp)
+            assert_really_equal(special.factorial2(n * 2, **kw), exp)
+            assert_really_equal(special.factorialk(n * 3, k=3, **kw), exp)
+            # also test complex k for factorialk
+            c = 1.5 - 2j
+            assert_really_equal(special.factorialk(n * c, k=c, **kw), complex_nan)
+            # same for array case
+            assert_really_equal(special.factorial([n], **kw)[0], exp)
+            assert_really_equal(special.factorial2([n * 2], **kw)[0], exp)
+            assert_really_equal(special.factorialk([n * 3], k=3, **kw)[0], exp)
+            assert_really_equal(special.factorialk([n * c], k=c, **kw)[0], complex_nan)
+            # more specific tests in test_factorial{,2,k}_complex_reference
+
+        # imag ensures we test both real and complex representations of the poles
+        _check(n_outer + imag)
+        # check for large multiple of period
+        _check(100_000 * n_outer + imag)
+
     @pytest.mark.parametrize("boxed", [True, False])
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize(
         "n",
         [
             np.nan, np.float64("nan"), np.nan + np.nan*1j, np.complex128("nan+nanj"),
-            None, np.datetime64("nat")
+            np.inf, np.inf + 0j, -np.inf, -np.inf + 0j, None, np.datetime64("nat")
         ],
         ids=[
             "NaN", "np.float64('nan')", "NaN+i*NaN", "np.complex128('nan+nanj')",
-            "None", "NaT"
+            "inf", "inf+0i", "-inf", "-inf+0i", "None", "NaT"
         ]
     )
     @pytest.mark.parametrize(
         "factorialx",
         [special.factorial, special.factorial2, special.factorialk]
     )
-    def test_factorialx_nan(self, factorialx, n, boxed):
+    def test_factorialx_inf_nan(self, factorialx, n, extend, boxed):
         # NaNs not allowed (by dtype) for exact=True
-        kw = {"exact": False}
+        kw = {"exact": False, "extend": extend}
         if factorialx == special.factorialk:
             kw["k"] = 3
 
-        permissible_types = ["i"]
-        # factorial also allows floats
-        if factorialx == special.factorial:
-            # None is allowed for scalars, but would cause object type in array case
-            permissible_types = ["i", "f"] if boxed else ["i", "f", type(None)]
+        # None is allowed for scalars, but would cause object type in array case
+        permissible_types = ["i", "f", "c"] if boxed else ["i", "f", "c", type(None)]
+        # factorial allows floats also for extend="zero"
+        types_need_complex_ext = "c" if factorialx == special.factorial else ["f", "c"]
 
         if not _is_subdtype(type(n), permissible_types):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
                 factorialx([n] if boxed else n, **kw)
+        elif _is_subdtype(type(n), types_need_complex_ext) and extend != "complex":
+            with pytest.raises(ValueError, match="In order to use non-integer.*"):
+                factorialx([n] if boxed else n, **kw)
         else:
+            # account for type and whether extend="complex"
+            complexify = (extend == "complex") and _is_subdtype(type(n), "c")
+            # note that the type of the naïve `np.nan + np.nan * 1j` is `complex`
+            # instead of `numpy.complex128`, which trips up assert_really_equal
+            expected = np.complex128("nan+nanj") if complexify else np.float64("nan")
+            # the only exception are real infinities
+            if _is_subdtype(type(n), "f") and np.isinf(n):
+                # unchanged for positive infinity; negative one depends on extension
+                neg_inf_result = np.float64(0 if (extend == "zero") else "nan")
+                expected = np.float64("inf") if (n > 0) else neg_inf_result
+
             result = factorialx([n], **kw)[0] if boxed else factorialx(n, **kw)
-            assert_really_equal(result, np.float64("nan"))
+            assert_really_equal(result, expected)
             # also tested in test_factorial{,2,k}_{array,scalar}_corner_cases
+
+    @pytest.mark.parametrize("extend", [0, 1.1, np.nan, "string"])
+    def test_factorialx_raises_extend(self, extend):
+        with pytest.raises(ValueError, match="argument `extend` must be.*"):
+            special.factorial(1, extend=extend)
+        with pytest.raises(ValueError, match="argument `extend` must be.*"):
+            special.factorial2(1, extend=extend)
+        with pytest.raises(ValueError, match="argument `extend` must be.*"):
+            special.factorialk(1, k=3, exact=True, extend=extend)
 
     @pytest.mark.parametrize("levels", range(1, 5))
     @pytest.mark.parametrize("exact", [True, False])
@@ -2289,15 +2376,20 @@ class TestFactorialFunctions:
         assert_allclose(correct, special.factorial(n, exact=False), rtol=rtol)
         assert_allclose(correct, special.factorial([n], exact=False)[0], rtol=rtol)
 
+        # extend="complex" only works for exact=False
+        kw = {"exact": False, "extend": "complex"}
+        assert_allclose(correct, special.factorial(n, **kw), rtol=rtol)
+        assert_allclose(correct, special.factorial([n], **kw)[0], rtol=rtol)
+
     def test_factorial_float_reference(self):
         def _check(n, expected):
             rtol = 8e-14 if sys.platform == 'win32' else 1e-15
             assert_allclose(special.factorial(n), expected, rtol=rtol)
             assert_allclose(special.factorial([n])[0], expected, rtol=rtol)
             # using floats with `exact=True` raises an error for scalars and arrays
-            with pytest.raises(ValueError, match="Non-integer values.*"):
-                assert_allclose(special.factorial(n, exact=True), expected, rtol=rtol)
-            with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
+            with pytest.raises(ValueError, match="`exact=True` only supports.*"):
+                special.factorial(n, exact=True)
+            with pytest.raises(ValueError, match="`exact=True` only supports.*"):
                 special.factorial([n], exact=True)
 
         # Reference values from mpmath for gamma(n+1)
@@ -2312,8 +2404,25 @@ class TestFactorialFunctions:
         # close to maximum for float64
         _check(170.6243, 1.79698185749571048960082e+308)
 
+    def test_factorial_complex_reference(self):
+        def _check(n, expected):
+            rtol = 3e-15 if sys.platform == 'win32' else 2e-15
+            kw = {"exact": False, "extend": "complex"}
+            assert_allclose(special.factorial(n, **kw), expected, rtol=rtol)
+            assert_allclose(special.factorial([n], **kw)[0], expected, rtol=rtol)
+
+        # Reference values from mpmath.gamma(n+1)
+        # negative & complex values
+        _check(-0.5, expected=1.7724538509055160276)
+        _check(-0.5 + 0j, expected=1.7724538509055160276 + 0j)
+        _check(2 + 2j, expected=-0.42263728631120216694 + 0.87181425569650686062j)
+        # close to poles
+        _check(-0.9999, expected=9999.422883232725532)
+        _check(-1 + 0.0001j, expected=-0.57721565582674219 - 9999.9999010944009697j)
+
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
@@ -2322,7 +2431,7 @@ class TestFactorialFunctions:
         [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
-    def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
+    def test_factorial_array_corner_cases(self, content, dim, exact, extend, dtype):
         if dtype is object and SCIPY_ARRAY_API:
             pytest.skip("object arrays unsupported in array API mode")
         # get dtype without calling array constructor (that might fail or mutate)
@@ -2331,17 +2440,23 @@ class TestFactorialFunctions:
         if dtype == np.float64 and any(_is_subdtype(type(x), "c") for x in content):
             pytest.skip("impossible combination")
 
-        kw = {"exact": exact}
+        kw = {"exact": exact, "extend": extend}
         # np.array(x, ndim=0) will not be 0-dim. unless x is too
         content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
 
         result = None
-        if not _is_subdtype(n.dtype, ["i", "f"]):
+        if extend == "complex" and exact:
+            with pytest.raises(ValueError, match="Incompatible options:.*"):
+                special.factorial(n, **kw)
+        elif not _is_subdtype(n.dtype, ["i", "f", "c"]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial(n, **kw)
+        elif _is_subdtype(n.dtype, "c") and extend != "complex":
+            with pytest.raises(ValueError, match="In order to use non-integer.*"):
+                special.factorial(n, **kw)
         elif exact and not _is_subdtype(n.dtype, "i"):
-            with pytest.raises(ValueError, match="factorial with `exact=.*"):
+            with pytest.raises(ValueError, match="`exact=True` only supports.*"):
                 special.factorial(n, **kw)
         else:
             result = special.factorial(n, **kw)
@@ -2354,22 +2469,33 @@ class TestFactorialFunctions:
             # result is empty if and only if n is empty, and has the same dimension
             # as n; dtype stays the same, except when not empty and not exact:
             if n.size:
-                dtype = native_int if exact else np.float64
+                cx = (extend == "complex") and _is_subdtype(n.dtype, "c")
+                dtype = np.complex128 if cx else (native_int if exact else np.float64)
             expected = np.array(ref, ndmin=dim, dtype=dtype)
-            assert_really_equal(result, expected)
+            assert_really_equal(result, expected, rtol=1e-15)
 
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
                              ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
-    def test_factorial_scalar_corner_cases(self, n, exact):
-        kw = {"exact": exact}
-        if not _is_subdtype(type(n), ["i", "f", type(None)]):
+    def test_factorial_scalar_corner_cases(self, n, exact, extend):
+        kw = {"exact": exact, "extend": extend}
+        if extend == "complex" and exact:
+            with pytest.raises(ValueError, match="Incompatible options:.*"):
+                special.factorial(n, **kw)
+        elif not _is_subdtype(type(n), ["i", "f", "c", type(None)]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial(n, **kw)
+        elif _is_subdtype(type(n), "c") and extend != "complex":
+            with pytest.raises(ValueError, match="In order to use non-integer.*"):
+                special.factorial(n, **kw)
         elif n is None or np.isnan(n):
-            assert_really_equal(special.factorial(n, **kw), np.float64("nan"))
+            # account for dtype and whether extend="complex"
+            complexify = (extend == "complex") and _is_subdtype(type(n), "c")
+            expected = np.complex128("nan+nanj") if complexify else np.float64("nan")
+            assert_really_equal(special.factorial(n, **kw), expected)
         elif exact and _is_subdtype(type(n), "f"):
-            with pytest.raises(ValueError, match="Non-integer values.*"):
+            with pytest.raises(ValueError, match="`exact=True` only supports.*"):
                 special.factorial(n, **kw)
         else:
             assert_equal(special.factorial(n, **kw), special.gamma(n + 1))
@@ -2404,8 +2530,37 @@ class TestFactorialFunctions:
         assert_allclose(correct, special.factorial2(n, exact=False), rtol=rtol)
         assert_allclose(correct, special.factorial2([n], exact=False)[0], rtol=rtol)
 
+        # extend="complex" only works for exact=False
+        kw = {"exact": False, "extend": "complex"}
+        # approximation only matches exactly for `n == 1 (mod k)`, see docstring
+        if n % 2 == 1:
+            assert_allclose(correct, special.factorial2(n, **kw), rtol=rtol)
+            assert_allclose(correct, special.factorial2([n], **kw)[0], rtol=rtol)
+
+    def test_factorial2_complex_reference(self):
+        # this tests for both floats and complex
+        def _check(n, expected):
+            rtol = 5e-15
+            kw = {"exact": False, "extend": "complex"}
+            assert_allclose(special.factorial2(n, **kw), expected, rtol=rtol)
+            assert_allclose(special.factorial2([n], **kw)[0], expected, rtol=rtol)
+
+        # Reference values from mpmath for:
+        # mpmath.power(2, n/2) * mpmath.gamma(n/2 + 1) * mpmath.sqrt(2 / mpmath.pi)
+        _check(3, expected=3)
+        _check(4, expected=special.factorial2(4) * math.sqrt(2 / math.pi))
+        _check(20, expected=special.factorial2(20) * math.sqrt(2 / math.pi))
+        # negative & complex values
+        _check(-0.5, expected=0.82217895866245855122)
+        _check(-0.5 + 0j, expected=0.82217895866245855122 + 0j)
+        _check(3 + 3j, expected=-1.0742236630142471526 + 1.4421398439387262897j)
+        # close to poles
+        _check(-1.9999, expected=7978.8918745523440682)
+        _check(-2 + 0.0001j, expected=0.0462499835314308444 - 7978.84559148876374493j)
+
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
@@ -2414,21 +2569,27 @@ class TestFactorialFunctions:
         [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
-    def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
+    def test_factorial2_array_corner_cases(self, content, dim, exact, extend, dtype):
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
         if dtype == np.float64 and any(_is_subdtype(type(x), "c") for x in content):
             pytest.skip("impossible combination")
 
-        kw = {"exact": exact}
+        kw = {"exact": exact, "extend": extend}
         # np.array(x, ndim=0) will not be 0-dim. unless x is too
         content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
 
         result = None
-        if not _is_subdtype(n.dtype, "i"):
+        if extend == "complex" and exact:
+            with pytest.raises(ValueError, match="Incompatible options:.*"):
+                special.factorial2(n, **kw)
+        elif not _is_subdtype(n.dtype, ["i", "f", "c"]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
+                special.factorial2(n, **kw)
+        elif _is_subdtype(n.dtype, ["f", "c"]) and extend != "complex":
+            with pytest.raises(ValueError, match="In order to use non-integer.*"):
                 special.factorial2(n, **kw)
         else:
             result = special.factorial2(n, **kw)
@@ -2441,20 +2602,34 @@ class TestFactorialFunctions:
             # result is empty if and only if n is empty, and has the same dimension
             # as n; dtype stays the same, except when not empty and not exact:
             if n.size:
-                dtype = native_int if exact else np.float64
+                cx = (extend == "complex") and _is_subdtype(n.dtype, "c")
+                dtype = np.complex128 if cx else (native_int if exact else np.float64)
             expected = np.array(ref, ndmin=dim, dtype=dtype)
-            assert_really_equal(result, expected, rtol=1e-15)
+            assert_really_equal(result, expected, rtol=2e-15)
 
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
                              ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
-    def test_factorial2_scalar_corner_cases(self, n, exact):
-        kw = {"exact": exact}
-        if not _is_subdtype(type(n), "i"):
+    def test_factorial2_scalar_corner_cases(self, n, exact, extend):
+        kw = {"exact": exact, "extend": extend}
+        if extend == "complex" and exact:
+            with pytest.raises(ValueError, match="Incompatible options:.*"):
+                special.factorial2(n, **kw)
+        elif not _is_subdtype(type(n), ["i", "f", "c", type(None)]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorial2(n, **kw)
+        elif _is_subdtype(type(n), ["f", "c"]) and extend != "complex":
+            with pytest.raises(ValueError, match="In order to use non-integer.*"):
+                special.factorial2(n, **kw)
+        elif n is None or np.isnan(n):
+            # account for dtype and whether extend="complex"
+            complexify = (extend == "complex") and _is_subdtype(type(n), "c")
+            expected = np.complex128("nan+nanj") if complexify else np.float64("nan")
+            assert_really_equal(special.factorial2(n, **kw), expected)
         else:
-            assert_equal(special.factorial2(n, **kw), 1)
+            expected = self.factorialk_ref(n, k=2, **kw)
+            assert_really_equal(special.factorial2(n, **kw), expected, rtol=1e-15)
 
     @pytest.mark.parametrize("k", range(1, 5))
     # note that n=170 is the last integer such that factorial(n) fits float64;
@@ -2490,8 +2665,47 @@ class TestFactorialFunctions:
         assert_allclose(correct, special.factorialk(n, k, exact=False), rtol=rtol)
         assert_allclose(correct, special.factorialk([n], k, exact=False)[0], rtol=rtol)
 
+        # extend="complex" only works for exact=False
+        kw = {"k": k, "exact": False, "extend": "complex"}
+        # approximation only matches exactly for `n == 1 (mod k)`, see docstring
+        if n % k == 1:
+            rtol = 2e-14
+            assert_allclose(correct, special.factorialk(n, **kw), rtol=rtol)
+            assert_allclose(correct, special.factorialk([n], **kw)[0], rtol=rtol)
+
+    def test_factorialk_complex_reference(self):
+        # this tests for both floats and complex
+        def _check(n, k, exp):
+            rtol = 1e-14
+            kw = {"k": k, "exact": False, "extend": "complex"}
+            assert_allclose(special.factorialk(n, **kw), exp, rtol=rtol)
+            assert_allclose(special.factorialk([n], **kw)[0], exp, rtol=rtol)
+
+        # Reference values from mpmath for:
+        # mpmath.power(k, (n-1)/k) * mpmath.gamma(n/k + 1) / mpmath.gamma(1/k + 1)
+        _check(n=4, k=3, exp=special.factorialk(4, k=3, exact=True))
+        _check(n=5, k=3, exp=7.29011132947227083)
+        _check(n=6.5, k=3, exp=19.6805080113566010)
+        # non-integer k
+        _check(n=3, k=2.5, exp=2.58465740293218541)
+        _check(n=11, k=2.5, exp=1963.5)  # ==11*8.5*6*3.5; c.f. n == 1 (mod k)
+        _check(n=-3 + 3j + 1, k=-3 + 3j, exp=-2 + 3j)
+        # complex values
+        _check(n=4 + 4j, k=4, exp=-0.67855904082768043854 + 2.1993925819930311497j)
+        _check(n=4, k=4 - 4j, exp=1.9775338957222718742 + 0.92607172675423901371j)
+        _check(n=4 + 4j, k=4 - 4j, exp=0.1868492880824934475 + 0.87660580316894290247j)
+        # negative values
+        _check(n=-0.5, k=3, exp=0.72981013240713739354)
+        _check(n=-0.5 + 0j, k=3, exp=0.72981013240713739354 + 0j)
+        _check(n=2.9, k=-0.7, exp=0.45396591474966867296 + 0.56925525174685228866j)
+        _check(n=-0.6, k=-0.7, exp=-0.07190820089634757334 - 0.090170031876701730081j)
+        # close to poles
+        _check(n=-2.9999, k=3, exp=7764.7170695908828364)
+        _check(n=-3 + 0.0001j, k=3, exp=0.1349475632879599864 - 7764.5821055158365027j)
+
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
     # test empty & non-empty arrays, with nans and mixed
@@ -2500,21 +2714,27 @@ class TestFactorialFunctions:
         [[], [1], [1.1], [np.nan], [np.nan + np.nan * 1j], [np.nan, 1]],
         ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN+i*NaN]", "[NaN, 1]"],
     )
-    def test_factorialk_array_corner_cases(self, content, dim, exact, dtype):
+    def test_factorialk_array_corner_cases(self, content, dim, exact, extend, dtype):
         # get dtype without calling array constructor (that might fail or mutate)
         if dtype == np.int64 and any(np.isnan(x) or (x != int(x)) for x in content):
             pytest.skip("impossible combination")
         if dtype == np.float64 and any(_is_subdtype(type(x), "c") for x in content):
             pytest.skip("impossible combination")
 
-        kw = {"k": 3, "exact": exact}
+        kw = {"k": 3, "exact": exact, "extend": extend}
         # np.array(x, ndim=0) will not be 0-dim. unless x is too
         content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
 
         result = None
-        if not _is_subdtype(n.dtype, "i"):
+        if extend == "complex" and exact:
+            with pytest.raises(ValueError, match="Incompatible options:.*"):
+                special.factorialk(n, **kw)
+        elif not _is_subdtype(n.dtype, ["i", "f", "c"]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
+                special.factorialk(n, **kw)
+        elif _is_subdtype(n.dtype, ["f", "c"]) and extend != "complex":
+            with pytest.raises(ValueError, match="In order to use non-integer.*"):
                 special.factorialk(n, **kw)
         else:
             result = special.factorialk(n, **kw)
@@ -2527,54 +2747,73 @@ class TestFactorialFunctions:
             # result is empty if and only if n is empty, and has the same dimension
             # as n; dtype stays the same, except when not empty and not exact:
             if n.size:
-                dtype = native_int if exact else np.float64
+                cx = (extend == "complex") and _is_subdtype(n.dtype, "c")
+                dtype = np.complex128 if cx else (native_int if exact else np.float64)
             expected = np.array(ref, ndmin=dim, dtype=dtype)
-            assert_really_equal(result, expected, rtol=1e-15)
+            assert_really_equal(result, expected, rtol=2e-15)
 
+    @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, np.nan + np.nan*1j, None],
                              ids=["1", "1.1", "2+2j", "NaN", "NaN+i*NaN", "None"])
-    def test_factorialk_scalar_corner_cases(self, n, k, exact):
-        kw = {"k": k, "exact": exact}
-        if not _is_subdtype(type(n), "i"):
+    def test_factorialk_scalar_corner_cases(self, n, k, exact, extend):
+        kw = {"k": k, "exact": exact, "extend": extend}
+        if extend == "complex" and exact:
+            with pytest.raises(ValueError, match="Incompatible options:.*"):
+                special.factorialk(n, **kw)
+        elif not _is_subdtype(type(n), ["i", "f", "c", type(None)]):
             with pytest.raises(ValueError, match="Unsupported data type.*"):
                 special.factorialk(n, **kw)
+        elif _is_subdtype(type(n), ["f", "c"]) and extend != "complex":
+            with pytest.raises(ValueError, match="In order to use non-integer.*"):
+                special.factorialk(n, **kw)
+        elif n is None or np.isnan(n):
+            # account for dtype and whether extend="complex"
+            complexify = (extend == "complex") and _is_subdtype(type(n), "c")
+            expected = np.complex128("nan+nanj") if complexify else np.float64("nan")
+            assert_really_equal(special.factorialk(n, **kw), expected)
         else:
-            # factorialk(1, k) == 1 for all k
-            assert_equal(special.factorialk(n, **kw), 1)
-
-    @pytest.mark.parametrize("k", range(1, 5))
-    def test_factorialk_deprecation_exact(self, k):
-        with pytest.deprecated_call(match="factorialk will default.*"):
-            # leaving exact= unspecified raises warning;
-            # cannot happen for extend="complex" because it requires non-default exact
-            special.factorialk(1, k=k)
+            expected = self.factorialk_ref(n, **kw)
+            assert_really_equal(special.factorialk(n, **kw), expected, rtol=1e-15)
 
     @pytest.mark.parametrize("boxed", [True, False])
-    @pytest.mark.parametrize("exact", [True, False])
-    @pytest.mark.parametrize("k", [0, 1.1, np.nan])
-    def test_factorialk_raises_k_complex(self, k, exact, boxed):
+    @pytest.mark.parametrize("exact,extend",
+                             [(True, "zero"), (False, "zero"), (False, "complex")])
+    @pytest.mark.parametrize("k", [-1, -1.0, 0, 0.0, 0 + 1j, 1.1, np.nan])
+    def test_factorialk_raises_k_complex(self, k, exact, extend, boxed):
         n = [1] if boxed else 1
-        kw = {"k": k, "exact": exact}
-        with pytest.raises(ValueError, match="k must be a positive integer*"):
+        kw = {"k": k, "exact": exact, "extend": extend}
+        if extend == "zero":
+            msg = "In order to use non-integer.*"
+            if _is_subdtype(type(k), "i") and (k < 1):
+                msg = "For `extend='zero'`.*"
+            with pytest.raises(ValueError, match=msg):
+                special.factorialk(n, **kw)
+        elif k == 0:
+            with pytest.raises(ValueError, match="Parameter k cannot be zero!"):
+                special.factorialk(n, **kw)
+        else:
+            # no error
             special.factorialk(n, **kw)
 
     @pytest.mark.parametrize("boxed", [True, False])
-    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("exact,extend",
+                             [(True, "zero"), (False, "zero"), (False, "complex")])
     # neither integer, float nor complex
     @pytest.mark.parametrize("k", ["string", np.datetime64("nat")],
                              ids=["string", "NaT"])
-    def test_factorialk_raises_k_other(self, k, exact, boxed):
+    def test_factorialk_raises_k_other(self, k, exact, extend, boxed):
         n = [1] if boxed else 1
-        kw = {"k": k, "exact": exact}
-        with pytest.raises(ValueError, match="k must be a positive integer*"):
+        kw = {"k": k, "exact": exact, "extend": extend}
+        with pytest.raises(ValueError, match="Unsupported data type.*"):
             special.factorialk(n, **kw)
 
-    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("exact,extend",
+                             [(True, "zero"), (False, "zero"), (False, "complex")])
     @pytest.mark.parametrize("k", range(1, 12))
-    def test_factorialk_dtype(self, k, exact):
-        kw = {"k": k, "exact": exact}
+    def test_factorialk_dtype(self, k, exact, extend):
+        kw = {"k": k, "exact": exact, "extend": extend}
         if exact and k in _FACTORIALK_LIMITS_64BITS.keys():
             n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
             assert_equal(special.factorialk(n, **kw).dtype, np_long)
@@ -2589,7 +2828,7 @@ class TestFactorialFunctions:
         else:
             n = np.array([_FACTORIALK_LIMITS_64BITS.get(k, 1)])
             # for exact=True and k >= 10, we always return object;
-            # for exact=False it's always float
+            # for exact=False it's always float (unless input is complex)
             dtype = object if exact else np.float64
             assert_equal(special.factorialk(n, **kw).dtype, dtype)
 
@@ -2597,7 +2836,7 @@ class TestFactorialFunctions:
         x = np.array([np.nan, 1, 2, 3, np.nan])
         expected = np.array([np.nan, 1, 2, 6, np.nan])
         assert_equal(special.factorial(x, exact=False), expected)
-        with pytest.raises(ValueError, match="factorial with `exact=True.*"):
+        with pytest.raises(ValueError, match="`exact=True` only supports.*"):
             special.factorial(x, exact=True)
 
 
@@ -2715,8 +2954,25 @@ class TestGamma:
         assert_almost_equal(rgam,rlgam,8)
 
     def test_infinity(self):
-        assert_(np.isinf(special.gamma(-1)))
         assert_equal(special.rgamma(-1), 0)
+
+    @pytest.mark.parametrize(
+        "x,expected",
+        [
+            # infinities
+            ([-np.inf, np.inf], [np.nan, np.inf]),
+            # negative and positive zero
+            ([-0.0, 0.0], [-np.inf, np.inf]),
+            # small poles
+            (range(-32, 0), np.full(32, np.nan)),
+            # medium sized poles
+            (range(-1024, -32, 99), np.full(11, np.nan)),
+            # large pole
+            ([-4.141512231792294e+16], [np.nan]),
+        ]
+    )
+    def test_poles(self, x, expected):
+        assert_array_equal(special.gamma(x), expected)
 
 
 class TestHankel:
@@ -3690,7 +3946,7 @@ class TestParabolicCylinder:
     def test_pbdv_points(self):
         # simple case
         eta = np.linspace(-10, 10, 5)
-        z = 2**(eta/2)*np.sqrt(np.pi)/special.gamma(.5-.5*eta)
+        z = 2**(eta/2)*np.sqrt(np.pi)*special.rgamma(.5-.5*eta)
         assert_allclose(special.pbdv(eta, 0.)[0], z, rtol=1e-14, atol=1e-14)
 
         # some points

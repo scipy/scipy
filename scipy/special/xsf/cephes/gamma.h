@@ -149,17 +149,30 @@ namespace cephes {
         int sgngam = 1;
 
         if (!std::isfinite(x)) {
-            return x;
+	    if (x > 0) {
+		// gamma(+inf) = +inf
+		return x;
+	    }
+	    // gamma(NaN) and gamma(-inf) both should equal NaN.
+            return std::numeric_limits<double>::quiet_NaN();
         }
+
+	if (x == 0) {
+	    /* For pole at zero, value depends on sign of zero.
+	     * +inf when approaching from right, -inf when approaching
+	     * from left. */
+	    return std::copysign(std::numeric_limits<double>::infinity(), x);
+	}
+
         q = std::abs(x);
 
         if (q > 33.0) {
             if (x < 0.0) {
                 p = std::floor(q);
                 if (p == q) {
-                gamnan:
-                    set_error("Gamma", SF_ERROR_OVERFLOW, NULL);
-                    return (std::numeric_limits<double>::infinity());
+		    // x is a negative integer. This is a pole.
+                    set_error("Gamma", SF_ERROR_SINGULAR, NULL);
+                    return (std::numeric_limits<double>::quiet_NaN());
                 }
                 i = p;
                 if ((i & 1) == 0) {
@@ -215,7 +228,9 @@ namespace cephes {
 
     small:
         if (x == 0.0) {
-            goto gamnan;
+	    /* For this to have happened, x must have started as a negative integer. */
+	    set_error("Gamma", SF_ERROR_SINGULAR, NULL);
+	    return (std::numeric_limits<double>::quiet_NaN());
         } else
             return (z / ((1.0 + 0.5772156649015329 * x) * x));
     }
@@ -360,16 +375,23 @@ namespace cephes {
         }
         if (x > 0) {
             return 1.0;
-        } else {
-            fx = std::floor(x);
-            if (x - fx == 0.0) {
-                return 0.0;
-            } else if (static_cast<int>(fx) % 2) {
-                return -1.0;
-            } else {
-                return 1.0;
-            }
-        }
+	}
+	if (x == 0) {
+	    return std::copysign(1.0, x);
+	}
+	if (std::isinf(x)) {
+	    // x > 0 case handled, so x must be negative infinity.
+	    return std::numeric_limits<double>::quiet_NaN();
+	}
+	fx = std::floor(x);
+	if (x - fx == 0.0) {
+	    return std::numeric_limits<double>::quiet_NaN();
+	}
+	// sign of gamma for x in (-n, -n+1) for positive integer n is (-1)^n.
+	if (static_cast<int>(fx) % 2) {
+	    return -1.0;
+	}
+	return 1.0;
     }
 
 } // namespace cephes

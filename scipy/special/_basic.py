@@ -11,7 +11,7 @@ from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 
 from . import _ufuncs
-from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
+from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma, rgamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 
@@ -2830,6 +2830,9 @@ def _range_prod(lo, hi, k=1):
     Breaks into smaller products first for speed:
     _range_prod(2, 9) = ((2*3)*(4*5))*((6*7)*(8*9))
     """
+    if lo == 1 and k == 1:
+        return math.factorial(hi)
+
     if lo + k < hi:
         mid = (hi + lo) // 2
         if k > 1:
@@ -2911,34 +2914,68 @@ def _factorialx_array_exact(n, k=1):
     return out
 
 
-def _factorialx_array_approx(n, k):
+def _factorialx_array_approx(n, k, extend):
     """
     Calculate approximation to multifactorial for array n and integer k.
 
-    Ensure we only call _factorialx_approx_core where necessary/required.
+    Ensure that values aren't calculated unnecessarily.
     """
+    if extend == "complex":
+        return _factorialx_approx_core(n, k=k, extend=extend)
+
+    # at this point we are guaranteed that extend='zero' and that k>0 is an integer
     result = zeros(n.shape)
     # keep nans as nans
     place(result, np.isnan(n), np.nan)
     # only compute where n >= 0 (excludes nans), everything else is 0
     cond = (n >= 0)
     n_to_compute = extract(cond, n)
-    place(result, cond, _factorialx_approx_core(n_to_compute, k=k))
+    place(result, cond, _factorialx_approx_core(n_to_compute, k=k, extend=extend))
     return result
 
 
-def _factorialx_approx_core(n, k):
+def _gamma1p(vals):
+    """
+    returns gamma(n+1), though with NaN at -1 instead of inf, c.f. #21827
+    """
+    res = gamma(vals + 1)
+    # replace infinities at -1 (from gamma function at 0) with nan
+    # gamma only returns inf for real inputs; can ignore complex case
+    if isinstance(res, np.ndarray):
+        if not _is_subdtype(vals.dtype, "c"):
+            res[vals == -1] = np.nan
+    elif np.isinf(res) and vals == -1:
+        res = np.float64("nan")
+    return res
+
+
+def _factorialx_approx_core(n, k, extend):
     """
     Core approximation to multifactorial for array n and integer k.
     """
     if k == 1:
-        # shortcut for k=1
-        result = gamma(n + 1)
+        # shortcut for k=1; same for both extensions, because we assume the
+        # handling of extend == 'zero' happens in _factorialx_array_approx
+        result = _gamma1p(n)
         if isinstance(n, np.ndarray):
-            # gamma does not maintain 0-dim arrays
+            # gamma does not maintain 0-dim arrays; fix it
             result = np.array(result)
         return result
 
+    if extend == "complex":
+        # see https://numpy.org/doc/stable/reference/generated/numpy.power.html
+        p_dtype = complex if (_is_subdtype(type(k), "c") or k < 0) else None
+        with warnings.catch_warnings():
+            # do not warn about 0 * inf, nan / nan etc.; the results are correct
+            warnings.simplefilter("ignore", RuntimeWarning)
+            result = np.power(k, (n - 1) / k, dtype=p_dtype) * _gamma1p(n / k)
+            result *= rgamma(1 / k + 1)
+        if isinstance(n, np.ndarray):
+            # ensure we keep array-ness for 0-dim inputs; already n/k above loses it
+            result = np.array(result)
+        return result
+
+    # at this point we are guaranteed that extend='zero' and that k>0 is an integer
     n_mod_k = n % k
     # scalar case separately, unified handling would be inefficient for arrays;
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
@@ -2988,7 +3025,105 @@ def _is_subdtype(dtype, dtypes):
     return any(np.issubdtype(dtype, dt) for dt in dtypes)
 
 
-def factorial(n, exact=False):
+def _factorialx_wrapper(fname, n, k, exact, extend):
+    """
+    Shared implementation for factorial, factorial2 & factorialk.
+    """
+    if extend not in ("zero", "complex"):
+        raise ValueError(
+            f"argument `extend` must be either 'zero' or 'complex', received: {extend}"
+        )
+    if exact and extend == "complex":
+        raise ValueError("Incompatible options: `exact=True` and `extend='complex'`")
+
+    msg_unsup = (
+        "Unsupported data type for {vname} in {fname}: {dtype}\n"
+    )
+    if fname == "factorial":
+        msg_unsup += (
+            "Permitted data types are integers and floating point numbers, "
+            "as well as complex numbers if `extend='complex' is passed."
+        )
+    else:
+        msg_unsup += (
+            "Permitted data types are integers, as well as floating point "
+            "numbers and complex numbers if `extend='complex' is passed."
+        )
+    msg_exact_not_possible = (
+        "`exact=True` only supports integers, cannot use data type {dtype}"
+    )
+    msg_needs_complex = (
+        "In order to use non-integer arguments, you must opt into this by passing "
+        "`extend='complex'`. Note that this changes the result for all negative "
+        "arguments (which by default return 0)."
+    )
+
+    if fname == "factorial2":
+        msg_needs_complex += (" Additionally, it will rescale the values of the double"
+                              " factorial at even integers by a factor of sqrt(2/pi).")
+    elif fname == "factorialk":
+        msg_needs_complex += (" Additionally, it will perturb the values of the"
+                              " multifactorial at most positive integers `n`.")
+        # check type of k
+        if not _is_subdtype(type(k), ["i", "f", "c"]):
+            raise ValueError(msg_unsup.format(vname="`k`", fname=fname, dtype=type(k)))
+        elif _is_subdtype(type(k), ["f", "c"]) and extend != "complex":
+            raise ValueError(msg_needs_complex)
+        # check value of k
+        if extend == "zero" and k < 1:
+            msg = f"For `extend='zero'`, k must be a positive integer, received: {k}"
+            raise ValueError(msg)
+        elif k == 0:
+            raise ValueError("Parameter k cannot be zero!")
+
+    # factorial allows floats also for extend="zero"
+    types_requiring_complex = "c" if fname == "factorial" else ["f", "c"]
+
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if not _is_subdtype(type(n), ["i", "f", "c", type(None)]):
+            raise ValueError(msg_unsup.format(vname="`n`", fname=fname, dtype=type(n)))
+        elif _is_subdtype(type(n), types_requiring_complex) and extend != "complex":
+            raise ValueError(msg_needs_complex)
+        elif n is None or np.isnan(n):
+            complexify = (extend == "complex") and _is_subdtype(type(n), "c")
+            return np.complex128("nan+nanj") if complexify else np.float64("nan")
+        elif extend == "zero" and n < 0:
+            return 0 if exact else np.float64(0)
+        elif n in {0, 1}:
+            return 1 if exact else np.float64(1)
+        elif exact and _is_subdtype(type(n), "i"):
+            # calculate with integers
+            return _range_prod(1, n, k=k)
+        elif exact:
+            # only relevant for factorial
+            raise ValueError(msg_exact_not_possible.format(dtype=type(n)))
+        # approximation
+        return _factorialx_approx_core(n, k=k, extend=extend)
+
+    # arrays & array-likes
+    n = asarray(n)
+
+    if not _is_subdtype(n.dtype, ["i", "f", "c"]):
+        raise ValueError(msg_unsup.format(vname="`n`", fname=fname, dtype=n.dtype))
+    elif _is_subdtype(n.dtype, types_requiring_complex) and extend != "complex":
+        raise ValueError(msg_needs_complex)
+    elif exact and _is_subdtype(n.dtype, ["f"]):
+        # only relevant for factorial
+        raise ValueError(msg_exact_not_possible.format(dtype=n.dtype))
+
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    elif exact:
+        # calculate with integers
+        return _factorialx_array_exact(n, k=k)
+    # approximation
+    return _factorialx_array_approx(n, k=k, extend=extend)
+
+
+def factorial(n, exact=False, extend="zero"):
     """
     The factorial of a number or array of numbers.
 
@@ -2999,18 +3134,24 @@ def factorial(n, exact=False):
 
     Parameters
     ----------
-    n : int or array_like of ints
-        Input values.  If ``n < 0``, the return value is 0.
+    n : int or float or complex (or array_like thereof)
+        Input values for ``n!``. Complex values require ``extend='complex'``.
+        By default, the return value for ``n < 0`` is 0.
     exact : bool, optional
-        If True, calculate the answer exactly using long integer arithmetic.
-        If False, result is approximated in floating point rapidly using the
-        `gamma` function.
+        If ``exact`` is set to True, calculate the answer exactly using
+        integer arithmetic, otherwise approximate using the gamma function
+        (faster, but yields floats instead of integers).
         Default is False.
+    extend : string, optional
+        One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
+        are handled - by default they are 0, but it is possible to opt into the
+        complex extension of the factorial (see below).
 
     Returns
     -------
-    nf : float or int or ndarray
-        Factorial of `n`, as integer or float depending on `exact`.
+    nf : int or float or complex or ndarray
+        Factorial of ``n``, as integer, float or complex (depending on ``exact``
+        and ``extend``). Array inputs are returned as arrays.
 
     Notes
     -----
@@ -3019,7 +3160,7 @@ def factorial(n, exact=False):
     The output dtype is increased to ``int64`` or ``object`` if necessary.
 
     With ``exact=False`` the factorial is approximated using the gamma
-    function:
+    function (which is also the definition of the complex extension):
 
     .. math:: n! = \\Gamma(n+1)
 
@@ -3036,47 +3177,10 @@ def factorial(n, exact=False):
     120
 
     """
-    msg_wrong_dtype = (
-        "Unsupported data type for factorial: {dtype}\n"
-        "Permitted data types are integers and floating point numbers."
-    )
-
-    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
-    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
-        # scalar cases
-        if not _is_subdtype(type(n), ["i", "f", type(None)]):
-            raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
-        elif n is None or np.isnan(n):
-            return np.float64("nan")
-        elif n < 0:
-            return 0 if exact else np.float64(0)
-        elif exact and _is_subdtype(type(n), "i"):
-            return math.factorial(n)
-        elif exact:
-            msg = ("Non-integer values of `n` together with `exact=True` are "
-                   "not supported. Either ensure integer `n` or use `exact=False`.")
-            raise ValueError(msg)
-        return _factorialx_approx_core(n, k=1)
-
-    # arrays & array-likes
-    n = asarray(n)
-
-    if not _is_subdtype(n.dtype, ["i", "f"]):
-        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
-    if exact and not _is_subdtype(n.dtype, "i"):
-        msg = ("factorial with `exact=True` does not "
-               "support non-integral arrays")
-        raise ValueError(msg)
-
-    if n.size == 0:
-        # return empty arrays unchanged
-        return n
-    elif exact:
-        return _factorialx_array_exact(n, k=1)
-    return _factorialx_array_approx(n, k=1)
+    return _factorialx_wrapper("factorial", n, k=1, exact=exact, extend=extend)
 
 
-def factorial2(n, exact=False):
+def factorial2(n, exact=False, extend="zero"):
     """Double factorial.
 
     This is the factorial with every second value skipped.  E.g., ``7!! = 7 * 5
@@ -3086,20 +3190,35 @@ def factorial2(n, exact=False):
           = 2 ** (n / 2) * gamma(n / 2 + 1)                 n even
           = 2 ** (n / 2) * (n / 2)!                         n even
 
+    The formula for odd ``n`` is the basis for the complex extension.
+
     Parameters
     ----------
-    n : int or array_like
-        Calculate ``n!!``.  If ``n < 0``, the return value is 0.
+    n : int or float or complex (or array_like thereof)
+        Input values for ``n!!``. Non-integer values require ``extend='complex'``.
+        By default, the return value for ``n < 0`` is 0.
     exact : bool, optional
-        The result can be approximated rapidly using the gamma-formula
-        above (default).  If `exact` is set to True, calculate the
-        answer exactly using integer arithmetic.
+        If ``exact`` is set to True, calculate the answer exactly using
+        integer arithmetic, otherwise use above approximation (faster,
+        but yields floats instead of integers).
+        Default is False.
+    extend : string, optional
+        One of ``'zero'`` or ``'complex'``; this determines how values ``n<0``
+        are handled - by default they are 0, but it is possible to opt into the
+        complex extension of the double factorial. This also enables passing
+        complex values to ``n``.
+
+        .. warning::
+
+           Using the ``'complex'`` extension also changes the values of the
+           double factorial for even integers, reducing them by a factor of
+           ``sqrt(2/pi) ~= 0.79``, see [1].
 
     Returns
     -------
-    nff : float or int
-        Double factorial of `n`, as an int or a float depending on
-        `exact`.
+    nf : int or float or complex or ndarray
+        Double factorial of ``n``, as integer, float or complex (depending on
+        ``exact`` and ``extend``). Array inputs are returned as arrays.
 
     Examples
     --------
@@ -3109,41 +3228,15 @@ def factorial2(n, exact=False):
     >>> factorial2(7, exact=True)
     105
 
+    References
+    ----------
+    .. [1] Complex extension to double factorial
+            https://en.wikipedia.org/wiki/Double_factorial#Complex_arguments
     """
-    msg_wrong_dtype = (
-        "Unsupported data type for factorial2: {dtype}\n"
-        "Only integers are permitted."
-    )
-
-    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
-    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
-        # scalar cases
-        if not _is_subdtype(type(n), "i"):
-            raise ValueError(msg_wrong_dtype.format(dtype=type(n)))
-        elif n < 0:
-            return 0
-        elif n in {0, 1}:
-            return 1
-        # general integer case
-        if exact:
-            return _range_prod(1, n, k=2)
-        return _factorialx_approx_core(n, k=2)
-
-    # arrays & array-likes
-    n = asarray(n)
-
-    if not _is_subdtype(n.dtype, "i"):
-        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype))
-
-    if n.size == 0:
-        # return empty arrays unchanged
-        return n
-    elif exact:
-        return _factorialx_array_exact(n, k=2)
-    return _factorialx_array_approx(n, k=2)
+    return _factorialx_wrapper("factorial2", n, k=2, exact=exact, extend=extend)
 
 
-def factorialk(n, k, exact=None):
+def factorialk(n, k, exact=False, extend="zero"):
     """Multifactorial of n of order k, n(!!...!).
 
     This is the multifactorial of n skipping k values.  For example,
@@ -3158,23 +3251,33 @@ def factorialk(n, k, exact=None):
 
     Parameters
     ----------
-    n : int or array_like
-        Calculate multifactorial. If ``n < 0``, the return value is 0.
-    k : int
-        Order of multifactorial.
+    n : int or float or complex (or array_like thereof)
+        Input values for multifactorial. Non-integer values require
+        ``extend='complex'``. By default, the return value for ``n < 0`` is 0.
+    n : int or float or complex (or array_like thereof)
+        Order of multifactorial. Non-integer values require ``extend='complex'``.
     exact : bool, optional
-        If exact is set to True, calculate the answer exactly using
+        If ``exact`` is set to True, calculate the answer exactly using
         integer arithmetic, otherwise use an approximation (faster,
         but yields floats instead of integers)
+        Default is False.
+    extend : string, optional
+        One of ``'zero'`` or ``'complex'``; this determines how values ``n<0`` are
+        handled - by default they are 0, but it is possible to opt into the complex
+        extension of the multifactorial. This enables passing complex values,
+        not only to ``n`` but also to ``k``.
 
         .. warning::
-           The default value for ``exact`` will be changed to
-           ``False`` in SciPy 1.15.0.
+
+           Using the ``'complex'`` extension also changes the values of the
+           multifactorial at integers ``n != 1 (mod k)`` by a factor depending
+           on both ``k`` and ``n % k``, see below or [1].
 
     Returns
     -------
-    val : int
-        Multifactorial of `n`.
+    nf : int or float or complex or ndarray
+        Multifactorial (order ``k``) of ``n``, as integer, float or complex (depending
+        on ``exact`` and ``extend``). Array inputs are returned as arrays.
 
     Examples
     --------
@@ -3197,61 +3300,24 @@ def factorialk(n, k, exact=None):
 
       n!(k) = k ** ((n - r)/k) * gamma(n/k + 1) / gamma(r/k + 1) * max(r, 1)
 
-    This is the basis of the approximation when ``exact=False``. Compare also [1].
+    This is the basis of the approximation when ``exact=False``.
+
+    In principle, any fixed choice of ``r`` (ignoring its relation ``r = n%k``
+    to ``n``) would provide a suitable analytic continuation from integer ``n``
+    to complex ``z`` (not only satisfying the functional equation but also
+    being logarithmically convex, c.f. Bohr-Mollerup theorem) -- in fact, the
+    choice of ``r`` above only changes the function by a constant factor. The
+    final constraint that determines the canonical continuation is ``f(1) = 1``,
+    which forces ``r = 1`` (see also [1]).::
+
+      z!(k) = k ** ((z - 1)/k) * gamma(z/k + 1) / gamma(1/k + 1)
 
     References
     ----------
     .. [1] Complex extension to multifactorial
             https://en.wikipedia.org/wiki/Double_factorial#Alternative_extension_of_the_multifactorial
     """
-    if not _is_subdtype(type(k), "i") or k < 1:
-        raise ValueError(f"k must be a positive integer, received: {k}")
-    if exact is None:
-        msg = (
-            "factorialk will default to `exact=False` starting from SciPy "
-            "1.15.0. To avoid behaviour changes due to this, explicitly "
-            "specify either `exact=False` (faster, returns floats), or the "
-            "past default `exact=True` (slower, lossless result as integer)."
-        )
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        exact = True
-
-    msg_wrong_dtype = (
-        "Unsupported data type for factorialk: {dtype}\n"
-        "Only integers are permitted."
-    )
-
-    helpmsg = ""
-    if k in {1, 2}:
-        func = "factorial" if k == 1 else "factorial2"
-        helpmsg = f"\nYou can try to use {func} instead"
-
-    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
-    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
-        # scalar cases
-        if not _is_subdtype(type(n), "i"):
-            raise ValueError(msg_wrong_dtype.format(dtype=type(n)) + helpmsg)
-        elif n < 0:
-            return 0
-        elif n in {0, 1}:
-            return 1
-        # general integer case
-        if exact:
-            return _range_prod(1, n, k=k)
-        return _factorialx_approx_core(n, k=k)
-
-    # arrays & array-likes
-    n = asarray(n)
-
-    if not _is_subdtype(n.dtype, "i"):
-        raise ValueError(msg_wrong_dtype.format(dtype=n.dtype) + helpmsg)
-
-    if n.size == 0:
-        # return empty arrays unchanged
-        return n
-    elif exact:
-        return _factorialx_array_exact(n, k=k)
-    return _factorialx_array_approx(n, k=k)
+    return _factorialx_wrapper("factorialk", n, k=k, exact=exact, extend=extend)
 
 
 def stirling2(N, K, *, exact=False):

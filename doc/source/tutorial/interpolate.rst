@@ -52,13 +52,31 @@ interpolation* can be summarized as follows:
 +------------------+-------------------------+------------------------------+------------------------+---------------------------------------+
 
 
-For data smoothing, :ref:`functions are provided <tutorial-interpolate_fitpack>`
-for 1- and 2-D data using cubic splines, based on the FORTRAN library FITPACK. 
+Smoothing and approximation of data
+===================================
 
-Additionally, routines are provided for interpolation / smoothing using
-:ref:`radial basis functions <tutorial-interpolate_RBF>` with several kernels.
++-------------------------------+-------------------------+-------------------------------+
+|                               | `make_smoothing_spline` |  classic smoothing splines,   |
+|                               |                         |  GVC penalty                  |
+| 1D spline functions           +-------------------------+-------------------------------+
+|                               | `make_splrep`           | automated/semi-automated knot |
+|                               |                         | selection                     |
++-------------------------------+-------------------------+-------------------------------+
+| spine curves in N-D           | `make_splprep`          |                               |
++-------------------------------+-------------------------+-------------------------------+
+| unconstrained least squares   | `make_lsq_spline`       |                               |
+| spline fit                    |                         |                               |
++-------------------------------+-------------------------+-------------------------------+
+| 2D smoothing surfaces         | `bisplrep`              | scattered data                |
++-------------------------------+-------------------------+-------------------------------+
+|                               | `RectBivariateSpline`   | gridded data                  |
++-------------------------------+-------------------------+-------------------------------+
+| Radial basis functions in N-D | `RBFInterpolator`       |                               |
++-------------------------------+-------------------------+-------------------------------+
 
-Further details are given in the links below. 
+
+**Further details are given in the links below**
+
 
 .. toctree::
    :maxdepth: 3

@@ -493,7 +493,8 @@ class TestDifferentialEvolutionSolver:
         # test the quadratic function from differential_evolution function
         differential_evolution(self.quadratic,
                                [(-100, 100)],
-                               tol=0.02)
+                               tol=0.02,
+                               seed=1)
 
     def test_rng_gives_repeatability(self):
         result = differential_evolution(self.quadratic,
@@ -522,35 +523,6 @@ class TestDifferentialEvolutionSolver:
                                    rng=rng,
                                    tol=0.5,
                                    init=init)
-
-    def test_rng_seed_spec007(self):
-        # spec007 involves the transition of RandomState-->Generator
-        # rng is the new name
-        differential_evolution(self.quadratic,
-                               [(-100, 100)],
-                               polish=False,
-                               rng=1,
-                               tol=0.5)
-        # should still be allowed to pass `seed`
-        differential_evolution(self.quadratic,
-                               [(-100, 100)],
-                               polish=False,
-                               seed=1,
-                               tol=0.5)
-        with assert_raises(TypeError):
-            # can't pass both seed and rng
-            differential_evolution(self.quadratic,
-                                   [(-100, 100)],
-                                   polish=False,
-                                   seed=1,
-                                   rng=1,
-                                   tol=0.5)
-            # use of rng=RandomState should give rise to an error.
-            differential_evolution(self.quadratic,
-                                   [(-100, 100)],
-                                   polish=False,
-                                   rng=np.random.RandomState(),
-                                   tol=0.5)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
@@ -732,6 +704,7 @@ class TestDifferentialEvolutionSolver:
         )
         assert res.success
 
+    @pytest.mark.thread_unsafe
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
@@ -877,6 +850,7 @@ class TestDifferentialEvolutionSolver:
             assert_almost_equal(cv, np.array([[0.0, 0.0, 0.], [2.1, 4.2, 0]]))
             assert cv.shape == (2, 3)
 
+    @pytest.mark.thread_unsafe
     def test_constraint_solve(self):
         def constr_f(x):
             return np.array([x[0] + x[1]])
@@ -894,6 +868,7 @@ class TestDifferentialEvolutionSolver:
         assert res.success
 
     @pytest.mark.fail_slow(10)
+    @pytest.mark.thread_unsafe
     def test_impossible_constraint(self):
         def constr_f(x):
             return np.array([x[0] + x[1]])
@@ -1570,6 +1545,7 @@ class TestDifferentialEvolutionSolver:
             DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
                                         integrality=integrality)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(10)
     def test_vectorized(self):
         def quadratic(x):

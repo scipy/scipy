@@ -148,7 +148,7 @@ class TestExpmActionSimple:
         k = 3
         nsamples = 10
         for i in range(nsamples):
-            A = scipy.sparse.random_array((n, n), density=0.05, random_state=rng)
+            A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
             B = rng.standard_normal((n, k))
             observed = expm_multiply(A, B)
             with suppress_warnings() as sup:
@@ -187,7 +187,7 @@ class TestExpmActionInterval:
         k = 3
         endpoint = True
         for num in (14, 13, 2):
-            A = scipy.sparse.random_array((n, n), density=0.05, random_state=rng)
+            A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
             B = rng.standard_normal((n, k))
             v = rng.standard_normal((n,))
             for target in (B, v):
@@ -311,7 +311,7 @@ class TestExpmActionInterval:
 @pytest.mark.parametrize("b_is_matrix", [False, True])
 def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
     """Make sure `expm_multiply` handles all numerical dtypes correctly."""
-    assert_allclose_ = (partial(assert_allclose, rtol=1.2e-3, atol=1e-5)
+    assert_allclose_ = (partial(assert_allclose, rtol=1.8e-3, atol=1e-5)
                         if {dtype_a, dtype_b} & IMPRECISE else assert_allclose)
     rng = np.random.default_rng(1234)
     # test data

@@ -9,12 +9,12 @@ import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import (
-    Callable,
     ClassVar,
     Literal,
     overload,
     TYPE_CHECKING,
 )
+from collections.abc import Callable
 
 import numpy as np
 

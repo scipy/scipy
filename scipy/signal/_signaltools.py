@@ -2316,9 +2316,13 @@ def deconvolve(signal, divisor):
 
 
 def hilbert(x, N=None, axis=-1):
-    """
-    Compute the analytic signal, using the Hilbert transform.
+    r"""FFT-based computation of the analytic signal.
 
+    The analytic signal is calculated by filtering out the negative frequencies and
+    doubling the amplitudes of the positive frequencies in the FFT domain.
+    The imaginary part of the result is the hilbert transform of the real-valued input
+    signal.
+    
     The transformation is done along the last axis by default.
 
     Parameters
@@ -2337,15 +2341,16 @@ def hilbert(x, N=None, axis=-1):
 
     Notes
     -----
-    The analytic signal ``x_a(t)`` of signal ``x(t)`` is:
+    The analytic signal ``x_a(t)`` of a real-valued signal ``x(t)``
+    can be expressed as [1]_
 
-    .. math:: x_a = F^{-1}(F(x) 2U) = x + i y
+    .. math:: x_a = F^{-1}(F(x) 2U) = x + i y\ ,
 
     where `F` is the Fourier transform, `U` the unit step function,
-    and `y` the Hilbert transform of `x`. [1]_
+    and `y` the Hilbert transform of `x`. [2]_
 
     In other words, the negative half of the frequency spectrum is zeroed
-    out, turning the real-valued signal into a complex signal.  The Hilbert
+    out, turning the real-valued signal into a complex-valued signal.  The Hilbert
     transformed signal can be obtained from ``np.imag(hilbert(x))``, and the
     original signal from ``np.real(hilbert(x))``.
 
@@ -2353,8 +2358,10 @@ def hilbert(x, N=None, axis=-1):
     ----------
     .. [1] Wikipedia, "Analytic signal".
            https://en.wikipedia.org/wiki/Analytic_signal
-    .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
+    .. [2] Wikipedia, "Hilbert Transform".
+           https://en.wikipedia.org/wiki/Hilbert_transform
+    .. [3] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
+    .. [4] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
            Processing, Third Edition, 2009. Chapter 12.
            ISBN 13: 978-1292-02572-8
 
@@ -2363,22 +2370,19 @@ def hilbert(x, N=None, axis=-1):
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
 
+    Let's create a chirp of which the frequency increases from 20 Hz to 100 Hz and
+    apply an amplitude modulation:
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import hilbert, chirp
-
-    >>> duration = 1.0
-    >>> fs = 400.0
-    >>> samples = int(fs*duration)
-    >>> t = np.arange(samples) / fs
-
-    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and
-    apply an amplitude modulation.
-
+    ...
+    >>> duration, fs = 1, 400  # 1 s signal with sampling frequency of 400 Hz
+    >>> t = np.arange(int(fs*duration)) / fs  # timestamps of samples
     >>> signal = chirp(t, 20.0, t[-1], 100.0)
     >>> signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
 
-    The amplitude envelope is given by magnitude of the analytic signal. The
+    The amplitude envelope is given by the magnitude of the analytic signal. The
     instantaneous frequency can be obtained by differentiating the
     instantaneous phase in respect to time. The instantaneous phase corresponds
     to the phase angle of the analytic signal.
@@ -2386,18 +2390,18 @@ def hilbert(x, N=None, axis=-1):
     >>> analytic_signal = hilbert(signal)
     >>> amplitude_envelope = np.abs(analytic_signal)
     >>> instantaneous_phase = np.unwrap(np.angle(analytic_signal))
-    >>> instantaneous_frequency = (np.diff(instantaneous_phase) /
-    ...                            (2.0*np.pi) * fs)
-
-    >>> fig, (ax0, ax1) = plt.subplots(nrows=2)
-    >>> ax0.plot(t, signal, label='signal')
-    >>> ax0.plot(t, amplitude_envelope, label='envelope')
-    >>> ax0.set_xlabel("time in seconds")
+    >>> instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
+    ...
+    >>> fig, (ax0, ax1) = plt.subplots(nrows=2, sharex='all', tight_layout=True)
+    >>> ax0.set_title("Amplitude-modulated Chirp Signal")
+    >>> ax0.set_ylabel("Amplitude")
+    >>> ax0.plot(t, signal, label='Signal')
+    >>> ax0.plot(t, amplitude_envelope, label='Envelope')
     >>> ax0.legend()
-    >>> ax1.plot(t[1:], instantaneous_frequency)
-    >>> ax1.set_xlabel("time in seconds")
-    >>> ax1.set_ylim(0.0, 120.0)
-    >>> fig.tight_layout()
+    >>> ax1.set(xlabel="Time in seconds", ylabel="Phase in rad", ylim=(0, 120))
+    >>> ax1.plot(t[1:], instantaneous_frequency, 'C2-', label='Instantaneous Phase')
+    >>> ax1.legend()
+    >>> plt.show()
 
     """
     x = np.asarray(x)
