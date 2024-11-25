@@ -662,8 +662,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             except AttributeError:
                 other = np.asarray(other)
                 o_ndim = other.ndim
-             perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
-             tr = other.transpose(perm)
+            perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
+            tr = other.transpose(perm)
             
             s_ndim = self.ndim
             perm = tuple(range(s_ndim)[:-2]) + tuple(range(s_ndim)[-2:][::-1])
