@@ -826,30 +826,26 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         if self.ndim < 3 and (np.isscalar(other) or other.ndim<3):
             return _spbase.dot(self, other)
+        # Handle scalar multiplication
+        if np.isscalar(other):
+            return self * other
         if isdense(other):
             return self._dense_dot(other)
-        else:
-            # Handle scalar multiplication
-            if np.isscalar(other):
-                return self * other
-            
-            if other.format != "coo":
-                raise TypeError("input must be a COO matrix/array")
-
+        elif other.format != "coo":
+            raise TypeError("input must be a COO matrix/array")
+        elif self.ndim == 1 and other.ndim == 1:
             # Handle inner product of vectors (1-D arrays)
-            if self.ndim == 1 and other.ndim == 1:
-                if self.shape[0] != other.shape[0]:
-                    raise ValueError(f"shapes {self.shape} and {other.shape}"
-                                     " are not aligned for inner product")
-                return self @ other
-            
+            if self.shape[0] != other.shape[0]:
+                raise ValueError(f"shapes {self.shape} and {other.shape}"
+                                 " are not aligned for inner product")
+            return self @ other
+        elif self.ndim == 2 and other.ndim == 2:
             # Handle matrix multiplication (2-D arrays)
-            if self.ndim == 2 and other.ndim == 2:
-                if self.shape[1] != other.shape[0]:
-                    raise ValueError(f"shapes {self.shape} and {other.shape}"
-                                     " are not aligned for matmul")
-                return self @ other
-            
+            if self.shape[1] != other.shape[0]:
+                raise ValueError(f"shapes {self.shape} and {other.shape}"
+                                 " are not aligned for matmul")
+            return self @ other
+        else:
             return self._sparse_dot(other)
 
     
