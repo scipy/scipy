@@ -1223,7 +1223,8 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     non_reduced_axes = [ax for ax in range(ndim) if ax not in axes]
 
     if not non_reduced_axes:
-        return np.zeros((len(coords[0])), dtype=int)  # Return an array with one row
+        # Return an array with one row
+        return np.zeros_like(coords[0])
     
     # Extract the shape of the non-reduced axes
     non_reduced_shape = [shape[ax] for ax in non_reduced_axes]
