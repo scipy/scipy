@@ -109,9 +109,6 @@ CONFIG = _cleanup(
             "path": r"@PYTHON_PATH@",
             "version": "@PYTHON_VERSION@",
         },
-        "Coverage Information": {
-            "GCOV": "@GCOV_FLAG@"
-        }
     }
 )
 
