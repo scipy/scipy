@@ -197,15 +197,15 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         k = max(0, offset)
         length = min(m + offset, n - offset, K)
         if length < 0:
-            raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
+            raise ValueError(f"Offset {offset} (index {j}) out of bounds")
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
         except ValueError as e:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
-                    "Diagonal length (index %d: %d at offset %d) does not "
-                    "agree with array size (%d, %d)." % (
-                    j, len(diagonal), offset, m, n)) from e
+                    f"Diagonal length (index {j}: {len(diagonal)} at"
+                    f" offset {offset}) does not agree with array size ({m}, {n})."
+                ) from e
             raise
 
     return dia_array((data_arr, offsets), shape=(m, n)).asformat(format)
