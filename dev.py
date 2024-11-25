@@ -727,6 +727,16 @@ class Test(Task):
         print("Capturing lcov info...")
         LCOV_OUTPUT_FILE = os.path.join(dirs.build, "lcov.info")
         LCOV_OUTPUT_DIR = os.path.join(dirs.build, "lcov")
+
+        try:
+            os.unlink(LCOV_OUTPUT_FILE)
+        except OSError:
+            pass
+        try:
+            shutil.rmtree(LCOV_OUTPUT_DIR)
+        except OSError:
+            pass
+
         lcov_cmd = [
             "lcov", "--capture",
             "--directory", dirs.build,
@@ -797,25 +807,13 @@ class Test(Task):
             # runner verbosity - convert bool to int
             verbose = int(args.verbose) + 1
 
-            scipy_code_fetching_gcov_flag = (
-                "import scipy;"
-                "print(scipy.show_config(mode='dicts')['Coverage Information']['GCOV'])")
-            was_built_with_gcov_flag = subprocess.run(["python", "-c",
-                                scipy_code_fetching_gcov_flag.format(lang="'c++'")],
-                                capture_output=True, encoding='utf-8').stdout.strip()
-            if was_built_with_gcov_flag == "true":
-                scipy_code_for_checking_compiler = (
-                    "import scipy;"
-                    "print(scipy.show_config(mode='dicts')['Compilers'][{lang}]['name'])")
-                cpp = subprocess.run(["python", "-c",
-                                      scipy_code_for_checking_compiler.format(lang="'c++'")],
-                                      capture_output=True, encoding='utf-8').stdout.strip()
-                c = subprocess.run(["python", "-c",
-                                    scipy_code_for_checking_compiler.format(lang="'c'")],
-                                    capture_output=True, encoding='utf-8').stdout.strip()
-                fortran = subprocess.run(["python", "-c",
-                                          scipy_code_for_checking_compiler.format(lang="'fortran'")],
-                                          capture_output=True, encoding='utf-8').stdout.strip()
+            was_built_with_gcov_flag = len(list(dirs.build.rglob("*.gcno"))) > 0
+            if was_built_with_gcov_flag:
+                config = importlib.import_module("scipy.__config__").show(mode='dicts')
+                compilers_config = config['Compilers']
+                cpp = compilers_config['c++']['name']
+                c = compilers_config['c']['name']
+                fortran = compilers_config['fortran']['name']
                 if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
                     print("SciPy was built with --gcov flag which requires LCOV while running tests")
                     print("Further, LCOV usage requires GCC for C, C++ and Fortran codes in SciPy")
@@ -830,7 +828,7 @@ class Test(Task):
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)
-            if args.coverage and was_built_with_gcov_flag == "true":
+            if args.coverage and was_built_with_gcov_flag:
                 if not result:
                     print("Tests should succeed to generate coverage reports using LCOV")
 
