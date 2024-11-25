@@ -184,7 +184,8 @@ class TestBracketRoot:
                             rtol=1e-5)
             xp_assert_equal(res_attr.shape, shape)
 
-        assert res.success.dtype == xp.bool
+        xp_test = array_namespace(xp.asarray(1.))
+        assert res.success.dtype == xp_test.bool
         if shape:
             assert xp.all(res.success[1:-1])
         assert res.status.dtype == xp.int32
