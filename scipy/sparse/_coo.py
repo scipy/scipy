@@ -777,10 +777,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         result_dtype = upcast_char(self.dtype.char, other.dtype.char)
         if self.ndim >= 3 or other.ndim >= 3:
             # if self has shape (N,), reshape to (1,N)
-            self_is_1d = False
             if self.ndim == 1:
-                self_is_1d = True
-                self = self.reshape(1, self.shape[0])
+                result = self.reshape(1, self.shape[0])._matmul_multivector(other)
+                return result.reshape(tuple(result_shape[:-2]) + tuple(result_shape[-1:]))
             broadcast_shape = np.broadcast_shapes(self.shape[:-2], other.shape[:-2])
             self_shape = broadcast_shape + self.shape[-2:]
             other_shape = broadcast_shape + other.shape[-2:]
@@ -793,11 +792,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                 np.array(other_shape), np.array(result_shape),
                                 np.concatenate(self.coords),
                                 self.data, other.ravel('C'), result)
-            
-            # if self was originally 1-D, reshape result accordingly
-            if self_is_1d:
-                result = result.reshape(tuple(result_shape[:-2]) +
-                                        tuple(result_shape[-1:]))
             return result
         
         if self.ndim == 2:
