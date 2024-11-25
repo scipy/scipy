@@ -11,7 +11,8 @@ from scipy._lib._util import np_long, np_ulong
 
 
 __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
-           'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
+           'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype',
+           'broadcast_shapes']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
                     np.uintc, np_long, np_ulong, np.longlong, np.ulonglong,
@@ -360,6 +361,80 @@ def check_shape(args, current_shape=None, *, allow_nd=(2,)) -> tuple[int, ...]:
         raise ValueError(f'shape must have length in {allow_nd}. Got {new_shape=}')
 
     return new_shape
+
+
+def broadcast_shapes(*shapes):
+    """Check if shapes can be broadcast and return resulting shape
+
+    This is similar to the NumPy ``broadcast_shapes`` function but
+    does not check memory consequences of the resulting dense matrix.
+
+    Parameters
+    ----------
+    *shapes : tuple of shape tuples
+        The tuple of shapes to be considered for broadcasting.
+        Shapes should be tuples of non-negative integers.
+
+    Returns
+    -------
+    new_shape : tuple of integers
+        The shape that results from broadcasting th input shapes.
+    """
+    # shortcut common case of 2 shapes
+    if len(shapes) == 2:
+        shape1, shape2 = shapes
+        if not isinstance(shape1, (tuple, list)):
+            shape1 = (shape1,)
+        if not isinstance(shape2, (tuple, list)):
+            shape2 = (shape2,)
+        len1, len2 = len(shape1), len(shape2)
+        if len1 >= len2:
+            out, shape = list(shape1), shape2
+            if not len2:
+                return shape1
+        else:
+            out, shape = list(shape2), shape1
+            if not len1:
+                return shape2
+        # shortcut common case of ndim 2
+        if len(out) == 2:
+            print(f"{shapes=}")
+            print(f"{out=} {shape=}")
+            if shape[-1] != 1 and shape[-1] != out[-1]:
+                if out[-1] != 1:
+                    raise ValueError("shapes cannot be broadcast to a single shape.")
+                out[-1] = shape[-1]
+            if len(shape) == 2 and shape[-2] != 1 and shape[-2] != out[-2]:
+                if out[-2] != 1:
+                    raise ValueError("shapes cannot be broadcast to a single shape.")
+                out[-2] = shape[-2]
+            print(f"Done: {out=} {shape=}")
+            return (*out,)
+        # ndim != 2
+        for i, x in enumerate(shape, start=-len(shape)):
+            if x != 1 and x != (outi := out[i]):
+                if outi != 1:
+                    raise ValueError("shapes cannot be broadcast to a single shape.")
+                out[i] = x
+        return (*out,)
+    # not 2 shapes
+    n_shapes = len(shapes)
+    if n_shapes == 0:
+        return ()
+    if n_shapes == 1:
+        return shapes[0]
+    shapes = [shp if isinstance(shp, (tuple, list)) else (shp,) for shp in shapes]
+    big_shp = max(shapes, key=len)
+    out = list(big_shp)
+    for shp in shapes:
+        if shp is big_shp:
+            continue
+        for i, x in enumerate(shp, start=-len(shp)):
+            if x != 1 and x != (outi := out[i]):
+                if outi != 1:
+                    raise ValueError("shapes cannot be broadcast to a single shape.")
+                out[i] = x
+    return (*out,)
 
 
 def check_reshape_kwargs(kwargs):

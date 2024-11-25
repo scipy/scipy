@@ -171,6 +171,71 @@ class TestSparseUtils:
             np.dtype('int64')
         )
 
+    def test_broadcast_shapes(self):
+        # note np.broadcast_shapes raises index too large for these first 5 tests
+        #      sputils does not!
+        shapes = ((6, 5, 1, 4, 1, 1), (1, 2**32), (2**32, 1))
+        new_shape = (6, 5, 1, 4, 2**32, 2**32)
+        assert sputils.broadcast_shapes(*shapes) == new_shape
+        assert sputils.broadcast_shapes(*shapes[:2]) == (6, 5, 1, 4, 1, 2**32)
+        print(shapes[1:])
+        assert sputils.broadcast_shapes(*shapes[1:]) == (2**32, 2**32)
+        assert sputils.broadcast_shapes((2, 5), (5,)) == (2, 5)
+        assert sputils.broadcast_shapes((5,), (2, 5)) == (2, 5)
+
+        # tests public broadcast_shapes
+        # from numpu/numpy/lib/tests/test_stride_tricks.py
+        data = [
+            [[], ()],
+            [[()], ()],
+            [[(7,)], (7,)],
+            [[(1, 2), (2,)], (1, 2)],
+            [[(1, 1)], (1, 1)],
+            [[(1, 1), (3, 4)], (3, 4)],
+            [[(6, 7), (5, 6, 1), (7,), (5, 1, 7)], (5, 6, 7)],
+            [[(5, 6, 1)], (5, 6, 1)],
+            [[(1, 3), (3, 1)], (3, 3)],
+            [[(1, 0), (0, 0)], (0, 0)],
+            [[(0, 1), (0, 0)], (0, 0)],
+            [[(1, 0), (0, 1)], (0, 0)],
+            [[(1, 1), (0, 0)], (0, 0)],
+            [[(1, 1), (1, 0)], (1, 0)],
+            [[(1, 1), (0, 1)], (0, 1)],
+            [[(), (0,)], (0,)],
+            [[(0,), (0, 0)], (0, 0)],
+            [[(0,), (0, 1)], (0, 0)],
+            [[(1,), (0, 0)], (0, 0)],
+            [[(), (0, 0)], (0, 0)],
+            [[(1, 1), (0,)], (1, 0)],
+            [[(1,), (0, 1)], (0, 1)],
+            [[(1,), (1, 0)], (1, 0)],
+            [[(), (1, 0)], (1, 0)],
+            [[(), (0, 1)], (0, 1)],
+            [[(1,), (3,)], (3,)],
+            [[2, (3, 2)], (3, 2)],
+            [[(1, 2)] * 32, (1, 2)],
+            [[(1, 2)] * 100, (1, 2)],
+            [[(2,)] * 32, (2,)],
+        ]
+        for input_shapes, target_shape in data:
+            assert_equal(sputils.broadcast_shapes(*input_shapes), target_shape)
+
+        # tests public broadcast_shapes failures
+        data = [
+            [(3,), (4,)],
+            [(2, 3), (2,)],
+            [2, (2, 3)],
+            [(3,), (3,), (4,)],
+            [(2, 5), (3, 5)],
+            [(2, 4), (2, 5)],
+            [(1, 3, 4), (2, 3, 3)],
+            [(1, 2), (3, 1), (3, 2), (10, 5)],
+            [(2,)] * 32 + [(3,)] * 32,
+        ]
+        for input_shapes in data:
+            with assert_raises(ValueError, match="cannot be broadcast"):
+                sputils.broadcast_shapes(*input_shapes)
+
     def test_check_shape_overflow(self):
         new_shape = sputils.check_shape([(10, -1)], (65535, 131070))
         assert_equal(new_shape, (10, 858967245))
