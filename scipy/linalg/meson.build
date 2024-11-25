@@ -224,6 +224,13 @@ py3.extension_module('_umath_linalg',
 )
 
 
+py3.extension_module('_batched_lapack',
+    ['_batched_lapack.cc'],
+    dependencies: [np_dep, npymath_lib, lapack_dep, blas_dep],
+    install: true,
+    subdir: 'scipy/linalg'
+)
+
 python_sources = [
   '__init__.py',
   '_basic.py',
