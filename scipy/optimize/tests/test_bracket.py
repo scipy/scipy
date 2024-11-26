@@ -9,7 +9,7 @@ import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less, array_namespace)
-from scipy._lib._array_api import xp_ravel
+from scipy._lib._array_api import xp_ravel, is_torch
 from scipy.conftest import array_api_compatible
 
 
@@ -177,11 +177,10 @@ class TestBracketRoot:
 
         attrs = ['xl', 'xr', 'fl', 'fr', 'success', 'nfev', 'nit']
         for attr in attrs:
-            ref_attr = [getattr(ref, attr).tolist() for ref in refs]
+            ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
-            xp_assert_close(xp_ravel(res_attr, xp=xp),
-                            xp.asarray(ref_attr, dtype=res_attr.dtype),
-                            rtol=1e-5)
+            rtol = 5e-7 if is_torch(xp) else None  # consider looking into this
+            xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr), rtol=rtol)
             xp_assert_equal(res_attr.shape, shape)
 
         xp_test = array_namespace(xp.asarray(1.))
