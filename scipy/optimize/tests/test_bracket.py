@@ -203,17 +203,17 @@ class TestBracketRoot:
             funcs = [lambda x: x - 1.5,
                      lambda x: x - 1000,
                      lambda x: x - 1000,
-                     lambda x: xp.nan,
+                     lambda x: x * xp.nan,
                      lambda x: x]
 
-            return [funcs[j](x) for x, j in zip(xs, js)]
+            return [funcs[int(j)](x) for x, j in zip(xs, js)]
 
         args = (xp.arange(5, dtype=xp.int64),)
         res = _bracket_root(f,
                             xl0=xp.asarray([-1., -1., -1., -1., 4.]),
-                            xr0=[1, 1, 1, 1, -4],
-                            xmin=[-xp.inf, -1, -xp.inf, -xp.inf, 6],
-                            xmax=[xp.inf, 1, xp.inf, xp.inf, 2],
+                            xr0=xp.asarray([1, 1, 1, 1, -4]),
+                            xmin=xp.asarray([-xp.inf, -1, -xp.inf, -xp.inf, 6]),
+                            xmax=xp.asarray([xp.inf, 1, xp.inf, xp.inf, 2]),
                             args=args, maxiter=3)
 
         ref_flags = xp.asarray([eim._ECONVERGED,
@@ -333,21 +333,21 @@ class TestBracketRoot:
         f.count = 0
         res = _bracket_root(f, xp.asarray(5.), xp.asarray(10.), 
                             factor=2)
-        bracket = (res.xl, res.xr)
+
         assert res.nfev == 4
-        xp_assert_close(bracket, xp.asarray([0., 5.]), atol=1e-15)
+        xp_assert_close(res.xl, xp.asarray(0.), atol=1e-15)
+        xp_assert_close(res.xr, xp.asarray(5.), atol=1e-15)
 
         # 3. bracket limit hits root exactly
         with np.errstate(over='ignore'):
             res = _bracket_root(f, xp.asarray(5.), xp.asarray(10.), 
                                 xmin=0)
-        bracket = (res.xl, res.xr)
-        xp_assert_close(bracket[0], xp.asarray(0.), atol=1e-15)
+        xp_assert_close(res.xl, xp.asarray(0.), atol=1e-15)
+
         with np.errstate(over='ignore'):
             res = _bracket_root(f, xp.asarray(-10.), xp.asarray(-5.), 
                                 xmax=0)
-        bracket = (res.xl, res.xr)
-        xp_assert_close(bracket[1], xp.asarray(0.), atol=1e-15)
+        xp_assert_close(res.xr, xp.asarray(0.), atol=1e-15)
 
         # 4. bracket not within min, max
         with np.errstate(over='ignore'):

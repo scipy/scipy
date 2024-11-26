@@ -378,7 +378,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         res['nfev'] = res['nfev'][:n] + res['nfev'][n:]
         # If the status on one side is zero, the status is zero. In any case,
         # report the status from one side only.
-        res['status'] = xp.where(sa != 0, sb, sa)
+        res['status'] = xp.where(sa == 0, sa, sb)
         res['success'] = (res['status'] == 0)
 
         del res['x']
