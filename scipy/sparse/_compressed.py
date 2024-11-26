@@ -998,10 +998,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         def check_bounds(indices, bound):
             idx = indices.max()
             if idx >= bound:
-                raise IndexError('index ({idx}) out of range (>= {bound})')
+                raise IndexError(f'index ({idx}) out of range (>= {bound})')
             idx = indices.min()
             if idx < -bound:
-                raise IndexError('index ({idx}) out of range (< -{bound})')
+                raise IndexError(f'index ({idx}) out of range (< -{bound})')
 
         i = np.atleast_1d(np.asarray(i, dtype=self.indices.dtype)).ravel()
         j = np.atleast_1d(np.asarray(j, dtype=self.indices.dtype)).ravel()
