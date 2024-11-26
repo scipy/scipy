@@ -754,7 +754,7 @@ class Test(Task):
                 return 1
             raise
 
-        print("Generating lcov HTML output...") # TODO: Add check for presense of genhtml
+        print("Generating lcov HTML output...")
         genhtml_cmd = [
             "genhtml", "-q", LCOV_OUTPUT_FILE,
             "--output-directory", LCOV_OUTPUT_DIR,
@@ -816,11 +816,14 @@ class Test(Task):
                 c = compilers_config['c']['name']
                 fortran = compilers_config['fortran']['name']
                 if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
-                    print("SciPy was built with --gcov flag which requires LCOV while running tests")
-                    print("Further, LCOV usage requires GCC for C, C++ and Fortran codes in SciPy")
-                    print(f"Compilers used currently are C: {c}, C++: {cpp}, Fortran: {fortran}")
+                    print("SciPy was built with --gcov flag which requires "
+                           "LCOV while running tests")
+                    print("Further, LCOV usage requires GCC for C, C++ and "
+                          "Fortran codes in SciPy")
+                    print("Compilers used currently are C: "
+                          f"{c}, C++: {cpp}, Fortran: {fortran}")
                     print("Therefore, exiting without running tests")
-                    exit(1) # Exit because tests won't succeed and will give missing symbol error
+                    exit(1) # Exit because tests will give missing symbol error
             result = runner(  # scipy._lib._testutils:PytestTester
                 args.mode,
                 verbose=verbose,
@@ -831,7 +834,8 @@ class Test(Task):
                 parallel=args.parallel)
             if args.coverage and was_built_with_gcov_flag:
                 if not result:
-                    print("Tests should succeed to generate coverage reports using LCOV")
+                    print("Tests should succeed to generate "
+                          "coverage reports using LCOV")
 
                 cls.run_lcov(dirs)
         return result
