@@ -46,6 +46,8 @@ A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 
 def do_solve(**kw):
+    if not hasattr(niter, 'n'):
+        niter.n = [0]
     if not hasattr(count, 'c'):
         count.c = [0]
     count.c[0] = 0

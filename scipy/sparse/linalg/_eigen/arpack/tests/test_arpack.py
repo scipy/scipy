@@ -402,8 +402,10 @@ class NonSymmetricParams:
         self.complex_test_cases = [SNC, GNC]
 
 
-@pytest.mark.parallel_threads(1)
-def test_symmetric_modes():
+@pytest.mark.iterations(1)
+@pytest.mark.thread_unsafe
+def test_symmetric_modes(num_parallel_threads):
+    assert num_parallel_threads == 1
     params = SymmetricParams()
     k = 2
     symmetric = True
@@ -666,7 +668,7 @@ def test_eigs_for_k_greater():
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = generate_matrix_symmetric(4, pos_definite=True, rng=rng)
     M_sparse = generate_matrix_symmetric(

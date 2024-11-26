@@ -894,6 +894,7 @@ class TestSpsolveTriangular:
         assert_allclose(A.dot(x), b, atol=1.5e-6)
 
 
+@pytest.mark.thread_unsafe
 @sup_sparse_efficiency
 @pytest.mark.parametrize("nnz", [10, 10**2, 10**3])
 @pytest.mark.parametrize("fmt", ["csr", "csc", "coo", "dia", "dok", "lil"])

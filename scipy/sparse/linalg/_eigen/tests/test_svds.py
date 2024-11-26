@@ -414,6 +414,7 @@ class SVDSCommonTests:
         tmp_rng = np.random.default_rng(0)
         A = tmp_rng.random((n, n))
 
+        rng = copy.deepcopy(rng)
         rng_2 = copy.deepcopy(rng)
 
         # with the same rng, solutions are the same and accurate
