@@ -320,7 +320,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
+        python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool lcov
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
@@ -361,7 +361,7 @@ jobs:
     - name: Test SciPy
       run: |
         export OPENBLAS_NUM_THREADS=1
-        python dev.py --no-build test -j2 --mode full -- --cov --cov-report term-missing
+        python dev.py --no-build test --coverage -j2 --mode full -- --cov --cov-report term-missing
 
   #################################################################################
   linux_32bit:
