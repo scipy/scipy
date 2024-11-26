@@ -759,7 +759,7 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     test_stats(angles_mat - angles, 1e-15, 1e-13)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
@@ -786,7 +786,7 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
@@ -814,7 +814,7 @@ def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
@@ -993,7 +993,7 @@ def test_approx_equal():
     assert_equal(p.approx_equal(q, atol), (r_mag < atol))
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_approx_equal_single_rotation():
     # also tests passing single argument to approx_equal
     p = Rotation.from_rotvec([0, 0, 1e-9])  # less than default atol of 1e-8
@@ -1884,7 +1884,7 @@ def test_as_davenport():
             assert_allclose(angles_dav, angles)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_as_davenport_degenerate():
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
