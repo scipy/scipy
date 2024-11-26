@@ -17,8 +17,7 @@ from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan, _rng_html_rewrite, _lazywhere,
-                              _transition_to_rng)
+                              _contains_nan, _rng_html_rewrite, _lazywhere)
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -440,6 +439,15 @@ class TestTransitionToRNG:
         return optimize.check_grad(optimize.rosen, optimize.rosen_der, x,
                                    direction='random', **kwargs)
 
+    def random_array(self, **kwargs):
+        return sparse.random_array((10, 10), density=1.0, **kwargs).todense()
+
+    def random(self, **kwargs):
+        return sparse.random(10, 10, density=1.0, **kwargs).todense()
+
+    def rand(self, **kwargs):
+        return sparse.rand(10, 10, density=1.0, **kwargs).todense()
+
     def svds(self, **kwargs):
         rng = np.random.default_rng(3458934594269824562)
         A = rng.random((10, 10))
@@ -478,6 +486,43 @@ class TestTransitionToRNG:
         res = stats.sobol_indices(func=f_ishigami, n=1024, dists=dists, **kwargs)
         return res.first_order
 
+    def qmc_engine(self, engine, **kwargs):
+        qrng = engine(d=1, **kwargs)
+        return qrng.random(4)
+
+    def halton(self, **kwargs):
+        return self.qmc_engine(stats.qmc.Halton, **kwargs)
+
+    def sobol(self, **kwargs):
+        return self.qmc_engine(stats.qmc.Sobol, **kwargs)
+
+    def latin_hypercube(self, **kwargs):
+        return self.qmc_engine(stats.qmc.LatinHypercube, **kwargs)
+
+    def poisson_disk(self, **kwargs):
+        return self.qmc_engine(stats.qmc.PoissonDisk, **kwargs)
+
+    def multivariate_normal_qmc(self, **kwargs):
+        X = stats.qmc.MultivariateNormalQMC([0], **kwargs)
+        return X.random(4)
+
+    def multinomial_qmc(self, **kwargs):
+        X = stats.qmc.MultinomialQMC([0.5, 0.5], 4, **kwargs)
+        return X.random(4)
+
+    def permutation_method(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = tuple(rng.random((2, 100)))
+        method = stats.PermutationMethod(**kwargs)
+        return stats.pearsonr(*data, method=method).pvalue
+
+    def bootstrap_method(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = tuple(rng.random((2, 100)))
+        res = stats.pearsonr(*data)
+        method = stats.BootstrapMethod(**kwargs)
+        return res.confidence_interval(method=method)
+
     @pytest.mark.fail_slow(10)
     @pytest.mark.slow
     @pytest.mark.parametrize("method_name, arg_name", [
@@ -489,13 +534,24 @@ class TestTransitionToRNG:
         ("differential_evolution", "seed"),
         ("dual_annealing", "seed"),
         ("check_grad", "seed"),
+        ('random_array', 'random_state'),
+        ('random', 'random_state'),
+        ('rand', 'random_state'),
         ("svds", "random_state"),
         ("random_rotation", "random_state"),
         ("goodness_of_fit", "random_state"),
         ("permutation_test", "random_state"),
         ("bootstrap", "random_state"),
+        ("permutation_method", "random_state"),
+        ("bootstrap_method", "random_state"),
         ("dunnett", "random_state"),
-        ("sobol_indices", "random_state")
+        ("sobol_indices", "random_state"),
+        ("halton", "seed"),
+        ("sobol", "seed"),
+        ("latin_hypercube", "seed"),
+        ("poisson_disk", "seed"),
+        ("multivariate_normal_qmc", "seed"),
+        ("multinomial_qmc", "seed"),
     ])
     def test_rng_deterministic(self, method_name, arg_name):
         np.random.seed(None)
@@ -503,11 +559,16 @@ class TestTransitionToRNG:
         method = getattr(self, method_name)
 
         rng = np.random.default_rng(seed)
+        message = "got multiple values for argument now known as `rng`"
+        with pytest.raises(TypeError, match=message):
+            method(**{'rng': rng, arg_name: seed})
+
+        rng = np.random.default_rng(seed)
         res1 = method(rng=rng)
         res2 = method(rng=seed)
         assert_equal(res2, res1)
 
-        if method_name in ["dunnett", "sobol_indices"]:
+        if method_name in {"dunnett", "sobol_indices"}:
             # the two kwargs have essentially the same behavior for these functions
             res3 = method(**{arg_name: seed})
             assert_equal(res3, res1)
@@ -516,14 +577,21 @@ class TestTransitionToRNG:
         rng = np.random.RandomState(seed)
         res1 = method(**{arg_name: rng})
         res2 = method(**{arg_name: seed})
+
+        if method_name in {"halton", "sobol", "latin_hypercube", "poisson_disk",
+                           "multivariate_normal_qmc", "multinomial_qmc"}:
+            # For these, passing `random_state=RandomState(seed)` is not the same as
+            # passing integer `seed`.
+            res1b = method(**{arg_name: np.random.RandomState(seed)})
+            assert_equal(res1b, res1)
+            res2b = method(**{arg_name: seed})
+            assert_equal(res2b, res2)
+            return
+
         np.random.seed(seed)
         res3 = method(**{arg_name: None})
         assert_equal(res2, res1)
         assert_equal(res3, res1)
-
-        message = "got multiple values for argument now known as `rng`"
-        with pytest.raises(TypeError, match=message):
-            method(**{'rng': rng, arg_name: seed})
 
 
 class TestLazywhere:

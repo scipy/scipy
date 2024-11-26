@@ -2396,8 +2396,12 @@ class MultivariateNormalQMC:
         else:
             engine_dim = d
         if engine is None:
+            # Need this during SPEC 7 transition to prevent `RandomState`
+            # from being passed via `rng`.
+            kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
+            kwargs = {kwarg: rng}
             self.engine = Sobol(
-                d=engine_dim, scramble=True, bits=30, rng=rng
+                d=engine_dim, scramble=True, bits=30, **kwargs
             )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != engine_dim:
@@ -2539,8 +2543,12 @@ class MultinomialQMC:
             raise ValueError('Elements of pvals must sum to 1.')
         self.n_trials = n_trials
         if engine is None:
+            # Need this during SPEC 7 transition to prevent `RandomState`
+            # from being passed via `rng`.
+            kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
+            kwargs = {kwarg: rng}
             self.engine = Sobol(
-                d=1, scramble=True, bits=30, rng=rng
+                d=1, scramble=True, bits=30, **kwargs
             )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != 1:
