@@ -582,7 +582,7 @@ def test_linearoperator_deallocation():
         pass
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_parallel_threads():
     results = []
     v0 = np.random.rand(50)

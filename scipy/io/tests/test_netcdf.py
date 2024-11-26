@@ -23,7 +23,7 @@ N_EG_ELS = 11  # number of elements for example variable
 VARTYPE_EG = 'b'  # var type for example variable
 
 
-pytestmark = pytest.mark.parallel_threads(1)
+pytestmark = pytest.mark.thread_unsafe
 
 
 @contextmanager

@@ -5,7 +5,7 @@ import scipy as sp
 from scipy.sparse import dok_array, dok_matrix
 
 
-pytestmark = pytest.mark.parallel_threads(1)
+pytestmark = pytest.mark.thread_unsafe
 
 
 @pytest.fixture

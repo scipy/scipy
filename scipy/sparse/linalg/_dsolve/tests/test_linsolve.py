@@ -265,7 +265,7 @@ class TestLinsolve:
         x2 = spsolve(As, Bs)
         assert_array_almost_equal(x, x2.toarray())
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_non_square(self):
         # A is not square.
@@ -277,7 +277,7 @@ class TestLinsolve:
         b2 = array([1.0, 2.0])
         assert_raises(ValueError, spsolve, A2, b2)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_example_comparison(self):
         row = array([0,0,1,2,2,2])
@@ -297,7 +297,7 @@ class TestLinsolve:
 
         assert_array_almost_equal(X, sX.toarray())
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_shape_compatibility(self):
@@ -357,7 +357,7 @@ class TestLinsolve:
         b = csc_array((1, 3))
         assert_raises(ValueError, spsolve, A, b)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_ndarray_support(self):
         A = array([[1., 2.], [2., 0.]])
@@ -489,7 +489,7 @@ class TestSplu:
             x = lu.solve(b, 'H')
             check(A.T.conj(), b, x, msg)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_splu_smoketest(self):
         self._internal_test_splu_smoketest()
@@ -505,7 +505,7 @@ class TestSplu:
             for idx_dtype in [np.int32, np.int64]:
                 self._smoketest(splu, check, dtype, idx_dtype)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_spilu_smoketest(self):
         self._internal_test_spilu_smoketest()
@@ -526,7 +526,7 @@ class TestSplu:
 
         assert_(max(errors) > 1e-5)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_spilu_drop_rule(self):
         # Test passing in the drop_rule argument to spilu.
@@ -654,7 +654,7 @@ class TestSplu:
             assert_raises(TypeError, lu.solve,
                           b.astype(np.complex128))
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_superlu_dlamch_i386_nan(self):
         # SuperLU 4.3 calls some functions returning floats without
@@ -672,7 +672,7 @@ class TestSplu:
         B = A.toarray()
         assert_(not np.isnan(B).any())
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_lu_attr(self):
 
@@ -708,7 +708,7 @@ class TestSplu:
         check(np.complex64, True)
         check(np.complex128, True)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.slow
     @sup_sparse_efficiency
     def test_threads_parallel(self):
@@ -732,7 +732,7 @@ class TestSplu:
 
         assert_equal(len(oks), 20)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_singular_matrix(self):
         # Test that SuperLU does not print to stdout when a singular matrix is
         # passed. See gh-20993.
@@ -822,7 +822,7 @@ class TestSpsolveTriangular:
             assert_raises(scipy.linalg.LinAlgError,
                           spsolve_triangular, A, b, lower=lower)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_bad_shape(self):
         # A is not square.
@@ -834,7 +834,7 @@ class TestSpsolveTriangular:
         b2 = array([1.0, 2.0])
         assert_raises(ValueError, spsolve_triangular, A2, b2)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @sup_sparse_efficiency
     def test_input_types(self):
         A = array([[1., 0.], [1., 2.]])
@@ -843,7 +843,7 @@ class TestSpsolveTriangular:
             x = spsolve_triangular(matrix_type(A), b, lower=True)
             assert_array_almost_equal(A.dot(x), b)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.slow
     @sup_sparse_efficiency
     @pytest.mark.parametrize("n", [10, 10**2, 10**3])

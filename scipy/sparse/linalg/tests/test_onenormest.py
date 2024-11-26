@@ -232,7 +232,7 @@ class TestOnenormest:
 
 class TestAlgorithm_2_2:
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_randn_inv(self):
         rng = np.random.RandomState(1234)
         n = 20

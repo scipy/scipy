@@ -399,7 +399,7 @@ def test_pickle():
             assert_equal(getattr(A, k), getattr(B, k))
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_inheritance():
     class Empty(interface.LinearOperator):
         pass

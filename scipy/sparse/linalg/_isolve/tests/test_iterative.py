@@ -219,7 +219,7 @@ def case(request):
     """
     return request.param
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_maxiter(case):
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
@@ -538,7 +538,7 @@ def test_x0_solves_problem_exactly(solver):
 
 
 # Specific tfqmr test
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('case', IterativeParams().cases)
 def test_show(case, capsys):
     def cb(x):

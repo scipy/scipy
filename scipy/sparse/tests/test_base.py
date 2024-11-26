@@ -2542,7 +2542,7 @@ class _TestGetSet:
         assert_array_equal(A.toarray(), B)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 class _TestSolve:
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils
@@ -5453,7 +5453,7 @@ class Test64Bit:
         else:
             raise ValueError(f"matrix {m!r} has no integer indices")
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_decorator_maxval_limit(self):
         # Test that the with_64bit_maxval_limit decorator works
 
@@ -5467,7 +5467,7 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_decorator_maxval_random(self):
         # Test that the with_64bit_maxval_limit decorator works (2)
 
@@ -5487,7 +5487,7 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_downcast_intp(self):
         # Check that bincount and ufunc.reduceat intp downcasts are
         # dealt with. The point here is to trigger points in the code
@@ -5554,7 +5554,7 @@ class RunAll64Bit:
         check(cls, method_name)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 @pytest.mark.slow
 class Test64BitArray(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
@@ -5580,7 +5580,7 @@ class Test64BitArray(RunAll64Bit):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 class Test64BitMatrix(RunAll64Bit):
     # assert_32bit=True only for spmatrix cuz sparray does not check index content
     @pytest.mark.fail_slow(5)
