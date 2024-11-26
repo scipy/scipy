@@ -17,7 +17,8 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
                        getdtype, isscalarlike, isintlike, downcast_intp_index,
-                       get_sum_dtype, check_shape, is_pydata_spmatrix)
+                       get_sum_dtype, check_shape, is_pydata_spmatrix,
+                       broadcast_shapes)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -446,11 +447,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if other.dtype == np.object_:
                 # 'other' not convertible to ndarray.
                 return NotImplemented
-            bshape = np.broadcast_shapes(self.shape, other.shape)
+            bshape = broadcast_shapes(self.shape, other.shape)
             return self._mul_scalar(other.flat[0]).reshape(bshape)
         # Fast case for trivial sparse matrix.
         if self.shape in ((1,), (1, 1)):
-            bshape = np.broadcast_shapes(self.shape, other.shape)
+            bshape = broadcast_shapes(self.shape, other.shape)
             return np.multiply(self.data.sum(), other).reshape(bshape)
 
         ret = self.tocoo()
@@ -994,12 +995,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         def check_bounds(indices, bound):
             idx = indices.max()
             if idx >= bound:
-                raise IndexError('index (%d) out of range (>= %d)' %
-                                 (idx, bound))
+                raise IndexError('index ({idx}) out of range (>= {bound})')
             idx = indices.min()
             if idx < -bound:
-                raise IndexError('index (%d) out of range (< -%d)' %
-                                 (idx, bound))
+                raise IndexError('index ({idx}) out of range (>= {bound})')
 
         i = np.atleast_1d(np.asarray(i, dtype=self.indices.dtype)).ravel()
         j = np.atleast_1d(np.asarray(j, dtype=self.indices.dtype)).ravel()
@@ -1409,13 +1408,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             out = r
             return out
 
-    def _broadcast_to(self, shape, copy=False):        
+    def _broadcast_to(self, shape, copy=False):
         if self.shape == shape:
             return self.copy() if copy else self
         
         shape = check_shape(shape, allow_nd=(self._allow_nd))
 
-        if np.broadcast_shapes(self.shape, shape) != shape:
+        if broadcast_shapes(self.shape, shape) != shape:
             raise ValueError("cannot be broadcast")
         
         if len(self.shape) == 1 and len(shape) == 1:
