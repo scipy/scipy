@@ -1490,7 +1490,7 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_comb_exact_non_int_dep(self):
         msg = "`exact=True`"
         with pytest.deprecated_call(match=msg):
@@ -1508,7 +1508,7 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     def test_perm_iv(self):
         # currently `exact=True` only support scalars
         with pytest.raises(ValueError, match="scalar integers"):
@@ -2755,7 +2755,7 @@ class TestFactorialFunctions:
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected, rtol=2e-15)
 
-    @pytest.mark.parallel_threads(1)
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
@@ -4469,7 +4469,7 @@ def test_pseudo_huber_small_r():
     assert_allclose(y, expected, rtol=1e-13)
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe
 def test_runtime_warning():
     with pytest.warns(RuntimeWarning,
                       match=r'Too many predicted coefficients'):
