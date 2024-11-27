@@ -409,16 +409,6 @@ def build(*, parent_callback, werror, asan, debug,
 
     parent_callback(**kwargs)
 
-@click.command()
-@click.argument("pytest_args", nargs=-1)
-@click.option(
-    '--verbose', '-v', default=False, is_flag=True,
-    help="more verbosity")
-@click.option(
-    '--coverage', '-c', default=False, is_flag=True,
-    help=("report coverage of project code. "
-            "HTML output goes under build/coverage")) # removed doctests as currently not supported by _lib/_testutils.py
-                                                    # doctests = Option(['--doctests'], default=False)
 @click.option(
     '--durations', '-d', default=None, metavar="NUM_TESTS",
     help="Show timing for the given number of slowest tests"
@@ -426,9 +416,6 @@ def build(*, parent_callback, werror, asan, debug,
 @click.option(
     '--submodule', '-s', default=None, metavar='MODULE_NAME',
     help="Submodule whose tests to run (cluster, constants, ...)")
-@click.option(
-    '--tests', '-t', default=None, metavar='TESTS',
-    help='Specify tests to run')
 @click.option(
     '--mode', '-m', default='not slow', metavar='MODE', show_default=True,
     help=("'fast', 'full', or something that could be passed to "
@@ -445,8 +432,9 @@ def build(*, parent_callback, werror, asan, debug,
         "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', 'jax.numpy')."
     )
 )
-@click.pass_context
-def test(ctx, pytest_args, verbose, *args, **kwargs):
+@spin.util.extend_command(spin.cmds.meson.test)
+def test(*, parent_callback, durations, submodule,
+         mode, parallel, array_api_backend, **kwargs):
     """🔧 Run tests
 
     PYTEST_ARGS are passed through directly to pytest, e.g.:
@@ -473,11 +461,13 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
 
     For more, see `pytest --help`.
     """  # noqa: E501
-    tests = ctx.params['tests']
-    if ctx.params["submodule"]:
-        tests = PROJECT_MODULE + "." + ctx.params["submodule"]
+    tests = kwargs['tests']
+    pytest_args = kwargs["pytest_args"]
 
-    markexpr = ctx.params['mode']
+    if submodule:
+        tests = PROJECT_MODULE + "." + submodule
+
+    markexpr = mode
     if (not pytest_args) and (not tests):
         pytest_args = ('scipy',)
 
@@ -488,28 +478,19 @@ def test(ctx, pytest_args, verbose, *args, **kwargs):
         if markexpr != "full":
             pytest_args = ('-m', markexpr) + pytest_args
 
-    n_jobs = ctx.params['parallel']
+    n_jobs = parallel
     if (n_jobs != 1) and ('-n' not in pytest_args):
         pytest_args = ('-n', str(n_jobs)) + pytest_args
 
     if tests and '--pyargs' not in pytest_args:
         pytest_args += ('--pyargs', tests)
 
-    if verbose:
-        pytest_args = ('-v',) + pytest_args
+    kwargs['pytest_args'] = pytest_args
 
-    ctx.params['pytest_args'] = pytest_args
+    if len(array_api_backend) != 0:
+        os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 
-    if len(ctx.params['array_api_backend']) != 0:
-        os.environ['SCIPY_ARRAY_API'] = json.dumps(list(ctx.params['array_api_backend']))
-
-    for extra_param in (
-        'verbose', 'coverage', 'durations',
-        'submodule', 'array_api_backend',
-        'mode', 'parallel', 'tests'):
-        del ctx.params[extra_param]
-
-    ctx.forward(meson.test)
+    parent_callback(**kwargs)
 
 @click.command()
 @click.option(
