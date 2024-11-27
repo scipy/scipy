@@ -1,3 +1,7 @@
+#ifdef __MINGW32__
+#include <pthread.h>
+#endif
+
 #include <Python.h>
 #include <numpy/npy_math.h>
 
