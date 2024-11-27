@@ -596,27 +596,19 @@ def python(ctx, python_args, *args, **kwargs):
         meson.python
     )
 
-@click.command(context_settings={
-    'ignore_unknown_options': True
-})
-@click.argument("ipython_args", metavar='', nargs=-1)
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@click.pass_context
-def ipython(ctx, ipython_args, *args, **kwargs):
+@spin.util.extend_command(spin.cmds.meson.ipython)
+def ipython(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch IPython shell with PYTHONPATH set
 
     OPTIONS are passed through directly to IPython, e.g.:
 
     spin ipython -i myscript.py
     """
-    _python(
-        ctx,
-        ipython_args,
-        ctx.params.pop('pythonpath'),
-        meson.ipython
-    )
+    _set_pythonpath(pythonpath)
+    parent_callback(**kwargs)
 
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
