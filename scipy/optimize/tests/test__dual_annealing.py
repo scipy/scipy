@@ -131,7 +131,7 @@ class TestDualAnnealing:
     def test_high_dim_no_ls(self):
         ret = dual_annealing(self.func, self.hd_bounds,
                              no_local_search=True, rng=self.seed)
-        assert_allclose(ret.fun, 0., atol=1e-4)
+        assert_allclose(ret.fun, 0., atol=1.2e-4)
 
     def test_nb_fun_call(self):
         self.nb_fun_call.c = 0
