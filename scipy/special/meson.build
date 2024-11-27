@@ -31,10 +31,17 @@ else
   scipy_import_dll_args = []
 endif
 
+if is_mingw
+  sf_error_state_link_args = ['-lpthread']
+else
+  sf_error_state_link_args = []
+endif
+
 sf_error_state_lib = shared_library('sf_error_state',
   ['sf_error_state.cpp'],
   include_directories: ['../_lib', '../_build_utils/src'],
   c_args: scipy_export_dll_args,
+  link_args: sf_error_state_link_args,
   install: true,
   install_dir: py3.get_install_dir() / 'scipy/special',
 )
