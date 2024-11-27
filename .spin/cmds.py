@@ -324,6 +324,7 @@ def cpu_count(only_physical_cores=False):
     show_default=True, help="Install tags to be used by meson."
 )
 @click.argument("meson_args", nargs=-1)
+@meson.build_dir_option
 @click.pass_context
 def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=False,
           quiet=False, meson_compile_args=tuple(), meson_install_args=tuple(),
@@ -418,6 +419,7 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
 
     ctx.params[MESON_COMPILE_ARGS] = meson_compile_args
     ctx.params[MESON_INSTALL_ARGS] = meson_install_args
+    ctx.params['prefix'] = os.path.abspath(meson._get_install_dir(ctx.params["build_dir"]))
 
     ctx.forward(meson.build)
 
