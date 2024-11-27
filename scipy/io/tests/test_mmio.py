@@ -20,7 +20,7 @@ import scipy.io._fast_matrix_market as fmm
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
 
-pytestmark = pytest.mark.parallel_threads(1)
+pytestmark = pytest.mark.thread_unsafe
 
 
 # Run the entire test suite on both _mmio and _fast_matrix_market implementations
