@@ -75,7 +75,7 @@ class TestGCROTMK:
         assert niter.n[0] < 3
 
     def test_arnoldi(self):
-        rng = np.random.RandomState(1)
+        rng = np.random.default_rng(1)
 
         A = eye_array(2000) + random_array((2000, 2000), density=5e-4, rng=rng)
         b = rng.random(2000)

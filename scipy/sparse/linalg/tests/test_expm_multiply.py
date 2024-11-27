@@ -186,7 +186,7 @@ class TestExpmActionInterval:
 
     @pytest.mark.fail_slow(20)
     def test_sparse_expm_multiply_interval(self):
-        rng = np.random.RandomState(1234)
+        rng = np.random.default_rng(1234)
         start = 0.1
         stop = 3.2
         n = 40

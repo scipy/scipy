@@ -107,7 +107,7 @@ class TestLGMRES:
     @pytest.mark.skipif(python_implementation() == 'PyPy',
                         reason="Fails on PyPy CI runs. See #9507")
     def test_arnoldi(self):
-        rng = np.random.RandomState(123)
+        rng = np.random.default_rng(123)
 
         A = eye_array(2000) + random_array((2000, 2000), density=5e-4, rng=rng)
         b = rng.random(2000)
