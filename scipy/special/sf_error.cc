@@ -1,7 +1,3 @@
-#ifdef __MINGW32__
-#include <pthread.h>
-#endif
-
 #include <Python.h>
 #include <numpy/npy_math.h>
 
@@ -66,9 +62,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     }
 
     save = PyGILState_Ensure();
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&err_mutex);
-#endif
+
     if (PyErr_Occurred()) {
         goto skip_warn;
     }
@@ -109,9 +103,6 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
 
 skip_warn:
     PyGILState_Release(save);
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&err_mutex);
-#endif
 }
 
 void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
