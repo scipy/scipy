@@ -35,9 +35,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     /* Internal function which takes a va_list instead of variadic args.
      * Makes this easier to wrap in error handling used in special C++
      * namespace for special function kernels provided by SciPy. */
-#ifndef Py_GIL_DISABLED
     PyGILState_STATE save;
-#endif
     PyObject *scipy_special = NULL;
     char msg[2048], info[1024];
     static PyObject *py_SpecialFunctionWarning = NULL;
@@ -63,11 +61,8 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
         PyOS_snprintf(msg, 2048, "scipy.special/%s: %s", func_name, sf_error_messages[(int) code]);
     }
 
-#ifndef Py_GIL_DISABLED
-#ifdef WITH_THREAD
     save = PyGILState_Ensure();
-#endif
-#else
+#ifdef Py_GIL_DISABLED
     PyMutex_Lock(&err_mutex);
 #endif
     if (PyErr_Occurred()) {
@@ -109,13 +104,8 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     }
 
 skip_warn:
-#ifndef Py_GIL_DISABLED
-#ifdef WITH_THREAD
     PyGILState_Release(save);
-#else
-    ;
-#endif
-#else
+#ifdef Py_GIL_DISABLED
     PyMutex_Unlock(&err_mutex);
 #endif
 }
