@@ -566,14 +566,13 @@ def docs(ctx, list_targets, clean, first_build, parallel, *args, **kwargs):
 
     ctx.forward(meson.docs)
 
-def _python(ctx, python_args, pythonpath, ctx_target):
+def _set_pythonpath(pythonpath):
     env = os.environ
     env['PYTHONWARNINGS'] = env.get('PYTHONWARNINGS', 'all')
 
     if pythonpath:
         for p in reversed(pythonpath.split(os.pathsep)):
             sys.path.insert(0, p)
-    ctx.forward(ctx_target)
 
 @click.command(context_settings={
     'ignore_unknown_options': True
@@ -619,15 +618,11 @@ def ipython(ctx, ipython_args, *args, **kwargs):
         meson.ipython
     )
 
-@click.command(context_settings={
-    'ignore_unknown_options': True
-})
-@click.argument("shell_args", metavar='', nargs=-1)
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@click.pass_context
-def shell(ctx, shell_args, *args, **kwargs):
+@spin.util.extend_command(spin.cmds.meson.shell)
+def shell(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch shell with PYTHONPATH set
 
     SHELL_ARGS are passed through directly to the shell, e.g.:
@@ -637,12 +632,8 @@ def shell(ctx, shell_args, *args, **kwargs):
     Ensure that your shell init file (e.g., ~/.zshrc) does not override
     the PYTHONPATH.
     """
-    _python(
-        ctx,
-        shell_args,
-        ctx.params.pop('pythonpath'),
-        meson.shell
-    )
+    _set_pythonpath(pythonpath)
+    parent_callback(**kwargs)
 
 @contextlib.contextmanager
 def working_dir(new_dir):
