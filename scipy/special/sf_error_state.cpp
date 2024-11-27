@@ -1,6 +1,10 @@
 #include <stdlib.h>
 #include "sf_error_state.h"
 
+#ifdef __MINGW32__
+#include <pthread.h>
+#endif
+
 
 
 /* If this isn't volatile clang tries to optimize it away */
