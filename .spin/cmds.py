@@ -492,19 +492,6 @@ def test(*, parent_callback, durations, submodule,
 
     parent_callback(**kwargs)
 
-@click.command()
-@click.option(
-    "--clean", is_flag=True,
-    default=False,
-    help="Clean previously built docs before building"
-)
-@click.option(
-    "--no-build", "-n",
-    "first_build",
-    default=True,
-    is_flag=True,
-    help="Build scipy before generating docs",
-)
 @click.option(
         '--list-targets', '-t', default=False, is_flag=True,
         help='List doc targets',
@@ -519,8 +506,8 @@ def test(*, parent_callback, durations, submodule,
             "needed in order to make docstring changes in C/Cython files " + \
             "show up."
 )
-@click.pass_context
-def docs(ctx, list_targets, clean, first_build, parallel, *args, **kwargs):
+@spin.util.extend_command(spin.cmds.meson.docs)
+def docs(*, parent_callback, list_targets, parallel, no_cache, **kwargs):
     """📖 Build Sphinx documentation
 
     By default, SPHINXOPTS="-W", raising errors on warnings.
@@ -543,28 +530,24 @@ def docs(ctx, list_targets, clean, first_build, parallel, *args, **kwargs):
     """
     meson.docs.ignore_unknown_options = True
 
-    if clean:
+    if kwargs['clean']:
         cwd = os.getcwd()
         os.chdir(os.path.join(cwd, "doc"))
         subprocess.call(["make", "clean"], cwd=os.getcwd())
-        ctx.params.pop("clean")
+        kwargs['clean'] = False
         os.chdir(cwd)
 
     SPHINXOPTS = "-W"
-    if "no_cache" in ctx.params:
-        if ctx.params["no_cache"]:
-            SPHINXOPTS += " -E"
-        ctx.params.pop("no_cache")
-    if "parallel" in ctx.params:
-        ctx.params["jobs"] = ctx.params["parallel"]
-        ctx.params.pop("parallel")
+    if no_cache:
+        SPHINXOPTS += " -E"
+
+    kwargs["jobs"] = parallel
     SPHINXOPTS = os.environ.get("SPHINXOPTS", "") + SPHINXOPTS
     os.environ["SPHINXOPTS"] = SPHINXOPTS
 
-    ctx.params.pop("list_targets")
-    ctx.params["sphinx_target"] = "html"
+    kwargs["sphinx_target"] = "html"
 
-    ctx.forward(meson.docs)
+    parent_callback(**kwargs)
 
 def _set_pythonpath(pythonpath):
     env = os.environ
