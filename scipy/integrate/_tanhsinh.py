@@ -889,18 +889,20 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
 def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     # Input validation and standardization
 
+    xp = array_namespace(a, b)
+
     message = '`f` must be callable.'
     if not callable(f):
         raise ValueError(message)
 
     message = 'All elements of `a`, `b`, and `step` must be real numbers.'
-    a, b, step = np.broadcast_arrays(a, b, step)
-    dtype = np.result_type(a.dtype, b.dtype, step.dtype)
-    if not np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.complexfloating):
+    a, b, step = xp.broadcast_arrays(xp.asarray(a), xp.asarray(b), xp.asarray(step))
+    dtype = xp.result_type(a.dtype, b.dtype, step.dtype)
+    if not xp.isdtype(dtype, 'numeric') or xp.isdtype(dtype, 'complex floating'):
         raise ValueError(message)
 
     valid_b = b >= a  # NaNs will be False
-    valid_step = np.isfinite(step) & (step > 0)
+    valid_step = xp.isfinite(step) & (step > 0)
     valid_abstep = valid_b & valid_step
 
     message = '`log` must be True or False.'
@@ -911,11 +913,12 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
 
     atol = tolerances.get('atol', None)
     if atol is None:
-        atol = -np.inf if log else 0
+        atol = -xp.inf if log else 0
 
     rtol = tolerances.get('rtol', None)
     rtol_temp = rtol if rtol is not None else 0.
 
+    # using NumPy for convenience here; these are just floats, not arrays
     params = np.asarray([atol, rtol_temp, 0.])
     message = "`atol` and `rtol` must be real numbers."
     if not np.issubdtype(params.dtype, np.floating):
@@ -940,7 +943,7 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     if not np.iterable(args):
         args = (args,)
 
-    return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol
+    return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol, xp
 
 
 def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
@@ -1102,20 +1105,20 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     >>> import numpy as np
     >>> from scipy.integrate import nsum
-    >>> res = nsum(lambda k: 1/k**2, 1, np.inf, maxterms=1e3)
+    >>> res = nsum(lambda k: 1/k**2, 1, np.inf)
     >>> ref = np.pi**2/6  # true value
     >>> res.error  # estimated error
-    4.990061275730517e-07
+    np.float64(7.448762306416137e-09)
     >>> (res.sum - ref)/ref  # true error
-    -1.0104163408712734e-10
+    np.float64(-1.839871898894426e-13)
     >>> res.nfev  # number of points at which callable was evaluated
-    1209
+    np.int32(8561)
 
     Compute the infinite sums of the reciprocals of integers raised to powers ``p``,
     where ``p`` is an array.
 
     >>> from scipy import special
-    >>> p = np.arange(2, 10)
+    >>> p = np.arange(3, 10)
     >>> res = nsum(lambda k, p: 1/k**p, 1, np.inf, maxterms=1e3, args=(p,))
     >>> ref = special.zeta(p, 1)
     >>> np.allclose(res.sum, ref)
@@ -1125,7 +1128,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     >>> res = nsum(lambda x: 1/x - 1/(x+1), 1, np.inf, step=2)
     >>> res.sum, res.sum - np.log(2)  # result, difference vs analytical sum
-    (0.6931471805598691, -7.616129948928574e-14)
+    (np.float64(0.6931471805598691), np.float64(-7.616129948928574e-14))
 
     """ # noqa: E501
     # Potential future work:
@@ -1138,66 +1141,68 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     # Function-specific input validation / standardization
     tmp = _nsum_iv(f, a, b, step, args, log, maxterms, tolerances)
-    f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol = tmp
+    f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol, xp = tmp
 
     # Additional elementwise algorithm input validation / standardization
-    tmp = eim._initialize(f, (a,), args, complex_ok=False)
+    tmp = eim._initialize(f, (a,), args, complex_ok=False, xp=xp)
     f, xs, fs, args, shape, dtype, xp = tmp
 
     # Finish preparing `a`, `b`, and `step` arrays
     a = xs[0]
-    b = np.broadcast_to(b, shape).ravel().astype(dtype)
-    step = np.broadcast_to(step, shape).ravel().astype(dtype)
-    valid_abstep = np.broadcast_to(valid_abstep, shape).ravel()
-    nterms = np.floor((b - a) / step)
-    finite_terms = np.isfinite(nterms)
+    b = xp.astype(xp_ravel(xp.broadcast_to(b, shape)), dtype)
+    step = xp.astype(xp_ravel(xp.broadcast_to(step, shape)), dtype)
+    valid_abstep = xp_ravel(xp.broadcast_to(valid_abstep, shape))
+    nterms = xp.floor((b - a) / step)
+    finite_terms = xp.isfinite(nterms)
     b[finite_terms] = a[finite_terms] + nterms[finite_terms]*step[finite_terms]
 
     # Define constants
-    eps = np.finfo(dtype).eps
-    zero = np.asarray(-np.inf if log else 0, dtype=dtype)[()]
+    eps = xp.finfo(dtype).eps
+    zero = xp.asarray(-xp.inf if log else 0, dtype=dtype)[()]
     if rtol is None:
-        rtol = 0.5*np.log(eps) if log else eps**0.5
+        rtol = 0.5*math.log(eps) if log else eps**0.5
     constants = (dtype, log, eps, zero, rtol, atol, maxterms)
 
     # Prepare result arrays
-    S = np.empty_like(a)
-    E = np.empty_like(a)
-    status = np.zeros(len(a), dtype=int)
-    nfev = np.ones(len(a), dtype=int)  # one function evaluation above
+    S = xp.empty_like(a)
+    E = xp.empty_like(a)
+    status = xp.zeros(len(a), dtype=xp.int32)
+    nfev = xp.ones(len(a), dtype=xp.int32)  # one function evaluation above
 
     # Branch for direct sum evaluation / integral approximation / invalid input
     i0 = ~valid_abstep                     # invalid
     i1 = (nterms + 1 <= maxterms) & ~i0    # direct sum evaluation
-    i2 = np.isfinite(a) & ~i1 & ~i0        # infinite sum to the right
-    i3 = np.isfinite(b) & ~i2 & ~i1 & ~i0  # infinite sum to the left
+    i2 = xp.isfinite(a) & ~i1 & ~i0        # infinite sum to the right
+    i3 = xp.isfinite(b) & ~i2 & ~i1 & ~i0  # infinite sum to the left
     i4 = ~i3 & ~i2 & ~i1 & ~i0             # infinite sum on both sides
 
-    if np.any(i0):
-        S[i0], E[i0] = np.nan, np.nan
+    if xp.any(i0):
+        S[i0], E[i0] = xp.nan, xp.nan
         status[i0] = -1
 
-    if np.any(i1):
+    if xp.any(i1):
         args_direct = [arg[i1] for arg in args]
-        tmp = _direct(f, a[i1], b[i1], step[i1], args_direct, constants)
+        tmp = _direct(f, a[i1], b[i1], step[i1], args_direct, constants, xp)
         S[i1], E[i1] = tmp[:-1]
         nfev[i1] += tmp[-1]
-        status[i1] = -3 * (~np.isfinite(S[i1]))
+        status[i1] = -3 * xp.asarray(~xp.isfinite(S[i1]), dtype=xp.int32)
 
-    if np.any(i2):
+    if xp.any(i2):
         args_indirect = [arg[i2] for arg in args]
-        tmp = _integral_bound(f, a[i2], b[i2], step[i2], args_indirect, constants)
+        tmp = _integral_bound(f, a[i2], b[i2], step[i2],
+                              args_indirect, constants, xp)
         S[i2], E[i2], status[i2] = tmp[:-1]
         nfev[i2] += tmp[-1]
 
-    if np.any(i3):
+    if xp.any(i3):
         args_indirect = [arg[i3] for arg in args]
         def _f(x, *args): return f(-x, *args)
-        tmp = _integral_bound(_f, -b[i3], -a[i3], step[i3], args_indirect, constants)
+        tmp = _integral_bound(_f, -b[i3], -a[i3], step[i3],
+                              args_indirect, constants, xp)
         S[i3], E[i3], status[i3] = tmp[:-1]
         nfev[i3] += tmp[-1]
 
-    if np.any(i4):
+    if xp.any(i4):
         args_indirect = [arg[i4] for arg in args]
 
         # There are two obvious high-level strategies:
@@ -1212,17 +1217,17 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
         # (especially getting the status message right)
         if log:
             def _f(x, *args):
-                log_factor = np.where(x==0, np.log(0.5), 0)
-                out = np.stack([f(x, *args), f(-x, *args)], axis=0)
+                log_factor = xp.where(x==0, math.log(0.5), 0)
+                out = xp.stack([f(x, *args), f(-x, *args)], axis=0)
                 return special.logsumexp(out, axis=0) + log_factor
 
         else:
             def _f(x, *args):
-                factor = np.where(x==0, 0.5, 1)
+                factor = xp.where(x==0, 0.5, 1)
                 return (f(x, *args) + f(-x, *args)) * factor
 
-        zero = np.zeros_like(a[i4])
-        tmp = _integral_bound(_f, zero, b[i4], step[i4], args_indirect, constants)
+        zero = xp.zeros_like(a[i4])
+        tmp = _integral_bound(_f, zero, b[i4], step[i4], args_indirect, constants, xp)
         S[i4], E[i4], status[i4] = tmp[:-1]
         nfev[i4] += 2*tmp[-1]
 
@@ -1233,7 +1238,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
                        nfev=nfev)
 
 
-def _direct(f, a, b, step, args, constants, inclusive=True):
+def _direct(f, a, b, step, args, constants, xp, inclusive=True):
     # Directly evaluate the sum.
 
     # When used in the context of distributions, `args` would contain the
@@ -1254,20 +1259,20 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
     # I didn't think it was great style to use `True` as `1` in Python, so I
     # explicitly converted it to an `int` before using it.
     inclusive_adjustment = int(inclusive)
-    steps = np.round((b - a) / step) + inclusive_adjustment
-    # Equivalently, steps = np.round((b - a) / step) + inclusive
-    max_steps = int(np.max(steps))
+    steps = xp.round((b - a) / step) + inclusive_adjustment
+    # Equivalently, steps = xp.round((b - a) / step) + inclusive
+    max_steps = int(xp.max(steps))
 
     # In each slice, the function will be evaluated at the same number of points,
     # but excessive points (those beyond the right sum limit `b`) are replaced
     # with NaN to (potentially) reduce the time of these unnecessary calculations.
     # Use a new last axis for these calculations for consistency with other
     # elementwise algorithms.
-    a2, b2, step2 = a[:, np.newaxis], b[:, np.newaxis], step[:, np.newaxis]
-    args2 = [arg[:, np.newaxis] for arg in args]
-    ks = a2 + np.arange(max_steps, dtype=dtype) * step2
+    a2, b2, step2 = a[:, xp.newaxis], b[:, xp.newaxis], step[:, xp.newaxis]
+    args2 = [arg[:, xp.newaxis] for arg in args]
+    ks = a2 + xp.arange(max_steps, dtype=dtype) * step2
     i_nan = ks >= (b2 + inclusive_adjustment*step2/2)
-    ks[i_nan] = np.nan
+    ks[i_nan] = xp.nan
     fs = f(ks, *args2)
 
     # The function evaluated at NaN is NaN, and NaNs are zeroed in the sum.
@@ -1275,45 +1280,46 @@ def _direct(f, a, b, step, args, constants, inclusive=True):
     # like this. This is an optimization that can be added later.
     fs[i_nan] = zero
     nfev = max_steps - i_nan.sum(axis=-1)
-    S = special.logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
+    S = special.logsumexp(fs, axis=-1) if log else xp.sum(fs, axis=-1)
     # Rough, non-conservative error estimate. See gh-19667 for improvement ideas.
-    E = np.real(S) + np.log(eps) if log else eps * abs(S)
+    E = xp_real(S) + math.log(eps) if log else eps * abs(S)
     return S, E, nfev
 
 
-def _integral_bound(f, a, b, step, args, constants):
+def _integral_bound(f, a, b, step, args, constants, xp):
     # Estimate the sum with integral approximation
     dtype, log, _, _, rtol, atol, maxterms = constants
-    log2 = np.log(2, dtype=dtype)
+    log2 = xp.asarray(math.log(2), dtype=dtype)
 
     # Get a lower bound on the sum and compute effective absolute tolerance
     lb = _tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
-    tol = np.broadcast_to(atol, lb.integral.shape)
+    tol = xp.broadcast_to(xp.asarray(atol), lb.integral.shape)
     if log:
-        tol = special.logsumexp((tol, rtol + lb.integral), axis=0)
+        tol = special.logsumexp(xp.stack((tol, rtol + lb.integral)), axis=0)
     else:
         tol = tol + rtol*lb.integral
     i_skip = lb.status < 0  # avoid unnecessary f_evals if integral is divergent
-    tol[i_skip] = np.nan
+    tol[i_skip] = xp.nan
     status = lb.status
 
     # As in `_direct`, we'll need a temporary new axis for points
     # at which to evaluate the function. Append axis at the end for
     # consistency with other elementwise algorithms.
-    a2 = a[..., np.newaxis]
-    step2 = step[..., np.newaxis]
-    args2 = [arg[..., np.newaxis] for arg in args]
+    a2 = a[..., xp.newaxis]
+    step2 = step[..., xp.newaxis]
+    args2 = [arg[..., xp.newaxis] for arg in args]
 
     # Find the location of a term that is less than the tolerance (if possible)
-    log2maxterms = np.floor(np.log2(maxterms)) if maxterms else 0
-    n_steps = np.concatenate([2**np.arange(0, log2maxterms), [maxterms]], dtype=dtype)
+    log2maxterms = math.floor(math.log2(maxterms)) if maxterms else 0
+    n_steps = xp.concat((2**xp.arange(0, log2maxterms), xp.asarray([maxterms])))
+    n_steps = xp.astype(n_steps, dtype)
     nfev = len(n_steps) * 2
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
     fksp1 = f(ks + step2, *args2)  # check that the function is decreasing
-    fk_insufficient = (fks > tol[:, np.newaxis]) | (fksp1 > fks)
-    n_fk_insufficient = np.sum(fk_insufficient, axis=-1)
-    nt = np.minimum(n_fk_insufficient, n_steps.shape[-1]-1)
+    fk_insufficient = (fks > tol[:, xp.newaxis]) | (fksp1 > fks)
+    n_fk_insufficient = xp.sum(fk_insufficient, axis=-1)
+    nt = xp.minimum(n_fk_insufficient, xp.asarray(n_steps.shape[-1]-1))
     n_steps = n_steps[nt]
 
     # If `maxterms` is insufficient (i.e. either the magnitude of the last term of the
@@ -1325,37 +1331,38 @@ def _integral_bound(f, a, b, step, args, constants):
     # Directly evaluate the sum up to this term
     k = a + n_steps * step
     left, left_error, left_nfev = _direct(f, a, k, step, args,
-                                          constants, inclusive=False)
-    i_skip |= np.isposinf(left)  # if sum is not finite, no sense in continuing
-    status[np.isposinf(left)] = -3
-    k[i_skip] = np.nan
+                                          constants, xp, inclusive=False)
+    left_is_pos_inf = xp.isinf(left) & (left > 0)
+    i_skip |= left_is_pos_inf  # if sum is infinite, no sense in continuing
+    status[left_is_pos_inf] = -3
+    k[i_skip] = xp.nan
 
     # Use integration to estimate the remaining sum
     # Possible optimization for future work: if there were no terms less than
     # the tolerance, there is no need to compute the integral to better accuracy.
     # Something like:
-    # atol = np.maximum(atol, np.minimum(fk/2 - fb/2))
-    # rtol = np.maximum(rtol, np.minimum((fk/2 - fb/2)/left))
+    # atol = xp.maximum(atol, xp.minimum(fk/2 - fb/2))
+    # rtol = xp.maximum(rtol, xp.minimum((fk/2 - fb/2)/left))
     # where `fk`/`fb` are currently calculated below.
     right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
 
     # Calculate the full estimate and error from the pieces
-    fk = fks[np.arange(len(fks)), nt]
+    fk = fks[xp.arange(len(fks)), nt]
 
     # fb = f(b, *args), but some functions return NaN at infinity.
     # instead of 0 like they must (for the sum to be convergent).
-    fb = np.full_like(fk, -np.inf) if log else np.zeros_like(fk)
-    i = np.isfinite(b)
-    if np.any(i):  # better not call `f` with empty arrays
+    fb = xp.full_like(fk, -xp.inf) if log else xp.zeros_like(fk)
+    i = xp.isfinite(b)
+    if xp.any(i):  # better not call `f` with empty arrays
         fb[i] = f(b[i], *[arg[i] for arg in args])
-    nfev = nfev + np.asarray(i, dtype=left_nfev.dtype)
+    nfev = nfev + xp.asarray(i, dtype=left_nfev.dtype)
 
     if log:
-        log_step = np.log(step)
+        log_step = xp.log(step)
         S_terms = (left, right.integral - log_step, fk - log2, fb - log2)
-        S = special.logsumexp(S_terms, axis=0)
-        E_terms = (left_error, right.error - log_step, fk-log2, fb-log2+np.pi*1j)
-        E = special.logsumexp(E_terms, axis=0).real
+        S = special.logsumexp(xp.stack(S_terms), axis=0)
+        E_terms = (left_error, right.error - log_step, fk-log2, fb-log2+xp.pi*1j)
+        E = xp_real(special.logsumexp(xp.stack(E_terms), axis=0))
     else:
         S = left + right.integral/step + fk/2 + fb/2
         E = left_error + right.error/step + fk/2 - fb/2

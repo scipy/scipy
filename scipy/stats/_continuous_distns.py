@@ -493,8 +493,10 @@ class norm_gen(rv_continuous):
 
         See eq. 16 of https://arxiv.org/abs/1209.4340v2
         """
+        if n == 0:
+            return 1.
         if n % 2 == 0:
-            return sc.factorial2(n - 1)
+            return sc.factorial2(int(n) - 1)
         else:
             return 0.
 
@@ -1062,7 +1064,7 @@ class betaprime_gen(rv_continuous):
     def _munp(self, n, a, b):
         return _lazywhere(
             b > n, (a, b),
-            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, n+1)], axis=0),
+            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, int(n)+1)], axis=0),
             fillvalue=np.inf)
 
 
@@ -2974,6 +2976,7 @@ class truncweibull_min_gen(rv_continuous):
 
 
 truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
+truncweibull_min._support = ('a', 'b')
 
 
 class weibull_max_gen(rv_continuous):
@@ -3597,6 +3600,9 @@ class gamma_gen(rv_continuous):
 
     def _stats(self, a):
         return a, a, 2.0/np.sqrt(a), 6.0/a
+
+    def _munp(self, n, a):
+        return sc.poch(a, n)
 
     def _entropy(self, a):
 
@@ -4259,6 +4265,8 @@ class gumbel_r_gen(rv_continuous):
 
         f(x) = \exp(-(x + e^{-x}))
 
+    for real :math:`x`.
+
     The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
     distribution.  It is also related to the extreme value distribution,
     log-Weibull and Gompertz distributions.
@@ -4388,6 +4396,8 @@ class gumbel_l_gen(rv_continuous):
     .. math::
 
         f(x) = \exp(x - e^x)
+
+    for real :math:`x`.
 
     The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
     distribution.  It is also related to the extreme value distribution,
@@ -4596,6 +4606,8 @@ class halflogistic_gen(rv_continuous):
                           f2=lambda q: 2*np.arctanh(1 - q))
 
     def _munp(self, n):
+        if n == 0:
+            return 1  # otherwise returns NaN
         if n == 1:
             return 2*np.log(2)
         if n == 2:
@@ -4898,7 +4910,7 @@ class invgamma_gen(rv_continuous):
     _support_mask = rv_continuous._open_support_mask
 
     def _shape_info(self):
-        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("a", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, a):
         # invgamma.pdf(x, a) = x**(-a-1) / gamma(a) * exp(-1/x)
@@ -5037,7 +5049,7 @@ class invgauss_gen(rv_continuous):
     def _ppf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            ppf = scu._invgauss_ppf(x, mu, 1)
+            ppf = np.asarray(scu._invgauss_ppf(x, mu, 1))
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
             ppf[i_wt] = scu._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(ppf)
@@ -5173,11 +5185,10 @@ class geninvgauss_gen(rv_continuous):
         # relying on logpdf avoids overflow of x**(p-1) for large x and p
         return np.exp(self._logpdf(x, p, b))
 
-    def _cdf(self, x, *args):
-        _a, _b = self._get_support(*args)
+    def _cdf(self, x, p, b):
+        _a, _b = self._get_support(p, b)
 
-        def _cdf_single(x, *args):
-            p, b = args
+        def _cdf_single(x, p, b):
             user_data = np.array([p, b], float).ctypes.data_as(ctypes.c_void_p)
             llc = LowLevelCallable.from_cython(_stats, '_geninvgauss_pdf',
                                                user_data)
@@ -5186,7 +5197,7 @@ class geninvgauss_gen(rv_continuous):
 
         _cdf_single = np.vectorize(_cdf_single, otypes=[np.float64])
 
-        return _cdf_single(x, *args)
+        return _cdf_single(x, p, b)
 
     def _logquasipdf(self, x, p, b):
         # log of the quasi-density (w/o normalizing constant) used in _rvs
@@ -5972,7 +5983,7 @@ class landau_gen(rv_continuous):
         return np.nan, np.nan, np.nan, np.nan
 
     def _munp(self, n):
-        return np.nan
+        return np.nan if n > 0 else 1
 
     def _fitstart(self, data, args=None):
         # Initialize ML guesses using quartiles instead of moments.
@@ -6981,6 +6992,8 @@ class gibrat_gen(rv_continuous):
 
         f(x) = \frac{1}{x \sqrt{2\pi}} \exp(-\frac{1}{2} (\log(x))^2)
 
+    for :math:`x >= 0`.
+
     `gibrat` is a special case of `lognorm` with ``s=1``.
 
     %(after_notes)s
@@ -7867,7 +7880,7 @@ class ncf_gen(rv_continuous):
     :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a
     generalized Laguerre polynomial and :math:`B` is the beta function.
 
-    `ncf` takes ``df1``, ``df2`` and ``nc`` as shape parameters. If ``nc=0``,
+    `ncf` takes ``dfn``, ``dfd`` and ``nc`` as shape parameters. If ``nc=0``,
     the distribution becomes equivalent to the Fisher distribution.
 
     This distribution uses routines from the Boost Math C++ library for
@@ -7883,12 +7896,12 @@ class ncf_gen(rv_continuous):
     %(example)s
 
     """
-    def _argcheck(self, df1, df2, nc):
-        return (df1 > 0) & (df2 > 0) & (nc >= 0)
+    def _argcheck(self, dfn, dfd, nc):
+        return (dfn > 0) & (dfd > 0) & (nc >= 0)
 
     def _shape_info(self):
-        idf1 = _ShapeInfo("df1", False, (0, np.inf), (False, False))
-        idf2 = _ShapeInfo("df2", False, (0, np.inf), (False, False))
+        idf1 = _ShapeInfo("dfn", False, (0, np.inf), (False, False))
+        idf2 = _ShapeInfo("dfd", False, (0, np.inf), (False, False))
         inc = _ShapeInfo("nc", False, (0, np.inf), (True, False))
         return [idf1, idf2, inc]
 
@@ -7912,19 +7925,21 @@ class ncf_gen(rv_continuous):
         with np.errstate(over='ignore'):  # see gh-17432
             return scu._ncf_isf(x, dfn, dfd, nc)
 
-    def _munp(self, n, dfn, dfd, nc):
-        val = (dfn * 1.0/dfd)**n
-        term = sc.gammaln(n+0.5*dfn) + sc.gammaln(0.5*dfd-n) - sc.gammaln(dfd*0.5)
-        val *= np.exp(-nc / 2.0+term)
-        val *= sc.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
-        return val
+    # # Produces bogus values as written - maybe it's close, though?
+    # def _munp(self, n, dfn, dfd, nc):
+    #     val = (dfn * 1.0/dfd)**n
+    #     term = sc.gammaln(n+0.5*dfn) + sc.gammaln(0.5*dfd-n) - sc.gammaln(dfd*0.5)
+    #     val *= np.exp(-nc / 2.0+term)
+    #     val *= sc.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
+    #     return val
 
     def _stats(self, dfn, dfd, nc, moments='mv'):
         mu = scu._ncf_mean(dfn, dfd, nc)
         mu2 = scu._ncf_variance(dfn, dfd, nc)
         g1 = scu._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
-        g2 = scu._ncf_kurtosis_excess(
-            dfn, dfd, nc) if 'k' in moments else None
+        g2 = scu._ncf_kurtosis_excess(  # isn't really excess kurtosis!
+            dfn, dfd, nc) - 3 if 'k' in moments else None
+        # Mathematica: Kurtosis[NoncentralFRatioDistribution[27, 27, 0.415784417992261]]
         return mu, mu2, g1, g2
 
 
@@ -8195,8 +8210,8 @@ class pareto_gen(rv_continuous):
             np.place(g2, mask, vals)
         return mu, mu2, g1, g2
 
-    def _entropy(self, c):
-        return 1 + 1.0/c - np.log(c)
+    def _entropy(self, b):
+        return 1 + 1.0/b - np.log(b)
 
     @_call_super_mom
     @inherit_docstring_from(rv_continuous)
@@ -9218,6 +9233,8 @@ class reciprocal_gen(rv_continuous):
         return np.exp(np.log(a) + q*(np.log(b) - np.log(a)))
 
     def _munp(self, n, a, b):
+        if n == 0:
+            return 1.0
         t1 = 1 / (np.log(b) - np.log(a)) / n
         t2 = np.real(np.exp(_log_diff(n * np.log(b), n*np.log(a))))
         return t1 * t2
@@ -9241,6 +9258,8 @@ class reciprocal_gen(rv_continuous):
 
 loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
+loguniform._support = ('a', 'b')
+reciprocal._support = ('a', 'b')
 
 
 class rice_gen(rv_continuous):
@@ -9436,6 +9455,7 @@ class irwinhall_gen(rv_continuous):
 
 
 irwinhall = irwinhall_gen(name="irwinhall")
+irwinhall._support = (0.0, 'n')
 
 
 class recipinvgauss_gen(rv_continuous):
@@ -9747,7 +9767,7 @@ class skewnorm_gen(rv_continuous):
         return skewnorm_odd_moments
 
     def _munp(self, order, a):
-        if order & 1:
+        if order % 2:
             if order > 19:
                 raise NotImplementedError("skewnorm noncentral moments not "
                                           "implemented for odd orders greater "
@@ -10148,6 +10168,7 @@ class truncexpon_gen(rv_continuous):
 
 
 truncexpon = truncexpon_gen(a=0.0, name='truncexpon')
+truncexpon._support = (0.0, 'b')
 
 
 # logsumexp trick for log(p + q) with only log(p) and log(q)
@@ -10435,6 +10456,7 @@ class truncnorm_gen(rv_continuous):
 
 
 truncnorm = truncnorm_gen(name='truncnorm', momtype=1)
+truncnorm._support = ('a', 'b')
 
 
 class truncpareto_gen(rv_continuous):
@@ -10755,6 +10777,7 @@ class truncpareto_gen(rv_continuous):
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
+truncpareto._support = (0.0, 'c')
 
 
 class tukeylambda_gen(rv_continuous):
@@ -11706,7 +11729,7 @@ class crystalball_gen(rv_continuous):
             rhs = (2**((n-1)/2.0) * sc.gamma((n+1)/2) *
                    (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2)))
             lhs = np.zeros(rhs.shape)
-            for k in range(n + 1):
+            for k in range(int(n) + 1):
                 lhs += (sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) *
                         (m/beta)**(-m + k + 1))
             return A * lhs + rhs
@@ -12408,6 +12431,8 @@ class rel_breitwigner_gen(rv_continuous):
         return np.clip(result, None, 1)
 
     def _munp(self, n, rho):
+        if n == 0:
+            return 1.
         if n == 1:
             # C = k / (2 * rho)
             C = np.sqrt(
