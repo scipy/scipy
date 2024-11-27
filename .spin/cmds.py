@@ -10,6 +10,7 @@ import math
 import subprocess
 from copy import deepcopy
 
+import spin
 import click
 from rich.console import Console
 from rich.theme import Theme
@@ -280,14 +281,9 @@ def cpu_count(only_physical_cores=False):
 
     return aggregate_cpu_count
 
-@click.command()
 @click.option(
     '--werror', default=False, is_flag=True,
     help="Treat warnings as errors")
-@click.option(
-    '--gcov', default=False, is_flag=True,
-    help="enable C code coverage via gcov (requires GCC)."
-            "gcov output goes to build/**/*.gc*")
 @click.option(
     '--asan', default=False, is_flag=True,
     help=("Build and run with AddressSanitizer support. "
@@ -323,12 +319,10 @@ def cpu_count(only_physical_cores=False):
     '--tags', default="runtime,python-runtime,tests,devel",
     show_default=True, help="Install tags to be used by meson."
 )
-@click.argument("meson_args", nargs=-1)
-@meson.build_dir_option
-@click.pass_context
-def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=False,
-          quiet=False, meson_compile_args=tuple(), meson_install_args=tuple(),
-          *args, **kwargs):
+@spin.util.extend_command(spin.cmds.meson.build)
+def build(*, parent_callback, werror, asan, debug,
+          release, parallel, setup_args, show_build_log,
+          with_scipy_openblas, with_accelerate, tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
     MESON_ARGS are passed through e.g.:
@@ -346,6 +340,7 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
     MESON_COMPILE_ARGS = "meson_compile_args"
     MESON_INSTALL_ARGS = "meson_install_args"
 
+    meson_args = kwargs[MESON_ARGS]
     meson_compile_args = tuple()
     meson_install_args = tuple()
 
@@ -356,16 +351,16 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
         # openblas-specific functions or OpenBLAS Lapack
         meson_args = meson_args + ("-Dlapack=lapack", "-Dblas=blas")
 
-    if ctx.params['werror']:
+    if werror:
         meson_args = meson_args + ("--werror", )
 
-    if ctx.params['debug'] or ctx.params['release']:
-        if ctx.params['debug'] and ctx.params['release']:
+    if debug or release:
+        if debug and release:
             raise ValueError("Set at most one of `--debug` and `--release`!")
-        if ctx.params['debug']:
+        if debug:
             buildtype = 'debug'
             cflags_unwanted = ('-O1', '-O2', '-O3')
-        elif ctx.params['release']:
+        elif release:
             buildtype = 'release'
             cflags_unwanted = ('-O0', '-O1', '-O2')
         meson_args = meson_args + (f"-Dbuildtype={buildtype}", )
@@ -378,50 +373,41 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
                     raise ValueError(f"A {buildtype} build isn't possible, "
                                         f"because CFLAGS contains `{flag}`."
                                         "Please also check CXXFLAGS and FFLAGS.")
-    if ctx.params['gcov']:
-        meson_args = meson_args + ('-Db_coverage=true', )
 
-    if ctx.params['asan']:
+    if asan:
         meson_args = meson_args + ('-Db_sanitize=address,undefined', )
 
-    if ctx.params['setup_args']:
-        meson_args = meson_args + tuple([str(arg) for arg in ctx.params['setup_args']])
+    if setup_args:
+        meson_args = meson_args + tuple([str(arg) for arg in setup_args])
 
-    if ctx.params['with_accelerate']:
+    if with_accelerate:
         # on a mac you probably want to use accelerate over scipy_openblas
         meson_args = meson_args + ("-Dblas=accelerate", )
-    elif ctx.params['with_scipy_openblas']:
+    elif with_scipy_openblas:
         configure_scipy_openblas()
         os.env['PKG_CONFIG_PATH'] = os.pathsep.join([
                 os.getcwd(),
                 os.env.get('PKG_CONFIG_PATH', '')
                 ])
 
-    if ctx.params['parallel'] is None:
+    if parallel is None:
         # Use number of physical cores rather than ninja's default of 2N+2,
         # to avoid out of memory issues (see gh-17941 and gh-18443)
         n_cores = cpu_count(only_physical_cores=True)
-        ctx.params['jobs'] = n_cores
+        kwargs['jobs'] = n_cores
     else:
-        ctx.params['jobs'] = ctx.params['parallel']
+        kwargs['jobs'] = parallel
 
-    meson_install_args = meson_install_args + ("--tags=" + ctx.params['tags'], )
+    meson_install_args = meson_install_args + ("--tags=" + tags, )
 
-    if ctx.params["show_build_log"]:
-        ctx.params["verbose"] = ctx.params["show_build_log"]
+    if show_build_log:
+        kwargs['verbose'] = show_build_log
 
-    for option in ('werror', 'debug', 'release',
-                   'gcov', 'asan','setup_args',
-                   'with_accelerate', 'with_scipy_openblas',
-                   'parallel', 'show_build_log',
-                   'tags'):
-        ctx.params.pop(option)
+    kwargs[MESON_ARGS] = meson_args
+    kwargs[MESON_COMPILE_ARGS] = meson_compile_args
+    kwargs[MESON_INSTALL_ARGS] = meson_install_args
 
-    ctx.params[MESON_COMPILE_ARGS] = meson_compile_args
-    ctx.params[MESON_INSTALL_ARGS] = meson_install_args
-    ctx.params['prefix'] = os.path.abspath(meson._get_install_dir(ctx.params["build_dir"]))
-
-    ctx.forward(meson.build)
+    parent_callback(**kwargs)
 
 @click.command()
 @click.argument("pytest_args", nargs=-1)
