@@ -325,7 +325,9 @@ def cpu_count(only_physical_cores=False):
 )
 @click.argument("meson_args", nargs=-1)
 @click.pass_context
-def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=False, quiet=False, *args, **kwargs):
+def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=False,
+          quiet=False, meson_compile_args=tuple(), meson_install_args=tuple(),
+          *args, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
     MESON_ARGS are passed through e.g.:
@@ -340,22 +342,21 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
     CFLAGS="-O0 -g" spin build
     """
     MESON_ARGS = "meson_args"
+    MESON_COMPILE_ARGS = "meson_compile_args"
+    MESON_INSTALL_ARGS = "meson_install_args"
 
-    meson_args_ = deepcopy(ctx.params[MESON_ARGS])
-    ctx.params[MESON_ARGS] = {}
-    ctx.params[MESON_ARGS]["compile"] = tuple()
-    ctx.params[MESON_ARGS]["install"] = tuple()
-    ctx.params[MESON_ARGS]["setup"] = meson_args_
+    meson_compile_args = tuple()
+    meson_install_args = tuple()
 
     if sys.platform == "cygwin":
         # Cygwin only has netlib lapack, but can link against
         # OpenBLAS rather than netlib blas at runtime.  There is
         # no libopenblas-devel to enable linking against
         # openblas-specific functions or OpenBLAS Lapack
-        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + ("-Dlapack=lapack", "-Dblas=blas")
+        meson_args = meson_args + ("-Dlapack=lapack", "-Dblas=blas")
 
     if ctx.params['werror']:
-        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + ("--werror", )
+        meson_args = meson_args + ("--werror", )
 
     if ctx.params['debug'] or ctx.params['release']:
         if ctx.params['debug'] and ctx.params['release']:
@@ -366,7 +367,7 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
         elif ctx.params['release']:
             buildtype = 'release'
             cflags_unwanted = ('-O0', '-O1', '-O2')
-        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + (f"-Dbuildtype={buildtype}", )
+        meson_args = meson_args + (f"-Dbuildtype={buildtype}", )
         if 'CFLAGS' in os.environ.keys():
             # Check that CFLAGS doesn't contain something that supercedes -O0
             # for a plain debug build (conda envs tend to set -O2)
@@ -377,17 +378,17 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
                                         f"because CFLAGS contains `{flag}`."
                                         "Please also check CXXFLAGS and FFLAGS.")
     if ctx.params['gcov']:
-        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + ('-Db_coverage=true', )
+        meson_args = meson_args + ('-Db_coverage=true', )
 
     if ctx.params['asan']:
-        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + ('-Db_sanitize=address,undefined', )
+        meson_args = meson_args + ('-Db_sanitize=address,undefined', )
 
     if ctx.params['setup_args']:
-        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + tuple([str(arg) for arg in ctx.params['setup_args']])
+        meson_args = meson_args + tuple([str(arg) for arg in ctx.params['setup_args']])
 
     if ctx.params['with_accelerate']:
         # on a mac you probably want to use accelerate over scipy_openblas
-        ctx.params[MESON_ARGS]["setup"] = ctx.params[MESON_ARGS]["setup"] + ("-Dblas=accelerate", )
+        meson_args = meson_args + ("-Dblas=accelerate", )
     elif ctx.params['with_scipy_openblas']:
         configure_scipy_openblas()
         os.env['PKG_CONFIG_PATH'] = os.pathsep.join([
@@ -399,11 +400,11 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
         # Use number of physical cores rather than ninja's default of 2N+2,
         # to avoid out of memory issues (see gh-17941 and gh-18443)
         n_cores = cpu_count(only_physical_cores=True)
-        ctx.params[MESON_ARGS]["jobs"] = n_cores
+        ctx.params['jobs'] = n_cores
     else:
-        ctx.params[MESON_ARGS]["jobs"] = ctx.params['parallel']
+        ctx.params['jobs'] = ctx.params['parallel']
 
-    ctx.params[MESON_ARGS]["install"] = ctx.params[MESON_ARGS]["install"] + ("--tags=" + ctx.params['tags'], )
+    meson_install_args = meson_install_args + ("--tags=" + ctx.params['tags'], )
 
     if ctx.params["show_build_log"]:
         ctx.params["verbose"] = ctx.params["show_build_log"]
@@ -414,6 +415,9 @@ def build(ctx, meson_args, with_scipy_openblas, jobs=None, clean=False, verbose=
                    'parallel', 'show_build_log',
                    'tags'):
         ctx.params.pop(option)
+
+    ctx.params[MESON_COMPILE_ARGS] = meson_compile_args
+    ctx.params[MESON_INSTALL_ARGS] = meson_install_args
 
     ctx.forward(meson.build)
 
