@@ -42,7 +42,6 @@ sf_error_state_lib = shared_library('sf_error_state',
 sf_error_state_dep = declare_dependency(
   compile_args: ['-DSP_SPECFUN_ERROR'] + scipy_import_dll_args,
   dependencies: thread_dep,
-  link_args: ['-lpthread'],
   link_with: sf_error_state_lib,
 )
 
