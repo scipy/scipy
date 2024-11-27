@@ -574,27 +574,19 @@ def _set_pythonpath(pythonpath):
         for p in reversed(pythonpath.split(os.pathsep)):
             sys.path.insert(0, p)
 
-@click.command(context_settings={
-    'ignore_unknown_options': True
-})
-@click.argument("python_args", metavar='', nargs=-1)
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@click.pass_context
-def python(ctx, python_args, *args, **kwargs):
+@spin.util.extend_command(spin.cmds.meson.python)
+def python(*, parent_callback, pythonpath, **kwargs):
     """🐍 Launch Python shell with PYTHONPATH set
 
     OPTIONS are passed through directly to Python, e.g.:
 
     spin python -c 'import sys; print(sys.path)'
     """
-    _python(
-        ctx,
-        python_args,
-        ctx.params.pop('pythonpath'),
-        meson.python
-    )
+    _set_pythonpath(pythonpath)
+    parent_callback(**kwargs)
 
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
