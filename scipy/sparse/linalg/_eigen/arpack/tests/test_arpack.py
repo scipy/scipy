@@ -693,7 +693,7 @@ def test_eigsh_for_k_greater():
 
 
 def test_real_eigs_real_k_subset():
-    rng = np.random.RandomState(1)
+    rng = np.random.default_rng(1)
 
     n = 10
     A = random_array(shape=(n, n), density=0.5, rng=rng)
