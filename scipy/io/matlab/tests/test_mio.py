@@ -290,7 +290,7 @@ def _check_level(label, expected, actual):
 
 def _load_check_case(name, files, case):
     for file_name in files:
-        matdict = loadmat(file_name, struct_as_record=True, sparray=True)
+        matdict = loadmat(file_name, struct_as_record=True, spmatrix=False)
         label = f"test {name}; file {file_name}"
         for k, expected in case.items():
             k_label = f"{label}, variable {k}"
@@ -386,7 +386,7 @@ def test_gzip_simple():
         mat_stream.close()
 
         mat_stream = gzip.open(fname, mode='rb')
-        actual = loadmat(mat_stream, struct_as_record=True, sparray=True)
+        actual = loadmat(mat_stream, struct_as_record=True, spmatrix=False)
         mat_stream.close()
     finally:
         shutil.rmtree(tmpdir)
@@ -1157,7 +1157,7 @@ def test_logical_sparse():
     filename = pjoin(test_data_path,'logical_sparse.mat')
     # Before fix, this would crash with:
     # ValueError: indices and data should have the same size
-    d = loadmat(filename, struct_as_record=True, sparray=True)
+    d = loadmat(filename, struct_as_record=True, spmatrix=False)
     log_sp = d['sp_log_5_4']
     assert_(SP.issparse(log_sp) and log_sp.format == "csc")
     assert_equal(log_sp.dtype.type, np.bool_)
@@ -1176,7 +1176,14 @@ def test_empty_sparse():
     empty_sparse = scipy.sparse.csr_array([[0,0],[0,0]])
     savemat(sio, dict(x=empty_sparse))
     sio.seek(0)
-    res = loadmat(sio, sparray=True)
+
+    res = loadmat(sio, spmatrix=False)
+    assert not scipy.sparse.isspmatrix(res['x'])
+    res = loadmat(sio, spmatrix=True)
+    assert scipy.sparse.isspmatrix(res['x'])
+    res = loadmat(sio)  # chk default
+    assert scipy.sparse.isspmatrix(res['x'])
+
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].toarray(), 0)
     # Do empty sparse matrices get written with max nnz 1?

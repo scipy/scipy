@@ -45,13 +45,13 @@ class TestMMIOArray:
     def check(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn, sparray=True)
+        b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(a, b)
 
     def check_exact(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn, sparray=True)
+        b = mmread(self.fn, spmatrix=False)
         assert_equal(a, b)
 
     @pytest.mark.thread_unsafe
@@ -171,13 +171,13 @@ class TestMMIOSparseCSR(TestMMIOArray):
     def check(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn, sparray=True)
+        b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(a.toarray(), b.toarray())
 
     def check_exact(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn, sparray=True)
+        b = mmread(self.fn, spmatrix=False)
         assert_equal(a.toarray(), b.toarray())
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
@@ -276,8 +276,14 @@ class TestMMIOSparseCSR(TestMMIOArray):
         info = (2, 2, 3, 'coordinate', 'pattern', 'general')
         mmwrite(self.fn, a, field='pattern')
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn, sparray=True)
+        b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(p, b.toarray())
+        assert not scipy.sparse.isspmatrix(b)
+
+        b = mmread(self.fn, spmatrix=True)
+        assert scipy.sparse.isspmatrix(b)
+        b = mmread(self.fn)  # chk default
+        assert scipy.sparse.isspmatrix(b)
 
     def test_gh13634_non_skew_symmetric_int(self):
         a = scipy.sparse.csr_array([[1, 2], [-2, 99]], dtype=np.int32)
@@ -370,7 +376,7 @@ class TestMMIOReadLargeIntegers:
             or over64):
             assert_raises(OverflowError, mmread, self.fn)
         else:
-            b = mmread(self.fn, sparray=True)
+            b = mmread(self.fn, spmatrix=False)
             if not dense:
                 b = b.toarray()
             assert_equal(a, b)
@@ -566,7 +572,7 @@ class TestMMIOCoordinate:
         f.write(example)
         f.close()
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn, sparray=True).toarray()
+        b = mmread(self.fn, spmatrix=False).toarray()
         assert_array_almost_equal(a, b)
 
     def test_read_general(self):
@@ -632,7 +638,7 @@ class TestMMIOCoordinate:
         assert_equal(mminfo(self.fn),
                      (10, 10, 0, 'coordinate', 'real', 'symmetric'))
         a = b.toarray()
-        b = mmread(self.fn, sparray=True).toarray()
+        b = mmread(self.fn, spmatrix=False).toarray()
         assert_array_almost_equal(a, b)
 
     def test_bzip2_py3(self):
@@ -656,7 +662,7 @@ class TestMMIOCoordinate:
             f_out.write(f_in.read())
             f_out.close()
 
-        a = mmread(fn_bzip2, sparray=True).toarray()
+        a = mmread(fn_bzip2, spmatrix=False).toarray()
         assert_array_almost_equal(a, b.toarray())
 
     def test_gzip_py3(self):
@@ -680,7 +686,7 @@ class TestMMIOCoordinate:
             f_out.write(f_in.read())
             f_out.close()
 
-        a = mmread(fn_gzip, sparray=True).toarray()
+        a = mmread(fn_gzip, spmatrix=False).toarray()
         assert_array_almost_equal(a, b.toarray())
 
     def test_real_write_read(self):
@@ -695,7 +701,7 @@ class TestMMIOCoordinate:
         assert_equal(mminfo(self.fn),
                      (5, 5, 8, 'coordinate', 'real', 'general'))
         a = b.toarray()
-        b = mmread(self.fn, sparray=True).toarray()
+        b = mmread(self.fn, spmatrix=False).toarray()
         assert_array_almost_equal(a, b)
 
     def test_complex_write_read(self):
@@ -711,7 +717,7 @@ class TestMMIOCoordinate:
         assert_equal(mminfo(self.fn),
                      (5, 5, 8, 'coordinate', 'complex', 'general'))
         a = b.toarray()
-        b = mmread(self.fn, sparray=True).toarray()
+        b = mmread(self.fn, spmatrix=False).toarray()
         assert_array_almost_equal(a, b)
 
     def test_sparse_formats(self, tmp_path):
@@ -735,7 +741,7 @@ class TestMMIOCoordinate:
             for fmt in ['csr', 'csc', 'coo']:
                 fname = tmpdir / (fmt + '.mtx')
                 mmwrite(fname, mat.asformat(fmt))
-                result = mmread(fname, sparray=True).toarray()
+                result = mmread(fname, spmatrix=False).toarray()
                 assert_array_almost_equal(result, expected)
 
     def test_precision(self):
@@ -749,7 +755,7 @@ class TestMMIOCoordinate:
                 A[n-1, n-1] = value
                 # write matrix with test precision and read again
                 mmwrite(self.fn, A, precision=precision)
-                A = scipy.io.mmread(self.fn, sparray=True)
+                A = scipy.io.mmread(self.fn, spmatrix=False)
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
@@ -777,7 +783,7 @@ def test_gh11389():
     mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
                        " 1 1 1\n"
                        "1 1 -2.1846000000000e+02  0.0000000000000e+00"),
-           sparray=True)
+           spmatrix=False)
 
 
 def test_gh18123(tmp_path):
@@ -789,17 +795,17 @@ def test_gh18123(tmp_path):
     test_file = tmp_path / "test.mtx"
     with open(test_file, "w") as f:
         f.writelines(lines)
-    mmread(test_file, sparray=True)
+    mmread(test_file, spmatrix=False)
 
 def test_mtx_append(tmp_path):
     a = mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
                            " 1 1 1\n"
                            "1 1 -2.1846000000000e+02  0.0000000000000e+00"),
-               sparray=True)
+               spmatrix=False)
     test_writefile = tmp_path / "test_mtx"
     test_readfile  = tmp_path / "test_mtx.mtx"
     mmwrite(test_writefile, a)
-    mmread(test_readfile, sparray=True)
+    mmread(test_readfile, spmatrix=False)
 
 
 def test_threadpoolctl():

@@ -462,7 +462,7 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file, *, sparray=False):
+def hb_read(path_or_open_file, *, spmatrix=True):
     """Read HB-format file.
 
     Parameters
@@ -470,8 +470,8 @@ def hb_read(path_or_open_file, *, sparray=False):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
-    sparray : bool or None
-        If True, return sparse csc_array. Otherwise return csc_matrix.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
 
     Returns
     -------
@@ -495,7 +495,7 @@ def hb_read(path_or_open_file, *, sparray=False):
     >>> from scipy.sparse import csr_array, eye
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb", sparray=True))  # read a hb file
+    >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
     <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (3, 3)>
         Coords	Values
@@ -512,7 +512,7 @@ def hb_read(path_or_open_file, *, sparray=False):
     else:
         with open(path_or_open_file) as f:
             data = _get_matrix(f)
-    if not sparray:
+    if spmatrix:
         return csc_matrix(data)
     return data
 
@@ -551,7 +551,7 @@ def hb_write(path_or_open_file, m, hb_info=None):
     >>> from scipy.sparse import csr_array, eye
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb", sparray=True))  # read a hb file
+    >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
     <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (3, 3)>
         Coords	Values

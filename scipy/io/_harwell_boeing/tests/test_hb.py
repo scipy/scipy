@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_almost_equal_nulp
 
-from scipy.sparse import coo_array, csc_array, random_array
+from scipy.sparse import coo_array, csc_array, random_array, isspmatrix
 
 from scipy.io import hb_read, hb_write
 
@@ -45,8 +45,13 @@ def assert_csc_almost_equal(r, l):
 
 class TestHBReader:
     def test_simple(self):
-        m = hb_read(StringIO(SIMPLE), sparray=True)
+        m = hb_read(StringIO(SIMPLE), spmatrix=False)
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
+        assert not isspmatrix(m)
+        m = hb_read(StringIO(SIMPLE), spmatrix=True)
+        assert isspmatrix(m)
+        m = hb_read(StringIO(SIMPLE))  # default
+        assert isspmatrix(m)
 
 
 class TestHBReadWrite:
@@ -55,7 +60,7 @@ class TestHBReadWrite:
         with tempfile.NamedTemporaryFile(mode='w+t') as file:
             hb_write(file, value)
             file.file.seek(0)
-            value_loaded = hb_read(file, sparray=True)
+            value_loaded = hb_read(file, spmatrix=False)
         assert_csc_almost_equal(value, value_loaded)
 
     def test_simple(self):

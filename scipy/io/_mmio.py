@@ -81,7 +81,7 @@ def mminfo(source):
 # -----------------------------------------------------------------------------
 
 
-def mmread(source, *, sparray=False):
+def mmread(source, *, spmatrix=True):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -90,8 +90,8 @@ def mmread(source, *, sparray=False):
     source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
-    sparray : bool or None
-        If ``True``, return sparse ``coo_array``. Otherwise return ``coo_matrix``.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
 
     Returns
     -------
@@ -117,7 +117,7 @@ def mmread(source, *, sparray=False):
 
     ``mmread(source)`` returns the data as sparse matrix in COO format.
 
-    >>> m = mmread(StringIO(text), sparray=True)
+    >>> m = mmread(StringIO(text), spmatrix=False)
     >>> m
     <COOrdinate sparse array of dtype 'float64'
          with 7 stored elements and shape (5, 5)>
@@ -128,7 +128,7 @@ def mmread(source, *, sparray=False):
            [4., 5., 6., 7., 0.],
            [0., 0., 0., 0., 0.]])
     """
-    return MMFile().read(source, sparray=sparray)
+    return MMFile().read(source, spmatrix=spmatrix)
 
 # -----------------------------------------------------------------------------
 
@@ -561,7 +561,7 @@ class MMFile:
         self._init_attrs(**kwargs)
 
     # -------------------------------------------------------------------------
-    def read(self, source, *, sparray=None):
+    def read(self, source, *, spmatrix=True):
         """
         Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -570,8 +570,8 @@ class MMFile:
         source : str or file-like
             Matrix Market filename (extensions .mtx, .mtz.gz)
             or open file object.
-        sparray : bool
-            If True, return sparse coo_array. Otherwise return coo_matrix.
+        spmatrix : bool, optional (default: True)
+            If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
 
         Returns
         -------
@@ -588,7 +588,7 @@ class MMFile:
         finally:
             if close_it:
                 stream.close()
-        if not sparray and isinstance(data, coo_array):
+        if spmatrix and isinstance(data, coo_array):
             data = coo_matrix(data)
         return data
 

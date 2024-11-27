@@ -84,7 +84,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 
 
 @docfiller
-def loadmat(file_name, mdict=None, appendmat=True, *, sparray=False, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     """
     Load MATLAB file.
 
@@ -98,8 +98,9 @@ def loadmat(file_name, mdict=None, appendmat=True, *, sparray=False, **kwargs):
     appendmat : bool, optional
        True to append the .mat extension to the end of the given
        filename, if not already present. Default is True.
-    sparray : bool or None
-        If True and sparse mat, return sparse array. Otherwise return sparse matrix.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        Only relevant for sparse variables.
     byte_order : str or None, optional
        None by default, implying byte order guessed from mat
        file. Otherwise can be one of ('native', '=', 'little', '<',
@@ -171,7 +172,7 @@ def loadmat(file_name, mdict=None, appendmat=True, *, sparray=False, **kwargs):
 
     Load the .mat file contents.
 
-    >>> mat_contents = sio.loadmat(mat_fname, sparray=True)
+    >>> mat_contents = sio.loadmat(mat_fname, spmatrix=False)
 
     The result is a dictionary, one key/value pair for each variable:
 
@@ -232,11 +233,11 @@ def loadmat(file_name, mdict=None, appendmat=True, *, sparray=False, **kwargs):
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
-    if not sparray:
-        import scipy.sparse as sparse
+    if spmatrix:
+        from scipy.sparse import issparse, coo_matrix
         for name, var in list(matfile_dict.items()):
-            if isinstance(var, sparse.sparray):
-                matfile_dict[name] = sparse.coo_matrix(var)
+            if issparse(var):
+                matfile_dict[name] = coo_matrix(var)
 
     if mdict is not None:
         mdict.update(matfile_dict)

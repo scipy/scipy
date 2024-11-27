@@ -293,7 +293,7 @@ def _validate_symmetry(symmetry):
     return symmetry
 
 
-def mmread(source, *, sparray=False):
+def mmread(source, *, spmatrix=True):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -302,8 +302,8 @@ def mmread(source, *, sparray=False):
     source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
-    sparray : bool
-        If ``True``, return sparse ``coo_array``. Otherwise return ``coo_matrix``.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
 
     Returns
     -------
@@ -334,7 +334,7 @@ def mmread(source, *, sparray=False):
 
     ``mmread(source)`` returns the data as sparse array in COO format.
 
-    >>> m = mmread(StringIO(text), sparray=True)
+    >>> m = mmread(StringIO(text), spmatrix=False)
     >>> m
     <COOrdinate sparse array of dtype 'float64'
         with 7 stored elements and shape (5, 5)>
@@ -352,7 +352,7 @@ def mmread(source, *, sparray=False):
     >>> import threadpoolctl
     >>>
     >>> with threadpoolctl.threadpool_limits(limits=2):
-    ...     m = mmread(StringIO(text), sparray=True)
+    ...     m = mmread(StringIO(text), spmatrix=False)
 
     """
     cursor, stream_to_close = _get_read_cursor(source)
@@ -366,7 +366,7 @@ def mmread(source, *, sparray=False):
         triplet, shape = _read_body_coo(cursor, generalize_symmetry=True)
         if stream_to_close:
             stream_to_close.close()
-        if not sparray:
+        if spmatrix:
             return SP.coo_matrix(triplet, shape=shape)
         return SP.coo_array(triplet, shape=shape)
 

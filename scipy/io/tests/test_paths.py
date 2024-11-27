@@ -49,7 +49,7 @@ class TestPaths:
             path = Path(temp_dir) / 'data.hb'
             scipy.io.hb_write(str(path), data)
 
-            data_new = scipy.io.hb_read(path, sparray=True)
+            data_new = scipy.io.hb_read(path, spmatrix=False)
             assert (data_new != data).nnz == 0
 
     def test_hb_write(self):
@@ -66,7 +66,7 @@ class TestPaths:
             path = Path(temp_dir) / 'data.mtx'
             scipy.io.mmwrite(str(path), data)
 
-            data_new = scipy.io.mmread(path, sparray=True)
+            data_new = scipy.io.mmread(path, spmatrix=False)
             assert (data_new != data).nnz == 0
 
     def test_mmio_write(self):
