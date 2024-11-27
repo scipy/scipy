@@ -660,27 +660,8 @@ def mypy(ctx, build_dir=None):
     print(report, end='')
     print(errors, end='', file=sys.stderr)
 
-@click.command()
-@click.argument("pytest_args", nargs=-1)
-@click.option(
-    '--verbose', '-v', default=False, is_flag=True,
-    help="more verbosity")
-@click.option(
-    '--durations', '-d', default=None, metavar="NUM_TESTS",
-    help="Show timing for the given number of slowest tests"
-)
-@click.option(
-    '--submodule', '-s', default=None, metavar='MODULE_NAME',
-    help="Submodule whose tests to run (cluster, constants, ...)")
-@click.option(
-    '--tests', '-t', default=None, multiple=True, metavar='TESTS',
-    help='Specify tests to run')
-@click.option(
-    '--parallel', '-j', default=1, metavar='N_JOBS',
-    help="Number of parallel jobs for testing"
-)
-@click.pass_context
-def smoke_docs(ctx, pytest_args, *args, **kwargs):
+@spin.util.extend_command(test, doc='')
+def smoke_docs(*, parent_callback, **kwargs):
     """🔧 Run doctests of objects in the public API.
 
     PYTEST_ARGS are passed through directly to pytest, e.g.:
@@ -718,9 +699,10 @@ def smoke_docs(ctx, pytest_args, *args, **kwargs):
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError("scipy-doctest not installed") from e
 
-    tests = ctx.params["tests"]
-    if ctx.params["submodule"]:
-        tests = PROJECT_MODULE + "." + ctx.params["submodule"]
+    tests = kwargs["tests"]
+    pytest_args = kwargs["pytest_args"]
+    if kwargs["submodule"]:
+        tests = PROJECT_MODULE + "." + kwargs["submodule"]
 
     if not pytest_args and not tests:
         pytest_args = ('scipy', )
@@ -736,9 +718,9 @@ def smoke_docs(ctx, pytest_args, *args, **kwargs):
 
     pytest_args = pytest_args + doctest_args
 
-    ctx.params['pytest_args'] = pytest_args
+    kwargs['pytest_args'] = pytest_args
 
-    ctx.forward(test)
+    parent_callback(**kwargs)
 
 @click.command()
 @click.option(
