@@ -33,6 +33,7 @@ from scipy._lib._util import VisibleDeprecationWarning
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
+pytestmark = pytest.mark.parallel_threads(1)
 
 
 def mlarr(*args, **kwargs):
@@ -1347,3 +1348,6 @@ def test_large_m4():
              "Variable 'a' has byte length longer than largest possible")
     with pytest.raises(ValueError, match=match):
         loadmat(truncated_mat)
+
+def test_gh_19223():
+    from scipy.io.matlab import varmats_from_mat  # noqa: F401

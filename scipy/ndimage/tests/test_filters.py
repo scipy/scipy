@@ -114,7 +114,8 @@ def _cases_axes_tuple_length_mismatch():
 
 class TestNdimageFilters:
 
-    def _validate_complex(self, xp, array, kernel, type2, mode='reflect', cval=0):
+    def _validate_complex(self, xp, array, kernel, type2, mode='reflect',
+                          cval=0, check_warnings=True):
         # utility for validating complex-valued correlations
         real_dtype = xp.real(xp.asarray([], dtype=type2)).dtype
         expected = _complex_correlate(
@@ -155,14 +156,17 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
         assert output.dtype.type == type2
 
-        # warns if the output is not a complex dtype
-        with pytest.warns(UserWarning,
-                          match="promoting specified output dtype to complex"):
-            correlate(array, kernel, output=real_dtype)
+        if check_warnings:
+            # warns if the output is not a complex dtype
+            with pytest.warns(UserWarning,
+                              match="promoting specified output dtype to "
+                              "complex"):
+                correlate(array, kernel, output=real_dtype)
 
-        with pytest.warns(UserWarning,
-                          match="promoting specified output dtype to complex"):
-            convolve(array, kernel, output=real_dtype)
+            with pytest.warns(UserWarning,
+                              match="promoting specified output dtype to "
+                              "complex"):
+                convolve(array, kernel, output=real_dtype)
 
         # raises if output array is provided, but is not complex-valued
         output_real = xp.zeros_like(array, dtype=real_dtype)
@@ -614,7 +618,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_kernel(self, dtype_input, dtype_kernel,
-                                      dtype_output, xp):
+                                      dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -623,7 +627,8 @@ class TestNdimageFilters:
                              [0, 1 + 1j]], dtype=dtype_kernel)
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6]], dtype=dtype_input)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @xfail_xp_backends(np_only=True,
                        reason="output=dtype is numpy-specific",
@@ -633,7 +638,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     @pytest.mark.parametrize('mode', ['grid-constant', 'constant'])
     def test_correlate_complex_kernel_cval(self, dtype_input, dtype_kernel,
-                                           dtype_output, mode, xp):
+                                           dtype_output, mode, xp,
+                                           num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -648,11 +654,13 @@ class TestNdimageFilters:
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6]], dtype=dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output, mode=mode,
-                               cval=5.0)
+                               cval=5.0,
+                               check_warnings=num_parallel_threads == 1)
 
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
+    @pytest.mark.thread_unsafe
     def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
                                                    dtype_kernel, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -674,21 +682,23 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel(self, dtype_input, dtype_kernel,
-                                        dtype_output, xp):
+                                        dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
 
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype_kernel)
         array = xp.asarray([1, 2, 3, 4, 5, 6], dtype=dtype_input)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel_cval(self, dtype_input, dtype_kernel,
-                                             dtype_output, xp):
+                                             dtype_output, xp,
+                                             num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -696,14 +706,15 @@ class TestNdimageFilters:
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype_kernel)
         array = xp.asarray([1, 2, 3, 4, 5, 6], dtype=dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
-                               cval=5.0)
+                               cval=5.0,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input(self, dtype_input, dtype_kernel,
-                                     dtype_output, xp):
+                                     dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -712,21 +723,23 @@ class TestNdimageFilters:
                              [0, 1]], dtype=dtype_kernel)
         array = xp.asarray([[1, 2j, 3],
                             [1 + 4j, 5, 6j]], dtype=dtype_input)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input(self, dtype_input, dtype_kernel,
-                                       dtype_output, xp):
+                                       dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
 
         kernel = xp.asarray([1, 0, 1], dtype=dtype_kernel)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype_input)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @skip_xp_backends(np_only=True,
@@ -736,7 +749,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_cval(self, dtype_input, dtype_kernel,
-                                            dtype_output, xp):
+                                            dtype_output, xp,
+                                            num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -744,12 +758,14 @@ class TestNdimageFilters:
         kernel = xp.asarray([1, 0, 1], dtype=dtype_kernel)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
-                               cval=5 - 3j)
+                               cval=5 - 3j,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp):
+    def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp,
+                                                num_parallel_threads):
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
 
@@ -757,7 +773,8 @@ class TestNdimageFilters:
                              [0, 1 + 1j]], dtype=dtype)
         array = xp.asarray([[1, 2j, 3],
                             [1 + 4j, 5, 6j]], dtype=dtype)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @skip_xp_backends(np_only=True,
@@ -766,7 +783,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel_cval(self, dtype,
-                                                     dtype_output, xp):
+                                                     dtype_output, xp,
+                                                     num_parallel_threads):
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
 
@@ -775,23 +793,28 @@ class TestNdimageFilters:
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6]], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
-                               cval=5.0 + 2.0j)
+                               cval=5.0 + 2.0j,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason="output=dtype is numpy-specific")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp):
+    @pytest.mark.thread_unsafe
+    def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp,
+                                                  num_parallel_threads):
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
 
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_and_kernel_cval(self, dtype,
-                                                       dtype_output, xp):
+                                                       dtype_output, xp,
+                                                       num_parallel_threads):
         if not (is_numpy(xp) or is_cupy(xp)):
             pytest.xfail("output=dtype is numpy-specific")
 
@@ -804,7 +827,8 @@ class TestNdimageFilters:
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
-                               cval=5.0 + 2.0j)
+                               cval=5.0 + 2.0j,
+                               check_warnings=num_parallel_threads == 1)
 
     def test_gauss01(self, xp):
         input = xp.asarray([[1, 2, 3],
@@ -1787,43 +1811,43 @@ class TestNdimageFilters:
     def test_rank01(self, xp):
         array = xp.asarray([1, 2, 3, 4, 5])
         output = ndimage.rank_filter(array, 1, size=2)
-        assert_array_almost_equal(array, output)
+        xp_assert_equal(array, output)
         output = ndimage.percentile_filter(array, 100, size=2)
-        assert_array_almost_equal(array, output)
+        xp_assert_equal(array, output)
         output = ndimage.median_filter(array, 2)
-        assert_array_almost_equal(array, output)
+        xp_assert_equal(array, output)
 
     def test_rank02(self, xp):
         array = xp.asarray([1, 2, 3, 4, 5])
         output = ndimage.rank_filter(array, 1, size=[3])
-        assert_array_almost_equal(array, output)
+        xp_assert_equal(array, output)
         output = ndimage.percentile_filter(array, 50, size=3)
-        assert_array_almost_equal(array, output)
+        xp_assert_equal(array, output)
         output = ndimage.median_filter(array, (3,))
-        assert_array_almost_equal(array, output)
+        xp_assert_equal(array, output)
 
     def test_rank03(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         output = ndimage.rank_filter(array, 1, size=[2])
-        assert_array_almost_equal(xp.asarray([3, 3, 5, 5, 4]), output)
+        xp_assert_equal(xp.asarray([3, 3, 5, 5, 4]), output)
         output = ndimage.percentile_filter(array, 100, size=2)
-        assert_array_almost_equal(xp.asarray([3, 3, 5, 5, 4]), output)
+        xp_assert_equal(xp.asarray([3, 3, 5, 5, 4]), output)
 
     def test_rank04(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         expected = xp.asarray([3, 3, 2, 4, 4])
         output = ndimage.rank_filter(array, 1, size=3)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
         output = ndimage.percentile_filter(array, 50, size=3)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
         output = ndimage.median_filter(array, size=3)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     def test_rank05(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         expected = xp.asarray([3, 3, 2, 4, 4])
         output = ndimage.rank_filter(array, -2, size=3)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     def test_rank06(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1834,9 +1858,9 @@ class TestNdimageFilters:
                     [5, 5, 3, 3, 1]]
         expected = xp.asarray(expected)
         output = ndimage.rank_filter(array, 1, size=[2, 3])
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
         output = ndimage.percentile_filter(array, 17, size=(2, 3))
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     @skip_xp_backends("jax.numpy",
         reason="assignment destination is read-only",
@@ -1855,11 +1879,11 @@ class TestNdimageFilters:
                     [5, 5, 3, 3, 1]]
         expected = xp.asarray(expected)
         ndimage.rank_filter(array, 1, size=[2, 3], output=array)
-        assert_array_almost_equal(expected, array)
+        xp_assert_equal(expected, array)
 
         ndimage.percentile_filter(array_copy, 17, size=(2, 3),
                                   output=array_copy)
-        assert_array_almost_equal(expected, array_copy)
+        xp_assert_equal(expected, array_copy)
 
     def test_rank07(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1870,7 +1894,7 @@ class TestNdimageFilters:
                     [6, 8, 8, 7, 5]]
         expected = xp.asarray(expected)
         output = ndimage.rank_filter(array, -2, size=[2, 3])
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     def test_rank08(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1881,11 +1905,11 @@ class TestNdimageFilters:
                     [5, 6, 7, 5, 5]]
         expected = xp.asarray(expected)
         output = ndimage.percentile_filter(array, 50.0, size=(2, 3))
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
         output = ndimage.rank_filter(array, 3, size=(2, 3))
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
         output = ndimage.median_filter(array, size=(2, 3))
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
         # non-separable: does not allow mode sequence
         with assert_raises(RuntimeError):
@@ -1922,9 +1946,9 @@ class TestNdimageFilters:
         expected = xp.asarray(expected)
         footprint = xp.asarray([[1, 0, 1], [1, 1, 0]])
         output = ndimage.rank_filter(array, 0, footprint=footprint)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
         output = ndimage.percentile_filter(array, 0.0, footprint=footprint)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     def test_rank11(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1936,9 +1960,9 @@ class TestNdimageFilters:
         expected = xp.asarray(expected)
         footprint = xp.asarray([[1, 0, 1], [1, 1, 0]])
         output = ndimage.rank_filter(array, -1, footprint=footprint)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
         output = ndimage.percentile_filter(array, 100.0, footprint=footprint)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank12(self, dtype, xp):
@@ -1958,9 +1982,9 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
         output = ndimage.percentile_filter(array, 50.0,
                                            footprint=footprint)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
         output = ndimage.median_filter(array, footprint=footprint)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank13(self, dtype, xp):
@@ -1978,7 +2002,7 @@ class TestNdimageFilters:
                             [5, 6, 9, 3, 5]], dtype=dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint,
                                      origin=-1)
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank14(self, dtype, xp):
@@ -1996,7 +2020,7 @@ class TestNdimageFilters:
                             [5, 6, 9, 3, 5]], dtype=dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint,
                                      origin=[-1, 0])
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank15(self, dtype, xp):
@@ -2014,7 +2038,44 @@ class TestNdimageFilters:
                             [5, 6, 9, 3, 5]], dtype=dtype)
         output = ndimage.rank_filter(array, 0, footprint=footprint,
                                      origin=[-1, 0])
-        assert_array_almost_equal(expected, output)
+        xp_assert_equal(expected, output)
+
+    def test_rank16(self, xp):
+        # test that lists are accepted and interpreted as numpy arrays
+        array = [3, 2, 5, 1, 4]
+        # expected values are: median(3, 2, 5) = 3, median(2, 5, 1) = 2, etc
+        expected = np.asarray([3, 3, 2, 4, 4])
+        output = ndimage.rank_filter(array, -2, size=3)
+        xp_assert_equal(expected, output)
+
+    def test_rank17(self, xp):
+        array = xp.asarray([3, 2, 5, 1, 4])
+        if not hasattr(array, 'flags'):
+            return
+        array.flags.writeable = False
+        expected = xp.asarray([3, 3, 2, 4, 4])
+        output = ndimage.rank_filter(array, -2, size=3)
+        xp_assert_equal(expected, output)
+
+    def test_rank18(self, xp):
+        # module 'array_api_strict' has no attribute 'float16'
+        tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
+                         'uint8', 'uint16', 'uint32', 'uint64']
+        for dtype_str in tested_dtypes:
+            dtype = getattr(xp, dtype_str)
+            x = xp.asarray([3, 2, 5, 1, 4], dtype=dtype)
+            y = ndimage.rank_filter(x, -2, size=3)
+            assert y.dtype == x.dtype
+
+    def test_rank19(self, xp):
+        # module 'array_api_strict' has no attribute 'float16'
+        tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
+                         'uint8', 'uint16', 'uint32', 'uint64']
+        for dtype_str in tested_dtypes:
+            dtype = getattr(xp, dtype_str)
+            x = xp.asarray([[3, 2, 5, 1, 4], [3, 2, 5, 1, 4]], dtype=dtype)
+            y = ndimage.rank_filter(x, -2, size=3)
+            assert y.dtype == x.dtype
 
     @skip_xp_backends(np_only=True, reason="off-by-ones on alt backends")
     @pytest.mark.parametrize('dtype', types)

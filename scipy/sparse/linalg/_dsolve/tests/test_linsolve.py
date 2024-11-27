@@ -888,7 +888,7 @@ def test_is_sptriangular_and_spbandwidth(nnz, fmt):
 
     N = nnz // 2
     dens = 0.1
-    A = scipy.sparse.random_array((N, N), density=dens, format="csr", random_state=rng)
+    A = scipy.sparse.random_array((N, N), density=dens, format="csr", rng=rng)
     A[1, 3] = A[3, 1] = 22  # ensure not upper or lower
     A = A.asformat(fmt)
     AU = scipy.sparse.triu(A, format=fmt)

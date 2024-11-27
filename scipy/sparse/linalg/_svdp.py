@@ -17,7 +17,6 @@ __all__ = ['_svdp']
 
 import numpy as np
 
-from scipy._lib._util import check_random_state
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
@@ -82,7 +81,7 @@ class _AProd:
 def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
           compute_u=True, compute_v=True, v0=None, full_output=False, tol=0,
           delta=None, eta=None, anorm=0, cgs=False, elr=True,
-          min_relgap=0.002, shifts=None, maxiter=None, random_state=None):
+          min_relgap=0.002, shifts=None, maxiter=None, rng=None):
     """
     Compute the singular value decomposition of a linear operator using PROPACK
 
@@ -145,17 +144,11 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     maxiter : int, optional
         Maximum number of restarts in IRL mode.  Default is ``1000``.
         Accessed only if ``irl_mode=True``.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -174,7 +167,8 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         ``full_output=True``.
 
     """
-    random_state = check_random_state(random_state)
+    if rng is None:
+        raise ValueError("`rng` must be a normalized numpy.random.Generator instance")
 
     which = which.upper()
     if which not in {'LM', 'SM'}:
@@ -225,9 +219,9 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     # a random starting vector: the random seed cannot be controlled in that
     # case, so we'll instead use numpy to generate a random vector
     if v0 is None:
-        u[:, 0] = random_state.uniform(size=m)
+        u[:, 0] = rng.uniform(size=m)
         if np.iscomplexobj(np.empty(0, dtype=typ)):  # complex type
-            u[:, 0] += 1j * random_state.uniform(size=m)
+            u[:, 0] += 1j * rng.uniform(size=m)
     else:
         try:
             u[:, 0] = v0

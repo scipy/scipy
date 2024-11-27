@@ -258,14 +258,21 @@ class TestRenameParameter:
         with pytest.raises(TypeError, match=message):
             self.old_keyword_still_accepted(new=10, old=10)
 
-    def test_old_keyword_deprecated(self):
+    @pytest.fixture
+    def kwarg_lock(self):
+        from threading import Lock
+        return Lock()
+
+    def test_old_keyword_deprecated(self, kwarg_lock):
         # positional argument and both keyword work identically,
         # but use of old keyword results in DeprecationWarning
         dep_msg = "Use of keyword argument `old` is deprecated"
         res1 = self.old_keyword_deprecated(10)
         res2 = self.old_keyword_deprecated(new=10)
-        with pytest.warns(DeprecationWarning, match=dep_msg):
-            res3 = self.old_keyword_deprecated(old=10)
+        # pytest warning filter is not thread-safe, enforce serialization
+        with kwarg_lock:
+            with pytest.warns(DeprecationWarning, match=dep_msg):
+                    res3 = self.old_keyword_deprecated(old=10)
         assert res1 == res2 == res3 == 10
 
         # unexpected keyword raises an error
@@ -278,12 +285,15 @@ class TestRenameParameter:
         message = re.escape("old_keyword_deprecated() got multiple")
         with pytest.raises(TypeError, match=message):
             self.old_keyword_deprecated(10, new=10)
-        with pytest.raises(TypeError, match=message), \
-                pytest.warns(DeprecationWarning, match=dep_msg):
-            self.old_keyword_deprecated(10, old=10)
-        with pytest.raises(TypeError, match=message), \
-                pytest.warns(DeprecationWarning, match=dep_msg):
-            self.old_keyword_deprecated(new=10, old=10)
+        with kwarg_lock:
+            with pytest.raises(TypeError, match=message), \
+                    pytest.warns(DeprecationWarning, match=dep_msg):
+                    # breakpoint()
+                    self.old_keyword_deprecated(10, old=10)
+        with kwarg_lock:
+            with pytest.raises(TypeError, match=message), \
+                    pytest.warns(DeprecationWarning, match=dep_msg):
+                    self.old_keyword_deprecated(new=10, old=10)
 
 
 class TestContainsNaNTest:
@@ -423,6 +433,7 @@ class TestLazywhere:
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
+    @pytest.mark.thread_unsafe
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
         mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1,
                                                  min_side=0)

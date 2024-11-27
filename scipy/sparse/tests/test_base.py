@@ -931,12 +931,12 @@ class _TestCommon:
                 # check that dense_setdiag worked
                 d = np.diag(a, k)
                 if np.asarray(v).ndim == 0:
-                    assert_array_equal(d, v, err_msg="%s %d" % (msg, r))
+                    assert_array_equal(d, v, err_msg="{msg} {r}")
                 else:
                     n = min(len(d), len(v))
-                    assert_array_equal(d[:n], v[:n], err_msg="%s %d" % (msg, r))
+                    assert_array_equal(d[:n], v[:n], err_msg="{msg} {r}")
                 # check that sparse setdiag worked
-                assert_array_equal(b.toarray(), a, err_msg="%s %d" % (msg, r))
+                assert_array_equal(b.toarray(), a, err_msg="{msg} {r}")
 
         # comprehensive test
         np.random.seed(1234)
@@ -945,7 +945,6 @@ class _TestCommon:
             for m,n in shapes:
                 ks = np.arange(-m+1, n-1)
                 for k in ks:
-                    msg = repr((dtype, m, n, k))
                     a = np.zeros((m, n), dtype=dtype)
                     b = self.spcreator((m, n), dtype=dtype)
 
@@ -1462,7 +1461,7 @@ class _TestCommon:
         for dtype in self.math_dtypes:
             check(dtype)
 
-    # github issue #15210
+    # GitHub issue #15210
     def test_rmul_scalar_type_error(self):
         datsp = self.datsp_dtypes[np.float64]
         with assert_raises(TypeError):
@@ -2502,7 +2501,7 @@ class _TestGetSet:
             check(np.dtype(dtype))
 
     def test_negative_index_assignment(self):
-        # Regression test for github issue 4428.
+        # Regression test for GitHub issue 4428.
 
         def check(dtype):
             A = self.spcreator((3, 10), dtype=dtype)
@@ -5055,7 +5054,7 @@ class TestBSR(sparse_test_class(getset=False,
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.toarray(), bsp.toarray())
 
-    # github issue #9687
+    # GitHub issue #9687
     def test_eliminate_zeros_all_zero(self):
         np.random.seed(0)
         m = self.bsr_container(np.random.random((12, 12)), blocksize=(2, 3))

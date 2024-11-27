@@ -880,7 +880,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         return self._diff_baryint._evaluate_derivatives(x, der-1, all_lower=False)
 
 
-def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
+def barycentric_interpolate(xi, yi, x, axis=0, *, der=0, rng=None):
     """
     Convenience function for polynomial interpolation.
 
@@ -905,13 +905,18 @@ def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
         The y coordinates of the points the polynomial should pass through.
     x : scalar or array_like
         Point or points at which to evaluate the interpolant.
+    axis : int, optional
+        Axis in the `yi` array corresponding to the x-coordinate values.
     der : int or list or None, optional
         How many derivatives to evaluate, or None for all potentially
         nonzero derivatives (that is, a number equal to the number
         of points), or a list of derivatives to evaluate. This number
         includes the function value as the '0th' derivative.
-    axis : int, optional
-        Axis in the `yi` array corresponding to the x-coordinate values.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -947,7 +952,7 @@ def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
     >>> plt.show()
 
     """
-    P = BarycentricInterpolator(xi, yi, axis=axis)
+    P = BarycentricInterpolator(xi, yi, axis=axis, rng=rng)
     if der == 0:
         return P(x)
     elif _isscalar(der):

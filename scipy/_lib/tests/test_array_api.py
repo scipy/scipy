@@ -4,10 +4,9 @@ import pytest
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    xp_create_diagonal
+    np_compat,
 )
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
-import scipy._lib.array_api_compat.numpy as np_compat
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -186,17 +185,3 @@ class TestArrayAPI:
         # scalars-vs-0d passes (if values match) also with regular python objects
         xp_assert_equal_no_0d(0., xp.asarray(0.))
         xp_assert_equal_no_0d(42, xp.asarray(42))
-
-    @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")
-    @array_api_compatible
-    @pytest.mark.parametrize('n', range(1, 10))
-    @pytest.mark.parametrize('offset', range(1, 10))
-    def test_create_diagonal(self, n, offset, xp):
-        rng = np.random.default_rng(2347823)
-        one = xp.asarray(1.)
-        x = rng.random(n)
-        A = xp_create_diagonal(xp.asarray(x, dtype=one.dtype), offset=offset, xp=xp)
-        B = xp.asarray(np.diag(x, offset), dtype=one.dtype)
-        xp_assert_equal(A, B)

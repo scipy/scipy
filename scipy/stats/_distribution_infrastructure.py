@@ -7,7 +7,7 @@ from numpy import inf
 
 from scipy._lib._util import _lazywhere
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
-from scipy import special
+from scipy import special, stats
 from scipy.integrate._tanhsinh import _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
@@ -1937,8 +1937,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
             # might need to figure out result type based on p
             return np.empty(p.shape, dtype=self._dtype)
 
-        def f2(x, p, **kwargs):
-            return f(x, **kwargs) - p
+        def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
+            return f(x, **kwargs) - _p
 
         f3, args = _kwargs2args(f2, args=[p], kwargs=params)
         # If we know the median or mean, should use it
@@ -2560,7 +2560,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
             method = self._logccdf_quadrature
         return method
 
-    def _logccdf_formula(self):
+    def _logccdf_formula(self, x, **params):
         raise NotImplementedError(self._not_implemented)
 
     def _logccdf_complement(self, x, **params):
@@ -2646,7 +2646,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._ccdf_quadrature(x[mask], *params_mask)
+            out[mask] = self._ccdf_quadrature(x[mask], **params_mask)
         return out[()]
 
     def _ccdf_quadrature(self, x, **params):
@@ -3092,7 +3092,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         i = np.arange(n+1).reshape([-1]+[1]*a.ndim)  # orthogonal to other axes
         i = self._preserve_type(i)
         n_choose_i = special.binom(n, i)
-        moment_b = np.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
+        with np.errstate(invalid='ignore'):  # can happen with infinite moment
+            moment_b = np.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
         return moment_b
 
     def _logmoment(self, order=1, *, logcenter=None, standardized=False):
@@ -3386,6 +3387,137 @@ class ContinuousDistribution(_ProbabilityDistribution):
     #     return _differentiate(f, self._parameters[var]).df
     #
     # fit method removed for initial PR
+
+
+def make_distribution(dist):
+    """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
+
+    The returned value is a `ContinuousDistribution` subclass. Like any subclass
+    of `ContinuousDistribution`, it must be instantiated (i.e. by passing all shape
+    parameters as keyword arguments) before use. Once instantiated, the resulting
+    object will have the same interface as any other instance of
+    `ContinuousDistribution`; e.g., `scipy.stats.Normal`.
+
+    .. note::
+
+        `make_distribution` does not work with all instances of `rv_continuous`.
+        Known failures include 'genpareto', 'genextreme', 'genhalflogistic',
+        'irwinhall', 'kstwo', 'kappa4', 'levy_stable', 'norminvgauss',
+        'tukeylambda', and `vonmises`.
+
+    Parameters
+    ----------
+    dist : `rv_continuous`
+        Instance of `rv_continuous`.
+
+    Returns
+    -------
+    CustomDistribution : `ContinuousDistribution`
+        A subclass of `ContinuousDistribution` corresponding with `dist`. The
+        initializer requires all shape parameters to be passed as keyword arguments
+        (using the same names as the instance of `rv_continuous`).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>> LogU = stats.make_distribution(stats.loguniform)
+    >>> X = LogU(a=1.0, b=3.0)
+    >>> np.isclose((X + 0.25).median(), stats.loguniform.ppf(0.5, 1, 3, loc=0.25))
+    np.True_
+    >>> X.plot()
+    >>> sample = X.sample(10000, rng=np.random.default_rng())
+    >>> plt.hist(sample, density=True, bins=30)
+    >>> plt.legend(('pdf', 'histogram'))
+    >>> plt.show()
+
+    """
+    # todo: check genpareto, genextreme, genhalflogistic, kstwo, kappa4, tukeylambda
+    parameters = []
+    names = []
+    support = getattr(dist, '_support', (dist.a, dist.b))
+    for shape_info in dist._shape_info():
+        domain = _RealDomain(endpoints=shape_info.endpoints,
+                             inclusive=shape_info.inclusive)
+        param = _RealParameter(shape_info.name, domain=domain)
+        parameters.append(param)
+        names.append(shape_info.name)
+
+    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
+
+    class CustomDistribution(ContinuousDistribution):
+        _parameterizations = ([_Parameterization(*parameters)] if parameters
+                              else [])
+        _variable = _x_param
+
+    def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
+        return dist._rvs(size=full_shape, random_state=rng, **kwargs)
+
+    def _moment_raw_formula(self, n, **kwargs):
+        return dist._munp(int(n), **kwargs)
+
+    def _moment_raw_formula_1(self, order, **kwargs):
+        if order != 1:
+            return None
+        return dist._stats(**kwargs)[0]
+
+    def _moment_central_formula(self, order, **kwargs):
+        if order != 2:
+            return None
+        return dist._stats(**kwargs)[1]
+
+    def _moment_standard_formula(self, order, **kwargs):
+        if order == 3:
+            if dist._stats_has_moments:
+                kwargs['moments'] = 's'
+            return dist._stats(**kwargs)[int(order - 1)]
+        elif order == 4:
+            if dist._stats_has_moments:
+                kwargs['moments'] = 'k'
+            k = dist._stats(**kwargs)[int(order - 1)]
+            return k if k is None else k + 3
+        else:
+            return None
+
+    methods = {'_logpdf': '_logpdf_formula',
+               '_pdf': '_pdf_formula',
+               '_logcdf': '_logcdf_formula',
+               '_cdf': '_cdf_formula',
+               '_logsf': '_logccdf_formula',
+               '_sf': '_ccdf_formula',
+               '_ppf': '_icdf_formula',
+               '_isf': '_iccdf_formula',
+               '_entropy': '_entropy_formula',
+               '_median': '_median_formula'}
+
+    for old_method, new_method in methods.items():
+        # If method of old distribution overrides generic implementation...
+        method = getattr(dist.__class__, old_method, None)
+        super_method = getattr(stats.rv_continuous, old_method, None)
+        if method is not super_method:
+            # Make it an attribute of the new object with the new name
+            setattr(CustomDistribution, new_method, getattr(dist, old_method))
+
+    def _overrides(method_name):
+        return (getattr(dist.__class__, method_name, None)
+                is not getattr(stats.rv_continuous, method_name, None))
+
+    if _overrides('_munp'):
+        CustomDistribution._moment_raw_formula = _moment_raw_formula
+
+    if _overrides('_rvs'):
+        CustomDistribution._sample_formula = _sample_formula
+
+    if _overrides('_stats'):
+        CustomDistribution._moment_standardized_formula = _moment_standard_formula
+        if not _overrides('_munp'):
+            CustomDistribution._moment_raw_formula = _moment_raw_formula_1
+            CustomDistribution._moment_central_formula = _moment_central_formula
+
+    return CustomDistribution
+
 
 # Rough sketch of how we might shift/scale distributions. The purpose of
 # making it a separate class is for

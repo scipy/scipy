@@ -127,6 +127,9 @@ dodoFile = "dev.py"
 [tool.spin]
 package = 'scipy'
 
+[tool.meson-python.args]
+install = ['--skip-subprojects']
+
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
 # We're only testing with essential test dependencies, not optional ones.

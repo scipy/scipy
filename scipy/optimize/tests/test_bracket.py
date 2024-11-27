@@ -1,12 +1,16 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_array_less, assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize._bracket import _ELIMITS
 from scipy.optimize.elementwise import bracket_root, bracket_minimum
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
+from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
+                                         xp_assert_less, array_namespace)
+from scipy._lib._array_api import xp_ravel, is_torch
+from scipy.conftest import array_api_compatible
 
 
 # These tests were originally written for the private `optimize._bracket`
@@ -38,12 +42,19 @@ def _bracket_minimum(*args, **kwargs):
     return res
 
 
+array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
+jax_skip_reason = 'JAX arrays do not support item assignment.'
+
+@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
 class TestBracketRoot:
     @pytest.mark.parametrize("seed", (615655101, 3141866013, 238075752))
     @pytest.mark.parametrize("use_xmin", (False, True))
     @pytest.mark.parametrize("other_side", (False, True))
     @pytest.mark.parametrize("fix_one_side", (False, True))
-    def test_nfev_expected(self, seed, use_xmin, other_side, fix_one_side):
+    def test_nfev_expected(self, seed, use_xmin, other_side, fix_one_side, xp):
         # Property-based test to confirm that _bracket_root is behaving as
         # expected. The basic case is when root < a < b.
         # The number of times bracket expands (per side) can be found by
@@ -53,9 +64,8 @@ class TestBracketRoot:
         # into the expression for the ends of the bracket.
         # `other_side=True` is the case that a < b < root
         # Special cases like a < root < b are tested separately
-
         rng = np.random.default_rng(seed)
-        xl0, d, factor = rng.random(size=3) * [1e5, 10, 5]
+        xl0, d, factor = xp.asarray(rng.random(size=3) * [1e5, 10, 5])
         factor = 1 + factor  # factor must be greater than 1
         xr0 = xl0 + d  # xr0 must be greater than a in basic case
 
@@ -64,12 +74,12 @@ class TestBracketRoot:
             return x  # root is 0
 
         if use_xmin:
-            xmin = -rng.random()
-            n = np.ceil(np.log(-(xl0 - xmin) / xmin) / np.log(factor))
+            xmin = xp.asarray(-rng.random())
+            n = xp.ceil(xp.log(-(xl0 - xmin) / xmin) / xp.log(factor))
             l, u = xmin + (xl0 - xmin)*factor**-n, xmin + (xl0 - xmin)*factor**-(n - 1)
             kwargs = dict(xl0=xl0, xr0=xr0, factor=factor, xmin=xmin)
         else:
-            n = np.ceil(np.log(xr0/d) / np.log(factor))
+            n = xp.ceil(xp.log(xr0/d) / xp.log(factor))
             l, u = xr0 - d*factor**n, xr0 - d*factor**(n-1)
             kwargs = dict(xl0=xl0, xr0=xr0, factor=factor)
 
@@ -105,33 +115,33 @@ class TestBracketRoot:
 
         # Compare reported bracket to theoretical bracket and reported function
         # values to function evaluated at bracket.
-        bracket = np.asarray([res.xl, res.xr])
-        assert_allclose(bracket, (l, u))
-        f_bracket = np.asarray([res.fl, res.fr])
-        assert_allclose(f_bracket, f(bracket))
+        bracket = xp.asarray([res.xl, res.xr])
+        xp_assert_close(bracket, xp.asarray([l, u]))
+        f_bracket = xp.asarray([res.fl, res.fr])
+        xp_assert_close(f_bracket, f(bracket))
 
         # Check that bracket is valid and that status and success are correct
         assert res.xr > res.xl
-        signs = np.sign(f_bracket)
+        signs = xp.sign(f_bracket)
         assert signs[0] == -signs[1]
         assert res.status == 0
         assert res.success
 
     def f(self, q, p):
-        return stats.norm.cdf(q) - p
+        return stats._stats_py._SimpleNormal().cdf(q) - p
 
     @pytest.mark.parametrize('p', [0.6, np.linspace(0.05, 0.95, 10)])
     @pytest.mark.parametrize('xmin', [-5, None])
     @pytest.mark.parametrize('xmax', [5, None])
     @pytest.mark.parametrize('factor', [1.2, 2])
-    def test_basic(self, p, xmin, xmax, factor):
+    def test_basic(self, p, xmin, xmax, factor, xp):
         # Test basic functionality to bracket root (distribution PPF)
-        res = _bracket_root(self.f, -0.01, 0.01, xmin=xmin, xmax=xmax,
-                            factor=factor, args=(p,))
-        assert_equal(-np.sign(res.fl), np.sign(res.fr))
+        res = _bracket_root(self.f, xp.asarray(-0.01), 0.01, xmin=xmin, xmax=xmax,
+                            factor=factor, args=(xp.asarray(p),))
+        xp_assert_equal(-xp.sign(res.fl), xp.sign(res.fr))
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
-    def test_vectorization(self, shape):
+    def test_vectorization(self, shape, xp):
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
         p = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
@@ -157,76 +167,85 @@ class TestBracketRoot:
             i = rng.random(size=shape) > 0.5
             xmin[i], xmax[i] = -np.inf, np.inf
         factor = rng.random(size=shape) + 1.5
+        refs = bracket_root_single(xl0, xr0, xmin, xmax, factor, p).ravel()
+        xl0, xr0, xmin, xmax, factor = (xp.asarray(xl0), xp.asarray(xr0),
+                                        xp.asarray(xmin), xp.asarray(xmax),
+                                        xp.asarray(factor))
+        args = tuple(map(xp.asarray, args))
         res = _bracket_root(f, xl0, xr0, xmin=xmin, xmax=xmax, factor=factor,
                             args=args, maxiter=maxiter)
-        refs = bracket_root_single(xl0, xr0, xmin, xmax, factor, p).ravel()
 
         attrs = ['xl', 'xr', 'fl', 'fr', 'success', 'nfev', 'nit']
         for attr in attrs:
-            ref_attr = [getattr(ref, attr) for ref in refs]
+            ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
-            assert_allclose(res_attr.ravel(), ref_attr)
-            assert_equal(res_attr.shape, shape)
+            rtol = 5e-7 if is_torch(xp) else None  # consider looking into this
+            xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr), rtol=rtol)
+            xp_assert_equal(res_attr.shape, shape)
 
-        assert np.issubdtype(res.success.dtype, np.bool_)
+        xp_test = array_namespace(xp.asarray(1.))
+        assert res.success.dtype == xp_test.bool
         if shape:
-            assert np.all(res.success[1:-1])
-        assert np.issubdtype(res.status.dtype, np.integer)
-        assert np.issubdtype(res.nfev.dtype, np.integer)
-        assert np.issubdtype(res.nit.dtype, np.integer)
-        assert_equal(np.max(res.nit), f.f_evals - 2)
-        assert_array_less(res.xl, res.xr)
-        assert_allclose(res.fl, self.f(res.xl, *args))
-        assert_allclose(res.fr, self.f(res.xr, *args))
+            assert xp.all(res.success[1:-1])
+        assert res.status.dtype == xp.int32
+        assert res.nfev.dtype == xp.int32
+        assert res.nit.dtype == xp.int32
+        assert xp.max(res.nit) == f.f_evals - 2
+        xp_assert_less(res.xl, res.xr)
+        xp_assert_close(res.fl, xp.asarray(self.f(res.xl, *args)))
+        xp_assert_close(res.fr, xp.asarray(self.f(res.xr, *args)))
 
-    def test_flags(self):
+    def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously.
         def f(xs, js):
             funcs = [lambda x: x - 1.5,
                      lambda x: x - 1000,
                      lambda x: x - 1000,
-                     lambda x: np.nan,
+                     lambda x: x * xp.nan,
                      lambda x: x]
 
-            return [funcs[j](x) for x, j in zip(xs, js)]
+            return [funcs[int(j)](x) for x, j in zip(xs, js)]
 
-        args = (np.arange(5, dtype=np.int64),)
+        args = (xp.arange(5, dtype=xp.int64),)
         res = _bracket_root(f,
-                            xl0=[-1, -1, -1, -1, 4],
-                            xr0=[1, 1, 1, 1, -4],
-                            xmin=[-np.inf, -1, -np.inf, -np.inf, 6],
-                            xmax=[np.inf, 1, np.inf, np.inf, 2],
+                            xl0=xp.asarray([-1., -1., -1., -1., 4.]),
+                            xr0=xp.asarray([1, 1, 1, 1, -4]),
+                            xmin=xp.asarray([-xp.inf, -1, -xp.inf, -xp.inf, 6]),
+                            xmax=xp.asarray([xp.inf, 1, xp.inf, xp.inf, 2]),
                             args=args, maxiter=3)
 
-        ref_flags = np.array([eim._ECONVERGED,
-                              _ELIMITS,
-                              eim._ECONVERR,
-                              eim._EVALUEERR,
-                              eim._EINPUTERR])
+        ref_flags = xp.asarray([eim._ECONVERGED,
+                                _ELIMITS,
+                                eim._ECONVERR,
+                                eim._EVALUEERR,
+                                eim._EINPUTERR],
+                               dtype=xp.int32)
 
-        assert_equal(res.status, ref_flags)
+        xp_assert_equal(res.status, ref_flags)
 
     @pytest.mark.parametrize("root", (0.622, [0.622, 0.623]))
     @pytest.mark.parametrize('xmin', [-5, None])
     @pytest.mark.parametrize('xmax', [5, None])
-    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
-    def test_dtype(self, root, xmin, xmax, dtype):
+    @pytest.mark.parametrize("dtype", ("float16", "float32", "float64"))
+    def test_dtype(self, root, xmin, xmax, dtype, xp):
         # Test that dtypes are preserved
+        dtype = getattr(xp, dtype)
+        xp_test = array_namespace(xp.asarray(1.))
 
-        xmin = xmin if xmin is None else dtype(xmin)
-        xmax = xmax if xmax is None else dtype(xmax)
-        root = dtype(root)
+        xmin = xmin if xmin is None else xp.asarray(xmin, dtype=dtype)
+        xmax = xmax if xmax is None else xp.asarray(xmax, dtype=dtype)
+        root = xp.asarray(root, dtype=dtype)
         def f(x, root):
-            return ((x - root) ** 3).astype(dtype)
+            return xp_test.astype((x - root) ** 3, dtype)
 
-        bracket = np.asarray([-0.01, 0.01], dtype=dtype)
+        bracket = xp.asarray([-0.01, 0.01], dtype=dtype)
         res = _bracket_root(f, *bracket, xmin=xmin, xmax=xmax, args=(root,))
-        assert np.all(res.success)
+        assert xp.all(res.success)
         assert res.xl.dtype == res.xr.dtype == dtype
         assert res.fl.dtype == res.fr.dtype == dtype
 
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
         # Test input validation for appropriate error messages
 
         message = '`func` must be callable.'
@@ -249,10 +268,10 @@ class TestBracketRoot:
         with pytest.raises(ValueError, match=message):
             _bracket_root(lambda x: x, -4, 4, factor=0.5)
 
-        message = "shape mismatch: objects cannot be broadcast"
-        # raised by `np.broadcast, but the traceback is readable IMO
-        with pytest.raises(ValueError, match=message):
-            _bracket_root(lambda x: x, [-2, -3], [3, 4, 5])
+        message = "broadcast"
+        # raised by `xp.broadcast, but the traceback is readable IMO
+        with pytest.raises(Exception, match=message):
+            _bracket_root(lambda x: x, xp.asarray([-2, -3]), xp.asarray([3, 4, 5]))
         # Consider making this give a more readable error message
         # with pytest.raises(ValueError, match=message):
         #     _bracket_root(lambda x: [x[0], x[1], x[1]], [-3, -3], [5, 5])
@@ -265,24 +284,24 @@ class TestBracketRoot:
         with pytest.raises(ValueError, match=message):
             _bracket_root(lambda x: x, -4, 4, maxiter="shrubbery")
 
-
-    def test_special_cases(self):
+    def test_special_cases(self, xp):
         # Test edge cases and other special cases
+        xp_test = array_namespace(xp.asarray(1.))
 
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            assert np.issubdtype(x.dtype, np.floating)
+            assert xp_test.isdtype(x.dtype, "real floating")
             return x ** 99 - 1
 
-        res = _bracket_root(f, -7, 5)
+        res = _bracket_root(f, xp.asarray(-7.), xp.asarray(5.))
         assert res.success
 
         # Test maxiter = 0. Should do nothing to bracket.
         def f(x):
             return x - 10
 
-        bracket = (-3, 5)
+        bracket = (xp.asarray(-3.), xp.asarray(5.))
         res = _bracket_root(f, *bracket, maxiter=0)
         assert res.xl, res.xr == bracket
         assert res.nit == 0
@@ -293,9 +312,10 @@ class TestBracketRoot:
         def f(x, c):
             return c*x - 1
 
-        res = _bracket_root(f, -1, 1, args=3)
+        res = _bracket_root(f, xp.asarray(-1.), xp.asarray(1.),
+                            args=xp.asarray(3.))
         assert res.success
-        assert_allclose(res.fl, f(res.xl, 3))
+        xp_assert_close(res.fl, f(res.xl, 3))
 
         # Test other edge cases
 
@@ -305,29 +325,33 @@ class TestBracketRoot:
 
         # 1. root lies within guess of bracket
         f.count = 0
-        _bracket_root(f, -10, 20)
-        assert_equal(f.count, 2)
+        _bracket_root(f, xp.asarray(-10), xp.asarray(20))
+        assert f.count == 2
 
         # 2. bracket endpoint hits root exactly
         f.count = 0
-        res = _bracket_root(f, 5, 10, factor=2)
-        bracket = (res.xl, res.xr)
-        assert_equal(res.nfev, 4)
-        assert_allclose(bracket, (0, 5), atol=1e-15)
+        res = _bracket_root(f, xp.asarray(5.), xp.asarray(10.), 
+                            factor=2)
+
+        assert res.nfev == 4
+        xp_assert_close(res.xl, xp.asarray(0.), atol=1e-15)
+        xp_assert_close(res.xr, xp.asarray(5.), atol=1e-15)
 
         # 3. bracket limit hits root exactly
         with np.errstate(over='ignore'):
-            res = _bracket_root(f, 5, 10, xmin=0)
-        bracket = (res.xl, res.xr)
-        assert_allclose(bracket[0], 0, atol=1e-15)
+            res = _bracket_root(f, xp.asarray(5.), xp.asarray(10.), 
+                                xmin=0)
+        xp_assert_close(res.xl, xp.asarray(0.), atol=1e-15)
+
         with np.errstate(over='ignore'):
-            res = _bracket_root(f, -10, -5, xmax=0)
-        bracket = (res.xl, res.xr)
-        assert_allclose(bracket[1], 0, atol=1e-15)
+            res = _bracket_root(f, xp.asarray(-10.), xp.asarray(-5.), 
+                                xmax=0)
+        xp_assert_close(res.xr, xp.asarray(0.), atol=1e-15)
 
         # 4. bracket not within min, max
         with np.errstate(over='ignore'):
-            res = _bracket_root(f, 5, 10, xmin=1)
+            res = _bracket_root(f, xp.asarray(5.), xp.asarray(10.),
+                                xmin=1)
         assert not res.success
 
 

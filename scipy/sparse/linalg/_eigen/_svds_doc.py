@@ -1,6 +1,6 @@
 def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
-                     solver='arpack', random_state=None):
+                     solver='arpack', rng=None):
     """
     Partial singular value decomposition of a sparse matrix using ARPACK.
 
@@ -54,17 +54,11 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>` and
             :ref:`'propack' <sparse.linalg.svds-propack>`
             are also supported.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     options : dict, optional
         A dictionary of solver-specific options. No solver-specific options
         are currently supported; this parameter is reserved for future use.
@@ -134,7 +128,7 @@ def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
 def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
-                     solver='lobpcg', random_state=None):
+                     solver='lobpcg', rng=None):
     """
     Partial singular value decomposition of a sparse matrix using LOBPCG.
 
@@ -184,17 +178,11 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'propack' <sparse.linalg.svds-propack>`
             are also supported.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     options : dict, optional
         A dictionary of solver-specific options. No solver-specific options
         are currently supported; this parameter is reserved for future use.
@@ -265,7 +253,7 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
 def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                       maxiter=None, return_singular_vectors=True,
-                      solver='propack', random_state=None):
+                      solver='propack', rng=None):
     """
     Partial singular value decomposition of a sparse matrix using PROPACK.
 
@@ -314,17 +302,11 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'arpack' <sparse.linalg.svds-arpack>` and
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`
             are also supported.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     options : dict, optional
         A dictionary of solver-specific options. No solver-specific options
         are currently supported; this parameter is reserved for future use.
