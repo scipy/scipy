@@ -66,7 +66,7 @@ private:
   }
 };
 
-PYBIND11_MODULE(_highs_options, m) {
+PYBIND11_MODULE(_highs_options, m, py::mod_gil_not_used()) {
   py::class_<HighsOptionsManager>(m, "HighsOptionsManager")
       .def(py::init<>())
       .def("get_option_type",
