@@ -756,14 +756,17 @@ def refguide_check(ctx, build_dir=None, *args, **kwargs):
     util.run(cmd)
 
 @click.command()
-@click.argument("pytest_args", nargs=-1)
+@click.argument(
+    'pytest_args', nargs=-1, metavar='PYTEST-ARGS', required=False
+)
 @click.option(
     '--tests', '-t', default=None, multiple=True, metavar='TESTS',
     help='Specify *rst files to smoke test')
 @click.option(
     '--verbose', '-v', default=False, is_flag=True, help="verbosity")
+@meson.build_dir_option
 @click.pass_context
-def smoke_tutorials(ctx, pytest_args, *args, **kwargs):
+def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs):
     """🔧 Run doctests of user-facing rst tutorials.
 
     To test all tutorials in the scipy doc/source/tutorial directory, use
@@ -786,35 +789,31 @@ def smoke_tutorials(ctx, pytest_args, *args, **kwargs):
        from the top-level `__init__.py` file.
 
     """  # noqa: E501
-    # handle all of
-    #   - `spin check-tutorials` (pytest_args == ())
-    #   - `spin check-tutorials path/to/rst`, and
-    #   - `spin check-tutorials path/to/rst -- --durations=3`
-    doctest_args = tuple()
-    if ctx.params["tests"]:
-        pytest_args = ctx.params["tests"]
-        del ctx.params["tests"]
+
+    click.secho(
+        "Invoking `build` prior to running tests for tutorials:",
+        bold=True, fg="bright_green"
+    )
+    ctx.invoke(build)
+
+    meson._set_pythonpath(build_dir)
+
+    cmd = ['pytest']
+    if tests:
+        cmd += list(tests)
     else:
-        # turn doctesting on:
-        doctest_args = (
-            '--doctest-glob=*rst',
-        )
+        cmd += ['doc/source/tutorial', '--doctest-glob=*rst']
+    if verbose:
+        cmd += ['-v']
 
-    if (not pytest_args) or all(arg.startswith('-') for arg in pytest_args):
-        pytest_args = ('doc/source/tutorial',) + pytest_args
+    extra_argv = list(pytest_args[:]) if pytest_args else []
+    if extra_argv and extra_argv[0] == '--':
+        extra_argv = extra_argv[1:]
+    cmd += extra_argv
 
-    # make all paths relative to the numpy source folder
-    curdir = Path(__file__).parent
-    pytest_args = tuple(
-        os.path.join(curdir, '..', arg) if not arg.startswith('-') else arg
-        for arg in pytest_args
-   )
-
-    pytest_args = pytest_args + doctest_args
-
-    ctx.params['pytest_args'] = pytest_args
-
-    ctx.forward(test)
+    cmd_str = ' '.join(cmd)
+    emit_cmdstr(cmd_str)
+    util.run(cmd)
 
 @click.command()
 @click.option(
