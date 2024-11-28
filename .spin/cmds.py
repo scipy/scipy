@@ -320,7 +320,7 @@ def cpu_count(only_physical_cores=False):
     show_default=True, help="Install tags to be used by meson."
 )
 @spin.util.extend_command(spin.cmds.meson.build)
-def build(*, parent_callback, werror, asan, debug,
+def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
           release, parallel, setup_args, show_build_log,
           with_scipy_openblas, with_accelerate, tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
@@ -340,7 +340,6 @@ def build(*, parent_callback, werror, asan, debug,
     MESON_COMPILE_ARGS = "meson_compile_args"
     MESON_INSTALL_ARGS = "meson_install_args"
 
-    meson_args = kwargs[MESON_ARGS]
     meson_compile_args = tuple()
     meson_install_args = tuple()
 
@@ -394,20 +393,21 @@ def build(*, parent_callback, werror, asan, debug,
         # Use number of physical cores rather than ninja's default of 2N+2,
         # to avoid out of memory issues (see gh-17941 and gh-18443)
         n_cores = cpu_count(only_physical_cores=True)
-        kwargs['jobs'] = n_cores
+        jobs = n_cores
     else:
-        kwargs['jobs'] = parallel
+        jobs = parallel
 
     meson_install_args = meson_install_args + ("--tags=" + tags, )
 
     if show_build_log:
-        kwargs['verbose'] = show_build_log
+        verbose = show_build_log
 
-    kwargs[MESON_ARGS] = meson_args
-    kwargs[MESON_COMPILE_ARGS] = meson_compile_args
-    kwargs[MESON_INSTALL_ARGS] = meson_install_args
-
-    parent_callback(**kwargs)
+    parent_callback(**{MESON_ARGS: meson_args,
+                       MESON_COMPILE_ARGS: meson_compile_args,
+                       MESON_INSTALL_ARGS: meson_install_args,
+                       "jobs": jobs,
+                       "verbose": verbose,
+                       **kwargs})
 
 @click.option(
     '--durations', '-d', default=None, metavar="NUM_TESTS",
