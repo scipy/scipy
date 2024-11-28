@@ -3577,13 +3577,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
       and ``method='exact'`` is preferred (at the cost of additional
       execution time).
 
-    - The default, ``method='auto'``, selects between the two: when
-      ``len(d) <= 50`` and there are no zeros and no ties, the exact method
-      is used; if the sample size is small and there are zeros or ties, the
-      p-value is computed using `permutation_test`;
-      otherwise, the approximate method is used. The p-value computed by
-      the permutation test is deterministic since it is only used if the
-      sample size is small enough to iterate over all possible outcomes.
+    - The default, ``method='auto'``, selects between the two:
+      ``method='exact'`` is used when ``len(d) <= 50``, and
+      ``method='asymptotic'`` is used otherwise.
 
     The presence of "ties" (i.e. not all elements of ``d`` are unique) or
     "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
@@ -3592,9 +3588,20 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     for more accurate comparison against the standard normal, but still,
     for finite sample sizes, the standard normal is only an approximation of
     the true null distribution of the z-statistic. For such situations, the
-    `method` parameter also accepts instances `PermutationMethod`. In this
+    `method` parameter also accepts instances of `PermutationMethod`. In this
     case, the p-value is computed using `permutation_test` with the provided
     configuration options and other appropriate settings.
+
+    The presence of ties and zeros affects the resolution of ``method='auto'``
+    accordingly: exhasutive permutations are performed when ``len(d) <= 13``,
+    and the asymptotic method is used otherwise. Note that they asymptotic
+    method may not be very accurate even for ``len(d) > 14``; the threshold
+    was chosen as a compromise between execution time and accuracy under the
+    constraint that the results must be deterministic. Consider providing an
+    instance of `PermutationMethod` method manually, choosing the
+    ``n_resamples`` parameter to balance time constraints and accuracy
+    requirements.
+
     Please also note that in the edge case that all elements of ``d`` are zero,
     the p-value relying on the normal approximaton cannot be computed (NaN)
     if ``zero_method='wilcox'`` or ``zero_method='pratt'``.
