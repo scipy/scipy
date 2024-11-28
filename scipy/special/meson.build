@@ -35,7 +35,7 @@ else
 endif
 
 sf_error_state_lib = shared_library('sf_error_state',
-  ['sf_error_state.cpp'],
+  ['sf_error_state.c'],
   include_directories: ['../_lib', '../_build_utils/src'],
   c_args: scipy_export_dll_args,
   install: true,

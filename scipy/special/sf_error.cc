@@ -3,7 +3,6 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-#include <signal.h>
 
 #include "sf_error.h"
 
@@ -26,10 +25,6 @@ const char *sf_error_messages[] = {
 
 extern "C" int wrap_PyUFunc_getfperr(void);
 
-#ifdef Py_GIL_DISABLED
-PyMutex err_mutex = {0};
-#endif
-
 void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list ap) {
     /* Internal function which takes a va_list instead of variadic args.
      * Makes this easier to wrap in error handling used in special C++
@@ -45,7 +40,6 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     if ((int) code < 0 || (int) code >= 10) {
         code = SF_ERROR_OTHER;
     }
-
     action = scipy_sf_error_get_action(code);
     if (action == SF_ERROR_IGNORE) {
         return;
@@ -62,13 +56,10 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
         PyOS_snprintf(msg, 2048, "scipy.special/%s: %s", func_name, sf_error_messages[(int) code]);
     }
 
-#ifndef Py_GIL_DISABLED
 #ifdef WITH_THREAD
     save = PyGILState_Ensure();
 #endif
-#else
-    PyMutex_Lock(&err_mutex);
-#endif
+
     if (PyErr_Occurred()) {
         goto skip_warn;
     }
@@ -108,14 +99,10 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     }
 
 skip_warn:
-#ifndef Py_GIL_DISABLED
 #ifdef WITH_THREAD
     PyGILState_Release(save);
 #else
     ;
-#endif
-#else
-    PyMutex_Unlock(&err_mutex);
 #endif
 }
 

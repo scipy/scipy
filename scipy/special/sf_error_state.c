@@ -1,12 +1,10 @@
 #include <stdlib.h>
-#include <mutex>
+
 #include "sf_error_state.h"
 
 
-static std::mutex err_mutex;
-
 /* If this isn't volatile clang tries to optimize it away */
-static volatile thread_local sf_action_t sf_error_actions[] = {
+static volatile sf_action_t sf_error_actions[] = {
     SF_ERROR_IGNORE, /* SF_ERROR_OK */
     SF_ERROR_IGNORE, /* SF_ERROR_SINGULAR */
     SF_ERROR_IGNORE, /* SF_ERROR_UNDERFLOW */
