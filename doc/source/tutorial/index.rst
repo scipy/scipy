@@ -51,6 +51,9 @@ There are also additional user guides for these topics:
 
 For guidance on organizing and importing functions from SciPy subpackages, refer to the `Guidelines for Importing Functions from SciPy <https://scipy.github.io/devdocs/reference/index.html#guidelines-for-importing-functions-from-scipy>`_.
 
+For information on support for parallel execution and thread safety, see
+:ref:`scipy_parallel_execution` and :ref:`scipy_thread_safety`.
+
 .. raw:: latex
 
    \addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
@@ -74,6 +77,9 @@ For guidance on organizing and importing functions from SciPy subpackages, refer
    stats
    arpack
    csgraph
+   parallel_execution
+   thread_safety
+
 
 .. raw:: latex
 
