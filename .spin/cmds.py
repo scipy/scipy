@@ -12,26 +12,12 @@ from copy import deepcopy
 
 import spin
 import click
-from rich.console import Console
-from rich.theme import Theme
 from spin import util
 from spin.cmds import meson
 
 from pathlib import Path
 
 PROJECT_MODULE = "scipy"
-
-console_theme = Theme({
-    "cmd": "italic gray50",
-})
-
-if sys.platform == 'win32':
-    class EMOJI:
-        cmd = ">"
-else:
-    class EMOJI:
-        cmd = ":computer:"
-
 
 # # Check that the meson git submodule is present
 # curdir = pathlib.Path(__file__).parent
@@ -612,18 +598,6 @@ def working_dir(new_dir):
     finally:
         os.chdir(current_dir)
 
-def emit_cmdstr(cmd):
-    """Print the command that's being run to stdout
-
-    Note: cannot use this in the below tasks (yet), because as is these command
-    strings are always echoed to the console, even if the command isn't run
-    (but for example the `build` command is run).
-    """
-    console = Console(theme=console_theme)
-    # The [cmd] square brackets controls the font styling, typically in italics
-    # to differentiate it from other stdout content
-    console.print(f"{EMOJI.cmd} [cmd] {cmd}")
-
 @click.command(context_settings={"ignore_unknown_options": True})
 @meson.build_dir_option
 @click.pass_context
@@ -652,7 +626,8 @@ def mypy(ctx, build_dir=None):
 
     with working_dir(install_dir):
         os.environ['MYPY_FORCE_COLOR'] = '1'
-        emit_cmdstr(f"mypy.api.run --config-file {config} {check_path}")
+        click.secho(f"mypy.api.run --config-file {config} {check_path}",
+                    bold=True, fg="bright_blue")
         report, errors, status = mypy.api.run([
             "--config-file",
             str(config),
@@ -810,7 +785,7 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
     cmd += extra_argv
 
     cmd_str = ' '.join(cmd)
-    emit_cmdstr(cmd_str)
+    click.secho(cmd_str, bold=True, fg="bright_blue")
     util.run(cmd)
 
 @click.command()
