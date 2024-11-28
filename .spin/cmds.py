@@ -433,7 +433,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
     )
 )
 @spin.util.extend_command(spin.cmds.meson.test)
-def test(*, parent_callback, durations, submodule,
+def test(*, parent_callback, pytest_args, tests, durations, submodule,
          mode, parallel, array_api_backend, **kwargs):
     """🔧 Run tests
 
@@ -461,8 +461,6 @@ def test(*, parent_callback, durations, submodule,
 
     For more, see `pytest --help`.
     """  # noqa: E501
-    tests = kwargs['tests']
-    pytest_args = kwargs["pytest_args"]
 
     if submodule:
         tests = PROJECT_MODULE + "." + submodule
@@ -485,12 +483,13 @@ def test(*, parent_callback, durations, submodule,
     if tests and '--pyargs' not in pytest_args:
         pytest_args += ('--pyargs', tests)
 
-    kwargs['pytest_args'] = pytest_args
+    if durations:
+        pytest_args += ('--durations', durations)
 
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 
-    parent_callback(**kwargs)
+    parent_callback(**{"pytest_args": pytest_args, "tests": tests, **kwargs})
 
 @click.option(
         '--list-targets', '-t', default=False, is_flag=True,
