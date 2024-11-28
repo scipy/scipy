@@ -79,8 +79,8 @@ class TestCephes:
         assert_func_equal(cephes.binom, rknown.ravel(), nk, rtol=1e-13)
 
         # Test branches in implementation
-        rng = np.random.RandomState(1234)
-        n = np.r_[np.arange(-7, 30), 1000*rng.rand(30) - 500]
+        np.random.seed(1234)
+        n = np.r_[np.arange(-7, 30), 1000*np.random.rand(30) - 500]
         k = np.arange(0, 102)
         nk = np.array(np.broadcast_arrays(n[:,None], k[None,:])
                       ).reshape(2, -1).T
@@ -1627,9 +1627,8 @@ class TestTandg:
 
 
 class TestEllip:
-    def test_ellipj_nan(self, num_parallel_threads):
+    def test_ellipj_nan(self):
         """Regression test for #912."""
-        special.seterr(domain='ignore')
         special.ellipj(0.5, np.nan)
 
     def test_ellipj(self):
@@ -1966,10 +1965,10 @@ class TestErf:
         assert_array_almost_equal(erz,erzr,4)
 
     def _check_variant_func(self, func, other_func, rtol, atol=0):
-        rng = np.random.RandomState(1234)
+        np.random.seed(1234)
         n = 10000
-        x = rng.pareto(0.02, n) * (2*rng.randint(0, 2, n) - 1)
-        y = rng.pareto(0.02, n) * (2*rng.randint(0, 2, n) - 1)
+        x = np.random.pareto(0.02, n) * (2*np.random.randint(0, 2, n) - 1)
+        y = np.random.pareto(0.02, n) * (2*np.random.randint(0, 2, n) - 1)
         z = x + 1j*y
 
         with np.errstate(all='ignore'):
@@ -2802,7 +2801,6 @@ class TestFactorialFunctions:
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected, rtol=2e-15)
 
-    @pytest.mark.parallel_threads(1)
     @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
@@ -4458,7 +4456,6 @@ def test_rel_entr_gh_20710_near_zero():
 
 
 def test_rel_entr_gh_20710_overflow():
-    special.seterr(all='ignore')
     inputs = np.array([
         # x, y
         # Overflow
