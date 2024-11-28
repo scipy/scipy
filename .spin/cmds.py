@@ -662,7 +662,7 @@ def mypy(ctx, build_dir=None):
     print(errors, end='', file=sys.stderr)
 
 @spin.util.extend_command(test, doc='')
-def smoke_docs(*, parent_callback, **kwargs):
+def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     """🔧 Run doctests of objects in the public API.
 
     PYTEST_ARGS are passed through directly to pytest, e.g.:
@@ -701,7 +701,6 @@ def smoke_docs(*, parent_callback, **kwargs):
         raise ModuleNotFoundError("scipy-doctest not installed") from e
 
     tests = kwargs["tests"]
-    pytest_args = kwargs["pytest_args"]
     if kwargs["submodule"]:
         tests = PROJECT_MODULE + "." + kwargs["submodule"]
 
@@ -719,9 +718,7 @@ def smoke_docs(*, parent_callback, **kwargs):
 
     pytest_args = pytest_args + doctest_args
 
-    kwargs['pytest_args'] = pytest_args
-
-    parent_callback(**kwargs)
+    parent_callback(**{"pytest_args": pytest_args, **kwargs})
 
 @click.command()
 @click.option(
