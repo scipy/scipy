@@ -5,6 +5,8 @@ Finite Difference Differentiation (:mod:`scipy.differentiate`)
 
 .. currentmodule:: scipy.differentiate
 
+.. arrayapi::
+
 SciPy ``differentiate`` provides functions for performing finite difference
 numerical differentiation of black-box functions.
 

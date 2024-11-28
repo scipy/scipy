@@ -475,7 +475,7 @@ def linkcode_resolve(domain, info):
         lineno = None
 
     if lineno:
-        linespec = "#L%d-L%d" % (lineno, lineno + len(source) - 1)
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
     else:
         linespec = ""
 
@@ -553,5 +553,59 @@ class LegacyDirective(Directive):
         return [admonition_node]
 
 
+class ArrayAPIDirective(Directive):
+    """
+    Adapted from LegacyDirective above
+
+    Uses a default text if the directive does not have contents. If it does,
+    the default text is concatenated to the contents.
+
+    """
+    has_content = True
+    node_class = nodes.admonition
+    optional_arguments = 1
+
+    def run(self):
+        try:
+            obj = self.arguments[0]
+        except IndexError:
+            # Argument is empty; use default text
+            obj = "submodule"
+        text = (f"This {obj} has experimental support for Python Array API Standard "
+                "compatible backends other than NumPy. Please consider testing this "
+                "feature by setting an environment variable ``SCIPY_ARRAY_API=1`` and "
+                "providing PyTorch, JAX, or CuPy arrays as array arguments. See "
+                ":ref:`dev-arrayapi` for more information.")
+
+        try:
+            self.content[0] = text+" "+self.content[0]
+        except IndexError:
+            # Content is empty; use the default text
+            source, lineno = self.state_machine.get_source_and_line(
+                self.lineno
+            )
+            self.content.append(
+                text,
+                source=source,
+                offset=lineno
+            )
+        text = '\n'.join(self.content)
+        # Create the admonition node, to be populated by `nested_parse`
+        admonition_node = self.node_class(rawsource=text)
+        # Set custom title
+        title_text = "Array API Standard Support"
+        textnodes, _ = self.state.inline_text(title_text, self.lineno)
+        title = nodes.title(title_text, '', *textnodes)
+        # Set up admonition node
+        admonition_node += title
+        # Select custom class for CSS styling
+        admonition_node['classes'] = ['admonition-arrayapi']
+        # Parse the directive contents
+        self.state.nested_parse(self.content, self.content_offset,
+                                admonition_node)
+        return [admonition_node]
+
+
 def setup(app):
     app.add_directive("legacy", LegacyDirective)
+    app.add_directive("arrayapi", ArrayAPIDirective)
