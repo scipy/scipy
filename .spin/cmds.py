@@ -506,7 +506,8 @@ def test(*, parent_callback, pytest_args, tests, durations, submodule,
             "show up."
 )
 @spin.util.extend_command(spin.cmds.meson.docs)
-def docs(*, parent_callback, list_targets, parallel, no_cache, **kwargs):
+def docs(*, parent_callback, sphinx_target, clean, jobs,
+         list_targets, parallel, no_cache, **kwargs):
     """📖 Build Sphinx documentation
 
     By default, SPHINXOPTS="-W", raising errors on warnings.
@@ -529,24 +530,25 @@ def docs(*, parent_callback, list_targets, parallel, no_cache, **kwargs):
     """
     meson.docs.ignore_unknown_options = True
 
-    if kwargs['clean']:
+    if clean: # SciPy has its own mechanism to clear the previous docs build
         cwd = os.getcwd()
         os.chdir(os.path.join(cwd, "doc"))
         subprocess.call(["make", "clean"], cwd=os.getcwd())
-        kwargs['clean'] = False
+        clean = False
         os.chdir(cwd)
 
     SPHINXOPTS = "-W"
     if no_cache:
         SPHINXOPTS += " -E"
 
-    kwargs["jobs"] = parallel
+    jobs = parallel
     SPHINXOPTS = os.environ.get("SPHINXOPTS", "") + SPHINXOPTS
     os.environ["SPHINXOPTS"] = SPHINXOPTS
 
-    kwargs["sphinx_target"] = "html"
+    sphinx_target = "html"
 
-    parent_callback(**kwargs)
+    parent_callback(**{"sphinx_target": sphinx_target,
+                       "clean": clean, "jobs": jobs, **kwargs})
 
 def _set_pythonpath(pythonpath):
     env = os.environ
