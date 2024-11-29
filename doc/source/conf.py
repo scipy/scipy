@@ -475,7 +475,7 @@ def linkcode_resolve(domain, info):
         lineno = None
 
     if lineno:
-        linespec = "#L%d-L%d" % (lineno, lineno + len(source) - 1)
+        linespec = f"#L{0}-L{1}".format(lineno, lineno + len(source) - 1)
     else:
         linespec = ""
 
