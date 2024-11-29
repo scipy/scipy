@@ -47,23 +47,25 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     f : callable
         The function to be integrated. The signature must be::
 
-            func(x: ndarray, *fargs) -> ndarray
+            f(xi: ndarray, *argsi) -> ndarray
 
-        where each element of ``x`` is a finite real and ``fargs`` is a tuple,
+        where each element of ``xi`` is a finite real number and ``argsi`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with `x`. ``func`` must be an elementwise-scalar function; see
-        documentation of parameter `preserve_shape` for details.
-        If ``func`` returns a value with complex dtype when evaluated at
+        with ``xi``. `f` must be an elementwise function: see documentation of parameter
+        `preserve_shape` for details. It must not mutate the array ``xi`` or the arrays
+        in ``argsi``.
+        If ``f`` returns a value with complex dtype when evaluated at
         either endpoint, subsequent arguments ``x`` will have complex dtype
         (but zero imaginary part).
     a, b : float array_like
-        Real lower and upper limits of integration. Must be broadcastable.
-        Elements may be infinite.
+        Real lower and upper limits of integration. Must be broadcastable with one
+        another and with arrays in `args`. Elements may be infinite.
     args : tuple of array_like, optional
-        Additional positional arguments to be passed to `func`. Must be arrays
-        broadcastable with `a` and `b`. If the callable to be integrated
-        requires arguments that are not broadcastable with `a` and `b`, wrap
-        that callable with `f`. See Examples.
+        Additional positional array arguments to be passed to `f`. Arrays
+        must be broadcastable with one another and the arrays of `a` and `b`.
+        If the callable for which the root is desired requires arguments that are
+        not broadcastable with `x`, wrap that callable with `f` such that `f`
+        accepts only `x` and broadcastable ``*args``.
     log : bool, default: False
         Setting to True indicates that `f` returns the log of the integrand
         and that `atol` and `rtol` are expressed as the logs of the absolute
@@ -96,16 +98,17 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
-        the result dtype), respectively. The error estimate is as
+        the result dtype), respectively.  Iteration will stop when
+        ``res.error < atol + rtol * abs(res.df)``. The error estimate is as
         described in [1]_ Section 5. While not theoretically rigorous or
         conservative, it is said to work well in practice. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
         non-negative and finite number if `log` is True.
     preserve_shape : bool, default: False
-        In the following, "arguments of `f`" refers to the array ``x`` and
-        any arrays within ``fargs``. Let ``shape`` be the broadcasted shape
+        In the following, "arguments of `f`" refers to the array ``xi`` and
+        any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
         of `a`, `b`, and all elements of `args` (which is conceptually
-        distinct from ``fargs`` passed into `f`).
+        distinct from ``xi` and ``argsi`` passed into `f`).
 
         - When ``preserve_shape=False`` (default), `f` must accept arguments
           of *any* broadcastable shapes.
@@ -114,10 +117,10 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
           ``shape`` *or* ``shape + (n,)``, where ``(n,)`` is the number of
           abscissae at which the function is being evaluated.
 
-        In either case, for each scalar element ``xi`` within `x`, the array
-        returned by `f` must include the scalar ``f(xi)`` at the same index.
+        In either case, for each scalar element ``xi[j]`` within ``xi``, the array
+        returned by `f` must include the scalar ``f(xi[j])`` at the same index.
         Consequently, the shape of the output is always the shape of the input
-        ``x``.
+        ``xi``.
 
         See Examples.
 
@@ -128,34 +131,39 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         similar to that returned by `_differentiate` (but containing the
         current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `_tanhsinh` will return a result object.
+        `_tanhsinh` will return a result object. `callback` must not mutate
+        `res` or its attributes.
 
     Returns
     -------
     res : _RichResult
         An instance of `scipy._lib._util._RichResult` with the following
-        attributes. (The descriptions are written as though the values will be
-        scalars; however, if `func` returns an array, the outputs will be
-        arrays of the same shape.)
-        success : bool
+        attributes. The descriptions are written as though the values will be
+        scalars; however, if `f` returns an array, the outputs will be
+        arrays of the same shape.
+
+        success : bool array
             ``True`` when the algorithm terminated successfully (status ``0``).
-        status : int
+            ``False`` otherwise.
+        status : int array
             An integer representing the exit status of the algorithm.
+
             ``0`` : The algorithm converged to the specified tolerances.
             ``-1`` : (unused)
             ``-2`` : The maximum number of iterations was reached.
             ``-3`` : A non-finite value was encountered.
             ``-4`` : Iteration was terminated by `callback`.
             ``1`` : The algorithm is proceeding normally (in `callback` only).
-        integral : float
-            An estimate of the integral
-        error : float
+
+        integral : float array
+            An estimate of the integral.
+        error : float array
             An estimate of the error. Only available if level two or higher
             has been completed; otherwise NaN.
-        maxlevel : int
+        maxlevel : int array
             The maximum refinement level used.
-        nfev : int
-            The number of points at which `func` was evaluated.
+        nfev : int array
+            The number of points at which `f` was evaluated.
 
     See Also
     --------
@@ -168,7 +176,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     tanh-sinh scheme was originally introduced in [4]_.
 
     Due to floating-point error in the abscissae, the function may be evaluated
-    at the endpoints of the interval during iterations. The values returned by
+    at the endpoints of the interval during iterations, but the values returned by
     the function at the endpoints will be ignored.
 
     References
@@ -1012,7 +1020,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     res : _RichResult
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         attributes. (The descriptions are written as though the values will be
-        scalars; however, if `func` returns an array, the outputs will be
+        scalars; however, if `f` returns an array, the outputs will be
         arrays of the same shape.)
 
         success : bool
@@ -1040,7 +1048,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
             the function is computed exactly, and direct summation is accurate to
             the precision of the result dtype.
         nfev : int array
-            The number of points at which `func` was evaluated.
+            The number of points at which `f` was evaluated.
 
     See Also
     --------
