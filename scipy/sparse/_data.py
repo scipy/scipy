@@ -187,7 +187,7 @@ class _minmax_mixin:
             value[not_full] = min_or_max(value[not_full], 0)
 
         mask = value != 0
-        major_index = np.compress(mask, major_index)
+        major_index = np.compress(mask, major_index).astype(idx_dtype, copy=False)
         value = np.compress(mask, value)
 
         if isinstance(self, sparray):

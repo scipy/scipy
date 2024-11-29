@@ -465,6 +465,25 @@ class TestConstructUtils:
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
 
+    def test_vstack_maintain64bit_idx_dtype(self):
+        # see gh-20389 v/hstack returns int32 idx_dtype with input int64 idx_dtype
+        X = csr_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.indptr = X.indptr.astype(np.int64)
+        X.indices = X.indices.astype(np.int64)
+        assert construct.vstack([X, X]).indptr.dtype == np.int64
+        assert construct.hstack([X, X]).indptr.dtype == np.int64
+
+        X = csc_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.indptr = X.indptr.astype(np.int64)
+        X.indices = X.indices.astype(np.int64)
+        assert construct.vstack([X, X]).indptr.dtype == np.int64
+        assert construct.hstack([X, X]).indptr.dtype == np.int64
+
+        X = coo_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.coords = tuple(co.astype(np.int64) for co in X.coords)
+        assert construct.vstack([X, X]).coords[0].dtype == np.int64
+        assert construct.hstack([X, X]).coords[0].dtype == np.int64
+
     def test_vstack_matrix_or_array(self):
         A = [[1,2],[3,4]]
         B = [[5,6]]
@@ -682,7 +701,14 @@ class TestConstructUtils:
                           [0, 0, 6, 0],
                           [0, 0, 0, 7]])
 
-        assert_equal(construct.block_diag((A, B, C)).toarray(), expected)
+        ABC = construct.block_diag((A, B, C))
+        assert_equal(ABC.toarray(), expected)
+        assert ABC.coords[0].dtype == np.int32
+
+    def test_block_diag_idx_dtype(self):
+        X = coo_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.coords = tuple(co.astype(np.int64) for co in X.coords)
+        assert construct.block_diag([X, X]).coords[0].dtype == np.int64
 
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
@@ -795,6 +821,10 @@ class TestConstructUtils:
         arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int,
                                      rng=0)
         assert arr.shape == (10, 10, 10, 10, 10)
+
+    def test_random_array_idx_dtype(self):
+        A = construct.random_array((10, 10))
+        assert A.coords[0].dtype == np.int32
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
