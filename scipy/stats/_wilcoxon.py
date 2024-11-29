@@ -1,4 +1,3 @@
-import warnings
 import numpy as np
 
 from scipy import stats
@@ -110,15 +109,6 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
     n_zero = np.sum(d == 0)
     if method == "auto" and d.shape[-1] > 50:
         method = "asymptotic"
-
-    if n_zero > 0 and method == "exact":
-        warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Consider using method `asymptotic` or "
-                      "`stats.PermutationMethod`",
-                      stacklevel=2)
-
-    if 0 < d.shape[-1] < 10 and method == "asymptotic":
-        warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
     return d, zero_method, correction, alternative, method, axis, output_z, n_zero
 
