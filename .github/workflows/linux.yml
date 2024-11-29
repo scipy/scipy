@@ -32,7 +32,7 @@ jobs:
     # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -149,7 +149,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -209,7 +209,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -239,7 +239,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -292,7 +292,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -374,7 +374,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
@@ -419,7 +419,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -467,7 +467,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -523,7 +523,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

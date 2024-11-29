@@ -35,7 +35,7 @@ jobs:
     #        (b) it does run with Act locally (`github` doesn't exist there)
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
     strategy:
       matrix:
