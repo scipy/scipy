@@ -2152,6 +2152,8 @@ class TestSystematic:
             exception_to_nan(mp_spherical_jn),
             [IntArg(0, 200), Arg(-1e8, 1e8)],
             dps=300,
+            # underflow of `spherical_jn` is a bit premature; see gh-21629
+            param_filter=(None, lambda z: np.abs(z) > 1e-20),
         )
 
     def test_spherical_jn_complex(self):
@@ -2239,8 +2241,9 @@ class TestSystematic:
 
     def test_spherical_kn(self):
         def mp_spherical_kn(n, z):
-            out = (mpmath.besselk(n + mpmath.mpf(1)/2, z) *
-                   mpmath.sqrt(mpmath.pi/(2*mpmath.mpmathify(z))))
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
             if mpmath.mpmathify(z).imag == 0:
                 return out.real
             else:

@@ -419,6 +419,9 @@ dqagie(double(*fcn)(double* x), const double bound, const int inf,
     rlist[0] = 0.0;
     elist[0] = 0.0;
     iord[0] = 0;
+    // Initialize variables to silence compiler
+    erlarg = 0.0;
+    ertest = 0.0;  
     if ((epsabs <= 0.0) && (epsrel < fmax(50.0*epmach, 0.5e-28))) { *ier = 6; }
     if (*ier == 6) { return; }
 
@@ -1399,6 +1402,7 @@ dqagse(double(*fcn)(double* x), const double a, const double b,
     *abserr = 0.0;
     ierror = 0;
     erlarg = 0.0;
+    ertest = 0.0;
     correc = 0.0;
 
     if ((epsabs <= 0.0) && (epsrel < fmax(50.0*epmach, 0.5e-28)))

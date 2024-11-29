@@ -17,7 +17,8 @@ from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan, _rng_html_rewrite, _lazywhere)
+                              _contains_nan, _rng_html_rewrite, _lazywhere,
+                              _transition_to_rng)
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -257,14 +258,21 @@ class TestRenameParameter:
         with pytest.raises(TypeError, match=message):
             self.old_keyword_still_accepted(new=10, old=10)
 
-    def test_old_keyword_deprecated(self):
+    @pytest.fixture
+    def kwarg_lock(self):
+        from threading import Lock
+        return Lock()
+
+    def test_old_keyword_deprecated(self, kwarg_lock):
         # positional argument and both keyword work identically,
         # but use of old keyword results in DeprecationWarning
         dep_msg = "Use of keyword argument `old` is deprecated"
         res1 = self.old_keyword_deprecated(10)
         res2 = self.old_keyword_deprecated(new=10)
-        with pytest.warns(DeprecationWarning, match=dep_msg):
-            res3 = self.old_keyword_deprecated(old=10)
+        # pytest warning filter is not thread-safe, enforce serialization
+        with kwarg_lock:
+            with pytest.warns(DeprecationWarning, match=dep_msg):
+                    res3 = self.old_keyword_deprecated(old=10)
         assert res1 == res2 == res3 == 10
 
         # unexpected keyword raises an error
@@ -277,12 +285,15 @@ class TestRenameParameter:
         message = re.escape("old_keyword_deprecated() got multiple")
         with pytest.raises(TypeError, match=message):
             self.old_keyword_deprecated(10, new=10)
-        with pytest.raises(TypeError, match=message), \
-                pytest.warns(DeprecationWarning, match=dep_msg):
-            self.old_keyword_deprecated(10, old=10)
-        with pytest.raises(TypeError, match=message), \
-                pytest.warns(DeprecationWarning, match=dep_msg):
-            self.old_keyword_deprecated(new=10, old=10)
+        with kwarg_lock:
+            with pytest.raises(TypeError, match=message), \
+                    pytest.warns(DeprecationWarning, match=dep_msg):
+                    # breakpoint()
+                    self.old_keyword_deprecated(10, old=10)
+        with kwarg_lock:
+            with pytest.raises(TypeError, match=message), \
+                    pytest.warns(DeprecationWarning, match=dep_msg):
+                    self.old_keyword_deprecated(new=10, old=10)
 
 
 class TestContainsNaNTest:
@@ -337,7 +348,7 @@ class TestContainsNaNTest:
         assert _contains_nan(data4)[0]
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
@@ -388,6 +399,26 @@ def test__rng_html_rewrite():
     assert res == ref
 
 
+@_transition_to_rng("seed", position_num=1, replace_doc=False)
+def _f_seed(o, rng=None):
+    rg = check_random_state(rng)
+    return rg.uniform(size=o)
+
+
+def test__transition_to_rng():
+    # SPEC-007 changes
+    _f_seed(1, rng=1)
+    _f_seed(1, rng=np.random.default_rng())
+    _f_seed(1, seed=1)
+    _f_seed(1, seed=np.random.RandomState())
+    with assert_raises(TypeError):
+        # can't pass both seed and rng
+        _f_seed(1, seed=1234, rng=1234)
+    with assert_raises(TypeError):
+        # use of rng=RandomState should give rise to an error.
+        _f_seed(rng=np.random.RandomState())
+
+
 class TestLazywhere:
     n_arrays = strategies.integers(min_value=1, max_value=3)
     rng_seed = strategies.integers(min_value=1000000000, max_value=9999999999)
@@ -398,10 +429,11 @@ class TestLazywhere:
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
+    @pytest.mark.thread_unsafe
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
         mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1,
                                                  min_side=0)

@@ -337,7 +337,7 @@ class BSpline:
         return cls.construct_fast(t, c, k, extrapolate)
 
     @classmethod
-    def design_matrix(cls, x, t, k, extrapolate=False, nu=0):
+    def design_matrix(cls, x, t, k, extrapolate=False):
         """
         Returns a design matrix as a CSR format sparse array.
 
@@ -456,7 +456,7 @@ class BSpline:
 
         # indptr is not passed to Cython as it is already fully computed
         data, indices = _bspl._make_design_matrix(
-            x, t, k, extrapolate, indices, nu
+            x, t, k, extrapolate, indices
         )
         return csr_array(
             (data, indices, indptr),
@@ -553,7 +553,7 @@ class BSpline:
         splder, splantider
 
         """
-        c = self.c
+        c = self.c.copy()
         # pad the c array if needed
         ct = len(self.t) - len(c)
         if ct > 0:
@@ -587,7 +587,7 @@ class BSpline:
         splder, splantider
 
         """
-        c = self.c
+        c = self.c.copy()
         # pad the c array if needed
         ct = len(self.t) - len(c)
         if ct > 0:
@@ -2324,7 +2324,7 @@ def fpcheck(x, t, k):
 
     Return None if inputs are consistent, raises a ValueError otherwise.
     """
-    # This routine is a clone of the `fpchec` Fortran routine, 
+    # This routine is a clone of the `fpchec` Fortran routine,
     # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
     # which carries the following comment:
     #

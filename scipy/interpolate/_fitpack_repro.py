@@ -786,22 +786,22 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
     minimize the sum of jumps, :math:`D_j`, of the ``k``-th derivative at the
     internal knots (:math:`x_b < t_i < x_e`), where
 
-        .. math::
+    .. math::
 
-            D_i = g^{(k)}(t_i + 0) - g^{(k)}(t_i - 0)
+        D_i = g^{(k)}(t_i + 0) - g^{(k)}(t_i - 0)
 
     Specifically, the routine constructs the spline function :math:`g(x)` which
     minimizes
 
-        .. math::
+    .. math::
 
-                \sum_i | D_i |^2 \to \mathrm{min}
+            \sum_i | D_i |^2 \to \mathrm{min}
 
     provided that
 
-        .. math::
+    .. math::
 
-               \sum_{j=1}^m (w_j \times (g(x_j) - y_j))^2 \leqslant s ,
+           \sum_{j=1}^m (w_j \times (g(x_j) - y_j))^2 \leqslant s ,
 
     where :math:`s > 0` is the input parameter.
 
@@ -818,9 +818,9 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
     routine does not consider smoothness and simply solves a least-squares
     problem
 
-        .. math::
+    .. math::
 
-            \sum w_j \times (g(x_j) - y_j)^2 \to \mathrm{min}
+        \sum w_j \times (g(x_j) - y_j)^2 \to \mathrm{min}
 
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
@@ -923,22 +923,22 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
     :math:`a=1, ..., D`, to minimize the sum of jumps, :math:`D_{i; a}`, of the
     ``k``-th derivative at the internal knots (:math:`u_b < t_i < u_e`), where
 
-        .. math::
+    .. math::
 
-            D_{i; a} = g_a^{(k)}(t_i + 0) - g_a^{(k)}(t_i - 0)
+        D_{i; a} = g_a^{(k)}(t_i + 0) - g_a^{(k)}(t_i - 0)
 
     Specifically, the routine constructs the spline function :math:`g(u)` which
     minimizes
 
-        .. math::
+    .. math::
 
-                \sum_i \sum_{a=1}^D | D_{i; a} |^2 \to \mathrm{min}
+            \sum_i \sum_{a=1}^D | D_{i; a} |^2 \to \mathrm{min}
 
     provided that
 
-        .. math::
+    .. math::
 
-            \sum_{j=1}^m \sum_{a=1}^D (w_j \times (g_a(u_j) - x_{j; a}))^2 \leqslant s
+        \sum_{j=1}^m \sum_{a=1}^D (w_j \times (g_a(u_j) - x_{j; a}))^2 \leqslant s
 
     where :math:`u_j` is the value of the parameter corresponding to the data point
     :math:`(x_{j; 1}, ..., x_{j; D})`, and :math:`s > 0` is the input parameter.

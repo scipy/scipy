@@ -152,6 +152,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             new_coords = np.unravel_index(flat_coords, shape, order=order)
 
+        idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.shape))
+        new_coords = tuple(np.asarray(co, dtype=idx_dtype) for co in new_coords)
+
         # Handle copy here rather than passing on to the constructor so that no
         # copy will be made of `new_coords` regardless.
         if copy:
@@ -552,7 +555,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         unique_mask = np.append(True, unique_mask)
         coords = tuple(idx[unique_mask] for idx in coords)
         unique_inds, = np.nonzero(unique_mask)
-        data = np.add.reduceat(data, unique_inds, dtype=self.dtype)
+        data = np.add.reduceat(data, downcast_intp_index(unique_inds), dtype=self.dtype)
         return coords, data
 
     def eliminate_zeros(self):

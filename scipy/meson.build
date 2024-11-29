@@ -29,6 +29,19 @@ endif
 
 thread_dep = dependency('threads', required: false)
 
+
+# Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
+# Will work for numpy>=2.0, hence not required (it'll be a while until 2.0 is
+# our minimum supported version). Using this now to be able to detect the
+# version easily for >=2.0.
+_numpy_dep = dependency('numpy', required: false)
+f2py_freethreading_arg = []
+if _numpy_dep.found()
+  if _numpy_dep.version().version_compare('>=2.1.0')
+    f2py_freethreading_arg = ['--free-threading']
+  endif
+endif
+
 # NumPy include directory - needed in all submodules
 # The chdir is needed because within numpy there's an `import signal`
 # statement, and we don't want that to pick up scipy's signal module rather
@@ -85,7 +98,7 @@ fortranobject_c = incdir_f2py / 'fortranobject.c'
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.13.1')
+pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -136,11 +149,51 @@ fortranobject_dep = declare_dependency(
   link_with: fortranobject_lib,
   include_directories: [inc_np, inc_f2py],
 )
-# Workaround for numpy#24761 on numpy<1.26.1 (see also gh-20515)
-_f2py_c_args = []
-if is_mingw
-  _f2py_c_args = '-DNPY_OS_MINGW'
+
+cdata = configuration_data()
+
+# Test variable attribute to use for thread-local storage;
+# Adapted from `numpy/_core/meson.build`.
+check_tls_attrs = [
+  ['thread_local', 'HAVE_THREAD_LOCAL'],    # C23
+  ['_Thread_local', 'HAVE__THREAD_LOCAL'],  # C11/C17
+  ['__thread', 'HAVE__THREAD'],
+]
+if is_windows and not is_mingw
+  check_tls_attrs += ['__declspec(thread)', 'HAVE___DECLSPEC_THREAD_']
 endif
+f2py_tls_define = ''
+foreach tls_attrs: check_tls_attrs
+  attr = tls_attrs[0]
+  code = f'''
+    #pragma GCC diagnostic error "-Wattributes"
+    #pragma clang diagnostic error "-Wattributes"
+
+    int @attr@ foo;
+  '''
+  code += '''
+    int
+    main()
+    {
+      return 0;
+    }
+  '''
+  if cc.compiles(code, name: tls_attrs[0])
+    cdata.set10(tls_attrs[1], true)
+    f2py_tls_define = tls_attrs[0]
+  endif
+endforeach
+
+# Contains only TLS check results for now - name chosen for when more compiler
+# checks need adding in the future.
+scipy_config_h = configure_file(
+  input: 'scipy_config.h.in',
+  output: 'scipy_config.h',
+  configuration: cdata,
+  install: false
+)
+
+_f2py_c_args = [f'-DF2PY_THREAD_LOCAL_DECL=@f2py_tls_define@']
 fortranobject_dep = declare_dependency(
   dependencies: fortranobject_dep,
   compile_args: _f2py_c_args,
@@ -160,14 +213,12 @@ if f2py_version.version_compare('<'+min_numpy_version)
   error(f'Found f2py executable is too old: @f2py_version@')
 endif
 
-# Note: this generato cannot handle:
+# Note: this generator cannot handle:
 # 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
 # 2. targets with #include's (due to no `depend_files` - see feature request
 #    at meson#8295)
-# TODO: add argument to mark extension modules as safe to run without the GIL,
-#       once f2py supports that (see numpy#26157).
 f2py_gen = generator(generate_f2pymod,
-  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'] + f2py_freethreading_arg,
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
 )
 
@@ -198,6 +249,9 @@ generate_blas_wrappers = false
 if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
+  endif
+  if cc.get_id() != 'clang'
+    warning('accelerate may not be properly detected with non-native Apple compiler due to https://github.com/mesonbuild/meson/issues/13608')
   endif
   _args_blas_lapack += ['-DACCELERATE_NEW_LAPACK']
   generate_blas_wrappers = true
@@ -236,7 +290,7 @@ else
   cblas = []
 endif
 
-if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
+if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name == 'scipy-openblas'
   # For these libraries we know that they contain LAPACK, and it's desirable to
   # use that - no need to run the full detection twice.
   lapack = blas
@@ -384,6 +438,7 @@ Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
+Wno_unused_but_set_variable = cc.get_supported_arguments('-Wno-unused-but-set-variable')
 
 # C++ warning flags
 _cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
@@ -590,6 +645,7 @@ subdir('sparse')
 subdir('stats')
 subdir('fft')
 subdir('io')
+subdir('optimize')
 subdir('spatial')
 subdir('cluster')
 subdir('constants')
@@ -600,6 +656,5 @@ subdir('signal')
 subdir('interpolate')
 subdir('ndimage')
 subdir('odr')
-subdir('optimize')
 subdir('datasets')
 subdir('misc')

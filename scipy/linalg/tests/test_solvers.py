@@ -761,7 +761,7 @@ class TestSolveSylvester:
         (np.array([[1, 2], [0, 4]]),
          np.array([[5, 6], [0, 8]]),
          np.array([[9, 10], [11, 12]])),
-        # a, b, c all real, 4x4. a and b have non-trival 2x2 blocks in their
+        # a, b, c all real, 4x4. a and b have non-trivial 2x2 blocks in their
         # quasi-triangular form.
         (np.array([[1.0, 0, 0, 0],
                    [0, 1.0, 2.0, 0.0],

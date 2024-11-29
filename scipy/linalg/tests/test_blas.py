@@ -212,6 +212,9 @@ class TestFBLAS1Simple:
     # XXX: need tests for rot,rotm,rotg,rotmg
 
 
+# FORTRAN routines are in their most part, thread-unsafe, therefore they can
+# cause segmentation faults and other memory access errors.
+@pytest.mark.thread_unsafe
 class TestFBLAS2Simple:
 
     def test_gemv(self):
