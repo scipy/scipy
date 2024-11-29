@@ -8,7 +8,6 @@ import traceback
 import warnings
 import math
 import subprocess
-from copy import deepcopy
 from concurrent.futures.process import _MAX_WINDOWS_WORKERS
 
 import spin
@@ -422,11 +421,9 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
        from the top-level `__init__.py` file.
 
     """  # noqa: E501
-    try:
-        # prevent obscure error later
-        import scipy_doctest
-    except ModuleNotFoundError as e:
-        raise ModuleNotFoundError("scipy-doctest not installed") from e
+    # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
+    if not importlib.util.find_spec("scipy_doctest"):
+        raise ModuleNotFoundError("Please install scipy-doctest")
 
     tests = kwargs["tests"]
     if kwargs["submodule"]:
@@ -652,7 +649,8 @@ def _dirty_git_working_dir():
 )
 @meson.build_dir_option
 @click.pass_context
-def bench(ctx, tests, submodule, compare, verbose, quick, commits, build_dir=None, *args, **kwargs):
+def bench(ctx, tests, submodule, compare, verbose, quick,
+          commits, build_dir=None, *args, **kwargs):
     """:wrench: Run benchmarks.
 
     \b
