@@ -17,7 +17,7 @@ from pytest import raises as assert_raises
 
 import numpy as np
 from numpy import array
-import scipy.sparse as SP
+from scipy.sparse import issparse, eye_array, coo_array, csc_array
 
 import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
@@ -72,14 +72,14 @@ case_table4.append(
 case_table4.append(
     {'name': 'sparse',
      'classes': {'testsparse': 'sparse'},
-     'expected': {'testsparse': SP.coo_array(A)},
+     'expected': {'testsparse': coo_array(A)},
      })
 B = A.astype(complex)
 B[0,0] += 1j
 case_table4.append(
     {'name': 'sparsecomplex',
      'classes': {'testsparsecomplex': 'sparse'},
-     'expected': {'testsparsecomplex': SP.coo_array(B)},
+     'expected': {'testsparsecomplex': coo_array(B)},
      })
 case_table4.append(
     {'name': 'multi',
@@ -207,12 +207,12 @@ case_table5.append(
 case_table5.append(
     {'name': 'sparse',
      'classes': {'testsparse': 'sparse'},
-     'expected': {'testsparse': SP.coo_array(A)},
+     'expected': {'testsparse': coo_array(A)},
      })
 case_table5.append(
     {'name': 'sparsecomplex',
      'classes': {'testsparsecomplex': 'sparse'},
-     'expected': {'testsparsecomplex': SP.coo_array(B)},
+     'expected': {'testsparsecomplex': coo_array(B)},
      })
 case_table5.append(
     {'name': 'bool',
@@ -247,8 +247,8 @@ def types_compatible(var1, var2):
 
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
-    if SP.issparse(expected):  # allow different types of sparse matrices
-        assert_(SP.issparse(actual))
+    if issparse(expected):  # allow different types of sparse matrices
+        assert_(issparse(actual))
         assert_array_almost_equal(actual.toarray(),
                                   expected.toarray(),
                                   err_msg=label,
@@ -372,7 +372,7 @@ def test_gzip_simple():
     xdense = np.zeros((20,20))
     xdense[2,3] = 2.3
     xdense[4,5] = 4.5
-    x = SP.csc_array(xdense)
+    x = csc_array(xdense)
 
     name = 'gzip_test'
     expected = {'x':x}
@@ -996,7 +996,7 @@ def test_mat_dtype():
 def test_sparse_in_struct():
     # reproduces bug found by DC where Cython code was insisting on
     # ndarray return type, but getting sparse matrix
-    st = {'sparsefield': SP.eye_array(4)}
+    st = {'sparsefield': eye_array(4)}
     stream = BytesIO()
     savemat(stream, {'a':st})
     d = loadmat(stream, struct_as_record=True)
@@ -1159,7 +1159,7 @@ def test_logical_sparse():
     # ValueError: indices and data should have the same size
     d = loadmat(filename, struct_as_record=True, spmatrix=False)
     log_sp = d['sp_log_5_4']
-    assert_(SP.issparse(log_sp) and log_sp.format == "csc")
+    assert_(issparse(log_sp) and log_sp.format == "csc")
     assert_equal(log_sp.dtype.type, np.bool_)
     assert_array_equal(log_sp.toarray(),
                        [[True, True, True, False],

@@ -13,7 +13,7 @@ import io
 import os
 
 import numpy as np
-import scipy.sparse as SP
+from scipy.sparse import coo_array, issparse, coo_matrix
 from scipy.io import _mmio
 
 __all__ = ['mminfo', 'mmread', 'mmwrite']
@@ -367,8 +367,8 @@ def mmread(source, *, spmatrix=True):
         if stream_to_close:
             stream_to_close.close()
         if spmatrix:
-            return SP.coo_matrix(triplet, shape=shape)
-        return SP.coo_array(triplet, shape=shape)
+            return coo_matrix(triplet, shape=shape)
+        return coo_array(triplet, shape=shape)
 
 
 def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"):
@@ -518,7 +518,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         a = _apply_field(a, field, no_pattern=True)
         _fmm_core.write_body_array(cursor, a)
 
-    elif SP.issparse(a):
+    elif issparse(a):
         # Write sparse scipy matrices
         a = a.tocoo()
 
@@ -526,7 +526,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
             # A symmetric matrix only specifies the elements below the diagonal.
             # Ensure that the matrix satisfies this requirement.
             lower_triangle_mask = a.row >= a.col
-            a = SP.coo_array((a.data[lower_triangle_mask],
+            a = coo_array((a.data[lower_triangle_mask],
                               (a.row[lower_triangle_mask],
                                a.col[lower_triangle_mask])), shape=a.shape)
 
