@@ -32,7 +32,7 @@ jobs:
     # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: macos-latest
     strategy:
       matrix:
@@ -114,6 +114,7 @@ jobs:
 
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
+        pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
 
         # Python.org installers still use 10.9, so let's use that too. Note
         # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
@@ -122,14 +123,14 @@ jobs:
         # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
         export MACOSX_DEPLOYMENT_TARGET=10.9
         export MACOSX_SDK_VERSION=10.9
-        CC="ccache $CC" python dev.py build
+        CC="ccache $CC" spin build --prefix=$PWD/build
 
     - name: Test SciPy
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
         export OMP_NUM_THREADS=2
-        python dev.py -n test -j2
+        spin test -j2
 
     - name: Ccache statistics
       shell: bash -l {0}
@@ -144,7 +145,7 @@ jobs:
     # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: macos-14
     strategy:
       matrix:
@@ -164,7 +165,7 @@ jobs:
     - name: Build and Install SciPy
       run: |
         sudo xcode-select -s /Applications/Xcode_15.2.app
-        
+
         git submodule update --init
         GFORTRAN_LOC=$(which gfortran-13)
         ln -s $GFORTRAN_LOC gfortran
@@ -173,13 +174,14 @@ jobs:
         # Ensure we have gfortran dylib
         GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
-    
+
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
         pip install -r requirements/openblas.txt
-        python dev.py build --with-scipy-openblas
+        pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
+        spin build --with-scipy-openblas --prefix=$PWD/build
 
         pip install pooch pytest hypothesis
-        python dev.py -n test 
+        spin test
 
 
   test_meson_accelerate:
@@ -189,7 +191,7 @@ jobs:
     # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: macos-14
     strategy:
       matrix:
@@ -220,7 +222,8 @@ jobs:
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
 
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        python dev.py build --with-accelerate
+        pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
+        spin build --with-accelerate --prefix=$PWD/build
 
         pip install pooch pytest hypothesis
-        python dev.py -n test
+        spin test

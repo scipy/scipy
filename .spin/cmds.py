@@ -9,6 +9,7 @@ import warnings
 import math
 import subprocess
 from copy import deepcopy
+from concurrent.futures.process import _MAX_WINDOWS_WORKERS
 
 import spin
 import click
@@ -122,9 +123,9 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         meson_args = meson_args + ("-Dblas=accelerate", )
     elif with_scipy_openblas:
         configure_scipy_openblas()
-        os.env['PKG_CONFIG_PATH'] = os.pathsep.join([
+        os.environ['PKG_CONFIG_PATH'] = os.pathsep.join([
                 os.getcwd(),
-                os.env.get('PKG_CONFIG_PATH', '')
+                os.environ.get('PKG_CONFIG_PATH', '')
                 ])
 
     if parallel is None:
@@ -733,7 +734,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick, commits, build_dir=Non
         _run_asv(cmd_compare)
 
 
-def configure_scipy_openblas(self, blas_variant='32'):
+def configure_scipy_openblas(blas_variant='32'):
     """Create scipy-openblas.pc and scipy/_distributor_init_local.py
 
     Requires a pre-installed scipy-openblas32 wheel from PyPI.

@@ -32,7 +32,7 @@ jobs:
     # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -66,6 +66,7 @@ jobs:
       if: matrix.python-version == '3.10'
       run: |
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
+        python -m pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
 
     - name: Install Python packages from repositories
       if: matrix.python-version == '3.13-dev' # this run will use python dev versions when available
@@ -74,6 +75,7 @@ jobs:
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3"
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install git+https://github.com/mesonbuild/meson.git
+        python -m pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -102,7 +104,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py build --werror
+        spin build --werror
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -118,10 +120,10 @@ jobs:
     - name: Check usage of install tags
       run: |
         rm -r ${{ env.INSTALLDIR }}
-        python dev.py build --tags=runtime,python-runtime,devel
+        spin build --tags=runtime,python-runtime,devel
         python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
         rm -r ${{ env.INSTALLDIR }}
-        python dev.py build --tags=runtime,python-runtime,devel,tests
+        spin build --tags=runtime,python-runtime,devel,tests
         python tools/check_installation.py ${{ env.INSTALLDIR }}
 
     - name: Check build-internal dependencies
@@ -134,12 +136,12 @@ jobs:
         python -m pip install mypy==1.10.0 types-psutil typing_extensions
         python -m pip install pybind11 sphinx
 
-        python -u dev.py mypy
+        spin mypy
 
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        python dev.py --no-build test -j2 -- --durations 10 --timeout=60
+        spin test -j2 -- --durations 10 --timeout=60
 
   #################################################################################
   test_venv_install:
@@ -147,7 +149,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -189,6 +191,7 @@ jobs:
         # build isolation here.
         python -m pip install numpy pybind11 pythran cython pytest ninja hypothesis
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
+        python -m pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
         python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
@@ -206,7 +209,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -236,7 +239,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -258,6 +261,7 @@ jobs:
       - name: Setup Python build deps
         run: |
           pip install build meson-python ninja pythran pybind11 cython "numpy>=2.0.0b1"
+          pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
 
       - name: Build wheel and install
         run: |
@@ -288,7 +292,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -325,6 +329,7 @@ jobs:
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -347,7 +352,7 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        python dev.py build --gcov --with-scipy-openblas
+        spin build --gcov --with-scipy-openblas
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -361,7 +366,7 @@ jobs:
     - name: Test SciPy
       run: |
         export OPENBLAS_NUM_THREADS=1
-        python dev.py --no-build test -j2 --mode full -- --cov --cov-report term-missing
+        spin test -j2 --mode full -- --cov --cov-report term-missing
 
   #################################################################################
   linux_32bit:
@@ -369,7 +374,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
@@ -389,6 +394,7 @@ jobs:
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
         python -m pip install -r requirements/openblas.txt && \
+        python -m pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs && \
         # Ensure that scipy-openblas is picked up by the numpy<1.26 build
         cat > \$HOME/.numpy-site.cfg <<EOL
         [openblas]
@@ -399,9 +405,10 @@ jobs:
         symbol_prefix = scipy_
         EOL
         python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
+        python -m pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs && \
         python -c 'import numpy as np; np.show_config()' && \
-        python dev.py build --with-scipy-openblas && \
-        python dev.py --no-build test"
+        spin build --with-scipy-openblas && \
+        spin test"
 
   #################################################################################
   distro_multiple_pythons:
@@ -412,7 +419,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -428,6 +435,7 @@ jobs:
       - name: Setup Python build deps
         run: |
           python3.11 -m pip install build pythran pybind11 cython numpy meson-python
+          python3.11 -m pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
 
       - name: Build wheel and install
         run: |
@@ -459,7 +467,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -484,6 +492,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         pip install pythran ninja meson-python pybind11 click rich_click pydevtool
+        pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
         pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis
         pip install -r requirements/openblas.txt
         echo "N_TEST_WORKERS=2" >> "$GITHUB_ENV"
@@ -500,8 +509,8 @@ jobs:
       # python3/site-packages as opposed to python3.13/site-packages,
       # then the dev.py scripts do not work as expected.
       run: |
-        # python dev.py build --with-scipy-openblas
-        # python dev.py --no-build test -j2 --mode full
+        # spin build --with-scipy-openblas
+        # spin test -j2 --mode full
         python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > scipy-openblas.pc
         PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
@@ -514,7 +523,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'czgdp1807/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
