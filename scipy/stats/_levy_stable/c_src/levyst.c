@@ -2,8 +2,8 @@
  * Implements special functions for stable distribution calculations.
  *
  * A function g appears in the integrand in Nolan's method for calculating
- * stable densitities and distribution functions. It takes a different form for
- * for alpha = 1 vs alpha ≠ 1. See [NO] for more info.
+ * stable densities and distribution functions. It takes a different form for
+ * alpha = 1 vs alpha ≠ 1. See [NO] for more info.
  *
  * References
  * [NO] John P. Nolan (1997) Numerical calculation of stable densities and

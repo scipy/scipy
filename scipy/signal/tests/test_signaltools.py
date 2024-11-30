@@ -193,9 +193,9 @@ class TestConvolve(_TestConvolve):
 
         # These are random arrays, which means test is much stronger than
         # convolving testing by convolving two np.ones arrays
-        np.random.seed(42)
-        array_types = {'i': np.random.choice([0, 1], size=n),
-                       'f': np.random.randn(n)}
+        rng = np.random.RandomState(42)
+        array_types = {'i': rng.choice([0, 1], size=n),
+                       'f': rng.randn(n)}
         array_types['b'] = array_types['u'] = array_types['i']
         array_types['c'] = array_types['f'] + 0.5j*array_types['f']
 
@@ -249,6 +249,7 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, [1], [[2]])
         assert_raises(ValueError, convolve, [3], 2)
 
+    @pytest.mark.thread_unsafe
     def test_dtype_deprecation(self):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -803,6 +804,7 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         assert_allclose(out, expected, atol=1e-10)
 
+    @pytest.mark.thread_unsafe
     def test_fft_nan(self):
         n = 1000
         rng = np.random.default_rng(43876432987)
@@ -1110,7 +1112,7 @@ class TestMedFilt:
         if (dtype in ["float96", "float128"]
                 and np.finfo(np.longdouble).dtype != dtype):
             pytest.skip(f"Platform does not support {dtype}")
-        
+
         in_typed = np.array(self.IN, dtype=dtype)
         with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
@@ -1268,6 +1270,7 @@ class TestResample:
         y = signal.resample(x, ny)
         assert_allclose(y, [1] * ny)
 
+    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_mutable_window(self, padtype):
         # Test that a mutable window is not modified
@@ -1413,6 +1416,15 @@ class TestResample:
                     y_s = signal.resample_poly(
                         x, up=1, down=down, window=weights)
                     assert_allclose(y_g[::down], y_s)
+
+    @pytest.mark.parametrize('dtype', [np.int32, np.float32])
+    def test_gh_15620(self, dtype):
+        data = np.array([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
+        actual = signal.resample_poly(data,
+                                      up=2,
+                                      down=1,
+                                      padtype='smooth')
+        assert np.count_nonzero(actual) > 0
 
 
 class TestCSpline1DEval:
@@ -1852,6 +1864,7 @@ class _TestLinearFilter:
             lfilter(np.array([1.0]), np.array([1.0]), data),
             lfilter(b, a, data))
 
+    @pytest.mark.thread_unsafe
     def test_dtype_deprecation(self):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -2090,6 +2103,7 @@ class TestCorrelate:
         assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
         assert_allclose(correlate(a, b, mode='valid'), [32])
 
+    @pytest.mark.thread_unsafe
     def test_dtype_deprecation(self):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -2124,6 +2138,11 @@ def test_correlation_lags(mode, behind, input_size):
     assert_equal(lags[lag_index], expected)
     # Correlation and lags shape should match
     assert_equal(lags.shape, correlation.shape)
+
+
+def test_correlation_lags_invalid_mode():
+    with pytest.raises(ValueError, match="Mode asdfgh is invalid"):
+        correlation_lags(100, 100, mode="asdfgh")
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble,
@@ -2494,6 +2513,8 @@ def test_choose_conv_method():
         h = x.copy()
         assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
+
+@pytest.mark.thread_unsafe
 def test_choose_conv_dtype_deprecation():
     # gh-21211
     a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -3099,7 +3120,7 @@ class TestPartialFractionExpansion:
             residuez(1, [0, 1, 2, 3])
 
     def test_inverse_unique_roots_different_rtypes(self):
-        # This test was inspired by github issue 2496.
+        # This test was inspired by GitHub issue 2496.
         r = [3 / 10, -1 / 6, -2 / 15]
         p = [0, -2, -5]
         k = []
@@ -3564,6 +3585,14 @@ class TestSOSFilt:
         # zi as array-like
         _, zf = sosfilt(sos, np.ones(40, dt), zi=zi.tolist())
         assert_allclose_cast(zf, zi, rtol=1e-13)
+
+    @pytest.mark.thread_unsafe
+    def test_dtype_deprecation(self, dt):
+        # gh-21211
+        sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)
+        x = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
+        with pytest.deprecated_call(match="dtype=object is not supported"):
+            sosfilt(sos, x)
 
 
 class TestDeconvolve:

@@ -871,37 +871,3 @@ def _loadarff(ofile):
     data = np.array(a, [(a.name, a.dtype) for a in attr])
     return data, meta
 
-
-# ----
-# Misc
-# ----
-def basic_stats(data):
-    nbfac = data.size * 1. / (data.size - 1)
-    return np.nanmin(data), np.nanmax(data), np.mean(data), np.std(data) * nbfac
-
-
-def print_attribute(name, tp, data):
-    type = tp.type_name
-    if type == 'numeric' or type == 'real' or type == 'integer':
-        min, max, mean, std = basic_stats(data)
-        print(f"{name},{type},{min:f},{max:f},{mean:f},{std:f}")
-    else:
-        print(str(tp))
-
-
-def test_weka(filename):
-    data, meta = loadarff(filename)
-    print(len(data.dtype))
-    print(data.size)
-    for i in meta:
-        print_attribute(i, meta[i], data[i])
-
-
-# make sure nose does not find this as a test
-test_weka.__test__ = False
-
-
-if __name__ == '__main__':
-    import sys
-    filename = sys.argv[1]
-    test_weka(filename)

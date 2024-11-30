@@ -35,7 +35,11 @@ def directed_hausdorff(const double[:,::1] ar1, const double[:,::1] ar2, seed=0)
     # shuffling the points in each array generally increases the likelihood of
     # an advantageous break in the inner search loop and never decreases the
     # performance of the algorithm
-    rng = np.random.RandomState(seed)
+    if isinstance(seed, np.random.Generator):
+        # Generator passthrough
+        rng = seed
+    else:
+        rng = np.random.RandomState(seed)
     resort1 = np.arange(N1, dtype=np.int64)
     resort2 = np.arange(N2, dtype=np.int64)
     rng.shuffle(resort1)

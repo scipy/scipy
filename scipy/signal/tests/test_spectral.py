@@ -1,7 +1,7 @@
 import sys
 
 import numpy as np
-from numpy.testing import (assert_, assert_approx_equal,
+from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, suppress_warnings)
 import pytest
@@ -990,21 +990,30 @@ class TestLombscargle:
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        P = lombscargle(t, x, f)
+        P = lombscargle(t, y, f)
 
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         delta = f[1] - f[0]
-        assert_(w - f[np.argmax(P)] < (delta/2.))
+        assert(w - f[np.argmax(P)] < (delta/2.))
+
+        # also, check that it works with weights
+        P = lombscargle(t, y, f, weights=np.ones_like(t, dtype=f.dtype))
+
+        # Check if difference between found frequency maximum and input
+        # frequency is less than accuracy
+        delta = f[1] - f[0]
+        assert(w - f[np.argmax(P)] < (delta/2.))
+
 
     def test_amplitude(self):
-        # Test if height of peak in normalized Lomb-Scargle periodogram
+        # Test if height of peak in unnormalized Lomb-Scargle periodogram
         # corresponds to amplitude of the generated input signal.
 
         # Input parameters
@@ -1016,28 +1025,29 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f)
+        pgram = lombscargle(t, y, f)
 
-        # Normalize
+        # convert to the amplitude
         pgram = np.sqrt(4 * pgram / t.shape[0])
 
-        # Check if difference between found frequency maximum and input
-        # frequency is less than accuracy
-        assert_approx_equal(np.max(pgram), ampl, significant=2)
+        # Check if amplitude is correct (this will not exactly match, due to
+        # numerical differences when data is removed)
+        assert_allclose(np.max(pgram), ampl, rtol=5e-2)
 
     def test_precenter(self):
-        # Test if precenter gives the same result as manually precentering.
+        # Test if precenter gives the same result as manually precentering
+        # (for a very simple offset)
 
         # Input parameters
         ampl = 2.
@@ -1049,19 +1059,28 @@ class TestLombscargle:
         offset = 0.15  # Offset to be subtracted in pre-centering
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi) + offset
+        y = ampl * np.sin(w*t + phi) + offset
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f, precenter=True)
-        pgram2 = lombscargle(t, x - x.mean(), f, precenter=False)
+        pgram = lombscargle(t, y, f, precenter=True)
+        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False)
+
+        # check if centering worked
+        assert_allclose(pgram, pgram2)
+
+        # do this again, but with floating_mean=True
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, precenter=True, floating_mean=True)
+        pgram2 = lombscargle(t, y - y.mean(), f, precenter=False, floating_mean=True)
 
         # check if centering worked
         assert_allclose(pgram, pgram2)
@@ -1078,46 +1097,251 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
-        x = ampl * np.sin(w*t + phi)
+        y = ampl * np.sin(w*t + phi)
 
         # Define the array of frequencies for which to compute the periodogram
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        pgram = lombscargle(t, x, f)
-        pgram2 = lombscargle(t, x, f, normalize=True)
+        pgram = lombscargle(t, y, f)
+        pgram2 = lombscargle(t, y, f, normalize=True)
+
+        # Calculate the scale to convert from unnormalized to normalized
+        weights = np.ones_like(t)/float(t.shape[0])
+        YY_hat = (weights * y * y).sum()
+        YY = YY_hat  # correct formula for floating_mean=False
+        scale_to_use = 2/(YY*t.shape[0])
 
         # check if normalization works as expected
-        assert_allclose(pgram * 2 / np.dot(x, x), pgram2)
-        assert_approx_equal(np.max(pgram2), 1.0, significant=2)
+        assert_allclose(pgram * scale_to_use, pgram2)
+        assert_allclose(np.max(pgram2), 1.0)
 
     def test_wrong_shape(self):
-        t = np.linspace(0, 1, 1)
-        x = np.linspace(0, 1, 2)
-        f = np.linspace(0, 1, 3)
-        assert_raises(ValueError, lombscargle, t, x, f)
 
-    def test_zero_division(self):
-        t = np.zeros(1)
-        x = np.zeros(1)
-        f = np.zeros(1)
-        assert_raises(ZeroDivisionError, lombscargle, t, x, f)
+        # different length t and y
+        t = np.linspace(0, 1, 1)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # t is 2D
+        t = np.expand_dims(np.linspace(0, 1, 2), 1)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # y is 2D
+        t = np.linspace(0, 1, 2)
+        y = np.expand_dims(np.linspace(0, 1, 2), 1)
+        f = np.linspace(0, 1, 3) + 0.1
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # f is 2D
+        t = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
+        f = np.expand_dims(np.linspace(0, 1, 3) + 0.1, 1)
+        assert_raises(ValueError, lombscargle, t, y, f)
+
+        # weights is 2D
+        t = np.linspace(0, 1, 2)
+        y = np.linspace(0, 1, 2)
+        f = np.linspace(0, 1, 3) + 0.1
+        weights = np.expand_dims(np.linspace(0, 1, 2), 1)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
     def test_lombscargle_atan_vs_atan2(self):
         # https://github.com/scipy/scipy/issues/3787
         # This raised a ZeroDivisionError.
         t = np.linspace(0, 10, 1000, endpoint=False)
-        x = np.sin(4*t)
+        y = np.sin(4*t)
         f = np.linspace(0, 50, 500, endpoint=False) + 0.1
-        lombscargle(t, x, f*2*np.pi)
+        lombscargle(t, y, f*2*np.pi)
+
+    def test_wrong_shape_weights(self):
+        # Weights must be the same shape as t
+
+        t = np.linspace(0, 1, 1)
+        y = np.linspace(0, 1, 1)
+        f = np.linspace(0, 1, 3) + 0.1
+        weights = np.linspace(1, 2, 2)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
+
+    def test_zero_division_weights(self):
+        # Weights cannot sum to 0
+
+        t = np.zeros(1)
+        y = np.zeros(1)
+        f = np.ones(1)
+        weights = np.zeros(1)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
+
+    def test_normalize_parameter(self):
+        # Test the validity of the normalize parameter input
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # check each of the valid inputs
+        pgram_false = lombscargle(t, y, f, normalize=False)
+        pgram_true = lombscargle(t, y, f, normalize=True)
+        pgram_power = lombscargle(t, y, f, normalize='power')
+        pgram_norm = lombscargle(t, y, f, normalize='normalize')
+        pgram_amp = lombscargle(t, y, f, normalize='amplitude')
+
+        # validate the results that should be the same
+        assert_allclose(pgram_false, pgram_power)
+        assert_allclose(pgram_true, pgram_norm)
+
+        # validate that the power and norm outputs are proper wrt each other
+        weights = np.ones_like(y)/float(y.shape[0])
+        YY_hat = (weights * y * y).sum()
+        YY = YY_hat  # correct formula for floating_mean=False
+        assert_allclose(pgram_power * 2.0 / (float(t.shape[0]) * YY), pgram_norm)
+
+        # validate that the amp output is correct for the given input
+        f_i = np.where(f==w)[0][0]
+        assert_allclose(np.abs(pgram_amp[f_i]), ampl)
+
+        # check invalid inputs
+        #  1) a string that is not allowed
+        assert_raises(ValueError, lombscargle, t, y, f, normalize='lomb')
+        #  2) something besides a bool or str
+        assert_raises(ValueError, lombscargle, t, y, f, normalize=2)
+
+    def test_offset_removal(self):
+        # Verify that the amplitude is the same, even with an offset
+        # must use floating_mean=True, otherwise it will not remove an offset
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2.15  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, floating_mean=True)
+        pgram_offset = lombscargle(t, y + offset, f, floating_mean=True)
+
+        # check if offset removal works as expected
+        assert_allclose(pgram, pgram_offset)
+
+    def test_floating_mean_false(self):
+        # Verify that when disabling the floating_mean, the calculations are correct
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0
+        nin = 1000
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a cos wave for the selected times
+        y = ampl * np.cos(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, normalize=True, floating_mean=False)
+        pgram_offset = lombscargle(t, y + offset, f, normalize=True,
+                                   floating_mean=False)
+
+        # check if disabling floating_mean works as expected
+        # nearly-zero for no offset, exact value will change based on seed
+        assert(pgram[0] < 0.01)
+        # significant value with offset, exact value will change based on seed
+        assert(pgram_offset[0] > 0.5)
+
+    def test_amplitude_is_correct(self):
+        # Verify that the amplitude is correct (when normalize='amplitude')
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.12
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 2.15  # Large offset
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.cos(w*t + phi) + offset
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Get the index of where the exact result should be
+        f_indx = np.where(f==w)[0][0]
+
+        # Calculate Lomb-Scargle periodogram (amplitude + phase)
+        pgram = lombscargle(t, y, f, normalize='amplitude', floating_mean=True)
+
+        # Check if amplitude is correct
+        assert_allclose(np.abs(pgram[f_indx]), ampl)
+
+        # Check if phase is correct
+        # (phase angle is the negative of the phase offset)
+        assert_allclose(-np.angle(pgram[f_indx]), phi)
+
+    def test_negative_weight(self):
+        # Test that a negative weight produces an error
+
+        t = np.zeros(1)
+        y = np.zeros(1)
+        f = np.ones(1)
+        weights = -np.ones(1)
+        assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
 
 class TestSTFT:
+    @pytest.mark.thread_unsafe
     def test_input_validation(self):
 
         def chk_VE(match):
@@ -1248,8 +1472,8 @@ class TestSTFT:
             assert_equal(False, check_NOLA(*setting), err_msg=msg)
 
     def test_average_all_segments(self):
-        np.random.seed(1234)
-        x = np.random.randn(1024)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(1024)
 
         fs = 1.0
         window = 'hann'
@@ -1268,8 +1492,8 @@ class TestSTFT:
         assert_allclose(np.mean(np.abs(Z)**2, axis=-1), Pw)
 
     def test_permute_axes(self):
-        np.random.seed(1234)
-        x = np.random.randn(1024)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(1024)
 
         fs = 1.0
         window = 'hann'
@@ -1292,7 +1516,7 @@ class TestSTFT:
 
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
     def test_roundtrip_real(self, scaling):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('boxcar', 100, 10, 0),           # Test no overlap
@@ -1305,7 +1529,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
@@ -1318,8 +1542,9 @@ class TestSTFT:
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
+    @pytest.mark.thread_unsafe
     def test_roundtrip_not_nola(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         w_fail = np.ones(16)
         w_fail[::2] = 0
@@ -1333,7 +1558,7 @@ class TestSTFT:
             assert not check_NOLA(window, nperseg, noverlap), msg
 
             t = np.arange(N)
-            x = 10 * np.random.randn(t.size)
+            x = 10 * rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True,
@@ -1346,7 +1571,7 @@ class TestSTFT:
             assert not np.allclose(x, xr[:len(x)]), msg
 
     def test_roundtrip_nola_not_cola(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('boxcar', 100, 10, 3),           # NOLA True, COLA False
@@ -1362,7 +1587,7 @@ class TestSTFT:
             assert not check_COLA(window, nperseg, noverlap), msg
 
             t = np.arange(N)
-            x = 10 * np.random.randn(t.size)
+            x = 10 * rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True,
@@ -1376,13 +1601,13 @@ class TestSTFT:
             assert_allclose(x, xr[:len(x)], err_msg=msg)
 
     def test_roundtrip_float32(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [('hann', 1024, 256, 128)]
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
             x = x.astype(np.float32)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
@@ -1396,9 +1621,10 @@ class TestSTFT:
             assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
     def test_roundtrip_complex(self, scaling):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('boxcar', 100, 10, 0),           # Test no overlap
@@ -1411,7 +1637,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size) + 10j*np.random.randn(t.size)
+            x = 10*rng.randn(t.size) + 10j*rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
@@ -1441,7 +1667,7 @@ class TestSTFT:
         assert_allclose(x, xr, err_msg=msg)
 
     def test_roundtrip_boundary_extension(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         # Test against boxcar, since window is all ones, and thus can be fully
         # recovered with no boundary extension
@@ -1453,7 +1679,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                            window=window, detrend=None, padded=True,
@@ -1474,7 +1700,7 @@ class TestSTFT:
                 assert_allclose(x, xr_ext, err_msg=msg)
 
     def test_roundtrip_padded_signal(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('boxcar', 101, 10, 0),
@@ -1483,7 +1709,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True)
@@ -1496,7 +1722,7 @@ class TestSTFT:
             assert_allclose(x, xr[:x.size], err_msg=msg)
 
     def test_roundtrip_padded_FFT(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('hann', 1024, 256, 128, 512),
@@ -1507,7 +1733,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap, nfft in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
             xc = x*np.exp(1j*np.pi/4)
 
             # real signal
@@ -1531,9 +1757,9 @@ class TestSTFT:
             assert_allclose(xc, xcr, err_msg=msg)
 
     def test_axis_rolling(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
-        x_flat = np.random.randn(1024)
+        x_flat = rng.randn(1024)
         _, _, z_flat = stft(x_flat)
 
         for a in range(3):

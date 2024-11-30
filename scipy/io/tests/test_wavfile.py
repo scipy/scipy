@@ -1,6 +1,7 @@
 import os
 import sys
 from io import BytesIO
+import threading
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
@@ -361,6 +362,7 @@ def test_read_unknown_wave_format():
                 wavfile.read(fp, mmap=mmap)
 
 
+@pytest.mark.thread_unsafe
 def test_read_early_eof_with_data():
     # File ends inside 'data' chunk, but we keep incomplete data
     for mmap in [False, True]:
@@ -414,7 +416,8 @@ def test_read_inconsistent_header():
 def test_write_roundtrip(realfile, mmap, rate, channels, dt_str, tmpdir):
     dtype = np.dtype(dt_str)
     if realfile:
-        tmpfile = str(tmpdir.join('temp.wav'))
+        tmpfile = str(tmpdir.join(str(threading.get_native_id()), 'temp.wav'))
+        os.makedirs(os.path.dirname(tmpfile), exist_ok=True)
     else:
         tmpfile = BytesIO()
     data = np.random.rand(100, channels)

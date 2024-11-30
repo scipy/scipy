@@ -3,6 +3,7 @@ class spmatrix:
 
     It cannot be instantiated.  Most of the work is provided by subclasses.
     """
+    _allow_nd = (2,)
 
     @property
     def _bsr_container(self):

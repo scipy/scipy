@@ -139,7 +139,7 @@ bins = np.linspace(0, 8, 25)
 ax.hist(
     ref.null_distribution, bins=bins, density=True, facecolor="C1"
 )
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            'randomized null distribution'])
 plot(ax)
 plt.show()

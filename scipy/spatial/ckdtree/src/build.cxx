@@ -13,6 +13,10 @@
 #include <stdexcept>
 #include <ios>
 
+#if defined(__cplusplus)
+using std::isinf;
+#endif
+
 #define tree_buffer_root(buf) (&(buf)[0][0])
 
 static ckdtree_intp_t

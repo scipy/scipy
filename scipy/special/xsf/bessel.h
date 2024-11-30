@@ -1,7 +1,12 @@
 #pragma once
 
 #include "amos.h"
+#include "cephes/besselpoly.h"
+#include "cephes/i0.h"
+#include "cephes/i1.h"
 #include "cephes/jv.h"
+#include "cephes/k0.h"
+#include "cephes/k1.h"
 #include "cephes/scipy_iv.h"
 #include "cephes/yv.h"
 #include "error.h"
@@ -600,7 +605,7 @@ inline std::complex<double> cyl_bessel_je(double v, std::complex<double> z) {
     cy_y.real(NAN);
     cy_y.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy_j;
     }
     if (v < 0) {
@@ -633,6 +638,14 @@ T cyl_bessel_je(T v, T x) {
     return std::real(cyl_bessel_je(v, std::complex(x)));
 }
 
+inline double cyl_bessel_y0(double x) { return cephes::y0(x); }
+
+inline float cyl_bessel_y0(float x) { return cyl_bessel_y0(static_cast<double>(x)); }
+
+inline double cyl_bessel_y1(double x) { return cephes::y1(x); }
+
+inline float cyl_bessel_y1(float x) { return cyl_bessel_y1(static_cast<double>(x)); }
+
 inline std::complex<double> cyl_bessel_ye(double v, std::complex<double> z) {
     int n = 1;
     int kode = 2;
@@ -645,7 +658,7 @@ inline std::complex<double> cyl_bessel_ye(double v, std::complex<double> z) {
     cy_y.real(NAN);
     cy_y.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy_y;
     }
     if (v < 0) {
@@ -698,7 +711,7 @@ inline std::complex<double> cyl_bessel_ie(double v, std::complex<double> z) {
     cy_k.real(NAN);
     cy_k.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v < 0) {
@@ -742,7 +755,7 @@ T cyl_bessel_ie(T v, T x) {
 
 inline std::complex<double> cyl_bessel_ke(double v, std::complex<double> z) {
     std::complex<double> cy{NAN, NAN};
-    if (isnan(v) || isnan(std::real(z)) || isnan(std::imag(z))) {
+    if (std::isnan(v) || std::isnan(std::real(z)) || std::isnan(std::imag(z))) {
         return cy;
     }
 
@@ -795,7 +808,7 @@ inline std::complex<double> cyl_hankel_1e(double v, std::complex<double> z) {
     cy.real(NAN);
     cy.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v < 0) {
@@ -823,7 +836,7 @@ inline std::complex<double> cyl_hankel_2e(double v, std::complex<double> z) {
     int sign = 1;
 
     std::complex<double> cy{NAN, NAN};
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
 
@@ -844,6 +857,14 @@ inline std::complex<float> cyl_hankel_2e(float v, std::complex<float> z) {
     );
 }
 
+inline double cyl_bessel_j0(double x) { return cephes::j0(x); }
+
+inline float cyl_bessel_j0(float x) { return cyl_bessel_j0(static_cast<double>(x)); }
+
+inline double cyl_bessel_j1(double x) { return cephes::j1(x); }
+
+inline float cyl_bessel_j1(float x) { return cyl_bessel_j1(static_cast<double>(x)); }
+
 inline std::complex<double> cyl_bessel_j(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
@@ -856,7 +877,7 @@ inline std::complex<double> cyl_bessel_j(double v, std::complex<double> z) {
     cy_y.real(NAN);
     cy_y.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy_j;
     }
     if (v < 0) {
@@ -914,7 +935,7 @@ inline std::complex<double> cyl_bessel_y(double v, std::complex<double> z) {
     cy_y.real(NAN);
     cy_y.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy_y;
     }
     if (v < 0) {
@@ -973,6 +994,22 @@ inline double cyl_bessel_i(double v, double x) { return cephes::iv(v, x); }
 
 inline float cyl_bessel_i(float v, float x) { return cyl_bessel_i(static_cast<double>(v), static_cast<double>(x)); }
 
+inline double cyl_bessel_i0(double x) { return cephes::i0(x); }
+
+inline float cyl_bessel_i0(float x) { return cyl_bessel_i0(static_cast<double>(x)); }
+
+inline double cyl_bessel_i0e(double x) { return cephes::i0e(x); }
+
+inline float cyl_bessel_i0e(float x) { return cyl_bessel_i0e(static_cast<double>(x)); }
+
+inline double cyl_bessel_i1(double x) { return cephes::i1(x); }
+
+inline float cyl_bessel_i1(float x) { return cyl_bessel_i1(static_cast<double>(x)); }
+
+inline double cyl_bessel_i1e(double x) { return cephes::i1e(x); }
+
+inline float cyl_bessel_i1e(float x) { return cyl_bessel_i1e(static_cast<double>(x)); }
+
 inline std::complex<double> cyl_bessel_i(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
@@ -985,7 +1022,7 @@ inline std::complex<double> cyl_bessel_i(double v, std::complex<double> z) {
     cy_k.real(NAN);
     cy_k.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v < 0) {
@@ -1075,6 +1112,22 @@ T cyl_bessel_k(T v, T z) {
     return std::real(cyl_bessel_k(v, std::complex(z)));
 }
 
+inline double cyl_bessel_k0(double x) { return cephes::k0(x); }
+
+inline float cyl_bessel_k0(float x) { return cyl_bessel_k0(static_cast<double>(x)); }
+
+inline double cyl_bessel_k0e(double x) { return cephes::k0e(x); }
+
+inline float cyl_bessel_k0e(float x) { return cyl_bessel_k0e(static_cast<double>(x)); }
+
+inline double cyl_bessel_k1(double x) { return cephes::k1(x); }
+
+inline float cyl_bessel_k1(float x) { return cyl_bessel_k1(static_cast<double>(x)); }
+
+inline double cyl_bessel_k1e(double x) { return cephes::k1e(x); }
+
+inline float cyl_bessel_k1e(float x) { return cyl_bessel_k1e(static_cast<double>(x)); }
+
 inline std::complex<double> cyl_hankel_1(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
@@ -1086,7 +1139,7 @@ inline std::complex<double> cyl_hankel_1(double v, std::complex<double> z) {
     cy.real(NAN);
     cy.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
         return cy;
     }
     if (v < 0) {
@@ -1116,7 +1169,12 @@ inline std::complex<double> cyl_hankel_2(double v, std::complex<double> z) {
     cy.real(NAN);
     cy.imag(NAN);
 
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+    if (std::isnan(v) || std::isnan(z.real()) || std::isnan(z.imag())) {
+        return cy;
+    }
+    if (v == 0 && z == 0.0) {
+        cy.real(NAN);
+        cy.imag(INFINITY);
         return cy;
     }
     if (v < 0) {
@@ -1133,6 +1191,12 @@ inline std::complex<double> cyl_hankel_2(double v, std::complex<double> z) {
 
 inline std::complex<float> cyl_hankel_2(float v, std::complex<float> z) {
     return static_cast<std::complex<float>>(cyl_hankel_2(static_cast<double>(v), static_cast<std::complex<double>>(z)));
+}
+
+inline double besselpoly(double a, double lambda, double nu) { return cephes::besselpoly(a, lambda, nu); }
+
+inline float besselpoly(float a, float lambda, float nu) {
+    return besselpoly(static_cast<double>(a), static_cast<double>(lambda), static_cast<double>(nu));
 }
 
 } // namespace xsf

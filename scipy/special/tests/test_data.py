@@ -13,7 +13,7 @@ from scipy.special import (
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc,
     elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
-    bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
+    bdtrik, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
     nbdtrik, pdtrik, owens_t,
     mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
@@ -144,9 +144,6 @@ def eval_genlaguerre_ddd(n, a, x):
 def bdtrik_comp(y, n, p):
     return bdtrik(1-y, n, p)
 
-def btdtri_comp(a, b, p):
-    return btdtri(a, b, 1-p)
-
 def btdtria_comp(p, b, x):
     return btdtria(1-p, b, x)
 
@@ -254,20 +251,6 @@ BOOST_TESTS = [
 
         data(betaincinv, 'ibeta_inv_data_ipp-ibeta_inv_data',
              (0,1,2), 3, rtol=1e-5),
-
-        data(btdtr, 'ibeta_small_data_ipp-ibeta_small_data',
-             (0,1,2), 5, rtol=6e-15),
-        data(btdtr, 'ibeta_data_ipp-ibeta_data',
-             (0,1,2), 5, rtol=4e-13),
-        data(btdtr, 'ibeta_int_data_ipp-ibeta_int_data',
-             (0,1,2), 5, rtol=2e-14),
-        data(btdtr, 'ibeta_large_data_ipp-ibeta_large_data',
-             (0,1,2), 5, rtol=4e-10),
-
-        data(btdtri, 'ibeta_inv_data_ipp-ibeta_inv_data',
-             (0,1,2), 3, rtol=1e-5),
-        data(btdtri_comp, 'ibeta_inv_data_ipp-ibeta_inv_data',
-             (0,1,2), 4, rtol=8e-7),
 
         data(btdtria, 'ibeta_inva_data_ipp-ibeta_inva_data',
              (2,0,1), 3, rtol=5e-9),
@@ -665,12 +648,7 @@ BOOST_TESTS = [
 
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    # Filter deprecation warnings of any deprecated functions.
-    if test.func in [btdtr, btdtri, btdtri_comp]:
-        with pytest.deprecated_call():
-            _test_factory(test)
-    else:
-        _test_factory(test)
+     _test_factory(test)
 
 
 GSL_TESTS = [

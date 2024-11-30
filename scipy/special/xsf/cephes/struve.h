@@ -88,6 +88,7 @@
 
 #include "dd_real.h"
 #include "gamma.h"
+#include "rgamma.h"
 #include "scipy_iv.h"
 
 namespace xsf {
@@ -306,7 +307,7 @@ namespace cephes {
                 if (v < -1) {
                     return xsf::cephes::gammasgn(v + 1.5) * std::numeric_limits<double>::infinity();
                 } else if (v == -1) {
-                    return 2 / std::sqrt(M_PI) / xsf::cephes::Gamma(0.5);
+                    return 2 / std::sqrt(M_PI) * xsf::cephes::rgamma(0.5);
                 } else {
                     return 0;
                 }

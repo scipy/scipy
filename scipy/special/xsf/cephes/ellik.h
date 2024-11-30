@@ -101,7 +101,7 @@ namespace cephes {
                 double sp = std::sin(phi);
                 double cp = std::cos(phi);
 
-                double a = log(4 * sp * sm / (1 + cp));
+                double a = std::log(4 * sp * sm / (1 + cp));
                 double b = -(1 + cp / sp / sp - a) / 4 / m;
                 return (a + b) / sm;
             }

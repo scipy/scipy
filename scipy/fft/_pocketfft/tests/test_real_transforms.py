@@ -1,5 +1,6 @@
 from os.path import join, dirname
-from typing import Callable, Union
+from collections.abc import Callable
+from threading import Lock
 
 import numpy as np
 from numpy.testing import (
@@ -81,6 +82,11 @@ def mdata_xy(request, reference_data):
     y = reference_data['Y'][request.param]
     x = reference_data['X'][request.param]
     return x, y
+
+
+@pytest.fixture
+def ref_lock():
+    return Lock()
 
 
 def fftw_dct_ref(type, size, dt, reference_data):
@@ -197,7 +203,7 @@ def test_complex(transform, dtype):
 
 
 DecMapType = dict[
-    tuple[Callable[..., np.ndarray], Union[type[np.floating], type[int]], int],
+    tuple[Callable[..., np.ndarray], type[np.floating] | type[int], int],
     int,
 ]
 
@@ -266,8 +272,10 @@ for k,v in dec_map.copy().items():
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
 class TestDCT:
-    def test_definition(self, rdt, type, fftwdata_size, reference_data):
-        x, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
+    def test_definition(self, rdt, type, fftwdata_size,
+                        reference_data, ref_lock):
+        with ref_lock:
+            x, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
         y = dct(x, type=type)
         assert_equal(y.dtype, dt)
         dec = dec_map[(dct, rdt, type)]
@@ -341,8 +349,9 @@ def test_dct4_definition_ortho(mdata_x, rdt):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_idct_definition(fftwdata_size, rdt, type, reference_data):
-    xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
+def test_idct_definition(fftwdata_size, rdt, type, reference_data, ref_lock):
+    with ref_lock:
+        xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
     x = idct(yr, type=type)
     dec = dec_map[(idct, rdt, type)]
     assert_equal(x.dtype, dt)
@@ -351,8 +360,9 @@ def test_idct_definition(fftwdata_size, rdt, type, reference_data):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_definition(fftwdata_size, rdt, type, reference_data):
-    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
+def test_definition(fftwdata_size, rdt, type, reference_data, ref_lock):
+    with ref_lock:
+        xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
     y = dst(xr, type=type)
     dec = dec_map[(dst, rdt, type)]
     assert_equal(y.dtype, dt)
@@ -385,8 +395,9 @@ def test_dst4_definition_ortho(rdt, mdata_x):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_idst_definition(fftwdata_size, rdt, type, reference_data):
-    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
+def test_idst_definition(fftwdata_size, rdt, type, reference_data, ref_lock):
+    with ref_lock:
+        xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
     x = idst(yr, type=type)
     dec = dec_map[(idst, rdt, type)]
     assert_equal(x.dtype, dt)

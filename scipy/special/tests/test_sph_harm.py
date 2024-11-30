@@ -22,13 +22,13 @@ class TestSphHarm:
 
         assert_allclose(y, p * np.exp(1j * m * phi))
 
-        assert_allclose(y_jac[0], p_jac * np.exp(1j * m * phi))
-        assert_allclose(y_jac[1], 1j * m * p * np.exp(1j * m * phi))
+        assert_allclose(y_jac[..., 0], p_jac * np.exp(1j * m * phi))
+        assert_allclose(y_jac[..., 1], 1j * m * p * np.exp(1j * m * phi))
 
-        assert_allclose(y_hess[0, 0], p_hess * np.exp(1j * m * phi))
-        assert_allclose(y_hess[0, 1], 1j * m * p_jac * np.exp(1j * m * phi))
-        assert_allclose(y_hess[1, 0], y_hess[0, 1])
-        assert_allclose(y_hess[1, 1], -m * m * p * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 0, 0], p_hess * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 0, 1], 1j * m * p_jac * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 1, 0], y_hess[..., 0, 1])
+        assert_allclose(y_hess[..., 1, 1], -m * m * p * np.exp(1j * m * phi))
 
     @pytest.mark.parametrize("n_max", [7, 10, 50])
     @pytest.mark.parametrize("m_max", [1, 4, 5, 9, 14])

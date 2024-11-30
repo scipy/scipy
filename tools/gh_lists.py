@@ -49,7 +49,7 @@ def main():
         def backtick_repl(matchobj):
             """repl to add an escaped space following a code block if needed"""
             if matchobj.group(2) != ' ':
-                post = '\ ' + matchobj.group(2)
+                post = r'\ ' + matchobj.group(2)
             else:
                 post = matchobj.group(2)
             return '``' + matchobj.group(1) + '``' + post
@@ -62,7 +62,7 @@ def main():
             # substitute any single backtick not adjacent to a backtick
             # for a double backtick
             title = re.sub("(?P<pre>(?:^|(?<=[^`])))`(?P<post>(?=[^`]|$))",
-                           "\g<pre>``\g<post>",
+                           r"\g<pre>``\g<post>",
                            title)
             # add an escaped space if code block is not followed by a space
             title = re.sub("``(.*?)``(.)", backtick_repl, title)

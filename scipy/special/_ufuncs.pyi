@@ -28,8 +28,6 @@ __all__ = [
     'binom',
     'boxcox',
     'boxcox1p',
-    'btdtr',
-    'btdtri',
     'btdtria',
     'btdtrib',
     'cbrt',
@@ -310,8 +308,6 @@ betaln: np.ufunc
 binom: np.ufunc
 boxcox1p: np.ufunc
 boxcox: np.ufunc
-btdtr: np.ufunc
-btdtri: np.ufunc
 btdtria: np.ufunc
 btdtrib: np.ufunc
 cbrt: np.ufunc

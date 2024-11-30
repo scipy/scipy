@@ -37,11 +37,11 @@ from . cimport sf_error
 
 
 cdef extern from "xsf_wrappers.h" nogil:
-    npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp)
-    double binom_wrap(double n, double k)
-    double cephes_hyp2f1_wrap(double a, double b, double c, double x)
-    double cephes_gamma_wrap(double x)
-    double cephes_beta_wrap(double a, double b)
+    npy_cdouble xsf_chyp2f1(double a, double b, double c, npy_cdouble zp)
+    double xsf_binom(double n, double k)
+    double xsf_hyp2f1(double a, double b, double c, double x)
+    double xsf_gamma(double x)
+    double xsf_beta(double a, double b)
     double hyp1f1_wrap(double a, double b, double x) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
 
@@ -51,9 +51,9 @@ cdef extern from "xsf_wrappers.h" nogil:
 cdef inline number_t hyp2f1(double a, double b, double c, number_t z) noexcept nogil:
     cdef npy_cdouble r
     if number_t is double:
-        return cephes_hyp2f1_wrap(a, b, c, z)
+        return xsf_hyp2f1(a, b, c, z)
     else:
-        r = hyp2f1_complex_wrap(a, b, c, npy_cdouble_from_double_complex(z))
+        r = xsf_chyp2f1(a, b, c, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
 
 cdef inline number_t hyp1f1(double a, double b, number_t z) noexcept nogil:
@@ -73,7 +73,7 @@ cdef inline number_t eval_jacobi(double n, double alpha, double beta, number_t x
     cdef double a, b, c, d
     cdef number_t g
 
-    d = binom_wrap(n+alpha, n)
+    d = xsf_binom(n+alpha, n)
     a = -n
     b = n + alpha + beta + 1
     c = alpha + 1
@@ -100,7 +100,7 @@ cdef inline double eval_jacobi_l(Py_ssize_t n, double alpha, double beta, double
             t = 2*k+alpha+beta
             d = ((t*(t+1)*(t+2))*(x-1)*p + 2*k*(k+beta)*(t+2)*d) / (2*(k+alpha+1)*(k+alpha+beta+1)*t)
             p = d + p
-        return binom_wrap(n+alpha, n)*p
+        return xsf_binom(n+alpha, n)*p
 
 #-----------------------------------------------------------------------------
 # Shifted Jacobi
@@ -108,11 +108,11 @@ cdef inline double eval_jacobi_l(Py_ssize_t n, double alpha, double beta, double
 
 @cython.cdivision(True)
 cdef inline number_t eval_sh_jacobi(double n, double p, double q, number_t x) noexcept nogil:
-    return eval_jacobi(n, p-q, q-1, 2*x-1) / binom_wrap(2*n + p - 1, n)
+    return eval_jacobi(n, p-q, q-1, 2*x-1) / xsf_binom(2*n + p - 1, n)
 
 @cython.cdivision(True)
 cdef inline double eval_sh_jacobi_l(Py_ssize_t n, double p, double q, double x) noexcept nogil:
-    return eval_jacobi_l(n, p-q, q-1, 2*x-1) / binom_wrap(2*n + p - 1, n)
+    return eval_jacobi_l(n, p-q, q-1, 2*x-1) / xsf_binom(2*n + p - 1, n)
 
 #-----------------------------------------------------------------------------
 # Gegenbauer (Ultraspherical)
@@ -123,7 +123,7 @@ cdef inline number_t eval_gegenbauer(double n, double alpha, number_t x) noexcep
     cdef double a, b, c, d
     cdef number_t g
 
-    d = cephes_gamma_wrap(n+2*alpha)/cephes_gamma_wrap(1+n)/cephes_gamma_wrap(2*alpha)
+    d = xsf_gamma(n+2*alpha)/xsf_gamma(1+n)/xsf_gamma(2*alpha)
     a = -n
     b = n + 2*alpha
     c = alpha + 0.5
@@ -154,7 +154,7 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
         a = n//2
 
         d = 1 if a % 2 == 0 else -1
-        d /= cephes_beta_wrap(alpha, 1 + a)
+        d /= xsf_beta(alpha, 1 + a)
         if n == 2*a:
             d /= (a + alpha)
         else:
@@ -181,7 +181,7 @@ cdef inline double eval_gegenbauer_l(Py_ssize_t n, double alpha, double x) noexc
             # avoid loss of precision
             return 2*alpha/n * p
         else:
-            return binom_wrap(n+2*alpha-1, n)*p
+            return xsf_binom(n+2*alpha-1, n)*p
 
 #-----------------------------------------------------------------------------
 # Chebyshev 1st kind (T)
@@ -332,9 +332,9 @@ cdef inline double eval_legendre_l(Py_ssize_t n, double x) noexcept nogil:
 
         d = 1 if a % 2 == 0 else -1
         if n == 2*a:
-            d *= -2 / cephes_beta_wrap(a + 1, -0.5)
+            d *= -2 / xsf_beta(a + 1, -0.5)
         else:
-            d *= 2 * x / cephes_beta_wrap(a + 1, 0.5)
+            d *= 2 * x / xsf_beta(a + 1, 0.5)
 
         p = 0
         for kk in range(a+1):
@@ -377,7 +377,7 @@ cdef inline number_t eval_genlaguerre(double n, double alpha, number_t x) noexce
                        "polynomial defined only for alpha > -1")
         return NAN
 
-    d = binom_wrap(n+alpha, n)
+    d = xsf_binom(n+alpha, n)
     a = -n
     b = alpha + 1
     g = x
@@ -410,7 +410,7 @@ cdef inline double eval_genlaguerre_l(Py_ssize_t n, double alpha, double x) noex
             k = kk+1.0
             d = -x/(k+alpha+1)*p + (k/(k+alpha+1)) * d
             p = d + p
-        return binom_wrap(n+alpha, n)*p
+        return xsf_binom(n+alpha, n)*p
 
 #-----------------------------------------------------------------------------
 # Laguerre

@@ -369,7 +369,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
         For mixed integrality constraints, supply an array of shape ``c.shape``.
         To infer a constraint on each decision variable from shorter inputs,
-        the argument will be broadcasted to ``c.shape`` using `numpy.broadcast_to`.
+        the argument will be broadcast to ``c.shape`` using `numpy.broadcast_to`.
 
         This argument is currently used only by the
         :ref:`'highs' <optimize.linprog-highs>` method and is ignored otherwise.

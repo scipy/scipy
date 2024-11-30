@@ -714,7 +714,7 @@ class TestGetWindow:
         assert_raises(ValueError, windows.get_window, 'broken', 4)
 
     def test_array_as_window(self):
-        # github issue 3603
+        # GitHub issue 3603
         osfactor = 128
         sig = np.arange(128)
 

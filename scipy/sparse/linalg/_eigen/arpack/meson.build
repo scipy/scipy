@@ -98,7 +98,7 @@ arpack_lib = static_library('arpack_lib',
 arpack_module = custom_target('arpack_module',
   output: ['_arpackmodule.c', '_arpack-f2pywrappers.f'],
   input: 'arpack.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
 )
 
 _arpack = py3.extension_module('_arpack',

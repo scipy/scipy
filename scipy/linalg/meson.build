@@ -49,7 +49,7 @@ linalg_cython_gen = generator(cython,
 fblas_module = custom_target('fblas_module',
   output: ['_fblasmodule.c'],
   input: 'fblas.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
     [
       'fblas_l1.pyf.src',
@@ -73,7 +73,7 @@ py3.extension_module('_fblas',
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c'],
   input: 'flapack.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
     [
       'flapack_user.pyf.src',
@@ -180,18 +180,12 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
-# _matfuncs_expm:
-_matfuncs_expm_pyx = custom_target('_matfuncs_expm',
-  output: '_matfuncs_expm.pyx',
-  input: '_matfuncs_expm.pyx.in',
-  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_matfuncs_expm',
-  linalg_cython_gen.process(_matfuncs_expm_pyx),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
+  [
+    '_matfuncs_expm.h',
+    '_matfuncs_expm.c',
+  ],
+  dependencies: [np_dep, lapack_dep, blas_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -204,6 +198,22 @@ _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   install: true,
   subdir: 'scipy/linalg'
 )
+
+if use_pythran
+  py3.extension_module('_linalg_pythran',
+    pythran_gen.process('_linalg_pythran.py'),
+    cpp_args: cpp_args_pythran,
+    dependencies: [pythran_dep, np_dep],
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/linalg'
+  )
+else
+  py3.install_sources(
+    ['_linalg_pythran.py'],
+    subdir: 'scipy/linalg'
+  )
+endif
 
 
 python_sources = [

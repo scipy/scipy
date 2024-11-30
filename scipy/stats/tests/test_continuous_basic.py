@@ -62,12 +62,13 @@ xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'truncnorm',
                 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
-                'crystalball', 'exponweib', 'f', 'fisk', 'foldcauchy', 'genextreme',
-                'genpareto', 'halfcauchy', 'invgamma', 'irwinhall', 'jf_skew_t',
-                'johnsonsu', 'kappa3', 'kappa4', 'levy', 'levy_l', 'loglaplace',
-                'lomax', 'mielke', 'ncf', 'nct', 'pareto', 'powerlognorm', 'powernorm',
-                'rel_breitwigner',  'skewcauchy', 't', 'trapezoid', 'truncexpon',
-                'truncpareto', 'tukeylambda', 'vonmises', 'vonmises_line'}
+                'crystalball', 'dpareto_lognorm', 'exponweib', 'f', 'fisk',
+                'foldcauchy', 'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
+                'irwinhall', 'jf_skew_t', 'johnsonsu', 'kappa3', 'kappa4', 'landau',
+                'levy', 'levy_l', 'loglaplace', 'lomax', 'mielke', 'ncf', 'nct',
+                'pareto', 'powerlognorm', 'powernorm', 'rel_breitwigner',
+                'skewcauchy', 't', 'trapezoid', 'truncexpon', 'truncpareto',
+                'tukeylambda', 'vonmises', 'vonmises_line'}
 skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
                'recipinvgauss', 'studentized_range'}  # far too slow (>10min)
 
@@ -76,11 +77,11 @@ skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = {'argus', 'beta', 'betaprime', 'cauchy', 'chi', 'chi2', 'cosine',
-               'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
-               'gausshyper', 'gengamma', 'genhyperbolic',
+               'dgamma', 'dpareto_lognorm', 'dweibull', 'erlang', 'f', 'foldcauchy',
+               'gamma', 'gausshyper', 'gengamma', 'genhyperbolic',
                'geninvgauss', 'gennorm', 'genpareto',
                'halfcauchy', 'halfgennorm', 'invgamma', 'irwinhall', 'jf_skew_t',
-               'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
+               'ksone', 'kstwo', 'kstwobign', 'landau', 'levy_l', 'loggamma',
                'logistic', 'loguniform', 'maxwell', 'nakagami',
                'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
                'powerlaw', 'rdist', 'reciprocal', 'rice',
@@ -385,8 +386,8 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
-                          'exponnorm', 'genhyperbolic', 'geninvgauss',
+    shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dpareto_lognorm', 'dweibull',
+                          'exponnorm', 'genhyperbolic', 'geninvgauss', 'landau',
                           'levy_stable', 'nct', 'norminvgauss', 'rice',
                           'skewnorm', 'semicircular', 'gennorm', 'loggamma']
 

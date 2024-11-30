@@ -175,7 +175,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 plot(ax)
 ax.hist(ref.null_distribution, np.linspace(-5, 5, 26),
         density=True)
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            f'exact \n({len(ref.null_distribution)} permutations)'])
 plt.show()
 ```

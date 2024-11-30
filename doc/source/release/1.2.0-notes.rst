@@ -91,7 +91,7 @@ parts. Supplying a map-like callable allows other parallelisation approaches
 (such as ``mpi4py``, or ``joblib``) to be used.
 
 ``dual_annealing`` (and ``shgo`` below) is a powerful new general-purpose
-global optizimation (GO) algorithm. ``dual_annealing`` uses two annealing
+global optimization (GO) algorithm. ``dual_annealing`` uses two annealing
 processes to accelerate the convergence towards the global minimum of an
 objective mathematical function. The first annealing process controls the
 stochastic Markov chain searching and the second annealing process controls the

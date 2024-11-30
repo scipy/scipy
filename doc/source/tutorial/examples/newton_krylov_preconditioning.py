@@ -1,5 +1,5 @@
 from scipy.optimize import root
-from scipy.sparse import spdiags, kron
+from scipy.sparse import dia_array, kron
 from scipy.sparse.linalg import spilu, LinearOperator
 from numpy import cosh, zeros_like, mgrid, zeros, eye
 
@@ -16,13 +16,13 @@ def get_preconditioner():
     diags_x[0,:] = 1/hx/hx
     diags_x[1,:] = -2/hx/hx
     diags_x[2,:] = 1/hx/hx
-    Lx = spdiags(diags_x, [-1,0,1], nx, nx)
+    Lx = dia_array((diags_x, [-1,0,1]), shape=(nx, nx))
 
     diags_y = zeros((3, ny))
     diags_y[0,:] = 1/hy/hy
     diags_y[1,:] = -2/hy/hy
     diags_y[2,:] = 1/hy/hy
-    Ly = spdiags(diags_y, [-1,0,1], ny, ny)
+    Ly = dia_array((diags_y, [-1,0,1]), shape=(ny, ny))
 
     J1 = kron(Lx, eye(ny)) + kron(eye(nx), Ly)
 

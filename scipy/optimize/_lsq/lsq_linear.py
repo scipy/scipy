@@ -230,8 +230,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     >>> from scipy.optimize import lsq_linear
     >>> rng = np.random.default_rng()
     ...
-    >>> m = 20000
-    >>> n = 10000
+    >>> m = 2000
+    >>> n = 1000
     ...
     >>> A = rand(m, n, density=1e-4, random_state=rng)
     >>> b = rng.standard_normal(m)
@@ -240,10 +240,9 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     >>> ub = lb + 1
     ...
     >>> res = lsq_linear(A, b, bounds=(lb, ub), lsmr_tol='auto', verbose=1)
-    # may vary
     The relative change of the cost function is less than `tol`.
-    Number of iterations 16, initial cost 1.5039e+04, final cost 1.1112e+04,
-    first-order optimality 4.66e-08.
+    Number of iterations 10, initial cost 1.0070e+03, final cost 9.6602e+02,
+    first-order optimality 2.21e-09.        # may vary
     """
     if method not in ['trf', 'bvls']:
         raise ValueError("`method` must be 'trf' or 'bvls'")

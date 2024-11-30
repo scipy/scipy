@@ -5,13 +5,14 @@
 
 import numpy as np
 
-from scipy._lib._util import check_random_state, rng_integers
+from scipy._lib._util import (check_random_state, rng_integers,
+                              _transition_to_rng)
 from scipy.sparse import csc_matrix
 
 __all__ = ['clarkson_woodruff_transform']
 
 
-def cwt_matrix(n_rows, n_columns, seed=None):
+def cwt_matrix(n_rows, n_columns, rng=None):
     r"""
     Generate a matrix S which represents a Clarkson-Woodruff transform.
 
@@ -26,13 +27,12 @@ def cwt_matrix(n_rows, n_columns, seed=None):
         Number of rows of S
     n_columns : int
         Number of columns of S
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
 
     Returns
     -------
@@ -45,15 +45,16 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     .. math:: \|SA\| = (1 \pm \epsilon)\|A\|
     Where the error epsilon is related to the size of S.
     """
-    rng = check_random_state(seed)
+    rng = check_random_state(rng)
     rows = rng_integers(rng, 0, n_rows, n_columns)
     cols = np.arange(n_columns+1)
     signs = rng.choice([1, -1], n_columns)
-    S = csc_matrix((signs, rows, cols),shape=(n_rows, n_columns))
+    S = csc_matrix((signs, rows, cols), shape=(n_rows, n_columns))
     return S
 
 
-def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
+@_transition_to_rng("seed", position_num=2)
+def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     r"""
     Applies a Clarkson-Woodruff Transform/sketch to the input matrix.
 
@@ -71,13 +72,11 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
         Input matrix, of shape ``(n, d)``.
     sketch_size : int
         Number of rows for the sketch.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -175,5 +174,5 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     166.58473879945151
 
     """
-    S = cwt_matrix(sketch_size, input_matrix.shape[0], seed)
+    S = cwt_matrix(sketch_size, input_matrix.shape[0], rng=rng)
     return S.dot(input_matrix)

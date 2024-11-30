@@ -13,8 +13,40 @@ from libc.math cimport NAN
 
 cnp.import_array()
 
-cdef extern from "src/__fitpack.h":
-    void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
+cdef extern from "src/__fitpack.h" namespace "fitpack":
+    void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result
+    ) noexcept nogil
+    ssize_t _find_interval(const double* tptr, ssize_t len_t,
+                           int k,
+                           double xval,
+                           ssize_t prev_l,
+                           int extrapolate
+    ) noexcept nogil
+    void qr_reduce(double *aptr, const ssize_t m, const ssize_t nz,    # a
+                   ssize_t *offset,
+                   const ssize_t nc,
+                   double *yptr, const ssize_t ydim1,                  # y
+                   const ssize_t startrow
+    ) except+ nogil
+    void data_matrix(const double *xptr, ssize_t m,
+                       const double *tptr, ssize_t len_t,
+                       int k,
+                       const double *wptr,
+                       double *Aptr,    # outputs
+                       ssize_t *offset_ptr,
+                       Py_ssize_t *nc,
+                       double *wrk
+    ) except+ nogil
+    void fpback(const double *Rptr, ssize_t m, ssize_t nz,
+                ssize_t nc,
+                const double *yptr, ssize_t ydim2,
+                double *cptr
+    ) except+ nogil
+    double fpknot(const double *x_ptr, ssize_t m,
+                  const double *t_ptr, ssize_t len_t,
+                  int k,
+                  const double *residuals_ptr
+    ) except+ nogil
 
 
 ctypedef fused int32_or_int64:
@@ -58,37 +90,14 @@ cdef inline int find_interval(const double[::1] t,
         Suitable interval or -1 if xval was nan.
 
     """
-    cdef:
-        int l
-        int n = t.shape[0] - k - 1
-        double tb = t[k]
-        double te = t[n]
-
-    if xval != xval:
-        # nan
-        return -1
-
-    if ((xval < tb) or (xval > te)) and not extrapolate:
-        return -1
-
-    l = prev_l if k < prev_l < n else k
-
-    # xval is in support, search for interval s.t. t[interval] <= xval < t[l+1]
-    while(xval < t[l] and l != k):
-        l -= 1
-
-    l += 1
-    while(xval >= t[l] and l != n):
-        l += 1
-
-    return l-1
+    return _find_interval(&t[0], t.shape[0], k, xval, prev_l, extrapolate)
 
 
 # NB: a python wrapper for find_interval. The leading underscore signals
 # it's not meant to be user-visible outside of _bsplines.py
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _find_interval(const double[::1] t,
+def _py_find_interval(const double[::1] t,
                    int k,
                    double xval,
                    int prev_l,
@@ -293,57 +302,6 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
-                            double[::1, :] ab,
-                            int kl, int ku,
-                            const cnp.npy_long[::1] deriv_ords,
-                            int offset=0):
-    """ Fill in the entries of the collocation matrix corresponding to known
-    derivatives at xval.
-
-    The collocation matrix is in the banded storage, as prepared by _colloc.
-    No error checking.
-
-    Parameters
-    ----------
-    t : ndarray, shape (nt + k + 1,)
-        knots
-    k : integer
-        B-spline order
-    xval : float
-        The value at which to evaluate the derivatives at.
-    ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
-        B-spline collocation matrix.
-        This argument is modified *in-place*.
-    kl : integer
-        Number of lower diagonals of ab.
-    ku : integer
-        Number of upper diagonals of ab.
-    deriv_ords : 1D ndarray
-        Orders of derivatives known at xval
-    offset : integer, optional
-        Skip this many rows of the matrix ab.
-
-    """
-    cdef:
-        int left, nu, a, clmn, row
-        double[::1] wrk = np.empty(2*k+2, dtype=np.float64)
-
-    # derivatives @ xval
-    with nogil:
-        left = find_interval(t, k, xval, k, extrapolate=False)
-        for row in range(deriv_ords.shape[0]):
-            nu = deriv_ords[row]
-            _deBoor_D(&t[0], xval, k, left, nu, &wrk[0])
-            # if A were a full matrix, it would be just
-            # ``A[row + offset, left-k:left+1] = bb``.
-            for a in range(k+1):
-                clmn = left - k + a
-                ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
 def _norm_eq_lsq(const double[::1] x,
                  const double[::1] t,
                  int k,
@@ -490,8 +448,8 @@ def _make_design_matrix(const double[::1] x,
 @cython.nonecheck(False)
 def evaluate_ndbspline(const double[:, ::1] xi,
                        const double[:, ::1] t,
-                       const long[::1] len_t,
-                       long[::1] k,
+                       const npy_int32[::1] len_t,
+                       const npy_int32[::1] k,
                        int[::1] nu,
                        bint extrapolate,
                        const double[::1] c1r,
@@ -683,7 +641,12 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 @cython.wraparound(False)
 @cython.nonecheck(False)
 @cython.boundscheck(False)
-def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1] k):
+def _colloc_nd(const double[:, ::1] xvals,
+               const double[:, ::1] _t,
+               const npy_int32[::1] len_t,
+               const npy_int32[::1] k,
+               const npy_intp[:, ::1] _indices_k1d,
+               const npy_intp[::1] _cstrides):
     """Construct the N-D tensor product collocation matrix as a CSR array.
 
     In the dense representation, each row of the collocation matrix corresponds
@@ -744,11 +707,9 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
 
         npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
         npy_intp volume   # the number of non-zero terms
-        npy_intp[:, ::1] _indices_k1d    # tabulated np.unravel_index
 
         # shifted indices into the data array
         npy_intp[::1] idx_c = np.ones(ndim, dtype=np.intp) * (-101)  # any sentinel would do, really
-        npy_intp[::1] cstrides
         npy_intp idx_cflat
 
         npy_intp[::1] nu = np.zeros(ndim, dtype=np.intp)
@@ -764,26 +725,9 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
         int j, d
 
     # the number of non-zero b-splines for each data point.
-    k1_shape = tuple(kd + 1 for kd in k)
     volume = 1
     for d in range(ndim):
         volume *= k[d] + 1
-
-    # Precompute the shape and strides of the coefficients array.
-    # This would have been the NdBSpline coefficients; in the present context
-    # this is a helper to compute the indices into the collocation matrix.
-    c_shape = tuple(len(t[d]) - k1_shape[d] for d in range(ndim))
-
-    # The computation is equivalent to
-    # >>> x = np.empty(c_shape)
-    # >>> cstrides = [s // 8 for s in x.strides]
-    cs = c_shape[1:] + (1,)
-    cstrides = np.cumprod(cs[::-1], dtype=np.intp)[::-1].copy()
-
-    # tabulate flat indices for iterating over the (k+1)**ndim subarray of
-    # non-zero b-spline elements
-    indices = np.unravel_index(np.arange(volume), k1_shape)
-    _indices_k1d = np.asarray(indices, dtype=np.intp).T.copy()
 
     # Allocate the collocation matrix in the CSR format.
     # If dense, this would have been
@@ -799,7 +743,7 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
         # For each point, iterate over the dimensions
         out_of_bounds = 0
         for d in range(ndim):
-            td = t[d]
+            td = _t[d, :len_t[d]]
             xd = xv[d]
             kd = k[d]
 
@@ -829,7 +773,7 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
             for d in range(ndim):
                 factor *= b[d, idx_b[d]]
                 idx_c[d] = idx_b[d] + i[d] - k[d]
-                idx_cflat += idx_c[d] * cstrides[d]
+                idx_cflat += idx_c[d] * _cstrides[d]
 
             # The `idx_cflat` computation above is an unrolled version of
             # idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
@@ -844,3 +788,79 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
             csr_data[j*volume + iflat] = factor
 
     return np.asarray(csr_data), np.asarray(csr_indices), csr_indptr
+
+
+# ---------------------------
+# wrappers for fitpack repro
+# ---------------------------
+def _qr_reduce(double[:, ::1] a, ssize_t[::1] offset, ssize_t nc,   # A packed
+               double[:, ::1] y,
+               ssize_t startrow=1
+):
+    # (A, offset, nc) is a PackedMatrix instance, unpacked
+    qr_reduce(&a[0, 0], a.shape[0], a.shape[1],
+              &offset[0],
+              nc,
+              &y[0, 0], y.shape[1],
+              startrow)
+
+
+def _data_matrix(const double[::1] x,
+                 const double[::1] t,
+                 int k,
+                 const double[::1] w):
+    cdef:
+         ssize_t m = x.shape[0]
+         double[:, ::1] A = np.empty((m, k+1), dtype=float)
+         ssize_t[::1] offset = np.zeros(m, dtype=np.intp)
+         double[::1] wrk = np.empty(2*k+2, dtype=float)
+         ssize_t nc
+
+    if w.shape[0] != x.shape[0]:
+        raise ValueError(f"{len(w) =} != {len(x) =}.")
+
+    data_matrix(&x[0], m,
+                &t[0], t.shape[0],
+                k,
+                &w[0],
+                &A[0, 0],    # output: (A, offset, nc)
+                &offset[0],
+                &nc,
+                &wrk[0],     # work array
+    )
+    return np.asarray(A), np.asarray(offset), int(nc)
+
+
+def _fpback(const double[:, ::1] R, ssize_t nc,  # (R, offset, nc) triangular => offset is range(nc)
+            const double[:, ::1] y
+):
+    cdef:
+        ssize_t m = R.shape[0]
+        ssize_t nz = R.shape[1]
+
+    if y.shape[0] != m:
+        raise ValueError(f"{y.shape = } != {m =}.")
+    if nc > m:
+        raise ValueError(f"{nc = } > {m = }.")
+
+    cdef double[:, ::1] c = np.empty_like(y[:nc, :])
+
+    fpback(&R[0, 0], m, nz,
+           nc,
+           &y[0, 0], y.shape[1],
+           &c[0, 0])
+
+    return np.asarray(c)
+
+
+def _fpknot(const double[::1] x,
+            const double[::1] t,
+            int k,
+            const double[::1] residuals):
+    if x.shape[0] != residuals.shape[0]:
+        raise ValueError(f"{len(x) = } != {len(residuals) =}")
+
+    return fpknot(&x[0], x.shape[0],
+                  &t[0], t.shape[0],
+                  k,
+                  &residuals[0])

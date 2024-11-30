@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_array
 from scipy.sparse.csgraph import csgraph_from_dense, csgraph_to_dense
 
 
@@ -45,7 +45,7 @@ def test_multiple_edges():
     # create a random square matrix with an even number of elements
     np.random.seed(1234)
     X = np.random.random((10, 10))
-    Xcsr = csr_matrix(X)
+    Xcsr = csr_array(X)
 
     # now double-up every other column
     Xcsr.indices[::2] = Xcsr.indices[1::2]

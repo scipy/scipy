@@ -67,7 +67,7 @@ def graphs(sparse_cls):
 def test_csgraph_equiv(func, graphs):
     A_dense, A_sparse = graphs
     actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
+    desired = func(sp.csc_array(A_dense))
     assert_equal(actual, desired)
 
 
@@ -76,7 +76,7 @@ def test_connected_components(graphs):
     func = spgraph.connected_components
 
     actual_comp, actual_labels = func(A_sparse)
-    desired_comp, desired_labels, = func(sp.csc_matrix(A_dense))
+    desired_comp, desired_labels, = func(sp.csc_array(A_dense))
 
     assert actual_comp == desired_comp
     assert_equal(actual_labels, desired_labels)
@@ -88,7 +88,7 @@ def test_laplacian(graphs):
     func = spgraph.laplacian
 
     actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
+    desired = func(sp.csc_array(A_dense))
 
     assert isinstance(actual, sparse_cls)
 
@@ -102,7 +102,7 @@ def test_order_search(graphs, func):
     A_dense, A_sparse = graphs
 
     actual = func(A_sparse, 0)
-    desired = func(sp.csc_matrix(A_dense), 0)
+    desired = func(sp.csc_array(A_dense), 0)
 
     assert_equal(actual, desired)
 
@@ -115,7 +115,7 @@ def test_tree_search(graphs, func):
     sparse_cls = type(A_sparse)
 
     actual = func(A_sparse, 0)
-    desired = func(sp.csc_matrix(A_dense), 0)
+    desired = func(sp.csc_array(A_dense), 0)
 
     assert isinstance(actual, sparse_cls)
 
@@ -128,7 +128,7 @@ def test_minimum_spanning_tree(graphs):
     func = spgraph.minimum_spanning_tree
 
     actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
+    desired = func(sp.csc_array(A_dense))
 
     assert isinstance(actual, sparse_cls)
 
@@ -141,7 +141,7 @@ def test_maximum_flow(graphs):
     func = spgraph.maximum_flow
 
     actual = func(A_sparse, 0, 2)
-    desired = func(sp.csr_matrix(A_dense), 0, 2)
+    desired = func(sp.csr_array(A_dense), 0, 2)
 
     assert actual.flow_value == desired.flow_value
     assert isinstance(actual.flow, sparse_cls)
@@ -154,7 +154,7 @@ def test_min_weight_full_bipartite_matching(graphs):
     func = spgraph.min_weight_full_bipartite_matching
 
     actual = func(A_sparse[0:2, 1:3])
-    desired = func(sp.csc_matrix(A_dense)[0:2, 1:3])
+    desired = func(sp.csc_array(A_dense)[0:2, 1:3])
 
     assert_equal(actual, desired)
 
@@ -182,7 +182,7 @@ def test_nonzero_fill_value(graphs, func, fill_value, comp_func):
     sparse_cls = type(A_sparse)
 
     actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
+    desired = func(sp.csc_array(A_dense))
 
     if func == spgraph.minimum_spanning_tree:
         assert isinstance(actual, sparse_cls)

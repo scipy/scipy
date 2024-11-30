@@ -22,6 +22,8 @@
 #include <Python.h>
 #include <setjmp.h>
 
+#include "scipy_config.h"
+
 /* Default behavior */
 #define CCALLBACK_DEFAULTS 0x0
 /* Whether calling ccallback_obtain is enabled */
@@ -66,32 +68,9 @@ struct ccallback {
  * Thread-local storage
  */
 
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 4)))
+#if !defined(SCIPY_TLS_EMPTY)
 
-static __thread ccallback_t *_active_ccallback = NULL;
-
-static void *ccallback__get_thread_local(void)
-{
-    return (void *)_active_ccallback;
-}
-
-static int ccallback__set_thread_local(void *value)
-{
-    _active_ccallback = value;
-    return 0;
-}
-
-/*
- * Obtain a pointer to the current ccallback_t structure.
- */
-static ccallback_t *ccallback_obtain(void)
-{
-    return (ccallback_t *)ccallback__get_thread_local();
-}
-
-#elif defined(_MSC_VER)
-
-static __declspec(thread) ccallback_t *_active_ccallback = NULL;
+static SCIPY_TLS ccallback_t *_active_ccallback = NULL;
 
 static void *ccallback__get_thread_local(void)
 {

@@ -11,6 +11,8 @@ from scipy.optimize import minimize_scalar
 from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
 from scipy.stats._stats_py import _var
+from scipy._lib._util import _transition_to_rng
+
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -180,11 +182,12 @@ class DunnettResult:
         return self._ci
 
 
+@_transition_to_rng('random_state', replace_doc=False)
 def dunnett(
     *samples: npt.ArrayLike,  # noqa: D417
     control: npt.ArrayLike,
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided",
-    random_state: SeedType = None
+    rng: SeedType = None
 ) -> DunnettResult:
     """Dunnett's test: multiple comparisons of means against a control group.
 
@@ -211,14 +214,21 @@ def dunnett(
         * 'greater': the means of the distributions underlying the
           samples are greater than the mean of the distribution underlying
           the control.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `random_state` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(random_state)``.
-        If `random_state` is already a ``Generator`` instance, then the
-        provided instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
-        The random number generator is used to control the randomized
-        Quasi-Monte Carlo integration of the multivariate-t distribution.
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `random_state` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `random_state` keyword will emit warnings. Following a
+            deprecation period, the `random_state` keyword will be removed.
 
     Returns
     -------
@@ -311,7 +321,7 @@ def dunnett(
     """
     samples_, control_, rng = _iv_dunnett(
         samples=samples, control=control,
-        alternative=alternative, random_state=random_state
+        alternative=alternative, rng=rng
     )
 
     rho, df, n_group, n_samples, n_control = _params_dunnett(
@@ -342,10 +352,10 @@ def _iv_dunnett(
     samples: Sequence[npt.ArrayLike],
     control: npt.ArrayLike,
     alternative: Literal['two-sided', 'less', 'greater'],
-    random_state: SeedType
+    rng: SeedType
 ) -> tuple[list[np.ndarray], np.ndarray, SeedType]:
     """Input validation for Dunnett's test."""
-    rng = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     if alternative not in {'two-sided', 'less', 'greater'}:
         raise ValueError(

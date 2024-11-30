@@ -798,7 +798,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         * 'prominences', 'right_bases', 'left_bases'
               If `prominence` is given, these keys are accessible. See
               `peak_prominences` for a description of their content.
-        * 'width_heights', 'left_ips', 'right_ips'
+        * 'widths', 'width_heights', 'left_ips', 'right_ips'
               If `width` is given, these keys are accessible. See `peak_widths`
               for a description of their content.
         * 'plateau_sizes', left_edges', 'right_edges'

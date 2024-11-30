@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_equal
 import pytest
 
-from scipy.sparse import csr_matrix, coo_matrix, diags
+from scipy.sparse import csr_array, diags_array
 from scipy.sparse.csgraph import (
     maximum_bipartite_matching, min_weight_full_bipartite_matching
 )
@@ -17,7 +17,7 @@ def test_maximum_bipartite_matching_raises_on_dense_input():
 
 
 def test_maximum_bipartite_matching_empty_graph():
-    graph = csr_matrix((0, 0))
+    graph = csr_array((0, 0))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
     expected_matching = np.array([])
@@ -26,7 +26,7 @@ def test_maximum_bipartite_matching_empty_graph():
 
 
 def test_maximum_bipartite_matching_empty_left_partition():
-    graph = csr_matrix((2, 0))
+    graph = csr_array((2, 0))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
     assert_array_equal(np.array([]), x)
@@ -34,7 +34,7 @@ def test_maximum_bipartite_matching_empty_left_partition():
 
 
 def test_maximum_bipartite_matching_empty_right_partition():
-    graph = csr_matrix((0, 3))
+    graph = csr_array((0, 3))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
     assert_array_equal(np.array([-1, -1, -1]), x)
@@ -42,7 +42,7 @@ def test_maximum_bipartite_matching_empty_right_partition():
 
 
 def test_maximum_bipartite_matching_graph_with_no_edges():
-    graph = csr_matrix((2, 2))
+    graph = csr_array((2, 2))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
     assert_array_equal(np.array([-1, -1]), x)
@@ -52,7 +52,7 @@ def test_maximum_bipartite_matching_graph_with_no_edges():
 def test_maximum_bipartite_matching_graph_that_causes_augmentation():
     # In this graph, column 1 is initially assigned to row 1, but it should be
     # reassigned to make room for row 2.
-    graph = csr_matrix([[1, 1], [1, 0]])
+    graph = csr_array([[1, 1], [1, 0]])
     x = maximum_bipartite_matching(graph, perm_type='column')
     y = maximum_bipartite_matching(graph, perm_type='row')
     expected_matching = np.array([1, 0])
@@ -61,7 +61,7 @@ def test_maximum_bipartite_matching_graph_that_causes_augmentation():
 
 
 def test_maximum_bipartite_matching_graph_with_more_rows_than_columns():
-    graph = csr_matrix([[1, 1], [1, 0], [0, 1]])
+    graph = csr_array([[1, 1], [1, 0], [0, 1]])
     x = maximum_bipartite_matching(graph, perm_type='column')
     y = maximum_bipartite_matching(graph, perm_type='row')
     assert_array_equal(np.array([0, -1, 1]), x)
@@ -69,7 +69,7 @@ def test_maximum_bipartite_matching_graph_with_more_rows_than_columns():
 
 
 def test_maximum_bipartite_matching_graph_with_more_columns_than_rows():
-    graph = csr_matrix([[1, 1, 0], [0, 0, 1]])
+    graph = csr_array([[1, 1, 0], [0, 0, 1]])
     x = maximum_bipartite_matching(graph, perm_type='column')
     y = maximum_bipartite_matching(graph, perm_type='row')
     assert_array_equal(np.array([0, 2]), x)
@@ -80,7 +80,7 @@ def test_maximum_bipartite_matching_explicit_zeros_count_as_edges():
     data = [0, 0]
     indices = [1, 0]
     indptr = [0, 1, 2]
-    graph = csr_matrix((data, indices, indptr), shape=(2, 2))
+    graph = csr_array((data, indices, indptr), shape=(2, 2))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
     expected_matching = np.array([1, 0])
@@ -96,7 +96,7 @@ def test_maximum_bipartite_matching_feasibility_of_result():
                10, 5, 6, 11, 12, 13, 5, 13, 14, 20, 22, 3, 15, 3, 13, 14]
     indptr = [0, 5, 7, 10, 10, 15, 20, 22, 22, 23, 25, 30, 32, 35, 35, 40, 45,
               47, 47, 48, 50]
-    graph = csr_matrix((data, indices, indptr), shape=(20, 25))
+    graph = csr_array((data, indices, indptr), shape=(20, 25))
     x = maximum_bipartite_matching(graph, perm_type='row')
     y = maximum_bipartite_matching(graph, perm_type='column')
     assert (x != -1).sum() == 13
@@ -112,37 +112,37 @@ def test_maximum_bipartite_matching_feasibility_of_result():
 
 def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
     np.random.seed(42)
-    A = diags(np.ones(25), offsets=0, format='csr')
+    A = diags_array(np.ones(25), offsets=0, format='csr')
     rand_perm = np.random.permutation(25)
     rand_perm2 = np.random.permutation(25)
 
     Rrow = np.arange(25)
     Rcol = rand_perm
     Rdata = np.ones(25, dtype=int)
-    Rmat = coo_matrix((Rdata, (Rrow, Rcol))).tocsr()
+    Rmat = csr_array((Rdata, (Rrow, Rcol)))
 
     Crow = rand_perm2
     Ccol = np.arange(25)
     Cdata = np.ones(25, dtype=int)
-    Cmat = coo_matrix((Cdata, (Crow, Ccol))).tocsr()
+    Cmat = csr_array((Cdata, (Crow, Ccol)))
     # Randomly permute identity matrix
-    B = Rmat * A * Cmat
+    B = Rmat @ A @ Cmat
 
     # Row permute
     perm = maximum_bipartite_matching(B, perm_type='row')
     Rrow = np.arange(25)
     Rcol = perm
     Rdata = np.ones(25, dtype=int)
-    Rmat = coo_matrix((Rdata, (Rrow, Rcol))).tocsr()
-    C1 = Rmat * B
+    Rmat = csr_array((Rdata, (Rrow, Rcol)))
+    C1 = Rmat @ B
 
     # Column permute
     perm2 = maximum_bipartite_matching(B, perm_type='column')
     Crow = perm2
     Ccol = np.arange(25)
     Cdata = np.ones(25, dtype=int)
-    Cmat = coo_matrix((Cdata, (Crow, Ccol))).tocsr()
-    C2 = B * Cmat
+    Cmat = csr_array((Cdata, (Crow, Ccol)))
+    C2 = B @ Cmat
 
     # Should get identity matrix back
     assert_equal(any(C1.diagonal() == 0), False)
@@ -151,13 +151,13 @@ def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
 
 @pytest.mark.parametrize('num_rows,num_cols', [(0, 0), (2, 0), (0, 3)])
 def test_min_weight_full_matching_trivial_graph(num_rows, num_cols):
-    biadjacency_matrix = csr_matrix((num_cols, num_rows))
-    row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency_matrix)
+    biadjacency = csr_array((num_cols, num_rows))
+    row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
 
 
-@pytest.mark.parametrize('biadjacency_matrix',
+@pytest.mark.parametrize('biadjacency',
                          [
                             [[1, 1, 1], [1, 0, 0], [1, 0, 0]],
                             [[1, 1, 1], [0, 0, 1], [0, 0, 1]],
@@ -166,9 +166,9 @@ def test_min_weight_full_matching_trivial_graph(num_rows, num_cols):
                             [[0, 1, 0], [0, 2, 0]],
                             [[1, 0], [2, 0], [5, 0]]
                          ])
-def test_min_weight_full_matching_infeasible_problems(biadjacency_matrix):
+def test_min_weight_full_matching_infeasible_problems(biadjacency):
     with pytest.raises(ValueError):
-        min_weight_full_bipartite_matching(csr_matrix(biadjacency_matrix))
+        min_weight_full_bipartite_matching(csr_array(biadjacency))
 
 
 def test_min_weight_full_matching_large_infeasible():
@@ -222,13 +222,13 @@ def test_min_weight_full_matching_large_infeasible():
          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         ])
     with pytest.raises(ValueError, match='no full matching exists'):
-        min_weight_full_bipartite_matching(csr_matrix(a))
+        min_weight_full_bipartite_matching(csr_array(a))
 
 
 def test_explicit_zero_causes_warning():
     with pytest.warns(UserWarning):
-        biadjacency_matrix = csr_matrix(((2, 0, 3), (0, 1, 1), (0, 2, 3)))
-        min_weight_full_bipartite_matching(biadjacency_matrix)
+        biadjacency = csr_array(((2, 0, 3), (0, 1, 1), (0, 2, 3)))
+        min_weight_full_bipartite_matching(biadjacency)
 
 
 # General test for linear sum assignment solvers to make it possible to rely
@@ -291,4 +291,4 @@ linear_sum_assignment_test_cases = product(
 @pytest.mark.parametrize('sign,test_case', linear_sum_assignment_test_cases)
 def test_min_weight_full_matching_small_inputs(sign, test_case):
     linear_sum_assignment_assertions(
-        min_weight_full_bipartite_matching, csr_matrix, sign, test_case)
+        min_weight_full_bipartite_matching, csr_array, sign, test_case)

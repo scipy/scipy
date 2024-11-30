@@ -1,4 +1,6 @@
 """Docstring components common to several ndimage functions."""
+from typing import Final
+
 from scipy._lib import doccer
 
 __all__ = ['docfiller']
@@ -205,4 +207,4 @@ docdict = {
     'prefilter': _prefilter_doc
     }
 
-docfiller = doccer.filldoc(docdict)
+docfiller: Final = doccer.filldoc(docdict)

@@ -32,7 +32,7 @@ def get_array_special_func(f_name, xp, n_array_args):
 
     # if generic array-API implementation is available, use that;
     # otherwise, fall back to NumPy/SciPy
-    if f_name in _generic_implementations and spx is not None:
+    if f_name in _generic_implementations:
         _f = _generic_implementations[f_name](xp=xp, spx=spx)
         if _f is not None:
             return _f
@@ -83,7 +83,7 @@ def _chdtr(xp, spx):
     # defined by `get_array_special_func` is that if `gammainc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtr`.
-    gammainc = getattr(spx.special, 'gammainc', None)  # noqa: F811
+    gammainc = getattr(spx.special, 'gammainc', None) if spx else None  # noqa: F811
     if gammainc is None and hasattr(xp, 'special'):
         gammainc = getattr(xp.special, 'gammainc', None)
     if gammainc is None:
@@ -104,7 +104,7 @@ def _chdtrc(xp, spx):
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtrc`.
-    gammaincc = getattr(spx.special, 'gammaincc', None)  # noqa: F811
+    gammaincc = getattr(spx.special, 'gammaincc', None) if spx else None  # noqa: F811
     if gammaincc is None and hasattr(xp, 'special'):
         gammaincc = getattr(xp.special, 'gammaincc', None)
     if gammaincc is None:
@@ -119,7 +119,7 @@ def _chdtrc(xp, spx):
 
 
 def _betaincc(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None)  # noqa: F811
+    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
     if betainc is None and hasattr(xp, 'special'):
         betainc = getattr(xp.special, 'betainc', None)
     if betainc is None:
@@ -132,7 +132,7 @@ def _betaincc(xp, spx):
 
 
 def _stdtr(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None)  # noqa: F811
+    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
     if betainc is None and hasattr(xp, 'special'):
         betainc = getattr(xp.special, 'betainc', None)
     if betainc is None:

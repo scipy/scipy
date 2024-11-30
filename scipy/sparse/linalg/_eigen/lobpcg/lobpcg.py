@@ -352,9 +352,7 @@ def lobpcg(
 
     >>> eigenvalues, _ = lobpcg(A, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
-    >>> eigenvalues.dtype
-    dtype('float32')
+    array([100.], dtype=float32)
 
     `lobpcg` needs only access the matrix product with `A` rather
     then the matrix itself. Since the matrix `A` is diagonal in
@@ -373,10 +371,10 @@ def lobpcg(
 
     >>> eigenvalues, _ = lobpcg(A_lambda, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
     >>> eigenvalues, _ = lobpcg(A_matmat, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     The traditional callable `LinearOperator` is no longer
     necessary but still supported as the input to `lobpcg`.
@@ -385,13 +383,13 @@ def lobpcg(
     >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat, dtype=np.int16)
     >>> eigenvalues, _ = lobpcg(A_lo, X, maxiter=80)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     The least efficient callable option is `aslinearoperator`:
 
     >>> eigenvalues, _ = lobpcg(aslinearoperator(A), X, maxiter=80)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     We now switch to computing the three smallest eigenvalues specifying
 

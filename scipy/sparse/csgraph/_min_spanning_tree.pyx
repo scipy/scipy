@@ -5,7 +5,7 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_array, csr_matrix, spmatrix
 from scipy.sparse.csgraph._validation import validate_graph
 from scipy.sparse._sputils import is_pydata_spmatrix
 
@@ -27,7 +27,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix, 2 dimensions
+    csgraph : array_like or sparse array or matrix, 2 dimensions
         The N x N matrix representing an undirected graph over N nodes
         (see notes below).
     overwrite : bool, optional
@@ -79,12 +79,12 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     removing the edges with weights 8 and 6.  In compressed sparse
     representation, the solution looks like this:
 
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import minimum_spanning_tree
-    >>> X = csr_matrix([[0, 8, 0, 3],
-    ...                 [0, 0, 2, 5],
-    ...                 [0, 0, 0, 6],
-    ...                 [0, 0, 0, 0]])
+    >>> X = csr_array([[0, 8, 0, 3],
+    ...                [0, 0, 2, 5],
+    ...                [0, 0, 0, 6],
+    ...                [0, 0, 0, 0]])
     >>> Tcsr = minimum_spanning_tree(X)
     >>> Tcsr.toarray().astype(int)
     array([[0, 0, 0, 3],
@@ -94,10 +94,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     """
     global NULL_IDX
 
-    is_pydata_sparse = is_pydata_spmatrix(csgraph)
-    if is_pydata_sparse:
-        pydata_sparse_cls = csgraph.__class__
-        pydata_sparse_fill_value = csgraph.fill_value
+    csgraph_orig = csgraph
     csgraph = validate_graph(csgraph, True, DTYPE, dense_output=False,
                              copy_if_sparse=not overwrite)
     cdef int N = csgraph.shape[0]
@@ -117,10 +114,17 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     _min_spanning_tree(data, indices, indptr, i_sort,
                        row_indices, predecessors, rank)
 
-    sp_tree = csr_matrix((data, indices, indptr), (N, N))
+    if isinstance(csgraph_orig, (np.matrix, spmatrix)):
+        sp_tree = csr_matrix((data, indices, indptr), shape=(N, N))
+        sp_tree.eliminate_zeros()
+        return sp_tree
+
+    sp_tree = csr_array((data, indices, indptr), shape=(N, N))
     sp_tree.eliminate_zeros()
 
-    if is_pydata_sparse:
+    if is_pydata_spmatrix(csgraph_orig):
+        pydata_sparse_cls = csgraph_orig.__class__
+        pydata_sparse_fill_value = csgraph_orig.fill_value
         # The `fill_value` keyword is new in PyData Sparse 0.15.4 (May 2024),
         # remove the `except` once the minimum supported version is >=0.15.4
         try:
