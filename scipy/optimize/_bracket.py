@@ -456,9 +456,9 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     # by the user. We need to be careful to ensure xl0 and xr0 are not outside
     # of (xmin, xmax).
     if xl0_not_supplied:
-        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, 0.5)
+        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, xp.asarray(0.5))
     if xr0_not_supplied:
-        xr0 = xm0 + xp.minimum((xmax - xm0)/16, 0.5)
+        xr0 = xm0 + xp.minimum((xmax - xm0)/16, xp.asarray(0.5))
 
     maxiter = xp.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
@@ -592,7 +592,8 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     invalid_bracket = ~((xmin <= xl0) & (xl0 < xm0) & (xm0 < xr0) & (xr0 <= xmax))
     # We will modify factor later on so make a copy. np.broadcast_to returns
     # a read-only view.
-    factor = xp.broadcast_to(factor, shape).astype(dtype, copy=True).ravel()
+    factor = xp.astype(xp.broadcast_to(factor, shape), dtype, copy=True)
+    factor = xp_ravel(factor)
 
     # To simplify the logic, swap xl and xr if f(xl) < f(xr). We should always be
     # marching downhill in the direction from xl to xr.

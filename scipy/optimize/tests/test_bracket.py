@@ -355,7 +355,10 @@ class TestBracketRoot:
         assert not res.success
 
 
+@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
 @array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
 class TestBracketMinimum:
     def init_f(self):
         def f(x, a, b):
@@ -394,19 +397,19 @@ class TestBracketMinimum:
     @pytest.mark.parametrize("other_side", (False, True))
     def test_nfev_expected(self, seed, use_xmin, other_side, xp):
         rng = np.random.default_rng(seed)
-        args = (0, 0)  # f(x) = x^2 with minimum at 0
+        args = (xp.asarray(0.), xp.asarray(0.))  # f(x) = x^2 with minimum at 0
         # xl0, xm0, xr0 are chosen such that the initial bracket is to
         # the right of the minimum, and the bracket will expand
         # downhill towards zero.
-        xl0, d1, d2, factor = rng.random(size=4) * [1e5, 10, 10, 5]
+        xl0, d1, d2, factor = xp.asarray(rng.random(size=4) * [1e5, 10, 10, 5])
         xm0 = xl0 + d1
         xr0 = xm0 + d2
         # Factor should be greater than one.
         factor += 1
 
         if use_xmin:
-            xmin = -rng.random() * 5
-            n = int(np.ceil(np.log(-(xl0 - xmin) / xmin) / np.log(factor)))
+            xmin = xp.asarray(-rng.random() * 5, dtype=xp.float64)
+            n = int(xp.ceil(xp.log(-(xl0 - xmin) / xmin) / xp.log(factor)))
             lower = xmin + (xl0 - xmin)*factor**-n
             middle = xmin + (xl0 - xmin)*factor**-(n-1)
             upper = xmin + (xl0 - xmin)*factor**-(n-2) if n > 1 else xm0
@@ -419,7 +422,7 @@ class TestBracketMinimum:
                 )
         else:
             xmin = None
-            n = int(np.ceil(np.log(xl0 / d1) / np.log(factor)))
+            n = int(xp.ceil(xp.log(xl0 / d1) / xp.log(factor)))
             lower = xl0 - d1*factor**n
             middle = xl0 - d1*factor**(n-1) if n > 1 else xl0
             upper = xl0 - d1*factor**(n-2) if n > 1 else xm0
@@ -453,7 +456,7 @@ class TestBracketMinimum:
         # Compare reported bracket to theoretical bracket and reported function
         # values to function evaluated at bracket.
         bracket = xp.asarray([result.xl, result.xm, result.xr])
-        xp_assert_close(bracket, (lower, middle, upper))
+        xp_assert_close(bracket, xp.asarray([lower, middle, upper]))
         f_bracket = xp.asarray([result.fl, result.fm, result.fr])
         xp_assert_close(f_bracket, f(bracket, *args))
 
@@ -474,10 +477,10 @@ class TestBracketMinimum:
             return [funcs[j](x) for x, j in zip(xs, js)]
 
         args = (xp.arange(5, dtype=xp.int64),)
-        xl0 = [-1.0, -1.0, -1.0, -1.0, 6.0]
-        xm0 = [0.0, 0.0, 0.0, 0.0, 4.0]
-        xr0 = [1.0, 1.0, 1.0, 1.0, 2.0]
-        xmin=[-xp.inf, -1.0, -xp.inf, -xp.inf, 8.0]
+        xl0 = xp.asarray([-1.0, -1.0, -1.0, -1.0, 6.0])
+        xm0 = xp.asarray([0.0, 0.0, 0.0, 0.0, 4.0])
+        xr0 = xp.asarray([1.0, 1.0, 1.0, 1.0, 2.0])
+        xmin = xp.asarray([-xp.inf, -1.0, -xp.inf, -xp.inf, 8.0])
 
         result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin,
                                   args=args, maxiter=3)
@@ -488,26 +491,29 @@ class TestBracketMinimum:
         xp_assert_equal(result.status, reference_flags)
 
     @pytest.mark.parametrize("minimum", (0.622, [0.622, 0.623]))
-    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
+    @pytest.mark.parametrize("dtype", ("float16", "float32", "float64"))
     @pytest.mark.parametrize("xmin", [-5, None])
     @pytest.mark.parametrize("xmax", [5, None])
     def test_dtypes(self, minimum, xmin, xmax, dtype, xp):
+        dtype = getattr(xp, dtype)
+        xp_test = array_namespace(xp.asarray(1.))
         xmin = xmin if xmin is None else xp.asarray(xmin, dtype=dtype)
         xmax = xmax if xmax is None else xp.asarray(xmax, dtype=dtype)
-        minimum = dtype(minimum)
+        minimum = xp.asarray(minimum, dtype=dtype)
 
         def f(x, minimum):
-            return ((x - minimum)**2).astype(dtype)
+            return xp_test.astype((x - minimum)**2, dtype)
 
         xl0, xm0, xr0 = [-0.01, 0.0, 0.01]
         result = _bracket_minimum(
-            f, xp.asarray(xm0, dtype=dtype), xl0=xl0, xr0=xr0, xmin=xmin,
-            xmax=xmax, args=(minimum, )
+            f, xp.asarray(xm0, dtype=dtype), xl0=xp.asarray(xl0, dtype=dtype),
+            xr0=xp.asarray(xr0, dtype=dtype), xmin=xmin, xmax=xmax, args=(minimum, )
         )
         assert xp.all(result.success)
         assert result.xl.dtype == result.xm.dtype == result.xr.dtype == dtype
         assert result.fl.dtype == result.fm.dtype == result.fr.dtype == dtype
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason="str/object arrays")
     def test_input_validation(self, xp):
         # Test input validation for appropriate error messages
 
@@ -561,7 +567,7 @@ class TestBracketMinimum:
     )
     def test_scalar_no_limits(self, xl0, xm0, xr0, args, xp):
         f = self.init_f()
-        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, args=args)
+        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, args=tuple(map(xp.asarray, args)))
         result = _bracket_minimum(f, xp.asarray(xm0), **kwargs)
         self.assert_valid_bracket(result, xp)
         assert result.status == 0
