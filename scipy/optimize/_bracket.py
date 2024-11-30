@@ -421,7 +421,7 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
 
     xr0_not_supplied = False
     if xr0 is None:
-        xr0 = np.nan
+        xr0 = xp.nan
         xr0_not_supplied = True
 
     factor = 2.0 if factor is None else factor
@@ -462,8 +462,8 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
 
     maxiter = xp.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
-    if (not np.issubdtype(maxiter.dtype, np.number) or maxiter.shape != tuple()
-            or np.iscomplex(maxiter)):
+    if (not xp.isdtype(maxiter.dtype, "numeric") or maxiter.shape != tuple()
+            or xp.isdtype(maxiter.dtype, "complex floating")):
         raise ValueError(message)
     maxiter_int = int(maxiter[()])
     if not maxiter == maxiter_int or maxiter < 0:
@@ -585,8 +585,10 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
     xl0, xm0, xr0 = xs
     fl0, fm0, fr0 = fs
-    xmin = xp.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
-    xmax = xp.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
+    xmin = xp.astype(xp.broadcast_to(xmin, shape), dtype, copy=False)
+    xmin = xp_ravel(xmin, xp=xp)
+    xmax = xp.astype(xp.broadcast_to(xmax, shape), dtype, copy=False)
+    xmax = xp_ravel(xmax, xp=xp)
     invalid_bracket = ~((xmin <= xl0) & (xl0 < xm0) & (xm0 < xr0) & (xr0 <= xmax))
     # We will modify factor later on so make a copy. np.broadcast_to returns
     # a read-only view.
@@ -610,7 +612,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     # Step size is divided by factor for case where there is a limit.
     factor[limited] = 1 / factor[limited]
 
-    status = xp.full_like(xl0, eim._EINPROGRESS, dtype=int)
+    status = xp.full_like(xl0, eim._EINPROGRESS, dtype=xp.int32)
     status[invalid_bracket] = eim._EINPUTERR
     nit, nfev = 0, 3
 
