@@ -1,5 +1,4 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -14,9 +13,9 @@ __all__ = ["isotonic_regression"]
 
 
 def isotonic_regression(
-    y: npt.ArrayLike,
+    y: "npt.ArrayLike",
     *,
-    weights: npt.ArrayLike | None = None,
+    weights: Optional["npt.ArrayLike"] = None,
     increasing: bool = True,
 ) -> OptimizeResult:
     r"""Nonparametric isotonic regression.

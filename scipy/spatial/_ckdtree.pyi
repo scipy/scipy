@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import (
     Any,
     Generic,
@@ -10,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.sparse import coo_matrix, dok_matrix
 
-from typing import Literal
+from typing import Literal, Optional
 
 # TODO: Replace `ndarray` with a 1D float64 array when possible
 _BoxType = TypeVar("_BoxType", None, npt.NDArray[np.float64])
@@ -41,9 +40,9 @@ class cKDTreeNode:
     @property
     def split(self) -> float: ...
     @property
-    def lesser(self) -> cKDTreeNode | None: ...
+    def lesser(self) -> Optional["cKDTreeNode"]: ...
     @property
-    def greater(self) -> cKDTreeNode | None: ...
+    def greater(self) -> Optional["cKDTreeNode"]: ...
 
 class cKDTree(Generic[_BoxType]):
     @property
@@ -55,7 +54,7 @@ class cKDTree(Generic[_BoxType]):
     @property
     def size(self) -> int: ...
     @property
-    def tree(self) -> cKDTreeNode: ...
+    def tree(self) -> "cKDTreeNode": ...
 
     # These are read-only attributes in cython, which behave like properties
     @property
@@ -81,7 +80,7 @@ class cKDTree(Generic[_BoxType]):
         copy_data: bool = ...,
         balanced_tree: bool = ...,
         boxsize: None = ...,
-    ) -> cKDTree[None]: ...
+    ) -> "cKDTree"[None]: ...
     @overload
     def __new__(
         cls,
@@ -91,7 +90,7 @@ class cKDTree(Generic[_BoxType]):
         copy_data: bool = ...,
         balanced_tree: bool = ...,
         boxsize: npt.ArrayLike = ...,
-    ) -> cKDTree[npt.NDArray[np.float64]]: ...
+    ) -> "cKDTree"[npt.NDArray[np.float64]]: ...
 
     # TODO: returns a 2-tuple of scalars if `x.ndim == 1` and `k == 1`,
     # returns a 2-tuple of arrays otherwise
@@ -120,7 +119,7 @@ class cKDTree(Generic[_BoxType]):
 
     def query_ball_tree(
         self,
-        other: cKDTree,
+        other: "cKDTree",
         r: float,
         p: float,
         eps: float = ...,
@@ -146,7 +145,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def count_neighbors(  # type: ignore[overload-overlap]
         self,
-        other: cKDTree,
+        other: "cKDTree",
         r: _ArrayLike0D,
         p: float = ...,
         weights: None | tuple[None, None] = ...,
@@ -155,7 +154,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def count_neighbors(  # type: ignore[overload-overlap]
         self,
-        other: cKDTree,
+        other: "cKDTree",
         r: _ArrayLike0D,
         p: float = ...,
         weights: _WeightType = ...,
@@ -164,7 +163,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def count_neighbors(  # type: ignore[overload-overlap]
         self,
-        other: cKDTree,
+        other: "cKDTree",
         r: npt.ArrayLike,
         p: float = ...,
         weights: None | tuple[None, None] = ...,
@@ -173,7 +172,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def count_neighbors(
         self,
-        other: cKDTree,
+        other: "cKDTree",
         r: npt.ArrayLike,
         p: float = ...,
         weights: _WeightType = ...,
@@ -183,7 +182,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
-        other: cKDTree,
+        other: "cKDTree",
         max_distance: float,
         p: float = ...,
         output_type: Literal["dok_matrix"] = ...,
@@ -191,7 +190,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
-        other: cKDTree,
+        other: "cKDTree",
         max_distance: float,
         p: float = ...,
         output_type: Literal["coo_matrix"] = ...,
@@ -199,7 +198,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def sparse_distance_matrix(  # type: ignore[overload-overlap]
         self,
-        other: cKDTree,
+        other: "cKDTree",
         max_distance: float,
         p: float = ...,
         output_type: Literal["dict"] = ...,
@@ -207,7 +206,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def sparse_distance_matrix(
         self,
-        other: cKDTree,
+        other: "cKDTree",
         max_distance: float,
         p: float = ...,
         output_type: Literal["ndarray"] = ...,

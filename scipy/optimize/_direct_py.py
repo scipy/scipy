@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import (  # noqa: UP035
     Any, Callable, Iterable, TYPE_CHECKING
 )
@@ -38,7 +37,7 @@ SUCCESS_MESSAGES = (
 
 
 def direct(
-    func: Callable[[npt.ArrayLike, tuple[Any]], float],
+    func: Callable[["npt.ArrayLike", tuple[Any]], float],
     bounds: Iterable | Bounds,
     *,
     args: tuple = (),
@@ -50,7 +49,7 @@ def direct(
     f_min_rtol: float = 1e-4,
     vol_tol: float = 1e-16,
     len_tol: float = 1e-6,
-    callback: Callable[[npt.ArrayLike], None] | None = None
+    callback: Callable[["npt.ArrayLike"], None] | None = None
 ) -> OptimizeResult:
     """
     Finds the global minimum of a function using the

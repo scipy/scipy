@@ -1,11 +1,9 @@
-from __future__ import annotations
-
 import inspect
 from dataclasses import dataclass
 from typing import (
     Literal, Protocol, TYPE_CHECKING
 )
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -26,7 +24,13 @@ __all__ = [
 ]
 
 
-def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
+class PPFDist(Protocol):
+    @property
+    def ppf(self) -> Callable[..., np.float64]:
+        ...
+
+
+def f_ishigami(x: "npt.ArrayLike") -> np.ndarray:
     r"""Ishigami function.
 
     .. math::
@@ -60,9 +64,9 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 
 
 def sample_A_B(
-    n: IntNumber,
-    dists: list[PPFDist],
-    rng: SeedType = None
+    n: "IntNumber",
+    dists: Sequence[PPFDist],
+    rng: "SeedType" = None
 ) -> np.ndarray:
     """Sample two matrices A and B.
 
@@ -177,8 +181,8 @@ class SobolResult:
 
     def bootstrap(
         self,
-        confidence_level: DecimalNumber = 0.95,
-        n_resamples: IntNumber = 999
+        confidence_level: "DecimalNumber" = 0.95,
+        n_resamples: "IntNumber" = 999
     ) -> BootstrapSobolResult:
         """Bootstrap Sobol' indices to provide confidence intervals.
 
@@ -240,22 +244,15 @@ class SobolResult:
             first_order=first_order, total_order=total_order
         )
 
-
-class PPFDist(Protocol):
-    @property
-    def ppf(self) -> Callable[..., float]:
-        ...
-
-
 @_transition_to_rng('random_state', replace_doc=False)
 def sobol_indices(
     *,
-    func: Callable[[np.ndarray], npt.ArrayLike] |
+    func: Callable[[np.ndarray], "npt.ArrayLike"] |
           dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],
-    n: IntNumber,
-    dists: list[PPFDist] | None = None,
+    n: "IntNumber",
+    dists: Sequence[PPFDist] | None = None,
     method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
-    rng: SeedType = None
+    rng: "SeedType" = None
 ) -> SobolResult:
     r"""Global sensitivity indices of Sobol'.
 
