@@ -123,6 +123,8 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.linalg.misc',
     'scipy.linalg.special_matrices',
     'scipy.misc',
+    'scipy.misc.common',
+    'scipy.misc.doccer',
     'scipy.ndimage.filters',
     'scipy.ndimage.fourier',
     'scipy.ndimage.interpolation',
@@ -241,14 +243,20 @@ def test_all_modules_are_expected():
 
     modnames = []
 
-    for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
-                                               prefix=scipy.__name__ + '.',
-                                               onerror=ignore_errors):
-        if is_unexpected(modname) and modname not in SKIP_LIST:
-            # We have a name that is new.  If that's on purpose, add it to
-            # PUBLIC_MODULES.  We don't expect to have to add anything to
-            # PRIVATE_BUT_PRESENT_MODULES.  Use an underscore in the name!
-            modnames.append(modname)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            action='ignore',
+            category=DeprecationWarning,
+            message="scipy.misc"
+        )
+        for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
+                                                   prefix=scipy.__name__ + '.',
+                                                   onerror=ignore_errors):
+            if is_unexpected(modname) and modname not in SKIP_LIST:
+                # We have a name that is new.  If that's on purpose, add it to
+                # PUBLIC_MODULES.  We don't expect to have to add anything to
+                # PRIVATE_BUT_PRESENT_MODULES.  Use an underscore in the name!
+                modnames.append(modname)
 
     if modnames:
         raise AssertionError(f'Found unexpected modules: {modnames}')
@@ -290,8 +298,14 @@ def test_all_modules_are_expected_2():
                         members.append(fullobjname)
 
         return members
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            action='ignore',
+            category=DeprecationWarning,
+            message="scipy.misc"
+        )
+        unexpected_members = find_unexpected_members("scipy")
 
-    unexpected_members = find_unexpected_members("scipy")
     for modname in PUBLIC_MODULES:
         unexpected_members.extend(find_unexpected_members(modname))
 
