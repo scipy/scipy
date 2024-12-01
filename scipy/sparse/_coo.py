@@ -1033,8 +1033,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         non_reduced_shape_other = [other.shape[s] for s in non_reduced_axes_other]
 
         permute_self = non_reduced_axes_self + axes_self
-        permute_other = non_reduced_axes_other[:-1] + axes_other \
-            + non_reduced_axes_other[-1:]
+        permute_other = (
+            non_reduced_axes_other[:-1] + axes_other + non_reduced_axes_other[-1:]
+        )
         self = self.transpose(permute_self)
         other = np.transpose(other, permute_other)
 
