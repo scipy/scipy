@@ -13,7 +13,8 @@ __all__ = [  # noqa: F822
     'residuez', 'resample', 'resample_poly', 'detrend',
     'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
     'filtfilt', 'decimate', 'vectorstrength',
-    'dlti', 'upfirdn', 'get_window', 'cheby1', 'firwin'
+    'dlti', 'upfirdn', 'get_window', 'cheby1', 'firwin' 'sosfilt',
+    'sosfilt_zi', 'sosfiltfilt'
 ]
 
 
