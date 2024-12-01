@@ -1,5 +1,5 @@
 from typing import (  # noqa: UP035
-    Any, Callable, Iterable, Concatenate
+    Any, Callable, Iterable
 )
 
 import numpy as np
@@ -35,10 +35,7 @@ SUCCESS_MESSAGES = (
 
 def direct(
     func: Callable[
-        Concatenate[
-            np.ndarray[tuple[int], np.dtype[np.float64]],
-            ...,
-        ],
+        [np.ndarray[tuple[int], np.dtype[np.float64]]],
         float | np.floating[Any] | np.integer[Any] | np.bool_,
     ],
     bounds: Iterable | Bounds,
