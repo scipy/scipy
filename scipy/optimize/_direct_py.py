@@ -1,14 +1,11 @@
 from typing import (  # noqa: UP035
-    Any, Callable, Iterable, TYPE_CHECKING
+    Any, Callable, Iterable, Concatenate
 )
 
 import numpy as np
 from scipy.optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
 from ._direct import direct as _direct  # type: ignore
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 __all__ = ['direct']
 

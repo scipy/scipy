@@ -11,7 +11,6 @@ from typing import (
     Literal,
     overload,
     TYPE_CHECKING,
-    Optional
 )
 from collections.abc import Callable
 
