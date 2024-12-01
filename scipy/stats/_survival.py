@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Literal
 import warnings
 
 import numpy as np
@@ -237,7 +237,7 @@ class ECDFResult:
 
 
 def _iv_CensoredData(
-    sample: Union["npt.ArrayLike", CensoredData], param_name: str = 'sample'
+    sample: "npt.ArrayLike | CensoredData", param_name: str = "sample"
 ) -> CensoredData:
     """Attempt to convert `sample` to `CensoredData`."""
     if not isinstance(sample, CensoredData):
@@ -249,7 +249,7 @@ def _iv_CensoredData(
     return sample
 
 
-def ecdf(sample: Union["npt.ArrayLike", CensoredData]) -> ECDFResult:
+def ecdf(sample: "npt.ArrayLike | CensoredData") -> ECDFResult:
     """Empirical cumulative distribution function of a sample.
 
     The empirical cumulative distribution function (ECDF) is a step function
@@ -484,8 +484,8 @@ class LogRankResult:
 
 
 def logrank(
-    x: Union["npt.ArrayLike", CensoredData],
-    y: Union["npt.ArrayLike", CensoredData],
+    x: "npt.ArrayLike | CensoredData",
+    y: "npt.ArrayLike | CensoredData",
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided"
 ) -> LogRankResult:
     r"""Compare the survival distributions of two samples via the logrank test.

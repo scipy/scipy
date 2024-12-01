@@ -7,7 +7,7 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
-from typing import TypeVar
+from typing import TypeAlias, TypeVar
 
 import numpy as np
 from scipy._lib._array_api import array_namespace, is_numpy, xp_size
@@ -67,9 +67,10 @@ else:
         copy_if_needed = False
 
 
-SeedType = IntNumber | np.random.Generator | np.random.RandomState | None
-GeneratorType = TypeVar("GeneratorType",
-                        bound=np.random.Generator|np.random.RandomState)
+_RNG: TypeAlias = np.random.Generator | np.random.RandomState
+SeedType: TypeAlias = IntNumber | _RNG | None
+
+GeneratorType = TypeVar("GeneratorType", bound=_RNG)
 
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility

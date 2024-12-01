@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-def f_ishigami(x: "npt.ArrayLike") -> np.ndarray:
+def f_ishigami(x: "npt.ArrayLike") -> "npt.NDArray[np.inexact[Any]]":
     r"""Ishigami function.
 
     .. math::

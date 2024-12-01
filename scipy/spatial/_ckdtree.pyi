@@ -9,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.sparse import coo_matrix, dok_matrix
 
-from typing import Literal, Optional
+from typing import Literal
 
 # TODO: Replace `ndarray` with a 1D float64 array when possible
 _BoxType = TypeVar("_BoxType", None, npt.NDArray[np.float64])
@@ -40,9 +40,9 @@ class cKDTreeNode:
     @property
     def split(self) -> float: ...
     @property
-    def lesser(self) -> Optional["cKDTreeNode"]: ...
+    def lesser(self) -> cKDTreeNode | None: ...
     @property
-    def greater(self) -> Optional["cKDTreeNode"]: ...
+    def greater(self) -> cKDTreeNode | None: ...
 
 class cKDTree(Generic[_BoxType]):
     @property
@@ -54,7 +54,7 @@ class cKDTree(Generic[_BoxType]):
     @property
     def size(self) -> int: ...
     @property
-    def tree(self) -> "cKDTreeNode": ...
+    def tree(self) -> cKDTreeNode: ...
 
     # These are read-only attributes in cython, which behave like properties
     @property
@@ -80,7 +80,7 @@ class cKDTree(Generic[_BoxType]):
         copy_data: bool = ...,
         balanced_tree: bool = ...,
         boxsize: None = ...,
-    ) -> "cKDTree"[None]: ...
+    ) -> cKDTree[None]: ...
     @overload
     def __new__(
         cls,
@@ -90,7 +90,7 @@ class cKDTree(Generic[_BoxType]):
         copy_data: bool = ...,
         balanced_tree: bool = ...,
         boxsize: npt.ArrayLike = ...,
-    ) -> "cKDTree"[npt.NDArray[np.float64]]: ...
+    ) -> cKDTree[npt.NDArray[np.float64]]: ...
 
     # TODO: returns a 2-tuple of scalars if `x.ndim == 1` and `k == 1`,
     # returns a 2-tuple of arrays otherwise
@@ -119,7 +119,7 @@ class cKDTree(Generic[_BoxType]):
 
     def query_ball_tree(
         self,
-        other: "cKDTree",
+        other: cKDTree,
         r: float,
         p: float,
         eps: float = ...,
@@ -145,7 +145,7 @@ class cKDTree(Generic[_BoxType]):
     @overload
     def count_neighbors(  # type: ignore[overload-overlap]
         self,
-        other: "cKDTree",
+        other: cKDTree,
         r: _ArrayLike0D,
         p: float = ...,
         weights: None | tuple[None, None] = ...,

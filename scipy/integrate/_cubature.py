@@ -23,7 +23,7 @@ from scipy.integrate._rules._base import _split_subregion
 
 __all__ = ['cubature']
 
-Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
+Array: TypeAlias = Any  # To be changed to an array-api-typing Protocol later
 
 
 @dataclass

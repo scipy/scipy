@@ -734,7 +734,7 @@ def van_der_corput(
         *,
         start_index: IntNumber = 0,
         scramble: bool = False,
-        permutations: Optional["npt.ArrayLike"] = None,
+        permutations: "npt.ArrayLike | None" = None,
         rng: SeedType = None,
         workers: IntNumber = 1) -> np.ndarray:
     """Van der Corput sequence.
@@ -1001,7 +1001,7 @@ class QMCEngine(ABC):
         self,
         l_bounds: "npt.ArrayLike",
         *,
-        u_bounds: Optional["npt.ArrayLike"] = None,
+        u_bounds: "npt.ArrayLike | None" = None,
         n: IntNumber = 1,
         endpoint: bool = False,
         workers: IntNumber = 1
@@ -2087,8 +2087,8 @@ class PoissonDisk(QMCEngine):
         ncandidates: IntNumber = 30,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None,
-        l_bounds: Optional["npt.ArrayLike"] = None,
-        u_bounds: Optional["npt.ArrayLike"] = None
+        l_bounds: "npt.ArrayLike | None" = None,
+        u_bounds: "npt.ArrayLike | None" = None,
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'radius': radius,
@@ -2349,11 +2349,14 @@ class MultivariateNormalQMC:
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-            self, mean: "npt.ArrayLike", cov: Optional["npt.ArrayLike"] = None, *,
-            cov_root: Optional["npt.ArrayLike"] = None,
+            self,
+            mean: "npt.ArrayLike",
+            cov: "npt.ArrayLike | None" = None,
+            *,
+            cov_root: "npt.ArrayLike | None" = None,
             inv_transform: bool = True,
             engine: QMCEngine | None = None,
-            rng: SeedType = None
+            rng: SeedType = None,
     ) -> None:
         mean = np.asarray(np.atleast_1d(mean))
         d = mean.shape[0]
@@ -2526,9 +2529,12 @@ class MultinomialQMC:
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, pvals: "npt.ArrayLike", n_trials: IntNumber,
-        *, engine: QMCEngine | None = None,
-        rng: SeedType = None
+        self,
+        pvals: "npt.ArrayLike",
+        n_trials: IntNumber,
+        *,
+        engine: QMCEngine | None = None,
+        rng: SeedType = None,
     ) -> None:
         self.pvals = np.atleast_1d(np.asarray(pvals))
         if np.min(pvals) < 0:
@@ -2906,7 +2912,7 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
 
 def _validate_bounds(
     l_bounds: "npt.ArrayLike", u_bounds: "npt.ArrayLike", d: int
-) -> tuple[np.ndarray, ...]:
+) -> "tuple[npt.NDArray[np.generic], npt.NDArray[np.generic]]":
     """Bounds input validation.
 
     Parameters
