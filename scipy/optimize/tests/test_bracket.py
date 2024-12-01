@@ -1,7 +1,6 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize._bracket import _ELIMITS
 from scipy.optimize.elementwise import bracket_root, bracket_minimum
@@ -382,7 +381,7 @@ class TestBracketMinimum:
         names = ("xl0", "xr0", "xmin", "xmax", "factor", "args")
         return {
             name: val for name, val in zip(names, (xl0, xr0, xmin, xmax, factor, args))
-            if not (val is None)
+            if val is not None
         }
 
     @pytest.mark.parametrize(
@@ -527,7 +526,8 @@ class TestBracketMinimum:
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, xp.asarray(-4), xl0='hello')
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, xp.asarray(-4), xr0='farcical aquatic ceremony')
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4),
+                             xr0='farcical aquatic ceremony')
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, xp.asarray(-4), xmin=np)
         with pytest.raises(ValueError, match=message):
@@ -604,7 +604,8 @@ class TestBracketMinimum:
     )
     def test_scalar_with_limit_left(self, xl0, xm0, xr0, xmin, args, xp):
         f = self.init_f()
-        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, xmin=xmin, args=tuple(map(xp.asarray, args)))
+        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, xmin=xmin,
+                                 args=tuple(map(xp.asarray, args)))
         result = _bracket_minimum(f, xp.asarray(xm0), **kwargs)
         self.assert_valid_bracket(result, xp)
         assert result.status == 0
@@ -740,7 +741,8 @@ class TestBracketMinimum:
     )
     def test_minimum_at_boundary_point(self, xl0, xm0, xr0, xmin, xmax, args, xp):
         f = self.init_f()
-        kwargs = self.get_kwargs(xr0=xr0, xmin=xmin, xmax=xmax, args=tuple(map(xp.asarray, args)))
+        kwargs = self.get_kwargs(xr0=xr0, xmin=xmin, xmax=xmax,
+                                 args=tuple(map(xp.asarray, args)))
         result = _bracket_minimum(f, xp.asarray(xm0), **kwargs)
         assert result.status == -1
         assert args[0] in (result.xl, result.xr)
@@ -773,8 +775,8 @@ class TestBracketMinimum:
         factor = rng.random(size=shape) + 1.5
         refs = bracket_minimum_single(xm0, xl0, xr0, xmin, xmax, factor, a).ravel()
         args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
-        res = _bracket_minimum(f, xp.asarray(xm0), xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
-                               factor=factor, args=args, maxiter=maxiter)
+        res = _bracket_minimum(f, xp.asarray(xm0), xl0=xl0, xr0=xr0, xmin=xmin,
+                               xmax=xmax, factor=factor, args=args, maxiter=maxiter)
 
         attrs = ['xl', 'xm', 'xr', 'fl', 'fm', 'fr', 'success', 'nfev', 'nit']
         for attr in attrs:
@@ -851,7 +853,8 @@ class TestBracketMinimum:
             log_a, log_b = xp.log(xmin), xp.log(xmax)
             return -((log_b - log_a)*x)**-1
 
-        result = _bracket_minimum(f, xp.asarray(0.5535723499480897), xmin=xmin, xmax=xmax)
+        result = _bracket_minimum(f, xp.asarray(0.5535723499480897), xmin=xmin,
+                                  xmax=xmax)
         assert xmin == result.xl
 
     def test_gh_20562_right(self, xp):
