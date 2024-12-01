@@ -638,7 +638,8 @@ class TestBracketMinimum:
     )
     def test_scalar_with_limit_right(self, xl0, xm0, xr0, xmax, args, xp):
         f = self.init_f()
-        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, xmax=xmax, args=tuple(map(xp.asarray, args)))
+        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
+        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, xmax=xmax, args=args)
         result = _bracket_minimum(f, xp.asarray(xm0, dtype=xp.float64), **kwargs)
         self.assert_valid_bracket(result, xp)
         assert result.status == 0
@@ -771,8 +772,9 @@ class TestBracketMinimum:
             xmin[i], xmax[i] = -np.inf, np.inf
         factor = rng.random(size=shape) + 1.5
         refs = bracket_minimum_single(xm0, xl0, xr0, xmin, xmax, factor, a).ravel()
+        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
         res = _bracket_minimum(f, xp.asarray(xm0), xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
-                               factor=factor, args=tuple(map(xp.asarray, args)), maxiter=maxiter)
+                               factor=factor, args=args, maxiter=maxiter)
 
         attrs = ['xl', 'xm', 'xr', 'fl', 'fm', 'fr', 'success', 'nfev', 'nit']
         for attr in attrs:
