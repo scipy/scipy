@@ -107,6 +107,7 @@ submodules = [
     'interpolate',
     'io',
     'linalg',
+    'misc',
     'ndimage',
     'odr',
     'optimize',
