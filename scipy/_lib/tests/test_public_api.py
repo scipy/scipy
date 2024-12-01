@@ -122,6 +122,7 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.linalg.matfuncs',
     'scipy.linalg.misc',
     'scipy.linalg.special_matrices',
+    'scipy.misc',
     'scipy.ndimage.filters',
     'scipy.ndimage.fourier',
     'scipy.ndimage.interpolation',
