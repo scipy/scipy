@@ -1,7 +1,6 @@
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize._bracket import _ELIMITS
 from scipy.optimize.elementwise import bracket_root, bracket_minimum
@@ -354,6 +353,10 @@ class TestBracketRoot:
         assert not res.success
 
 
+@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
 class TestBracketMinimum:
     def init_f(self):
         def f(x, a, b):
@@ -362,23 +365,22 @@ class TestBracketMinimum:
         f.count = 0
         return f
 
-    def assert_valid_bracket(self, result):
-        assert np.all(
+    def assert_valid_bracket(self, result, xp):
+        assert xp.all(
             (result.xl < result.xm) & (result.xm < result.xr)
         )
-        assert np.all(
+        assert xp.all(
             (result.fl >= result.fm) & (result.fr > result.fm)
             | (result.fl > result.fm) & (result.fr > result.fm)
         )
 
     def get_kwargs(
-            self, *, xl0=None, xr0=None, factor=None, xmin=None, xmax=None, args=()
+            self, *, xl0=None, xr0=None, factor=None, xmin=None, xmax=None, args=None
     ):
         names = ("xl0", "xr0", "xmin", "xmax", "factor", "args")
         return {
             name: val for name, val in zip(names, (xl0, xr0, xmin, xmax, factor, args))
-            if isinstance(val, np.ndarray) or np.isscalar(val)
-            or val not in [None, ()]
+            if val is not None
         }
 
     @pytest.mark.parametrize(
@@ -391,21 +393,21 @@ class TestBracketMinimum:
     )
     @pytest.mark.parametrize("use_xmin", (False, True))
     @pytest.mark.parametrize("other_side", (False, True))
-    def test_nfev_expected(self, seed, use_xmin, other_side):
+    def test_nfev_expected(self, seed, use_xmin, other_side, xp):
         rng = np.random.default_rng(seed)
-        args = (0, 0)  # f(x) = x^2 with minimum at 0
+        args = (xp.asarray(0.), xp.asarray(0.))  # f(x) = x^2 with minimum at 0
         # xl0, xm0, xr0 are chosen such that the initial bracket is to
         # the right of the minimum, and the bracket will expand
         # downhill towards zero.
-        xl0, d1, d2, factor = rng.random(size=4) * [1e5, 10, 10, 5]
+        xl0, d1, d2, factor = xp.asarray(rng.random(size=4) * [1e5, 10, 10, 5])
         xm0 = xl0 + d1
         xr0 = xm0 + d2
         # Factor should be greater than one.
         factor += 1
 
         if use_xmin:
-            xmin = -rng.random() * 5
-            n = int(np.ceil(np.log(-(xl0 - xmin) / xmin) / np.log(factor)))
+            xmin = xp.asarray(-rng.random() * 5, dtype=xp.float64)
+            n = int(xp.ceil(xp.log(-(xl0 - xmin) / xmin) / xp.log(factor)))
             lower = xmin + (xl0 - xmin)*factor**-n
             middle = xmin + (xl0 - xmin)*factor**-(n-1)
             upper = xmin + (xl0 - xmin)*factor**-(n-2) if n > 1 else xm0
@@ -418,7 +420,7 @@ class TestBracketMinimum:
                 )
         else:
             xmin = None
-            n = int(np.ceil(np.log(xl0 / d1) / np.log(factor)))
+            n = int(xp.ceil(xp.log(xl0 / d1) / xp.log(factor)))
             lower = xl0 - d1*factor**n
             middle = xl0 - d1*factor**(n-1) if n > 1 else xl0
             upper = xl0 - d1*factor**(n-2) if n > 1 else xm0
@@ -440,7 +442,7 @@ class TestBracketMinimum:
         kwargs = self.get_kwargs(
             xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, factor=factor, args=args
         )
-        result = _bracket_minimum(f, xm0, **kwargs)
+        result = _bracket_minimum(f, xp.asarray(xm0), **kwargs)
 
         # Check that `nfev` and `nit` have the correct relationship
         assert result.nfev == result.nit + 3
@@ -451,62 +453,68 @@ class TestBracketMinimum:
 
         # Compare reported bracket to theoretical bracket and reported function
         # values to function evaluated at bracket.
-        bracket = np.asarray([result.xl, result.xm, result.xr])
-        assert_allclose(bracket, (lower, middle, upper))
-        f_bracket = np.asarray([result.fl, result.fm, result.fr])
-        assert_allclose(f_bracket, f(bracket, *args))
+        xp_assert_close(result.xl, lower)
+        xp_assert_close(result.xm, middle)
+        xp_assert_close(result.xr, upper)
+        xp_assert_close(result.fl, f(lower, *args))
+        xp_assert_close(result.fm, f(middle, *args))
+        xp_assert_close(result.fr, f(upper, *args))
 
-        self.assert_valid_bracket(result)
+        self.assert_valid_bracket(result, xp)
         assert result.status == 0
         assert result.success
 
-    def test_flags(self):
+    def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously
         def f(xs, js):
             funcs = [lambda x: (x - 1.5)**2,
                      lambda x: x,
                      lambda x: x,
-                     lambda x: np.nan,
+                     lambda x: xp.nan,
                      lambda x: x**2]
 
             return [funcs[j](x) for x, j in zip(xs, js)]
 
-        args = (np.arange(5, dtype=np.int64),)
-        xl0 = [-1.0, -1.0, -1.0, -1.0, 6.0]
-        xm0 = [0.0, 0.0, 0.0, 0.0, 4.0]
-        xr0 = [1.0, 1.0, 1.0, 1.0, 2.0]
-        xmin=[-np.inf, -1.0, -np.inf, -np.inf, 8.0]
+        args = (xp.arange(5, dtype=xp.int64),)
+        xl0 = xp.asarray([-1.0, -1.0, -1.0, -1.0, 6.0])
+        xm0 = xp.asarray([0.0, 0.0, 0.0, 0.0, 4.0])
+        xr0 = xp.asarray([1.0, 1.0, 1.0, 1.0, 2.0])
+        xmin = xp.asarray([-xp.inf, -1.0, -xp.inf, -xp.inf, 8.0])
 
         result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin,
                                   args=args, maxiter=3)
 
-        reference_flags = np.array([eim._ECONVERGED, _ELIMITS,
-                                    eim._ECONVERR, eim._EVALUEERR,
-                                    eim._EINPUTERR])
-        assert_equal(result.status, reference_flags)
+        reference_flags = xp.asarray([eim._ECONVERGED, _ELIMITS,
+                                      eim._ECONVERR, eim._EVALUEERR,
+                                      eim._EINPUTERR], dtype=xp.int32)
+        xp_assert_equal(result.status, reference_flags)
 
     @pytest.mark.parametrize("minimum", (0.622, [0.622, 0.623]))
-    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
+    @pytest.mark.parametrize("dtype", ("float16", "float32", "float64"))
     @pytest.mark.parametrize("xmin", [-5, None])
     @pytest.mark.parametrize("xmax", [5, None])
-    def test_dtypes(self, minimum, xmin, xmax, dtype):
-        xmin = xmin if xmin is None else dtype(xmin)
-        xmax = xmax if xmax is None else dtype(xmax)
-        minimum = dtype(minimum)
+    def test_dtypes(self, minimum, xmin, xmax, dtype, xp):
+        dtype = getattr(xp, dtype)
+        xp_test = array_namespace(xp.asarray(1.))
+        xmin = xmin if xmin is None else xp.asarray(xmin, dtype=dtype)
+        xmax = xmax if xmax is None else xp.asarray(xmax, dtype=dtype)
+        minimum = xp.asarray(minimum, dtype=dtype)
 
         def f(x, minimum):
-            return ((x - minimum)**2).astype(dtype)
+            return xp_test.astype((x - minimum)**2, dtype)
 
-        xl0, xm0, xr0 = np.array([-0.01, 0.0, 0.01], dtype=dtype)
+        xl0, xm0, xr0 = [-0.01, 0.0, 0.01]
         result = _bracket_minimum(
-            f, xm0, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(minimum, )
+            f, xp.asarray(xm0, dtype=dtype), xl0=xp.asarray(xl0, dtype=dtype),
+            xr0=xp.asarray(xr0, dtype=dtype), xmin=xmin, xmax=xmax, args=(minimum, )
         )
-        assert np.all(result.success)
+        assert xp.all(result.success)
         assert result.xl.dtype == result.xm.dtype == result.xr.dtype == dtype
         assert result.fl.dtype == result.fm.dtype == result.fr.dtype == dtype
 
-    def test_input_validation(self):
+    @pytest.mark.skip_xp_backends(np_only=True, reason="str/object arrays")
+    def test_input_validation(self, xp):
         # Test input validation for appropriate error messages
 
         message = '`func` must be callable.'
@@ -515,34 +523,35 @@ class TestBracketMinimum:
 
         message = '...must be numeric and real.'
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, 4+1j)
+            _bracket_minimum(lambda x: x**2, xp.asarray(4+1j))
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xl0='hello')
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4), xl0='hello')
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xr0='farcical aquatic ceremony')
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4),
+                             xr0='farcical aquatic ceremony')
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xmin=np)
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4), xmin=np)
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xmax=object())
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4), xmax=object())
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, factor=sum)
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4), factor=sum)
 
         message = "All elements of `factor` must be greater than 1."
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x, -4, factor=0.5)
+            _bracket_minimum(lambda x: x, xp.asarray(-4), factor=0.5)
 
         message = "shape mismatch: objects cannot be broadcast"
-        # raised by `np.broadcast, but the traceback is readable IMO
+        # raised by `xp.broadcast, but the traceback is readable IMO
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, [-2, -3], xl0=[-3, -4, -5])
+            _bracket_minimum(lambda x: x**2, xp.asarray([-2, -3]), xl0=[-3, -4, -5])
 
         message = '`maxiter` must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter=1.5)
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4), xr0=4, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter=-1)
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4), xr0=4, maxiter=-1)
         with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter="ekki")
+            _bracket_minimum(lambda x: x**2, xp.asarray(-4), xr0=4, maxiter="ekki")
 
     @pytest.mark.parametrize("xl0", [0.0, None])
     @pytest.mark.parametrize("xm0", (0.05, 0.1, 0.15))
@@ -557,11 +566,11 @@ class TestBracketMinimum:
             (121.6, 0), (5764.1, 0), (-6.4, 0), (-12.9, 0), (-146.2, 0)
         )
     )
-    def test_scalar_no_limits(self, xl0, xm0, xr0, args):
+    def test_scalar_no_limits(self, xl0, xm0, xr0, args, xp):
         f = self.init_f()
-        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, args=args)
-        result = _bracket_minimum(f, xm0, **kwargs)
-        self.assert_valid_bracket(result)
+        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, args=tuple(map(xp.asarray, args)))
+        result = _bracket_minimum(f, xp.asarray(xm0, dtype=xp.float64), **kwargs)
+        self.assert_valid_bracket(result, xp)
         assert result.status == 0
         assert result.success
         assert result.nfev == f.count
@@ -594,11 +603,12 @@ class TestBracketMinimum:
             (0.4, 0.0)
         )
     )
-    def test_scalar_with_limit_left(self, xl0, xm0, xr0, xmin, args):
+    def test_scalar_with_limit_left(self, xl0, xm0, xr0, xmin, args, xp):
         f = self.init_f()
-        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, xmin=xmin, args=args)
-        result = _bracket_minimum(f, xm0, **kwargs)
-        self.assert_valid_bracket(result)
+        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, xmin=xmin,
+                                 args=tuple(map(xp.asarray, args)))
+        result = _bracket_minimum(f, xp.asarray(xm0), **kwargs)
+        self.assert_valid_bracket(result, xp)
         assert result.status == 0
         assert result.success
         assert result.nfev == f.count
@@ -628,11 +638,12 @@ class TestBracketMinimum:
             (0.5, 0.0)
         )
     )
-    def test_scalar_with_limit_right(self, xl0, xm0, xr0, xmax, args):
+    def test_scalar_with_limit_right(self, xl0, xm0, xr0, xmax, args, xp):
         f = self.init_f()
+        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
         kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, xmax=xmax, args=args)
-        result = _bracket_minimum(f, xm0, **kwargs)
-        self.assert_valid_bracket(result)
+        result = _bracket_minimum(f, xp.asarray(xm0, dtype=xp.float64), **kwargs)
+        self.assert_valid_bracket(result, xp)
         assert result.status == 0
         assert result.success
         assert result.nfev == f.count
@@ -729,20 +740,21 @@ class TestBracketMinimum:
             ),
         )
     )
-    def test_minimum_at_boundary_point(self, xl0, xm0, xr0, xmin, xmax, args):
+    def test_minimum_at_boundary_point(self, xl0, xm0, xr0, xmin, xmax, args, xp):
         f = self.init_f()
-        kwargs = self.get_kwargs(xr0=xr0, xmin=xmin, xmax=xmax, args=args)
-        result = _bracket_minimum(f, xm0, **kwargs)
+        kwargs = self.get_kwargs(xr0=xr0, xmin=xmin, xmax=xmax,
+                                 args=tuple(map(xp.asarray, args)))
+        result = _bracket_minimum(f, xp.asarray(xm0), **kwargs)
         assert result.status == -1
         assert args[0] in (result.xl, result.xr)
         assert result.nfev == f.count
 
     @pytest.mark.parametrize('shape', [tuple(), (12, ), (3, 4), (3, 2, 2)])
-    def test_vectorization(self, shape):
+    def test_vectorization(self, shape, xp):
         # Test for correct functionality, output shapes, and dtypes for
         # various input shapes.
         a = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
-        args = (a, 0.0)
+        args = (a, 0.)
         maxiter = 10
 
         @np.vectorize
@@ -762,93 +774,98 @@ class TestBracketMinimum:
             i = rng.random(size=shape) > 0.5
             xmin[i], xmax[i] = -np.inf, np.inf
         factor = rng.random(size=shape) + 1.5
-        res = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
-                               factor=factor, args=args, maxiter=maxiter)
         refs = bracket_minimum_single(xm0, xl0, xr0, xmin, xmax, factor, a).ravel()
+        args = tuple(xp.asarray(arg, dtype=xp.float64) for arg in args)
+        res = _bracket_minimum(f, xp.asarray(xm0), xl0=xl0, xr0=xr0, xmin=xmin,
+                               xmax=xmax, factor=factor, args=args, maxiter=maxiter)
 
         attrs = ['xl', 'xm', 'xr', 'fl', 'fm', 'fr', 'success', 'nfev', 'nit']
         for attr in attrs:
-            ref_attr = [getattr(ref, attr) for ref in refs]
+            ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
-            assert_allclose(res_attr.ravel(), ref_attr)
-            assert_equal(res_attr.shape, shape)
+            xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
+            xp_assert_equal(res_attr.shape, shape)
 
-        assert np.issubdtype(res.success.dtype, np.bool_)
+        xp_test = array_namespace(xp.asarray(1.))
+        assert res.success.dtype == xp_test.bool
         if shape:
-            assert np.all(res.success[1:-1])
-        assert np.issubdtype(res.status.dtype, np.integer)
-        assert np.issubdtype(res.nfev.dtype, np.integer)
-        assert np.issubdtype(res.nit.dtype, np.integer)
-        assert_equal(np.max(res.nit), f.count - 3)
-        self.assert_valid_bracket(res)
-        assert_allclose(res.fl, f(res.xl, *args))
-        assert_allclose(res.fm, f(res.xm, *args))
-        assert_allclose(res.fr, f(res.xr, *args))
+            assert xp.all(res.success[1:-1])
+        assert res.status.dtype == xp.int32
+        assert res.nfev.dtype == xp.int32
+        assert res.nit.dtype == xp.int32
+        assert xp.max(res.nit) == f.count - 3
+        self.assert_valid_bracket(res, xp)
+        xp_assert_close(res.fl, f(res.xl, *args))
+        xp_assert_close(res.fm, f(res.xm, *args))
+        xp_assert_close(res.fr, f(res.xr, *args))
 
-    def test_special_cases(self):
+    def test_special_cases(self, xp):
         # Test edge cases and other special cases.
+        xp_test = array_namespace(xp.asarray(1.))
 
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            assert np.issubdtype(x.dtype, np.floating)
+            assert xp_test.isdtype(x.dtype, "numeric")
             return x ** 98 - 1
 
-        result = _bracket_minimum(f, -7, xr0=5)
+        result = _bracket_minimum(f, xp.asarray(-7., dtype=xp.float64), xr0=5)
         assert result.success
 
         # Test maxiter = 0. Should do nothing to bracket.
         def f(x):
             return x**2 - 10
 
-        xl0, xm0, xr0 = -3, -1, 2
+        xl0, xm0, xr0 = xp.asarray(-3.), xp.asarray(-1.), xp.asarray(2.)
         result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, maxiter=0)
-        assert_equal([result.xl, result.xm, result.xr], [xl0, xm0, xr0])
+        xp_assert_equal(result.xl, xl0)
+        xp_assert_equal(result.xm, xm0)
+        xp_assert_equal(result.xr, xr0)
 
         # Test scalar `args` (not in tuple)
         def f(x, c):
             return c*x**2 - 1
 
-        result = _bracket_minimum(f, -1, args=3)
+        result = _bracket_minimum(f, xp.asarray(-1.), args=xp.asarray(3.))
         assert result.success
-        assert_allclose(result.fl, f(result.xl, 3))
+        xp_assert_close(result.fl, f(result.xl, 3))
 
         # Initial bracket is valid.
         f = self.init_f()
-        xl0, xm0, xr0 = [-1.0, -0.2, 1.0]
-        args = (0, 0)
+        xl0, xm0, xr0 = xp.asarray(-1.0), xp.asarray(-0.2), xp.asarray(1.0)
+        args = (xp.asarray(0.), xp.asarray(0.))
         result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, args=args)
         assert f.count == 3
 
-        assert_equal(
-            [result.xl, result.xm, result.xr],
-            [xl0, xm0, xr0],
-        )
-        assert_equal(
-            [result.fl, result.fm, result.fr],
-            [f(xl0, *args), f(xm0, *args), f(xr0, *args)],
-        )
+        xp_assert_equal(result.xl, xl0)
+        xp_assert_equal(result.xm , xm0)
+        xp_assert_equal(result.xr, xr0)
+        xp_assert_equal(result.fl, f(xl0, *args))
+        xp_assert_equal(result.fm, f(xm0, *args))
+        xp_assert_equal(result.fr, f(xr0, *args))
 
-    def test_gh_20562_left(self):
+    def test_gh_20562_left(self, xp):
         # Regression test for https://github.com/scipy/scipy/issues/20562
         # minimum of f in [xmin, xmax] is at xmin.
-        xmin, xmax = 0.21933608, 1.39713606
+        xmin, xmax = xp.asarray(0.21933608), xp.asarray(1.39713606)
 
         def f(x):
-            log_a, log_b = np.log([xmin, xmax])
+            log_a, log_b = xp.log(xmin), xp.log(xmax)
             return -((log_b - log_a)*x)**-1
 
-        result = _bracket_minimum(f, 0.5535723499480897, xmin=xmin, xmax=xmax)
+        result = _bracket_minimum(f, xp.asarray(0.5535723499480897), xmin=xmin,
+                                  xmax=xmax)
         assert xmin == result.xl
 
-    def test_gh_20562_right(self):
+    def test_gh_20562_right(self, xp):
         # Regression test for https://github.com/scipy/scipy/issues/20562
         # minimum of f in [xmin, xmax] is at xmax.
-        xmin, xmax = -1.39713606, -0.21933608,
+        xmin, xmax = xp.asarray(-1.39713606), xp.asarray(-0.21933608)
 
         def f(x):
-            log_a, log_b = np.log([-xmax, -xmin])
+            log_a, log_b = xp.log(-xmax), xp.log(-xmin)
             return ((log_b - log_a)*x)**-1
 
-        result = _bracket_minimum(f, -0.5535723499480897, xmin=xmin, xmax=xmax)
+        result = _bracket_minimum(f, xp.asarray(-0.5535723499480897),
+                                  xmin=xmin, xmax=xmax)
         assert xmax == result.xr

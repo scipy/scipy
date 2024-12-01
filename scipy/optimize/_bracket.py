@@ -402,66 +402,74 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not np.iterable(args):
         args = (args,)
 
-    xm0 = np.asarray(xm0)[()]
-    if not np.issubdtype(xm0.dtype, np.number) or np.iscomplex(xm0).any():
+    xp = array_namespace(xm0)
+    xm0 = xp.asarray(xm0)[()]
+    if (not xp.isdtype(xm0.dtype, "numeric")
+        or xp.isdtype(xm0.dtype, "complex floating")):
         raise ValueError('`xm0` must be numeric and real.')
 
-    xmin = -np.inf if xmin is None else xmin
-    xmax = np.inf if xmax is None else xmax
+    xmin = -xp.inf if xmin is None else xmin
+    xmax = xp.inf if xmax is None else xmax
 
     # If xl0 (xr0) is not supplied, fill with a dummy value for the sake
     # of broadcasting. We need to wait until xmin (xmax) has been validated
     # to compute the default values.
     xl0_not_supplied = False
     if xl0 is None:
-        xl0 = np.nan
+        xl0 = xp.nan
         xl0_not_supplied = True
 
     xr0_not_supplied = False
     if xr0 is None:
-        xr0 = np.nan
+        xr0 = xp.nan
         xr0_not_supplied = True
 
     factor = 2.0 if factor is None else factor
-    xl0, xm0, xr0, xmin, xmax, factor = np.broadcast_arrays(
-        xl0, xm0, xr0, xmin, xmax, factor
+    xl0, xm0, xr0, xmin, xmax, factor = xp.broadcast_arrays(
+        xp.asarray(xl0), xm0, xp.asarray(xr0), xp.asarray(xmin),
+        xp.asarray(xmax), xp.asarray(factor)
     )
 
-    if not np.issubdtype(xl0.dtype, np.number) or np.iscomplex(xl0).any():
+    if (not xp.isdtype(xl0.dtype, "numeric")
+        or xp.isdtype(xl0.dtype, "complex floating")):
         raise ValueError('`xl0` must be numeric and real.')
 
-    if not np.issubdtype(xr0.dtype, np.number) or np.iscomplex(xr0).any():
+    if (not xp.isdtype(xr0.dtype, "numeric")
+        or xp.isdtype(xr0.dtype, "complex floating")):
         raise ValueError('`xr0` must be numeric and real.')
 
-    if not np.issubdtype(xmin.dtype, np.number) or np.iscomplex(xmin).any():
+    if (not xp.isdtype(xmin.dtype, "numeric")
+        or xp.isdtype(xmin.dtype, "complex floating")):
         raise ValueError('`xmin` must be numeric and real.')
 
-    if not np.issubdtype(xmax.dtype, np.number) or np.iscomplex(xmax).any():
+    if (not xp.isdtype(xmax.dtype, "numeric")
+        or xp.isdtype(xmax.dtype, "complex floating")):
         raise ValueError('`xmax` must be numeric and real.')
 
-    if not np.issubdtype(factor.dtype, np.number) or np.iscomplex(factor).any():
+    if (not xp.isdtype(factor.dtype, "numeric")
+        or xp.isdtype(factor.dtype, "complex floating")):
         raise ValueError('`factor` must be numeric and real.')
-    if not np.all(factor > 1):
+    if not xp.all(factor > 1):
         raise ValueError('All elements of `factor` must be greater than 1.')
 
     # Calculate default values of xl0 and/or xr0 if they have not been supplied
     # by the user. We need to be careful to ensure xl0 and xr0 are not outside
     # of (xmin, xmax).
     if xl0_not_supplied:
-        xl0 = xm0 - np.minimum((xm0 - xmin)/16, 0.5)
+        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, xp.asarray(0.5))
     if xr0_not_supplied:
-        xr0 = xm0 + np.minimum((xmax - xm0)/16, 0.5)
+        xr0 = xm0 + xp.minimum((xmax - xm0)/16, xp.asarray(0.5))
 
-    maxiter = np.asarray(maxiter)
+    maxiter = xp.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
-    if (not np.issubdtype(maxiter.dtype, np.number) or maxiter.shape != tuple()
-            or np.iscomplex(maxiter)):
+    if (not xp.isdtype(maxiter.dtype, "numeric") or maxiter.shape != tuple()
+            or xp.isdtype(maxiter.dtype, "complex floating")):
         raise ValueError(message)
     maxiter_int = int(maxiter[()])
     if not maxiter == maxiter_int or maxiter < 0:
         raise ValueError(message)
 
-    return func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter
+    return func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter, xp
 
 
 def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
@@ -569,7 +577,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     callback = None  # works; I just don't want to test it
 
     temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter)
-    func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter = temp
+    func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter, xp = temp
 
     xs = (xl0, xm0, xr0)
     temp = eim._initialize(func, xs, args)
@@ -577,12 +585,15 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
     xl0, xm0, xr0 = xs
     fl0, fm0, fr0 = fs
-    xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
-    xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
+    xmin = xp.astype(xp.broadcast_to(xmin, shape), dtype, copy=False)
+    xmin = xp_ravel(xmin, xp=xp)
+    xmax = xp.astype(xp.broadcast_to(xmax, shape), dtype, copy=False)
+    xmax = xp_ravel(xmax, xp=xp)
     invalid_bracket = ~((xmin <= xl0) & (xl0 < xm0) & (xm0 < xr0) & (xr0 <= xmax))
     # We will modify factor later on so make a copy. np.broadcast_to returns
     # a read-only view.
-    factor = np.broadcast_to(factor, shape).astype(dtype, copy=True).ravel()
+    factor = xp.astype(xp.broadcast_to(factor, shape), dtype, copy=True)
+    factor = xp_ravel(factor)
 
     # To simplify the logic, swap xl and xr if f(xl) < f(xr). We should always be
     # marching downhill in the direction from xl to xr.
@@ -590,11 +601,11 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     xl0[comp], xr0[comp] = xr0[comp], xl0[comp]
     fl0[comp], fr0[comp] = fr0[comp], fl0[comp]
     # We only need the boundary in the direction we're traveling.
-    limit = np.where(comp, xmin, xmax)
+    limit = xp.where(comp, xmin, xmax)
 
-    unlimited = np.isinf(limit)
+    unlimited = xp.isinf(limit)
     limited = ~unlimited
-    step = np.empty_like(xl0)
+    step = xp.empty_like(xl0)
 
     step[unlimited] = (xr0[unlimited] - xm0[unlimited])
     step[limited] = (limit[limited] - xr0[limited])
@@ -602,7 +613,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     # Step size is divided by factor for case where there is a limit.
     factor[limited] = 1 / factor[limited]
 
-    status = np.full_like(xl0, eim._EINPROGRESS, dtype=int)
+    status = xp.full_like(xl0, eim._EINPROGRESS, dtype=xp.int32)
     status[invalid_bracket] = eim._EINPUTERR
     nit, nfev = 0, 3
 
@@ -616,14 +627,14 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
     def pre_func_eval(work):
         work.step *= work.factor
-        x = np.empty_like(work.xr)
+        x = xp.empty_like(work.xr)
         x[~work.limited] = work.xr0[~work.limited] + work.step[~work.limited]
         x[work.limited] = work.limit[work.limited] - work.step[work.limited]
         # Since the new bracket endpoint is calculated from an offset with the
         # limit, it may be the case that the new endpoint equals the old endpoint,
         # when the old endpoint is sufficiently close to the limit. We use the
         # limit itself as the new endpoint in these cases.
-        x[work.limited] = np.where(
+        x[work.limited] = xp.where(
             x[work.limited] == work.xr[work.limited],
             work.limit[work.limited],
             x[work.limited],
@@ -652,7 +663,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         stop[i] = True
 
         # Condition 3: non-finite value encountered
-        i = ~(np.isfinite(work.xr) & np.isfinite(work.fr)) & ~stop
+        i = ~(xp.isfinite(work.xr) & xp.isfinite(work.fr)) & ~stop
         work.status[i] = eim._EVALUEERR
         stop[i] = True
 
