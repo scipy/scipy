@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from collections.abc import Callable
 
 import numpy as np
@@ -59,7 +59,7 @@ def sample_A_B(
     n,
     dists,
     rng=None
-) -> np.ndarray:
+):
     """Sample two matrices A and B.
 
     Uses a Sobol' sequence with 2`d` columns to have 2 uncorrelated matrices.
