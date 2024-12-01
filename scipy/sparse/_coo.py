@@ -1008,11 +1008,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
         combined_shape = self_nonreduced_shape + other_nonreduced_shape
 
         # Unravel the 2D coordinates to get multi-dimensional coordinates
-        iter_cs = zip(prod.coords, (self_nonreduced_shape, other_nonreduced_shape))
-        coords = sum((np.unravel_index(c, s) for c, s in iter_cs if s), start=())
- 
+        coords = []
+        for c, s in zip(prod.coords, (self_nonreduced_shape, other_nonreduced_shape)):
+            if s:
+                coords.extend(np.unravel_index(c, s))
 
-        if coords == ():  # if result is scalar
+        if coords == []:  # if result is scalar
             return sum(prod.data)
             
         # Construct the resulting COO array with combined coordinates and shape
