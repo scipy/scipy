@@ -8,7 +8,6 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
 
-from collections.abc import Sequence
 from types import ModuleType
 from typing import Any, Literal, TypeAlias
 
@@ -55,7 +54,7 @@ Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
 ArrayLike: TypeAlias = Array | npt.ArrayLike
 
 
-def _compliance_scipy(arrays: Sequence[ArrayLike]) -> Sequence[Array]:
+def _compliance_scipy(arrays):
     """Raise exceptions on known-bad subclasses.
 
     The following subclasses are not supported and raise and error:

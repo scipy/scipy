@@ -1,9 +1,7 @@
 import inspect
 from dataclasses import dataclass
-from typing import (
-    Literal, Protocol, TYPE_CHECKING
-)
-from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
+from collections.abc import Callable
 
 import numpy as np
 
@@ -16,7 +14,7 @@ from scipy._lib._util import _transition_to_rng
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from scipy._lib._util import DecimalNumber, IntNumber, SeedType
+    from scipy._lib._util import DecimalNumber, IntNumber
 
 
 __all__ = [
@@ -600,7 +598,7 @@ def sobol_indices(
     n = n_
 
     if not callable(method):
-        indices_methods: dict[str, Callable] = {
+        indices_methods = {
             "saltelli_2010": saltelli_2010,
         }
         try:
