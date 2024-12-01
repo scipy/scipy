@@ -246,7 +246,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
     _reject_objects(in1, 'correlate')
-    _reject_objects(in1, 'correlate')
+    _reject_objects(in2, 'correlate')
 
     if in1.ndim == in2.ndim == 0:
         return in1 * in2.conj()
@@ -1293,8 +1293,8 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
 
-    _reject_objects(in1, 'choose_conv_method')
-    _reject_objects(in1, 'choose_conv_method')
+    _reject_objects(volume, 'choose_conv_method')
+    _reject_objects(kernel, 'choose_conv_method')
 
     if measure:
         times = {}
