@@ -923,8 +923,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 raise ValueError(f"shapes {self.shape} and {other.shape}"
                                  " are not aligned for n-D dot")
 
-        new_shape_self = self.shape[:-1] + (1,) * (len(other.shape) - 1) \
-            + self.shape[-1:]
+        new_shape_self = (
+            self.shape[:-1] + (1,) * (len(other.shape) - 1) + self.shape[-1:]
+        )
         new_shape_other = (1,) * (len(self.shape) - 1) + other.shape
 
         result_shape = self.shape[:-1] + other.shape[:-2] + other.shape[-1:]
