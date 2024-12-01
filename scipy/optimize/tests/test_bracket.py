@@ -454,10 +454,12 @@ class TestBracketMinimum:
 
         # Compare reported bracket to theoretical bracket and reported function
         # values to function evaluated at bracket.
-        bracket = xp.asarray([result.xl, result.xm, result.xr])
-        xp_assert_close(bracket, xp.asarray([lower, middle, upper]))
-        f_bracket = xp.asarray([result.fl, result.fm, result.fr])
-        xp_assert_close(f_bracket, f(bracket, *args))
+        xp_assert_close(result.xl, lower)
+        xp_assert_close(result.xm, middle)
+        xp_assert_close(result.xr, upper)
+        xp_assert_close(result.fl, f(lower, *args))
+        xp_assert_close(result.fm, f(middle, *args))
+        xp_assert_close(result.fr, f(upper, *args))
 
         self.assert_valid_bracket(result, xp)
         assert result.status == 0
@@ -817,8 +819,9 @@ class TestBracketMinimum:
 
         xl0, xm0, xr0 = xp.asarray(-3.), xp.asarray(-1.), xp.asarray(2.)
         result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, maxiter=0)
-        xp_assert_equal(xp.asarray([result.xl, result.xm, result.xr]),
-                        xp.asarray([xl0, xm0, xr0]))
+        xp_assert_equal(result.xl, xl0)
+        xp_assert_equal(result.xm, xm0)
+        xp_assert_equal(result.xr, xr0)
 
         # Test scalar `args` (not in tuple)
         def f(x, c):
@@ -835,14 +838,12 @@ class TestBracketMinimum:
         result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, args=args)
         assert f.count == 3
 
-        xp_assert_equal(
-            xp.asarray([result.xl, result.xm, result.xr]),
-            xp.asarray([xl0, xm0, xr0]),
-        )
-        xp_assert_equal(
-            xp.asarray([result.fl, result.fm, result.fr]),
-            xp.asarray([f(xl0, *args), f(xm0, *args), f(xr0, *args)]),
-        )
+        xp_assert_equal(result.xl, xl0)
+        xp_assert_equal(result.xm , xm0)
+        xp_assert_equal(result.xr, xr0)
+        xp_assert_equal(result.fl, f(xl0, *args))
+        xp_assert_equal(result.fm, f(xm0, *args))
+        xp_assert_equal(result.fr, f(xr0, *args))
 
     def test_gh_20562_left(self, xp):
         # Regression test for https://github.com/scipy/scipy/issues/20562
