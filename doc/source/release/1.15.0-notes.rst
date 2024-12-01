@@ -24,10 +24,55 @@ This release requires Python 3.10+ and NumPy 1.23.5 or greater.
 Highlights of this release
 **************************
 
+Sparse arrays are now fully functional for 1-D and 2-D arrays. We recommend
+that all new code use sparse arrays and that developers start to migrate their
+existing code from sparse matrix to sparse array:
+:ref:`migration_to_sparray`. Both ``sparse.linalg`` and ``sparse.csgraph``
+work with either sparse matrix or sparse array and work internally with
+sparse array.
+
+A transition has started towards unifying the SciPy API with regards to
+random number generation, as outlined in
+`SPEC-7 <https://scientific-python.org/specs/spec-0007/>`_. The uniform API
+provided by this SPEC will:
+
+* standardize the usage of the ``rng`` keyword, eventually deprecating the
+  usage of other parameter names.
+* deprecate the setting of a global seed via ``np.random.seed``
+* transition from ``np.random.RandomState`` to ``np.random.Generator``
+
+For further details please visit the SPEC-007 specification.
 
 ************
 New features
 ************
+
+`scipy.differentiate` introduction
+==================================
+The new `scipy.differentiate` sub-package contains functions for accurate
+estimation of derivatives of black box functions.
+
+* Use `scipy.differentiate.derivative` for first-order derivatives of
+  scalar-in, scalar-out functions.
+* Use `scipy.differentiate.jacobian` for first-order partial derivatives of
+  vector-in, vector-out functions.
+* Use `scipy.differentiate.hessian` for second-order partial derivatives of
+  vector-in, scalar-out functions.
+
+All functions use high-order finite difference rules with adaptive (real)
+step size. To facilitate batch computation, these functions are vectorized
+and support several Array API compatible array libraries in addition to NumPy
+(see "Array API Standard Support" below).
+
+`scipy.integrate` improvements
+==============================
+- The ``QUADPACK`` Fortran77 package has been ported to C.
+- `scipy.integrate.lebedev_rule` computes abscissae and weights for
+  integration over the surface of a sphere.
+- `scipy.integrate.nsum` evaluates finite and infinite series and their
+  logarithms. To facilitate batch computation, the function is vectorized and
+  supports several Array API compatible array libraries in addition to
+  NumPy (see "Array API Standard Support" below).
 
 `scipy.cluster` improvements
 ============================
@@ -35,27 +80,90 @@ New features
 
 `scipy.interpolate` improvements
 ================================
+- `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
+  approximation of real or complex functions.
+- `scipy.interpolate.FloaterHormannInterpolator` adds barycentric rational
+  interpolation.
+- New functions `scipy.interpolate.make_splrep` and
+  `scipy.interpolate.make_splprep` implement construction of smoothing splines.
+  The algorithmic content is equivalent to FITPACK (``splrep`` and ``splprep``
+  functions, and ``*UnivariateSpline`` classes) and the user API is consistent
+  with ``make_interp_spline``: these functions receive data arrays and return
+  a `scipy.interpolate.BSpline` instance.
+- New generator function `scipy.interpolate.generate_knots` implements the
+  FITPACK strategy for selecting knots of a smoothing spline given the
+  smoothness parameter, ``s``. The function exposes the internal logic of knot
+  selection that ``splrep`` and ``*UnivariateSpline`` was using.
 
 
 `scipy.linalg` improvements
 ===========================
-
+- `scipy.linalg.interpolative` Fortran77 code has been ported to Cython.
+- `scipy.linalg.solve` supports several new values for the ``assume_a``
+  argument, enabling faster computation for diagonal, tri-diagonal, banded, and
+  triangular matrices. Also, when ``assume_a`` is left unspecified, the
+  function now automatically detects and exploits diagonal, tri-diagonal,
+  and triangular structures.
+- `scipy.linalg` matrix creation functions (`scipy.linalg.circulant`,
+  `scipy.linalg.companion`, `scipy.linalg.convolution_matrix`,
+  `scipy.linalg.fiedler`, `scipy.linalg.fiedler_companion`,
+  `scipy.linalg.leslie`, and `scipy.linalg.toeplitz`) now support batch
+  matrix creation.
+- `scipy.linalg.funm` is faster.
+- `scipy.linalg.orthogonal_procrustes` now supports complex input.
+- Wrappers for the following LAPACK routines have been added in
+  `scipy.linalg.lapack`: ``?lantr``, ``?sytrs``, ``?hetrs``, ``?trcon``,
+  and ``?gtcon``.
 
 `scipy.ndimage` improvements
 ============================
+- Several additional filtering functions now support an ``axes`` argument
+  that specifies which axes of the input filtering is to be performed on.
+  These include ``correlate``, ``convolve``, ``generic_laplace``, ``laplace``,
+  ``gaussian_laplace``, ``derivative2``, ``generic_gradient_magnitude``,
+  ``gaussian_gradient_magnitude`` and ``generic_filter``.
+- The binary and grayscale morphology functions now support an ``axes``
+  argument that specifies which axes of the input filtering is to be performed
+  on.
+
 
 
 `scipy.optimize` improvements
 =============================
+- The vendored HiGHS library has been upgraded from ``1.4.0`` to ``1.8.0``,
+  bringing accuracy and performance improvements to solvers.
+- The ``MINPACK`` Fortran77 package has been ported to C.
+- The ``L-BFGS-B`` Fortran77 package has been ported to C.
+- The new `scipy.optimize.elementwise` namespace includes functions
+  ``bracket_root``, ``find_root``, and ``bracket_minimum``
+  for root-finding and minimization of univariate functions. To facilitate
+  batch computation, these functions are vectorized and support several
+  Array API compatible array libraries in addition to NumPy (see
+  "Array API Standard Support" below). Compared to existing functions (e.g.
+  `scipy.optimize.root_scalar` and `scipy.optimize.minimize_scalar`),
+  these functions can offer speedups of over 100x when used with NumPy arrays,
+  and even greater gains are possible with other Array API Standard compatible
+  array libraries (e.g. CuPy).
 
 
 `scipy.signal` improvements
 ===========================
+- Add functionality of complex-valued waveforms to ``signal.chirp()``.
 
 
 `scipy.sparse` improvements
 ===========================
-
+- A :ref:`migration guide<migration_to_sparray>` is now available for
+  moving from sparse.matrix to sparse.array in your code/library.
+- Sparse arrays now support indexing for 1-D and 2-D arrays. So, sparse
+  arrays are now fully functional for 1-D and 2D.
+- n-D sparse arrays in COO format can now be constructed, reshaped and used
+  for basic arithmetic.
+- New functions ``sparse.linalg.is_sptriangular`` and
+  ``sparse.linalg.spbandwidth`` mimic the existing dense tools
+  ``linalg.is_triangular`` and ``linalg.bandwidth``.
+- ``sparse.linalg`` and ``sparse.csgraph`` now work with sparse arrays. Be
+  careful that your index arrays are 32-bit. We are working on 64bit support.
 
 
 `scipy.spatial` improvements
@@ -64,16 +172,131 @@ New features
 
 `scipy.special` improvements
 ============================
+- The factorial functions ``special.{factorial,factorial2,factorialk}`` now
+  offer an extension to the complex domain by passing the kwarg
+  ``extend='complex'``. This is opt-in because it changes the values for
+  negative inputs (which by default return 0), as well as for some integers
+  (in the case of ``factorial2`` and ``factorialk``; for more details,
+  check the respective docstrings).
+- `scipy.special.zeta` now defines the Riemann zeta function on the complex
+  plane.
+- `scipy.special.softplus` computes the softplus function
+- The spherical Bessel functions (`scipy.special.spherical_jn`,
+  `scipy.special.spherical_yn`, `scipy.special.spherical_in`, and
+  `scipy.special.spherical_kn`) now support negative arguments with real dtype.
+- `scipy.special.logsumexp` now preserves precision when one element of the
+  sum has magnitude much bigger than the rest.
+- The accuracy of several functions has been improved:
 
+  - `scipy.special.ncfdtr` and `scipy.special.nctdtr` have been improved
+    throughout the domain.
+  - `scipy.special.hyperu` is improved for the case of ``b=1``, small ``x``,
+    and small ``a``.
+  - `scipy.special.logit` is improved near the argument ``p=0.5``.
+  - `scipy.special.rel_entr` is improved when ``x/y`` overflows, underflows,
+    or is close to ``1``.
 
 `scipy.stats` improvements
 ==========================
+- A new probability distribution infrastructure has been added for the
+  implementation of univariate, continuous distributions:
 
+  - Speed, accuracy, and memory advantages of the new infastructure are
+    detailed in
+  - `scipy.stats.Normal` represents the normal distribution with the new
+    interface. In most cases, its methods are faster and more accurate than
+    those of `scipy.stats.norm`.
+  - Use `scipy.stats.make_distribution` to treat an existing continuous
+    distribution (e.g. `scipy.stats.norm`) with the new infrastructure.
+    This can improve the speed and accuracy of existing distributions,
+    especially for methods not overridden with custom formulas in the
+    implementation.
+
+- `scipy.stats.Mixture` has been added to represent mixture distributions.
+- The new `scipy.stats.lmoment` calculates sample l-moments and l-moment
+  ratios.
+- `scipy.stats.chatterjeexi` computes the Xi correlation coefficient, which
+  can detect nonlinear dependence. The function also performs a hypothesis
+  test of independence between samples.
+- `scipy.stats.wilcoxon` has improved method resolution logic for the default
+  ``method='auto'``. Other values of ``method`` provided by the user are now
+  respected in all cases, and the method argument ``approx`` has been
+  renamed to ``asymptotic`` for consistency with similar functions. (Use of
+  ``approx`` is still allowed for backward compatibility.)
+- There are several new probability distributions:
+
+  - `scipy.stats.dpareto_lognorm` represents the double Pareto lognormal
+    distribution.
+  - `scipy.stats.landau` represents the Landau distribution.
+  - `scipy.stats.normal_inverse_gamma` represents the normal-inverse-gamma
+    distribution.
+  - `scipy.stats.poisson_binom` represents the Poisson binomial distribution.
+
+- Batch calculation with `scipy.stats.alexandergovern` and
+  `scipy.stats.combine_pvalues` is faster.
+- `scipy.stats.chisquare` added an argument ``sum_check``. By default, the
+  function raises an error when the sum of expected and obseved frequencies
+  are not equal; setting ``sum_check=False`` disables this check to
+  facilitate hypothesis tests other than Pearson's chi-squared test.
+- The accuracy of several distribution methods has been improved, including:
+
+  - `scipy.stats.nct` method ``pdf``
+  - `scipy.stats.crystalball` method ``sf``
+  - `scipy.stats.geom` method ``rvs``
+  - `scipy.stats.cauchy` methods ``logpdf``, ``pdf``, ``ppf`` and ``isf``
+  - The ``logcdf`` and/or ``logsf`` methods of distributions that do not
+    override the generic implementation of these methods, including
+    `scipy.stats.beta`, `scipy.stats.betaprime`, `scipy.stats.cauchy`,
+    `scipy.stats.chi`, `scipy.stats.chi2`, `scipy.stats.exponweib`,
+    `scipy.stats.gamma`, `scipy.stats.gompertz`, `scipy.stats.halflogistic`,
+    `scipy.stats.hypsecant`, `scipy.stats.invgamma`, `scipy.stats.laplace`,
+    `scipy.stats.levy`, `scipy.stats.loggamma`, `scipy.stats.maxwell`,
+    `scipy.stats.nakagami`, and `scipy.stats.t`.
 
 
 *******************
 Deprecated features
 *******************
+- Functions `scipy.linalg.interpolative.rand` and
+  `scipy.linalg.interpolative.seed` have been deprecated and will be removed
+  in SciPy ``1.17.0``.
+- Complex inputs to `scipy.spatial.distance.cosine` and
+  `scipy.spatial.distance.correlation` have been deprecated and will raise
+  an error in SciPy ``1.17.0``.
+- `scipy.stats.find_repeats` is deprecated as of SciPy ``1.15.0`` and will be
+  removed in SciPy ``1.17.0``. Please use
+  ``numpy.unique``/``numpy.unique_counts`` instead.
+- `scipy.linalg.kron` is deprecated in favour of ``numpy.kron``.
+- Using object arrays and longdouble arrays in `scipy.signal`
+  convolution/correlation functions (`scipy.signal.correlate`,
+  `scipy.signal.convolve` and `scipy.signal.choose_conv_method`) and
+  filtering functions (`scipy.signal.lfilter`, `scipy.signal.sosfilt`) has
+  been deprecated as of SciPy ``1.15.0`` and will be removed in SciPy
+  ``1.17.0``.
+- `scipy.stats.linregress` has deprecated one-argument use; the two
+  variables must be specified as separate arguments.
+- ``scipy.stats.trapz`` is deprecated in favor of `scipy.stats.trapezoid`.
+
+********************
+Expired Deprecations
+********************
+- The wavelet functions in `scipy.signal` have been removed. This includes
+  ``daub``, ``qmf``, ``cascade``, ``morlet``, ``morlet2``, ``ricker``,
+  and ``cwt``. Users should use ``pywavelets`` instead.
+- ``scipy.signal.cmplx_sort`` has been removed.
+- ``scipy.integrate.quadrature`` and ``scipy.integrate.romberg`` have been
+  removed in favour of `scipy.integrate.quad`.
+- ``scipy.stats.rvs_ratio_uniforms`` has been removed in favor of
+  `scipy.stats.sampling.RatioUniforms`.
+- `scipy.special.factorial` now raises an error for non-integer scalars when
+  ``exact=True``.
+- `scipy.integrate.cumulative_trapezoid` now raises an error for values of
+  ``initial`` other than ``0`` and ``None``.
+- Complex dtypes now raise an error in `scipy.interpolate.Akima1DInterpolator`
+  and `scipy.interpolate.PchipInterpolator`
+- ``special.btdtr`` and ``special.btdtri`` have been removed.
+- The default of the ``exact=`` kwarg in ``special.factorialk`` has changed
+  from ``True`` to ``False``.
 
 `scipy.linalg` deprecations
 ===========================
@@ -87,11 +310,76 @@ Deprecated features
 ******************************
 Backwards incompatible changes
 ******************************
+- ``interpolate.BSpline.integrate`` output is now always a numpy array.
+  Previously, for 1D splines the output was a python float or a 0D array
+  depending on the value of the ``extrapolate`` argument.
+- `scipy.stats.wilcoxon` now respects the ``method`` argument provided by the
+  user. Previously, even if ``method='exact'`` was specified, the function
+  would resort to ``method='approx'`` in some cases.
 
 *************
 Other changes
 *************
+- `scipy.stats.bootstrap` now emits a ``FutureWarning`` if the shapes of the
+  input arrays do not agree. Broadcast the arrays to the same batch shape
+  (i.e. for all dimensions except those specified by the ``axis`` argument)
+  to avoid the warning. Broadcasting will be performed automatically in the
+  future.
+- SciPy endorsed `SPEC-7 <https://scientific-python.org/specs/spec-0007/>`_,
+  which proposes a ``rng`` argument to control pseudorandom number generation
+  (PRNG) in a standard way, replacing legacy arguments like ``seed`` and
+  ``random_sate``. In many cases, use of ``rng`` will change the behavior of
+  the function unless the argument is already an instance of
+  ``numpy.random.Generator``.
 
+  - Effective in SciPy ``1.15.0``:
+
+    - The ``rng`` argument has been added to the following functions:
+      `scipy.cluster.vq.kmeans`, `scipy.cluster.vq.kmeans2`,
+      `scipy.interpolate.BarycentricInterpolator`,
+      `scipy.interpolate.barycentric_interpolate`,
+      `scipy.linalg.clarkson_woodruff_transform`,
+      `scipy.optimize.basinhopping`,
+      `scipy.optimize.differential_evolution`, `scipy.optimize.dual_annealing`,
+      `scipy.optimize.check_grad`, `scipy.optimize.quadratic_assignment`,
+      `scipy.sparse.random`, `scipy.sparse.random_array`, `scipy.sparse.rand`,
+      `scipy.sparse.linalg.svds`, `scipy.spatial.transform.Rotation.random`,
+      `scipy.spatial.distance.directed_hausdorff`,
+      `scipy.stats.goodness_of_fit`, `scipy.stats.BootstrapMethod`,
+      `scipy.stats.PermutationMethod`, `scipy.stats.bootstrap`,
+      `scipy.stats.permutation_test`, `scipy.stats.dunnett`, all
+      `scipy.stats.qmc` classes that consume random numbers, and
+      `scipy.stats.sobol_indices`.
+    - When passed by keyword, the ``rng`` argument will follow the SPEC 7
+      standard behavior: the argument will be normalized with
+      ``np.random.default_rng`` before being used.
+    - When passed by position or legacy keyword, the behavior of the argument
+      will remain unchanged (for now).
+
+  - Beginning in SciPy ``1.17.0``:
+
+    - Keyword use of the legacy argument will begin to emit a
+      ``DeprecationWarning`` about the keyword argument's removal.
+    - Positional use of the legacy argument will emit a ``FutureWarning``
+      about the upcoming change in interpretation of the argument. For
+      instance, integers will be normalized by ``np.random.default_rng``
+      rather than ``np.random.RandomState``, so the random number stream
+      will change.
+    - Reliance on the default argument value (``None``) will emit a
+      ``FutureWarning`` if ``np.random.seed`` was used to control the
+      random state, as the state will be nondeterministic in the future.
+
+  - In SciPy ``1.19.0``, the legacy argument will be removed and the ``rng``
+    argument will follow the new behavior whether passed by keyword or
+    position (where positional use is permitted).
+  - In all cases, users can avoid future disruption by proactively passing
+    an instance of ``np.random.Generator`` by keyword ``rng``. For details,
+    see `SPEC-7 <https://scientific-python.org/specs/spec-0007/>`_.
+
+- The SciPy build no longer adds ``-std=legacy`` for Fortran code,
+  except when using Gfortran. This avoids problems with the new Flang and
+  AMD Fortran compilers. It may make new build warnings appear for other
+  compilers - if so, please file an issue.
 
 
 *******
