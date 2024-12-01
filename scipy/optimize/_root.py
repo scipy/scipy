@@ -712,7 +712,7 @@ def _root_krylov_doc():
             be called as ``update(x, f)`` after each nonlinear step,
             with ``x`` giving the current point, and ``f`` the current
             function value.
-        inner_rtol, inner_atol, inner_callback, …
+        inner_rtol, inner_atol, inner_callback, ...
             Parameters to pass on to the "inner" Krylov solver.
 
             For a full list of options, see the documentation for the
