@@ -1,6 +1,7 @@
 # TODO: 64-bit BLAS and LAPACK
 
 __init__py = fs.copyfile('__init__.py')
+__init__pxd = fs.copyfile('__init__.pxd')
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
 _generate_pyx = find_program('_generate_pyx.py')
@@ -31,19 +32,19 @@ cython_blas_pxd = cython_linalg[2]
 linalg_init_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py])
+  depends : [_cython_tree, __init__py, __init__pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on _cythonized_array_utils.pxd
 linalg_init_utils_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
+  depends : [_cython_tree, __init__py, __init__pxd, _cy_array_utils_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
 linalg_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py, cython_blas_pxd])#, cython_linalg])
+  depends : [_cython_tree, __init__py, __init__pxd, cython_blas_pxd])#, cython_linalg])
 
 # fblas
 fblas_module = custom_target('fblas_module',
@@ -218,6 +219,7 @@ endif
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_basic.py',
   '_cythonized_array_utils.pxd',
   '_cythonized_array_utils.pyi',

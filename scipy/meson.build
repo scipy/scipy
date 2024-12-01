@@ -360,7 +360,6 @@ python_sources = [
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
-  'linalg.pxd',
   'optimize.pxd',
   'special.pxd',
 ]
@@ -379,7 +378,6 @@ py3.install_sources(
 #_cython_tree = declare_dependency(sources: [
 _cython_tree = [
   fs.copyfile('__init__.py'),
-  fs.copyfile('linalg.pxd'),
   fs.copyfile('optimize.pxd'),
   fs.copyfile('special.pxd'),
 ]
