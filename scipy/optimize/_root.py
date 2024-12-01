@@ -719,8 +719,8 @@ def _root_krylov_doc():
             solver you are using. By default this is `scipy.sparse.linalg.lgmres`.
             If the solver has been overridden through `method`, see the documentation
             for that solver instead.
-            To use an option for that solver, prepend `inner_` to it.
-            For example, to control the `rtol` argument to the solver,
+            To use an option for that solver, prepend ``inner_`` to it.
+            For example, to control the ``rtol`` argument to the solver,
             set the `inner_rtol` option here.
 
         outer_k : int, optional
