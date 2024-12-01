@@ -5,7 +5,7 @@ from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
 from scipy import linalg
 import scipy.linalg._decomp_update as _decomp_update
-from scipy.linalg._decomp_update import qr_delete, qr_update, qr_insert
+from scipy.linalg import qr_delete, qr_update, qr_insert
 
 def assert_unitary(a, rtol=None, atol=None, assert_sqr=True):
     if rtol is None:
