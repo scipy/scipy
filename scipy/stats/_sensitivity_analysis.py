@@ -24,12 +24,6 @@ __all__ = [
 ]
 
 
-class PPFDist(Protocol):
-    @property
-    def ppf(self) -> Callable[..., np.float64]:
-        ...
-
-
 def f_ishigami(x: "npt.ArrayLike") -> np.ndarray:
     r"""Ishigami function.
 
@@ -64,9 +58,9 @@ def f_ishigami(x: "npt.ArrayLike") -> np.ndarray:
 
 
 def sample_A_B(
-    n: "IntNumber",
-    dists: Sequence[PPFDist],
-    rng: "SeedType" = None
+    n,
+    dists,
+    rng=None
 ) -> np.ndarray:
     """Sample two matrices A and B.
 
@@ -247,13 +241,12 @@ class SobolResult:
 @_transition_to_rng('random_state', replace_doc=False)
 def sobol_indices(
     *,
-    func: Callable[[np.ndarray], "npt.ArrayLike"] |
-          dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],
-    n: "IntNumber",
-    dists: Sequence[PPFDist] | None = None,
-    method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
-    rng: "SeedType" = None
-) -> SobolResult:
+    func,
+    n,
+    dists=None,
+    method='saltelli_2010',
+    rng=None
+):
     r"""Global sensitivity indices of Sobol'.
 
     Parameters
