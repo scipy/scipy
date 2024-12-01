@@ -23,7 +23,7 @@ class Leaks(Benchmark):
         peak_mems = []
 
         for repeat in repeats:
-            code = """
+            code = f"""
             import numpy as np
             from scipy.interpolate import griddata
 
@@ -34,12 +34,10 @@ class Leaks(Benchmark):
             points = np.random.rand(1000, 2)
             values = func(points[:,0], points[:,1])
 
-            for t in range(%(repeat)d):
+            for t in range({repeat}):
                 for method in ['nearest', 'linear', 'cubic']:
                     griddata(points, values, (grid_x, grid_y), method=method)
-
-            """ % dict(repeat=repeat)
-
+            """
             _, peak_mem = run_monitored(code)
             peak_mems.append(peak_mem)
 

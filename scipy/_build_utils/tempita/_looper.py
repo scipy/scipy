@@ -41,8 +41,7 @@ class looper:
         return looper_iter(self.seq)
 
     def __repr__(self):
-        return '<%s for %r>' % (
-            self.__class__.__name__, self.seq)
+        return '<{} for {!r}>'.format(self.__class__.__name__, self.seq)
 
 
 class looper_iter:
@@ -69,8 +68,7 @@ class loop_pos:
         self.pos = pos
 
     def __repr__(self):
-        return '<loop pos=%r at %r>' % (
-            self.seq[self.pos], self.pos)
+        return '<loop pos={!r} at {!r}>'.format(self.seq[self.pos], self.pos)
 
     def index(self):
         return self.pos
