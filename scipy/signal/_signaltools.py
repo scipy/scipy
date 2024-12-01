@@ -2329,7 +2329,7 @@ def hilbert(x, N=None, axis=-1):
 
     See Also
     --------
-    envelope: Compute envelope of a signal of a real- or complex-valued signal.
+    envelope: Compute envelope of a real- or complex-valued signal.
 
     Examples
     --------
