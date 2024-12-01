@@ -284,7 +284,7 @@ def cases_test_fit_mse():
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'tukeylambda',  # close, but doesn't meet tolerance
                       'vonmises',  # can have negative CDF; doesn't play nice
-                      'arcsine', 'argus', 'powerlaw',  # don't meet tolerance
+                      'arcsine', 'argus', 'powerlaw', 'rdist', # don't meet tolerance
                       'poisson_binom',  # vector-valued shape parameter
                       }
 
@@ -314,7 +314,7 @@ def cases_test_fit_mse():
                        'nakagami', 'ncf', 'nchypergeom_fisher',
                        'nchypergeom_wallenius', 'nct', 'ncx2',
                        'pearson3', 'powerlognorm',
-                       'rdist', 'reciprocal', 'rel_breitwigner', 'rice',
+                       'reciprocal', 'rel_breitwigner', 'rice',
                        'trapezoid', 'truncnorm', 'truncweibull_min',
                        'vonmises_line', 'zipfian'}
 

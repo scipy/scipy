@@ -100,7 +100,7 @@ class TestLGMRES:
     def test_arnoldi(self):
         rng = np.random.default_rng(123)
 
-        A = eye_array(2000) + random_array((2000, 2000), density=5e-4, random_state=rng)
+        A = eye_array(2000) + random_array((2000, 2000), density=5e-4, rng=rng)
         b = rng.random(2000)
 
         # The inner arnoldi should be equivalent to gmres

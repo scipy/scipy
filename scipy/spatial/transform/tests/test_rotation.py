@@ -759,6 +759,7 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     test_stats(angles_mat - angles, 1e-15, 1e-13)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
@@ -785,6 +786,7 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     assert_array_almost_equal(mat_expected, mat_estimated)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
@@ -812,6 +814,7 @@ def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     assert_array_almost_equal(mat_expected, mat_estimated)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_compare_algorithms(seq_tuple, intrinsic):
@@ -990,6 +993,7 @@ def test_approx_equal():
     assert_equal(p.approx_equal(q, atol), (r_mag < atol))
 
 
+@pytest.mark.thread_unsafe
 def test_approx_equal_single_rotation():
     # also tests passing single argument to approx_equal
     p = Rotation.from_rotvec([0, 0, 1e-9])  # less than default atol of 1e-8
@@ -1806,7 +1810,7 @@ def test_len_and_bool():
 
 def test_from_davenport_single_rotation():
     axis = [0, 0, 1]
-    quat = Rotation.from_davenport(axis, 'extrinsic', 90, 
+    quat = Rotation.from_davenport(axis, 'extrinsic', 90,
                                    degrees=True).as_quat()
     expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
     assert_allclose(quat, expected_quat)
@@ -1827,17 +1831,17 @@ def test_from_davenport_one_or_two_axes():
     rot_dav = Rotation.from_davenport([ez], 'e', [np.pi/4])
     assert_allclose(rot.as_quat(canonical=True),
                     rot_dav.as_quat(canonical=True))
-    
+
     # Single rotation, two axes, axes.shape == (2, 3)
-    rot = Rotation.from_rotvec([np.array(ez) * np.pi/4, 
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/4,
                                 np.array(ey) * np.pi/6])
     rot = rot[0] * rot[1]
     rot_dav = Rotation.from_davenport([ey, ez], 'e', [np.pi/6, np.pi/4])
     assert_allclose(rot.as_quat(canonical=True),
                     rot_dav.as_quat(canonical=True))
-    
+
     # Two rotations, single axis, axes.shape == (3, )
-    rot = Rotation.from_rotvec([np.array(ez) * np.pi/6, 
+    rot = Rotation.from_rotvec([np.array(ez) * np.pi/6,
                                 np.array(ez) * np.pi/4])
     rot_dav = Rotation.from_davenport([ez], 'e', [np.pi/6, np.pi/4])
     assert_allclose(rot.as_quat(canonical=True),
@@ -1880,6 +1884,7 @@ def test_as_davenport():
             assert_allclose(angles_dav, angles)
 
 
+@pytest.mark.thread_unsafe
 def test_as_davenport_degenerate():
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
@@ -1926,7 +1931,7 @@ def test_compare_from_davenport_from_euler():
                 seq = seq.upper()
             eul = Rotation.from_euler(seq, angles)
             dav = Rotation.from_davenport(ax, order, angles)
-            assert_allclose(eul.as_quat(canonical=True), dav.as_quat(canonical=True), 
+            assert_allclose(eul.as_quat(canonical=True), dav.as_quat(canonical=True),
                             rtol=1e-12)
 
     # asymmetric sequences

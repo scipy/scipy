@@ -28,6 +28,7 @@ dependencies:
   - pytest-xdist
   - pytest-timeout
   - asv >=0.6
+  - conda-build
   - hypothesis
   - array-api-strict<2.1.1
   # For type annotations

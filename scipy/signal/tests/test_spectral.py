@@ -1025,8 +1025,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1059,8 +1059,8 @@ class TestLombscargle:
         offset = 0.15  # Offset to be subtracted in pre-centering
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1097,8 +1097,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1273,8 +1273,8 @@ class TestLombscargle:
         offset = 2  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a cos wave for the selected times
@@ -1307,8 +1307,8 @@ class TestLombscargle:
         offset = 2.15  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1341,6 +1341,7 @@ class TestLombscargle:
 
 
 class TestSTFT:
+    @pytest.mark.thread_unsafe
     def test_input_validation(self):
 
         def chk_VE(match):
@@ -1471,8 +1472,8 @@ class TestSTFT:
             assert_equal(False, check_NOLA(*setting), err_msg=msg)
 
     def test_average_all_segments(self):
-        np.random.seed(1234)
-        x = np.random.randn(1024)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(1024)
 
         fs = 1.0
         window = 'hann'
@@ -1491,8 +1492,8 @@ class TestSTFT:
         assert_allclose(np.mean(np.abs(Z)**2, axis=-1), Pw)
 
     def test_permute_axes(self):
-        np.random.seed(1234)
-        x = np.random.randn(1024)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(1024)
 
         fs = 1.0
         window = 'hann'
@@ -1515,7 +1516,7 @@ class TestSTFT:
 
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
     def test_roundtrip_real(self, scaling):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('boxcar', 100, 10, 0),           # Test no overlap
@@ -1528,7 +1529,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
@@ -1541,8 +1542,9 @@ class TestSTFT:
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
+    @pytest.mark.thread_unsafe
     def test_roundtrip_not_nola(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         w_fail = np.ones(16)
         w_fail[::2] = 0
@@ -1556,7 +1558,7 @@ class TestSTFT:
             assert not check_NOLA(window, nperseg, noverlap), msg
 
             t = np.arange(N)
-            x = 10 * np.random.randn(t.size)
+            x = 10 * rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True,
@@ -1569,7 +1571,7 @@ class TestSTFT:
             assert not np.allclose(x, xr[:len(x)]), msg
 
     def test_roundtrip_nola_not_cola(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('boxcar', 100, 10, 3),           # NOLA True, COLA False
@@ -1585,7 +1587,7 @@ class TestSTFT:
             assert not check_COLA(window, nperseg, noverlap), msg
 
             t = np.arange(N)
-            x = 10 * np.random.randn(t.size)
+            x = 10 * rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True,
@@ -1599,13 +1601,13 @@ class TestSTFT:
             assert_allclose(x, xr[:len(x)], err_msg=msg)
 
     def test_roundtrip_float32(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [('hann', 1024, 256, 128)]
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
             x = x.astype(np.float32)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
@@ -1619,9 +1621,10 @@ class TestSTFT:
             assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
     def test_roundtrip_complex(self, scaling):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('boxcar', 100, 10, 0),           # Test no overlap
@@ -1634,7 +1637,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size) + 10j*np.random.randn(t.size)
+            x = 10*rng.randn(t.size) + 10j*rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
@@ -1664,7 +1667,7 @@ class TestSTFT:
         assert_allclose(x, xr, err_msg=msg)
 
     def test_roundtrip_boundary_extension(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         # Test against boxcar, since window is all ones, and thus can be fully
         # recovered with no boundary extension
@@ -1676,7 +1679,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                            window=window, detrend=None, padded=True,
@@ -1697,7 +1700,7 @@ class TestSTFT:
                 assert_allclose(x, xr_ext, err_msg=msg)
 
     def test_roundtrip_padded_signal(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('boxcar', 101, 10, 0),
@@ -1706,7 +1709,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=True)
@@ -1719,7 +1722,7 @@ class TestSTFT:
             assert_allclose(x, xr[:x.size], err_msg=msg)
 
     def test_roundtrip_padded_FFT(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         settings = [
                     ('hann', 1024, 256, 128, 512),
@@ -1730,7 +1733,7 @@ class TestSTFT:
 
         for window, N, nperseg, noverlap, nfft in settings:
             t = np.arange(N)
-            x = 10*np.random.randn(t.size)
+            x = 10*rng.randn(t.size)
             xc = x*np.exp(1j*np.pi/4)
 
             # real signal
@@ -1754,9 +1757,9 @@ class TestSTFT:
             assert_allclose(xc, xcr, err_msg=msg)
 
     def test_axis_rolling(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
-        x_flat = np.random.randn(1024)
+        x_flat = rng.randn(1024)
         _, _, z_flat = stft(x_flat)
 
         for a in range(3):

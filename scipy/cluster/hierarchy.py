@@ -2950,6 +2950,9 @@ def set_link_color_palette(palette):
     -----
     Ability to reset the palette with ``None`` added in SciPy 0.17.0.
 
+    Thread safety: using this function in a multi-threaded fashion may
+    result in `dendrogram` producing plots with unexpected colors.
+
     Examples
     --------
     >>> import numpy as np

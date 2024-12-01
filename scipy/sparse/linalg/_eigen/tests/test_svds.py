@@ -688,9 +688,9 @@ class SVDSCommonTests:
         rng = np.random.default_rng(0)
         k = 5
         (m, n) = shape
-        S = random_array(shape=(m, n), density=0.1, random_state=rng)
+        S = random_array(shape=(m, n), density=0.1, rng=rng)
         if dtype is complex:
-            S = + 1j * random_array(shape=(m, n), density=0.1, random_state=rng)
+            S = + 1j * random_array(shape=(m, n), density=0.1, rng=rng)
         e = np.ones(m)
         e[0:5] *= 1e1 ** np.arange(-5, 0, 1)
         S = dia_array((e, 0), shape=(m, m)) @ S

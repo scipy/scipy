@@ -12,6 +12,7 @@ from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
 
+
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
@@ -54,17 +55,19 @@ class TestDerivative:
         # input shapes.
         x = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
         n = np.size(x)
+        state = {}
 
         @np.vectorize
         def _derivative_single(x):
             return derivative(self.f, x, order=order)
 
         def f(x, *args, **kwargs):
-            f.nit += 1
-            f.feval += 1 if (x.size == n or x.ndim <=1) else x.shape[-1]
+            state['nit'] += 1
+            state['feval'] += 1 if (x.size == n or x.ndim <=1) else x.shape[-1]
             return self.f(x, *args, **kwargs)
-        f.nit = -1
-        f.feval = 0
+
+        state['nit'] = -1
+        state['feval'] = 0
 
         res = derivative(f, xp.asarray(x, dtype=xp.float64), order=order)
         refs = _derivative_single(x).ravel()
@@ -88,12 +91,12 @@ class TestDerivative:
         ref_nfev = [np.int32(ref.nfev) for ref in refs]
         xp_assert_equal(xp.reshape(res.nfev, (-1,)), xp.asarray(ref_nfev))
         if is_numpy(xp):  # can't expect other backends to be exactly the same
-            assert xp.max(res.nfev) == f.feval
+            assert xp.max(res.nfev) == state['feval']
 
         ref_nit = [np.int32(ref.nit) for ref in refs]
         xp_assert_equal(xp.reshape(res.nit, (-1,)), xp.asarray(ref_nit))
         if is_numpy(xp):  # can't expect other backends to be exactly the same
-            assert xp.max(res.nit) == f.nit
+            assert xp.max(res.nit) == state['nit']
 
     def test_flags(self, xp):
         # Test cases that should produce different status flags; show that all
@@ -682,6 +685,7 @@ class TestHessian(JacobianHessianTest):
         # assert np.unique(res.nfev).size == 3
 
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.skip_xp_backends(np_only=True,
                                   reason='Python list input uses NumPy backend')
     def test_small_rtol_warning(self, xp):

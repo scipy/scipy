@@ -289,7 +289,7 @@ def laplacian(
     Fix a random seed ``rng`` and add a random sparse noise to the graph ``G``:
 
     >>> rng = np.random.default_rng()
-    >>> G += 1e-2 * random_array((N, N), density=0.1, random_state=rng)
+    >>> G += 1e-2 * random_array((N, N), density=0.1, rng=rng)
 
     Set initial approximations for eigenvectors:
 

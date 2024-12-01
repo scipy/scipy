@@ -122,6 +122,8 @@
 #include <cmath>
 
 #define complex std::complex
+#define isinf std::isinf
+#define isnan std::isnan
 
 /////////////////////////////////////////////////////////////////////////
 
