@@ -901,6 +901,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         prod_arr = coo_array((prod.data, prod_coords), combined_shape)
         
         # reshape back if a or b were originally 1-D
+        # TODO: Move this logic before computation of prod_coords for efficiency
         if self_is_1d:
             prod_arr = prod_arr.reshape(combined_shape[1:])
         if other_is_1d:
