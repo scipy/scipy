@@ -1043,8 +1043,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         reshape_other = (*non_reduced_shape_other[:-1], math.prod(reduced_shape_other),
                         *non_reduced_shape_other[-1:])
 
-        prod_arr = self.reshape(reshape_self).dot(other.reshape(reshape_other))
-        return prod_arr
+        return self.reshape(reshape_self).dot(other.reshape(reshape_other))
 
 
     def _matmul_sparse(self, other):
