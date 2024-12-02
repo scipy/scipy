@@ -88,8 +88,6 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
 
 def generate_matrix(N, complex_=False, hermitian=False,
                     pos_definite=False, sparse=False, rng=None):
-    if rng is None:
-        rng = np.random
     M = rng.random((N, N))
     if complex_:
         M = M + 1j * rng.random((N, N))
@@ -120,7 +118,6 @@ def generate_matrix(N, complex_=False, hermitian=False,
 
 
 def generate_matrix_symmetric(N, pos_definite=False, sparse=False, rng=None):
-    rng = np.random if rng is None else rng
     M = rng.random((N, N))
 
     M = 0.5 * (M + M.T)  # Make M symmetric
@@ -301,7 +298,6 @@ class SymmetricParams:
         # these should all be float32 so that the eigenvalues
         # are the same in float32 and float64
         N = 6
-        # np.random.seed(2300)
         rng = np.random.RandomState(2300)
         Ar = generate_matrix(N, hermitian=True,
                              pos_definite=True,
@@ -693,7 +689,7 @@ def test_eigsh_for_k_greater():
 
 
 def test_real_eigs_real_k_subset():
-    rng = np.random.default_rng(1)
+    rng = np.random.default_rng(2)
 
     n = 10
     A = random_array(shape=(n, n), density=0.5, rng=rng)

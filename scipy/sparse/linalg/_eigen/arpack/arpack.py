@@ -36,7 +36,6 @@ Uses ARPACK: https://github.com/opencollab/arpack-ng
 # for eigenvalues by providing a shift (sigma) and a solver.
 
 import numpy as np
-import threading
 import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse
