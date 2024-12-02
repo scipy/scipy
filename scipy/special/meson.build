@@ -357,6 +357,7 @@ py3.install_sources(xsf_cephes_sources, subdir: 'scipy/special/xsf/cephes')
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',

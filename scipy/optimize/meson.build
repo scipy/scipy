@@ -176,6 +176,7 @@ subdir('tests')
 
 py3.install_sources([
   '__init__.py',
+  '__init__.pxd',
   '_basinhopping.py',
   '_bracket.py',
   '_chandrupatla.py',
