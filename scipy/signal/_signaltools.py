@@ -2519,7 +2519,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         nonlinear nature of the utilized absolute value function. I.e., the embedded
         square root function typically produces addiational harmonics.
         The default is ``False``.
-    residual : Literal['lowpass', 'all', None]
+    residual : Literal['lowpass', 'all', None], optional
         This option determines what kind of residual, i.e., the signal part which the
         input bandpass filter removes, is returned. ``'all'`` returns everything except
         the contents of the frequency band ``bp_in[0]:bp_in[1]``, ``'lowpass'``
