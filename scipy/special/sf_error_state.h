@@ -3,10 +3,6 @@
 #include "scipy_dll.h"
 #include "xsf/error.h"
 
-#ifdef __MINGW32__
-#include <pthread.h>
-#endif
-
 
 #ifdef __cplusplus
 extern "C" {
