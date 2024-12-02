@@ -548,6 +548,9 @@ npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z) {
     return to_ccomplex(xsf::sph_bessel_k_jac(n, to_complex(z)));
 }
 
+float xsf_pow1pf(float x, float y) { return xsf::pow1p(x, y); }
+double xsf_pow1p(double x, double y) { return xsf::pow1p(x, y); }
+
 // Stats
 
 double xsf_bdtr(double k, int n, double p) { return xsf::bdtr(k, n, p); }

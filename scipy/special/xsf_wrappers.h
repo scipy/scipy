@@ -302,6 +302,9 @@ npy_cdouble special_csph_bessel_k(long n, npy_cdouble z);
 double special_sph_bessel_k_jac(long n, double x);
 npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z);
 
+float xsf_pow1pf(float x, float y);
+double xsf_pow1p(double x, double y);
+
 // Stats
 
 double xsf_bdtr(double k, int n, double p);
