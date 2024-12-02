@@ -27,9 +27,6 @@ const char *sf_error_messages[] = {
 
 extern "C" int wrap_PyUFunc_getfperr(void);
 
-#ifdef Py_GIL_DISABLED
-PyMutex err_mutex = {0};
-#endif
 
 void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list ap) {
     /* Internal function which takes a va_list instead of variadic args.
