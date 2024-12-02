@@ -31,7 +31,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
 from scipy.stats import _covariance, Covariance
 from scipy import stats
 
-from scipy.integrate._tanhsinh import _tanhsinh
+from scipy.integrate import tanhsinh
 from scipy.integrate import romb, qmc_quad, dblquad, tplquad
 from scipy.special import multigammaln
 
@@ -3870,7 +3870,7 @@ class TestNormalInverseGamma:
 
         # Test PDF
         x = np.linspace(-5, 5, 11)
-        res = _tanhsinh(lambda s2, x: norm_inv_gamma.pdf(x, s2), 0, np.inf, args=(x,))
+        res = tanhsinh(lambda s2, x: norm_inv_gamma.pdf(x, s2), 0, np.inf, args=(x,))
         ref = t.pdf(x)
         assert_allclose(res.integral, ref)
 
@@ -3891,8 +3891,8 @@ class TestNormalInverseGamma:
 
         # Test PDF
         s2 = np.linspace(0.1, 10, 10)
-        res = _tanhsinh(lambda x, s2: norm_inv_gamma.pdf(x, s2),
-                        -np.inf, np.inf, args=(s2,))
+        res = tanhsinh(lambda x, s2: norm_inv_gamma.pdf(x, s2),
+                       -np.inf, np.inf, args=(s2,))
         ref = inv_gamma.pdf(s2)
         assert_allclose(res.integral, ref)
 

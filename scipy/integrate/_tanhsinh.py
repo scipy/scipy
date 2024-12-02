@@ -27,9 +27,8 @@ __all__ = ['nsum']
 #  make public?
 
 
-def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
-              minlevel=2, atol=None, rtol=None, preserve_shape=False,
-              callback=None):
+def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
+             atol=None, rtol=None, preserve_shape=False, callback=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
     In practice, tanh-sinh quadrature achieves quadratic convergence for
@@ -39,7 +38,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     Either or both of the limits of integration may be infinite, and
     singularities at the endpoints are acceptable. Divergent integrals and
     integrands with non-finite derivatives or singularities within an interval
-    are out of scope, but the latter may be evaluated be calling `_tanhsinh` on
+    are out of scope, but the latter may be evaluated be calling `tanhsinh` on
     each sub-interval separately.
 
     Parameters
@@ -47,23 +46,25 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     f : callable
         The function to be integrated. The signature must be::
 
-            func(x: ndarray, *fargs) -> ndarray
+            f(xi: ndarray, *argsi) -> ndarray
 
-        where each element of ``x`` is a finite real and ``fargs`` is a tuple,
+        where each element of ``xi`` is a finite real number and ``argsi`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with `x`. ``func`` must be an elementwise-scalar function; see
-        documentation of parameter `preserve_shape` for details.
-        If ``func`` returns a value with complex dtype when evaluated at
+        with ``xi``. `f` must be an elementwise function: see documentation of parameter
+        `preserve_shape` for details. It must not mutate the array ``xi`` or the arrays
+        in ``argsi``.
+        If ``f`` returns a value with complex dtype when evaluated at
         either endpoint, subsequent arguments ``x`` will have complex dtype
         (but zero imaginary part).
     a, b : float array_like
-        Real lower and upper limits of integration. Must be broadcastable.
-        Elements may be infinite.
+        Real lower and upper limits of integration. Must be broadcastable with one
+        another and with arrays in `args`. Elements may be infinite.
     args : tuple of array_like, optional
-        Additional positional arguments to be passed to `func`. Must be arrays
-        broadcastable with `a` and `b`. If the callable to be integrated
-        requires arguments that are not broadcastable with `a` and `b`, wrap
-        that callable with `f`. See Examples.
+        Additional positional array arguments to be passed to `f`. Arrays
+        must be broadcastable with one another and the arrays of `a` and `b`.
+        If the callable for which the root is desired requires arguments that are
+        not broadcastable with `x`, wrap that callable with `f` such that `f`
+        accepts only `x` and broadcastable ``*args``.
     log : bool, default: False
         Setting to True indicates that `f` returns the log of the integrand
         and that `atol` and `rtol` are expressed as the logs of the absolute
@@ -96,16 +97,17 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
-        the result dtype), respectively. The error estimate is as
+        the result dtype), respectively.  Iteration will stop when
+        ``res.error < atol + rtol * abs(res.df)``. The error estimate is as
         described in [1]_ Section 5. While not theoretically rigorous or
         conservative, it is said to work well in practice. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
         non-negative and finite number if `log` is True.
     preserve_shape : bool, default: False
-        In the following, "arguments of `f`" refers to the array ``x`` and
-        any arrays within ``fargs``. Let ``shape`` be the broadcasted shape
+        In the following, "arguments of `f`" refers to the array ``xi`` and
+        any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
         of `a`, `b`, and all elements of `args` (which is conceptually
-        distinct from ``fargs`` passed into `f`).
+        distinct from ``xi` and ``argsi`` passed into `f`).
 
         - When ``preserve_shape=False`` (default), `f` must accept arguments
           of *any* broadcastable shapes.
@@ -114,10 +116,10 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
           ``shape`` *or* ``shape + (n,)``, where ``(n,)`` is the number of
           abscissae at which the function is being evaluated.
 
-        In either case, for each scalar element ``xi`` within `x`, the array
-        returned by `f` must include the scalar ``f(xi)`` at the same index.
+        In either case, for each scalar element ``xi[j]`` within ``xi``, the array
+        returned by `f` must include the scalar ``f(xi[j])`` at the same index.
         Consequently, the shape of the output is always the shape of the input
-        ``x``.
+        ``xi``.
 
         See Examples.
 
@@ -128,34 +130,39 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         similar to that returned by `_differentiate` (but containing the
         current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `_tanhsinh` will return a result object.
+        `tanhsinh` will return a result object. `callback` must not mutate
+        `res` or its attributes.
 
     Returns
     -------
     res : _RichResult
         An instance of `scipy._lib._util._RichResult` with the following
-        attributes. (The descriptions are written as though the values will be
-        scalars; however, if `func` returns an array, the outputs will be
-        arrays of the same shape.)
-        success : bool
+        attributes. The descriptions are written as though the values will be
+        scalars; however, if `f` returns an array, the outputs will be
+        arrays of the same shape.
+
+        success : bool array
             ``True`` when the algorithm terminated successfully (status ``0``).
-        status : int
+            ``False`` otherwise.
+        status : int array
             An integer representing the exit status of the algorithm.
+
             ``0`` : The algorithm converged to the specified tolerances.
             ``-1`` : (unused)
             ``-2`` : The maximum number of iterations was reached.
             ``-3`` : A non-finite value was encountered.
             ``-4`` : Iteration was terminated by `callback`.
             ``1`` : The algorithm is proceeding normally (in `callback` only).
-        integral : float
-            An estimate of the integral
-        error : float
+
+        integral : float array
+            An estimate of the integral.
+        error : float array
             An estimate of the error. Only available if level two or higher
             has been completed; otherwise NaN.
-        maxlevel : int
+        maxlevel : int array
             The maximum refinement level used.
-        nfev : int
-            The number of points at which `func` was evaluated.
+        nfev : int array
+            The number of points at which `f` was evaluated.
 
     See Also
     --------
@@ -168,7 +175,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     tanh-sinh scheme was originally introduced in [4]_.
 
     Due to floating-point error in the abscissae, the function may be evaluated
-    at the endpoints of the interval during iterations. The values returned by
+    at the endpoints of the interval during iterations, but the values returned by
     the function at the endpoints will be ignored.
 
     References
@@ -191,10 +198,10 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     Evaluate the Gaussian integral:
 
     >>> import numpy as np
-    >>> from scipy.integrate._tanhsinh import _tanhsinh
+    >>> from scipy.integrate import tanhsinh
     >>> def f(x):
     ...     return np.exp(-x**2)
-    >>> res = _tanhsinh(f, -np.inf, np.inf)
+    >>> res = tanhsinh(f, -np.inf, np.inf)
     >>> res.integral  # true value is np.sqrt(np.pi), 1.7724538509055159
     1.7724538509055159
     >>> res.error  # actual error is 0
@@ -204,19 +211,19 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     arguments sufficiently far from zero, so the value of the integral
     over a finite interval is nearly the same.
 
-    >>> _tanhsinh(f, -20, 20).integral
+    >>> tanhsinh(f, -20, 20).integral
     1.772453850905518
 
     However, with unfavorable integration limits, the integration scheme
     may not be able to find the important region.
 
-    >>> _tanhsinh(f, -np.inf, 1000).integral
+    >>> tanhsinh(f, -np.inf, 1000).integral
     4.500490856616431
 
     In such cases, or when there are singularities within the interval,
     break the integral into parts with endpoints at the important points.
 
-    >>> _tanhsinh(f, -np.inf, 0).integral + _tanhsinh(f, 0, 1000).integral
+    >>> tanhsinh(f, -np.inf, 0).integral + tanhsinh(f, 0, 1000).integral
     1.772453850905404
 
     For integration involving very large or very small magnitudes, use
@@ -225,12 +232,12 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     limits of integration, log-integration would avoid the underflow
     experienced when evaluating the integral normally.)
 
-    >>> res = _tanhsinh(f, 20, 30, rtol=1e-10)
+    >>> res = tanhsinh(f, 20, 30, rtol=1e-10)
     >>> res.integral, res.error
     (4.7819613911309014e-176, 4.670364401645202e-187)
     >>> def log_f(x):
     ...     return -x**2
-    >>> res = _tanhsinh(log_f, 20, 30, log=True, rtol=np.log(1e-10))
+    >>> res = tanhsinh(log_f, 20, 30, log=True, rtol=np.log(1e-10))
     >>> np.exp(res.integral), np.exp(res.error)
     (4.7819613911306924e-176, 4.670364401645093e-187)
 
@@ -241,7 +248,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> dist = stats.gausshyper(13.8, 3.12, 2.51, 5.18)
     >>> a, b = dist.support()
     >>> x = np.linspace(a, b, 100)
-    >>> res = _tanhsinh(dist.pdf, a, x)
+    >>> res = tanhsinh(dist.pdf, a, x)
     >>> ref = dist.cdf(x)
     >>> np.allclose(res.integral, ref)
     True
@@ -257,12 +264,12 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     ...    return np.sin(c*x)
     >>>
     >>> c = [1, 10, 30, 100]
-    >>> res = _tanhsinh(f, 0, 1, args=(c,), minlevel=1)
+    >>> res = tanhsinh(f, 0, 1, args=(c,), minlevel=1)
     >>> shapes
     [(4,), (4, 34), (4, 32), (3, 64), (2, 128), (1, 256)]
 
     To understand where these shapes are coming from - and to better
-    understand how `_tanhsinh` computes accurate results - note that
+    understand how `tanhsinh` computes accurate results - note that
     higher values of ``c`` correspond with higher frequency sinusoids.
     The higher frequency sinusoids make the integrand more complicated,
     so more function evaluations are required to achieve the target
@@ -290,7 +297,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> def f(x):
     ...    return [x, np.sin(10*x), np.cos(30*x), x*np.sin(100*x)**2]
 
-    This integrand is not compatible with `_tanhsinh` as written; for instance,
+    This integrand is not compatible with `tanhsinh` as written; for instance,
     the shape of the output will not be the same as the shape of ``x``. Such a
     function *could* be converted to a compatible form with the introduction of
     additional parameters, but this would be inconvenient. In such cases,
@@ -303,7 +310,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     ...     return [x0, np.sin(10*x1), np.cos(30*x2), x3*np.sin(100*x3)]
     >>>
     >>> a = np.zeros(4)
-    >>> res = _tanhsinh(f, a, 1, preserve_shape=True)
+    >>> res = tanhsinh(f, a, 1, preserve_shape=True)
     >>> shapes
     [(4,), (4, 66), (4, 64), (4, 128), (4, 256)]
 
@@ -312,6 +319,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     ``x`` of shape ``(4,)`` or ``(4, n)``, and this is what we observe.
 
     """
+    maxfun = None  # unused right now
     (f, a, b, log, maxfun, maxlevel, minlevel,
      atol, rtol, args, preserve_shape, callback, xp) = _tanhsinh_iv(
         f, a, b, log, maxfun, maxlevel, minlevel, atol,
@@ -1012,7 +1020,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     res : _RichResult
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
         attributes. (The descriptions are written as though the values will be
-        scalars; however, if `func` returns an array, the outputs will be
+        scalars; however, if `f` returns an array, the outputs will be
         arrays of the same shape.)
 
         success : bool
@@ -1040,7 +1048,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
             the function is computed exactly, and direct summation is accurate to
             the precision of the result dtype.
         nfev : int array
-            The number of points at which `func` was evaluated.
+            The number of points at which `f` was evaluated.
 
     See Also
     --------
@@ -1292,7 +1300,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
     log2 = xp.asarray(math.log(2), dtype=dtype)
 
     # Get a lower bound on the sum and compute effective absolute tolerance
-    lb = _tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
+    lb = tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
     tol = xp.broadcast_to(xp.asarray(atol), lb.integral.shape)
     if log:
         tol = special.logsumexp(xp.stack((tol, rtol + lb.integral)), axis=0)
@@ -1344,7 +1352,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
     # atol = xp.maximum(atol, xp.minimum(fk/2 - fb/2))
     # rtol = xp.maximum(rtol, xp.minimum((fk/2 - fb/2)/left))
     # where `fk`/`fb` are currently calculated below.
-    right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
+    right = tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
 
     # Calculate the full estimate and error from the pieces
     fk = fks[xp.arange(len(fks)), nt]

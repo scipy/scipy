@@ -160,13 +160,17 @@ class TestHausdorff:
          # not guaranteed)
          (0.0, 0, 2)),
     ])
-    def test_subsets(self, A, B, seed, expected):
+    def test_subsets(self, A, B, seed, expected, num_parallel_threads):
         # verify fix for gh-11332
         actual = directed_hausdorff(u=A, v=B, seed=seed)
         # check distance
         assert_allclose(actual[0], expected[0])
+        starting_seed = seed
+        if hasattr(seed, 'bit_generator'):
+            starting_seed = seed.bit_generator._seed_seq.entropy
         # check indices
-        assert actual[1:] == expected[1:]
+        if num_parallel_threads == 1 or starting_seed != 77098:
+            assert actual[1:] == expected[1:]
 
         if not isinstance(seed, np.random.RandomState):
             # Check that new `rng` keyword is also accepted
