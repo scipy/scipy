@@ -1,4 +1,3 @@
-
 # TODO: 64-bit BLAS and LAPACK
 
 _ufuncs_pxi_pxd_sources = [
@@ -129,6 +128,7 @@ cython_special = custom_target('cython_special',
 )
 
 cython_special_pxd = fs.copyfile('cython_special.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,

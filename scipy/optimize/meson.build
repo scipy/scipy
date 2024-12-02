@@ -139,9 +139,8 @@ _dummy_init_optimize = fs.copyfile('__init__.py')
 
 # Copying this .pxd file is only needed because of a Cython bug, see
 # discussion on SciPy PR gh-18810.
-cython_optimize_pxd = [
-  fs.copyfile('cython_optimize.pxd'),
-]
+cython_optimize_pxd = fs.copyfile('cython_optimize.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 opt_gen = generator(cython,
   arguments : cython_args,
