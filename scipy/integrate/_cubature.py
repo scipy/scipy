@@ -4,7 +4,7 @@ import itertools
 
 from dataclasses import dataclass, field
 from types import ModuleType
-from typing import Any, TYPE_CHECKING
+from typing import Any, TypeAlias
 
 from scipy._lib._array_api import (
     array_namespace,
@@ -23,10 +23,7 @@ from scipy.integrate._rules._base import _split_subregion
 
 __all__ = ['cubature']
 
-if TYPE_CHECKING:
-    Array = Any  # To be changed to a Protocol later (see array-api#589)
-else:
-    Array = object
+Array: TypeAlias = Any  # To be changed to an array-api-typing Protocol later
 
 
 @dataclass
