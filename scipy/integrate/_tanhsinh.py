@@ -136,10 +136,10 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     Returns
     -------
     res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
-        attributes. The descriptions are written as though the values will be
-        scalars; however, if `f` returns an array, the outputs will be
-        arrays of the same shape.
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. (The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
+        arrays of the same shape.)
 
         success : bool array
             ``True`` when the algorithm terminated successfully (status ``0``).
@@ -166,7 +166,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
 
     See Also
     --------
-    quad, quadrature
+    quad
 
     Notes
     -----
@@ -1019,8 +1019,8 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     -------
     res : _RichResult
         An object similar to an instance of `scipy.optimize.OptimizeResult` with the
-        attributes. (The descriptions are written as though the values will be
-        scalars; however, if `f` returns an array, the outputs will be
+        following attributes. (The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
         arrays of the same shape.)
 
         success : bool
