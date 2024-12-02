@@ -180,21 +180,21 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
 
     References
     ----------
-    [1] Bailey, David H., Karthik Jeyabalan, and Xiaoye S. Li. "A comparison of
-        three high-precision quadrature schemes." Experimental Mathematics 14.3
-        (2005): 317-329.
-    [2] Vanherck, Joren, Bart Sorée, and Wim Magnus. "Tanh-sinh quadrature for
-        single and multiple integration using floating-point arithmetic."
-        arXiv preprint arXiv:2007.15057 (2020).
-    [3] van Engelen, Robert A.  "Improving the Double Exponential Quadrature
-        Tanh-Sinh, Sinh-Sinh and Exp-Sinh Formulas."
-        https://www.genivia.com/files/qthsh.pdf
-    [4] Takahasi, Hidetosi, and Masatake Mori. "Double exponential formulas for
-        numerical integration." Publications of the Research Institute for
-        Mathematical Sciences 9.3 (1974): 721-741.
+    .. [1] Bailey, David H., Karthik Jeyabalan, and Xiaoye S. Li. "A comparison of
+           three high-precision quadrature schemes." Experimental Mathematics 14.3
+           (2005): 317-329.
+    .. [2] Vanherck, Joren, Bart Sorée, and Wim Magnus. "Tanh-sinh quadrature for
+           single and multiple integration using floating-point arithmetic."
+           arXiv preprint arXiv:2007.15057 (2020).
+    .. [3] van Engelen, Robert A.  "Improving the Double Exponential Quadrature
+           Tanh-Sinh, Sinh-Sinh and Exp-Sinh Formulas."
+           https://www.genivia.com/files/qthsh.pdf
+    .. [4] Takahasi, Hidetosi, and Masatake Mori. "Double exponential formulas for
+           numerical integration." Publications of the Research Institute for
+           Mathematical Sciences 9.3 (1974): 721-741.
 
-    Example
-    -------
+    Examples
+    --------
     Evaluate the Gaussian integral:
 
     >>> import numpy as np
@@ -1104,8 +1104,8 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     References
     ----------
-    [1] Wikipedia. "Integral test for convergence."
-    https://en.wikipedia.org/wiki/Integral_test_for_convergence
+    .. [1] Wikipedia. "Integral test for convergence."
+           https://en.wikipedia.org/wiki/Integral_test_for_convergence
 
     Examples
     --------
