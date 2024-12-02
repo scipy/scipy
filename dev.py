@@ -748,9 +748,9 @@ class Test(Task):
             subprocess.call(lcov_cmd)
         except OSError as err:
             if err.errno == errno.ENOENT:
-                print(f"Error when running '{lcov_cmd_str}': {err}\n")
-                print("You need to LCOV (https://lcov.readthedocs.io/en/latest/)")
-                print("to capture test coverage of C/C++/Fortran code in SciPy")
+                print(f"Error when running '{lcov_cmd_str}': {err}\n"
+                    "You need to install LCOV (https://lcov.readthedocs.io/en/latest/) "
+                    "to capture test coverage of C/C++/Fortran code in SciPy.")
                 return 1
             raise
 
@@ -817,12 +817,11 @@ class Test(Task):
                 fortran = compilers_config['fortran']['name']
                 if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
                     print("SciPy was built with --gcov flag which requires "
-                           "LCOV while running tests")
-                    print("Further, LCOV usage requires GCC for C, C++ and "
-                          "Fortran codes in SciPy")
-                    print("Compilers used currently are C: "
-                          f"{c}, C++: {cpp}, Fortran: {fortran}")
-                    print("Therefore, exiting without running tests")
+                          "LCOV while running tests.\nFurther, LCOV usage "
+                          "requires GCC for C, C++ and Fortran codes in SciPy.\n"
+                          "Compilers used currently are:\n"
+                          f"  C: {c}\n  C++: {cpp}\n  Fortran: {fortran}\n"
+                          "Therefore, exiting without running tests.")
                     exit(1) # Exit because tests will give missing symbol error
             result = runner(  # scipy._lib._testutils:PytestTester
                 args.mode,
