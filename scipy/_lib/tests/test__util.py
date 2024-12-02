@@ -525,71 +525,70 @@ class TestTransitionToRNG:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.slow
-    @pytest.mark.parametrize("method_name, arg_name", [
-        ("kmeans", "seed"),
-        ("kmeans2", "seed"),
-        ("barycentric", "random_state"),
-        ("clarkson_woodruff_transform", "seed"),
-        ("basinhopping", "seed"),
-        ("differential_evolution", "seed"),
-        ("dual_annealing", "seed"),
-        ("check_grad", "seed"),
-        ('random_array', 'random_state'),
-        ('random', 'random_state'),
-        ('rand', 'random_state'),
-        ("svds", "random_state"),
-        ("random_rotation", "random_state"),
-        ("goodness_of_fit", "random_state"),
-        ("permutation_test", "random_state"),
-        ("bootstrap", "random_state"),
-        ("permutation_method", "random_state"),
-        ("bootstrap_method", "random_state"),
-        ("dunnett", "random_state"),
-        ("sobol_indices", "random_state"),
-        ("halton", "seed"),
-        ("sobol", "seed"),
-        ("latin_hypercube", "seed"),
-        ("poisson_disk", "seed"),
-        ("multivariate_normal_qmc", "seed"),
-        ("multinomial_qmc", "seed"),
+    @pytest.mark.parametrize("method, arg_name", [
+        (kmeans, "seed"),
+        (kmeans2, "seed"),
+        (barycentric, "random_state"),
+        (clarkson_woodruff_transform, "seed"),
+        (basinhopping, "seed"),
+        (differential_evolution, "seed"),
+        (dual_annealing, "seed"),
+        (check_grad, "seed"),
+        (random_array, 'random_state'),
+        (random, 'random_state'),
+        (rand, 'random_state'),
+        (svds, "random_state"),
+        (random_rotation, "random_state"),
+        (goodness_of_fit, "random_state"),
+        (permutation_test, "random_state"),
+        (bootstrap, "random_state"),
+        (permutation_method, "random_state"),
+        (bootstrap_method, "random_state"),
+        (dunnett, "random_state"),
+        (sobol_indices, "random_state"),
+        (halton, "seed"),
+        (sobol, "seed"),
+        (latin_hypercube, "seed"),
+        (poisson_disk, "seed"),
+        (multivariate_normal_qmc, "seed"),
+        (multinomial_qmc, "seed"),
     ])
-    def test_rng_deterministic(self, method_name, arg_name):
+    def test_rng_deterministic(self, method, arg_name):
         np.random.seed(None)
         seed = 2949672964
-        method = getattr(self, method_name)
 
         rng = np.random.default_rng(seed)
         message = "got multiple values for argument now known as `rng`"
         with pytest.raises(TypeError, match=message):
-            method(**{'rng': rng, arg_name: seed})
+            method(self, **{'rng': rng, arg_name: seed})
 
         rng = np.random.default_rng(seed)
-        res1 = method(rng=rng)
-        res2 = method(rng=seed)
+        res1 = method(self, rng=rng)
+        res2 = method(self, rng=seed)
         assert_equal(res2, res1)
 
-        if method_name in {"dunnett", "sobol_indices"}:
+        if method.__name__ in {"dunnett", "sobol_indices"}:
             # the two kwargs have essentially the same behavior for these functions
-            res3 = method(**{arg_name: seed})
+            res3 = method(self, **{arg_name: seed})
             assert_equal(res3, res1)
             return
 
         rng = np.random.RandomState(seed)
-        res1 = method(**{arg_name: rng})
-        res2 = method(**{arg_name: seed})
+        res1 = method(self, **{arg_name: rng})
+        res2 = method(self, **{arg_name: seed})
 
-        if method_name in {"halton", "sobol", "latin_hypercube", "poisson_disk",
-                           "multivariate_normal_qmc", "multinomial_qmc"}:
+        if method.__name__ in {"halton", "sobol", "latin_hypercube", "poisson_disk",
+                               "multivariate_normal_qmc", "multinomial_qmc"}:
             # For these, passing `random_state=RandomState(seed)` is not the same as
             # passing integer `seed`.
-            res1b = method(**{arg_name: np.random.RandomState(seed)})
+            res1b = method(self, **{arg_name: np.random.RandomState(seed)})
             assert_equal(res1b, res1)
-            res2b = method(**{arg_name: seed})
+            res2b = method(self, **{arg_name: seed})
             assert_equal(res2b, res2)
             return
 
         np.random.seed(seed)
-        res3 = method(**{arg_name: None})
+        res3 = method(self, **{arg_name: None})
         assert_equal(res2, res1)
         assert_equal(res3, res1)
 
