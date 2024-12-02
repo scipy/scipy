@@ -360,9 +360,6 @@ python_sources = [
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
-  'linalg.pxd',
-  'optimize.pxd',
-  'special.pxd',
 ]
 
 if fs.exists('_distributor_init_local.py')
@@ -374,15 +371,11 @@ py3.install_sources(
   subdir: 'scipy'
 )
 
-# Copy the main __init__.py and pxd files to the build dir.
+# Copy the main __init__.py to the build dir.
+# Some submodules (linalg, special, optimize) add pxd files to this.
 # Needed to trick Cython, it won't do a relative import outside a package
 #_cython_tree = declare_dependency(sources: [
-_cython_tree = [
-  fs.copyfile('__init__.py'),
-  fs.copyfile('linalg.pxd'),
-  fs.copyfile('optimize.pxd'),
-  fs.copyfile('special.pxd'),
-]
+_cython_tree = [fs.copyfile('__init__.py')]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
 if cy.version().version_compare('>=3.1.0')
