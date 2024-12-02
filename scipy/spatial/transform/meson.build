@@ -7,11 +7,6 @@ py3.extension_module('_rotation',
   subdir: 'scipy/spatial/transform'
 )
 
-py3.install_sources(
-  '_rotation.pyi',
-  subdir: 'scipy/spatial/transform'
-)
-
 py3.install_sources([
     '__init__.py',
     '_rotation_groups.py',
