@@ -149,6 +149,11 @@ and support several Array API compatible array libraries in addition to NumPy
 `scipy.signal` improvements
 ===========================
 - Add functionality of complex-valued waveforms to ``signal.chirp()``.
+- `scipy.signal.lombscargle` has two new arguments, ``weights`` and
+  ``floating_mean``, enabling sample weighting and removal of an unknown
+  y-offset independently for each frequency. Additionally, the ``normalize``
+  argument includes a new option to return the complex representation of the
+  amplitude and phase.
 
 
 `scipy.sparse` improvements
