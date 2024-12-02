@@ -1,8 +1,3 @@
-''' Nose test generators
-
-Need function load / save / roundtrip tests
-
-'''
 import os
 from collections import OrderedDict
 from os.path import join as pjoin, dirname
@@ -38,6 +33,7 @@ from scipy._lib._util import VisibleDeprecationWarning
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
+pytestmark = pytest.mark.thread_unsafe
 
 
 def mlarr(*args, **kwargs):
@@ -263,8 +259,7 @@ def _check_level(label, expected, actual):
             f"Expected type {type(expected)}, got {type(actual)} at {label}")
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
-    if not isinstance(expected,
-                      (np.void, np.ndarray, MatlabObject)):
+    if not isinstance(expected, np.void | np.ndarray | MatlabObject):
         assert_equal(expected, actual)
         return
     # This is an ndarray-like thing
@@ -1353,3 +1348,6 @@ def test_large_m4():
              "Variable 'a' has byte length longer than largest possible")
     with pytest.raises(ValueError, match=match):
         loadmat(truncated_mat)
+
+def test_gh_19223():
+    from scipy.io.matlab import varmats_from_mat  # noqa: F401

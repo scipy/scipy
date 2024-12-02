@@ -169,7 +169,7 @@ Deleting a branch on github_
    git checkout main
    # delete branch locally
    git branch -D my-unwanted-branch
-   # delete branch on github
+   # delete branch on GitHub
    git push origin :my-unwanted-branch
 
 (Note the colon ``:`` before ``test-branch``.  See also:
@@ -185,7 +185,7 @@ share it via github_.
 
 First fork SciPy into your account, as from :ref:`forking`.
 
-Then, go to your forked repository github page, say
+Then, go to your forked repository GitHub page, say
 ``https://github.com/your-user-name/scipy``
 
 Click on the 'Admin' button, and add anyone else to the repo as a

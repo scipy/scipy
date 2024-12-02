@@ -1,5 +1,6 @@
 import itertools
 import platform
+import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -36,6 +37,8 @@ try:
     from scipy.__config__ import CONFIG
 except ImportError:
     CONFIG = None
+
+IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -1179,6 +1182,9 @@ class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
 
+# Allocating an array of such a size leads to _ArrayMemoryError(s)
+# since the maximum memory that can be in 32-bit (WASM) is 4GB
+@pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
 @pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
@@ -2121,6 +2127,62 @@ class TestSchur:
         assert t.dtype == t0.dtype
         assert z.dtype == z0.dtype
 
+    @pytest.mark.parametrize('sort', ['iuc', 'ouc'])
+    @pytest.mark.parametrize('output', ['real', 'complex'])
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_gh_13137_sort_str(self, sort, output, dtype):
+        # gh-13137 reported that sort values 'iuc' and 'ouc' were not
+        # correct because the callables assumed that the eigenvalues would
+        # always be expressed as a single complex number.
+        # In fact, when `output='real'` and the dtype is real, the
+        # eigenvalues are passed as separate real and imaginary components
+        # (yet no error is raised if the callable accepts only one argument).
+        #
+        # This tests these sort values by counting the number of eigenvalues
+        # `schur` reports as being inside/outside the unit circle.
+
+        # Real matrix with eigenvalues 0.1 +- 2j
+        A = np.asarray([[0.1, -2], [2, 0.1]])
+
+        # Previously, this would fail for `output='real'` with real dtypes
+        sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
+        assert sdim == 0 if sort == 'iuc' else sdim == 2
+
+    @pytest.mark.parametrize('output', ['real', 'complex'])
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_gh_13137_sort_custom(self, output, dtype):
+        # This simply tests our understanding of how eigenvalues are
+        # passed to a sort callable. If `output='real'` and the dtype is real,
+        # real and imaginary parts are passed as separate real arguments;
+        # otherwise, they are passed a single complex argument.
+        # Also, if `output='real'` and the dtype is real, when either
+        # eigenvalue in a complex conjugate pair satisfies the sort condition,
+        # `sdim` is incremented by TWO.
+
+        # Real matrix with eigenvalues 0.1 +- 2j
+        A = np.asarray([[0.1, -2], [2, 0.1]])
+
+        all_real = output=='real' and dtype in {np.float32, np.float64}
+
+        def sort(x, y=None):
+            if all_real:
+                assert not np.iscomplexobj(x)
+                assert y is not None and np.isreal(y)
+                z = x + y*1j
+            else:
+                assert np.iscomplexobj(x)
+                assert y is None
+                z = x
+            return z.imag > 1e-15
+
+        # Only one complex eigenvalue satisfies the condition, but when
+        # `all_real` applies, both eigenvalues in the complex conjugate pair
+        # are counted.
+        sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
+        assert sdim == 2 if all_real else sdim == 1
+
 
 class TestHessenberg:
 
@@ -2823,9 +2885,9 @@ def _check_orth(n, dtype, skip_big=False):
     assert_allclose(Y, Y.mean(), atol=tol)
 
     if n > 5 and not skip_big:
-        np.random.seed(1)
-        X = np.random.rand(n, 5) @ np.random.rand(5, n)
-        X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+        rng = np.random.RandomState(1)
+        X = rng.rand(n, 5) @ rng.rand(5, n)
+        X = X + 1e-4 * rng.rand(n, 1) @ rng.rand(1, n)
         X = X.astype(dtype)
 
         Y = orth(X, rcond=1e-3)
@@ -2870,7 +2932,7 @@ def test_orth_empty(dt):
 
 class TestNullSpace:
     def test_null_space(self):
-        np.random.seed(1)
+        rng = np.random.RandomState(1)
 
         dtypes = [np.float32, np.float64, np.complex64, np.complex128]
         sizes = [1, 2, 3, 10, 100]
@@ -2889,15 +2951,15 @@ class TestNullSpace:
             assert_equal(Y.shape, (2, 1))
             assert_allclose(X.T @ Y, 0, atol=tol)
 
-            X = np.random.randn(1 + n//2, n)
+            X = rng.randn(1 + n//2, n)
             Y = null_space(X)
             assert_equal(Y.shape, (n, n - 1 - n//2))
             assert_allclose(X @ Y, 0, atol=tol)
 
             if n > 5:
-                np.random.seed(1)
-                X = np.random.rand(n, 5) @ np.random.rand(5, n)
-                X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+                rng = np.random.RandomState(1)
+                X = rng.rand(n, 5) @ rng.rand(5, n)
+                X = X + 1e-4 * rng.rand(n, 1) @ rng.rand(1, n)
                 X = X.astype(dt)
 
                 Y = null_space(X, rcond=1e-3)

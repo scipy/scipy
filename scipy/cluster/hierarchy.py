@@ -1080,7 +1080,7 @@ class ClusterNode:
 
     """
 
-    def __init__(self, id, left=None, right=None, dist=0, count=1):
+    def __init__(self, id, left=None, right=None, dist=0.0, count=1):
         if id < 0:
             raise ValueError('The id must be non-negative.')
         if dist < 0:
@@ -2949,6 +2949,9 @@ def set_link_color_palette(palette):
     Notes
     -----
     Ability to reset the palette with ``None`` added in SciPy 0.17.0.
+
+    Thread safety: using this function in a multi-threaded fashion may
+    result in `dendrogram` producing plots with unexpected colors.
 
     Examples
     --------

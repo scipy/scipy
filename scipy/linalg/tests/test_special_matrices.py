@@ -100,7 +100,6 @@ class TestLeslie:
 
     def test_bad_shapes(self):
         assert_raises(ValueError, leslie, [[1, 1], [2, 2]], [3, 4, 5])
-        assert_raises(ValueError, leslie, [3, 4, 5], [[1, 1], [2, 2]])
         assert_raises(ValueError, leslie, [1, 2], [1, 2])
         assert_raises(ValueError, leslie, [1], [])
 
@@ -115,7 +114,6 @@ class TestLeslie:
 class TestCompanion:
 
     def test_bad_shapes(self):
-        assert_raises(ValueError, companion, [[1, 1], [2, 2]])
         assert_raises(ValueError, companion, [0, 4, 5])
         assert_raises(ValueError, companion, [1])
         assert_raises(ValueError, companion, [])
@@ -131,6 +129,16 @@ class TestCompanion:
         expected = array([
             [-2.5, 5.0],
             [1.0, 0.0]])
+        assert_array_equal(c, expected)
+
+        c = companion([(1.0, 2.0, 3.0),
+                       (4.0, 5.0, 6.0)])
+        expected = array([
+            ([-2.00, -3.00],
+             [+1.00, +0.00]),
+            ([-1.25, -1.50],
+             [+1.00, +0.00])
+        ])
         assert_array_equal(c, expected)
 
 
@@ -203,7 +211,12 @@ class TestBlockDiag:
 
 
 class TestKron:
+    @pytest.mark.thread_unsafe
+    def test_dep(self):
+        with pytest.deprecated_call(match="`kron`"):
+            kron(np.array([[1, 2],[3, 4]]),np.array([[1, 1, 1]]))
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_basic(self):
 
         a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
@@ -219,6 +232,7 @@ class TestKron:
                           [33, 44]])
         assert_array_equal(a, expected)
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_empty(self):
         m1 = np.empty((0, 2))
         m2 = np.empty((1, 3))
@@ -571,11 +585,6 @@ class TestConvolutionMatrix:
         with pytest.raises(ValueError, match='n must be a positive integer'):
             convolution_matrix([1, 2, 3], 0)
 
-    def test_bad_first_arg(self):
-        # first arg must be a 1d array, otherwise ValueError
-        with pytest.raises(ValueError, match='one-dimensional'):
-            convolution_matrix(1, 4)
-
     def test_empty_first_arg(self):
         # first arg must have at least one value
         with pytest.raises(ValueError, match=r'len\(a\)'):
@@ -601,3 +610,31 @@ class TestConvolutionMatrix:
             A = convolution_matrix(a, nv, mode)
         y2 = A @ v
         assert_array_almost_equal(y1, y2)
+
+
+@pytest.mark.thread_unsafe
+@pytest.mark.fail_slow(5)  # `leslie` has an import in the function
+@pytest.mark.parametrize('f, args', [(circulant, ()),
+                                     (companion, ()),
+                                     (convolution_matrix, (5, 'same')),
+                                     (fiedler, ()),
+                                     (fiedler_companion, ()),
+                                     (leslie, (np.arange(9),)),
+                                     (toeplitz, (np.arange(9),)),
+                                     ])
+def test_batch(f, args):
+    rng = np.random.default_rng(283592436523456)
+    batch_shape = (2, 3)
+    m = 10
+    A = rng.random(batch_shape + (m,))
+
+    if f in {toeplitz}:
+        message = "Beginning in SciPy 1.17, multidimensional input will be..."
+        with pytest.warns(FutureWarning, match=message):
+            f(A, *args)
+        return
+
+    res = f(A, *args)
+    ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
+    ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
+    assert_allclose(res, ref)

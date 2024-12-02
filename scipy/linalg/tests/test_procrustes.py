@@ -1,42 +1,43 @@
 from itertools import product, permutations
 
 import numpy as np
+import pytest
 from numpy.testing import assert_array_less, assert_allclose
 from pytest import raises as assert_raises
 
-from scipy.linalg import inv, eigh, norm
+from scipy.linalg import inv, eigh, norm, svd
 from scipy.linalg import orthogonal_procrustes
 from scipy.sparse._sputils import matrix
 
 
 def test_orthogonal_procrustes_ndim_too_large():
-    np.random.seed(1234)
-    A = np.random.randn(3, 4, 5)
-    B = np.random.randn(3, 4, 5)
+    rng = np.random.RandomState(1234)
+    A = rng.randn(3, 4, 5)
+    B = rng.randn(3, 4, 5)
     assert_raises(ValueError, orthogonal_procrustes, A, B)
 
 
 def test_orthogonal_procrustes_ndim_too_small():
-    np.random.seed(1234)
-    A = np.random.randn(3)
-    B = np.random.randn(3)
+    rng = np.random.RandomState(1234)
+    A = rng.randn(3)
+    B = rng.randn(3)
     assert_raises(ValueError, orthogonal_procrustes, A, B)
 
 
 def test_orthogonal_procrustes_shape_mismatch():
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     shapes = ((3, 3), (3, 4), (4, 3), (4, 4))
     for a, b in permutations(shapes, 2):
-        A = np.random.randn(*a)
-        B = np.random.randn(*b)
+        A = rng.randn(*a)
+        B = rng.randn(*b)
         assert_raises(ValueError, orthogonal_procrustes, A, B)
 
 
 def test_orthogonal_procrustes_checkfinite_exception():
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     m, n = 2, 3
-    A_good = np.random.randn(m, n)
-    B_good = np.random.randn(m, n)
+    A_good = rng.randn(m, n)
+    B_good = rng.randn(m, n)
     for bad_value in np.inf, -np.inf, np.nan:
         A_bad = A_good.copy()
         A_bad[1, 2] = bad_value
@@ -47,23 +48,23 @@ def test_orthogonal_procrustes_checkfinite_exception():
 
 
 def test_orthogonal_procrustes_scale_invariance():
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     m, n = 4, 3
     for i in range(3):
-        A_orig = np.random.randn(m, n)
-        B_orig = np.random.randn(m, n)
+        A_orig = rng.randn(m, n)
+        B_orig = rng.randn(m, n)
         R_orig, s = orthogonal_procrustes(A_orig, B_orig)
-        for A_scale in np.square(np.random.randn(3)):
-            for B_scale in np.square(np.random.randn(3)):
+        for A_scale in np.square(rng.randn(3)):
+            for B_scale in np.square(rng.randn(3)):
                 R, s = orthogonal_procrustes(A_orig * A_scale, B_orig * B_scale)
                 assert_allclose(R, R_orig)
 
 
 def test_orthogonal_procrustes_array_conversion():
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     for m, n in ((6, 4), (4, 4), (4, 6)):
-        A_arr = np.random.randn(m, n)
-        B_arr = np.random.randn(m, n)
+        A_arr = rng.randn(m, n)
+        B_arr = rng.randn(m, n)
         As = (A_arr, A_arr.tolist(), matrix(A_arr))
         Bs = (B_arr, B_arr.tolist(), matrix(B_arr))
         R_arr, s = orthogonal_procrustes(A_arr, B_arr)
@@ -75,13 +76,13 @@ def test_orthogonal_procrustes_array_conversion():
 
 
 def test_orthogonal_procrustes():
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     for m, n in ((6, 4), (4, 4), (4, 6)):
         # Sample a random target matrix.
-        B = np.random.randn(m, n)
+        B = rng.randn(m, n)
         # Sample a random orthogonal matrix
         # by computing eigh of a sampled symmetric matrix.
-        X = np.random.randn(n, n)
+        X = rng.randn(n, n)
         w, V = eigh(X.T + X)
         assert_allclose(inv(V), V.T)
         # Compute a matrix with a known orthogonal transformation that gives B.
@@ -91,7 +92,7 @@ def test_orthogonal_procrustes():
         assert_allclose(inv(R), R.T)
         assert_allclose(A.dot(R), B)
         # Create a perturbed input matrix.
-        A_perturbed = A + 1e-2 * np.random.randn(m, n)
+        A_perturbed = A + 1e-2 * rng.randn(m, n)
         # Check that the orthogonal procrustes function can find an orthogonal
         # transformation that is better than the orthogonal transformation
         # computed from the original input matrix.
@@ -199,3 +200,22 @@ def test_empty():
     a = np.empty((0, 3))
     r, s = orthogonal_procrustes(a, a)
     assert_allclose(r, np.identity(3))
+
+
+@pytest.mark.parametrize('shape', [(4, 5), (5, 5), (5, 4)])
+def test_unitary(shape):
+    # gh-12071 added support for unitary matrices; check that it
+    # works as intended.
+    m, n = shape
+    rng = np.random.default_rng(589234981235)
+    A = rng.random(shape) + rng.random(shape) * 1j
+    Q = rng.random((n, n)) + rng.random((n, n)) * 1j
+    Q, _ = np.linalg.qr(Q)
+    B = A @ Q
+    R, scale = orthogonal_procrustes(A, B)
+    assert_allclose(R @ R.conj().T, np.eye(n), atol=1e-14)
+    assert_allclose(A @ Q, B)
+    if shape != (4, 5):  # solution is unique
+        assert_allclose(R, Q)
+    _, s, _ = svd(A.conj().T @ B)
+    assert_allclose(scale, np.sum(s))

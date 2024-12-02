@@ -5,6 +5,7 @@ python_sources = [
   'test_boxcox.py',
   'test_cdflib.py',
   'test_cdft_asymptotic.py',
+  'test_cephes_intp_cast.py',
   'test_cosine_distr.py',
   'test_cython_special.py',
   'test_data.py',

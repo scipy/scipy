@@ -11,10 +11,11 @@ __all__ = ['orthogonal_procrustes']
 
 def orthogonal_procrustes(A, B, check_finite=True):
     """
-    Compute the matrix solution of the orthogonal Procrustes problem.
+    Compute the matrix solution of the orthogonal (or unitary) Procrustes problem.
 
-    Given matrices A and B of equal shape, find an orthogonal matrix R
-    that most closely maps A to B using the algorithm given in [1]_.
+    Given matrices `A` and `B` of the same shape, find an orthogonal (or unitary in
+    the case of complex input) matrix `R` that most closely maps `A` to `B` using the
+    algorithm given in [1]_.
 
     Parameters
     ----------
@@ -32,9 +33,9 @@ def orthogonal_procrustes(A, B, check_finite=True):
     R : (N, N) ndarray
         The matrix solution of the orthogonal Procrustes problem.
         Minimizes the Frobenius norm of ``(A @ R) - B``, subject to
-        ``R.T @ R = I``.
+        ``R.conj().T @ R = I``.
     scale : float
-        Sum of the singular values of ``A.T @ B``.
+        Sum of the singular values of ``A.conj().T @ B``.
 
     Raises
     ------
@@ -72,6 +73,24 @@ def orthogonal_procrustes(A, B, check_finite=True):
     >>> sca
     9.0
 
+    As an example of the unitary Procrustes problem, generate a
+    random complex matrix ``A``, a random unitary matrix ``Q``,
+    and their product ``B``.
+
+    >>> shape = (4, 4)
+    >>> rng = np.random.default_rng(589234981235)
+    >>> A = rng.random(shape) + rng.random(shape)*1j
+    >>> Q = rng.random(shape) + rng.random(shape)*1j
+    >>> Q, _ = np.linalg.qr(Q)
+    >>> B = A @ Q
+
+    `orthogonal_procrustes` recovers the unitary matrix ``Q``
+    from ``A`` and ``B``.
+
+    >>> R, _ = orthogonal_procrustes(A, B)
+    >>> np.allclose(R, Q)
+    True
+
     """
     if check_finite:
         A = np.asarray_chkfinite(A)
@@ -84,7 +103,9 @@ def orthogonal_procrustes(A, B, check_finite=True):
     if A.shape != B.shape:
         raise ValueError(f'the shapes of A and B differ ({A.shape} vs {B.shape})')
     # Be clever with transposes, with the intention to save memory.
-    u, w, vt = svd(B.T.dot(A).T)
-    R = u.dot(vt)
+    # The conjugate has no effect for real inputs, but gives the correct solution
+    # for complex inputs.
+    u, w, vt = svd((B.T @ np.conjugate(A)).T)
+    R = u @ vt
     scale = w.sum()
     return R, scale

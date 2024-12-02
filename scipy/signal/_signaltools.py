@@ -93,6 +93,22 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
     return not ok1
 
 
+def _reject_objects(arr, name):
+    """Warn if arr.dtype is object or longdouble.
+    """
+    dt = np.asarray(arr).dtype
+    if not (np.issubdtype(dt, np.integer)
+            or dt in [np.bool_, np.float16, np.float32, np.float64,
+                      np.complex64, np.complex128]
+    ):
+        msg = (
+            f"dtype={dt} is not supported by {name} and will raise an error in "
+            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, `np.float16`,"
+            f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
+        )
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+
+
 def correlate(in1, in2, mode='full', method='auto'):
     r"""
     Cross-correlate two N-dimensional arrays.
@@ -229,6 +245,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     """
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
+    _reject_objects(in1, 'correlate')
+    _reject_objects(in2, 'correlate')
 
     if in1.ndim == in2.ndim == 0:
         return in1 * in2.conj()
@@ -387,6 +405,8 @@ def correlation_lags(in1_len, in2_len, mode='full'):
             lags = np.arange(lag_bound + 1)
         else:
             lags = np.arange(lag_bound, 1)
+    else:
+        raise ValueError(f"Mode {mode} is invalid")
     return lags
 
 
@@ -678,7 +698,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
 
 
 def _calc_oa_lens(s1, s2):
-    """Calculate the optimal FFT lengths for overlapp-add convolution.
+    """Calculate the optimal FFT lengths for overlap-add convolution.
 
     The calculation is done for a single dimension.
 
@@ -1273,6 +1293,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
 
+    _reject_objects(volume, 'choose_conv_method')
+    _reject_objects(kernel, 'choose_conv_method')
+
     if measure:
         times = {}
         for method in ['fft', 'direct']:
@@ -1402,6 +1425,9 @@ def convolve(in1, in2, mode='full', method='auto'):
     volume = np.asarray(in1)
     kernel = np.asarray(in2)
 
+    _reject_objects(volume, 'correlate')
+    _reject_objects(kernel, 'correlate')
+
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
     elif volume.ndim != kernel.ndim:
@@ -1480,17 +1506,17 @@ def order_filter(a, domain, rank):
            [15, 16, 17, 18, 19],
            [20, 21, 22, 23, 24]])
     >>> signal.order_filter(x, domain, 0)
-    array([[  0.,   0.,   0.,   0.,   0.],
-           [  0.,   0.,   1.,   2.,   0.],
-           [  0.,   5.,   6.,   7.,   0.],
-           [  0.,  10.,  11.,  12.,   0.],
-           [  0.,   0.,   0.,   0.,   0.]])
+    array([[  0,   0,   0,   0,   0],
+           [  0,   0,   1,   2,   0],
+           [  0,   5,   6,   7,   0],
+           [  0,  10,  11,  12,   0],
+           [  0,   0,   0,   0,   0]])
     >>> signal.order_filter(x, domain, 2)
-    array([[  6.,   7.,   8.,   9.,   4.],
-           [ 11.,  12.,  13.,  14.,   9.],
-           [ 16.,  17.,  18.,  19.,  14.],
-           [ 21.,  22.,  23.,  24.,  19.],
-           [ 20.,  21.,  22.,  23.,  24.]])
+    array([[  6,   7,   8,   9,   4],
+           [ 11,  12,  13,  14,   9],
+           [ 16,  17,  18,  19,  14],
+           [ 21,  22,  23,  24,  19],
+           [ 20,  21,  22,  23,  24]])
 
     """
     domain = np.asarray(domain)
@@ -2077,6 +2103,11 @@ def lfilter(b, a, x, axis=-1, zi=None):
     """
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
+
+    _reject_objects(x, 'lfilter')
+    _reject_objects(a, 'lfilter')
+    _reject_objects(b, 'lfilter')
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
@@ -2285,9 +2316,13 @@ def deconvolve(signal, divisor):
 
 
 def hilbert(x, N=None, axis=-1):
-    """
-    Compute the analytic signal, using the Hilbert transform.
+    r"""FFT-based computation of the analytic signal.
 
+    The analytic signal is calculated by filtering out the negative frequencies and
+    doubling the amplitudes of the positive frequencies in the FFT domain.
+    The imaginary part of the result is the hilbert transform of the real-valued input
+    signal.
+    
     The transformation is done along the last axis by default.
 
     Parameters
@@ -2306,15 +2341,16 @@ def hilbert(x, N=None, axis=-1):
 
     Notes
     -----
-    The analytic signal ``x_a(t)`` of signal ``x(t)`` is:
+    The analytic signal ``x_a(t)`` of a real-valued signal ``x(t)``
+    can be expressed as [1]_
 
-    .. math:: x_a = F^{-1}(F(x) 2U) = x + i y
+    .. math:: x_a = F^{-1}(F(x) 2U) = x + i y\ ,
 
     where `F` is the Fourier transform, `U` the unit step function,
-    and `y` the Hilbert transform of `x`. [1]_
+    and `y` the Hilbert transform of `x`. [2]_
 
     In other words, the negative half of the frequency spectrum is zeroed
-    out, turning the real-valued signal into a complex signal.  The Hilbert
+    out, turning the real-valued signal into a complex-valued signal.  The Hilbert
     transformed signal can be obtained from ``np.imag(hilbert(x))``, and the
     original signal from ``np.real(hilbert(x))``.
 
@@ -2322,8 +2358,10 @@ def hilbert(x, N=None, axis=-1):
     ----------
     .. [1] Wikipedia, "Analytic signal".
            https://en.wikipedia.org/wiki/Analytic_signal
-    .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
+    .. [2] Wikipedia, "Hilbert Transform".
+           https://en.wikipedia.org/wiki/Hilbert_transform
+    .. [3] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
+    .. [4] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
            Processing, Third Edition, 2009. Chapter 12.
            ISBN 13: 978-1292-02572-8
 
@@ -2336,22 +2374,19 @@ def hilbert(x, N=None, axis=-1):
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
 
+    Let's create a chirp of which the frequency increases from 20 Hz to 100 Hz and
+    apply an amplitude modulation:
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import hilbert, chirp
-
-    >>> duration = 1.0
-    >>> fs = 400.0
-    >>> samples = int(fs*duration)
-    >>> t = np.arange(samples) / fs
-
-    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and
-    apply an amplitude modulation.
-
+    ...
+    >>> duration, fs = 1, 400  # 1 s signal with sampling frequency of 400 Hz
+    >>> t = np.arange(int(fs*duration)) / fs  # timestamps of samples
     >>> signal = chirp(t, 20.0, t[-1], 100.0)
     >>> signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
 
-    The amplitude envelope is given by magnitude of the analytic signal. The
+    The amplitude envelope is given by the magnitude of the analytic signal. The
     instantaneous frequency can be obtained by differentiating the
     instantaneous phase in respect to time. The instantaneous phase corresponds
     to the phase angle of the analytic signal.
@@ -2359,18 +2394,18 @@ def hilbert(x, N=None, axis=-1):
     >>> analytic_signal = hilbert(signal)
     >>> amplitude_envelope = np.abs(analytic_signal)
     >>> instantaneous_phase = np.unwrap(np.angle(analytic_signal))
-    >>> instantaneous_frequency = (np.diff(instantaneous_phase) /
-    ...                            (2.0*np.pi) * fs)
-
-    >>> fig, (ax0, ax1) = plt.subplots(nrows=2)
-    >>> ax0.plot(t, signal, label='signal')
-    >>> ax0.plot(t, amplitude_envelope, label='envelope')
-    >>> ax0.set_xlabel("time in seconds")
+    >>> instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
+    ...
+    >>> fig, (ax0, ax1) = plt.subplots(nrows=2, sharex='all', tight_layout=True)
+    >>> ax0.set_title("Amplitude-modulated Chirp Signal")
+    >>> ax0.set_ylabel("Amplitude")
+    >>> ax0.plot(t, signal, label='Signal')
+    >>> ax0.plot(t, amplitude_envelope, label='Envelope')
     >>> ax0.legend()
-    >>> ax1.plot(t[1:], instantaneous_frequency)
-    >>> ax1.set_xlabel("time in seconds")
-    >>> ax1.set_ylim(0.0, 120.0)
-    >>> fig.tight_layout()
+    >>> ax1.set(xlabel="Time in seconds", ylabel="Phase in rad", ylim=(0, 120))
+    >>> ax1.plot(t[1:], instantaneous_frequency, 'C2-', label='Instantaneous Phase')
+    >>> ax1.legend()
+    >>> plt.show()
 
     """
     x = np.asarray(x)
@@ -3657,7 +3692,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
-    if isinstance(window, (list, np.ndarray)):
+    if isinstance(window, (list | np.ndarray)):
         window = np.array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
@@ -3668,8 +3703,12 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
-        h = firwin(2 * half_len + 1, f_c,
-                   window=window).astype(x.dtype)  # match dtype of x
+        if np.issubdtype(x.dtype, np.floating):
+            h = firwin(2 * half_len + 1, f_c,
+                       window=window).astype(x.dtype)  # match dtype of x
+        else:
+            h = firwin(2 * half_len + 1, f_c,
+                       window=window)
     h *= up
 
     # Zero-pad our filter to put the output samples at the center
@@ -3827,7 +3866,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     Notes
     -----
-    Detrending can be interpreted as subtracting a least squares fit polyonimial:
+    Detrending can be interpreted as subtracting a least squares fit polynomial:
     Setting the parameter `type` to 'constant' corresponds to fitting a zeroth degree
     polynomial, 'linear' to a first degree polynomial. Consult the example below.
 
@@ -4596,7 +4635,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See Also
     --------
-    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, sosfreqz
+    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, freqz_sos
 
     Notes
     -----
@@ -4626,6 +4665,11 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    _reject_objects(sos, 'sosfilt')
+    _reject_objects(x, 'sosfilt')
+    if zi is not None:
+        _reject_objects(zi, 'sosfilt')
+
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
     x_zi_shape = list(x.shape)
@@ -4713,7 +4757,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    filtfilt, sosfilt, sosfilt_zi, sosfreqz
+    filtfilt, sosfilt, sosfilt_zi, freqz_sos
 
     Notes
     -----

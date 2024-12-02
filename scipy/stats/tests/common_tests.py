@@ -10,7 +10,7 @@ import numpy.ma.testutils as ma_npt
 from scipy._lib._util import (
     getfullargspec_no_self as _getfullargspec, np_long
 )
-from scipy._lib._array_api import xp_assert_equal
+from scipy._lib._array_api_no_0d import xp_assert_equal
 from scipy import stats
 
 

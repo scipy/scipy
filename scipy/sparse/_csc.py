@@ -132,7 +132,10 @@ class _csc_base(_cs_matrix):
         return self._major_index_fancy(col)._minor_slice(row)
 
     def _get_arrayXint(self, row, col):
-        return self._get_submatrix(major=col)._minor_index_fancy(row)
+        res = self._get_submatrix(major=col)._minor_index_fancy(row)
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_arrayXslice(self, row, col):
         return self._major_slice(col)._minor_index_fancy(row)

@@ -1344,7 +1344,7 @@ def sen_seasonal_slopes(x):
             For each season, the Theil-Sen slope estimator: the median of
             within-season slopes.
         inter_slope : float
-            The seasonal Kendall slope estimateor: the median of within-season
+            The seasonal Kendall slope estimator: the median of within-season
             slopes *across all* seasons.
 
     See Also

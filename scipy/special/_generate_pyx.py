@@ -8,8 +8,8 @@ files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
 This will generate both calls to PyUFunc_FromFuncAndData and the
 required ufunc inner loops.
 
-The functions signatures are contained in 'functions.json', the syntax
-for a function signature is
+The functions' signatures are contained in 'functions.json'.
+The syntax for a function signature is
 
     <function>:       <name> ':' <input> '*' <output>
                         '->' <retval> '*' <ignored_retval>
@@ -30,6 +30,7 @@ codes, according to
    'G': 'long double complex'
    'i': 'int'
    'l': 'long'
+   'p': 'npy_intp', 'Py_ssize_t'
    'v': 'void'
 
 If multiple kernel functions are given for a single ufunc, the one
@@ -83,14 +84,19 @@ special_ufuncs = [
     'binom', 'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
     'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',
     'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',
-    'iv', '_iv_ratio', 'ive', 'jv',
+    'iv', '_iv_ratio', '_iv_ratio_c', 'ive', 'jv',
     'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp', 'kv', 'kve', 'log_expit',
     'log_wright_bessel', 'loggamma', 'logit', 'mathieu_a', 'mathieu_b', 'mathieu_cem',
     'mathieu_modcem1', 'mathieu_modcem2', 'mathieu_modsem1', 'mathieu_modsem2',
     'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
     'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv', 'pbwa',
     'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv', 'pro_rad2',
-    'pro_rad2_cv', 'psi', 'rgamma', 'sph_harm', 'wright_bessel', 'yv', 'yve', '_zeta'
+    'pro_rad2_cv', 'psi', 'rgamma', 'sph_harm', 'wright_bessel', 'yv', 'yve', 'zetac',
+    '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
+    'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1', 'struve', 'modstruve',
+    'beta', 'betaln', 'besselpoly', 'gammaln', 'gammasgn', 'cbrt', 'radian', 'cosm1',
+    'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel', 'ellipe',
+    'ellipeinc', 'ellipk', 'ellipkinc', 'ellipkm1', 'ellipj', '_riemann_zeta'
 ]
 
 # -----------------------------------------------------------------------------
@@ -170,6 +176,7 @@ CY_TYPES = {
     'G': 'long double complex',
     'i': 'int',
     'l': 'long',
+    'p': 'Py_ssize_t',
     'v': 'void',
 }
 
@@ -182,6 +189,7 @@ C_TYPES = {
     'G': 'npy_clongdouble',
     'i': 'npy_int',
     'l': 'npy_long',
+    'p': 'npy_intp',
     'v': 'void',
 }
 
@@ -194,6 +202,7 @@ TYPE_NAMES = {
     'G': 'NPY_CLONGDOUBLE',
     'i': 'NPY_INT',
     'l': 'NPY_LONG',
+    'p': 'NPY_INTP',
 }
 
 
@@ -202,18 +211,19 @@ def underscore(arg):
 
 
 def cast_order(c):
-    return ['ilfdgFDG'.index(x) for x in c]
+    return ['ilpfdgFDG'.index(x) for x in c]
 
 
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.
 DANGEROUS_DOWNCAST = {
-    ('F', 'i'), ('F', 'l'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
-    ('D', 'i'), ('D', 'l'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
-    ('G', 'i'), ('G', 'l'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
-    ('f', 'i'), ('f', 'l'),
-    ('d', 'i'), ('d', 'l'),
-    ('g', 'i'), ('g', 'l'),
+    ('F', 'i'), ('F', 'l'), ('F', 'p'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
+    ('D', 'i'), ('D', 'l'), ('D', 'p'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
+    ('G', 'i'), ('G', 'l'), ('G', 'p'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
+    ('f', 'i'), ('f', 'l'), ('f', 'p'),
+    ('d', 'i'), ('d', 'l'), ('d', 'p'),
+    ('g', 'i'), ('g', 'l'), ('g', 'p'),
+    ('p', 'l'), ('p', 'i'),
     ('l', 'i'),
 }
 
@@ -226,6 +236,7 @@ NAN_VALUE = {
     'G': 'NAN',
     'i': '0xbad0bad0',
     'l': '0xbad0bad0',
+    'p': '0xbad0bad0',
 }
 
 
@@ -393,7 +404,8 @@ def iter_variants(inputs, outputs):
     ]
 
     # float32-preserving signatures
-    if not ('i' in inputs or 'l' in inputs):
+    if not ('i' in inputs or 'l' in inputs or 'q' in inputs
+             or 'p' in inputs):
         # Don't add float32 versions of ufuncs with integer arguments, as this
         # can lead to incorrect dtype selection if the integer arguments are
         # arrays, but float arguments are scalars.
@@ -428,14 +440,15 @@ class Func:
                 self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
-        m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$",
+        T = 'fdgFDGilp'
+        m = re.match(rf"\s*([{T}]*)\s*\*\s*([{T}]*)\s*->\s*([*{T}]*)\s*$",
                      sig)
         if m:
             inarg, outarg, ret = (x.strip() for x in m.groups())
             if ret.count('*') > 1:
                 raise ValueError(f"{self.name}: Invalid signature: {sig}")
             return inarg, outarg, ret
-        m = re.match(r"\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
+        m = re.match(rf"\s*([{T}]*)\s*->\s*([{T}]?)\s*$", sig)
         if m:
             inarg, ret = (x.strip() for x in m.groups())
             return inarg, "", ret

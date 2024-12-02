@@ -36,7 +36,7 @@ def minkowski_distance_p(x, y, p=2):
     --------
     >>> from scipy.spatial import minkowski_distance_p
     >>> minkowski_distance_p([[0, 0], [0, 0]], [[1, 1], [0, 1]])
-    array([2, 1])
+    array([2., 1.])
 
     """
     x = np.asarray(x)

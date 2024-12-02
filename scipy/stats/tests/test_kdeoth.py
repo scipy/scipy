@@ -477,7 +477,7 @@ def test_marginal_iv():
     with pytest.raises(ValueError, match=message):
         kde.marginal([1, 2.5])
 
-    # IV for uniquenes
+    # IV for uniqueness
     message = "All elements of `dimensions` must be unique."
     with pytest.raises(ValueError, match=message):
         kde.marginal([1, 2, 2])
