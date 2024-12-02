@@ -2802,14 +2802,13 @@ class TestHilbert2:
 
 
 class TestEnvelope:
-    """Unit tests for function ._signaltools.envelope()`. """
+    """Unit tests for function `._signaltools.envelope()`. """
 
-    @classmethod
-    def assert_close(cls, actual, desired, msg):
+    @staticmethod
+    def assert_close(actual, desired, msg):
         """Little helper to compare to arrays with proper tolerances"""
         xp_assert_close(actual, desired, atol=1e-12, rtol=1e-12, err_msg=msg)
 
-# noinspection PyTypeChecker
     def test_envelope_invalid_parameters(self):
         """For `envelope()` Raise all exceptions that are used to verify function
         parameters. """
@@ -2823,15 +2822,18 @@ class TestEnvelope:
             ts = ', '.join(map(str, bp_in))
             with pytest.raises(ValueError,
                                match=rf"bp_in=\({ts}\) isn't a 2-tuple of.*"):
+                # noinspection PyTypeChecker
                 envelope(np.ones(4), bp_in=bp_in)
         with pytest.raises(ValueError,
                            match="n_out=10.0 is not a positive integer or.*"):
+            # noinspection PyTypeChecker
             envelope(np.ones(4), n_out=10.)
         for bp_in in [(-1, 3), (1, 1), (0, 10)]:
             with pytest.raises(ValueError,
                                match=r"`-n//2 <= bp_in\[0\] < bp_in\[1\] <=.*"):
                 envelope(np.ones(4), bp_in=bp_in)
         with pytest.raises(ValueError, match="residual='undefined' not in .*"):
+            # noinspection PyTypeChecker
             envelope(np.ones(4), residual='undefined')
 
     def test_envelope_verify_parameters(self):

@@ -2468,41 +2468,42 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         Real- or complex-valued input signal, which is assumed to be made up of ``n``
         samples and having sampling interval ``T``. `z` may also be a multidimensional
         array with the time axis being defined by `axis`.
-    bp_in : tuple[int | None, int | None]
+    bp_in : tuple[int | None, int | None], optional
         2-tuple defining the frequency band ``bp_in[0]:bp_in[1]`` of the input filter.
         The corner frequencies are specified as integer multiples of ``1/(n*T)`` with
         ``-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2`` being the allowed frequency range.
-        ``None`` entries are replaced with `-n//2` or `(n+1)//2` respectively. The
+        ``None`` entries are replaced with ``-n//2`` or ``(n+1)//2`` respectively. The
         default of ``(1, None)`` removes the mean value as well as the negative
         frequency components.
-    n_out : int | None
+    n_out : int | None, optional
         If not ``None`` the output will be resampled to `n_out` samples. The default
         of ``None`` sets the output to the same length as the input `z`.
-    squared : bool
+    squared : bool, optional
         If set, the square of the envelope is returned. The bandwidth of the squared
         envelope is often smaller than the non-squared envelope bandwidth due to the
         nonlinear nature of the utilized absolute value function. I.e., the embedded
         square root function typically produces addiational harmonics.
+        The default is ``False``.
     residual : Literal['lowpass', 'all', None]
         This option determines what kind of residual, i.e., the signal part which the
         input bandpass filter removes, is returned. ``'all'`` returns everything except
         the contents of the frequency band ``bp_in[0]:bp_in[1]``, ``'lowpass'``
         returns the contents of the frequency band ``< bp_in[0]``. If ``None`` then
-        only the envelope is returned.
-    axis : int
+        only the envelope is returned. Default: ``'lowpass'``.
+    axis : int, optional
        Axis of `z` over which to compute the envelope. Default is last the axis.
 
     Returns
     -------
     ndarray
-        If parameter `residual` is ``None`` then an array `z_env` with the same shape
+        If parameter `residual` is ``None`` then an array ``z_env`` with the same shape
         as the input `z` is returned, containing its envelope. Otherwise, an array with
-        shape ``(2, *z.shape)``, containing the arrays `z_env`, `z_res` being stacked
+        shape ``(2, *z.shape)``, containing the arrays ``z_env`` and ``z_res``, stacked
         along the first axis, is returned.
-        It allows unpacking, i.e., ``z_env, z_res = envelope(z)``.
-        The residual `z_res` contains the signal part which the input bandpass filter
+        It allows unpacking, i.e., ``z_env, z_res = envelope(z, residual='all')``.
+        The residual ``z_res`` contains the signal part which the input bandpass filter
         removed, depending on the parameter `residual`. Note that for real-valued
-        signals, also a real-valued residual is returned. Hence, the negative frequency
+        signals, a real-valued residual is returned. Hence, the negative frequency
         components of `bp_in` are ignored.
 
     Notes
@@ -2538,10 +2539,10 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     absolute value. Hence, it is more efficient to use ``np.abs(z)`` instead of this
     function.
 
-    Though, computing the envelope based on the analytic signal [1]_ is the natural
+    Although computing the envelope based on the analytic signal [1]_ is the natural
     method for real-valued signals, other methods are also frequently used. The most
-    popular alterantive is probably the so-called "square-law" envelope detector and
-    its relatives [2]_. They do not always compute the correct result for all kind of
+    popular alternative is probably the so-called "square-law" envelope detector and
+    its relatives [2]_. They do not always compute the correct result for all kinds of
     signals, but are usually correct and typically computationally more efficient for
     most kinds of narrowband signals. The definition for an envelope presented here is
     common where instantaneous amplitude and phase are of interest (e.g., as described
