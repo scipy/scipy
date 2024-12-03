@@ -1188,7 +1188,7 @@ class TestTransforms:
             # Should also try to test fit, plot?
 
 
-    def test_imf_transform(self):
+    def test_exp(self):
         rng = np.random.default_rng(81345982345826)
         mu = rng.random((3, 1))
         sigma = rng.random((3, 1))

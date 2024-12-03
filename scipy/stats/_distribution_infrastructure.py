@@ -4117,11 +4117,11 @@ class Mixture(_ProbabilityDistribution):
         return x[()]
 
 
-class IMFTransformedDistribution(TransformedDistribution):
-    r"""Distribution underlying an injective, monotonic function of a random variable
+class MonotonicTransformedDistribution(TransformedDistribution):
+    r"""Distribution underlying a strictly monotonic function of a random variable
 
-    Given a random variable :math:`X`; a strictly increasing function
-    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, the derivative
+    Given a random variable :math:`X`; a strictly monotonic function
+    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, and the derivative
     :math:`h'(u) = \frac{dh(u)}{du}`, define the distribution underlying
     the random variable :math:`Y = g(X)`.
 
@@ -4232,5 +4232,5 @@ def exp(X):
     >>> plt.show()
 
     """
-    return IMFTransformedDistribution(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
-                                      logdh=lambda u: -np.log(u))
+    return MonotonicTransformedDistribution(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
+                                            logdh=lambda u: -np.log(u))
