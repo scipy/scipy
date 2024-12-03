@@ -1841,6 +1841,23 @@ class ContinuousDistribution(_ProbabilityDistribution):
         else:
             return out * other
 
+    def __rpow__(self, other):
+        funcs = dict(g=lambda u: other**u, g_name=f'{other}**',
+                     h=lambda u: np.log(u) / np.log(other),
+                     dh=lambda u: 1 / np.abs(u * np.log(other)))
+
+        if not np.isscalar(other) or other <= 0 or other == 1:
+            message = ("Raising an argument to the power of a random variable is only "
+                       "implemented when all the argument is a positive scalar other "
+                       "than 1.")
+            raise NotImplementedError(message)
+
+        if other > 1:
+            return MonotonicTransformedDistribution(self, **funcs, increasing=True)
+        else:
+            return MonotonicTransformedDistribution(self, **funcs, increasing=False)
+
+
     def __neg__(self):
         return self * -1
 

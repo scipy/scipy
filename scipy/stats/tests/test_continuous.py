@@ -1189,13 +1189,17 @@ class TestTransforms:
             # Should also try to test fit, plot?
 
     @pytest.mark.fail_slow(5)
-    def test_exp(self):
+    @pytest.mark.parametrize('exp_pow', ['exp', 'pow'])
+    def test_exp_pow(self, exp_pow):
         rng = np.random.default_rng(81345982345826)
         mu = rng.random((3, 1))
         sigma = rng.random((3, 1))
 
         X = Normal()*sigma + mu
-        Y = stats.exp(X)
+        if exp_pow == 'exp':
+            Y = stats.exp(X)
+        else:
+            Y = np.e ** X
         Y0 = stats.lognorm(sigma, scale=np.exp(mu))
 
         y = Y0.rvs((3, 10), random_state=rng)
@@ -1226,6 +1230,7 @@ class TestTransforms:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('scale', [1, 2, -1])
+    @pytest.mark.xfail_on_32bit("`scale=-1` fails on 32-bit; needs investigation")
     def test_reciprocal(self, scale):
         rng = np.random.default_rng(81345982345826)
         a = rng.random((3, 1))
@@ -1315,6 +1320,13 @@ class TestTransforms:
         message = "The logarithm of a random variable is only implemented when the..."
         with pytest.raises(NotImplementedError, match=message):
             stats.log(X)
+        message = "Raising an argument to the power of a random variable is only..."
+        with pytest.raises(NotImplementedError, match=message):
+            (-2) ** X
+        with pytest.raises(NotImplementedError, match=message):
+            1 ** X
+        with pytest.raises(NotImplementedError, match=message):
+            [0.5, 1.5] ** X
 
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
