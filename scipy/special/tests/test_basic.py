@@ -1628,9 +1628,8 @@ class TestTandg:
 
 
 class TestEllip:
-    def test_ellipj_nan(self, num_parallel_threads):
+    def test_ellipj_nan(self):
         """Regression test for #912."""
-        special.seterr(domain='ignore')
         special.ellipj(0.5, np.nan)
 
     def test_ellipj(self):
@@ -2755,7 +2754,6 @@ class TestFactorialFunctions:
             expected = np.array(ref, ndmin=dim, dtype=dtype)
             assert_really_equal(result, expected, rtol=2e-15)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("extend", ["zero", "complex"])
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("k", range(1, 5))
@@ -4293,7 +4291,8 @@ def errstate_lock():
 @with_special_errors
 def test_error_raising(errstate_lock):
     with errstate_lock:
-        assert_raises(special.SpecialFunctionError, special.iv, 1, 1e99j)
+        with special.errstate(all='raise'):
+            assert_raises(special.SpecialFunctionError, special.iv, 1, 1e99j)
 
 
 def test_xlogy():
