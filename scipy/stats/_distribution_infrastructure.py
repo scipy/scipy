@@ -4273,3 +4273,49 @@ def exp(X):
     """
     return MonotonicTransformedDistribution(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
                                             logdh=lambda u: -np.log(u))
+
+
+def log(X):
+    r"""Natural logarithm of a non-negative random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X` with positive support.
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = \exp(X)`.
+
+    Examples
+    --------
+    Suppose we have a gamma distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> Gamma = stats.make_distribution(stats.gamma)
+    >>> X = Gamma(a=1.0)
+
+    We wish to have a exp-gamma distributed random variable :math:`Y`,
+    a random variable whose natural exponential is :math:`X`.
+    If :math:`X` is to be the natural exponential of :math:`Y`, then we
+    must take :math:`Y` to be the natural logarithm of :math:`X`.
+
+    >>> Y = stats.log(X)
+
+    To demonstrate that ``X`` represents the exponential of ``Y``,
+    we plot a normalized histogram of the exponential of observations of
+    ``Y`` against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.exp(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of `X`', 'histogram of `exp(y)`'))
+    >>> plt.show()
+
+    """
+    return MonotonicTransformedDistribution(X, g=np.log, h=np.exp, dh=np.exp,
+                                            logdh=lambda u: u)

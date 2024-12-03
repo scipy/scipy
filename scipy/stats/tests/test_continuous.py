@@ -1233,8 +1233,6 @@ class TestTransforms:
         X = _Gamma(a=a)
         Y0 = stats.invgamma(a, scale=2)
         Y = 2 / X
-        assert_allclose(Y.entropy(), Y0.entropy())
-
         y = Y0.rvs((3, 10), random_state=rng)
         p = Y0.cdf(y)
 
@@ -1256,6 +1254,39 @@ class TestTransforms:
             assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), 2/(X.sample(rng=seed)))
+
+    def test_log(self):
+        rng = np.random.default_rng(81345982345826)
+        a = rng.random((3, 1))
+
+        X = _Gamma(a=a)
+        Y0 = stats.loggamma(a)
+        Y = stats.log(X)
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        with np.errstate(invalid='ignore'):
+            assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+            assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), np.log(X.sample(rng=seed)))
 
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
