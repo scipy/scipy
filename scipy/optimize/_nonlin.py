@@ -1492,9 +1492,32 @@ class KrylovJacobian(Jacobian):
             self.method_kw.setdefault('store_outer_Av', False)
             self.method_kw.setdefault('atol', 0)
 
+        valid_inner_params = dict(
+            bicgstab=["rtol", "atol"],
+            gmres=["rtol", "atol", "restart"],
+            lgmres=[
+                "rtol",
+                "atol",
+                "inner_m",
+                "outer_k",
+                "outer_v",
+                "store_outer_Av",
+                "prepend_outer_v"
+            ],
+            cgs=["rtol", "atol", "show", "check"],
+            minres=["rtol", "shift"],
+            tfqmr=["rtol", "atol"],
+        ).get(method, method)
+
         for key, value in kw.items():
             if not key.startswith('inner_'):
                 raise ValueError(f"Unknown parameter {key}")
+            if key[6:] not in valid_inner_params:
+                warnings.warn(
+                    f"The option {key} is not valid for inner solver {method}."
+                    " Please see the solver's documentation for a list of valid"
+                    " options."
+                )
             self.method_kw[key[6:]] = value
 
     def _update_diff_step(self):
