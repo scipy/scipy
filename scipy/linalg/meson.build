@@ -3,6 +3,8 @@
 __init__py = fs.copyfile('__init__.py')
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
+_cython_tree += fs.copyfile('__init__.pxd')
+
 _generate_pyx = find_program('_generate_pyx.py')
 cython_linalg = custom_target('cython_linalg',
   output: [
@@ -218,6 +220,7 @@ endif
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_basic.py',
   '_cythonized_array_utils.pxd',
   '_cythonized_array_utils.pyi',

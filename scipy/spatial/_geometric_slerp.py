@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 __all__ = ['geometric_slerp']
 
 import warnings
@@ -33,9 +31,9 @@ def _geometric_slerp(start, end, t):
 
 
 def geometric_slerp(
-    start: npt.ArrayLike,
-    end: npt.ArrayLike,
-    t: npt.ArrayLike,
+    start: "npt.ArrayLike",
+    end: "npt.ArrayLike",
+    t: "npt.ArrayLike",
     tol: float = 1e-7,
 ) -> np.ndarray:
     """

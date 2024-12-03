@@ -115,13 +115,6 @@ jobs:
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
 
-        # Python.org installers still use 10.9, so let's use that too. Note
-        # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
-        # this number in the future (if needed) should not be a problem.
-        # Conda-forge is still at 10.9, see:
-        # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
-        export MACOSX_DEPLOYMENT_TARGET=10.9
-        export MACOSX_SDK_VERSION=10.9
         CC="ccache $CC" python dev.py build
 
     - name: Test SciPy

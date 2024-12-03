@@ -8,7 +8,7 @@ from numpy import inf
 from scipy._lib._util import _lazywhere
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
-from scipy.integrate._tanhsinh import _tanhsinh
+from scipy.integrate import tanhsinh as _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
 from scipy.stats._probability_distribution import _ProbabilityDistribution
