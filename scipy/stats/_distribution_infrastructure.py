@@ -1828,7 +1828,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def __rtruediv__(self, other):
         a, b = self.support()
-        funcs = dict(g=lambda u: 1 / u, h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
+        funcs = dict(g=lambda u: 1 / u, g_name='inv',
+                     h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
         if np.all(a >= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
         elif np.all(b <= 0):
@@ -4151,10 +4152,14 @@ class MonotonicTransformedDistribution(TransformedDistribution):
     increasing : bool, optional
         Whether the function is strictly increasing (True, default)
         or strictly decreasing (False).
+    g_name : str, optional
+        The name of the mathematical function represented by `g`,
+        used in `__repr__` and `__str__`. The default is ``g.__name__``.
 
     """
 
-    def __init__(self, dist, *args, g, h, dh, logdh=None, increasing=True, **kwargs):
+    def __init__(self, dist, *args, g, h, dh, logdh=None,
+                 increasing=True, g_name=None, **kwargs):
         super().__init__(dist, *args, **kwargs)
         self._g = g
         self._h = h
@@ -4180,6 +4185,13 @@ class MonotonicTransformedDistribution(TransformedDistribution):
             self._ilogxdf = self._dist._ilogccdf_dispatch
             self._ilogcxdf = self._dist._ilogcdf_dispatch
         self._increasing = increasing
+        self._g_name = g.__name__ if g_name is None else g_name
+
+    def __repr__(self):
+        return f"{self._g_name}({repr(self._dist)})"
+
+    def __str__(self):
+        return f"{self._g_name}({str(self._dist)})"
 
     def _overrides(self, method_name):
         # Do not use the generic overrides of TransformedDistribution

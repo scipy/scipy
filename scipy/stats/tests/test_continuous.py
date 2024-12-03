@@ -1223,6 +1223,9 @@ class TestTransforms:
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
 
+        X = _Uniform(a=1, b=2)
+        assert repr(stats.exp(X)) == str(stats.exp(X)) == "exp(_Uniform(a=1.0, b=2.0))"
+
     def test_reciprocal(self):
         rng = np.random.default_rng(81345982345826)
         a = rng.random((3, 1))
@@ -1254,6 +1257,9 @@ class TestTransforms:
             assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), 2/(X.sample(rng=seed)))
+
+        X = _Uniform(a=1, b=2)
+        assert repr(1 / X) == str(1 / X) == "inv(_Uniform(a=1.0, b=2.0))"
 
     def test_log(self):
         rng = np.random.default_rng(81345982345826)
@@ -1288,6 +1294,9 @@ class TestTransforms:
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), np.log(X.sample(rng=seed)))
 
+        X = _Uniform(a=1, b=2)
+        assert repr(stats.log(X)) == str(stats.log(X)) == "log(_Uniform(a=1.0, b=2.0))"
+
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
 
@@ -1305,10 +1314,6 @@ class TestTransforms:
         assert_allclose(X.cdf(x), Y.cdf((x + loc) * scale))
         X = loc -_LogUniform(a=a, b=b)/scale
         assert_allclose(X.cdf(x), Y.ccdf((-x + loc)*scale))
-
-        message = "Division by a random variable is not yet implemented."
-        with pytest.raises(NotImplementedError, match=message):
-            1 / Y
 
 
 class TestFullCoverage:
