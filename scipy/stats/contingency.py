@@ -143,7 +143,7 @@ Chi2ContingencyResult = _make_tuple_bunch(
 )
 
 
-def chi2_contingency(observed, correction=True, lambda_=None, method=None):
+def chi2_contingency(observed, correction=True, lambda_=None, *, method=None):
     """Chi-square test of independence of variables in a contingency table.
 
     This function computes the chi-square statistic and p-value for the
