@@ -2542,6 +2542,7 @@ class _TestGetSet:
         assert_array_equal(A.toarray(), B)
 
 
+@pytest.mark.thread_unsafe
 class _TestSolve:
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils
@@ -3544,47 +3545,48 @@ class _TestArithmetic:
     """
     def __arith_init(self):
         # these can be represented exactly in FP (so arithmetic should be exact)
-        self.__A = array([[-1.5, 6.5, 0, 2.25, 0, 0],
+        __A = array([[-1.5, 6.5, 0, 2.25, 0, 0],
                           [3.125, -7.875, 0.625, 0, 0, 0],
                           [0, 0, -0.125, 1.0, 0, 0],
                           [0, 0, 8.375, 0, 0, 0]], 'float64')
-        self.__B = array([[0.375, 0, 0, 0, -5, 2.5],
+        __B = array([[0.375, 0, 0, 0, -5, 2.5],
                           [14.25, -3.75, 0, 0, -0.125, 0],
                           [0, 7.25, 0, 0, 0, 0],
                           [18.5, -0.0625, 0, 0, 0, 0]], 'complex128')
-        self.__B.imag = array([[1.25, 0, 0, 0, 6, -3.875],
+        __B.imag = array([[1.25, 0, 0, 0, 6, -3.875],
                                [2.25, 4.125, 0, 0, 0, 2.75],
                                [0, 4.125, 0, 0, 0, 0],
                                [-0.0625, 0, 0, 0, 0, 0]], 'float64')
 
         # fractions are all x/16ths
-        assert_array_equal((self.__A*16).astype('int32'),16*self.__A)
-        assert_array_equal((self.__B.real*16).astype('int32'),16*self.__B.real)
-        assert_array_equal((self.__B.imag*16).astype('int32'),16*self.__B.imag)
+        assert_array_equal((__A*16).astype('int32'),16*__A)
+        assert_array_equal((__B.real*16).astype('int32'),16*__B.real)
+        assert_array_equal((__B.imag*16).astype('int32'),16*__B.imag)
 
-        self.__Asp = self.spcreator(self.__A)
-        self.__Bsp = self.spcreator(self.__B)
+        __Asp = self.spcreator(__A)
+        __Bsp = self.spcreator(__B)
+        return __A, __B, __Asp, __Bsp
 
     @pytest.mark.fail_slow(20)
     def test_add_sub(self):
-        self.__arith_init()
+        __A, __B, __Asp, __Bsp = self.__arith_init()
 
         # basic tests
         assert_array_equal(
-            (self.__Asp + self.__Bsp).toarray(), self.__A + self.__B
+            (__Asp + __Bsp).toarray(), __A + __B
         )
 
         # check conversions
         for x in supported_dtypes:
             with np.errstate(invalid="ignore"):
-                A = self.__A.astype(x)
+                A = __A.astype(x)
             Asp = self.spcreator(A)
             for y in supported_dtypes:
                 if not np.issubdtype(y, np.complexfloating):
                     with np.errstate(invalid="ignore"):
-                        B = self.__B.real.astype(y)
+                        B = __B.real.astype(y)
                 else:
-                    B = self.__B.astype(y)
+                    B = __B.astype(y)
                 Bsp = self.spcreator(B)
 
                 # addition
@@ -3610,22 +3612,22 @@ class _TestArithmetic:
                 assert_array_equal(A - Bsp,D1)          # check dense - sparse
 
     def test_mu(self):
-        self.__arith_init()
+        __A, __B, __Asp, __Bsp = self.__arith_init()
 
         # basic tests
-        assert_array_equal((self.__Asp @ self.__Bsp.T).toarray(),
-                           self.__A @ self.__B.T)
+        assert_array_equal((__Asp @ __Bsp.T).toarray(),
+                            __A @ __B.T)
 
         for x in supported_dtypes:
             with np.errstate(invalid="ignore"):
-                A = self.__A.astype(x)
+                A = __A.astype(x)
             Asp = self.spcreator(A)
             for y in supported_dtypes:
                 if np.issubdtype(y, np.complexfloating):
-                    B = self.__B.astype(y)
+                    B = __B.astype(y)
                 else:
                     with np.errstate(invalid="ignore"):
-                        B = self.__B.real.astype(y)
+                        B = __B.real.astype(y)
                 Bsp = self.spcreator(B)
 
                 D1 = A @ B.T
@@ -5451,6 +5453,7 @@ class Test64Bit:
         else:
             raise ValueError(f"matrix {m!r} has no integer indices")
 
+    @pytest.mark.thread_unsafe
     def test_decorator_maxval_limit(self):
         # Test that the with_64bit_maxval_limit decorator works
 
@@ -5464,6 +5467,7 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
+    @pytest.mark.thread_unsafe
     def test_decorator_maxval_random(self):
         # Test that the with_64bit_maxval_limit decorator works (2)
 
@@ -5483,6 +5487,7 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
+    @pytest.mark.thread_unsafe
     def test_downcast_intp(self):
         # Check that bincount and ufunc.reduceat intp downcasts are
         # dealt with. The point here is to trigger points in the code
@@ -5549,31 +5554,33 @@ class RunAll64Bit:
         check(cls, method_name)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.slow
 class Test64BitArray(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_limit_10(self, cls, method_name):
-       self._check_resiliency(cls, method_name, maxval_limit=10)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_limit_10(self, cls, method_name):
+        self._check_resiliency(cls, method_name, maxval_limit=10)
 
-   @pytest.mark.fail_slow(2)
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_random(self, cls, method_name):
-       # bsr_array.eliminate_zeros relies on csr_array constructor
-       # not making copies of index arrays --- this is not
-       # necessarily true when we pick the index data type randomly
-       self._check_resiliency(cls, method_name, random=True)
+    @pytest.mark.fail_slow(2)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_random(self, cls, method_name):
+        # bsr_array.eliminate_zeros relies on csr_array constructor
+        # not making copies of index arrays --- this is not
+        # necessarily true when we pick the index data type randomly
+        self._check_resiliency(cls, method_name, random=True)
 
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_all_32(self, cls, method_name):
-       self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_all_32(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
 
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_all_64(self, cls, method_name):
-       self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_all_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
 
+@pytest.mark.thread_unsafe
 class Test64BitMatrix(RunAll64Bit):
     # assert_32bit=True only for spmatrix cuz sparray does not check index content
     @pytest.mark.fail_slow(5)

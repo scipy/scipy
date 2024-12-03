@@ -220,6 +220,7 @@ class TestCommon1D:
         assert_allclose(dat_mean, datsp_mean)
         assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_array(self, spcreator):
         A = np.array([2, 3, 4])
@@ -229,6 +230,7 @@ class TestCommon1D:
         assert_equal(spcreator(A).toarray(), A)
         assert_equal(spcreator(A, dtype='int16').toarray(), A.astype('int16'))
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_list(self, spcreator):
         A = [2, 3, 4]
@@ -240,6 +242,7 @@ class TestCommon1D:
             spcreator(A, dtype='int16').toarray(), np.array(A).astype('int16')
         )
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_sparse(self, spcreator):
         D = np.array([1, 0, 0])
