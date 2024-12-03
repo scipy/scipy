@@ -383,9 +383,9 @@ def _untabulate(table):
     x, y = [], []
     for i in range(r):
         for j in range(c):
-            x += ([i] * table[i, j])
-            y += ([j] * table[i, j])
-    return np.asarray(x), np.asarray(y)
+            x.append([i] * table[i, j])
+            y.append([j] * table[i, j])
+    return np.concatenate(x), np.concatenate(y)
 
 
 def _chi2_permutation_method(observed, expected, method):
