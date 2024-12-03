@@ -253,6 +253,7 @@ class TestSos2Zpk:
         xp_assert_close(_cplxpair(p2), p)
         assert k2 == k
 
+    @pytest.mark.thread_unsafe
     def test_fewer_zeros(self):
         """Test not the expected number of p/z (effectively at origin)."""
         sos = butter(3, 0.1, output='sos')
@@ -1561,7 +1562,7 @@ class TestButtord:
         b, a = butter(N, Wn, 'bandpass', False)
         w, h = freqz(b, a)
         w /= np.pi
- 
+
         assert np.all((-rp - 0.1) < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
 
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < (-rs + 0.1))
@@ -1636,6 +1637,7 @@ class TestButtord:
             buttord([20, 50], [14, 60], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
+    @pytest.mark.thread_unsafe
     def test_runtime_warnings(self):
         msg = "Order is zero.*|divide by zero encountered"
         with pytest.warns(RuntimeWarning, match=msg):
@@ -4134,10 +4136,10 @@ class TestIIRFilter:
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
         xp_assert_close(np.asarray(k),  np.asarray(k2))
-        # if fs is specified then the normalization of Wn to have 
+        # if fs is specified then the normalization of Wn to have
         # 0 <= Wn <= 1 should not cause an integer overflow
         # the following line should not raise an exception
-        iirfilter(20, [1000000000, 1100000000], btype='bp', 
+        iirfilter(20, [1000000000, 1100000000], btype='bp',
                       analog=False, fs=6250000000)
 
     def test_invalid_wn_size(self):
@@ -4216,6 +4218,7 @@ class TestGroupDelay:
                               0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
 
+    @pytest.mark.thread_unsafe
     def test_singular(self):
         # Let's create a filter with zeros and poles on the unit circle and
         # check if warnings are raised at those frequencies.

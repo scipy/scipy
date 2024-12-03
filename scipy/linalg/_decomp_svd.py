@@ -134,21 +134,25 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
         raise ValueError(message)
 
-    if lapack_driver == 'gesdd' and compute_uv:
+    if compute_uv:
         # XXX: revisit int32 when ILP64 lapack becomes a thing
         max_mn, min_mn = (m, n) if m > n else (n, m)
         if full_matrices:
             if max_mn*max_mn > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
-                                  " would incur integer overflow in LAPACK.")
+                                  "would incur integer overflow in LAPACK. "
+                                  "Try using numpy.linalg.svd instead.")
         else:
             sz = max(m * min_mn, n * min_mn)
             if max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix of {sz} elements would "
-                                  "incur an in integer overflow in LAPACK.")
+                                  "incur an in integer overflow in LAPACK. "
+                                  "Try using numpy.linalg.svd instead.")
 
     funcs = (lapack_driver, lapack_driver + '_lwork')
-    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
+    # XXX: As of 1.14.1 it isn't possible to build SciPy with ILP64,
+    # so the following line always yields a LP64 (32-bit pointer size) variant
+    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64="preferred")
 
     # compute optimal lwork
     lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],

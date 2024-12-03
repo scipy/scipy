@@ -597,7 +597,7 @@ class TestFirls:
             firls(11, .1, 1, fs=np.array([10, 20]))
 
 class TestMinimumPhase:
-
+    @pytest.mark.thread_unsafe
     def test_bad_args(self):
         # not enough taps
         assert_raises(ValueError, minimum_phase, [1.])

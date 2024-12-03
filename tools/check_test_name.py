@@ -26,8 +26,6 @@ SOFTWARE.
 Check that test names start with `test`, and that test classes start with
 `Test`.
 """
-from __future__ import annotations
-
 import ast
 import os
 from pathlib import Path

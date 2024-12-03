@@ -207,7 +207,7 @@ namespace detail {
          * chosen empirically based on the relevant benchmarks in
          * scipy/special/_precompute/hyp2f1_data.py */
         if (std::abs(u) <= 100 && std::abs(v) <= 100 && std::abs(w) <= 100 && std::abs(x) <= 100) {
-            result = cephes::Gamma(u) * cephes::Gamma(v) / (cephes::Gamma(w) * cephes::Gamma(x));
+            result = cephes::Gamma(u) * cephes::Gamma(v) * (cephes::rgamma(w) * cephes::rgamma(x));
             if (std::isfinite(result) && result != 0.0) {
                 return result;
             }
@@ -269,7 +269,7 @@ namespace detail {
         XSF_HOST_DEVICE Hyp2f1Transform1LimitSeriesGenerator(double a, double b, double m, std::complex<double> z)
             : d1_(xsf::digamma(a)), d2_(xsf::digamma(b)), d3_(xsf::digamma(1 + m)),
               d4_(xsf::digamma(1.0)), a_(a), b_(b), m_(m), z_(z), log_1_z_(std::log(1.0 - z)),
-              factor_(1.0 / cephes::Gamma(m + 1)), k_(0) {}
+              factor_(cephes::rgamma(m + 1)), k_(0) {}
 
         XSF_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> term_ = (d1_ + d2_ - d3_ - d4_ + log_1_z_) * factor_;
@@ -315,8 +315,8 @@ namespace detail {
                                                                  std::complex<double> z)
             : d1_(xsf::digamma(1.0)), d2_(xsf::digamma(1 + m)), d3_(xsf::digamma(a)),
               d4_(xsf::digamma(c - a)), a_(a), b_(b), c_(c), m_(m), z_(z), log_neg_z_(std::log(-z)),
-              factor_(xsf::cephes::poch(b, m) * xsf::cephes::poch(1 - c + b, m) /
-                      xsf::cephes::Gamma(m + 1)),
+              factor_(xsf::cephes::poch(b, m) * xsf::cephes::poch(1 - c + b, m) *
+                      xsf::cephes::rgamma(m + 1)),
               k_(0) {}
 
         XSF_HOST_DEVICE std::complex<double> operator()() {
@@ -345,8 +345,8 @@ namespace detail {
                                                                            double n, std::complex<double> z)
             : d1_(xsf::digamma(1.0)), d2_(xsf::digamma(1 + m)), d3_(xsf::digamma(a)),
               d4_(xsf::digamma(n)), a_(a), b_(b), c_(c), m_(m), n_(n), z_(z), log_neg_z_(std::log(-z)),
-              factor_(xsf::cephes::poch(b, m) * xsf::cephes::poch(1 - c + b, m) /
-                      xsf::cephes::Gamma(m + 1)),
+              factor_(xsf::cephes::poch(b, m) * xsf::cephes::poch(1 - c + b, m) *
+                      xsf::cephes::rgamma(m + 1)),
               k_(0) {}
 
         XSF_HOST_DEVICE std::complex<double> operator()() {
@@ -416,7 +416,7 @@ namespace detail {
       public:
         XSF_HOST_DEVICE Hyp2f1Transform2LimitFinitePartGenerator(double b, double c, double m,
                                                                      std::complex<double> z)
-            : b_(b), c_(c), m_(m), z_(z), term_(cephes::Gamma(m) / cephes::Gamma(c - b)), k_(0) {}
+            : b_(b), c_(c), m_(m), z_(z), term_(cephes::Gamma(m) * cephes::rgamma(c - b)), k_(0) {}
 
         XSF_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> output = term_;
@@ -486,8 +486,8 @@ namespace detail {
             auto series_generator1 = HypergeometricSeriesGenerator(a + m, b + m, 1 + m, 1.0 - z);
             result *= series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0},
                                                static_cast<std::uint64_t>(-m));
-            double prefactor = std::pow(-1.0, m + 1) * xsf::cephes::Gamma(c) /
-                               (xsf::cephes::Gamma(a + m) * xsf::cephes::Gamma(b + m));
+            double prefactor = std::pow(-1.0, m + 1) * xsf::cephes::Gamma(c) *
+                               (xsf::cephes::rgamma(a + m) * xsf::cephes::rgamma(b + m));
             auto series_generator2 = Hyp2f1Transform1LimitSeriesGenerator(a, b, -m, z);
             result += prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS,
                                               hyp2f1_MAXITER, "hyp2f1");
@@ -500,10 +500,10 @@ namespace detail {
         /* 1 / z transform in limiting case where a - b approaches a non-negative integer m. Negative integer case
          * can be handled by swapping a and b. */
         auto series_generator1 = Hyp2f1Transform2LimitFinitePartGenerator(b, c, m, z);
-        std::complex<double> result = cephes::Gamma(c) / cephes::Gamma(a) * std::pow(-z, -b);
+        std::complex<double> result = cephes::Gamma(c) * cephes::rgamma(a) * std::pow(-z, -b);
         result *=
             series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
-        std::complex<double> prefactor = cephes::Gamma(c) / (cephes::Gamma(a) * cephes::Gamma(c - b) * std::pow(-z, a));
+        std::complex<double> prefactor = cephes::Gamma(c) * (cephes::rgamma(a) * cephes::rgamma(c - b) * std::pow(-z, -a));
         double n = c - a;
         if (abs(n - std::round(n)) < hyp2f1_EPS) {
             auto series_generator2 = Hyp2f1Transform2LimitSeriesCminusAIntGenerator(a, b, c, m, n, z);

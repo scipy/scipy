@@ -296,3 +296,8 @@ Name: Chebfun
 Files: scipy/interpolate/[_aaa.py, tests/test_aaa.py]
 License 3-Clause BSD
   For details, see scipy/interpolate/_aaa.py
+
+Name: getLebedevSphere
+Files: scipy/integrate/_lebedev.py
+License 2-Clause BSD
+  For details, see scipy/integrate/_lebedev.py

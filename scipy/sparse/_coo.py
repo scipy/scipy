@@ -151,6 +151,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             new_coords = np.unravel_index(flat_coords, shape, order=order)
 
+        idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.shape))
+        new_coords = tuple(np.asarray(co, dtype=idx_dtype) for co in new_coords)
+
         # Handle copy here rather than passing on to the constructor so that no
         # copy will be made of `new_coords` regardless.
         if copy:

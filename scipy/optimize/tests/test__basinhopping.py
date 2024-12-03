@@ -118,9 +118,6 @@ class TestBasinHopping:
         self.niter = 100
         self.disp = False
 
-        # fix random seed
-        np.random.seed(1234)
-
         self.kwargs = {"method": "L-BFGS-B", "jac": True}
         self.kwargs_nograd = {"method": "L-BFGS-B"}
 
@@ -227,7 +224,7 @@ class TestBasinHopping:
             minimizer_kwargs["method"] = method
             res = basinhopping(func2d_nograd, self.x0[i],
                                minimizer_kwargs=minimizer_kwargs,
-                               niter=niter, disp=self.disp)
+                               niter=niter, disp=self.disp, seed=1234)
             tol = self.tol
             if method == 'COBYLA':
                 tol = 2
@@ -301,8 +298,8 @@ class TestBasinHopping:
         basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                      niter=0, disp=self.disp)
 
-    def test_seed_reproducibility(self):
-        # seed should ensure reproducibility between runs
+    def test_rng_reproducibility(self):
+        # rng should ensure reproducibility between runs
         minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
 
         f_1 = []
@@ -311,7 +308,7 @@ class TestBasinHopping:
             f_1.append(f)
 
         basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
-                     niter=10, callback=callback, seed=10)
+                     niter=10, callback=callback, rng=10)
 
         f_2 = []
 
@@ -319,7 +316,7 @@ class TestBasinHopping:
             f_2.append(f)
 
         basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
-                     niter=10, callback=callback2, seed=10)
+                     niter=10, callback=callback2, rng=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
     def test_random_gen(self):
@@ -330,22 +327,24 @@ class TestBasinHopping:
 
         res1 = basinhopping(func2d, [1.0, 1.0],
                             minimizer_kwargs=minimizer_kwargs,
-                            niter=10, seed=rng)
+                            niter=10, rng=rng)
 
         rng = np.random.default_rng(1)
         res2 = basinhopping(func2d, [1.0, 1.0],
                             minimizer_kwargs=minimizer_kwargs,
-                            niter=10, seed=rng)
+                            niter=10, rng=rng)
         assert_equal(res1.x, res2.x)
 
     def test_monotonic_basin_hopping(self):
         # test 1-D minimizations with gradient and T=0
         i = 0
+
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=self.niter, disp=self.disp, T=0)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
+@pytest.mark.thread_unsafe
 class Test_Storage:
     def setup_method(self):
         self.x0 = np.array(1)
@@ -384,15 +383,16 @@ class Test_Storage:
 class Test_RandomDisplacement:
     def setup_method(self):
         self.stepsize = 1.0
-        self.displace = RandomDisplacement(stepsize=self.stepsize)
         self.N = 300000
-        self.x0 = np.zeros([self.N])
 
     def test_random(self):
         # the mean should be 0
         # the variance should be (2*stepsize)**2 / 12
         # note these tests are random, they will fail from time to time
-        x = self.displace(self.x0)
+        rng = np.random.RandomState(0)
+        x0 = np.zeros([self.N])
+        displace = RandomDisplacement(stepsize=self.stepsize, rng=rng)
+        x = displace(x0)
         v = (2. * self.stepsize) ** 2 / 12
         assert_almost_equal(np.mean(x), 0., 1)
         assert_almost_equal(np.var(x), v, 1)
@@ -449,7 +449,13 @@ class Test_Metropolis:
         x0 = -4
         limit = 50  # Constrain to func value >= 50
         con = {'type': 'ineq', 'fun': lambda x: func(x) - limit},
-        res = basinhopping(func, x0, 30, minimizer_kwargs={'constraints': con})
+        res = basinhopping(
+            func,
+            x0,
+            30,
+            seed=np.random.RandomState(1234),
+            minimizer_kwargs={'constraints': con}
+        )
         assert res.success
         assert_allclose(res.fun, limit, rtol=1e-6)
 

@@ -11,7 +11,8 @@ from scipy._lib._util import np_long, np_ulong
 
 
 __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
-           'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
+           'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype',
+           'broadcast_shapes']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
                     np.uintc, np_long, np_ulong, np.longlong, np.ulonglong,
@@ -360,6 +361,39 @@ def check_shape(args, current_shape=None, *, allow_nd=(2,)) -> tuple[int, ...]:
         raise ValueError(f'shape must have length in {allow_nd}. Got {new_shape=}')
 
     return new_shape
+
+
+def broadcast_shapes(*shapes):
+    """Check if shapes can be broadcast and return resulting shape
+
+    This is similar to the NumPy ``broadcast_shapes`` function but
+    does not check memory consequences of the resulting dense matrix.
+
+    Parameters
+    ----------
+    *shapes : tuple of shape tuples
+        The tuple of shapes to be considered for broadcasting.
+        Shapes should be tuples of non-negative integers.
+
+    Returns
+    -------
+    new_shape : tuple of integers
+        The shape that results from broadcasting th input shapes.
+    """
+    if not shapes:
+        return ()
+    shapes = [shp if isinstance(shp, (tuple, list)) else (shp,) for shp in shapes]
+    big_shp = max(shapes, key=len)
+    out = list(big_shp)
+    for shp in shapes:
+        if shp is big_shp:
+            continue
+        for i, x in enumerate(shp, start=-len(shp)):
+            if x != 1 and x != out[i]:
+                if out[i] != 1:
+                    raise ValueError("shapes cannot be broadcast to a single shape.")
+                out[i] = x
+    return (*out,)
 
 
 def check_reshape_kwargs(kwargs):

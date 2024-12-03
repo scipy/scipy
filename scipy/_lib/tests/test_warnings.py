@@ -115,6 +115,7 @@ def test_warning_calls_filters(warning_calls):
         os.path.join('optimize', '_nnls.py'),
         os.path.join('signal', '_ltisys.py'),
         os.path.join('sparse', '__init__.py'),  # np.matrix pending-deprecation
+        os.path.join('special', '_basic.py'),  # gh-21801
         os.path.join('stats', '_discrete_distns.py'),  # gh-14901
         os.path.join('stats', '_continuous_distns.py'),
         os.path.join('stats', '_binned_statistic.py'),  # gh-19345

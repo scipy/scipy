@@ -6,7 +6,7 @@ import numpy as np
 
 import scipy.sparse.linalg as ssl
 
-from .interpnd import _ndim_coords_from_arrays
+from ._interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator
 from ._rgi_cython import evaluate_linear_2d, find_indices
 from ._bsplines import make_interp_spline
