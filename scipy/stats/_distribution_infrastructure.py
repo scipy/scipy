@@ -1832,11 +1832,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
                      h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
         if np.all(a >= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
-        elif np.all(b <= 0):
-            out = MonotonicTransformedDistribution(self, **funcs, increasing=True)
+        # elif np.all(b <= 0):
+        #     out = MonotonicTransformedDistribution(self, **funcs, increasing=True)
         else:
             message = ("Division by a random variable is only implemented "
-                       "when the support is strictly positive.")
+                       "when the support is non-negative.")
             raise NotImplementedError(message)
         if np.all(other == 1):
             return out
@@ -4329,5 +4329,9 @@ def log(X):
     >>> plt.show()
 
     """
+    if np.any(X.support()[0] < 0):
+        message = ("The logarithm of a random variable is only implemented when the "
+                   "support is non-negative.")
+        raise NotImplementedError(message)
     return MonotonicTransformedDistribution(X, g=np.log, h=np.exp, dh=np.exp,
                                             logdh=lambda u: u)

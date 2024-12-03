@@ -1188,7 +1188,7 @@ class TestTransforms:
             #                 dist0.sample(x_result_shape, rng=rng0) * scale + loc)
             # Should also try to test fit, plot?
 
-
+    @pytest.mark.fail_slow(5)
     def test_exp(self):
         rng = np.random.default_rng(81345982345826)
         mu = rng.random((3, 1))
@@ -1223,10 +1223,9 @@ class TestTransforms:
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
 
-        X = _Uniform(a=1, b=2)
-        assert repr(stats.exp(X)) == str(stats.exp(X)) == "exp(_Uniform(a=1.0, b=2.0))"
-
-    def test_reciprocal(self):
+    @pytest.mark.fail_slow(5)
+    @pytest.mark.parametrize('scale', [1, 2])
+    def test_reciprocal(self, scale):
         rng = np.random.default_rng(81345982345826)
         a = rng.random((3, 1))
 
@@ -1234,8 +1233,8 @@ class TestTransforms:
         # Gamma = stats.make_distribution(stats.gamma)
         # but it produces warnings, and I already wrote `_Gamma`.
         X = _Gamma(a=a)
-        Y0 = stats.invgamma(a, scale=2)
-        Y = 2 / X
+        Y0 = stats.invgamma(a, scale=scale)
+        Y = scale / X
         y = Y0.rvs((3, 10), random_state=rng)
         p = Y0.cdf(y)
 
@@ -1256,11 +1255,9 @@ class TestTransforms:
             assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
             assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
         seed = 3984593485
-        assert_allclose(Y.sample(rng=seed), 2/(X.sample(rng=seed)))
+        assert_allclose(Y.sample(rng=seed), scale/(X.sample(rng=seed)))
 
-        X = _Uniform(a=1, b=2)
-        assert repr(1 / X) == str(1 / X) == "inv(_Uniform(a=1.0, b=2.0))"
-
+    @pytest.mark.fail_slow(5)
     def test_log(self):
         rng = np.random.default_rng(81345982345826)
         a = rng.random((3, 1))
@@ -1294,8 +1291,21 @@ class TestTransforms:
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), np.log(X.sample(rng=seed)))
 
+    def test_monotonic_transforms(self):
+        # Some tests of monotonic transforms that are better to be grouped or
+        # don't fit well above
         X = _Uniform(a=1, b=2)
         assert repr(stats.log(X)) == str(stats.log(X)) == "log(_Uniform(a=1.0, b=2.0))"
+        assert repr(1 / X) == str(1 / X) == "inv(_Uniform(a=1.0, b=2.0))"
+        assert repr(stats.exp(X)) == str(stats.exp(X)) == "exp(_Uniform(a=1.0, b=2.0))"
+
+        X = _Uniform(a=-1, b=2)
+        message = "Division by a random variable is only implemented when the..."
+        with pytest.raises(NotImplementedError, match=message):
+            1 / X
+        message = "The logarithm of a random variable is only implemented when the..."
+        with pytest.raises(NotImplementedError, match=message):
+            stats.log(X)
 
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
