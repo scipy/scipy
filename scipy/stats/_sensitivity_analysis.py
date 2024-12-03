@@ -664,9 +664,9 @@ def sobol_indices(
             "should have a shape ``(d, s, n)``."
         )
         try:
-            f_A, f_B, f_AB = np.atleast_2d(
+            f_A, f_B, f_AB = map(lambda arr: arr.copy(), np.atleast_2d(
                 func['f_A'], func['f_B'], func['f_AB']
-            )
+            ))
         except KeyError as exc:
             raise ValueError(message) from exc
 
