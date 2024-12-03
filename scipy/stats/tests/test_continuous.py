@@ -1223,37 +1223,46 @@ class TestTransforms:
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
 
-    @pytest.mark.fail_slow(5)
-    @pytest.mark.parametrize('scale', [1, 2])
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.parametrize('scale', [1, 2, -1])
     def test_reciprocal(self, scale):
         rng = np.random.default_rng(81345982345826)
         a = rng.random((3, 1))
 
-        # This works:
-        # Gamma = stats.make_distribution(stats.gamma)
-        # but it produces warnings, and I already wrote `_Gamma`.
-        X = _Gamma(a=a)
-        Y0 = stats.invgamma(a, scale=scale)
+        # Separate sign from scale. It's easy to scale the resulting
+        # RV with negative scale; we want to test the ability to divide
+        # by a RV with negative support
+        sign, scale = np.sign(scale), abs(scale)
+
+        # Reference distribution
+        InvGamma = stats.make_distribution(stats.invgamma)
+        Y0 = sign * scale * InvGamma(a=a)
+
+        # Test distribution
+        X = _Gamma(a=a) if sign > 0 else -_Gamma(a=a)
         Y = scale / X
-        y = Y0.rvs((3, 10), random_state=rng)
+
+        y = Y0.sample(shape=(3, 10), rng=rng)
         p = Y0.cdf(y)
+        logp = np.log(p)
 
         assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
         assert_allclose(Y.entropy(), Y0.entropy())
-        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.median(), Y0.median())
         # moments are not finite
         assert_allclose(Y.support(), Y0.support())
         assert_allclose(Y.pdf(y), Y0.pdf(y))
         assert_allclose(Y.cdf(y), Y0.cdf(y))
-        assert_allclose(Y.ccdf(y), Y0.sf(y))
-        assert_allclose(Y.icdf(p), Y0.ppf(p))
-        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.ccdf(y), Y0.ccdf(y))
+        assert_allclose(Y.icdf(p), Y0.icdf(p))
+        assert_allclose(Y.iccdf(p), Y0.iccdf(p))
         assert_allclose(Y.logpdf(y), Y0.logpdf(y))
         assert_allclose(Y.logcdf(y), Y0.logcdf(y))
-        assert_allclose(Y.logccdf(y), Y0.logsf(y))
-        with np.errstate(invalid='ignore'):
-            assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
-            assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        assert_allclose(Y.logccdf(y), Y0.logccdf(y))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            assert_allclose(Y.ilogcdf(logp), Y0.ilogcdf(logp))
+            assert_allclose(Y.ilogccdf(logp), Y0.ilogccdf(logp))
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), scale/(X.sample(rng=seed)))
 

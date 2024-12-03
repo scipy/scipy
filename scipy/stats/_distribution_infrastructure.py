@@ -1830,13 +1830,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
         a, b = self.support()
         funcs = dict(g=lambda u: 1 / u, g_name='inv',
                      h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
-        if np.all(a >= 0):
+        if np.all(a >= 0) or np.all(b <= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
-        # elif np.all(b <= 0):
-        #     out = MonotonicTransformedDistribution(self, **funcs, increasing=True)
         else:
             message = ("Division by a random variable is only implemented "
-                       "when the support is non-negative.")
+                       "when the support is either non-negative or non-positive.")
             raise NotImplementedError(message)
         if np.all(other == 1):
             return out
@@ -3803,10 +3801,10 @@ class ShiftedScaledDistribution(TransformedDistribution):
             order, raw_moments, loc, self._zero)
 
     def _sample_dispatch(self, sample_shape, full_shape, *,
-                         method, rng, **params):
+                         rng, loc, scale, sign, method, **params):
         rvs = self._dist._sample_dispatch(
             sample_shape, full_shape, method=method, rng=rng, **params)
-        return self._itransform(rvs, **params)
+        return self._itransform(rvs, loc=loc, scale=scale, sign=sign, **params)
 
     def __add__(self, loc):
         return ShiftedScaledDistribution(self._dist, loc=self.loc + loc,
@@ -4199,6 +4197,8 @@ class MonotonicTransformedDistribution(TransformedDistribution):
 
     def _support(self, **params):
         a, b = self._dist._support(**params)
+        # For reciprocal transformation, we want this zero to become -inf
+        b = np.where(b==0, np.asarray("-0", dtype=b.dtype), b)
         with np.errstate(divide='ignore'):
             if self._increasing:
                 return self._g(a), self._g(b)
