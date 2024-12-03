@@ -256,10 +256,10 @@ def test_ellip_harm():
             point_ref.append(func(h2[i], k2[i], s[i]))
         return point_ref
 
-    np.random.seed(1234)
-    h2 = np.random.pareto(0.5, size=30)
-    k2 = h2*(1 + np.random.pareto(0.5, size=h2.size))
-    s = np.random.pareto(0.5, size=h2.size)
+    rng = np.random.RandomState(1234)
+    h2 = rng.pareto(0.5, size=30)
+    k2 = h2*(1 + rng.pareto(0.5, size=h2.size))
+    s = rng.pareto(0.5, size=h2.size)
     points = []
     for i in range(h2.size):
         for n in range(4):
