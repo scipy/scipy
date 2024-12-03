@@ -29,7 +29,6 @@ from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import check_random_state
 from scipy import stats
 
 
