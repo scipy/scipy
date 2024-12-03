@@ -4282,6 +4282,7 @@ def test_legacy():
         assert_equal(special.smirnovi(1, 0.3), special.smirnovi(1.8, 0.3))
 
 
+# This lock can be removed once errstate is made thread-safe (see gh-21956)
 @pytest.fixture
 def errstate_lock():
     import threading
