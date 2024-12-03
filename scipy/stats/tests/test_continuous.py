@@ -18,7 +18,8 @@ from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
     _generate_domain_support, Mixture)
-from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
+from scipy.stats._new_distributions import (StandardNormal, Normal, _LogUniform,
+                                            _Uniform, _Gamma)
 
 
 class Test_RealDomain:
@@ -1222,6 +1223,36 @@ class TestTransforms:
         seed = 3984593485
         assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
 
+    def test_reciprocal(self):
+        rng = np.random.default_rng(81345982345826)
+        a = rng.random((3, 1))
+
+        X = _Gamma(a=a)
+        Y0 = stats.invgamma(a)
+        Y = 1 / X
+        assert_allclose(Y.entropy(), Y0.entropy())
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        # moments are not finite
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        with np.errstate(invalid='ignore'):
+            assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+            assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), 1/(X.sample(rng=seed)))
 
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
