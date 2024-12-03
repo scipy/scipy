@@ -1827,8 +1827,20 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return self.__mul__(other)
 
     def __rtruediv__(self, other):
-        return MonotonicTransformedDistribution(self, g=lambda u: 1 / u, h=lambda u: 1 / u,
-                                                dh=lambda u: 1 / u ** 2, increasing=False)
+        a, b = self.support()
+        funcs = dict(g=lambda u: 1 / u, h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
+        if np.all(a >= 0):
+            out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
+        elif np.all(b <= 0):
+            out = MonotonicTransformedDistribution(self, **funcs, increasing=True)
+        else:
+            message = ("Division by a random variable is only implemented "
+                       "when the support is strictly positive.")
+            raise NotImplementedError(message)
+        if np.all(other == 1):
+            return out
+        else:
+            return out * other
 
     def __neg__(self):
         return self * -1

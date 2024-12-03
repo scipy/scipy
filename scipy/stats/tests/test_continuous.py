@@ -1227,9 +1227,12 @@ class TestTransforms:
         rng = np.random.default_rng(81345982345826)
         a = rng.random((3, 1))
 
+        # This works:
+        # Gamma = stats.make_distribution(stats.gamma)
+        # but it produces warnings, and I already wrote `_Gamma`.
         X = _Gamma(a=a)
-        Y0 = stats.invgamma(a)
-        Y = 1 / X
+        Y0 = stats.invgamma(a, scale=2)
+        Y = 2 / X
         assert_allclose(Y.entropy(), Y0.entropy())
 
         y = Y0.rvs((3, 10), random_state=rng)
@@ -1252,7 +1255,7 @@ class TestTransforms:
             assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
             assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
         seed = 3984593485
-        assert_allclose(Y.sample(rng=seed), 1/(X.sample(rng=seed)))
+        assert_allclose(Y.sample(rng=seed), 2/(X.sample(rng=seed)))
 
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
