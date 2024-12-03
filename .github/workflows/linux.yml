@@ -260,7 +260,7 @@ jobs:
 
       - name: Setup Python build deps
         run: |
-          pip install build meson-python ninja pythran pybind11 cython "numpy>=2.0.0b1"
+          pip install build meson-python ninja pythran pybind11 cython numpy
           pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
 
       - name: Build wheel and install

@@ -15,13 +15,13 @@ from numpy.testing import (
 from numpy import array, arange
 import numpy as np
 
-from scipy.fft import fft
+from scipy import fft as sp_fft
 from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
     correlate, correlate2d, correlation_lags, convolve, convolve2d,
-    fftconvolve, oaconvolve, choose_conv_method,
+    fftconvolve, oaconvolve, choose_conv_method, envelope,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
@@ -31,6 +31,7 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
+from scipy._lib._array_api import xp_assert_close
 from scipy._lib._util import ComplexWarning, np_long, np_ulong
 
 
@@ -1255,7 +1256,7 @@ class TestResample:
     def test_input_domain(self):
         # Test if both input domain modes produce the same results.
         tsig = np.arange(256) + 0j
-        fsig = fft(tsig)
+        fsig = sp_fft.fft(tsig)
         num = 256
         assert_allclose(
             signal.resample(fsig, num, domain='freq'),
@@ -2863,6 +2864,190 @@ class TestHilbert2:
     def test_hilbert2_types(self, dtype):
         in_typed = np.zeros((2, 32), dtype=dtype)
         assert_equal(np.real(signal.hilbert2(in_typed)).dtype, dtype)
+
+
+class TestEnvelope:
+    """Unit tests for function `._signaltools.envelope()`. """
+
+    @staticmethod
+    def assert_close(actual, desired, msg):
+        """Little helper to compare to arrays with proper tolerances"""
+        xp_assert_close(actual, desired, atol=1e-12, rtol=1e-12, err_msg=msg)
+
+    def test_envelope_invalid_parameters(self):
+        """For `envelope()` Raise all exceptions that are used to verify function
+        parameters. """
+        with pytest.raises(ValueError,
+                           match=r"Invalid parameter axis=2 for z.shape=.*"):
+            envelope(np.ones(3), axis=2)
+        with pytest.raises(ValueError,
+                           match=r"z.shape\[axis\] not > 0 for z.shape=.*"):
+            envelope(np.ones((3, 0)), axis=1)
+        for bp_in in [(0, 1, 2), (0, 2.), (None, 2.)]:
+            ts = ', '.join(map(str, bp_in))
+            with pytest.raises(ValueError,
+                               match=rf"bp_in=\({ts}\) isn't a 2-tuple of.*"):
+                # noinspection PyTypeChecker
+                envelope(np.ones(4), bp_in=bp_in)
+        with pytest.raises(ValueError,
+                           match="n_out=10.0 is not a positive integer or.*"):
+            # noinspection PyTypeChecker
+            envelope(np.ones(4), n_out=10.)
+        for bp_in in [(-1, 3), (1, 1), (0, 10)]:
+            with pytest.raises(ValueError,
+                               match=r"`-n//2 <= bp_in\[0\] < bp_in\[1\] <=.*"):
+                envelope(np.ones(4), bp_in=bp_in)
+        with pytest.raises(ValueError, match="residual='undefined' not in .*"):
+            # noinspection PyTypeChecker
+            envelope(np.ones(4), residual='undefined')
+
+    def test_envelope_verify_parameters(self):
+        """Ensure that the various parametrizations produce compatible results. """
+        Z, Zr_a = [4, 2, 2, 3, 0], [4, 0, 0, 6, 0, 0, 0, 0]
+        z = sp_fft.irfft(Z)
+        n = len(z)
+
+        # the reference envelope:
+        ze2_0, zr_0 = envelope(z, (1, 3), residual='all', squared=True)
+        self.assert_close(sp_fft.rfft(ze2_0), np.array([4, 2, 0, 0, 0]).astype(complex),
+                          msg="Envelope calculation error")
+        self.assert_close(sp_fft.rfft(zr_0), np.array([4, 0, 0, 3, 0]).astype(complex),
+                          msg="Residual calculation error")
+
+        ze_1, zr_1 = envelope(z, (1, 3), residual='all', squared=False)
+        self.assert_close(ze_1**2, ze2_0,
+                          msg="Unsquared versus Squared envelope calculation error")
+        self.assert_close(zr_1, zr_0,
+                          msg="Unsquared versus Squared residual calculation error")
+
+        ze2_2, zr_2 = envelope(z, (1, 3), residual='all', squared=True, n_out=3*n)
+        self.assert_close(ze2_2[::3], ze2_0,
+                          msg="3x up-sampled envelope calculation error")
+        self.assert_close(zr_2[::3], zr_0,
+                          msg="3x up-sampled residual calculation error")
+
+        ze2_3, zr_3 = envelope(z, (1, 3), residual='lowpass', squared=True)
+        self.assert_close(ze2_3, ze2_0,
+                          msg="`residual='lowpass'` envelope calculation error")
+        self.assert_close(sp_fft.rfft(zr_3), np.array([4, 0, 0, 0, 0]).astype(complex),
+                          msg="`residual='lowpass'` residual calculation error")
+
+        ze2_4 = envelope(z, (1, 3), residual=None, squared=True)
+        self.assert_close(ze2_4, ze2_0,
+                          msg="`residual=None` envelope calculation error")
+
+        # compare complex analytic signal to real version
+        Z_a = np.copy(Z)
+        Z_a[1:] *= 2
+        z_a = sp_fft.ifft(Z_a, n=n)  # analytic signal of Z
+        self.assert_close(z_a.real, z,
+                          msg="Reference analytic signal error")
+        ze2_a, zr_a = envelope(z_a, (1, 3), residual='all', squared=True)
+        self.assert_close(ze2_a, ze2_0.astype(complex),  # dtypes must match
+                          msg="Complex envelope calculation error")
+        self.assert_close(sp_fft.fft(zr_a), np.array(Zr_a).astype(complex),
+                          msg="Complex residual calculation error")
+
+    @pytest.mark.parametrize(
+        "               Z,        bp_in,     Ze2_desired,      Zr_desired",
+        [([1, 0, 2, 2, 0],    (1, None), [4, 2, 0, 0, 0], [1, 0, 0, 0, 0]),
+         ([4, 0, 2, 0, 0],    (0, None), [4, 0, 2, 0, 0], [0, 0, 0, 0, 0]),
+         ([4, 0, 0, 2, 0], (None, None), [4, 0, 0, 2, 0], [0, 0, 0, 0, 0]),
+         ([0, 0, 2, 2, 0],       (1, 3), [2, 0, 0, 0, 0], [0, 0, 0, 2, 0]),
+         ([4, 0, 2, 2, 0],      (-3, 3), [4, 0, 2, 0, 0], [0, 0, 0, 2, 0]),
+         ([4, 0, 3, 4, 0],    (None, 1), [2, 0, 0, 0, 0], [0, 0, 3, 4, 0]),
+         ([4, 0, 3, 4, 0],    (None, 0), [0, 0, 0, 0, 0], [4, 0, 3, 4, 0])])
+    def test_envelope_real_signals(self, Z, bp_in, Ze2_desired, Zr_desired):
+        """Test envelope calculation with real-valued test signals.
+
+        The comparisons are performed in the Fourier space, since it makes evaluating
+        the bandpass filter behavior straightforward. Note that also the squared
+        envelope can be easily calculated by hand, if one recalls that coefficients of
+        a complex-valued Fourier series representing the signal can be directly
+        determined by an FFT and that the absolute square of a Fourier series is again
+        a Fourier series.
+        """
+        z = sp_fft.irfft(Z)
+        ze2, zr = envelope(z, bp_in, residual='all', squared=True)
+        ze2_lp, zr_lp = envelope(z, bp_in, residual='lowpass', squared=True)
+        Ze2, Zr, Ze2_lp, Zr_lp = (sp_fft.rfft(z_) for z_ in (ze2, zr, ze2_lp, zr_lp))
+
+        Ze2_desired = np.array(Ze2_desired).astype(complex)
+        Zr_desired = np.array(Zr_desired).astype(complex)
+        self.assert_close(Ze2, Ze2_desired,
+                          msg="Envelope calculation error (residual='all')")
+        self.assert_close(Zr, Zr_desired,
+                          msg="Residual calculation error (residual='all')")
+
+        if bp_in[1] is not None:
+            Zr_desired[bp_in[1]:] = 0
+        self.assert_close(Ze2_lp, Ze2_desired,
+                          msg="Envelope calculation error (residual='lowpass')")
+        self.assert_close(Zr_lp, Zr_desired,
+                          msg="Residual calculation error (residual='lowpass')")
+
+    @pytest.mark.parametrize(
+        "               Z,        bp_in,         Ze2_desired,         Zr_desired",
+        [([0, 5, 0, 5, 0], (None, None),    [5, 0, 10, 0, 5],    [0, 0, 0, 0, 0]),
+         ([1, 5, 0, 5, 2],      (-1, 2),    [5, 0, 10, 0, 5],    [1, 0, 0, 0, 2]),
+         ([1, 2, 6, 0, 6, 3],   (-1, 2), [0, 6, 0, 12, 0, 6], [1, 2, 0, 0, 0, 3])
+         ])
+    def test_envelope_complex_signals(self, Z, bp_in, Ze2_desired, Zr_desired):
+        """Test envelope calculation with complex-valued test signals.
+
+        We only need to test for the complex envelope here, since the ``Nones``s in the
+        bandpass filter were already tested in the previous test.
+        """
+        z = sp_fft.ifft(sp_fft.ifftshift(Z))
+        ze2, zr = envelope(z, bp_in, residual='all', squared=True)
+        Ze2, Zr = (sp_fft.fftshift(sp_fft.fft(z_)) for z_ in (ze2, zr))
+
+        self.assert_close(Ze2, np.array(Ze2_desired).astype(complex),
+                          msg="Envelope calculation error")
+        self.assert_close(Zr, np.array(Zr_desired).astype(complex),
+                          msg="Residual calculation error")
+
+    def test_envelope_verify_axis_parameter(self):
+        """Test for multi-channel envelope calculations. """
+        z = sp_fft.irfft([[1, 0, 2, 2, 0], [7, 0, 4, 4, 0]])
+        Ze2_desired = np.array([[4, 2, 0, 0, 0], [16, 8, 0, 0, 0]],
+                               dtype=complex)
+        Zr_desired = np.array([[1, 0, 0, 0, 0], [7, 0, 0, 0, 0]], dtype=complex)
+
+        ze2, zr = envelope(z, squared=True, axis=1)
+        ye2T, yrT = envelope(z.T, squared=True, axis=0)
+        Ze2, Ye2, Zr, Yr = (sp_fft.rfft(z_) for z_ in (ze2, ye2T.T, zr, yrT.T))
+
+        self.assert_close(Ze2, Ze2_desired, msg="2d envelope calculation error")
+        self.assert_close(Zr, Zr_desired,  msg="2d residual calculation error")
+        self.assert_close(Ye2, Ze2_desired, msg="Transposed 2d envelope calc. error")
+        self.assert_close(Yr, Zr_desired, msg="Transposed 2d residual calc. error")
+
+    def test_envelope_verify_axis_parameter_complex(self):
+        """Test for multi-channel envelope calculations with complex values. """
+        z = sp_fft.ifft(sp_fft.ifftshift([[1, 5, 0, 5, 2], [1, 10, 0, 10, 2]], axes=1))
+        Ze2_des = np.array([[5, 0, 10, 0, 5], [20, 0, 40, 0, 20],],
+                           dtype=complex)
+        Zr_des = np.array([[1, 0, 0, 0, 2], [1, 0, 0, 0, 2]], dtype=complex)
+
+        kw = dict(bp_in=(-1, 2), residual='all', squared=True)
+        ze2, zr = envelope(z, axis=1, **kw)
+        ye2T, yrT = envelope(z.T, axis=0, **kw)
+        Ze2, Ye2, Zr, Yr = (sp_fft.fftshift(sp_fft.fft(z_), axes=1)
+                            for z_ in (ze2, ye2T.T, zr, yrT.T))
+
+        self.assert_close(Ze2, Ze2_des, msg="2d envelope calculation error")
+        self.assert_close(Zr, Zr_des, msg="2d residual calculation error")
+        self.assert_close(Ye2, Ze2_des,  msg="Transposed 2d envelope calc. error")
+        self.assert_close(Yr, Zr_des,  msg="Transposed 2d residual calc. error")
+
+    @pytest.mark.parametrize('X', [[4, 0, 0, 1, 2], [4, 0, 0, 2, 1, 2]])
+    def test_compare_envelope_hilbert(self, X):
+        """Compare output of `envelope()` and `hilbert()`. """
+        x = sp_fft.irfft(X)
+        e_hil = np.abs(hilbert(x))
+        e_env = envelope(x, (None, None), residual=None)
+        self.assert_close(e_hil, e_env, msg="Hilbert-Envelope comparison error")
 
 
 class TestPartialFractionExpansion:

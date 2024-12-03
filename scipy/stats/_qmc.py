@@ -1,6 +1,4 @@
 """Quasi-Monte Carlo engines and helpers."""
-from __future__ import annotations
-
 import copy
 import math
 import numbers
@@ -18,12 +16,11 @@ from collections.abc import Callable
 
 import numpy as np
 
+from scipy._lib._util import DecimalNumber, GeneratorType, IntNumber, SeedType
+
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from scipy._lib._util import (
-        DecimalNumber, GeneratorType, IntNumber, SeedType
-    )
-
+    
 import scipy.stats as stats
 from scipy._lib._util import rng_integers, _rng_spawn, _transition_to_rng
 from scipy.sparse.csgraph import minimum_spanning_tree
@@ -89,9 +86,9 @@ def check_random_state(seed=None):
 
 
 def scale(
-    sample: npt.ArrayLike,
-    l_bounds: npt.ArrayLike,
-    u_bounds: npt.ArrayLike,
+    sample: "npt.ArrayLike",
+    l_bounds: "npt.ArrayLike",
+    u_bounds: "npt.ArrayLike",
     *,
     reverse: bool = False
 ) -> np.ndarray:
@@ -171,7 +168,7 @@ def scale(
         return (sample - lower) / (upper - lower)
 
 
-def _ensure_in_unit_hypercube(sample: npt.ArrayLike) -> np.ndarray:
+def _ensure_in_unit_hypercube(sample: "npt.ArrayLike") -> np.ndarray:
     """Ensure that sample is a 2D array and is within a unit hypercube
 
     Parameters
@@ -202,7 +199,7 @@ def _ensure_in_unit_hypercube(sample: npt.ArrayLike) -> np.ndarray:
 
 
 def discrepancy(
-        sample: npt.ArrayLike,
+        sample: "npt.ArrayLike",
         *,
         iterative: bool = False,
         method: Literal["CD", "WD", "MD", "L2-star"] = "CD",
@@ -337,7 +334,7 @@ def discrepancy(
 
 
 def geometric_discrepancy(
-        sample: npt.ArrayLike,
+        sample: "npt.ArrayLike",
         method: Literal["mindist", "mst"] = "mindist",
         metric: str = "euclidean") -> float:
     """Discrepancy of a given sample based on its geometric properties.
@@ -462,8 +459,8 @@ def geometric_discrepancy(
 
 
 def update_discrepancy(
-        x_new: npt.ArrayLike,
-        sample: npt.ArrayLike,
+        x_new: "npt.ArrayLike",
+        sample: "npt.ArrayLike",
         initial_disc: DecimalNumber) -> float:
     """Update the centered discrepancy with a new sample.
 
@@ -736,7 +733,7 @@ def van_der_corput(
         *,
         start_index: IntNumber = 0,
         scramble: bool = False,
-        permutations: npt.ArrayLike | None = None,
+        permutations: "npt.ArrayLike | None" = None,
         rng: SeedType = None,
         workers: IntNumber = 1) -> np.ndarray:
     """Van der Corput sequence.
@@ -1001,9 +998,9 @@ class QMCEngine(ABC):
 
     def integers(
         self,
-        l_bounds: npt.ArrayLike,
+        l_bounds: "npt.ArrayLike",
         *,
-        u_bounds: npt.ArrayLike | None = None,
+        u_bounds: "npt.ArrayLike | None" = None,
         n: IntNumber = 1,
         endpoint: bool = False,
         workers: IntNumber = 1
@@ -1081,7 +1078,7 @@ class QMCEngine(ABC):
 
         return sample
 
-    def reset(self) -> QMCEngine:
+    def reset(self) -> "QMCEngine":
         """Reset the engine to base state.
 
         Returns
@@ -1095,7 +1092,7 @@ class QMCEngine(ABC):
         self.num_generated = 0
         return self
 
-    def fast_forward(self, n: IntNumber) -> QMCEngine:
+    def fast_forward(self, n: IntNumber) -> "QMCEngine":
         """Fast-forward the sequence by `n` positions.
 
         Parameters
@@ -1912,7 +1909,7 @@ class Sobol(QMCEngine):
 
         return self.random(n)
 
-    def reset(self) -> Sobol:
+    def reset(self) -> "Sobol":
         """Reset the engine to base state.
 
         Returns
@@ -1925,7 +1922,7 @@ class Sobol(QMCEngine):
         self._quasi = self._shift.copy()
         return self
 
-    def fast_forward(self, n: IntNumber) -> Sobol:
+    def fast_forward(self, n: IntNumber) -> "Sobol":
         """Fast-forward the sequence by `n` positions.
 
         Parameters
@@ -2089,8 +2086,8 @@ class PoissonDisk(QMCEngine):
         ncandidates: IntNumber = 30,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         rng: SeedType = None,
-        l_bounds: npt.ArrayLike | None = None,
-        u_bounds: npt.ArrayLike | None = None
+        l_bounds: "npt.ArrayLike | None" = None,
+        u_bounds: "npt.ArrayLike | None" = None,
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'radius': radius,
@@ -2266,7 +2263,7 @@ class PoissonDisk(QMCEngine):
         """
         return self.random(np.inf)  # type: ignore[arg-type]
 
-    def reset(self) -> PoissonDisk:
+    def reset(self) -> "PoissonDisk":
         """Reset the engine to base state.
 
         Returns
@@ -2351,11 +2348,14 @@ class MultivariateNormalQMC:
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-            self, mean: npt.ArrayLike, cov: npt.ArrayLike | None = None, *,
-            cov_root: npt.ArrayLike | None = None,
+            self,
+            mean: "npt.ArrayLike",
+            cov: "npt.ArrayLike | None" = None,
+            *,
+            cov_root: "npt.ArrayLike | None" = None,
             inv_transform: bool = True,
             engine: QMCEngine | None = None,
-            rng: SeedType = None
+            rng: SeedType = None,
     ) -> None:
         mean = np.asarray(np.atleast_1d(mean))
         d = mean.shape[0]
@@ -2396,8 +2396,12 @@ class MultivariateNormalQMC:
         else:
             engine_dim = d
         if engine is None:
+            # Need this during SPEC 7 transition to prevent `RandomState`
+            # from being passed via `rng`.
+            kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
+            kwargs = {kwarg: rng}
             self.engine = Sobol(
-                d=engine_dim, scramble=True, bits=30, rng=rng
+                d=engine_dim, scramble=True, bits=30, **kwargs
             )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != engine_dim:
@@ -2528,9 +2532,12 @@ class MultinomialQMC:
 
     @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, pvals: npt.ArrayLike, n_trials: IntNumber,
-        *, engine: QMCEngine | None = None,
-        rng: SeedType = None
+        self,
+        pvals: "npt.ArrayLike",
+        n_trials: IntNumber,
+        *,
+        engine: QMCEngine | None = None,
+        rng: SeedType = None,
     ) -> None:
         self.pvals = np.atleast_1d(np.asarray(pvals))
         if np.min(pvals) < 0:
@@ -2539,8 +2546,12 @@ class MultinomialQMC:
             raise ValueError('Elements of pvals must sum to 1.')
         self.n_trials = n_trials
         if engine is None:
+            # Need this during SPEC 7 transition to prevent `RandomState`
+            # from being passed via `rng`.
+            kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
+            kwargs = {kwarg: rng}
             self.engine = Sobol(
-                d=1, scramble=True, bits=30, rng=rng
+                d=1, scramble=True, bits=30, **kwargs
             )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != 1:
@@ -2727,7 +2738,7 @@ def _lloyd_iteration(
 
 
 def _lloyd_centroidal_voronoi_tessellation(
-    sample: npt.ArrayLike,
+    sample: "npt.ArrayLike",
     *,
     tol: DecimalNumber = 1e-5,
     maxiter: IntNumber = 10,
@@ -2907,8 +2918,8 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
 
 
 def _validate_bounds(
-    l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
-) -> tuple[np.ndarray, ...]:
+    l_bounds: "npt.ArrayLike", u_bounds: "npt.ArrayLike", d: int
+) -> "tuple[npt.NDArray[np.generic], npt.NDArray[np.generic]]":
     """Bounds input validation.
 
     Parameters
