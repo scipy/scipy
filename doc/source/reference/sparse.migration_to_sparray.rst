@@ -126,8 +126,6 @@ Recommended steps for migration
    -  If you use sparse libraries that only accept ``int32`` index arrays
       for sparse representations, we suggest using just-in-time conversion.
       Convert to ``int32`` just before you call the code that requires ``int32``.
-      The helper functions ``safely_cast_index_arrays(A, np.int32)``
-      and ``get_index_dtype(arrays, maxval, check_contents)`` can help with that.
    -  ``sparray`` selects index dtype based on the dtype of the input array instead
       of the values in the array. So if you want your index arrays to be ``int32``,
       you will need to ensure an ``int32`` dtype for each index array like ``indptr``
