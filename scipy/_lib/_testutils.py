@@ -284,6 +284,9 @@ def _test_cython_extension(tmp_path, srcdir):
     except FileNotFoundError:
         pytest.skip("No usable 'meson' found")
 
+    # Make safe for being called by multiple threads within one test
+    tmp_path = tmp_path / str(threading.get_ident())
+
     # build the examples in a temporary directory
     mod_name = os.path.split(srcdir)[1]
     shutil.copytree(srcdir, tmp_path / mod_name)

@@ -2,6 +2,7 @@
 
 import numpy as np
 from numpy.testing import assert_equal
+import pytest
 from pytest import raises as assert_raises
 from scipy.sparse import _sputils as sputils
 from scipy.sparse._sputils import matrix
@@ -170,6 +171,65 @@ class TestSparseUtils:
             np.dtype(sputils.get_index_dtype((a1, a2), maxval=too_big)),
             np.dtype('int64')
         )
+
+    # tests public broadcast_shapes largely from
+    # numpy/numpy/lib/tests/test_stride_tricks.py
+    # first 3 cause np.broadcast to raise index too large, but not sputils
+    @pytest.mark.parametrize("input_shapes,target_shape", [
+        [((6, 5, 1, 4, 1, 1), (1, 2**32), (2**32, 1)), (6, 5, 1, 4, 2**32, 2**32)],
+        [((6, 5, 1, 4, 1, 1), (1, 2**32)), (6, 5, 1, 4, 1, 2**32)],
+        [((1, 2**32), (2**32, 1)), (2**32, 2**32)],
+        [[2, 2, 2], (2,)],
+        [[], ()],
+        [[()], ()],
+        [[(7,)], (7,)],
+        [[(1, 2), (2,)], (1, 2)],
+        [[(2,), (1, 2)], (1, 2)],
+        [[(1, 1)], (1, 1)],
+        [[(1, 1), (3, 4)], (3, 4)],
+        [[(6, 7), (5, 6, 1), (7,), (5, 1, 7)], (5, 6, 7)],
+        [[(5, 6, 1)], (5, 6, 1)],
+        [[(1, 3), (3, 1)], (3, 3)],
+        [[(1, 0), (0, 0)], (0, 0)],
+        [[(0, 1), (0, 0)], (0, 0)],
+        [[(1, 0), (0, 1)], (0, 0)],
+        [[(1, 1), (0, 0)], (0, 0)],
+        [[(1, 1), (1, 0)], (1, 0)],
+        [[(1, 1), (0, 1)], (0, 1)],
+        [[(), (0,)], (0,)],
+        [[(0,), (0, 0)], (0, 0)],
+        [[(0,), (0, 1)], (0, 0)],
+        [[(1,), (0, 0)], (0, 0)],
+        [[(), (0, 0)], (0, 0)],
+        [[(1, 1), (0,)], (1, 0)],
+        [[(1,), (0, 1)], (0, 1)],
+        [[(1,), (1, 0)], (1, 0)],
+        [[(), (1, 0)], (1, 0)],
+        [[(), (0, 1)], (0, 1)],
+        [[(1,), (3,)], (3,)],
+        [[2, (3, 2)], (3, 2)],
+        [[(1, 2)] * 32, (1, 2)],
+        [[(1, 2)] * 100, (1, 2)],
+        [[(2,)] * 32, (2,)],
+    ])
+    def test_broadcast_shapes_successes(self, input_shapes, target_shape):
+        assert_equal(sputils.broadcast_shapes(*input_shapes), target_shape)
+
+    # tests public broadcast_shapes failures
+    @pytest.mark.parametrize("input_shapes", [
+        [(3,), (4,)],
+        [(2, 3), (2,)],
+        [2, (2, 3)],
+        [(3,), (3,), (4,)],
+        [(2, 5), (3, 5)],
+        [(2, 4), (2, 5)],
+        [(1, 3, 4), (2, 3, 3)],
+        [(1, 2), (3, 1), (3, 2), (10, 5)],
+        [(2,)] * 32 + [(3,)] * 32,
+    ])
+    def test_broadcast_shapes_failures(self, input_shapes):
+        with assert_raises(ValueError, match="cannot be broadcast"):
+            sputils.broadcast_shapes(*input_shapes)
 
     def test_check_shape_overflow(self):
         new_shape = sputils.check_shape([(10, -1)], (65535, 131070))

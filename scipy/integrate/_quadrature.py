@@ -1,5 +1,3 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 import numpy.typing as npt
 import math
@@ -136,11 +134,16 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
         d = dx
     else:
         x = _asarray(x, xp=xp, subok=True)
-        # reshape to correct shape
-        shape = [1] * y.ndim
-        shape[axis] = y.shape[axis]
-        x = xp.reshape(x, shape)
-        d = x[tuple(slice1)] - x[tuple(slice2)]
+        if x.ndim == 1:
+            d = x[1:] - x[:-1]
+            # make d broadcastable to y
+            slice3 = [None] * nd
+            slice3[axis] = slice(None)
+            d = d[tuple(slice3)]
+        else:
+            # if x is n-D it should be broadcastable to y
+            x = xp.broadcast_to(x, y.shape)
+            d = x[tuple(slice1)] - x[tuple(slice2)]
     try:
         ret = xp.sum(
             d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0,
@@ -157,22 +160,6 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     return ret
 
 
-if TYPE_CHECKING:
-    # workaround for mypy function attributes see:
-    # https://github.com/python/mypy/issues/2087#issuecomment-462726600
-    from typing import Protocol
-
-    class CacheAttributes(Protocol):
-        cache: dict[int, tuple[Any, Any]]
-else:
-    CacheAttributes = Callable
-
-
-def cache_decorator(func: Callable) -> CacheAttributes:
-    return cast(CacheAttributes, func)
-
-
-@cache_decorator
 def _cached_roots_legendre(n):
     """
     Cache roots_legendre results to speed up calls of the fixed_quad
@@ -391,7 +378,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     return result
 
 
-def simpson(y, *, x=None, dx=1.0, axis=-1):
+def simpson(y, x=None, *, dx=1.0, axis=-1):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.

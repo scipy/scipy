@@ -55,11 +55,11 @@ class TestChatterjeeXi:
         rng = np.random.default_rng(25932435798274926)
         x, y = rng.random(size=(2, 10))
 
-        message = 'shape mismatch: objects cannot be broadcast...'
+        message = 'Array shapes are incompatible for broadcasting.'
         with pytest.raises(ValueError, match=message):
             stats.chatterjeexi(x, y[:-1])
 
-        message = '`axis` is out of bounds for array...'
+        message = '...axis 10 is out of bounds for array...'
         with pytest.raises(ValueError, match=message):
             stats.chatterjeexi(x, y, axis=10)
 

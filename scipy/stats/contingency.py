@@ -410,7 +410,7 @@ def _chi2_monte_carlo_method(observed, expected, method):
                    'must be unspecified. Use the `MonteCarloMethod` `rng` argument '
                    'to control the random state.')
         raise ValueError(message)
-    rng = check_random_state(method.pop('rng', None))
+    rng = np.random.default_rng(method.pop('rng', None))
 
     # `random_table.rvs` produces random contingency tables with the given marginals
     # under the null hypothesis of independence

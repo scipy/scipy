@@ -85,7 +85,7 @@ def magic_square(n):
     (or absence) of an integer 1 to n^2 in each position of the square.
     """
 
-    np.random.seed(0)
+    rng = np.random.RandomState(0)
     M = n * (n**2 + 1) / 2
 
     numbers = np.arange(n**4) // n**2 + 1
@@ -139,7 +139,7 @@ def magic_square(n):
 
     A = np.array(np.vstack(A_list), dtype=float)
     b = np.array(b_list, dtype=float)
-    c = np.random.rand(A.shape[1])
+    c = rng.rand(A.shape[1])
 
     return A, b, c, numbers, M
 
@@ -149,8 +149,8 @@ def lpgen_2d(m, n):
         row sums == n/m, col sums == 1
         https://gist.github.com/denis-bz/8647461
     """
-    np.random.seed(0)
-    c = - np.random.exponential(size=(m, n))
+    rng = np.random.RandomState(0)
+    c = - rng.exponential(size=(m, n))
     Arow = np.zeros((m, m * n))
     brow = np.zeros(m)
     for j in range(m):
@@ -172,17 +172,17 @@ def lpgen_2d(m, n):
 
 
 def very_random_gen(seed=0):
-    np.random.seed(seed)
+    rng = np.random.RandomState(seed)
     m_eq, m_ub, n = 10, 20, 50
-    c = np.random.rand(n)-0.5
-    A_ub = np.random.rand(m_ub, n)-0.5
-    b_ub = np.random.rand(m_ub)-0.5
-    A_eq = np.random.rand(m_eq, n)-0.5
-    b_eq = np.random.rand(m_eq)-0.5
-    lb = -np.random.rand(n)
-    ub = np.random.rand(n)
-    lb[lb < -np.random.rand()] = -np.inf
-    ub[ub > np.random.rand()] = np.inf
+    c = rng.rand(n)-0.5
+    A_ub = rng.rand(m_ub, n)-0.5
+    b_ub = rng.rand(m_ub)-0.5
+    A_eq = rng.rand(m_eq, n)-0.5
+    b_eq = rng.rand(m_eq)-0.5
+    lb = -rng.rand(n)
+    ub = rng.rand(n)
+    lb[lb < -rng.rand()] = -np.inf
+    ub[ub > rng.rand()] = np.inf
     bounds = np.vstack((lb, ub)).T
     return c, A_ub, b_ub, A_eq, b_eq, bounds
 
@@ -211,11 +211,11 @@ def l1_regression_prob(seed=0, m=8, d=9, n=100):
     phi: feature map R^d -> R^m
     m: dimension of feature space
     '''
-    np.random.seed(seed)
-    phi = np.random.normal(0, 1, size=(m, d))  # random feature mapping
-    w_true = np.random.randn(m)
-    x = np.random.normal(0, 1, size=(d, n))  # features
-    y = w_true @ (phi @ x) + np.random.normal(0, 1e-5, size=n)  # measurements
+    rng = np.random.RandomState(seed)
+    phi = rng.normal(0, 1, size=(m, d))  # random feature mapping
+    w_true = rng.randn(m)
+    x = rng.normal(0, 1, size=(d, n))  # features
+    y = w_true @ (phi @ x) + rng.normal(0, 1e-5, size=n)  # measurements
 
     # construct the problem
     c = np.ones(m+n)
@@ -267,6 +267,7 @@ def generic_callback_test(self):
     assert_allclose(last_cb['slack'], res['slack'])
 
 
+@pytest.mark.thread_unsafe
 def test_unknown_solvers_and_options():
     c = np.array([-3, -2])
     A_ub = [[2, 1], [1, 1], [1, 0]]
@@ -292,6 +293,7 @@ def test_choose_solver():
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
 
+@pytest.mark.thread_unsafe
 def test_deprecation():
     with pytest.warns(DeprecationWarning):
         linprog(1, method='interior-point')
@@ -444,6 +446,7 @@ class LinprogCommonTests:
                       method=self.method, options=self.options)
         _assert_success(res, desired_fun=2, desired_x=[2])
 
+    @pytest.mark.thread_unsafe
     def test_unknown_options(self):
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
@@ -460,6 +463,7 @@ class LinprogCommonTests:
         assert_warns(OptimizeWarning, f,
                      c, A_ub=A_ub, b_ub=b_ub, options=o)
 
+    @pytest.mark.thread_unsafe
     def test_integrality_without_highs(self):
         # ensure that using `integrality` parameter without `method='highs'`
         # raises warning and produces correct solution to relaxed problem
@@ -512,14 +516,14 @@ class LinprogCommonTests:
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=self.options)
 
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         m = 100
         n = 150
         A_eq = scipy.sparse.rand(m, n, 0.5)
-        x_valid = np.random.randn(n)
-        c = np.random.randn(n)
-        ub = x_valid + np.random.rand(n)
-        lb = x_valid - np.random.rand(n)
+        x_valid = rng.randn(n)
+        c = rng.randn(n)
+        ub = x_valid + rng.rand(n)
+        lb = x_valid - rng.rand(n)
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq @ x_valid
 
@@ -609,6 +613,7 @@ class LinprogCommonTests:
         if do_presolve:
             assert_equal(res.nit, 0)
 
+    @pytest.mark.thread_unsafe
     def test_bounds_infeasible_2(self):
 
         # Test ill-valued bounds (lower inf, upper -inf)
@@ -805,12 +810,12 @@ class LinprogCommonTests:
 
     def test_zero_column_1(self):
         m, n = 3, 4
-        np.random.seed(0)
-        c = np.random.rand(n)
+        rng = np.random.RandomState(0)
+        c = rng.rand(n)
         c[1] = 1
-        A_eq = np.random.rand(m, n)
+        A_eq = rng.rand(m, n)
         A_eq[:, 1] = 0
-        b_eq = np.random.rand(m)
+        b_eq = rng.rand(m)
         A_ub = [[1, 0, 1, 1]]
         b_ub = 3
         bounds = [(-10, 10), (-10, 10), (-10, None), (None, None)]
@@ -823,17 +828,17 @@ class LinprogCommonTests:
             # See upstream issue https://github.com/ERGO-Code/HiGHS/issues/648
             pytest.xfail()
 
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         m, n = 2, 4
-        c = np.random.rand(n)
+        c = rng.rand(n)
         c[1] = -1
-        A_eq = np.random.rand(m, n)
+        A_eq = rng.rand(m, n)
         A_eq[:, 1] = 0
-        b_eq = np.random.rand(m)
+        b_eq = rng.rand(m)
 
-        A_ub = np.random.rand(m, n)
+        A_ub = rng.rand(m, n)
         A_ub[:, 1] = 0
-        b_ub = np.random.rand(m)
+        b_ub = rng.rand(m)
         bounds = (None, None)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
@@ -863,10 +868,11 @@ class LinprogCommonTests:
 
     def test_zero_row_3(self):
         m, n = 2, 4
-        c = np.random.rand(n)
-        A_eq = np.random.rand(m, n)
+        rng = np.random.RandomState(1234)
+        c = rng.rand(n)
+        A_eq = rng.rand(m, n)
         A_eq[0, :] = 0
-        b_eq = np.random.rand(m)
+        b_eq = rng.rand(m)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
@@ -877,10 +883,11 @@ class LinprogCommonTests:
 
     def test_zero_row_4(self):
         m, n = 2, 4
-        c = np.random.rand(n)
-        A_ub = np.random.rand(m, n)
+        rng = np.random.RandomState(1234)
+        c = rng.rand(n)
+        A_ub = rng.rand(m, n)
         A_ub[0, :] = 0
-        b_ub = -np.random.rand(m)
+        b_ub = -rng.rand(m)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
@@ -1062,9 +1069,10 @@ class LinprogCommonTests:
         # mostly a test of redundancy removal, which is carefully tested in
         # test__remove_redundancy.py
         m, n = 10, 10
-        c = np.random.rand(n)
-        A_eq = np.random.rand(m, n)
-        b_eq = np.random.rand(m)
+        rng = np.random.RandomState(0)
+        c = rng.rand(n)
+        A_eq = rng.rand(m, n)
+        b_eq = rng.rand(m)
         A_eq[-1, :] = 2 * A_eq[-2, :]
         b_eq[-1] *= -1
         with suppress_warnings() as sup:
@@ -1764,6 +1772,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, method=self.method)
         _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("options",
                              [{"maxiter": -1},
                               {"disp": -1},
@@ -1950,6 +1959,7 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
         # even if the solution is wrong, the appropriate error is raised.
         pytest.skip("Simplex fails on this problem.")
 
+    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate warning is issued.
@@ -1966,6 +1976,7 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
     def test_bug_5400(self):
         pytest.skip("Simplex fails on this problem.")
 
+    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate error is raised.
@@ -2001,6 +2012,7 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
     def test_bug_7237_low_tol(self):
         pytest.skip("Simplex fails on this problem.")
 
+    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate warning is issued.

@@ -4599,6 +4599,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         # If the user specified an `rng`, replace it with the appropriate callables
         method = method._asdict()
         if (rng := method.pop('rng', None)) is not None:  # goo-goo g'joob
+            rng = np.random.default_rng(rng)
             method['rvs'] = rng.normal, rng.normal
 
         res = monte_carlo_test((x, y,), statistic=statistic, axis=axis,

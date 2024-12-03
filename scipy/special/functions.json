@@ -615,8 +615,9 @@
             "ncfdtrinc": "dddd->d"        }
     },
     "nctdtr": {
-        "_cdflib_wrappers.pxd": {
-            "nctdtr": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "nct_cdf_float": "fff->f",
+            "nct_cdf_double": "ddd->d"    }
     },
     "nctdtridf": {
         "_cdflib_wrappers.pxd": {
@@ -934,12 +935,6 @@
         "boost_special_functions.h++": {
             "ncf_kurtosis_excess_float": "fff->f",
             "ncf_kurtosis_excess_double": "ddd->d"
-        }
-    },
-    "_nct_cdf": {
-        "boost_special_functions.h++": {
-            "nct_cdf_float": "fff->f",
-            "nct_cdf_double": "ddd->d"
         }
     },
     "_nct_pdf": {
