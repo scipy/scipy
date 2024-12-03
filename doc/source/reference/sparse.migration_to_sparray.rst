@@ -126,7 +126,7 @@ Recommended steps for migration
    -  If you use sparse libraries that only accept ``int32`` index arrays
       for sparse representations, we suggest using just-in-time conversion.
       Convert to ``int32`` just before you call the code that requires ``int32``.
-      The helper functions ``scipy.sparse.safely_cast_index_arrays(A, np.int32)``
+      The helper functions ``safely_cast_index_arrays(A, np.int32)``
       and ``get_index_dtype(arrays, maxval, check_contents)`` can help with that.
    -  ``sparray`` selects index dtype based on the dtype of the input array instead
       of the values in the array. So if you want your index arrays to be ``int32``,
@@ -157,7 +157,7 @@ Their signatures are::
    def block_array(blocks, format=None, dtype=None):
    def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None):
    def eye_array(m, n=None, *, k=0, dtype=float, format=None):
-   def random_array(shape, density=0.01, format='coo', dtype=None, random_state=None, data_random_state=None):
+   def random_array(shape, density=0.01, format='coo', dtype=None, rng=None, data_sampler=None):
 
 The ``random_array`` function has a ``shape`` (2-tuple) arg rather than
 two integers. And the ``random_state`` arg defaults to NumPy's new ``default_rng()``.
