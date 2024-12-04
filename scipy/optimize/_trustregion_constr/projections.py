@@ -1,6 +1,6 @@
 """Basic linear factorizations needed by the solver."""
 
-from scipy.sparse import (bmat, csc_matrix, eye, issparse)
+from scipy.sparse import (block_array, csc_array, eye_array, issparse)
 from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 import scipy.sparse.linalg
@@ -92,7 +92,7 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
 def augmented_system_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A - ``AugmentedSystem``."""
     # Form augmented system
-    K = csc_matrix(bmat([[eye(n), A.T], [A, None]]))
+    K = block_array([[eye_array(n), A.T], [A, None]], format="csc")
     # LU factorization
     # TODO: Use a symmetric indefinite factorization
     #       to solve the system twice as fast (because
@@ -367,7 +367,7 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
     # The factorization of an empty matrix
     # only works for the sparse representation.
     if m*n == 0:
-        A = csc_matrix(A)
+        A = csc_array(A)
 
     # Check Argument
     if issparse(A):

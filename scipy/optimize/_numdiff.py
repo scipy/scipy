@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
-from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
+from ..sparse import issparse, csc_array, csr_array, coo_array, find
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import array_namespace
 from scipy._lib import array_api_extra as xpx
@@ -244,7 +244,7 @@ def group_columns(A, order=0):
            and its Applications, 13 (1974), pp. 117-120.
     """
     if issparse(A):
-        A = csc_matrix(A)
+        A = csc_array(A)
     else:
         A = np.atleast_2d(A)
         A = (A != 0).astype(np.int32)
@@ -364,7 +364,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         with shape (m, n). Otherwise it returns a dense array or sparse
         matrix depending on how `sparsity` is defined. If `sparsity`
         is None then a ndarray with shape (m, n) is returned. If
-        `sparsity` is not None returns a csr_matrix with shape (m, n).
+        `sparsity` is not None returns a csr_array with shape (m, n).
         For sparse matrices and linear operators it is always returned as
         a 2-D structure, for ndarrays, if m=1 it is returned
         as a 1-D gradient array with shape (n,).
@@ -530,7 +530,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                 groups = group_columns(sparsity)
 
             if issparse(structure):
-                structure = csc_matrix(structure)
+                structure = csc_array(structure)
             else:
                 structure = np.atleast_2d(structure)
 
@@ -693,7 +693,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             raise ValueError("Never be here.")
 
         # All that's left is to compute the fraction. We store i, j and
-        # fractions as separate arrays and later construct coo_matrix.
+        # fractions as separate arrays and later construct coo_array.
         row_indices.append(i)
         col_indices.append(j)
         fractions.append(df[i] / dx[j])
@@ -701,8 +701,8 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     row_indices = np.hstack(row_indices)
     col_indices = np.hstack(col_indices)
     fractions = np.hstack(fractions)
-    J = coo_matrix((fractions, (row_indices, col_indices)), shape=(m, n))
-    return csr_matrix(J)
+    J = coo_array((fractions, (row_indices, col_indices)), shape=(m, n))
+    return csr_array(J)
 
 
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
@@ -772,7 +772,7 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     if issparse(J_to_test):
         J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,
                                    args=args, kwargs=kwargs)
-        J_to_test = csr_matrix(J_to_test)
+        J_to_test = csr_array(J_to_test)
         abs_err = J_to_test - J_diff
         i, j, abs_err_data = find(abs_err)
         J_diff_data = np.asarray(J_diff[i, j]).ravel()

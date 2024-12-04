@@ -283,7 +283,7 @@ def least_squares(
         always uses the '2-point' scheme. If callable, it is used as
         ``jac(x, *args, **kwargs)`` and should return a good approximation
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
-        is applied), a sparse matrix (csr_matrix preferred for performance) or
+        is applied), a sparse matrix (csr_array preferred for performance) or
         a `scipy.sparse.linalg.LinearOperator`.
     bounds : 2-tuple of array_like or `Bounds`, optional
         There are two ways to specify bounds:
@@ -647,9 +647,9 @@ def least_squares(
     estimate it by finite differences and provide the sparsity structure of
     Jacobian to significantly speed up this process.
 
-    >>> from scipy.sparse import lil_matrix
+    >>> from scipy.sparse import lil_array
     >>> def sparsity_broyden(n):
-    ...     sparsity = lil_matrix((n, n), dtype=int)
+    ...     sparsity = lil_array((n, n), dtype=int)
     ...     i = np.arange(n)
     ...     sparsity[i, i] = 1
     ...     i = np.arange(1, n)

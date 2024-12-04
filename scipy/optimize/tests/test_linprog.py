@@ -220,7 +220,7 @@ def l1_regression_prob(seed=0, m=8, d=9, n=100):
     # construct the problem
     c = np.ones(m+n)
     c[:m] = 0
-    A_ub = scipy.sparse.lil_matrix((2*n, n+m))
+    A_ub = scipy.sparse.lil_array((2*n, n+m))
     idx = 0
     for ii in range(n):
         A_ub[idx, :m] = phi @ x[:, ii]
@@ -519,7 +519,7 @@ class LinprogCommonTests:
         rng = np.random.RandomState(0)
         m = 100
         n = 150
-        A_eq = scipy.sparse.rand(m, n, 0.5)
+        A_eq = scipy.sparse.random_array((m, n), density=0.5)
         x_valid = rng.randn(n)
         c = rng.randn(n)
         ub = x_valid + rng.rand(n)

@@ -6,7 +6,7 @@ from numpy.testing import (assert_, assert_allclose,
                            assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy.sparse import issparse, lil_matrix
+from scipy.sparse import issparse, lil_array
 from scipy.sparse.linalg import aslinearoperator
 
 from scipy.optimize import least_squares, Bounds
@@ -92,7 +92,7 @@ class BroydenTridiagonal:
         self.x0 = make_strictly_feasible(self.x0, self.lb, self.ub)
 
         if mode == 'sparse':
-            self.sparsity = lil_matrix((n, n), dtype=int)
+            self.sparsity = lil_array((n, n), dtype=int)
             i = np.arange(n)
             self.sparsity[i, i] = 1
             i = np.arange(1, n)
@@ -116,7 +116,7 @@ class BroydenTridiagonal:
         return f
 
     def _jac(self, x):
-        J = lil_matrix((self.n, self.n))
+        J = lil_array((self.n, self.n))
         i = np.arange(self.n)
         J[i, i] = 3 - 2 * x
         i = np.arange(1, self.n)

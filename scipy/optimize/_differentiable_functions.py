@@ -60,9 +60,9 @@ def _wrapper_hess(hess, grad=None, x0=None, args=(), finite_diff_options=None):
         if sps.issparse(H):
             def wrapped(x, **kwds):
                 ncalls[0] += 1
-                return sps.csr_matrix(hess(np.copy(x), *args))
+                return sps.csr_array(hess(np.copy(x), *args))
 
-            H = sps.csr_matrix(H)
+            H = sps.csr_array(H)
 
         elif isinstance(H, LinearOperator):
             def wrapped(x, **kwds):
@@ -443,8 +443,8 @@ class VectorFunction:
                     sparse_jacobian is None and sps.issparse(self.J)):
                 def jac_wrapped(x):
                     self.njev += 1
-                    return sps.csr_matrix(jac(x))
-                self.J = sps.csr_matrix(self.J)
+                    return sps.csr_array(jac(x))
+                self.J = sps.csr_array(self.J)
                 self.sparse_jacobian = True
 
             elif sps.issparse(self.J):
@@ -473,10 +473,10 @@ class VectorFunction:
                     sparse_jacobian is None and sps.issparse(self.J)):
                 def update_jac():
                     self._update_fun()
-                    self.J = sps.csr_matrix(
+                    self.J = sps.csr_array(
                         approx_derivative(fun_wrapped, self.x, f0=self.f,
                                           **finite_diff_options))
-                self.J = sps.csr_matrix(self.J)
+                self.J = sps.csr_array(self.J)
                 self.sparse_jacobian = True
 
             elif sps.issparse(self.J):
@@ -507,8 +507,8 @@ class VectorFunction:
             if sps.issparse(self.H):
                 def hess_wrapped(x, v):
                     self.nhev += 1
-                    return sps.csr_matrix(hess(x, v))
-                self.H = sps.csr_matrix(self.H)
+                    return sps.csr_array(hess(x, v))
+                self.H = sps.csr_array(self.H)
 
             elif isinstance(self.H, LinearOperator):
                 def hess_wrapped(x, v):
@@ -625,7 +625,7 @@ class LinearVectorFunction:
     """
     def __init__(self, A, x0, sparse_jacobian):
         if sparse_jacobian or sparse_jacobian is None and sps.issparse(A):
-            self.J = sps.csr_matrix(A)
+            self.J = sps.csr_array(A)
             self.sparse_jacobian = True
         elif sps.issparse(A):
             self.J = A.toarray()
@@ -651,7 +651,7 @@ class LinearVectorFunction:
         self.f_updated = True
 
         self.v = np.zeros(self.m, dtype=float)
-        self.H = sps.csr_matrix((self.n, self.n))
+        self.H = sps.csr_array((self.n, self.n))
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
@@ -686,7 +686,7 @@ class IdentityVectorFunction(LinearVectorFunction):
     def __init__(self, x0, sparse_jacobian):
         n = len(x0)
         if sparse_jacobian or sparse_jacobian is None:
-            A = sps.eye(n, format='csr')
+            A = sps.eye_array(n, format='csr')
             sparse_jacobian = True
         else:
             A = np.eye(n)
