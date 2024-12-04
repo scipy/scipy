@@ -73,6 +73,12 @@ and support several Array API compatible array libraries in addition to NumPy
   logarithms. To facilitate batch computation, the function is vectorized and
   supports several Array API compatible array libraries in addition to
   NumPy (see "Array API Standard Support" below).
+- `scipy.integrate.tanhsinh` is now exposed for public use, allowing
+  evaluation of a convergent integral using tanh-sinh quadrature.
+- The new `scipy.integrate.cubature` function supports multidimensional
+  integration, has support for approximating integrals with
+  one or more sets of infinite limits, and supports custom integration rules.
+
 
 `scipy.cluster` improvements
 ============================
@@ -114,6 +120,11 @@ and support several Array API compatible array libraries in addition to NumPy
 - Wrappers for the following LAPACK routines have been added in
   `scipy.linalg.lapack`: ``?lantr``, ``?sytrs``, ``?hetrs``, ``?trcon``,
   and ``?gtcon``.
+- `scipy.linalg.expm` was rewritten in C.
+- `scipy.linalg.null_space` now accepts the new arguments ``overwrite_a``,
+  ``check_finite``, and ``lapack_driver``.
+- ``id_dist`` Fortran code was rewritten in Cython.
+
 
 `scipy.ndimage` improvements
 ============================
@@ -125,6 +136,8 @@ and support several Array API compatible array libraries in addition to NumPy
 - The binary and grayscale morphology functions now support an ``axes``
   argument that specifies which axes of the input filtering is to be performed
   on.
+- `scipy.ndimage.rank_filter` time complexity has improved from ``n`` to
+  ``log(n)``.
 
 
 
@@ -144,6 +157,10 @@ and support several Array API compatible array libraries in addition to NumPy
   these functions can offer speedups of over 100x when used with NumPy arrays,
   and even greater gains are possible with other Array API Standard compatible
   array libraries (e.g. CuPy).
+- `scipy.optimize.differential_evolution` now supports more general use of
+  ``workers``, such as passing a map-like callable.
+- `scipy.optimize.nnls` was rewritten in Cython.
+- ``HessianUpdateStrategy`` now supports ``__matmul__``.
 
 
 `scipy.signal` improvements
@@ -154,6 +171,8 @@ and support several Array API compatible array libraries in addition to NumPy
   y-offset independently for each frequency. Additionally, the ``normalize``
   argument includes a new option to return the complex representation of the
   amplitude and phase.
+- New function `scipy.signal.envelope` for computation of the envelope of a
+  real or complex valued signal.
 
 
 `scipy.sparse` improvements
@@ -169,10 +188,19 @@ and support several Array API compatible array libraries in addition to NumPy
   ``linalg.is_triangular`` and ``linalg.bandwidth``.
 - ``sparse.linalg`` and ``sparse.csgraph`` now work with sparse arrays. Be
   careful that your index arrays are 32-bit. We are working on 64bit support.
+- The vendored ``ARPACK`` library has been upgraded to version ``3.9.1``.
+- COO, CSR, CSC and LIL formats now support the ``axis`` argument for
+  ``count_nonzero``.
+- Sparse arrays and matrices may now raise errors when initialized with
+  incompatible data types, such as ``float16``.
+- ``min``, ``max``, ``argmin``, and ``argmax`` now support computation
+  over nonzero elements only via the new ``explicit`` argument.
 
 
 `scipy.spatial` improvements
 ============================
+- ``Rotation.concatenate`` now accepts a bare ``Rotation`` object, and will
+  return a copy of it.
 
 
 `scipy.special` improvements
@@ -200,6 +228,10 @@ and support several Array API compatible array libraries in addition to NumPy
   - `scipy.special.logit` is improved near the argument ``p=0.5``.
   - `scipy.special.rel_entr` is improved when ``x/y`` overflows, underflows,
     or is close to ``1``.
+
+- `scipy.special.gdtrib` may now be used in a CuPy ``ElementwiseKernel`` on
+  GPUs.
+- `scipy.special.ndtr` is now more efficient.
 
 `scipy.stats` improvements
 ==========================
@@ -258,6 +290,40 @@ and support several Array API compatible array libraries in addition to NumPy
     `scipy.stats.levy`, `scipy.stats.loggamma`, `scipy.stats.maxwell`,
     `scipy.stats.nakagami`, and `scipy.stats.t`.
 
+- `scipy.stats.qmc.PoissonDisk` now accepts lower and upper bounds
+  parameters ``l_bounds`` and ``u_bounds``.
+
+**************************
+Array API Standard Support
+**************************
+Experimental support for array libraries other than NumPy has been added to
+existing sub-packages in recent versions of SciPy. Please consider testing
+these features by setting an environment variable ``SCIPY_ARRAY_API=1`` and
+providing PyTorch, JAX, or CuPy arrays as array arguments. Features with
+support added for SciPy ``1.15.0`` include:
+
+- All functions in `scipy.differentiate` (new sub-package)
+- All functions in `scipy.optimize.elementwise` (new namespace)
+- `scipy.optimize.rosen`, `scipy.optimize.rosen_der`, and
+  `scipy.optimize.rosen_hess`
+- `scipy.special.logsumexp`
+- `scipy.integrate.trapezoid`
+- `scipy.integrate.tanhsinh` (newly public function)
+- `scipy.integrate.cubature` (new function)
+- `scipy.integrate.nsum` (new function)
+- `scipy.special.chdtr`, `scipy.special.betainc`, and `scipy.special.betaincc`
+- `scipy.stats.boxcox_llf`
+- `scipy.stats.differential_entropy`
+- `scipy.stats.zmap`, `scipy.stats.zscore`, and `scipy.stats.gzscore`
+- `scipy.stats.tmean`, `scipy.stats.tvar`, `scipy.stats.tstd`,
+  `scipy.stats.tsem`, `scipy.stats.tmin`, and `scipy.stats.tmax`
+- `scipy.stats.gmean`, `scipy.stats.hmean` and `scipy.stats.pmean`
+- `scipy.stats.combine_pvalues`
+- `scipy.stats.ttest_ind`, `scipy.stats.ttest_rel`
+- `scipy.stats.directional_stats`
+- `scipy.ndimage` functions will now delegate to ``cupyx.scipy.ndimage``,
+  and for other backends will transit via NumPy arrays on the host.
+
 
 *******************
 Deprecated features
@@ -281,6 +347,9 @@ Deprecated features
 - `scipy.stats.linregress` has deprecated one-argument use; the two
   variables must be specified as separate arguments.
 - ``scipy.stats.trapz`` is deprecated in favor of `scipy.stats.trapezoid`.
+- `scipy.special.lpn` is deprecated in favor of `scipy.special.legendre_p_all`.
+- `scipy.special.lpmn` and `scipy.special.clpmn` are deprecated in favor of
+  `scipy.special.assoc_legendre_p_all`.
 
 ********************
 Expired Deprecations
@@ -385,6 +454,11 @@ Other changes
   except when using Gfortran. This avoids problems with the new Flang and
   AMD Fortran compilers. It may make new build warnings appear for other
   compilers - if so, please file an issue.
+
+
+- Testing thread-safety improvements related to Python ``3.13t`` have been
+  made in: `scipy.special`, `scipy.spatial`, `scipy.sparse`,
+  `scipy.interpolate`.
 
 
 *******
