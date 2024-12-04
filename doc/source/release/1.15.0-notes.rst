@@ -6,7 +6,7 @@ SciPy 1.15.0 Release Notes
 
 .. contents::
 
-SciPy 1.15.0 is the culmination of X months of hard work. It contains
+SciPy 1.15.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and better
 documentation. There have been a number of deprecations and API changes
 in this release, which are documented below. All users are encouraged to
@@ -17,31 +17,34 @@ run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
 1.15.x branch, and on adding new features on the main branch.
 
-This release requires Python 3.10+ and NumPy 1.23.5 or greater.
+This release requires Python 3.10-3.13 and NumPy 1.23.5 or greater.
 
 
 **************************
 Highlights of this release
 **************************
 
-Sparse arrays are now fully functional for 1-D and 2-D arrays. We recommend
-that all new code use sparse arrays and that developers start to migrate their
-existing code from sparse matrix to sparse array:
-:ref:`migration_to_sparray`. Both ``sparse.linalg`` and ``sparse.csgraph``
-work with either sparse matrix or sparse array and work internally with
-sparse array.
+- Sparse arrays are now fully functional for 1-D and 2-D arrays. We recommend
+  that all new code use sparse arrays and that developers start to migrate
+  their existing code from sparse matrix to sparse array:
+  :ref:`migration_to_sparray`. Both ``sparse.linalg`` and ``sparse.csgraph``
+  work with either sparse matrix or sparse array and work internally with
+  sparse array.
+- Sparse arrays now provide basic support for n-D arrays in the COO format
+  including ``add``, ``subtract``, ``reshape``, ``transpose``, ``matmul``,
+  ``dot``, ``tensordot`` and others. More functionality is coming in future
+  releases.
+- Preliminary support for free-threaded Python 3.13.
+- A new distribution infrastructure in `scipy.stats` that includes speed
+  and accuracy improvements to existing distributions.
+- `scipy.differentiate` is a new top-level submodule for accurate
+  estimation of derivatives of black box functions.
+- `scipy.optimize.elementwise` provides vectorized root-finding and
+  minimization of univariate functions, and it supports the array API
+  as do new ``integrate`` functions ``tanhsinh``, ``nsum``, and ``cubature``.
+- `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
+  approximation of real or complex functions.
 
-A transition has started towards unifying the SciPy API with regards to
-random number generation, as outlined in
-`SPEC-7 <https://scientific-python.org/specs/spec-0007/>`_. The uniform API
-provided by this SPEC will:
-
-* standardize the usage of the ``rng`` keyword, eventually deprecating the
-  usage of other parameter names.
-* deprecate the setting of a global seed via ``np.random.seed``
-* transition from ``np.random.RandomState`` to ``np.random.Generator``
-
-For further details please visit the SPEC-007 specification.
 
 ************
 New features
@@ -76,8 +79,8 @@ and support several Array API compatible array libraries in addition to NumPy
 - `scipy.integrate.tanhsinh` is now exposed for public use, allowing
   evaluation of a convergent integral using tanh-sinh quadrature.
 - The new `scipy.integrate.cubature` function supports multidimensional
-  integration, has support for approximating integrals with
-  one or more sets of infinite limits, and supports custom integration rules.
+  integration, and has support for approximating integrals with
+  one or more sets of infinite limits.
 
 
 `scipy.interpolate` improvements
@@ -144,7 +147,7 @@ and support several Array API compatible array libraries in addition to NumPy
 - The ``MINPACK`` Fortran77 package has been ported to C.
 - The ``L-BFGS-B`` Fortran77 package has been ported to C.
 - The new `scipy.optimize.elementwise` namespace includes functions
-  ``bracket_root``, ``find_root``, and ``bracket_minimum``
+  ``bracket_root``, ``find_root``, ``bracket_minimum``, and ``find_minimum``
   for root-finding and minimization of univariate functions. To facilitate
   batch computation, these functions are vectorized and support several
   Array API compatible array libraries in addition to NumPy (see
@@ -247,7 +250,7 @@ and support several Array API compatible array libraries in addition to NumPy
 
 - `scipy.stats.Mixture` has been added to represent mixture distributions.
 - The new `scipy.stats.lmoment` calculates sample l-moments and l-moment
-  ratios.
+  ratios. Notably, these sample estimators are unbiased.
 - `scipy.stats.chatterjeexi` computes the Xi correlation coefficient, which
   can detect nonlinear dependence. The function also performs a hypothesis
   test of independence between samples.
@@ -288,6 +291,29 @@ and support several Array API compatible array libraries in addition to NumPy
 
 - `scipy.stats.qmc.PoissonDisk` now accepts lower and upper bounds
   parameters ``l_bounds`` and ``u_bounds``.
+
+Preliminary Support for Free-Threaded CPython 3.13
+==================================================
+SciPy ``1.15`` has preliminary support for the free-threaded build of CPython
+``3.13.`` This allows SciPy functionality to execute in parallel with Python
+threads
+(see the ``threading`` stdlib module). This support was enabled by fixing a
+significant number of thread-safety issues in both pure Python and
+C/C++/Cython/Fortran extension modules. Wheels are provided on PyPI for this
+release; NumPy ``>=2.1.3`` is required at runtime. Note that building for a
+free-threaded interpreter requires a recent pre-release or nightly for Cython
+``3.1.0``.
+
+Support for free-threaded Python does not mean that SciPy is fully thread-safe.
+Please see :ref:`scipy_thread_safety` for more details.
+
+If you are interested in free-threaded Python, for example because you have a
+multiprocessing-based workflow that you are interested in running with Python
+threads, we encourage testing and experimentation. If you run into problems
+that you suspect are because of SciPy, please open an issue, checking first if
+the bug also occurs in the "regular" non-free-threaded CPython ``3.13`` build.
+Many threading bugs can also occur in code that releases the GIL; disabling
+the GIL only makes it easier to hit threading bugs.
 
 **************************
 Array API Standard Support
@@ -417,22 +443,8 @@ Other changes
     - When passed by position or legacy keyword, the behavior of the argument
       will remain unchanged (for now).
 
-  - Beginning in SciPy ``1.17.0``:
-
-    - Keyword use of the legacy argument will begin to emit a
-      ``DeprecationWarning`` about the keyword argument's removal.
-    - Positional use of the legacy argument will emit a ``FutureWarning``
-      about the upcoming change in interpretation of the argument. For
-      instance, integers will be normalized by ``np.random.default_rng``
-      rather than ``np.random.RandomState``, so the random number stream
-      will change.
-    - Reliance on the default argument value (``None``) will emit a
-      ``FutureWarning`` if ``np.random.seed`` was used to control the
-      random state, as the state will be nondeterministic in the future.
-
-  - In SciPy ``1.19.0``, the legacy argument will be removed and the ``rng``
-    argument will follow the new behavior whether passed by keyword or
-    position (where positional use is permitted).
+  - It is planned that in ``1.17.0`` the legacy argument will start emitting
+    warnings, and that in ``1.19.0`` the default behavior will change.
   - In all cases, users can avoid future disruption by proactively passing
     an instance of ``np.random.Generator`` by keyword ``rng``. For details,
     see `SPEC-7 <https://scientific-python.org/specs/spec-0007/>`_.
