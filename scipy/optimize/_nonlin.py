@@ -1512,13 +1512,15 @@ class KrylovJacobian(Jacobian):
         for key, value in kw.items():
             if not key.startswith('inner_'):
                 raise ValueError(f"Unknown parameter {key}")
-            if key[6:] not in valid_inner_params:
+            option = key[6:]
+            if option not in valid_inner_params:
                 warnings.warn(
-                    f"The option {key} is not valid for inner solver {method}."
-                    " Please see the solver's documentation for a list of valid"
-                    " options."
+                    f"The option {option} is not valid for inner solver {method}, "
+                    f"so it has been ignored."
+                    f"Please see the solver's documentation for a list of valid"
+                    f"options to append to `inner_`."
                 )
-            self.method_kw[key[6:]] = value
+            self.method_kw[option] = value
 
     def _update_diff_step(self):
         mx = abs(self.x0).max()
