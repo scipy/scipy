@@ -75,7 +75,7 @@ jobs:
           name: setup Python venv
           command: |
             pip install numpy cython pybind11 pythran ninja meson
-            pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
+            pip install git+https://github.com/scientific-python/spin.git@main
             pip install -r requirements/doc.txt
             pip install mpmath gmpy2 "asv>=0.6.0" click rich-click doit pydevtool pooch threadpoolctl
             # extra benchmark deps

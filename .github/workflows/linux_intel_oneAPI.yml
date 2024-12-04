@@ -64,7 +64,7 @@ jobs:
         run: |
           conda activate scipy-dev
           conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
-          pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
+          pip install git+https://github.com/scientific-python/spin.git@main
 
       - name: cache install
         id: cache-install

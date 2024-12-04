@@ -70,7 +70,7 @@ linux_aarch64_test_task:
     echo "CCACHE_DIR=$PWD/.ccache" >> $CIRRUS_ENV
 
     python -m pip install meson ninja numpy cython pybind11 pythran
-    python -m pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
+    python -m pip install git+https://github.com/scientific-python/spin.git@main
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch pytest-xdist hypothesis
 
