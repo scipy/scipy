@@ -465,6 +465,153 @@ Other changes
 Authors
 *******
 
+* endolith (4)
+* h-vetinari (61)
+* a-drenaline (1) +
+* Afleloup (1) +
+* Ahmad Alkadri (1) +
+* Luiz Eduardo Amaral (3) +
+* Virgile Andreani (3)
+* Isaac Alonso Asensio (2) +
+* Matteo Bachetti (1) +
+* Arash Badie-Modiri (1) +
+* Arnaud Baguet (1) +
+* Soutrik Bandyopadhyay (1) +
+* Ankit Barik (1) +
+* Christoph Baumgarten (1)
+* Nickolai Belakovski (2)
+* Krishan Bhasin (1) +
+* Jake Bowhay (84)
+* Michael Bratsch (2) +
+* Matthew Brett (1)
+* Keith Briggs (1) +
+* Olly Britton (145) +
+* Dietrich Brunn (10)
+* Clemens Brunner (1)
+* Evgeni Burovski (127)
+* Matthias Bussonnier (7)
+* CJ Carey (17)
+* Cesar Carrasco (4) +
+* Hood Chatham (1)
+* Aadya Chinubhai (1)
+* Alessandro Chitarrini (1) +
+* Thibault de Coincy (1) +
+* Lucas Colley (216)
+* Martin Diehl (1) +
+* Djip007 (1) +
+* Kevin Doshi (2) +
+* Michael Dunphy (2)
+* Andy Everall (1) +
+* Thomas J. Fan (2)
+* fancidev (60)
+* Sergey Fedorov (2) +
+* Sahil Garje (1) +
+* Gabriel Gerlero (2)
+* Yotam Gingold (1) +
+* Ralf Gommers (103)
+* Rohit Goswami (62)
+* Anil Gurses (1) +
+* Oscar Gustafsson (1) +
+* Matt Haberland (347)
+* Matt Hall (1) +
+* Joren Hammudoglu (2) +
+* Daniel Isaac (4) +
+* Maxim Ivanov (1)
+* Jakob Jakobson (2)
+* Janez Demšar (4) +
+* Chris Jerdonek (2) +
+* Adam Jones (3) +
+* Aditi Juneja (1) +
+* Nuri Jung (1) +
+* Guus Kamphuis (1) +
+* Aditya Karumanchi (2) +
+* Robert Kern (5)
+* Agriya Khetarpal (6)
+* Andrew Knyazev (7)
+* Gideon Genadi Kogan (1) +
+* Damien LaRocque (1) +
+* Eric Larson (10)
+* Gregory R. Lee (4)
+* Linfye (1) +
+* Boyu Liu (1) +
+* Drew Allan Loney (1) +
+* Smit Lunagariya (1)
+* Henry Lunn (1) +
+* Marco Maggi (4)
+* Lauren Main (1) +
+* Martin Spišák (1) +
+* Mateusz Sokół (4)
+* Jan-Kristian Mathisen (1) +
+* Nikolay Mayorov (2)
+* Nicholas McKibben (1)
+* Melissa Weber Mendonça (62)
+* João Mendes (10)
+* Gian Marco Messa (1) +
+* Samuel Le Meur-Diebolt (1) +
+* Michał Górny (2)
+* Naoto Mizuno (2)
+* Nicolas Mokus (2)
+* musvaage (18) +
+* Andrew Nelson (87)
+* Jens Hedegaard Nielsen (1) +
+* Roman Nigmatullin (8) +
+* Nick ODell (37)
+* Yagiz Olmez (4)
+* Matti Picus (9)
+* Diogo Pires (5) +
+* Ilhan Polat (96)
+* Zachary Potthoff (1) +
+* Tom M. Ragonneau (2)
+* Peter Ralph (1) +
+* Stephan Rave (1) +
+* Tyler Reddy (113)
+* redha2404 (2) +
+* Ritvik1sharma (1) +
+* Heshy Roskes (1)
+* Pamphile Roy (32)
+* Mikhail Ryazanov (1) +
+* Sina Saber (1) +
+* Atsushi Sakai (1)
+* Clemens Schmid (1) +
+* Daniel Schmitz (15)
+* Moritz Schreiber (1) +
+* Dan Schult (72)
+* Searchingdays (1) +
+* Matias Senger (1) +
+* Scott Shambaugh (1)
+* Zhida Shang (1) +
+* Sheila-nk (4)
+* Romain Simon (2) +
+* Gagandeep Singh (25)
+* Albert Steppi (34)
+* Anushka Suyal (142) +
+* Alex Szatmary (1)
+* Svetlin Tassev (1) +
+* Ewout ter Hoeven (1)
+* Tibor Völcker (4) +
+* Kanishk Tiwari (1) +
+* Yusuke Toyama (1) +
+* Edgar Andrés Margffoy Tuay (124)
+* Adam Turner (2) +
+* Nicole Vadot (1) +
+* Andrew Valentine (1)
+* Christian Veenhuis (2)
+* vfdev (2) +
+* Pauli Virtanen (2)
+* Simon Waldherr (1) +
+* Warren Weckesser (23)
+* Anreas Weh (1)
+* Benoît Wygas (2) +
+* Pavadol Yamsiri (3) +
+* ysard (1) +
+* Xiao Yuan (2)
+* Irwin Zaid (12)
+* Gang Zhao (1)
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (10)
+
+A total of 143 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 
 ************************
