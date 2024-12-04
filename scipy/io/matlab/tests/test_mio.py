@@ -17,7 +17,7 @@ from pytest import raises as assert_raises
 
 import numpy as np
 from numpy import array
-import scipy.sparse as SP
+from scipy.sparse import issparse, eye_array, coo_array, csc_array
 
 import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
@@ -72,14 +72,14 @@ case_table4.append(
 case_table4.append(
     {'name': 'sparse',
      'classes': {'testsparse': 'sparse'},
-     'expected': {'testsparse': SP.coo_matrix(A)},
+     'expected': {'testsparse': coo_array(A)},
      })
 B = A.astype(complex)
 B[0,0] += 1j
 case_table4.append(
     {'name': 'sparsecomplex',
      'classes': {'testsparsecomplex': 'sparse'},
-     'expected': {'testsparsecomplex': SP.coo_matrix(B)},
+     'expected': {'testsparsecomplex': coo_array(B)},
      })
 case_table4.append(
     {'name': 'multi',
@@ -207,12 +207,12 @@ case_table5.append(
 case_table5.append(
     {'name': 'sparse',
      'classes': {'testsparse': 'sparse'},
-     'expected': {'testsparse': SP.coo_matrix(A)},
+     'expected': {'testsparse': coo_array(A)},
      })
 case_table5.append(
     {'name': 'sparsecomplex',
      'classes': {'testsparsecomplex': 'sparse'},
-     'expected': {'testsparsecomplex': SP.coo_matrix(B)},
+     'expected': {'testsparsecomplex': coo_array(B)},
      })
 case_table5.append(
     {'name': 'bool',
@@ -247,8 +247,8 @@ def types_compatible(var1, var2):
 
 def _check_level(label, expected, actual):
     """ Check one level of a potentially nested array """
-    if SP.issparse(expected):  # allow different types of sparse matrices
-        assert_(SP.issparse(actual))
+    if issparse(expected):  # allow different types of sparse matrices
+        assert_(issparse(actual))
         assert_array_almost_equal(actual.toarray(),
                                   expected.toarray(),
                                   err_msg=label,
@@ -290,7 +290,7 @@ def _check_level(label, expected, actual):
 
 def _load_check_case(name, files, case):
     for file_name in files:
-        matdict = loadmat(file_name, struct_as_record=True)
+        matdict = loadmat(file_name, struct_as_record=True, spmatrix=False)
         label = f"test {name}; file {file_name}"
         for k, expected in case.items():
             k_label = f"{label}, variable {k}"
@@ -372,7 +372,7 @@ def test_gzip_simple():
     xdense = np.zeros((20,20))
     xdense[2,3] = 2.3
     xdense[4,5] = 4.5
-    x = SP.csc_matrix(xdense)
+    x = csc_array(xdense)
 
     name = 'gzip_test'
     expected = {'x':x}
@@ -386,7 +386,7 @@ def test_gzip_simple():
         mat_stream.close()
 
         mat_stream = gzip.open(fname, mode='rb')
-        actual = loadmat(mat_stream, struct_as_record=True)
+        actual = loadmat(mat_stream, struct_as_record=True, spmatrix=False)
         mat_stream.close()
     finally:
         shutil.rmtree(tmpdir)
@@ -996,7 +996,7 @@ def test_mat_dtype():
 def test_sparse_in_struct():
     # reproduces bug found by DC where Cython code was insisting on
     # ndarray return type, but getting sparse matrix
-    st = {'sparsefield': SP.coo_matrix(np.eye(4))}
+    st = {'sparsefield': eye_array(4)}
     stream = BytesIO()
     savemat(stream, {'a':st})
     d = loadmat(stream, struct_as_record=True)
@@ -1157,9 +1157,9 @@ def test_logical_sparse():
     filename = pjoin(test_data_path,'logical_sparse.mat')
     # Before fix, this would crash with:
     # ValueError: indices and data should have the same size
-    d = loadmat(filename, struct_as_record=True)
+    d = loadmat(filename, struct_as_record=True, spmatrix=False)
     log_sp = d['sp_log_5_4']
-    assert_(isinstance(log_sp, SP.csc_matrix))
+    assert_(issparse(log_sp) and log_sp.format == "csc")
     assert_equal(log_sp.dtype.type, np.bool_)
     assert_array_equal(log_sp.toarray(),
                        [[True, True, True, False],
@@ -1173,10 +1173,17 @@ def test_empty_sparse():
     # Can we read empty sparse matrices?
     sio = BytesIO()
     import scipy.sparse
-    empty_sparse = scipy.sparse.csr_matrix([[0,0],[0,0]])
+    empty_sparse = scipy.sparse.csr_array([[0,0],[0,0]])
     savemat(sio, dict(x=empty_sparse))
     sio.seek(0)
-    res = loadmat(sio)
+
+    res = loadmat(sio, spmatrix=False)
+    assert not scipy.sparse.isspmatrix(res['x'])
+    res = loadmat(sio, spmatrix=True)
+    assert scipy.sparse.isspmatrix(res['x'])
+    res = loadmat(sio)  # chk default
+    assert scipy.sparse.isspmatrix(res['x'])
+
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].toarray(), 0)
     # Do empty sparse matrices get written with max nnz 1?

@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_almost_equal_nulp
 
-from scipy.sparse import coo_matrix, csc_matrix, rand
+from scipy.sparse import coo_array, csc_array, random_array, isspmatrix
 
 from scipy.io import hb_read, hb_write
 
@@ -27,7 +27,7 @@ RUA                      100           100            10             0
 6.912334991524289e-01
 """
 
-SIMPLE_MATRIX = coo_matrix(
+SIMPLE_MATRIX = coo_array(
     ((0.297124379969, 0.366236668288, 0.47869621747, 0.649006864799,
       0.0661749042483, 0.887037034319, 0.419647859016,
       0.564960307211, 0.993442388709, 0.691233499152,),
@@ -36,8 +36,8 @@ SIMPLE_MATRIX = coo_matrix(
 
 
 def assert_csc_almost_equal(r, l):
-    r = csc_matrix(r)
-    l = csc_matrix(l)
+    r = csc_array(r)
+    l = csc_array(l)
     assert_equal(r.indptr, l.indptr)
     assert_equal(r.indices, l.indices)
     assert_array_almost_equal_nulp(r.data, l.data, 10000)
@@ -45,8 +45,13 @@ def assert_csc_almost_equal(r, l):
 
 class TestHBReader:
     def test_simple(self):
-        m = hb_read(StringIO(SIMPLE))
+        m = hb_read(StringIO(SIMPLE), spmatrix=False)
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
+        assert not isspmatrix(m)
+        m = hb_read(StringIO(SIMPLE), spmatrix=True)
+        assert isspmatrix(m)
+        m = hb_read(StringIO(SIMPLE))  # default
+        assert isspmatrix(m)
 
 
 class TestHBReadWrite:
@@ -55,11 +60,11 @@ class TestHBReadWrite:
         with tempfile.NamedTemporaryFile(mode='w+t') as file:
             hb_write(file, value)
             file.file.seek(0)
-            value_loaded = hb_read(file)
+            value_loaded = hb_read(file, spmatrix=False)
         assert_csc_almost_equal(value, value_loaded)
 
     def test_simple(self):
-        random_matrix = rand(10, 100, 0.1)
-        for matrix_format in ('coo', 'csc', 'csr', 'bsr', 'dia', 'dok', 'lil'):
-            matrix = random_matrix.asformat(matrix_format, copy=False)
-            self.check_save_load(matrix)
+        random_arr = random_array((10, 100), density=0.1)
+        for format in ('coo', 'csc', 'csr', 'bsr', 'dia', 'dok', 'lil'):
+            arr = random_arr.asformat(format, copy=False)
+            self.check_save_load(arr)

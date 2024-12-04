@@ -87,6 +87,9 @@ Recommended steps for migration
    -  Find and change places where your code makes use of ``np.matrix``
       features. Convert those to ``np.ndarray`` features.
    -  Rename all ``*_matrix`` constructor calls to ``*_array``.
+   -  If your code reads sparse from files with ``mmread``, ``hb_read``
+      or ``loadmat``, use the new keyword argument ``spmatrix=False``
+      in those functions to read to sparray.
    -  Test your code. And **read** your code. You have migrated to
       sparray.
 
