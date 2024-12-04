@@ -80,10 +80,6 @@ and support several Array API compatible array libraries in addition to NumPy
   one or more sets of infinite limits, and supports custom integration rules.
 
 
-`scipy.cluster` improvements
-============================
-
-
 `scipy.interpolate` improvements
 ================================
 - `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
@@ -371,15 +367,6 @@ Expired Deprecations
 - ``special.btdtr`` and ``special.btdtri`` have been removed.
 - The default of the ``exact=`` kwarg in ``special.factorialk`` has changed
   from ``True`` to ``False``.
-
-`scipy.linalg` deprecations
-===========================
-
-
-`scipy.spatial` deprecations
-============================
-
-
 
 ******************************
 Backwards incompatible changes
