@@ -9,7 +9,8 @@
 # `scipy.optimize._differentiate._differentiate for numerical differentiation,
 # `scipy.optimize._bracket._bracket_root for finding rootfinding brackets,
 # `scipy.optimize._bracket._bracket_minimize for finding minimization brackets,
-# `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature.
+# `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature,
+# `scipy.differentiate.derivative` for finite difference based differentiation.
 
 import math
 import numpy as np

@@ -1572,10 +1572,35 @@ const char *gamma_doc = R"(
     which, combined with the fact that :math:`\Gamma(1) = 1`, implies
     the above identity for :math:`z = n`.
 
+    The gamma function has poles at non-negative integers and the sign
+    of infinity as z approaches each pole depends upon the direction in
+    which the pole is approached. For this reason, the consistent thing
+    is for gamma(z) to return NaN at negative integers, and to return
+    -inf when x = -0.0 and +inf when x = 0.0, using the signbit of zero
+    to signify the direction in which the origin is being approached. This
+    is for instance what is recommended for the gamma function in annex F
+    entry 9.5.4 of the Iso C 99 standard [isoc99]_.
+
+    Prior to SciPy version 1.15, ``scipy.special.gamma(z)`` returned ``+inf``
+    at each pole. This was fixed in version 1.15, but with the following
+    consequence. Expressions where gamma appears in the denominator
+    such as
+
+    ``gamma(u) * gamma(v) / (gamma(w) * gamma(x))``
+
+    no longer evaluate to 0 if the numerator is well defined but there is a
+    pole in the denominator. Instead such expressions evaluate to NaN. We
+    recommend instead using the function `rgamma` for the reciprocal gamma
+    function in such cases. The above expression could for instance be written
+    as
+
+    ``gamma(u) * gamma(v) * (rgamma(w) * rgamma(x))``
+
     References
     ----------
     .. [dlmf] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/5.2#E1
+    .. [isoc99] https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf
 
     Examples
     --------

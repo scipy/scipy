@@ -2,11 +2,13 @@ from warnings import warn, catch_warnings, simplefilter
 
 import numpy as np
 from numpy import asarray
-from scipy.sparse import (issparse,
-                          SparseEfficiencyWarning, csc_array, eye_array, diags_array)
-from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
+from scipy.sparse import (issparse, SparseEfficiencyWarning,
+                          csr_array, csc_array, eye_array, diags_array)
+from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
+                                   get_index_dtype)
 from scipy.linalg import LinAlgError
 import copy
+import threading
 
 from . import _superlu
 
@@ -16,10 +18,11 @@ try:
 except ImportError:
     noScikit = True
 
-useUmfpack = not noScikit
+useUmfpack = threading.local()
+
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
-           'MatrixRankWarning', 'spsolve_triangular']
+           'MatrixRankWarning', 'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
 class MatrixRankWarning(UserWarning):
@@ -87,9 +90,10 @@ def use_solver(**kwargs):
     True
     >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
+    global useUmfpack
     if 'useUmfpack' in kwargs:
-        globals()['useUmfpack'] = kwargs['useUmfpack']
-    if useUmfpack and 'assumeSortedIndices' in kwargs:
+        useUmfpack.u = kwargs['useUmfpack']
+    if useUmfpack.u and 'assumeSortedIndices' in kwargs:
         umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
 def _get_umf_family(A):
@@ -256,7 +260,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if M != b.shape[0]:
         raise ValueError(f"matrix - rhs dimension mismatch ({A.shape} - {b.shape[0]})")
 
-    use_umfpack = use_umfpack and useUmfpack
+    if not hasattr(useUmfpack, 'u'):
+        useUmfpack.u = not noScikit
+
+    use_umfpack = use_umfpack and useUmfpack.u
 
     if b_is_vector and use_umfpack:
         if b_is_sparse:
@@ -270,7 +277,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+                  " .astype(), or set linsolve.useUmfpack.u = False")
 
         umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
@@ -321,8 +328,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 col_segs.append(np.full(segment_length, j, dtype=int))
                 data_segs.append(np.asarray(xj[w], dtype=A.dtype))
             sparse_data = np.concatenate(data_segs)
-            sparse_row = np.concatenate(row_segs)
-            sparse_col = np.concatenate(col_segs)
+            idx_dtype = get_index_dtype(maxval=max(b.shape))
+            sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
+            sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
             x = A.__class__((sparse_data, (sparse_row, sparse_col)),
                            shape=b.shape, dtype=A.dtype)
 
@@ -568,7 +576,10 @@ def factorized(A):
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
 
-    if useUmfpack:
+    if not hasattr(useUmfpack, 'u'):
+        useUmfpack.u = not noScikit
+
+    if useUmfpack.u:
         if noScikit:
             raise RuntimeError('Scikits.umfpack not installed.')
 
@@ -581,7 +592,7 @@ def factorized(A):
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+                  " .astype(), or set linsolve.useUmfpack.u = False")
 
         umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
@@ -738,3 +749,138 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     return x
 
+
+def is_sptriangular(A):
+    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``
+
+    Checks for triangular structure in ``A``. The result is summarized in
+    two boolean values ``lower`` and ``upper`` to designate whether ``A`` is
+    lower triangular or upper triangular respectively. Diagonal ``A`` will
+    result in both being True. Non-triangular structure results in False for both.
+
+    Only the sparse structure is used here. Values are not checked for zeros.
+
+    This function will convert a copy of ``A`` to CSC format if it is not already
+    CSR or CSC format. So it may be more efficient to convert it yourself if you
+    have other uses for the CSR/CSC version.
+
+    If ``A`` is not square, the portions outside the upper left square of the
+    matrix do not affect its triangular structure. You probably want to work
+    with the square portion of the matrix, though it is not requred here.
+
+    Parameters
+    ----------
+    A : SciPy sparse array or matrix
+        A sparse matrix preferrably in CSR or CSC format.
+
+    Returns
+    -------
+    lower, upper : 2-tuple of bool
+
+        .. versionadded:: 1.15.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_array, eye_array
+    >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> scipy.sparse.linalg.is_sptriangular(A)
+    (True, False)
+    >>> D = eye_array((3,3), format='csr')
+    >>> scipy.sparse.linalg.is_sptriangular(D)
+    (True, True)
+    """
+    if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok", "lil")):
+        warn('is_sptriangular needs sparse and not BSR format. Converting to CSR.',
+             SparseEfficiencyWarning, stacklevel=2)
+        A = csr_array(A)
+
+    # bsr is better off converting to csr
+    if A.format == "dia":
+        return A.offsets.max() <= 0, A.offsets.min() >= 0
+    elif A.format == "coo":
+        rows, cols = A.coords
+        return (cols <= rows).all(), (cols >= rows).all()
+    elif A.format == "dok":
+        return all(c <= r for r, c in A.keys()), all(c >= r for r, c in A.keys())
+    elif A.format == "lil":
+        lower = all(col <= row for row, cols in enumerate(A.rows) for col in cols)
+        upper = all(col >= row for row, cols in enumerate(A.rows) for col in cols)
+        return lower, upper
+    # format in ("csc", "csr")
+    indptr, indices = A.indptr, A.indices
+    N = len(indptr) - 1
+
+    lower, upper = True, True
+    # check middle, 1st, last col (treat as CSC and switch at end if CSR)
+    for col in [N // 2, 0, -1]:
+        rows = indices[indptr[col]:indptr[col + 1]]
+        upper = upper and (col >= rows).all()
+        lower = lower and (col <= rows).all()
+        if not upper and not lower:
+            return False, False
+    # check all cols
+    cols = np.repeat(np.arange(N), np.diff(indptr))
+    rows = indices
+    upper = upper and (cols >= rows).all()
+    lower = lower and (cols <= rows).all()
+    if A.format == 'csr':
+        return upper, lower
+    return lower, upper
+
+
+def spbandwidth(A):
+    """Return the lower and upper bandwidth of a 2D numeric array.
+
+    Computes the lower and upper limits on the bandwidth of the
+    sparse 2D array ``A``. The result is summarized as a 2-tuple
+    of positive integers ``(lo, hi)``. A zero denotes no sub/super
+    diagonal entries on that side (tringular). The maximum value
+    for ``lo``(``hi``) is one less than the number of rows(cols).
+
+    Only the sparse structure is used here. Values are not checked for zeros.
+
+    Parameters
+    ----------
+    A : SciPy sparse array or matrix
+        A sparse matrix preferrably in CSR or CSC format.
+
+    Returns
+    -------
+    below, above : 2-tuple of int
+        The distance to the farthest non-zero diagonal below/above the
+        main diagonal.
+
+        .. versionadded:: 1.15.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_array, eye_array
+    >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> scipy.sparse.linalg.spbandwidth(A)
+    (2, 0)
+    >>> D = eye_array((3,3), format='csr')
+    >>> scipy.sparse.linalg.spbandwidth(D)
+    (0, 0)
+    """
+    if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok")):
+        warn('spbandwidth needs sparse format not LIL and BSR. Converting to CSR.',
+             SparseEfficiencyWarning, stacklevel=2)
+        A = csr_array(A)
+
+    # bsr and lil are better off converting to csr
+    if A.format == "dia":
+        return max(0, -A.offsets.min().item()), max(0, A.offsets.max().item())
+    if A.format in ("csc", "csr"):
+        indptr, indices = A.indptr, A.indices
+        N = len(indptr) - 1
+        gap = np.repeat(np.arange(N), np.diff(indptr)) - indices
+        if A.format == 'csr':
+            gap = -gap
+    elif A.format == "coo":
+        gap = A.coords[1] - A.coords[0]
+    elif A.format == "dok":
+        gap = [(c - r) for r, c in A.keys()] + [0]
+        return -min(gap), max(gap)
+    return max(-np.min(gap).item(), 0), max(np.max(gap).item(), 0)

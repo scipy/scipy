@@ -55,7 +55,7 @@
 
 #include "airy.h"
 #include "cbrt.h"
-#include "gamma.h"
+#include "rgamma.h"
 #include "j0.h"
 #include "j1.h"
 #include "polevl.h"
@@ -241,7 +241,7 @@ namespace cephes {
             t = std::frexp(0.5 * x, &ex);
             ex = ex * n;
             if ((ex > -1023) && (ex < 1023) && (n > 0.0) && (n < (MAXGAM - 1.0))) {
-                t = std::pow(0.5 * x, n) / xsf::cephes::Gamma(n + 1.0);
+                t = std::pow(0.5 * x, n) * xsf::cephes::rgamma(n + 1.0);
                 y *= t;
             } else {
                 t = n * std::log(0.5 * x) - lgam_sgn(n + 1.0, &sgngam);
@@ -592,13 +592,13 @@ namespace cephes {
 
         if (x == 0 && n < 0 && !nint) {
             set_error("Jv", SF_ERROR_OVERFLOW, NULL);
-            return std::numeric_limits<double>::infinity() / Gamma(n + 1);
+            return std::numeric_limits<double>::infinity() * rgamma(n + 1);
         }
 
         y = std::abs(x);
 
         if (y * y < std::abs(n + 1) * detail::MACHEP) {
-            return std::pow(0.5 * x, n) / Gamma(n + 1);
+            return std::pow(0.5 * x, n) * rgamma(n + 1);
         }
 
         k = 3.6 * std::sqrt(y);

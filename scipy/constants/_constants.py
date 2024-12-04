@@ -7,8 +7,6 @@ print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 
 The list is not meant to be comprehensive, but just convenient for everyday use.
 """
 
-from __future__ import annotations
-
 import math as _math
 from typing import TYPE_CHECKING, Any
 
@@ -228,7 +226,7 @@ kgf = kilogram_force = g  # * 1 kg
 
 
 def convert_temperature(
-    val: npt.ArrayLike,
+    val: "npt.ArrayLike",
     old_scale: str,
     new_scale: str,
 ) -> Any:
@@ -306,7 +304,7 @@ def convert_temperature(
 # optics
 
 
-def lambda2nu(lambda_: npt.ArrayLike) -> Any:
+def lambda2nu(lambda_: "npt.ArrayLike") -> Any:
     """
     Convert wavelength to optical frequency
 
@@ -337,7 +335,7 @@ def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     return c / _asarray(lambda_, xp=xp, subok=True)
 
 
-def nu2lambda(nu: npt.ArrayLike) -> Any:
+def nu2lambda(nu: "npt.ArrayLike") -> Any:
     """
     Convert optical frequency to wavelength.
 
