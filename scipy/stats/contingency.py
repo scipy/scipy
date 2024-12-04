@@ -24,7 +24,7 @@ Functions for creating and analyzing contingency tables.
 from functools import reduce
 import math
 import numpy as np
-from ._stats_py import power_divergence
+from ._stats_py import power_divergence, _untabulate
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
@@ -373,18 +373,6 @@ def _chi2_resampling_methods(observed, expected, correction, lambda_, method):
         raise ValueError(message)
 
     return Chi2ContingencyResult(res.statistic, res.pvalue, np.nan, expected)
-
-
-def _untabulate(table):
-    # converts a contingency table to paired samples indicating the
-    # correspondence between row and column indices
-    r, c = table.shape
-    x, y = [], []
-    for i in range(r):
-        for j in range(c):
-            x.append([i] * table[i, j])
-            y.append([j] * table[i, j])
-    return np.concatenate(x), np.concatenate(y)
 
 
 def _chi2_permutation_method(observed, expected, method):
