@@ -621,23 +621,31 @@ class TestPearsonr:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(method="exact")
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.xfail_on_32bit("Monte Carlo method needs > a few kB of memory")
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
-    def test_resampling_pvalue(self, method, alternative):
+    @pytest.mark.parametrize('method_name',
+                             ('permutation', 'monte_carlo', 'monte_carlo2'))
+    def test_resampling_pvalue(self, method_name, alternative):
         rng = np.random.default_rng(24623935790378923)
-        size = (2, 100) if method == 'permutation' else (2, 1000)
+        size = (2, 100) if method_name == 'permutation' else (2, 1000)
         x = rng.normal(size=size)
         y = rng.normal(size=size)
         methods = {'permutation': stats.PermutationMethod(rng=rng),
-                   'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2)}
-        method = methods[method]
+                   'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2),
+                   'monte_carlo2': stats.MonteCarloMethod(rng=1294)}
+        method = methods[method_name]
         res = stats.pearsonr(x, y, alternative=alternative, method=method, axis=-1)
         ref = stats.pearsonr(x, y, alternative=alternative, axis=-1)
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
+
+        if method_name == 'monte_carlo2':
+            method = stats.MonteCarloMethod(rng=1294)
+            res2 = stats.pearsonr(x, y, alternative=alternative, method=method, axis=-1)
+            assert_equal(res2.statistic, res.statistic)
+            assert_equal(res2.pvalue, res.pvalue)
 
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))

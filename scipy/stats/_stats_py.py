@@ -4455,7 +4455,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     And for a bootstrap confidence interval:
 
-    >>> method = stats.BootstrapMethod(method='BCa', random_state=rng)
+    >>> method = stats.BootstrapMethod(method='BCa', rng=rng)
     >>> res.confidence_interval(confidence_level=0.9, method=method)
     ConfidenceInterval(low=-0.9983163756488651, high=-0.22771001702132443)  # may vary
 
@@ -4595,12 +4595,15 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
             statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
-        if method.rvs is None:
-            rng = np.random.default_rng()
-            method.rvs = rng.normal, rng.normal
+        # `monte_carlo_test` accepts an `rvs` tuple of callables, not an `rng`
+        # If the user specified an `rng`, replace it with the appropriate callables
+        method = method._asdict()
+        if (rng := method.pop('rng', None)) is not None:  # goo-goo g'joob
+            rng = np.random.default_rng(rng)
+            method['rvs'] = rng.normal, rng.normal
 
         res = monte_carlo_test((x, y,), statistic=statistic, axis=axis,
-                               alternative=alternative, **method._asdict())
+                               alternative=alternative, **method)
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
                               alternative=alternative, x=x, y=y, axis=axis)

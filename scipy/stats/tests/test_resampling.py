@@ -2028,3 +2028,11 @@ def test_parameter_vectorized(fun_name):
         return np.mean(x)
     fun(statistic=statistic, vectorized=None, **options)
     fun(statistic=statistic, vectorized=False, **options)
+
+
+class TestMonteCarloMethod:
+    def test_rvs_and_random_state(self):
+        message = "Use of `rvs` and `rng` are mutually exclusive."
+        rng = np.random.default_rng(34982345)
+        with pytest.raises(ValueError, match=message):
+            stats.MonteCarloMethod(rvs=rng.random, rng=rng)
