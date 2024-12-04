@@ -1,6 +1,7 @@
 import glob
 import os
 import shutil
+import jupytext
 
 def call_jupytext(md_files, _contents_path, _contents_cache_path):
     is_cached = os.path.exists(_contents_cache_path)
@@ -8,7 +9,8 @@ def call_jupytext(md_files, _contents_path, _contents_cache_path):
         for md_file in md_files:
             basename = os.path.splitext(os.path.basename(md_file))[0]
             output_name = os.path.join(_contents_path, f"{basename}.ipynb")
-            os.system(f"python3 -m jupytext --output {output_name} {md_file}")
+            nb = jupytext.read(md_file)
+            jupytext.write(jupytext.read(md_file), output_name, fmt="ipynb", version=4)
         return True
 
     is_dirty = False
@@ -19,7 +21,8 @@ def call_jupytext(md_files, _contents_path, _contents_cache_path):
         cmd_execution_time = os.path.getctime(cached_output_path)
         md_file_modification_time = os.path.getmtime(md_file)
         if cmd_execution_time <= md_file_modification_time:
-            os.system(f"python3 -m jupytext --output {output_path} {md_file}")
+            nb = jupytext.read(md_file)
+            jupytext.write(nb, output_path, fmt="ipynb", version=4)
             is_dirty = True
         else:
             shutil.copyfile(
