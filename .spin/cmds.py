@@ -227,6 +227,16 @@ def test(*, parent_callback, pytest_args, tests, durations, submodule,
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 
+    if sys.platform == "darwin":
+        build_dir = os.path.abspath(kwargs['build_dir'])
+        install_dir = meson._get_site_packages(build_dir)
+        # Temporary workaround for Apple linker.
+        # Refer, https://github.com/scipy/scipy/pull/21674#issuecomment-2516438231 for details
+        # Must be removed before merging
+        os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = os.path.join(
+            install_dir,
+            os.path.join("scipy", "special")
+        )
     parent_callback(**{"pytest_args": pytest_args, "tests": tests, **kwargs})
 
 @click.option(

@@ -116,7 +116,7 @@ jobs:
         mamba install scikit-umfpack scikit-sparse
         pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
 
-        CC="ccache $CC" spin build --prefix=$PWD/build
+        CC="ccache $CC" spin build
 
     - name: Test SciPy
       shell: bash -l {0}
@@ -171,7 +171,7 @@ jobs:
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
         pip install -r requirements/openblas.txt
         pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
-        spin build --with-scipy-openblas --prefix=$PWD/build
+        spin build --with-scipy-openblas
 
         pip install pooch pytest hypothesis
         spin test
@@ -216,7 +216,7 @@ jobs:
 
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
         pip install git+https://github.com/czgdp1807/spin.git@meson_kwargs
-        spin build --with-accelerate --prefix=$PWD/build
+        spin build --with-accelerate
 
         pip install pooch pytest hypothesis
         spin test
