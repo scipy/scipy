@@ -178,6 +178,9 @@ def chi2_contingency(observed, correction=True, lambda_=None, *, method=None):
         `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
         provided configuration options and other appropriate settings.
         Otherwise, the p-value is computed as documented in the notes.
+        Note that if `method` is an instance of `MonteCarloMethod`, the ``rvs``
+        attribute must be left unspecified; Monte Carlo samples are always drawn
+        using the ``rvs`` method of `scipy.stats.random_table`.
 
         .. versionadded:: 1.15.0
 

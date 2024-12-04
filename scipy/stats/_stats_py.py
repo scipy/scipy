@@ -4685,11 +4685,11 @@ def fisher_exact(table, alternative=None, *, method=None):
 
     For other table sizes, or if `method` is provided, the null hypothesis
     is that the rows and columns of the tables have fixed sums and are
-    independent; i.e., the table is a sample from a distribution defined
-    by `scipy.stats.random_table` and the marginals. The statistic is the
+    independent; i.e., the table was sampled from a `scipy.stats.random_table`
+    distribution with the observed marginals. The statistic is the
     probability mass of this distribution evaluated at `table`, and the
     p-value is the percentage of the population of tables with statistic at
-    least as extreme (small) as that of`table`. There is only one alternative
+    least as extreme (small) as that of `table`. There is only one alternative
     hypothesis available: the rows and columns are not independent.
 
     There are other possible choices of statistic and two-sided
@@ -4718,6 +4718,9 @@ def fisher_exact(table, alternative=None, *, method=None):
         the p-value is computed using
         `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
         provided configuration options and other appropriate settings.
+        Note that if `method` is an instance of `MonteCarloMethod`, the ``rvs``
+        attribute must be left unspecified; Monte Carlo samples are always drawn
+        using the ``rvs`` method of `scipy.stats.random_table`.
         Otherwise, the p-value is computed as documented in the notes.
 
         .. versionadded:: 1.15.0
