@@ -8,6 +8,7 @@ from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_
                                    get_index_dtype)
 from scipy.linalg import LinAlgError
 import copy
+import threading
 
 from . import _superlu
 
@@ -17,7 +18,8 @@ try:
 except ImportError:
     noScikit = True
 
-useUmfpack = not noScikit
+useUmfpack = threading.local()
+
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
            'MatrixRankWarning', 'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
@@ -88,9 +90,10 @@ def use_solver(**kwargs):
     True
     >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
+    global useUmfpack
     if 'useUmfpack' in kwargs:
-        globals()['useUmfpack'] = kwargs['useUmfpack']
-    if useUmfpack and 'assumeSortedIndices' in kwargs:
+        useUmfpack.u = kwargs['useUmfpack']
+    if useUmfpack.u and 'assumeSortedIndices' in kwargs:
         umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
 def _get_umf_family(A):
@@ -257,7 +260,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if M != b.shape[0]:
         raise ValueError(f"matrix - rhs dimension mismatch ({A.shape} - {b.shape[0]})")
 
-    use_umfpack = use_umfpack and useUmfpack
+    if not hasattr(useUmfpack, 'u'):
+        useUmfpack.u = not noScikit
+
+    use_umfpack = use_umfpack and useUmfpack.u
 
     if b_is_vector and use_umfpack:
         if b_is_sparse:
@@ -271,7 +277,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+                  " .astype(), or set linsolve.useUmfpack.u = False")
 
         umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
@@ -570,7 +576,10 @@ def factorized(A):
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
 
-    if useUmfpack:
+    if not hasattr(useUmfpack, 'u'):
+        useUmfpack.u = not noScikit
+
+    if useUmfpack.u:
         if noScikit:
             raise RuntimeError('Scikits.umfpack not installed.')
 
@@ -583,7 +592,7 @@ def factorized(A):
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+                  " .astype(), or set linsolve.useUmfpack.u = False")
 
         umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)

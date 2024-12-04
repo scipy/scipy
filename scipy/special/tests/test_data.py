@@ -280,7 +280,7 @@ BOOST_TESTS = [
 
         data(pdtrik, 'poisson_quantile_ipp-poisson_quantile_data',
              (1,0), 2, rtol=3e-9),
-        data(pdtrik_comp, 'poisson_quantile_ipp-poisson_quantile_data', 
+        data(pdtrik_comp, 'poisson_quantile_ipp-poisson_quantile_data',
              (1,0), 3, rtol=4e-9),
 
         data(cbrt, 'cbrt_data_ipp-cbrt_data', 1, 0),
@@ -646,6 +646,7 @@ BOOST_TESTS = [
 ]
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
      _test_factory(test)

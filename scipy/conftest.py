@@ -64,6 +64,10 @@ def pytest_configure(config):
             "markers",
             "thread_unsafe: mark the test function as single-threaded",
         )
+        config.addinivalue_line(
+            "markers",
+            "iterations(n): run the given test function `n` times in each thread",
+        )
 
 
 def pytest_runtest_setup(item):

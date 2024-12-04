@@ -235,16 +235,16 @@ class TestConstructUtils:
         #    diags([a, b, ...], [i, j, ...]) == diag(a, i) + diag(b, j) + ...
         #
 
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         for n_diags in [1, 2, 3, 4, 5, 10]:
-            n = 1 + n_diags//2 + np.random.randint(0, 10)
+            n = 1 + n_diags//2 + rng.randint(0, 10)
 
             offsets = np.arange(-n+1, n-1)
-            np.random.shuffle(offsets)
+            rng.shuffle(offsets)
             offsets = offsets[:n_diags]
 
-            diagonals = [np.random.rand(n - abs(q)) for q in offsets]
+            diagonals = [rng.rand(n - abs(q)) for q in offsets]
 
             mat = construct.diags(diagonals, offsets=offsets)
             dense_mat = sum([np.diag(x, j) for x, j in zip(diagonals, offsets)])
@@ -674,6 +674,7 @@ class TestConstructUtils:
         assert isinstance(bmat([[Gm, Gm]], format="csc"), spmatrix)
 
     @pytest.mark.slow
+    @pytest.mark.thread_unsafe
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
