@@ -438,7 +438,7 @@ Two sparse utility functions can help with handling the index dtype.
 Use ``get_index_dtype(arrays, maxval, check_contents)`` while creating indices
 to find an appropriate dtype (int32 or int64) to use for your compressed indices.
 
-Use ``scipy.sparse.safely_cast_index_arrays`` for recasting after construction,
+Use ``safely_cast_index_arrays(A, idx_dtype)`` for recasting after construction,
 while making sure you con't create overflows during downcasting.
 This function doesn't actually change the input array. The cast arrays are returned.
 And copies are only made when needed. So you can check if casting was done using
@@ -455,13 +455,13 @@ Example idioms include the following::
 
        # select index dtype before construction based on shape
        shape = (3, 3)
-       idx_dtype = scipy.sparse.get_index_dtype(maxval=max(shape))
+       idx_dtype = scipy.sparse._sputils.get_index_dtype(maxval=max(shape))
        indices = np.array([0, 1, 0], dtype=idx_dtype)
        indptr = np.arange(3, dtype=idx_dtype)
        A = csr_array((data, indices, indptr), shape=shape)
 
        # rescast after construction, raising exception before overflow
-       indices, indptr = scipy.sparse.safely_cast_index_arrays(B, np.int32)
+       indices, indptr = scipy.sparse._sputils.safely_cast_index_arrays(B, np.int32)
        B.indices, B.indptr = indices, indptr
 
 Other
