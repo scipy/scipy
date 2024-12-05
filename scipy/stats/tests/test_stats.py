@@ -5732,19 +5732,24 @@ class Test_ttest_ind_permutations:
 
         kwargs = dict(n_resamples=999)
 
-        # Use ttest_ind with `method`
-        rng = np.random.default_rng(348934579834565)
-        rvs = [rng.standard_normal, rng.standard_normal]
-        method = stats.MonteCarloMethod(rvs=rvs, **kwargs)
-        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
-
-        # Use `permutation_test` directly
+        # Use `monte_carlo` directly
         def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
         rng = np.random.default_rng(348934579834565)
         rvs = [rng.standard_normal, rng.standard_normal]
         ref = stats.monte_carlo_test((x, y), rvs=rvs, statistic=statistic, axis=-1,
                                      alternative=alternative, **kwargs)
 
+        # Use ttest_ind with `method`
+        rng = np.random.default_rng(348934579834565)
+        rvs = [rng.standard_normal, rng.standard_normal]
+        method = stats.MonteCarloMethod(rvs=rvs, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Passing `rng` instead of `rvs`
+        method = stats.MonteCarloMethod(rng=348934579834565, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
         assert_equal(res.statistic, ref.statistic)
         assert_equal(res.pvalue, ref.pvalue)
 
@@ -5754,7 +5759,6 @@ class Test_ttest_ind_permutations:
         assert_allclose(res.pvalue, ref.pvalue, rtol=6e-2)
 
     def test_resampling_input_validation(self):
-        rng = np.random.default_rng(328924823)
         message = "`method` must be an instance of `PermutationMethod`, an instance..."
         with pytest.raises(ValueError, match=message):
             stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
