@@ -1190,7 +1190,8 @@ def _log1mexp(x):
 
     def f2(x):
         # good for exp(x) close to 1
-        return np.real(np.log(-special.expm1(x + 0j)))
+        with np.errstate(divide='ignore'):
+            return np.real(np.log(-special.expm1(x + 0j)))
 
     return _lazywhere(x < -1, (x,), f=f1, f2=f2)[()]
 
@@ -1818,6 +1819,22 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def __truediv__(self, scale):
         return ShiftedScaledDistribution(self, scale=1/scale)
+
+    def __pow__(self, other):
+        if not np.isscalar(other) or other <= 0 or other != int(other):
+            message = ("Raising a random variable to the power of an argument is only "
+                       "implemented when the argument is a positive integer.")
+            raise NotImplementedError(message)
+
+        X = abs(self) if (other % 2 == 0) else self
+
+        # This notation for g_name is nonstandard
+        funcs = dict(g=lambda u: u**other, g_name=f'pow_{other}',
+                     h=lambda u: u**(1 / other),
+                     dh=lambda u: 1/other * u**(1/other - 1))
+
+        return MonotonicTransformedDistribution(X, **funcs, increasing=True)
+
 
     def __radd__(self, other):
         return self.__add__(other)
