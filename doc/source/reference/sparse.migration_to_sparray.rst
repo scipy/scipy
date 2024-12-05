@@ -141,7 +141,7 @@ Recommended steps for migration
       incoming index arrays rather than their values. So, if you want ``int32``,
       set the dtype, e.g. ``indices = np.array([1,3,6], dtype=np.int32)`` or
       ``indptr = np.arange(9, dtype=np.int32)``, when creating the index arrays.
-      See :ref:`sparse-migration-index-array-dtype` below for more info.
+      See :ref:`sparse-migration-index-array-dtypes` below for more info.
       In many settings, the index array dtype isn't crucial and you can just let
       the constructors choose the dtype for both sparray and spmatrix.
    -  Test your code. And **read** your code. You have migrated to sparray.
