@@ -5753,19 +5753,34 @@ class Test_ttest_ind_permutations:
         assert_equal(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue, rtol=6e-2)
 
+    def test_resampling_input_validation(self):
+        rng = np.random.default_rng(328924823)
+        message = "`method` must be an instance of `PermutationMethod`, an instance..."
+        with pytest.raises(ValueError, match=message):
+            stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
 
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,
                                   reason='Uses NumPy for pvalue, CI')
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_permutation_not_implement_for_xp(self, xp):
-        message = "Use of `permutations` is compatible only with NumPy arrays."
         a2, b2 = xp.asarray(self.a2), xp.asarray(self.b2)
+
+        message = "Use of `permutations` is compatible only with NumPy arrays."
         if is_numpy(xp):  # no error
             stats.ttest_ind(a2, b2, permutations=10)
         else:  # NotImplementedError
             with pytest.raises(NotImplementedError, match=message):
                 stats.ttest_ind(a2, b2, permutations=10)
+
+        message = "Use of resampling methods is compatible only with NumPy arrays."
+        rng = np.random.default_rng(7457345872572348)
+        method = stats.PermutationMethod(rng=rng)
+        if is_numpy(xp):  # no error
+            stats.ttest_ind(a2, b2, method=method)
+        else:  # NotImplementedError
+            with pytest.raises(NotImplementedError, match=message):
+                stats.ttest_ind(a2, b2, method=method)
 
 
 @pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
@@ -5966,6 +5981,12 @@ class Test_ttest_trim:
             message = "Arguments {'permutations'} are deprecated, whether..."
             with pytest.warns(DeprecationWarning, match=message):
                 stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
+
+        with assert_raises(NotImplementedError, match=match):
+            message = "Arguments {.*'random_state'.*} are deprecated, whether..."
+            with pytest.warns(DeprecationWarning, match=message):
+                stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2,
+                                random_state=2)
 
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,
