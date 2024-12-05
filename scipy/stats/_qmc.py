@@ -6,7 +6,6 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from collections.abc import Callable
 from typing import (
     ClassVar,
     Literal,
