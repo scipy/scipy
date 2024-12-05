@@ -191,7 +191,8 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     Raises
     ------
     ValueError
-        If the array has shape that would not fit in the new dtype.
+        If the array has shape that would not fit in the new dtype, or if
+        the sparse format does not use index arrays.
     """
     if not msg:
         msg = f"dtype {idx_dtype}"
