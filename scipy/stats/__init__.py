@@ -471,6 +471,8 @@ Random Variables
    Normal
    Mixture
    make_distribution
+   exp
+   log
 
 Quasi-Monte Carlo
 =================
@@ -642,6 +644,7 @@ from ._sensitivity_analysis import *
 from ._survival import *
 from ._distribution_infrastructure import Mixture, make_distribution
 from ._new_distributions import Normal
+from ._distribution_infrastructure import exp, log
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi
 

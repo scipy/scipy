@@ -1829,8 +1829,36 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return self.__mul__(other)
 
     def __rtruediv__(self, other):
-        message = "Division by a random variable is not yet implemented."
-        raise NotImplementedError(message)
+        a, b = self.support()
+        funcs = dict(g=lambda u: 1 / u, g_name='inv',
+                     h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
+        if np.all(a >= 0) or np.all(b <= 0):
+            out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
+        else:
+            message = ("Division by a random variable is only implemented "
+                       "when the support is either non-negative or non-positive.")
+            raise NotImplementedError(message)
+        if np.all(other == 1):
+            return out
+        else:
+            return out * other
+
+    def __rpow__(self, other):
+        funcs = dict(g=lambda u: other**u, g_name=f'{other}**',
+                     h=lambda u: np.log(u) / np.log(other),
+                     dh=lambda u: 1 / np.abs(u * np.log(other)))
+
+        if not np.isscalar(other) or other <= 0 or other == 1:
+            message = ("Raising an argument to the power of a random variable is only "
+                       "implemented when the argument is a positive scalar other than "
+                       "1.")
+            raise NotImplementedError(message)
+
+        if other > 1:
+            return MonotonicTransformedDistribution(self, **funcs, increasing=True)
+        else:
+            return MonotonicTransformedDistribution(self, **funcs, increasing=False)
+
 
     def __neg__(self):
         return self * -1
@@ -3625,11 +3653,6 @@ def _shift_scale_inverse_function(func):
 
 
 class TransformedDistribution(ContinuousDistribution):
-    # TODO: This may need some sort of default `_parameterizations` with a
-    #       single `_Parameterization` that has no parameters. The reason is
-    #       that `dist`'s parameters need to get added to it. If they're not
-    #       added, then those parameter kwargs are not recognized in
-    #       `_update_parameters`.
     def __init__(self, dist, *args, **kwargs):
         self._copy_parameterization()
         self._variable = dist._variable
@@ -3638,6 +3661,8 @@ class TransformedDistribution(ContinuousDistribution):
             # Add standard distribution parameters to our parameterization
             dist_parameters = dist._parameterization.parameters
             set_params = set(dist_parameters)
+            if not self._parameterizations:
+                self._parameterizations.append(_Parameterization())
             for parameterization in self._parameterizations:
                 if set_params.intersection(parameterization.parameters):
                     message = (f"One or more of the parameters of {dist} has "
@@ -3829,10 +3854,10 @@ class ShiftedScaledDistribution(TransformedDistribution):
             order, raw_moments, loc, self._zero)
 
     def _sample_dispatch(self, sample_shape, full_shape, *,
-                         method, rng, **params):
+                         rng, loc, scale, sign, method, **params):
         rvs = self._dist._sample_dispatch(
             sample_shape, full_shape, method=method, rng=rng, **params)
-        return self._itransform(rvs, **params)
+        return self._itransform(rvs, loc=loc, scale=scale, sign=sign, **params)
 
     def __add__(self, loc):
         return ShiftedScaledDistribution(self._dist, loc=self.loc + loc,
@@ -4154,3 +4179,212 @@ class Mixture(_ProbabilityDistribution):
         x = [var.sample(shape=n, rng=rng) for n, var in zip(ns, self._components)]
         x = np.reshape(rng.permuted(np.concatenate(x)), shape)
         return x[()]
+
+
+class MonotonicTransformedDistribution(TransformedDistribution):
+    r"""Distribution underlying a strictly monotonic function of a random variable
+
+    Given a random variable :math:`X`; a strictly monotonic function
+    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, and the derivative magnitude
+    :math: `|h'(u)| = \left| \frac{dh(u)}{du} \right|`, define the distribution
+    underlying the random variable :math:`Y = g(X)`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    g, h, dh : callable
+        Elementwise functions representing the mathematical functions
+        :math:`g(u)`, :math:`h(u)`, and :math:`|h'(u)|`
+    logdh : callable, optional
+        Elementwise function representing :math:`\log(h'(u))`.
+        The default is ``lambda u: np.log(dh(u))``, but providing
+        a custom implementation may avoid over/underflow.
+    increasing : bool, optional
+        Whether the function is strictly increasing (True, default)
+        or strictly decreasing (False).
+    g_name : str, optional
+        The name of the mathematical function represented by `g`,
+        used in `__repr__` and `__str__`. The default is ``g.__name__``.
+
+    """
+
+    def __init__(self, dist, *args, g, h, dh, logdh=None,
+                 increasing=True, g_name=None, **kwargs):
+        super().__init__(dist, *args, **kwargs)
+        self._g = g
+        self._h = h
+        self._dh = dh
+        self._logdh = (logdh if logdh is not None
+                       else lambda u: np.log(dh(u)))
+        if increasing:
+            self._xdf = self._dist._cdf_dispatch
+            self._cxdf = self._dist._ccdf_dispatch
+            self._ixdf = self._dist._icdf_dispatch
+            self._icxdf = self._dist._iccdf_dispatch
+            self._logxdf = self._dist._logcdf_dispatch
+            self._logcxdf = self._dist._logccdf_dispatch
+            self._ilogxdf = self._dist._ilogcdf_dispatch
+            self._ilogcxdf = self._dist._ilogccdf_dispatch
+        else:
+            self._xdf = self._dist._ccdf_dispatch
+            self._cxdf = self._dist._cdf_dispatch
+            self._ixdf = self._dist._iccdf_dispatch
+            self._icxdf = self._dist._icdf_dispatch
+            self._logxdf = self._dist._logccdf_dispatch
+            self._logcxdf = self._dist._logcdf_dispatch
+            self._ilogxdf = self._dist._ilogccdf_dispatch
+            self._ilogcxdf = self._dist._ilogcdf_dispatch
+        self._increasing = increasing
+        self._g_name = g.__name__ if g_name is None else g_name
+
+    def __repr__(self):
+        return f"{self._g_name}({repr(self._dist)})"
+
+    def __str__(self):
+        return f"{self._g_name}({str(self._dist)})"
+
+    def _overrides(self, method_name):
+        # Do not use the generic overrides of TransformedDistribution
+        return False
+
+    def _support(self, **params):
+        a, b = self._dist._support(**params)
+        # For reciprocal transformation, we want this zero to become -inf
+        b = np.where(b==0, np.asarray("-0", dtype=b.dtype), b)
+        with np.errstate(divide='ignore'):
+            if self._increasing:
+                return self._g(a), self._g(b)
+            else:
+                return self._g(b), self._g(a)
+
+    def _logpdf_dispatch(self, x, *args, **params):
+        return self._dist._logpdf_dispatch(self._h(x), *args, **params) + self._logdh(x)
+
+    def _pdf_dispatch(self, x, *args, **params):
+        return self._dist._pdf_dispatch(self._h(x), *args, **params) * self._dh(x)
+
+    def _logcdf_dispatch(self, x, *args, **params):
+        return self._logxdf(self._h(x), *args, **params)
+
+    def _cdf_dispatch(self, x, *args, **params):
+        return self._xdf(self._h(x), *args, **params)
+
+    def _logccdf_dispatch(self, x, *args, **params):
+        return self._logcxdf(self._h(x), *args, **params)
+
+    def _ccdf_dispatch(self, x, *args, **params):
+        return self._cxdf(self._h(x), *args, **params)
+
+    def _ilogcdf_dispatch(self, p, *args, **params):
+        return self._g(self._ilogxdf(p, *args, **params))
+
+    def _icdf_dispatch(self, p, *args, **params):
+        return self._g(self._ixdf(p, *args, **params))
+
+    def _ilogccdf_dispatch(self, p, *args, **params):
+        return self._g(self._ilogcxdf(p, *args, **params))
+
+    def _iccdf_dispatch(self, p, *args, **params):
+        return self._g(self._icxdf(p, *args, **params))
+
+    def _sample_dispatch(self, sample_shape, full_shape, *,
+                         method, rng, **params):
+        rvs = self._dist._sample_dispatch(
+            sample_shape, full_shape, method=method, rng=rng, **params)
+        return self._g(rvs)
+
+
+def exp(X):
+    r"""Natural exponential of a random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = \exp(X)`.
+
+    Examples
+    --------
+    Suppose we have a normally distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.Normal()
+
+    We wish to have a lognormally distributed random variable :math:`Y`,
+    a random variable whose natural logarithm is :math:`X`.
+    If :math:`X` is to be the natural logarithm of :math:`Y`, then we
+    must take :math:`Y` to be the natural exponential of :math:`X`.
+
+    >>> Y = stats.exp(X)
+
+    To demonstrate that ``X`` represents the logarithm of ``Y``,
+    we plot a normalized histogram of the logarithm of observations of
+    ``Y`` against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.log(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of `X`', 'histogram of `log(y)`'))
+    >>> plt.show()
+
+    """
+    return MonotonicTransformedDistribution(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
+                                            logdh=lambda u: -np.log(u))
+
+
+def log(X):
+    r"""Natural logarithm of a non-negative random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X` with positive support.
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = \exp(X)`.
+
+    Examples
+    --------
+    Suppose we have a gamma distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> Gamma = stats.make_distribution(stats.gamma)
+    >>> X = Gamma(a=1.0)
+
+    We wish to have a exp-gamma distributed random variable :math:`Y`,
+    a random variable whose natural exponential is :math:`X`.
+    If :math:`X` is to be the natural exponential of :math:`Y`, then we
+    must take :math:`Y` to be the natural logarithm of :math:`X`.
+
+    >>> Y = stats.log(X)
+
+    To demonstrate that ``X`` represents the exponential of ``Y``,
+    we plot a normalized histogram of the exponential of observations of
+    ``Y`` against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.exp(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of `X`', 'histogram of `exp(y)`'))
+    >>> plt.show()
+
+    """
+    if np.any(X.support()[0] < 0):
+        message = ("The logarithm of a random variable is only implemented when the "
+                   "support is non-negative.")
+        raise NotImplementedError(message)
+    return MonotonicTransformedDistribution(X, g=np.log, h=np.exp, dh=np.exp,
+                                            logdh=lambda u: u)

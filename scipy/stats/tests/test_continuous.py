@@ -18,7 +18,8 @@ from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
     _generate_domain_support, Mixture)
-from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
+from scipy.stats._new_distributions import (StandardNormal, Normal, _LogUniform,
+                                            _Uniform, _Gamma)
 
 
 class Test_RealDomain:
@@ -1192,6 +1193,146 @@ class TestTransforms:
             #                 dist0.sample(x_result_shape, rng=rng0) * scale + loc)
             # Should also try to test fit, plot?
 
+    @pytest.mark.fail_slow(5)
+    @pytest.mark.parametrize('exp_pow', ['exp', 'pow'])
+    def test_exp_pow(self, exp_pow):
+        rng = np.random.default_rng(81345982345826)
+        mu = rng.random((3, 1))
+        sigma = rng.random((3, 1))
+
+        X = Normal()*sigma + mu
+        if exp_pow == 'exp':
+            Y = stats.exp(X)
+        else:
+            Y = np.e ** X
+        Y0 = stats.lognorm(sigma, scale=np.exp(mu))
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
+
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.parametrize('scale', [1, 2, -1])
+    @pytest.mark.xfail_on_32bit("`scale=-1` fails on 32-bit; needs investigation")
+    def test_reciprocal(self, scale):
+        rng = np.random.default_rng(81345982345826)
+        a = rng.random((3, 1))
+
+        # Separate sign from scale. It's easy to scale the resulting
+        # RV with negative scale; we want to test the ability to divide
+        # by a RV with negative support
+        sign, scale = np.sign(scale), abs(scale)
+
+        # Reference distribution
+        InvGamma = stats.make_distribution(stats.invgamma)
+        Y0 = sign * scale * InvGamma(a=a)
+
+        # Test distribution
+        X = _Gamma(a=a) if sign > 0 else -_Gamma(a=a)
+        Y = scale / X
+
+        y = Y0.sample(shape=(3, 10), rng=rng)
+        p = Y0.cdf(y)
+        logp = np.log(p)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.median())
+        # moments are not finite
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.ccdf(y))
+        assert_allclose(Y.icdf(p), Y0.icdf(p))
+        assert_allclose(Y.iccdf(p), Y0.iccdf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logccdf(y))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            assert_allclose(Y.ilogcdf(logp), Y0.ilogcdf(logp))
+            assert_allclose(Y.ilogccdf(logp), Y0.ilogccdf(logp))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), scale/(X.sample(rng=seed)))
+
+    @pytest.mark.fail_slow(5)
+    def test_log(self):
+        rng = np.random.default_rng(81345982345826)
+        a = rng.random((3, 1))
+
+        X = _Gamma(a=a)
+        Y0 = stats.loggamma(a)
+        Y = stats.log(X)
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        with np.errstate(invalid='ignore'):
+            assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+            assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), np.log(X.sample(rng=seed)))
+
+    def test_monotonic_transforms(self):
+        # Some tests of monotonic transforms that are better to be grouped or
+        # don't fit well above
+        X = _Uniform(a=1, b=2)
+        assert repr(stats.log(X)) == str(stats.log(X)) == "log(_Uniform(a=1.0, b=2.0))"
+        assert repr(1 / X) == str(1 / X) == "inv(_Uniform(a=1.0, b=2.0))"
+        assert repr(stats.exp(X)) == str(stats.exp(X)) == "exp(_Uniform(a=1.0, b=2.0))"
+
+        X = _Uniform(a=-1, b=2)
+        message = "Division by a random variable is only implemented when the..."
+        with pytest.raises(NotImplementedError, match=message):
+            1 / X
+        message = "The logarithm of a random variable is only implemented when the..."
+        with pytest.raises(NotImplementedError, match=message):
+            stats.log(X)
+        message = "Raising an argument to the power of a random variable is only..."
+        with pytest.raises(NotImplementedError, match=message):
+            (-2) ** X
+        with pytest.raises(NotImplementedError, match=message):
+            1 ** X
+        with pytest.raises(NotImplementedError, match=message):
+            [0.5, 1.5] ** X
+
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
 
@@ -1209,10 +1350,6 @@ class TestTransforms:
         assert_allclose(X.cdf(x), Y.cdf((x + loc) * scale))
         X = loc -_LogUniform(a=a, b=b)/scale
         assert_allclose(X.cdf(x), Y.ccdf((-x + loc)*scale))
-
-        message = "Division by a random variable is not yet implemented."
-        with pytest.raises(NotImplementedError, match=message):
-            1 / Y
 
 
 class TestFullCoverage:
