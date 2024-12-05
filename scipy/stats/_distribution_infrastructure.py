@@ -3906,7 +3906,7 @@ class OrderStatisticDistribution(TransformedDistribution):
         # but `_tanhsinh` doesn't accept complex limits of integration; take `real`.
         log_FX = self._dist._logcdf_dispatch(x.real, **kwargs)
         log_cFX = self._dist._logccdf_dispatch(x.real, **kwargs)
-        # This formula can be problematic when (r - 1)|(n-r) = 0 and `log_FX`|log_cFX = -inf
+        # This can be problematic when (r - 1)|(n-r) = 0 and `log_FX`|log_cFX = -inf
         # The PDF in these cases is 0^0, so these should be replaced with log(1)=0
         # return log_fX + (r-1)*log_FX + (n-r)*log_cFX - log_factor
         rm1_log_FX = np.where((r - 1 == 0) & np.isneginf(log_FX), 0, (r-1)*log_FX)
