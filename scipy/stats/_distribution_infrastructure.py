@@ -62,13 +62,10 @@ _NO_CACHE = "no_cache"
 #  implement symmetric distribution
 #  implement composite distribution
 #  implement wrapped distribution
-#  implement folded distribution
-#  implement double distribution
 #  profile/optimize
 #  general cleanup (choose keyword-only parameters)
 #  compare old/new distribution timing
 #  make video
-#  PR
 #  add array API support
 #  why does dist.ilogcdf(-100) not converge to bound? Check solver response to inf
 #  _chandrupatla_minimize should not report xm = fm = NaN when it fails
@@ -3672,19 +3669,19 @@ def _shift_scale_inverse_function(func):
 
 
 class TransformedDistribution(ContinuousDistribution):
-    def __init__(self, dist, *args, **kwargs):
+    def __init__(self, X, /, *args, **kwargs):
         self._copy_parameterization()
-        self._variable = dist._variable
-        self._dist = dist
-        if dist._parameterization:
+        self._variable = X._variable
+        self._dist = X
+        if X._parameterization:
             # Add standard distribution parameters to our parameterization
-            dist_parameters = dist._parameterization.parameters
+            dist_parameters = X._parameterization.parameters
             set_params = set(dist_parameters)
             if not self._parameterizations:
                 self._parameterizations.append(_Parameterization())
             for parameterization in self._parameterizations:
                 if set_params.intersection(parameterization.parameters):
-                    message = (f"One or more of the parameters of {dist} has "
+                    message = (f"One or more of the parameters of {X} has "
                                "the same name as a parameter of "
                                f"{self.__class__.__name__}. Name collisions "
                                "create ambiguities and are not supported.")
@@ -4228,9 +4225,9 @@ class MonotonicTransformedDistribution(TransformedDistribution):
 
     """
 
-    def __init__(self, dist, *args, g, h, dh, logdh=None,
+    def __init__(self, X, /, *args, g, h, dh, logdh=None,
                  increasing=True, g_name=None, **kwargs):
-        super().__init__(dist, *args, **kwargs)
+        super().__init__(X, *args, **kwargs)
         self._g = g
         self._h = h
         self._dh = dh
@@ -4334,8 +4331,8 @@ class FoldedDistribution(TransformedDistribution):
     # Many enhancements are possible if distribution is symmetric. Start
     # with the general case; enhance later.
 
-    def __init__(self, dist, *args, **kwargs):
-        super().__init__(dist, *args, **kwargs)
+    def __init__(self, X, /, *args, **kwargs):
+        super().__init__(X, *args, **kwargs)
         # I think we need to allow `_support` to define whether the endpoints
         # are inclusive or not. In the meantime, it's best to ensure that the lower
         # endpoint (typically 0 for folded distribution) is inclusive so PDF evaluates
@@ -4387,7 +4384,7 @@ class FoldedDistribution(TransformedDistribution):
         return np.abs(rvs)
 
 
-def abs(X):
+def abs(X, /):
     r"""Absolute value of a random variable
 
     Parameters
@@ -4429,7 +4426,7 @@ def abs(X):
     return FoldedDistribution(X)
 
 
-def exp(X):
+def exp(X, /):
     r"""Natural exponential of a random variable
 
     Parameters
@@ -4474,7 +4471,7 @@ def exp(X):
                                             logdh=lambda u: -np.log(u))
 
 
-def log(X):
+def log(X, /):
     r"""Natural logarithm of a non-negative random variable
 
     Parameters
