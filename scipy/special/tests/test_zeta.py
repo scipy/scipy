@@ -271,7 +271,7 @@ gcc_linux = cpp_compiler == "gcc" and sys.platform == "linux"
 clang_macOS = cpp_compiler == "clang" and sys.platform == "darwin"
 
 
-@pytest.mark.xfail(
+@pytest.mark.skipif(
     not (gcc_linux or clang_macOS),
     reason="Underflow may not be avoided on other platforms",
 )
