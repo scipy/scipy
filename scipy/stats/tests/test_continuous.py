@@ -12,8 +12,8 @@ import hypothesis.extra.numpy as npst
 from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
+from scipy.stats import qmc
 from scipy.stats._distr_params import distcont
-
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
@@ -179,6 +179,8 @@ class TestDistributions:
             check_support(dist)
             check_moment_funcs(dist, result_shape)  # this needs to get split up
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
+            qrng = qmc.Halton(d=1, seed=rng)
+            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('family', families)
@@ -349,7 +351,7 @@ def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
         sample_method = dist.sample
 
     methods = {'inverse_transform'}
-    if dist._overrides(f'_{fname}_formula'):
+    if dist._overrides(f'_{fname}_formula') and not isinstance(rng, qmc.QMCEngine):
         methods.add('formula')
 
     for method in methods:
@@ -701,11 +703,12 @@ def check_moment_funcs(dist, result_shape):
         assert_allclose(dist.moment(i, 'standardized'), ref, atol=atol*10**i)
 
 
-@pytest.mark.parametrize('family', (StandardNormal,))
+@pytest.mark.parametrize('family', (Normal,))
 @pytest.mark.parametrize('x_shape', [tuple(), (2, 3)])
 @pytest.mark.parametrize('dist_shape', [tuple(), (4, 1)])
 @pytest.mark.parametrize('fname', ['sample'])
-def test_sample_against_cdf(family, dist_shape, x_shape, fname):
+@pytest.mark.parametrize('rng_type', [np.random.Generator, qmc.Halton, qmc.Sobol])
+def test_sample_against_cdf(family, dist_shape, x_shape, fname, rng_type):
     rng = np.random.default_rng(842582438235635)
     num_parameters = family._num_parameters()
 
@@ -714,13 +717,15 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname):
 
     dist = family._draw(dist_shape, rng)
 
-    n = 1000
+    n = 1024
     sample_size = (n,) + x_shape
     sample_array_shape = sample_size + dist_shape
 
     if fname == 'sample':
         sample_method = dist.sample
 
+    if rng_type != np.random.Generator:
+        rng = rng_type(d=1, seed=rng)
     x = sample_method(sample_size, rng=rng)
     assert x.shape == sample_array_shape
 
