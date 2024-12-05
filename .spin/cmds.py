@@ -309,11 +309,12 @@ def test(*, parent_callback, pytest_args, tests, coverage,
             os.path.join("scipy", "special")
         )
 
-    parent_callback(**{"pytest_args": pytest_args, "tests": tests,
-                       "coverage": coverage, **kwargs})
-
-    if coverage and was_built_with_gcov_flag:
-        return run_lcov(build_dir)
+    try:
+        parent_callback(**{"pytest_args": pytest_args, "tests": tests,
+                        "coverage": coverage, **kwargs})
+    finally:
+        if coverage and was_built_with_gcov_flag:
+            return run_lcov(build_dir)
 
 @click.option(
         '--list-targets', '-t', default=False, is_flag=True,
