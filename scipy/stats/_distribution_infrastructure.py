@@ -3831,7 +3831,7 @@ class OrderStatisticDistribution(TransformedDistribution):
     n : array_like
         The (integer) sample size :math:`n`
     r : array_like
-        The (integer) rank :math:`r`
+        The (integer) rank of the order statistic :math:`r`
 
     Notes
     -----
@@ -3879,7 +3879,8 @@ class OrderStatisticDistribution(TransformedDistribution):
 
     """
 
-    # These should really be _IntegerDomain/_IntegerParameter
+    # These can be restricted to _IntegerDomain/_IntegerParameter in a separate
+    # PR if desired.
     _r_domain = _RealDomain(endpoints=(1, 'n'), inclusive=(True, True))
     _r_param = _RealParameter('r', domain=_r_domain, typical=(1, 2))
 
@@ -3905,7 +3906,12 @@ class OrderStatisticDistribution(TransformedDistribution):
         # but `_tanhsinh` doesn't accept complex limits of integration; take `real`.
         log_FX = self._dist._logcdf_dispatch(x.real, **kwargs)
         log_cFX = self._dist._logccdf_dispatch(x.real, **kwargs)
-        return log_fX + (r-1)*log_FX + (n-r)*log_cFX - log_factor
+        # This formula can be problematic when (r - 1)|(n-r) = 0 and `log_FX`|log_cFX = -inf
+        # The PDF in these cases is 0^0, so these should be replaced with log(1)=0
+        # return log_fX + (r-1)*log_FX + (n-r)*log_cFX - log_factor
+        rm1_log_FX = np.where((r - 1 == 0) & np.isneginf(log_FX), 0, (r-1)*log_FX)
+        nmr_log_cFX = np.where((n - r == 0) & np.isneginf(log_cFX), 0, (n-r)*log_cFX)
+        return log_fX + rm1_log_FX + nmr_log_cFX - log_factor
 
     def _pdf_formula(self, x, r, n, **kwargs):
         # 1 / factor = factorial(n) / (factorial(r-1) * factorial(n-r))
