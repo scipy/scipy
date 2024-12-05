@@ -946,7 +946,7 @@ class TestFisherExact:
         res = stats.fisher_exact(table, alternative=alternative)
         assert_equal((res.statistic, res.pvalue), res)
 
-    def test_resampling_input_validation(self):
+    def test_input_validation_edge_cases_rxc(self):
         rng = np.random.default_rng(2345783457834572345)
         table = np.asarray([[2, 7], [8, 2]])
 
@@ -964,6 +964,18 @@ class TestFisherExact:
         with pytest.raises(ValueError, match=message):
             method = stats.MonteCarloMethod(rvs=stats.norm.rvs)
             stats.fisher_exact(table, method=method)
+
+        message = "`table` must have at least one row and one column."
+        with pytest.raises(ValueError, match=message):
+            stats.fisher_exact(np.zeros((0, 1)))
+
+        # Specical case: when there is only one table with given marginals, the
+        # PMF of that case is 1.0, so the p-value is 1.0
+        np.testing.assert_equal(stats.fisher_exact([[1, 2, 3]]), (1, 1))
+        np.testing.assert_equal(stats.fisher_exact([[1], [2], [3]]), (1, 1))
+        np.testing.assert_equal(stats.fisher_exact(np.zeros((2, 3))), (1, 1))
+
+
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.slow()
