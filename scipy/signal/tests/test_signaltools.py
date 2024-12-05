@@ -2403,6 +2403,53 @@ class TestFiltFilt:
         assert_allclose(y, expected)
 
 
+    def test_complex_coeff(self):
+        # gh-17877: complex coefficient filters
+        if self.filtfilt_kind != 'tf':
+            pytest.skip('complex coefficents only for tf')
+
+        # centre frequency for filter [/time]
+        fcentre = 50
+        # filter passband width [/time]
+        fwidth = 5
+        # sample rate [/time]
+        fs = 1e3
+
+        z, p, k = signal.butter(2, 2*np.pi*fwidth/2, output='zpk', fs=fs)
+
+        z = z.astype(complex)
+        p = p.astype(complex)
+
+        # rotate filter zeros and poles to be centred about fcentre
+        z *= np.exp(2j * np.pi * fcentre/fs)
+        p *= np.exp(2j * np.pi * fcentre/fs)
+
+        b, a = signal.zpk2tf(z, p, k)
+
+        # time [time]
+        t = np.arange(500) / fs
+
+        # filter input
+        u = 2 * np.cos(2*np.pi*fcentre*t)
+
+        # first-order transient iterations to 0.5% settling level.
+        # filter isn't first-order, use 0.5% to allow for headroom
+        # for 1% assertion later
+        ntrans = int(np.log(5e-3) / np.log(max(abs(p))))
+
+        assert 2*ntrans < len(t)
+
+        # 2*cos(x) = np.exp(2j*x) + np.exp(-2j*x); filter above should
+        # remove np.exp(-2j*x)
+        yref = np.exp(2j*np.pi*fcentre*t)
+
+        y = self.filtfilt((z,p,k), u)
+        assert_array_less(abs(y - yref)[ntrans:-ntrans], 1e-2)
+
+        ygust = self.filtfilt((z,p,k), u, method='gust')
+        assert_array_less(abs(ygust - yref)[ntrans:-ntrans], 1e-2)
+
+
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
 
