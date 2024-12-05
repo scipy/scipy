@@ -1333,6 +1333,14 @@ class TestTransforms:
         with pytest.raises(NotImplementedError, match=message):
             [0.5, 1.5] ** X
 
+        message = "Raising a random variable to the power of an argument is only"
+        with pytest.raises(NotImplementedError, match=message):
+            X ** (-2)
+        with pytest.raises(NotImplementedError, match=message):
+            X ** 0
+        with pytest.raises(NotImplementedError, match=message):
+            X ** [0.5, 1.5]
+
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
 
@@ -1350,6 +1358,69 @@ class TestTransforms:
         assert_allclose(X.cdf(x), Y.cdf((x + loc) * scale))
         X = loc -_LogUniform(a=a, b=b)/scale
         assert_allclose(X.cdf(x), Y.ccdf((-x + loc)*scale))
+
+    def test_abs(self):
+        rng = np.random.default_rng(81345982345826)
+        loc = rng.random((3, 1))
+
+        Y = stats.abs(Normal() + loc)
+        Y0 = stats.foldnorm(loc)
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy() + 0j))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        sample = Y.sample(10)
+        assert np.all(sample > 0)
+
+    def test_pow(self):
+        rng = np.random.default_rng(81345982345826)
+
+        Y = Normal()**2
+        Y0 = stats.chi2(df=1)
+
+        y = Y0.rvs(10, random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy() + 0j), rtol=1e-6)
+        assert_allclose(Y.entropy(), Y0.entropy(), rtol=1e-6)
+        assert_allclose(Y.median(), Y0.median())
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        sample = Y.sample(10)
+        assert np.all(sample > 0)
 
 
 class TestFullCoverage:
