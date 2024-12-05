@@ -111,8 +111,8 @@ and support several Array API compatible array libraries in addition to NumPy
   and triangular structures.
 - `scipy.linalg` matrix creation functions (`scipy.linalg.circulant`,
   `scipy.linalg.companion`, `scipy.linalg.convolution_matrix`,
-  `scipy.linalg.fiedler`, `scipy.linalg.fiedler_companion`,
-  `scipy.linalg.leslie`, and `scipy.linalg.toeplitz`) now support batch
+  `scipy.linalg.fiedler`, `scipy.linalg.fiedler_companion`, and
+  `scipy.linalg.leslie`) now support batch
   matrix creation.
 - `scipy.linalg.funm` is faster.
 - `scipy.linalg.orthogonal_procrustes` now supports complex input.
@@ -321,8 +321,8 @@ Array API Standard Support
 Experimental support for array libraries other than NumPy has been added to
 existing sub-packages in recent versions of SciPy. Please consider testing
 these features by setting an environment variable ``SCIPY_ARRAY_API=1`` and
-providing PyTorch, JAX, or CuPy arrays as array arguments. Features with
-support added for SciPy ``1.15.0`` include:
+providing PyTorch, JAX, ndonnx, or CuPy arrays as array arguments. Features
+with support added for SciPy ``1.15.0`` include:
 
 - All functions in `scipy.differentiate` (new sub-package)
 - All functions in `scipy.optimize.elementwise` (new namespace)
@@ -356,6 +356,9 @@ Deprecated features
 - Complex inputs to `scipy.spatial.distance.cosine` and
   `scipy.spatial.distance.correlation` have been deprecated and will raise
   an error in SciPy ``1.17.0``.
+- `scipy.spatial.distance.kulczynski1` and
+  `scipy.spatial.distance.sokalmichener` were deprecated and will be removed
+  in SciPy ``1.17.0``.
 - `scipy.stats.find_repeats` is deprecated as of SciPy ``1.15.0`` and will be
   removed in SciPy ``1.17.0``. Please use
   ``numpy.unique``/``numpy.unique_counts`` instead.
@@ -372,6 +375,8 @@ Deprecated features
 - `scipy.special.lpn` is deprecated in favor of `scipy.special.legendre_p_all`.
 - `scipy.special.lpmn` and `scipy.special.clpmn` are deprecated in favor of
   `scipy.special.assoc_legendre_p_all`.
+- The raveling of multi-dimensional input by `scipy.linalg.toeplitz` has
+  been deprecated. It will support batching in SciPy ``1.17.0``.
 
 ********************
 Expired Deprecations
@@ -393,6 +398,7 @@ Expired Deprecations
 - ``special.btdtr`` and ``special.btdtri`` have been removed.
 - The default of the ``exact=`` kwarg in ``special.factorialk`` has changed
   from ``True`` to ``False``.
+- All functions in the ``scipy.misc`` submodule have been removed.
 
 ******************************
 Backwards incompatible changes
@@ -407,6 +413,8 @@ Backwards incompatible changes
 *************
 Other changes
 *************
+- A separate accompanying type stubs package, ``scipy-stubs``, will be made
+  available with the ``1.15.0`` release.
 - `scipy.stats.bootstrap` now emits a ``FutureWarning`` if the shapes of the
   input arrays do not agree. Broadcast the arrays to the same batch shape
   (i.e. for all dimensions except those specified by the ``axis`` argument)
@@ -455,6 +463,9 @@ Other changes
   compilers - if so, please file an issue.
 
 
+- ``scipy.signal.sosfreqz`` has been renamed to `scipy.signal.freqz_sos`.
+  New code should use the new name. The old name is maintained as an alias for
+  backwards compatibility.
 - Testing thread-safety improvements related to Python ``3.13t`` have been
   made in: `scipy.special`, `scipy.spatial`, `scipy.sparse`,
   `scipy.interpolate`.
@@ -754,7 +765,7 @@ Issues closed for 1.15.0
 * `#21011 <https://github.com/scipy/scipy/issues/21011>`__: BUG: Double free or corruption when passing invalid arguments...
 * `#21016 <https://github.com/scipy/scipy/issues/21016>`__: BUG: Indexing broken for sparse arrays
 * `#21030 <https://github.com/scipy/scipy/issues/21030>`__: DOC, DEV: release notes ``gh_lists`` touchups
-* `#21044 <https://github.com/scipy/scipy/issues/21044>`__: RFC: quo vadis, ``xp_assert_\*`` infrastructure?
+* `#21044 <https://github.com/scipy/scipy/issues/21044>`__: RFC: quo vadis, ``xp_assert_*`` infrastructure?
 * `#21045 <https://github.com/scipy/scipy/issues/21045>`__: BUG: ``scipy/optimize/tests/test_hessian_update_strategy.py::TestHessianUpdateSt``...
 * `#21057 <https://github.com/scipy/scipy/issues/21057>`__: BUG: loong64 architecture fails TestQuad.test_complex
 * `#21059 <https://github.com/scipy/scipy/issues/21059>`__: TST, MAINT: ``TestHyp2f1.test_region5`` tol issue with gcc 14.1.0
