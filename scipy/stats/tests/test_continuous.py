@@ -1092,13 +1092,13 @@ class TestMakeDistribution:
 class TestTransforms:
 
     # putting this at the top to hopefully avoid merge conflicts
-    def test_truncated(self):
+    def test_truncate(self):
         rng = np.random.default_rng(81345982345826)
         lb = rng.random((3, 1))
         ub = rng.random((3, 1))
         lb, ub = np.minimum(lb, ub), np.maximum(lb, ub)
 
-        Y = stats.TruncatedDistribution(Normal(), lb=lb, ub=ub)
+        Y = stats.truncate(Normal(), lb=lb, ub=ub)
         Y0 = stats.truncnorm(lb, ub)
 
         y = Y0.rvs((3, 10), random_state=rng)
