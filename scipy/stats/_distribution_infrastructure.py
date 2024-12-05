@@ -1827,8 +1827,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
         # This notation for g_name is nonstandard
         funcs = dict(g=lambda u: u**other, g_name=f'pow_{other}',
-                     h=lambda u: u**(1 / other),
-                     dh=lambda u: 1/other * u**(1/other - 1))
+                     h=lambda u: np.sign(u) * np.abs(u)**(1 / other),
+                     dh=lambda u: 1/other * np.abs(u)**(1/other - 1))
 
         return MonotonicTransformedDistribution(X, **funcs, increasing=True)
 
