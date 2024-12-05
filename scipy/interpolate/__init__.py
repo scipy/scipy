@@ -204,7 +204,7 @@ from ._ndbspline import NdBSpline
 from ._bary_rational import *
 
 # Deprecated namespaces, to be removed in v2.0.0
-from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf
+from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf, interpnd
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

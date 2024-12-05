@@ -4,7 +4,7 @@ import itertools
 
 from dataclasses import dataclass, field
 from types import ModuleType
-from typing import Any, TYPE_CHECKING
+from typing import Any, TypeAlias
 
 from scipy._lib._array_api import (
     array_namespace,
@@ -23,10 +23,7 @@ from scipy.integrate._rules._base import _split_subregion
 
 __all__ = ['cubature']
 
-if TYPE_CHECKING:
-    Array = Any  # To be changed to a Protocol later (see array-api#589)
-else:
-    Array = object
+Array: TypeAlias = Any  # To be changed to an array-api-typing Protocol later
 
 
 @dataclass
@@ -633,7 +630,7 @@ class _InfiniteLimitsTransform(_VariableTransform):
 
         self._num_inf = self._xp.sum(
             self._xp.astype(self._double_inf_pos | self._semi_inf_pos, self._xp.int64),
-        )
+        ).__int__()
 
     @property
     def transformed_limits(self):
