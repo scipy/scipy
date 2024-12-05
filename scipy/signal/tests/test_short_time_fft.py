@@ -380,16 +380,25 @@ def test_f(fft_mode: FFT_MODE_TYPE, f):
     xp_assert_equal(SFT.f, f)
 
 
-def test_extent():
+@pytest.mark.parametrize('n', [20, 21])
+@pytest.mark.parametrize('m', [5, 6])
+@pytest.mark.parametrize('fft_mode', ['onesided', 'centered'])
+def test_extent(n, m, fft_mode: FFT_MODE_TYPE):
     """Ensure that the `extent()` method is correct. """
-    SFT = ShortTimeFFT(np.ones(32), hop=4, fs=32, fft_mode='onesided')
-    assert SFT.extent(100, 'tf', False) == (-0.375, 3.625, 0.0, 17.0)
-    assert SFT.extent(100, 'ft', False) == (0.0, 17.0, -0.375, 3.625)
-    assert SFT.extent(100, 'tf', True) == (-0.4375, 3.5625, -0.5, 16.5)
-    assert SFT.extent(100, 'ft', True) == (-0.5, 16.5, -0.4375, 3.5625)
+    SFT = ShortTimeFFT(np.ones(m), hop=m, fs=m, fft_mode=fft_mode)
 
-    SFT = ShortTimeFFT(np.ones(32), hop=4, fs=32, fft_mode='centered')
-    assert SFT.extent(100, 'tf', False) == (-0.375, 3.625, -16.0, 15.0)
+    t0 = SFT.t(n)[0]  # first timestamp
+    t1 = SFT.t(n)[-1] + SFT.delta_t  # last timestamp + 1
+    t0c, t1c = t0 - SFT.delta_t / 2, t1 - SFT.delta_t / 2  # centered timestamps
+
+    f0 = SFT.f[0]  # first frequency
+    f1 = SFT.f[-1] + SFT.delta_f  # last frequency + 1
+    f0c, f1c = f0 - SFT.delta_f / 2, f1 - SFT.delta_f / 2  # centered frequencies
+
+    assert SFT.extent(n, 'tf', False) == (t0, t1, f0, f1)
+    assert SFT.extent(n, 'ft', False) == (f0, f1, t0, t1)
+    assert SFT.extent(n, 'tf', True) == (t0c, t1c, f0c, f1c)
+    assert SFT.extent(n, 'ft', True) == (f0c, f1c, t0c, t1c)
 
 
 def test_spectrogram():

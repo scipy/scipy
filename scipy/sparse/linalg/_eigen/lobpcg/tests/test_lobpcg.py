@@ -13,7 +13,7 @@ from numpy.testing import (assert_almost_equal, assert_equal,
 from scipy import sparse
 from scipy.linalg import (eigh, toeplitz,
                           cholesky_banded, cho_solve_banded)
-from scipy.sparse import spdiags, diags, eye, csr_matrix
+from scipy.sparse import dia_array, eye_array, csr_array
 from scipy.sparse.linalg import eigsh, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
@@ -89,7 +89,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     X = rnd.standard_normal((n, m)).astype(Vdtype)
     Xcopy = np.copy(X)
     vals = np.arange(1, n+1, dtype=float)
-    B = diags([vals], [0], (n, n)).astype(Bdtype)
+    B = dia_array(([vals], [0]), shape=(n, n)).astype(Bdtype)
     BX = B @ X
     BX = BX.astype(BVdtype)
     is_all_complex = (np.issubdtype(Vdtype, np.complexfloating) and
@@ -144,6 +144,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_nonhermitian_warning(capsys):
@@ -194,7 +195,7 @@ def test_diagonal(n, m, m_excluded):
     # A is the diagonal matrix whose entries are 1,...n,
     # B is the identity matrix.
     vals = np.arange(1, n+1, dtype=float)
-    A_s = diags([vals], [0], (n, n))
+    A_s = dia_array(([vals], [0]), shape=(n, n))
     A_a = A_s.toarray()
 
     def A_f(x):
@@ -204,8 +205,8 @@ def test_diagonal(n, m, m_excluded):
                           matmat=A_f,
                           shape=(n, n), dtype=float)
 
-    B_a = eye(n)
-    B_s = csr_matrix(B_a)
+    B_a = eye_array(n)
+    B_s = csr_array(B_a)
 
     def B_f(x):
         return B_a @ x
@@ -215,7 +216,7 @@ def test_diagonal(n, m, m_excluded):
                           shape=(n, n), dtype=float)
 
     # Let the preconditioner M be the inverse of A.
-    M_s = diags([1./vals], [0], (n, n))
+    M_s = dia_array(([1./vals], [0]), shape=(n, n))
     M_a = M_s.toarray()
 
     def M_f(x):
@@ -303,6 +304,7 @@ def _check_fiedler(n, p):
     assert_allclose(lobpcg_w, analytic_w[:2], atol=1e-14)
 
 
+@pytest.mark.thread_unsafe
 def test_fiedler_small_8():
     """Check the dense workaround path for small matrices.
     """
@@ -333,6 +335,7 @@ def test_failure_to_run_iterations():
     assert np.max(eigenvalues) > 0
 
 
+@pytest.mark.thread_unsafe
 def test_failure_to_run_iterations_nonsymmetric():
     """Check that the code exists gracefully without breaking
     if the matrix in not symmetric.
@@ -399,7 +402,7 @@ def test_eigsh_consistency(n, atol):
     """Check eigsh vs. lobpcg consistency.
     """
     vals = np.arange(1, n+1, dtype=np.float64)
-    A = spdiags(vals, 0, n, n)
+    A = dia_array((vals, 0), shape=(n, n))
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((n, 2))
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
@@ -409,6 +412,7 @@ def test_eigsh_consistency(n, atol):
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
+@pytest.mark.thread_unsafe
 def test_verbosity():
     """Check that nonzero verbosity level code runs.
     """
@@ -433,7 +437,7 @@ def test_tolerance_float32():
     n = 50
     m = 3
     vals = -np.arange(1, n + 1)
-    A = diags([vals], [0], (n, n))
+    A = dia_array(([vals], [0]), shape=(n, n))
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
@@ -444,8 +448,8 @@ def test_tolerance_float32():
 @pytest.mark.parametrize("vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("mdtype", ALLDTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,
-                                      sparse.csr_matrix,
-                                      sparse.coo_matrix])
+                                      sparse.csr_array,
+                                      sparse.coo_array])
 def test_dtypes(vdtype, mdtype, arr_type):
     """Test lobpcg in various dtypes.
     """
@@ -461,6 +465,7 @@ def test_dtypes(vdtype, mdtype, arr_type):
     assert_allclose(np.sum(np.abs(eigvecs - eigvecs.conj())), 0, atol=1e-2)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_inplace_warning():
@@ -471,13 +476,14 @@ def test_inplace_warning():
     n = 6
     m = 1
     vals = -np.arange(1, n + 1)
-    A = diags([vals], [0], (n, n))
+    A = dia_array(([vals], [0]), shape=(n, n))
     A = A.astype(np.cdouble)
     X = rnd.standard_normal((n, m))
     with pytest.warns(UserWarning, match="Inplace update"):
         eigvals, _ = lobpcg(A, X, maxiter=2, verbosityLevel=1)
 
 
+@pytest.mark.thread_unsafe
 def test_maxit():
     """Check lobpcg if maxit=maxiter runs maxiter iterations and
     if maxit=None runs 20 iterations (the default)
@@ -489,7 +495,7 @@ def test_maxit():
     n = 50
     m = 4
     vals = -np.arange(1, n + 1)
-    A = diags([vals], [0], (n, n))
+    A = dia_array(([vals], [0]), shape=(n, n))
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float64)
@@ -629,7 +635,7 @@ def test_diagonal_data_types(n, m):
     list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
     for s_f_i, s_f in enumerate(list_sparse_format):
 
-        As64 = diags([vals * vals], [0], (n, n), format=s_f)
+        As64 = dia_array(([vals * vals], [0]), shape=(n, n)).asformat(s_f)
         As32 = As64.astype(np.float32)
         Af64 = As64.toarray()
         Af32 = Af64.astype(np.float32)
@@ -643,7 +649,7 @@ def test_diagonal_data_types(n, m):
 
         listA = [Af64, As64, Af32, As32, As32f, As32LO, lambda v: As32 @ v]
 
-        Bs64 = diags([vals], [0], (n, n), format=s_f)
+        Bs64 = dia_array(([vals], [0]), shape=(n, n)).asformat(s_f)
         Bf64 = Bs64.toarray()
         Bs32 = Bs64.astype(np.float32)
 
@@ -656,7 +662,7 @@ def test_diagonal_data_types(n, m):
         listB = [Bf64, Bs64, Bs32, Bs32f, Bs32LO, lambda v: Bs32 @ v]
 
         # Define the preconditioner function as LinearOperator.
-        Ms64 = diags([1./vals], [0], (n, n), format=s_f)
+        Ms64 = dia_array(([1./vals], [0]), shape=(n, n)).asformat(s_f)
 
         def Ms64precond(x):
             return Ms64 @ x

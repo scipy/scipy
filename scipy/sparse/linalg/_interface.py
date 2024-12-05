@@ -26,8 +26,8 @@ how this linear operator multiplies with (operates on) a vector. We can now
 add this operator to a sparse matrix that stores only offsets from one::
 
     >>> from scipy.sparse.linalg._interface import aslinearoperator
-    >>> from scipy.sparse import csr_matrix
-    >>> offsets = csr_matrix([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
+    >>> from scipy.sparse import csr_array
+    >>> offsets = csr_array([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
     >>> A = aslinearoperator(offsets) + Ones(offsets.shape)
     >>> A.dot([1, 2, 3])
     array([13,  4, 15])
@@ -866,7 +866,7 @@ def aslinearoperator(A):
     'A' may be any of the following types:
      - ndarray
      - matrix
-     - sparse matrix (e.g. csr_matrix, lil_matrix, etc.)
+     - sparse array (e.g. csr_array, lil_array, etc.)
      - LinearOperator
      - An object with .shape and .matvec attributes
 

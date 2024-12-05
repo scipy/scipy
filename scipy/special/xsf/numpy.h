@@ -14,14 +14,37 @@
 
 #include <numpy/arrayobject.h>
 #include <numpy/npy_3kcompat.h>
+#include <numpy/npy_math.h>
 #include <numpy/ufuncobject.h>
 
 #include "dual.h"
-#include "sf_error.h"
+#include "error.h"
 #include "third_party/kokkos/mdspan.hpp"
+
+/* PyUFunc_getfperr gets bits for current floating point error (fpe) status codes so we
+ * can check for floating point errors and make proper calls to set_error in ufunc loops.
+ * Define a wrapper so it can be given C linkage within this C++ header. */
+extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 namespace xsf {
 namespace numpy {
+
+    void set_error_check_fpe(const char *func_name) {
+	int status = wrap_PyUFunc_getfperr();
+	if (status & NPY_FPE_DIVIDEBYZERO) {
+	    xsf::set_error(func_name, SF_ERROR_SINGULAR, "floating point division by zero");
+	}
+	if (status & NPY_FPE_OVERFLOW) {
+	    xsf::set_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
+	}
+	if (status & NPY_FPE_UNDERFLOW) {
+	    xsf::set_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
+	}
+	if (status & NPY_FPE_INVALID) {
+	    xsf::set_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");
+	}
+    }
+
     namespace detail {
 
         // This is std::accumulate, but that is not constexpr until C++20
@@ -778,7 +801,7 @@ namespace numpy {
             }
 
             const char *name = static_cast<ufunc_data<Func> *>(data)->name;
-            sf_error_check_fpe(name);
+	    set_error_check_fpe(name);
         }
     };
 
@@ -811,7 +834,7 @@ namespace numpy {
             }
 
             const char *name = static_cast<ufunc_data<Func> *>(data)->name;
-            sf_error_check_fpe(name);
+	    set_error_check_fpe(name);
         }
     };
 

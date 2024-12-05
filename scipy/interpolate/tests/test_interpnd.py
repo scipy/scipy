@@ -174,6 +174,7 @@ class TestLinearNDInterpolation:
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
     @pytest.mark.slow
+    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(_IS_32BIT, reason='it fails on 32-bit')
     def test_threading(self):
         # This test was taken from issue 8856
@@ -258,7 +259,8 @@ class TestCloughTocher2DInterpolator:
 
     def _check_accuracy(self, func, x=None, tol=1e-6, alternate=False,
                         rescale=False, **kw):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
+        # np.random.seed(1234)
         if x is None:
             x = np.array([(0, 0), (0, 1),
                           (1, 0), (1, 1), (0.25, 0.75), (0.6, 0.8),
@@ -273,7 +275,7 @@ class TestCloughTocher2DInterpolator:
                                                      func(x[:,0], x[:,1]),
                                                      tol=1e-6, rescale=rescale)
 
-        p = np.random.rand(50, 2)
+        p = rng.rand(50, 2)
 
         if not alternate:
             a = ip(p)
@@ -372,9 +374,9 @@ class TestCloughTocher2DInterpolator:
             lambda x, y: np.cos(2*np.pi*x)*np.sin(2*np.pi*y)
         ]
 
-        np.random.seed(4321)  # use a different seed than the check!
+        rng = np.random.RandomState(4321)  # use a different seed than the check!
         grid = np.r_[np.array([(0,0), (0,1), (1,0), (1,1)], dtype=float),
-                     np.random.rand(30*30, 2)]
+                     rng.rand(30*30, 2)]
 
         for j, func in enumerate(funcs):
             self._check_accuracy(func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2,
@@ -389,9 +391,9 @@ class TestCloughTocher2DInterpolator:
 
     def test_pickle(self):
         # Test at single points
-        np.random.seed(1234)
-        x = np.random.rand(30, 2)
-        y = np.random.rand(30) + 1j*np.random.rand(30)
+        rng = np.random.RandomState(1234)
+        x = rng.rand(30, 2)
+        y = rng.rand(30) + 1j*rng.rand(30)
 
         ip = interpnd.CloughTocher2DInterpolator(x, y)
         ip2 = pickle.loads(pickle.dumps(ip))
@@ -421,9 +423,9 @@ class TestCloughTocher2DInterpolator:
         xp_assert_close(v1, v2)
 
         # ... and affine invariant
-        np.random.seed(1)
-        A = np.random.randn(2, 2)
-        b = np.random.randn(2)
+        rng = np.random.RandomState(1)
+        A = rng.randn(2, 2)
+        b = rng.randn(2)
 
         points = A.dot(points.T).T + b[None,:]
         p1 = A.dot(p1) + b

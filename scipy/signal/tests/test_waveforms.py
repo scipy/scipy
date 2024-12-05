@@ -73,6 +73,28 @@ class TestChirp:
         abserr = np.max(np.abs(f - chirp_linear(tf, f0, f1, t1)))
         assert abserr < 1e-6
 
+    def test_linear_complex_power(self):
+        method = 'linear'
+        f0 = 1.0
+        f1 = 2.0
+        t1 = 1.0
+        t = np.linspace(0, t1, 100)
+        w_real = waveforms.chirp(t, f0, t1, f1, method, complex=False)
+        w_complex = waveforms.chirp(t, f0, t1, f1, method, complex=True)
+        w_pwr_r = np.var(w_real)
+        w_pwr_c = np.var(w_complex)
+
+        # Making sure that power of the real part is not affected with
+        # complex conversion operation
+        err = w_pwr_r - np.real(w_pwr_c)
+
+        assert(err < 1e-6)
+
+    def test_linear_complex_at_zero(self):
+        w = waveforms.chirp(t=0, f0=-10.0, f1=1.0, t1=1.0, method='linear',
+                            complex=True)
+        xp_assert_close(w, 1.0+0.0j)  # dtype must match
+
     def test_quadratic_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic')
         assert_almost_equal(w, 1.0)
@@ -81,6 +103,11 @@ class TestChirp:
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic',
                             vertex_zero=False)
         assert_almost_equal(w, 1.0)
+
+    def test_quadratic_complex_at_zero(self):
+        w = waveforms.chirp(t=0, f0=-1.0, f1=2.0, t1=1.0, method='quadratic',
+                            complex=True)
+        xp_assert_close(w, 1.0+0j)
 
     def test_quadratic_freq_01(self):
         method = 'quadratic'

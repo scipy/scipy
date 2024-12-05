@@ -3,10 +3,10 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy
+    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
+    np_compat,
 )
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
-import scipy._lib.array_api_compat.numpy as np_compat
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 

@@ -1,4 +1,3 @@
-
 # TODO: 64-bit BLAS and LAPACK
 
 _ufuncs_pxi_pxd_sources = [
@@ -129,6 +128,7 @@ cython_special = custom_target('cython_special',
 )
 
 cython_special_pxd = fs.copyfile('cython_special.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,
@@ -357,6 +357,7 @@ py3.install_sources(xsf_cephes_sources, subdir: 'scipy/special/xsf/cephes')
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',
