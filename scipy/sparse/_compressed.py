@@ -1191,7 +1191,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """apply the binary operation fn to two sparse matrices."""
         other = self.__class__(other)
 
-        new_shape = np.broadcast_shapes(self.shape, other.shape)
+        new_shape = broadcast_shapes(self.shape, other.shape)
         new_ndim = len(new_shape)
         new_shape_as_2d = new_shape if new_ndim > 1 else (1, new_shape[0])
 
