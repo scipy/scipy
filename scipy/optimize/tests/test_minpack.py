@@ -308,7 +308,7 @@ class TestLeastSq:
         p0 = array([0,0,0])
         params_fit, ier = leastsq(self.residuals, p0,
                                   args=(self.y_meas, self.x))
-        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
@@ -317,7 +317,7 @@ class TestLeastSq:
         params_fit, ier = leastsq(self.residuals, p0,
                                   args=(self.y_meas, self.x),
                                   Dfun=self.residuals_jacobian)
-        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
@@ -405,7 +405,7 @@ class TestLeastSq:
         p0 = array([0,0,0])
         params_fit, ier = leastsq(func, p0,
                                   args=(self.y_meas, self.x))
-        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
@@ -418,7 +418,7 @@ class TestLeastSq:
         params_fit, ier = leastsq(self.residuals, p0,
                                   args=(self.y_meas, self.x),
                                   Dfun=deriv_func)
-        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 

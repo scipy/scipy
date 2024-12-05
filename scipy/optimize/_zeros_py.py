@@ -316,9 +316,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             if fder == 0:
                 msg = "Derivative was zero."
                 if disp:
-                    msg += (
-                        " Failed to converge after %d iterations, value is %s."
-                        % (itr + 1, p0))
+                    msg += " Failed to converge after {} iterations, value is {}".format(itr + 1, p0)
                     raise RuntimeError(msg)
                 warnings.warn(msg, RuntimeWarning, stacklevel=2)
                 return _results_select(
@@ -364,9 +362,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 if p1 != p0:
                     msg = f"Tolerance of {p1 - p0} reached."
                     if disp:
-                        msg += (
-                            " Failed to converge after %d iterations, value is %s."
-                            % (itr + 1, p1))
+                        msg += " Failed to converge after {} iterations, value is {}".format(itr + 1, p1)
                         raise RuntimeError(msg)
                     warnings.warn(msg, RuntimeWarning, stacklevel=2)
                 p = (p1 + p0) / 2.0
@@ -386,8 +382,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
 
     if disp:
-        msg = ("Failed to converge after %d iterations, value is %s."
-               % (itr + 1, p))
+        msg = "Failed to converge after {} iterations, value is {}".format(itr + 1, p)
         raise RuntimeError(msg)
 
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR), method)
@@ -1089,7 +1084,7 @@ class TOMS748Solver:
         self.k = max(k, self._K_MIN)
         # Noisily replace a high value of k with self._K_MAX
         if self.k > self._K_MAX:
-            msg = "toms748: Overriding k: ->%d" % self._K_MAX
+            msg = "toms748: Overriding k: ->{}".format(self._K_MAX)
             warnings.warn(msg, RuntimeWarning, stacklevel=3)
             self.k = self._K_MAX
 
