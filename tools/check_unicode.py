@@ -23,7 +23,7 @@ allowed = latin1_letters | greek_letters | box_drawing_chars | extra_symbols
 # END_INCLUDE_RST (do not change this line!)
 
 
-def unicode_check(showall=False):
+def check_unicode(showall=False):
     """
     If showall is True, all non-ASCII characters are displayed.
     """
@@ -92,4 +92,4 @@ if __name__ == "__main__":
                         help=('Show non-ASCII Unicode characters from all '
                               'files.'))
     args = parser.parse_args()
-    sys.exit(unicode_check(args.showall) > 0)
+    sys.exit(check_unicode(args.showall) > 0)
