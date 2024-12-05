@@ -1848,8 +1848,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
         if not np.isscalar(other) or other <= 0 or other == 1:
             message = ("Raising an argument to the power of a random variable is only "
-                       "implemented when all the argument is a positive scalar other "
-                       "than 1.")
+                       "implemented when the argument is a positive scalar other than "
+                       "1.")
             raise NotImplementedError(message)
 
         if other > 1:
