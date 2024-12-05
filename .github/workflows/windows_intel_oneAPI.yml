@@ -106,8 +106,3 @@ jobs:
         shell: cmd /C call {0}
         run: |
           spin test -s datasets
-
-      - name: Test scipy.misc
-        shell: cmd /C call {0}
-        run: |
-          spin test -s misc
