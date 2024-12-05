@@ -763,19 +763,21 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         A dictionary containing name-value pairs of known distribution
         parameters. Monte Carlo samples are randomly drawn from the
         null-hypothesized distribution with these values of the parameters.
-        Before the statistic is evaluated for each Monte Carlo sample, only
-        remaining unknown parameters of the null-hypothesized distribution
-        family are fit to the samples; the known parameters are held fixed.
-        If all parameters of the distribution family are known, then the step
-        of fitting the distribution family to each sample is omitted.
+        Before the statistic is evaluated for the observed `data` and each
+        Monte Carlo sample, only remaining unknown parameters of the
+        null-hypothesized distribution family are fit to the samples; the
+        known parameters are held fixed. If all parameters of the distribution
+        family are known, then the step of fitting the distribution family to
+        each sample is omitted.
     fit_params : dict, optional
         A dictionary containing name-value pairs of distribution parameters
         that have already been fit to the data, e.g. using `scipy.stats.fit`
         or the ``fit`` method of `dist`. Monte Carlo samples are drawn from the
         null-hypothesized distribution with these specified values of the
-        parameter. On those Monte Carlo samples, however, these and all other
-        unknown parameters of the null-hypothesized distribution family are
-        fit before the statistic is evaluated.
+        parameter. However, these and all other unknown parameters of the
+        null-hypothesized distribution family are always fit to the sample,
+        whether that is the observed `data` or a Monte Carlo sample, before
+        the statistic is evaluated.
     guessed_params : dict, optional
         A dictionary containing name-value pairs of distribution parameters
         which have been guessed. These parameters are always considered as

@@ -440,7 +440,7 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     >>> import numpy as np
     >>> from scipy.sparse import random_array
     >>> from scipy.optimize import linear_sum_assignment
-    >>> sparse = random_array((10, 10), random_state=42, density=.5, format='coo') * 10
+    >>> sparse = random_array((10, 10), rng=42, density=.5, format='coo') * 10
     >>> sparse.data = np.ceil(sparse.data)
     >>> dense = sparse.toarray()
     >>> dense = np.full(sparse.shape, np.inf)
@@ -448,10 +448,10 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     >>> sparse = sparse.tocsr()
     >>> row_ind, col_ind = linear_sum_assignment(dense)
     >>> print(dense[row_ind, col_ind].sum())
-    28.0
+    25.0
     >>> row_ind, col_ind = min_weight_full_bipartite_matching(sparse)
     >>> print(sparse[row_ind, col_ind].sum())
-    28.0
+    25.0
 
     """
     biadjacency = convert_pydata_sparse_to_scipy(biadjacency)

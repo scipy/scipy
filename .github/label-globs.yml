@@ -51,11 +51,6 @@ scipy.linalg:
   - any-glob-to-any-file:
     - scipy/linalg/**
 
-scipy.misc:
-- changed-files:
-  - any-glob-to-any-file:
-    - scipy/misc/**
-
 scipy.ndimage:
 - changed-files:
   - any-glob-to-any-file:

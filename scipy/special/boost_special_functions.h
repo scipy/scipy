@@ -951,26 +951,46 @@ ncf_kurtosis_excess_double(double v1, double v2, double l)
 
 template<typename Real>
 Real
-nct_cdf_wrap(const Real x, const Real v, const Real l)
+nct_cdf_wrap(const Real v, const Real l, const Real x)
 {
-    if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
+    if (std::isnan(x) || std::isnan(v) || std::isnan(l)) {
+	return NAN;
     }
-    // -inf => 0, inf => 1
-    return 1.0 - std::signbit(x);
+    if (v <= 0) {
+	sf_error("nctdtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    if (std::isinf(x)) {
+	return  (x > 0) ? 1.0 : 0.0;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(
+                boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+	/* Result must be between 0 and 1 to be a valid CDF value.
+       Return NAN if the result is out of bounds because the answer cannot be trusted. */
+	    sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
-nct_cdf_float(float x, float v, float l)
+nct_cdf_float(float v, float l, float x)
 {
-    return nct_cdf_wrap(x, v, l);
+    return nct_cdf_wrap(v, l, x);
 }
 
 double
-nct_cdf_double(double x, double v, double l)
+nct_cdf_double(double v, double l, double x)
 {
-    return nct_cdf_wrap(x, v, l);
+    return nct_cdf_wrap(v, l, x);
 }
 
 template<typename Real>

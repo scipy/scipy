@@ -1,3 +1,4 @@
+import os
 import pickle
 from copy import deepcopy
 
@@ -11,7 +12,8 @@ import hypothesis.extra.numpy as npst
 from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
-
+from scipy.stats import qmc
+from scipy.stats._distr_params import distcont
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
@@ -177,6 +179,8 @@ class TestDistributions:
             check_support(dist)
             check_moment_funcs(dist, result_shape)  # this needs to get split up
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
+            qrng = qmc.Halton(d=1, seed=rng)
+            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('family', families)
@@ -347,7 +351,7 @@ def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
         sample_method = dist.sample
 
     methods = {'inverse_transform'}
-    if dist._overrides(f'_{fname}_formula'):
+    if dist._overrides(f'_{fname}_formula') and not isinstance(rng, qmc.QMCEngine):
         methods.add('formula')
 
     for method in methods:
@@ -699,11 +703,12 @@ def check_moment_funcs(dist, result_shape):
         assert_allclose(dist.moment(i, 'standardized'), ref, atol=atol*10**i)
 
 
-@pytest.mark.parametrize('family', (StandardNormal,))
+@pytest.mark.parametrize('family', (Normal,))
 @pytest.mark.parametrize('x_shape', [tuple(), (2, 3)])
 @pytest.mark.parametrize('dist_shape', [tuple(), (4, 1)])
 @pytest.mark.parametrize('fname', ['sample'])
-def test_sample_against_cdf(family, dist_shape, x_shape, fname):
+@pytest.mark.parametrize('rng_type', [np.random.Generator, qmc.Halton, qmc.Sobol])
+def test_sample_against_cdf(family, dist_shape, x_shape, fname, rng_type):
     rng = np.random.default_rng(842582438235635)
     num_parameters = family._num_parameters()
 
@@ -712,13 +717,15 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname):
 
     dist = family._draw(dist_shape, rng)
 
-    n = 1000
+    n = 1024
     sample_size = (n,) + x_shape
     sample_array_shape = sample_size + dist_shape
 
     if fname == 'sample':
         sample_method = dist.sample
 
+    if rng_type != np.random.Generator:
+        rng = rng_type(d=1, seed=rng)
     x = sample_method(sample_size, rng=rng)
     assert x.shape == sample_array_shape
 
@@ -1002,6 +1009,84 @@ class TestAttributes:
         # Trying to mutate an attribute really mutates a copy
         Y.mu[0] = 10
         assert Y.mu[0] == 2
+
+
+class TestMakeDistribution:
+    @pytest.mark.parametrize('i, distdata', enumerate(distcont))
+    def test_make_distribution(self, i, distdata):
+        distname = distdata[0]
+
+        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
+                'johnsonsb', 'kstwobign', 'powerlognorm', 'powernorm', 'recipinvgauss',
+                'vonmises_line'}
+        if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
+            pytest.skip('Skipping as XSLOW')
+
+
+        if distname in {  # skip these distributions
+            'genpareto', 'genextreme', 'genhalflogistic',  # complicated support
+            'kstwo', 'kappa4', 'tukeylambda',  # complicated support
+            'levy_stable',  # levy_stable does things differently...
+            'ksone',  # tolerance issues
+            'norminvgauss',  # private methods seem to have broadcasting issues
+            'vonmises',  # circular distribution; shouldn't work
+            'irwinhall',  # requires dtype of shape parameter to be integer
+            'studentized_range',  # too slow
+        }:
+            return
+
+        # skip single test, mostly due to slight disagreement
+        skip_entropy = {'kstwobign', 'pearson3'}  # tolerance issue
+        skip_skewness = {'exponpow'}  # tolerance issue
+        skip_kurtosis = {'chi', 'exponpow', 'invgamma', 'johnsonsb'}  # tolerance issue
+        skip_logccdf = {'jf_skew_t', # check this out later
+                        'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
+                    3: {'pareto'},  # stats.pareto is just wrong
+                    4: {'invgamma'}}  # tolerance issue
+        skip_standardized = {'exponpow'}  # tolerances
+
+        dist = getattr(stats, distname)
+        params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
+        rng = np.random.default_rng(7548723590230982)
+        CustomDistribution = stats.make_distribution(dist)
+        X = CustomDistribution(**params)
+        Y = dist(**params)
+        x = X.sample(shape=10, rng=rng)
+        p = X.cdf(x)
+        atol = 1e-12
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            m, v, s, k = Y.stats('mvsk')
+            if distname not in skip_entropy:
+                assert_allclose(X.entropy(), Y.entropy())
+            assert_allclose(X.median(), Y.median())
+            assert_allclose(X.mean(), m, atol=atol)
+            assert_allclose(X.variance(), v, atol=atol)
+            if distname not in skip_skewness:
+                assert_allclose(X.skewness(), s, atol=atol)
+            if distname not in skip_kurtosis:
+                assert_allclose(X.kurtosis(convention='excess'), k, atol=atol)
+            assert_allclose(X.logpdf(x), Y.logpdf(x))
+            assert_allclose(X.pdf(x), Y.pdf(x))
+            assert_allclose(X.logcdf(x), Y.logcdf(x))
+            assert_allclose(X.cdf(x), Y.cdf(x))
+            if distname not in skip_logccdf:
+                assert_allclose(X.logccdf(x), Y.logsf(x))
+            assert_allclose(X.ccdf(x), Y.sf(x))
+            assert_allclose(X.icdf(p), Y.ppf(p))
+            assert_allclose(X.iccdf(p), Y.isf(p))
+            for order in range(5):
+                if distname not in skip_raw.get(order, {}):
+                    assert_allclose(X.moment(order, kind='raw'),
+                                    Y.moment(order), atol=atol)
+            for order in range(3, 4):
+                if distname not in skip_standardized:
+                    assert_allclose(X.moment(order, kind='standardized'),
+                                    Y.stats('mvsk'[order-1]), atol=atol)
+            seed = 845298245687345
+            assert_allclose(X.sample(shape=10, rng=seed),
+                            Y.rvs(size=10, random_state=np.random.default_rng(seed)))
 
 
 class TestTransforms:

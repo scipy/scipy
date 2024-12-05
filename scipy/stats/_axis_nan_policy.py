@@ -531,7 +531,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     reduced_axes = tuple(range(n_dims))
                 samples = [np.asarray(sample.ravel()) for sample in samples]
             else:
-                samples = _broadcast_arrays(samples, axis=axis)
+                # don't ignore any axes when broadcasting if paired
+                samples = _broadcast_arrays(samples, axis=axis if not paired else None)
                 axis = np.atleast_1d(axis)
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
@@ -605,7 +606,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # each separate sample begins
             lengths = np.array([sample.shape[axis] for sample in samples])
             split_indices = np.cumsum(lengths)
-            x = _broadcast_concatenate(samples, axis)
+            x = _broadcast_concatenate(samples, axis, paired=paired)
 
             # Addresses nan_policy == "raise"
             if nan_policy != 'propagate' or override['nan_propagation']:

@@ -6,12 +6,10 @@ https://data-apis.org/array-api/latest/purpose_and_scope.html
 The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
-from __future__ import annotations
-
 import os
 
 from types import ModuleType
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -38,7 +36,6 @@ __all__ = [
     'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
     'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
-    'xp_create_diagonal'
 ]
 
 
@@ -53,12 +50,11 @@ _GLOBAL_CONFIG = {
 }
 
 
-if TYPE_CHECKING:
-    Array = Any  # To be changed to a Protocol later (see array-api#589)
-    ArrayLike = Array | npt.ArrayLike
+Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
+ArrayLike: TypeAlias = Array | npt.ArrayLike
 
 
-def _compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
+def _compliance_scipy(arrays):
     """Raise exceptions on known-bad subclasses.
 
     The following subclasses are not supported and raise and error:
@@ -591,12 +587,3 @@ def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
         arr = xp.astype(arr, xp.complex128)
 
     return arr
-
-def xp_create_diagonal(x: Array, /, *, offset: int = 0,
-                       xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(x) if xp is None else xp
-    n = x.shape[0] + abs(offset)
-    diag = xp.zeros(n**2, dtype=x.dtype)
-    i = offset if offset >= 0 else abs(offset) * n
-    diag[i:min(n*(n-offset), diag.shape[0]):n+1] = x
-    return xp.reshape(diag, (n, n))

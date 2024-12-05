@@ -114,7 +114,8 @@ def _cases_axes_tuple_length_mismatch():
 
 class TestNdimageFilters:
 
-    def _validate_complex(self, xp, array, kernel, type2, mode='reflect', cval=0):
+    def _validate_complex(self, xp, array, kernel, type2, mode='reflect',
+                          cval=0, check_warnings=True):
         # utility for validating complex-valued correlations
         real_dtype = xp.real(xp.asarray([], dtype=type2)).dtype
         expected = _complex_correlate(
@@ -155,14 +156,17 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
         assert output.dtype.type == type2
 
-        # warns if the output is not a complex dtype
-        with pytest.warns(UserWarning,
-                          match="promoting specified output dtype to complex"):
-            correlate(array, kernel, output=real_dtype)
+        if check_warnings:
+            # warns if the output is not a complex dtype
+            with pytest.warns(UserWarning,
+                              match="promoting specified output dtype to "
+                              "complex"):
+                correlate(array, kernel, output=real_dtype)
 
-        with pytest.warns(UserWarning,
-                          match="promoting specified output dtype to complex"):
-            convolve(array, kernel, output=real_dtype)
+            with pytest.warns(UserWarning,
+                              match="promoting specified output dtype to "
+                              "complex"):
+                convolve(array, kernel, output=real_dtype)
 
         # raises if output array is provided, but is not complex-valued
         output_real = xp.zeros_like(array, dtype=real_dtype)
@@ -614,7 +618,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_kernel(self, dtype_input, dtype_kernel,
-                                      dtype_output, xp):
+                                      dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -623,7 +627,8 @@ class TestNdimageFilters:
                              [0, 1 + 1j]], dtype=dtype_kernel)
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6]], dtype=dtype_input)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @xfail_xp_backends(np_only=True,
                        reason="output=dtype is numpy-specific",
@@ -633,7 +638,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     @pytest.mark.parametrize('mode', ['grid-constant', 'constant'])
     def test_correlate_complex_kernel_cval(self, dtype_input, dtype_kernel,
-                                           dtype_output, mode, xp):
+                                           dtype_output, mode, xp,
+                                           num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -648,11 +654,13 @@ class TestNdimageFilters:
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6]], dtype=dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output, mode=mode,
-                               cval=5.0)
+                               cval=5.0,
+                               check_warnings=num_parallel_threads == 1)
 
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
+    @pytest.mark.thread_unsafe
     def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
                                                    dtype_kernel, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -674,21 +682,23 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel(self, dtype_input, dtype_kernel,
-                                        dtype_output, xp):
+                                        dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
 
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype_kernel)
         array = xp.asarray([1, 2, 3, 4, 5, 6], dtype=dtype_input)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel_cval(self, dtype_input, dtype_kernel,
-                                             dtype_output, xp):
+                                             dtype_output, xp,
+                                             num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -696,14 +706,15 @@ class TestNdimageFilters:
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype_kernel)
         array = xp.asarray([1, 2, 3, 4, 5, 6], dtype=dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
-                               cval=5.0)
+                               cval=5.0,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input(self, dtype_input, dtype_kernel,
-                                     dtype_output, xp):
+                                     dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -712,21 +723,23 @@ class TestNdimageFilters:
                              [0, 1]], dtype=dtype_kernel)
         array = xp.asarray([[1, 2j, 3],
                             [1 + 4j, 5, 6j]], dtype=dtype_input)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input(self, dtype_input, dtype_kernel,
-                                       dtype_output, xp):
+                                       dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
 
         kernel = xp.asarray([1, 0, 1], dtype=dtype_kernel)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype_input)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @skip_xp_backends(np_only=True,
@@ -736,7 +749,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_cval(self, dtype_input, dtype_kernel,
-                                            dtype_output, xp):
+                                            dtype_output, xp,
+                                            num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
         dtype_kernel = getattr(xp, dtype_kernel)
         dtype_output = getattr(xp, dtype_output)
@@ -744,12 +758,14 @@ class TestNdimageFilters:
         kernel = xp.asarray([1, 0, 1], dtype=dtype_kernel)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype_input)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
-                               cval=5 - 3j)
+                               cval=5 - 3j,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp):
+    def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp,
+                                                num_parallel_threads):
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
 
@@ -757,7 +773,8 @@ class TestNdimageFilters:
                              [0, 1 + 1j]], dtype=dtype)
         array = xp.asarray([[1, 2j, 3],
                             [1 + 4j, 5, 6j]], dtype=dtype)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @skip_xp_backends(np_only=True,
@@ -766,7 +783,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel_cval(self, dtype,
-                                                     dtype_output, xp):
+                                                     dtype_output, xp,
+                                                     num_parallel_threads):
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
 
@@ -775,23 +793,28 @@ class TestNdimageFilters:
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6]], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
-                               cval=5.0 + 2.0j)
+                               cval=5.0 + 2.0j,
+                               check_warnings=num_parallel_threads == 1)
 
     @skip_xp_backends(np_only=True, reason="output=dtype is numpy-specific")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp):
+    @pytest.mark.thread_unsafe
+    def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp,
+                                                  num_parallel_threads):
         dtype = getattr(xp, dtype)
         dtype_output = getattr(xp, dtype_output)
 
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype)
-        self._validate_complex(xp, array, kernel, dtype_output)
+        self._validate_complex(xp, array, kernel, dtype_output,
+                               check_warnings=num_parallel_threads == 1)
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_and_kernel_cval(self, dtype,
-                                                       dtype_output, xp):
+                                                       dtype_output, xp,
+                                                       num_parallel_threads):
         if not (is_numpy(xp) or is_cupy(xp)):
             pytest.xfail("output=dtype is numpy-specific")
 
@@ -804,7 +827,8 @@ class TestNdimageFilters:
         kernel = xp.asarray([1, 1 + 1j], dtype=dtype)
         array = xp.asarray([1, 2j, 3, 1 + 4j, 5, 6j], dtype=dtype)
         self._validate_complex(xp, array, kernel, dtype_output, mode='constant',
-                               cval=5.0 + 2.0j)
+                               cval=5.0 + 2.0j,
+                               check_warnings=num_parallel_threads == 1)
 
     def test_gauss01(self, xp):
         input = xp.asarray([[1, 2, 3],
