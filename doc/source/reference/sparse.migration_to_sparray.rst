@@ -123,6 +123,9 @@ Recommended steps for migration
       to account for the sparrays yielding 1D sparrays rather than 2D spmatrices.
    -  Find and change places where your code makes use of ``np.matrix``
       features. Convert those to ``np.ndarray`` features.
+   -  If your code reads sparse from files with ``mmread``, ``hb_read``
+      or ``loadmat``, use the new keyword argument ``spmatrix=False``
+      in those functions to read to sparray.
    -  If you use sparse libraries that only accept ``int32`` index arrays
       for sparse representations, we suggest using just-in-time conversion.
       Convert to ``int32`` just before you call the code that requires ``int32``.
@@ -130,7 +133,7 @@ Recommended steps for migration
       of the values in the array. So if you want your index arrays to be ``int32``,
       you will need to ensure an ``int32`` dtype for each index array like ``indptr``
       that you pass to ``csr_array``. With ``spmatrix`` it is tempting to use the
-      default int64 dtype for numpy arrays and rely on the sparse constructor
+      default int64 dtype for ``numpy`` arrays and rely on the sparse constructor
       to downcast if the values were small. But this downcasting leads to extra
       recasting when working with other matrices, slices or arithmetic expressions.
       For ``sparray`` you can still rely on the constructors to choose dtypes. But
@@ -138,6 +141,7 @@ Recommended steps for migration
       incoming index arrays rather than their values. So, if you want ``int32``,
       set the dtype, e.g. ``indices = np.array([1,3,6], dtype=np.int32)`` or
       ``indptr = np.arange(9, dtype=np.int32)``, when creating the index arrays.
+      See :ref:`sparse-migration-index-array-dtype` below for more info.
       In many settings, the index array dtype isn't crucial and you can just let
       the constructors choose the dtype for both sparray and spmatrix.
    -  Test your code. And **read** your code. You have migrated to sparray.
@@ -415,6 +419,8 @@ Use tests to find * and ** spots
         scipy.sparse._matrix.dok_matrix = _strict_dok_matrix
         scipy.sparse._matrix.lil_matrix = _strict_lil_matrix
 
+
+.. _sparse-migration-index-array-dtypes:
 
 Index Array DTypes
 ------------------

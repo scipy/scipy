@@ -255,7 +255,7 @@ def test_gh_17782_segfault():
                 43 33 4.000000000000000e+00
                 44 43 6.028000259399414e+01
     """
-    data = mmread(StringIO(text))
+    data = mmread(StringIO(text), spmatrix=False)
     dijkstra(data, directed=True, return_predecessors=True)
 
 

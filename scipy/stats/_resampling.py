@@ -2121,6 +2121,7 @@ class ResamplingMethod:
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
+
     """
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
@@ -2156,13 +2157,30 @@ class MonteCarloMethod(ResamplingMethod):
         samples are drawn from the standard normal distribution, so
         ``rvs = (rng.normal, rng.normal)`` where
         ``rng = np.random.default_rng()``.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
     """
     rvs: object = None
+    rng: object = None
+
+    def __init__(self, n_resamples=9999, batch=None, rvs=None, rng=None):
+        if (rvs is not None) and (rng is not None):
+            message = 'Use of `rvs` and `rng` are mutually exclusive.'
+            raise ValueError(message)
+
+        self.n_resamples = n_resamples
+        self.batch = batch
+        self.rvs = rvs
+        self.rng = rng
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
         return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    rvs=self.rvs)
+                    rvs=self.rvs, rng=self.rng)
 
 
 _rs_deprecation = ("Use of attribute `random_state` is deprecated and replaced by "
