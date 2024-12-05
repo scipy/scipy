@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import threading
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import (
@@ -28,20 +29,25 @@ class TestCOBYQA:
     def test_minimize_simple(self):
         class Callback:
             def __init__(self):
+                self.lock = threading.Lock()
                 self.n_calls = 0
 
             def __call__(self, x):
                 assert isinstance(x, np.ndarray)
-                self.n_calls += 1
+                with self.lock:
+                    self.n_calls += 1
 
         class CallbackNewSyntax:
             def __init__(self):
+                self.lock = threading.Lock()
                 self.n_calls = 0
 
             def __call__(self, intermediate_result):
                 assert isinstance(intermediate_result, OptimizeResult)
-                self.n_calls += 1
+                with self.lock:
+                    self.n_calls += 1
 
+        x0 = [4.95, 0.66]
         callback = Callback()
         callback_new_syntax = CallbackNewSyntax()
 
@@ -49,7 +55,7 @@ class TestCOBYQA:
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
         sol = minimize(
             self.fun,
-            self.x0,
+            x0,
             method='cobyqa',
             constraints=constraints,
             callback=callback,
@@ -57,7 +63,7 @@ class TestCOBYQA:
         )
         sol_new = minimize(
             self.fun,
-            self.x0,
+            x0,
             method='cobyqa',
             constraints=constraints,
             callback=callback_new_syntax,

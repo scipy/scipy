@@ -634,23 +634,24 @@ class BaseQRinsert(BaseQRdeltas):
         a, q, r = super().generate(type, mode)
 
         assert_(p > 0)
+        rng = np.random.RandomState(1234)
 
         # super call set the seed...
         if which == 'row':
             if p == 1:
-                u = np.random.random(a.shape[1])
+                u = rng.random(a.shape[1])
             else:
-                u = np.random.random((p, a.shape[1]))
+                u = rng.random((p, a.shape[1]))
         elif which == 'col':
             if p == 1:
-                u = np.random.random(a.shape[0])
+                u = rng.random(a.shape[0])
             else:
-                u = np.random.random((a.shape[0], p))
+                u = rng.random((a.shape[0], p))
         else:
             ValueError('which should be either "row" or "col"')
 
         if np.iscomplexobj(self.dtype.type(1)):
-            b = np.random.random(u.shape)
+            b = rng.random(u.shape)
             u = u + 1j * b
 
         u = u.astype(self.dtype)

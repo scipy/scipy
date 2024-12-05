@@ -73,7 +73,7 @@ Real ibeta_wrap(Real a, Real b, Real x)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(x)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
     if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
@@ -117,7 +117,7 @@ Real ibetac_wrap(Real a, Real b, Real x)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(x)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
     if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
@@ -161,7 +161,7 @@ Real ibeta_inv_wrap(Real a, Real b, Real p, const Policy& policy_)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(p)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(p)) {
         return NAN;
     }
     if ((a <= 0) || (b <= 0) || (p < 0) || (p > 1)) {
@@ -205,7 +205,7 @@ Real ibetac_inv_wrap(Real a, Real b, Real p)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(p)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(p)) {
         return NAN;
     }
     if ((a <= 0) || (b <= 0) || (p < 0) || (p > 1)) {
@@ -423,7 +423,7 @@ Real hyp1f1_wrap(Real a, Real b, Real x)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(x)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
     if (b <= 0 && std::trunc(b) == b) {
@@ -951,26 +951,46 @@ ncf_kurtosis_excess_double(double v1, double v2, double l)
 
 template<typename Real>
 Real
-nct_cdf_wrap(const Real x, const Real v, const Real l)
+nct_cdf_wrap(const Real v, const Real l, const Real x)
 {
-    if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
+    if (std::isnan(x) || std::isnan(v) || std::isnan(l)) {
+	return NAN;
     }
-    // -inf => 0, inf => 1
-    return 1.0 - std::signbit(x);
+    if (v <= 0) {
+	sf_error("nctdtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    if (std::isinf(x)) {
+	return  (x > 0) ? 1.0 : 0.0;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(
+                boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+	/* Result must be between 0 and 1 to be a valid CDF value.
+       Return NAN if the result is out of bounds because the answer cannot be trusted. */
+	    sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
-nct_cdf_float(float x, float v, float l)
+nct_cdf_float(float v, float l, float x)
 {
-    return nct_cdf_wrap(x, v, l);
+    return nct_cdf_wrap(v, l, x);
 }
 
 double
-nct_cdf_double(double x, double v, double l)
+nct_cdf_double(double v, double l, double x)
 {
-    return nct_cdf_wrap(x, v, l);
+    return nct_cdf_wrap(v, l, x);
 }
 
 template<typename Real>

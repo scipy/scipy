@@ -67,6 +67,7 @@
 
 #include "const.h"
 #include "gamma.h"
+#include "rgamma.h"
 
 namespace xsf {
 namespace cephes {
@@ -203,14 +204,14 @@ namespace cephes {
 
             h1 = hyp2f0(a, a - b + 1, -1.0 / x, 1, &err1);
 
-            temp = std::exp(u) / xsf::cephes::Gamma(b - a);
+            temp = std::exp(u) * xsf::cephes::rgamma(b - a);
             h1 *= temp;
             err1 *= temp;
 
             h2 = hyp2f0(b - a, 1.0 - a, 1.0 / x, 2, &err2);
 
             if (a < 0)
-                temp = std::exp(t) / xsf::cephes::Gamma(a);
+                temp = std::exp(t) * xsf::cephes::rgamma(a);
             else
                 temp = std::exp(t - xsf::cephes::lgam(a));
 

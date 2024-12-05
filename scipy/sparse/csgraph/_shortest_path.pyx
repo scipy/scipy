@@ -17,9 +17,10 @@ import warnings
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import csr_array, issparse
 from scipy.sparse.csgraph._validation import validate_graph
-from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
+from scipy.sparse._sputils import (convert_pydata_sparse_to_scipy,
+                                   safely_cast_index_arrays)
 
 cimport cython
 
@@ -56,7 +57,7 @@ def shortest_path(csgraph, method='auto',
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     method : string ['auto'|'FW'|'D'], optional
         Algorithm to use for shortest paths.  Options are:
@@ -137,7 +138,7 @@ def shortest_path(csgraph, method='auto',
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import shortest_path
 
     >>> graph = [
@@ -146,9 +147,9 @@ def shortest_path(csgraph, method='auto',
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -243,7 +244,7 @@ def floyd_warshall(csgraph, directed=True,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -288,7 +289,7 @@ def floyd_warshall(csgraph, directed=True,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import floyd_warshall
 
     >>> graph = [
@@ -297,9 +298,9 @@ def floyd_warshall(csgraph, directed=True,
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -436,7 +437,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of non-negative distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -517,7 +518,7 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import dijkstra
 
     >>> graph = [
@@ -526,9 +527,9 @@ def dijkstra(csgraph, directed=True, indices=None,
     ... [0, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 4 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -544,9 +545,8 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     """
     #------------------------------
-    # validate csgraph and convert to csr matrix
-    csgraph = validate_graph(csgraph, directed, DTYPE,
-                             dense_output=False)
+    # validate csgraph and convert to csr
+    csgraph = validate_graph(csgraph, directed, DTYPE, dense_output=False)
 
     if np.any(csgraph.data < 0):
         warnings.warn("Graph has negative weights: dijkstra will give "
@@ -609,42 +609,35 @@ def dijkstra(csgraph, directed=True, indices=None,
         csr_data = np.ones(csgraph.data.shape)
     else:
         csr_data = csgraph.data
+    csr_indices, csr_indptr = safely_cast_index_arrays(csgraph, ITYPE, msg="csgraph")
 
-    csgraph_indices = csgraph.indices
-    csgraph_indptr = csgraph.indptr
-    if csgraph_indices.dtype != ITYPE:
-        csgraph_indices = csgraph_indices.astype(ITYPE)
-    if csgraph_indptr.dtype != ITYPE:
-        csgraph_indptr = csgraph_indptr.astype(ITYPE)
     if directed:
         if min_only:
             _dijkstra_directed_multi(indices,
-                                     csr_data, csgraph_indices,
-                                     csgraph_indptr,
+                                     csr_data, csr_indices, csr_indptr,
                                      dist_matrix, predecessor_matrix,
                                      source_matrix, limitf)
         else:
             _dijkstra_directed(indices,
-                               csr_data, csgraph_indices, csgraph_indptr,
+                               csr_data, csr_indices, csr_indptr,
                                dist_matrix, predecessor_matrix, limitf)
     else:
-        csgraphT = csgraph.T.tocsr()
+        csrT = csgraph.T.tocsr()
+        csrT_indices, csrT_indptr = safely_cast_index_arrays(csrT, ITYPE, msg="csgraph")
         if unweighted:
             csrT_data = csr_data
         else:
-            csrT_data = csgraphT.data
+            csrT_data = csrT.data
         if min_only:
             _dijkstra_undirected_multi(indices,
-                                       csr_data, csgraph_indices,
-                                       csgraph_indptr,
-                                       csrT_data, csgraphT.indices,
-                                       csgraphT.indptr,
+                                       csr_data, csr_indices, csr_indptr,
+                                       csrT_data, csrT_indices, csrT_indptr,
                                        dist_matrix, predecessor_matrix,
                                        source_matrix, limitf)
         else:
             _dijkstra_undirected(indices,
-                                 csr_data, csgraph_indices, csgraph_indptr,
-                                 csrT_data, csgraphT.indices, csgraphT.indptr,
+                                 csr_data, csr_indices, csr_indptr,
+                                 csrT_data, csrT_indices, csrT_indptr,
                                  dist_matrix, predecessor_matrix, limitf)
 
     if return_predecessors:
@@ -965,7 +958,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -1014,7 +1007,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import bellman_ford
 
     >>> graph = [
@@ -1023,9 +1016,9 @@ def bellman_ford(csgraph, directed=True, indices=None,
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -1077,16 +1070,15 @@ def bellman_ford(csgraph, directed=True, indices=None,
         csr_data = np.ones(csgraph.data.shape)
     else:
         csr_data = csgraph.data
+    csr_indices, csr_indptr = safely_cast_index_arrays(csgraph, ITYPE, msg="csgraph")
 
     if directed:
         ret = _bellman_ford_directed(indices,
-                                     csr_data, csgraph.indices,
-                                     csgraph.indptr,
+                                     csr_data, csr_indices, csr_indptr,
                                      dist_matrix, predecessor_matrix)
     else:
         ret = _bellman_ford_undirected(indices,
-                                       csr_data, csgraph.indices,
-                                       csgraph.indptr,
+                                       csr_data, csr_indices, csr_indptr,
                                        dist_matrix, predecessor_matrix)
 
     if ret >= 0:
@@ -1205,7 +1197,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     Parameters
     ----------
-    csgraph : array, matrix, or sparse matrix, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -1254,7 +1246,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import johnson
 
     >>> graph = [
@@ -1263,9 +1255,9 @@ def johnson(csgraph, directed=True, indices=None,
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -1325,37 +1317,33 @@ def johnson(csgraph, directed=True, indices=None,
     dist_array = np.zeros(N, dtype=DTYPE)
 
     csr_data = csgraph.data.copy()
+    csr_indices, csr_indptr = safely_cast_index_arrays(csgraph, ITYPE, msg="csgraph")
 
     #------------------------------
     # here we first add a single node to the graph, connected by a
     # directed edge of weight zero to each node, and perform bellman-ford
     if directed:
-        ret = _johnson_directed(csr_data, csgraph.indices,
-                                csgraph.indptr, dist_array)
+        ret = _johnson_directed(csr_data, csr_indices, csr_indptr, dist_array)
     else:
-        ret = _johnson_undirected(csr_data, csgraph.indices,
-                                  csgraph.indptr, dist_array)
+        ret = _johnson_undirected(csr_data, csr_indices, csr_indptr, dist_array)
 
     if ret >= 0:
         raise NegativeCycleError("Negative cycle detected on node %i" % ret)
 
     #------------------------------
     # add the bellman-ford weights to the data
-    _johnson_add_weights(csr_data, csgraph.indices,
-                         csgraph.indptr, dist_array)
+    _johnson_add_weights(csr_data, csr_indices, csr_indptr, dist_array)
 
     if directed:
         _dijkstra_directed(indices,
-                           csr_data, csgraph.indices, csgraph.indptr,
+                           csr_data, csr_indices, csr_indptr,
                            dist_matrix, predecessor_matrix, np.inf)
     else:
-        csgraphT = csr_matrix((csr_data, csgraph.indices, csgraph.indptr),
-                               csgraph.shape).T.tocsr()
-        _johnson_add_weights(csgraphT.data, csgraphT.indices,
-                             csgraphT.indptr, dist_array)
+        csrT = csr_array((csr_data, csr_indices, csr_indptr), csgraph.shape).T.tocsr()
+        _johnson_add_weights(csrT.data, csrT.indices, csrT.indptr, dist_array)
         _dijkstra_undirected(indices,
-                             csr_data, csgraph.indices, csgraph.indptr,
-                             csgraphT.data, csgraphT.indices, csgraphT.indptr,
+                             csr_data, csr_indices, csr_indptr,
+                             csrT.data, csrT.indices, csrT.indptr,
                              dist_matrix, predecessor_matrix, np.inf)
 
     # ------------------------------
@@ -1723,7 +1711,7 @@ def yen(
 
     Parameters
     ----------
-    csgraph : array or sparse array, 2 dimensions
+    csgraph : array_like, or sparse array or matrix, 2 dimensions
         The N x N array of distances representing the input graph.
     source : int
         The index of the starting node for the paths.
@@ -1787,7 +1775,7 @@ def yen(
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import yen
 
     >>> graph = [
@@ -1796,9 +1784,9 @@ def yen(
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1

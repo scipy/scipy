@@ -1,5 +1,6 @@
 import scipy
 import scipy.special as sc
+import sys
 import numpy as np
 import pytest
 
@@ -51,11 +52,6 @@ def test_riemann_zeta_avoid_overflow():
     desired = -5.6966307844402683127e+297  # Computed with Mpmath
     assert_allclose(sc.zeta(s), desired, atol=0, rtol=5e-14)
 
-# Some of the test cases below fail for intel compilers
-cpp_compiler = scipy.__config__.CONFIG["Compilers"]["c++"]["name"]
-using_intel_compiler = cpp_compiler in [
-    "intel", "intel-cl", "intel-llvm", "intel-llvm-cl"
-]
 
 @pytest.mark.parametrize(
     "z, desired, rtol",
@@ -261,46 +257,45 @@ using_intel_compiler = cpp_compiler in [
         ((50.55805244181687-1e6j),
          (1.0000000000000002-5.736517078070873e-16j),
          1e-13),
-        # Naive implementation of reflection formula suffers internal overflow
-        pytest.param(
-            (-217.40285743524163+13.992648136816397j),
-            (-6.012818500554211e+249-1.926943776932387e+250j),
-            5e-13,
-            marks=pytest.mark.xfail(
-                condition=using_intel_compiler,
-                reason="Fails with intel compiler.",
-            ),
-        ),
-        pytest.param(
-            (-237.71710702931668+13.992648136816397j),
-            (-8.823803086106129e+281-5.009074181335139e+281j),
-            1e-13,
-            marks=pytest.mark.xfail(
-                condition=using_intel_compiler,
-                reason="Fails with intel compiler.",
-            ),
-        ),
         ((-294.86605461349745+13.992648136816397j), (-np.inf+np.inf*1j), 1e-13),
-        pytest.param(
-            (-217.40285743524163-16.147667799398363j),
-            (-5.111612904844256e+251-4.907132127666742e+250j),
-            5e-13,
-            marks=pytest.mark.xfail(
-                condition=using_intel_compiler,
-                reason="Fails with intel compiler.",
-            ),
-        ),
-        pytest.param(
-            (-237.71710702931668-16.147667799398363j),
-            (-1.3256112779883167e+283-2.253002003455494e+283j),
-            5e-13,
-            marks=pytest.mark.xfail(
-                condition=using_intel_compiler,
-                reason="Fails with intel compiler.",
-            ),
-        ),
         ((-294.86605461349745-16.147667799398363j), (np.inf-np.inf*1j), 1e-13),
     ]
 )
 def test_riemann_zeta_complex(z, desired, rtol):
+    assert_allclose(sc.zeta(z), desired, rtol=rtol)
+
+
+# Some of the test cases below fail for intel compilers
+cpp_compiler = scipy.__config__.CONFIG["Compilers"]["c++"]["name"]
+gcc_linux = cpp_compiler == "gcc" and sys.platform == "linux"
+clang_macOS = cpp_compiler == "clang" and sys.platform == "darwin"
+
+
+@pytest.mark.skipif(
+    not (gcc_linux or clang_macOS),
+    reason="Underflow may not be avoided on other platforms",
+)
+@pytest.mark.parametrize(
+    "z, desired, rtol",
+    [
+        # Test cases generated as part of same script for
+        # test_riemann_zeta_complex. These cases are split off because
+        # they fail on some platforms.
+        #
+        # Naive implementation of reflection formula suffers internal overflow
+        ((-217.40285743524163+13.992648136816397j),
+         (-6.012818500554211e+249-1.926943776932387e+250j),
+         5e-13,),
+        ((-237.71710702931668+13.992648136816397j),
+         (-8.823803086106129e+281-5.009074181335139e+281j),
+         1e-13,),
+        ((-217.40285743524163-16.147667799398363j),
+         (-5.111612904844256e+251-4.907132127666742e+250j),
+         5e-13,),
+        ((-237.71710702931668-16.147667799398363j),
+         (-1.3256112779883167e+283-2.253002003455494e+283j),
+         5e-13,),
+    ],
+)
+def test_riemann_zeta_complex_avoid_underflow(z, desired, rtol):
     assert_allclose(sc.zeta(z), desired, rtol=rtol)

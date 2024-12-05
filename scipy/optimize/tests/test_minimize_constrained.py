@@ -465,6 +465,7 @@ class TestTrustRegionConstr:
                         Elec(n_electrons=2, constr_jac='3-point',
                              constr_hess=SR1())]
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('prob', list_of_problems)
     @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))
     @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
@@ -778,7 +779,7 @@ def test_issue_18882():
             method="trust-constr",
             constraints=NonlinearConstraint(lsf, 0, 0),
         )
-    assert (not res.success) and (res.constr_violation > 1e-8)  
+    assert (not res.success) and (res.constr_violation > 1e-8)
 
 class TestBoundedNelderMead:
 

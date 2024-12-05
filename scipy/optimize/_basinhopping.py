@@ -5,7 +5,7 @@ import numpy as np
 import math
 import inspect
 import scipy.optimize
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _transition_to_rng
 
 __all__ = ['basinhopping']
 
@@ -264,25 +264,17 @@ class RandomDisplacement:
     ----------
     stepsize : float, optional
         Maximum stepsize in any dimension
-    random_gen : {None, int, `numpy.random.Generator`,
-                  `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-
+    rng : {None, int, `numpy.random.Generator`}, optional
+        Random number generator
     """
 
-    def __init__(self, stepsize=0.5, random_gen=None):
+    def __init__(self, stepsize=0.5, rng=None):
         self.stepsize = stepsize
-        self.random_gen = check_random_state(random_gen)
+        self.rng = check_random_state(rng)
 
     def __call__(self, x):
-        x += self.random_gen.uniform(-self.stepsize, self.stepsize,
-                                     np.shape(x))
+        x += self.rng.uniform(-self.stepsize, self.stepsize,
+                              np.shape(x))
         return x
 
 
@@ -309,25 +301,17 @@ class Metropolis:
     ----------
     T : float
         The "temperature" parameter for the accept or reject criterion.
-    random_gen : {None, int, `numpy.random.Generator`,
-                  `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : {None, int, `numpy.random.Generator`}, optional
         Random number generator used for acceptance test.
 
     """
 
-    def __init__(self, T, random_gen=None):
+    def __init__(self, T, rng=None):
         # Avoid ZeroDivisionError since "MBH can be regarded as a special case
         # of the BH framework with the Metropolis criterion, where temperature
         # T = 0." (Reject all steps that increase energy.)
         self.beta = 1.0 / T if T != 0 else float('inf')
-        self.random_gen = check_random_state(random_gen)
+        self.rng = check_random_state(rng)
 
     def accept_reject(self, res_new, res_old):
         """
@@ -348,7 +332,7 @@ class Metropolis:
             prod = -(res_new.fun - res_old.fun) * self.beta
             w = math.exp(min(0, prod))
 
-        rand = self.random_gen.uniform()
+        rand = self.rng.uniform()
         return w >= rand and (res_new.success or not res_old.success)
 
     def __call__(self, *, res_new, res_old):
@@ -358,10 +342,11 @@ class Metropolis:
         return bool(self.accept_reject(res_new, res_old))
 
 
+@_transition_to_rng("seed", position_num=12, replace_doc=True)
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
                  callback=None, interval=50, disp=False, niter_success=None,
-                 seed=None, *, target_accept_rate=0.5, stepwise_factor=0.9):
+                 rng=None, *, target_accept_rate=0.5, stepwise_factor=0.9):
     """Find the global minimum of a function using the basin-hopping algorithm.
 
     Basin-hopping is a two-phase method that combines a global stepping
@@ -432,15 +417,13 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        Specify `seed` for repeatable minimizations. The random numbers
-        generated with this seed only affect the default Metropolis
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        The random numbers generated only affect the default Metropolis
         `accept_test` and the default `take_step`. If you supply your own
         `take_step` and `accept_test`, and these functions use random
         number generation, then those functions are responsible for the state
@@ -641,7 +624,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     >>> rng = np.random.default_rng()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
-    ...                    niter=10, callback=print_fun, seed=rng)
+    ...                    niter=10, callback=print_fun, rng=rng)
     at minimum 0.4159 accepted 1
     at minimum -0.4317 accepted 1
     at minimum -1.0109 accepted 1
@@ -666,7 +649,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     x0 = np.array(x0)
 
     # set up the np.random generator
-    rng = check_random_state(seed)
+    rng = check_random_state(rng)
 
     # set up minimizer
     if minimizer_kwargs is None:
@@ -690,7 +673,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
             take_step_wrapped = take_step
     else:
         # use default
-        displace = RandomDisplacement(stepsize=stepsize, random_gen=rng)
+        displace = RandomDisplacement(stepsize=stepsize, rng=rng)
         take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
                                              accept_rate=target_accept_rate,
                                              factor=stepwise_factor,
@@ -704,7 +687,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         accept_tests = [accept_test]
 
     # use default
-    metropolis = Metropolis(T, random_gen=rng)
+    metropolis = Metropolis(T, rng=rng)
     accept_tests.append(metropolis)
 
     if niter_success is None:

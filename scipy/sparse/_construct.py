@@ -11,7 +11,7 @@ import numbers
 import math
 import numpy as np
 
-from scipy._lib._util import check_random_state, rng_integers
+from scipy._lib._util import check_random_state, rng_integers, _transition_to_rng
 from ._sputils import upcast, get_index_dtype, isscalarlike
 
 from ._sparsetools import csr_hstack
@@ -197,15 +197,15 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
         k = max(0, offset)
         length = min(m + offset, n - offset, K)
         if length < 0:
-            raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
+            raise ValueError(f"Offset {offset} (index {j}) out of bounds")
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
         except ValueError as e:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
-                    "Diagonal length (index %d: %d at offset %d) does not "
-                    "agree with array size (%d, %d)." % (
-                    j, len(diagonal), offset, m, n)) from e
+                    f"Diagonal length (index {j}: {len(diagonal)} at"
+                    f" offset {offset}) does not agree with array size ({m}, {n})."
+                ) from e
             raise
 
     return dia_array((data_arr, offsets), shape=(m, n)).asformat(format)
@@ -536,13 +536,10 @@ def kron(A, B, format=None):
             return coo_sparse(output_shape).asformat(format)
 
         # expand entries of a into blocks
-        row = A.row.repeat(B.nnz)
-        col = A.col.repeat(B.nnz)
+        idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
+        row = np.asarray(A.row, dtype=idx_dtype).repeat(B.nnz)
+        col = np.asarray(A.col, dtype=idx_dtype).repeat(B.nnz)
         data = A.data.repeat(B.nnz)
-
-        if max(A.shape[0]*B.shape[0], A.shape[1]*B.shape[1]) > np.iinfo('int32').max:
-            row = row.astype(np.int64)
-            col = col.astype(np.int64)
 
         row *= B.shape[0]
         col *= B.shape[1]
@@ -688,12 +685,11 @@ def _stack_along_minor_axis(blocks, axis):
     #   abundance of caution.
     sum_dim = sum(b._shape_as_2d[axis] for b in blocks)
     nnz = sum(len(b.indices) for b in blocks)
-    idx_dtype = get_index_dtype(maxval=max(sum_dim - 1, nnz))
+    idx_dtype = get_index_dtype(indptr_list, maxval=max(sum_dim - 1, nnz))
     stack_dim_cat = np.array([b._shape_as_2d[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
-        indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
-        indices_cat = (np.concatenate([b.indices for b in blocks])
-                       .astype(idx_dtype))
+        indptr_cat = np.concatenate(indptr_list, dtype=idx_dtype)
+        indices_cat = np.concatenate([b.indices for b in blocks], dtype=idx_dtype)
         indptr = np.empty(constant_dim + 1, dtype=idx_dtype)
         indices = np.empty_like(indices_cat)
         data = np.empty_like(data_cat)
@@ -938,7 +934,7 @@ def _block(blocks, format, dtype, return_spmatrix=False):
         # stack along rows (axis 0):
         A = _compressed_sparse_stack(blocks[:, 0], 0, return_spmatrix)
         if dtype is not None:
-            A = A.astype(dtype)
+            A = A.astype(dtype, copy=False)
         return A
     elif (format in (None, 'csc') and
           all(issparse(b) and b.format == 'csc' for b in blocks.flat)
@@ -951,7 +947,7 @@ def _block(blocks, format, dtype, return_spmatrix=False):
         # stack along columns (axis 1):
         A = _compressed_sparse_stack(blocks[0, :], 1, return_spmatrix)
         if dtype is not None:
-            A = A.astype(dtype)
+            A = A.astype(dtype, copy=False)
         return A
 
     block_mask = np.zeros(blocks.shape, dtype=bool)
@@ -994,7 +990,8 @@ def _block(blocks, format, dtype, return_spmatrix=False):
     shape = (row_offsets[-1], col_offsets[-1])
 
     data = np.empty(nnz, dtype=dtype)
-    idx_dtype = get_index_dtype(maxval=max(shape))
+    idx_dtype = get_index_dtype([b.coords[0] for b in blocks[block_mask]],
+                                maxval=max(shape))
     row = np.empty(nnz, dtype=idx_dtype)
     col = np.empty(nnz, dtype=idx_dtype)
 
@@ -1066,6 +1063,7 @@ def block_diag(mats, format=None, dtype=None):
     row = []
     col = []
     data = []
+    idx_arrays = []  # track idx_dtype of incoming sparse arrays
     r_idx = 0
     c_idx = 0
     for a in mats:
@@ -1073,6 +1071,8 @@ def block_diag(mats, format=None, dtype=None):
             a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()
+            if not idx_arrays and a.coords[0].dtype == np.int64:
+                idx_arrays.append(a.coords[0])
             nrows, ncols = a._shape_as_2d
             row.append(a.row + r_idx)
             col.append(a.col + c_idx)
@@ -1085,29 +1085,22 @@ def block_diag(mats, format=None, dtype=None):
             data.append(a.ravel())
         r_idx += nrows
         c_idx += ncols
-    row = np.concatenate(row)
-    col = np.concatenate(col)
+    idx_dtype = get_index_dtype(idx_arrays, maxval=max(r_idx, c_idx))
+    row = np.concatenate(row, dtype=idx_dtype)
+    col = np.concatenate(col, dtype=idx_dtype)
     data = np.concatenate(data)
-    return container((data, (row, col)),
-                      shape=(r_idx, c_idx),
-                      dtype=dtype).asformat(format)
+    new_shape = (r_idx, c_idx)
+
+    return container((data, (row, col)), shape=new_shape, dtype=dtype).asformat(format)
 
 
+@_transition_to_rng("random_state")
 def random_array(shape, *, density=0.01, format='coo', dtype=None,
-                 random_state=None, data_sampler=None):
+                 rng=None, data_sampler=None):
     """Return a sparse array of uniformly random numbers in [0, 1)
 
     Returns a sparse array with the given shape and density
     where values are generated uniformly randomly in the range [0, 1).
-
-    .. warning::
-
-        Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
-        ``np.random.default_rng``) for ``random_state`` will lead to much
-        faster execution times.
-
-        A much slower implementation is used by default for backwards
-        compatibility.
 
     Parameters
     ----------
@@ -1120,21 +1113,14 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional (default: np.float64)
         type of the returned matrix values.
-    random_state : {None, int, `Generator`, `RandomState`}, optional
-        A random number generator to determine nonzero structure. We recommend using
-        a `numpy.random.Generator` manually provided for every call as it is much
-        faster than RandomState.
-
-        - If `None` (or `np.random`), the `numpy.random.RandomState`
-          singleton is used.
-        - If an int, a new ``Generator`` instance is used,
-          seeded with the int.
-        - If a ``Generator`` or ``RandomState`` instance then
-          that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
         This random state will be used for sampling `indices` (the sparsity
         structure), and by default for the data values too (see `data_sampler`).
-
     data_sampler : callable, optional (default depends on dtype)
         Sampler of random data values with keyword arg `size`.
         This function should take a single keyword argument `size` specifying
@@ -1143,7 +1129,7 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         By default, uniform [0, 1) random values are used unless `dtype` is
         an integer (default uniform integers from that dtype) or
         complex (default uniform over the unit square in the complex plane).
-        For these, the `random_state` rng is used e.g. ``rng.uniform(size=size)``.
+        For these, the `rng` is used e.g. ``rng.uniform(size=size)``.
 
     Returns
     -------
@@ -1160,13 +1146,13 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
 
     Default sampling uniformly from [0, 1):
 
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng)
 
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
     >>> S = sp.sparse.random_array((3, 4), density=0.25,
-    ...                            random_state=rng, data_sampler=rvs)
+    ...                            rng=rng, data_sampler=rvs)
     >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1175,38 +1161,39 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     Building a custom distribution.
     This example builds a squared normal from np.random:
 
-    >>> def np_normal_squared(size=None, random_state=rng):
-    ...     return random_state.standard_normal(size) ** 2
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
-    ...                      data_sampler=np_normal_squared)
+    >>> def np_normal_squared(size=None, rng=rng):
+    ...     return rng.standard_normal(size) ** 2
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng,
+    ...                            data_sampler=np_normal_squared)
 
     Or we can build it from sp.stats style rvs functions:
 
-    >>> def sp_stats_normal_squared(size=None, random_state=rng):
+    >>> def sp_stats_normal_squared(size=None, rng=rng):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
-    ...     return std_normal(size=size, random_state=random_state) ** 2
-    >>> S = sp.sparse.random_array((3, 4), density=0.25, random_state=rng,
-    ...                      data_sampler=sp_stats_normal_squared)
+    ...     return std_normal(size=size, random_state=rng) ** 2
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng,
+    ...                            data_sampler=sp_stats_normal_squared)
 
     Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):
-    ...         return random_state.standard_normal(size) ** 2
+    ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X().rvs
     >>> S = sp.sparse.random_array((3, 4), density=0.25,
-    ...                            random_state=rng, data_sampler=Y)
+    ...                            rng=rng, data_sampler=Y)
     """
-    # Use the more efficient RNG by default.
-    if random_state is None:
-        random_state = np.random.default_rng()
-    data, ind = _random(shape, density, format, dtype, random_state, data_sampler)
+    data, ind = _random(shape, density, format, dtype, rng, data_sampler)
+
+    # downcast, if safe, before calling coo_constructor
+    idx_dtype = get_index_dtype(maxval=max(shape))
+    ind = tuple(np.asarray(co, dtype=idx_dtype) for co in ind)
     return coo_array((data, ind), shape=shape).asformat(format)
 
 
 def _random(shape, density=0.01, format=None, dtype=None,
-            random_state=None, data_sampler=None):
+            rng=None, data_sampler=None):
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
 
@@ -1215,7 +1202,7 @@ def _random(shape, density=0.01, format=None, dtype=None,
     # Number of non zero values
     size = int(round(density * tot_prod))
 
-    rng = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     if data_sampler is None:
         if np.issubdtype(dtype, np.integer):
@@ -1232,10 +1219,12 @@ def _random(shape, density=0.01, format=None, dtype=None,
         else:
             data_sampler = rng.uniform
 
+    idx_dtype = get_index_dtype(maxval=max(shape))
     # rng.choice uses int64 if first arg is an int
-    if tot_prod < np.iinfo(np.int64).max:
+    if tot_prod <= np.iinfo(np.int64).max:
         raveled_ind = rng.choice(tot_prod, size=size, replace=False)
         ind = np.unravel_index(raveled_ind, shape=shape, order='F')
+        ind = tuple(np.asarray(co, idx_dtype) for co in ind)
     else:
         # for ravel indices bigger than dtype max, use sets to remove duplicates
         ndim = len(shape)
@@ -1243,26 +1232,18 @@ def _random(shape, density=0.01, format=None, dtype=None,
         while len(seen) < size:
             dsize = size - len(seen)
             seen.update(map(tuple, rng_integers(rng, shape, size=(dsize, ndim))))
-        ind = tuple(np.array(list(seen)).T)
+        ind = tuple(np.array(list(seen), dtype=idx_dtype).T)
 
     # size kwarg allows eg data_sampler=partial(np.random.poisson, lam=5)
     vals = data_sampler(size=size).astype(dtype, copy=False)
     return vals, ind
 
 
+@_transition_to_rng("random_state", position_num=5)
 def random(m, n, density=0.01, format='coo', dtype=None,
-           random_state=None, data_rvs=None):
+           rng=None, data_rvs=None):
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
-
-    .. warning::
-
-        Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
-        ``np.random.default_rng``) for ``random_state`` will lead to much
-        faster execution times.
-
-        A much slower implementation is used by default for backwards
-        compatibility.
 
     .. warning::
 
@@ -1281,15 +1262,11 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-          singleton is used.
-        - If `seed` is an int, a new ``RandomState`` instance is used,
-          seeded with `seed`.
-        - If `seed` is already a ``Generator`` or ``RandomState`` instance then
-          that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
         This random state will be used for sampling the sparsity structure, but
         not necessarily for sampling the values of the structurally nonzero
@@ -1319,12 +1296,12 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> import scipy as sp
     >>> import numpy as np
     >>> rng = np.random.default_rng()
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng)
 
     Providing a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=rvs)
     >>> S.toarray()
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1333,27 +1310,27 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     Building a custom distribution.
     This example builds a squared normal from np.random:
 
-    >>> def np_normal_squared(size=None, random_state=rng):
-    ...     return random_state.standard_normal(size) ** 2
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+    >>> def np_normal_squared(size=None, rng=rng):
+    ...     return rng.standard_normal(size) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
     ...                      data_rvs=np_normal_squared)
 
     Or we can build it from sp.stats style rvs functions:
 
-    >>> def sp_stats_normal_squared(size=None, random_state=rng):
+    >>> def sp_stats_normal_squared(size=None, rng=rng):
     ...     std_normal = sp.stats.distributions.norm_gen().rvs
-    ...     return std_normal(size=size, random_state=random_state) ** 2
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng,
+    ...     return std_normal(size=size, random_state=rng) ** 2
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng,
     ...                      data_rvs=sp_stats_normal_squared)
 
     Or we can subclass sp.stats rv_continuous or rv_discrete:
 
     >>> class NormalSquared(sp.stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=rng):
-    ...         return random_state.standard_normal(size) ** 2
+    ...         return rng.standard_normal(size) ** 2
     >>> X = NormalSquared()
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, rng=rng, data_rvs=Y.rvs)
     """
     if n is None:
         n = m
@@ -1364,11 +1341,12 @@ def random(m, n, density=0.01, format='coo', dtype=None,
             return data_rvs(size)
     else:
         data_rvs_kw = None
-    vals, ind = _random((m, n), density, format, dtype, random_state, data_rvs_kw)
+    vals, ind = _random((m, n), density, format, dtype, rng, data_rvs_kw)
     return coo_matrix((vals, ind), shape=(m, n)).asformat(format)
 
 
-def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+@_transition_to_rng("random_state", position_num=5)
+def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     """Generate a sparse matrix of the given shape and density with uniformly
     distributed values.
 
@@ -1389,15 +1367,11 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -1415,7 +1389,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     Examples
     --------
     >>> from scipy.sparse import rand
-    >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
+    >>> matrix = rand(3, 4, density=0.25, format="csr", rng=42)
     >>> matrix
     <Compressed Sparse Row sparse matrix of dtype 'float64'
         with 3 stored elements and shape (3, 4)>
@@ -1425,4 +1399,4 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
            [0.        , 0.        , 0.        , 0.        ]])
 
     """
-    return random(m, n, density, format, dtype, random_state)
+    return random(m, n, density, format, dtype, rng)

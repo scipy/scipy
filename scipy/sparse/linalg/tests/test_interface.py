@@ -222,7 +222,7 @@ class TestAsLinearOperator:
 
             cases.append((matrix(original, dtype=dtype), original))
             cases.append((np.array(original, dtype=dtype), original))
-            cases.append((sparse.csr_matrix(original, dtype=dtype), original))
+            cases.append((sparse.csr_array(original, dtype=dtype), original))
 
             # Test default implementations of _adjoint and _rmatvec, which
             # refer to each other.
@@ -398,6 +398,8 @@ def test_pickle():
         for k in A.__dict__:
             assert_equal(getattr(A, k), getattr(B, k))
 
+
+@pytest.mark.thread_unsafe
 def test_inheritance():
     class Empty(interface.LinearOperator):
         pass
@@ -512,7 +514,7 @@ def test_transpose_noconjugate():
 
 def test_sparse_matmat_exception():
     A = interface.LinearOperator((2, 2), matvec=lambda x: x)
-    B = sparse.identity(2)
+    B = sparse.eye_array(2)
     msg = "Unable to multiply a LinearOperator with a sparse matrix."
     with assert_raises(TypeError, match=msg):
         A @ B

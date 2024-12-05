@@ -53,7 +53,7 @@ z_src = [
   'PROPACK/complex16/dbsvd.F',
   'PROPACK/complex16/dgemm_ovwr.F',
   'PROPACK/complex16/printstat.F',
-  '../_eigen/arpack/ARPACK/SRC/zzdotc.f',
+  'PROPACK/complex16/zzdotc.f',
   'PROPACK/complex16/zblasext.F',
   'PROPACK/complex16/zgemm_ovwr.F',
   'PROPACK/complex16/zgetu0.F',
