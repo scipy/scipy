@@ -886,9 +886,10 @@ class TestFisherExact:
         assert_approx_equal(res, 0.2751, significant=4)
 
     def test_raises(self):
-        # test we raise an error for wrong shape of input.
-        assert_raises(ValueError, stats.fisher_exact,
-                      np.arange(6).reshape(2, 3))
+        # test we raise an error for wrong number of dimensions.
+        message = "The input `table` must have two dimensions."
+        with pytest.raises(ValueError, match=message):
+            stats.fisher_exact(np.arange(6))
 
     def test_row_or_col_zero(self):
         tables = ([[0, 0], [5, 10]],
@@ -944,6 +945,102 @@ class TestFisherExact:
         table = np.array([[14500, 20000], [30000, 40000]])
         res = stats.fisher_exact(table, alternative=alternative)
         assert_equal((res.statistic, res.pvalue), res)
+
+    def test_input_validation_edge_cases_rxc(self):
+        rng = np.random.default_rng(2345783457834572345)
+        table = np.asarray([[2, 7], [8, 2]])
+
+        message = r"`alternative` must be the default \(None\) unless..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.PermutationMethod(rng=rng)
+            stats.fisher_exact(table, method=method, alternative='less')
+
+        message = "...not recognized; if provided, `method` must be an..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.BootstrapMethod(rng=rng)
+            stats.fisher_exact(table, method=method)
+
+        message = "If the `method` argument of `fisher_exact` is an..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.MonteCarloMethod(rvs=stats.norm.rvs)
+            stats.fisher_exact(table, method=method)
+
+        message = "`table` must have at least one row and one column."
+        with pytest.raises(ValueError, match=message):
+            stats.fisher_exact(np.zeros((0, 1)))
+
+        # Specical case: when there is only one table with given marginals, the
+        # PMF of that case is 1.0, so the p-value is 1.0
+        np.testing.assert_equal(stats.fisher_exact([[1, 2, 3]]), (1, 1))
+        np.testing.assert_equal(stats.fisher_exact([[1], [2], [3]]), (1, 1))
+        np.testing.assert_equal(stats.fisher_exact(np.zeros((2, 3))), (1, 1))
+
+
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.slow()
+    def test_resampling_2x2(self):
+        rng = np.random.default_rng(2345783457834572345)
+        table = np.asarray([[2, 7], [8, 2]])
+        ref = stats.fisher_exact(table)
+        ref_pvalue = ref.pvalue
+        ref_stat = stats.random_table(table.sum(axis=1), table.sum(axis=0)).pmf(table)
+
+        method = stats.MonteCarloMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=0.0025)
+        assert_equal(res.statistic, ref_stat)
+
+        method = stats.PermutationMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref.pvalue, atol=0.0025)
+        assert_equal(res.statistic, ref_stat)
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.slow()
+    def test_resampling_rxc(self):
+        # Compare against R fisher.exact
+        # options(digits=16)
+        # MP6 < - rbind(
+        #     c(1, 2, 2, 1, 1, 0, 1),
+        #     c(2, 0, 0, 2, 3, 0, 0),
+        #     c(0, 1, 1, 1, 2, 7, 3),
+        #     c(1, 1, 2, 0, 0, 0, 1),
+        #     c(0, 1, 1, 1, 1, 0, 0))
+        # fisher.test(MP6)
+
+        table = [[1, 2, 2, 1, 1, 0, 1],
+                 [2, 0, 0, 2, 3, 0, 0],
+                 [0, 1, 1, 1, 2, 7, 3],
+                 [1, 1, 2, 0, 0, 0, 1],
+                 [0, 1, 1, 1, 1, 0, 0]]
+        table = np.asarray(table)
+
+        ref_pvalue = 0.03928964365533
+        rng = np.random.default_rng(3928964365533)
+
+        method = stats.PermutationMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=5e-4)
+
+        method = stats.MonteCarloMethod(rng=rng, n_resamples=99999)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=5e-4)
+
+    @pytest.mark.xslow()
+    def test_resampling_exact_2x2(self):
+        # Test that exact permutation p-value matches result of `fisher_exact`
+        rng = np.random.default_rng(2345783457834572345)
+        method = stats.PermutationMethod(rng=rng)
+
+        for a in range(1, 3):
+            for b in range(1, 3):
+                for c in range(1, 3):
+                    for d in range(1, 4):
+                        table = np.asarray([[a, b], [c, d]])
+                        ref = stats.fisher_exact(table)
+                        res = stats.fisher_exact(table, method=method)
+                        assert_allclose(res.pvalue, ref.pvalue, atol=1e-14)
 
 
 class TestCorrSpearmanr:
