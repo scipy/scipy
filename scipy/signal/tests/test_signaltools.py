@@ -28,7 +28,6 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
-from scipy._lib._array_api import xp_assert_close
 from scipy._lib._util import ComplexWarning
 
 from scipy._lib._array_api import (
@@ -274,6 +273,7 @@ class TestConvolve:
         assert_raises(ValueError, convolve, [3], 2)
 
     @pytest.mark.thread_unsafe
+    @skip_xp_backends(np_only=True)
     def test_dtype_deprecation(self, xp):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -908,12 +908,8 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         xp_assert_close(out, expected, atol=1e-10)
 
-    def test_fft_nan(self, xp):
-
-        if not is_numpy(xp):
-            pytest.skip(reason="SciPy-specific test")
-
     @pytest.mark.thread_unsafe
+    @skip_xp_backends(np_only=True)
     def test_fft_nan(self, xp):
         n = 1000
         rng = np.random.default_rng(43876432987)
@@ -2026,8 +2022,9 @@ class _TestLinearFilter:
             lfilter(np.array([1.0]), np.array([1.0]), data),
             lfilter(b, a, data))
 
+    @skip_xp_backends(np_only=True)
     @pytest.mark.thread_unsafe
-    def test_dtype_deprecation(self):
+    def test_dtype_deprecation(self, xp):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
         b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
@@ -2333,6 +2330,7 @@ class TestCorrelate:
         xp_assert_close(correlate(a, b, mode='valid'), xp.asarray([32]))
 
     @pytest.mark.thread_unsafe
+    @skip_xp_backends(np_only=True)
     def test_dtype_deprecation(self, xp):
         # gh-21211
         a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
@@ -2373,7 +2371,8 @@ def test_correlation_lags(mode, behind, input_size, xp):
     assert lags.shape == correlation.shape
 
 
-def test_correlation_lags_invalid_mode():
+@skip_xp_backends(np_only=True)
+def test_correlation_lags_invalid_mode(xp):
     with pytest.raises(ValueError, match="Mode asdfgh is invalid"):
         correlation_lags(100, 100, mode="asdfgh")
 
@@ -2805,7 +2804,8 @@ def test_choose_conv_method(xp):
 
 
 @pytest.mark.thread_unsafe
-def test_choose_conv_dtype_deprecation():
+@skip_xp_backends(np_only=True)
+def test_choose_conv_dtype_deprecation(xp):
     # gh-21211
     a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
     b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
@@ -2813,8 +2813,9 @@ def test_choose_conv_dtype_deprecation():
         choose_conv_method(a, b)
 
 
+@skip_xp_backends(np_only=True)
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_choose_conv_method_2():
+def test_choose_conv_method_2(xp):
     for mode in ['valid', 'same', 'full']:
         x = [Decimal(3), Decimal(2)]
         h = [Decimal(1), Decimal(4)]
@@ -4078,7 +4079,7 @@ class TestSOSFilt:
         assert_allclose_cast(zf, zi, rtol=1e-13)
 
     @pytest.mark.thread_unsafe
-    def test_dtype_deprecation(self, dt):
+    def test_dtype_deprecation(self, dt, xp):
         # gh-21211
         sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)
         x = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
