@@ -4034,6 +4034,198 @@ class ShiftedScaledDistribution(TransformedDistribution):
                                          scale=self.scale / scale)
 
 
+class OrderStatisticDistribution(TransformedDistribution):
+    r"""Probability distribution of an order statistic
+
+    An instance of this class represents a random variable that follows the
+    distribution underlying the :math:`r^{\text{th}}` order statistic of a
+    sample of :math:`n` observations of a random variable :math:`X`.
+
+    Parameters
+    ----------
+    dist : `ContinuousDistribution`
+        The random variable :math:`X`
+    n : array_like
+        The (integer) sample size :math:`n`
+    r : array_like
+        The (integer) rank of the order statistic :math:`r`
+
+    Notes
+    -----
+    If we make :math:`n` observations of a continuous random variable
+    :math:`X` and sort them in increasing order
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
+    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+
+    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
+    :math:`F`, and :math:`F'`, respectively, then the PDF underlying
+    math:`X_{(r)}` is given by:
+
+    .. math::
+
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} F'(x)^{n - r}
+
+    The CDF and other methods of the distribution underlying :math:`X_{(r)}`
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is
+    a standard uniform random variable, and that the order statistics of
+    observations of `U` follow a beta distribution, :math:`B(r, n - r + 1)`.
+
+    References
+    ----------
+    .. [1] Order statistic. *Wikipedia*. https://en.wikipedia.org/wiki/Order_statistic
+
+    Examples
+    --------
+    Suppose we are interested in order statistics of samples of size five drawn
+    from the standard normal distribution. Plot the PDF underlying the fourth
+    order statistic and compare with a normalized histogram from simulation.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>>
+    >>> X = stats.Normal()
+    >>> data = X.sample(shape=(10000, 5))
+    >>> ranks = np.sort(data, axis=1)
+    >>> Y = stats.OrderStatisticDistribution(X, r=4, n=5)
+    >>>
+    >>> ax = plt.gca()
+    >>> Y.plot(ax=ax)
+    >>> ax.hist(ranks[:, 3], density=True, bins=30)
+    >>> plt.show()
+
+    """
+
+    # These can be restricted to _IntegerDomain/_IntegerParameter in a separate
+    # PR if desired.
+    _r_domain = _RealDomain(endpoints=(1, 'n'), inclusive=(True, True))
+    _r_param = _RealParameter('r', domain=_r_domain, typical=(1, 2))
+
+    _n_domain = _RealDomain(endpoints=(1, np.inf), inclusive=(True, True))
+    _n_param = _RealParameter('n', domain=_n_domain, typical=(1, 4))
+
+    _r_domain.define_parameters(_n_param)
+
+    _parameterizations = [_Parameterization(_r_param, _n_param)]
+
+    def __init__(self, dist, /, *args, r, n, **kwargs):
+        super().__init__(dist, *args, r=r, n=n, **kwargs)
+
+    def _overrides(self, method_name):
+        return method_name in {'_logpdf_formula', '_pdf_formula',
+                               '_cdf_formula', '_ccdf_formula',
+                               '_icdf_formula', '_iccdf_formula'}
+
+    def _logpdf_formula(self, x, r, n, **kwargs):
+        log_factor = special.betaln(r, n - r + 1)
+        log_fX = self._dist._logpdf_dispatch(x, **kwargs)
+        # log-methods sometimes use complex dtype with 0 imaginary component,
+        # but `_tanhsinh` doesn't accept complex limits of integration; take `real`.
+        log_FX = self._dist._logcdf_dispatch(x.real, **kwargs)
+        log_cFX = self._dist._logccdf_dispatch(x.real, **kwargs)
+        # This can be problematic when (r - 1)|(n-r) = 0 and `log_FX`|log_cFX = -inf
+        # The PDF in these cases is 0^0, so these should be replaced with log(1)=0
+        # return log_fX + (r-1)*log_FX + (n-r)*log_cFX - log_factor
+        rm1_log_FX = np.where((r - 1 == 0) & np.isneginf(log_FX), 0, (r-1)*log_FX)
+        nmr_log_cFX = np.where((n - r == 0) & np.isneginf(log_cFX), 0, (n-r)*log_cFX)
+        return log_fX + rm1_log_FX + nmr_log_cFX - log_factor
+
+    def _pdf_formula(self, x, r, n, **kwargs):
+        # 1 / factor = factorial(n) / (factorial(r-1) * factorial(n-r))
+        factor = special.beta(r, n - r + 1)
+        fX = self._dist._pdf_dispatch(x, **kwargs)
+        FX = self._dist._cdf_dispatch(x, **kwargs)
+        cFX = self._dist._ccdf_dispatch(x, **kwargs)
+        return fX * FX**(r-1) * cFX**(n-r) / factor
+
+    def _cdf_formula(self, x, r, n, **kwargs):
+        x_ = self._dist._cdf_dispatch(x, **kwargs)
+        return special.betainc(r, n-r+1, x_)
+
+    def _ccdf_formula(self, x, r, n, **kwargs):
+        x_ = self._dist._cdf_dispatch(x, **kwargs)
+        return special.betaincc(r, n-r+1, x_)
+
+    def _icdf_formula(self, p, r, n, **kwargs):
+        p_ = special.betaincinv(r, n-r+1, p)
+        return self._dist._icdf_dispatch(p_, **kwargs)
+
+    def _iccdf_formula(self, p, r, n, **kwargs):
+        p_ = special.betainccinv(r, n-r+1, p)
+        return self._dist._icdf_dispatch(p_, **kwargs)
+
+
+def order_statistic(X, /, *, r, n):
+    r"""Probability distribution of an order statistic
+
+    Returns a random variable that follows the distribution underlying the
+    :math:`r^{\text{th}}` order statistic of a sample of :math:`n`
+    observations of a random variable :math:`X`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`
+    r : array_like
+        The (positive integer) rank of the order statistic :math:`r`
+    n : array_like
+        The (positive integer) sample size :math:`n`
+
+    Notes
+    -----
+    If we make :math:`n` observations of a continuous random variable
+    :math:`X` and sort them in increasing order
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
+    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+
+    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
+    :math:`F`, and :math:`F'`, respectively, then the PDF underlying
+    math:`X_{(r)}` is given by:
+
+    .. math::
+
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} F'(x)^{n - r}
+
+    The CDF and other methods of the distribution underlying :math:`X_{(r)}`
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is
+    a standard uniform random variable, and that the order statistics of
+    observations of `U` follow a beta distribution, :math:`B(r, n - r + 1)`.
+
+    References
+    ----------
+    .. [1] Order statistic. *Wikipedia*. https://en.wikipedia.org/wiki/Order_statistic
+
+    Examples
+    --------
+    Suppose we are interested in order statistics of samples of size five drawn
+    from the standard normal distribution. Plot the PDF underlying each
+    order statistic and compare with a normalized histogram from simulation.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>>
+    >>> X = stats.Normal()
+    >>> data = X.sample(shape=(10000, 5))
+    >>> sorted = np.sort(data, axis=1)
+    >>> Y = stats.order_statistic(X, r=[1, 2, 3, 4, 5], n=5)
+    >>>
+    >>> ax = plt.gca()
+    >>> colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    >>> for i in range(5):
+    ...     y = sorted[:, i]
+    ...     ax.hist(y, density=True, bins=30, alpha=0.1, color=colors[i])
+    >>> Y.plot(ax=ax)
+    >>> plt.show()
+
+    """
+    r, n = np.asarray(r), np.asarray(n)
+    if np.any((r != np.floor(r)) | (r < 0)) or np.any((n != np.floor(n)) | (n < 0)):
+        message = "`r` and `n` must contain only positive integers."
+        raise ValueError(message)
+    return OrderStatisticDistribution(X, r=r, n=n)
+
+
 class Mixture(_ProbabilityDistribution):
     r"""Representation of a mixture distribution.
 
