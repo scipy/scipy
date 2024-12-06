@@ -959,6 +959,7 @@ class QMCEngine(ABC):
             "maxiter": 10,
             "qhull_options": None,
         }
+        self._optimization = optimization
         self.optimization_method = _select_optimizer(optimization, config)
 
     @abstractmethod
@@ -1770,6 +1771,7 @@ class Sobol(QMCEngine):
 
         self.bits = bits
         self.dtype_i: type
+        self.scramble = scramble
 
         if self.bits is None:
             self.bits = 30

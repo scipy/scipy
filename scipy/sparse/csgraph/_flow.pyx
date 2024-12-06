@@ -3,9 +3,8 @@
 import numpy as np
 
 from scipy.sparse import csr_array, issparse, csr_matrix
-from scipy.sparse._sputils import convert_pydata_sparse_to_scipy, is_pydata_spmatrix
-
-from ._tools import _safe_downcast_indices
+from scipy.sparse._sputils import (convert_pydata_sparse_to_scipy, is_pydata_spmatrix,
+                                   safely_cast_index_arrays)
 
 cimport numpy as np
 
@@ -254,10 +253,10 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     if not csgraph.has_sorted_indices:
         csgraph = csgraph.sorted_indices()
 
-    csgraph_indices, csgraph_indptr = _safe_downcast_indices(csgraph)
-    if csgraph_indices is not csgraph.indices:
+    indices, indptr = safely_cast_index_arrays(csgraph, idx_dtype=ITYPE, msg="csgraph")
+    if indices is not csgraph.indices:
         # create a new object without copying data
-        csgraph = csr_array((csgraph.data, csgraph_indices, csgraph_indptr),
+        csgraph = csr_array((csgraph.data, indices, indptr),
                             shape=csgraph.shape, dtype=csgraph.dtype)
 
     # Our maximum flow solvers assume that edges always exist

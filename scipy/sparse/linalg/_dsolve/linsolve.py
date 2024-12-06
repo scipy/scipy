@@ -5,7 +5,7 @@ from numpy import asarray
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
                           csr_array, csc_array, eye_array, diags_array)
 from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
-                                   get_index_dtype)
+                                   get_index_dtype, safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
 import copy
 import threading
@@ -129,21 +129,6 @@ def _get_umf_family(A):
     A_new.indices = np.asarray(A.indices, dtype=np.int64)
 
     return family, A_new
-
-def _safe_downcast_indices(A):
-    # check for safe downcasting
-    max_value = np.iinfo(np.intc).max
-
-    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
-        raise ValueError("indptr values too large for SuperLU")
-
-    if max(*A.shape) > max_value:  # only check large enough arrays
-        if np.any(A.indices > max_value):
-            raise ValueError("indices values too large for SuperLU")
-
-    indices = A.indices.astype(np.intc, copy=False)
-    indptr = A.indptr.astype(np.intc, copy=False)
-    return indices, indptr
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -429,7 +414,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices, indptr = _safe_downcast_indices(A)
+    indices, indptr = safely_cast_index_arrays(A, np.intc, "SuperLU")
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -525,7 +510,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices, indptr = _safe_downcast_indices(A)
+    indices, indptr = safely_cast_index_arrays(A, np.intc, "SuperLU")
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,

@@ -60,7 +60,6 @@ PUBLIC_SUBMODULES = [
     'linalg.blas',
     'linalg.lapack',
     'linalg.interpolative',
-    'misc',
     'ndimage',
     'odr',
     'optimize',

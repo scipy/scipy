@@ -886,9 +886,10 @@ class TestFisherExact:
         assert_approx_equal(res, 0.2751, significant=4)
 
     def test_raises(self):
-        # test we raise an error for wrong shape of input.
-        assert_raises(ValueError, stats.fisher_exact,
-                      np.arange(6).reshape(2, 3))
+        # test we raise an error for wrong number of dimensions.
+        message = "The input `table` must have two dimensions."
+        with pytest.raises(ValueError, match=message):
+            stats.fisher_exact(np.arange(6))
 
     def test_row_or_col_zero(self):
         tables = ([[0, 0], [5, 10]],
@@ -944,6 +945,102 @@ class TestFisherExact:
         table = np.array([[14500, 20000], [30000, 40000]])
         res = stats.fisher_exact(table, alternative=alternative)
         assert_equal((res.statistic, res.pvalue), res)
+
+    def test_input_validation_edge_cases_rxc(self):
+        rng = np.random.default_rng(2345783457834572345)
+        table = np.asarray([[2, 7], [8, 2]])
+
+        message = r"`alternative` must be the default \(None\) unless..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.PermutationMethod(rng=rng)
+            stats.fisher_exact(table, method=method, alternative='less')
+
+        message = "...not recognized; if provided, `method` must be an..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.BootstrapMethod(rng=rng)
+            stats.fisher_exact(table, method=method)
+
+        message = "If the `method` argument of `fisher_exact` is an..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.MonteCarloMethod(rvs=stats.norm.rvs)
+            stats.fisher_exact(table, method=method)
+
+        message = "`table` must have at least one row and one column."
+        with pytest.raises(ValueError, match=message):
+            stats.fisher_exact(np.zeros((0, 1)))
+
+        # Specical case: when there is only one table with given marginals, the
+        # PMF of that case is 1.0, so the p-value is 1.0
+        np.testing.assert_equal(stats.fisher_exact([[1, 2, 3]]), (1, 1))
+        np.testing.assert_equal(stats.fisher_exact([[1], [2], [3]]), (1, 1))
+        np.testing.assert_equal(stats.fisher_exact(np.zeros((2, 3))), (1, 1))
+
+
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.slow()
+    def test_resampling_2x2(self):
+        rng = np.random.default_rng(2345783457834572345)
+        table = np.asarray([[2, 7], [8, 2]])
+        ref = stats.fisher_exact(table)
+        ref_pvalue = ref.pvalue
+        ref_stat = stats.random_table(table.sum(axis=1), table.sum(axis=0)).pmf(table)
+
+        method = stats.MonteCarloMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=0.0025)
+        assert_equal(res.statistic, ref_stat)
+
+        method = stats.PermutationMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref.pvalue, atol=0.0025)
+        assert_equal(res.statistic, ref_stat)
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.slow()
+    def test_resampling_rxc(self):
+        # Compare against R fisher.exact
+        # options(digits=16)
+        # MP6 < - rbind(
+        #     c(1, 2, 2, 1, 1, 0, 1),
+        #     c(2, 0, 0, 2, 3, 0, 0),
+        #     c(0, 1, 1, 1, 2, 7, 3),
+        #     c(1, 1, 2, 0, 0, 0, 1),
+        #     c(0, 1, 1, 1, 1, 0, 0))
+        # fisher.test(MP6)
+
+        table = [[1, 2, 2, 1, 1, 0, 1],
+                 [2, 0, 0, 2, 3, 0, 0],
+                 [0, 1, 1, 1, 2, 7, 3],
+                 [1, 1, 2, 0, 0, 0, 1],
+                 [0, 1, 1, 1, 1, 0, 0]]
+        table = np.asarray(table)
+
+        ref_pvalue = 0.03928964365533
+        rng = np.random.default_rng(3928964365533)
+
+        method = stats.PermutationMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=5e-4)
+
+        method = stats.MonteCarloMethod(rng=rng, n_resamples=99999)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=5e-4)
+
+    @pytest.mark.xslow()
+    def test_resampling_exact_2x2(self):
+        # Test that exact permutation p-value matches result of `fisher_exact`
+        rng = np.random.default_rng(2345783457834572345)
+        method = stats.PermutationMethod(rng=rng)
+
+        for a in range(1, 3):
+            for b in range(1, 3):
+                for c in range(1, 3):
+                    for d in range(1, 4):
+                        table = np.asarray([[a, b], [c, d]])
+                        ref = stats.fisher_exact(table)
+                        res = stats.fisher_exact(table, method=method)
+                        assert_allclose(res.pvalue, ref.pvalue, atol=1e-14)
 
 
 class TestCorrSpearmanr:
@@ -5329,14 +5426,14 @@ def test_ttest_ind_nan_policy():
         return 1 - (p / 2)
     converter = np.vectorize(convert)
 
-    tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit')
+    tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit')
 
-    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
+    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit',
                            alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
-    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
+    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit',
                            alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
@@ -5351,6 +5448,7 @@ def test_ttest_ind_scalar():
     assert np.isnan(p)
 
 
+@pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
 class Test_ttest_ind_permutations:
     N = 20
 
@@ -5597,20 +5695,99 @@ class Test_ttest_ind_permutations:
         print(0.0 not in p_values)
         assert 0.0 not in p_values
 
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("shape", [(12,), (2, 12)])
+    def test_permutation_method(self, alternative, shape):
+        rng = np.random.default_rng(2348934579834565)
+        x = rng.random(size=shape)
+        y = rng.random(size=13)
+
+        kwargs = dict(n_resamples=999)
+
+        # Use ttest_ind with `method`
+        rng = np.random.default_rng(348934579834565)
+        method = stats.PermutationMethod(rng=rng, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+
+        # Use `permutation_test` directly
+        def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
+        rng =  np.random.default_rng(348934579834565)
+        ref = stats.permutation_test((x, y), statistic, axis=-1, rng=rng,
+                                     alternative=alternative, **kwargs)
+
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Sanity check against theoretical t-test
+        ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
+        assert_equal(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=3e-2)
+
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("shape", [(12,), (2, 12)])
+    def test_monte_carlo_method(self, alternative, shape):
+        rng = np.random.default_rng(2348934579834565)
+        x = rng.random(size=shape)
+        y = rng.random(size=13)
+
+        kwargs = dict(n_resamples=999)
+
+        # Use `monte_carlo` directly
+        def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
+        rng = np.random.default_rng(348934579834565)
+        rvs = [rng.standard_normal, rng.standard_normal]
+        ref = stats.monte_carlo_test((x, y), rvs=rvs, statistic=statistic, axis=-1,
+                                     alternative=alternative, **kwargs)
+
+        # Use ttest_ind with `method`
+        rng = np.random.default_rng(348934579834565)
+        rvs = [rng.standard_normal, rng.standard_normal]
+        method = stats.MonteCarloMethod(rvs=rvs, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Passing `rng` instead of `rvs`
+        method = stats.MonteCarloMethod(rng=348934579834565, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Sanity check against theoretical t-test
+        ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
+        assert_equal(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=6e-2)
+
+    def test_resampling_input_validation(self):
+        message = "`method` must be an instance of `PermutationMethod`, an instance..."
+        with pytest.raises(ValueError, match=message):
+            stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
+
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,
                                   reason='Uses NumPy for pvalue, CI')
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_permutation_not_implement_for_xp(self, xp):
-        message = "Use of `permutations` is compatible only with NumPy arrays."
         a2, b2 = xp.asarray(self.a2), xp.asarray(self.b2)
+
+        message = "Use of `permutations` is compatible only with NumPy arrays."
         if is_numpy(xp):  # no error
             stats.ttest_ind(a2, b2, permutations=10)
         else:  # NotImplementedError
             with pytest.raises(NotImplementedError, match=message):
                 stats.ttest_ind(a2, b2, permutations=10)
 
+        message = "Use of resampling methods is compatible only with NumPy arrays."
+        rng = np.random.default_rng(7457345872572348)
+        method = stats.PermutationMethod(rng=rng)
+        if is_numpy(xp):  # no error
+            stats.ttest_ind(a2, b2, method=method)
+        else:  # NotImplementedError
+            with pytest.raises(NotImplementedError, match=message):
+                stats.ttest_ind(a2, b2, method=method)
 
+
+@pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
 class Test_ttest_ind_common:
     # for tests that are performed on variations of the t-test such as
     # permutations and trimming
@@ -5805,7 +5982,15 @@ class Test_ttest_trim:
         # confirm that attempting to trim with permutations raises an error
         match = "Use of `permutations` is incompatible with with use of `trim`."
         with assert_raises(NotImplementedError, match=match):
-            stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
+            message = "Arguments {'permutations'} are deprecated, whether..."
+            with pytest.warns(DeprecationWarning, match=message):
+                stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
+
+        with assert_raises(NotImplementedError, match=match):
+            message = "Arguments {.*'random_state'.*} are deprecated, whether..."
+            with pytest.warns(DeprecationWarning, match=message):
+                stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2,
+                                random_state=2)
 
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,

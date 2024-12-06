@@ -1,17 +1,19 @@
 import functools
 from abc import ABC, abstractmethod
 from functools import cached_property
+import math
 
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _lazywhere
+from scipy._lib._util import _lazywhere, _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
 from scipy.integrate import tanhsinh as _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
 from scipy.stats._probability_distribution import _ProbabilityDistribution
+from scipy.stats import qmc
 
 # in case we need to distinguish between None and not specified
 # Typically this is used to determine whether the tolerance has been set by the
@@ -60,13 +62,10 @@ _NO_CACHE = "no_cache"
 #  implement symmetric distribution
 #  implement composite distribution
 #  implement wrapped distribution
-#  implement folded distribution
-#  implement double distribution
 #  profile/optimize
 #  general cleanup (choose keyword-only parameters)
 #  compare old/new distribution timing
 #  make video
-#  PR
 #  add array API support
 #  why does dist.ilogcdf(-100) not converge to bound? Check solver response to inf
 #  _chandrupatla_minimize should not report xm = fm = NaN when it fails
@@ -1044,7 +1043,7 @@ def _dispatch(f):
             method = getattr(self, method_name)
         else:
             method = f(self, *args, method=method, **kwargs)
-            if self.cache_policy != _NO_CACHE:
+            if func_name != '_sample_dispatch' and self.cache_policy != _NO_CACHE:
                 self._method_cache[func_name] = method
 
         try:
@@ -1188,7 +1187,8 @@ def _log1mexp(x):
 
     def f2(x):
         # good for exp(x) close to 1
-        return np.real(np.log(-special.expm1(x + 0j)))
+        with np.errstate(divide='ignore'):
+            return np.real(np.log(-special.expm1(x + 0j)))
 
     return _lazywhere(x < -1, (x,), f=f1, f2=f2)[()]
 
@@ -1817,6 +1817,22 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def __truediv__(self, scale):
         return ShiftedScaledDistribution(self, scale=1/scale)
 
+    def __pow__(self, other):
+        if not np.isscalar(other) or other <= 0 or other != int(other):
+            message = ("Raising a random variable to the power of an argument is only "
+                       "implemented when the argument is a positive integer.")
+            raise NotImplementedError(message)
+
+        X = abs(self) if (other % 2 == 0) else self
+
+        # This notation for g_name is nonstandard
+        funcs = dict(g=lambda u: u**other, g_name=f'pow_{other}',
+                     h=lambda u: np.sign(u) * np.abs(u)**(1 / other),
+                     dh=lambda u: 1/other * np.abs(u)**(1/other - 1))
+
+        return MonotonicTransformedDistribution(X, **funcs, increasing=True)
+
+
     def __radd__(self, other):
         return self.__add__(other)
 
@@ -1827,11 +1843,41 @@ class ContinuousDistribution(_ProbabilityDistribution):
         return self.__mul__(other)
 
     def __rtruediv__(self, other):
-        message = "Division by a random variable is not yet implemented."
-        raise NotImplementedError(message)
+        a, b = self.support()
+        funcs = dict(g=lambda u: 1 / u, g_name='inv',
+                     h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
+        if np.all(a >= 0) or np.all(b <= 0):
+            out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
+        else:
+            message = ("Division by a random variable is only implemented "
+                       "when the support is either non-negative or non-positive.")
+            raise NotImplementedError(message)
+        if np.all(other == 1):
+            return out
+        else:
+            return out * other
+
+    def __rpow__(self, other):
+        funcs = dict(g=lambda u: other**u, g_name=f'{other}**',
+                     h=lambda u: np.log(u) / np.log(other),
+                     dh=lambda u: 1 / np.abs(u * np.log(other)))
+
+        if not np.isscalar(other) or other <= 0 or other == 1:
+            message = ("Raising an argument to the power of a random variable is only "
+                       "implemented when the argument is a positive scalar other than "
+                       "1.")
+            raise NotImplementedError(message)
+
+        if other > 1:
+            return MonotonicTransformedDistribution(self, **funcs, increasing=True)
+        else:
+            return MonotonicTransformedDistribution(self, **funcs, increasing=False)
 
     def __neg__(self):
         return self * -1
+
+    def __abs__(self):
+        return FoldedDistribution(self)
 
     ### Utilities
 
@@ -2330,7 +2376,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _logcdf2_subtraction(self, x, y, **params):
-        flip_sign = x > y
+        flip_sign = x > y  # some results will be negative
         x, y = np.minimum(x, y), np.maximum(x, y)
         logcdf_x = self._logcdf_dispatch(x, **params)
         logcdf_y = self._logcdf_dispatch(y, **params)
@@ -2344,7 +2390,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         log_tail = np.logaddexp(logcdf_x, logccdf_y)[case_central]
         log_mass[case_central] = _log1mexp(log_tail)
         log_mass[flip_sign] += np.pi * 1j
-        return log_mass[()]
+        return log_mass[()] if np.any(flip_sign) else log_mass.real[()]
 
     def _logcdf2_logexp(self, x, y, **params):
         expres = self._cdf2_dispatch(x, y, **params)
@@ -2461,7 +2507,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         cdf_max = np.maximum(cdf_x, cdf_y)
         ccdf_max = np.maximum(ccdf_x, ccdf_y)
         spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
-        mask = abs(tol * out) < spacing
+        mask = np.abs(tol * out) < spacing
 
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
@@ -2783,7 +2829,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # Common keyword options include:
     # method - a string that indicates which method should be used to compute
     #          the quantity (e.g. a formula or numerical integration).
-    # rng - the NumPy Generator object to used for drawing random numbers.
+    # rng - the NumPy Generator/SciPy QMCEngine object to used for drawing numbers.
     #
     # Input/output validation is included in each function, since there is
     # little code to be shared.
@@ -2800,12 +2846,14 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # See the note corresponding with the "Distribution Parameters" for more
     # information.
 
+    # TODO:
+    #  - should we accept a QRNG with `d != 1`?
     def sample(self, shape=(), *, method=None, rng=None):
         # needs output validation to ensure that developer returns correct
         # dtype and shape
         sample_shape = (shape,) if not np.iterable(shape) else tuple(shape)
         full_shape = sample_shape + self._shape
-        rng = np.random.default_rng(rng)
+        rng = np.random.default_rng(rng) if not isinstance(rng, qmc.QMCEngine) else rng
         res = self._sample_dispatch(sample_shape, full_shape, method=method,
                                     rng=rng, **self._parameters)
 
@@ -2814,7 +2862,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     @_dispatch
     def _sample_dispatch(self, sample_shape, full_shape, *, method, rng, **params):
         # make sure that tests catch if sample is 0d array
-        if self._overrides('_sample_formula'):
+        if self._overrides('_sample_formula') and not isinstance(rng, qmc.QMCEngine):
             method = self._sample_formula
         else:
             method = self._sample_inverse_transform
@@ -2824,8 +2872,40 @@ class ContinuousDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _sample_inverse_transform(self, sample_shape, full_shape, *, rng, **params):
-        uniform = rng.random(size=full_shape, dtype=self._dtype)
+        if isinstance(rng, qmc.QMCEngine):
+            uniform = self._qmc_uniform(sample_shape, full_shape, qrng=rng, **params)
+        else:
+            uniform = rng.random(size=full_shape, dtype=self._dtype)
         return self._icdf_dispatch(uniform, **params)
+
+    def _qmc_uniform(self, sample_shape, full_shape, *, qrng, **params):
+        # Generate QMC uniform sample(s) on unit interval with specified shape;
+        # if `sample_shape != ()`, then each slice along axis 0 is independent.
+
+        # Determine the number of independent sequences and the length of each.
+        n_low_discrepancy = sample_shape[0] if sample_shape else 1
+        n_independent = math.prod(full_shape[1:] if sample_shape else full_shape)
+
+        # For each independent sequence, we'll need a new QRNG of the appropriate class
+        # with its own RNG. (If scramble=False, we don't really need all the separate
+        # rngs, but I'm not going to add a special code path right now.)
+        rngs = _rng_spawn(qrng.rng, n_independent)
+        qrng_class = qrng.__class__
+        kwargs = dict(d=1, scramble=qrng.scramble, optimization=qrng._optimization)
+        if isinstance(qrng, qmc.Sobol):
+            kwargs['bits'] = qrng.bits
+
+        # Draw uniform low-discrepancy sequences scrambled with each RNG
+        uniforms = []
+        for rng in rngs:
+            qrng = qrng_class(seed=rng, **kwargs)
+            uniform = qrng.random(n_low_discrepancy)
+            uniform = uniform.reshape(n_low_discrepancy if sample_shape else ())[()]
+            uniforms.append(uniform)
+
+        # Reorder the axes and ensure that the shape is correct
+        uniform = np.moveaxis(np.stack(uniforms), -1, 0) if uniforms else np.asarray([])
+        return uniform.reshape(full_shape)
 
     ### Moments
     # The `moment` method accepts two positional arguments - the order and kind
@@ -3543,7 +3623,7 @@ def _shift_scale_distribution_function_2arg(func):
         yt = self._transform(y, loc, scale)
         fxy = f(xt, yt, *args, **kwargs)
         fyx = f(yt, xt, *args, **kwargs)
-        return np.where(sign, fxy, fyx)[()]
+        return np.real_if_close(np.where(sign, fxy, fyx))[()]
 
     return wrapped
 
@@ -3589,22 +3669,19 @@ def _shift_scale_inverse_function(func):
 
 
 class TransformedDistribution(ContinuousDistribution):
-    # TODO: This may need some sort of default `_parameterizations` with a
-    #       single `_Parameterization` that has no parameters. The reason is
-    #       that `dist`'s parameters need to get added to it. If they're not
-    #       added, then those parameter kwargs are not recognized in
-    #       `_update_parameters`.
-    def __init__(self, dist, *args, **kwargs):
+    def __init__(self, X, /, *args, **kwargs):
         self._copy_parameterization()
-        self._variable = dist._variable
-        self._dist = dist
-        if dist._parameterization:
+        self._variable = X._variable
+        self._dist = X
+        if X._parameterization:
             # Add standard distribution parameters to our parameterization
-            dist_parameters = dist._parameterization.parameters
+            dist_parameters = X._parameterization.parameters
             set_params = set(dist_parameters)
+            if not self._parameterizations:
+                self._parameterizations.append(_Parameterization())
             for parameterization in self._parameterizations:
                 if set_params.intersection(parameterization.parameters):
-                    message = (f"One or more of the parameters of {dist} has "
+                    message = (f"One or more of the parameters of {X} has "
                                "the same name as a parameter of "
                                f"{self.__class__.__name__}. Name collisions "
                                "create ambiguities and are not supported.")
@@ -3638,6 +3715,146 @@ class TransformedDistribution(ContinuousDistribution):
         s = super().__repr__()
         return s.replace("Distribution",
                          self._dist.__class__.__name__)
+
+
+class TruncatedDistribution(TransformedDistribution):
+    """Truncated distribution."""
+    # TODO:
+    # - consider avoiding catastropic cancellation by using appropriate tail
+    # - if the mode of `_dist` is within the support, it's still the mode
+    # - rejection sampling might be more efficient than inverse transform
+
+    _lb_domain = _RealDomain(endpoints=(-inf, 'ub'), inclusive=(True, False))
+    _lb_param = _RealParameter('lb', symbol=r'b_l',
+                                domain=_lb_domain, typical=(0.1, 0.2))
+
+    _ub_domain = _RealDomain(endpoints=('lb', inf), inclusive=(False, True))
+    _ub_param = _RealParameter('ub', symbol=r'b_u',
+                                  domain=_ub_domain, typical=(0.8, 0.9))
+
+    _parameterizations = [_Parameterization(_lb_param, _ub_param),
+                          _Parameterization(_lb_param),
+                          _Parameterization(_ub_param)]
+
+    def __init__(self, X, /, *args, lb=-np.inf, ub=np.inf, **kwargs):
+        return super().__init__(X, *args, lb=lb, ub=ub, **kwargs)
+
+    def _process_parameters(self, lb=None, ub=None, **params):
+        lb = lb if lb is not None else np.full_like(lb, -np.inf)[()]
+        ub = ub if ub is not None else np.full_like(ub, np.inf)[()]
+        parameters = self._dist._process_parameters(**params)
+        a, b = self._support(lb=lb, ub=ub, **parameters)
+        logmass = self._dist._logcdf2_dispatch(a, b, **parameters)
+        parameters.update(dict(lb=lb, ub=ub, _a=a, _b=b, logmass=logmass))
+        return parameters
+
+    def _support(self, lb, ub, **params):
+        a, b = self._dist._support(**params)
+        return np.maximum(a, lb), np.minimum(b, ub)
+
+    def _overrides(self, method_name):
+        return False
+
+    def _logpdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logpdf = self._dist._logpdf_dispatch(x, *args, **params)
+        return logpdf - logmass
+
+    def _logcdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logcdf = self._dist._logcdf2_dispatch(_a, x, *args, **params)
+        # of course, if this result is small we could compute with the other tail
+        return logcdf - logmass
+
+    def _logccdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logccdf = self._dist._logcdf2_dispatch(x, _b, *args, **params)
+        return logccdf - logmass
+
+    def _logcdf2_dispatch(self, x, y, *args, lb, ub, _a, _b, logmass, **params):
+        logcdf2 = self._dist._logcdf2_dispatch(x, y, *args, **params)
+        return logcdf2 - logmass
+
+    def _ilogcdf_dispatch(self, logp, *args, lb, ub, _a, _b, logmass, **params):
+        log_Fa = self._dist._logcdf_dispatch(_a, *args, **params)
+        logp_adjusted = np.logaddexp(log_Fa, logp + logmass)
+        return self._dist._ilogcdf_dispatch(logp_adjusted, *args, **params)
+
+    def _ilogccdf_dispatch(self, logp, *args, lb, ub, _a, _b, logmass, **params):
+        log_cFb = self._dist._logccdf_dispatch(_b, *args, **params)
+        logp_adjusted = np.logaddexp(log_cFb, logp + logmass)
+        return self._dist._ilogccdf_dispatch(logp_adjusted, *args, **params)
+
+    def _icdf_dispatch(self, p, *args, lb, ub, _a, _b, logmass, **params):
+        Fa = self._dist._cdf_dispatch(_a, *args, **params)
+        p_adjusted = Fa + p*np.exp(logmass)
+        return self._dist._icdf_dispatch(p_adjusted, *args, **params)
+
+    def _iccdf_dispatch(self, p, *args, lb, ub, _a, _b, logmass, **params):
+        cFb = self._dist._ccdf_dispatch(_b, *args, **params)
+        p_adjusted = cFb + p*np.exp(logmass)
+        return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
+
+
+def truncate(X, lb=-np.inf, ub=np.inf):
+    """Truncate the support of a random variable.
+
+    Given a random variable `X`, `truncate` returns a random variable with
+    support truncated to the interval between `lb` and `ub`. The underlying
+    probability density function is normalized accordingly.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable to be truncated.
+    lb, ub : float array-like
+        The lower and upper truncation points, respectively. Must be
+        broadcastable with one another and the shape of `X`.
+
+    Returns
+    -------
+    X : `ContinuousDistribution`
+        The truncated random variable.
+
+    References
+    ----------
+    .. [1] "Truncated Distribution". *Wikipedia*.
+           https://en.wikipedia.org/wiki/Truncated_distribution
+
+    Examples
+    --------
+    Compare against `scipy.stats.truncnorm`, which truncates a standard normal,
+    *then* shifts and scales it.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>> loc, scale, lb, ub = 1, 2, -2, 2
+    >>> X = stats.truncnorm(lb, ub, loc, scale)
+    >>> Y = scale * stats.truncate(stats.Normal(), lb, ub) + loc
+    >>> x = np.linspace(-3, 5, 300)
+    >>> plt.plot(x, X.pdf(x), '-', label='X')
+    >>> plt.plot(x, Y.pdf(x), '--', label='Y')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF')
+    >>> plt.title('Truncated, then Shifted/Scaled Normal')
+    >>> plt.legend()
+    >>> plt.show()
+
+    However, suppose we wish to shift and scale a normal random variable,
+    then truncate its support to given values. This is straightforward with
+    `truncate`.
+
+    >>> Z = stats.truncate(scale * stats.Normal() + loc, lb, ub)
+    >>> Z.plot()
+    >>> plt.show()
+
+    Furthermore, `truncate` can be applied to any random variable:
+
+    >>> Rayleigh = stats.make_distribution(stats.rayleigh)
+    >>> W = stats.truncate(Rayleigh(), lb=0, ub=3)
+    >>> W.plot()
+    >>> plt.show()
+
+    """
+    return TruncatedDistribution(X, lb=lb, ub=ub)
 
 
 class ShiftedScaledDistribution(TransformedDistribution):
@@ -3690,11 +3907,11 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def _entropy_dispatch(self, *args, loc, scale, sign, **params):
         return (self._dist._entropy_dispatch(*args, **params)
-                + np.log(abs(scale)))
+                + np.log(np.abs(scale)))
 
     def _logentropy_dispatch(self, *args, loc, scale, sign, **params):
         lH0 = self._dist._logentropy_dispatch(*args, **params)
-        lls = np.log(np.log(abs(scale))+0j)
+        lls = np.log(np.log(np.abs(scale))+0j)
         return special.logsumexp(np.broadcast_arrays(lH0, lls), axis=0)
 
     def _median_dispatch(self, *, method, loc, scale, sign, **params):
@@ -3708,12 +3925,12 @@ class ShiftedScaledDistribution(TransformedDistribution):
     def _logpdf_dispatch(self, x, *args, loc, scale, sign, **params):
         x = self._transform(x, loc, scale)
         logpdf = self._dist._logpdf_dispatch(x, *args, **params)
-        return logpdf - np.log(abs(scale))
+        return logpdf - np.log(np.abs(scale))
 
     def _pdf_dispatch(self, x, *args, loc, scale, sign, **params):
         x = self._transform(x, loc, scale)
         pdf = self._dist._pdf_dispatch(x, *args, **params)
-        return pdf / abs(scale)
+        return pdf / np.abs(scale)
 
     # Sorry about the magic. This is just a draft to show the behavior.
     @_shift_scale_distribution_function
@@ -3793,10 +4010,10 @@ class ShiftedScaledDistribution(TransformedDistribution):
             order, raw_moments, loc, self._zero)
 
     def _sample_dispatch(self, sample_shape, full_shape, *,
-                         method, rng, **params):
+                         rng, loc, scale, sign, method, **params):
         rvs = self._dist._sample_dispatch(
             sample_shape, full_shape, method=method, rng=rng, **params)
-        return self._itransform(rvs, **params)
+        return self._itransform(rvs, loc=loc, scale=scale, sign=sign, **params)
 
     def __add__(self, loc):
         return ShiftedScaledDistribution(self._dist, loc=self.loc + loc,
@@ -4239,3 +4456,327 @@ class Mixture(_ProbabilityDistribution):
         x = [var.sample(shape=n, rng=rng) for n, var in zip(ns, self._components)]
         x = np.reshape(rng.permuted(np.concatenate(x)), shape)
         return x[()]
+
+
+class MonotonicTransformedDistribution(TransformedDistribution):
+    r"""Distribution underlying a strictly monotonic function of a random variable
+
+    Given a random variable :math:`X`; a strictly monotonic function
+    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, and the derivative magnitude
+    :math: `|h'(u)| = \left| \frac{dh(u)}{du} \right|`, define the distribution
+    underlying the random variable :math:`Y = g(X)`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    g, h, dh : callable
+        Elementwise functions representing the mathematical functions
+        :math:`g(u)`, :math:`h(u)`, and :math:`|h'(u)|`
+    logdh : callable, optional
+        Elementwise function representing :math:`\log(h'(u))`.
+        The default is ``lambda u: np.log(dh(u))``, but providing
+        a custom implementation may avoid over/underflow.
+    increasing : bool, optional
+        Whether the function is strictly increasing (True, default)
+        or strictly decreasing (False).
+    g_name : str, optional
+        The name of the mathematical function represented by `g`,
+        used in `__repr__` and `__str__`. The default is ``g.__name__``.
+
+    """
+
+    def __init__(self, X, /, *args, g, h, dh, logdh=None,
+                 increasing=True, g_name=None, **kwargs):
+        super().__init__(X, *args, **kwargs)
+        self._g = g
+        self._h = h
+        self._dh = dh
+        self._logdh = (logdh if logdh is not None
+                       else lambda u: np.log(dh(u)))
+        if increasing:
+            self._xdf = self._dist._cdf_dispatch
+            self._cxdf = self._dist._ccdf_dispatch
+            self._ixdf = self._dist._icdf_dispatch
+            self._icxdf = self._dist._iccdf_dispatch
+            self._logxdf = self._dist._logcdf_dispatch
+            self._logcxdf = self._dist._logccdf_dispatch
+            self._ilogxdf = self._dist._ilogcdf_dispatch
+            self._ilogcxdf = self._dist._ilogccdf_dispatch
+        else:
+            self._xdf = self._dist._ccdf_dispatch
+            self._cxdf = self._dist._cdf_dispatch
+            self._ixdf = self._dist._iccdf_dispatch
+            self._icxdf = self._dist._icdf_dispatch
+            self._logxdf = self._dist._logccdf_dispatch
+            self._logcxdf = self._dist._logcdf_dispatch
+            self._ilogxdf = self._dist._ilogccdf_dispatch
+            self._ilogcxdf = self._dist._ilogcdf_dispatch
+        self._increasing = increasing
+        self._g_name = g.__name__ if g_name is None else g_name
+
+    def __repr__(self):
+        return f"{self._g_name}({repr(self._dist)})"
+
+    def __str__(self):
+        return f"{self._g_name}({str(self._dist)})"
+
+    def _overrides(self, method_name):
+        # Do not use the generic overrides of TransformedDistribution
+        return False
+
+    def _support(self, **params):
+        a, b = self._dist._support(**params)
+        # For reciprocal transformation, we want this zero to become -inf
+        b = np.where(b==0, np.asarray("-0", dtype=b.dtype), b)
+        with np.errstate(divide='ignore'):
+            if self._increasing:
+                return self._g(a), self._g(b)
+            else:
+                return self._g(b), self._g(a)
+
+    def _logpdf_dispatch(self, x, *args, **params):
+        return self._dist._logpdf_dispatch(self._h(x), *args, **params) + self._logdh(x)
+
+    def _pdf_dispatch(self, x, *args, **params):
+        return self._dist._pdf_dispatch(self._h(x), *args, **params) * self._dh(x)
+
+    def _logcdf_dispatch(self, x, *args, **params):
+        return self._logxdf(self._h(x), *args, **params)
+
+    def _cdf_dispatch(self, x, *args, **params):
+        return self._xdf(self._h(x), *args, **params)
+
+    def _logccdf_dispatch(self, x, *args, **params):
+        return self._logcxdf(self._h(x), *args, **params)
+
+    def _ccdf_dispatch(self, x, *args, **params):
+        return self._cxdf(self._h(x), *args, **params)
+
+    def _ilogcdf_dispatch(self, p, *args, **params):
+        return self._g(self._ilogxdf(p, *args, **params))
+
+    def _icdf_dispatch(self, p, *args, **params):
+        return self._g(self._ixdf(p, *args, **params))
+
+    def _ilogccdf_dispatch(self, p, *args, **params):
+        return self._g(self._ilogcxdf(p, *args, **params))
+
+    def _iccdf_dispatch(self, p, *args, **params):
+        return self._g(self._icxdf(p, *args, **params))
+
+    def _sample_dispatch(self, sample_shape, full_shape, *,
+                         method, rng, **params):
+        rvs = self._dist._sample_dispatch(
+            sample_shape, full_shape, method=method, rng=rng, **params)
+        return self._g(rvs)
+
+
+class FoldedDistribution(TransformedDistribution):
+    r"""Distribution underlying the absolute value of a random variable
+
+    Given a random variable :math:`X`; define the distribution
+    underlying the random variable :math:`Y = |X|`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        The random variable :math:`Y = |X|`
+
+    """
+    # Many enhancements are possible if distribution is symmetric. Start
+    # with the general case; enhance later.
+
+    def __init__(self, X, /, *args, **kwargs):
+        super().__init__(X, *args, **kwargs)
+        # I think we need to allow `_support` to define whether the endpoints
+        # are inclusive or not. In the meantime, it's best to ensure that the lower
+        # endpoint (typically 0 for folded distribution) is inclusive so PDF evaluates
+        # correctly at that point.
+        self._variable.domain.inclusive = (True, self._variable.domain.inclusive[1])
+
+    def _overrides(self, method_name):
+        # Do not use the generic overrides of TransformedDistribution
+        return False
+
+    def _support(self, **params):
+        a, b = self._dist._support(**params)
+        a_, b_ = np.abs(a), np.abs(b)
+        a_, b_ = np.minimum(a_, b_), np.maximum(a_, b_)
+        i = (a < 0) & (b > 0)
+        a_ = np.asarray(a_)
+        a_[i] = 0
+        return a_[()], b_[()]
+
+    def _logpdf_dispatch(self, x, *args, **params):
+        logpdfs = np.stack([self._dist._logpdf_dispatch(x, *args, **params),
+                            self._dist._logpdf_dispatch(-x, *args, **params)])
+        return special.logsumexp(logpdfs, axis=0)
+
+    def _pdf_dispatch(self, x, *args, **params):
+        return (self._dist._pdf_dispatch(x, *args, **params)
+                + self._dist._pdf_dispatch(-x, *args, **params))
+
+    def _logcdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._logcdf2_dispatch(-x, x, *args, **params).real
+
+    def _cdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._cdf2_dispatch(-x, x, *args, **params)
+
+    def _logccdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._logccdf2_dispatch(-x, x, *args, **params).real
+
+    def _ccdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._ccdf2_dispatch(-x, x, *args, **params)
+
+    def _sample_dispatch(self, sample_shape, full_shape, *,
+                         method, rng, **params):
+        rvs = self._dist._sample_dispatch(
+            sample_shape, full_shape, method=method, rng=rng, **params)
+        return np.abs(rvs)
+
+
+def abs(X, /):
+    r"""Absolute value of a random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = |X|`.
+
+    Examples
+    --------
+    Suppose we have a normally distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.Normal()
+
+    We wish to have a random variable :math:`Y` distributed according to
+    the folded normal distribution; that is, a random variable :math:`|X|`.
+
+    >>> Y = stats.abs(X)
+
+    The PDF of the distribution in the left half plane is "folded" over to
+    the right half plane. Because the normal PDF is symmetric, the resulting
+    PDF is zero for negative arguments and doubled for positive arguments.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 300)
+    >>> ax = plt.gca()
+    >>> Y.plot(x='x', y='pdf', t=('x', -1, 5), ax=ax)
+    >>> plt.plot(x, 2 * X.pdf(x), '--')
+    >>> plt.legend(('PDF of `Y`', 'Doubled PDF of `X`'))
+    >>> plt.show()
+
+    """
+    return FoldedDistribution(X)
+
+
+def exp(X, /):
+    r"""Natural exponential of a random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = \exp(X)`.
+
+    Examples
+    --------
+    Suppose we have a normally distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.Normal()
+
+    We wish to have a lognormally distributed random variable :math:`Y`,
+    a random variable whose natural logarithm is :math:`X`.
+    If :math:`X` is to be the natural logarithm of :math:`Y`, then we
+    must take :math:`Y` to be the natural exponential of :math:`X`.
+
+    >>> Y = stats.exp(X)
+
+    To demonstrate that ``X`` represents the logarithm of ``Y``,
+    we plot a normalized histogram of the logarithm of observations of
+    ``Y`` against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.log(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of `X`', 'histogram of `log(y)`'))
+    >>> plt.show()
+
+    """
+    return MonotonicTransformedDistribution(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
+                                            logdh=lambda u: -np.log(u))
+
+
+def log(X, /):
+    r"""Natural logarithm of a non-negative random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X` with positive support.
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = \exp(X)`.
+
+    Examples
+    --------
+    Suppose we have a gamma distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> Gamma = stats.make_distribution(stats.gamma)
+    >>> X = Gamma(a=1.0)
+
+    We wish to have a exp-gamma distributed random variable :math:`Y`,
+    a random variable whose natural exponential is :math:`X`.
+    If :math:`X` is to be the natural exponential of :math:`Y`, then we
+    must take :math:`Y` to be the natural logarithm of :math:`X`.
+
+    >>> Y = stats.log(X)
+
+    To demonstrate that ``X`` represents the exponential of ``Y``,
+    we plot a normalized histogram of the exponential of observations of
+    ``Y`` against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.exp(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of `X`', 'histogram of `exp(y)`'))
+    >>> plt.show()
+
+    """
+    if np.any(X.support()[0] < 0):
+        message = ("The logarithm of a random variable is only implemented when the "
+                   "support is non-negative.")
+        raise NotImplementedError(message)
+    return MonotonicTransformedDistribution(X, g=np.log, h=np.exp, dh=np.exp,
+                                            logdh=lambda u: u)

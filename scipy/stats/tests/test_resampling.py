@@ -1096,7 +1096,7 @@ class TestMonteCarloHypothesisTest:
         data = rng.random(size=(2, 5)), rng.random(size=7)  # broadcastable
         rvs = rng.normal, rng.normal
         def statistic(x, y, axis):
-            return stats.ttest_ind(x, y, axis).statistic
+            return stats.ttest_ind(x, y, axis=axis).statistic
 
         res = stats.monte_carlo_test(data, rvs, statistic, axis=-1)
         ref = stats.ttest_ind(data[0], [data[1]], axis=-1)
@@ -1522,35 +1522,6 @@ class TestPermutationTest:
 
         assert res.statistic == res2.statistic
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
-
-    @pytest.mark.parametrize('alternative', ('less', 'greater'))
-    # Different conventions for two-sided p-value here VS ttest_ind.
-    # Eventually, we can add multiple options for the two-sided alternative
-    # here in permutation_test.
-    @pytest.mark.parametrize('permutations', (30, 1e9))
-    @pytest.mark.parametrize('axis', (0, 1, 2))
-    def test_against_permutation_ttest(self, alternative, permutations, axis):
-        # check that this function and ttest_ind with permutations give
-        # essentially identical results.
-
-        x = np.arange(3*4*5).reshape(3, 4, 5)
-        y = np.moveaxis(np.arange(4)[:, None, None], 0, axis)
-
-        rng1 = np.random.default_rng(4337234444626115331)
-        res1 = stats.ttest_ind(x, y, permutations=permutations, axis=axis,
-                               random_state=rng1, alternative=alternative)
-
-        def statistic(x, y, axis):
-            return stats.ttest_ind(x, y, axis=axis).statistic
-
-        rng2 = np.random.default_rng(4337234444626115331)
-        res2 = permutation_test((x, y), statistic, vectorized=True,
-                                n_resamples=permutations,
-                                alternative=alternative, axis=axis,
-                                rng=rng2)
-
-        assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
-        assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
     # -- Independent (Unpaired) Sample Tests -- #
 

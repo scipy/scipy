@@ -105,8 +105,3 @@ jobs:
         shell: cmd /C call {0}
         run: |
           python dev.py test -s datasets
-
-      - name: Test scipy.misc
-        shell: cmd /C call {0}
-        run: |
-          python dev.py test -s misc
