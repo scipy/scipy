@@ -3957,7 +3957,8 @@ def vectorstrength(events, period):
     I2pi = xp.asarray(2j*xp.pi, dtype=xp.complex64
                         if period.dtype == xp.float32
                         else xp.complex128)
-    vectors = xp.exp(I2pi/period.T @ events)
+    events_ = xp.astype(events, I2pi.dtype) if is_torch(xp) else events
+    vectors = xp.exp(I2pi/period.T @ events_)
 
     # the vector strength is just the magnitude of the mean of the vectors
     # the vector phase is the angle of the mean of the vectors

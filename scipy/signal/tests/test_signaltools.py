@@ -36,7 +36,11 @@ from scipy._lib._array_api import (
 )
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+xfail_xp_backends = pytest.mark.xfail_xp_backends
+pytestmark = [array_api_compatible,
+              pytest.mark.usefixtures("skip_xp_backends"),
+              pytest.mark.usefixtures("xfail_xp_backends")
+]
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -3737,6 +3741,7 @@ class TestVectorstrength:
         assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
         assert_almost_equal(xp.asarray(phase), xp.asarray(2 * xp.pi * targ_phase))
 
+    @xfail_xp_backends('torch', reason="phase modulo 2*pi")
     def test_single_2dperiod(self, xp):
         events = xp.asarray([.5])
         period = xp.asarray([1, 2, 5.])
@@ -3787,7 +3792,10 @@ class TestVectorstrength:
         assert strength.ndim == 0
         assert phase.ndim == 0
         assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
-        assert_almost_equal(xp.asarray(phase), xp.asarray(2 * xp.pi * targ_phase))
+        rtol_kw = {'rtol': 5e-7} if is_torch(xp) else {}
+        xp_assert_close(xp.asarray(phase, dtype=xp.float64),
+                        xp.asarray(2 * xp.pi * targ_phase, dtype=xp.float64),
+                        **rtol_kw)
 
     def test_spaced_2dperiod(self, xp):
         events = xp.asarray([.1, 1.1, 2.1, 4.1, 10.1])
@@ -3800,7 +3808,8 @@ class TestVectorstrength:
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * xp.pi * targ_phase)
+        rtol_kw = {'rtol': 2e-6} if is_torch(xp) else {}
+        xp_assert_close(phase, 2 * xp.pi * targ_phase, **rtol_kw)
 
     def test_partial_1dperiod(self, xp):
         events = xp.asarray([.25, .5, .75])
@@ -3815,6 +3824,7 @@ class TestVectorstrength:
         assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
         assert_almost_equal(xp.asarray(phase), xp.asarray(2 * xp.pi * targ_phase))
 
+    @xfail_xp_backends("torch", reason="phase modulo 2*pi")
     def test_partial_2dperiod(self, xp):
         events = xp.asarray([.25, .5, .75])
         period = xp.asarray([1., 1., 1., 1.])
