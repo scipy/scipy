@@ -18,6 +18,7 @@ from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
+from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -257,14 +258,21 @@ class TestRenameParameter:
         with pytest.raises(TypeError, match=message):
             self.old_keyword_still_accepted(new=10, old=10)
 
-    def test_old_keyword_deprecated(self):
+    @pytest.fixture
+    def kwarg_lock(self):
+        from threading import Lock
+        return Lock()
+
+    def test_old_keyword_deprecated(self, kwarg_lock):
         # positional argument and both keyword work identically,
         # but use of old keyword results in DeprecationWarning
         dep_msg = "Use of keyword argument `old` is deprecated"
         res1 = self.old_keyword_deprecated(10)
         res2 = self.old_keyword_deprecated(new=10)
-        with pytest.warns(DeprecationWarning, match=dep_msg):
-            res3 = self.old_keyword_deprecated(old=10)
+        # pytest warning filter is not thread-safe, enforce serialization
+        with kwarg_lock:
+            with pytest.warns(DeprecationWarning, match=dep_msg):
+                    res3 = self.old_keyword_deprecated(old=10)
         assert res1 == res2 == res3 == 10
 
         # unexpected keyword raises an error
@@ -277,12 +285,15 @@ class TestRenameParameter:
         message = re.escape("old_keyword_deprecated() got multiple")
         with pytest.raises(TypeError, match=message):
             self.old_keyword_deprecated(10, new=10)
-        with pytest.raises(TypeError, match=message), \
-                pytest.warns(DeprecationWarning, match=dep_msg):
-            self.old_keyword_deprecated(10, old=10)
-        with pytest.raises(TypeError, match=message), \
-                pytest.warns(DeprecationWarning, match=dep_msg):
-            self.old_keyword_deprecated(new=10, old=10)
+        with kwarg_lock:
+            with pytest.raises(TypeError, match=message), \
+                    pytest.warns(DeprecationWarning, match=dep_msg):
+                    # breakpoint()
+                    self.old_keyword_deprecated(10, old=10)
+        with kwarg_lock:
+            with pytest.raises(TypeError, match=message), \
+                    pytest.warns(DeprecationWarning, match=dep_msg):
+                    self.old_keyword_deprecated(new=10, old=10)
 
 
 class TestContainsNaNTest:
@@ -337,7 +348,7 @@ class TestContainsNaNTest:
         assert _contains_nan(data4)[0]
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
@@ -388,6 +399,200 @@ def test__rng_html_rewrite():
     assert res == ref
 
 
+class TestTransitionToRNG:
+    def kmeans(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        return cluster.vq.kmeans2(rng.random(size=(20, 3)), 3, **kwargs)
+
+    def kmeans2(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        return cluster.vq.kmeans2(rng.random(size=(20, 3)), 3, **kwargs)
+
+    def barycentric(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        x1, x2, y1 = rng.random((3, 10))
+        f = interpolate.BarycentricInterpolator(x1, y1, **kwargs)
+        return f(x2)
+
+    def clarkson_woodruff_transform(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        return linalg.clarkson_woodruff_transform(rng.random((10, 10)), 3, **kwargs)
+
+    def basinhopping(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        return optimize.basinhopping(optimize.rosen, rng.random(3), **kwargs).x
+
+    def opt(self, fun, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        bounds = optimize.Bounds(-rng.random(3) * 10, rng.random(3) * 10)
+        return fun(optimize.rosen, bounds, **kwargs).x
+
+    def differential_evolution(self, **kwargs):
+        return self.opt(optimize.differential_evolution, **kwargs)
+
+    def dual_annealing(self, **kwargs):
+        return self.opt(optimize.dual_annealing, **kwargs)
+
+    def check_grad(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        x = rng.random(3)
+        return optimize.check_grad(optimize.rosen, optimize.rosen_der, x,
+                                   direction='random', **kwargs)
+
+    def random_array(self, **kwargs):
+        return sparse.random_array((10, 10), density=1.0, **kwargs).toarray()
+
+    def random(self, **kwargs):
+        return sparse.random(10, 10, density=1.0, **kwargs).toarray()
+
+    def rand(self, **kwargs):
+        return sparse.rand(10, 10, density=1.0, **kwargs).toarray()
+
+    def svds(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        A = rng.random((10, 10))
+        return sparse.linalg.svds(A, **kwargs)
+
+    def random_rotation(self, **kwargs):
+        return spatial.transform.Rotation.random(3, **kwargs).as_matrix()
+
+    def goodness_of_fit(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = rng.random(100)
+        return stats.goodness_of_fit(stats.laplace, data, **kwargs).pvalue
+
+    def permutation_test(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = tuple(rng.random((2, 100)))
+        def statistic(x, y, axis): return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+        return stats.permutation_test(data, statistic, **kwargs).pvalue
+
+    def bootstrap(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = (rng.random(100),)
+        return stats.bootstrap(data, np.mean, **kwargs).confidence_interval
+
+    def dunnett(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        x, y, control = rng.random((3, 100))
+        return stats.dunnett(x, y, control=control, **kwargs).pvalue
+
+    def sobol_indices(self, **kwargs):
+        def f_ishigami(x): return (np.sin(x[0]) + 7 * np.sin(x[1]) ** 2
+                                   + 0.1 * (x[2] ** 4) * np.sin(x[0]))
+        dists = [stats.uniform(loc=-np.pi, scale=2 * np.pi),
+                 stats.uniform(loc=-np.pi, scale=2 * np.pi),
+                 stats.uniform(loc=-np.pi, scale=2 * np.pi)]
+        res = stats.sobol_indices(func=f_ishigami, n=1024, dists=dists, **kwargs)
+        return res.first_order
+
+    def qmc_engine(self, engine, **kwargs):
+        qrng = engine(d=1, **kwargs)
+        return qrng.random(4)
+
+    def halton(self, **kwargs):
+        return self.qmc_engine(stats.qmc.Halton, **kwargs)
+
+    def sobol(self, **kwargs):
+        return self.qmc_engine(stats.qmc.Sobol, **kwargs)
+
+    def latin_hypercube(self, **kwargs):
+        return self.qmc_engine(stats.qmc.LatinHypercube, **kwargs)
+
+    def poisson_disk(self, **kwargs):
+        return self.qmc_engine(stats.qmc.PoissonDisk, **kwargs)
+
+    def multivariate_normal_qmc(self, **kwargs):
+        X = stats.qmc.MultivariateNormalQMC([0], **kwargs)
+        return X.random(4)
+
+    def multinomial_qmc(self, **kwargs):
+        X = stats.qmc.MultinomialQMC([0.5, 0.5], 4, **kwargs)
+        return X.random(4)
+
+    def permutation_method(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = tuple(rng.random((2, 100)))
+        method = stats.PermutationMethod(**kwargs)
+        return stats.pearsonr(*data, method=method).pvalue
+
+    def bootstrap_method(self, **kwargs):
+        rng = np.random.default_rng(3458934594269824562)
+        data = tuple(rng.random((2, 100)))
+        res = stats.pearsonr(*data)
+        method = stats.BootstrapMethod(**kwargs)
+        return res.confidence_interval(method=method)
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.slow
+    @pytest.mark.parametrize("method, arg_name", [
+        (kmeans, "seed"),
+        (kmeans2, "seed"),
+        (barycentric, "random_state"),
+        (clarkson_woodruff_transform, "seed"),
+        (basinhopping, "seed"),
+        (differential_evolution, "seed"),
+        (dual_annealing, "seed"),
+        (check_grad, "seed"),
+        (random_array, 'random_state'),
+        (random, 'random_state'),
+        (rand, 'random_state'),
+        (svds, "random_state"),
+        (random_rotation, "random_state"),
+        (goodness_of_fit, "random_state"),
+        (permutation_test, "random_state"),
+        (bootstrap, "random_state"),
+        (permutation_method, "random_state"),
+        (bootstrap_method, "random_state"),
+        (dunnett, "random_state"),
+        (sobol_indices, "random_state"),
+        (halton, "seed"),
+        (sobol, "seed"),
+        (latin_hypercube, "seed"),
+        (poisson_disk, "seed"),
+        (multivariate_normal_qmc, "seed"),
+        (multinomial_qmc, "seed"),
+    ])
+    def test_rng_deterministic(self, method, arg_name):
+        np.random.seed(None)
+        seed = 2949672964
+
+        rng = np.random.default_rng(seed)
+        message = "got multiple values for argument now known as `rng`"
+        with pytest.raises(TypeError, match=message):
+            method(self, **{'rng': rng, arg_name: seed})
+
+        rng = np.random.default_rng(seed)
+        res1 = method(self, rng=rng)
+        res2 = method(self, rng=seed)
+        assert_equal(res2, res1)
+
+        if method.__name__ in {"dunnett", "sobol_indices"}:
+            # the two kwargs have essentially the same behavior for these functions
+            res3 = method(self, **{arg_name: seed})
+            assert_equal(res3, res1)
+            return
+
+        rng = np.random.RandomState(seed)
+        res1 = method(self, **{arg_name: rng})
+        res2 = method(self, **{arg_name: seed})
+
+        if method.__name__ in {"halton", "sobol", "latin_hypercube", "poisson_disk",
+                               "multivariate_normal_qmc", "multinomial_qmc"}:
+            # For these, passing `random_state=RandomState(seed)` is not the same as
+            # passing integer `seed`.
+            res1b = method(self, **{arg_name: np.random.RandomState(seed)})
+            assert_equal(res1b, res1)
+            res2b = method(self, **{arg_name: seed})
+            assert_equal(res2b, res2)
+            return
+
+        np.random.seed(seed)
+        res3 = method(self, **{arg_name: None})
+        assert_equal(res2, res1)
+        assert_equal(res3, res1)
+
+
 class TestLazywhere:
     n_arrays = strategies.integers(min_value=1, max_value=3)
     rng_seed = strategies.integers(min_value=1000000000, max_value=9999999999)
@@ -398,10 +603,11 @@ class TestLazywhere:
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
+    @pytest.mark.thread_unsafe
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
         mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1,
                                                  min_side=0)
@@ -445,7 +651,7 @@ class TestLazywhere:
             ref2 = ref2.reshape(result_shape)
             ref3 = ref3.reshape(result_shape)
 
-        xp_assert_close(res1, ref1, rtol=2e-16, allow_0d=True)
-        xp_assert_equal(res2, ref2, allow_0d=True)
+        xp_assert_close(res1, ref1, rtol=2e-16)
+        xp_assert_equal(res2, ref2)
         if not is_array_api_strict(xp):
-            xp_assert_equal(res3, ref3, allow_0d=True)
+            xp_assert_equal(res3, ref3)

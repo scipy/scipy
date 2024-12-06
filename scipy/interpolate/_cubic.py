@@ -1,8 +1,6 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from typing import Literal
 
 import numpy as np
 
@@ -10,9 +8,6 @@ from scipy.linalg import solve, solve_banded
 
 from . import PPoly
 from ._polyint import _isscalar
-
-if TYPE_CHECKING:
-    from typing import Literal
 
 __all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",
            "Akima1DInterpolator", "CubicSpline"]

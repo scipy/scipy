@@ -19,7 +19,7 @@ from ._decomp_lu import lu
 from ._decomp_qr import qr
 from ._decomp_qz import ordqz
 from ._decomp import _asarray_validated
-from ._special_matrices import kron, block_diag
+from ._special_matrices import block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
@@ -80,7 +80,7 @@ def solve_sylvester(a, b, q):
     True
 
     """
-    # Accomodate empty a
+    # Accommodate empty a
     if a.size == 0 or b.size == 0:
         tdict = {'s': np.float32, 'd': np.float64,
                  'c': np.complex64, 'z': np.complex128}
@@ -178,7 +178,7 @@ def solve_continuous_lyapunov(a, q):
     if a.shape != q.shape:
         raise ValueError("Matrix a and q should have the same shape.")
 
-    # Accomodate empty array
+    # Accommodate empty array
     if a.size == 0:
         tdict = {'s': np.float32, 'd': np.float64,
                  'c': np.complex64, 'z': np.complex128}
@@ -223,7 +223,7 @@ def _solve_discrete_lyapunov_direct(a, q):
     `method=direct`. It is not supposed to be called directly.
     """
 
-    lhs = kron(a, a.conj())
+    lhs = np.kron(a, a.conj())
     lhs = np.eye(lhs.shape[0]) - lhs
     x = solve(lhs, q.flatten())
 

@@ -19,8 +19,7 @@ py3.extension_module('_minpack',
     '__minpack.h',
     '__minpack.c',
   ],
-  include_directories: '../_lib/src',
-  dependencies: np_dep,
+  dependencies: [np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -65,17 +64,12 @@ py3.extension_module('_zeros',
 
 py3.extension_module('_lbfgsb',
   [
-    'lbfgsb_src/lbfgsb.f',
-    'lbfgsb_src/linpack.f',
-    'lbfgsb_src/timer.f',
-    f2py_gen.process('lbfgsb_src/lbfgsb.pyf'),
+    '__lbfgsb.h',
+    '__lbfgsb.c',
   ],
-  fortran_args: fortran_ignore_warnings,
+  dependencies: [lapack_dep, blas_dep, np_dep],
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
-  override_options: ['b_lto=false'],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -145,9 +139,8 @@ _dummy_init_optimize = fs.copyfile('__init__.py')
 
 # Copying this .pxd file is only needed because of a Cython bug, see
 # discussion on SciPy PR gh-18810.
-cython_optimize_pxd = [
-  fs.copyfile('cython_optimize.pxd'),
-]
+cython_optimize_pxd = fs.copyfile('cython_optimize.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 opt_gen = generator(cython,
   arguments : cython_args,
@@ -177,16 +170,13 @@ subdir('_trlib')
 subdir('_trustregion_constr')
 subdir('cython_optimize')
 subdir('_shgo_lib')
-subdir('_highs')
+subdir('_highspy')
 subdir('tests')
 
-py3.install_sources(
-  ['lbfgsb_src/README'],
-  subdir: 'scipy/optimize'
-)
 
 py3.install_sources([
   '__init__.py',
+  '__init__.pxd',
   '_basinhopping.py',
   '_bracket.py',
   '_chandrupatla.py',

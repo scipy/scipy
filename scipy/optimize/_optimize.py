@@ -29,8 +29,7 @@ import math
 import warnings
 import sys
 import inspect
-from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
-                   asarray, sqrt)
+from numpy import eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
 from scipy.sparse.linalg import LinearOperator
@@ -40,8 +39,10 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
-                              _call_callback_maybe_halt)
+                              _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
+from scipy._lib._array_api import array_namespace
+from scipy._lib import array_api_extra as xpx
 
 
 # standard status messages of optimizers
@@ -123,9 +124,11 @@ class OptimizeResult(_RichResult):
         underlying solver. Refer to `message` for details.
     message : str
         Description of the cause of the termination.
-    fun, jac, hess: ndarray
-        Values of objective function, its Jacobian and its Hessian (if
-        available). The Hessians may be approximations, see the documentation
+    fun : float
+        Value of objective function at `x`.
+    jac, hess : ndarray
+        Values of objective function's Jacobian and its Hessian at `x` (if
+        available). The Hessian may be an approximation, see the documentation
         of the function in question.
     hess_inv : object
         Inverse of the objective function's Hessian; may be an approximation.
@@ -357,9 +360,12 @@ def rosen(x):
     >>> ax.plot_surface(X, Y, rosen([X, Y]))
     >>> plt.show()
     """
-    x = asarray(x)
-    r = np.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
-                  axis=0)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
+    r = xp.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
+               axis=0, dtype=x.dtype)
     return r
 
 
@@ -390,11 +396,14 @@ def rosen_der(x):
     array([ -2. ,  10.6,  15.6,  13.4,   6.4,  -3. , -12.4, -19.4,  62. ])
 
     """
-    x = asarray(x)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
-    der = np.zeros_like(x)
+    der = xp.zeros_like(x)
     der[1:-1] = (200 * (xm - xm_m1**2) -
                  400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm))
     der[0] = -400 * x[0] * (x[1] - x[0]**2) - 2 * (1 - x[0])
@@ -432,14 +441,17 @@ def rosen_hess(x):
            [  0.,   0., -80., 200.]])
 
     """
-    x = atleast_1d(x)
-    H = np.diag(-400 * x[:-1], 1) - np.diag(400 * x[:-1], -1)
-    diagonal = np.zeros(len(x), dtype=x.dtype)
+    xp = array_namespace(x)
+    x = xpx.atleast_nd(x, ndim=1, xp=xp)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
+    H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
+         - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
+    diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
     diagonal[0] = 1200 * x[0]**2 - 400 * x[1] + 2
     diagonal[-1] = 200
     diagonal[1:-1] = 202 + 1200 * x[1:-1]**2 - 400 * x[2:]
-    H = H + np.diag(diagonal)
-    return H
+    return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
 def rosen_hess_prod(x, p):
@@ -473,8 +485,12 @@ def rosen_hess_prod(x, p):
     array([  -0.,   27.,  -10.,  -95., -192., -265., -278., -195., -180.])
 
     """
-    x = atleast_1d(x)
-    Hp = np.zeros(len(x), dtype=x.dtype)
+    xp = array_namespace(x, p)
+    x = xpx.atleast_nd(x, ndim=1, xp=xp)
+    if xp.isdtype(x.dtype, 'integral'):
+        x = xp.astype(x, xp.asarray(1.).dtype)
+    p = xp.asarray(p, dtype=x.dtype)
+    Hp = xp.zeros(x.shape[0], dtype=x.dtype)
     Hp[0] = (1200 * x[0]**2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1]
     Hp[1:-1] = (-400 * x[:-2] * p[:-2] +
                 (202 + 1200 * x[1:-1]**2 - 400 * x[2:]) * p[1:-1] -
@@ -955,6 +971,13 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
         function is an ndarray of shape (n,) (never a scalar even if n=1).
         It must return a 1-D array_like of shape (m,) or a scalar.
 
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
+
         .. versionchanged:: 1.9.0
             `f` is now able to return a 1-D array-like, with the :math:`(m, n)`
             Jacobian being estimated.
@@ -1008,9 +1031,10 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
                              args=args, f0=f0)
 
 
+@_transition_to_rng("seed", position_num=6)
 def check_grad(func, grad, x0, *args, epsilon=_epsilon,
-                direction='all', seed=None):
-    """Check the correctness of a gradient function by comparing it against a
+                direction='all', rng=None):
+    r"""Check the correctness of a gradient function by comparing it against a
     (forward) finite-difference approximation of the gradient.
 
     Parameters
@@ -1033,17 +1057,15 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         using `func`. By default it is ``'all'``, in which case, all
         the one hot direction vectors are considered to check `grad`.
         If `func` is a vector valued function then only ``'all'`` can be used.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        Specify `seed` for reproducing the return value from this function.
-        The random numbers generated with this seed affect the random vector
-        along which gradients are computed to check ``grad``. Note that `seed`
-        is only used when `direction` argument is set to `'random'`.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        The random numbers generated affect the random vector along which gradients
+        are computed to check ``grad``. Note that `rng` is only used when `direction`
+        argument is set to `'random'`.
 
     Returns
     -------
@@ -1083,8 +1105,8 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         if _grad.ndim > 1:
             raise ValueError("'random' can only be used with scalar valued"
                              " func")
-        random_state = check_random_state(seed)
-        v = random_state.normal(0, 1, size=(x0.shape))
+        rng_gen = check_random_state(rng)
+        v = rng_gen.standard_normal(size=(x0.shape))
         _args = (func, x0, v) + args
         _func = g
         vars = np.zeros((1,))
@@ -2933,7 +2955,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     The algorithm attempts to find three strictly ordered points (i.e.
     :math:`x_a < x_b < x_c` or :math:`x_c < x_b < x_a`) satisfying
     :math:`f(x_b) ≤ f(x_a)` and :math:`f(x_b) ≤ f(x_c)`, where one of the
-    inequalities must be satistfied strictly and all :math:`x_i` must be
+    inequalities must be satisfied strictly and all :math:`x_i` must be
     finite.
 
     Examples
@@ -3184,7 +3206,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
                                           myfunc, None, tuple(), xtol=tol)
         alpha_min, fret = res.x, res.fun
         xi = alpha_min * xi
-        return squeeze(fret), p + xi, xi
+        return fret, p + xi, xi
     else:
         bound = _line_for_search(p, xi, lower_bound, upper_bound)
         if np.isneginf(bound[0]) and np.isposinf(bound[1]):
@@ -3194,7 +3216,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
             # we can use a bounded scalar minimization
             res = _minimize_scalar_bounded(myfunc, bound, xatol=tol / 100)
             xi = res.x * xi
-            return squeeze(res.fun), p + xi, xi
+            return res.fun, p + xi, xi
         else:
             # only bounded on one side. use the tangent function to convert
             # the infinity bound to a finite bound. The new bounded region
@@ -3205,7 +3227,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
                 bound,
                 xatol=tol / 100)
             xi = np.tan(res.x) * xi
-            return squeeze(res.fun), p + xi, xi
+            return res.fun, p + xi, xi
 
 
 def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
@@ -3493,7 +3515,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, stacklevel=3)
 
-    fval = squeeze(func(x))
+    fval = func(x)
     x1 = x.copy()
     iter = 0
     while True:
@@ -3538,7 +3560,7 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
             else:
                 _, lmax = _line_for_search(x, direc1, lower_bound, upper_bound)
             x2 = x + min(lmax, 1) * direc1
-            fx2 = squeeze(func(x2))
+            fx2 = func(x2)
 
             if (fx > fx2):
                 t = 2.0*(fx + fx2 - 2.0*fval)
@@ -3584,7 +3606,6 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         print(f"         Current function value: {fval:f}")
         print("         Iterations: %d" % iter)
         print("         Function evaluations: %d" % fcalls[0])
-
     result = OptimizeResult(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
                             message=msg, x=x)

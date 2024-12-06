@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config.h"
+#include "cephes/struve.h"
 
 namespace xsf {
 namespace detail {
@@ -216,5 +216,13 @@ T itmodstruve0(T x) {
     SPECFUN_CONVINF("itmodstruve0", out);
     return out;
 }
+
+double struve_h(double v, double z) { return cephes::struve_h(v, z); }
+
+float struve_h(float v, float z) { return struve_h(static_cast<double>(v), static_cast<double>(z)); }
+
+double struve_l(double v, double z) { return cephes::struve_l(v, z); }
+
+float struve_l(float v, float z) { return struve_l(static_cast<double>(v), static_cast<double>(z)); }
 
 } // namespace xsf

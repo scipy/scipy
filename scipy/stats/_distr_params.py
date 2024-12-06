@@ -19,6 +19,7 @@ distcont = [
     ['cosine', ()],
     ['crystalball', (2.0, 3.0)],
     ['dgamma', (1.1023326088288166,)],
+    ['dpareto_lognorm', (3, 1.2, 1.5, 2)],
     ['dweibull', (2.0685080649914673,)],
     ['erlang', (10,)],
     ['expon', ()],
@@ -121,7 +122,8 @@ distcont = [
     ['wald', ()],
     ['weibull_max', (2.8687961709100187,)],
     ['weibull_min', (1.7866166930421596,)],
-    ['wrapcauchy', (0.031071279018614728,)]]
+    ['wrapcauchy', (0.031071279018614728,)]
+]
 
 
 distdiscrete = [
@@ -142,6 +144,7 @@ distdiscrete = [
     ['nbinom', (5, 0.5)],
     ['planck', (0.51,)],   # 4.1
     ['poisson', (0.6,)],
+    ['poisson_binom', ([0.1, 0.6, 0.7, 0.8],)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
     ['zipf', (6.6,)],
@@ -169,6 +172,7 @@ invdistdiscrete = [
     ['nbinom', (10, 1.5)],
     ['planck', (-0.5, )],
     ['poisson', (-0.5, )],
+    ['poisson_binom', ([-1, 2, 0.5],)],
     ['randint', (5, 2)],
     ['skellam', (-5, -2)],
     ['zipf', (-2, )],
@@ -194,6 +198,7 @@ invdistcont = [
     ['cosine', ()],
     ['crystalball', (-1, 2)],
     ['dgamma', (-1, )],
+    ['dpareto_lognorm', (3, -1.2, 1.5, 2)],
     ['dweibull', (-1, )],
     ['erlang', (-1, )],
     ['expon', ()],

@@ -94,7 +94,7 @@ def _ident_like(A):
     if scipy.sparse.issparse(A):
         # Creates a sparse matrix in dia format
         out = scipy.sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
-        if isinstance(A, scipy.sparse.spmatrix):
+        if scipy.sparse.issparse(A):
             return out.asformat(A.format)
         return scipy.sparse.dia_array(out).asformat(A.format)
     elif is_pydata_spmatrix(A):
@@ -183,9 +183,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import expm, expm_multiply
-    >>> A = csc_matrix([[1, 0], [0, 1]])
+    >>> A = csc_array([[1, 0], [0, 1]])
     >>> A.toarray()
     array([[1, 0],
            [0, 1]], dtype=int64)
