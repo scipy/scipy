@@ -377,6 +377,9 @@ Deprecated features
   `scipy.special.assoc_legendre_p_all`.
 - The raveling of multi-dimensional input by `scipy.linalg.toeplitz` has
   been deprecated. It will support batching in SciPy ``1.17.0``.
+- The ``random_state`` and ``permutations`` arguments of
+  `scipy.stats.ttest_ind` are deprecated. Use ``method`` to perform a
+  permutation test, instead.
 
 ********************
 Expired Deprecations
@@ -414,7 +417,9 @@ Backwards incompatible changes
 Other changes
 *************
 - A separate accompanying type stubs package, ``scipy-stubs``, will be made
-  available with the ``1.15.0`` release.
+  available with the ``1.15.0`` release. `Installation instructions are
+  available
+  <https://github.com/jorenham/scipy-stubs?tab=readme-ov-file#installation>`_.
 - `scipy.stats.bootstrap` now emits a ``FutureWarning`` if the shapes of the
   input arrays do not agree. Broadcast the arrays to the same batch shape
   (i.e. for all dimensions except those specified by the ``axis`` argument)
