@@ -3736,8 +3736,8 @@ class TruncatedDistribution(TransformedDistribution):
                           _Parameterization(_lb_param),
                           _Parameterization(_ub_param)]
 
-    def __init__(self, dist, *args, lb=-np.inf, ub=np.inf, **kwargs):
-        return super().__init__(dist, *args, lb=lb, ub=ub, **kwargs)
+    def __init__(self, X, /, *args, lb=-np.inf, ub=np.inf, **kwargs):
+        return super().__init__(X, *args, lb=lb, ub=ub, **kwargs)
 
     def _process_parameters(self, lb=None, ub=None, **params):
         lb = lb if lb is not None else np.full_like(lb, -np.inf)[()]
