@@ -1459,12 +1459,12 @@ class TestTransforms:
         assert np.all(sample > 0)
 
     @pytest.mark.fail_slow(20)  # Moments require integration
-    def test_order_statistics(self):
+    def test_order_statistic(self):
         rng = np.random.default_rng(7546349802439582)
         X = _Uniform(a=0, b=1)
         n = 5
         r = np.asarray([[1], [3], [5]])
-        Y = stats.OrderStatisticDistribution(X, n=n, r=r)
+        Y = stats.order_statistic(X, n=n, r=r)
         Y0 = stats.beta(r, n + 1 - r)
 
         y = Y0.rvs((3, 10), random_state=rng)
@@ -1490,6 +1490,16 @@ class TestTransforms:
         with np.errstate(invalid='ignore', divide='ignore'):
             assert_allclose(Y.ilogcdf(np.log(p),), Y0.ppf(p))
             assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+
+        message = "`r` and `n` must contain only positive integers."
+        with pytest.raises(ValueError, match=message):
+            stats.order_statistic(X, n=n, r=-1)
+        with pytest.raises(ValueError, match=message):
+            stats.order_statistic(X, n=-1, r=r)
+        with pytest.raises(ValueError, match=message):
+            stats.order_statistic(X, n=n, r=1.5)
+        with pytest.raises(ValueError, match=message):
+            stats.order_statistic(X, n=1.5, r=r)
 
 
 class TestFullCoverage:
