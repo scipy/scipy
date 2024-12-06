@@ -27,9 +27,10 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_atleast_nd,
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size
 )
 import scipy._lib.array_api_compat.numpy as np_compat
+from scipy._lib.array_api_extra import atleast_nd
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
@@ -1602,7 +1603,7 @@ def order_filter(a, domain, rank):
     if not (
         xp.isdtype(a.dtype, "integral") or a.dtype in (xp.float32, xp.float64)
     ):
-
+        raise ValueError(f"dtype={a.dtype} is not supported by order_filter")
     result = ndimage.rank_filter(a, rank, footprint=domain, mode='constant')
     return result
 
@@ -2549,7 +2550,7 @@ def hilbert2(x, N=None):
     """
     xp = array_namespace(x)
 
-    x = xp_atleast_nd(x, ndim=2, xp=xp)
+    x = atleast_nd(x, ndim=2, xp=xp)
     if x.ndim > 2:
         raise ValueError("x must be 2-D.")
     if xp.isdtype(x.dtype, 'complex floating'):
