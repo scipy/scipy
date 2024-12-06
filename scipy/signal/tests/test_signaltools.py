@@ -3820,11 +3820,10 @@ class TestPartialFractionExpansion:
         assert_almost_equal(a, [1, -1])
 
 
-@skip_xp_backends(np_only=True)
 class TestVectorstrength:
 
     def test_single_1dperiod(self, xp):
-        events = np.array([.5])
+        events = xp.asarray([.5])
         period = 5.
         targ_strength = 1.
         targ_phase = .1
@@ -3833,24 +3832,26 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
 
+        assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
+        assert_almost_equal(xp.asarray(phase), xp.asarray(2 * xp.pi * targ_phase))
+
+    @xfail_xp_backends('torch', reason="phase modulo 2*pi")
     def test_single_2dperiod(self, xp):
-        events = np.array([.5])
-        period = [1, 2, 5.]
+        events = xp.asarray([.5])
+        period = xp.asarray([1, 2, 5.])
         targ_strength = [1.] * 3
-        targ_phase = np.array([.5, .25, .1])
+        targ_phase = xp.asarray([.5, .25, .1])
 
         strength, phase = vectorstrength(events, period)
 
         assert strength.ndim == 1
         assert phase.ndim == 1
-        assert_array_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_array_almost_equal(strength, xp.asarray(targ_strength))
+        assert_almost_equal(phase, xp.asarray(2 * xp.pi * targ_phase))
 
     def test_equal_1dperiod(self, xp):
-        events = np.array([.25, .25, .25, .25, .25, .25])
+        events = xp.asarray([.25, .25, .25, .25, .25, .25])
         period = 2
         targ_strength = 1.
         targ_phase = .125
@@ -3859,24 +3860,24 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
+        assert_almost_equal(xp.asarray(phase), xp.asarray(2 * xp.pi * targ_phase))
 
     def test_equal_2dperiod(self, xp):
-        events = np.array([.25, .25, .25, .25, .25, .25])
-        period = [1, 2, ]
-        targ_strength = [1.] * 2
-        targ_phase = np.array([.25, .125])
+        events = xp.asarray([.25, .25, .25, .25, .25, .25])
+        period = xp.asarray([1, 2, ])
+        targ_strength = xp.asarray([1.] * 2)
+        targ_phase = xp.asarray([.25, .125])
 
         strength, phase = vectorstrength(events, period)
 
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_almost_equal(phase, 2 * xp.pi * targ_phase)
 
     def test_spaced_1dperiod(self, xp):
-        events = np.array([.1, 1.1, 2.1, 4.1, 10.1])
+        events = xp.asarray([.1, 1.1, 2.1, 4.1, 10.1])
         period = 1
         targ_strength = 1.
         targ_phase = .1
@@ -3885,24 +3886,28 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
+        rtol_kw = {'rtol': 5e-7} if is_torch(xp) else {}
+        xp_assert_close(xp.asarray(phase, dtype=xp.float64),
+                        xp.asarray(2 * xp.pi * targ_phase, dtype=xp.float64),
+                        **rtol_kw)
 
     def test_spaced_2dperiod(self, xp):
-        events = np.array([.1, 1.1, 2.1, 4.1, 10.1])
-        period = [1, .5]
-        targ_strength = [1.] * 2
-        targ_phase = np.array([.1, .2])
+        events = xp.asarray([.1, 1.1, 2.1, 4.1, 10.1])
+        period = xp.asarray([1, .5])
+        targ_strength = xp.asarray([1.] * 2)
+        targ_phase = xp.asarray([.1, .2])
 
         strength, phase = vectorstrength(events, period)
 
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        rtol_kw = {'rtol': 2e-6} if is_torch(xp) else {}
+        xp_assert_close(phase, 2 * xp.pi * targ_phase, **rtol_kw)
 
     def test_partial_1dperiod(self, xp):
-        events = np.array([.25, .5, .75])
+        events = xp.asarray([.25, .5, .75])
         period = 1
         targ_strength = 1. / 3.
         targ_phase = .5
@@ -3911,24 +3916,25 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
+        assert_almost_equal(xp.asarray(phase), xp.asarray(2 * xp.pi * targ_phase))
 
+    @xfail_xp_backends("torch", reason="phase modulo 2*pi")
     def test_partial_2dperiod(self, xp):
-        events = np.array([.25, .5, .75])
-        period = [1., 1., 1., 1.]
-        targ_strength = [1. / 3.] * 4
-        targ_phase = np.array([.5, .5, .5, .5])
+        events = xp.asarray([.25, .5, .75])
+        period = xp.asarray([1., 1., 1., 1.])
+        targ_strength = xp.asarray([1. / 3.] * 4)
+        targ_phase = xp.asarray([.5, .5, .5, .5])
 
         strength, phase = vectorstrength(events, period)
 
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_almost_equal(phase, 2 * xp.pi * targ_phase)
 
     def test_opposite_1dperiod(self, xp):
-        events = np.array([0, .25, .5, .75])
+        events = xp.asarray([0, .25, .5, .75])
         period = 1.
         targ_strength = 0
 
@@ -3936,12 +3942,12 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
+        assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
 
     def test_opposite_2dperiod(self, xp):
-        events = np.array([0, .25, .5, .75])
-        period = [1.] * 10
-        targ_strength = [0.] * 10
+        events = xp.asarray([0, .25, .5, .75])
+        period = xp.asarray([1.] * 10)
+        targ_strength = xp.asarray([0.] * 10)
 
         strength, phase = vectorstrength(events, period)
 
@@ -3950,13 +3956,13 @@ class TestVectorstrength:
         assert_almost_equal(strength, targ_strength)
 
     def test_2d_events_ValueError(self, xp):
-        events = np.array([[1, 2]])
+        events = xp.asarray([[1, 2]])
         period = 1.
         assert_raises(ValueError, vectorstrength, events, period)
 
     def test_2d_period_ValueError(self, xp):
         events = 1.
-        period = np.array([[1]])
+        period = xp.asarray([[1]])
         assert_raises(ValueError, vectorstrength, events, period)
 
     def test_zero_period_ValueError(self, xp):
