@@ -3169,6 +3169,7 @@ class TestHilbert2:
         assert xp.real(signal.hilbert2(in_typed)).dtype == dtype
 
 
+@skip_xp_backends(np_only=True)
 class TestEnvelope:
     """Unit tests for function `._signaltools.envelope()`. """
 
@@ -3177,7 +3178,7 @@ class TestEnvelope:
         """Little helper to compare to arrays with proper tolerances"""
         xp_assert_close(actual, desired, atol=1e-12, rtol=1e-12, err_msg=msg)
 
-    def test_envelope_invalid_parameters(self):
+    def test_envelope_invalid_parameters(self, xp):
         """For `envelope()` Raise all exceptions that are used to verify function
         parameters. """
         with pytest.raises(ValueError,
@@ -3204,7 +3205,7 @@ class TestEnvelope:
             # noinspection PyTypeChecker
             envelope(np.ones(4), residual='undefined')
 
-    def test_envelope_verify_parameters(self):
+    def test_envelope_verify_parameters(self, xp):
         """Ensure that the various parametrizations produce compatible results. """
         Z, Zr_a = [4, 2, 2, 3, 0], [4, 0, 0, 6, 0, 0, 0, 0]
         z = sp_fft.irfft(Z)
@@ -3260,7 +3261,7 @@ class TestEnvelope:
          ([4, 0, 2, 2, 0],      (-3, 3), [4, 0, 2, 0, 0], [0, 0, 0, 2, 0]),
          ([4, 0, 3, 4, 0],    (None, 1), [2, 0, 0, 0, 0], [0, 0, 3, 4, 0]),
          ([4, 0, 3, 4, 0],    (None, 0), [0, 0, 0, 0, 0], [4, 0, 3, 4, 0])])
-    def test_envelope_real_signals(self, Z, bp_in, Ze2_desired, Zr_desired):
+    def test_envelope_real_signals(self, Z, bp_in, Ze2_desired, Zr_desired, xp):
         """Test envelope calculation with real-valued test signals.
 
         The comparisons are performed in the Fourier space, since it makes evaluating
@@ -3295,7 +3296,7 @@ class TestEnvelope:
          ([1, 5, 0, 5, 2],      (-1, 2),    [5, 0, 10, 0, 5],    [1, 0, 0, 0, 2]),
          ([1, 2, 6, 0, 6, 3],   (-1, 2), [0, 6, 0, 12, 0, 6], [1, 2, 0, 0, 0, 3])
          ])
-    def test_envelope_complex_signals(self, Z, bp_in, Ze2_desired, Zr_desired):
+    def test_envelope_complex_signals(self, Z, bp_in, Ze2_desired, Zr_desired, xp):
         """Test envelope calculation with complex-valued test signals.
 
         We only need to test for the complex envelope here, since the ``Nones``s in the
@@ -3326,7 +3327,7 @@ class TestEnvelope:
         self.assert_close(Ye2, Ze2_desired, msg="Transposed 2d envelope calc. error")
         self.assert_close(Yr, Zr_desired, msg="Transposed 2d residual calc. error")
 
-    def test_envelope_verify_axis_parameter_complex(self):
+    def test_envelope_verify_axis_parameter_complex(self, xp):
         """Test for multi-channel envelope calculations with complex values. """
         z = sp_fft.ifft(sp_fft.ifftshift([[1, 5, 0, 5, 2], [1, 10, 0, 10, 2]], axes=1))
         Ze2_des = np.array([[5, 0, 10, 0, 5], [20, 0, 40, 0, 20],],
@@ -3345,7 +3346,7 @@ class TestEnvelope:
         self.assert_close(Yr, Zr_des,  msg="Transposed 2d residual calc. error")
 
     @pytest.mark.parametrize('X', [[4, 0, 0, 1, 2], [4, 0, 0, 2, 1, 2]])
-    def test_compare_envelope_hilbert(self, X):
+    def test_compare_envelope_hilbert(self, X, xp):
         """Compare output of `envelope()` and `hilbert()`. """
         x = sp_fft.irfft(X)
         e_hil = np.abs(hilbert(x))
