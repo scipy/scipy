@@ -2376,7 +2376,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _logcdf2_subtraction(self, x, y, **params):
-        flip_sign = x > y
+        flip_sign = x > y  # some results will be negative
         x, y = np.minimum(x, y), np.maximum(x, y)
         logcdf_x = self._logcdf_dispatch(x, **params)
         logcdf_y = self._logcdf_dispatch(y, **params)
@@ -2390,7 +2390,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         log_tail = np.logaddexp(logcdf_x, logccdf_y)[case_central]
         log_mass[case_central] = _log1mexp(log_tail)
         log_mass[flip_sign] += np.pi * 1j
-        return log_mass[()]
+        return log_mass[()] if np.any(flip_sign) else log_mass.real[()]
 
     def _logcdf2_logexp(self, x, y, **params):
         expres = self._cdf2_dispatch(x, y, **params)
@@ -3623,7 +3623,7 @@ def _shift_scale_distribution_function_2arg(func):
         yt = self._transform(y, loc, scale)
         fxy = f(xt, yt, *args, **kwargs)
         fyx = f(yt, xt, *args, **kwargs)
-        return np.where(sign, fxy, fyx)[()]
+        return np.real_if_close(np.where(sign, fxy, fyx))[()]
 
     return wrapped
 
@@ -3715,6 +3715,146 @@ class TransformedDistribution(ContinuousDistribution):
         s = super().__repr__()
         return s.replace("Distribution",
                          self._dist.__class__.__name__)
+
+
+class TruncatedDistribution(TransformedDistribution):
+    """Truncated distribution."""
+    # TODO:
+    # - consider avoiding catastropic cancellation by using appropriate tail
+    # - if the mode of `_dist` is within the support, it's still the mode
+    # - rejection sampling might be more efficient than inverse transform
+
+    _lb_domain = _RealDomain(endpoints=(-inf, 'ub'), inclusive=(True, False))
+    _lb_param = _RealParameter('lb', symbol=r'b_l',
+                                domain=_lb_domain, typical=(0.1, 0.2))
+
+    _ub_domain = _RealDomain(endpoints=('lb', inf), inclusive=(False, True))
+    _ub_param = _RealParameter('ub', symbol=r'b_u',
+                                  domain=_ub_domain, typical=(0.8, 0.9))
+
+    _parameterizations = [_Parameterization(_lb_param, _ub_param),
+                          _Parameterization(_lb_param),
+                          _Parameterization(_ub_param)]
+
+    def __init__(self, X, /, *args, lb=-np.inf, ub=np.inf, **kwargs):
+        return super().__init__(X, *args, lb=lb, ub=ub, **kwargs)
+
+    def _process_parameters(self, lb=None, ub=None, **params):
+        lb = lb if lb is not None else np.full_like(lb, -np.inf)[()]
+        ub = ub if ub is not None else np.full_like(ub, np.inf)[()]
+        parameters = self._dist._process_parameters(**params)
+        a, b = self._support(lb=lb, ub=ub, **parameters)
+        logmass = self._dist._logcdf2_dispatch(a, b, **parameters)
+        parameters.update(dict(lb=lb, ub=ub, _a=a, _b=b, logmass=logmass))
+        return parameters
+
+    def _support(self, lb, ub, **params):
+        a, b = self._dist._support(**params)
+        return np.maximum(a, lb), np.minimum(b, ub)
+
+    def _overrides(self, method_name):
+        return False
+
+    def _logpdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logpdf = self._dist._logpdf_dispatch(x, *args, **params)
+        return logpdf - logmass
+
+    def _logcdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logcdf = self._dist._logcdf2_dispatch(_a, x, *args, **params)
+        # of course, if this result is small we could compute with the other tail
+        return logcdf - logmass
+
+    def _logccdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logccdf = self._dist._logcdf2_dispatch(x, _b, *args, **params)
+        return logccdf - logmass
+
+    def _logcdf2_dispatch(self, x, y, *args, lb, ub, _a, _b, logmass, **params):
+        logcdf2 = self._dist._logcdf2_dispatch(x, y, *args, **params)
+        return logcdf2 - logmass
+
+    def _ilogcdf_dispatch(self, logp, *args, lb, ub, _a, _b, logmass, **params):
+        log_Fa = self._dist._logcdf_dispatch(_a, *args, **params)
+        logp_adjusted = np.logaddexp(log_Fa, logp + logmass)
+        return self._dist._ilogcdf_dispatch(logp_adjusted, *args, **params)
+
+    def _ilogccdf_dispatch(self, logp, *args, lb, ub, _a, _b, logmass, **params):
+        log_cFb = self._dist._logccdf_dispatch(_b, *args, **params)
+        logp_adjusted = np.logaddexp(log_cFb, logp + logmass)
+        return self._dist._ilogccdf_dispatch(logp_adjusted, *args, **params)
+
+    def _icdf_dispatch(self, p, *args, lb, ub, _a, _b, logmass, **params):
+        Fa = self._dist._cdf_dispatch(_a, *args, **params)
+        p_adjusted = Fa + p*np.exp(logmass)
+        return self._dist._icdf_dispatch(p_adjusted, *args, **params)
+
+    def _iccdf_dispatch(self, p, *args, lb, ub, _a, _b, logmass, **params):
+        cFb = self._dist._ccdf_dispatch(_b, *args, **params)
+        p_adjusted = cFb + p*np.exp(logmass)
+        return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
+
+
+def truncate(X, lb=-np.inf, ub=np.inf):
+    """Truncate the support of a random variable.
+
+    Given a random variable `X`, `truncate` returns a random variable with
+    support truncated to the interval between `lb` and `ub`. The underlying
+    probability density function is normalized accordingly.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable to be truncated.
+    lb, ub : float array-like
+        The lower and upper truncation points, respectively. Must be
+        broadcastable with one another and the shape of `X`.
+
+    Returns
+    -------
+    X : `ContinuousDistribution`
+        The truncated random variable.
+
+    References
+    ----------
+    .. [1] "Truncated Distribution". *Wikipedia*.
+           https://en.wikipedia.org/wiki/Truncated_distribution
+
+    Examples
+    --------
+    Compare against `scipy.stats.truncnorm`, which truncates a standard normal,
+    *then* shifts and scales it.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>> loc, scale, lb, ub = 1, 2, -2, 2
+    >>> X = stats.truncnorm(lb, ub, loc, scale)
+    >>> Y = scale * stats.truncate(stats.Normal(), lb, ub) + loc
+    >>> x = np.linspace(-3, 5, 300)
+    >>> plt.plot(x, X.pdf(x), '-', label='X')
+    >>> plt.plot(x, Y.pdf(x), '--', label='Y')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF')
+    >>> plt.title('Truncated, then Shifted/Scaled Normal')
+    >>> plt.legend()
+    >>> plt.show()
+
+    However, suppose we wish to shift and scale a normal random variable,
+    then truncate its support to given values. This is straightforward with
+    `truncate`.
+
+    >>> Z = stats.truncate(scale * stats.Normal() + loc, lb, ub)
+    >>> Z.plot()
+    >>> plt.show()
+
+    Furthermore, `truncate` can be applied to any random variable:
+
+    >>> Rayleigh = stats.make_distribution(stats.rayleigh)
+    >>> W = stats.truncate(Rayleigh(), lb=0, ub=3)
+    >>> W.plot()
+    >>> plt.show()
+
+    """
+    return TruncatedDistribution(X, lb=lb, ub=ub)
 
 
 class ShiftedScaledDistribution(TransformedDistribution):
