@@ -5,7 +5,7 @@ from scipy._lib._array_api import (
 )
 from ._signaltools import (convolve, fftconvolve, convolve2d, oaconvolve,
                            correlate, correlate2d, order_filter, medfilt, medfilt2d,
-                           wiener, detrend, hilbert, hilbert2)
+                           wiener, detrend, hilbert, hilbert2, vectorstrength)
 
 MODULE_NAME = 'signal'
 
@@ -87,6 +87,10 @@ def detrend_signature(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     return xp
 
 
+def vectorstrength_signature(periods, events):
+   return array_namespace(periods, events)
+
+
 def hilbert_signature(x, *args, **kwds):
     xp = array_namespace(x)
     return xp
@@ -107,6 +111,7 @@ _FUNC_MAP = {
     order_filter: order_filter_signature,
     wiener: wiener_signature,
     detrend: detrend_signature,
+    vectorstrength: vectorstrength_signature,
     hilbert: hilbert_signature,
     hilbert2: hilbert2_signature,
 }
