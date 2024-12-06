@@ -304,7 +304,7 @@ def diagsvd(s, M, N):
 
 
 def higher_order_svd(
-    a: npt.ArrayLike, *, compact: bool = True, check_finite: bool = True
+    a: npt.ArrayLike, *, compact_rtol: float | None = None, check_finite: bool = True
 ) -> tuple[list[np.ndarray], np.ndarray]:
     """Higher-order SVD (HOSVD)
 
@@ -317,12 +317,14 @@ def higher_order_svd(
     ----------
     a : array_like
         Tensor to decompose
-    compact : bool,  default: False
-        If False (default), ``S`` is of the same shape as the input tensor `a`
+    compact_rtol : float, optional
+        By default, ``S`` is of the same shape as the input tensor `a`
         and all ``U_k`` are of the shape ``(n_k, n_k)``, where ``n_k = a.shape[k]``.
-        If True, ``S`` has shape ``m_1, ..., m_k, ... m_M`` and the shapes of
-        the ``U_k`` are ``(n_k, m_k)``, where ``n_k`` is as above and the ``m_k``
-        are the elements of multilinear rank of the `a`.
+        If set to a non-negative float, singular values less than `compact_rtol` times
+        the maximum magnitude singular value are treated as zero when determining
+        the multilinear rank. Then ``S`` has shape ``m_1, ..., m_k, ... m_M``
+        and the shapes of the ``U_k`` are ``(n_k, m_k)``, where ``n_k`` is as
+        above and the ``m_k`` are the elements of multilinear rank of the `a`.
     check_finite : bool, default: True
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -332,10 +334,10 @@ def higher_order_svd(
     -------
     U : list of ndarray
         List of the unitary matrices ``U_k`` with shapes as described in
-        documentation of `compact`.
+        documentation of `compact_rtol`.
     S : ndarray
         The core tensor with shapes as described in the documentation of
-        `compact`.
+        `compact_rtol`.
 
     Raises
     ------
@@ -377,8 +379,9 @@ def higher_order_svd(
     True
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    if compact not in {True, False}:
-        raise ValueError("`compact` must be either `True` or `False`.")
+    if compact_rtol is not None and compact_rtol < 0:
+        raise ValueError("`compact_rtol` must be a positive floating point number.")
+    rtol = compact_rtol  # shorter alias
 
     core_tensor = a
     left_singular_basis = []
@@ -387,9 +390,8 @@ def higher_order_svd(
         newshape = (a.shape[k], math.prod(a.shape[:k]) * math.prod(a.shape[k + 1:]))
         unfold = np.reshape(np.moveaxis(a, k, 0), newshape)
         U, s, _ = svd(unfold, check_finite=False)
-        # todo: replace this with appropriate tolerance for vanishing singular values
-        tol = 1e-12
-        U = U[:, np.abs(s) > tol] if compact else U
+        tol = np.max(np.abs(s)) * rtol if (rtol is not None and s.size) else None
+        U = U[:, np.abs(s) > tol] if tol is not None else U
         left_singular_basis.append(U)
         core_tensor = np.tensordot(core_tensor, U.T.conj(), (0, 1))
 
