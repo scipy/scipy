@@ -2557,7 +2557,7 @@ cdef class Rotation:
             return result
 
     @cython.embedsignature(True)
-    def __mul__(Rotation self, other):
+    def __mul__(Rotation self, Rotation other):
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
