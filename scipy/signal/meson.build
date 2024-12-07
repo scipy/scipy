@@ -4,7 +4,7 @@ py3.extension_module('_sigtools',
     '_sigtoolsmodule.cc',
     '_medianfilter.cc',
     '_lfilter.cc',
-    tempita_gen.process('_correlate_nd.cc.in')
+    '_correlate_nd.cc'
   ],
   dependencies: np_dep,
   link_args: version_link_args,
