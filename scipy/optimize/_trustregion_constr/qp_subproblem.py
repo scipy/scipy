@@ -1,6 +1,6 @@
 """Equality-constrained quadratic programming solvers."""
 
-from scipy.sparse import linalg, block_array, csc_array
+from scipy.sparse import linalg, block_array
 from math import copysign
 import numpy as np
 from numpy.linalg import norm

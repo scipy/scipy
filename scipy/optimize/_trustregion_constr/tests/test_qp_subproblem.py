@@ -19,10 +19,10 @@ class TestEQPDirectFactorization(TestCase):
     # Optimization" p.452.
     def test_nocedal_example(self):
         H = csc_array([[6, 2, 1],
-                        [2, 5, 2],
-                        [1, 2, 4]])
+                       [2, 5, 2],
+                       [1, 2, 4]])
         A = csc_array([[1, 0, 1],
-                        [0, 1, 1]])
+                       [0, 1, 1]])
         c = np.array([-8, -3, -3])
         b = -np.array([3, 0])
         x, lagrange_multipliers = eqp_kktfact(H, c, A, b)
@@ -425,10 +425,10 @@ class TestProjectCG(TestCase):
     # Optimization" p.452.
     def test_nocedal_example(self):
         H = csc_array([[6, 2, 1],
-                        [2, 5, 2],
-                        [1, 2, 4]])
+                       [2, 5, 2],
+                       [1, 2, 4]])
         A = csc_array([[1, 0, 1],
-                        [0, 1, 1]])
+                       [0, 1, 1]])
         c = np.array([-8, -3, -3])
         b = -np.array([3, 0])
         Z, _, Y = projections(A)
@@ -439,11 +439,11 @@ class TestProjectCG(TestCase):
 
     def test_compare_with_direct_fact(self):
         H = csc_array([[6, 2, 1, 3],
-                        [2, 5, 2, 4],
-                        [1, 2, 4, 5],
-                        [3, 4, 5, 7]])
+                       [2, 5, 2, 4],
+                       [1, 2, 4, 5],
+                       [3, 4, 5, 7]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 1, 1]])
+                       [0, 1, 1, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         Z, _, Y = projections(A)
@@ -455,11 +455,11 @@ class TestProjectCG(TestCase):
 
     def test_trust_region_infeasible(self):
         H = csc_array([[6, 2, 1, 3],
-                        [2, 5, 2, 4],
-                        [1, 2, 4, 5],
-                        [3, 4, 5, 7]])
+                       [2, 5, 2, 4],
+                       [1, 2, 4, 5],
+                       [3, 4, 5, 7]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 1, 1]])
+                       [0, 1, 1, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         trust_radius = 1
@@ -469,11 +469,11 @@ class TestProjectCG(TestCase):
 
     def test_trust_region_barely_feasible(self):
         H = csc_array([[6, 2, 1, 3],
-                        [2, 5, 2, 4],
-                        [1, 2, 4, 5],
-                        [3, 4, 5, 7]])
+                       [2, 5, 2, 4],
+                       [1, 2, 4, 5],
+                       [3, 4, 5, 7]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 1, 1]])
+                       [0, 1, 1, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         trust_radius = 2.32379000772445021283
@@ -488,11 +488,11 @@ class TestProjectCG(TestCase):
 
     def test_hits_boundary(self):
         H = csc_array([[6, 2, 1, 3],
-                        [2, 5, 2, 4],
-                        [1, 2, 4, 5],
-                        [3, 4, 5, 7]])
+                       [2, 5, 2, 4],
+                       [1, 2, 4, 5],
+                       [3, 4, 5, 7]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 1, 1]])
+                       [0, 1, 1, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         trust_radius = 3
@@ -506,11 +506,11 @@ class TestProjectCG(TestCase):
 
     def test_negative_curvature_unconstrained(self):
         H = csc_array([[1, 2, 1, 3],
-                        [2, 0, 2, 4],
-                        [1, 2, 0, 2],
-                        [3, 4, 2, 0]])
+                       [2, 0, 2, 4],
+                       [1, 2, 0, 2],
+                       [3, 4, 2, 0]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 0, 1]])
+                       [0, 1, 0, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         Z, _, Y = projections(A)
@@ -519,11 +519,11 @@ class TestProjectCG(TestCase):
 
     def test_negative_curvature(self):
         H = csc_array([[1, 2, 1, 3],
-                        [2, 0, 2, 4],
-                        [1, 2, 0, 2],
-                        [3, 4, 2, 0]])
+                       [2, 0, 2, 4],
+                       [1, 2, 0, 2],
+                       [3, 4, 2, 0]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 0, 1]])
+                       [0, 1, 0, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         Z, _, Y = projections(A)
@@ -539,11 +539,11 @@ class TestProjectCG(TestCase):
     # are active during the iterations.
     def test_inactive_box_constraints(self):
         H = csc_array([[6, 2, 1, 3],
-                        [2, 5, 2, 4],
-                        [1, 2, 4, 5],
-                        [3, 4, 5, 7]])
+                       [2, 5, 2, 4],
+                       [1, 2, 4, 5],
+                       [3, 4, 5, 7]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 1, 1]])
+                       [0, 1, 1, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         Z, _, Y = projections(A)
@@ -561,11 +561,11 @@ class TestProjectCG(TestCase):
     # by maximum iterations (infeasible interaction).
     def test_active_box_constraints_maximum_iterations_reached(self):
         H = csc_array([[6, 2, 1, 3],
-                        [2, 5, 2, 4],
-                        [1, 2, 4, 5],
-                        [3, 4, 5, 7]])
+                       [2, 5, 2, 4],
+                       [1, 2, 4, 5],
+                       [3, 4, 5, 7]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 1, 1]])
+                       [0, 1, 1, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         Z, _, Y = projections(A)
@@ -583,11 +583,11 @@ class TestProjectCG(TestCase):
     # because it hits boundary (without infeasible interaction).
     def test_active_box_constraints_hits_boundaries(self):
         H = csc_array([[6, 2, 1, 3],
-                        [2, 5, 2, 4],
-                        [1, 2, 4, 5],
-                        [3, 4, 5, 7]])
+                       [2, 5, 2, 4],
+                       [1, 2, 4, 5],
+                       [3, 4, 5, 7]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 1, 1]])
+                       [0, 1, 1, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         trust_radius = 3
@@ -605,11 +605,11 @@ class TestProjectCG(TestCase):
     # because it hits boundary (infeasible interaction).
     def test_active_box_constraints_hits_boundaries_infeasible_iter(self):
         H = csc_array([[6, 2, 1, 3],
-                        [2, 5, 2, 4],
-                        [1, 2, 4, 5],
-                        [3, 4, 5, 7]])
+                       [2, 5, 2, 4],
+                       [1, 2, 4, 5],
+                       [3, 4, 5, 7]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 1, 1]])
+                       [0, 1, 1, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         trust_radius = 4
@@ -627,11 +627,11 @@ class TestProjectCG(TestCase):
     # because it hits boundary (no infeasible interaction).
     def test_active_box_constraints_negative_curvature(self):
         H = csc_array([[1, 2, 1, 3],
-                        [2, 0, 2, 4],
-                        [1, 2, 0, 2],
-                        [3, 4, 2, 0]])
+                       [2, 0, 2, 4],
+                       [1, 2, 0, 2],
+                       [3, 4, 2, 0]])
         A = csc_array([[1, 0, 1, 0],
-                        [0, 1, 0, 1]])
+                       [0, 1, 0, 1]])
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         Z, _, Y = projections(A)

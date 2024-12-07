@@ -1126,7 +1126,7 @@ def _get_Abc(lp, c0):
             return sps.vstack(blocks, format="csr")
 
         zeros = sps.csr_array
-        eye = sps.eye
+        eye = sps.eye_array
     else:
         sparse = False
         hstack = np.hstack
@@ -1176,7 +1176,7 @@ def _get_Abc(lp, c0):
         if sparse:
             idxs = (np.arange(n_bounds), i_newub)
             A_ub = vstack((A_ub, sps.csr_array((np.ones(n_bounds), idxs),
-                                                shape=shape)))
+                                               shape=shape)))
         else:
             A_ub = vstack((A_ub, np.zeros(shape)))
             A_ub[np.arange(m_ub, A_ub.shape[0]), i_newub] = 1
@@ -1213,10 +1213,8 @@ def _get_Abc(lp, c0):
     lb_shift = lbs[lb_some].astype(float)
     c0 += np.sum(lb_shift * c[i_shift])
     if sparse:
-        b = b.reshape(-1, 1)
         A = A.tocsc()
-        b -= (A[:, i_shift] @ sps.diags_array(lb_shift)).sum(axis=1).reshape(b.shape)
-        b = b.ravel()
+        b -= (A[:, i_shift] @ sps.diags_array(lb_shift)).sum(axis=1)
     else:
         b -= (A[:, i_shift] * lb_shift).sum(axis=1)
     if x0 is not None:

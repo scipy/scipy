@@ -204,7 +204,7 @@ class BarrierSubproblem:
         new_data[mask] = s
         new_data[~mask] = data
         J = sps.csr_array((new_data, new_indices, new_indptr),
-                           (n_eq + n_ineq, n_vars + n_ineq))
+                          (n_eq + n_ineq, n_vars + n_ineq))
         return J
 
     def lagrangian_hessian_x(self, z, v):

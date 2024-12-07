@@ -1,6 +1,6 @@
 """Basic linear factorizations needed by the solver."""
 
-from scipy.sparse import (block_array, csc_array, eye_array, issparse)
+from scipy.sparse import block_array, csc_array, eye_array, issparse
 from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 import scipy.sparse.linalg
