@@ -1161,11 +1161,11 @@ def task_check_python_h_first():
     }
 
 
-def task_unicode_check():
-    # emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
+def task_check_unicode():
+    # emit_cmdstr(os.path.join('tools', 'check_unicode.py'))
     return {
-        'basename': 'unicode-check',
-        'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
+        'basename': 'check_unicode',
+        'actions': [str(Dirs().root / 'tools' / 'check_unicode.py')],
         'doc': 'Check for disallowed Unicode characters in the SciPy Python '
                'and Cython source code.',
     }
@@ -1192,7 +1192,7 @@ class Lint:
     def run(cls, fix):
         run_doit_task({
             'lint': {'fix': fix},
-            'unicode-check': {},
+            'check-unicode': {},
             'check-testname': {},
             'check_python_h_first': {},
         })
