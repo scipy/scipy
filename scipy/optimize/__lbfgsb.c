@@ -154,14 +154,6 @@ enum StatusMsg {
 };
 
 
-enum StatusWord {
-    SUBS_THREE_DASH,
-    SUBS_CONVERGED,
-    SUBS_BOUNDED,
-    SUBS_TRUNCATED
-};
-
-
 // Internal functions
 
 static void mainlb(
@@ -675,7 +667,6 @@ mainlb(int n, int m, double* x, double* l, double* u,
     //
     //     ************
     int prjctd, cnstnd, boxed, updatd, wrk;
-    enum StatusWord word;
     int i, k, nintol, iback, nskip, head, col, iter, itail, iupdat;
     int nseg, nfgv, info, ifun, iword, nfree, nact, ileave, nenter;
     double theta, fold, dr, rr, tol, xstep, sbgnrm, stpmx, ddum, dnorm, dtd;
@@ -716,9 +707,6 @@ mainlb(int n, int m, double* x, double* l, double* u,
         ifun = 0;
         // For stopping tolerance
         tol = factr * epsmach;
-
-        // 'word' records the status of subspace solutions.
-        word = SUBS_THREE_DASH;
 
         // 'info' records the termination information.
         info = 0;
@@ -970,19 +958,6 @@ LINE666:
 
         // Compute the infinity norm of the projected (-)gradient.
         projgr(n, l, u, nbd, x, g, &sbgnrm);
-
-        if (iword == 0)
-        {
-            word = SUBS_CONVERGED;
-        } else if (iword == 1)
-        {
-            word = SUBS_BOUNDED;
-        } else if (iword == 5)
-        {
-            word = SUBS_TRUNCATED;
-        } else {
-            word = SUBS_THREE_DASH;
-        }
 
         goto LINE1000;
     }
@@ -1761,8 +1736,6 @@ cauchy(int n, double* x, double* l, double* u,
             // to repeat the loop for unsearched intervals.
             dtm = -f1 / f2;
         } else if (bnded) {
-            f1 = 0.0;
-            f2 = 0.0;
             dtm = 0.0;
             break;
         } else {
@@ -2062,7 +2035,7 @@ formk(int n, int nsub, int* ind, int nenter, int ileave,
             for (jy = 0; jy < m - 1; jy++)
             {
                 js = m + jy;
-                temp_int = m - jy + 1;
+                temp_int = m - (jy + 1);
                 dcopy_(&temp_int, &wn1[(jy + 1) + 2*m*(jy + 1)], &one_int, &wn1[jy + 2*m*jy], &one_int);
                 dcopy_(&temp_int, &wn1[(js + 1) + 2*m*(js + 1)], &one_int, &wn1[js + 2*m*js], &one_int);
                 temp_int = m - 1;
@@ -2658,7 +2631,7 @@ lnsrlb(int n, double* l, double* u, int* nbd, double* x,
         r[i] = g[i];
     }
 
-    *fold = f;  // What's the point of this?
+    *fold = f;  // Later used in mainlb, see control flow after returning from this function.
     *ifun = 0;
     *iback = 0;
     *temp_task = START;
@@ -3673,7 +3646,7 @@ dcstep (double* stx, double* fx, double* dx, double* sty, double* fy, double* dy
         q = ((gamma - dp) + gamma) + *dx;
         r = p / q;
         stpc = *stp + r * (*stx - *stp);
-        stpq = *stp + (dp / (dp - *dx)) * (stx - stp);
+        stpq = *stp + (dp / (dp - *dx)) * (*stx - *stp);
         if (fabs(stpc - *stp) > fabs(stpq - *stp))
         {
             stpf = stpc;

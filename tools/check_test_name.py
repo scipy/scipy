@@ -26,16 +26,16 @@ SOFTWARE.
 Check that test names start with `test`, and that test classes start with
 `Test`.
 """
-from __future__ import annotations
-
 import ast
 import os
 from pathlib import Path
 import sys
 from collections.abc import Iterator, Sequence
 import itertools
+from get_submodule_paths import get_submodule_paths
 
 PRAGMA = "# skip name check"
+submodule_paths = get_submodule_paths()
 
 
 def _find_names(node: ast.Module) -> Iterator[str]:
@@ -163,7 +163,9 @@ if __name__ == "__main__":
     path = Path("scipy").rglob("**/tests/**/test*.py")
 
     for file in path:
-        filename = os.path.basename(file)
+        if any(submodule_path in str(file.absolute()) for submodule_path in
+               submodule_paths):
+            continue
         with open(file, encoding="utf-8") as fd:
             content = fd.read()
         ret |= main(content, file)

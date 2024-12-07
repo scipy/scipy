@@ -259,6 +259,25 @@ void coo_matmat_dense(const npy_int64 nnz,
 }
 
 
+/*
+ *
+ * Input Arguments:
+ *   npy_int64  nnz           - number of nonzeros in A
+ *   npy_int64  n_dim         - number of dimensions of A
+ *   npy_int64  n_col_B       - number of columns in B
+ *   I  shape_B[]             - shape of B
+ *   I  shape_Y[]             - shape of result Y
+ *   I  A_coords[]            - flattened coordinates of A of shape (n_dim * nnz)
+ *   T  Ax[nnz]               - nonzero values of A
+ *   T  Bx[]                  - input tensor B flattened
+ *
+ * Output Arguments:
+ *   T  Yx[]                  - output tensor flattened
+ *
+ * Notes:
+ *   Output array Yx must be preallocated
+ * 
+ */
 template <class I, class T>
 void coo_matmat_dense_nd(const npy_int64 nnz,
                          const npy_int64 n_dim,

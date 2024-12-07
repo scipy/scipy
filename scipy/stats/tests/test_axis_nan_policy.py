@@ -72,7 +72,7 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue)),
     (stats.wilcoxon, tuple(), dict(), 1, 2, True,
      lambda res: (res.statistic, res.pvalue)),
-    (stats.wilcoxon, tuple(), {'mode': 'approx'}, 1, 3, True,
+    (stats.wilcoxon, tuple(), {'method': 'asymptotic'}, 1, 3, True,
      lambda res: (res.statistic, res.pvalue, res.zstatistic)),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -136,10 +136,13 @@ axis_nan_policy_cases = [
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
+    (stats.lmoment, tuple(), dict(), 1, 4, False, lambda x: tuple(x)),
     (combine_pvalues_weighted, tuple(), {}, 2, 2, True, None),
     (xp_mean_1samp, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (xp_mean_2samp, tuple(), dict(), 2, 1, True, lambda x: (x,)),
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -825,7 +828,8 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 # After broadcasting, all arrays are the same shape, so
                 # the shape of the output should be the same as a single-
                 # sample statistic. Use np.mean as a reference.
-                concat = stats._stats_py._broadcast_concatenate(samples, axis)
+                concat = stats._stats_py._broadcast_concatenate(samples, axis,
+                                                                paired=paired)
                 with np.testing.suppress_warnings() as sup:
                     sup.filter(RuntimeWarning, "Mean of empty slice.")
                     sup.filter(RuntimeWarning, "invalid value encountered")
@@ -865,6 +869,49 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     stats._stats_py._broadcast_concatenate(samples, axis, paired)
                 with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)
+
+
+def paired_non_broadcastable_cases():
+    rng = np.random.default_rng(91359824598245)
+    for case in axis_nan_policy_cases:
+        hypotest, args, kwds, n_samples, n_outputs, paired, unpacker = case
+        if n_samples == 1:  # broadcasting only needed with >1 sample
+            continue
+        yield case + (rng,)
+
+
+@pytest.mark.parametrize("axis", [0, 1])
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
+                          "paired", "unpacker", "rng"),
+                         paired_non_broadcastable_cases())
+def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
+                           unpacker, rng, axis):
+    # test for correct error message when shapes are not broadcastable
+
+    get_samples = True
+    while get_samples:
+        samples = [rng.random(size=rng.integers(2, 100, size=2))
+                   for i in range(n_samples)]
+        # if samples are broadcastable, try again
+        get_samples = _check_arrays_broadcastable(samples, axis=axis)
+
+    message = "Array shapes are incompatible for broadcasting."
+    with pytest.raises(ValueError, match=message):
+        hypotest(*samples, *args, **kwds)
+
+    if not paired:  # there's another test for paired-sample statistics
+        return
+
+    # Previously, paired sample statistics did not raise an error
+    # message when the shapes were broadcastable except along `axis`
+    # https://github.com/scipy/scipy/pull/19578#pullrequestreview-1766857165
+    shape = rng.integers(2, 10, size=2)
+    most_samples = [rng.random(size=shape) for i in range(n_samples-1)]
+    shape = list(shape)
+    shape[axis] += 1
+    other_sample = rng.random(size=shape)
+    with pytest.raises(ValueError, match=message):
+        hypotest(other_sample, *most_samples, *args, **kwds)
 
 
 def test_masked_array_2_sentinel_array():

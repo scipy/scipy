@@ -931,12 +931,12 @@ class _TestCommon:
                 # check that dense_setdiag worked
                 d = np.diag(a, k)
                 if np.asarray(v).ndim == 0:
-                    assert_array_equal(d, v, err_msg="%s %d" % (msg, r))
+                    assert_array_equal(d, v, err_msg="{msg} {r}")
                 else:
                     n = min(len(d), len(v))
-                    assert_array_equal(d[:n], v[:n], err_msg="%s %d" % (msg, r))
+                    assert_array_equal(d[:n], v[:n], err_msg="{msg} {r}")
                 # check that sparse setdiag worked
-                assert_array_equal(b.toarray(), a, err_msg="%s %d" % (msg, r))
+                assert_array_equal(b.toarray(), a, err_msg="{msg} {r}")
 
         # comprehensive test
         np.random.seed(1234)
@@ -945,7 +945,6 @@ class _TestCommon:
             for m,n in shapes:
                 ks = np.arange(-m+1, n-1)
                 for k in ks:
-                    msg = repr((dtype, m, n, k))
                     a = np.zeros((m, n), dtype=dtype)
                     b = self.spcreator((m, n), dtype=dtype)
 
@@ -1462,7 +1461,7 @@ class _TestCommon:
         for dtype in self.math_dtypes:
             check(dtype)
 
-    # github issue #15210
+    # GitHub issue #15210
     def test_rmul_scalar_type_error(self):
         datsp = self.datsp_dtypes[np.float64]
         with assert_raises(TypeError):
@@ -2502,7 +2501,7 @@ class _TestGetSet:
             check(np.dtype(dtype))
 
     def test_negative_index_assignment(self):
-        # Regression test for github issue 4428.
+        # Regression test for GitHub issue 4428.
 
         def check(dtype):
             A = self.spcreator((3, 10), dtype=dtype)
@@ -2543,6 +2542,7 @@ class _TestGetSet:
         assert_array_equal(A.toarray(), B)
 
 
+@pytest.mark.thread_unsafe
 class _TestSolve:
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils
@@ -2769,16 +2769,78 @@ class _TestSlicing:
         assert_array_equal(a[...].toarray(), b[...])
         assert_array_equal(a[...,].toarray(), b[...,])
 
-        assert_array_equal(a[1, ...].toarray(), b[1, ...])
-        assert_array_equal(a[..., 1].toarray(), b[..., 1])
+        assert_array_equal(a[4, ...].toarray(), b[4, ...])
+        assert_array_equal(a[..., 4].toarray(), b[..., 4])
+        assert_array_equal(a[..., 5].toarray(), b[..., 5])
+        with pytest.raises(IndexError, match='index .5. out of range'):
+            a[5, ...]
+        with pytest.raises(IndexError, match='index .10. out of range'):
+            a[..., 10]
+        with pytest.raises(IndexError, match='index .5. out of range'):
+            a.T[..., 5]
+
         assert_array_equal(a[1:, ...].toarray(), b[1:, ...])
         assert_array_equal(a[..., 1:].toarray(), b[..., 1:])
+        assert_array_equal(a[:2, ...].toarray(), b[:2, ...])
+        assert_array_equal(a[..., :2].toarray(), b[..., :2])
 
+        # check slice limit outside range
+        assert_array_equal(a[:5, ...].toarray(), b[:5, ...])
+        assert_array_equal(a[..., :5].toarray(), b[..., :5])
+        assert_array_equal(a[5:, ...].toarray(), b[5:, ...])
+        assert_array_equal(a[..., 5:].toarray(), b[..., 5:])
+        assert_array_equal(a[10:, ...].toarray(), b[10:, ...])
+        assert_array_equal(a[..., 10:].toarray(), b[..., 10:])
+
+        # ellipsis should be ignored
         assert_array_equal(a[1:, 1, ...].toarray(), b[1:, 1, ...])
         assert_array_equal(a[1, ..., 1:].toarray(), b[1, ..., 1:])
+        assert_array_equal(a[..., 1, 1:].toarray(), b[1, ..., 1:])
+        assert_array_equal(a[:2, 1, ...].toarray(), b[:2, 1, ...])
+        assert_array_equal(a[1, ..., :2].toarray(), b[1, ..., :2])
+        assert_array_equal(a[..., 1, :2].toarray(), b[1, ..., :2])
         # These return ints
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
+
+    def test_ellipsis_fancy_bool(self):
+        numpy_a = self.asdense(arange(50).reshape(5, 10))
+        a = self.spcreator(numpy_a)
+
+        ix5 = [True, False, True, False, True]
+        ix10 = [False] * 5 + ix5  # same number of True values as ix5
+        ix10_6True = ix5 + ix5  # not same number of True values as ix5
+        full_ix = [ix10] * 5
+
+        assert_array_equal(toarray(a[full_ix, ...]), numpy_a[full_ix, ...])
+        assert_array_equal(toarray(a[..., full_ix]), numpy_a[..., full_ix])
+
+        assert_array_equal(toarray(a[ix5, ...]), numpy_a[ix5, ...])
+        assert_array_equal(toarray(a[..., ix10]), numpy_a[..., ix10])
+
+        assert_array_equal(toarray(a[ix5, ..., ix10]), numpy_a[ix5, ..., ix10])
+        assert_array_equal(toarray(a[..., ix5, ix10]), numpy_a[..., ix5, ix10])
+        assert_array_equal(toarray(a[ix5, ix10, ...]), numpy_a[ix5, ix10, ...])
+
+        with assert_raises(ValueError, match="shape mismatch"):
+            a[ix5, ix10_6True]
+
+    def test_ellipsis_fancy_slicing(self):
+        b = self.asdense(arange(50).reshape(5, 10))
+        a = self.spcreator(b)
+
+        assert_array_equal(a[[4], ...].toarray(), b[[4], ...])
+        assert_array_equal(a[[2, 4], ...].toarray(), b[[2, 4], ...])
+        assert_array_equal(a[..., [4]].toarray(), b[..., [4]])
+        assert_array_equal(a[..., [2, 4]].toarray(), b[..., [2, 4]])
+
+        assert_array_equal(a[[4], 1, ...].toarray(), b[[4], 1, ...])
+        assert_array_equal(a[[2, 4], 1, ...].toarray(), b[[2, 4], 1, ...])
+        assert_array_equal(a[[4], ..., 1].toarray(), b[[4], ..., 1])
+        assert_array_equal(a[..., [4], 1].toarray(), b[..., [4], 1])
+        # fancy index gives dense
+        assert_array_equal(toarray(a[[2, 4], ..., [2, 4]]), b[[2, 4], ..., [2, 4]])
+        assert_array_equal(toarray(a[..., [2, 4], [2, 4]]), b[..., [2, 4], [2, 4]])
 
     def test_multiple_ellipsis_slicing(self):
         a = self.spcreator(arange(6).reshape(3, 2))
@@ -2962,9 +3024,11 @@ class _TestFancyIndexing:
         A = self.spcreator(B)
 
         # [i]
+        assert_equal(A[[3]].toarray(), B[[3]])
         assert_equal(A[[1, 3]].toarray(), B[[1, 3]])
 
         # [i,[1,2]]
+        assert_equal(A[3, [3]].toarray(), B[3, [3]])
         assert_equal(A[3, [1, 3]].toarray(), B[3, [1, 3]])
         assert_equal(A[-1, [2, -5]].toarray(), B[-1, [2, -5]])
         assert_equal(A[array(-1), [2, -5]].toarray(), B[-1, [2, -5]])
@@ -2978,6 +3042,7 @@ class _TestFancyIndexing:
         assert_equal(A[1:4, array([-1, -5])].toarray(), B[1:4, [-1, -5]])
 
         # [[1,2],j]
+        assert_equal(A[[3], 3].toarray(), B[[3], 3])
         assert_equal(A[[1, 3], 3].toarray(), B[[1, 3], 3])
         assert_equal(A[[2, -5], -4].toarray(), B[[2, -5], -4])
         assert_equal(A[array([2, -5]), -4].toarray(), B[[2, -5], -4])
@@ -2985,11 +3050,13 @@ class _TestFancyIndexing:
         assert_equal(A[array([2, -5]), array(-4)].toarray(), B[[2, -5], -4])
 
         # [[1,2],1:2]
+        assert_equal(A[[3], :].toarray(), B[[3], :])
         assert_equal(A[[1, 3], :].toarray(), B[[1, 3], :])
         assert_equal(A[[2, -5], 8:-1].toarray(), B[[2, -5], 8:-1])
         assert_equal(A[array([2, -5]), 8:-1].toarray(), B[[2, -5], 8:-1])
 
         # [[1,2],[1,2]]
+        assert_equal(toarray(A[[3], [4]]), B[[3], [4]])
         assert_equal(toarray(A[[1, 3], [2, 4]]), B[[1, 3], [2, 4]])
         assert_equal(toarray(A[[-1, -3], [2, -4]]), B[[-1, -3], [2, -4]])
         assert_equal(
@@ -3027,6 +3094,7 @@ class _TestFancyIndexing:
         assert_equal(A[array([-1, -3])].toarray(), B[[-1, -3]])
 
         # [[1,2],:][:,[1,2]]
+        assert_equal(A[[3], :][:, [4]].toarray(), B[[3], :][:, [4]])
         assert_equal(
             A[[1, 3], :][:, [2, 4]].toarray(), B[[1, 3], :][:, [2, 4]]
         )
@@ -3037,6 +3105,19 @@ class _TestFancyIndexing:
             A[array([-1, -3]), :][:, array([2, -4])].toarray(),
             B[[-1, -3], :][:, [2, -4]]
         )
+
+        # [1,[[1,2]]][[[1,2]],1]
+        assert_equal(
+            A[1, [[1, 3]]][[[0, 0]], 1].toarray(), B[1, [[1, 3]]][[[0, 0]], 1]
+        )
+        assert_equal(
+            A[1, [[-1, -3]]][[[0, -1]], 1].toarray(), B[1, [[-1, -3]]][[[0, -1]], 1]
+        )
+        # [:1,[[1,2]]][[[1,2]],:1]
+        with pytest.raises(IndexError, match="Only 1D or 2D arrays allowed"):
+            A[:1, [[1, 3]]]
+        with pytest.raises(IndexError, match="Only 1D or 2D arrays allowed"):
+            A[[[0, 0]], :1]
 
         # [:,[1,2]][[1,2],:]
         assert_equal(
@@ -3464,47 +3545,48 @@ class _TestArithmetic:
     """
     def __arith_init(self):
         # these can be represented exactly in FP (so arithmetic should be exact)
-        self.__A = array([[-1.5, 6.5, 0, 2.25, 0, 0],
+        __A = array([[-1.5, 6.5, 0, 2.25, 0, 0],
                           [3.125, -7.875, 0.625, 0, 0, 0],
                           [0, 0, -0.125, 1.0, 0, 0],
                           [0, 0, 8.375, 0, 0, 0]], 'float64')
-        self.__B = array([[0.375, 0, 0, 0, -5, 2.5],
+        __B = array([[0.375, 0, 0, 0, -5, 2.5],
                           [14.25, -3.75, 0, 0, -0.125, 0],
                           [0, 7.25, 0, 0, 0, 0],
                           [18.5, -0.0625, 0, 0, 0, 0]], 'complex128')
-        self.__B.imag = array([[1.25, 0, 0, 0, 6, -3.875],
+        __B.imag = array([[1.25, 0, 0, 0, 6, -3.875],
                                [2.25, 4.125, 0, 0, 0, 2.75],
                                [0, 4.125, 0, 0, 0, 0],
                                [-0.0625, 0, 0, 0, 0, 0]], 'float64')
 
         # fractions are all x/16ths
-        assert_array_equal((self.__A*16).astype('int32'),16*self.__A)
-        assert_array_equal((self.__B.real*16).astype('int32'),16*self.__B.real)
-        assert_array_equal((self.__B.imag*16).astype('int32'),16*self.__B.imag)
+        assert_array_equal((__A*16).astype('int32'),16*__A)
+        assert_array_equal((__B.real*16).astype('int32'),16*__B.real)
+        assert_array_equal((__B.imag*16).astype('int32'),16*__B.imag)
 
-        self.__Asp = self.spcreator(self.__A)
-        self.__Bsp = self.spcreator(self.__B)
+        __Asp = self.spcreator(__A)
+        __Bsp = self.spcreator(__B)
+        return __A, __B, __Asp, __Bsp
 
     @pytest.mark.fail_slow(20)
     def test_add_sub(self):
-        self.__arith_init()
+        __A, __B, __Asp, __Bsp = self.__arith_init()
 
         # basic tests
         assert_array_equal(
-            (self.__Asp + self.__Bsp).toarray(), self.__A + self.__B
+            (__Asp + __Bsp).toarray(), __A + __B
         )
 
         # check conversions
         for x in supported_dtypes:
             with np.errstate(invalid="ignore"):
-                A = self.__A.astype(x)
+                A = __A.astype(x)
             Asp = self.spcreator(A)
             for y in supported_dtypes:
                 if not np.issubdtype(y, np.complexfloating):
                     with np.errstate(invalid="ignore"):
-                        B = self.__B.real.astype(y)
+                        B = __B.real.astype(y)
                 else:
-                    B = self.__B.astype(y)
+                    B = __B.astype(y)
                 Bsp = self.spcreator(B)
 
                 # addition
@@ -3530,22 +3612,22 @@ class _TestArithmetic:
                 assert_array_equal(A - Bsp,D1)          # check dense - sparse
 
     def test_mu(self):
-        self.__arith_init()
+        __A, __B, __Asp, __Bsp = self.__arith_init()
 
         # basic tests
-        assert_array_equal((self.__Asp @ self.__Bsp.T).toarray(),
-                           self.__A @ self.__B.T)
+        assert_array_equal((__Asp @ __Bsp.T).toarray(),
+                            __A @ __B.T)
 
         for x in supported_dtypes:
             with np.errstate(invalid="ignore"):
-                A = self.__A.astype(x)
+                A = __A.astype(x)
             Asp = self.spcreator(A)
             for y in supported_dtypes:
                 if np.issubdtype(y, np.complexfloating):
-                    B = self.__B.astype(y)
+                    B = __B.astype(y)
                 else:
                     with np.errstate(invalid="ignore"):
-                        B = self.__B.real.astype(y)
+                        B = __B.real.astype(y)
                 Bsp = self.spcreator(B)
 
                 D1 = A @ B.T
@@ -4191,6 +4273,13 @@ class TestCSR(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
+    def test_setdiag_csr(self):
+        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
+        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
+        A = self.spcreator(D)
+        A.setdiag(5 * np.ones(A.shape[0]))
+        assert A[-1, -1] == 5
+
     def test_binop_explicit_zeros(self):
         # Check that binary ops don't introduce spurious explicit zeros.
         # See gh-9619 for context.
@@ -4358,6 +4447,13 @@ class TestCSC(sparse_test_class()):
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:
             x + x
+
+    def test_setdiag_csc(self):
+        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
+        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
+        A = self.spcreator(D)
+        A.setdiag(5 * np.ones(A.shape[0]))
+        assert A[-1, -1] == 5
 
 
 TestCSC.init_class()
@@ -4533,9 +4629,9 @@ class TestLIL(sparse_test_class(minmax=False)):
 
         # Ticket 1604.
         A = self.lil_container((1, 3), dtype=np.dtype('float64'))
-        B = array([0.1, 0.1, 0.1])
+        B = self.asdense([0.1, 0.1, 0.1])
         A[0, :] += B
-        assert_array_equal(A[0, :].toarray().squeeze(), B)
+        assert_array_equal(A[0, :].toarray(), B)
 
     def test_lil_iteration(self):
         row_data = [[1, 2, 3], [4, 5, 6]]
@@ -4959,7 +5055,7 @@ class TestBSR(sparse_test_class(getset=False,
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.toarray(), bsp.toarray())
 
-    # github issue #9687
+    # GitHub issue #9687
     def test_eliminate_zeros_all_zero(self):
         np.random.seed(0)
         m = self.bsr_container(np.random.random((12, 12)), blocksize=(2, 3))
@@ -5356,6 +5452,7 @@ class Test64Bit:
         else:
             raise ValueError(f"matrix {m!r} has no integer indices")
 
+    @pytest.mark.thread_unsafe
     def test_decorator_maxval_limit(self):
         # Test that the with_64bit_maxval_limit decorator works
 
@@ -5369,6 +5466,7 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
+    @pytest.mark.thread_unsafe
     def test_decorator_maxval_random(self):
         # Test that the with_64bit_maxval_limit decorator works (2)
 
@@ -5388,6 +5486,7 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
+    @pytest.mark.thread_unsafe
     def test_downcast_intp(self):
         # Check that bincount and ufunc.reduceat intp downcasts are
         # dealt with. The point here is to trigger points in the code
@@ -5454,31 +5553,33 @@ class RunAll64Bit:
         check(cls, method_name)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.slow
 class Test64BitArray(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_limit_10(self, cls, method_name):
-       self._check_resiliency(cls, method_name, maxval_limit=10)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_limit_10(self, cls, method_name):
+        self._check_resiliency(cls, method_name, maxval_limit=10)
 
-   @pytest.mark.fail_slow(2)
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_random(self, cls, method_name):
-       # bsr_array.eliminate_zeros relies on csr_array constructor
-       # not making copies of index arrays --- this is not
-       # necessarily true when we pick the index data type randomly
-       self._check_resiliency(cls, method_name, random=True)
+    @pytest.mark.fail_slow(2)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_random(self, cls, method_name):
+        # bsr_array.eliminate_zeros relies on csr_array constructor
+        # not making copies of index arrays --- this is not
+        # necessarily true when we pick the index data type randomly
+        self._check_resiliency(cls, method_name, random=True)
 
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_all_32(self, cls, method_name):
-       self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_all_32(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
 
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_all_64(self, cls, method_name):
-       self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_all_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
 
+@pytest.mark.thread_unsafe
 class Test64BitMatrix(RunAll64Bit):
     # assert_32bit=True only for spmatrix cuz sparray does not check index content
     @pytest.mark.fail_slow(5)

@@ -115,12 +115,7 @@ html-build:
 	$(SPHINXBUILD) -WT --keep-going $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html $(FILES)
 
 convert-notebooks:
-	mkdir -p source/_contents
-	for file in source/tutorial/stats/*.md; do \
-		basename=$$(basename $$file .md); \
-		output_name="source/_contents/$${basename}.ipynb"; \
-		$(PYTHON) -m jupytext --output "$$output_name"  $$file; \
-	done
+	$(PYTHON) convert_notebooks.py
 
 
 coverage: build version-check

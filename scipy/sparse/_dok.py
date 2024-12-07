@@ -206,12 +206,13 @@ class _dok_base(_spbase, IndexMixin, dict):
         return newdok
 
     def _get_intXarray(self, row, col):
-        col = col.squeeze()
-        return self._get_columnXarray([row], col)
+        return self._get_columnXarray([row], col.ravel())
 
     def _get_arrayXint(self, row, col):
-        row = row.squeeze()
-        return self._get_columnXarray(row, [col])
+        res = self._get_columnXarray(row.ravel(), [col])
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_sliceXarray(self, row, col):
         row = list(range(*row.indices(self.shape[0])))

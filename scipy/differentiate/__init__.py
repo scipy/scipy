@@ -11,7 +11,7 @@ numerical differentiation of black-box functions.
 .. autosummary::
    :toctree: generated/
 
-   differentiate
+   derivative
    jacobian
    hessian
 
@@ -20,7 +20,7 @@ numerical differentiation of black-box functions.
 
 from ._differentiate import *
 
-__all__ = ['differentiate', 'jacobian', 'hessian']
+__all__ = ['derivative', 'jacobian', 'hessian']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

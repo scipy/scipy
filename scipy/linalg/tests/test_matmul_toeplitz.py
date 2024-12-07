@@ -128,7 +128,8 @@ class TestMatmulToeplitz:
         if r is None:
             actual = matmul_toeplitz(c, x, check_finite, workers)
         else:
+            r = np.ravel(r)
             actual = matmul_toeplitz((c, r), x, check_finite)
-        desired = toeplitz(c, r) @ x
+        desired = toeplitz(np.ravel(c), r) @ x
         assert_allclose(actual, desired,
             rtol=self.tolerance, atol=self.tolerance)

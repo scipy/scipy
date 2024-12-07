@@ -17,7 +17,8 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
                        getdtype, isscalarlike, isintlike, downcast_intp_index,
-                       get_sum_dtype, check_shape, is_pydata_spmatrix)
+                       get_sum_dtype, check_shape, get_index_dtype, broadcast_shapes,
+                       is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -446,11 +447,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if other.dtype == np.object_:
                 # 'other' not convertible to ndarray.
                 return NotImplemented
-            bshape = np.broadcast_shapes(self.shape, other.shape)
+            bshape = broadcast_shapes(self.shape, other.shape)
             return self._mul_scalar(other.flat[0]).reshape(bshape)
         # Fast case for trivial sparse matrix.
         if self.shape in ((1,), (1, 1)):
-            bshape = np.broadcast_shapes(self.shape, other.shape)
+            bshape = broadcast_shapes(self.shape, other.shape)
             return np.multiply(self.data.sum(), other).reshape(bshape)
 
         ret = self.tocoo()
@@ -470,8 +471,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 data = np.multiply(ret.data, other2d[:, ret.col])
             else:
                 raise ValueError("cannot be broadcast")
-            row = np.repeat(np.arange(other2d.shape[0]), ret.nnz)
-            col = np.tile(ret.col, other2d.shape[0])
+            idx_dtype = self._get_index_dtype(ret.col,
+                                              maxval=ret.nnz * other2d.shape[0])
+            row = np.repeat(np.arange(other2d.shape[0], dtype=idx_dtype), ret.nnz)
+            col = np.tile(ret.col.astype(idx_dtype, copy=False), other2d.shape[0])
             return self._coo_container(
                 (data.view(np.ndarray).ravel(), (row, col)),
                 shape=(other2d.shape[0], self.shape[-1]),
@@ -485,8 +488,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 data = np.multiply(ret.data[:, None], other2d[ret.row])
             else:
                 raise ValueError("cannot be broadcast")
-            row = np.repeat(ret.row, other2d.shape[1])
-            col = np.tile(np.arange(other2d.shape[1]), len(ret.col))
+            idx_dtype = self._get_index_dtype(ret.row,
+                                              maxval=ret.nnz * other2d.shape[1])
+            row = np.repeat(ret.row.astype(idx_dtype, copy=False), other2d.shape[1])
+            col = np.tile(np.arange(other2d.shape[1], dtype=idx_dtype), ret.nnz)
             return self._coo_container(
                 (data.view(np.ndarray).ravel(), (row, col)),
                 shape=(self.shape[0], other2d.shape[1]),
@@ -550,6 +555,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_shape += (M,)
         if o_ndim == 2:
             new_shape += (N,)
+        faux_shape = (M if self.ndim == 2 else 1, N if o_ndim == 2 else 1)
 
         major_dim = self._swap((M, N))[0]
         other = self.__class__(other)  # convert to this format
@@ -587,7 +593,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         if new_shape == ():
             return np.array(data[0])
-        return self.__class__((data, indices, indptr), shape=new_shape)
+        res = self.__class__((data, indices, indptr), shape=faux_shape)
+        if faux_shape != new_shape:
+            if res.format != 'csr':
+                res = res.tocsr()
+            res = res.reshape(new_shape)
+        return res
 
     def diagonal(self, k=0):
         rows, cols = self.shape
@@ -964,17 +975,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.data[offsets] = x
             return
 
-        mask = (offsets <= -1)
+        mask = (offsets >= 0)
         # Boundary between csc and convert to coo
         # The value 0.001 is justified in gh-19962#issuecomment-1920499678
-        if mask.sum() < self.nnz * 0.001:
+        if self.nnz - mask.sum() < self.nnz * 0.001:
+            # replace existing entries
+            self.data[offsets[mask]] = x[mask]
             # create new entries
+            mask = ~mask
             i = i[mask]
             j = j[mask]
             self._insert_many(i, j, x[mask])
-            # replace existing entries
-            mask = ~mask
-            self.data[offsets[mask]] = x[mask]
         else:
             # convert to coo for _set_diag
             coo = self.tocoo()
@@ -988,12 +999,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         def check_bounds(indices, bound):
             idx = indices.max()
             if idx >= bound:
-                raise IndexError('index (%d) out of range (>= %d)' %
-                                 (idx, bound))
+                raise IndexError(f'index ({idx}) out of range (>= {bound})')
             idx = indices.min()
             if idx < -bound:
-                raise IndexError('index (%d) out of range (< -%d)' %
-                                 (idx, bound))
+                raise IndexError(f'index ({idx}) out of range (< -{bound})')
 
         i = np.atleast_1d(np.asarray(i, dtype=self.indices.dtype)).ravel()
         j = np.atleast_1d(np.asarray(j, dtype=self.indices.dtype)).ravel()
@@ -1421,7 +1430,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         shape = check_shape(shape, allow_nd=(self._allow_nd))
 
-        if np.broadcast_shapes(self.shape, shape) != shape:
+        if broadcast_shapes(self.shape, shape) != shape:
             raise ValueError("cannot be broadcast")
 
         if len(self.shape) == 1 and len(shape) == 1:
@@ -1476,7 +1485,8 @@ def _make_diagonal_csr(data, is_array=False):
     csr_array = csr_array if is_array else csr_matrix
 
     N = len(data)
-    indptr = np.arange(N + 1)
+    idx_dtype = get_index_dtype(maxval=N)
+    indptr = np.arange(N + 1, dtype=idx_dtype)
     indices = indptr[:-1]
 
     return csr_array((data, indices, indptr), shape=(N, N))
