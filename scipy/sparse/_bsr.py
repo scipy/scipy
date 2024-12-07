@@ -623,6 +623,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 #        """
 #        return (x[0],x[1])
 
+    def _broadcast_to(self, shape, copy=False):
+        return _spbase._broadcast_to(self, shape, copy)
+
 
 def isspmatrix_bsr(x):
     """Is `x` of a bsr_matrix type?

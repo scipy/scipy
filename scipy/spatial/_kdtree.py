@@ -1,7 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-from ._ckdtree import cKDTree, cKDTreeNode
+from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -36,7 +36,7 @@ def minkowski_distance_p(x, y, p=2):
     --------
     >>> from scipy.spatial import minkowski_distance_p
     >>> minkowski_distance_p([[0, 0], [0, 0]], [[1, 1], [0, 1]])
-    array([2, 1])
+    array([2., 1.])
 
     """
     x = np.asarray(x)

@@ -181,8 +181,10 @@ class _lil_base(_spbase, IndexMixin):
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_arrayXint(self, row, col):
-        row = row.squeeze()
-        return self._get_row_ranges(row, slice(col, col+1))
+        res = self._get_row_ranges(row.ravel(), slice(col, col+1))
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_intXslice(self, row, col):
         return self._get_row_ranges((row,), col)

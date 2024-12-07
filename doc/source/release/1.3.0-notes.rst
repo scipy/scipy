@@ -138,7 +138,7 @@ improved substantially.
 ----------------------------
 
 `scipy.spatial.ConvexHull` now has a ``good`` attribute that can be used
-alongsize the ``QGn`` Qhull options to determine which external facets of a
+alongside the ``QGn`` Qhull options to determine which external facets of a
 convex hull are visible from an external query point.
 
 `scipy.spatial.cKDTree.query_ball_point` has been modernized to use some newer

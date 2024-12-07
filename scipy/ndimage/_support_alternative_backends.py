@@ -6,18 +6,18 @@ from scipy._lib._array_api import (
 import numpy as np
 from ._ndimage_api import *   # noqa: F403
 from . import _ndimage_api
-from . import _dispatchers
+from . import _delegators
 __all__ = _ndimage_api.__all__
 
 
 MODULE_NAME = 'ndimage'
 
 
-def dispatch_xp(dispatcher, module_name):
+def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
         def wrapper(*args, **kwds):
-            xp = dispatcher(*args, **kwds)
+            xp = delegator(*args, **kwds)
 
             # try delegating to a cupyx/jax namesake
             if is_cupy(xp):
@@ -62,9 +62,9 @@ def dispatch_xp(dispatcher, module_name):
 # ### decorate ###
 for func_name in _ndimage_api.__all__:
     bare_func = getattr(_ndimage_api, func_name)
-    dispatcher = getattr(_dispatchers, func_name + "_dispatcher")
+    delegator = getattr(_delegators, func_name + "_signature")
 
-    f = (dispatch_xp(dispatcher, MODULE_NAME)(bare_func)
+    f = (delegate_xp(delegator, MODULE_NAME)(bare_func)
          if SCIPY_ARRAY_API
          else bare_func)
 

@@ -5,6 +5,11 @@
 #ifndef ROUND_H
 #define ROUND_H
 
+#if defined(__cplusplus)
+#include <cmath>
+using std::isnan;
+#endif
+
 #include <math.h>
 
 

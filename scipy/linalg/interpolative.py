@@ -513,9 +513,12 @@ def interp_decomp(A, eps_or_k, rand=True, rng=None):
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm. If ``rand`` is
-        ``False``, the argument is ignored.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -528,7 +531,7 @@ def interp_decomp(A, eps_or_k, rand=True, rng=None):
         Interpolation coefficients.
     """  # numpy/numpydoc#87  # noqa: E501
     from scipy.sparse.linalg import LinearOperator
-
+    rng = np.random.default_rng(rng)
     real = _is_real(A)
 
     if isinstance(A, np.ndarray):
@@ -754,8 +757,12 @@ def estimate_spectral_norm(A, its=20, rng=None):
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
     its : int, optional
         Number of power method iterations.
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -763,6 +770,7 @@ def estimate_spectral_norm(A, its=20, rng=None):
         Spectral norm estimate.
     """
     from scipy.sparse.linalg import aslinearoperator
+    rng = np.random.default_rng(rng)
     A = aslinearoperator(A)
 
     if _is_real(A):
@@ -790,8 +798,12 @@ def estimate_spectral_norm_diff(A, B, its=20, rng=None):
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
     its : int, optional
         Number of power method iterations.
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -799,6 +811,7 @@ def estimate_spectral_norm_diff(A, B, its=20, rng=None):
         Spectral norm estimate of matrix difference.
     """
     from scipy.sparse.linalg import aslinearoperator
+    rng = np.random.default_rng(rng)
     A = aslinearoperator(A)
     B = aslinearoperator(B)
 
@@ -845,9 +858,12 @@ def svd(A, eps_or_k, rand=True, rng=None):
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm. If ``rand`` is
-        ``False``, the argument is ignored.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -859,6 +875,7 @@ def svd(A, eps_or_k, rand=True, rng=None):
         2D array right singular vectors.
     """
     from scipy.sparse.linalg import LinearOperator
+    rng = np.random.default_rng(rng)
 
     real = _is_real(A)
 
@@ -936,8 +953,12 @@ def estimate_rank(A, eps, rng=None):
         with the `rmatvec` method (to apply the matrix adjoint).
     eps : float
         Relative error for numerical rank definition.
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -946,6 +967,7 @@ def estimate_rank(A, eps, rng=None):
     """
     from scipy.sparse.linalg import LinearOperator
 
+    rng = np.random.default_rng(rng)
     real = _is_real(A)
 
     if isinstance(A, np.ndarray):

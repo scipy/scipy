@@ -84,6 +84,8 @@ extern "C" {
 #include "sf_error.h"
 
 using std::complex;
+using std::isinf;
+using std::isnan;
 
 #define TWOITERTOL DBL_EPSILON
 

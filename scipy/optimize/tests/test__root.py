@@ -56,7 +56,7 @@ class TestRoot:
                 options={"tol_norm": norm})
 
     def test_minimize_scalar_coerce_args_param(self):
-        # github issue #3503
+        # GitHub issue #3503
         def func(z, f=1):
             x, y = z
             return np.array([x**3 - 1, y**3 - f])
@@ -85,6 +85,7 @@ class TestRoot:
         with assert_raises(ValueError):
             root(F, [0.1, 0.0], method='lm')
 
+    @pytest.mark.thread_unsafe
     def test_gh_10370(self):
         # gh-10370 reported that passing both `args` and `jac` to `root` with
         # `method='krylov'` caused a failure. Ensure that this is fixed whether
@@ -110,7 +111,7 @@ class TestRoot:
         assert_equal(res1.x, ref.x)
         assert_equal(res2.x, ref.x)
         assert res1.success is res2.success is ref.success is True
-    
+
     @pytest.mark.parametrize("method", ["hybr", "lm", "broyden1", "broyden2",
                                         "anderson", "linearmixing",
                                         "diagbroyden", "excitingmixing",
@@ -118,6 +119,6 @@ class TestRoot:
     def test_method_in_result(self, method):
         def func(x):
             return x - 1
-        
+
         res = root(func, x0=[1], method=method)
         assert res.method == method

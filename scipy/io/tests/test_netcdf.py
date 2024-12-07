@@ -11,6 +11,7 @@ from contextlib import contextmanager
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            break_cycles, suppress_warnings, IS_PYPY)
+import pytest
 from pytest import raises as assert_raises
 
 from scipy.io import netcdf_file
@@ -20,6 +21,9 @@ TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
 N_EG_ELS = 11  # number of elements for example variable
 VARTYPE_EG = 'b'  # var type for example variable
+
+
+pytestmark = pytest.mark.thread_unsafe
 
 
 @contextmanager

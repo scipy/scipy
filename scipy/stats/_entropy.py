@@ -4,7 +4,6 @@ Created on Fri Apr  2 09:06:05 2021
 @author: matth
 """
 
-from __future__ import annotations
 import math
 import numpy as np
 from scipy import special

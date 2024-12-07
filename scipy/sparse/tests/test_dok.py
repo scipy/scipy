@@ -5,6 +5,9 @@ import scipy as sp
 from scipy.sparse import dok_array, dok_matrix
 
 
+pytestmark = pytest.mark.thread_unsafe
+
+
 @pytest.fixture
 def d():
     return {(0, 1): 1, (0, 2): 2}

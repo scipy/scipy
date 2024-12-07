@@ -102,7 +102,7 @@ class TestHausdorff:
         new_global_state = rs2.get_state()
         assert_equal(new_global_state, old_global_state)
 
-    @pytest.mark.parametrize("seed", [None, 27870671])
+    @pytest.mark.parametrize("seed", [None, 27870671, np.random.default_rng(177)])
     def test_random_state_None_int(self, seed):
         # check that seed values of None or int do not alter global
         # random state
@@ -123,15 +123,25 @@ class TestHausdorff:
         with pytest.raises(ValueError, match=msg):
             directed_hausdorff(A, B)
 
+    # preserve use of legacy keyword `seed` during SPEC 7 transition
     @pytest.mark.parametrize("A, B, seed, expected", [
         # the two cases from gh-11332
         ([(0,0)],
          [(0,1), (0,0)],
-         0,
+         np.int64(0),
          (0.0, 0, 1)),
         ([(0,0)],
          [(0,1), (0,0)],
          1,
+         (0.0, 0, 1)),
+        # gh-11332 cases with a Generator
+        ([(0,0)],
+         [(0,1), (0,0)],
+         np.random.default_rng(0),
+         (0.0, 0, 1)),
+        ([(0,0)],
+         [(0,1), (0,0)],
+         np.random.default_rng(1),
          (0.0, 0, 1)),
         # slightly more complex case
         ([(-5, 3), (0,0)],
@@ -141,14 +151,31 @@ class TestHausdorff:
          # be the last one found, but a unique
          # solution is not guaranteed more broadly
          (0.0, 1, 1)),
+        # repeated with Generator seeding
+        ([(-5, 3), (0,0)],
+         [(0,1), (0,0), (-5, 3)],
+         np.random.default_rng(77098),
+         # NOTE: using a Generator changes the
+         # indices but not the distance (unique solution
+         # not guaranteed)
+         (0.0, 0, 2)),
     ])
-    def test_subsets(self, A, B, seed, expected):
+    def test_subsets(self, A, B, seed, expected, num_parallel_threads):
         # verify fix for gh-11332
         actual = directed_hausdorff(u=A, v=B, seed=seed)
         # check distance
         assert_allclose(actual[0], expected[0])
+        starting_seed = seed
+        if hasattr(seed, 'bit_generator'):
+            starting_seed = seed.bit_generator._seed_seq.entropy
         # check indices
-        assert actual[1:] == expected[1:]
+        if num_parallel_threads == 1 or starting_seed != 77098:
+            assert actual[1:] == expected[1:]
+
+        if not isinstance(seed, np.random.RandomState):
+            # Check that new `rng` keyword is also accepted
+            actual = directed_hausdorff(u=A, v=B, rng=seed)
+            assert_allclose(actual[0], expected[0])
 
 
 @pytest.mark.xslow

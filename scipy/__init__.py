@@ -22,7 +22,6 @@ Using any of these subpackages requires an explicit import. For example,
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
  linalg                       --- Linear algebra routines
- misc                         --- Utilities that don't have another home.
  ndimage                      --- N-D image package
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
@@ -108,7 +107,6 @@ submodules = [
     'interpolate',
     'io',
     'linalg',
-    'misc',
     'ndimage',
     'odr',
     'optimize',

@@ -55,7 +55,7 @@ def ascent():
     >>> ascent.shape
     (512, 512)
     >>> ascent.max()
-    255
+    np.uint8(255)
 
     >>> import matplotlib.pyplot as plt
     >>> plt.gray()
@@ -198,9 +198,7 @@ def face(gray=False):
     >>> face.shape
     (768, 1024, 3)
     >>> face.max()
-    255
-    >>> face.dtype
-    dtype('uint8')
+    np.uint8(255)
 
     >>> import matplotlib.pyplot as plt
     >>> plt.gray()

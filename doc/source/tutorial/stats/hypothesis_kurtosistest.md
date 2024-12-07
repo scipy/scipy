@@ -126,7 +126,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 kt_plot(ax)
 ax.hist(res.null_distribution, np.linspace(-5, 5, 50),
         density=True)
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            'Monte Carlo approximation\n(11 observations)'])
 plt.show()
 ```

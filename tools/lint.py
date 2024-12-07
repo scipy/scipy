@@ -4,6 +4,7 @@ import sys
 import subprocess
 import packaging.version
 from argparse import ArgumentParser
+from get_submodule_paths import get_submodule_paths
 
 
 CONFIG = os.path.join(
@@ -129,6 +130,12 @@ def main():
         files = diff_files(branch_point)
     else:
         files = args.files
+
+    # Remove any files from submodules
+    root_dir = os.path.dirname(os.path.dirname(__file__))
+    submodule_paths = get_submodule_paths()
+    files = [f for f in files if all(submodule_path not in os.path.join(root_dir, f)
+                                     for submodule_path in submodule_paths)]
 
     cython_exts = ('.pyx', '.pxd', '.pxi')
     cython_files = {f for f in files if any(f.endswith(ext) for ext in cython_exts)}

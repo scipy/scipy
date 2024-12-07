@@ -314,7 +314,7 @@ class MatFile5Reader(MatFileReader):
                 msg = (
                     f'Duplicate variable name "{name}" in stream'
                     " - replacing previous with new\nConsider"
-                    "scipy.io.matlab._mio5.varmats_from_mat to split "
+                    "scipy.io.matlab.varmats_from_mat to split "
                     "file into single variable files"
                 )
                 warnings.warn(msg, MatReadWarning, stacklevel=2)

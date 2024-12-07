@@ -39,6 +39,7 @@ def test_get_output_basic(dtype):
     assert result is output
 
 
+@pytest.mark.thread_unsafe
 def test_get_output_complex():
     shape = (2, 3)
 

@@ -71,6 +71,13 @@ def root_scalar(f, args=(), method=None, bracket=None,
     ----------
     f : callable
         A function to find a root of.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
     args : tuple, optional
         Extra arguments passed to the objective function and its derivative(s).
     method : str, optional

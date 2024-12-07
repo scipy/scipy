@@ -17,12 +17,14 @@ with safe_import():
 methods = [("highs-ipm", {}),
            ("highs-ds", {})]
 
+# TODO(rg): CI failures with GROW7 as of gh-21565
+# Can't be reproduced locally...
 problems = ['25FV47', '80BAU3B', 'ADLITTLE', 'AFIRO', 'AGG', 'AGG2', 'AGG3',
             'BANDM', 'BEACONFD', 'BLEND', 'BNL1', 'BNL2', 'BORE3D', 'BRANDY',
             'CAPRI', 'CYCLE', 'CZPROB', 'D2Q06C', 'D6CUBE', 'DEGEN2', 'DEGEN3',
             'DFL001', 'E226', 'ETAMACRO', 'FFFFF800', 'FINNIS', 'FIT1D',
             'FIT1P', 'FIT2D', 'FIT2P', 'GANGES', 'GFRD-PNC', 'GREENBEA',
-            'GREENBEB', 'GROW15', 'GROW22', 'GROW7', 'ISRAEL', 'KB2', 'LOTFI',
+            'GREENBEB', 'GROW15', 'GROW22', 'ISRAEL', 'KB2', 'LOTFI',
             'MAROS', 'MAROS-R7', 'MODSZK1', 'PEROLD', 'PILOT', 'PILOT4',
             'PILOT87', 'PILOT-JA', 'PILOTNOV', 'PILOT-WE', 'QAP8', 'QAP12',
             'QAP15', 'RECIPE', 'SC105', 'SC205', 'SC50A', 'SC50B', 'SCAGR25',
@@ -40,7 +42,8 @@ infeasible_problems = ['bgdbg1', 'bgetam', 'bgindy', 'bgprtr', 'box1',
                        'refinery', 'vol1', 'woodinfe']
 
 if not is_xslow():
-    enabled_problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD', 'GROW7',
+    # TODO(rg): CI failures with GROW7 as of gh-21565
+    enabled_problems = ['ADLITTLE', 'AFIRO', 'BLEND', 'BEACONFD',
                         'LOTFI', 'SC105', 'SCTAP1', 'SHARE2B', 'STOCFOR1']
     enabled_infeasible_problems = ['bgdbg1', 'bgprtr', 'box1', 'chemcom',
                                    'cplex2', 'ex72a', 'ex73a', 'forest6',

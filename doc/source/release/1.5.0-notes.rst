@@ -256,7 +256,7 @@ a new ``mode`` parameter to specify how the p-value is to be computed.  The
 default is ``"auto"``, which uses the exact distribution for inputs up to length
 25 and the normal approximation for larger inputs.
 
-Added a new Cython-based implementation to evaluate guassian kernel estimates,
+Added a new Cython-based implementation to evaluate gaussian kernel estimates,
 which should improve the performance of ``gaussian_kde``
 
 The ``winsorize`` function now has a ``nan_policy`` argument for refined

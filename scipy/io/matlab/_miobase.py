@@ -6,6 +6,8 @@ Base classes for MATLAB file stream reading.
 MATLAB is a registered trademark of the Mathworks inc.
 """
 
+from typing import Final
+
 import numpy as np
 from scipy._lib import doccer
 
@@ -79,7 +81,7 @@ matlab_compatible : bool, optional
          '''unicode_strings : bool, optional
    If True, write strings as Unicode, else MATLAB usual encoding.'''}
 
-docfiller = doccer.filldoc(doc_dict)
+docfiller: Final = doccer.filldoc(doc_dict)
 
 '''
 

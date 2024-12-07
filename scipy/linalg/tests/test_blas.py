@@ -5,6 +5,7 @@
 import math
 import pytest
 import numpy as np
+import numpy.random
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
@@ -13,7 +14,6 @@ from numpy import float32, float64, complex64, complex128, arange, triu, \
                   tril, zeros, tril_indices, ones, mod, diag, append, eye, \
                   nonzero
 
-from numpy.random import rand, seed
 import scipy
 from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
 
@@ -229,6 +229,9 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(f(3j, [[3-4j]], [-4], 3, [5j]),
                                       [-48-21j])
 
+    # All of these *ger* functions are segfaulting when called from multiple
+    # threads under free-threaded CPython, see gh-21936.
+    @pytest.mark.thread_unsafe
     def test_ger(self):
 
         for p in 'sd':
@@ -453,15 +456,15 @@ class TestFBLAS2Simple:
                           a=np.zeros((2, 2), 'd', 'F'))
 
     def test_gbmv(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 7
             m = 5
             kl = 1
             ku = 2
             # fake a banded matrix via toeplitz
-            A = toeplitz(append(rand(kl+1), zeros(m-kl-1)),
-                         append(rand(ku+1), zeros(n-ku-1)))
+            A = toeplitz(append(rng.random(kl+1), zeros(m-kl-1)),
+                         append(rng.random(ku+1), zeros(n-ku-1)))
             A = A.astype(dtype)
             Ab = zeros((kl+ku+1, n), dtype=dtype)
 
@@ -471,8 +474,8 @@ class TestFBLAS2Simple:
             Ab[0, 2:7] = A[0, 2]  # sup2
             Ab[3, :4] = A[1, 0]  # sub1
 
-            x = rand(n).astype(dtype)
-            y = rand(m).astype(dtype)
+            x = rng.random(n).astype(dtype)
+            y = rng.random(m).astype(dtype)
             alpha, beta = dtype(3), dtype(-5)
 
             func, = get_blas_funcs(('gbmv',), dtype=dtype)
@@ -487,7 +490,7 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1, y2)
 
     def test_sbmv_hbmv(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 6
             k = 2
@@ -495,16 +498,16 @@ class TestFBLAS2Simple:
             Ab = zeros((k+1, n), dtype=dtype)
 
             # Form the array and its packed banded storage
-            A[arange(n), arange(n)] = rand(n)
+            A[arange(n), arange(n)] = rng.random(n)
             for ind2 in range(1, k+1):
-                temp = rand(n-ind2)
+                temp = rng.random(n-ind2)
                 A[arange(n-ind2), arange(ind2, n)] = temp
                 Ab[-1-ind2, ind2:] = temp
             A = A.astype(dtype)
             A = A + A.T if ind < 2 else A + A.conj().T
             Ab[-1, :] = diag(A)
-            x = rand(n).astype(dtype)
-            y = rand(n).astype(dtype)
+            x = rng.random(n).astype(dtype)
+            y = rng.random(n).astype(dtype)
             alpha, beta = dtype(1.25), dtype(3)
 
             if ind > 1:
@@ -516,18 +519,18 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1, y2)
 
     def test_spmv_hpmv(self):
-        seed(1234)
+        rng = np.random.default_rng(12345698)
         for ind, dtype in enumerate(DTYPES+COMPLEX_DTYPES):
             n = 3
-            A = rand(n, n).astype(dtype)
+            A = rng.random((n, n)).astype(dtype)
             if ind > 1:
-                A += rand(n, n)*1j
+                A += rng.random((n, n))*1j
             A = A.astype(dtype)
             A = A + A.T if ind < 4 else A + A.conj().T
             c, r = tril_indices(n)
             Ap = A[r, c]
-            x = rand(n).astype(dtype)
-            y = rand(n).astype(dtype)
+            x = rng.random(n).astype(dtype)
+            y = rng.random(n).astype(dtype)
             xlong = arange(2*n).astype(dtype)
             ylong = ones(2*n).astype(dtype)
             alpha, beta = dtype(1.25), dtype(2)
@@ -548,17 +551,17 @@ class TestFBLAS2Simple:
             assert_almost_equal(y1[4], ylong[4])
 
     def test_spr_hpr(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES+COMPLEX_DTYPES):
             n = 3
-            A = rand(n, n).astype(dtype)
+            A = rng.random((n, n)).astype(dtype)
             if ind > 1:
-                A += rand(n, n)*1j
+                A += rng.random((n, n))*1j
             A = A.astype(dtype)
             A = A + A.T if ind < 4 else A + A.conj().T
             c, r = tril_indices(n)
             Ap = A[r, c]
-            x = rand(n).astype(dtype)
+            x = rng.random(n).astype(dtype)
             alpha = (DTYPES+COMPLEX_DTYPES)[mod(ind, 4)](2.5)
 
             if ind > 3:
@@ -575,18 +578,18 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1f, y2)
 
     def test_spr2_hpr2(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 3
-            A = rand(n, n).astype(dtype)
+            A = rng.random((n, n)).astype(dtype)
             if ind > 1:
-                A += rand(n, n)*1j
+                A += rng.random((n, n))*1j
             A = A.astype(dtype)
             A = A + A.T if ind < 2 else A + A.conj().T
             c, r = tril_indices(n)
             Ap = A[r, c]
-            x = rand(n).astype(dtype)
-            y = rand(n).astype(dtype)
+            x = rng.random(n).astype(dtype)
+            y = rng.random(n).astype(dtype)
             alpha = dtype(2)
 
             if ind > 1:
@@ -603,19 +606,19 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1f, y2)
 
     def test_tbmv(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 10
             k = 3
-            x = rand(n).astype(dtype)
+            x = rng.random(n).astype(dtype)
             A = zeros((n, n), dtype=dtype)
             # Banded upper triangular array
             for sup in range(k+1):
-                A[arange(n-sup), arange(sup, n)] = rand(n-sup)
+                A[arange(n-sup), arange(sup, n)] = rng.random(n-sup)
 
             # Add complex parts for c,z
             if ind > 1:
-                A[nonzero(A)] += 1j * rand((k+1)*n-(k*(k+1)//2)).astype(dtype)
+                A[nonzero(A)] += 1j * rng.random((k+1)*n-(k*(k+1)//2)).astype(dtype)
 
             # Form the banded storage
             Ab = zeros((k+1, n), dtype=dtype)
@@ -641,19 +644,19 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1, y2)
 
     def test_tbsv(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 6
             k = 3
-            x = rand(n).astype(dtype)
+            x = rng.random(n).astype(dtype)
             A = zeros((n, n), dtype=dtype)
             # Banded upper triangular array
             for sup in range(k+1):
-                A[arange(n-sup), arange(sup, n)] = rand(n-sup)
+                A[arange(n-sup), arange(sup, n)] = rng.random(n-sup)
 
             # Add complex parts for c,z
             if ind > 1:
-                A[nonzero(A)] += 1j * rand((k+1)*n-(k*(k+1)//2)).astype(dtype)
+                A[nonzero(A)] += 1j * rng.random((k+1)*n-(k*(k+1)//2)).astype(dtype)
 
             # Form the banded storage
             Ab = zeros((k+1, n), dtype=dtype)
@@ -679,12 +682,16 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1, y2)
 
     def test_tpmv(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 10
-            x = rand(n).astype(dtype)
+            x = rng.random(n).astype(dtype)
             # Upper triangular array
-            A = triu(rand(n, n)) if ind < 2 else triu(rand(n, n)+rand(n, n)*1j)
+            if ind < 2:
+                A = triu(rng.random((n, n)))
+            else:
+                A = triu(rng.random((n, n)) + rng.random((n, n))*1j)
+
             # Form the packed storage
             c, r = tril_indices(n)
             Ap = A[r, c]
@@ -708,12 +715,15 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1, y2)
 
     def test_tpsv(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 10
-            x = rand(n).astype(dtype)
+            x = rng.random(n).astype(dtype)
             # Upper triangular array
-            A = triu(rand(n, n)) if ind < 2 else triu(rand(n, n)+rand(n, n)*1j)
+            if ind < 2:
+                A = triu(rng.random((n, n)))
+            else:
+                A = triu(rng.random((n, n)) + rng.random((n, n))*1j)
             A += eye(n)
             # Form the packed storage
             c, r = tril_indices(n)
@@ -738,11 +748,11 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1, y2)
 
     def test_trmv(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 3
-            A = (rand(n, n)+eye(n)).astype(dtype)
-            x = rand(3).astype(dtype)
+            A = (rng.random((n, n))+eye(n)).astype(dtype)
+            x = rng.random(3).astype(dtype)
             func, = get_blas_funcs(('trmv',), dtype=dtype)
 
             y1 = func(a=A, x=x)
@@ -763,11 +773,11 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(y1, y2)
 
     def test_trsv(self):
-        seed(1234)
+        rng = np.random.default_rng(1234)
         for ind, dtype in enumerate(DTYPES):
             n = 15
-            A = (rand(n, n)+eye(n)).astype(dtype)
-            x = rand(n).astype(dtype)
+            A = (rng.random((n, n))+eye(n)).astype(dtype)
+            x = rng.random(n).astype(dtype)
             func, = get_blas_funcs(('trsv',), dtype=dtype)
 
             y1 = func(a=A, x=x)
@@ -1045,14 +1055,14 @@ class TestTRMM:
 
 
 def test_trsm():
-    seed(1234)
+    rng = np.random.default_rng(1234)
     for ind, dtype in enumerate(DTYPES):
         tol = np.finfo(dtype).eps*1000
         func, = get_blas_funcs(('trsm',), dtype=dtype)
 
         # Test protection against size mismatches
-        A = rand(4, 5).astype(dtype)
-        B = rand(4, 4).astype(dtype)
+        A = rng.random((4, 5)).astype(dtype)
+        B = rng.random((4, 4)).astype(dtype)
         alpha = dtype(1)
         assert_raises(Exception, func, alpha, A, B)
         assert_raises(Exception, func, alpha, A.T, B)
@@ -1060,12 +1070,15 @@ def test_trsm():
         n = 8
         m = 7
         alpha = dtype(-2.5)
-        A = (rand(m, m) if ind < 2 else rand(m, m) + rand(m, m)*1j) + eye(m)
+        if ind < 2:
+            A = rng.random((m, m)) + eye(m)
+        else:
+            A = (rng.random((m, m)) + rng.random((m, m))*1j) + eye(m)
         A = A.astype(dtype)
         Au = triu(A)
         Al = tril(A)
-        B1 = rand(m, n).astype(dtype)
-        B2 = rand(n, m).astype(dtype)
+        B1 = rng.random((m, n)).astype(dtype)
+        B2 = rng.random((n, m)).astype(dtype)
 
         x1 = func(alpha=alpha, a=A, b=B1)
         assert_equal(B1.shape, x1.shape)

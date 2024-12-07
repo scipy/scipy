@@ -137,7 +137,7 @@ class gaussian_kde:
 
     `gaussian_kde` does not currently support data that lies in a
     lower-dimensional subspace of the space in which it is expressed. For such
-    data, consider performing principle component analysis / dimensionality
+    data, consider performing principal component analysis / dimensionality
     reduction and using `gaussian_kde` with the transformed data.
 
     References
@@ -226,7 +226,7 @@ class gaussian_kde:
                    "of the space in which it is expressed. This has resulted "
                    "in a singular data covariance matrix, which cannot be "
                    "treated using the algorithms implemented in "
-                   "`gaussian_kde`. Consider performing principle component "
+                   "`gaussian_kde`. Consider performing principal component "
                    "analysis / dimensionality reduction and using "
                    "`gaussian_kde` with the transformed data.")
             raise linalg.LinAlgError(msg) from e

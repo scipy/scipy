@@ -36,6 +36,8 @@ PYTHON_INCLUDING_HEADERS = [
     "pythonic/core.hpp",
     # Python-including headers the sort doesn't pick up
     "ni_support.h",
+    # xsf::numpy
+    "xsf/numpy.h",
 ]
 LEAF_HEADERS = []
 

@@ -65,7 +65,7 @@
 #include "../config.h"
 #include "../error.h"
 #include "const.h"
-#include "gamma.h"
+#include "rgamma.h"
 #include "polevl.h"
 
 namespace xsf {
@@ -252,7 +252,7 @@ namespace cephes {
         k = xk;
         t = n;
         r = n - 1;
-        ans = (std::pow(z, r) * psi / Gamma(t)) - ans;
+        ans = (std::pow(z, r) * psi * rgamma(t)) - ans;
         return ans;
     }
 

@@ -1,6 +1,11 @@
 #ifndef STIRLING_H
 #define STIRLING_H
 
+#if defined(__cplusplus)
+#include <cmath>
+using std::isinf;
+#endif
+
 #include <complex.h>
 #include <math.h>
 #include <stdio.h>

@@ -231,10 +231,8 @@ Beta distribution
 .. autosummary::
    :toctree: generated/
 
-   btdtr        -- Cumulative distribution function of the beta distribution.
-   btdtri       -- The `p`-th quantile of the beta distribution.
-   btdtria      -- Inverse of `btdtr` with respect to `a`.
-   btdtrib      -- btdtria(a, p, x).
+   btdtria      -- Inverse of `betainc` with respect to `a`.
+   btdtrib      -- Inverse of `betainc` with respect to `b`.
 
 F distribution
 ^^^^^^^^^^^^^^
@@ -541,7 +539,7 @@ orthogonal polynomials:
    roots_jacobi      -- Gauss-Jacobi quadrature.
    roots_laguerre    -- Gauss-Laguerre quadrature.
    roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
-   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermite     -- Gauss-Hermite (physicist's) quadrature.
    roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
    roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
    roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.
@@ -750,6 +748,7 @@ Other special functions
    spence      -- Spence's function, also known as the dilogarithm.
    zeta        -- Riemann zeta function.
    zetac       -- Riemann zeta function minus 1.
+   softplus    -- Softplus function.
 
 Convenience functions
 ---------------------
@@ -875,27 +874,6 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-
-_depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
-             'removed in SciPy 1.14.0.  Use scipy.special.{} instead.')
-
-
-def btdtr(*args, **kwargs):  # type: ignore [no-redef]
-    warnings.warn(_depr_msg.format('betainc'), category=DeprecationWarning,
-                  stacklevel=2)
-    return _ufuncs.btdtr(*args, **kwargs)
-
-
-btdtr.__doc__ = _ufuncs.btdtr.__doc__  # type: ignore [misc]
-
-
-def btdtri(*args, **kwargs):  # type: ignore [no-redef]
-    warnings.warn(_depr_msg.format('betaincinv'), category=DeprecationWarning,
-                  stacklevel=2)
-    return _ufuncs.btdtri(*args, **kwargs)
-
-
-btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
 
 
 def _get_include():

@@ -4,7 +4,6 @@
 """ Test functions for linalg.matfuncs module
 
 """
-import random
 import functools
 
 import numpy as np
@@ -15,9 +14,11 @@ import pytest
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-                          expm, expm_frechet, expm_cond, norm, khatri_rao)
+                          expm, expm_frechet, expm_cond, norm, khatri_rao,
+                          cosm, sinm, tanm, coshm, sinhm, tanhm)
 from scipy.linalg import _matfuncs_inv_ssq
 from scipy.linalg._matfuncs import pick_pade_structure
+from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
 import scipy.linalg._expm_frechet
 
 from scipy.optimize import minimize
@@ -201,6 +202,7 @@ class TestLogM:
                 A_logm, info = logm(A, disp=False)
                 assert_(np.issubdtype(A_logm.dtype, np.complexfloating))
 
+    @pytest.mark.thread_unsafe
     def test_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
         B = np.asarray([[1, 1], [0, 0]])
@@ -210,6 +212,7 @@ class TestLogM:
             E = expm(L)
             assert_allclose(E, M, atol=1e-14)
 
+    @pytest.mark.thread_unsafe
     def test_nearly_singular(self):
         M = np.array([[1e-100]])
         expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
@@ -249,12 +252,22 @@ class TestLogM:
         assert log_a.shape == (0, 0)
         assert log_a.dtype == log_a0.dtype
 
+    @pytest.mark.thread_unsafe
+    @pytest.mark.parametrize('dtype', [int, float, np.float32, complex, np.complex64])
+    def test_no_ZeroDivisionError(self, dtype):
+        # gh-17136 reported inconsistent behavior in `logm` depending on input dtype:
+        # sometimes it raised an error, and sometimes it printed a warning message.
+        # check that this is resolved and that the warning is emitted properly.
+        with (pytest.warns(RuntimeWarning, match="logm result may be inaccurate"),
+              pytest.warns(LogmExactlySingularWarning)):
+            logm(np.zeros((2, 2), dtype=dtype))
+
 
 class TestSqrtM:
     def test_round_trip_random_float(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         for n in range(1, 6):
-            M_unscaled = np.random.randn(n, n)
+            M_unscaled = rng.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_sqrtm, info = sqrtm(M, disp=False)
@@ -262,9 +275,9 @@ class TestSqrtM:
                 assert_allclose(M_sqrtm_round_trip, M)
 
     def test_round_trip_random_complex(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         for n in range(1, 6):
-            M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+            M_unscaled = rng.randn(n, n) + 1j * rng.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_sqrtm, info = sqrtm(M, disp=False)
@@ -437,52 +450,47 @@ class TestSqrtM:
 
     def test_data_size_preservation_uint_in_float_out(self):
         M = np.zeros((10, 10), dtype=np.uint8)
-        # input bit size is 8, but minimum float bit size is 16
-        assert sqrtm(M).dtype == np.float16
+        assert sqrtm(M).dtype == np.float64
         M = np.zeros((10, 10), dtype=np.uint16)
-        assert sqrtm(M).dtype == np.float16
+        assert sqrtm(M).dtype == np.float64
         M = np.zeros((10, 10), dtype=np.uint32)
-        assert sqrtm(M).dtype == np.float32
+        assert sqrtm(M).dtype == np.float64
         M = np.zeros((10, 10), dtype=np.uint64)
         assert sqrtm(M).dtype == np.float64
 
     def test_data_size_preservation_int_in_float_out(self):
         M = np.zeros((10, 10), dtype=np.int8)
-        # input bit size is 8, but minimum float bit size is 16
-        assert sqrtm(M).dtype == np.float16
+        assert sqrtm(M).dtype == np.float64
         M = np.zeros((10, 10), dtype=np.int16)
-        assert sqrtm(M).dtype == np.float16
+        assert sqrtm(M).dtype == np.float64
         M = np.zeros((10, 10), dtype=np.int32)
-        assert sqrtm(M).dtype == np.float32
+        assert sqrtm(M).dtype == np.float64
         M = np.zeros((10, 10), dtype=np.int64)
         assert sqrtm(M).dtype == np.float64
 
     def test_data_size_preservation_int_in_comp_out(self):
         M = np.array([[2, 4], [0, -2]], dtype=np.int8)
-        # input bit size is 8, but minimum complex bit size is 64
-        assert sqrtm(M).dtype == np.complex64
+        assert sqrtm(M).dtype == np.complex128
         M = np.array([[2, 4], [0, -2]], dtype=np.int16)
-        # input bit size is 16, but minimum complex bit size is 64
-        assert sqrtm(M).dtype == np.complex64
+        assert sqrtm(M).dtype == np.complex128
         M = np.array([[2, 4], [0, -2]], dtype=np.int32)
-        assert sqrtm(M).dtype == np.complex64
+        assert sqrtm(M).dtype == np.complex128
         M = np.array([[2, 4], [0, -2]], dtype=np.int64)
         assert sqrtm(M).dtype == np.complex128
 
     def test_data_size_preservation_float_in_float_out(self):
         M = np.zeros((10, 10), dtype=np.float16)
-        assert sqrtm(M).dtype == np.float16
+        assert sqrtm(M).dtype == np.float32
         M = np.zeros((10, 10), dtype=np.float32)
         assert sqrtm(M).dtype == np.float32
         M = np.zeros((10, 10), dtype=np.float64)
         assert sqrtm(M).dtype == np.float64
         if hasattr(np, 'float128'):
             M = np.zeros((10, 10), dtype=np.float128)
-            assert sqrtm(M).dtype == np.float128
+            assert sqrtm(M).dtype == np.float64
 
     def test_data_size_preservation_float_in_comp_out(self):
         M = np.array([[2, 4], [0, -2]], dtype=np.float16)
-        # input bit size is 16, but minimum complex bit size is 64
         assert sqrtm(M).dtype == np.complex64
         M = np.array([[2, 4], [0, -2]], dtype=np.float32)
         assert sqrtm(M).dtype == np.complex64
@@ -490,16 +498,16 @@ class TestSqrtM:
         assert sqrtm(M).dtype == np.complex128
         if hasattr(np, 'float128') and hasattr(np, 'complex256'):
             M = np.array([[2, 4], [0, -2]], dtype=np.float128)
-            assert sqrtm(M).dtype == np.complex256
+            assert sqrtm(M).dtype == np.complex128
 
     def test_data_size_preservation_comp_in_comp_out(self):
         M = np.array([[2j, 4], [0, -2j]], dtype=np.complex64)
+        assert sqrtm(M).dtype == np.complex64
+        M = np.array([[2j, 4], [0, -2j]], dtype=np.complex128)
         assert sqrtm(M).dtype == np.complex128
         if hasattr(np, 'complex256'):
-            M = np.array([[2j, 4], [0, -2j]], dtype=np.complex128)
-            assert sqrtm(M).dtype == np.complex256
             M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
-            assert sqrtm(M).dtype == np.complex256
+            assert sqrtm(M).dtype == np.complex128
 
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):
@@ -560,18 +568,18 @@ class TestFractionalMatrixPower:
     def test_random_matrices_and_powers(self):
         # Each independent iteration of this fuzz test picks random parameters.
         # It tries to hit some edge cases.
-        np.random.seed(1234)
+        rng = np.random.default_rng(1726500458620605)
         nsamples = 20
         for i in range(nsamples):
             # Sample a matrix size and a random real power.
-            n = random.randrange(1, 5)
-            p = np.random.randn()
+            n = rng.integers(1, 5)
+            p = rng.random()
 
             # Sample a random real or complex matrix.
-            matrix_scale = np.exp(random.randrange(-4, 5))
-            A = np.random.randn(n, n)
-            if random.choice((True, False)):
-                A = A + 1j * np.random.randn(n, n)
+            matrix_scale = np.exp(rng.integers(-4, 5))
+            A = rng.random(size=[n, n])
+            if [True, False][rng.choice(2)]:
+                A = A + 1j * rng.random(size=[n, n])
             A = A * matrix_scale
 
             # Check a couple of analytically equivalent ways
@@ -706,13 +714,18 @@ class TestExpM:
         elt = expm(1)
         assert_allclose(elt, np.array([[np.e]]))
 
-    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
-    def test_empty_matrix_input(self, dt):
-        # handle gh-11082
-        A = np.zeros((0, 0), dtype=dt)
-        result = expm(A)
-        assert result.size == 0
-        assert result.dtype == A.dtype
+    @pytest.mark.parametrize('func', [expm, cosm, sinm, tanm, coshm, sinhm, tanhm])
+    @pytest.mark.parametrize('dt',[int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('shape', [(0, 0), (1, 1)])
+    def test_small_empty_matrix_input(self, func, dt, shape):
+        # regression test for gh-11082 / gh-20372 - test behavior of expm
+        # and related functions for small and zero-sized arrays.
+        A = np.zeros(shape, dtype=dt)
+        A0 = np.zeros((10, 10), dtype=dt)
+        result = func(A)
+        result0 = func(A0)
+        assert result.shape == shape
+        assert result.dtype == result0.dtype
 
     def test_2x2_input(self):
         E = np.e
@@ -752,6 +765,7 @@ class TestExpM:
         a.flags.writeable = False
         expm(a)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(5)
     def test_gh18086(self):
         A = np.zeros((400, 400), dtype=float)
@@ -832,6 +846,7 @@ class TestExpmFrechet:
             assert_allclose(expected_frechet, observed_frechet)
 
     def test_fuzz(self):
+        rng = np.random.default_rng(1726500908359153)
         # try a bunch of crazy inputs
         rfuncs = (
                 np.random.uniform,
@@ -840,9 +855,9 @@ class TestExpmFrechet:
                 np.random.exponential)
         ntests = 100
         for i in range(ntests):
-            rfunc = random.choice(rfuncs)
-            target_norm_1 = random.expovariate(1.0)
-            n = random.randrange(2, 16)
+            rfunc = rfuncs[rng.choice(4)]
+            target_norm_1 = rng.exponential()
+            n = rng.integers(2, 16)
             A_original = rfunc(size=(n,n))
             E_original = rfunc(size=(n,n))
             A_original_norm_1 = scipy.linalg.norm(A_original, 1)
@@ -942,12 +957,12 @@ class TestExpmConditionNumber:
 
     @pytest.mark.slow
     def test_expm_cond_fuzz(self):
-        np.random.seed(12345)
+        rng = np.random.RandomState(12345)
         eps = 1e-5
         nsamples = 10
         for i in range(nsamples):
-            n = np.random.randint(2, 5)
-            A = np.random.randn(n, n)
+            n = rng.randint(2, 5)
+            A = rng.randn(n, n)
             A_norm = scipy.linalg.norm(A)
             X = expm(A)
             X_norm = scipy.linalg.norm(X)
@@ -968,7 +983,7 @@ class TestExpmConditionNumber:
             # Check that the identified perturbation indeed gives greater
             # relative error than random perturbations with similar norms.
             for j in range(5):
-                p_rand = eps * _normalized_like(np.random.randn(*A.shape), A)
+                p_rand = eps * _normalized_like(rng.randn(*A.shape), A)
                 assert_allclose(norm(p_best), norm(p_rand))
                 p_rand_relerr = _relative_error(expm, A, p_rand)
                 assert_array_less(p_rand_relerr, p_best_relerr)

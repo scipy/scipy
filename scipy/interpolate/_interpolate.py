@@ -12,7 +12,7 @@ from scipy.special import comb
 from . import _fitpack_py
 from ._polyint import _Interpolator1D
 from . import _ppoly
-from .interpnd import _ndim_coords_from_arrays
+from ._interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
 

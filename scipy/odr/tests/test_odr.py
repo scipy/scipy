@@ -28,6 +28,7 @@ class TestODR:
     def empty_data_func(self, B, x):
         return B[0]*x + B[1]
 
+    @pytest.mark.thread_unsafe
     def test_empty_data(self):
         beta0 = [0.02, 0.0]
         linear = Model(self.empty_data_func)

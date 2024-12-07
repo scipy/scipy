@@ -4,7 +4,8 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy.conftest import array_api_compatible
 from scipy import special
-from scipy._lib._array_api import xp_assert_close, is_jax, is_torch, SCIPY_DEVICE
+from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -47,7 +48,7 @@ def test_rel_entr_generic(dtype):
 
 @pytest.mark.fail_slow(5)
 @array_api_compatible
-# @pytest.mark.skip_xp_backends('numpy', reasons=['skip while debugging'])
+# @pytest.mark.skip_xp_backends('numpy', reason='skip while debugging')
 # @pytest.mark.usefixtures("skip_xp_backends")
 # `reversed` is for developer convenience: test new function first = less waiting
 @pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))

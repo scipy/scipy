@@ -144,7 +144,7 @@ T sph_bessel_y(long n, T x) {
     T s0, s1, sn;
     int idx;
 
-    if (isnan(x)) {
+    if (std::isnan(x)) {
         return x;
     }
 
@@ -179,7 +179,7 @@ T sph_bessel_y(long n, T x) {
         sn = (2 * idx + 3) * s1 / x - s0;
         s0 = s1;
         s1 = sn;
-        if (isinf(sn)) {
+        if (std::isinf(sn)) {
             // Overflow occurred already: terminate recurrence.
             return sn;
         }
@@ -229,7 +229,7 @@ T sph_bessel_y_jac(long n, T x) {
 
 template <typename T>
 T sph_bessel_i(long n, T x) {
-    if (isnan(x)) {
+    if (std::isnan(x)) {
         return x;
     }
 
@@ -246,7 +246,7 @@ T sph_bessel_i(long n, T x) {
         return 0;
     }
 
-    if (isinf(x)) {
+    if (std::isinf(x)) {
         // https://dlmf.nist.gov/10.49.E8
         if (x == -std::numeric_limits<T>::infinity()) {
             return std::pow(-1, n) * std::numeric_limits<T>::infinity();
@@ -314,7 +314,7 @@ T sph_bessel_i_jac(long n, T z) {
 
 template <typename T>
 T sph_bessel_k(long n, T z) {
-    if (isnan(z)) {
+    if (std::isnan(z)) {
         return z;
     }
 
@@ -327,7 +327,7 @@ T sph_bessel_k(long n, T z) {
         return std::numeric_limits<T>::infinity();
     }
 
-    if (isinf(z)) {
+    if (std::isinf(z)) {
         // https://dlmf.nist.gov/10.52.E6
         if (z == std::numeric_limits<T>::infinity()) {
             return 0;

@@ -15,6 +15,7 @@ from .test_continuous_basic import check_distribution_rvs
 import numpy as np
 
 import scipy.linalg
+
 from scipy.stats._multivariate import (_PSD,
                                        _lnB,
                                        multivariate_normal_frozen)
@@ -30,7 +31,8 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
 from scipy.stats import _covariance, Covariance
 from scipy import stats
 
-from scipy.integrate import romb, qmc_quad, tplquad
+from scipy.integrate import tanhsinh
+from scipy.integrate import romb, qmc_quad, dblquad, tplquad
 from scipy.special import multigammaln
 
 from .common_tests import check_random_state_property
@@ -104,7 +106,7 @@ class TestCovariance:
 
         res = factory(preprocessing(A))
         ref = cov_type(preprocessing(A))
-        assert type(res) == type(ref)
+        assert type(res) is type(ref)
         assert_allclose(res.whiten(x), ref.whiten(x))
 
     @pytest.mark.parametrize("matrix_type", list(_matrices))
@@ -3852,3 +3854,177 @@ class TestDirichletMultinomial:
                 res_ijk = res[j, k]
                 ref = method(alpha[k].squeeze(), n[j].squeeze())
                 assert_allclose(res_ijk, ref)
+
+
+class TestNormalInverseGamma:
+
+    def test_marginal_x(self):
+        # According to [1], sqrt(a * lmbda / b) * (x - u) should follow a t-distribution
+        # with 2*a degrees of freedom. Test that this is true of the PDF and random
+        # variates.
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random(4)
+
+        norm_inv_gamma = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        t = stats.t(2*a, loc=mu, scale=1/np.sqrt(a * lmbda / b))
+
+        # Test PDF
+        x = np.linspace(-5, 5, 11)
+        res = tanhsinh(lambda s2, x: norm_inv_gamma.pdf(x, s2), 0, np.inf, args=(x,))
+        ref = t.pdf(x)
+        assert_allclose(res.integral, ref)
+
+        # Test RVS
+        res = norm_inv_gamma.rvs(size=10000, random_state=rng)
+        _, pvalue = stats.ks_1samp(res[0], t.cdf)
+        assert pvalue > 0.1
+
+    def test_marginal_s2(self):
+        # According to [1], s2 should follow an inverse gamma distribution with
+        # shapes a, b (where b is the scale in our parameterization). Test that
+        # this is true of the PDF and random variates.
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random(4)
+
+        norm_inv_gamma = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        inv_gamma = stats.invgamma(a, scale=b)
+
+        # Test PDF
+        s2 = np.linspace(0.1, 10, 10)
+        res = tanhsinh(lambda x, s2: norm_inv_gamma.pdf(x, s2),
+                       -np.inf, np.inf, args=(s2,))
+        ref = inv_gamma.pdf(s2)
+        assert_allclose(res.integral, ref)
+
+        # Test RVS
+        res = norm_inv_gamma.rvs(size=10000, random_state=rng)
+        _, pvalue = stats.ks_1samp(res[1], inv_gamma.cdf)
+        assert pvalue > 0.1
+
+    def test_pdf_logpdf(self):
+        # Check that PDF and log-PDF are consistent
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random((4, 20)) - 0.25  # make some invalid
+        x, s2 = rng.random(size=(2, 20)) - 0.25
+        res = stats.normal_inverse_gamma(mu, lmbda, a, b).pdf(x, s2)
+        ref = stats.normal_inverse_gamma.logpdf(x, s2, mu, lmbda, a, b)
+        assert_allclose(res, np.exp(ref))
+
+    def test_invalid_and_special_cases(self):
+        # Test cases that are handled by input validation rather than the formulas
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random(4)
+        x, s2 = rng.random(2)
+
+        res = stats.normal_inverse_gamma(np.nan, lmbda, a, b).pdf(x, s2)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, -1, a, b).pdf(x, s2)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, lmbda, 0, b).pdf(x, s2)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, lmbda, a, -1).pdf(x, s2)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, lmbda, a, b).pdf(x, -1)
+        assert_equal(res, 0)
+
+        # PDF with out-of-support s2 is not zero if shape parameter is invalid
+        res = stats.normal_inverse_gamma(mu, [-1, np.nan], a, b).pdf(x, -1)
+        assert_equal(res, np.nan)
+
+        res = stats.normal_inverse_gamma(mu, -1, a, b).mean()
+        assert_equal(res, (np.nan, np.nan))
+
+        res = stats.normal_inverse_gamma(mu, lmbda, -1, b).var()
+        assert_equal(res, (np.nan, np.nan))
+
+        with pytest.raises(ValueError, match="Domain error in arguments..."):
+            stats.normal_inverse_gamma(mu, lmbda, a, -1).rvs()
+
+    def test_broadcasting(self):
+        # Test methods with broadcastable array parameters. Roughly speaking, the
+        # shapes should be the broadcasted shapes of all arguments, and the raveled
+        # outputs should be the same as the outputs with raveled inputs.
+        rng = np.random.default_rng(8925849245)
+        b = rng.random(2)
+        a = rng.random((3, 1)) + 2  # for defined moments
+        lmbda = rng.random((4, 1, 1))
+        mu = rng.random((5, 1, 1, 1))
+        s2 = rng.random((6, 1, 1, 1, 1))
+        x = rng.random((7, 1, 1, 1, 1, 1))
+        dist = stats.normal_inverse_gamma(mu, lmbda, a, b)
+
+        # Test PDF and log-PDF
+        broadcasted = np.broadcast_arrays(x, s2, mu, lmbda, a, b)
+        broadcasted_raveled = [np.ravel(arr) for arr in broadcasted]
+
+        res = dist.pdf(x, s2)
+        assert res.shape == broadcasted[0].shape
+        assert_allclose(res.ravel(),
+                        stats.normal_inverse_gamma.pdf(*broadcasted_raveled))
+
+        res = dist.logpdf(x, s2)
+        assert res.shape == broadcasted[0].shape
+        assert_allclose(res.ravel(),
+                        stats.normal_inverse_gamma.logpdf(*broadcasted_raveled))
+
+        # Test moments
+        broadcasted = np.broadcast_arrays(mu, lmbda, a, b)
+        broadcasted_raveled = [np.ravel(arr) for arr in broadcasted]
+
+        res = dist.mean()
+        assert res[0].shape == broadcasted[0].shape
+        assert_allclose((res[0].ravel(), res[1].ravel()),
+                        stats.normal_inverse_gamma.mean(*broadcasted_raveled))
+
+        res = dist.var()
+        assert res[0].shape == broadcasted[0].shape
+        assert_allclose((res[0].ravel(), res[1].ravel()),
+                        stats.normal_inverse_gamma.var(*broadcasted_raveled))
+
+        # Test RVS
+        size = (6, 5, 4, 3, 2)
+        rng = np.random.default_rng(2348923985324)
+        res = dist.rvs(size=size, random_state=rng)
+        rng = np.random.default_rng(2348923985324)
+        shape = 6, 5*4*3*2
+        ref = stats.normal_inverse_gamma.rvs(*broadcasted_raveled, size=shape,
+                                             random_state=rng)
+        assert_allclose((res[0].reshape(shape), res[1].reshape(shape)), ref)
+
+    @pytest.mark.slow
+    @pytest.mark.fail_slow(10)
+    def test_moments(self):
+        # Test moments against quadrature
+        rng = np.random.default_rng(8925849245)
+        mu, lmbda, a, b = rng.random(4)
+        a += 2  # ensure defined
+
+        dist = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        res = dist.mean()
+
+        ref = dblquad(lambda s2, x: dist.pdf(x, s2) * x, -np.inf, np.inf, 0, np.inf)
+        assert_allclose(res[0], ref[0], rtol=1e-6)
+
+        ref = dblquad(lambda s2, x: dist.pdf(x, s2) * s2, -np.inf, np.inf, 0, np.inf)
+        assert_allclose(res[1], ref[0], rtol=1e-6)
+
+    @pytest.mark.parametrize('dtype', [np.int32, np.float16, np.float32, np.float64])
+    def test_dtype(self, dtype):
+        if np.__version__ < "2":
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        rng = np.random.default_rng(8925849245)
+        x, s2, mu, lmbda, a, b = rng.uniform(3, 10, size=6).astype(dtype)
+        dtype_out = np.result_type(1.0, dtype)
+        dist = stats.normal_inverse_gamma(mu, lmbda, a, b)
+        assert dist.rvs()[0].dtype == dtype_out
+        assert dist.rvs()[1].dtype == dtype_out
+        assert dist.mean()[0].dtype == dtype_out
+        assert dist.mean()[1].dtype == dtype_out
+        assert dist.var()[0].dtype == dtype_out
+        assert dist.var()[1].dtype == dtype_out
+        assert dist.logpdf(x, s2).dtype == dtype_out
+        assert dist.pdf(x, s2).dtype == dtype_out

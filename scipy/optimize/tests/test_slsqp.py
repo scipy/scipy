@@ -592,6 +592,7 @@ class TestSLSQP:
         # The problem is infeasible, so it cannot succeed
         assert not res.success
 
+    @pytest.mark.thread_unsafe
     def test_parameters_stay_within_bounds(self):
         # gh11403. For some problems the SLSQP Fortran code suggests a step
         # outside one of the lower/upper bounds. When this happens

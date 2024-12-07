@@ -38,3 +38,11 @@ def test_pro_rad1():
     # SpheroidalS1Prime(1, 1, 30, 1.1)
     res = special.pro_rad1(1, 1, 30, 1.1)
     assert_allclose(res, (0.009657872296166435, 3.253369651472877), rtol=2e-5)
+
+def test_pro_rad2():
+    # https://github.com/scipy/scipy/issues/21461
+    # Reference values taken from WolframAlpha
+    # SpheroidalS2(0, 0, 3, 1.02)
+    # SpheroidalS2Prime(0, 0, 3, 1.02)
+    res = special.pro_rad2(0, 0, 3, 1.02)
+    assert_allclose(res, (-0.35089596858528077, 13.652764213480872), rtol=10e-10)

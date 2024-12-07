@@ -53,6 +53,7 @@ def test_geterr():
         assert_(value in _sf_error_actions)
 
 
+@pytest.mark.thread_unsafe
 def test_seterr():
     entry_err = sc.geterr()
     try:
@@ -124,6 +125,7 @@ def test_errstate_cpp_alt_ufunc_machinery():
     assert_equal(olderr, sc.geterr())
 
 
+@pytest.mark.thread_unsafe
 def test_errstate():
     for category, error_code in _sf_error_code_map.items():
         for action in _sf_error_actions:

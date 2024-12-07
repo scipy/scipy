@@ -63,6 +63,7 @@ Filtering
    sosfiltfilt   -- A forward-backward filter for second-order sections.
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
+   envelope      -- Compute the envelope of a real- or complex-valued signal.
 
    decimate      -- Downsample a signal.
    detrend       -- Remove linear and/or constant trends from data.
@@ -89,8 +90,8 @@ Filter design
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
+   freqz_sos     -- Digital filter frequency response for SOS format filter.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
-   sosfreqz      -- Digital filter frequency response for SOS format filter.
    gammatone     -- FIR and IIR gammatone filter design.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.

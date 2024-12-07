@@ -60,7 +60,6 @@ PUBLIC_SUBMODULES = [
     'linalg.blas',
     'linalg.lapack',
     'linalg.interpolative',
-    'misc',
     'ndimage',
     'odr',
     'optimize',
@@ -103,6 +102,7 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\.jn',  # alias for jv
     r'scipy\.ndimage\.sum',   # alias for sum_labels
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
+    r'scipy\.signal\.sosfreqz',  # alias for freqz_sos
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',

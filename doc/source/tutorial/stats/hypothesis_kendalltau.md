@@ -150,7 +150,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 plot(ax)
 bins = np.linspace(-1.25, 1.25, 25)
 ax.hist(ref.null_distribution, bins=bins, density=True)
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            'exact null distribution'])
 plot(ax)
 plt.show()

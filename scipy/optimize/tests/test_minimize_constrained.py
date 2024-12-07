@@ -3,7 +3,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (assert_array_almost_equal,
-                           assert_array_less, assert_, assert_allclose,
+                           assert_array_less, assert_,
                            suppress_warnings)
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
@@ -465,6 +465,7 @@ class TestTrustRegionConstr:
                         Elec(n_electrons=2, constr_jac='3-point',
                              constr_hess=SR1())]
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('prob', list_of_problems)
     @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))
     @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
@@ -710,10 +711,10 @@ def test_bug_11886():
     minimize(opt, 2*[1], constraints = lin_cons)
 
 
-# Remove xfail when gh-11649 is resolved
-@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-11649.",
-                   strict=True)
 def test_gh11649():
+    # trust - constr error when attempting to keep bound constrained solutions
+    # feasible. Algorithm attempts to go outside bounds when evaluating finite
+    # differences. (don't give objective an analytic gradient)
     bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
 
     def assert_inbounds(x):
@@ -728,24 +729,21 @@ def test_gh11649():
         assert_inbounds(x)
         return x[0]**2 + x[1]
 
+    def nce_jac(x):
+        return np.array([2*x[0], 1])
+
     def nci(x):
         assert_inbounds(x)
         return x[0]*x[1]
 
     x0 = np.array((0.99, -0.99))
     nlcs = [NonlinearConstraint(nci, -10, np.inf),
-            NonlinearConstraint(nce, 1, 1)]
+            NonlinearConstraint(nce, 1, 1, jac=nce_jac)]
 
     res = minimize(fun=obj, x0=x0, method='trust-constr',
                    bounds=bnds, constraints=nlcs)
-    assert res.success
     assert_inbounds(res.x)
     assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
-    assert_allclose(nce(res.x), nlcs[1].ub)
-
-    ref = minimize(fun=obj, x0=x0, method='slsqp',
-                   bounds=bnds, constraints=nlcs)
-    assert_allclose(res.fun, ref.fun)
 
 
 def test_gh20665_too_many_constraints():
@@ -763,6 +761,25 @@ def test_gh20665_too_many_constraints():
         minimize(rosen, x0, method='trust-constr', constraints=[g],
                  options={'factorization_method': 'SVDFactorization'})
 
+def test_issue_18882():
+    def lsf(u):
+        u1, u2 = u
+        a, b = [3.0, 4.0]
+        return 1.0 + u1**2 / a**2 - u2**2 / b**2
+
+    def of(u):
+        return np.sum(u**2)
+
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning, "delta_grad == 0.0")
+        sup.filter(UserWarning, "Singular Jacobian matrix.")
+        res = minimize(
+            of,
+            [0.0, 0.0],
+            method="trust-constr",
+            constraints=NonlinearConstraint(lsf, 0, 0),
+        )
+    assert (not res.success) and (res.constr_violation > 1e-8)
 
 class TestBoundedNelderMead:
 

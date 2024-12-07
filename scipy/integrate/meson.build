@@ -63,8 +63,7 @@ dop_lib = static_library('dop_lib',
 
 py3.extension_module('_quadpack',
   ['__quadpack.h', '__quadpack.c'],
-  include_directories: ['../_lib/src'],
-  dependencies: np_dep,
+  dependencies: [np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/integrate'
 )
@@ -134,17 +133,20 @@ py3.extension_module('_test_odeint_banded',
 )
 
 subdir('_ivp')
+subdir('_rules')
 subdir('tests')
 
 py3.install_sources([
     '__init__.py',
     '_bvp.py',
+    '_lebedev.py',
     '_ode.py',
     '_quad_vec.py',
     '_quadrature.py',
     '_odepack_py.py',
     '_quadpack_py.py',
     '_tanhsinh.py',
+    '_cubature.py',
     'dop.py',
     'lsoda.py',
     'odepack.py',
