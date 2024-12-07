@@ -90,9 +90,9 @@ jobs:
 
       - name: pip-packages
         run: |
-          # 1.23.5 is currently the oldest numpy usable on cp3.10 according
+          # 1.24.4 is currently the oldest numpy usable on cp3.10 according
           # to pyproject.toml
-          python -m pip install numpy==1.23.5 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis
+          python -m pip install numpy==1.24.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
