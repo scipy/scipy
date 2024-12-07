@@ -252,6 +252,12 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     build_dir = os.path.abspath(kwargs['build_dir'])
     site_package_dir = get_site_packages(build_dir)
 
+    if site_package_dir is None and coverage:
+        raise FileNotFoundError(
+            "SciPy build not found, please execute "
+            "``spin build`` before calling ``spin test --coverage``. "
+            "We need it to figure out whether ``lcov`` can be called or not.")
+
     if site_package_dir is not None:
         with working_dir(site_package_dir):
             sys.path.insert(0, site_package_dir)
