@@ -112,7 +112,6 @@ py3.install_sources([
 )
 
 py3.install_sources([
-    '_ckdtree.pyi',
     '_qhull.pyi',
     '_voronoi.pyi',
     'distance.pyi'

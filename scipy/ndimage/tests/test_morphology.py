@@ -1,7 +1,7 @@
 import numpy as np
 from scipy._lib._array_api import (
     is_cupy, is_numpy, is_torch, array_namespace,
-    xp_assert_equal, assert_array_almost_equal
+    xp_assert_close, xp_assert_equal, assert_array_almost_equal
 )
 import pytest
 from pytest import raises as assert_raises
@@ -2253,6 +2253,64 @@ class TestNdimageMorphology:
         out = ndimage.binary_fill_holes(data)
         assert_array_almost_equal(out, expected)
 
+    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(
+        "cupy", reason="these filters do not yet have axes support in CuPy")
+    @skip_xp_backends(
+        "jax.numpy", reason="these filters are not implemented in JAX.numpy")
+    @pytest.mark.parametrize('border_value',[0, 1])
+    @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
+    @pytest.mark.parametrize('expand_axis', [0, 1, 2])
+    @pytest.mark.parametrize('func_name', ["binary_erosion",
+                                           "binary_dilation",
+                                           "binary_opening",
+                                           "binary_closing",
+                                           "binary_hit_or_miss",
+                                           "binary_propagation",
+                                           "binary_fill_holes"])
+    def test_binary_axes(self, xp, func_name, expand_axis, origin, border_value):
+        struct = np.asarray([[0, 1, 0],
+                             [1, 1, 1],
+                             [0, 1, 0]], bool)
+        struct = xp.asarray(struct)
+
+        data = np.asarray([[0, 0, 0, 1, 0, 0, 0],
+                           [0, 0, 0, 1, 0, 0, 0],
+                           [0, 0, 1, 1, 0, 1, 0],
+                           [0, 1, 0, 1, 1, 0, 1],
+                           [0, 1, 1, 1, 1, 1, 0],
+                           [0, 0, 1, 1, 0, 0, 0],
+                           [0, 0, 0, 1, 0, 0, 0]], bool)
+        data = xp.asarray(data)
+        if func_name == "binary_hit_or_miss":
+            kwargs = dict(origin1=origin, origin2=origin)
+        else:
+            kwargs = dict(origin=origin)
+        border_supported = func_name not in ["binary_hit_or_miss",
+                                             "binary_fill_holes"]
+        if border_supported:
+            kwargs['border_value'] = border_value
+        elif border_value != 0:
+            pytest.skip('border_value !=0 unsupported by this function')
+        func = getattr(ndimage, func_name)
+        expected = func(data, struct, **kwargs)
+
+        # replicate data and expected result along a new axis
+        n_reps = 5
+        expected = xp.stack([expected] * n_reps, axis=expand_axis)
+        data = xp.stack([data] * n_reps, axis=expand_axis)
+
+        # filter all axes except expand_axis
+        axes = [0, 1, 2]
+        axes.remove(expand_axis)
+        if is_numpy(xp) or is_cupy(xp):
+            out = xp.asarray(np.zeros(data.shape, bool))
+            func(data, struct, output=out, axes=axes, **kwargs)
+        else:
+            # inplace output= is unsupported by JAX
+            out = func(data, struct, axes=axes, **kwargs)
+        xp_assert_close(out, expected)
+
     def test_grey_erosion01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2585,6 +2643,62 @@ class TestNdimageMorphology:
         # Check that type mismatch is properly handled
         output = xp.empty_like(array, dtype=xp.float64)
         ndimage.black_tophat(array, structure=structure, output=output)
+
+    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(
+        "cupy", reason="these filters do not yet have axes support in CuPy")
+    @skip_xp_backends(
+        "jax.numpy", reason="these filters are not implemented in JAX.numpy")
+    @pytest.mark.parametrize('origin', [(0, 0), (-1, 0)])
+    @pytest.mark.parametrize('expand_axis', [0, 1, 2])
+    @pytest.mark.parametrize('mode', ['reflect', 'constant', 'nearest',
+                                      'mirror', 'wrap'])
+    @pytest.mark.parametrize('footprint_mode', ['size', 'footprint',
+                                                'structure'])
+    @pytest.mark.parametrize('func_name', ["grey_erosion",
+                                           "grey_dilation",
+                                           "grey_opening",
+                                           "grey_closing",
+                                           "morphological_laplace",
+                                           "morphological_gradient",
+                                           "white_tophat",
+                                           "black_tophat"])
+    def test_grey_axes(self, xp, func_name, expand_axis, origin, footprint_mode,
+                       mode):
+
+        data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
+                           [0, 0, 0, 4, 0, 0, 0],
+                           [0, 0, 2, 1, 0, 2, 0],
+                           [0, 3, 0, 6, 5, 0, 1],
+                           [0, 4, 5, 3, 3, 4, 0],
+                           [0, 0, 9, 3, 0, 0, 0],
+                           [0, 0, 0, 2, 0, 0, 0]])
+        kwargs = dict(origin=origin, mode=mode)
+        if footprint_mode == 'size':
+            kwargs['size'] = (2, 3)
+        else:
+            kwargs['footprint'] = xp.asarray([[1, 0, 1], [1, 1, 0]])
+        if footprint_mode == 'structure':
+            kwargs['structure'] = xp.ones_like(kwargs['footprint'])
+        func = getattr(ndimage, func_name)
+        expected = func(data, **kwargs)
+
+        # replicate data and expected result along a new axis
+        n_reps = 5
+        expected = xp.stack([expected] * n_reps, axis=expand_axis)
+        data = xp.stack([data] * n_reps, axis=expand_axis)
+
+        # filter all axes except expand_axis
+        axes = [0, 1, 2]
+        axes.remove(expand_axis)
+
+        if is_numpy(xp) or is_cupy(xp):
+            out = xp.zeros(expected.shape, dtype=expected.dtype)
+            func(data, output=out, axes=axes, **kwargs)
+        else:
+            # inplace output= is unsupported by JAX
+            out = func(data, axes=axes, **kwargs)
+        xp_assert_close(out, expected)
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss01(self, dtype, xp):

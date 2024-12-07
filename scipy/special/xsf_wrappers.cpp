@@ -556,10 +556,6 @@ double xsf_bdtri(double k, int n, double y) { return xsf::bdtri(k, n, y); }
 
 double xsf_bdtrc(double k, int n, double p) { return xsf::bdtrc(k, n, p); }
 
-double xsf_btdtri(double aa, double bb, double yy0) { return xsf::btdtri(aa, bb, yy0); }
-
-double xsf_btdtr(double a, double b, double x) { return xsf::btdtr(a, b, x); }
-
 double xsf_chdtr(double df, double x) { return xsf::chdtr(df, x); }
 
 double xsf_chdtrc(double df, double x) { return xsf::chdtrc(df, x); }

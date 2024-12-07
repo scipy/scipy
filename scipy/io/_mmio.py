@@ -16,7 +16,7 @@ import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 
-from scipy.sparse import coo_matrix, issparse
+from scipy.sparse import coo_array, issparse, coo_matrix
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
@@ -81,7 +81,7 @@ def mminfo(source):
 # -----------------------------------------------------------------------------
 
 
-def mmread(source):
+def mmread(source, *, spmatrix=True):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -90,11 +90,13 @@ def mmread(source):
     source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
 
     Returns
     -------
-    a : ndarray or coo_matrix
-        Dense or sparse matrix depending on the matrix format in the
+    a : ndarray or coo_array or coo_matrix
+        Dense or sparse array depending on the matrix format in the
         Matrix Market file.
 
     Examples
@@ -115,18 +117,18 @@ def mmread(source):
 
     ``mmread(source)`` returns the data as sparse matrix in COO format.
 
-    >>> m = mmread(StringIO(text))
+    >>> m = mmread(StringIO(text), spmatrix=False)
     >>> m
-    <5x5 sparse matrix of type '<class 'numpy.float64'>'
-    with 7 stored elements in COOrdinate format>
-    >>> m.A
+    <COOrdinate sparse array of dtype 'float64'
+         with 7 stored elements and shape (5, 5)>
+    >>> m.toarray()
     array([[0., 0., 0., 0., 0.],
            [0., 0., 1., 0., 0.],
            [0., 0., 0., 2., 3.],
            [4., 5., 6., 7., 0.],
            [0., 0., 0., 0., 0.]])
     """
-    return MMFile().read(source)
+    return MMFile().read(source, spmatrix=spmatrix)
 
 # -----------------------------------------------------------------------------
 
@@ -160,7 +162,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     --------
     >>> from io import BytesIO
     >>> import numpy as np
-    >>> from scipy.sparse import coo_matrix
+    >>> from scipy.sparse import coo_array
     >>> from scipy.io import mmwrite
 
     Write a small NumPy array to a matrix market file.  The file will be
@@ -173,14 +175,14 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     %%MatrixMarket matrix array real general
     %
     2 4
-    1.0000000000000000e+00
-    0.0000000000000000e+00
-    0.0000000000000000e+00
-    2.5000000000000000e+00
-    0.0000000000000000e+00
-    0.0000000000000000e+00
-    0.0000000000000000e+00
-    6.2500000000000000e+00
+    1
+    0
+    0
+    2.5
+    0
+    0
+    0
+    6.25
 
     Add a comment to the output file, and set the precision to 3.
 
@@ -192,21 +194,21 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     % Some test data.
     %
     2 4
-    1.000e+00
-    0.000e+00
-    0.000e+00
-    2.500e+00
-    0.000e+00
-    0.000e+00
-    0.000e+00
-    6.250e+00
+    1.00e+00
+    0.00e+00
+    0.00e+00
+    2.50e+00
+    0.00e+00
+    0.00e+00
+    0.00e+00
+    6.25e+00
 
     Convert to a sparse matrix before calling ``mmwrite``.  This will
     result in the output format being ``'coordinate'`` rather than
     ``'array'``.
 
     >>> target = BytesIO()
-    >>> mmwrite(target, coo_matrix(a), precision=3)
+    >>> mmwrite(target, coo_array(a), precision=3)
     >>> print(target.getvalue().decode('latin1'))
     %%MatrixMarket matrix coordinate real general
     %
@@ -231,12 +233,12 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     %%MatrixMarket matrix array complex hermitian
     %
     3 3
-    3.00e+00 0.00e+00
-    1.00e+00 -2.00e+00
-    4.00e+00 3.00e+00
-    1.00e+00 0.00e+00
-    0.00e+00 5.00e+00
-    2.50e+00 0.00e+00
+    3.0e+00 0.0e+00
+    1.0e+00 -2.0e+00
+    4.0e+00 3.0e+00
+    1.0e+00 0.0e+00
+    0.0e+00 5.0e+00
+    2.5e+00 0.0e+00
 
     """
     MMFile().write(target, a, comment, field, precision, symmetry)
@@ -559,7 +561,7 @@ class MMFile:
         self._init_attrs(**kwargs)
 
     # -------------------------------------------------------------------------
-    def read(self, source):
+    def read(self, source, *, spmatrix=True):
         """
         Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -568,22 +570,28 @@ class MMFile:
         source : str or file-like
             Matrix Market filename (extensions .mtx, .mtz.gz)
             or open file object.
+        spmatrix : bool, optional (default: True)
+            If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
 
         Returns
         -------
-        a : ndarray or coo_matrix
-            Dense or sparse matrix depending on the matrix format in the
+        a : ndarray or coo_array or coo_matrix
+            Dense or sparse array depending on the matrix format in the
             Matrix Market file.
         """
         stream, close_it = self._open(source)
 
         try:
             self._parse_header(stream)
-            return self._parse_body(stream)
+            data = self._parse_body(stream)
 
         finally:
             if close_it:
                 stream.close()
+        if spmatrix and isinstance(data, coo_array):
+            data = coo_matrix(data)
+        return data
+
 
     # -------------------------------------------------------------------------
     def write(self, target, a, comment='', field=None, precision=None,
@@ -715,7 +723,7 @@ class MMFile:
 
             if entries == 0:
                 # empty matrix
-                return coo_matrix((rows, cols), dtype=dtype)
+                return coo_array((rows, cols), dtype=dtype)
 
             I = zeros(entries, dtype='intc')
             J = zeros(entries, dtype='intc')
@@ -775,7 +783,7 @@ class MMFile:
 
                 V = concatenate((V, od_V))
 
-            a = coo_matrix((V, (I, J)), shape=(rows, cols), dtype=dtype)
+            a = coo_array((V, (I, J)), shape=(rows, cols), dtype=dtype)
         else:
             raise NotImplementedError(format)
 
@@ -908,10 +916,10 @@ class MMFile:
             # if symmetry format used, remove values above main diagonal
             if symmetry != self.SYMMETRY_GENERAL:
                 lower_triangle_mask = coo.row >= coo.col
-                coo = coo_matrix((coo.data[lower_triangle_mask],
-                                 (coo.row[lower_triangle_mask],
-                                  coo.col[lower_triangle_mask])),
-                                 shape=coo.shape)
+                coo = coo_array((coo.data[lower_triangle_mask],
+                                (coo.row[lower_triangle_mask],
+                                 coo.col[lower_triangle_mask])),
+                                shape=coo.shape)
 
             # write shape spec
             data = '%i %i %i\n' % (rows, cols, coo.nnz)

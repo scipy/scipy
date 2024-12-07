@@ -2,7 +2,8 @@ import warnings
 
 import numpy as np
 from scipy.special import factorial
-from scipy._lib._util import _asarray_validated, float_factorial, check_random_state
+from scipy._lib._util import (_asarray_validated, float_factorial, check_random_state,
+                              _transition_to_rng)
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate",
@@ -564,13 +565,29 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         If absent or None, the weights will be computed from `xi` (default).
         This allows for the reuse of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation.
-    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : {None, int, `numpy.random.Generator`}, optional
+        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used. Specify `rng` for repeatable interpolation.
+
+        If this argument `random_state` is passed by keyword,
+        legacy behavior for the argument `random_state` applies:
+
+        - If `random_state` is None (or `numpy.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `random_state` is an int, a new ``RandomState`` instance is used,
+          seeded with `random_state`.
+        - If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+          that instance is used.
+
+        .. versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` this keyword was changed from `random_state` to `rng`.
+            For an interim period, both keywords will continue to work (only specify
+            one of them). After the interim period using the `random_state` keyword will emit
+            warnings. The behavior of the `random_state` and `rng` keywords is outlined above.
 
     Notes
     -----
@@ -619,10 +636,11 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> plt.show()
     """ # numpy/numpydoc#87  # noqa: E501
 
-    def __init__(self, xi, yi=None, axis=0, *, wi=None, random_state=None):
+    @_transition_to_rng("random_state", replace_doc=False)
+    def __init__(self, xi, yi=None, axis=0, *, wi=None, rng=None):
         super().__init__(xi, yi, axis)
 
-        random_state = check_random_state(random_state)
+        rng = check_random_state(rng)
 
         self.xi = np.asarray(xi, dtype=np.float64)
         self.set_yi(yi)
@@ -643,7 +661,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             # these numerical stability improvements will be able to provide all
             # the points to the constructor.
             self._inv_capacity = 4.0 / (np.max(self.xi) - np.min(self.xi))
-            permute = random_state.permutation(self.n, )
+            permute = rng.permutation(self.n, )
             inv_permute = np.zeros(self.n, dtype=np.int32)
             inv_permute[permute] = np.arange(self.n)
             self.wi = np.zeros(self.n)
@@ -862,7 +880,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         return self._diff_baryint._evaluate_derivatives(x, der-1, all_lower=False)
 
 
-def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
+def barycentric_interpolate(xi, yi, x, axis=0, *, der=0, rng=None):
     """
     Convenience function for polynomial interpolation.
 
@@ -887,13 +905,18 @@ def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
         The y coordinates of the points the polynomial should pass through.
     x : scalar or array_like
         Point or points at which to evaluate the interpolant.
+    axis : int, optional
+        Axis in the `yi` array corresponding to the x-coordinate values.
     der : int or list or None, optional
         How many derivatives to evaluate, or None for all potentially
         nonzero derivatives (that is, a number equal to the number
         of points), or a list of derivatives to evaluate. This number
         includes the function value as the '0th' derivative.
-    axis : int, optional
-        Axis in the `yi` array corresponding to the x-coordinate values.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -929,7 +952,7 @@ def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
     >>> plt.show()
 
     """
-    P = BarycentricInterpolator(xi, yi, axis=axis)
+    P = BarycentricInterpolator(xi, yi, axis=axis, rng=rng)
     if der == 0:
         return P(x)
     elif _isscalar(der):

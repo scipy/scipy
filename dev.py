@@ -106,7 +106,7 @@ import importlib
 import importlib.util
 import errno
 import contextlib
-from sysconfig import get_path
+import sysconfig
 import math
 import traceback
 from concurrent.futures.process import _MAX_WINDOWS_WORKERS
@@ -326,22 +326,14 @@ class Dirs:
         return dist_packages path or site_packages path.
         """
         if sys.version_info >= (3, 12):
-            plat_path = Path(get_path('platlib'))
+            plat_path = Path(sysconfig.get_path('platlib'))
         else:
-            # distutils is required to infer meson install path
-            # for python < 3.12 in debian patched python
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning)
-                from distutils import dist
-                from distutils.command.install import INSTALL_SCHEMES
-            if 'deb_system' in INSTALL_SCHEMES:
-                # debian patched python in use
-                install_cmd = dist.Distribution().get_command_obj('install')
-                install_cmd.select_scheme('deb_system')
-                install_cmd.finalize_options()
-                plat_path = Path(install_cmd.install_platlib)
+            # infer meson install path for python < 3.12 in
+            # debian patched python
+            if 'deb_system' in sysconfig.get_scheme_names():
+                plat_path = Path(sysconfig.get_path('platlib', 'deb_system'))
             else:
-                plat_path = Path(get_path('platlib'))
+                plat_path = Path(sysconfig.get_path('platlib'))
         return self.installed / plat_path.relative_to(sys.exec_prefix)
 
 
@@ -730,6 +722,53 @@ class Test(Task):
         'task_dep': ['build'],
     }
 
+    @staticmethod
+    def run_lcov(dirs):
+        print("Capturing lcov info...")
+        LCOV_OUTPUT_FILE = os.path.join(dirs.build, "lcov.info")
+        LCOV_OUTPUT_DIR = os.path.join(dirs.build, "lcov")
+        BUILD_DIR = str(dirs.build)
+
+        try:
+            os.unlink(LCOV_OUTPUT_FILE)
+        except OSError:
+            pass
+        try:
+            shutil.rmtree(LCOV_OUTPUT_DIR)
+        except OSError:
+            pass
+
+        lcov_cmd = [
+            "lcov", "--capture",
+            "--directory", BUILD_DIR,
+            "--output-file", LCOV_OUTPUT_FILE,
+            "--no-external"]
+        lcov_cmd_str = " ".join(lcov_cmd)
+        emit_cmdstr(" ".join(lcov_cmd))
+        try:
+            subprocess.call(lcov_cmd)
+        except OSError as err:
+            if err.errno == errno.ENOENT:
+                print(f"Error when running '{lcov_cmd_str}': {err}\n"
+                    "You need to install LCOV (https://lcov.readthedocs.io/en/latest/) "
+                    "to capture test coverage of C/C++/Fortran code in SciPy.")
+                return False
+            raise
+
+        print("Generating lcov HTML output...")
+        genhtml_cmd = [
+            "genhtml", "-q", LCOV_OUTPUT_FILE,
+            "--output-directory", LCOV_OUTPUT_DIR,
+            "--legend", "--highlight"]
+        emit_cmdstr(genhtml_cmd)
+        ret = subprocess.call(genhtml_cmd)
+        if ret != 0:
+            print("genhtml failed!")
+        else:
+            print("HTML output generated under build/lcov/")
+
+        return ret == 0
+
     @classmethod
     def scipy_tests(cls, args, pytest_args):
         dirs = Dirs(args)
@@ -771,6 +810,22 @@ class Test(Task):
                   f"installed at:{mod_path}")
             # runner verbosity - convert bool to int
             verbose = int(args.verbose) + 1
+
+            was_built_with_gcov_flag = len(list(dirs.build.rglob("*.gcno"))) > 0
+            if was_built_with_gcov_flag:
+                config = importlib.import_module("scipy.__config__").show(mode='dicts')
+                compilers_config = config['Compilers']
+                cpp = compilers_config['c++']['name']
+                c = compilers_config['c']['name']
+                fortran = compilers_config['fortran']['name']
+                if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
+                    print("SciPy was built with --gcov flag which requires "
+                          "LCOV while running tests.\nFurther, LCOV usage "
+                          "requires GCC for C, C++ and Fortran codes in SciPy.\n"
+                          "Compilers used currently are:\n"
+                          f"  C: {c}\n  C++: {cpp}\n  Fortran: {fortran}\n"
+                          "Therefore, exiting without running tests.")
+                    exit(1) # Exit because tests will give missing symbol error
             result = runner(  # scipy._lib._testutils:PytestTester
                 args.mode,
                 verbose=verbose,
@@ -779,6 +834,12 @@ class Test(Task):
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)
+            if args.coverage and was_built_with_gcov_flag:
+                if not result:
+                    print("Tests should succeed to generate "
+                          "coverage reports using LCOV")
+                else:
+                    return cls.run_lcov(dirs)
         return result
 
     @classmethod
@@ -1100,11 +1161,11 @@ def task_check_python_h_first():
     }
 
 
-def task_unicode_check():
-    # emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
+def task_check_unicode():
+    # emit_cmdstr(os.path.join('tools', 'check_unicode.py'))
     return {
-        'basename': 'unicode-check',
-        'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
+        'basename': 'check_unicode',
+        'actions': [str(Dirs().root / 'tools' / 'check_unicode.py')],
         'doc': 'Check for disallowed Unicode characters in the SciPy Python '
                'and Cython source code.',
     }
@@ -1131,7 +1192,7 @@ class Lint:
     def run(cls, fix):
         run_doit_task({
             'lint': {'fix': fix},
-            'unicode-check': {},
+            'check-unicode': {},
             'check-testname': {},
             'check_python_h_first': {},
         })

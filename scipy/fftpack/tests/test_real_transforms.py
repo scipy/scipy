@@ -1,4 +1,5 @@
 from os.path import join, dirname
+import threading
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_equal
@@ -192,9 +193,14 @@ class _TestDCTBase:
         self.dec = 14
         self.type = None
 
-    def test_definition(self):
+    @pytest.fixture
+    def dct_lock(self):
+        return threading.Lock()
+
+    def test_definition(self, dct_lock):
         for i in FFTWDATA_SIZES:
-            x, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
+            with dct_lock:
+                x, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
             y = dct(x, type=self.type)
             assert_equal(y.dtype, dt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
@@ -206,8 +212,9 @@ class _TestDCTBase:
 
     def test_axis(self):
         nt = 2
+        rng = np.random.RandomState(1234)
         for i in [7, 8, 9, 16, 32, 64]:
-            x = np.random.randn(nt, i)
+            x = rng.randn(nt, i)
             y = dct(x, type=self.type)
             for j in range(nt):
                 assert_array_almost_equal(y[j], dct(x[j], type=self.type),
@@ -355,9 +362,14 @@ class _TestIDCTBase:
         self.dec = 14
         self.type = None
 
-    def test_definition(self):
+    @pytest.fixture
+    def idct_lock(self):
+        return threading.Lock()
+
+    def test_definition(self, idct_lock):
         for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
+            with idct_lock:
+                xr, yr, dt = fftw_dct_ref(self.type, i, self.rdt)
             x = idct(yr, type=self.type)
             if self.type == 1:
                 x /= 2 * (i-1)
@@ -460,9 +472,14 @@ class _TestDSTBase:
         self.dec = None  # number of decimals to match
         self.type = None  # dst type
 
-    def test_definition(self):
+    @pytest.fixture
+    def dst_lock(self):
+        return threading.Lock()
+
+    def test_definition(self, dst_lock):
         for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
+            with dst_lock:
+                xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
             y = dst(xr, type=self.type)
             assert_equal(y.dtype, dt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
@@ -585,9 +602,14 @@ class _TestIDSTBase:
         self.dec = None
         self.type = None
 
-    def test_definition(self):
+    @pytest.fixture
+    def idst_lock(self):
+        return threading.Lock()
+
+    def test_definition(self, idst_lock):
         for i in FFTWDATA_SIZES:
-            xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
+            with idst_lock:
+                xr, yr, dt = fftw_dst_ref(self.type, i, self.rdt)
             x = idst(yr, type=self.type)
             if self.type == 1:
                 x /= 2 * (i+1)
@@ -701,11 +723,11 @@ class TestOverwrite:
             assert_equal(x2, x, err_msg=f"spurious overwrite in {sig}")
 
     def _check_1d(self, routine, dtype, shape, axis):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         if np.issubdtype(dtype, np.complexfloating):
-            data = np.random.randn(*shape) + 1j*np.random.randn(*shape)
+            data = rng.randn(*shape) + 1j*rng.randn(*shape)
         else:
-            data = np.random.randn(*shape)
+            data = rng.randn(*shape)
         data = data.astype(dtype)
 
         for type in [1, 2, 3, 4]:

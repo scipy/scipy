@@ -164,6 +164,7 @@ def test_label02(xp):
     assert n == 0
 
 
+@pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
 def test_label03(xp):
     data = xp.ones([1])
     out, n = ndimage.label(data)
@@ -823,7 +824,7 @@ def test_maximum04(xp):
 def test_maximum05(xp):
     # Regression test for ticket #501 (Trac)
     x = xp.asarray([-3, -2, -1])
-    assert ndimage.maximum(x) == -1 
+    assert ndimage.maximum(x) == -1
 
 
 def test_median01(xp):

@@ -19,8 +19,7 @@ py3.extension_module('_minpack',
     '__minpack.h',
     '__minpack.c',
   ],
-  include_directories: '../_lib/src',
-  dependencies: np_dep,
+  dependencies: [np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -140,9 +139,8 @@ _dummy_init_optimize = fs.copyfile('__init__.py')
 
 # Copying this .pxd file is only needed because of a Cython bug, see
 # discussion on SciPy PR gh-18810.
-cython_optimize_pxd = [
-  fs.copyfile('cython_optimize.pxd'),
-]
+cython_optimize_pxd = fs.copyfile('cython_optimize.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 opt_gen = generator(cython,
   arguments : cython_args,
@@ -172,12 +170,13 @@ subdir('_trlib')
 subdir('_trustregion_constr')
 subdir('cython_optimize')
 subdir('_shgo_lib')
-subdir('_highs')
+subdir('_highspy')
 subdir('tests')
 
 
 py3.install_sources([
   '__init__.py',
+  '__init__.pxd',
   '_basinhopping.py',
   '_bracket.py',
   '_chandrupatla.py',

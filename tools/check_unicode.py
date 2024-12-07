@@ -5,6 +5,8 @@ from itertools import chain
 from glob import iglob
 import sys
 import argparse
+import os
+from get_submodule_paths import get_submodule_paths
 
 
 # The set of Unicode code points greater than 127 that we allow in the source code:
@@ -16,22 +18,27 @@ import argparse
 latin1_letters = set(chr(cp) for cp in range(192, 256))
 greek_letters = set('αβγδεζηθικλμνξoπρστυϕχψω' + 'ΓΔΘΛΞΠΣϒΦΨΩ')
 box_drawing_chars = set(chr(cp) for cp in range(0x2500, 0x2580))
-extra_symbols = set('®ő∫≠≥≤±∞²³')
+extra_symbols = set('®ő∫≠≥≤±∞²³·→√')
 allowed = latin1_letters | greek_letters | box_drawing_chars | extra_symbols
 # END_INCLUDE_RST (do not change this line!)
 
 
-def unicode_check(showall=False):
+def check_unicode(showall=False):
     """
     If showall is True, all non-ASCII characters are displayed.
     """
     # File encoding regular expression from PEP-263.
     encoding_pat = re.compile("^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)")
+    root_dir = os.path.dirname(os.path.dirname(__file__))
+    submodule_paths = get_submodule_paths()
 
     nbad = 0
-    for name in chain(iglob('scipy/**/*.py', recursive=True),
-                      iglob('scipy/**/*.pyx', recursive=True),
-                      iglob('scipy/**/*.px[di]', recursive=True)):
+    for name in chain(iglob(os.path.join(root_dir, 'scipy/**/*.py'), recursive=True),
+                      iglob(os.path.join(root_dir, 'scipy/**/*.pyx'), recursive=True),
+                      iglob(os.path.join(root_dir, 'scipy/**/*.px[di]'),
+                            recursive=True)):
+        if any(submodule_path in name for submodule_path in submodule_paths):
+            continue
         # Read the file as bytes, and check for any bytes greater than 127.
         with open(name, 'rb') as f:
             content = f.read()
@@ -85,4 +92,4 @@ if __name__ == "__main__":
                         help=('Show non-ASCII Unicode characters from all '
                               'files.'))
     args = parser.parse_args()
-    sys.exit(unicode_check(args.showall) > 0)
+    sys.exit(check_unicode(args.showall) > 0)

@@ -81,6 +81,7 @@ an alternative to ode with the zvode solver, sometimes performing better.
 __all__ = ['ode', 'complex_ode']
 
 import re
+import threading
 import warnings
 
 from numpy import asarray, array, zeros, isscalar, real, imag, vstack
@@ -93,6 +94,12 @@ from . import _lsoda
 _dop_int_dtype = _dop.types.intvar.dtype
 _vode_int_dtype = _vode.types.intvar.dtype
 _lsoda_int_dtype = _lsoda.types.intvar.dtype
+
+
+# lsoda, vode and zvode are not thread-safe. VODE_LOCK protects both vode and
+# zvode; they share the `def run` implementation
+LSODA_LOCK = threading.Lock()
+VODE_LOCK = threading.Lock()
 
 
 # ------------------------------------------------------------------------------
@@ -1004,7 +1011,10 @@ class vode(IntegratorBase):
 
         args = ((f, jac, y0, t0, t1) + tuple(self.call_args) +
                 (f_params, jac_params))
-        y1, t, istate = self.runner(*args)
+
+        with VODE_LOCK:
+            y1, t, istate = self.runner(*args)
+
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
@@ -1343,7 +1353,10 @@ class lsoda(IntegratorBase):
             self.acquire_new_handle()
         args = [f, y0, t0, t1] + self.call_args[:-1] + \
                [jac, self.call_args[-1], f_params, 0, jac_params]
-        y1, t, istate = self.runner(*args)
+
+        with LSODA_LOCK:
+            y1, t, istate = self.runner(*args)
+
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'

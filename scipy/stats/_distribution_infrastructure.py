@@ -1,16 +1,19 @@
 import functools
 from abc import ABC, abstractmethod
 from functools import cached_property
+import math
 
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _lazywhere
+from scipy._lib._util import _lazywhere, _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
-from scipy import special
-from scipy.integrate._tanhsinh import _tanhsinh
+from scipy import special, stats
+from scipy.integrate import tanhsinh as _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
+from scipy.stats._probability_distribution import _ProbabilityDistribution
+from scipy.stats import qmc
 
 # in case we need to distinguish between None and not specified
 # Typically this is used to determine whether the tolerance has been set by the
@@ -59,13 +62,10 @@ _NO_CACHE = "no_cache"
 #  implement symmetric distribution
 #  implement composite distribution
 #  implement wrapped distribution
-#  implement folded distribution
-#  implement double distribution
 #  profile/optimize
 #  general cleanup (choose keyword-only parameters)
 #  compare old/new distribution timing
 #  make video
-#  PR
 #  add array API support
 #  why does dist.ilogcdf(-100) not converge to bound? Check solver response to inf
 #  _chandrupatla_minimize should not report xm = fm = NaN when it fails
@@ -1043,7 +1043,7 @@ def _dispatch(f):
             method = getattr(self, method_name)
         else:
             method = f(self, *args, method=method, **kwargs)
-            if self.cache_policy != _NO_CACHE:
+            if func_name != '_sample_dispatch' and self.cache_policy != _NO_CACHE:
                 self._method_cache[func_name] = method
 
         try:
@@ -1102,7 +1102,6 @@ def _cdf2_input_validation(f):
         if func_name in {'_cdf2', '_ccdf2'}:
             res = np.clip(res, 0., 1.)
         else:
-            res = res.real  # exp(res) > 0
             res = np.clip(res, None, 0.)  # exp(res) < 1
 
         # Transform the result to account for swapped argument order
@@ -1188,7 +1187,8 @@ def _log1mexp(x):
 
     def f2(x):
         # good for exp(x) close to 1
-        return np.real(np.log(-special.expm1(x + 0j)))
+        with np.errstate(divide='ignore'):
+            return np.real(np.log(-special.expm1(x + 0j)))
 
     return _lazywhere(x < -1, (x,), f=f1, f2=f2)[()]
 
@@ -1398,7 +1398,7 @@ def _generate_example(dist_family):
     return example
 
 
-class ContinuousDistribution:
+class ContinuousDistribution(_ProbabilityDistribution):
     r""" Class that represents a continuous statistical distribution.
 
     Parameters
@@ -1571,6 +1571,12 @@ class ContinuousDistribution:
         self._parameters = parameters
         self._parameterization = parameterization
         self._original_parameters = original_parameters
+        for name in self._parameters.keys():
+            # Make parameters properties of the class; return values from the instance
+            if hasattr(self.__class__, name):
+                continue
+            setattr(self.__class__, name, property(lambda self_, name_=name:
+                                                   self_._parameters[name_].copy()[()]))
 
     def reset_cache(self):
         r""" Clear all cached values.
@@ -1772,22 +1778,6 @@ class ContinuousDistribution:
             raise ValueError(message)
         self._validation_policy = validation_policy
 
-    def __getattr__(self, item):
-        # This override allows distribution parameters to be accessed as
-        # attributes. See Question 1 at the top.
-
-        # This might be needed in __init__ to ensure that `_parameters` exists
-        # super().__setattr__('_parameters', dict())
-
-        # This is needed for deepcopy/pickling
-        if '_parameters' not in vars(self):
-            return super().__getattribute__(item)
-
-        if item in self._parameters:
-            return self._parameters[item][()]
-
-        return super().__getattribute__(item)
-
     ### Other magic methods
 
     def __repr__(self):
@@ -1819,7 +1809,7 @@ class ContinuousDistribution:
         return ShiftedScaledDistribution(self, loc=loc)
 
     def __sub__(self, loc):
-        return ShiftedScaledDistribution(self, loc=-self.loc)
+        return ShiftedScaledDistribution(self, loc=-loc)
 
     def __mul__(self, scale):
         return ShiftedScaledDistribution(self, scale=scale)
@@ -1827,20 +1817,67 @@ class ContinuousDistribution:
     def __truediv__(self, scale):
         return ShiftedScaledDistribution(self, scale=1/scale)
 
+    def __pow__(self, other):
+        if not np.isscalar(other) or other <= 0 or other != int(other):
+            message = ("Raising a random variable to the power of an argument is only "
+                       "implemented when the argument is a positive integer.")
+            raise NotImplementedError(message)
+
+        X = abs(self) if (other % 2 == 0) else self
+
+        # This notation for g_name is nonstandard
+        funcs = dict(g=lambda u: u**other, g_name=f'pow_{other}',
+                     h=lambda u: np.sign(u) * np.abs(u)**(1 / other),
+                     dh=lambda u: 1/other * np.abs(u)**(1/other - 1))
+
+        return MonotonicTransformedDistribution(X, **funcs, increasing=True)
+
+
     def __radd__(self, other):
         return self.__add__(other)
 
     def __rsub__(self, other):
-        return self.__add__(other)
+        return self.__neg__().__add__(other)
 
     def __rmul__(self, other):
-        return self.__add__(other)
+        return self.__mul__(other)
 
     def __rtruediv__(self, other):
-        return self.__add__(other)
+        a, b = self.support()
+        funcs = dict(g=lambda u: 1 / u, g_name='inv',
+                     h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
+        if np.all(a >= 0) or np.all(b <= 0):
+            out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
+        else:
+            message = ("Division by a random variable is only implemented "
+                       "when the support is either non-negative or non-positive.")
+            raise NotImplementedError(message)
+        if np.all(other == 1):
+            return out
+        else:
+            return out * other
+
+    def __rpow__(self, other):
+        funcs = dict(g=lambda u: other**u, g_name=f'{other}**',
+                     h=lambda u: np.log(u) / np.log(other),
+                     dh=lambda u: 1 / np.abs(u * np.log(other)))
+
+        if not np.isscalar(other) or other <= 0 or other == 1:
+            message = ("Raising an argument to the power of a random variable is only "
+                       "implemented when the argument is a positive scalar other than "
+                       "1.")
+            raise NotImplementedError(message)
+
+        if other > 1:
+            return MonotonicTransformedDistribution(self, **funcs, increasing=True)
+        else:
+            return MonotonicTransformedDistribution(self, **funcs, increasing=False)
 
     def __neg__(self):
         return self * -1
+
+    def __abs__(self):
+        return FoldedDistribution(self)
 
     ### Utilities
 
@@ -1946,8 +1983,8 @@ class ContinuousDistribution:
             # might need to figure out result type based on p
             return np.empty(p.shape, dtype=self._dtype)
 
-        def f2(x, p, **kwargs):
-            return f(x, **kwargs) - p
+        def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
+            return f(x, **kwargs) - _p
 
         f3, args = _kwargs2args(f2, args=[p], kwargs=params)
         # If we know the median or mean, should use it
@@ -2059,100 +2096,6 @@ class ContinuousDistribution:
     # and we use quadrature otherwise.
 
     def support(self):
-        r"""Support of the random variable
-
-        The support of a random variable is set of all possible outcomes;
-        i.e., the subset of the domain of argument :math:`x` for which
-        the probability density function :math:`f(x)` is nonzero.
-
-        This function returns lower and upper bounds of the support.
-
-        Returns
-        -------
-        out : tuple of Array
-            The lower and upper bounds of the support.
-
-        See Also
-        --------
-        pdf
-
-        References
-        ----------
-        .. [1] Support (mathematics), *Wikipedia*,
-               https://en.wikipedia.org/wiki/Support_(mathematics)
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support ``(l, r)``.
-        The following table summarizes the value returned by methods
-        of ``ContinuousDistribution`` for arguments outside the support.
-
-        +----------------+---------------------+---------------------+
-        | Method         | Value for ``x < l`` | Value for ``x > r`` |
-        +================+=====================+=====================+
-        | ``pdf(x)``     | 0                   | 0                   |
-        +----------------+---------------------+---------------------+
-        | ``logpdf(x)``  | -inf                | -inf                |
-        +----------------+---------------------+---------------------+
-        | ``cdf(x)``     | 0                   | 1                   |
-        +----------------+---------------------+---------------------+
-        | ``logcdf(x)``  | -inf                | 0                   |
-        +----------------+---------------------+---------------------+
-        | ``ccdf(x)``    | 1                   | 0                   |
-        +----------------+---------------------+---------------------+
-        | ``logccdf(x)`` | 0                   | -inf                |
-        +----------------+---------------------+---------------------+
-
-        For the ``cdf`` and related methods, the inequality need not be
-        strict; i.e. the tabulated value is returned when the method is
-        evaluated *at* the corresponding boundary.
-
-        The following table summarizes the value returned by the inverse
-        methods of ``ContinuousDistribution`` for arguments at the boundaries
-        of the domain ``0`` to ``1``.
-
-        +-------------+-----------+-----------+
-        | Method      | ``x = 0`` | ``x = 1`` |
-        +=============+===========+===========+
-        | ``icdf(x)`` | ``l``     | ``r``     |
-        +-------------+-----------+-----------+
-        | ``icdf(x)`` | ``r``     | ``l``     |
-        +-------------+-----------+-----------+
-
-        For the inverse log-functions, the same values are returned for
-        for ``x = log(0)`` and ``x = log(1)``. All inverse functions return
-        ``nan`` when evaluated at an argument outside the domain ``0`` to ``1``.
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Retrieve the support of the distribution:
-
-        >>> X.support()
-        (-0.5, 0.5)
-
-        For a distribution with infinite support,
-
-        >>> X = stats.Normal()
-        >>> X.support()
-        (-inf, inf)
-
-        Due to underflow, the numerical value returned by the PDF may be zero
-        even for arguments within the support, even if the true value is
-        nonzero. In such cases, the log-PDF may be useful.
-
-        >>> X.pdf([-100., 100.])
-        array([0., 0.])
-        >>> X.logpdf([-100., 100.])
-        array([-5000.91893853, -5000.91893853])
-
-        Use cases for the log-CDF and related methods are analogous.
-
-        """
         # If this were a `cached_property`, we couldn't update the value
         # when the distribution parameters change.
         # Caching is important, though, because calls to _support take a few
@@ -2191,90 +2134,14 @@ class ContinuousDistribution:
 
     @_set_invalid_nan_property
     def logentropy(self, *, method=None):
-        r"""Logarithm of the differential entropy
-
-        In terms of probability density function :math:`f(x)` and support
-        :math:`\chi`, the differential entropy (or simply "entropy") of a random
-        variable :math:`X` is:
-
-        .. math::
-
-            h(X) = - \int_{\chi} f(x) \log f(x) dx
-
-        `logentropy` computes the logarithm of the differential entropy
-        ("log-entropy"), :math:`log(h(X))`, but it may be numerically favorable
-        compared to the naive implementation (computing :math:`h(X)` then
-        taking the logarithm).
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'logexp', 'quadrature}
-            The strategy used to evaluate the log-entropy. By default
-            (``None``), the infrastructure chooses between the following options,
-            listed in order of precedence.
-
-            - ``'formula'``: use a formula for the log-entropy itself
-            - ``'logexp'``: evaluate the entropy and take the logarithm
-            - ``'quadrature'``: numerically log-integrate the logarithm of the
-              entropy integrand
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The log-entropy.
-
-        See Also
-        --------
-        entropy
-        logpdf
-
-        Notes
-        -----
-        If the entropy of a distribution is negative, then the log-entropy
-        is complex with imaginary part divisible by :math:`\pi`. For
-        consistency, the result of this function always has complex dtype,
-        regardless of the value of the imaginary part.
-
-        References
-        ----------
-        .. [1] Differential entropy, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Differential_entropy
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-1., b=1.)
-
-        Evaluate the log-entropy:
-
-        >>> X.logentropy()
-        (-0.3665129205816642+0j)
-        >>> np.allclose(np.exp(X.logentropy()), X.entropy())
-        True
-
-        For a random variable with negative entropy, the log-entropy has an
-        imaginary part equal to `np.pi`.
-
-        >>> X = stats.Uniform(a=-.1, b=.1)
-        >>> X.entropy(), X.logentropy()
-        (-1.6094379124341007, (0.4758849953271105+3.141592653589793j))
-
-        """
         return self._logentropy_dispatch(method=method, **self._parameters) + 0j
 
     @_dispatch
     def _logentropy_dispatch(self, method=None, **params):
         if self._overrides('_logentropy_formula'):
             method = self._logentropy_formula
-        elif _isnull(self.tol) and self._overrides('_entropy_formula'):
-            method = self._logentropy_logexp
+        elif self._overrides('_entropy_formula'):
+            method = self._logentropy_logexp_safe
         else:
             method = self._logentropy_quadrature
         return method
@@ -2286,6 +2153,15 @@ class ContinuousDistribution:
         res = np.log(self._entropy_dispatch(**params)+0j)
         return _log_real_standardize(res)
 
+    def _logentropy_logexp_safe(self, **params):
+        out = self._logentropy_logexp(**params)
+        mask = np.isinf(out.real)
+        if np.any(mask):
+            params_mask = {key:val[mask] for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._logentropy_quadrature(**params_mask)
+        return out[()]
+
     def _logentropy_quadrature(self, **params):
         def logintegrand(x, **params):
             logpdf = self._logpdf_dispatch(x, **params)
@@ -2295,67 +2171,6 @@ class ContinuousDistribution:
 
     @_set_invalid_nan_property
     def entropy(self, *, method=None):
-        r"""Differential entropy
-
-        In terms of probability density function :math:`f(x)` and support
-        :math:`\chi`, the differential entropy (or simply "entropy") of a
-        continuous random variable :math:`X` is:
-
-        .. math::
-
-            h(X) = - \int_{\chi} f(x) \log f(x) dx
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'logexp', 'quadrature'}
-            The strategy used to evaluate the entropy. By default (``None``),
-            the infrastructure chooses between the following options, listed
-            in order of precedence.
-
-            - ``'formula'``: use a formula for the entropy itself
-            - ``'logexp'``: evaluate the log-entropy and exponentiate
-            - ``'quadrature'``: use numerical integration
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The entropy of the random variable.
-
-        See Also
-        --------
-        logentropy
-        pdf
-
-        Notes
-        -----
-        This function calculates the entropy using the natural logarithm; i.e.
-        the logarithm with base :math:`e`. Consequently, the value is expressed
-        in (dimensionless) "units" of nats. To convert the entropy to different
-        units (i.e. corresponding with a different base), divide the result by
-        the natural logarithm of the desired base.
-
-        References
-        ----------
-        .. [1] Differential entropy, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Differential_entropy
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-1., b=1.)
-
-        Evaluate the entropy:
-
-        >>> X.entropy()
-        0.6931471805599454
-
-        """
         return self._entropy_dispatch(method=method, **self._parameters)
 
     @_dispatch
@@ -2383,61 +2198,6 @@ class ContinuousDistribution:
 
     @_set_invalid_nan_property
     def median(self, *, method=None):
-        r"""Median (50th percentil)
-
-        If a continuous random variable :math:`X` has probability :math:`0.5` of
-        taking on a value less than :math:`m`, then :math:`m` is the median.
-        That is, the median is the value :math:`m` for which:
-
-        .. math::
-
-            P(X ≤ m) = 0.5 = P(X ≥ m)
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'icdf'}
-            The strategy used to evaluate the median.
-            By default (``None``), the infrastructure chooses between the
-            following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the median
-            - ``'icdf'``: evaluate the inverse CDF of 0.5
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The median
-
-        See Also
-        --------
-        mean
-        mode
-        icdf
-
-        References
-        ----------
-        .. [1] Median, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Median#Probability_distributions
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=0., b=10.)
-
-        Compute the median:
-
-        >>> X.median()
-        5
-        >>> X.median() == X.icdf(0.5) == X.iccdf(0.5)
-        True
-
-        """
         return self._median_dispatch(method=method, **self._parameters)
 
     @_dispatch
@@ -2456,100 +2216,6 @@ class ContinuousDistribution:
 
     @_set_invalid_nan_property
     def mode(self, *, method=None):
-        r"""Mode (most likely value)
-
-        Informally, the mode is a value that a random variable has the highest
-        probability (density) of assuming. That is, the mode is the element of
-        the support :math:`\chi` that maximizes the probability density
-        function :math:`f(x)`:
-
-        .. math::
-
-            \text{mode} = \arg\max_{x \in \chi} f(x)
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'optimization'}
-            The strategy used to evaluate the mode.
-            By default (``None``), the infrastructure chooses between the
-            following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the median
-            - ``'optimization'``: numerically maximize the PDF
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The mode
-
-        See Also
-        --------
-        mean
-        median
-        pdf
-
-        Notes
-        -----
-        For some distributions
-
-        #. the mode is not unique (e.g. the uniform distribution);
-        #. the PDF has one or more singularities, and it is debateable whether
-           a singularity is considered to be in the domain and called the mode
-           (e.g. the gamma distribution with shape parameter less than 1); and/or
-        #. the probability density function may have one or more local maxima
-           that are not a global maximum (e.g. mixture distributions).
-
-        In such cases, `mode` will
-
-        #. return a single value,
-        #. consider the mode to occur at a singularity, and/or
-        #. return a local maximum which may or may not be a global maximum.
-
-        If a formula for the mode is not specifically implemented for the
-        chosen distribution, SciPy will attempt to compute the mode
-        numerically, which may not meet the user's preferred definition of a
-        mode. In such cases, the user is encouraged to subclass the
-        distribution and override ``mode``.
-
-        References
-        ----------
-        .. [1] Mode (statistics), *Wikipedia*,
-               https://en.wikipedia.org/wiki/Mode_(statistics)
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=1., sigma=2.)
-
-        Evaluate the mode:
-
-        >>> X.mode()
-        1.0
-
-        If the mode is not uniquely defined, ``mode`` nonetheless returns a
-        single value.
-
-        >>> X = stats.Uniform(a=0., b=1.)
-        >>> X.mode()
-        0.5
-
-        If this choice does not satisfy your requirements, subclass the
-        distribution and override ``mode``:
-
-        >>> class BetterUniform(stats.Uniform):
-        ...     def mode(self):
-        ...         return self.b
-        >>> X = BetterUniform(a=0., b=1.)
-        >>> X.mode()
-        1.0
-
-        """
         return self._mode_dispatch(method=method, **self._parameters)
 
     @_dispatch
@@ -2585,207 +2251,18 @@ class ContinuousDistribution:
         return mode[()]
 
     def mean(self, *, method=None):
-        r"""Mean (raw first moment about the origin)
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'transform', 'quadrature', 'cache'}
-            Method used to calculate the raw first moment. Not
-            all methods are available for all distributions. See
-            `moment` for details.
-
-        See Also
-        --------
-        moment
-        median
-        mode
-
-        References
-        ----------
-        .. [1] Mean, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Mean#Mean_of_a_probability_distribution
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=1., sigma=2.)
-
-        Evaluate the variance:
-
-        >>> X.mean()
-        1.0
-        >>> X.mean() == X.moment(order=1, kind='raw') == X.mu
-        True
-
-        """
         return self.moment(1, kind='raw', method=method)
 
     def variance(self, *, method=None):
-        r"""Variance (central second moment)
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'transform', 'normalize', 'quadrature', 'cache'}
-            Method used to calculate the central second moment. Not
-            all methods are available for all distributions. See
-            `moment` for details.
-
-        See Also
-        --------
-        moment
-        standard_deviation
-        mean
-
-        References
-        ----------
-        .. [1] Variance, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Variance#Absolutely_continuous_random_variable
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=1., sigma=2.)
-
-        Evaluate the variance:
-
-        >>> X.variance()
-        4.0
-        >>> X.variance() == X.moment(order=2, kind='central') == X.sigma**2
-        True
-
-        """
         return self.moment(2, kind='central', method=method)
 
     def standard_deviation(self, *, method=None):
-        r"""Standard deviation (square root of the second central moment)
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'transform', 'normalize', 'quadrature', 'cache'}
-            Method used to calculate the central second moment. Not
-            all methods are available for all distributions. See
-            `moment` for details.
-
-        See Also
-        --------
-        variance
-        mean
-        moment
-
-        References
-        ----------
-        .. [1] Standard deviation, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Standard_deviation#Definition_of_population_values
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=1., sigma=2.)
-
-        Evaluate the standard deviation:
-
-        >>> X.standard_deviation()
-        2.0
-        >>> X.standard_deviation() == X.moment(order=2, kind='central')**0.5 == X.sigma
-        True
-
-        """
         return np.sqrt(self.variance(method=method))
 
     def skewness(self, *, method=None):
-        r"""Skewness (standardized third moment)
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'general', 'transform', 'normalize', 'cache'}
-            Method used to calculate the standardized third moment. Not
-            all methods are available for all distributions. See
-            `moment` for details.
-
-        See Also
-        --------
-        moment
-        mean
-        variance
-
-        References
-        ----------
-        .. [1] Skewness, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Skewness
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=1., sigma=2.)
-
-        Evaluate the skewness:
-
-        >>> X.skewness()
-        0.0
-        >>> X.skewness() == X.moment(order=3, kind='standardized')
-        True
-
-        """
         return self.moment(3, kind='standardized', method=method)
 
     def kurtosis(self, *, method=None, convention='non-excess'):
-        r"""Kurtosis (standardized fourth moment)
-
-        By default, this is the standardized fourth moment, also known as the
-        "non-excess" or "Pearson" kurtosis (e.g. the kurtosis of the normal
-        distribution is 3). The "excess" or "Fisher" kurtosis (the standardized
-        fourth moment minus 3) is available via the `convention` parameter.
-
-        Parameters
-        ----------
-        method : {None, 'formula', 'general', 'transform', 'normalize', 'cache'}
-            Method used to calculate the standardized fourth moment. Not
-            all methods are available for all distributions. See
-            `moment` for details.
-        convention : {'non-excess', 'excess'}
-            Two distinct conventions are available:
-
-            - ``'non-excess'``: the standardized fourth moment (Pearson's kurtosis)
-            - ``'excess'``: the standardized fourth moment minus 3 (Fisher's kurtosis)
-
-            The default is ``'non-excess'``.
-
-        See Also
-        --------
-        moment
-        mean
-        variance
-
-        References
-        ----------
-        .. [1] Kurtosis, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Kurtosis
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=1., sigma=2.)
-
-        Evaluate the kurtosis:
-
-        >>> X.kurtosis()
-        3.0
-        >>> (X.kurtosis()
-        ...  == X.kurtosis(convention='excess') + 3.
-        ...  == X.moment(order=4, kind='standardized'))
-        True
-
-        """
         conventions = {'non-excess', 'excess'}
         message = (f'Parameter `convention` of `{self.__class__.__name__}.kurtosis` '
                    f"must be one of {conventions}.")
@@ -2832,88 +2309,6 @@ class ContinuousDistribution:
 
     @_set_invalid_nan
     def logpdf(self, x, /, *, method=None):
-        r"""Log of the probability density function
-
-        The probability density function ("PDF"), denoted :math:`f(x)`, is the
-        probability *per unit length* that the random variable will assume the
-        value :math:`x`. Mathematically, it can be defined as the derivative
-        of the cumulative distribution function :math:`F(x)`:
-
-        .. math::
-
-            f(x) = \frac{d}{dx} F(x)
-
-        `logpdf` computes the logarithm of the probability density function
-        ("log-PDF"), :math:`\log(f(x))`, but it may be numerically favorable
-        compared to the naive implementation (computing :math:`f(x)` and
-        taking the logarithm).
-
-        `logpdf` accepts `x` for :math:`x`.
-
-        Parameters
-        ----------
-        x : array_like
-            The argument of the log-PDF.
-        method : {None, 'formula', 'logexp'}
-            The strategy used to evaluate the log-PDF. By default (``None``), the
-            infrastructure chooses between the following options, listed in order
-            of precedence.
-
-            - ``'formula'``: use a formula for the log-PDF itself
-            - ``'logexp'``: evaluate the PDF and takes its logarithm
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The log-PDF evaluated at the argument `x`.
-
-        See Also
-        --------
-        pdf
-        logcdf
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        By definition of the support, the log-PDF evaluates to its minimum value
-        of :math:`-\infty` (i.e. :math:`\log(0)`) outside the support; i.e. for
-        :math:`x < l` or :math:`x > r`. The maximum of the log-PDF may be less
-        than or greater than :math:`\log(1) = 0` because the maximum of the PDF
-        can be any positive real.
-
-        For distributions with infinite support, it is common for `pdf` to return
-        a value of ``0`` when the argument is theoretically within the support;
-        this can occur because the true value of the PDF is too small to be
-        represented by the chosen dtype. The log-PDF, however, will often be finite
-        (not ``-inf``) over a much larger domain. Consequently, it may be preferred
-        to work with the logarithms of probabilities and probability densities to
-        avoid underflow.
-
-        References
-        ----------
-        .. [1] Probability density function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Probability_density_function
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-1.0, b=1.0)
-
-        Evaluate the log-PDF at the desired argument:
-
-        >>> X.logpdf(0.5)
-        -0.6931471805599453
-        >>> np.allclose(X.logpdf(0.5), np.log(X.pdf(0.5)))
-        True
-
-        """
         return self._logpdf_dispatch(x, method=method, **self._parameters)
 
     @_dispatch
@@ -2932,72 +2327,6 @@ class ContinuousDistribution:
 
     @_set_invalid_nan
     def pdf(self, x, /, *, method=None):
-        r"""Probability density function
-
-        The probability density function ("PDF"), denoted :math:`f(x)`, is the
-        probability *per unit length* that the random variable will assume the
-        value :math:`x`. Mathematically, it can be defined as the derivative
-        of the cumulative distribution function :math:`F(x)`:
-
-        .. math::
-
-            f(x) = \frac{d}{dx} F(x)
-
-        `pdf` accepts `x` for :math:`x`.
-
-        Parameters
-        ----------
-        x : array_like
-            The argument of the PDF.
-        method : {None, 'formula', 'logexp'}
-            The strategy used to evaluate the PDF. By default (``None``), the
-            infrastructure chooses between the following options, listed in
-            order of precedence.
-
-            - ``'formula'``: use a formula for the PDF itself
-            - ``'logexp'``: evaluate the log-PDF and exponentiate
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The PDF evaluated at the argument `x`.
-
-        See Also
-        --------
-        cdf
-        logpdf
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        By definition of the support, the PDF evaluates to its minimum value
-        of :math:`0` outside the support; i.e. for :math:`x < l` or
-        :math:`x > r`. The maximum of the PDF may be less than or greater than
-        :math:`1`; since the valus is a probability *density*, only its integral
-        over the support must equal :math:`1`.
-
-        References
-        ----------
-        .. [1] Probability density function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Probability_density_function
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-1., b=1.)
-
-        Evaluate the PDF at the desired argument:
-
-        >>> X.pdf(0.25)
-        0.5
-
-        """
         return self._pdf_dispatch(x, method=method, **self._parameters)
 
     @_dispatch
@@ -3017,109 +2346,6 @@ class ContinuousDistribution:
     ## Cumulative Distribution Functions
 
     def logcdf(self, x, y=None, /, *, method=None):
-        r"""Log of the cumulative distribution function
-
-        The cumulative distribution function ("CDF"), denoted :math:`F(x)`, is
-        the probability the random variable :math:`X` will assume a value
-        less than or equal to :math:`x`:
-
-        .. math::
-
-            F(x) = P(X ≤ x)
-
-        A two-argument variant of this function is also defined as the
-        probability the random variable :math:`X` will assume a value between
-        :math:`x` and :math:`y`.
-
-        .. math::
-
-            F(x, y) = P(x ≤ X ≤ y)
-
-        `logcdf` computes the logarithm of the cumulative distribution function
-        ("log-CDF"), :math:`\log(F(x))`/:math:`\log(F(x, y))`, but it may be
-        numerically favorable compared to the naive implementation (computing
-        the CDF and taking the logarithm).
-
-        `logcdf` accepts `x` for :math:`x` and `y` for :math:`y`.
-
-        Parameters
-        ----------
-        x, y : array_like
-            The arguments of the log-CDF. `x` is required; `y` is optional.
-        method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'subtraction'}
-            The strategy used to evaluate the log-CDF.
-            By default (``None``), the one-argument form of the function
-            chooses between the following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the log-CDF itself
-            - ``'logexp'``: evaluate the CDF and take the logarithm
-            - ``'complement'``: evaluate the log-CCDF and take the
-              logarithmic complement (see Notes)
-            - ``'quadrature'``: numerically log-integrate the log-PDF
-
-            In place of ``'complement'``, the two-argument form accepts:
-
-            - ``'subtraction'``: compute the log-CDF at each argument and take
-              the logarithmic difference (see Notes)
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The log-CDF evaluated at the provided argument(s).
-
-        See Also
-        --------
-        cdf
-        logccdf
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        The log-CDF evaluates to its minimum value of :math:`\log(0) = -\infty`
-        for :math:`x ≤ l` and its maximum value of :math:`\log(1) = 0` for
-        :math:`x ≥ r`.
-
-        For distributions with infinite support, it is common for
-        `cdf` to return a value of ``0`` when the argument
-        is theoretically within the support; this can occur because the true value
-        of the CDF is too small to be represented by the chosen dtype. `logcdf`,
-        however, will often return a finite (not ``-inf``) result over a much larger
-        domain. Similarly, `logcdf` may provided a strictly negative result with
-        arguments for which `cdf` would return ``1.0``. Consequently, it may be
-        preferred to work with the logarithms of probabilities to avoid underflow
-        and related limitations of floating point numbers.
-
-        The "logarithmic complement" of a number :math:`z` is mathematically
-        equivalent to :math:`\log(1-\exp(z))`, but it is computed to avoid loss
-        of precision when :math:`\exp(z)` is nearly :math:`0` or :math:`1`.
-        Similarly, the term "logarithmic difference" of :math:`w` and :math:`z`
-        is used here to mean :math:`\log(\exp(w)-\exp(z))`.
-
-        References
-        ----------
-        .. [1] Cumulative distribution function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Cumulative_distribution_function
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Evaluate the log-CDF at the desired argument:
-
-        >>> X.logcdf(0.25)
-        -0.287682072451781
-        >>> np.allclose(X.logcdf(0.), np.log(X.cdf(0.)))
-        True
-
-        """  # noqa: E501
         if y is None:
             return self._logcdf1(x, method=method)
         else:
@@ -3127,7 +2353,8 @@ class ContinuousDistribution:
 
     @_cdf2_input_validation
     def _logcdf2(self, x, y, *, method):
-        return self._logcdf2_dispatch(x, y, method=method, **self._parameters)
+        out = self._logcdf2_dispatch(x, y, method=method, **self._parameters)
+        return (out + 0j) if not np.issubdtype(out.dtype, np.complexfloating) else out
 
     @_dispatch
     def _logcdf2_dispatch(self, x, y, *, method=None, **params):
@@ -3138,9 +2365,9 @@ class ContinuousDistribution:
         elif (self._overrides('_logcdf_formula')
               or self._overrides('_logccdf_formula')):
             method = self._logcdf2_subtraction
-        elif _isnull(self.tol) and (self._overrides('_cdf_formula')
-                                    or self._overrides('_ccdf_formula')):
-            method = self._logcdf2_logexp
+        elif (self._overrides('_cdf_formula')
+              or self._overrides('_ccdf_formula')):
+            method = self._logcdf2_logexp_safe
         else:
             method = self._logcdf2_quadrature
         return method
@@ -3149,7 +2376,7 @@ class ContinuousDistribution:
         raise NotImplementedError(self._not_implemented)
 
     def _logcdf2_subtraction(self, x, y, **params):
-        flip_sign = x > y
+        flip_sign = x > y  # some results will be negative
         x, y = np.minimum(x, y), np.maximum(x, y)
         logcdf_x = self._logcdf_dispatch(x, **params)
         logcdf_y = self._logcdf_dispatch(y, **params)
@@ -3163,12 +2390,22 @@ class ContinuousDistribution:
         log_tail = np.logaddexp(logcdf_x, logccdf_y)[case_central]
         log_mass[case_central] = _log1mexp(log_tail)
         log_mass[flip_sign] += np.pi * 1j
-        return np.real_if_close(log_mass[()])
+        return log_mass[()] if np.any(flip_sign) else log_mass.real[()]
 
     def _logcdf2_logexp(self, x, y, **params):
         expres = self._cdf2_dispatch(x, y, **params)
         expres = expres + 0j if np.any(x > y) else expres
         return np.log(expres)
+
+    def _logcdf2_logexp_safe(self, x, y, **params):
+        out = self._logcdf2_logexp(x, y, **params)
+        mask = np.isinf(out.real)
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._logcdf2_quadrature(x[mask], y[mask], **params_mask)
+        return out[()]
 
     def _logcdf2_quadrature(self, x, y, **params):
         logres = self._quadrature(self._logpdf_dispatch, limits=(x, y),
@@ -3183,10 +2420,10 @@ class ContinuousDistribution:
     def _logcdf_dispatch(self, x, *, method=None, **params):
         if self._overrides('_logcdf_formula'):
             method = self._logcdf_formula
-        elif _isnull(self.tol) and self._overrides('_cdf_formula'):
-            method = self._logcdf_logexp
         elif self._overrides('_logccdf_formula'):
             method = self._logcdf_complement
+        elif self._overrides('_cdf_formula'):
+            method = self._logcdf_logexp_safe
         else:
             method = self._logcdf_quadrature
         return method
@@ -3194,11 +2431,21 @@ class ContinuousDistribution:
     def _logcdf_formula(self, x, **params):
         raise NotImplementedError(self._not_implemented)
 
+    def _logcdf_complement(self, x, **params):
+        return _log1mexp(self._logccdf_dispatch(x, **params))
+
     def _logcdf_logexp(self, x, **params):
         return np.log(self._cdf_dispatch(x, **params))
 
-    def _logcdf_complement(self, x, **params):
-        return _log1mexp(self._logccdf_dispatch(x, **params))
+    def _logcdf_logexp_safe(self, x, **params):
+        out = self._logcdf_logexp(x, **params)
+        mask = np.isinf(out)
+        if np.any(mask):
+            params_mask = {key:np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._logcdf_quadrature(x[mask], **params_mask)
+        return out[()]
 
     def _logcdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
@@ -3206,103 +2453,6 @@ class ContinuousDistribution:
                                 params=params, log=True)
 
     def cdf(self, x, y=None, /, *, method=None):
-        r"""Cumulative distribution function
-
-        The cumulative distribution function ("CDF"), denoted :math:`F(x)`, is
-        the probability the random variable :math:`X` will assume a value
-        less than or equal to :math:`x`:
-
-        .. math::
-
-            F(x) = P(X ≤ x)
-
-        A two-argument variant of this function is also defined as the
-        probability the random variable :math:`X` will assume a value between
-        :math:`x` and :math:`y`.
-
-        .. math::
-
-            F(x, y) = P(x ≤ X ≤ y)
-
-        `cdf` accepts `x` for :math:`x` and `y` for :math:`y`.
-
-        Parameters
-        ----------
-        x, y : array_like
-            The arguments of the CDF. `x` is required; `y` is optional.
-        method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'subtraction'}
-            The strategy used to evaluate the CDF.
-            By default (``None``), the one-argument form of the function
-            chooses between the following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the CDF itself
-            - ``'logexp'``: evaluate the log-CDF and exponentiate
-            - ``'complement'``: evaluate the CCDF and take the complement
-            - ``'quadrature'``: numerically integrate the PDF
-
-            In place of ``'complement'``, the two-argument form accepts:
-
-            - ``'subtraction'``: compute the CDF at each argument and take
-              the difference.
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The CDF evaluated at the provided argument(s).
-
-        See Also
-        --------
-        logcdf
-        ccdf
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        The CDF :math:`F(x)` is related to the probability density function
-        :math:`f(x)` by:
-
-        .. math::
-
-            F(x) = \int_l^x f(u) du
-
-        The two argument version is:
-
-        .. math::
-
-            F(x, y) = \int_x^y f(u) du = F(y) - F(x)
-
-        The CDF evaluates to its minimum value of :math:`0` for :math:`x ≤ l`
-        and its maximum value of :math:`1` for :math:`x ≥ r`.
-
-        The CDF is also known simply as the "distribution function".
-
-        References
-        ----------
-        .. [1] Cumulative distribution function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Cumulative_distribution_function
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Evaluate the CDF at the desired argument:
-
-        >>> X.cdf(0.25)
-        0.75
-
-        Evaluate the cumulative probability between two arguments:
-
-        >>> X.cdf(-0.25, 0.25) == X.cdf(0.25) - X.cdf(-0.25)
-        True
-
-        """  # noqa: E501
         if y is None:
             return self._cdf1(x, method=method)
         else:
@@ -3320,9 +2470,8 @@ class ContinuousDistribution:
         elif (self._overrides('_logcdf_formula')
               or self._overrides('_logccdf_formula')):
             method = self._cdf2_logexp
-        elif _isnull(self.tol) and (self._overrides('_cdf_formula')
-                                    or self._overrides('_ccdf_formula')):
-            method = self._cdf2_subtraction
+        elif self._overrides('_cdf_formula') or self._overrides('_ccdf_formula'):
+            method = self._cdf2_subtraction_safe
         else:
             method = self._cdf2_quadrature
         return method
@@ -3341,8 +2490,31 @@ class ContinuousDistribution:
         cdf_y = self._cdf_dispatch(y, **params)
         ccdf_x = self._ccdf_dispatch(x, **params)
         ccdf_y = self._ccdf_dispatch(y, **params)
-        i = (cdf_x < 0.5) & (cdf_y < 0.5)
-        return np.where(i, cdf_y-cdf_x, ccdf_x-ccdf_y)
+        i = (ccdf_x < 0.5) & (ccdf_y < 0.5)
+        return np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
+
+    def _cdf2_subtraction_safe(self, x, y, **params):
+        cdf_x = self._cdf_dispatch(x, **params)
+        cdf_y = self._cdf_dispatch(y, **params)
+        ccdf_x = self._ccdf_dispatch(x, **params)
+        ccdf_y = self._ccdf_dispatch(y, **params)
+        i = (ccdf_x < 0.5) & (ccdf_y < 0.5)
+        out = np.where(i, ccdf_x-ccdf_y, cdf_y-cdf_x)
+
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+
+        cdf_max = np.maximum(cdf_x, cdf_y)
+        ccdf_max = np.maximum(ccdf_x, ccdf_y)
+        spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
+        mask = np.abs(tol * out) < spacing
+
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._cdf2_quadrature(x[mask], y[mask], *params_mask)
+        return out[()]
 
     def _cdf2_quadrature(self, x, y, **params):
         return self._quadrature(self._pdf_dispatch, limits=(x, y), params=params)
@@ -3357,8 +2529,8 @@ class ContinuousDistribution:
             method = self._cdf_formula
         elif self._overrides('_logcdf_formula'):
             method = self._cdf_logexp
-        elif _isnull(self.tol) and self._overrides('_ccdf_formula'):
-            method = self._cdf_complement
+        elif self._overrides('_ccdf_formula'):
+            method = self._cdf_complement_safe
         else:
             method = self._cdf_quadrature
         return method
@@ -3372,117 +2544,25 @@ class ContinuousDistribution:
     def _cdf_complement(self, x, **params):
         return 1 - self._ccdf_dispatch(x, **params)
 
+    def _cdf_complement_safe(self, x, **params):
+        ccdf = self._ccdf_dispatch(x, **params)
+        out = 1 - ccdf
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+        mask = tol * out < np.spacing(ccdf)
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._cdf_quadrature(x[mask], *params_mask)
+        return out[()]
+
     def _cdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
         return self._quadrature(self._pdf_dispatch, limits=(a, x),
                                 params=params)
 
     def logccdf(self, x, y=None, /, *, method=None):
-        r"""Log of the complementary cumulative distribution function
-
-        The complementary cumulative distribution function ("CCDF"), denoted
-        :math:`G(x)` is the complement of the cumulative distribution function
-        :math:`F(x)`; i.e., probability the random variable :math:`X` will
-        assume a value greater than :math:`x`:
-
-        .. math::
-
-            G(x) = 1 - F(x) = P(X > x)
-
-        A two-argument variant of this function is:
-
-        .. math::
-
-            G(x, y) = 1 - F(x, y) = P(X < x \quad \text{or} \quad X > y)
-
-        `logccdf` computes the logarithm of the complementary cumulative
-        distribution function ("log-CCDF"), :math:`\log(G(x))`/:math:`\log(G(x, y))`,
-        but it may be numerically favorable compared to the naive implementation
-        (computing the CDF and taking the logarithm).
-
-        `logccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
-
-        Parameters
-        ----------
-        x, y : array_like
-            The arguments of the log-CCDF. `x` is required; `y` is optional.
-        method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'addition'}
-            The strategy used to evaluate the log-CCDF.
-            By default (``None``), the one-argument form of the function
-            chooses between the following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the log CCDF itself
-            - ``'logexp'``: evaluate the CCDF and take the logarithm
-            - ``'complement'``: evaluate the log-CDF and take the
-              logarithmic complement (see Notes)
-            - ``'quadrature'``: numerically log-integrate the log-PDF
-
-            The two-argument form chooses between:
-
-            - ``'formula'``: use a formula for the log CCDF itself
-            - ``'addition'``: compute the log-CDF at `x` and the log-CCDF at `y`,
-              then take the logarithmic sum (see Notes)
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The log-CCDF evaluated at the provided argument(s).
-
-        See Also
-        --------
-        ccdf
-        logcdf
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        The log-CCDF returns its minimum value of :math:`\log(0)=-\infty` for
-        :math:`x ≥ r` and its maximum value of :math:`\log(1) = 0` for
-        :math:`x ≤ l`.
-
-        For distributions with infinite support, it is common for
-        `ccdf` to return a value of ``0`` when the argument
-        is theoretically within the support; this can occur because the true value
-        of the CCDF is too small to be represented by the chosen dtype. The log
-        of the CCDF, however, will often be finite (not ``-inf``) over a much larger
-        domain. Similarly, `logccdf` may provided a strictly negative result with
-        arguments for which `ccdf` would return ``1.0``. Consequently, it may be
-        preferred to work with the logarithms of probabilities to avoid underflow
-        and related limitations of floating point numbers.
-
-        The "logarithmic complement" of a number :math:`z` is mathematically
-        equivalent to :math:`\log(1-\exp(z))`, but it is computed to avoid loss
-        of precision when :math:`\exp(z)` is nearly :math:`0` or :math:`1`.
-        Similarly, the term "logarithmic sum" of :math:`w` and :math:`z`
-        is used here to mean the :math:`\log(\exp(w)+\exp(z))`, AKA
-        :math:`\text{LogSumExp}(w, z)`.
-
-
-        References
-        ----------
-        .. [1] Cumulative distribution function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Cumulative_distribution_function#Derived_functions
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Evaluate the log-CCDF at the desired argument:
-
-        >>> X.logccdf(0.25)
-        -1.3862943611198906
-        >>> np.allclose(X.logccdf(0.), np.log(X.ccdf(0.)))
-        True
-
-        """  # noqa: E501
         if y is None:
             return self._logccdf1(x, method=method)
         else:
@@ -3518,22 +2598,32 @@ class ContinuousDistribution:
     def _logccdf_dispatch(self, x, method=None, **params):
         if self._overrides('_logccdf_formula'):
             method = self._logccdf_formula
-        elif _isnull(self.tol) and self._overrides('_ccdf_formula'):
-            method = self._logccdf_logexp
         elif self._overrides('_logcdf_formula'):
             method = self._logccdf_complement
+        elif self._overrides('_ccdf_formula'):
+            method = self._logccdf_logexp_safe
         else:
             method = self._logccdf_quadrature
         return method
 
-    def _logccdf_formula(self):
+    def _logccdf_formula(self, x, **params):
         raise NotImplementedError(self._not_implemented)
+
+    def _logccdf_complement(self, x, **params):
+        return _log1mexp(self._logcdf_dispatch(x, **params))
 
     def _logccdf_logexp(self, x, **params):
         return np.log(self._ccdf_dispatch(x, **params))
 
-    def _logccdf_complement(self, x, **params):
-        return _log1mexp(self._logcdf_dispatch(x, **params))
+    def _logccdf_logexp_safe(self, x, **params):
+        out = self._logccdf_logexp(x, **params)
+        mask = np.isinf(out)
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._logccdf_quadrature(x[mask], **params_mask)
+        return out[()]
 
     def _logccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
@@ -3541,105 +2631,6 @@ class ContinuousDistribution:
                                 params=params, log=True)
 
     def ccdf(self, x, y=None, /, *, method=None):
-        r"""Complementary cumulative distribution function
-
-        The complementary cumulative distribution function ("CCDF"), denoted
-        :math:`G(x)`, is the complement of the cumulative distribution function
-        :math:`F(x)`; i.e., probability the random variable :math:`X` will
-        assume a value greater than :math:`x`:
-
-        .. math::
-
-            G(x) = 1 - F(x) = P(X > x)
-
-        A two-argument variant of this function is:
-
-        .. math::
-
-            G(x, y) = 1 - F(x, y) = P(X < x \text{ or } X > y)
-
-        `ccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
-
-        Parameters
-        ----------
-        x, y : array_like
-            The arguments of the CCDF. `x` is required; `y` is optional.
-        method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'addition'}
-            The strategy used to evaluate the CCDF.
-            By default (``None``), the infrastructure chooses between the
-            following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the CCDF itself
-            - ``'logexp'``: evaluate the log-CCDF and exponentiate
-            - ``'complement'``: evaluate the CDF and take the complement
-            - ``'quadrature'``: numerically integrate the PDF
-
-            The two-argument form chooses between:
-
-            - ``'formula'``: use a formula for the CCDF itself
-            - ``'addition'``: compute the CDF at `x` and the CCDF at `y`, then add
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The CCDF evaluated at the provided argument(s).
-
-        See Also
-        --------
-        cdf
-        logccdf
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        The CCDF :math:`G(x)` is related to the probability density function
-        :math:`f(x)` by:
-
-        .. math::
-
-            G(x) = \int_x^r f(u) du
-
-        The two argument version is:
-
-        .. math::
-
-            G(x, y) = \int_l^x f(u) du + \int_y^r f(u) du
-
-        The CCDF returns its minimum value of :math:`0` for :math:`x ≥ r`
-        and its maximum value of :math:`1` for :math:`x ≤ l`.
-
-        The CCDF is also known as the "survival function".
-
-        References
-        ----------
-        .. [1] Cumulative distribution function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Cumulative_distribution_function#Derived_functions
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Evaluate the CCDF at the desired argument:
-
-        >>> X.ccdf(0.25)
-        0.25
-        >>> np.allclose(X.ccdf(0.25), 1-X.cdf(0.25))
-        True
-
-        Evaluate the complement of the cumulative probability between two arguments:
-
-        >>> X.ccdf(-0.25, 0.25) == X.cdf(-0.25) + X.ccdf(0.25)
-        True
-
-        """  # noqa: E501
         if y is None:
             return self._ccdf1(x, method=method)
         else:
@@ -3676,8 +2667,8 @@ class ContinuousDistribution:
             method = self._ccdf_formula
         elif self._overrides('_logccdf_formula'):
             method = self._ccdf_logexp
-        elif _isnull(self.tol) and self._overrides('_cdf_formula'):
-            method = self._ccdf_complement
+        elif self._overrides('_cdf_formula'):
+            method = self._ccdf_complement_safe
         else:
             method = self._ccdf_quadrature
         return method
@@ -3691,6 +2682,19 @@ class ContinuousDistribution:
     def _ccdf_complement(self, x, **params):
         return 1 - self._cdf_dispatch(x, **params)
 
+    def _ccdf_complement_safe(self, x, **params):
+        cdf = self._cdf_dispatch(x, **params)
+        out = 1 - cdf
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+        mask = tol * out < np.spacing(cdf)
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._ccdf_quadrature(x[mask], **params_mask)
+        return out[()]
+
     def _ccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
         return self._quadrature(self._pdf_dispatch, limits=(x, b),
@@ -3700,86 +2704,6 @@ class ContinuousDistribution:
 
     @_set_invalid_nan
     def ilogcdf(self, logp, /, *, method=None):
-        r"""Inverse of the logarithm of the cumulative distribution function.
-
-        The inverse of the logarithm of the cumulative distribution function
-        ("inverse log-CDF") is the argument :math:`x` for which the logarithm
-        of the cumulative distribution function :math:`\log(F(x))` evaluates
-        to :math:`\log(p)`.
-
-        Mathematically, it is equivalent to :math:`F^{-1}(\exp(y))`, where
-        :math:`y = \log(p)`, but it may be numerically favorable compared to
-        the naive implementation (computing :math:`p = \exp(y)`, then
-        :math:`F^{-1}(p)`).
-
-        `ilogcdf` accepts `logp` for :math:`\log(p) ≤ 0`.
-
-        Parameters
-        ----------
-        logp : array_like
-            The argument of the inverse log-CDF.
-        method : {None, 'formula', 'complement', 'inversion'}
-            The strategy used to evaluate the inverse log-CDF.
-            By default (``None``), the infrastructure chooses between the
-            following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the inverse log-CDF itself
-            - ``'complement'``: evaluate the inverse log-CCDF at the
-              logarithmic complement of `logp` (see Notes)
-            - ``'inversion'``: solve numerically for the argument at which the
-              log-CDF is equal to `logp`
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The inverse log-CDF evaluated at the provided argument.
-
-        See Also
-        --------
-        icdf
-        logcdf
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        The inverse log-CDF returns its minimum value of :math:`l` at
-        :math:`\log(p) = \log(0) = -\infty` and its maximum value of :math:`r` at
-        :math:`\log(p) = \log(1) = 0`. Because the log-CDF has range
-        :math:`[-\infty, 0]`, the inverse log-CDF is only defined on the
-        negative reals; for :math:`\log(p) > 0`, `ilogcdf` returns ``nan``.
-
-        Occasionally, it is needed to find the argument of the CDF for which
-        the resulting probability is very close to ``0`` or ``1`` - too close to
-        represent accurately with floating point arithmetic. In many cases,
-        however, the *logarithm* of this resulting probability may be
-        represented in floating point arithmetic, in which case this function
-        may be used to find the argument of the CDF for which the *logarithm*
-        of the resulting probability is :math:`y = \log(p)`.
-
-        The "logarithmic complement" of a number :math:`z` is mathematically
-        equivalent to :math:`\log(1-\exp(z))`, but it is computed to avoid loss
-        of precision when :math:`\exp(z)` is nearly :math:`0` or :math:`1`.
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Evaluate the inverse log-CDF at the desired argument:
-
-        >>> X.ilogcdf(-0.25)
-        0.2788007830714034
-        >>> np.allclose(X.ilogcdf(-0.25), X.icdf(np.exp(-0.25)))
-        True
-
-        """
         return self._ilogcdf_dispatch(logp, method=method, **self._parameters)
 
     @_dispatch
@@ -3803,93 +2727,14 @@ class ContinuousDistribution:
 
     @_set_invalid_nan
     def icdf(self, p, /, *, method=None):
-        r"""Inverse of the cumulative distribution function.
-
-        The inverse of the cumulative distribution function ("inverse CDF"),
-        denoted :math:`F^{-1}(p)`, is the argument :math:`x` for which the
-        cumulative distribution function :math:`F(x)` evaluates to :math:`p`.
-
-        .. math::
-
-            F^{-1}(p) = x \quad \text{s.t.} \quad F(x) = p
-
-        `icdf` accepts `p` for :math:`p \in [0, 1]`.
-
-        Parameters
-        ----------
-        p : array_like
-            The argument of the inverse CDF.
-        method : {None, 'formula', 'complement', 'inversion'}
-            The strategy used to evaluate the inverse CDF.
-            By default (``None``), the infrastructure chooses between the
-            following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the inverse CDF itself
-            - ``'complement'``: evaluate the inverse CCDF at the
-              complement of `p`
-            - ``'inversion'``: solve numerically for the argument at which the
-              CDF is equal to `p`
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The inverse CDF evaluated at the provided argument.
-
-        See Also
-        --------
-        cdf
-        ilogcdf
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
-        inverse CDF returns its minimum value of :math:`l` at :math:`p = 0`
-        and its maximum value of :math:`r` at :math:`p = 1`. Because the CDF
-        has range :math:`[0, 1]`, the inverse CDF is only defined on the
-        domain :math:`[0, 1]`; for :math:`p < 0` and :math:`p > 1`, `icdf`
-        returns ``nan``.
-
-        The inverse CDF is also known as the quantile function, percentile function,
-        and percent-point function.
-
-        References
-        ----------
-        .. [1] Quantile function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Quantile_function
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Evaluate the inverse CDF at the desired argument:
-
-        >>> X.icdf(0.25)
-        -0.25
-        >>> np.allclose(X.cdf(X.icdf(0.25)), 0.25)
-        True
-
-        This function returns NaN when the argument is outside the domain.
-
-        >>> X.icdf([-0.1, 0, 1, 1.1])
-        array([ nan, -0.5,  0.5,  nan])
-
-        """
         return self._icdf_dispatch(p, method=method, **self._parameters)
 
     @_dispatch
     def _icdf_dispatch(self, x, method=None, **params):
         if self._overrides('_icdf_formula'):
             method = self._icdf_formula
-        elif _isnull(self.tol) and self._overrides('_iccdf_formula'):
-            method = self._icdf_complement
+        elif self._overrides('_iccdf_formula'):
+            method = self._icdf_complement_safe
         else:
             method = self._icdf_inversion
         return method
@@ -3900,90 +2745,23 @@ class ContinuousDistribution:
     def _icdf_complement(self, x, **params):
         return self._iccdf_dispatch(1 - x, **params)
 
+    def _icdf_complement_safe(self, x, **params):
+        out = self._icdf_complement(x, **params)
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+        mask = tol * x < np.spacing(1 - x)
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._icdf_inversion(x[mask], *params_mask)
+        return out[()]
+
     def _icdf_inversion(self, x, **params):
         return self._solve_bounded(self._cdf_dispatch, x, params=params)
 
     @_set_invalid_nan
     def ilogccdf(self, logp, /, *, method=None):
-        r"""Inverse of the log of the complementary cumulative distribution function.
-
-        The inverse of the logarithm of the complementary cumulative distribution
-        function ("inverse log-CCDF") is the argument :math:`x` for which the logarithm
-        of the complementary cumulative distribution function :math:`\log(G(x))`
-        evaluates to :math:`\log(p)`.
-
-        Mathematically, it is equivalent to :math:`G^{-1}(\exp(y))`, where
-        :math:`y = \log(p)`, but it may be numerically favorable compared to the naive
-        implementation (computing :math:`p = \exp(y)`, then :math:`G^{-1}(p)`).
-
-        `ilogccdf` accepts `logp` for :math:`\log(p) ≤ 0`.
-
-        Parameters
-        ----------
-        x : array_like
-            The argument of the inverse log-CCDF.
-        method : {None, 'formula', 'complement', 'inversion'}
-            The strategy used to evaluate the inverse log-CCDF.
-            By default (``None``), the infrastructure chooses between the
-            following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the inverse log-CCDF itself
-            - ``'complement'``: evaluate the inverse log-CDF at the
-              logarithmic complement of `x` (see Notes)
-            - ``'inversion'``: solve numerically for the argument at which the
-              log-CCDF is equal to `x`
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The inverse log-CCDF evaluated at the provided argument.
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
-        inverse log-CCDF returns its minimum value of :math:`l` at
-        :math:`\log(p) = \log(1) = 0` and its maximum value of :math:`r` at
-        :math:`\log(p) = \log(0) = -\infty`. Because the log-CCDF has range
-        :math:`[-\infty, 0]`, the inverse log-CDF is only defined on the
-        negative reals; for :math:`\log(p) > 0`, `ilogccdf` returns ``nan``.
-
-        Occasionally, it is needed to find the argument of the CCDF for which
-        the resulting probability is very close to ``0`` or ``1`` - too close to
-        represent accurately with floating point arithmetic. In many cases,
-        however, the *logarithm* of this resulting probability may be
-        represented in floating point arithmetic, in which case this function
-        may be used to find the argument of the CCDF for which the *logarithm*
-        of the resulting probability is `y = \log(p)`.
-
-        The "logarithmic complement" of a number :math:`z` is mathematically
-        equivalent to :math:`\log(1-\exp(z))`, but it is computed to avoid loss
-        of precision when :math:`\exp(z)` is nearly :math:`0` or :math:`1`.
-
-        See Also
-        --------
-        iccdf
-        ilogccdf
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Evaluate the inverse log-CCDF at the desired argument:
-
-        >>> X.ilogccdf(-0.25)
-        -0.2788007830714034
-        >>> np.allclose(X.ilogccdf(-0.25), X.iccdf(np.exp(-0.25)))
-        True
-
-        """
         return self._ilogccdf_dispatch(logp, method=method, **self._parameters)
 
     @_dispatch
@@ -4007,86 +2785,14 @@ class ContinuousDistribution:
 
     @_set_invalid_nan
     def iccdf(self, p, /, *, method=None):
-        r"""Inverse complementary cumulative distribution function.
-
-        The inverse complementary cumulative distribution function ("inverse CCDF"),
-        denoted :math:`G^{-1}(p)`, is the argument :math:`x` for which the
-        complementary cumulative distribution function :math:`G(x)` evaluates to
-        :math:`p`.
-
-        .. math::
-
-            G^{-1}(p) = x \quad \text{s.t.} \quad G(x) = p
-
-        `iccdf` accepts `p` for :math:`p \in [0, 1]`.
-
-        Parameters
-        ----------
-        p : array_like
-            The argument of the inverse CCDF.
-        method : {None, 'formula', 'complement', 'inversion'}
-            The strategy used to evaluate the inverse CCDF.
-            By default (``None``), the infrastructure chooses between the
-            following options, listed in order of precedence.
-
-            - ``'formula'``: use a formula for the inverse CCDF itself
-            - ``'complement'``: evaluate the inverse CDF at the
-              complement of `p`
-            - ``'inversion'``: solve numerically for the argument at which the
-              CCDF is equal to `p`
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a ``NotImplementedError``
-            will be raised.
-
-        Returns
-        -------
-        out : array
-            The inverse CCDF evaluated at the provided argument.
-
-        Notes
-        -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
-        inverse CCDF returns its minimum value of :math:`l` at :math:`p = 1`
-        and its maximum value of :math:`r` at :math:`p = 0`. Because the CCDF
-        has range :math:`[0, 1]`, the inverse CCDF is only defined on the
-        domain :math:`[0, 1]`; for :math:`p < 0` and :math:`p > 1`, ``iccdf``
-        returns ``nan``.
-
-        See Also
-        --------
-        icdf
-        ilogccdf
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=-0.5, b=0.5)
-
-        Evaluate the inverse CCDF at the desired argument:
-
-        >>> X.iccdf(0.25)
-        0.25
-        >>> np.allclose(X.iccdf(0.25), X.icdf(1-0.25))
-        True
-
-        This function returns NaN when the argument is outside the domain.
-
-        >>> X.iccdf([-0.1, 0, 1, 1.1])
-        array([ nan,  0.5, -0.5,  nan])
-
-        """
         return self._iccdf_dispatch(p, method=method, **self._parameters)
 
     @_dispatch
     def _iccdf_dispatch(self, x, method=None, **params):
         if self._overrides('_iccdf_formula'):
             method = self._iccdf_formula
-        elif _isnull(self.tol) and self._overrides('_icdf_formula'):
-            method = self._iccdf_complement
+        elif self._overrides('_icdf_formula'):
+            method = self._iccdf_complement_safe
         else:
             method = self._iccdf_inversion
         return method
@@ -4096,6 +2802,18 @@ class ContinuousDistribution:
 
     def _iccdf_complement(self, x, **params):
         return self._icdf_dispatch(1 - x, **params)
+
+    def _iccdf_complement_safe(self, x, **params):
+        out = self._iccdf_complement(x, **params)
+        eps = np.finfo(self._dtype).eps
+        tol = self.tol if not _isnull(self.tol) else np.sqrt(eps)
+        mask = tol * x < np.spacing(1 - x)
+        if np.any(mask):
+            params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
+                           for key, val in params.items()}
+            out = np.asarray(out)
+            out[mask] = self._iccdf_inversion(x[mask], *params_mask)
+        return out[()]
 
     def _iccdf_inversion(self, x, **params):
         return self._solve_bounded(self._ccdf_dispatch, x, params=params)
@@ -4111,7 +2829,7 @@ class ContinuousDistribution:
     # Common keyword options include:
     # method - a string that indicates which method should be used to compute
     #          the quantity (e.g. a formula or numerical integration).
-    # rng - the NumPy Generator object to used for drawing random numbers.
+    # rng - the NumPy Generator/SciPy QMCEngine object to used for drawing numbers.
     #
     # Input/output validation is included in each function, since there is
     # little code to be shared.
@@ -4128,66 +2846,14 @@ class ContinuousDistribution:
     # See the note corresponding with the "Distribution Parameters" for more
     # information.
 
+    # TODO:
+    #  - should we accept a QRNG with `d != 1`?
     def sample(self, shape=(), *, method=None, rng=None):
-        """Random sample from the distribution.
-
-        Parameters
-        ----------
-        shape : tuple of ints, default: ()
-            The shape of the sample to draw. If the parameters of the distribution
-            underlying the random variable are arrays of shape ``param_shape``,
-            the output array will be of shape ``shape + param_shape``.
-        method : {None, 'formula', 'inverse_transform'}
-            The strategy used to produce the sample. By default (``None``),
-            the infrastructure chooses between the following options,
-            listed in order of precedence.
-
-            - ``'formula'``: an implementation specific to the distribution
-            - ``'inverse_transform'``: generate a uniformly distributed sample and
-              return the inverse CDF at these arguments.
-
-            Not all `method` options are available for all distributions.
-            If the selected `method` is not available, a `NotImplementedError``
-            will be raised.
-        rng : `numpy.random.Generator`, optional
-            Pseudorandom number generator state. When `rng` is None, a new
-            `numpy.random.Generator` is created using entropy from the
-            operating system. Types other than `numpy.random.Generator` are
-            passed to `numpy.random.default_rng` to instantiate a `Generator`.
-
-        References
-        ----------
-        .. [1] Sampling (statistics), *Wikipedia*,
-               https://en.wikipedia.org/wiki/Sampling_(statistics)
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=0., b=1.)
-
-        Generate a pseudorandom sample:
-
-        >>> x = X.sample((1000, 1))
-        >>> octiles = (np.arange(8) + 1) / 8
-        >>> np.count_nonzero(x <= octiles, axis=0)
-        array([ 148,  263,  387,  516,  636,  751,  865, 1000])  # may vary
-
-        >>> X = stats.Uniform(a=np.zeros((3, 1)), b=np.ones(2))
-        >>> X.a.shape,
-        (3, 2)
-        >>> x = X.sample(shape=(5, 4))
-        >>> x.shape
-        (5, 4, 3, 2)
-
-        """
         # needs output validation to ensure that developer returns correct
         # dtype and shape
         sample_shape = (shape,) if not np.iterable(shape) else tuple(shape)
         full_shape = sample_shape + self._shape
-        rng = np.random.default_rng(rng)
+        rng = np.random.default_rng(rng) if not isinstance(rng, qmc.QMCEngine) else rng
         res = self._sample_dispatch(sample_shape, full_shape, method=method,
                                     rng=rng, **self._parameters)
 
@@ -4196,7 +2862,7 @@ class ContinuousDistribution:
     @_dispatch
     def _sample_dispatch(self, sample_shape, full_shape, *, method, rng, **params):
         # make sure that tests catch if sample is 0d array
-        if self._overrides('_sample_formula'):
+        if self._overrides('_sample_formula') and not isinstance(rng, qmc.QMCEngine):
             method = self._sample_formula
         else:
             method = self._sample_inverse_transform
@@ -4206,8 +2872,40 @@ class ContinuousDistribution:
         raise NotImplementedError(self._not_implemented)
 
     def _sample_inverse_transform(self, sample_shape, full_shape, *, rng, **params):
-        uniform = rng.random(size=full_shape, dtype=self._dtype)
+        if isinstance(rng, qmc.QMCEngine):
+            uniform = self._qmc_uniform(sample_shape, full_shape, qrng=rng, **params)
+        else:
+            uniform = rng.random(size=full_shape, dtype=self._dtype)
         return self._icdf_dispatch(uniform, **params)
+
+    def _qmc_uniform(self, sample_shape, full_shape, *, qrng, **params):
+        # Generate QMC uniform sample(s) on unit interval with specified shape;
+        # if `sample_shape != ()`, then each slice along axis 0 is independent.
+
+        # Determine the number of independent sequences and the length of each.
+        n_low_discrepancy = sample_shape[0] if sample_shape else 1
+        n_independent = math.prod(full_shape[1:] if sample_shape else full_shape)
+
+        # For each independent sequence, we'll need a new QRNG of the appropriate class
+        # with its own RNG. (If scramble=False, we don't really need all the separate
+        # rngs, but I'm not going to add a special code path right now.)
+        rngs = _rng_spawn(qrng.rng, n_independent)
+        qrng_class = qrng.__class__
+        kwargs = dict(d=1, scramble=qrng.scramble, optimization=qrng._optimization)
+        if isinstance(qrng, qmc.Sobol):
+            kwargs['bits'] = qrng.bits
+
+        # Draw uniform low-discrepancy sequences scrambled with each RNG
+        uniforms = []
+        for rng in rngs:
+            qrng = qrng_class(seed=rng, **kwargs)
+            uniform = qrng.random(n_low_discrepancy)
+            uniform = uniform.reshape(n_low_discrepancy if sample_shape else ())[()]
+            uniforms.append(uniform)
+
+        # Reorder the axes and ensure that the shape is correct
+        uniform = np.moveaxis(np.stack(uniforms), -1, 0) if uniforms else np.asarray([])
+        return uniform.reshape(full_shape)
 
     ### Moments
     # The `moment` method accepts two positional arguments - the order and kind
@@ -4270,159 +2968,6 @@ class ContinuousDistribution:
 
     @_set_invalid_nan_property
     def moment(self, order=1, kind='raw', *, method=None):
-        r"""Raw, central, or standard moment of positive integer order.
-
-        In terms of probability density function :math:`f(x)` and support
-        :math:`\chi`, the "raw" moment (about the origin) of order :math:`n` of
-        a random variable :math:`X` is:
-
-        .. math::
-
-            \mu'_n(X) = \int_{\chi} x^n f(x) dx
-
-        The "central" moment is the raw moment taken about the mean,
-        :math:`\mu = \mu'_1`:
-
-        .. math::
-
-            \mu_n(X) = \int_{\chi} (x - \mu) ^n f(x) dx
-
-        The "standardized" moment is the central moment normalized by the
-        :math:`n^\text{th}` power of the standard deviation
-        :math:`\sigma = \sqrt{\mu_2}` to produce a scale invariant quantity:
-
-        .. math::
-
-            \tilde{\mu}_n(X) = \frac{\mu_n(X)}
-                                    {\sigma^n}
-
-        Parameters
-        ----------
-        order : int
-            The integer order of the moment; i.e. :math:`n` in the formulae above.
-        kind : {'raw', 'central', 'standardized'}
-            Whether to return the raw (default), central, or standardized moment
-            defined above.
-        method : {None, 'formula', 'general', 'transform', 'normalize', 'quadrature', 'cache'}
-            The strategy used to evaluate the moment. By default (``None``),
-            the infrastructure chooses between the following options,
-            listed in order of precedence.
-
-            - ``'cache'``: use the value of the moment most recently calculated
-              via another method
-            - ``'formula'``: use a formula for the moment itself
-            - ``'general'``: use a general result that is true for all distributions
-              with finite moments; for instance, the zeroth raw moment is
-              identically 1
-            - ``'transform'``: transform a raw moment to a central moment or
-              vice versa (see Notes)
-            - ``'normalize'``: normalize a central moment to get a standardized
-              or vice versa
-            - ``'quadrature'``: numerically integrate according to the definition
-
-            Not all `method` options are available for all orders, kinds, and
-            distributions. If the selected `method` is not available, a
-            ``NotImplementedError`` will be raised.
-
-        Returns
-        -------
-        out : array
-            The moment of the random variable of the specified order and kind.
-
-        See Also
-        --------
-        pdf
-        mean
-        variance
-        standard_deviation
-        skewness
-        kurtosis
-
-        Notes
-        -----
-        Not all distributions have finite moments of all orders; moments of some
-        orders may be undefined or infinite. If a formula for the moment is not
-        specifically implemented for the chosen distribution, SciPy will attempt
-        to compute the moment via a generic method, which may yield a finite
-        result where none exists. This is not a critical bug, but an opportunity
-        for an enhancement.
-
-        The definition of a raw moment in the summary is specific to the raw moment
-        about the origin. The raw moment about any point :math:`a` is:
-
-        .. math::
-
-            E[(X-a)^n] = \int_{\chi} (x-a)^n f(x) dx
-
-        In this notation, a raw moment about the origin is :math:`\mu'_n = E[x^n]`,
-        and a central moment is :math:`\mu_n = E[(x-\mu)^n]`, where :math:`\mu`
-        is the first raw moment; i.e. the mean.
-
-        The ``'transform'`` method takes advantage of the following relationships
-        between moments taken about different points :math:`a` and :math:`b`.
-
-        .. math::
-
-            E[(X-b)^n] =  \sum_{i=0}^n E[(X-a)^i] {n \choose i} (a - b)^{n-i}
-
-        For instance, to transform the raw moment to the central moment, we let
-        :math:`b = \mu` and :math:`a = 0`.
-
-        The distribution infrastructure provides flexibility for distribution
-        authors to implement separate formulas for raw moments, central moments,
-        and standardized moments of any order. By default, the moment of the
-        desired order and kind is evaluated from the formula if such a formula
-        is available; if not, the infrastructure uses any formulas that are
-        available rather than resorting directly to numerical integration.
-        For instance, if formulas for the first three raw moments are
-        available and the third standardized moments is desired, the
-        infrastructure will evaluate the raw moments and perform the transforms
-        and standardization required. The decision tree is somewhat complex,
-        but the strategy for obtaining a moment of a given order and kind
-        (possibly as an intermediate step due to the recursive nature of the
-        transform formula above) roughly follows this order of priority:
-
-        #. Use cache (if order of same moment and kind has been calculated)
-        #. Use formula (if available)
-        #. Transform between raw and central moment and/or normalize to convert
-           between central and standardized moments (if efficient)
-        #. Use a generic result true for most distributions (if available)
-        #. Use quadrature
-
-        References
-        ----------
-        .. [1] Moment, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Moment_(mathematics)
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=1., sigma=2.)
-
-        Evaluate the first raw moment:
-
-        >>> X.moment(order=1, kind='raw')
-        1.0
-        >>> X.moment(order=1, kind='raw') == X.mean() == X.mu
-        True
-
-        Evaluate the second central moment:
-
-        >>> X.moment(order=2, kind='central')
-        4.0
-        >>> X.moment(order=2, kind='central') == X.variance() == X.sigma**2
-        True
-
-        Evaluate the fourth standardized moment:
-
-        >>> X.moment(order=4, kind='standardized')
-        3.0
-        >>> X.moment(order=4, kind='standardized') == X.kurtosis(convention='non-excess')
-        True
-
-        """  # noqa:E501
         kinds = {'raw': self._moment_raw,
                  'central': self._moment_central,
                  'standardized': self._moment_standardized}
@@ -4455,6 +3000,9 @@ class ContinuousDistribution:
 
         if moment is None and 'quadrature' in methods:
             moment = self._moment_integrate_pdf(order, center=self._zero, **params)
+
+        if moment is None and 'quadrature_icdf' in methods:
+            moment = self._moment_integrate_icdf(order, center=self._zero, **params)
 
         if moment is not None and self.cache_policy != _NO_CACHE:
             self._moment_raw_cache[order] = moment
@@ -4515,6 +3063,11 @@ class ContinuousDistribution:
             mean = self._moment_raw_dispatch(self._one, **params,
                                              methods=self._moment_methods)
             moment = self._moment_integrate_pdf(order, center=mean, **params)
+
+        if moment is None and 'quadrature_icdf' in methods:
+            mean = self._moment_raw_dispatch(self._one, **params,
+                                             methods=self._moment_methods)
+            moment = self._moment_integrate_icdf(order, center=mean, **params)
 
         if moment is not None and self.cache_policy != _NO_CACHE:
             self._moment_central_cache[order] = moment
@@ -4606,13 +3159,21 @@ class ContinuousDistribution:
             return pdf*(x-center)**order
         return self._quadrature(integrand, args=(order, center), params=params)
 
+    def _moment_integrate_icdf(self, order, center, **params):
+        def integrand(x, order, center, **params):
+            x = self._icdf_dispatch(x, **params)
+            return (x-center)**order
+        return self._quadrature(integrand, limits=(0., 1.),
+                                args=(order, center), params=params)
+
     def _moment_transform_center(self, order, moment_as, a, b):
         a, b, *moment_as = np.broadcast_arrays(a, b, *moment_as)
         n = order
         i = np.arange(n+1).reshape([-1]+[1]*a.ndim)  # orthogonal to other axes
         i = self._preserve_type(i)
         n_choose_i = special.binom(n, i)
-        moment_b = np.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
+        with np.errstate(invalid='ignore'):  # can happen with infinite moment
+            moment_b = np.sum(n_choose_i*moment_as*(a-b)**(n-i), axis=0)
         return moment_b
 
     def _logmoment(self, order=1, *, logcenter=None, standardized=False):
@@ -4907,6 +3468,137 @@ class ContinuousDistribution:
     #
     # fit method removed for initial PR
 
+
+def make_distribution(dist):
+    """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
+
+    The returned value is a `ContinuousDistribution` subclass. Like any subclass
+    of `ContinuousDistribution`, it must be instantiated (i.e. by passing all shape
+    parameters as keyword arguments) before use. Once instantiated, the resulting
+    object will have the same interface as any other instance of
+    `ContinuousDistribution`; e.g., `scipy.stats.Normal`.
+
+    .. note::
+
+        `make_distribution` does not work with all instances of `rv_continuous`.
+        Known failures include 'genpareto', 'genextreme', 'genhalflogistic',
+        'irwinhall', 'kstwo', 'kappa4', 'levy_stable', 'norminvgauss',
+        'tukeylambda', and `vonmises`.
+
+    Parameters
+    ----------
+    dist : `rv_continuous`
+        Instance of `rv_continuous`.
+
+    Returns
+    -------
+    CustomDistribution : `ContinuousDistribution`
+        A subclass of `ContinuousDistribution` corresponding with `dist`. The
+        initializer requires all shape parameters to be passed as keyword arguments
+        (using the same names as the instance of `rv_continuous`).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>> LogU = stats.make_distribution(stats.loguniform)
+    >>> X = LogU(a=1.0, b=3.0)
+    >>> np.isclose((X + 0.25).median(), stats.loguniform.ppf(0.5, 1, 3, loc=0.25))
+    np.True_
+    >>> X.plot()
+    >>> sample = X.sample(10000, rng=np.random.default_rng())
+    >>> plt.hist(sample, density=True, bins=30)
+    >>> plt.legend(('pdf', 'histogram'))
+    >>> plt.show()
+
+    """
+    # todo: check genpareto, genextreme, genhalflogistic, kstwo, kappa4, tukeylambda
+    parameters = []
+    names = []
+    support = getattr(dist, '_support', (dist.a, dist.b))
+    for shape_info in dist._shape_info():
+        domain = _RealDomain(endpoints=shape_info.endpoints,
+                             inclusive=shape_info.inclusive)
+        param = _RealParameter(shape_info.name, domain=domain)
+        parameters.append(param)
+        names.append(shape_info.name)
+
+    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
+
+    class CustomDistribution(ContinuousDistribution):
+        _parameterizations = ([_Parameterization(*parameters)] if parameters
+                              else [])
+        _variable = _x_param
+
+    def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
+        return dist._rvs(size=full_shape, random_state=rng, **kwargs)
+
+    def _moment_raw_formula(self, n, **kwargs):
+        return dist._munp(int(n), **kwargs)
+
+    def _moment_raw_formula_1(self, order, **kwargs):
+        if order != 1:
+            return None
+        return dist._stats(**kwargs)[0]
+
+    def _moment_central_formula(self, order, **kwargs):
+        if order != 2:
+            return None
+        return dist._stats(**kwargs)[1]
+
+    def _moment_standard_formula(self, order, **kwargs):
+        if order == 3:
+            if dist._stats_has_moments:
+                kwargs['moments'] = 's'
+            return dist._stats(**kwargs)[int(order - 1)]
+        elif order == 4:
+            if dist._stats_has_moments:
+                kwargs['moments'] = 'k'
+            k = dist._stats(**kwargs)[int(order - 1)]
+            return k if k is None else k + 3
+        else:
+            return None
+
+    methods = {'_logpdf': '_logpdf_formula',
+               '_pdf': '_pdf_formula',
+               '_logcdf': '_logcdf_formula',
+               '_cdf': '_cdf_formula',
+               '_logsf': '_logccdf_formula',
+               '_sf': '_ccdf_formula',
+               '_ppf': '_icdf_formula',
+               '_isf': '_iccdf_formula',
+               '_entropy': '_entropy_formula',
+               '_median': '_median_formula'}
+
+    for old_method, new_method in methods.items():
+        # If method of old distribution overrides generic implementation...
+        method = getattr(dist.__class__, old_method, None)
+        super_method = getattr(stats.rv_continuous, old_method, None)
+        if method is not super_method:
+            # Make it an attribute of the new object with the new name
+            setattr(CustomDistribution, new_method, getattr(dist, old_method))
+
+    def _overrides(method_name):
+        return (getattr(dist.__class__, method_name, None)
+                is not getattr(stats.rv_continuous, method_name, None))
+
+    if _overrides('_munp'):
+        CustomDistribution._moment_raw_formula = _moment_raw_formula
+
+    if _overrides('_rvs'):
+        CustomDistribution._sample_formula = _sample_formula
+
+    if _overrides('_stats'):
+        CustomDistribution._moment_standardized_formula = _moment_standard_formula
+        if not _overrides('_munp'):
+            CustomDistribution._moment_raw_formula = _moment_raw_formula_1
+            CustomDistribution._moment_central_formula = _moment_central_formula
+
+    return CustomDistribution
+
+
 # Rough sketch of how we might shift/scale distributions. The purpose of
 # making it a separate class is for
 # a) simplicity of the ContinuousDistribution class and
@@ -4931,7 +3623,7 @@ def _shift_scale_distribution_function_2arg(func):
         yt = self._transform(y, loc, scale)
         fxy = f(xt, yt, *args, **kwargs)
         fyx = f(yt, xt, *args, **kwargs)
-        return np.where(sign, fxy, fyx)[()]
+        return np.real_if_close(np.where(sign, fxy, fyx))[()]
 
     return wrapped
 
@@ -4977,22 +3669,19 @@ def _shift_scale_inverse_function(func):
 
 
 class TransformedDistribution(ContinuousDistribution):
-    # TODO: This may need some sort of default `_parameterizations` with a
-    #       single `_Parameterization` that has no parameters. The reason is
-    #       that `dist`'s parameters need to get added to it. If they're not
-    #       added, then those parameter kwargs are not recognized in
-    #       `_update_parameters`.
-    def __init__(self, dist, *args, **kwargs):
+    def __init__(self, X, /, *args, **kwargs):
         self._copy_parameterization()
-        self._variable = dist._variable
-        self._dist = dist
-        if dist._parameterization:
+        self._variable = X._variable
+        self._dist = X
+        if X._parameterization:
             # Add standard distribution parameters to our parameterization
-            dist_parameters = dist._parameterization.parameters
+            dist_parameters = X._parameterization.parameters
             set_params = set(dist_parameters)
+            if not self._parameterizations:
+                self._parameterizations.append(_Parameterization())
             for parameterization in self._parameterizations:
                 if set_params.intersection(parameterization.parameters):
-                    message = (f"One or more of the parameters of {dist} has "
+                    message = (f"One or more of the parameters of {X} has "
                                "the same name as a parameter of "
                                f"{self.__class__.__name__}. Name collisions "
                                "create ambiguities and are not supported.")
@@ -5024,8 +3713,148 @@ class TransformedDistribution(ContinuousDistribution):
 
     def __repr__(self):
         s = super().__repr__()
-        return s.replace(self.__class__.__name__,
+        return s.replace("Distribution",
                          self._dist.__class__.__name__)
+
+
+class TruncatedDistribution(TransformedDistribution):
+    """Truncated distribution."""
+    # TODO:
+    # - consider avoiding catastropic cancellation by using appropriate tail
+    # - if the mode of `_dist` is within the support, it's still the mode
+    # - rejection sampling might be more efficient than inverse transform
+
+    _lb_domain = _RealDomain(endpoints=(-inf, 'ub'), inclusive=(True, False))
+    _lb_param = _RealParameter('lb', symbol=r'b_l',
+                                domain=_lb_domain, typical=(0.1, 0.2))
+
+    _ub_domain = _RealDomain(endpoints=('lb', inf), inclusive=(False, True))
+    _ub_param = _RealParameter('ub', symbol=r'b_u',
+                                  domain=_ub_domain, typical=(0.8, 0.9))
+
+    _parameterizations = [_Parameterization(_lb_param, _ub_param),
+                          _Parameterization(_lb_param),
+                          _Parameterization(_ub_param)]
+
+    def __init__(self, X, /, *args, lb=-np.inf, ub=np.inf, **kwargs):
+        return super().__init__(X, *args, lb=lb, ub=ub, **kwargs)
+
+    def _process_parameters(self, lb=None, ub=None, **params):
+        lb = lb if lb is not None else np.full_like(lb, -np.inf)[()]
+        ub = ub if ub is not None else np.full_like(ub, np.inf)[()]
+        parameters = self._dist._process_parameters(**params)
+        a, b = self._support(lb=lb, ub=ub, **parameters)
+        logmass = self._dist._logcdf2_dispatch(a, b, **parameters)
+        parameters.update(dict(lb=lb, ub=ub, _a=a, _b=b, logmass=logmass))
+        return parameters
+
+    def _support(self, lb, ub, **params):
+        a, b = self._dist._support(**params)
+        return np.maximum(a, lb), np.minimum(b, ub)
+
+    def _overrides(self, method_name):
+        return False
+
+    def _logpdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logpdf = self._dist._logpdf_dispatch(x, *args, **params)
+        return logpdf - logmass
+
+    def _logcdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logcdf = self._dist._logcdf2_dispatch(_a, x, *args, **params)
+        # of course, if this result is small we could compute with the other tail
+        return logcdf - logmass
+
+    def _logccdf_dispatch(self, x, *args, lb, ub, _a, _b, logmass, **params):
+        logccdf = self._dist._logcdf2_dispatch(x, _b, *args, **params)
+        return logccdf - logmass
+
+    def _logcdf2_dispatch(self, x, y, *args, lb, ub, _a, _b, logmass, **params):
+        logcdf2 = self._dist._logcdf2_dispatch(x, y, *args, **params)
+        return logcdf2 - logmass
+
+    def _ilogcdf_dispatch(self, logp, *args, lb, ub, _a, _b, logmass, **params):
+        log_Fa = self._dist._logcdf_dispatch(_a, *args, **params)
+        logp_adjusted = np.logaddexp(log_Fa, logp + logmass)
+        return self._dist._ilogcdf_dispatch(logp_adjusted, *args, **params)
+
+    def _ilogccdf_dispatch(self, logp, *args, lb, ub, _a, _b, logmass, **params):
+        log_cFb = self._dist._logccdf_dispatch(_b, *args, **params)
+        logp_adjusted = np.logaddexp(log_cFb, logp + logmass)
+        return self._dist._ilogccdf_dispatch(logp_adjusted, *args, **params)
+
+    def _icdf_dispatch(self, p, *args, lb, ub, _a, _b, logmass, **params):
+        Fa = self._dist._cdf_dispatch(_a, *args, **params)
+        p_adjusted = Fa + p*np.exp(logmass)
+        return self._dist._icdf_dispatch(p_adjusted, *args, **params)
+
+    def _iccdf_dispatch(self, p, *args, lb, ub, _a, _b, logmass, **params):
+        cFb = self._dist._ccdf_dispatch(_b, *args, **params)
+        p_adjusted = cFb + p*np.exp(logmass)
+        return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
+
+
+def truncate(X, lb=-np.inf, ub=np.inf):
+    """Truncate the support of a random variable.
+
+    Given a random variable `X`, `truncate` returns a random variable with
+    support truncated to the interval between `lb` and `ub`. The underlying
+    probability density function is normalized accordingly.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable to be truncated.
+    lb, ub : float array-like
+        The lower and upper truncation points, respectively. Must be
+        broadcastable with one another and the shape of `X`.
+
+    Returns
+    -------
+    X : `ContinuousDistribution`
+        The truncated random variable.
+
+    References
+    ----------
+    .. [1] "Truncated Distribution". *Wikipedia*.
+           https://en.wikipedia.org/wiki/Truncated_distribution
+
+    Examples
+    --------
+    Compare against `scipy.stats.truncnorm`, which truncates a standard normal,
+    *then* shifts and scales it.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>> loc, scale, lb, ub = 1, 2, -2, 2
+    >>> X = stats.truncnorm(lb, ub, loc, scale)
+    >>> Y = scale * stats.truncate(stats.Normal(), lb, ub) + loc
+    >>> x = np.linspace(-3, 5, 300)
+    >>> plt.plot(x, X.pdf(x), '-', label='X')
+    >>> plt.plot(x, Y.pdf(x), '--', label='Y')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('PDF')
+    >>> plt.title('Truncated, then Shifted/Scaled Normal')
+    >>> plt.legend()
+    >>> plt.show()
+
+    However, suppose we wish to shift and scale a normal random variable,
+    then truncate its support to given values. This is straightforward with
+    `truncate`.
+
+    >>> Z = stats.truncate(scale * stats.Normal() + loc, lb, ub)
+    >>> Z.plot()
+    >>> plt.show()
+
+    Furthermore, `truncate` can be applied to any random variable:
+
+    >>> Rayleigh = stats.make_distribution(stats.rayleigh)
+    >>> W = stats.truncate(Rayleigh(), lb=0, ub=3)
+    >>> W.plot()
+    >>> plt.show()
+
+    """
+    return TruncatedDistribution(X, lb=lb, ub=ub)
 
 
 class ShiftedScaledDistribution(TransformedDistribution):
@@ -5078,11 +3907,11 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def _entropy_dispatch(self, *args, loc, scale, sign, **params):
         return (self._dist._entropy_dispatch(*args, **params)
-                + np.log(abs(scale)))
+                + np.log(np.abs(scale)))
 
     def _logentropy_dispatch(self, *args, loc, scale, sign, **params):
         lH0 = self._dist._logentropy_dispatch(*args, **params)
-        lls = np.log(np.log(abs(scale))+0j)
+        lls = np.log(np.log(np.abs(scale))+0j)
         return special.logsumexp(np.broadcast_arrays(lH0, lls), axis=0)
 
     def _median_dispatch(self, *, method, loc, scale, sign, **params):
@@ -5096,12 +3925,12 @@ class ShiftedScaledDistribution(TransformedDistribution):
     def _logpdf_dispatch(self, x, *args, loc, scale, sign, **params):
         x = self._transform(x, loc, scale)
         logpdf = self._dist._logpdf_dispatch(x, *args, **params)
-        return logpdf - np.log(abs(scale))
+        return logpdf - np.log(np.abs(scale))
 
     def _pdf_dispatch(self, x, *args, loc, scale, sign, **params):
         x = self._transform(x, loc, scale)
         pdf = self._dist._pdf_dispatch(x, *args, **params)
-        return pdf / abs(scale)
+        return pdf / np.abs(scale)
 
     # Sorry about the magic. This is just a draft to show the behavior.
     @_shift_scale_distribution_function
@@ -5181,10 +4010,10 @@ class ShiftedScaledDistribution(TransformedDistribution):
             order, raw_moments, loc, self._zero)
 
     def _sample_dispatch(self, sample_shape, full_shape, *,
-                         method, rng, **params):
+                         rng, loc, scale, sign, method, **params):
         rvs = self._dist._sample_dispatch(
             sample_shape, full_shape, method=method, rng=rng, **params)
-        return self._itransform(rvs, **params)
+        return self._itransform(rvs, loc=loc, scale=scale, sign=sign, **params)
 
     def __add__(self, loc):
         return ShiftedScaledDistribution(self._dist, loc=self.loc + loc,
@@ -5204,18 +4033,821 @@ class ShiftedScaledDistribution(TransformedDistribution):
                                          loc=self.loc / scale,
                                          scale=self.scale / scale)
 
-    def __radd__(self, other):
-        return self.__add__(other)
 
-    def __rsub__(self, other):
-        return self.__neg__().__add__(other)
+class OrderStatisticDistribution(TransformedDistribution):
+    r"""Probability distribution of an order statistic
 
-    def __rmul__(self, other):
-        return self.__mul__(other)
+    An instance of this class represents a random variable that follows the
+    distribution underlying the :math:`r^{\text{th}}` order statistic of a
+    sample of :math:`n` observations of a random variable :math:`X`.
 
-    def __rtruediv__(self, other):
-        message = "Division by a random variable is not yet implemented."
+    Parameters
+    ----------
+    dist : `ContinuousDistribution`
+        The random variable :math:`X`
+    n : array_like
+        The (integer) sample size :math:`n`
+    r : array_like
+        The (integer) rank of the order statistic :math:`r`
+
+    Notes
+    -----
+    If we make :math:`n` observations of a continuous random variable
+    :math:`X` and sort them in increasing order
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
+    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+
+    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
+    :math:`F`, and :math:`F'`, respectively, then the PDF underlying
+    math:`X_{(r)}` is given by:
+
+    .. math::
+
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} F'(x)^{n - r}
+
+    The CDF and other methods of the distribution underlying :math:`X_{(r)}`
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is
+    a standard uniform random variable, and that the order statistics of
+    observations of `U` follow a beta distribution, :math:`B(r, n - r + 1)`.
+
+    References
+    ----------
+    .. [1] Order statistic. *Wikipedia*. https://en.wikipedia.org/wiki/Order_statistic
+
+    Examples
+    --------
+    Suppose we are interested in order statistics of samples of size five drawn
+    from the standard normal distribution. Plot the PDF underlying the fourth
+    order statistic and compare with a normalized histogram from simulation.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>>
+    >>> X = stats.Normal()
+    >>> data = X.sample(shape=(10000, 5))
+    >>> ranks = np.sort(data, axis=1)
+    >>> Y = stats.OrderStatisticDistribution(X, r=4, n=5)
+    >>>
+    >>> ax = plt.gca()
+    >>> Y.plot(ax=ax)
+    >>> ax.hist(ranks[:, 3], density=True, bins=30)
+    >>> plt.show()
+
+    """
+
+    # These can be restricted to _IntegerDomain/_IntegerParameter in a separate
+    # PR if desired.
+    _r_domain = _RealDomain(endpoints=(1, 'n'), inclusive=(True, True))
+    _r_param = _RealParameter('r', domain=_r_domain, typical=(1, 2))
+
+    _n_domain = _RealDomain(endpoints=(1, np.inf), inclusive=(True, True))
+    _n_param = _RealParameter('n', domain=_n_domain, typical=(1, 4))
+
+    _r_domain.define_parameters(_n_param)
+
+    _parameterizations = [_Parameterization(_r_param, _n_param)]
+
+    def __init__(self, dist, /, *args, r, n, **kwargs):
+        super().__init__(dist, *args, r=r, n=n, **kwargs)
+
+    def _overrides(self, method_name):
+        return method_name in {'_logpdf_formula', '_pdf_formula',
+                               '_cdf_formula', '_ccdf_formula',
+                               '_icdf_formula', '_iccdf_formula'}
+
+    def _logpdf_formula(self, x, r, n, **kwargs):
+        log_factor = special.betaln(r, n - r + 1)
+        log_fX = self._dist._logpdf_dispatch(x, **kwargs)
+        # log-methods sometimes use complex dtype with 0 imaginary component,
+        # but `_tanhsinh` doesn't accept complex limits of integration; take `real`.
+        log_FX = self._dist._logcdf_dispatch(x.real, **kwargs)
+        log_cFX = self._dist._logccdf_dispatch(x.real, **kwargs)
+        # This can be problematic when (r - 1)|(n-r) = 0 and `log_FX`|log_cFX = -inf
+        # The PDF in these cases is 0^0, so these should be replaced with log(1)=0
+        # return log_fX + (r-1)*log_FX + (n-r)*log_cFX - log_factor
+        rm1_log_FX = np.where((r - 1 == 0) & np.isneginf(log_FX), 0, (r-1)*log_FX)
+        nmr_log_cFX = np.where((n - r == 0) & np.isneginf(log_cFX), 0, (n-r)*log_cFX)
+        return log_fX + rm1_log_FX + nmr_log_cFX - log_factor
+
+    def _pdf_formula(self, x, r, n, **kwargs):
+        # 1 / factor = factorial(n) / (factorial(r-1) * factorial(n-r))
+        factor = special.beta(r, n - r + 1)
+        fX = self._dist._pdf_dispatch(x, **kwargs)
+        FX = self._dist._cdf_dispatch(x, **kwargs)
+        cFX = self._dist._ccdf_dispatch(x, **kwargs)
+        return fX * FX**(r-1) * cFX**(n-r) / factor
+
+    def _cdf_formula(self, x, r, n, **kwargs):
+        x_ = self._dist._cdf_dispatch(x, **kwargs)
+        return special.betainc(r, n-r+1, x_)
+
+    def _ccdf_formula(self, x, r, n, **kwargs):
+        x_ = self._dist._cdf_dispatch(x, **kwargs)
+        return special.betaincc(r, n-r+1, x_)
+
+    def _icdf_formula(self, p, r, n, **kwargs):
+        p_ = special.betaincinv(r, n-r+1, p)
+        return self._dist._icdf_dispatch(p_, **kwargs)
+
+    def _iccdf_formula(self, p, r, n, **kwargs):
+        p_ = special.betainccinv(r, n-r+1, p)
+        return self._dist._icdf_dispatch(p_, **kwargs)
+
+
+def order_statistic(X, /, *, r, n):
+    r"""Probability distribution of an order statistic
+
+    Returns a random variable that follows the distribution underlying the
+    :math:`r^{\text{th}}` order statistic of a sample of :math:`n`
+    observations of a random variable :math:`X`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`
+    r : array_like
+        The (positive integer) rank of the order statistic :math:`r`
+    n : array_like
+        The (positive integer) sample size :math:`n`
+
+    Notes
+    -----
+    If we make :math:`n` observations of a continuous random variable
+    :math:`X` and sort them in increasing order
+    :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}`,
+    :math:`X_{(r)}` is known as the :math:`r^{\text{th}}` order statistic.
+
+    If the PDF, CDF, and CCDF underlying math:`X` are denoted :math:`f`,
+    :math:`F`, and :math:`F'`, respectively, then the PDF underlying
+    math:`X_{(r)}` is given by:
+
+    .. math::
+
+        f_r(x) = \frac{n!}{(r-1)! (n-r)!} f(x) F(x)^{r-1} F'(x)^{n - r}
+
+    The CDF and other methods of the distribution underlying :math:`X_{(r)}`
+    are calculated using the fact that :math:`X = F^{-1}(U)`, where :math:`U` is
+    a standard uniform random variable, and that the order statistics of
+    observations of `U` follow a beta distribution, :math:`B(r, n - r + 1)`.
+
+    References
+    ----------
+    .. [1] Order statistic. *Wikipedia*. https://en.wikipedia.org/wiki/Order_statistic
+
+    Examples
+    --------
+    Suppose we are interested in order statistics of samples of size five drawn
+    from the standard normal distribution. Plot the PDF underlying each
+    order statistic and compare with a normalized histogram from simulation.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import stats
+    >>>
+    >>> X = stats.Normal()
+    >>> data = X.sample(shape=(10000, 5))
+    >>> sorted = np.sort(data, axis=1)
+    >>> Y = stats.order_statistic(X, r=[1, 2, 3, 4, 5], n=5)
+    >>>
+    >>> ax = plt.gca()
+    >>> colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    >>> for i in range(5):
+    ...     y = sorted[:, i]
+    ...     ax.hist(y, density=True, bins=30, alpha=0.1, color=colors[i])
+    >>> Y.plot(ax=ax)
+    >>> plt.show()
+
+    """
+    r, n = np.asarray(r), np.asarray(n)
+    if np.any((r != np.floor(r)) | (r < 0)) or np.any((n != np.floor(n)) | (n < 0)):
+        message = "`r` and `n` must contain only positive integers."
+        raise ValueError(message)
+    return OrderStatisticDistribution(X, r=r, n=n)
+
+
+class Mixture(_ProbabilityDistribution):
+    r"""Representation of a mixture distribution.
+
+    A mixture distribution is the distribution of a random variable
+    defined in the following way: first, a random variable is selected
+    from `components` according to the probabilities given by `weights`, then
+    the selected random variable is realized.
+
+    Parameters
+    ----------
+    components : sequence of `ContinuousDistribution`
+        The underlying instances of `ContinuousDistribution`.
+        All must have scalar shape parameters (if any); e.g., the `pdf` evaluated
+        at a scalar argument must return a scalar.
+    weights : sequence of floats
+        The corresponding probabilities of selecting each random variable.
+        Must be non-negative and sum to one.
+
+    Attributes
+    ----------
+    components : sequence of `ContinuousDistribution`
+        The underlying instances of `ContinuousDistribution`.
+    weights : ndarray
+        The corresponding probabilities of selecting each random variable.
+
+    Methods
+    -------
+    support
+
+    sample
+
+    moment
+
+    mean
+    median
+    mode
+
+    variance
+    standard_deviation
+
+    skewness
+    kurtosis
+
+    pdf
+    logpdf
+
+    cdf
+    icdf
+    ccdf
+    iccdf
+
+    logcdf
+    ilogcdf
+    logccdf
+    ilogccdf
+
+    entropy
+
+    Notes
+    -----
+    The following abbreviations are used throughout the documentation.
+
+    - PDF: probability density function
+    - CDF: cumulative distribution function
+    - CCDF: complementary CDF
+    - entropy: differential entropy
+    - log-*F*: logarithm of *F* (e.g. log-CDF)
+    - inverse *F*: inverse function of *F* (e.g. inverse CDF)
+
+    References
+    ----------
+    .. [1] Mixture distribution, *Wikipedia*,
+           https://en.wikipedia.org/wiki/Mixture_distribution
+
+    """
+    # Todo:
+    # Fix Normal(mu=0.5).logentropy() runtime warning
+    # Add support for array shapes, weights
+
+    def _input_validation(self, components, weights):
+        if len(components) == 0:
+            message = ("`components` must contain at least one random variable.")
+            raise ValueError(message)
+
+        for var in components:
+            # will generalize to other kinds of distributions when there
+            # *are* other kinds of distributions
+            if not isinstance(var, ContinuousDistribution):
+                message = ("Each element of `components` must be an instance of "
+                           "`ContinuousDistribution`.")
+                raise ValueError(message)
+            if not var._shape == ():
+                message = "All elements of `components` must have scalar shapes."
+                raise ValueError(message)
+
+        if weights is None:
+            return
+
+        weights = np.asarray(weights)
+        if weights.shape != (len(components),):
+            message = "`components` and `weights` must have the same length."
+            raise ValueError(message)
+
+        if not np.issubdtype(weights.dtype, np.inexact):
+            message = "`weights` must have floating point dtype."
+            raise ValueError(message)
+
+        if not np.isclose(np.sum(weights), 1.0):
+            message = "`weights` must sum to 1.0."
+            raise ValueError(message)
+
+        if not np.all(weights >= 0):
+            message = "All `weights` must be non-negative."
+            raise ValueError(message)
+
+        return components, weights
+
+    def __init__(self, components, *, weights=None):
+        components, weights = self._input_validation(components, weights)
+        n = len(components)
+        dtype = np.result_type(*(var._dtype for var in components))
+        self._shape = np.broadcast_shapes(*(var._shape for var in components))
+        self._dtype, self._components = dtype, components
+        self._weights = np.full(n, 1/n, dtype=dtype) if weights is None else weights
+        self.validation_policy = None
+
+    @property
+    def components(self):
+        return list(self._components)
+
+    @property
+    def weights(self):
+        return self._weights.copy()
+
+    def _full(self, val, *args):
+        args = [np.asarray(arg) for arg in args]
+        dtype = np.result_type(self._dtype, *(arg.dtype for arg in args))
+        shape = np.broadcast_shapes(self._shape, *(arg.shape for arg in args))
+        return np.full(shape, val, dtype=dtype)
+
+    def _sum(self, fun, *args):
+        out = self._full(0, *args)
+        for var, weight in zip(self._components, self._weights):
+            out += getattr(var, fun)(*args) * weight
+        return out
+
+    def _logsum(self, fun, *args):
+        out = self._full(-np.inf, *args)
+        for var, log_weight in zip(self._components, np.log(self._weights)):
+            np.logaddexp(out, getattr(var, fun)(*args) + log_weight, out=out)
+        return out
+
+    def support(self):
+        a = self._full(np.inf)
+        b = self._full(-np.inf)
+        for var in self._components:
+            a = np.minimum(a, var.support()[0])
+            b = np.maximum(b, var.support()[1])
+        return a, b
+
+    def _raise_if_method(self, method):
+        if method is not None:
+            raise NotImplementedError("`method` not implemented for this distribution.")
+
+    def logentropy(self, *, method=None):
+        self._raise_if_method(method)
+        def log_integrand(x):
+            # `x` passed by `_tanhsinh` will be of complex dtype because
+            # `log_integrand` returns complex values, but the imaginary
+            # component is always zero. Extract the real part because
+            # `logpdf` uses `logaddexp`, which fails for complex input.
+            return self.logpdf(x.real) + np.log(self.logpdf(x.real) + 0j)
+
+        res = _tanhsinh(log_integrand, *self.support(), log=True).integral
+        return _log_real_standardize(res + np.pi*1j)
+
+    def entropy(self, *, method=None):
+        self._raise_if_method(method)
+        return _tanhsinh(lambda x: -self.pdf(x) * self.logpdf(x),
+                         *self.support()).integral
+
+    def mode(self, *, method=None):
+        self._raise_if_method(method)
+        a, b = self.support()
+        def f(x): return -self.pdf(x)
+        res = _bracket_minimum(f, 1., xmin=a, xmax=b)
+        res = _chandrupatla_minimize(f, res.xl, res.xm, res.xr)
+        return res.x
+
+    def median(self, *, method=None):
+        self._raise_if_method(method)
+        return self.icdf(0.5)
+
+    def mean(self, *, method=None):
+        self._raise_if_method(method)
+        return self._sum('mean')
+
+    def variance(self, *, method=None):
+        self._raise_if_method(method)
+        return self._moment_central(2)
+
+    def standard_deviation(self, *, method=None):
+        self._raise_if_method(method)
+        return self.variance()**0.5
+
+    def skewness(self, *, method=None):
+        self._raise_if_method(method)
+        return self._moment_standardized(3)
+
+    def kurtosis(self, *, method=None):
+        self._raise_if_method(method)
+        return self._moment_standardized(4)
+
+    def moment(self, order=1, kind='raw', *, method=None):
+        self._raise_if_method(method)
+        kinds = {'raw': self._moment_raw,
+                 'central': self._moment_central,
+                 'standardized': self._moment_standardized}
+        order = ContinuousDistribution._validate_order_kind(self, order, kind, kinds)
+        moment_kind = kinds[kind]
+        return moment_kind(order)
+
+    def _moment_raw(self, order):
+        out = self._full(0)
+        for var, weight in zip(self._components, self._weights):
+            out += var.moment(order, kind='raw') * weight
+        return out
+
+    def _moment_central(self, order):
+        order = int(order)
+        out = self._full(0)
+        for var, weight in zip(self._components, self._weights):
+            moment_as = [var.moment(order, kind='central')
+                         for order in range(order + 1)]
+            a, b = var.mean(), self.mean()
+            moment = var._moment_transform_center(order, moment_as, a, b)
+            out += moment * weight
+        return out
+
+    def _moment_standardized(self, order):
+        return self._moment_central(order) / self.standard_deviation()**order
+
+    def pdf(self, x, /, *, method=None):
+        self._raise_if_method(method)
+        return self._sum('pdf', x)
+
+    def logpdf(self, x, /, *, method=None):
+        self._raise_if_method(method)
+        return self._logsum('logpdf', x)
+
+    def cdf(self, x, y=None, /, *, method=None):
+        self._raise_if_method(method)
+        args = (x,) if y is None else (x, y)
+        return self._sum('cdf', *args)
+
+    def logcdf(self, x, y=None, /, *, method=None):
+        self._raise_if_method(method)
+        args = (x,) if y is None else (x, y)
+        return self._logsum('logcdf', *args)
+
+    def ccdf(self, x, y=None, /, *, method=None):
+        self._raise_if_method(method)
+        args = (x,) if y is None else (x, y)
+        return self._sum('ccdf', *args)
+
+    def logccdf(self, x, y=None, /, *, method=None):
+        self._raise_if_method(method)
+        args = (x,) if y is None else (x, y)
+        return self._logsum('logccdf', *args)
+
+    def _invert(self, fun, p):
+        xmin, xmax = self.support()
+        fun = getattr(self, fun)
+        f = lambda x, p: fun(x) - p  # noqa: E731 is silly
+        res = _bracket_root(f, xl0=self.mean(), xmin=xmin, xmax=xmax, args=(p,))
+        return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
+
+    def icdf(self, p, /, *, method=None):
+        self._raise_if_method(method)
+        return self._invert('cdf', p)
+
+    def iccdf(self, p, /, *, method=None):
+        self._raise_if_method(method)
+        return self._invert('ccdf', p)
+
+    def ilogcdf(self, p, /, *, method=None):
+        self._raise_if_method(method)
+        return self._invert('logcdf', p)
+
+    def ilogccdf(self, p, /, *, method=None):
+        self._raise_if_method(method)
+        return self._invert('logccdf', p)
+
+    def sample(self, shape=(), *, rng=None, method=None):
+        self._raise_if_method(method)
+        rng = np.random.default_rng(rng)
+        size = np.prod(np.atleast_1d(shape))
+        ns = rng.multinomial(size, self._weights)
+        x = [var.sample(shape=n, rng=rng) for n, var in zip(ns, self._components)]
+        x = np.reshape(rng.permuted(np.concatenate(x)), shape)
+        return x[()]
+
+
+class MonotonicTransformedDistribution(TransformedDistribution):
+    r"""Distribution underlying a strictly monotonic function of a random variable
+
+    Given a random variable :math:`X`; a strictly monotonic function
+    :math:`g(u)`, its inverse :math:`h(u) = g^{-1}(u)`, and the derivative magnitude
+    :math: `|h'(u)| = \left| \frac{dh(u)}{du} \right|`, define the distribution
+    underlying the random variable :math:`Y = g(X)`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    g, h, dh : callable
+        Elementwise functions representing the mathematical functions
+        :math:`g(u)`, :math:`h(u)`, and :math:`|h'(u)|`
+    logdh : callable, optional
+        Elementwise function representing :math:`\log(h'(u))`.
+        The default is ``lambda u: np.log(dh(u))``, but providing
+        a custom implementation may avoid over/underflow.
+    increasing : bool, optional
+        Whether the function is strictly increasing (True, default)
+        or strictly decreasing (False).
+    g_name : str, optional
+        The name of the mathematical function represented by `g`,
+        used in `__repr__` and `__str__`. The default is ``g.__name__``.
+
+    """
+
+    def __init__(self, X, /, *args, g, h, dh, logdh=None,
+                 increasing=True, g_name=None, **kwargs):
+        super().__init__(X, *args, **kwargs)
+        self._g = g
+        self._h = h
+        self._dh = dh
+        self._logdh = (logdh if logdh is not None
+                       else lambda u: np.log(dh(u)))
+        if increasing:
+            self._xdf = self._dist._cdf_dispatch
+            self._cxdf = self._dist._ccdf_dispatch
+            self._ixdf = self._dist._icdf_dispatch
+            self._icxdf = self._dist._iccdf_dispatch
+            self._logxdf = self._dist._logcdf_dispatch
+            self._logcxdf = self._dist._logccdf_dispatch
+            self._ilogxdf = self._dist._ilogcdf_dispatch
+            self._ilogcxdf = self._dist._ilogccdf_dispatch
+        else:
+            self._xdf = self._dist._ccdf_dispatch
+            self._cxdf = self._dist._cdf_dispatch
+            self._ixdf = self._dist._iccdf_dispatch
+            self._icxdf = self._dist._icdf_dispatch
+            self._logxdf = self._dist._logccdf_dispatch
+            self._logcxdf = self._dist._logcdf_dispatch
+            self._ilogxdf = self._dist._ilogccdf_dispatch
+            self._ilogcxdf = self._dist._ilogcdf_dispatch
+        self._increasing = increasing
+        self._g_name = g.__name__ if g_name is None else g_name
+
+    def __repr__(self):
+        return f"{self._g_name}({repr(self._dist)})"
+
+    def __str__(self):
+        return f"{self._g_name}({str(self._dist)})"
+
+    def _overrides(self, method_name):
+        # Do not use the generic overrides of TransformedDistribution
+        return False
+
+    def _support(self, **params):
+        a, b = self._dist._support(**params)
+        # For reciprocal transformation, we want this zero to become -inf
+        b = np.where(b==0, np.asarray("-0", dtype=b.dtype), b)
+        with np.errstate(divide='ignore'):
+            if self._increasing:
+                return self._g(a), self._g(b)
+            else:
+                return self._g(b), self._g(a)
+
+    def _logpdf_dispatch(self, x, *args, **params):
+        return self._dist._logpdf_dispatch(self._h(x), *args, **params) + self._logdh(x)
+
+    def _pdf_dispatch(self, x, *args, **params):
+        return self._dist._pdf_dispatch(self._h(x), *args, **params) * self._dh(x)
+
+    def _logcdf_dispatch(self, x, *args, **params):
+        return self._logxdf(self._h(x), *args, **params)
+
+    def _cdf_dispatch(self, x, *args, **params):
+        return self._xdf(self._h(x), *args, **params)
+
+    def _logccdf_dispatch(self, x, *args, **params):
+        return self._logcxdf(self._h(x), *args, **params)
+
+    def _ccdf_dispatch(self, x, *args, **params):
+        return self._cxdf(self._h(x), *args, **params)
+
+    def _ilogcdf_dispatch(self, p, *args, **params):
+        return self._g(self._ilogxdf(p, *args, **params))
+
+    def _icdf_dispatch(self, p, *args, **params):
+        return self._g(self._ixdf(p, *args, **params))
+
+    def _ilogccdf_dispatch(self, p, *args, **params):
+        return self._g(self._ilogcxdf(p, *args, **params))
+
+    def _iccdf_dispatch(self, p, *args, **params):
+        return self._g(self._icxdf(p, *args, **params))
+
+    def _sample_dispatch(self, sample_shape, full_shape, *,
+                         method, rng, **params):
+        rvs = self._dist._sample_dispatch(
+            sample_shape, full_shape, method=method, rng=rng, **params)
+        return self._g(rvs)
+
+
+class FoldedDistribution(TransformedDistribution):
+    r"""Distribution underlying the absolute value of a random variable
+
+    Given a random variable :math:`X`; define the distribution
+    underlying the random variable :math:`Y = |X|`.
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        The random variable :math:`Y = |X|`
+
+    """
+    # Many enhancements are possible if distribution is symmetric. Start
+    # with the general case; enhance later.
+
+    def __init__(self, X, /, *args, **kwargs):
+        super().__init__(X, *args, **kwargs)
+        # I think we need to allow `_support` to define whether the endpoints
+        # are inclusive or not. In the meantime, it's best to ensure that the lower
+        # endpoint (typically 0 for folded distribution) is inclusive so PDF evaluates
+        # correctly at that point.
+        self._variable.domain.inclusive = (True, self._variable.domain.inclusive[1])
+
+    def _overrides(self, method_name):
+        # Do not use the generic overrides of TransformedDistribution
+        return False
+
+    def _support(self, **params):
+        a, b = self._dist._support(**params)
+        a_, b_ = np.abs(a), np.abs(b)
+        a_, b_ = np.minimum(a_, b_), np.maximum(a_, b_)
+        i = (a < 0) & (b > 0)
+        a_ = np.asarray(a_)
+        a_[i] = 0
+        return a_[()], b_[()]
+
+    def _logpdf_dispatch(self, x, *args, **params):
+        logpdfs = np.stack([self._dist._logpdf_dispatch(x, *args, **params),
+                            self._dist._logpdf_dispatch(-x, *args, **params)])
+        return special.logsumexp(logpdfs, axis=0)
+
+    def _pdf_dispatch(self, x, *args, **params):
+        return (self._dist._pdf_dispatch(x, *args, **params)
+                + self._dist._pdf_dispatch(-x, *args, **params))
+
+    def _logcdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._logcdf2_dispatch(-x, x, *args, **params).real
+
+    def _cdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._cdf2_dispatch(-x, x, *args, **params)
+
+    def _logccdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._logccdf2_dispatch(-x, x, *args, **params).real
+
+    def _ccdf_dispatch(self, x, *args, **params):
+        x = np.abs(x)
+        return self._dist._ccdf2_dispatch(-x, x, *args, **params)
+
+    def _sample_dispatch(self, sample_shape, full_shape, *,
+                         method, rng, **params):
+        rvs = self._dist._sample_dispatch(
+            sample_shape, full_shape, method=method, rng=rng, **params)
+        return np.abs(rvs)
+
+
+def abs(X, /):
+    r"""Absolute value of a random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = |X|`.
+
+    Examples
+    --------
+    Suppose we have a normally distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.Normal()
+
+    We wish to have a random variable :math:`Y` distributed according to
+    the folded normal distribution; that is, a random variable :math:`|X|`.
+
+    >>> Y = stats.abs(X)
+
+    The PDF of the distribution in the left half plane is "folded" over to
+    the right half plane. Because the normal PDF is symmetric, the resulting
+    PDF is zero for negative arguments and doubled for positive arguments.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 300)
+    >>> ax = plt.gca()
+    >>> Y.plot(x='x', y='pdf', t=('x', -1, 5), ax=ax)
+    >>> plt.plot(x, 2 * X.pdf(x), '--')
+    >>> plt.legend(('PDF of `Y`', 'Doubled PDF of `X`'))
+    >>> plt.show()
+
+    """
+    return FoldedDistribution(X)
+
+
+def exp(X, /):
+    r"""Natural exponential of a random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X`.
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = \exp(X)`.
+
+    Examples
+    --------
+    Suppose we have a normally distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> X = stats.Normal()
+
+    We wish to have a lognormally distributed random variable :math:`Y`,
+    a random variable whose natural logarithm is :math:`X`.
+    If :math:`X` is to be the natural logarithm of :math:`Y`, then we
+    must take :math:`Y` to be the natural exponential of :math:`X`.
+
+    >>> Y = stats.exp(X)
+
+    To demonstrate that ``X`` represents the logarithm of ``Y``,
+    we plot a normalized histogram of the logarithm of observations of
+    ``Y`` against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.log(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of `X`', 'histogram of `log(y)`'))
+    >>> plt.show()
+
+    """
+    return MonotonicTransformedDistribution(X, g=np.exp, h=np.log, dh=lambda u: 1 / u,
+                                            logdh=lambda u: -np.log(u))
+
+
+def log(X, /):
+    r"""Natural logarithm of a non-negative random variable
+
+    Parameters
+    ----------
+    X : `ContinuousDistribution`
+        The random variable :math:`X` with positive support.
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable :math:`Y = \exp(X)`.
+
+    Examples
+    --------
+    Suppose we have a gamma distributed random variable :math:`X`:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> Gamma = stats.make_distribution(stats.gamma)
+    >>> X = Gamma(a=1.0)
+
+    We wish to have a exp-gamma distributed random variable :math:`Y`,
+    a random variable whose natural exponential is :math:`X`.
+    If :math:`X` is to be the natural exponential of :math:`Y`, then we
+    must take :math:`Y` to be the natural logarithm of :math:`X`.
+
+    >>> Y = stats.log(X)
+
+    To demonstrate that ``X`` represents the exponential of ``Y``,
+    we plot a normalized histogram of the exponential of observations of
+    ``Y`` against the PDF underlying ``X``.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(435383595582522)
+    >>> y = Y.sample(shape=10000, rng=rng)
+    >>> ax = plt.gca()
+    >>> ax.hist(np.exp(y), bins=50, density=True)
+    >>> X.plot(ax=ax)
+    >>> plt.legend(('PDF of `X`', 'histogram of `exp(y)`'))
+    >>> plt.show()
+
+    """
+    if np.any(X.support()[0] < 0):
+        message = ("The logarithm of a random variable is only implemented when the "
+                   "support is non-negative.")
         raise NotImplementedError(message)
-
-    def __neg__(self):
-        return self * -1
+    return MonotonicTransformedDistribution(X, g=np.log, h=np.exp, dh=np.exp,
+                                            logdh=lambda u: u)
