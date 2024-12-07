@@ -212,7 +212,7 @@ scipy_signal__sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * ar
     if (azero == NULL) {
         goto fail;
     }
-    ara_ptr = PyArray_DATA(ara);
+    ara_ptr = (char *)PyArray_DATA(ara);
     nal = PyArray_ITEMSIZE(ara);
     st = memcmp(ara_ptr, azero, nal);
     PyDataMem_FREE(azero);
@@ -425,19 +425,19 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
 
     nfilt = na > nb ? na : nb;
 
-    azfilled = malloc(nal * nfilt);
+    azfilled = (char *)malloc(nal * nfilt);
     if (azfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create azfilled");
         goto clean_itzf;
     }
-    bzfilled = malloc(nbl * nfilt);
+    bzfilled = (char *)malloc(nbl * nfilt);
     if (bzfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create bzfilled");
         goto clean_azfilled;
     }
 
     nxl = PyArray_ITEMSIZE(x);
-    zfzfilled = malloc(nxl * (nfilt - 1));
+    zfzfilled = (char *)malloc(nxl * (nfilt - 1));
     if (zfzfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create zfzfilled");
         goto clean_bzfilled;
