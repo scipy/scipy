@@ -4542,10 +4542,10 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     # Backward filter.
     # Create y0 so zi*y0 broadcasts appropriately.
     y0 = axis_slice(y, start=-1, axis=axis)
-    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), axis=axis, zi=zi * y0)
+    (y, zf) = lfilter(b, a, axis_reverse(y.conj(), axis=axis), axis=axis, zi=(zi * y0).conj())
 
     # Reverse y.
-    y = axis_reverse(y, axis=axis)
+    y = axis_reverse(y, axis=axis).conj()
 
     if edge > 0:
         # Slice the actual signal from the extended signal.
@@ -4578,9 +4578,15 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
         # Make an extension of length `edge` at each
         # end of the input array.
         if padtype == 'even':
-            ext = even_ext(x, edge, axis=axis)
+            if not np.iscomplexobj(x):
+                ext = even_ext(x, edge, axis=axis)
+            else:
+                ext = even_ext(x.real, edge, axis=axis) + 1.j*odd_ext(x.imag, edge, axis=axis)
         elif padtype == 'odd':
-            ext = odd_ext(x, edge, axis=axis)
+            if not np.iscomplexobj(x):
+                ext = odd_ext(x, edge, axis=axis)
+            else:
+                ext = odd_ext(x.real, edge, axis=axis) + 1.j*even_ext(x.imag, edge, axis=axis)
         else:
             ext = const_ext(x, edge, axis=axis)
     else:
