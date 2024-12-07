@@ -10,27 +10,6 @@
 
 #include "_sigtools.h"
 
-template<int TYPECODE> struct traits {};
-
-template<> struct traits<NPY_FLOAT> {
-    typedef float real_type;
-};
-template<> struct traits<NPY_DOUBLE> {
-    typedef double real_type;
-};
-template<> struct traits<NPY_LONGDOUBLE> {
-    typedef npy_longdouble real_type;
-};
-template<> struct traits<NPY_CFLOAT> {
-    typedef float real_type;
-};
-template<> struct traits<NPY_CDOUBLE> {
-    typedef double real_type;
-};
-template<> struct traits<NPY_CLONGDOUBLE> {
-    typedef npy_longdouble real_type;
-};
-
 
 template<int TYPECODE>
 static void filt(char *b, char *a, char *x, char *y, char *Z,
