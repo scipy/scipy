@@ -307,6 +307,7 @@ class TestArithmetic1D:
         # Test basic matrix arithmetic with shapes like 0, (1, 0), (0, 3), etc.
         mat = np.array([])
         a = mat.reshape(0)
+        d = mat.reshape((1, 0))
         f = np.ones([5, 5])
 
         asp = spcreator(a)
@@ -331,3 +332,5 @@ class TestArithmetic1D:
 
         # Addition
         assert_equal(asp.__add__(asp).toarray(), a.__add__(a))
+        dsp = spcreator(d)
+        assert_equal(asp + dsp, a + d)
