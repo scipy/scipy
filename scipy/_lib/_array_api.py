@@ -223,6 +223,17 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     return _asarray(x, copy=True, xp=xp)
 
 
+def xp_sinc(x: Array, *, xp=None):
+    """`xp.sinc` replacement. Looking at you, array_api_strict.
+    """
+    if xp is None:
+        xp = array_namespace(x)
+    try:
+        return xp.sinc(x)
+    except AttributeError:
+        return xp.asarray(np.sinc(np.asarray(x)))
+
+
 def _strict_check(actual, desired, xp, *,
                   check_namespace=True, check_dtype=True, check_shape=True,
                   check_0d=True):
@@ -270,6 +281,8 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
+    if isinstance(desired, list):
+        desired = xp.asarray(desired, dtype=xp.asarray(actual).dtype)
 
     actual, desired = _strict_check(
         actual, desired, xp, check_namespace=check_namespace,
@@ -295,6 +308,8 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
+    if isinstance(desired, list):
+        desired = xp.asarray(desired, dtype=xp.asarray(actual).dtype)
 
     actual, desired = _strict_check(
         actual, desired, xp,
