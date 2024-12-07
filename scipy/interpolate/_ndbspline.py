@@ -5,7 +5,7 @@ import numpy as np
 
 from math import prod
 
-from . import _bspl
+from . import _bspl   # type: ignore[attr-defined]
 
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array

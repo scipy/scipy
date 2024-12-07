@@ -32,7 +32,7 @@ from scipy.interpolate._ndbspline import make_ndbspl
 
 from scipy.interpolate import _dfitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
-from scipy.interpolate import _bspl
+from scipy.interpolate import _dierckx
 
 
 class TestBSpline:
@@ -1613,7 +1613,7 @@ def make_interp_full_matr(x, y, t, k):
             left = np.searchsorted(t, xval) - 1
 
         # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        bb = _dierckx.evaluate_all_bspl(t, k, xval, left)
         A[j, left-k:left+1] = bb
 
     c = sl.solve(A, y)
@@ -1637,7 +1637,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
             left = np.searchsorted(t, xval) - 1
 
         # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        bb = _dierckx.evaluate_all_bspl(t, k, xval, left)
         A[j, left-k:left+1] = bb
 
     # have observation matrix, can solve the LSQ problem
@@ -1908,7 +1908,7 @@ def _qr_reduce_py(a_p, y, startrow=1):
 
     # convert to packed
     offs = list(range(R.shape[0]))
-    R_p = PackedMatrix(R, np.array(offs), nc)
+    R_p = PackedMatrix(R, np.array(offs, dtype=np.int64), nc)
 
     return R_p, y1
 
@@ -1972,12 +1972,12 @@ class TestGivensQR:
         assert nc == t.shape[0] - k - 1
 
         offset = a_csr.indices[::(k+1)]
-        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        offset = np.ascontiguousarray(offset, dtype=np.int64)
         A = a_csr.data.reshape(m, k+1)
 
         R = PackedMatrix(A, offset, nc)
         y_ = y[:, None]     # _qr_reduce requires `y` a 2D array
-        _bspl._qr_reduce(A, offset, nc, y_)      # modifies arguments in-place
+        _dierckx.qr_reduce(A, offset, nc, y_)      # modifies arguments in-place
 
         # signs may differ
         xp_assert_close(np.minimum(R.todense() + r,
@@ -1987,7 +1987,7 @@ class TestGivensQR:
 
         # sign changes are consistent between Q and R:
         c_full = sl.solve(r, qTy)
-        c_banded = _bspl._fpback(R.a, R.nc, y_)
+        c_banded = _dierckx.fpback(R.a, R.nc, y_)
         xp_assert_close(c_full, c_banded[:, 0], atol=5e-13)
 
     def test_py_vs_compiled(self):
@@ -2001,14 +2001,14 @@ class TestGivensQR:
         assert nc == t.shape[0] - k - 1
 
         offset = a_csr.indices[::(k+1)]
-        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        offset = np.ascontiguousarray(offset, dtype=np.int64)
         A = a_csr.data.reshape(m, k+1)
 
         R = PackedMatrix(A, offset, nc)
         y_ = y[:, None]
 
         RR, yy = _qr_reduce_py(R, y_)
-        _bspl._qr_reduce(A, offset, nc , y_)   # in-place
+        _dierckx.qr_reduce(A, offset, nc , y_)   # in-place
 
         xp_assert_close(RR.a, R.a, atol=1e-15)
         xp_assert_equal(RR.offset, R.offset, check_dtype=False)
@@ -2021,28 +2021,29 @@ class TestGivensQR:
         n = 10
         x, y, t, k = self._get_xyt(n)
         w = np.arange(1, n+1, dtype=float)
-        A, offset, nc = _bspl._data_matrix(x, t, k, w)
+
+        A, offset, nc = _dierckx.data_matrix(x, t, k, w)
 
         m = x.shape[0]
         a_csr = BSpline.design_matrix(x, t, k)
         a_w = (a_csr * w[:, None]).tocsr()
         A_ = a_w.data.reshape((m, k+1))
-        offset_ = a_w.indices[::(k+1)]
+        offset_ = a_w.indices[::(k+1)].astype(np.int64)
 
         xp_assert_close(A, A_, atol=1e-15)
-        xp_assert_equal(offset, offset_, check_dtype=False)
+        xp_assert_equal(offset, offset_)
         assert nc == t.shape[0] - k - 1
 
     def test_fpback(self):
         n = 10
         x, y, t, k = self._get_xyt(n)
         y = np.c_[y, y**2]
-        A, offset, nc = _bspl._data_matrix(x, t, k, w=np.ones_like(x))
+        A, offset, nc = _dierckx.data_matrix(x, t, k, np.ones_like(x))
         R = PackedMatrix(A, offset, nc)
-        _bspl._qr_reduce(A, offset, nc, y)
+        _dierckx.qr_reduce(A, offset, nc, y)
 
         c = fpback(R, y)
-        cc = _bspl._fpback(A, nc, y)
+        cc = _dierckx.fpback(A, nc, y)
 
         xp_assert_close(cc, c, atol=1e-14)
 
