@@ -62,17 +62,17 @@ csc_matmat_maxnnz   l iiIIII
 csc_matmat          v iiIITIIT*I*I*T
 csc_matvec          v iiIITT*T
 csc_matvecs         v iiiIITT*T
-csc_elmul_csc       v iiIITIIT*I*I*T
-csc_eldiv_csc       v iiIITIIT*I*I*T
-csc_plus_csc        v iiIITIIT*I*I*T
-csc_minus_csc       v iiIITIIT*I*I*T
-csc_maximum_csc     v iiIITIIT*I*I*T
-csc_minimum_csc     v iiIITIIT*I*I*T
-csc_ne_csc          v iiIITIIT*I*I*B
-csc_lt_csc          v iiIITIIT*I*I*B
-csc_gt_csc          v iiIITIIT*I*I*B
-csc_le_csc          v iiIITIIT*I*I*B
-csc_ge_csc          v iiIITIIT*I*I*B
+csc_elmul_csc       v iiiiiiIITIIT*I*I*T
+csc_eldiv_csc       v iiiiiiIITIIT*I*I*T
+csc_plus_csc        v iiiiiiIITIIT*I*I*T
+csc_minus_csc       v iiiiiiIITIIT*I*I*T
+csc_maximum_csc     v iiiiiiIITIIT*I*I*T
+csc_minimum_csc     v iiiiiiIITIIT*I*I*T
+csc_ne_csc          v iiiiiiIITIIT*I*I*B
+csc_lt_csc          v iiiiiiIITIIT*I*I*B
+csc_gt_csc          v iiiiiiIITIIT*I*I*B
+csc_le_csc          v iiiiiiIITIIT*I*I*B
+csc_ge_csc          v iiiiiiIITIIT*I*I*B
 """
 
 # csr.h
@@ -85,17 +85,17 @@ csr_tobsr           v iiiiIIT*I*I*T
 csr_todense         v iiIIT*T
 csr_matvec          v iiIITT*T
 csr_matvecs         v iiiIITT*T
-csr_elmul_csr       v iiIITIIT*I*I*T
-csr_eldiv_csr       v iiIITIIT*I*I*T
-csr_plus_csr        v iiIITIIT*I*I*T
-csr_minus_csr       v iiIITIIT*I*I*T
-csr_maximum_csr     v iiIITIIT*I*I*T
-csr_minimum_csr     v iiIITIIT*I*I*T
-csr_ne_csr          v iiIITIIT*I*I*B
-csr_lt_csr          v iiIITIIT*I*I*B
-csr_gt_csr          v iiIITIIT*I*I*B
-csr_le_csr          v iiIITIIT*I*I*B
-csr_ge_csr          v iiIITIIT*I*I*B
+csr_elmul_csr       v iiiiiiIITIIT*I*I*T
+csr_eldiv_csr       v iiiiiiIITIIT*I*I*T
+csr_plus_csr        v iiiiiiIITIIT*I*I*T
+csr_minus_csr       v iiiiiiIITIIT*I*I*T
+csr_maximum_csr     v iiiiiiIITIIT*I*I*T
+csr_minimum_csr     v iiiiiiIITIIT*I*I*T
+csr_ne_csr          v iiiiiiIITIIT*I*I*B
+csr_lt_csr          v iiiiiiIITIIT*I*I*B
+csr_gt_csr          v iiiiiiIITIIT*I*I*B
+csr_le_csr          v iiiiiiIITIIT*I*I*B
+csr_ge_csr          v iiiiiiIITIIT*I*I*B
 csr_scale_rows      v iiII*TT
 csr_scale_columns   v iiII*TT
 csr_sort_indices    v iI*I*T

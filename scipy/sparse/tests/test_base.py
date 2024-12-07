@@ -1475,6 +1475,7 @@ class _TestCommon:
             a = dat.copy()
             a[0,2] = 2.0
             b = datsp
+
             c = b + a
             assert_array_equal(c, b.toarray() + a)
 
@@ -1482,9 +1483,51 @@ class _TestCommon:
             assert_array_equal(c.toarray(),
                                b.toarray() + b.toarray())
 
-            # test broadcasting
+        for dtype in self.math_dtypes:
+            check(dtype)
+
+    def test_add_broadcasting(self):
+        if self.datsp.format in ("dok", "dia", "bsr"):
+            return
+
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+
+            a = dat.copy()
+            a[0,2] = 2.0
+            b = datsp
+            acol = a[:, [0]]
+            arow = a[[0], :]
+            bcol = self.spcreator(acol)
+            brow = self.spcreator(arow)
+
+            c = b + bcol
+            assert_array_equal(c.toarray(), b.toarray() + bcol.toarray())
+
+            # test broadcasting dense
             c = b + a[0]
             assert_array_equal(c, b.toarray() + a[0])
+            c = a[0] + b
+            assert_array_equal(c, a[0] + b.toarray())
+            c = b + arow
+            assert_array_equal(c, b.toarray() + arow)
+            c = b + acol
+            assert_array_equal(c, b.toarray() + acol)
+            c = acol + b
+            assert_array_equal(c, acol + b.toarray())
+            c = arow + b
+            assert_array_equal(c, arow + b.toarray())
+
+            # test broadcasting sparse
+            c = b + brow
+            assert_array_equal(c.toarray(), b.toarray() + brow.toarray())
+            c = b + bcol
+            assert_array_equal(c.toarray(), b.toarray() + bcol.toarray())
+            c = brow + b
+            assert_array_equal(c.toarray(), brow.toarray() + b.toarray())
+            c = bcol + b
+            assert_array_equal(c.toarray(), bcol.toarray() + b.toarray())
 
         for dtype in self.math_dtypes:
             check(dtype)
@@ -2165,8 +2208,12 @@ class _TestCommon:
         assert_array_equal(dsp.__add__(dsp).toarray(), d.__add__(d))
 
         # bad addition
-        assert_raises(ValueError, asp.__add__, dsp)
-        assert_raises(ValueError, bsp.__add__, asp)
+        if asp.format in ("csc", "csr", "coo", "lil"):
+            assert_array_equal(asp.__add__(dsp).toarray(), a.__add__(d))
+            assert_array_equal(bsp.__add__(asp).toarray(), b.__add__(a))
+        elif asp.format in ("dok", "dia", "bsr"):
+            assert_raises(ValueError, asp.__add__, dsp)
+            assert_raises(ValueError, bsp.__add__, asp)
 
     def test_size_zero_conversions(self):
         mat = array([])
