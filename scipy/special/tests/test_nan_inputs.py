@@ -1,7 +1,7 @@
 """Test how the ufuncs in special handle nan inputs.
 
 """
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_, suppress_warnings
