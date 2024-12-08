@@ -14,7 +14,7 @@
 
 __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
-           'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf']
+           'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf', 'condeig']
 
 import numpy as np
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
@@ -1630,3 +1630,45 @@ def cdf2rdf(w, v):
     vr = einsum('...ij,...jk->...ik', v, u).real
 
     return wr, vr
+
+
+def condeig(a):
+    """
+    Calculate condition numbers for the eigenvalues of a matrix.
+
+    Condition numbers for the eigenvalues are calculated as the reciprocals
+    of the cosine of the angles between the left and right eigenvectors of
+    the matrix.
+
+    Parameters
+    ----------
+    a : (M, M) array_like
+        A complex or real matrix whose condition numbers with respect to
+        eigenvalues is to be computed.
+
+    Returns
+    -------
+    c : (M,) double or complex ndarray
+        The condition numbers of the matrix with respect to the
+        eigenvalues.
+
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue computation does not converge.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> a = np.array([[1., 2.],[3., 4.]])
+    >>> linalg.condeig(a)
+    >>> array([1.01503844, 1.01503844])
+
+    >>> a = np.array([[1.+1j, 2.+2j],[3.+3j, 4.+4j]])
+    >>> linalg.condeig(a)
+    >>> array([1.01503844+2.37909035e-17j, 1.01503844+2.47462652e-17j])
+
+    """
+    _, vl, vr = eig(a, left=True)
+    return np.reciprocal(np.sum(vl * vr, axis=0))
