@@ -25,8 +25,9 @@ Highlights of this release
 **************************
 
 - Sparse arrays are now fully functional for 1-D and 2-D arrays. We recommend
-  that all new code use sparse arrays and that developers start to migrate
-  their existing code from sparse matrix to sparse array:
+  that all new code use sparse arrays instead of sparse matrices and that
+  developers start to migrate their existing code from sparse matrix to sparse
+  array:
   :ref:`migration_to_sparray`. Both ``sparse.linalg`` and ``sparse.csgraph``
   work with either sparse matrix or sparse array and work internally with
   sparse array.
@@ -35,8 +36,9 @@ Highlights of this release
   ``dot``, ``tensordot`` and others. More functionality is coming in future
   releases.
 - Preliminary support for free-threaded Python 3.13.
-- A new distribution infrastructure in `scipy.stats` that includes speed
-  and accuracy improvements to existing distributions.
+- New probability distribution features in `scipy.stats` can be used to improve
+  the speed and accuracy of existing continuous distributions and perform new
+  probability calculations.
 - `scipy.differentiate` is a new top-level submodule for accurate
   estimation of derivatives of black box functions.
 - `scipy.optimize.elementwise` provides vectorized root-finding and
@@ -73,9 +75,7 @@ and support several Array API compatible array libraries in addition to NumPy
 - `scipy.integrate.lebedev_rule` computes abscissae and weights for
   integration over the surface of a sphere.
 - `scipy.integrate.nsum` evaluates finite and infinite series and their
-  logarithms. To facilitate batch computation, the function is vectorized and
-  supports several Array API compatible array libraries in addition to
-  NumPy (see "Array API Standard Support" below).
+  logarithms.
 - `scipy.integrate.tanhsinh` is now exposed for public use, allowing
   evaluation of a convergent integral using tanh-sinh quadrature.
 - The new `scipy.integrate.cubature` function supports multidimensional
@@ -241,7 +241,7 @@ and support several Array API compatible array libraries in addition to NumPy
   accuracy, and memory advantages:
 
   - `scipy.stats.Normal` represents the normal distribution with the new
-    interface. In most cases, its methods are faster and more accurate than
+    interface. In typical cases, its methods are faster and more accurate than
     those of `scipy.stats.norm`.
   - Use `scipy.stats.make_distribution` to treat an existing continuous
     distribution (e.g. `scipy.stats.norm`) with the new infrastructure.
@@ -250,6 +250,17 @@ and support several Array API compatible array libraries in addition to NumPy
     implementation.
 
 - `scipy.stats.Mixture` has been added to represent mixture distributions.
+- Instances of `scipy.stats.Normal` and the classes returned by
+  `scipy.stats.make_distribution` are supported by several new mathematical
+  transformations.
+
+  - `scipy.stats.truncate` for truncation of the support.
+  - `scipy.stats.order_statistic` for the order statistics of a given number
+    of IID random variables.
+  - `scipy.stats.abs`, `scipy.stats.exp`, and `scipy.stats.log`. For example,
+    ``scipy.stats.abs(Normal())`` is distributed according to the folded normal
+    and ``scipy.stats.exp(Normal())`` is lognormally distributed.
+
 - The new `scipy.stats.lmoment` calculates sample l-moments and l-moment
   ratios. Notably, these sample estimators are unbiased.
 - `scipy.stats.chatterjeexi` computes the Xi correlation coefficient, which
@@ -294,15 +305,6 @@ and support several Array API compatible array libraries in addition to NumPy
   parameters ``l_bounds`` and ``u_bounds``.
 - `scipy.stats.fisher_exact` now supports two-dimensional tables with shapes
   other than ``(2, 2)``.
-- `scipy.stats.truncate` adds the ability to truncate the distribution
-  underlying a random variable and `scipy.stats.abs` provides the ability to
-  take the absolute value of a random variable. The new ``FoldedDistribution``
-  represents the distribution underlying the absolute value of a random
-  variable.
-- Added ``OrderStatisticDistribution``, a class representing the distribution
-  of order statistics of samples drawn from another distribution.
-- It is now possible to generate quasi-random samples from statistical
-  distributions by providing a ``QMCEngine`` object to the ``rng`` argument.
 
 Preliminary Support for Free-Threaded CPython 3.13
 ==================================================
