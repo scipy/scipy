@@ -598,7 +598,7 @@ class Ufunc(Func):
         for j, type in enumerate(types):
             toplevel += f"ufunc_{self.name}_types[{j}] = <char>{type}\n"
         for j, func in enumerate(funcs):
-            toplevel += f"ufunc_{self.name}_ptr[2*{j}] = <void*>{func}\n"
+            toplevel += f"ufunc_{self.name}_ptr[2*{j}] = <void*>{self.cython_func_name(func, specialized=True)}\n"
             toplevel += f"ufunc_{self.name}_ptr[2*{j}+1] = <void*>(<char*>{self.name})\n"
         for j, func in enumerate(funcs):
             toplevel += f"ufunc_{self.name}_data[{j}] = &ufunc_{self.name}_ptr[2*{j}]\n"
