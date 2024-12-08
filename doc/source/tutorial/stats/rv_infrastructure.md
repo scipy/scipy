@@ -46,14 +46,14 @@ x, loc, scale = 1., 0., 1.
 dist.pdf(x, loc, scale)
 ```
 
-The less common approach was to invoke the `__call__` method of the distribution option, which returned an instance of `rv_continuous_frozen`, regardless of the original class.
+The less common approach was to invoke the `__call__` method of the distribution object, which returned an instance of `rv_continuous_frozen`, regardless of the original class.
 
 ```{code-cell} ipython3
 frozen = stats.norm()
 type(frozen)
 ```
 
-Methods of this new object accept only arguments, but not the distribution parameters.
+Methods of this new object accept only arguments, not the distribution parameters.
 
 ```{code-cell} ipython3
 frozen.pdf(x)
@@ -61,7 +61,7 @@ frozen.pdf(x)
 
 In a sense, the instances of `rv_continuous` like `norm` represented "distribution families", which require parameters to identify a particular probability distribution, and an instance of `rv_continuous_frozen` was akin to a "random variable" - a mathematical object that follows a particular probability distribution.
 
-Both approaches are valid and have advantages in certain situations. For instance, `stats.norm.pdf(x)` may appear more natural than `stats.norm().pdf(x)` for simple invocations. However, the former approach has a few inherent disadvantages; e.g., all of SciPy's 125 continuous distributions have to be instantiated at import time, and distribution parameters must be validated every time a method is called.
+Both approaches are valid and have advantages in certain situations. For instance, `stats.norm.pdf(x)` may appear more natural than `stats.norm().pdf(x)` for simple invocations. However, the former approach has a few inherent disadvantages; e.g., all of SciPy's 125 continuous distributions have to be instantiated at import time, distribution parameters must be validated every time a method is called, and documentation of methods must either a) be generated separately for every method of every distribution or b) omit the shape parameters that are unique for each distribution.
 
 To address these and other shortcomings, gh-15928 proposed a new, separate infrastructure based on the latter (random variable) approach. This transition guide documents how users of `rv_continuous` and `rv_continuous_frozen` can migrate to the new infrastructure.
 
@@ -76,18 +76,26 @@ In the new infrastructure, distributions families are classes named according to
 
 ```{code-cell} ipython3
 from scipy import stats
-X = stats.Normal()
+X = stats.Normal(mu=0, sigma=1)
 X
 ```
+
+Once instantiated, shape parameters can be read (but not written) as attributes.
+
+```{code-cell} ipython3
+X.mu, X.sigma
+```
+
+Note that the documentation of [`scipy.stats.Normal`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Normal.html#scipy.stats.Normal) contains links to more detailed documentation of each of its methods. (Compare, for instance, against the documentation of [`scipy.stats.norm`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.norm.html).)
 
 ```{code-cell} ipython3
 X.pdf(x)
 ```
 
-For simple calls like this (e.g. the argument is a valid float), call to methods of the new random variables will typically be faster than comparable calls to the old distribution methods.
+For simple calls like this (e.g. the argument is a valid float), calls to methods of the new random variables will typically be faster than comparable calls to the old distribution methods.
 
 ```{code-cell} ipython3
-%timeit dist.pdf(x)
+%timeit dist.pdf(x, loc=mu, scale=sigma)
 ```
 
 ```{code-cell} ipython3
@@ -98,11 +106,12 @@ For simple calls like this (e.g. the argument is a valid float), call to methods
 %timeit X.pdf(x)
 ```
 
-Besides those above, many other calls to methods of the old distribution `norm` (represented as `dist`), a "frozen" distribution created by `norm` (represented as `frozen`), and an instance of the new `Normal` class (represented as `X`) appear similar. Calls to the following methods of `dist` and `norm` can be applied directly to `X`.
+Note that the calls to `frozen.pdf` and `X.pdf` are identical, and the call to `dist.pdf` is very similar to the call to `X.pdf` - the only difference is that the call to `dist.pdf` includes the shape parameters, whereas in the new infrastructure, shape parameters are only provided when the random variable is instantiated.
+
+Besides `pdf`, several other methods of the new infrastructure are essentially the same as the old methods.
 
 +++
 
-- `pdf` (probability density function)
 - `logpdf` (logarithm of probability density function)
 - `cdf` (cumulative distribution function)
 - `logcdf` (logarithm of cumulative distribution function)
@@ -123,7 +132,7 @@ Others methods have new names, but are otherwise very similar.
 
 +++
 
-The new infrastructure has several new methods in the same vein as those above.
+The new infrastructure has several *new* methods in the same vein as those above.
 
 - `ilogcdf` (inverse of the logarithm of the cumulative distribution function)
 - `ilogccdf` (inverse of the logarithm of the complementary cumulative distribution function)
@@ -140,14 +149,13 @@ And it has a new `plot` method for convenience
 X.plot();
 ```
 
-Most of the remaining methods of the old infrastructure (`rvs`, `moment`, `stats`, `interval`, `fit`, `nnlf`, `fit_loc_scale`, and `expect`) can be replaced, but some care is required. Before describing the replacements, we briefly mention how to work with random variables that are not distributed according to the standard normal (zero mean, unit standard deviation): almost all old distribution objects can be converted into a new distribution class with `scipy.stats.make_distribution`, and the new distribution class can be instantiated by passing the shape parameters as keyword arguments. For instance, consider the [Weibull distribution](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weibull_min.html#scipy.stats.weibull_min). We can create a new class that is an abstraction of the distribution family like:
+Most of the remaining methods of the old infrastructure (`rvs`, `moment`, `stats`, `interval`, `fit`, `nnlf`, `fit_loc_scale`, and `expect`) can be replaced, but some care is required. Before describing the replacements, we briefly mention how to work with random variables that are not normally distributed: almost all old distribution objects can be converted into a new distribution class with `scipy.stats.make_distribution`, and the new distribution class can be instantiated by passing the shape parameters as keyword arguments. For instance, consider the [Weibull distribution](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weibull_min.html#scipy.stats.weibull_min). We can create a new class that is an abstraction of the distribution family like:
 
 ```{code-cell} ipython3
-dist = stats.weibull_min
-Weibull = stats.make_distribution(dist)
+Weibull = stats.make_distribution(stats.weibull_min)
 ```
 
-According to the documentation, the shape parameter of `weibull_min` was denoted `c`, so we can instantiate a random variable by passing `c` as a keyword argument.
+According to the documentation of [`weibull_min`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weibull_min.html#scipy.stats.weibull_min), the shape parameter is denoted `c`, so we can instantiate a random variable by passing `c` as a keyword argument to the new `Weibull` class.
 
 ```{code-cell} ipython3
 c = 2.
@@ -176,7 +184,7 @@ Y.plot();
 The previous infrastructure offered a `moments` method for raw moments. When only the order is specified, the new `moment` method is a drop-in replacement.
 
 ```{code-cell} ipython3
-dist.moment(1, c), X.moment(1)  # first raw moment of the Weibull distribution with shape c
+stats.weibull_min.moment(1, c), X.moment(1)  # first raw moment of the Weibull distribution with shape c
 ```
 
 However, the previous infrastructure also had a `stats` method, which provided various statistics of the distribution. The following statistics were associated with the indicated characters.
@@ -191,7 +199,7 @@ However, the previous infrastructure also had a `stats` method, which provided v
 For example:
 
 ```{code-cell} ipython3
-dist.stats(c, moments='mvsk')
+stats.weibull_min.stats(c, moments='mvsk')
 ```
 
 Now, moments of any `order` and `kind` (raw, central, and standardized) can be computed by passing the appropriate arguments to the new `moment` method.
@@ -200,7 +208,7 @@ Now, moments of any `order` and `kind` (raw, central, and standardized) can be c
 X.moment(order=1, kind='raw'), X.moment(order=2, kind='central'), X.moment(order=3, kind='standardized'), X.moment(order=4, kind='standardized') 
 ```
 
-Note the difference in definition of [kurtosis](https://en.wikipedia.org/wiki/Kurtosis). Previously, the "excess" (AKA "Fisher's") kurtosis was provided. As a matter of convention (rather than as a mathematical necessity), this is the standardized fourth moment shifted by a constant value (`3`) to give a value of `0.0` for the normal distribution.
+Note the difference in definition of [kurtosis](https://en.wikipedia.org/wiki/Kurtosis). Previously, the "excess" (AKA "Fisher's") kurtosis was provided. As a matter of convention (rather than the natural mathematical definition), this is the standardized fourth moment shifted by a constant value (`3`) to give a value of `0.0` for the normal distribution.
 
 ```{code-cell} ipython3
 stats.norm.stats(moments='k')
@@ -222,9 +230,9 @@ stats.Normal().kurtosis(convention='non-excess'), stats.Normal().kurtosis(conven
 
 +++
 
-The old `rvs` method has been replaced with `sample`, but there are two differences that should be noted.
+The old `rvs` method has been replaced with `sample`, but there are a two differences that should be noted.
 
-First, `random_state` is replaced by `rng` per [SPEC 7](https://scientific-python.org/specs/spec-0007/). A pattern to control the random state in the past has been the use of `numpy.random.seed` or passing integers or instances of `numpy.RandomState`.
+First, `random_state` is replaced by `rng` per [SPEC 7](https://scientific-python.org/specs/spec-0007/). A pattern to control the random state in the past has been to use `numpy.random.seed` or to pass integer seeds to the `random_state` argument. The integer seeds were converted to instances of `numpy.random.RandomState`, so behavior for a given integer seed would be identical in these two cases:
 
 ```{code-cell} ipython3
 import numpy as np
@@ -233,11 +241,12 @@ dist = stats.norm
 dist.rvs(), dist.rvs(random_state=1)
 ```
 
-Now, use the `rng` argument with integers or instances of `numpy.Generator`.
+In the new infrastructure, pass instances of `numpy.Generator` to the `rng` argument of `sample` to control the random state. Note that integer seeds are now converted to instances of `numpy.random.Generator`, not instances of `numpy.random.RandomState`.
 
 ```{code-cell} ipython3
 X = stats.Normal()
-X.sample(rng=1), X.sample(rng=np.random.default_rng(1))
+rng = np.random.default_rng(1)  # instantiate a numpy.random.Generator
+X.sample(rng=rng), X.sample(rng=1)
 ```
 
 Second, the argument `shape` replaces argument `size`.
@@ -261,6 +270,10 @@ Now, the shape of the parameter arrays is considered to be a property of the ran
 ```{code-cell} ipython3
 Y = stats.Normal(mu = [0, 1])
 Y.sample(shape=(3, 4)).shape  # the sample has shape (3, 4); each element is of shape (2,)
+```
+
+```{code-cell} ipython3
+
 ```
 
 #### Probability Mass (AKA "Confidence") Intervals
@@ -312,7 +325,7 @@ def f(x): return x**4
 stats.norm.expect(f, lb=-np.inf, ub=np.inf)
 ```
 
-This provides little added convencience over what the source code does, which is to use `scipy.integrate.quad` to perform the integration numerically.
+This provides little added convencience over what the source code does: use `scipy.integrate.quad` to perform the integration numerically.
 
 ```{code-cell} ipython3
 from scipy import integrate
@@ -349,7 +362,7 @@ And with the new random variables:
 integrate.quad(f, a=a, b=b)[0] / X.cdf(a, b)
 ```
 
-Note that this is actually simplified because the `cdf` method of the new random variables accepts two arguments to compute the probability mass within the specified interval.
+Note that the `cdf` method of the new random variables accepts two arguments to compute the probability mass within the specified interval. In many cases, this can avoid subtractive error ("catastrophic cancellation") when the probability mass is very small.
 
 +++
 
@@ -449,129 +462,248 @@ plt.ylabel('pdf(x)')
 plt.legend()
 ```
 
+## New Features
+
++++
+
 <a id='Transformations'></a>
 ### Transformations
 
-Transformations can be applied to random variables. For instance, shifted and scaled versions can be created using `ShiftedScaledDistribution`.
+Mathematical transformations can be applied to random variables. For instance, many elementary arithmetic operations (`+`, `-`, `*`, `/`, `**`) between random variables and scalars work.
+
+For instance, we can see that the reciprocal of a Weibull-distributed RV is distributed according to `scipy.stats.invweibull`. (An "inverse" distribution is typically the distribution underlying the reciprocal of a random variable.)
 
 ```{code-cell} ipython3
-from scipy.stats._distribution_infrastructure import ShiftedScaledDistribution
-x = 1.
-loc = np.asarray([1, 2, 3])
-scale = np.asarray([2, 3])[:, np.newaxis]
+c = 10.6
+
+X = Weibull(c=10.6)  
+Y = 1 / X  # compare to `invweibull`
+Y.plot();
+
+x = np.linspace(0.8, 2.05, 300)
+plt.plot(x, stats.invweibull(c=c).pdf(x), '--')
+```
+
+`scipy.stats.chis2` describes a sum of the squares of normally-distributed random variables.
+
+```{code-cell} ipython3
 X = stats.Normal()
-Y = stats.ShiftedScaledDistribution(X, loc=loc, scale=scale)
-np.testing.assert_equal(Y.cdf(x), X.cdf((x-loc)/scale))
+Y = X**2  # compare to chi2
+Y.plot(t=('x', 0, 5));
+
+x = np.linspace(0, 5, 300)
+plt.plot(x, stats.chi2(df=1).pdf(x), '--')
 ```
+
+`scipy.stats.foldcauchy` describes the absolute value of a Cauchy-distributed random variable. (A "folded" distribution is the distribution underlying the absolute value of a random variable.)
 
 ```{code-cell} ipython3
-Y.loc, Y.scale
+Cauchy = stats.make_distribution(stats.cauchy)
+c = 4.72
+
+X = Cauchy() + c  
+Y = abs(X)  # compare to `foldcauchy`
+Y.plot(t=('x', 0, 60));
+
+x = np.linspace(0, 60, 300)
+plt.plot(x, stats.foldcauchy(c=c).pdf(x), '--')
 ```
 
-For convenience, a `ShiftedScaledDistribution` can be created simply by performing an elementary arithmetic operation between a random variable and a numerical array.
+`scipy.stats.lognormal` describes the exponential of a normally distributed random variable. It is so-named because the logarithm of the resulting random variable is normally distributed. (In general, a "log" distribution is typically the distribution underlying the *exponential* of a random variable.)
 
 ```{code-cell} ipython3
-Y = X*scale + loc
-np.testing.assert_equal(Y.cdf(x), X.cdf((x-loc)/scale))
+u, s = 1, 0.5
+
+X = stats.Normal()*s + u
+Y = stats.exp(X)  # compare to `lognorm`
+Y.plot(t=('x', 0, 9));
+
+x = np.linspace(0, 9, 300)
+plt.plot(x, stats.lognorm(s=s, scale=np.exp(u)).pdf(x), '--')
 ```
 
- There are several advantages of this architecture compared to building transformations directly into the `ContinuousDistribution` class:
-- It allows distributions to use common parameterizations. By contrast, `rv_continuous` requires parameterizations to consider `loc` and `scale` or risk overparameterization (e.g. [gh-14716](https://github.com/scipy/scipy/issues/14716)). For example,
-  - `stats.uniform` does not allow parameterization with the left and right support endpoints; it only accepts `loc` and `scale`.
-  - `stats.loguniform` accepts the left and right support endpoints as shape parameters `a` and `b`; consequently, `a`, `b`, and `scale` are not independent parameters.
-- Any overhead associated with a transformation is avoided unless the transformation is intentionally applied. (Although this is possible to achieve even if the transformation capabilities are built into the class, it may require special care.)
-- It is highly extensible. For instance, transformations can also be used to generically define:
-  - truncated distributions
-  - half/double distributions
-  - wrapped distributions
-  - order statistic distributions
-  - $\log$/$\exp$ transformed distributions
+`scipy.stats.loggamma` describes the logarithm of of a Gamma-distributed random variable. Note that the more common name of this distribution would be [exp-gamma](https://reference.wolfram.com/language/ref/ExpGammaDistribution.html.en#:~:text=The%20term%20exp%2Dgamma%20is,of%20qualitatively%20similar%20probability%20distributions.) because the exponential of the RV is gamma-distributed.
 
-  and these transformations can be applied in any order.
-- It avoids common pitfalls when fitting distributions to data. For instance, in the current infrastructure:
-  - Users often forget to fix the location of distributions which almost always have fixed locations. This often results in poor fits or unexpected values of fit parameters.
-  - It is impossible to fix the truncation points of truncated distributions because the loc-scale transformation is applied *after* the shape parameters truncate the support. It is more naturable to use the distribution if the these transformations are applied in the opposite order.
+```{code-cell} ipython3
+Gamma = stats.make_distribution(stats.gamma)
+a = 0.414
+
+X = Gamma(a=a)  
+Y = stats.log(X)  # compare to `loggamma`
+Y.plot();
+
+x = np.linspace(-17.5, 2, 300)
+plt.plot(x, stats.loggamma(c=a).pdf(x), '--')
+```
+
+`scipy.stats.truncnorm` is the distribution underlying a truncated normal random variable. Note that the truncation transformation can be applied either before or after shifting and scaling the normally-distributed random variable, which can make it much easier to achieve the desired result than `scipy.stats.truncnorm` (which inherently shifts and scales *after* truncation).
+
+```{code-cell} ipython3
+a, b = 0.1, 2
+
+X = stats.Normal()  
+Y = stats.truncate(X, a, b)  # compare to `truncnorm`
+Y.plot();
+
+x = np.linspace(a, b, 300)
+plt.plot(x, stats.truncnorm(a, b).pdf(x), '--')
+```
+
+`scipy.stats.dgamma` is a mixture of two gamma-distributed RVs, one of which is reflected about the origin. (Typically, a "double" distribution is the distribution underlying a mixture of RVs, one of which is reflected.)
+
+```{code-cell} ipython3
+a = 1.1
+X = Gamma(a=a)
+Y = stats.Mixture((X, -X), weights=[0.5, 0.5])
+# plot method not available for mixtures
+
+x = np.linspace(-4, 4, 300)
+plt.plot(x, Y.pdf(x))
+plt.plot(x, stats.dgamma(a=a).pdf(x), '--')
+```
+
+*Limitations*:
+
+While most arithmetic transformations between random variables and Python scalars or NumPy arrays are supported, there are a few restrictions.
+
+- Raising a random variable to the power of an argument is only implemented when the argument is a positive integer.
+- Raising an argument to the power of a random variable is only implemented when the argument is a positive scalar other than 1.
+- Division by a random variable is only implemented when the support is either non-negative or non-positive.
+- The logarithm of a random variable is only implemented when the support is non-negative. (The logarithm of negative values is imaginary.)
+
+Arithmetic operations between two random variables are *not* yet supported. Note that such operations are much more complex mathematically; for instance, the PDF of the sum of the two random variables involves convolution of the two PDFs.
+
+Also, while transformations are composable, a) truncation and b) shifting/scaling can each be done only once. For instance, `Y = 2 * stats.exp(X + 1)` will raise an error because this would require shifting before exponentiation and scaling after exponentiation; this is treated as "shifting/scaling" twice. However, a mathematical simplification is possible here (and in many cases) to avoid the problem: `Y = (2*math.exp(2)) * stats.exp(X)` is equivalent and requires only one scaling operation.
+
+Although the transformations are fairly robust, they all reply on generic implementations which may cause numerical difficulties. If you are concerned about the accuracy of the results of a transformation, consider comparing the resulting PDF against a histogram of a random sample.
 
 +++
 
-Negative scale (multiplication by negative values) is supported. This eliminates the need to have separate left and right versions of some distributions (e.g. Weibull, Gumbel).
+X = stats.Normal()
+Y = X**3
+x = np.linspace(-5, 5, 300)
+plt.plot(x, Y.pdf(x), label='pdf')
+plt.hist(X.sample(100000)**3, density=True, bins=np.linspace(-5, 5, 100), alpha=0.5);
+plt.ylim(0, 2)
+
++++
+
+### Quasi-Monte Carlo Sampling
+
++++
+
+Random variables enable generation of quasi-random, low-discrepancy samples from statistical distributions.
 
 ```{code-cell} ipython3
-X = stats.LogUniform(a=1, b=2)
-Y = stats.ShiftedScaledDistribution(X, loc=0, scale=-1)
-X.support(), Y.support()
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+X = stats.Normal()
+
+rng = np.random.default_rng(7824387278234)
+qrng = stats.qmc.Sobol(1, rng=rng)  # instantiate a QMCEngine
+
+bins = np.linspace(-3.5, 3.5, 31)
+plt.hist(X.sample(512, rng=qrng), bins, alpha=0.5, label='quasi-random')
+plt.hist(X.sample(512, rng=rng), bins, alpha=0.5, label='pseudo-random')
+plt.title('Histogram of normally-distributed sample')
+plt.legend()
+plt.show()
 ```
+
+Note that when generating multiple samples (e.g. `len(shape) > 1`),  each slice along the zeroth axis is an independent, low-discrepancy sequency. The following generates two independent QMC samples, each of length 512.
+
+```{code-cell} ipython3
+samples = X.sample((512, 2), rng=qrng)
+plt.hist(samples[:, 0], bins, alpha=0.5, label='sample 0')
+plt.hist(samples[:, 1], bins, alpha=0.5, label='sample 1')
+plt.title('Histograms of normally-distributed samples')
+plt.legend()
+plt.show()
+```
+
+The result is quite different if we generate 512 independent QMC sequences, each of length 2.
+
+```{code-cell} ipython3
+samples = X.sample((2, 512), rng=qrng)
+plt.hist(samples[0], bins, alpha=0.5, label='sample 0')
+plt.hist(samples[1], bins, alpha=0.5, label='sample 1')
+plt.title('Histograms of normally-distributed samples')
+plt.legend()
+plt.show()
+```
+
+### Accuracy
+
++++
+
+For some distributions, like `scipy.stats.norm`, almost all methods of the distribution are customized to ensure accurate computation. For others, like `scipy.stats.gausshyper`, little more than the PDF is defined, and the other methods must be computed numerically based on the PDF. For example, the survival function (complementary CDF) of the Gauss hypergeometric distribution is calculated by numerically integrating the PDF from `0` (the left end of the support) to `x` to get the CDF, then the complement is taken.
+
+```{code-cell} ipython3
+a, b, c, z = 1.5, 2.5, 2, 0
+x = 0.5
+frozen = stats.gausshyper(a=a, b=b, c=c, z=z)
+frozen.sf(x)
+```
+
+```{code-cell} ipython3
+frozen.sf(x) == 1 - integrate.quad(frozen.pdf, 0, x)[0]
+```
+
+However, another aproach would be to numerically integrate the PDF from `x` to `1` (the right end of the support).
+
+```{code-cell} ipython3
+integrate.quad(frozen.pdf, x, 1)[0]
+```
+
+These are distince but equally valid approaches, so assuming the PDF is accurate, it is unlikely that the two results are inaccurate in the same way. Therefore, we can estimate the accuracy of the results by comparing them.
+
+```{code-cell} ipython3
+res1 = frozen.sf(x)
+res2 = integrate.quad(frozen.pdf, x, 1)[0]
+abs((res1 - res2) / res1)
+```
+
+The new infrastructure is aware of several different ways for computing most quantities. For example, this diagram illustrates the relationships between various distribution functions.
+
+![image.png](attachment:c7742b7b-e07f-4bc4-9e05-3566bc7bde2b.png)
+
+It follows a decision tree to choose what is expected to be the most accurate way of estimating the quantity. These decision trees are subject to change, but an example for computing the complementary CDF might look something like:
+
+![image.png](attachment:ee923abe-2ba7-43ec-815a-04e69e6f2b73.png)
+
+and for calculating a moment:
+
+![image.png](attachment:68d09366-2cca-477c-ad70-72541b64b29a.png)
+
+However, you can override the method it uses with the `method` argument.
+
+```{code-cell} ipython3
+GaussHyper = stats.make_distribution(stats.gausshyper)
+X = GaussHyper(a=a, b=b, c=c, z=z)
+```
+
+```{code-cell} ipython3
+X.ccdf(x, method='quadrature') == integrate.tanhsinh(X.pdf, x, 1).integral
+```
+
+```{code-cell} ipython3
+X.ccdf(x, method='complement') == (1 - integrate.tanhsinh(X.pdf, 0, x).integral)
+```
+
+```{code-cell} ipython3
+X.ccdf(x, method='logexp') == np.exp(integrate.tanhsinh(lambda x: X.logpdf(x), x, 1, log=True).integral)
+```
+
+When in doubt, consider trying different `method`s to compute a given quantity.
+
++++
 
 ### Performance
-#### Overhead
-I've been careful to reduce overhead where possible.
-
-```{code-cell} ipython3
-x = 1.
-X = stats.Normal()
-%timeit X.pdf(x)
-```
-
-```{code-cell} ipython3
-dist = stats.norm()  # old infrastructure
-%timeit dist.pdf(x)
-```
-
-Even though these are meant to be instantiated once and used many times, instantiation followed by use is still tends to be faster than in the old infrastructure.
-
-```{code-cell} ipython3
-%timeit stats.Normal().pdf(x)  # new infrastructure
-```
-
-```{code-cell} ipython3
-%timeit stats.norm.pdf(x)  # old infrastructure
-```
-
-If there's still too much overhead, the user can disable input validation.
-
-```{code-cell} ipython3
-X = stats.Normal(iv_policy='skip_all')
-%timeit X.pdf(x)
-```
-
-```{code-cell} ipython3
-%timeit stats.Normal(iv_policy='skip_all').pdf(x)
-```
-
-Overhead increases when shape parameters are invalid, need to be broadcast, or need to be converted to a floating point type for calculations. In these cases, there has been substantial effort to keep the overhead low and provide performance comparable to or better than `rv_continuous`.
 
 +++
 
-#### Numerical calculations
-Another important aspect of performance is that of methods for which analytical formulas are not available. For example, the Gauss hypergeometric distribution can be defined as follows.
-
-```{code-cell} ipython3
-from scipy.stats._distribution_infrastructure import (ContinuousDistribution, _RealDomain,
-                                                      _RealParameter, _Parameterization, oo)
-from scipy import special
-
-class GaussHyper(ContinuousDistribution):
-    """Gauss hypergeometric distribution"""
-
-    _a_param = _RealParameter('a', domain=_RealDomain(endpoints=(0, oo)))
-    _b_param = _RealParameter('b', domain=_RealDomain(endpoints=(0, oo)))
-    _c_param = _RealParameter('c', domain=_RealDomain(endpoints=(-oo, oo)))
-    _z_param = _RealParameter('z', domain=_RealDomain(endpoints=(-1, oo)))
-    _x_param = _RealParameter('x', domain=_RealDomain(endpoints=(0, 1), inclusive=(True, True)))
-
-    _parameterizations = [_Parameterization(_a_param, _b_param, _c_param, _z_param)]
-    _variable = _x_param
-
-    def _pdf_formula(self, x, *, a, b, c, z, **kwargs):
-        Cinv = special.gamma(a) * special.gamma(b) / special.gamma(a + b) * special.hyp2f1(c, a, a + b, -z)
-        return 1.0 / Cinv * x ** (a - 1.0) * (1.0 - x) ** (b - 1.0) / (1.0 + z * x) ** c
-
-a, b, c, z = 1.5, 2.5, 2, 0
-X = GaussHyper(a=a, b=b, c=c, z=z)
-x = 0.5
-```
-
-For scalar shapes and argument, performance of the new and old infrastructures are comparable.
+Consider the performance of calculations involving the Gauss hypergeometric distribution. For scalar shapes and argument, performance of the new and old infrastructures are comparable. The new infrastructure is not expected to be much faster; although it reduces the "overhead" of parameter validation, it is not significantly faster at numerical integration of scalar quantities, and the latter dominates the execution time here.
 
 ```{code-cell} ipython3
 %timeit X.cdf(x)  # new infrastructure
@@ -582,19 +714,10 @@ For scalar shapes and argument, performance of the new and old infrastructures a
 ```
 
 ```{code-cell} ipython3
-%timeit X.icdf(x)  # new infrastructure
+np.isclose(X.cdf(x), stats.gausshyper.cdf(x, a, b, c, z))
 ```
 
-```{code-cell} ipython3
-%timeit stats.gausshyper.ppf(x, a, b, c, z)  # old infrastructure
-```
-
-```{code-cell} ipython3
-np.testing.assert_allclose(X.cdf(x), stats.gausshyper.cdf(x, a, b, c, z))
-np.testing.assert_allclose(X.icdf(x), stats.gausshyper.ppf(x, a, b, c, z))
-```
-
-But the quadrature and rootfinding code of the new infrastructure is vectorized (and eventually will be Array-API compatible), so it is much faster when arrays are involved.
+But the new infrastructure is much faster when arrays are involved. This is because the underlying integrator ([`scipy.integrate.tanhsinh`](https://scipy.github.io/devdocs/reference/generated/scipy.integrate.tanhsinh.html#scipy.integrate.tanhsinh)) and root finder ([`scipy.optimize.elementwise.find_root`](https://scipy.github.io/devdocs/reference/generated/scipy.optimize.elementwise.find_root.html)) of the new infrastructure are natively vectorized, whereas the old routines (`scipy.integrate.quad` and `scipy.optimize.brentq`) are not.
 
 ```{code-cell} ipython3
 x = np.linspace(0, 1, 1000)
@@ -608,256 +731,42 @@ x = np.linspace(0, 1, 1000)
 %timeit stats.gausshyper.cdf(x, a, b, c, z)  # old infrastructure
 ```
 
-```{code-cell} ipython3
-%timeit X.icdf(x)  # new infrastructure
-```
-
-```{code-cell} ipython3
-# Warning: takes a long time
-%timeit -r 1 -n 1 stats.gausshyper.ppf(x, a, b, c, z)  # old infrastructure
-```
-
-There are plans for the new infrastructure to use interpolation for additional performance gains with very large arrays.
-
-+++
-
-### Distribution properties
-The new infrastructure has the distribution "properties" one would expect. `mode`, `skewness`, `kurtosis`, and `logentropy` are new.
-
-```{code-cell} ipython3
-X = stats.Normal()
-X.mean(), X.median(), X.mode()
-```
-
-```{code-cell} ipython3
-X.standard_deviation(), X.variance()
-```
-
-```{code-cell} ipython3
-X.skewness(), X.kurtosis()  # *Pearson* kurtosis
-```
-
-```{code-cell} ipython3
-X.entropy(), X.logentropy()
-```
-
-Note that the `logentropy` method returns a complex value because the entropy can be negative. The logarithm of a negative number is the logarithm of the number's magnitude plus an odd multiple of $\pi i$.
-
-```{code-cell} ipython3
-Y = stats.LogUniform(a=1, b=2)
-Y.entropy(), Y.logentropy()
-```
-
-These are implemented as methods rather than `@property`s because they accept arguments. For instance, the entropy can be computed using the analytical formula, by exponentiating the log-entropy, or by quadrature.
-
-```{code-cell} ipython3
-X.entropy(), X.entropy(method='logexp'), X.entropy(method='quadrature')
-```
-
-### Distribution functions
-Functions of the distributions underlying the random variables follow a consistent naming scheme.
-- prefix `i` is for "inverse"
-- prefix `c` is for "complementary"
-- prefix `log` is for "logarithm of"
-
-```{code-cell} ipython3
-x = 1.
-np.testing.assert_allclose(X.icdf(X.cdf(x)), x)
-np.testing.assert_allclose(X.iccdf(X.ccdf(x)), x)
-np.testing.assert_allclose(X.ilogcdf(X.logcdf(x)), x)
-np.testing.assert_allclose(X.ilogccdf(X.logccdf(x)), x)
-```
-
-Note the addition of new methods for the inverse of the logarithm of distribution functions. These are useful when the argument of `icdf` would be too small or too close to `1.0` to represent accurately using floating point numbers.
-
-```{code-cell} ipython3
-np.testing.assert_allclose(X.ilogcdf(X.logcdf(-1000.)), -1000)
-np.testing.assert_allclose(X.ilogccdf(X.logccdf(1000.)), 1000)
-```
-
-The distribution methods also have two-argument versions.
-
-```{code-cell} ipython3
-x1, x2 = 1., 2.
-np.testing.assert_allclose(X.cdf(x1, x2),
-                           X.cdf(x2) - X.cdf(x1))
-np.testing.assert_allclose(X.ccdf(x1, x2),
-                           1 - X.cdf(x1, x2))
-np.testing.assert_allclose(X.logcdf(x1, x2),
-                           np.log(X.cdf(x1, x2)))
-np.testing.assert_allclose(X.logccdf(x1, x2),
-                           np.log(X.ccdf(x1, x2)))
-```
-
-Besides convenience, this avoids catastropic cancellation where possible.
-
-```{code-cell} ipython3
-x1, x2 = 20., 20.5
-X.cdf(20, 20.5), X.cdf(x2) - X.cdf(x1)
-```
-
-For numerically challenging cases, there are alternative `method` options available.
-
-```{code-cell} ipython3
-eps = 1e-100
-res = X.logcdf(0., eps, method='quadrature')
-ref = X.logpdf(0.) + np.log(eps)
-np.testing.assert_equal(res, ref)
-```
-
-All distribution functions from the old distribution infrastructure are available in the new infrastructure (albeit under different names) with the following exceptions.
-- `interval` is not available as a separate method, but the same values can be calculated using `iccdf` and `icdf`. However, the probability interval is in some sense an inverse of the two-argument `cdf`, so we could consider adding the capabilities to `icdf`.
-- `expect` will not be supported. In the old infrastructure, this was little more than a light wrapper around an integrator, and we cannot do much better in general cases. The bug report to convenience ratio was too unfavorable to justify inclusion in the new infrastructure.
-
-+++
-
-### Random Sampling
-Technically, "observe" might be a better name for this method, since instances like `X` represent a random variable. In any case, `sample` is easier to interpret than `rvs`:
-
-```{code-cell} ipython3
-X.sample()
-```
-
-Currently, a Generator can be passed either during construction or when calling the `sample` method.
-
-```{code-cell} ipython3
-rng = np.random.default_rng(872438745698345)
-X = stats.Normal(rng=rng)
-sample1 = X.sample()
-
-rng2 = np.random.default_rng(872438745698345)
-sample2 = X.sample(rng=rng2)
-
-np.testing.assert_equal(sample1, sample2)
-```
-
-The parameter that controls the shape of the sample is called `shape`.
-
-```{code-cell} ipython3
-X.sample(shape=(2, 3))
-```
-
-`QMCEngine`s can also be used. Each slice along the last axis is generated from an independent low-discrepancy sequence. (*Note: currently, this is not the way it works, but that is what is slated to happen.*)
-
-```{code-cell} ipython3
-qrng = stats.qmc.Halton
-n_observations = 10000
-sample1 = X.sample(shape=(n_observations,), qmc_engine=qrng)
-# Verify a property we would expect to hold exactly
-np.testing.assert_equal((sample1 > 0).sum(), n_observations/2)
-```
-
-An important change is that the user does not need to consider the shape of the distribution parameters when specifying the `shape` of the sample. Instead, the shape of the output array is the specified `shape` concatenated with the distribution shape.
-
-```{code-cell} ipython3
-n_observations = 4
-X_temp = stats.LogUniform(a=[0.5, 0.9],
-                          b=[[1], [2], [3]])
-sample = X_temp.sample(shape=n_observations)
-sample.shape == (n_observations,) + X_temp._shape
-```
-
-### Moments
-
-The `moment` method can compute raw, central, and standard moments of any order.
-
-```{code-cell} ipython3
-np.testing.assert_equal(X.moment(order=1, kind='raw'),
-                        X.mean())
-np.testing.assert_equal(X.moment(order=2, kind='central'),
-                        X.variance())
-np.testing.assert_equal(X.moment(order=3, kind='standardized'),
-                        X.skewness())
-
-X.moment(order=10, kind='standardized')
-```
-
-### Fitting
-There is a draft of a generalized `fit` method. The method would unify techniques like maximum likelihood estimation with other needs, such as inverting distribution functions with respect to distribution parameters. We begin by initializing a normal distribution.
-
-```{code-cell} ipython3
-from scipy.stats._new_distributions import Normal
-X = Normal(mu=-1, sigma=0.5)
-```
-
-Suppose we know the desired mean and standard deviation and wish to fit the `mu` and `sigma` parameters of the distribution to achieve them.
-
-```{code-cell} ipython3
-parameters = ['mu', 'sigma']
-objective = {'f': lambda: [X.mean(), X.standard_deviation()],
-             'output': [0.5, 1.5]}
-X.fit(parameters, objective)
-print(X.mean(), X.standard_deviation())
-```
-
-Or if we know the desired values of the `pdf` and `cdf` when the argument is `0`:
-
-```{code-cell} ipython3
-objective = dict(f=lambda x: [X.pdf(x), X.cdf(x)],
-                 input=[0.],
-                 output=[0.5, 0.35])
-X.fit(parameters, objective)
-X.pdf(0), X.cdf(0)
-```
-
-Of course, we can still perform maximum likelihood optimization.
-
-```{code-cell} ipython3
-data = X.sample(1000, rng=rng)
-objective = dict(f=X.llf, input=(data,))
-X.fit(parameters, objective)
-X.mu, X.sigma
-```
-
-Currently, `fit` relies entirely on generic optimization procedures. In future work, the behavior can be overridden depending on the distribution, parameters, and objectives..
+Comparable performance improvements can be expected for array calculations whenever the underlying functions are computed by either numerical quadrature or inversion (root-finding).
 
 +++
 
 ### Visualization
 
-We can visualize the results of the fit above using the convenience method, `plot`.
+We can readily visualize functions of the distribution underlying random variables using the convenience method, `plot`.
 
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
 ax = X.plot()
-ax = plt.hist(data, density=True, alpha=0.5, bins=50)
 ```
 
 ```{code-cell} ipython3
-X = stats.Normal(mu=[1, 2, 3], sigma=[1, 2, 3])
 X.plot(y='cdf')
 ```
 
-The `plot` method is relatively flexible, with a signature inspired by grammar of graphics. For instance, with the argument `x` on [-10, 10], plot the `pdf` against the `cdf`.
+The `plot` method is quite flexible, with a signature inspired by grammar of graphics. For instance, with the argument `x` on [-10, 10], plot the `pdf` against the `cdf`.
 
 ```{code-cell} ipython3
 X.plot('cdf', 'pdf', t=('x', -10, 10))
 ```
 
 ### Order statistics distributions
-There is draft support for distributions of [order statistics](https://en.wikipedia.org/wiki/Order_statistic) of distributions, partially to demonstrate the flexibility of distribution transformations. For example, we can plot the probability density functions of the order statistics of a normal distribution with sample size 4.
+There is support for distributions of [order statistics](https://en.wikipedia.org/wiki/Order_statistic) of random samples from distribution. For example, we can plot the probability density functions of the order statistics of a normal distribution with sample size 4.
 
 ```{code-cell} ipython3
-from scipy.stats._new_distributions import OrderStatisticDistribution
 n = 4
 r = np.arange(1, n+1)
 X = stats.Normal()
-Y = OrderStatisticDistribution(X, r=r, n=n)
+Y = stats.order_statistic(X, r=r, n=n)
 Y.plot()
 ```
 
-Compute the expected values of these order statistics.
+Compute the expected values of these order statistics:
 
 ```{code-cell} ipython3
 Y.mean()
-```
-
-The `OrderStatisticDistribution` can be shifted and scaled, or we can generate an `OrderStatsticDistribution` from a shifted and scaled distribution. (In this case, the order of operations doesn't matter, but that is not the case for all transformations.)
-
-```{code-cell} ipython3
-loc, scale= 1, 2
-Y1 = stats.ShiftedScaledDistribution(OrderStatisticDistribution(stats.Normal(), r=r, n=n), loc=loc, scale=scale)
-Y2 = OrderStatisticDistribution(stats.ShiftedScaledDistribution(stats.Normal(), loc=loc, scale=scale), r=r, n=n)
-np.testing.assert_allclose(Y1.mean(), Y.mean()*scale+loc)
-np.testing.assert_allclose(Y2.mean(), Y.mean()*scale+loc)
 ```
