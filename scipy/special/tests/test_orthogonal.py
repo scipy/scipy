@@ -258,24 +258,23 @@ class TestCall:
         poly = []
         for n in range(5):
             poly.extend([x.strip() for x in
-                ("""
-                orth.jacobi(%(n)d,0.3,0.9)
-                orth.sh_jacobi(%(n)d,0.3,0.9)
-                orth.genlaguerre(%(n)d,0.3)
-                orth.laguerre(%(n)d)
-                orth.hermite(%(n)d)
-                orth.hermitenorm(%(n)d)
-                orth.gegenbauer(%(n)d,0.3)
-                orth.chebyt(%(n)d)
-                orth.chebyu(%(n)d)
-                orth.chebyc(%(n)d)
-                orth.chebys(%(n)d)
-                orth.sh_chebyt(%(n)d)
-                orth.sh_chebyu(%(n)d)
-                orth.legendre(%(n)d)
-                orth.sh_legendre(%(n)d)
-                """ % dict(n=n)).split()
-            ])
+                (f"""
+                orth.jacobi({n},0.3,0.9)
+                orth.sh_jacobi({n},0.3,0.9)
+                orth.genlaguerre({n},0.3)
+                orth.laguerre({n})
+                orth.hermite({n})
+                orth.hermitenorm({n})
+                orth.gegenbauer({n},0.3)
+                orth.chebyt({n})
+                orth.chebyu({n})
+                orth.chebyc({n})
+                orth.chebys({n})
+                orth.sh_chebyt({n})
+                orth.sh_chebyu({n})
+                orth.legendre({n})
+                orth.sh_legendre({n})
+                """).split()])
         with np.errstate(all='ignore'):
             for pstr in poly:
                 p = eval(pstr)

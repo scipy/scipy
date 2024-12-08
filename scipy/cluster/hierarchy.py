@@ -1452,18 +1452,18 @@ def to_tree(Z, rd=False):
         fj = int_floor(row[1], xp)
         if fi > i + n:
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 0') % fi)
+                              'is used before it is formed. See row {}, '
+                              'column 0').format(fi))
         if fj > i + n:
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 1') % fj)
+                              'is used before it is formed. See row {}, '
+                              'column 1').format(fj))
 
         nd = ClusterNode(i + n, d[fi], d[fj], row[2])
         #                ^ id   ^ left ^ right ^ dist
         if row[3] != nd.count:
-            raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '
-                              'incorrect.') % i)
+            raise ValueError(('Corrupt matrix Z. The count Z[{},3] is '
+                              'incorrect.').format(i))
         d[n + i] = nd
 
     if rd:
@@ -4166,6 +4166,6 @@ def leaders(Z, T):
     s = _hierarchy.leaders(Z, T, L, M, n_clusters, n_obs)
     if s >= 0:
         raise ValueError(('T is not a valid assignment vector. Error found '
-                          'when examining linkage node %d (< 2n-1).') % s)
+                          'when examining linkage node {} (< 2n-1).').format(s))
     L, M = xp.asarray(L), xp.asarray(M)
     return (L, M)

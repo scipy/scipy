@@ -502,8 +502,7 @@ class TestDlasd4:
             res = lasd4(i, sgm, mvc)
             roots.append(res[1])
 
-            assert_((res[3] <= 0), "LAPACK root finding dlasd4 failed to find \
-                                    the singular value %i" % i)
+            assert_((res[3] <= 0), f"LAPACK root finding dlasd4 failed to find the singular value {i}")
         roots = np.array(roots)[::-1]
 
         assert_((not np.any(np.isnan(roots)), "There are NaN roots"))
