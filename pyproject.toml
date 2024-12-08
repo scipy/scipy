@@ -12,7 +12,7 @@
 # breakage; if we add pins or bounds because of known problems then they need
 # them too.
 
-# Run tools/generate_requirements.txt when making changes to any dependencies
+# Run tools/generate_requirements.py when making changes to any dependencies
 
 [build-system]
 build-backend = 'mesonpy'
@@ -83,7 +83,7 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
-    "array-api-strict>=2.0,<2.1.1",
+    "array-api-strict>=2.0",
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',

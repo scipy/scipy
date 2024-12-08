@@ -4,7 +4,7 @@ import functools
 
 import numpy as np
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy
+    array_namespace, scipy_namespace_for, is_numpy, xp_asarray
 )
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
@@ -41,9 +41,9 @@ def get_array_special_func(f_name, xp, n_array_args):
     def __f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
-        array_args = [np.asarray(arg) for arg in array_args]
+        array_args = [xp_asarray(arg, xp=np) for arg in array_args]
         out = _f(*array_args, *other_args, **kwargs)
-        return _xp.asarray(out)
+        return xp_asarray(out, xp=xp)
 
     return __f
 

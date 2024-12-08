@@ -32,8 +32,9 @@ __all__ = [
     'get_xp_devices',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
+    'xp_asarray',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_copy', 'xp_copysign', 'xp_device',
+    'xp_atleast_nd', 'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
     'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
 ]
@@ -195,6 +196,74 @@ def _asarray(
     return array
 
 
+def xp_asarray(
+        array: ArrayLike,
+        dtype: Any = None,
+        order: Literal['K', 'A', 'C', 'F'] | None = None,
+        copy: bool | None = None,
+        *,
+        xp: ModuleType | None = None,
+        check_finite: bool = False,
+        subok: bool = False,
+    ) -> Array:
+    """SciPy-specific replacement for `xp.asarray` with `order`, `check_finite`,
+    `subok`, and automatic array type conversion and device transfer.
+
+    Memory layout parameter `order` is not exposed in the Array API standard.
+    `order` is only enforced if the input array implementation
+    is NumPy based, otherwise `order` is just silently ignored.
+
+    `check_finite` is also not a keyword in the array API standard; included
+    here for convenience rather than that having to be a separate function
+    call inside SciPy functions.
+
+    `subok` is included to allow this function to preserve the behaviour of
+    `np.asanyarray` for NumPy based inputs.
+
+    """
+    xp_in = array_namespace(array)
+    if xp is None:
+        xp = xp_in
+
+    if is_numpy(xp_in):
+        # If object is array-like (but not array), make it an ndarray; otherwise, no-op.
+        array = np.asanyarray(array)
+
+    if is_numpy(xp_in) and not array.__class__.__name__.endswith('ndarray') and subok:
+        # If it's a (strict) subclass of ndarray and we must preserve the subclass...
+        if not is_numpy(xp):
+            message = f"Array library {xp} cannot respect `subok=True`."
+            raise TypeError(message)
+        # This will do the right thing for NumPy 2.0+; for earlier versions of NumPy,
+        # it will not respect copy=False.
+        array = np.array(array, order=order, dtype=dtype, copy=copy, subok=True)
+    elif is_numpy(xp):
+        # Convert to NumPy array. Raise if copy is necessary and copy=False;
+        # otherwise, don't copy yet.
+        array = np_compat.from_dlpack(array, copy=None if copy is True else copy)
+        # Now apply all the options
+        array = np_compat.asarray(array, order=order, dtype=dtype, copy=copy)
+    else:
+        array = xp.from_dlpack(array, copy=None if copy is True else copy)
+        array = xp.asarray(array, dtype=dtype, copy=copy)
+
+    if check_finite:
+        _check_finite(array, xp)
+
+    return array
+
+
+def xp_atleast_nd(x: Array, *, ndim: int, xp: ModuleType | None = None) -> Array:
+    """Recursively expand the dimension to have at least `ndim`."""
+    if xp is None:
+        xp = array_namespace(x)
+    x = xp.asarray(x)
+    if x.ndim < ndim:
+        x = xp.expand_dims(x, axis=0)
+        x = xp_atleast_nd(x, ndim=ndim, xp=xp)
+    return x
+
+
 def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     """
     Copies an array.
@@ -285,7 +354,10 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
                                        check_dtype=False, msg=err_msg)
-    # JAX uses `np.testing`
+
+    # JAX uses `np.testing` natively; array-api-strict must be converted
+    actual = xp_asarray(actual, xp=np) if is_array_api_strict(xp) else actual
+    desired = xp_asarray(desired, xp=np) if is_array_api_strict(xp) else desired
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
@@ -318,7 +390,10 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
                                        equal_nan=True, check_dtype=False, msg=err_msg)
-    # JAX uses `np.testing`
+
+    # JAX uses `np.testing` natively; array-api-strict must be converted
+    actual = xp_asarray(actual, xp=np) if is_array_api_strict(xp) else actual
+    desired = xp_asarray(desired, xp=np) if is_array_api_strict(xp) else desired
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
 
@@ -343,7 +418,10 @@ def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
-    # JAX uses `np.testing`
+
+    # JAX uses `np.testing` natively; array-api-strict must be converted
+    actual = xp_asarray(actual, xp=np) if is_array_api_strict(xp) else actual
+    desired = xp_asarray(desired, xp=np) if is_array_api_strict(xp) else desired
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
