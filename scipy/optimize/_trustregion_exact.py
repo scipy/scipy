@@ -366,6 +366,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         # Update damping factor
                         lambda_current = lambda_new
                         already_factorized = True
+                        U = c
                     else:  # Unsuccessful factorization
                         # Update uncertainty bounds
                         lambda_lb = max(lambda_lb, lambda_new)
