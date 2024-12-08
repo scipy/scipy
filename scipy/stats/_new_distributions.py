@@ -86,7 +86,10 @@ class Normal(ContinuousDistribution):
 
     def _logentropy_formula(self, *, mu, sigma, **kwargs):
         lH0 = StandardNormal._logentropy_formula(self)
-        lls = np.log(np.log(abs(sigma))+0j)
+        with np.errstate(divide='ignore'):
+            # sigma = 1 -> log(sigma) = 0 -> log(log(sigma)) = -inf
+            # Silence the unnecessary runtime warning
+            lls = np.log(np.log(abs(sigma))+0j)
         return special.logsumexp(np.broadcast_arrays(lH0, lls), axis=0)
 
     def _median_formula(self, *, mu, sigma, **kwargs):
