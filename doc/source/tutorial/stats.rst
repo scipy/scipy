@@ -21,6 +21,7 @@ Note: This documentation is work in progress.
    :maxdepth: 2
 
    stats/probability_distributions
+   stats/rv_infrastructure
    stats/sampling
    stats/kernel_density_estimation
    stats/multiscale_graphcorr
