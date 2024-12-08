@@ -17,10 +17,22 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.15.0",
-    "Cython>=3.0.8",        # when updating version, also update check in meson.build
-    "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
-    "pythran>=0.14.0",
+    # The upper bound on meson-python is pre-emptive only (looser
+    # on purpose, since chance of breakage in 0.18/0.19 is low with
+    # 0.17.1 working at time of writing)
+    "meson-python>=0.15.0,<0.20.0",
+    # we need at least Cython 3.1.0a1 for free-threaded CPython
+    # 3.13 wheel builds
+    "Cython>=3.1.0a1,<3.2.0; python_version=='3.13t'",        # when updating version, also update check in meson.build
+    # for other CPython versions, the regular pre-emptive
+    # Cython version bounds policy applies
+    "Cython>=3.0.8,<3.1.0; python_version!='3.13t'",
+    # The upper bound on pybind11 is pre-emptive only
+    "pybind11>=2.13.2,<2.14.0",     # when updating version, also update check in scipy/meson.build
+    # The upper bound on pythran is pre-emptive only; 0.17.0
+    # is released/working at time of writing, and 0.18.x may
+    # have desirable free-threaded CPython 3.13 support
+    "pythran>=0.14.0,<0.19.0",
 
     # numpy requirement for wheel builds for distribution on PyPI - building
     # against 2.x yields wheels that are also compatible with numpy 1.x at
@@ -28,7 +40,10 @@ requires = [
     # Note that building against numpy 1.x works fine too - users and
     # redistributors can do this by installing the numpy version they like and
     # disabling build isolation.
-    "numpy>=2.0.0rc1",
+    "numpy>=2.0.0,<2.5; python_version!='3.13t'",
+    # free-threaded CPython 3.13 support requires more
+    # recent NumPy release at build time
+    "numpy>=2.1.3,<2.5; python_version=='3.13t'",
 ]
 
 [project]
@@ -46,7 +61,10 @@ maintainers = [
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.10"
 dependencies = [
-    "numpy>=1.23.5",
+    # free-threaded CPython 3.13 support requires more
+    # recent NumPy release at runtime
+    "numpy>=2.1.3,<2.5; python_version=='3.13t'",
+    "numpy>=1.23.5,<2.5; python_version!='3.13t'",
 ] # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
