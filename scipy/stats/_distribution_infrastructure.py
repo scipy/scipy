@@ -1499,7 +1499,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         # IDEs can suggest parameter names. If there are multiple parameterizations,
         # we'll need the default values of parameters to be None; this will
         # filter out the parameters that were not actually specified by the user.
-        parameters = {key: val for key, val in parameters.items() if val is not None}
+        parameters = {key: val for key, val in
+                      sorted(parameters.items()) if val is not None}
         self._update_parameters(**parameters)
 
     def _update_parameters(self, *, validation_policy=None, **params):
@@ -1699,9 +1700,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _get_parameter_str(self, parameters):
         # Get a string representation of the parameters like "{a, b, c}".
-        parameter_names_list = list(parameters.keys())
-        parameter_names_list.sort()
-        return f"{{{', '.join(parameter_names_list)}}}"
+        return f"{{{', '.join(parameters.keys())}}}"
 
     def _copy_parameterization(self):
         self._parameterizations = self._parameterizations.copy()
@@ -1792,7 +1791,6 @@ class ContinuousDistribution(_ProbabilityDistribution):
         parameters = list(self._original_parameters.items())
         info = []
         if parameters:
-            parameters.sort()
             if self._size <= 3:
                 str_parameters = [f"{symbol}={value}" for symbol, value in parameters]
                 str_parameters = f"{', '.join(str_parameters)}"
