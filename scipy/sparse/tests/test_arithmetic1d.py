@@ -190,7 +190,7 @@ class TestArithmetic1D:
                 except TypeError:
                     continue
                 except ValueError:
-                    matchme = 'broadcast|inconsistent shapes'
+                    matchme = 'not be broadcast'
                     with pytest.raises(ValueError, match=matchme):
                         i.multiply(j)
                     continue

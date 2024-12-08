@@ -263,7 +263,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # TODO sparse broadcasting
             if self.format != other.format:
                 other = other.asformat(self.format)
-          
+
             res = self._binopt(other, '_ne_')
             all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
@@ -329,7 +329,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             warn("Comparing sparse matrices using >= and <= is inefficient, "
                  "using <, >, or !=, instead.",
                  SparseEfficiencyWarning, stacklevel=3)
-            
+
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
@@ -368,7 +368,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if other.shape != self.shape:
             # This will raise an error if the shapes are not broadcastable
             bshape = np.broadcast_shapes(self.shape, other.shape)
-            
+
             self = self._broadcast_to(bshape)
             other = np.broadcast_to(other, bshape)
         dtype = upcast_char(self.dtype.char, other.dtype.char)
@@ -1437,7 +1437,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.sum_duplicates()
             if self.nnz == 0: # array has no non zero elements
                 return self.__class__(shape, dtype=self.dtype, copy=False)
-            
+
             N = shape[0]
             data = np.full(N, self.data[0])
             indices = np.arange(0,N)

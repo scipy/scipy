@@ -499,7 +499,7 @@ class _spbase:
     def power(self, n, dtype=None):
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
-    
+
     def _broadcast_to(self, shape, copy=False):
         if self.shape == shape:
             return self.copy() if copy else self
@@ -1135,7 +1135,7 @@ class _spbase:
                     raise ValueError("dimensions do not match")
                 out[...] = ret
             return ret
-        
+
         validateaxis(axis)
 
         # Mimic numpy's casting.
@@ -1168,7 +1168,7 @@ class _spbase:
                 raise ValueError("duplicate value in 'axis'")
             # if no duplicates
             axis = None
-            
+
         M, N = self.shape
 
         if axis is None:
@@ -1246,7 +1246,7 @@ class _spbase:
                     raise ValueError("dimensions do not match")
                 out[...] = ret
             return ret
-        
+
         validateaxis(axis)
 
         res_dtype = self.dtype.type
@@ -1266,7 +1266,7 @@ class _spbase:
 
         if type(axis) is tuple and len(axis) == 1:
             axis = axis[0]
-        
+
         # if 1-d, axis should be 0, -1, or None
         if self.ndim == 1:
             if axis not in (None, -1, 0):

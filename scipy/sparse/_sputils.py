@@ -377,10 +377,10 @@ def validateaxis(axis) -> None:
 
     if type(axis) is not tuple:
         axis = [axis]
-    
+
     if len(axis)>2:
         raise ValueError("axis tuple has too many elements")
-    
+
     if any(ax >= 2 or ax < -2 for ax in axis):
         raise ValueError("axis out of range")
 
