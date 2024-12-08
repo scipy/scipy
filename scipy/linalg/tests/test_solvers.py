@@ -5,6 +5,7 @@ from numpy.testing import assert_array_almost_equal, assert_allclose
 import pytest
 from pytest import raises as assert_raises
 
+from scipy.conftest import mac_acclrt_gh21862
 from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
@@ -549,6 +550,8 @@ class TestSolveDiscreteAre:
         a, b, q, r, knownfailure = case
         if knownfailure:
             pytest.xfail(reason=knownfailure)
+        if mac_acclrt_gh21862 and j in (0, 1, 2):
+            pytest.skip(reason="macOS Sequoia <15.2 fails several of these tests")
 
         atol = self.max_tol[j]
 
