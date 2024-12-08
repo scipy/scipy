@@ -1,8 +1,9 @@
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import (assert_equal, assert_array_equal,
+                           assert_allclose, suppress_warnings)
 import pytest
 from scipy.linalg import block_diag
-from scipy.sparse import coo_array, random_array
+from scipy.sparse import coo_array, random_array, SparseEfficiencyWarning
 from .._coo import _block_diag, _extract_block_diag
 
 
@@ -418,7 +419,7 @@ def test_tuple_constructor_for_dim_size_zero():
 
     empty_arr = coo_array(([], ([], [], [], [])), shape=(4,0,2,3))
     assert_equal(empty_arr.toarray(), np.empty((4,0,2,3)))
-    
+
 
 @pytest.mark.parametrize(('shape', 'new_shape'), [((4,9,6,5), (3,6,15,4)),
                                                   ((4,9,6,5), (36,30)),
@@ -547,8 +548,7 @@ def test_nd_add_sparse_with_inconsistent_shapes(a_shape, b_shape):
 
     arr_a = random_array((a_shape), density=0.6, rng=rng, dtype=int)
     arr_b = random_array((b_shape), density=0.6, rng=rng, dtype=int)
-    with pytest.raises(ValueError,
-                       match="(Incompatible|inconsistent) shapes|cannot be broadcast"):
+    with pytest.raises(ValueError, match="cannot be broadcast"):
         arr_a + arr_b
 
 
@@ -596,7 +596,7 @@ def test_nd_sub_sparse_with_inconsistent_shapes(a_shape, b_shape):
 
     arr_a = random_array((a_shape), density=0.6, rng=rng, dtype=int)
     arr_b = random_array((b_shape), density=0.6, rng=rng, dtype=int)
-    with pytest.raises(ValueError, match="inconsistent shapes"):
+    with pytest.raises(ValueError, match="cannot be broadcast"):
         arr_a - arr_b
 
 
@@ -626,8 +626,8 @@ def test_nd_matmul_vector(mat_shape, vec_shape):
 
 
 mat_mat_shapes = [
-    ((2, 3, 4, 5), (2, 3, 5, 7)), 
-    ((0, 0), (0,)), 
+    ((2, 3, 4, 5), (2, 3, 5, 7)),
+    ((0, 0), (0,)),
     ((4, 4, 2, 0), (0,)),
     ((7, 8, 3), (3,)),
     ((7, 8, 3), (3, 1)),
@@ -670,7 +670,7 @@ def test_nd_matmul_sparse_with_inconsistent_arrays():
         sp_x @ sp_y
     with pytest.raises(ValueError, match="matmul: dimension mismatch with signature"):
         sp_x @ (sp_y.toarray())
-    
+
     sp_z = random_array((1,5,3,2), density=0.6, random_state=rng, dtype=int)
     with pytest.raises(ValueError, match="Batch dimensions are not broadcastable"):
         sp_x @ sp_z
@@ -688,7 +688,7 @@ def test_dot_1d_1d(): # 1-D inner product
     assert_equal(res, exp)
 
 
-def test_dot_sparse_scalar():    
+def test_dot_sparse_scalar():
     a = coo_array([[1, 2], [3, 4], [5, 6]])
     b = 3
     res = a.dot(b)
@@ -696,7 +696,7 @@ def test_dot_sparse_scalar():
     assert_equal(res.toarray(), exp)
 
 
-def test_dot_with_inconsistent_shapes(): 
+def test_dot_with_inconsistent_shapes():
     arr_a = coo_array([[[1, 2]], [[3, 4]]])
     arr_b = coo_array([4, 5, 6])
     with pytest.raises(ValueError, match="not aligned for n-D dot"):
@@ -708,12 +708,12 @@ dot_shapes = [
     ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
     ((3,2,4,7), (7,1)), ((1,5,), (6,3,5,2)),
     ((4,6), (3,2,6,4)), ((2,8,7), (4,5,7,7,2)), # dot of n-D and m-D arrays
-    ((4,5,7,6), (3,2,6,4)), 
+    ((4,5,7,6), (3,2,6,4)),
 ]
 @pytest.mark.parametrize(('a_shape', 'b_shape'), dot_shapes)
-def test_dot_nd(a_shape, b_shape): 
+def test_dot_nd(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
-    
+
     arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
     arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
@@ -739,9 +739,9 @@ tensordot_shapes_and_axes = [
     ((2,3,4), (2,3,4), ([0, 1, 2], [0, 1, 2])),
 ]
 @pytest.mark.parametrize(('a_shape', 'b_shape', 'axes'), tensordot_shapes_and_axes)
-def test_tensordot(a_shape, b_shape, axes): 
+def test_tensordot(a_shape, b_shape, axes):
     rng = np.random.default_rng(23409823)
-    
+
     arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
     arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
@@ -759,11 +759,11 @@ def test_tensordot(a_shape, b_shape, axes):
         assert_equal(res.toarray(), exp)
     else:
         assert_equal(res, exp)
-        
 
-def test_tensordot_with_invalid_args(): 
+
+def test_tensordot_with_invalid_args():
     rng = np.random.default_rng(23409823)
-    
+
     arr_a = random_array((3,4,5), density=0.6, random_state=rng, dtype=int)
     arr_b = random_array((3,4,6), density=0.6, random_state=rng, dtype=int)
 
@@ -787,7 +787,7 @@ def test_tensordot_with_invalid_args():
                           ((1,1,1), (4,5,6)), ((1,3,1,5,4), (8,2,3,9,5,4)),])
 def test_broadcast_to(actual_shape, broadcast_shape):
     rng = np.random.default_rng(23409823)
-    
+
     arr = random_array(actual_shape, density=0.6, random_state=rng, dtype=int)
     res = arr._broadcast_to(broadcast_shape)
     exp = np.broadcast_to(arr.toarray(), broadcast_shape)
@@ -821,3 +821,238 @@ def test_extract_block_diag(shape):
     res = _extract_block_diag(_block_diag(sp_x), shape)
 
     assert_equal(res.toarray(), sp_x.toarray())
+
+
+bitwise_op_and_compare_shapes = [
+    ((3,4), (3,4)), ((1,4), (2,1)), ((3,5), (1,)), ((1,), (7,8)),
+    ((3,4,6), (3,4,6)), ((4,3), (2,1,3)), ((2,1,3), (4,3)),
+    ((3,5,4), (1,)), ((1,), (7,8,4)), ((16,1,6), (2,6)), ((3,7,5), (3,7,5)),
+    ((16,2,6), (1,2,6)), ((7,8), (5,7,8)), ((4,5,1), (5,1)),
+    ((6,8,3), (4,1,1,3)), ((1,1,1), (3,4,2)), ((3,4,2), (1,1,1,1,1)),
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_boolean_comparisons(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+    with sup:
+        assert_array_equal((a==b).toarray(), a.toarray()==b.toarray())
+        assert_array_equal((a!=b).toarray(), a.toarray()!=b.toarray())
+        assert_array_equal((a>=b).toarray(), a.toarray()>=b.toarray())
+        assert_array_equal((a<=b).toarray(), a.toarray()<=b.toarray())
+        assert_array_equal((a>b).toarray(), a.toarray()>b.toarray())
+        assert_array_equal((a<b).toarray(), a.toarray()<b.toarray())
+        assert_array_equal((a==b).toarray(), np.bitwise_not((a!=b).toarray()))
+        assert_array_equal((a>=b).toarray(), np.bitwise_not((a<b).toarray()))
+        assert_array_equal((a<=b).toarray(), np.bitwise_not((a>b).toarray()))
+
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_multiply(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+    res = a * b
+    exp = np.multiply(a.toarray(), b.toarray())
+    assert_equal(res.toarray(), exp)
+
+
+def test_multiply_with_scalar():
+    rng = np.random.default_rng(23409823)
+    a = random_array((3,5,4), density=0.6, random_state=rng, dtype=int)
+    res = a * 7
+    exp = np.multiply(a.toarray(), 7)
+    assert_equal(res.toarray(), exp)
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_maximum(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+    with sup:
+        res = a.maximum(b)
+        exp = np.maximum(a.toarray(), b.toarray())
+        assert_equal(res.toarray(), exp)
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_minimum(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+    with sup:
+        res = a.minimum(b)
+        exp = np.minimum(a.toarray(), b.toarray())
+        assert_equal(res.toarray(), exp)
+
+
+def test_maximum_with_scalar():
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = coo_array([0,1,6])
+    b = coo_array([[15, 0], [14, 5], [0, -12]])
+    c = coo_array([[[[3,0], [2,4]], [[8,9], [-3,12]]],
+                   [[[5,2], [3,0]], [[0,7], [0,-6]]]])
+    with sup:
+        assert_equal(a.maximum(5).toarray(), np.maximum(a.toarray(), 5))
+        assert_equal(b.maximum(9).toarray(), np.maximum(b.toarray(), 9))
+        assert_equal(c.maximum(5).toarray(), np.maximum(c.toarray(), 5))
+
+def test_minimum_with_scalar():
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = coo_array([0,1,6])
+    b = coo_array([[15, 0], [14, 5], [0, -12]])
+    c = coo_array([[[[3,0], [2,4]], [[8,9], [-3,12]]],
+                   [[[5,2], [3,0]], [[0,7], [0,-6]]]])
+    with sup:
+        assert_equal(a.minimum(5).toarray(), np.minimum(a.toarray(), 5))
+        assert_equal(b.minimum(9).toarray(), np.minimum(b.toarray(), 9))
+        assert_equal(c.minimum(5).toarray(), np.minimum(c.toarray(), 5))
+
+def test_boolean_comparisons_with_scalar():
+    rng = np.random.default_rng(23409823)
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = random_array((5,4,8,7), density=0.6, random_state=rng, dtype=int)
+    with sup:
+        assert_array_equal((a==0).toarray(), a.toarray()==0)
+        assert_array_equal((a!=0).toarray(), a.toarray()!=0)
+        assert_array_equal((a>=1).toarray(), a.toarray()>=1)
+        assert_array_equal((a<=1).toarray(), a.toarray()<=1)
+        assert_array_equal((a>0).toarray(), a.toarray()>0)
+        assert_array_equal((a<0).toarray(), a.toarray()<0)
+
+
+broadcast_add_sub_shapes = [
+    ((3,4), (3,4)), ((1,4), (2,1)), ((3,5), (1,)), ((1,), (7,8)),
+    ((3,4,6), (3,4,6)), ((4,3), (2,1,3)), ((2,1,3), (4,3)),
+    ((3,5,4), (1,)), ((1,), (7,8,4)), ((16,1,6), (2,6)), ((3,7,5), (3,7,5)),
+    ((16,2,6), (1,2,6)), ((7,8), (5,7,8)), ((4,5,1), (5,1)),
+    ((6,8,3), (4,1,1,3)), ((1,1,1), (3,4,2)), ((3,4,2), (1,1,1,1,1)),
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape'), broadcast_add_sub_shapes)
+def test_add_broadcasting(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a + b
+    exp = np.add(a.toarray(), b.toarray())
+    assert_equal(res.toarray(), exp)
+    res = a + b.toarray()
+    assert_equal(res, exp)
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), broadcast_add_sub_shapes)
+def test_sub_broadcasting(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a - b
+    exp = np.subtract(a.toarray(), b.toarray())
+    assert_equal(res.toarray(), exp)
+
+    res = a - b.toarray()
+    assert_equal(res, exp)
+
+argmax_argmin_shapes_axis = [
+    ((3,), None), ((3,), 0),
+    ((4,6), 1), ((7,3), 0), ((3,5), None),
+    ((2,8,7), 2), ((2,8,7), 0),
+    ((2,0), 0), ((3,0,0,2), 0),
+    ((3,2,4,7), None), ((3,2,4,7), 1), ((3,2,4,7), 0), ((3,2,4,7), 2),
+    ((3,2,4,7), -2), ((4,5,7,8,2), 4), ((4,5,7,8,2), -3),
+]
+@pytest.mark.parametrize(('shape', 'axis'), argmax_argmin_shapes_axis)
+def test_argmax_argmin(shape, axis):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.argmax(axis=axis)
+    exp = np.argmax(a.toarray(), axis=axis)
+    assert_equal(res, exp)
+
+    res = a.argmin(axis=axis)
+    exp = np.argmin(a.toarray(), axis=axis)
+    assert_equal(res, exp)
+
+
+max_min_shapes_axis = [
+    ((3,), None), ((3,), 0),
+    ((4,6), 1), ((7,3), 0), ((3,5), None),
+    ((2,8,7), 2), ((2,8,7), 0),
+    ((3,2,4,7), None), ((3,2,4,7), 1), ((3,2,4,7), 0), ((3,2,4,7), 2),
+    ((4,5,7,8,2), 4), ((4,5,8,1), 3), ((4,6), (0,)), ((4,6), (0,1)),
+    ((3,0,2), 2), ((3,0,2), (0,2)), ((3,0), 0),
+    ((3,7,8,5), (0,1)), ((3,7,8,5), (2,1)), ((3,7,8,5), (2,0)),
+    ((3,7,8,5), (0,-2)), ((3,7,8,5), (-1,2)), ((3,7,8,5), (3)),
+    ((3,7,8,5), (0,1,2)), ((3,7,8,5), (0,1,2,3)), ((3,7,8,5), ()),
+]
+@pytest.mark.parametrize(('shape', 'axis'), max_min_shapes_axis)
+def test_min_max(shape, axis):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res_min = a.min(axis=axis)
+    exp_min = np.min(a.toarray(), axis=axis)
+    res_max = a.max(axis=axis)
+    exp_max = np.max(a.toarray(), axis=axis)
+    res_nanmin = a.nanmin(axis=axis)
+    exp_nanmin = np.nanmin(a.toarray(), axis=axis)
+    res_nanmax = a.nanmax(axis=axis)
+    exp_nanmax = np.nanmax(a.toarray(), axis=axis)
+
+    for res, exp in [(res_min, exp_min), (res_max, exp_max),
+                     (res_nanmin, exp_nanmin), (res_nanmax, exp_nanmax)]:
+        if np.issubdtype(type(res), np.number):
+            assert_equal(res, exp)
+        else:
+            assert_equal(res.toarray(), exp)
+
+
+sum_mean_params = [
+    ((3,), None, None), ((3,), 0, None),
+    ((4,6), 1, None), ((7,3), 0, None), ((3,5), None, None),
+    ((2,8,7), 2, None), ((2,8,7), 0, np.zeros((8,7))),
+    ((3,2,4,7), None, None), ((3,2,4,7), 1, np.zeros((3,4,7))),
+    ((3,2,4,7), 0, None), ((4,5,7,8,2), 4, None),
+    ((4,5,8,1), 3, None), ((4,6), (0,), None), ((4,6), (0,1), None),
+    ((3,0,2), 2, None), ((3,0,2), (0,2), None), ((3,0), 0, None),
+    ((3,7,8,5), (0,1), np.zeros((8,5))), ((3,7,8,5), (2,1), None),
+    ((3,7,8,5), (0,-2), None), ((3,7,8,5), (-1,2), np.zeros((3,7))),
+    ((3,7,8,5), (3), None), ((3,7,8,5), (0,1,2), np.zeros((5,))),
+    ((3,7,8,5), (0,1,2,3), None), ((3,7,8,5), (), None),
+]
+@pytest.mark.parametrize(('shape', 'axis', 'out'), sum_mean_params)
+def test_sum(shape, axis, out):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.sum(axis=axis, out=out)
+    exp = np.sum(a.toarray(), axis=axis, out=out)
+    assert_equal(res, exp)
+
+
+@pytest.mark.parametrize(('shape', 'axis', 'out'), sum_mean_params)
+def test_mean(shape, axis, out):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.mean(axis=axis, out=out)
+    exp = np.mean(a.toarray(), axis=axis, out=out)
+    assert_allclose(res, exp)
+
+
+def test_pow_abs_round():
+    rng = np.random.default_rng(23409823)
+    a = random_array((3,6,5,2,4), density=0.6, random_state=rng, dtype=int)
+    assert_allclose((a**3).toarray(), np.power(a.toarray(), 3))
+    assert_allclose((a**7).toarray(), np.power(a.toarray(), 7))
+    assert_allclose(round(a).toarray(), np.round(a.toarray()))
+    assert_allclose(abs(a).toarray(), np.abs(a.toarray()))
