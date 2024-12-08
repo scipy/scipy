@@ -380,7 +380,6 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
     1999, pp. 59-61.
-
     """
     _check_c1_c2(c1, c2)
 
@@ -416,6 +415,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         if alpha1 == 0 or (amax is not None and alpha0 > amax):
             # alpha1 == 0: This shouldn't happen. Perhaps the increment has
             # slipped below machine precision?
+
             alpha_star = None
             phi_star = phi0
             phi0 = old_phi0
@@ -436,7 +436,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition)
+                              phi0, derphi0, c1, c2, extra_condition, maxiter)
             break
 
         derphi_a1 = derphi(alpha1)
@@ -451,7 +451,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition)
+                              phi0, derphi0, c1, c2, extra_condition, maxiter)
             break
 
         alpha2 = 2 * alpha1  # increase by factor of two on each iteration
@@ -530,7 +530,7 @@ def _quadmin(a, fa, fpa, b, fb):
 
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
-          phi, derphi, phi0, derphi0, c1, c2, extra_condition):
+          phi, derphi, phi0, derphi0, c1, c2, extra_condition, maxiter=10):
     """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
 
     Part of the optimization algorithm in `scalar_search_wolfe2`.
@@ -542,7 +542,6 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
 
     """
 
-    maxiter = 10
     i = 0
     delta1 = 0.2  # cubic interpolant check
     delta2 = 0.1  # quadratic interpolant check
