@@ -4410,9 +4410,10 @@ class Mixture(_ProbabilityDistribution):
         The underlying instances of `ContinuousDistribution`.
         All must have scalar shape parameters (if any); e.g., the `pdf` evaluated
         at a scalar argument must return a scalar.
-    weights : sequence of floats
+    weights : sequence of floats, optional
         The corresponding probabilities of selecting each random variable.
-        Must be non-negative and sum to one.
+        Must be non-negative and sum to one. The default behavior is to weight
+        all components equally.
 
     Attributes
     ----------
@@ -4472,7 +4473,6 @@ class Mixture(_ProbabilityDistribution):
 
     """
     # Todo:
-    # Fix Normal(mu=0.5).logentropy() runtime warning
     # Add support for array shapes, weights
 
     def _input_validation(self, components, weights):
@@ -4492,7 +4492,7 @@ class Mixture(_ProbabilityDistribution):
                 raise ValueError(message)
 
         if weights is None:
-            return
+            return components, weights
 
         weights = np.asarray(weights)
         if weights.shape != (len(components),):
