@@ -270,6 +270,7 @@ Spectral analysis
    istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
+   wigner_ville   -- Compute the the Wigner-Ville distribution.
 
 Chirp Z-transform and Zoom FFT
 ============================================
@@ -306,6 +307,7 @@ from ._ltisys import *
 from ._lti_conversion import *
 from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
+from ._wigner import wigner_ville
 from ._spectral_py import *
 from ._short_time_fft import *
 from ._peak_finding import *
