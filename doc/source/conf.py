@@ -182,6 +182,14 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
+
+# see: https://github.com/scipy/scipy/issues/22020
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*py:obj reference target not found: scipy.misc.*',
+    category=Warning,
+)
+
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
     'autosummary.import_cycle',
