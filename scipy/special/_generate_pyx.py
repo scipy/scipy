@@ -304,9 +304,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     outtypecodes = []
     for j in range(len(func_inputs)):
         ftypes.append(CY_TYPES[func_inputs[j]])
-        fvars.append("<%s>(<%s*>ip%d)[0]" % (
-            CY_TYPES[func_inputs[j]],
-            CY_TYPES[ufunc_inputs[j]], j))
+        fvars.append(f"<{CY_TYPES[func_inputs[j]]}>(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0]")
 
     if len(func_outputs)+1 == len(ufunc_outputs):
         func_joff = 1

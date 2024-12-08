@@ -364,8 +364,8 @@ class Template:
             elif not self._unicode and isinstance(value, str):
                 if not self.default_encoding:
                     raise UnicodeEncodeError(
-                        'Cannot encode unicode value %r into bytes '
-                        '(no default_encoding provided)' % value)
+                        f"Cannot encode unicode value {value!r} into bytes (no default_encoding provided)"
+                    )
                 value = value.encode(self.default_encoding)
             return value
 

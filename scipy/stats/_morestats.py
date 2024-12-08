@@ -3864,12 +3864,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):
         if d.size == 0:
-            raise ValueError("Sample %d is empty. All samples must "
-                             "contain at least one value." % (k + 1))
+            raise ValueError(f"Sample {k + 1} is empty. All samples must contain at least one value.")
         if d.ndim != 1:
-            raise ValueError("Sample %d has %d dimensions.  All "
-                             "samples must be one-dimensional sequences." %
-                             (k + 1, d.ndim))
+            raise ValueError(f"Sample {k + 1} has {d.ndim} dimensions. All samples must be one-dimensional sequences.")
 
     cdata = np.concatenate(data)
     contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
@@ -3914,9 +3911,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         # check for that case here.
         zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
-            msg = ("All values in sample %d are equal to the grand "
-                   "median (%r), so they are ignored, resulting in an "
-                   "empty sample." % (zero_cols[0] + 1, grand_median))
+            msg = f"All values in sample {zero_cols[0] + 1} are equal to the grand median ({grand_median!r}), so they are ignored, resulting in an empty sample."
             raise ValueError(msg)
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
