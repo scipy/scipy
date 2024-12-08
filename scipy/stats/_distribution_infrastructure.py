@@ -1466,7 +1466,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     See Also
     --------
-    :ref:`distribution_infrastructure` : Tutorial
+    :ref:`rv_infrastructure` : Tutorial
 
     Notes
     -----
