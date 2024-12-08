@@ -1652,6 +1652,14 @@ class TestMixture:
         assert y.shape == shape
         assert stats.ks_1samp(y.ravel(), X.cdf).pvalue > 0.05
 
+    def test_default_weights(self):
+        a = 1.1
+        Gamma = stats.make_distribution(stats.gamma)
+        X = Gamma(a=a)
+        Y = stats.Mixture((X, -X))
+        x = np.linspace(-4, 4, 300)
+        assert_allclose(Y.pdf(x), stats.dgamma(a=a).pdf(x))
+
     def test_properties(self):
         components = [Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)]
         weights = (0.4, 0.6)
