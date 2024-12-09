@@ -263,6 +263,7 @@ class TestConvolve:
                 xp_assert_equal(fft, val, check_dtype=False)
                 xp_assert_equal(direct, val, check_dtype=False)
 
+    @skip_xp_backends(np_only=True)
     def test_mismatched_dims(self, xp):
         # Input arrays should have the same number of dimensions
         assert_raises(ValueError, convolve, [1], 2, method='direct')
@@ -482,6 +483,7 @@ class TestConvolve2d:
 
     @pytest.mark.slow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
+    @skip_xp_backends(np_only=True, reason="stride_tricks")
     def test_large_array(self, xp):
         # Test indexing doesn't overflow an int (gh-10761)
         n = 2**31 // (1000 * xp.int64().itemsize)
@@ -569,11 +571,11 @@ class TestFFTConvolve:
                                       [-2, -1],
                                       [-1, -2]])
     def test_2d_real_same(self, axes, xp):
-        a = xp.asarray([[1, 2, 3],
-                   [4, 5, 6]])
-        expected = xp.asarray([[1, 4, 10, 12, 9],
-                          [8, 26, 56, 54, 36],
-                          [16, 40, 73, 60, 36]])
+        a = xp.asarray([[1.0, 2, 3],
+                        [4, 5, 6]])
+        expected = xp.asarray([[1.0, 4, 10, 12, 9],
+                               [8, 26, 56, 54, 36],
+                               [16, 40, 73, 60, 36]])
 
         if axes == '':
             out = fftconvolve(a, a)
@@ -581,7 +583,7 @@ class TestFFTConvolve:
             if isinstance(axes, list):
                 axes = tuple(axes)
             out = fftconvolve(a, a, axes=axes)
-        xp_assert_close(out, expected, atol=1.5e-6, check_dtype=False)
+        xp_assert_close(out, expected)
 
     @pytest.mark.parametrize('axes', [[1, 2],
                                       [2, 1],
@@ -951,7 +953,6 @@ def gen_oa_shapes_eq(sizes):
             if a >= b]
 
 
-
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 @skip_xp_backends("jax.numpy", reason="fails all around")
 class TestOAConvolve:
@@ -1275,11 +1276,15 @@ class TestMedFilt:
         a.strides = 16
         xp_assert_close(signal.medfilt(a, 1),  xp.asarray([5.]))
 
-    @skip_xp_backends(np_only=True, reason="XXX skip for now")
-    @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
+    @skip_xp_backends(
+        "jax.numpy",
+        reason="chunk assignment does not work on jax immutable arrays"
+    )
+    @pytest.mark.parametrize("dtype", ["uint8", "float32", "float64"])
     def test_medfilt2d_parallel(self, dtype, xp):
-        in_typed = np.array(self.IN, dtype=dtype)
-        expected = np.array(self.OUT, dtype=dtype)
+        dtype = getattr(xp, dtype)
+        in_typed = xp.asarray(self.IN, dtype=dtype)
+        expected = xp.asarray(self.OUT, dtype=dtype)
 
         # This is used to simplify the indexing calculations.
         assert in_typed.shape == expected.shape
@@ -1320,7 +1325,7 @@ class TestMedFilt:
             return med[Msel, Nsel], Mout, Nout
 
         # Give each chunk to a different thread.
-        output = np.zeros_like(expected)
+        output = xp.zeros_like(expected)
         with ThreadPoolExecutor(max_workers=4) as pool:
             chunks = {(0, 0), (0, 1), (1, 0), (1, 1)}
             futures = {pool.submit(apply, chunk) for chunk in chunks}

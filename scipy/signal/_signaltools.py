@@ -30,7 +30,7 @@ from scipy._lib._array_api import (
     array_namespace, is_torch, is_numpy, xp_copy, xp_size
 )
 import scipy._lib.array_api_compat.numpy as np_compat
-from scipy._lib.array_api_extra import atleast_nd
+import scipy._lib.array_api_extra as xpx
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
@@ -1178,6 +1178,7 @@ def _reverse_and_conj(x, xp):
         # in slices, x-ref https://github.com/pytorch/pytorch/issues/59786
         x_rev = xp.flip(x)
 
+    # cf https://github.com/data-apis/array-api/issues/824
     if xp.isdtype(x.dtype, 'complex floating'):
         return xp.conj(x_rev)
     else:
@@ -1653,7 +1654,7 @@ def medfilt(volume, kernel_size=None):
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
     if volume.ndim == 0:
-        volume = xp.expand_dims(volume)   # np.atleast_1d
+        volume = xpx.atleast_nd(volume, ndim=1, xp=xp)
 
     if not (xp.isdtype(volume.dtype, "integral") or
             volume.dtype in [xp.float32, xp.float64]):
@@ -2550,7 +2551,7 @@ def hilbert2(x, N=None):
     """
     xp = array_namespace(x)
 
-    x = atleast_nd(x, ndim=2, xp=xp)
+    x = xpx.atleast_nd(x, ndim=2, xp=xp)
     if x.ndim > 2:
         raise ValueError("x must be 2-D.")
     if xp.isdtype(x.dtype, 'complex floating'):
@@ -4013,7 +4014,7 @@ def detrend(data: np.ndarray, axis: int = -1,
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
-    # XXX will be able to simplify after data-apis/array-api-compat#147 lands
+    # XXX simplify when data-apis/array-api-compat#147 is available
     if isinstance(bp, int):
        xp = array_namespace(data)
     else:
