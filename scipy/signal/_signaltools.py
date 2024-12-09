@@ -4221,7 +4221,11 @@ def lfilter_zi(b, a):
     IminusA = xp.asarray(IminusA, dtype=dt)
     B = b[1:] - a[1:] * b[0]
     # Solve zi = A*zi + B
-    zi = xp.linalg.solve(IminusA, B)
+    if hasattr(xp, 'linalg'):
+        zi = xp.linalg.solve(IminusA, B)
+    else:
+        zi = linalg.solve(np.asarray(IminusA), np.asarray(B))
+        zi = xp.asarray(zi)        
 
     # For future reference: we could also use the following
     # explicit formulas to solve the linear system:
