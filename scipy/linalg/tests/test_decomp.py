@@ -10,6 +10,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
+from scipy.conftest import mac_acclrt_gh21862
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd,
                           hessenberg, rq, eig_banded, eigvals_banded, eigh,
@@ -311,6 +312,10 @@ class TestEig:
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
 
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_make_eigvals(self):
         # Step through all paths in _make_eigvals
         # Real eigenvalues
@@ -2574,18 +2579,38 @@ class TestOrdQZ:
         for reti, Ai, Bi in zip(ret, self.A, self.B):
             self.check(Ai, Bi, sort, *reti)
 
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_lhp(self):
         self.check_all('lhp')
 
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_rhp(self):
         self.check_all('rhp')
 
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_iuc(self):
         self.check_all('iuc')
 
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_ouc(self):
         self.check_all('ouc')
 
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_ref(self):
         # real eigenvalues first (top-left corner)
         def sort(x, y):
@@ -2597,6 +2622,10 @@ class TestOrdQZ:
 
         self.check_all(sort)
 
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_cef(self):
         # complex eigenvalues first (top-left corner)
         def sort(x, y):
@@ -2615,6 +2644,10 @@ class TestOrdQZ:
         ret = ordqz(self.B[2], self.A[1], sort='lhp')
         self.check(self.B[2], self.A[1], 'lhp', *ret)
 
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_sort_explicit(self):
         # Test order of the eigenvalues in the 2 x 2 case where we can
         # explicitly compute the solution
@@ -2665,6 +2698,10 @@ class TestOrdQZ:
 
 class TestOrdQZWorkspaceSize:
     @pytest.mark.fail_slow(5)
+    @pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
     def test_decompose(self):
         rng = np.random.RandomState(12345)
         N = 202
