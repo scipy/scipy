@@ -4857,30 +4857,57 @@ class FoldedDistribution(TransformedDistribution):
         a_[i] = 0
         return a_[()], b_[()]
 
-    def _logpdf_dispatch(self, x, *args, **params):
-        logpdfs = np.stack([self._dist._logpdf_dispatch(x, *args, **params),
-                            self._dist._logpdf_dispatch(-x, *args, **params)])
+    def _logpdf_dispatch(self, x, *args, method=None, **params):
+        x = np.abs(x)
+        right = self._dist._logpdf_dispatch(x, *args, method=method, **params)
+        left = self._dist._logpdf_dispatch(-x, *args, method=method, **params)
+        left = np.asarray(left)
+        right = np.asarray(right)
+        a, b = self._dist._support(**params)
+        left[-x < a] = -np.inf
+        right[x > b] = -np.inf
+        logpdfs = np.stack([left, right])
         return special.logsumexp(logpdfs, axis=0)
 
-    def _pdf_dispatch(self, x, *args, **params):
-        return (self._dist._pdf_dispatch(x, *args, **params)
-                + self._dist._pdf_dispatch(-x, *args, **params))
-
-    def _logcdf_dispatch(self, x, *args, **params):
+    def _pdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
-        return self._dist._logcdf2_dispatch(-x, x, *args, **params).real
+        right = self._dist._pdf_dispatch(x, *args, method=method, **params)
+        left = self._dist._pdf_dispatch(-x, *args, method=method, **params)
+        left = np.asarray(left)
+        right = np.asarray(right)
+        a, b = self._dist._support(**params)
+        left[-x < a] = 0
+        right[x > b] = 0
+        return left + right
 
-    def _cdf_dispatch(self, x, *args, **params):
+    def _logcdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
-        return self._dist._cdf2_dispatch(-x, x, *args, **params)
+        a, b = self._dist._support(**params)
+        xl = np.maximum(-x, a)
+        xr = np.minimum(x, b)
+        return self._dist._logcdf2_dispatch(xl, xr, *args, method=method, **params).real
 
-    def _logccdf_dispatch(self, x, *args, **params):
+    def _cdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
-        return self._dist._logccdf2_dispatch(-x, x, *args, **params).real
+        a, b = self._dist._support(**params)
+        xl = np.maximum(-x, a)
+        xr = np.minimum(x, b)
+        return self._dist._cdf2_dispatch(xl, xr, *args, **params)
 
-    def _ccdf_dispatch(self, x, *args, **params):
+    def _logccdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
-        return self._dist._ccdf2_dispatch(-x, x, *args, **params)
+        a, b = self._dist._support(**params)
+        xl = np.maximum(-x, a)
+        xr = np.minimum(x, b)
+        return self._dist._logccdf2_dispatch(xl, xr, *args, method=method, 
+                                             **params).real
+
+    def _ccdf_dispatch(self, x, *args, method=None, **params):
+        x = np.abs(x)
+        a, b = self._dist._support(**params)
+        xl = np.maximum(-x, a)
+        xr = np.minimum(x, b)
+        return self._dist._ccdf2_dispatch(xl, xr, *args, method=method, **params)
 
     def _sample_dispatch(self, sample_shape, full_shape, *,
                          method, rng, **params):

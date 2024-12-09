@@ -1464,6 +1464,20 @@ class TestTransforms:
         sample = Y.sample(10)
         assert np.all(sample > 0)
 
+    def test_abs_finite_support(self):
+        # The original implementation of `FoldedDistribution` might evaluate
+        # the private distribution methods outside the support. Check that this
+        # is resolved.
+        Weibull = stats.make_distribution(stats.weibull_min)
+        X = Weibull(c=2)
+        Y = abs(-X)
+        assert_equal(X.logpdf(1), Y.logpdf(1))
+        assert_equal(X.pdf(1), Y.pdf(1))
+        assert_equal(X.logcdf(1), Y.logcdf(1))
+        assert_equal(X.cdf(1), Y.cdf(1))
+        assert_equal(X.logccdf(1), Y.logccdf(1))
+        assert_equal(X.ccdf(1), Y.ccdf(1))
+
     def test_pow(self):
         rng = np.random.default_rng(81345982345826)
 
