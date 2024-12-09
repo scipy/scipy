@@ -324,7 +324,7 @@ def higher_order_svd(
         the maximum magnitude singular value are treated as zero when determining
         the multilinear rank. Then ``S`` has shape ``m_1, ..., m_k, ... m_M``
         and the shapes of the ``U_k`` are ``(n_k, m_k)``, where ``n_k`` is as
-        above and the ``m_k`` are the elements of multilinear rank of the `a`.
+        above and the ``m_k`` are the elements of multilinear rank of `a`.
     check_finite : bool, default: True
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -334,7 +334,7 @@ def higher_order_svd(
     -------
     U : list of ndarray
         List of the unitary matrices ``U_k`` with shapes as described in
-        documentation of `compact_rtol`.
+        the documentation of `compact_rtol`.
     S : ndarray
         The core tensor with shapes as described in the documentation of
         `compact_rtol`.
