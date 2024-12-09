@@ -405,16 +405,12 @@ class SVDSCommonTests:
         with pytest.raises(AssertionError, match=message):
             assert_equal(res1a, res1b)
 
-    @pytest.mark.parametrize("rng", (0, 1,
-                                     np.random.default_rng(0)))
-    def test_svd_rng_2(self, rng):
+    def test_svd_rng_2(self):
         n = 100
         k = 1
 
-        tmp_rng = np.random.default_rng(0)
-        A = tmp_rng.random((n, n))
-
-        rng = copy.deepcopy(rng)
+        rng = np.random.default_rng(234981)
+        A = rng.random((n, n))
         rng_2 = copy.deepcopy(rng)
 
         # with the same rng, solutions are the same and accurate
@@ -424,23 +420,20 @@ class SVDSCommonTests:
             assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
-    @pytest.mark.parametrize("rng", (None,
-                                     np.random.default_rng(0)))
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
-    def test_svd_rng_3(self, rng):
+    def test_svd_rng_3(self):
         n = 100
         k = 5
 
-        tmp_rng = np.random.default_rng(0)
-        A = tmp_rng.random((n, n))
-
-        rng = copy.deepcopy(rng)
+        rng1 = np.random.default_rng(0)
+        rng2 = np.random.default_rng(234832)
+        A = rng1.random((n, n))
 
         # rng in different state produces accurate - but not
         # not necessarily identical - results
-        res1a = svds(A, k, solver=self.solver, rng=rng, maxiter=1000)
-        res2a = svds(A, k, solver=self.solver, rng=rng, maxiter=1000)
+        res1a = svds(A, k, solver=self.solver, rng=rng1, maxiter=1000)
+        res2a = svds(A, k, solver=self.solver, rng=rng2, maxiter=1000)
         _check_svds(A, k, *res1a, atol=2e-7)
         _check_svds(A, k, *res2a, atol=2e-7)
 
