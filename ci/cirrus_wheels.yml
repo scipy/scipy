@@ -28,7 +28,7 @@ cirrus_wheels_linux_aarch64_task:
     - env:
         CIBW_BUILD: cp311-manylinux* cp312-manylinux*
   env:
-    CIBW_PRERELEASE_PYTHONS: True
+    CIBW_PRERELEASE_PYTHONS: False
     # The following settings are useful when targetting an unreleased Python version.
     #CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja;bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
     #CIBW_ENVIRONMENT: >
