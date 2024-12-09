@@ -1018,34 +1018,33 @@ class TestMakeDistribution:
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
-                'johnsonsb', 'kstwobign', 'powerlognorm', 'powernorm', 'recipinvgauss',
-                'vonmises_line'}
+                'johnsonsb', 'ksone', 'kstwobign', 'powerlognorm', 'powernorm',
+                'recipinvgauss', 'studentized_range', 'vonmises_line'}
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
-
 
         if distname in {  # skip these distributions
             'genpareto', 'genextreme', 'genhalflogistic',  # complicated support
             'kstwo', 'kappa4', 'tukeylambda',  # complicated support
             'levy_stable',  # private methods seem to require >= 1d args
-            'ksone',  # tolerance issues
             'vonmises',  # circular distribution; shouldn't work
-            'studentized_range',  # too slow
         }:
             return
-        # if distname != 'norminvgauss':
+        # if distname != 'genpareto':
         #     pytest.skip()
 
         # skip single test, mostly due to slight disagreement
+        custom_tolerances = {'ksone': 1e-5}  # discontinuous PDF
         skip_entropy = {'kstwobign', 'pearson3'}  # tolerance issue
-        skip_skewness = {'exponpow'}  # tolerance issue
-        skip_kurtosis = {'chi', 'exponpow', 'invgamma', 'johnsonsb'}  # tolerance issue
+        skip_skewness = {'exponpow', 'ksone'}  # tolerance issue
+        skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance issue
+                         'johnsonsb', 'ksone'}  # tolerance issue
         skip_logccdf = {'jf_skew_t', # check this out later
                         'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
-        skip_standardized = {'exponpow'}  # tolerances
+        skip_standardized = {'exponpow', 'ksone'}  # tolerances
 
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
@@ -1055,39 +1054,42 @@ class TestMakeDistribution:
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
         p = X.cdf(x)
+        rtol = custom_tolerances.get(distname, 1e-7)
         atol = 1e-12
 
         with np.errstate(divide='ignore', invalid='ignore'):
             m, v, s, k = Y.stats('mvsk')
             if distname not in skip_entropy:
-                assert_allclose(X.entropy(), Y.entropy())
-            assert_allclose(X.median(), Y.median())
-            assert_allclose(X.mean(), m, atol=atol)
-            assert_allclose(X.variance(), v, atol=atol)
+                assert_allclose(X.entropy(), Y.entropy(), rtol=rtol)
+            assert_allclose(X.median(), Y.median(), rtol=rtol)
+            assert_allclose(X.mean(), m, rtol=rtol, atol=atol)
+            assert_allclose(X.variance(), v, rtol=rtol, atol=atol)
             if distname not in skip_skewness:
-                assert_allclose(X.skewness(), s, atol=atol)
+                assert_allclose(X.skewness(), s, rtol=rtol, atol=atol)
             if distname not in skip_kurtosis:
-                assert_allclose(X.kurtosis(convention='excess'), k, atol=atol)
-            assert_allclose(X.logpdf(x), Y.logpdf(x))
-            assert_allclose(X.pdf(x), Y.pdf(x))
-            assert_allclose(X.logcdf(x), Y.logcdf(x))
-            assert_allclose(X.cdf(x), Y.cdf(x))
+                assert_allclose(X.kurtosis(convention='excess'), k,
+                                rtol=rtol, atol=atol)
+            assert_allclose(X.logpdf(x), Y.logpdf(x), rtol=rtol)
+            assert_allclose(X.pdf(x), Y.pdf(x), rtol=rtol)
+            assert_allclose(X.logcdf(x), Y.logcdf(x), rtol=rtol)
+            assert_allclose(X.cdf(x), Y.cdf(x), rtol=rtol)
             if distname not in skip_logccdf:
-                assert_allclose(X.logccdf(x), Y.logsf(x))
-            assert_allclose(X.ccdf(x), Y.sf(x))
-            assert_allclose(X.icdf(p), Y.ppf(p))
-            assert_allclose(X.iccdf(p), Y.isf(p))
+                assert_allclose(X.logccdf(x), Y.logsf(x), rtol=rtol)
+            assert_allclose(X.ccdf(x), Y.sf(x), rtol=rtol)
+            assert_allclose(X.icdf(p), Y.ppf(p), rtol=rtol)
+            assert_allclose(X.iccdf(p), Y.isf(p), rtol=rtol)
             for order in range(5):
                 if distname not in skip_raw.get(order, {}):
                     assert_allclose(X.moment(order, kind='raw'),
-                                    Y.moment(order), atol=atol)
+                                    Y.moment(order), rtol=rtol, atol=atol)
             for order in range(3, 4):
                 if distname not in skip_standardized:
                     assert_allclose(X.moment(order, kind='standardized'),
-                                    Y.stats('mvsk'[order-1]), atol=atol)
+                                    Y.stats('mvsk'[order-1]), rtol=rtol, atol=atol)
             seed = 845298245687345
             assert_allclose(X.sample(shape=10, rng=seed),
-                            Y.rvs(size=10, random_state=np.random.default_rng(seed)))
+                            Y.rvs(size=10, random_state=np.random.default_rng(seed)),
+                            rtol=rtol)
 
 
 class TestTransforms:
