@@ -1018,27 +1018,23 @@ class TestMakeDistribution:
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
-                'johnsonsb', 'ksone', 'kstwobign', 'powerlognorm', 'powernorm',
-                'recipinvgauss', 'studentized_range', 'vonmises_line'}
+                'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'powerlognorm',
+                'powernorm', 'recipinvgauss', 'studentized_range', 'vonmises_line'}
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
         if distname in {  # skip these distributions
-            'genpareto', 'genextreme', 'genhalflogistic',  # complicated support
-            'kstwo', 'kappa4', 'tukeylambda',  # complicated support
             'levy_stable',  # private methods seem to require >= 1d args
             'vonmises',  # circular distribution; shouldn't work
         }:
             return
-        # if distname != 'truncpareto':
-        #     pytest.skip()
 
         # skip single test, mostly due to slight disagreement
-        custom_tolerances = {'ksone': 1e-5}  # discontinuous PDF
+        custom_tolerances = {'ksone': 1e-5, 'kstwo': 1e-5}  # discontinuous PDF
         skip_entropy = {'kstwobign', 'pearson3'}  # tolerance issue
         skip_skewness = {'exponpow', 'ksone'}  # tolerance issue
         skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance issue
-                         'johnsonsb', 'ksone'}  # tolerance issue
+                         'johnsonsb', 'ksone', 'kstwo'}  # tolerance issue
         skip_logccdf = {'jf_skew_t', # check this out later
                         'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},

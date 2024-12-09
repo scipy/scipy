@@ -3481,9 +3481,7 @@ def make_distribution(dist):
     .. note::
 
         `make_distribution` does not work with all instances of `rv_continuous`.
-        Known failures include 'genpareto', 'genextreme', 'genhalflogistic',
-        'irwinhall', 'kstwo', 'kappa4', 'levy_stable', 'norminvgauss',
-        'tukeylambda', and `vonmises`.
+        Known failures include 'levy_stable' and `vonmises`.
 
     Parameters
     ----------
@@ -3513,7 +3511,6 @@ def make_distribution(dist):
     >>> plt.show()
 
     """
-    # todo: check genpareto, genextreme, genhalflogistic, kstwo, kappa4, tukeylambda
     parameters = []
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
@@ -3531,6 +3528,10 @@ def make_distribution(dist):
         _parameterizations = ([_Parameterization(*parameters)] if parameters
                               else [])
         _variable = _x_param
+
+    def _support(self, **kwargs):
+        a, b = dist._get_support(**kwargs)
+        return np.asarray(a)[()], np.asarray(b)[()]
 
     def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
         return dist._rvs(size=full_shape, random_state=rng, **kwargs)
@@ -3588,6 +3589,9 @@ def make_distribution(dist):
     def _overrides(method_name):
         return (getattr(dist.__class__, method_name, None)
                 is not getattr(stats.rv_continuous, method_name, None))
+
+    if _overrides('_get_support'):
+        CustomDistribution._support = _support
 
     if _overrides('_munp'):
         CustomDistribution._moment_raw_formula = _moment_raw_formula
