@@ -1087,6 +1087,19 @@ class TestMakeDistribution:
                             Y.rvs(size=10, random_state=np.random.default_rng(seed)),
                             rtol=rtol)
 
+    def test_input_validation(self):
+        message = '`levy_stable` is not supported.'
+        with pytest.raises(NotImplementedError, match=message):
+            stats.make_distribution(stats.levy_stable)
+
+        message = '`vonmises` is not supported.'
+        with pytest.raises(NotImplementedError, match=message):
+            stats.make_distribution(stats.vonmises)
+
+        message = "The argument must be an instance of `rv_continuous`."
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(object())
+
 
 class TestTransforms:
 

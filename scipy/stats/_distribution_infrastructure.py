@@ -3483,7 +3483,7 @@ def make_distribution(dist):
     .. note::
 
         `make_distribution` does not work with all instances of `rv_continuous`.
-        Known failures include 'levy_stable' and `vonmises`.
+        Known failures include `levy_stable` and `vonmises`.
 
     Parameters
     ----------
@@ -3513,6 +3513,13 @@ def make_distribution(dist):
     >>> plt.show()
 
     """
+    if dist in {stats.levy_stable, stats.vonmises}:
+        raise NotImplementedError(f"`{dist.name}` is not supported.")
+
+    if not isinstance(dist, stats.rv_continuous):
+        message = f"The argument must be an instance of `rv_continuous`."
+        raise ValueError(message)
+
     parameters = []
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
