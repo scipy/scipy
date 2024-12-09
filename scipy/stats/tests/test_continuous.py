@@ -1100,6 +1100,19 @@ class TestMakeDistribution:
         with pytest.raises(ValueError, match=message):
             stats.make_distribution(object())
 
+    def test_repr_str_docs(self):
+        from scipy.stats._distribution_infrastructure import _distribution_names
+        for dist in _distribution_names.keys():
+            assert hasattr(stats, dist)
+
+        dist = stats.make_distribution(stats.gamma)
+        assert str(dist(a=2)) == "Gamma(a=2.0)"
+        assert 'Gamma' in dist.__doc__
+
+        dist = stats.make_distribution(stats.halfgennorm)
+        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
+        assert 'HalfGeneralizedNormal' in dist.__doc__
+
 
 class TestTransforms:
 

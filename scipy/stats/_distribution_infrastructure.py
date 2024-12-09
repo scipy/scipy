@@ -3471,6 +3471,82 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # fit method removed for initial PR
 
 
+# Special case the names of some new-style distributions in `make_distribution`
+_distribution_names = {
+    'argus': 'ARGUS',
+    'betaprime': 'BetaPrime',
+    'chi2': 'ChiSquared',
+    'crystalball': 'CrystalBall',
+    'dgamma': 'DoubleGamma',
+    'dweibull': 'DoubleWeibull',
+    'expon': 'Exponential',
+    'exponnorm': 'ExponentiallyModifiedNormal',
+    'exponweib': 'ExponentialWeibull',
+    'exponpow': 'ExponentialPower',
+    'fatiguelife': 'FatigueLife',
+    'foldcauchy': 'FoldedCauchy',
+    'foldnorm': 'FoldedNormal',
+    'genlogistic': 'GeneralizedLogistic',
+    'gennorm': 'GeneralizedNormal',
+    'genpareto': 'GeneralizedPareto',
+    'genexpon': 'GeneralizedExponential',
+    'genextreme': 'GeneralizedExtremeValue',
+    'gausshyper': 'GaussHypergeometric',
+    'gengamma': 'GeneralizedGamma',
+    'genhalflogistic': 'GeneralizedHalfLogistic',
+    'geninvgauss': 'GeneralizedInverseGaussian',
+    'gumbel_r': 'Gumbel',
+    'gumbel_l': 'ReflectedGumbel',
+    'halfcauchy': 'HalfCauchy',
+    'halflogistic': 'HalfLogistic',
+    'halfnorm': 'HalfNormal',
+    'halfgennorm': 'HalfGeneralizedNormal',
+    'hypsecant': 'HyperbolicSecant',
+    'invgamma': 'InverseGammma',
+    'invgauss': 'InverseGaussian',
+    'invweibull': 'InverseWeibull',
+    'irwinhall': 'IrwinHall',
+    'jf_skew_t': 'JonesFaddySkewT',
+    'johnsonsb': 'JohnsonSB',
+    'johnsonsu': 'JohnsonSU',
+    'ksone': 'KSOneSided',
+    'kstwo': 'KSTwoSided',
+    'kstwobign': 'KSTwoSidedAsymptotic',
+    'laplace_asymmetric': 'LaplaceAsymmetric',
+    'levy_l': 'LevyLeft',
+    'levy_stable': 'LevyStable',
+    'loggamma': 'ExpGamma',  # really the Exponential Gamma Distribution
+    'loglaplace': 'LogLaplace',
+    'lognorm': 'LogNormal',
+    'loguniform': 'LogUniform',
+    'ncx2': 'NoncentralChiSquared',
+    'nct': 'NoncentralT',
+    'norm': 'Normal',
+    'norminvgauss': 'NormalInverseGaussian',
+    'powerlaw': 'PowerLaw',
+    'powernorm': 'PowerNormal',
+    'rdist': 'R',
+    'rel_breitwigner': 'RelativisticBreitWigner',
+    'recipinvgauss': 'ReciprocalInverseGaussian',
+    'semicircular': 'SemiCircular',
+    'skewcauchy': 'SkewCauchy',
+    'skewnorm': 'SkewNormal',
+    'studentized_range': 'StudentizedRange',
+    't': 'StudentT',
+    'trapezoid': 'Trapezoidal',
+    'triang': 'Triangular',
+    'truncexpon': 'TruncatedExponential',
+    'truncnorm': 'TruncatedNormal',
+    'truncpareto': 'TruncatedPareto',
+    'truncweibull_min': 'TruncatedWeibull',
+    'tukeylambda': 'TukeyLambda',
+    'vonmises_line': 'VonMisesLine',
+    'weibull_min': 'Weibull',
+    'weibull_max': 'ReflectedWeibull',
+    'wrapcauchy': 'WrappedCauchyLine',
+}
+
+
 def make_distribution(dist):
     """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
 
@@ -3496,6 +3572,14 @@ def make_distribution(dist):
         A subclass of `ContinuousDistribution` corresponding with `dist`. The
         initializer requires all shape parameters to be passed as keyword arguments
         (using the same names as the instance of `rv_continuous`).
+
+    Notes
+    -----
+    The documentation of `ContinuousDistribution` is not rendered. See below for
+    an example of how to instantiate the class (i.e. pass all shape parameters of
+    `dist` to the initializer as keyword arguments). Documentation of all methods
+    is identical to that of `scipy.stats.Normal`. Use ``help`` on the returned
+    class or its methods for more information.
 
     Examples
     --------
@@ -3533,10 +3617,16 @@ def make_distribution(dist):
     _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
+    repr_str = _distribution_names.get(dist.name, dist.name.capitalize())
+
     class CustomDistribution(ContinuousDistribution):
         _parameterizations = ([_Parameterization(*parameters)] if parameters
                               else [])
         _variable = _x_param
+
+        def __repr__(self):
+            s = super().__repr__()
+            return s.replace('CustomDistribution', repr_str)
 
     def _support(self, **kwargs):
         a, b = dist._get_support(**kwargs)
@@ -3614,9 +3704,14 @@ def make_distribution(dist):
             CustomDistribution._moment_raw_formula = _moment_raw_formula_1
             CustomDistribution._moment_central_formula = _moment_central_formula
 
-    class_docs = _combine_docs(CustomDistribution, include_examples=False)
-    CustomDistribution.__doc__ = ("The PDF of this distribution "
-                                  f"is defined {class_docs.lstrip()}")
+    support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
+    docs = [
+        f"This class represents `scipy.stats.{dist.name}` as a subclass of "
+        "`ContinuousDistribution`.",
+        f"The `repr`/`str` of instances class instances is `{repr_str}`.",
+        f"The PDF of the distribution is defined {support_etc}"
+    ]
+    CustomDistribution.__doc__ = ("\n".join(docs))
 
     return CustomDistribution
 
