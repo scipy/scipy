@@ -1,6 +1,7 @@
 """Tests for the linalg._isolve.lgmres module
 """
 
+import threading
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            suppress_warnings)
 
@@ -10,38 +11,51 @@ from platform import python_implementation
 import numpy as np
 from numpy import zeros, array, allclose
 from scipy.linalg import norm
-from scipy.sparse import csr_matrix, eye, rand
+from scipy.sparse import csr_array, eye_array, random_array
 
 from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse.linalg import splu
 from scipy.sparse.linalg._isolve import lgmres, gmres
 
 
-Am = csr_matrix(array([[-2, 1, 0, 0, 0, 9],
-                       [1, -2, 1, 0, 5, 0],
-                       [0, 1, -2, 1, 0, 0],
-                       [0, 0, 1, -2, 1, 0],
-                       [0, 3, 0, 1, -2, 1],
-                       [1, 0, 0, 0, 1, -2]]))
+Am = csr_array(array([[-2, 1, 0, 0, 0, 9],
+                      [1, -2, 1, 0, 5, 0],
+                      [0, 1, -2, 1, 0, 0],
+                      [0, 0, 1, -2, 1, 0],
+                      [0, 3, 0, 1, -2, 1],
+                      [1, 0, 0, 0, 1, -2]]))
 b = array([1, 2, 3, 4, 5, 6])
-count = [0]
+count = threading.local()  # [0]
+niter = threading.local()  # [0]
 
 
 def matvec(v):
-    count[0] += 1
+    if not hasattr(count, 'c'):
+        count.c = [0]
+    count.c[0] += 1
     return Am@v
+
+
+def cb(v):
+    if not hasattr(niter, 'n'):
+        niter.n = [0]
+    niter.n[0] += 1
 
 
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 
 def do_solve(**kw):
-    count[0] = 0
+    if not hasattr(niter, 'n'):
+        niter.n = [0]
+    if not hasattr(count, 'c'):
+        count.c = [0]
+    count.c[0] = 0
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, ".*called without specifying.*")
         x0, flag = lgmres(A, b, x0=zeros(A.shape[0]),
                           inner_m=6, rtol=1e-14, **kw)
-    count_0 = count[0]
+    count_0 = count.c[0]
     assert_(allclose(A@x0, b, rtol=1e-12, atol=1e-12), norm(A@x0-b))
     return x0, count_0
 
@@ -53,11 +67,13 @@ class TestLGMRES:
         M = LinearOperator(matvec=pc.solve, shape=A.shape, dtype=A.dtype)
 
         x0, count_0 = do_solve()
-        x1, count_1 = do_solve(M=M)
+        niter.n[0] = 0
+        x1, count_1 = do_solve(M=M, callback=cb)
 
-        assert_(count_1 == 3)
-        assert_(count_1 < count_0/2)
-        assert_(allclose(x1, x0, rtol=1e-14))
+        assert count_1 == 3
+        assert count_1 < count_0/2
+        assert allclose(x1, x0, rtol=1e-14)
+        assert niter.n[0] < 3
 
     def test_outer_v(self):
         # Check that the augmentation vectors behave as expected
@@ -91,18 +107,16 @@ class TestLGMRES:
     @pytest.mark.skipif(python_implementation() == 'PyPy',
                         reason="Fails on PyPy CI runs. See #9507")
     def test_arnoldi(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(123)
 
-        A = eye(2000) + rand(2000, 2000, density=5e-4)
-        b = np.random.rand(2000)
+        A = eye_array(2000) + random_array((2000, 2000), density=5e-4, rng=rng)
+        b = rng.random(2000)
 
         # The inner arnoldi should be equivalent to gmres
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]),
-                               inner_m=15, maxiter=1)
-            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]),
-                              restart=15, maxiter=1)
+            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=10, maxiter=1)
+            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=10, maxiter=1)
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
@@ -111,14 +125,14 @@ class TestLGMRES:
         assert_allclose(x0, x1)
 
     def test_cornercase(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         # Rounding error may prevent convergence with tol=0 --- ensure
         # that the return values in this case are correct, and no
         # exceptions are raised
 
         for n in [3, 5, 10, 100]:
-            A = 2*eye(n)
+            A = 2*eye_array(n)
 
             with suppress_warnings() as sup:
                 sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -132,7 +146,7 @@ class TestLGMRES:
                 if info == 0:
                     assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
-                b = np.random.rand(n)
+                b = rng.rand(n)
                 x, info = lgmres(A, b, maxiter=10)
                 assert_equal(info, 0)
                 assert_allclose(A.dot(x) - b, 0, atol=1e-14)
@@ -142,7 +156,7 @@ class TestLGMRES:
                     assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
     def test_nans(self):
-        A = eye(3, format='lil')
+        A = eye_array(3, format='lil')
         A[1, 1] = np.nan
         b = np.ones(3)
 

@@ -1034,7 +1034,7 @@ def test_siegelslopes():
     y[:4] = 1000
     assert_equal(mstats.siegelslopes(y, x), (5.0, -3.0))
 
-    # if there are no outliers, results should be comparble to linregress
+    # if there are no outliers, results should be comparable to linregress
     x = np.arange(10)
     y = -2.3 + 0.3*x + stats.norm.rvs(size=10, random_state=231)
     slope_ols, intercept_ols, _, _, _ = stats.linregress(x, y)

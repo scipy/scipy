@@ -16,6 +16,8 @@ from scipy.integrate._bvp import (modify_mesh, estimate_fun_jac,
                                   estimate_bc_jac, compute_jac_indices,
                                   construct_global_jac, solve_bvp)
 
+import pytest
+
 
 def exp_fun(x, y):
     return np.vstack((y[1], y[0]))
@@ -689,6 +691,7 @@ def test_nonlin_bc():
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
+@pytest.mark.thread_unsafe
 def test_verbose():
     # Smoke test that checks the printing does something and does not crash
     x = np.linspace(0, 1, 5)

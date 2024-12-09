@@ -27,6 +27,6 @@ def test_matdims():
     # The argument has to make sense though
     assert_raises(ValueError, matdims, np.array([1,2]), 'bizarre')
     # Check empty sparse matrices get their own shape
-    from scipy.sparse import csr_matrix, csc_matrix
-    assert_equal(matdims(csr_matrix(np.zeros((3, 3)))), (3, 3))
-    assert_equal(matdims(csc_matrix(np.zeros((2, 2)))), (2, 2))
+    from scipy.sparse import csr_array, csc_array
+    assert_equal(matdims(csr_array(np.zeros((3, 3)))), (3, 3))
+    assert_equal(matdims(csc_array(np.zeros((2, 2)))), (2, 2))

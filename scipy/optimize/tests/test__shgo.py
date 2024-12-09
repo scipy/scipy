@@ -472,7 +472,7 @@ class TestShgoSimplicialTestFunctions:
 
     @pytest.mark.fail_slow(10)
     def test_f5_3_cons_symmetry(self):
-        """Assymmetrically constrained test function"""
+        """Asymmetrically constrained test function"""
         options = {'symmetry': [0, 0, 0, 3],
                    'disp': True}
 
@@ -1007,6 +1007,7 @@ class TestShgoFailures:
 
         np.testing.assert_equal(False, res.success)
 
+    @pytest.mark.thread_unsafe
     def test_6_1_lower_known_f_min(self):
         """Test Global mode limiting local evaluations with f* too high"""
         options = {  # Specify known function value

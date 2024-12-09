@@ -2,7 +2,7 @@
 #define CKDTREE_CPP_DECL
 
 /*
- * Use numpy to provide some platform independency.
+ * Use numpy to provide some platform independence.
  * Define these functions for your platform
  * */
 #include <numpy/npy_common.h>

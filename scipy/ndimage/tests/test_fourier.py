@@ -18,6 +18,7 @@ pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
               skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
 
 
+@skip_xp_backends('jax.numpy', reason="jax-ml/jax#23827")
 class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])

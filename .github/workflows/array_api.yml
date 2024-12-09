@@ -25,9 +25,13 @@ env:
     -t scipy._lib.tests.test__util
     -t scipy.differentiate.tests.test_differentiate
     -t scipy.integrate.tests.test_tanhsinh
+    -t scipy.integrate.tests.test_cubature
+    -t scipy.optimize.tests.test_bracket
     -t scipy.optimize.tests.test_chandrupatla
+    -t scipy.optimize.tests.test_optimize
     -t scipy.stats
     -t scipy.ndimage
+    -t scipy.integrate.tests.test_quadrature
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -54,12 +58,12 @@ jobs:
           - maintenance-branch: true
 
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'  # not using a path to also cache pytorch
@@ -71,7 +75,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis array-api-strict
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis array-api-strict==2.1.0
 
     - name: Install PyTorch CPU
       run: |
@@ -91,7 +95,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v4
+      uses:  actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}

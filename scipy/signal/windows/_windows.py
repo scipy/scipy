@@ -1151,8 +1151,8 @@ def kaiser(M, beta, sym=True):
 
     The Kaiser was named for Jim Kaiser, who discovered a simple approximation
     to the DPSS window based on Bessel functions.
-    The Kaiser window is a very good approximation to the Digital Prolate
-    Spheroidal Sequence, or Slepian window, which is the transform which
+    The Kaiser window is a very good approximation to the discrete prolate
+    spheroidal sequence, or Slepian window, which is the transform which
     maximizes the energy in the main lobe of the window relative to total
     energy.
 
