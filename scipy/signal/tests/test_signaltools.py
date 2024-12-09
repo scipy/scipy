@@ -36,7 +36,12 @@ from scipy._lib._array_api import (
 )
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+xfail_xp_backends = pytest.mark.xfail_xp_backends
+pytestmark = [
+    array_api_compatible,
+    pytest.mark.usefixtures("skip_xp_backends"),
+    pytest.mark.usefixtures("xfail_xp_backends"),
+]
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -198,10 +203,8 @@ class TestConvolve:
         assert_raises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
+    @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     def test_convolve_method(self, xp, n=100):
-        if xp != np:
-            pytest.skip(reason="TODO: convert this test")
-
         # this types data structure was manually encoded instead of
         # using custom filters on the soon-to-be-removed np.sctypes
         types = {'uint16', 'uint64', 'int64', 'int32',
@@ -860,6 +863,7 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=axes)
         xp_assert_close(out, expected, rtol=1e-10)
 
+    @xfail_xp_backends(np_only=True, reason="TODO: swapaxes")
     @pytest.mark.parametrize('axes', [[1, 4],
                                       [4, 1],
                                       [1, -1],
@@ -869,9 +873,6 @@ class TestFFTConvolve:
                                       [-4, -1],
                                       [-1, -4]])
     def test_random_data_multidim_axes(self, axes, xp):
-        if xp != np:
-            pytest.xfail("FIXME: swapaxis")
-
         a_shape, b_shape = (123, 22), (132, 11)
         np.random.seed(1234)
         a = xp.asarray(np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape))
@@ -4166,7 +4167,7 @@ class TestDetrend:
             bp = xp.asarray(bp)
         else:
             if not is_numpy(xp):
-                pytest.xfail("list bp is numpy-only")
+                pytest.skip("list bp is numpy-only")
 
         res = detrend(x, bp=bp)
         res_scipy_191 = xp.asarray([-4.44089210e-16, -2.22044605e-16,
