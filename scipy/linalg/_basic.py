@@ -2063,7 +2063,7 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
 
     >>> n = 1000000
     >>> matmul_toeplitz([1] + [0]*(n-1), np.ones(n))
-    array([1., 1., 1., ..., 1., 1., 1.])
+    array([1., 1., 1., ..., 1., 1., 1.], shape=(1000000,))
 
     """
 
