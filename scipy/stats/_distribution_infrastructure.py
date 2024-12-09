@@ -1234,9 +1234,11 @@ def _log_real_standardize(x):
     return y.reshape(shape)[()]
 
 
-def _combine_docs(dist_family):
+def _combine_docs(dist_family, *, include_examples=True):
     fields = set(NumpyDocString.sections)
     fields.remove('index')
+    if not include_examples:
+        fields.remove('Examples')
 
     doc = ClassDoc(dist_family)
     superdoc = ClassDoc(ContinuousDistribution)
@@ -3604,6 +3606,10 @@ def make_distribution(dist):
         if not _overrides('_munp'):
             CustomDistribution._moment_raw_formula = _moment_raw_formula_1
             CustomDistribution._moment_central_formula = _moment_central_formula
+
+    class_docs = _combine_docs(CustomDistribution, include_examples=False)
+    CustomDistribution.__doc__ = ("The PDF of this distribution "
+                                  f"is defined {class_docs.lstrip()}")
 
     return CustomDistribution
 
