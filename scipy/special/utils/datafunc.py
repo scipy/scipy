@@ -36,8 +36,9 @@ def run_test(filename, funcs, args=[0]):  # noqa: B006
 
     data = parse_txt_data(filename)
     if data.shape[1] != len(funcs) + nargs:
-        raise ValueError("data has %d items / row, but len(funcs) = %d and "
-                         "nargs = %d" % (data.shape[1], len(funcs), nargs))
+        raise ValueError(f"data has {data.shape[1]} items / row, but len(funcs) = {len(funcs)} "
+                        f"and nargs = {nargs}")
+
 
     if nargs > 1:
         f = funcs[0]

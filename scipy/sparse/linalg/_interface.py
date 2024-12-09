@@ -399,8 +399,7 @@ class LinearOperator:
             X = np.asanyarray(X)
 
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, not %d-d'
-                             % X.ndim)
+            raise ValueError(f"expected 2-d ndarray or matrix, not {X.ndim}-d")
 
         if X.shape[0] != self.shape[0]:
             raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
@@ -548,7 +547,8 @@ class LinearOperator:
         else:
             dt = 'dtype=' + str(self.dtype)
 
-        return '<%dx%d %s with %s>' % (M, N, self.__class__.__name__, dt)
+        return f"<{M}x{N} {self.__class__.__name__} with {dt}>"
+
 
     def adjoint(self):
         """Hermitian adjoint.

@@ -549,12 +549,13 @@ class MMFile:
     # -------------------------------------------------------------------------
     @staticmethod
     def _field_template(field, precision):
-        return {MMFile.FIELD_REAL: '%%.%ie\n' % precision,
-                MMFile.FIELD_INTEGER: '%i\n',
-                MMFile.FIELD_UNSIGNED: '%u\n',
-                MMFile.FIELD_COMPLEX: '%%.%ie %%.%ie\n' %
-                    (precision, precision)
-                }.get(field, None)
+        return {
+                MMFile.FIELD_REAL: f"%.{precision}e\n",
+                MMFile.FIELD_INTEGER: f"{int()}\n",
+                MMFile.FIELD_UNSIGNED: f"{int()}u\n",
+                MMFile.FIELD_COMPLEX: f"%.{precision}e %.{precision}e\n"
+            }.get(field, None)
+
 
     # -------------------------------------------------------------------------
     def __init__(self, **kwargs):
@@ -865,7 +866,7 @@ class MMFile:
         # write dense format
         if rep == self.FORMAT_ARRAY:
             # write shape spec
-            data = '%i %i\n' % (rows, cols)
+            data = f"{rows} {cols}\n"
             stream.write(data.encode('latin1'))
 
             if field in (self.FIELD_INTEGER, self.FIELD_REAL,
@@ -922,23 +923,23 @@ class MMFile:
                                 shape=coo.shape)
 
             # write shape spec
-            data = '%i %i %i\n' % (rows, cols, coo.nnz)
+            data = f"{rows} {cols} {coo.nnz}\n"
             stream.write(data.encode('latin1'))
 
             template = self._field_template(field, precision-1)
 
             if field == self.FIELD_PATTERN:
                 for r, c in zip(coo.row+1, coo.col+1):
-                    data = "%i %i\n" % (r, c)
+                    data = f"{r} {c}\n"
                     stream.write(data.encode('latin1'))
             elif field in (self.FIELD_INTEGER, self.FIELD_REAL,
                            self.FIELD_UNSIGNED):
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
-                    data = ("%i %i " % (r, c)) + (template % d)
+                    data = f"{r} {c} " + (template % d)
                     stream.write(data.encode('latin1'))
             elif field == self.FIELD_COMPLEX:
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
-                    data = ("%i %i " % (r, c)) + (template % (d.real, d.imag))
+                    data = f"{r} {c} " + (template % (d.real, d.imag))
                     stream.write(data.encode('latin1'))
             else:
                 raise TypeError(f'Unknown field type {field}')

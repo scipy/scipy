@@ -31,9 +31,9 @@ def test_basic_table_parse():
 
 
 def test_basic_lookup():
-    assert_equal('%d %s' % (_cd.value('speed of light in vacuum'),
-                            _cd.unit('speed of light in vacuum')),
+    assert_equal(f'{_cd.value("speed of light in vacuum")} {_cd.unit("speed of light in vacuum")}',
                  '299792458 m s^-1')
+
 
 
 def test_find_all():
