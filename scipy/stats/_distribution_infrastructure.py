@@ -4726,7 +4726,8 @@ class FoldedDistribution(TransformedDistribution):
         a, b = self._dist._support(**params)
         xl = np.maximum(-x, a)
         xr = np.minimum(x, b)
-        return self._dist._logccdf2_dispatch(xl, xr, *args, method=method, **params).real
+        return self._dist._logccdf2_dispatch(xl, xr, *args, method=method, 
+                                             **params).real
 
     def _ccdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
