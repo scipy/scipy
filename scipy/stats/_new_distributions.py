@@ -331,28 +331,7 @@ class _Gamma(ContinuousDistribution):
 
 # Distribution classes need only define the summary and beginning of the extended
 # summary portion of the class documentation. All other documentation, including
-# examples, is generated automatically. This may be time-consuming for distributions
-# with slow methods, so we generate the documentation offline and store it as a static
-# `_new_distributions_docs.json` file. After making updates to the documentation of
-# a class, execute this file as a script to re-generate `_new_distribution_docs.json`.
-# Improvements to this system are welcome.
-_docfile = "_new_distribution_docs.json"
-_docdir = os.path.dirname(__file__)
-_docpath = os.path.abspath(os.path.join(_docdir, _docfile))
+# examples, is generated automatically.
 _module = sys.modules[__name__].__dict__
-
-if __name__ == "__main__":
-    # When executed as a script, generate the complete docstring for each distribution
-    # class (`_combine_docs`), store them in a dictionary, and write to a file.
-    docs = {}
-    for dist_name in __all__:
-        docs[dist_name] = _combine_docs(_module[dist_name])
-    with open(_docpath, 'w') as f:
-        json.dump(docs, f, indent="    ")
-
-# When imported, load the dictionary from the file, and assign to each distribution
-# class's `__doc__` attribute the corresponding docstring.
-with open(_docpath) as f:
-    docs = json.load(f)
-    for dist_name in __all__:
-        _module[dist_name].__doc__ = docs[dist_name]
+for dist_name in __all__:
+    _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
