@@ -184,7 +184,7 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR))
     return -2; /* Invalid boundary flag */
 
-  char **indices = malloc(Nwin[1] * sizeof(indices[0]));
+  char **indices = (char **)malloc(Nwin[1] * sizeof(indices[0]));
   if (indices == NULL) return -3; /* No memory */
 
   /* Speed this up by not doing any if statements in the for loop.  Need 3*3*2=18 different
