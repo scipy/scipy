@@ -1192,7 +1192,7 @@ class Lint:
     def run(cls, fix):
         run_doit_task({
             'lint': {'fix': fix},
-            'check-unicode': {},
+            'check_unicode': {},
             'check-testname': {},
             'check_python_h_first': {},
         })
