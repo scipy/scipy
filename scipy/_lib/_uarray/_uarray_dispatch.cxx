@@ -15,13 +15,43 @@
 
 namespace {
 
+template <typename T>
+class immortal {
+    alignas(T) std::byte storage[sizeof(T)];
+
+public:
+    template <typename... Args>
+    immortal(Args&&... args) {
+       // Construct new T in storage
+       new(&storage) T(std::forward<Args>(args)...);
+    }
+    ~immortal() {
+        // Intentionally don't call destructor
+    }
+
+    // T* get() const { return reinterpret_cast<T*>(&storage); }
+    const T* get() const { return reinterpret_cast<const T*>(&storage); }
+    const T* get_const() const { return reinterpret_cast<const T*>(&storage); }
+
+
+    const T* operator ->() const { return get(); }
+    // T* operator ->() const { return get(); }
+
+    friend bool operator==(const immortal<T> & lhs, const immortal<T> & rhs) {
+      return lhs.get() == rhs.get();
+    }
+
+};
+
 /** Handle to a python object that automatically DECREFs */
 class py_ref {
-  explicit py_ref(PyObject * object): obj_(object) {}
+  // explicit py_ref(PyObject * object): obj_(object) {}
 
 public:
   py_ref() noexcept: obj_(nullptr) {}
+  py_ref(PyObject * object): obj_(object) {}
   py_ref(std::nullptr_t) noexcept: py_ref() {}
+  py_ref(immortal<py_ref> other): obj_(other->get()) { Py_XINCREF(obj_); }
 
   py_ref(const py_ref & other) noexcept: obj_(other.obj_) { Py_XINCREF(obj_); }
   py_ref(py_ref && other) noexcept: obj_(other.obj_) { other.obj_ = nullptr; }
@@ -114,9 +144,26 @@ struct backend_options {
   }
 };
 
+struct global_backend_options {
+  immortal<py_ref> backend;
+  bool coerce = false;
+  bool only = false;
+
+  bool operator==(const global_backend_options & other) const {
+    return (
+        *backend.get_const() == *other.backend.get_const() &&
+        coerce == other.coerce &&
+        only == other.only);
+  }
+
+  bool operator!=(const global_backend_options & other) const {
+    return !(*this == other);
+  }
+};
+
 struct global_backends {
-  backend_options global;
-  std::vector<py_ref> registered;
+  global_backend_options global;
+  std::vector<immortal<py_ref>> registered;
   bool try_global_backend_last = false;
 };
 
@@ -140,30 +187,30 @@ Using these with PyObject_GetAttr is faster than PyObject_GetAttrString which
 has to create a new python string internally.
  */
 struct {
-  py_ref ua_convert;
-  py_ref ua_domain;
-  py_ref ua_function;
+  immortal<py_ref> ua_convert;
+  immortal<py_ref> ua_domain;
+  immortal<py_ref> ua_function;
 
   bool init() {
-    ua_convert = py_ref::steal(PyUnicode_InternFromString("__ua_convert__"));
-    if (!ua_convert)
+    ua_convert = immortal<py_ref>(PyUnicode_InternFromString("__ua_convert__"));
+    if (!ua_convert->get())
       return false;
 
-    ua_domain = py_ref::steal(PyUnicode_InternFromString("__ua_domain__"));
-    if (!ua_domain)
+    ua_domain = immortal<py_ref>(PyUnicode_InternFromString("__ua_domain__"));
+    if (!ua_domain->get())
       return false;
 
-    ua_function = py_ref::steal(PyUnicode_InternFromString("__ua_function__"));
-    if (!ua_function)
+    ua_function = immortal<py_ref>(PyUnicode_InternFromString("__ua_function__"));
+    if (!ua_function->get())
       return false;
 
     return true;
   }
 
   void clear() {
-    ua_convert.reset();
-    ua_domain.reset();
-    ua_function.reset();
+    const_cast<py_ref*>(ua_convert.get_const())->reset();
+    const_cast<py_ref*>(ua_domain.get_const())->reset();
+    const_cast<py_ref*>(ua_function.get_const())->reset();
   }
 } identifiers;
 
@@ -202,7 +249,7 @@ std::string domain_to_string(PyObject * domain) {
 
 Py_ssize_t backend_get_num_domains(PyObject * backend) {
   auto domain =
-      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain.get()));
+      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain->get()));
   if (!domain)
     return -1;
 
@@ -225,7 +272,7 @@ enum class LoopReturn { Continue, Break, Error };
 template <typename Func>
 LoopReturn backend_for_each_domain(PyObject * backend, Func f) {
   auto domain =
-      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain.get()));
+      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain->get()));
   if (!domain)
     return LoopReturn::Error;
 
@@ -410,7 +457,28 @@ struct BackendState {
     return output;
   }
 
+  static global_backend_options convert_global_backend_options(PyObject * input) {
+    global_backend_options output;
+    int coerce, only;
+    PyObject * py_backend;
+    if (!PyArg_ParseTuple(input, "Opp", &py_backend, &coerce, &only))
+      throw std::invalid_argument("");
+
+    if (py_backend != Py_None) {
+      Py_XINCREF(py_backend);
+      output.backend = immortal<py_ref>(py_backend);
+    }
+    output.coerce = coerce;
+    output.only = only;
+
+    return output;
+  }
+
   static py_ref convert_backend(PyObject * input) { return py_ref::ref(input); }
+  static immortal<py_ref> convert_global_backend(PyObject * input) {
+    Py_XINCREF(input);
+    return immortal<py_ref>(input);
+  }
 
   static local_backends convert_local_backends(PyObject * input) {
     PyObject *py_skipped, *py_preferred;
@@ -434,9 +502,9 @@ struct BackendState {
       throw std::invalid_argument("");
 
     global_backends output;
-    output.global = BackendState::convert_backend_options(py_global);
+    output.global = BackendState::convert_global_backend_options(py_global);
     output.registered =
-        convert_iter<py_ref>(py_registered, BackendState::convert_backend);
+        convert_iter<immortal<py_ref>>(py_registered, BackendState::convert_global_backend);
     output.try_global_backend_last = try_global_backend_last;
 
     return output;
@@ -454,6 +522,8 @@ struct BackendState {
         BackendState::convert_local_backends);
   }
 
+  static py_ref convert_py(immortal<py_ref> input) { return *(input.get_const()); }
+
   static py_ref convert_py(py_ref input) { return input; }
 
   static py_ref convert_py(bool input) { return py_bool(input); }
@@ -464,6 +534,17 @@ struct BackendState {
     }
     py_ref output = py_make_tuple(
         input.backend, py_bool(input.coerce), py_bool(input.only));
+    if (!output)
+      throw std::runtime_error("");
+    return output;
+  }
+
+  static py_ref convert_py(global_backend_options input) {
+    if (!input.backend.get_const()) {
+      input.backend = immortal<py_ref>(Py_None);
+    }
+    py_ref output = py_make_tuple(
+        *(input.backend.get_const()), py_bool(input.coerce), py_bool(input.only));
     if (!output)
       throw std::runtime_error("");
     return output;
@@ -552,10 +633,10 @@ void globals_free(void * /* self */) {
 int globals_traverse(PyObject * self, visitproc visit, void * arg) {
   for (const auto & kv : global_domain_map) {
     const auto & globals = kv.second;
-    PyObject * backend = globals.global.backend.get();
+    PyObject * backend = globals.global.backend.get_const()->get();
     Py_VISIT(backend);
     for (const auto & reg : globals.registered) {
-      backend = reg.get();
+      backend = reg.get_const()->get();
       Py_VISIT(backend);
     }
   }
@@ -579,8 +660,9 @@ PyObject * set_global_backend(PyObject * /* self */, PyObject * args) {
 
   const auto res =
       backend_for_each_domain_string(backend, [&](const std::string & domain) {
-        backend_options options;
-        options.backend = py_ref::ref(backend);
+        global_backend_options options;
+        Py_XINCREF(backend);
+        options.backend = immortal<py_ref>(backend);
         options.coerce = coerce;
         options.only = only;
 
@@ -607,8 +689,9 @@ PyObject * register_backend(PyObject * /* self */, PyObject * args) {
 
   const auto ret =
       backend_for_each_domain_string(backend, [&](const std::string & domain) {
+        Py_XINCREF(backend);
         (*current_global_state)[domain].registered.push_back(
-            py_ref::ref(backend));
+            immortal<py_ref>(backend));
         return LoopReturn::Continue;
       });
   if (ret == LoopReturn::Error)
@@ -632,7 +715,8 @@ void clear_single(const std::string & domain, bool registered, bool global) {
   }
 
   if (global) {
-    domain_globals->second.global.backend.reset();
+    py_ref* backend = const_cast<py_ref*>(domain_globals->second.global.backend.get_const());
+    backend->reset();
     domain_globals->second.try_global_backend_last = false;
   }
 }
@@ -980,16 +1064,16 @@ LoopReturn for_each_backend_in_domain(
   auto & globals = get_global_backends(domain_key);
   auto try_global_backend = [&] {
     auto & options = globals.global;
-    if (!options.backend)
+    if (!options.backend.get())
       return LoopReturn::Continue;
 
-    int skip_current = should_skip(options.backend.get());
+    int skip_current = should_skip(options.backend->get());
     if (skip_current < 0)
       return LoopReturn::Error;
     if (skip_current > 0)
       return LoopReturn::Continue;
 
-    return call(options.backend.get(), options.coerce);
+    return call(options.backend->get(), options.coerce);
   };
 
   if (!globals.try_global_backend_last) {
@@ -1002,14 +1086,14 @@ LoopReturn for_each_backend_in_domain(
   }
 
   for (size_t i = 0; i < globals.registered.size(); ++i) {
-    py_ref backend = globals.registered[i];
-    int skip_current = should_skip(backend.get());
+    auto backend = globals.registered[i];
+    int skip_current = should_skip(backend->get());
     if (skip_current < 0)
       return LoopReturn::Error;
     if (skip_current)
       continue;
 
-    ret = call(backend.get(), false);
+    ret = call(backend->get(), false);
     if (ret != LoopReturn::Continue)
       return ret;
   }
@@ -1170,7 +1254,7 @@ py_ref Function::canonicalize_kwargs(PyObject * kwargs) {
 
 py_func_args Function::replace_dispatchables(
     PyObject * backend, PyObject * args, PyObject * kwargs, PyObject * coerce) {
-  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert.get());
+  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert->get());
   if (!has_ua_convert) {
     return {py_ref::ref(args), py_ref::ref(kwargs)};
   }
@@ -1182,7 +1266,7 @@ py_func_args Function::replace_dispatchables(
 
   PyObject * convert_args[] = {backend, dispatchables.get(), coerce};
   auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
-      identifiers.ua_convert.get(), convert_args,
+      identifiers.ua_convert->get(), convert_args,
       array_size(convert_args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
   if (!res) {
     return {};
@@ -1287,7 +1371,7 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
             backend, reinterpret_cast<PyObject *>(this), new_args.args.get(),
             new_args.kwargs.get()};
         result = py_ref::steal(Q_PyObject_VectorcallMethod(
-            identifiers.ua_function.get(), args,
+            identifiers.ua_function->get(), args,
             array_size(args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
 
         // raise BackendNotImplemeted is equivalent to return NotImplemented
@@ -1554,7 +1638,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
   auto result = for_each_backend_in_domain(
       domain, [&](PyObject * backend, bool coerce_backend) {
         auto has_ua_convert =
-            PyObject_HasAttr(backend, identifiers.ua_convert.get());
+            PyObject_HasAttr(backend, identifiers.ua_convert->get());
 
         if (!has_ua_convert) {
           // If no __ua_convert__, assume it won't accept the type
@@ -1566,7 +1650,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
             (coerce && coerce_backend) ? Py_True : Py_False};
 
         auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
-            identifiers.ua_convert.get(), convert_args,
+            identifiers.ua_convert->get(), convert_args,
             array_size(convert_args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET,
             nullptr));
         if (!res) {
