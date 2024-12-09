@@ -1035,8 +1035,7 @@ class TestMakeDistribution:
         skip_skewness = {'exponpow', 'ksone'}  # tolerance issue
         skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance issue
                          'johnsonsb', 'ksone', 'kstwo'}  # tolerance issue
-        skip_logccdf = {'jf_skew_t', # check this out later
-                        'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue

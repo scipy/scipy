@@ -5717,6 +5717,10 @@ class jf_skew_t_gen(rv_continuous):
         y = (1 + x / np.sqrt(a + b + x ** 2)) * 0.5
         return sc.betainc(a, b, y)
 
+    def _sf(self, x, a, b):
+        y = (1 + x / np.sqrt(a + b + x ** 2)) * 0.5
+        return sc.betaincc(a, b, y)
+
     def _ppf(self, q, a, b):
         d1 = beta.ppf(q, a, b)
         d2 = (2 * d1 - 1) * np.sqrt(a + b)
