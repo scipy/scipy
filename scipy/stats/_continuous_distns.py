@@ -10778,7 +10778,7 @@ class truncpareto_gen(rv_continuous):
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
-truncpareto._support = (0.0, 'c')
+truncpareto._support = (1.0, 'c')
 
 
 class tukeylambda_gen(rv_continuous):

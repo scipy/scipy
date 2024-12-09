@@ -1030,7 +1030,7 @@ class TestMakeDistribution:
             'vonmises',  # circular distribution; shouldn't work
         }:
             return
-        # if distname != 'genpareto':
+        # if distname != 'truncpareto':
         #     pytest.skip()
 
         # skip single test, mostly due to slight disagreement
@@ -1059,6 +1059,7 @@ class TestMakeDistribution:
 
         with np.errstate(divide='ignore', invalid='ignore'):
             m, v, s, k = Y.stats('mvsk')
+            assert_allclose(X.support(), Y.support())
             if distname not in skip_entropy:
                 assert_allclose(X.entropy(), Y.entropy(), rtol=rtol)
             assert_allclose(X.median(), Y.median(), rtol=rtol)
