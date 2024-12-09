@@ -557,6 +557,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     # utility functions
     def _binopt(self, other, op, in_shape=None, out_shape=None):
         """Apply the binary operation fn to two sparse matrices."""
+        # if broadcasting is involved use CSR code
+        if self.shape != other.shape:
+            return self.tocsr()._binopt(other, op)
 
         # Ideally we'd take the GCDs of the blocksize dimensions
         # and explode self and other to match.

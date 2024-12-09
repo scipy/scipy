@@ -218,8 +218,7 @@ class _minmax_mixin:
         if isinstance(axis, tuple):
             if len(axis) == 1:
                 axis = axis[0]
-
-            if self.ndim == len(axis):
+            elif self.ndim == len(axis):
                 axis = [ax if ax >= 0 else ax + self.ndim for ax in axis]
                 if len(axis) != len(set(axis)):
                     raise ValueError("duplicate value in 'axis'")

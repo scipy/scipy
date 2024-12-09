@@ -1360,9 +1360,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self = self.reshape(self._shape_as_2d).tocsr()
             other = other.reshape(other._shape_as_2d).tocsr()
 
-            bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self._broadcast_to(bshape)
-            other = other._broadcast_to(bshape)
+            bshape2d = np.broadcast_shapes(self.shape, other.shape)
+            self = self._broadcast_to(bshape2d)
+            other = other._broadcast_to(bshape2d)
         else:
             other = self.__class__(other)
 
@@ -1393,8 +1393,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            indptr, indices, data)
 
         A = self.__class__((data, indices, indptr), shape=self.shape)
-        if different_shapes and both_are_1d:
-            A = A.reshape(result_shape_if_1d).tocsr()
+        if different_shapes:
+            if both_are_1d:
+                A = A.reshape(result_shape_if_1d).tocsr()
+            else:
+                A = A.tocsr().reshape(bshape)
         A.prune()
 
         return A

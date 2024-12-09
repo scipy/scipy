@@ -1046,9 +1046,9 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         assert_raises(ValueError, datsp.sum, axis=3)
-        #assert_raises(TypeError, datsp.sum, axis=(0, 1))
         assert_raises(TypeError, datsp.sum, axis=1.5)
         assert_raises(ValueError, datsp.sum, axis=1, out=out)
+        assert_equal(datsp.sum(axis=(0, 1)), dat.sum(axis=(0, 1)))
 
     def test_sum_dtype(self):
         dat = array([[0, 1, 2],
@@ -1143,9 +1143,9 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         assert_raises(ValueError, datsp.mean, axis=3)
-        #assert_raises(TypeError, datsp.mean, axis=(0, 1))
         assert_raises(TypeError, datsp.mean, axis=1.5)
         assert_raises(ValueError, datsp.mean, axis=1, out=out)
+        assert_equal(datsp.mean(axis=(0, 1)), dat.mean(axis=(0, 1)))
 
     def test_mean_dtype(self):
         dat = array([[0, 1, 2],
@@ -2139,10 +2139,10 @@ class _TestCommon:
         assert_array_equal(fsp.dot(esp).toarray(), np.dot(f, e))
 
         # bad matrix products
-        # assert_raises(ValueError, dsp.dot, e)
-        # assert_raises(ValueError, asp.dot, d)
+        assert_raises(ValueError, dsp.dot, e)
+        assert_raises(ValueError, asp.dot, d)
 
-        # elemente-wise multiplication
+        # element-wise multiplication
         assert_array_equal(asp.multiply(asp).toarray(), np.multiply(a, a))
         assert_array_equal(bsp.multiply(bsp).toarray(), np.multiply(b, b))
         assert_array_equal(dsp.multiply(dsp).toarray(), np.multiply(d, d))
@@ -2156,8 +2156,8 @@ class _TestCommon:
         assert_array_equal(dsp.multiply(6).toarray(), np.multiply(d, 6))
 
         # bad element-wise multiplication
-        # assert_raises(ValueError, asp.multiply, c)
-        # assert_raises(ValueError, esp.multiply, c)
+        assert_raises(ValueError, asp.multiply, c)
+        assert_raises(ValueError, esp.multiply, c)
 
         # Addition
         assert_array_equal(asp.__add__(asp).toarray(), a.__add__(a))
@@ -2165,8 +2165,13 @@ class _TestCommon:
         assert_array_equal(dsp.__add__(dsp).toarray(), d.__add__(d))
 
         # bad addition
-        # assert_raises(ValueError, asp.__add__, dsp)
-        # assert_raises(ValueError, bsp.__add__, asp)
+        if asp.format == "dok":
+            # TODO support DOK handling of broadcasting in __add__
+            assert_raises(ValueError, asp.__add__, dsp)
+            assert_raises(ValueError, bsp.__add__, asp)
+        else:
+            assert_array_equal(asp.__add__(dsp).toarray(), a.__add__(d))
+            assert_array_equal(bsp.__add__(asp).toarray(), b.__add__(a))
 
     def test_size_zero_conversions(self):
         mat = array([])
@@ -3822,11 +3827,12 @@ class _TestMinMax:
         datsp = self.spcreator(dat)
 
         for fname in ('min', 'max'):
+            datfunc = getattr(dat, fname)
             func = getattr(datsp, fname)
             assert_raises(ValueError, func, axis=3)
-            # assert_raises(TypeError, func, axis=(0, 1))
             assert_raises(TypeError, func, axis=1.5)
             assert_raises(ValueError, func, axis=1, out=1)
+            assert_equal(func(axis=(0, 1)), datfunc(axis=(0, 1)))
 
     def test_numpy_minmax(self):
         # See gh-5987

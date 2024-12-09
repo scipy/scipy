@@ -144,8 +144,11 @@ class _dia_base(_data_matrix):
     def sum(self, axis=None, dtype=None, out=None):
         validateaxis(axis)
 
-        if axis is not None and axis < 0:
-            axis += 2
+        if axis is not None:
+            if isinstance(axis, tuple):
+                axis = tuple(ax if ax >= 0 else ax + 2 for ax in axis)
+            elif axis < 0:
+                axis += 2
 
         res_dtype = get_sum_dtype(self.dtype)
         num_rows, num_cols = self.shape
@@ -185,6 +188,10 @@ class _dia_base(_data_matrix):
         # If other is not DIA format, let them handle us instead.
         if not isinstance(other, _dia_base):
             return other._add_sparse(self)
+
+        # if broadcasting is involved use CSR code
+        if self.shape != other.shape:
+            return self.tocsr()._add_sparse(other)
 
         # Fast path for exact equality of the sparsity structure.
         if np.array_equal(self.offsets, other.offsets):
