@@ -215,10 +215,11 @@ class _minmax_mixin:
 
         validateaxis(axis)
 
-        if type(axis) is tuple and len(axis) == 1:
-            axis = axis[0]
+        if isinstance(axis, tuple):
+            if len(axis) == 1:
+                axis = axis[0]
 
-        if type(axis) is tuple and self.ndim == len(axis):
+            if self.ndim == len(axis):
                 axis = [ax if ax >= 0 else ax + self.ndim for ax in axis]
                 if len(axis) != len(set(axis)):
                     raise ValueError("duplicate value in 'axis'")

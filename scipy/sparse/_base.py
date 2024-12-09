@@ -1141,7 +1141,7 @@ class _spbase:
         # Mimic numpy's casting.
         res_dtype = get_sum_dtype(self.dtype)
 
-        if type(axis) is tuple and len(axis) == 1:
+        if isinstance(axis, tuple) and len(axis) == 1:
             axis = axis[0]
 
         if self.ndim == 1:
@@ -1160,7 +1160,7 @@ class _spbase:
         # possible -- these should override this function.
 
         # if axis is tuple of all dimensions then same as axis=None
-        if type(axis) is tuple and len(axis) == self.ndim:
+        if isinstance(axis, tuple) and len(axis) == self.ndim:
             # adjust axes
             axis = [ax if ax >= 0 else ax + self.ndim for ax in axis]
             # check for duplicates
@@ -1264,7 +1264,7 @@ class _spbase:
         inter_dtype = np.float64 if integral else res_dtype
         inter_self = self.astype(inter_dtype)
 
-        if type(axis) is tuple and len(axis) == 1:
+        if isinstance(axis, tuple) and len(axis) == 1:
             axis = axis[0]
 
         # if 1-d, axis should be 0, -1, or None
@@ -1275,7 +1275,7 @@ class _spbase:
             return res.sum(dtype=res_dtype, out=out)
 
         # if axis is tuple of all dimensions then same as axis=None
-        if type(axis) is tuple:
+        if isinstance(axis, tuple):
             # adjust axes
             axis = [ax if ax >= 0 else ax + self.ndim for ax in axis]
             if len(axis) == self.ndim:
