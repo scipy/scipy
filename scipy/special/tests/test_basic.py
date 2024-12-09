@@ -3221,7 +3221,7 @@ class TestHyper:
         ]
         for i, (a, b, c, x, v) in enumerate(values):
             cv = special.hyp2f1(a, b, c, x)
-            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
+            assert_almost_equal(cv, v, 8, err_msg=f'test #{i}')
 
     def test_hyperu(self):
         val1 = special.hyperu(1,0.1,100)
@@ -3287,7 +3287,8 @@ class TestBessel:
                   ]
         for i, (v, x, y) in enumerate(values):
             yc = special.jv(v, x)
-            assert_almost_equal(yc, y, 8, err_msg='test #%d' % i)
+            assert_almost_equal(yc, y, 8, err_msg=f'test #{i}')
+
 
     def test_negv_jve(self):
         assert_almost_equal(special.jve(-3,2), -special.jve(3,2), 14)
@@ -3359,7 +3360,7 @@ class TestBessel:
                 elif tt == 1:
                     assert_allclose(jnp(nn, zz), 0, atol=1e-6)
                 else:
-                    raise AssertionError("Invalid t return for nt=%d" % nt)
+                    raise AssertionError(f"Invalid t return for nt={nt}")
 
     def test_jnp_zeros(self):
         jnp = special.jnp_zeros(1,5)
@@ -3779,7 +3780,7 @@ class TestBessel:
                   ]
         for i, (x, v) in enumerate(values):
             cv = special.i0(x) * exp(-x)
-            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
+            assert_almost_equal(cv, v, 8, err_msg=f'test #{i}')
 
     def test_i0e(self):
         oize = special.i0e(.1)
@@ -3797,7 +3798,7 @@ class TestBessel:
                   ]
         for i, (x, v) in enumerate(values):
             cv = special.i1(x) * exp(-x)
-            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
+            assert_almost_equal(cv, v, 8, err_msg=f'test #{i}')
 
     def test_i1e(self):
         oi1e = special.i1e(.1)

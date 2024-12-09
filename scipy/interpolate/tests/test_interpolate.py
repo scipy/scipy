@@ -1355,7 +1355,8 @@ class TestPPoly:
         xi = np.linspace(0, 1, 200)
         for dx in range(0, 10):
             xp_assert_close(pp(xi, dx), pp.derivative(dx)(xi),
-                            err_msg="dx=%d" % (dx,))
+                            err_msg=f"dx={dx}")
+
 
     def test_antiderivative_of_constant(self):
         # https://github.com/scipy/scipy/issues/4216
@@ -1419,7 +1420,8 @@ class TestPPoly:
                 endpoint = r*pp2.x[:-1] + (1 - r)*pp2.x[1:]
 
                 xp_assert_close(pp2(pp2.x[1:]), pp2(endpoint),
-                                rtol=1e-7, err_msg="dx=%d k=%d" % (dx, k))
+                                rtol=1e-7, err_msg=f"dx={dx} k={k}")
+
 
     def test_antiderivative_vs_spline(self):
         rng = np.random.RandomState(1234)
