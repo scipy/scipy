@@ -3709,11 +3709,6 @@ class TransformedDistribution(ContinuousDistribution):
     def _process_parameters(self, **params):
         return self._dist._process_parameters(**params)
 
-    def __repr__(self):
-        s = super().__repr__()
-        return s.replace("Distribution",
-                         self._dist.__class__.__name__)
-
 
 class TruncatedDistribution(TransformedDistribution):
     """Truncated distribution."""
@@ -3789,6 +3784,9 @@ class TruncatedDistribution(TransformedDistribution):
         cFb = self._dist._ccdf_dispatch(_b, *args, **params)
         p_adjusted = cFb + p*np.exp(logmass)
         return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
+
+    def __repr__(self):
+        return f"truncate({repr(self._dist)}, lb={self.lb}, ub={self.ub})"
 
 
 def truncate(X, lb=-np.inf, ub=np.inf):
@@ -3889,6 +3887,14 @@ class ShiftedScaledDistribution(TransformedDistribution):
         a, b = self._dist._support(**params)
         a, b = self._itransform(a, loc, scale), self._itransform(b, loc, scale)
         return np.where(sign, a, b)[()], np.where(sign, b, a)[()]
+
+    def __repr__(self):
+        result =  f"{self.scale}*{repr(self._dist)}"
+        if self.loc > 0:
+            result += f" + {self.loc}"
+        elif self.loc < 0:
+            result += f" - {-self.loc}"
+        return result
 
     # Here, we override all the `_dispatch` methods rather than the public
     # methods or _function methods. Why not the public methods?
@@ -4151,6 +4157,9 @@ class OrderStatisticDistribution(TransformedDistribution):
     def _iccdf_formula(self, p, r, n, **kwargs):
         p_ = special.betainccinv(r, n-r+1, p)
         return self._dist._icdf_dispatch(p_, **kwargs)
+
+    def __repr__(self):
+        return f"order_statistic({repr(self._dist)}, r={self.r}, n={self.n})"
 
 
 def order_statistic(X, /, *, r, n):
@@ -4525,6 +4534,16 @@ class Mixture(_ProbabilityDistribution):
         x = [var.sample(shape=n, rng=rng) for n, var in zip(ns, self._components)]
         x = np.reshape(rng.permuted(np.concatenate(x)), shape)
         return x[()]
+
+    def __repr__(self):
+        result = "Mixture(\n"
+        result += "    [\n"
+        for component in self.components:
+            result += f"        {repr(component)},\n"
+        result += "    ],\n"
+        result += f"    weights={repr(self.weights)},\n"
+        result += ")"
+        return result
 
 
 class MonotonicTransformedDistribution(TransformedDistribution):
