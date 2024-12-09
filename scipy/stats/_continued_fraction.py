@@ -181,6 +181,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     In this case, all the terms have been precomputed, so we call `_continued_fraction`
     with simple callables which simply return the precomputed coefficients:
 
+    >>> from scipy.special._continued_fraction import _continued_fraction
     >>> res = _continued_fraction(a=lambda n: 1, b=lambda n: b[n], maxiter=len(b) - 1)
     >>> (res.f - np.pi) / np.pi
     np.float64(7.067899292141148e-15)
@@ -204,7 +205,6 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
 
     Then the continued fraction can be evaluated as:
 
-    >>> from scipy.special._continued_fraction import _continued_fraction
     >>> res = _continued_fraction(a, b)
     >>> res
          success: False
@@ -272,7 +272,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     # and the first argument is an integer (the number of the term). Rather
     # than complicate the framework, we wrap the user-provided callables to
     # make this problem fit within the existing framework.
-    xp = array_namespace(*args) if args else np
+    xp = array_namespace(*args) if args else array_namespace(a(0))
 
     def a(n, *args, a=a):
         n = int(xp.real(xp_ravel(n))[0])
@@ -298,7 +298,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     temp = eim._initialize(b, (zero,), args, complex_ok=True)
     _, _, fs_b, _, shape_b, dtype_b, xp_b = temp
 
-    xp = xp_a  # raise Error if xp_a != xp_b
+    xp = array_namespace(fs_a[0], fs_b[0], *args)
 
     shape = xp.broadcast_shapes(shape_a, shape_b)
     dtype = xp.result_type(dtype_a, dtype_b)

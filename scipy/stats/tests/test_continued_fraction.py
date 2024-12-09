@@ -11,11 +11,8 @@ from scipy.stats._continued_fraction import _continued_fraction
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends(
-    'array_api_strict', 'jax.numpy',
-    reasons=['Currently uses fancy indexing assignment.',
-             'JAX arrays do not support item assignment.'],
-)
+@pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing assignment')
+@pytest.mark.skip_xp_backends('jax.numpy', reason="Don't support mutation")
 class TestContinuedFraction:
     rng = np.random.default_rng(5895448232066142650)
     p = rng.uniform(1, 10, size=10)
@@ -109,12 +106,7 @@ class TestContinuedFraction:
         ref = xp.tan(x)
         xp_assert_close(res.f, ref)
 
-    @pytest.mark.skip_xp_backends(
-        'array_api_strict', 'jax.numpy', 'torch',
-        reasons=['Currently uses fancy indexing assignment.',
-                 'JAX arrays do not support item assignment.',
-                 'pytorch/pytorch#136063'],
-    )
+    @pytest.mark.skip_xp_backends('torch', reasons=['pytorch/pytorch#136063'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
     def test_log(self, shape, dtype, xp):
@@ -170,11 +162,7 @@ class TestContinuedFraction:
         xp_assert_equal(res.status, xp.asarray([0, -2, -3], dtype=xp.int32))
 
     def test_special_cases(self, xp):
-        # need to fix this for other backends, then np->xp
-        one = np.asarray(1)
+        one = xp.asarray(1)
         res = _continued_fraction(lambda x: one, lambda x: one, maxiter=0)
-        xp_assert_close(res.f, np.asarray(1.))
+        xp_assert_close(res.f, xp.asarray(1.))
         assert res.nit == res.nfev - 1 == 0
-
-        # improve this, maybe
-        # res = _continued_fraction(self.a1, self.b1, args=([],))
