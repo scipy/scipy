@@ -1122,6 +1122,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Reshape the COO array to match the new dimensions
         self = self.reshape(shape)
 
+        idx_dtype = get_index_dtype(self.coords, maxval=max(new_shape))
         coords = self.coords
         new_data = self.data
         new_coords = coords[-1:]  # Copy last coordinate to start
@@ -1131,7 +1132,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             repeat_count = new_shape[-1]
             cum_repeat *= repeat_count
             new_data = np.tile(new_data, repeat_count)
-            new_dim = np.repeat(np.arange(0, repeat_count), self.nnz)
+            new_dim = np.repeat(np.arange(0, repeat_count, dtype=idx_dtype), self.nnz)
             new_coords = (new_dim,)
 
         for i in range(-2, -(len(shape)+1), -1):
@@ -1145,7 +1146,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 new_coords = tuple(np.tile(new_coords[i+1:], repeat_count))
 
                 # Create new dimensions and stack them
-                new_dim = np.repeat(np.arange(0, repeat_count), nnz)
+                new_dim = np.repeat(np.arange(0, repeat_count, dtype=idx_dtype), nnz)
                 new_coords = (new_dim,) + new_coords
             else:
                 # If no broadcasting needed, tile the coordinates
