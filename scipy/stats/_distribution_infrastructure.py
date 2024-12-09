@@ -3528,6 +3528,7 @@ _distribution_names = {
     'rdist': 'R',
     'rel_breitwigner': 'RelativisticBreitWigner',
     'recipinvgauss': 'ReciprocalInverseGaussian',
+    'reciprocal': 'LogUniform',
     'semicircular': 'SemiCircular',
     'skewcauchy': 'SkewCauchy',
     'skewnorm': 'SkewNormal',
@@ -3628,8 +3629,11 @@ def make_distribution(dist):
             s = super().__repr__()
             return s.replace('CustomDistribution', repr_str)
 
-    def _support(self, **kwargs):
-        a, b = dist._get_support(**kwargs)
+    # override the domain's `get_numerical_endpoints` rather than the
+    # distribution's `_support` to ensure that `_support` takes care
+    # of any required broadcasting, etc.
+    def get_numerical_endpoints(parameter_values):
+        a, b = dist._get_support(**parameter_values)
         return np.asarray(a)[()], np.asarray(b)[()]
 
     def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
@@ -3690,7 +3694,7 @@ def make_distribution(dist):
                 is not getattr(stats.rv_continuous, method_name, None))
 
     if _overrides('_get_support'):
-        CustomDistribution._support = _support
+        CustomDistribution._variable.domain.get_numerical_endpoints = get_numerical_endpoints
 
     if _overrides('_munp'):
         CustomDistribution._moment_raw_formula = _moment_raw_formula
@@ -3708,7 +3712,7 @@ def make_distribution(dist):
     docs = [
         f"This class represents `scipy.stats.{dist.name}` as a subclass of "
         "`ContinuousDistribution`.",
-        f"The `repr`/`str` of instances class instances is `{repr_str}`.",
+        f"The `repr`/`str` of class instances is `{repr_str}`.",
         f"The PDF of the distribution is defined {support_etc}"
     ]
     CustomDistribution.__doc__ = ("\n".join(docs))
