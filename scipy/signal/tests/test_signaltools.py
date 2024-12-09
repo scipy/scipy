@@ -2358,6 +2358,40 @@ class TestFiltFilt:
         y2dt = self.filtfilt(zpk, x2d.T, padlen=n, axis=0)
         assert_equal(y2d, y2dt.T)
 
+    def test_sine_complex(self):
+        rate = 2000
+        t = np.linspace(0, 1.0, rate + 1)
+        # A signal with low frequency and a high frequency.
+        xlow = np.exp(1.j * 5 * 2 * np.pi * t)
+        xhigh = np.exp(1.j * 250 * 2 * np.pi * t)
+        x = xlow + xhigh
+
+        zpk = butter(8, 0.125, output='zpk')
+        # r is the magnitude of the largest pole.
+        r = np.abs(zpk[1]).max()
+        eps = 1e-5
+        # n estimates the number of steps for the
+        # transient to decay by a factor of eps.
+        n = int(np.ceil(np.log(eps) / np.log(r)))
+
+        # High order lowpass filter...
+        y = self.filtfilt(zpk, x, padtype='even', padlen=n)
+        # Result should be just xlow.
+        err = np.abs(y - xlow).max()
+        assert_(err < 1e-4)
+
+        # A 2D case.
+        x2d = np.vstack([xlow, xlow + xhigh])
+        y2d = self.filtfilt(zpk, x2d, padtype='even', padlen=n, axis=1)
+        assert_equal(y2d.shape, x2d.shape)
+        err = np.abs(y2d - xlow).max()
+        assert_(err < 1e-4)
+
+        # Use the previous result to check the use of the axis keyword.
+        # (Regression test for ticket #1620)
+        y2dt = self.filtfilt(zpk, x2d.T, padtype='even', padlen=n, axis=0)
+        assert_equal(y2d, y2dt.T)
+
     def test_axis(self):
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
