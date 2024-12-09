@@ -3535,8 +3535,8 @@ def make_distribution(dist):
     def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
         return dist._rvs(size=full_shape, random_state=rng, **kwargs)
 
-    def _moment_raw_formula(self, n, **kwargs):
-        return dist._munp(int(n), **kwargs)
+    def _moment_raw_formula(self, order, **kwargs):
+        return dist._munp(int(order), **kwargs)
 
     def _moment_raw_formula_1(self, order, **kwargs):
         if order != 1:

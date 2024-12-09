@@ -1027,14 +1027,15 @@ class TestMakeDistribution:
         if distname in {  # skip these distributions
             'genpareto', 'genextreme', 'genhalflogistic',  # complicated support
             'kstwo', 'kappa4', 'tukeylambda',  # complicated support
-            'levy_stable',  # levy_stable does things differently...
+            'levy_stable',  # private methods seem to require >= 1d args
             'ksone',  # tolerance issues
             'norminvgauss',  # private methods seem to have broadcasting issues
             'vonmises',  # circular distribution; shouldn't work
-            'irwinhall',  # requires dtype of shape parameter to be integer
             'studentized_range',  # too slow
         }:
             return
+        # if distname != 'irwinhall':
+        #     pytest.skip()
 
         # skip single test, mostly due to slight disagreement
         skip_entropy = {'kstwobign', 'pearson3'}  # tolerance issue
