@@ -1057,11 +1057,11 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         def check(dtype):
-            dat_mean = dat.mean(dtype=dtype)
-            datsp_mean = datsp.mean(dtype=dtype)
+            dat_sum = dat.mean(dtype=dtype)
+            datsp_sum = datsp.mean(dtype=dtype)
 
-            assert_array_almost_equal(dat_mean, datsp_mean)
-            assert_equal(dat_mean.dtype, datsp_mean.dtype)
+            assert_array_almost_equal(dat_sum, datsp_sum)
+            assert_equal(dat_sum.dtype, datsp_sum.dtype)
 
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -1094,11 +1094,11 @@ class _TestCommon:
                      [-6, 7, 9]])
         datsp = self.spcreator(dat)
 
-        dat_mean = np.sum(dat)
-        datsp_mean = np.sum(datsp)
+        dat_sum = np.sum(dat)
+        datsp_sum = np.sum(datsp)
 
-        assert_array_almost_equal(dat_mean, datsp_mean)
-        assert_equal(dat_mean.dtype, datsp_mean.dtype)
+        assert_array_almost_equal(dat_sum, datsp_sum)
+        assert_equal(dat_sum.dtype, datsp_sum.dtype)
 
     def test_mean(self):
         keep = not self.is_array_test
@@ -1135,7 +1135,7 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             check(dtype)
 
-    def test_mean_invalid_params(self):
+    def test_mean_axis_param(self):
         out = self.asdense(np.zeros((1, 3)))
         dat = array([[0, 1, 2],
                      [3, -4, 5],
@@ -4288,6 +4288,7 @@ class TestCSR(sparse_test_class()):
         assert (a + b).nnz == 2
         assert a.multiply(b).nnz == 1
 
+
 TestCSR.init_class()
 
 
@@ -5587,42 +5588,28 @@ class Test64BitMatrix(RunAll64Bit):
     def test_no_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, assert_32bit=True)
 
-    def test_downcast_intp(self):
-        # Check that bincount and ufunc.reduceat intp downcasts are
-        # dealt with. The point here is to trigger points in the code
-        # that can fail on 32-bit systems when using 64-bit indices,
-        # due to use of functions that only work with intp-size
-        # indices.
+    # inheritance of pytest test classes does not separate marks for subclasses.
+    # So we define these functions in both Array and Matrix versions.
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
+    def test_resiliency_limit_10(self, cls, method_name):
+        self._check_resiliency(cls, method_name, maxval_limit=10)
 
-        @with_64bit_maxval_limit(fixed_dtype=np.int64,
-                                 downcast_maxval=1)
-        def check_limited():
-            # These involve indices larger than `downcast_maxval`
-            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
-            assert_raises(AssertionError, a.getnnz, axis=1)
-            assert_raises(AssertionError, a.sum, axis=0)
+    @pytest.mark.fail_slow(2)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
+    def test_resiliency_random(self, cls, method_name):
+        # bsr_array.eliminate_zeros relies on csr_array constructor
+        # not making copies of index arrays --- this is not
+        # necessarily true when we pick the index data type randomly
+        self._check_resiliency(cls, method_name, random=True)
 
-            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
-            assert_raises(AssertionError, a.getnnz, axis=0)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
+    def test_resiliency_all_32(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
 
-            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
-            assert_raises(AssertionError, a.getnnz, axis=0)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
+    def test_resiliency_all_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
-        @with_64bit_maxval_limit(fixed_dtype=np.int64)
-        def check_unlimited():
-            # These involve indices larger than `downcast_maxval`
-            a = csc_matrix([[1, 2], [3, 4], [5, 6]])
-            a.getnnz(axis=1)
-            a.sum(axis=0)
-
-            a = csr_matrix([[1, 2, 3], [3, 4, 6]])
-            a.getnnz(axis=0)
-
-            a = coo_matrix([[1, 2, 3], [3, 4, 5]])
-            a.getnnz(axis=0)
-
-        check_limited()
-        check_unlimited()
 
 def test_broadcast_to():
     a = np.array([[1, 0, 2]])
@@ -5631,13 +5618,13 @@ def test_broadcast_to():
     d = np.array([[7]])
     e = np.array([[0]])
     f = np.array([[0,0,0,0]])
-    for csc_container in (csc_matrix, csc_array, csr_matrix, csr_array):
-        res_a = csc_container(a)._broadcast_to((2,3))
-        res_b = csc_container(b)._broadcast_to((3,4))
-        res_c = csc_container(c)._broadcast_to((2,3))
-        res_d = csc_container(d)._broadcast_to((4,4))
-        res_e = csc_container(e)._broadcast_to((5,6))
-        res_f = csc_container(f)._broadcast_to((2,4))
+    for container in (csc_matrix, csc_array, csr_matrix, csr_array):
+        res_a = container(a)._broadcast_to((2,3))
+        res_b = container(b)._broadcast_to((3,4))
+        res_c = container(c)._broadcast_to((2,3))
+        res_d = container(d)._broadcast_to((4,4))
+        res_e = container(e)._broadcast_to((5,6))
+        res_f = container(f)._broadcast_to((2,4))
         assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
         assert_array_equal(res_b.toarray(), np.broadcast_to(b, (3,4)))
         assert_array_equal(res_c.toarray(), c)
@@ -5646,7 +5633,7 @@ def test_broadcast_to():
         assert_array_equal(res_f.toarray(), np.broadcast_to(f, (2,4)))
 
         with pytest.raises(ValueError, match="cannot be broadcast"):
-            csc_container([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
+            container([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
 
         with pytest.raises(ValueError, match="cannot be broadcast"):
-            csc_container([[0, 1, 2]])._broadcast_to(shape=(3, 2))
+            container([[0, 1, 2]])._broadcast_to(shape=(3, 2))

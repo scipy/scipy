@@ -284,7 +284,7 @@ void coo_matmat_dense_nd(const npy_int64 nnz,
                          const npy_int64 n_col_B,
                          const I shape_B[],
                          const I shape_Y[],
-                         const I A_coords[], // flattened coordinates of shape (n_dim * nnz)
+                         const I A_coords[],
                          const T Ax[],
                          const T Bx[],
                          T Yx[])
