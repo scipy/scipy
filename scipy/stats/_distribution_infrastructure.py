@@ -3572,7 +3572,12 @@ def make_distribution(dist):
                '_entropy': '_entropy_formula',
                '_median': '_median_formula'}
 
+    # These are not desirable overrides for the new infrastructure
+    skip_override = {'norminvgauss': {'_sf', '_isf'}}
+
     for old_method, new_method in methods.items():
+        if dist.name in skip_override and old_method in skip_override[dist.name]:
+            continue
         # If method of old distribution overrides generic implementation...
         method = getattr(dist.__class__, old_method, None)
         super_method = getattr(stats.rv_continuous, old_method, None)
