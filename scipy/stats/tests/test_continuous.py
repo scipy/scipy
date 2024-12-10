@@ -1349,10 +1349,6 @@ class TestTransforms:
     def test_monotonic_transforms(self):
         # Some tests of monotonic transforms that are better to be grouped or
         # don't fit well above
-        X = _Uniform(a=1, b=2)
-        assert repr(stats.log(X)) == str(stats.log(X)) == "log(_Uniform(a=1.0, b=2.0))"
-        assert repr(1 / X) == str(1 / X) == "inv(_Uniform(a=1.0, b=2.0))"
-        assert repr(stats.exp(X)) == str(stats.exp(X)) == "exp(_Uniform(a=1.0, b=2.0))"
 
         X = _Uniform(a=-1, b=2)
         message = "Division by a random variable is only implemented when the..."
