@@ -67,4 +67,61 @@ static void convolveND(Generic_Array *, Generic_Array *, Generic_Array *, MultAd
 static void RawFilter(Generic_Vector, Generic_Vector, Generic_Array, Generic_Array, Generic_Array *, Generic_Array *, BasicFilterFunction *, int);
 */
 
+
+template<int TYPECODE> struct traits {};
+
+// integer types
+template<> struct traits<NPY_UBYTE> {
+    typedef npy_ubyte real_type;
+};
+template<> struct traits<NPY_BYTE> {
+    typedef npy_byte real_type;
+};
+template<> struct traits<NPY_USHORT> {
+    typedef npy_ushort real_type;
+};
+template<> struct traits<NPY_SHORT> {
+    typedef short real_type;
+};
+template<> struct traits<NPY_UINT> {
+    typedef npy_uint real_type;
+};
+template<> struct traits<NPY_INT> {
+    typedef int real_type;
+};
+template<> struct traits<NPY_ULONG> {
+    typedef npy_ulong real_type;
+};
+template<> struct traits<NPY_LONG> {
+    typedef npy_long real_type;
+};
+template<> struct traits<NPY_ULONGLONG> {
+    typedef npy_ulonglong real_type;
+};
+template<> struct traits<NPY_LONGLONG> {
+    typedef npy_longlong real_type;
+};
+
+// real types
+template<> struct traits<NPY_FLOAT> {
+    typedef float real_type;
+};
+template<> struct traits<NPY_DOUBLE> {
+    typedef double real_type;
+};
+template<> struct traits<NPY_LONGDOUBLE> {
+    typedef npy_longdouble real_type;
+};
+
+// complex
+template<> struct traits<NPY_CFLOAT> {
+    typedef float real_type;
+};
+template<> struct traits<NPY_CDOUBLE> {
+    typedef double real_type;
+};
+template<> struct traits<NPY_CLONGDOUBLE> {
+    typedef npy_longdouble real_type;
+};
+
 #endif

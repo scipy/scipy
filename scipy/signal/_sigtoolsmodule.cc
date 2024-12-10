@@ -9,7 +9,7 @@ is granted under the SciPy License.
 #include "numpy/ndarrayobject.h"
 #include "npy_2_compat.h"
 
-#include "_sigtools.h"
+#include "_sigtools.hh"
 #include <stdlib.h>
 
 #define PYERR(message) {PyErr_SetString(PyExc_ValueError, message); goto fail;}
@@ -508,7 +508,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
      work  (dimsize+1)*6
 
   */
-  tempstor = malloc((total_dsize)*sizeof(double)+(total_isize)*sizeof(int));
+  tempstor = (double *)malloc((total_dsize)*sizeof(double)+(total_isize)*sizeof(int));
   if (tempstor == NULL) return -2;
 
   des = tempstor; grid = des + wrksize+1;
@@ -736,34 +736,34 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
         if (afill == NULL) goto fail;
     }
 
-    aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
+    aout_dimens = (npy_intp *)malloc(PyArray_NDIM(ain1)*sizeof(npy_intp));
     if (aout_dimens == NULL) goto fail;
     switch(mode & OUTSIZE_MASK) {
     case VALID:
-	for (i = 0; i < PyArray_NDIM(ain1); i++) {
-	    aout_dimens[i] = PyArray_DIMS(ain1)[i] - PyArray_DIMS(ain2)[i] + 1;
-	    if (aout_dimens[i] < 0) {
-		PyErr_SetString(PyExc_ValueError,
+    for (i = 0; i < PyArray_NDIM(ain1); i++) {
+        aout_dimens[i] = PyArray_DIMS(ain1)[i] - PyArray_DIMS(ain2)[i] + 1;
+        if (aout_dimens[i] < 0) {
+        PyErr_SetString(PyExc_ValueError,
                     "no part of the output is valid, use option 1 (same) or 2 "
                     "(full) for third argument");
-		goto fail;
-	    }
-	}
-	break;
+        goto fail;
+        }
+    }
+    break;
     case SAME:
-	for (i = 0; i < PyArray_NDIM(ain1); i++) {
+    for (i = 0; i < PyArray_NDIM(ain1); i++) {
             aout_dimens[i] = PyArray_DIMS(ain1)[i];
         }
-	break;
+    break;
     case FULL:
-	for (i = 0; i < PyArray_NDIM(ain1); i++) {
+    for (i = 0; i < PyArray_NDIM(ain1); i++) {
             aout_dimens[i] = PyArray_DIMS(ain1)[i] + PyArray_DIMS(ain2)[i] - 1;
         }
-	break;
+    break;
     default:
-	PyErr_SetString(PyExc_ValueError,
-			"mode must be 0 (valid), 1 (same), or 2 (full)");
-	goto fail;
+    PyErr_SetString(PyExc_ValueError,
+            "mode must be 0 (valid), 1 (same), or 2 (full)");
+    goto fail;
     }
 
     aout = (PyArrayObject *)PyArray_SimpleNew(PyArray_NDIM(ain1), aout_dimens,
@@ -773,16 +773,16 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
     flag = mode + boundary + (typenum << TYPE_SHIFT) + \
       (flip != 0) * FLIP_MASK;
 
-    ret = pylab_convolve_2d (PyArray_DATA(ain1),      /* Input data Ns[0] x Ns[1] */
-		             PyArray_STRIDES(ain1),   /* Input strides */
-		             PyArray_DATA(aout),      /* Output data */
-		             PyArray_STRIDES(aout),   /* Output strides */
-		             PyArray_DATA(ain2),      /* coefficients in filter */
-		             PyArray_STRIDES(ain2),   /* coefficients strides */
-		             PyArray_DIMS(ain2),      /* Size of kernel Nwin[2] */
-			     PyArray_DIMS(ain1),      /* Size of image Ns[0] x Ns[1] */
-		             flag,                    /* convolution parameters */
-		             PyArray_DATA(afill));    /* fill value */
+    ret = pylab_convolve_2d((char *)PyArray_DATA(ain1),      /* Input data Ns[0] x Ns[1] */
+                     PyArray_STRIDES(ain1),   /* Input strides */
+                     (char *)PyArray_DATA(aout),      /* Output data */
+                     PyArray_STRIDES(aout),   /* Output strides */
+                     (char *)PyArray_DATA(ain2),      /* coefficients in filter */
+                     (npy_intp *)PyArray_STRIDES(ain2),   /* coefficients strides */
+                     PyArray_DIMS(ain2),      /* Size of kernel Nwin[2] */
+                     PyArray_DIMS(ain1),      /* Size of image Ns[0] x Ns[1] */
+                     flag,                    /* convolution parameters */
+                     (char *)PyArray_DATA(afill));    /* fill value */
 
 
     switch (ret) {
