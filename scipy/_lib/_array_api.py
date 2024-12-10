@@ -166,7 +166,7 @@ def xp_asarray(
         # If object is array-like (but not array), make it an ndarray; otherwise, no-op.
         array = np.asanyarray(array)
 
-    if is_numpy(xp_in) and not array.__class__.__name__.endswith('ndarray') and subok:
+    if is_numpy(xp_in) and type(array) is not np.ndarray and subok:
         # If it's a (strict) subclass of ndarray and we must preserve the subclass...
         if not is_numpy(xp):
             message = f"Array library {xp} cannot respect `subok=True`."
@@ -181,7 +181,10 @@ def xp_asarray(
         # Now apply all the options
         array = np_compat.asarray(array, order=order, dtype=dtype, copy=copy)
     else:
-        array = xp.from_dlpack(array, copy=None if copy is True else copy)
+        if is_torch(xp):  # data-apis/array-api-compat#204
+            array = xp.from_dlpack(array)
+        else:
+            array = xp.from_dlpack(array, copy=None if copy is True else copy)
         array = xp.asarray(array, dtype=dtype, copy=copy)
 
     if check_finite:
