@@ -1501,7 +1501,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         # IDEs can suggest parameter names. If there are multiple parameterizations,
         # we'll need the default values of parameters to be None; this will
         # filter out the parameters that were not actually specified by the user.
-        parameters = {key: val for key, val in parameters.items() if val is not None}
+        parameters = {key: val for key, val in
+                      sorted(parameters.items()) if val is not None}
         self._update_parameters(**parameters)
 
     def _update_parameters(self, *, validation_policy=None, **params):
@@ -1701,9 +1702,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _get_parameter_str(self, parameters):
         # Get a string representation of the parameters like "{a, b, c}".
-        parameter_names_list = list(parameters.keys())
-        parameter_names_list.sort()
-        return f"{{{', '.join(parameter_names_list)}}}"
+        return f"{{{', '.join(parameters.keys())}}}"
 
     def _copy_parameterization(self):
         self._parameterizations = self._parameterizations.copy()
@@ -1794,7 +1793,6 @@ class ContinuousDistribution(_ProbabilityDistribution):
         parameters = list(self._original_parameters.items())
         info = []
         if parameters:
-            parameters.sort()
             if self._size <= 3:
                 str_parameters = [f"{symbol}={value}" for symbol, value in parameters]
                 str_parameters = f"{', '.join(str_parameters)}"
@@ -3836,11 +3834,6 @@ class TransformedDistribution(ContinuousDistribution):
     def _process_parameters(self, **params):
         return self._dist._process_parameters(**params)
 
-    def __repr__(self):
-        s = super().__repr__()
-        return s.replace("Distribution",
-                         self._dist.__class__.__name__)
-
 
 class TruncatedDistribution(TransformedDistribution):
     """Truncated distribution."""
@@ -3916,6 +3909,9 @@ class TruncatedDistribution(TransformedDistribution):
         cFb = self._dist._ccdf_dispatch(_b, *args, **params)
         p_adjusted = cFb + p*np.exp(logmass)
         return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
+
+    def __repr__(self):
+        return f"truncate({repr(self._dist)}, lb={self.lb}, ub={self.ub})"
 
 
 def truncate(X, lb=-np.inf, ub=np.inf):
@@ -4016,6 +4012,14 @@ class ShiftedScaledDistribution(TransformedDistribution):
         a, b = self._dist._support(**params)
         a, b = self._itransform(a, loc, scale), self._itransform(b, loc, scale)
         return np.where(sign, a, b)[()], np.where(sign, b, a)[()]
+
+    def __repr__(self):
+        result =  f"{self.scale}*{repr(self._dist)}"
+        if self.loc > 0:
+            result += f" + {self.loc}"
+        elif self.loc < 0:
+            result += f" - {-self.loc}"
+        return result
 
     # Here, we override all the `_dispatch` methods rather than the public
     # methods or _function methods. Why not the public methods?
@@ -4278,6 +4282,9 @@ class OrderStatisticDistribution(TransformedDistribution):
     def _iccdf_formula(self, p, r, n, **kwargs):
         p_ = special.betainccinv(r, n-r+1, p)
         return self._dist._icdf_dispatch(p_, **kwargs)
+
+    def __repr__(self):
+        return f"order_statistic({repr(self._dist)}, r={self.r}, n={self.n})"
 
 
 def order_statistic(X, /, *, r, n):
@@ -4652,6 +4659,16 @@ class Mixture(_ProbabilityDistribution):
         x = [var.sample(shape=n, rng=rng) for n, var in zip(ns, self._components)]
         x = np.reshape(rng.permuted(np.concatenate(x)), shape)
         return x[()]
+
+    def __repr__(self):
+        result = "Mixture(\n"
+        result += "    [\n"
+        for component in self.components:
+            result += f"        {repr(component)},\n"
+        result += "    ],\n"
+        result += f"    weights={repr(self.weights)},\n"
+        result += ")"
+        return result
 
 
 class MonotonicTransformedDistribution(TransformedDistribution):
