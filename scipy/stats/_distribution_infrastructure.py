@@ -1821,12 +1821,10 @@ class ContinuousDistribution(_ProbabilityDistribution):
                        "implemented when the argument is a positive integer.")
             raise NotImplementedError(message)
 
-        if other % 2 == 0:
-            X = abs(self)
-            repr_pattern = f"...**{other}"
-        else:
-            X = self
-            repr_pattern = f"(...)**{other}"
+        # Fill in repr_pattern with the repr of self before taking abs.
+        # Avoids having unnecessary abs in the repr.
+        repr_pattern = f"({repr(self)})**{other}"
+        X = abs(self) if other % 2 == 0 else self
 
         # This notation for g_name is nonstandard
         funcs = dict(g=lambda u: u**other, repr_pattern=repr_pattern,
@@ -1847,7 +1845,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def __rtruediv__(self, other):
         a, b = self.support()
-        funcs = dict(g=lambda u: 1 / u, repr_pattern=f"{other}/{(repr(self))}",
+        funcs = dict(g=lambda u: 1 / u, repr_pattern=f"{other}/({repr(self)})",
                      h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
         if np.all(a >= 0) or np.all(b <= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
@@ -1864,7 +1862,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         funcs = dict(g=lambda u: other**u,
                      h=lambda u: np.log(u) / np.log(other),
                      dh=lambda u: 1 / np.abs(u * np.log(other)),
-                     repr_pattern=f"{other}**(repr(self))")
+                     repr_pattern=f"{other}**({repr(self)})")
 
         if not np.isscalar(other) or other <= 0 or other == 1:
             message = ("Raising an argument to the power of a random variable is only "
@@ -4746,7 +4744,7 @@ class FoldedDistribution(TransformedDistribution):
         return np.abs(rvs)
 
     def __repr__(self):
-        return f"|{repr(self._dist)}|"
+        return f"abs({repr(self._dist)})"
 
 
 def abs(X, /):
