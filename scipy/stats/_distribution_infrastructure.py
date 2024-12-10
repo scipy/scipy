@@ -3548,6 +3548,7 @@ _distribution_names = {
 }
 
 
+# beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 def make_distribution(dist):
     """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
 
@@ -3559,8 +3560,10 @@ def make_distribution(dist):
 
     .. note::
 
-        `make_distribution` does not work with all instances of `rv_continuous`.
-        Known failures include `levy_stable` and `vonmises`.
+        `make_distribution` does not work perfectly with all instances of
+        `rv_continuous`. Known failures include `levy_stable` and `vonmises`,
+        and some methods of some distributions will not support array shape
+        parameters.
 
     Parameters
     ----------
@@ -3602,7 +3605,7 @@ def make_distribution(dist):
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
     if not isinstance(dist, stats.rv_continuous):
-        message = f"The argument must be an instance of `rv_continuous`."
+        message = "The argument must be an instance of `rv_continuous`."
         raise ValueError(message)
 
     parameters = []
@@ -3694,7 +3697,8 @@ def make_distribution(dist):
                 is not getattr(stats.rv_continuous, method_name, None))
 
     if _overrides('_get_support'):
-        CustomDistribution._variable.domain.get_numerical_endpoints = get_numerical_endpoints
+        domain = CustomDistribution._variable.domain
+        domain.get_numerical_endpoints = get_numerical_endpoints
 
     if _overrides('_munp'):
         CustomDistribution._moment_raw_formula = _moment_raw_formula
