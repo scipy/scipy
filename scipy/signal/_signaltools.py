@@ -2422,8 +2422,8 @@ def deconvolve(signal, divisor):
     """
     xp = array_namespace(signal, divisor)
 
-    num = xpx.atleast_nd(signal, ndim=1, xp=xp)
-    den = xpx.atleast_nd(divisor, ndim=1, xp=xp)
+    num = xpx.atleast_nd(xp.asarray(signal), ndim=1, xp=xp)
+    den = xpx.atleast_nd(xp.asarray(divisor), ndim=1, xp=xp)
     if num.ndim > 1:
         raise ValueError("signal must be 1-D.")
     if den.ndim > 1:
@@ -2585,7 +2585,7 @@ def hilbert2(x, N=None):
 
     """
     xp = array_namespace(x)
-    x = xpx.atleast_nd(x, ndim=2, xp=xp)
+    x = xpx.atleast_nd(xp.asarray(x), ndim=2, xp=xp)
     if x.ndim > 2:
         raise ValueError("x must be 2-D.")
     if xp.isdtype(x.dtype, 'complex floating'):
@@ -4191,10 +4191,10 @@ def lfilter_zi(b, a):
     # We could use scipy.signal.normalize, but it uses warnings in
     # cases where a ValueError is more appropriate, and it allows
     # b to be 2D.
-    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
     if b.ndim != 1:
         raise ValueError("Numerator b must be 1-D.")
-    a = xpx.atleast_nd(a, ndim=1, xp=xp)
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
     if a.ndim != 1:
         raise ValueError("Denominator a must be 1-D.")
 

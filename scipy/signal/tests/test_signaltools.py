@@ -2609,6 +2609,12 @@ class TestCorrelate2d:
 @skip_xp_backends('cupy', reason='lfilter_zi is incompatible')
 class TestLFilterZI:
 
+    @skip_xp_backends(np_only=True, reason='list inputs are numpy specific')
+    def test_array_like(self, xp):
+        zi_expected = xp.asarray([5.0, -1.0])
+        zi = lfilter_zi([1.0, 0.0, 2.0], [1.0, -1.0, 0.5])
+        assert_array_almost_equal(zi, zi_expected)
+
     def test_basic(self, xp):
         a = xp.asarray([1.0, -1.0, 0.5])
         b = xp.asarray([1.0, 0.0, 2.0])
@@ -3229,6 +3235,10 @@ class TestHilbert:
 @skip_xp_backends("jax.numpy",
    reason="jax arrays do not support item assignment")
 class TestHilbert2:
+
+    @skip_xp_backends(np_only=True, reason='list inputs are numpy-specific')
+    def test_array_like(self, xp):
+        hilbert2([[1, 2, 3], [4, 5, 6]])
 
     def test_bad_args(self, xp):
         # x must be real.
@@ -4230,6 +4240,15 @@ class TestSOSFilt:
 
 @skip_xp_backends('jax.numpy', reason='item assignment')
 class TestDeconvolve:
+
+    @skip_xp_backends(np_only=True, reason="list inputs are numpy-specific")
+    def test_array_like(self, xp):
+        # From docstring example: with lists
+        original = [0.0, 1, 0, 0, 1, 1, 0, 0]
+        impulse_response = [2, 1]
+        recorded = xp.asarray([0.0, 2, 1, 0, 2, 3, 1, 0, 0])
+        recovered, remainder = signal.deconvolve(recorded, impulse_response)
+        xp_assert_close(recovered, original)
 
     def test_basic(self, xp):
         # From docstring example
