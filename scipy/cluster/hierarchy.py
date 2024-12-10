@@ -1361,18 +1361,18 @@ def cut_tree(Z, n_clusters=None, height=None):
     elif height is None and n_clusters is None:  # return the full cut tree
         cols_idx = xp.arange(nobs)
     elif height is not None:
-        height = xp.asarray(height)
-        heights = xp.asarray([x.dist for x in nodes])
+        height = xp_asarray(height, xp=xp)
+        heights = xp_asarray([x.dist for x in nodes], xp=xp)
         cols_idx = xp.searchsorted(heights, height)
     else:
-        n_clusters = xp.asarray(n_clusters)
+        n_clusters = xp_asarray(n_clusters, xp=xp)
         cols_idx = nobs - xp.searchsorted(xp.arange(nobs), n_clusters)
 
     try:
         n_cols = len(cols_idx)
     except TypeError:  # scalar
         n_cols = 1
-        cols_idx = xp.asarray([cols_idx])
+        cols_idx = xp_asarray([cols_idx], xp=xp)
 
     groups = xp.zeros((n_cols, nobs), dtype=xp.int64)
     last_group = xp.arange(nobs)
@@ -1702,8 +1702,9 @@ def cophenet(Z, Y=None):
     if Y is None:
         return zz
 
-    Y = _asarray(Y, order='C', xp=xp)
+    Y = xp_asarray(Y, order='C', xp=np)
     distance.is_valid_y(Y, throw=True, name='Y')
+    Y = xp_asarray(Y, xp=xp)
 
     z = xp.mean(zz)
     y = xp.mean(Y)
@@ -2673,10 +2674,11 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     T = np.zeros((n,), dtype='i')
 
     if monocrit is not None:
-        monocrit = np.asarray(monocrit, order='C', dtype=np.float64)
+        monocrit = xp_asarray(monocrit, order='C', dtype=np.float64, xp=np)
+    else:
+        monocrit = np.asarray(None)
 
-    Z = np.asarray(Z)
-    monocrit = np.asarray(monocrit)
+    Z = xp_asarray(Z, xp=np)
     if criterion == 'inconsistent':
         if R is None:
             R = inconsistent(Z, depth)
@@ -2685,7 +2687,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
             _is_valid_im(R, throw=True, name='R', materialize=True, xp=xp)
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
-            R = np.asarray(R)
+            R = xp_asarray(R, xp=np)
         _hierarchy.cluster_in(Z, R, T, float(t), int(n))
     elif criterion == 'distance':
         _hierarchy.cluster_dist(Z, T, float(t), int(n))
@@ -2697,7 +2699,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
     else:
         raise ValueError(f'Invalid cluster formation criterion: {str(criterion)}')
-    return xp.asarray(T)
+    return xp_asarray(T, xp=xp)
 
 
 @xp_capabilities(cpu_only=True, reason="Cython code",
@@ -2788,7 +2790,7 @@ def fclusterdata(X, t, criterion='inconsistent',
 
     """
     xp = array_namespace(X)
-    X = _asarray(X, order='C', dtype=xp.float64, xp=xp)
+    X = xp_asarray(X, order='C', dtype=np.float64, xp=np)
 
     if X.ndim != 2:
         raise TypeError('The observation matrix X must be an n by m array.')
