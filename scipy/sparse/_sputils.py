@@ -32,13 +32,13 @@ def upcast(*args):
     --------
     >>> from scipy.sparse._sputils import upcast
     >>> upcast('int32')
-    <type 'numpy.int32'>
+    <class 'numpy.int32'>
     >>> upcast('bool')
-    <type 'numpy.bool_'>
+    <class 'numpy.bool'>
     >>> upcast('int32','float32')
-    <type 'numpy.float64'>
+    <class 'numpy.float64'>
     >>> upcast('bool',complex,float)
-    <type 'numpy.complex128'>
+    <class 'numpy.complex128'>
 
     """
 
@@ -172,6 +172,7 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
         The array for which index arrays should be downcast.
     idx_dtype : dtype
         Desired dtype. Should be an integer dtype (default: ``np.int32``).
+        Most of scipy.sparse uses either int64 or int32.
     msg : string, optional
         A string to be added to the end of the ValueError message
         if the array shape is too big to fit in `idx_dtype`.
@@ -193,6 +194,24 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     ValueError
         If the array has shape that would not fit in the new dtype, or if
         the sparse format does not use index arrays.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy as sp
+    >>> data = [3]
+    >>> coords = (np.array([3]), np.array([1]))  # Note: int64 arrays
+    >>> A = sp.sparse.coo_array((data, coords))
+    >>> A.coords[0].dtype
+    dtype('int64')
+
+    >>> # rescast after construction, raising exception if shape too big
+    >>> coords = sp.sparse.safely_cast_index_arrays(A, np.int32)
+    >>> A.coords[0] is coords[0]  # False if casting is needed
+    False
+    >>> A.coords = coords  # set the index dtype of A
+    >>> A.coords[0].dtype
+    dtype('int32')
     """
     if not msg:
         msg = f"dtype {idx_dtype}"
@@ -262,6 +281,25 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     dtype : dtype
         Suitable index data type (int32 or int64)
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy as sp
+    >>> # select index dtype based on shape
+    >>> shape = (3, 3)
+    >>> idx_dtype = sp.sparse.get_index_dtype(maxval=max(shape))
+    >>> data = [1.1, 3.0, 1.5]
+    >>> indices = np.array([0, 1, 0], dtype=idx_dtype)
+    >>> indptr = np.array([0, 2, 3, 3], dtype=idx_dtype)
+    >>> A = sp.sparse.csr_array((data, indices, indptr), shape=shape)
+    >>> A.indptr.dtype
+    dtype('int32')
+
+    >>> # select based on larger of existing arrays and shape
+    >>> shape = (3, 3)
+    >>> idx_dtype = sp.sparse.get_index_dtype(A.indptr, maxval=max(shape))
+    >>> idx_dtype
+    <class 'numpy.int32'>
     """
     # not using intc directly due to misinteractions with pythran
     if np.intc().itemsize != 4:

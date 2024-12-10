@@ -464,7 +464,7 @@ and for ``safely_cast_index_arrays``::
 
    .. code-block:: python
 
-       # rescast after construction, raising exception before overflow
+       # rescast after construction, raising exception if shape too big
        indices, indptr = scipy.sparse.safely_cast_index_arrays(B, np.int32)
        B.indices, B.indptr = indices, indptr
 
