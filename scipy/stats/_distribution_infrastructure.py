@@ -1463,6 +1463,10 @@ class ContinuousDistribution(_ProbabilityDistribution):
     entropy
     logentropy
 
+    See Also
+    --------
+    :ref:`rv_infrastructure` : Tutorial
+
     Notes
     -----
     The following abbreviations are used throughout the documentation.
