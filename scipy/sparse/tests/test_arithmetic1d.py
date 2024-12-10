@@ -176,7 +176,7 @@ class TestArithmetic1D:
                 try:
                     dense_mult = i.toarray() * j.toarray()
                 except ValueError:
-                    with pytest.raises(ValueError, match='inconsistent shapes'):
+                    with pytest.raises(ValueError, match='cannot be broadcast'):
                         i.multiply(j)
                     continue
                 sp_mult = i.multiply(j)
@@ -190,7 +190,7 @@ class TestArithmetic1D:
                 except TypeError:
                     continue
                 except ValueError:
-                    matchme = 'broadcast together|inconsistent shapes'
+                    matchme = 'not be broadcast'
                     with pytest.raises(ValueError, match=matchme):
                         i.multiply(j)
                     continue
@@ -311,10 +311,6 @@ class TestArithmetic1D:
         f = np.ones([5, 5])
 
         asp = spcreator(a)
-        dsp = spcreator(d)
-        # bad shape for addition
-        with pytest.raises(ValueError, match='inconsistent shapes'):
-            asp.__add__(dsp)
 
         # matrix product.
         assert_equal(asp.dot(asp), np.dot(a, a))
@@ -331,8 +327,10 @@ class TestArithmetic1D:
         assert_equal(asp.multiply(6).toarray(), np.multiply(a, 6))
 
         # bad element-wise multiplication
-        with pytest.raises(ValueError, match='inconsistent shapes'):
+        with pytest.raises(ValueError, match='cannot be broadcast'):
             asp.multiply(f)
 
         # Addition
         assert_equal(asp.__add__(asp).toarray(), a.__add__(a))
+        dsp = spcreator(d)
+        assert_equal(asp + dsp, a + d)

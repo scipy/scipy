@@ -1046,9 +1046,9 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         assert_raises(ValueError, datsp.sum, axis=3)
-        assert_raises(TypeError, datsp.sum, axis=(0, 1))
         assert_raises(TypeError, datsp.sum, axis=1.5)
         assert_raises(ValueError, datsp.sum, axis=1, out=out)
+        assert_equal(datsp.sum(axis=(0, 1)), dat.sum(axis=(0, 1)))
 
     def test_sum_dtype(self):
         dat = array([[0, 1, 2],
@@ -1057,11 +1057,11 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         def check(dtype):
-            dat_mean = dat.mean(dtype=dtype)
-            datsp_mean = datsp.mean(dtype=dtype)
+            dat_sum = dat.mean(dtype=dtype)
+            datsp_sum = datsp.mean(dtype=dtype)
 
-            assert_array_almost_equal(dat_mean, datsp_mean)
-            assert_equal(dat_mean.dtype, datsp_mean.dtype)
+            assert_array_almost_equal(dat_sum, datsp_sum)
+            assert_equal(dat_sum.dtype, datsp_sum.dtype)
 
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -1094,11 +1094,11 @@ class _TestCommon:
                      [-6, 7, 9]])
         datsp = self.spcreator(dat)
 
-        dat_mean = np.sum(dat)
-        datsp_mean = np.sum(datsp)
+        dat_sum = np.sum(dat)
+        datsp_sum = np.sum(datsp)
 
-        assert_array_almost_equal(dat_mean, datsp_mean)
-        assert_equal(dat_mean.dtype, datsp_mean.dtype)
+        assert_array_almost_equal(dat_sum, datsp_sum)
+        assert_equal(dat_sum.dtype, datsp_sum.dtype)
 
     def test_mean(self):
         keep = not self.is_array_test
@@ -1135,7 +1135,7 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             check(dtype)
 
-    def test_mean_invalid_params(self):
+    def test_mean_axis_param(self):
         out = self.asdense(np.zeros((1, 3)))
         dat = array([[0, 1, 2],
                      [3, -4, 5],
@@ -1143,9 +1143,9 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         assert_raises(ValueError, datsp.mean, axis=3)
-        assert_raises(TypeError, datsp.mean, axis=(0, 1))
         assert_raises(TypeError, datsp.mean, axis=1.5)
         assert_raises(ValueError, datsp.mean, axis=1, out=out)
+        assert_equal(datsp.mean(axis=(0, 1)), dat.mean(axis=(0, 1)))
 
     def test_mean_dtype(self):
         dat = array([[0, 1, 2],
@@ -2142,7 +2142,7 @@ class _TestCommon:
         assert_raises(ValueError, dsp.dot, e)
         assert_raises(ValueError, asp.dot, d)
 
-        # elemente-wise multiplication
+        # element-wise multiplication
         assert_array_equal(asp.multiply(asp).toarray(), np.multiply(a, a))
         assert_array_equal(bsp.multiply(bsp).toarray(), np.multiply(b, b))
         assert_array_equal(dsp.multiply(dsp).toarray(), np.multiply(d, d))
@@ -2165,8 +2165,13 @@ class _TestCommon:
         assert_array_equal(dsp.__add__(dsp).toarray(), d.__add__(d))
 
         # bad addition
-        assert_raises(ValueError, asp.__add__, dsp)
-        assert_raises(ValueError, bsp.__add__, asp)
+        if asp.format == "dok":
+            # TODO support DOK handling of broadcasting in __add__
+            assert_raises(ValueError, asp.__add__, dsp)
+            assert_raises(ValueError, bsp.__add__, asp)
+        else:
+            assert_array_equal(asp.__add__(dsp).toarray(), a.__add__(d))
+            assert_array_equal(bsp.__add__(asp).toarray(), b.__add__(a))
 
     def test_size_zero_conversions(self):
         mat = array([])
@@ -2328,7 +2333,7 @@ class _TestInplaceArithmetic:
             # Elementwise multiply from sparray.__rmul__
             x = a.copy()
             y = a.copy()
-            with assert_raises(ValueError, match="inconsistent shapes"):
+            with assert_raises(ValueError, match="cannot be broadcast"):
                 x *= b.T
             x = x * a
             y *= b
@@ -3822,11 +3827,12 @@ class _TestMinMax:
         datsp = self.spcreator(dat)
 
         for fname in ('min', 'max'):
+            datfunc = getattr(dat, fname)
             func = getattr(datsp, fname)
             assert_raises(ValueError, func, axis=3)
-            assert_raises(TypeError, func, axis=(0, 1))
             assert_raises(TypeError, func, axis=1.5)
             assert_raises(ValueError, func, axis=1, out=1)
+            assert_equal(func(axis=(0, 1)), datfunc(axis=(0, 1)))
 
     def test_numpy_minmax(self):
         # See gh-5987
@@ -5609,6 +5615,7 @@ class Test64BitMatrix(RunAll64Bit):
     @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
     def test_resiliency_all_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
+
 
 def test_broadcast_to():
     a = np.array([[1, 0, 2]])
