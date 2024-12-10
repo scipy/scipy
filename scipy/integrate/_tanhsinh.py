@@ -382,7 +382,10 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
         xr0=xr0, fr0=fr0, wr0=wr0, xl0=xl0, fl0=fl0, wl0=wl0, d4=d4,  # err est
         ainf=ainf, binf=binf, abinf=abinf, a0=xp.reshape(a0, (-1, 1)),  # transforms
-        pc_xjc=None, pc_wj=None, pc_indices=[0], pc_h0=None)  # pair cache
+        # Store the xjc/wj pair cache in an object so they can't get compressed
+        # Using RichResult to allow dot notation, but a dictionary would suffice
+        pair_cache=_RichResult(xjc=None, wj=None, indices=[0], h0=None))  # pair cache
+
 
     # Constant scalars don't need to be put in `work` unless they need to be
     # passed outside `tanhsinh`. Examples: atol, rtol, h0, minlevel.
@@ -559,36 +562,36 @@ def _pair_cache(k, h0, xp, work):
     # Abscissae and weights of consecutive levels are concatenated.
     # `index` records the indices that correspond with each level:
     # `xjc[index[k]:index[k+1]` extracts the level `k` abscissae.
-    if not isinstance(h0, type(work.pc_h0)) or h0 != work.pc_h0:
-        work.pc_xjc = xp.empty(0)
-        work.pc_wj = xp.empty(0)
-        work.pc_indices = [0]
+    if not isinstance(h0, type(work.pair_cache.h0)) or h0 != work.pair_cache.h0:
+        work.pair_cache.xjc = xp.empty(0)
+        work.pair_cache.wj = xp.empty(0)
+        work.pair_cache.indices = [0]
 
-    xjcs = [work.pc_xjc]
-    wjs = [work.pc_wj]
+    xjcs = [work.pair_cache.xjc]
+    wjs = [work.pair_cache.wj]
 
-    for i in range(len(work.pc_indices)-1, k + 1):
+    for i in range(len(work.pair_cache.indices)-1, k + 1):
         xjc, wj = _compute_pair(i, h0, xp)
         xjcs.append(xjc)
         wjs.append(wj)
-        work.pc_indices.append(work.pc_indices[-1] + xjc.shape[0])
+        work.pair_cache.indices.append(work.pair_cache.indices[-1] + xjc.shape[0])
 
-    work.pc_xjc = xp.concat(xjcs)
-    work.pc_wj = xp.concat(wjs)
-    work.pc_h0 = h0
+    work.pair_cache.xjc = xp.concat(xjcs)
+    work.pair_cache.wj = xp.concat(wjs)
+    work.pair_cache.h0 = h0
 
 
 def _get_pairs(k, h0, inclusive, dtype, xp, work):
     # Retrieve the specified abscissa-weight pairs from the cache
     # If `inclusive`, return all up to and including the specified level
-    if (len(work.pc_indices) <= k+2
-        or not isinstance (h0, type(work.pc_h0))
-        or h0 != work.pc_h0):
+    if (len(work.pair_cache.indices) <= k+2
+        or not isinstance (h0, type(work.pair_cache.h0))
+        or h0 != work.pair_cache.h0):
             _pair_cache(k, h0, xp, work)
 
-    xjc = work.pc_xjc
-    wj = work.pc_wj
-    indices = work.pc_indices
+    xjc = work.pair_cache.xjc
+    wj = work.pair_cache.wj
+    indices = work.pair_cache.indices
 
     start = 0 if inclusive else indices[k]
     end = indices[k+1]
@@ -715,7 +718,7 @@ def _estimate_error(work, xp):
         nan = xp.full_like(work.Sn, xp.nan)
         return nan, nan
 
-    indices = work.pc_indices
+    indices = work.pair_cache.indices
 
     n_active = work.Sn.shape[0]  # number of active elements
     axis_kwargs = dict(axis=-1, keepdims=True)

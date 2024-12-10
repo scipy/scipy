@@ -426,6 +426,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
                        atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                        status=status, dtype=dtype, terms=(order+1)//2,
                        hdir=hdir, il=il, ic=ic, ir=ir, io=io,
+                       # Store the weights in an object so they can't get compressed
+                       # Using RichResult to allow dot notation, but a dict would work
                        diff_state=_RichResult(central=[], right=[], fac=None))
 
     # This is the correspondence between terms in the `work` object and the
