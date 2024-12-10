@@ -1609,10 +1609,10 @@ class TestReprs:
     def test_executable(self, dist):
         # Test that reprs actually evaluate to proper distribution
         # provided relevant imports are made.
-        from numpy import array
-        from scipy.stats import abs, exp, log, order_statistic, truncate
-        from scipy.stats import Mixture, Normal
-        from scipy.stats._new_distributions import _Uniform
+        from numpy import array  # noqa: F401
+        from scipy.stats import abs, exp, log, order_statistic, truncate # noqa: F401
+        from scipy.stats import Mixture, Normal # noqa: F401
+        from scipy.stats._new_distributions import _Uniform # noqa: F401
         new_dist = eval(repr(dist))
         # A basic check that the distributions are the same
         sample1 = self._get_fingerprint(dist)
