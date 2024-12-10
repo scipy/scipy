@@ -181,6 +181,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     In this case, all the terms have been precomputed, so we call `_continued_fraction`
     with simple callables which simply return the precomputed coefficients:
 
+    >>> import numpy as np
     >>> from scipy.special._continued_fraction import _continued_fraction
     >>> res = _continued_fraction(a=lambda n: 1, b=lambda n: b[n], maxiter=len(b) - 1)
     >>> (res.f - np.pi) / np.pi
@@ -219,7 +220,6 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     between two continued fractions. We will compute both of them in one
     vectorized call to `_continued_fraction`.
 
-    >>> import numpy as np
     >>> u, v = 5, 239
     >>>
     >>> def a(n, a1, _):

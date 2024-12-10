@@ -110,6 +110,8 @@ class TestContinuedFraction:
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
     def test_log(self, shape, dtype, xp):
+        if (np.__version__ < "2") and (dtype == 'float32'):
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
         np_dtype = getattr(np, dtype)
         rng = np.random.default_rng(2435908729190400)
         x = rng.random(shape).astype(np_dtype)
