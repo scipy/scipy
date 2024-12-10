@@ -1131,7 +1131,7 @@ class _BivariateSplineBase:
                 newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, dx, dy)
             if ier != 0:
                 # This should not happen under normal conditions.
-                raise ValueError("Unexpected error code returned by pardtc: {}".format(ier))
+                raise ValueError(f"Unexpected error code returned by pardtc: {ier}")
             nx = len(tx)
             ny = len(ty)
             newtx = tx[dx:nx - dx]

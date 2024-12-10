@@ -760,8 +760,8 @@ def splder(tck, n=1):
                 t = t[1:-1]
                 k -= 1
         except FloatingPointError as e:
-            raise ValueError(("The spline has internal repeated knots "
-                              "and is not differentiable {} times").format(n)) from e
+            raise ValueError("The spline has internal repeated knots "
+                              f"and is not differentiable {n} times") from e
 
     return t, c, k
 

@@ -402,7 +402,7 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_spline
 
         if len(self.x) < minval:
-            raise ValueError("x and y arrays must have at least {} entries".format(minval))
+            raise ValueError(f"x and y arrays must have at least {minval} entries")
 
         self.fill_value = fill_value  # calls the setter, can modify bounds_err
 
@@ -1667,8 +1667,8 @@ class BPoly(_PPolyBase):
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
                 if n1+n2 != n:
-                    mesg = ("Point {} has {} derivatives, point {} has {} derivatives, but order {} requested"
-                            .format(xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                    mesg = (f"Point {xi[i]} has {len(y1)} derivatives, point {xi[i+1]} has {len(y2)} derivatives, but order {orders[i]} requested"
+                            )
                     raise ValueError(mesg)
 
                 if not (n1 <= len(y1) and n2 <= len(y2)):

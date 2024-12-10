@@ -270,7 +270,7 @@ def _check_level(label, expected, actual):
         if isinstance(expected, MatlabObject):
             assert_equal(expected.classname, actual.classname)
         for i, ev in enumerate(expected):
-            level_label = "{}, [{}], ".format(label, i)
+            level_label = f"{label}, [{i}], "
             _check_level(level_label, ev, actual[i])
         return
     if ex_dtype.fields:  # probably recarray

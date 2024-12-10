@@ -54,7 +54,7 @@ def main():
             name = NAME_MAP.get(name, name)
             if disp:
                 if name not in names:
-                    stdout_b.write((f"    - Author: {name}\n").encode('utf-8'))
+                    stdout_b.write((f"    - Author: {name}\n").encode())
             names.update((name,))
 
         # Look for "thanks to" messages in the commit log
@@ -68,7 +68,7 @@ def main():
             name = m.group(2)
             if name not in ('this',):
                 if disp:
-                    stdout_b.write((f"    - Log   : {line.strip().decode('utf-8')}\n").encode('utf-8'))
+                    stdout_b.write((f"    - Log   : {line.strip().decode('utf-8')}\n").encode())
                 name = NAME_MAP.get(name, name)
                 names.update((name,))
 
@@ -111,7 +111,7 @@ def main():
         # Print some empty lines to separate
         stdout_b.write(b"\n\n")
         for author in n_authors:
-            stdout_b.write((f"- {author}\n").encode('utf-8'))
+            stdout_b.write((f"- {author}\n").encode())
         # return for early exit so we only print new authors
         return
 
@@ -142,7 +142,7 @@ Authors
     A total of {len(authors)} people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
-    """).encode('utf-8'))
+    """).encode())
 
     stdout_b.write(b"\nNOTE: Check this list manually! It is automatically generated "
                    b"and some names\n      may be missing.\n")
