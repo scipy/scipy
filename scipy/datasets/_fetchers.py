@@ -114,7 +114,7 @@ def electrocardiogram():
     >>> from scipy.datasets import electrocardiogram
     >>> ecg = electrocardiogram()
     >>> ecg
-    array([-0.245, -0.215, -0.185, ..., -0.405, -0.395, -0.385])
+    array([-0.245, -0.215, -0.185, ..., -0.405, -0.395, -0.385], shape=(108000,))
     >>> ecg.shape, ecg.mean(), ecg.std()
     ((108000,), -0.16510875, 0.5992473991177294)
 
