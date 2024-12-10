@@ -4609,9 +4609,6 @@ class MonotonicTransformedDistribution(TransformedDistribution):
     def __repr__(self):
         return f"{self._g_name}({repr(self._dist)})"
 
-    def __str__(self):
-        return f"{self._g_name}({str(self._dist)})"
-
     def _overrides(self, method_name):
         # Do not use the generic overrides of TransformedDistribution
         return False
