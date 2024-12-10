@@ -4239,6 +4239,9 @@ class TestSOSFilt:
             sosfilt(sos, x)
 
 
+@skip_xp_backends(
+    cpu_only=True, reason="call a CPU-only C-extension", exceptions=["cupy"]
+)
 @skip_xp_backends('jax.numpy', reason='item assignment')
 class TestDeconvolve:
 
