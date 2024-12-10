@@ -1821,10 +1821,15 @@ class ContinuousDistribution(_ProbabilityDistribution):
                        "implemented when the argument is a positive integer.")
             raise NotImplementedError(message)
 
-        X = abs(self) if (other % 2 == 0) else self
+        if other % 2 == 0:
+            X = abs(self)
+            repr_pattern = f"...**{other}"
+        else:
+            X = self
+            repr_pattern = f"(...)**{other}"
 
         # This notation for g_name is nonstandard
-        funcs = dict(g=lambda u: u**other, g_name=f'pow_{other}',
+        funcs = dict(g=lambda u: u**other, repr_pattern=repr_pattern,
                      h=lambda u: np.sign(u) * np.abs(u)**(1 / other),
                      dh=lambda u: 1/other * np.abs(u)**(1/other - 1))
 
@@ -1842,7 +1847,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def __rtruediv__(self, other):
         a, b = self.support()
-        funcs = dict(g=lambda u: 1 / u, g_name='inv',
+        funcs = dict(g=lambda u: 1 / u, repr_pattern=f"{other}/{(repr(self))}",
                      h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
         if np.all(a >= 0) or np.all(b <= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
@@ -1856,9 +1861,10 @@ class ContinuousDistribution(_ProbabilityDistribution):
             return out * other
 
     def __rpow__(self, other):
-        funcs = dict(g=lambda u: other**u, g_name=f'{other}**',
+        funcs = dict(g=lambda u: other**u,
                      h=lambda u: np.log(u) / np.log(other),
-                     dh=lambda u: 1 / np.abs(u * np.log(other)))
+                     dh=lambda u: 1 / np.abs(u * np.log(other)),
+                     repr_pattern=f"{other}**(repr(self))")
 
         if not np.isscalar(other) or other <= 0 or other == 1:
             message = ("Raising an argument to the power of a random variable is only "
@@ -4571,14 +4577,18 @@ class MonotonicTransformedDistribution(TransformedDistribution):
     increasing : bool, optional
         Whether the function is strictly increasing (True, default)
         or strictly decreasing (False).
-    g_name : str, optional
-        The name of the mathematical function represented by `g`,
-        used in `__repr__` and `__str__`. The default is ``g.__name__``.
+    repr_pattern : str, optional
+        A string pattern for determining the __repr__. The __repr__
+        for X will be substituted into the position where `...` appears.
+        For example:
+            ``"exp(...)"`` for the repr of an exponentially transformed
+            distribution
+        The default is ``f"{g.__name__}(...)"``.
 
     """
 
     def __init__(self, X, /, *args, g, h, dh, logdh=None,
-                 increasing=True, g_name=None, **kwargs):
+                 increasing=True, repr_pattern=None, **kwargs):
         super().__init__(X, *args, **kwargs)
         self._g = g
         self._h = h
@@ -4604,10 +4614,13 @@ class MonotonicTransformedDistribution(TransformedDistribution):
             self._ilogxdf = self._dist._ilogccdf_dispatch
             self._ilogcxdf = self._dist._ilogcdf_dispatch
         self._increasing = increasing
-        self._g_name = g.__name__ if g_name is None else g_name
+        if repr_pattern is None:
+            repr_pattern = f"{g.__name__}(...)"
+        self.__repr = repr_pattern.replace("...", repr(X))
+
 
     def __repr__(self):
-        return f"{self._g_name}({repr(self._dist)})"
+        return self.__repr
 
     def _overrides(self, method_name):
         # Do not use the generic overrides of TransformedDistribution
@@ -4731,6 +4744,9 @@ class FoldedDistribution(TransformedDistribution):
         rvs = self._dist._sample_dispatch(
             sample_shape, full_shape, method=method, rng=rng, **params)
         return np.abs(rvs)
+
+    def __repr__(self):
+        return f"|{repr(self._dist)}|"
 
 
 def abs(X, /):
