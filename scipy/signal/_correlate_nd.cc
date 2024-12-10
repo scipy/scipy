@@ -7,7 +7,7 @@
 #define NO_IMPORT_ARRAY
 #include "numpy/ndarrayobject.h"
 #include "npy_2_compat.h"
-#include "_sigtools.h"
+#include "_sigtools.hh"
 
 enum {
     CORR_MODE_VALID=0,

@@ -8,7 +8,7 @@
 #include <numpy/ndarrayobject.h>
 #include "npy_2_compat.h"
 
-#include "_sigtools.h"
+#include "_sigtools.hh"
 
 
 template<int TYPECODE>

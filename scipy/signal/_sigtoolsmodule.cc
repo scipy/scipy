@@ -9,7 +9,7 @@ is granted under the SciPy License.
 #include "numpy/ndarrayobject.h"
 #include "npy_2_compat.h"
 
-#include "_sigtools.h"
+#include "_sigtools.hh"
 #include <stdlib.h>
 
 #define PYERR(message) {PyErr_SetString(PyExc_ValueError, message); goto fail;}
