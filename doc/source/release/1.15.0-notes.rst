@@ -194,8 +194,8 @@ and support several Array API compatible array libraries in addition to NumPy
   incompatible data types, such as ``float16``.
 - ``min``, ``max``, ``argmin``, and ``argmax`` now support computation
   over nonzero elements only via the new ``explicit`` argument.
-- New function ``safely_cast_index_arrays`` has been added
-  to facilitate casting challenges in ``sparse``.
+- New functions ``get_index_dtype`` and ``safely_cast_index_arrays`` are
+  available to facilitate index array casting in ``sparse``.
 
 
 `scipy.spatial` improvements
