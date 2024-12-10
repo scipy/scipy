@@ -316,7 +316,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             if fder == 0:
                 msg = "Derivative was zero."
                 if disp:
-                    msg += f" Failed to converge after {itr + 1} iterations, value is {p0}"
+                    msg += (
+                        f" Failed to converge after {itr + 1} iterations, value is {p0}"
+                    )
                     raise RuntimeError(msg)
                 warnings.warn(msg, RuntimeWarning, stacklevel=2)
                 return _results_select(
@@ -362,7 +364,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 if p1 != p0:
                     msg = f"Tolerance of {p1 - p0} reached."
                     if disp:
-                        msg += f" Failed to converge after {itr + 1} iterations, value is {p1}"
+                        msg += (
+                            f" Failed to converge after {itr + 1} iterations, value is {p1}"
+                        )
                         raise RuntimeError(msg)
                     warnings.warn(msg, RuntimeWarning, stacklevel=2)
                 p = (p1 + p0) / 2.0
