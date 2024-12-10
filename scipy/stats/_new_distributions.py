@@ -301,17 +301,22 @@ class Uniform(ContinuousDistribution):
         kwargs.update(dict(a=a, b=b, ab=ab))
         return kwargs
 
+    def _logpdf_formula(self, x, *, ab, **kwargs):
+        return np.where(np.isnan(x), np.nan, -np.log(ab))
+
     def _pdf_formula(self, x, *, ab, **kwargs):
-        return np.full(x.shape, 1/ab)
+        return np.where(np.isnan(x), np.nan, 1/ab)
 
     def _logcdf_formula(self, x, *, a, ab, **kwargs):
-        return np.log(x - a) - np.log(ab)
+        with np.errstate(divide='ignore'):
+            return np.log(x - a) - np.log(ab)
 
     def _cdf_formula(self, x, *, a, ab, **kwargs):
         return (x - a) / ab
 
     def _logccdf_formula(self, x, *, b, ab, **kwargs):
-        return np.log(b - x) - np.log(ab)
+        with np.errstate(divide='ignore'):
+            return np.log(b - x) - np.log(ab)
 
     def _ccdf_formula(self, x, *, b, ab, **kwargs):
         return (b - x) / ab
@@ -340,8 +345,11 @@ class Uniform(ContinuousDistribution):
 
     _moment_central_formula.orders = [2]  # type: ignore[attr-defined]
 
-    def _sample_formula(self, sample_shape, full_shape, rng, a, b, **kwargs):
-        return rng.uniform(a, b, size=full_shape)[()]
+    def _sample_formula(self, sample_shape, full_shape, rng, a, b, ab, **kwargs):
+        try:
+            return rng.uniform(a, b, size=full_shape)[()]
+        except OverflowError:  # happens when there are NaNs
+            return rng.uniform(0, 1, size=full_shape)*ab + a
 
 
 class _Gamma(ContinuousDistribution):
