@@ -1560,17 +1560,17 @@ class TestFullCoverage:
         msg = _generate_domain_support(_LogUniform)
         assert "accepts two parameterizations" in msg
 
-    def test_ContinuousDistribution__str__(self):
+    def test_ContinuousDistribution__repr__(self):
         X = _Uniform(a=0, b=1)
-        assert str(X) == "_Uniform(a=0.0, b=1.0)"
+        assert repr(X) == "_Uniform(a=0.0, b=1.0)"
 
-        assert str(X*3 + 2) == "ShiftedScaled_Uniform(a=0.0, b=1.0, loc=2.0, scale=3.0)"
+        assert repr(X*3 + 2) == "3.0*_Uniform(a=0.0, b=1.0) + 2.0"
 
         X = _Uniform(a=np.zeros(4), b=1)
-        assert str(X) == "_Uniform(a, b, shape=(4,))"
+        assert repr(X) == "_Uniform(a, b, shape=(4,))"
 
         X = _Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
-        assert str(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
+        assert repr(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
 
 
 class MixedDist(ContinuousDistribution):
