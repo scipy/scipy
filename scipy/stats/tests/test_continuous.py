@@ -1573,6 +1573,45 @@ class TestFullCoverage:
         assert repr(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
 
 
+
+class TestReprs:
+    U = _Uniform(a=0, b=1)
+    X = Normal(mu=-1, sigma=1)
+    Y = Normal(mu=1, sigma=1)
+
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            U,
+            3*U + 2,
+            U**4,
+            (3*U + 2)**4,
+            (3*U + 2)**3,
+            2**U,
+            2**(3*U + 1),
+            1 / (1 + U),
+            stats.order_statistic(U, r=3, n=5),
+            stats.truncate(U, 0.2, 0.8),
+            stats.Mixture([X, Y], weights=[0.3, 0.7]),
+            abs(U),
+            stats.exp(U),
+            stats.log(1 + U),
+        ]
+    )
+    def test_executable(self, dist):
+        # Test that reprs actually evaluate to proper distribution
+        # provided relevant imports are made.
+        from numpy import array
+        from scipy.stats import abs, exp, log, order_statistic, truncate
+        from scipy.stats import Mixture, Normal
+        from scipy.stats._new_distributions import _Uniform
+        new_dist = eval(repr(dist))
+        # A basic check that the distributions are the same
+        sample1 = dist.sample(shape=10, rng=1234)
+        sample2 = new_dist.sample(shape=10, rng=1234)
+        assert_equal(sample1, sample2)
+
+
 class MixedDist(ContinuousDistribution):
     _variable = _RealParameter('x', domain=_RealDomain(endpoints=(-np.inf, np.inf)))
     def _pdf_formula(self, x, *args, **kwargs):
