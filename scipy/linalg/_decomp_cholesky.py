@@ -35,10 +35,13 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     potrf, = get_lapack_funcs(('potrf',), (a1,))
     c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
     if info > 0:
-        raise LinAlgError(f"{info}-th leading minor of the array is not positive definite")
+        raise LinAlgError(
+            f"{info}-th leading minor of the array is not positive definite"
+        )
     if info < 0:
-        raise ValueError(f'LAPACK reported an illegal value in {-info}-th argument'
-                         'on entry to "POTRF".')
+        raise ValueError(
+            f'LAPACK reported an illegal value in {-info}-th argument'
+        )
     return c, lower
 
 

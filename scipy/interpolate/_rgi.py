@@ -27,7 +27,9 @@ def _check_points(points):
                 descending_dimensions.append(i)
                 p = np.flip(p)
             else:
-                raise ValueError(f"The points in dimension {i} must be strictly ascending or descending")
+                raise ValueError(
+                    f"The points in dimension {i} must be strictly ascending or descending"
+                )
         # see https://github.com/scipy/scipy/issues/17716
         p = np.ascontiguousarray(p)
         grid.append(p)
@@ -36,12 +38,16 @@ def _check_points(points):
 
 def _check_dimensionality(points, values):
     if len(points) > values.ndim:
-        raise ValueError(f"There are {len(points)} point arrays, but values has {values.ndim} dimensions")
+        raise ValueError(
+            f"There are {len(points)} point arrays, but values has {values.ndim} dimensions"
+        )
     for i, p in enumerate(points):
         if not np.asarray(p).ndim == 1:
             raise ValueError(f"The points in dimension {i} must be 1-dimensional")
         if not values.shape[i] == len(p):
-            raise ValueError(f"There are {len(p)} points and {values.shape[i]} values in dimension {i}")
+            raise ValueError(
+                f"There are {len(p)} points and {values.shape[i]} values in dimension {i}"
+            )
 
 
 class RegularGridInterpolator:
@@ -454,7 +460,9 @@ class RegularGridInterpolator:
             for i, p in enumerate(xi.T):
                 if not np.logical_and(np.all(self.grid[i][0] <= p),
                                       np.all(p <= self.grid[i][-1])):
-                    raise ValueError(f"One of the requested xi is out of bounds in dimension {i}")
+                    raise ValueError(
+                        f"One of the requested xi is out of bounds in dimension {i}"
+                    )
             out_of_bounds = None
         else:
             out_of_bounds = self._find_out_of_bounds(xi.T)
@@ -704,7 +712,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     # sanity check consistency of input dimensions
     if len(points) > ndim:
-        raise ValueError(f"There are {len(points)} point arrays, but values has {ndim} dimensions")
+        raise ValueError(
+            f"There are {len(points)} point arrays, but values has {ndim} dimensions"
+        )
     if len(points) != ndim and method == 'splinef2d':
         raise ValueError("The method splinef2d can only be used for "
                          "scalar data with one point per coordinate")
@@ -715,13 +725,18 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     # sanity check requested xi
     xi = _ndim_coords_from_arrays(xi, ndim=len(grid))
     if xi.shape[-1] != len(grid):
-        raise ValueError(f"The requested sample points xi have dimension {xi.shape[-1]}, but this RegularGridInterpolator has dimension {len(grid)}")
+        raise ValueError(
+            f"The requested sample points xi have dimension {xi.shape[-1]}, "
+            f"but this RegularGridInterpolator has dimension {len(grid)}"
+        )
 
     if bounds_error:
         for i, p in enumerate(xi.T):
             if not np.logical_and(np.all(grid[i][0] <= p),
                                   np.all(p <= grid[i][-1])):
-                raise ValueError(f"One of the requested xi is out of bounds in dimension {i}")
+                raise ValueError(
+                    f"One of the requested xi is out of bounds in dimension {i}"
+                )
 
     # perform interpolation
     if method in RegularGridInterpolator._ALL_METHODS:

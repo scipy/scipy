@@ -118,9 +118,15 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     getrf, = get_lapack_funcs(('getrf',), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError(f'illegal value in {-info}th argument of internal getrf (lu_factor)')
+        raise ValueError(
+            f'illegal value in {-info}th argument of internal getrf (lu_factor)'
+        )
     if info > 0:
-        warn(f"Diagonal number {info} is exactly zero. Singular matrix.", LinAlgWarning, stacklevel=2)
+        warn(
+            f"Diagonal number {info} is exactly zero. Singular matrix.",
+            LinAlgWarning,
+            stacklevel=2
+        )
     return lu, piv
 
 

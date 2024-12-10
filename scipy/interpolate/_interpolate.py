@@ -1666,9 +1666,11 @@ class BPoly(_PPolyBase):
                 n1 = min(n//2, len(y1))
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
-                if n1+n2 != n:
-                    mesg = (f"Point {xi[i]} has {len(y1)} derivatives, point {xi[i+1]} has {len(y2)} derivatives, but order {orders[i]} requested"
-                            )
+                if n1 + n2 != n:
+                    mesg = (
+                        f"Point {xi[i]} has {len(y1)} derivatives, point {xi[i+1]} has "
+                        f"{len(y2)} derivatives, but order {orders[i]} requested"
+                    )
                     raise ValueError(mesg)
 
                 if not (n1 <= len(y1) and n2 <= len(y2)):

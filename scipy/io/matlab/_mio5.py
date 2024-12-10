@@ -789,7 +789,9 @@ class VarWriter5:
         length = max([len(fieldname) for fieldname in fieldnames])+1
         max_length = (self.long_field_names and 64) or 32
         if length > max_length:
-            raise ValueError(f"Field names are restricted to {max_length - 1} characters")
+            raise ValueError(
+                f"Field names are restricted to {max_length - 1} characters"
+            )
         self.write_element(np.array([length], dtype='i4'))
         self.write_element(np.array(fieldnames, dtype=f'S{length}'), mdtype=miINT8)
         A = np.atleast_2d(arr).flatten('F')

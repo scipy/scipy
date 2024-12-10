@@ -200,7 +200,9 @@ class Tokenizer:
                 else:
                     self.curpos = m.end()
                     return Token(self.tokens[i], m.group(), self.curpos)
-            raise SyntaxError(f"Unknown character at position {self.curpos} ({self.data[self.curpos]})")
+            raise SyntaxError(
+                f"Unknown character at position {self.curpos} ({self.data[self.curpos]})"
+            )
 
 
 # Grammar for fortran format:
@@ -262,7 +264,9 @@ class FortranFormatParser:
 
     def _parse_format(self, tokens):
         if not tokens[0].type == "LPAR":
-            raise SyntaxError(f"Expected left parenthesis at position {0} (got '{tokens[0].value}')")
+            raise SyntaxError(
+                f"Expected left parenthesis at position {0} (got '{tokens[0].value}')"
+            )
         elif not tokens[-1].type == "RPAR":
             raise SyntaxError("Expected right parenthesis at position "
                               f"{len(tokens)} (got '{tokens[-1].value}')")

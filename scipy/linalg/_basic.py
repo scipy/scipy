@@ -598,7 +598,10 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     (nlower, nupper) = l_and_u
     if nlower + nupper + 1 != a1.shape[0]:
-        raise ValueError(f"invalid values for the number of lower and upper diagonals: l+u+1 ({nlower + nupper + 1}) does not equal ab.shape[0] ({a1.shape[0]})")
+        raise ValueError(
+            f"invalid values for the number of lower and upper diagonals: l+u+1 "
+            f"({nlower + nupper + 1}) does not equal ab.shape[0] ({a1.shape[0]})"
+        )
 
     # accommodate empty arrays
     if b1.size == 0:
@@ -1151,7 +1154,9 @@ def inv(a, overwrite_a=False, check_finite=True):
     if info > 0:
         raise LinAlgError("singular matrix")
     if info < 0:
-        raise ValueError(f'illegal value in {-info}-th argument of internal getrf|getri')
+        raise ValueError(
+            f'illegal value in {-info}-th argument of internal getrf|getri'
+        )
     return inv_a
 
 
@@ -1465,7 +1470,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         if info > 0:
             raise LinAlgError("SVD did not converge in Linear Least Squares")
         if info < 0:
-            raise ValueError(f'illegal value in {-info}-th argument of internal {lapack_driver}')
+            raise ValueError(
+                f'illegal value in {-info}-th argument of internal {lapack_driver}'
+            )
         resids = np.asarray([], dtype=x.dtype)
         if m > n:
             x1 = x[:n]

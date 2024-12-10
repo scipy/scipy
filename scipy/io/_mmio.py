@@ -550,7 +550,9 @@ class MMFile:
         return {MMFile.FIELD_REAL: f'%.{precision}e\n',
                 MMFile.FIELD_INTEGER: '{:d}\n',
                 MMFile.FIELD_UNSIGNED: '{:u}\n',
-                MMFile.FIELD_COMPLEX: f'%.{precision}e %.{precision}e\n'}.get(field, None)
+                MMFile.FIELD_COMPLEX: (
+                    f'%.{precision}e %.{precision}e\n'
+                )}.get(field, None)
 
     # -------------------------------------------------------------------------
     def __init__(self, **kwargs):

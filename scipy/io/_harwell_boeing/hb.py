@@ -189,8 +189,10 @@ class HBInfo:
         nnon_zeros = _expect_int(line[42:56])
         nelementals = _expect_int(line[56:70])
         if not nelementals == 0:
-            raise ValueError(f"Unexpected value {nelementals} for nltvl (last entry of line 3)")
-
+            raise ValueError(
+                f"Unexpected value {nelementals} for nltvl (last entry of line 3)"
+            )
+        
         # Fourth line
         line = fid.readline().strip("\n")
 

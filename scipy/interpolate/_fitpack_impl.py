@@ -117,7 +117,10 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         for i in range(idim):
             if x[i][0] != x[i][-1]:
                 if not quiet:
-                    warnings.warn(RuntimeWarning(f'Setting x[{i}][{m}]=x[{i}][0]'), stacklevel=2)
+                    warnings.warn(
+                        RuntimeWarning(f'Setting x[{i}][{m}]=x[{i}][0]'), 
+                        stacklevel=2
+                    )
                 x[i][-1] = x[i][0]
     if not 0 < idim < 11:
         raise TypeError('0 < idim < 11 must hold')
@@ -185,7 +188,12 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     c.shape = idim, n - k - 1
     tcku = [t, list(c), k], u
     if ier <= 0 and not quiet:
-        warnings.warn(RuntimeWarning(_iermess[ier][0] + f"\tk={k} n={len(t)} m={m} fp={fp} s={s}"), stacklevel=2)
+        warnings.warn(
+            RuntimeWarning(
+                _iermess[ier][0] + f"\tk={k} n={len(t)} m={m} fp={fp} s={s}"
+            ), 
+            stacklevel=2
+        )
     if ier > 0 and not full_output:
         if ier in [1, 2, 3]:
             warnings.warn(RuntimeWarning(_iermess[ier][0]), stacklevel=2)
@@ -228,7 +236,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         raise TypeError('Lengths of the first three arguments (x,y,w) must '
                         'be equal')
     if not (1 <= k <= 5):
-        raise TypeError(f'Given degree of the spline (k={k}) is not supported. (1<=k<=5)')
+        raise TypeError(
+            f'Given degree of the spline (k={k}) is not supported. (1<=k<=5)'
+        )
     if m <= k:
         raise TypeError('m > k must hold')
     if xb is None:
@@ -537,7 +547,9 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     if task == -1 and ny < 2*ky+2:
         raise TypeError('There must be at least 2*ky+2 knots_x for task=-1')
     if not ((1 <= kx <= 5) and (1 <= ky <= 5)):
-        raise TypeError(f'Given degree of the spline (kx,ky={kx},{ky}) is not supported. (1<=k<=5)')
+        raise TypeError(
+            f'Given degree of the spline (kx,ky={kx},{ky}) is not supported. (1<=k<=5)'
+        )
     if m < (kx + 1)*(ky + 1):
         raise TypeError('m >= (kx+1)(ky+1) must hold')
     if nxest is None:
@@ -578,11 +590,16 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
 
     ierm = min(11, max(-3, ier))
     if ierm <= 0 and not quiet:
-        _mess = (_iermess2[ierm][0] + f"\tkx,ky={kx},{ky} nx,ny={len(tx)},{len(ty)} m={m} fp={fp} s={s}")
+        _mess = (
+            _iermess2[ierm][0] + 
+            f"\tkx,ky={kx},{ky} nx,ny={len(tx)},{len(ty)} m={m} fp={fp} s={s}"
+        )
         warnings.warn(RuntimeWarning(_mess), stacklevel=2)
     if ierm > 0 and not full_output:
         if ier in [1, 2, 3, 4, 5]:
-            _mess = (f"\n\tkx,ky={kx},{ky} nx,ny={len(tx)},{len(ty)} m={m} fp={fp} s={s}")
+            _mess = (
+                f"\n\tkx,ky={kx},{ky} nx,ny={len(tx)},{len(ty)} m={m} fp={fp} s={s}"
+            )
             warnings.warn(RuntimeWarning(_iermess2[ierm][0] + _mess), stacklevel=2)
         else:
             try:
