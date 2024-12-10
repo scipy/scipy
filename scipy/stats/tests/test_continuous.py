@@ -1575,6 +1575,17 @@ class TestReprs:
     X = Normal(mu=-1, sigma=1)
     Y = Normal(mu=1, sigma=1)
 
+    def _get_fingerprint(self, dist):
+        # Get a sample from a distribution or array of distributions for use
+        # as a fingerprint for loosely testing equality of distributions
+        # or arrays of distributions.
+        dist = np.asarray(dist)
+        if dist.ndim:
+            return np.fromiter(
+                (val for x in np.asarray(dist) for val in x.sample(shape=10, rng=1234)),
+                dtype=float)
+        return dist[()].sample(shape=10, rng=1234)
+
     @pytest.mark.parametrize(
         "dist",
         [
@@ -1592,6 +1603,7 @@ class TestReprs:
             abs(U),
             stats.exp(U),
             stats.log(1 + U),
+            np.array([1.0, 2.0])*U + np.array([2.0, 3.0]),
         ]
     )
     def test_executable(self, dist):
@@ -1603,8 +1615,8 @@ class TestReprs:
         from scipy.stats._new_distributions import _Uniform
         new_dist = eval(repr(dist))
         # A basic check that the distributions are the same
-        sample1 = dist.sample(shape=10, rng=1234)
-        sample2 = new_dist.sample(shape=10, rng=1234)
+        sample1 = self._get_fingerprint(dist)
+        sample2 = self._get_fingerprint(new_dist)
         assert_equal(sample1, sample2)
 
 
