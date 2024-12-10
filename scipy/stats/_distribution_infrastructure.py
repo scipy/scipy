@@ -3897,10 +3897,10 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def __repr__(self):
         result =  f"{self.scale}*{repr(self._dist)}"
-        if self.loc > 0:
-            result += f" + {self.loc}"
-        elif self.loc < 0:
+        if not self.loc.ndim and self.loc < 0:
             result += f" - {-self.loc}"
+        elif np.any(self.loc > 0):
+            result += f" + {self.loc}"
         return result
 
     # Here, we override all the `_dispatch` methods rather than the public
