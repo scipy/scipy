@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
 .. jupyterlite:: ../../_contents/hypothesis_kendalltau.ipynb
    :new_tab: True
 ```
 
 (hypothesis_kendalltau)=
+
++++
+
 # Kendall's tau test
 
 Kendall's tau is a measure of the correspondence between two rankings.
