@@ -52,6 +52,14 @@ static SuperLUGlobalObject *get_tls_global(void)
 
     PyDict_SetItemString(thread_dict, key, (PyObject *)obj);
 
+    /*
+        Decrease reference count of obj because thread_dict
+        already holds one reference
+        (due to PyDict_SetItemString operation in the line above)
+        and the caller of get_tls_global doesn't steal reference to obj.
+        This helps in avoiding in memory leak due to dangling reference of obj.
+    */
+    Py_DECREF(obj);
     return obj;
 #endif
 }
