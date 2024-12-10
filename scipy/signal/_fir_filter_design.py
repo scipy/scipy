@@ -579,9 +579,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
         raise ValueError('freq and gain must be of same length.')
 
     if nfreqs is not None and numtaps >= nfreqs:
-        raise ValueError(('ntaps must be less than nfreqs, but firwin2 was '
-                          'called with ntaps=%d and nfreqs=%s') %
-                         (numtaps, nfreqs))
+        raise ValueError(f'ntaps must be less than nfreqs, but firwin2 was called with ntaps={numtaps} and nfreqs={nfreqs}')
 
     if freq[0] != 0 or freq[-1] != nyq:
         raise ValueError('freq must start with 0 and end with fs/2.')
