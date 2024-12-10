@@ -65,7 +65,7 @@ def test_distributions_submodule():
     actual = set(scipy.stats.distributions.__all__)
     continuous = [dist[0] for dist in distcont]    # continuous dist names
     discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
-    other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
+    other = ['rv_discrete', 'rv_continuous', 'mixture_distribution', 'norm_mixture', 'rv_histogram',
              'entropy', 'trapz']
     expected = continuous + discrete + other
 
@@ -1348,6 +1348,68 @@ class TestPlanck:
         expected = array([-1001000., -2001000., -3001000.])
         assert_array_almost_equal(vals, expected)
 
+class TestMixtureDistribution:
+    def test_uniform(self):
+        uniform1 = stats.uniform(0, 1)
+        uniform2 = stats.uniform(1, 1)
+        md = stats.mixture_distribution([1, 1], [uniform1, uniform2])
+        assert_equal((0, 2), md.support())
+        assert_almost_equal(stats.uniform(0, 2).entropy(), md.entropy())
+        assert_equal(md.mean(), 1.)
+        assert_almost_equal(md.var(), stats.uniform(0, 2).var())
+
+    def test_rvs_uniform(self):
+        uniform1 = stats.uniform(0, 1)
+        uniform2 = stats.uniform(10, 1)
+        uniform3 = stats.uniform(20, 1)
+        md = stats.mixture_distribution([1, 1, 1], [uniform1, uniform2, uniform3])
+        rvs = md.rvs(size=1000, random_state=1234)
+        assert_equal(len(rvs), 1000)
+        assert_equal((rvs < 0).sum(), 0)
+        assert_equal(((rvs > 1) & (rvs < 10)).sum(), 0)
+        assert_equal(((rvs > 11) & (rvs < 20)).sum(), 0)
+        assert_equal((rvs > 21).sum(), 0)
+
+        rvs = md.rvs(size=(2, 3, 1), random_state=1234)
+        assert_equal(rvs.shape, (2, 3, 1))
+
+        rvs = md.rvs(random_state=1234)
+        assert(isinstance(rvs, float))
+
+
+class TestNormMixture:
+    def test_norm(self):
+        # test against normal (special case for 1 component)
+        points = np.linspace(-10, 10, 100)
+        dist1 = stats.norm_mixture([2], [3], [1])
+        pdf2 = stats.norm.pdf(points, loc=2, scale=3)
+        assert_array_almost_equal(dist1.pdf(points), pdf2)
+        assert_almost_equal(dist1.mean(), 2.0)
+        assert_almost_equal(dist1.std(), 3.0)
+
+    def test_two_gaussians(self):
+        points = np.linspace(-10, 10, 100)
+        mixture = stats.norm_mixture([2, 5], [3, 1], [0.7, 0.5])
+        pdf_mixture = mixture.pdf(points)
+
+        pdf_ref = 0.7 / (0.7 + 0.5) * stats.norm.pdf(points, loc=2, scale=3) + \
+                  0.5 / (0.7 + 0.5) * stats.norm.pdf(points, loc=5, scale=1)
+        assert_array_almost_equal(pdf_mixture, pdf_ref)
+
+    def test_means_std(self):
+        mus = np.repeat([2], 3)
+        sigmas = np.array([3, 1.5, 5])
+        weights = np.array([0.7, 0.2, 0.1])
+        mixture = stats.norm_mixture(mus, sigmas, weights)
+        assert_almost_equal(mixture.mean(), mus[0])
+        assert_almost_equal(mixture.var(), np.sum(weights * sigmas ** 2))
+
+        weights = np.array([0.7, 0.2, 0.1])
+        mus = np.array([2, 3, 4])
+        sigmas = np.array([3, 1.5, 5])
+        mixture = stats.norm_mixture(mus, sigmas, weights)
+        assert_almost_equal(mixture.mean(), np.average(mus, weights=weights))
+        assert_almost_equal(mixture.var(), np.sum(weights * (sigmas ** 2 + mus ** 2)) - mixture.mean() ** 2)
 
 class TestGennorm:
     def test_laplace(self):
