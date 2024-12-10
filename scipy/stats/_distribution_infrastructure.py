@@ -3709,6 +3709,9 @@ class TransformedDistribution(ContinuousDistribution):
     def _process_parameters(self, **params):
         return self._dist._process_parameters(**params)
 
+    def __repr__(self):
+        raise NotImplementedError()
+
 
 class TruncatedDistribution(TransformedDistribution):
     """Truncated distribution."""
