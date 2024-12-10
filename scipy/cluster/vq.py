@@ -68,7 +68,7 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    _asarray, array_namespace, xp_size, xp_copy
+    xp_asarray, array_namespace, xp_size, xp_copy
 )
 from scipy._lib._util import (check_random_state, rng_integers,
                               _transition_to_rng)
@@ -134,7 +134,7 @@ def whiten(obs, check_finite=True):
 
     """
     xp = array_namespace(obs)
-    obs = _asarray(obs, check_finite=check_finite, xp=xp)
+    obs = xp_asarray(obs, check_finite=check_finite, xp=xp)
     std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
     if xp.any(zero_std_mask):
@@ -204,18 +204,18 @@ def vq(obs, code_book, check_finite=True):
 
     """
     xp = array_namespace(obs, code_book)
-    obs = _asarray(obs, xp=xp, check_finite=check_finite)
-    code_book = _asarray(code_book, xp=xp, check_finite=check_finite)
+    obs = xp_asarray(obs, xp=xp, check_finite=check_finite)
+    code_book = xp_asarray(code_book, xp=xp, check_finite=check_finite)
     ct = xp.result_type(obs, code_book)
 
     c_obs = xp.astype(obs, ct, copy=False)
     c_code_book = xp.astype(code_book, ct, copy=False)
 
     if xp.isdtype(ct, kind='real floating'):
-        c_obs = np.asarray(c_obs)
-        c_code_book = np.asarray(c_code_book)
+        c_obs = xp_asarray(c_obs, xp=np)
+        c_code_book = xp_asarray(c_code_book, xp=np)
         result = _vq.vq(c_obs, c_code_book)
-        return xp.asarray(result[0]), xp.asarray(result[1])
+        return xp_asarray(result[0], xp=xp), xp_asarray(result[1], xp=xp)
     return py_vq(obs, code_book, check_finite=False)
 
 
@@ -257,8 +257,8 @@ def py_vq(obs, code_book, check_finite=True):
 
     """
     xp = array_namespace(obs, code_book)
-    obs = _asarray(obs, xp=xp, check_finite=check_finite)
-    code_book = _asarray(code_book, xp=xp, check_finite=check_finite)
+    obs = xp_asarray(obs, xp=xp, check_finite=check_finite)
+    code_book = xp_asarray(code_book, xp=xp, check_finite=check_finite)
 
     if obs.ndim != code_book.ndim:
         raise ValueError("Observation and code_book should have the same rank")
@@ -267,8 +267,10 @@ def py_vq(obs, code_book, check_finite=True):
         obs = obs[:, xp.newaxis]
         code_book = code_book[:, xp.newaxis]
 
-    # Once `cdist` has array API support, this `xp.asarray` call can be removed
-    dist = xp.asarray(cdist(obs, code_book))
+    # Once `cdist` has array API support, these `xp_asarray` calls can be removed
+    obs = xp_asarray(obs, xp=np)
+    code_book = xp_asarray(code_book, xp=np)
+    dist = xp_asarray(cdist(obs, code_book), xp=xp)
     code = xp.argmin(dist, axis=1)
     min_dist = xp.min(dist, axis=1)
     return code, min_dist
@@ -315,14 +317,14 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
         obs_code, distort = vq(obs, code_book, check_finite=False)
         prev_avg_dists.append(xp.mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
-        obs = np.asarray(obs)
-        obs_code = np.asarray(obs_code)
+        obs = xp_asarray(obs, xp=np)
+        obs_code = xp_asarray(obs_code, xp=np)
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
                                                           code_book.shape[0])
-        obs = xp.asarray(obs)
-        obs_code = xp.asarray(obs_code)
-        code_book = xp.asarray(code_book)
-        has_members = xp.asarray(has_members)
+        obs = xp_asarray(obs, xp=xp)
+        obs_code = xp_asarray(obs_code, xp=xp)
+        code_book = xp_asarray(code_book, xp=xp)
+        has_members = xp_asarray(has_members, xp=xp)
         code_book = code_book[has_members]
         diff = xp.abs(prev_avg_dists[0] - prev_avg_dists[1])
 
@@ -464,8 +466,8 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         xp = array_namespace(obs)
     else:
         xp = array_namespace(obs, k_or_guess)
-    obs = _asarray(obs, xp=xp, check_finite=check_finite)
-    guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite)
+    obs = xp_asarray(obs, xp=xp, check_finite=check_finite)
+    guess = xp_asarray(k_or_guess, xp=xp, check_finite=check_finite)
     if iter < 1:
         raise ValueError(f"iter must be at least 1, got {iter}")
 
@@ -518,7 +520,7 @@ def _kpoints(data, k, rng, xp):
     """
     idx = rng.choice(data.shape[0], size=int(k), replace=False)
     # convert to array with default integer dtype (avoids numpy#25607)
-    idx = xp.asarray(idx, dtype=xp.asarray([1]).dtype)
+    idx = xp_asarray(idx, dtype=xp.asarray([1]).dtype, xp=xp)
     return xp.take(data, idx, axis=0)
 
 
@@ -546,18 +548,18 @@ def _krandinit(data, k, rng, xp):
 
     """
     mu = xp.mean(data, axis=0)
-    k = np.asarray(k)
+    k = xp_asarray(k, xp=np)
 
     if data.ndim == 1:
         _cov = xpx.cov(data, xp=xp)
         x = rng.standard_normal(size=k)
-        x = xp.asarray(x)
-        x *= xp.sqrt(_cov)
+        x = xp_asarray(x, xp=xp)
+        x = x * xp.sqrt(_cov)
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
         _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
         x = rng.standard_normal(size=(k, xp_size(s)))
-        x = xp.asarray(x)
+        x = xp_asarray(x, xp=xp)
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1.))
         x = x @ sVh
     else:
@@ -566,7 +568,7 @@ def _krandinit(data, k, rng, xp):
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
         x = rng.standard_normal(size=(k, xp_size(mu)))
-        x = xp.asarray(x)
+        x = xp_asarray(x, xp=xp)
         x = x @ xp.linalg.cholesky(_cov).T
 
     x += mu
@@ -605,13 +607,15 @@ def _kpp(data, k, rng, xp):
 
     dims = data.shape[1]
 
-    init = xp.empty((int(k), dims))
+    data = xp_asarray(data, xp=np)
+    init = np.empty((int(k), dims))
 
     for i in range(k):
         if i == 0:
             init[i, :] = data[rng_integers(rng, data.shape[0]), :]
 
         else:
+            
             D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
@@ -621,7 +625,7 @@ def _kpp(data, k, rng, xp):
 
     if ndim == 1:
         init = init[:, 0]
-    return init
+    return xp_asarray(init, xp=xp)
 
 
 _valid_init_meth = {'random': _krandinit, 'points': _kpoints, '++': _kpp}
@@ -776,7 +780,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         xp = array_namespace(data)
     else:
         xp = array_namespace(data, k)
-    data = _asarray(data, xp=xp, check_finite=check_finite)
+    data = xp_asarray(data, xp=xp, check_finite=check_finite)
     code_book = xp_copy(k, xp=xp)
     if data.ndim == 1:
         d = 1
@@ -812,8 +816,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             rng = check_random_state(rng)
             code_book = init_meth(data, code_book, rng, xp)
 
-    data = np.asarray(data)
-    code_book = np.asarray(code_book)
+    data = xp_asarray(data, xp=np)
+    code_book = xp_asarray(code_book, xp=np)
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book, check_finite=check_finite)[0]
@@ -825,4 +829,4 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             new_code_book[~has_members] = code_book[~has_members]
         code_book = new_code_book
 
-    return xp.asarray(code_book), xp.asarray(label)
+    return xp_asarray(code_book, xp=xp), xp_asarray(label, xp=xp)
