@@ -599,7 +599,8 @@ class TestJacobian(JacobianHessianTest):
             ref_attr = xp.asarray([[getattr(res00, attr), getattr(res01, attr)],
                                    [getattr(res10, attr), getattr(res11, attr)]])
             ref[attr] = xp.squeeze(ref_attr)
-            xp_assert_close(res[attr], ref[attr], rtol=1.5e-14)
+            rtol = 1.5e-5 if res[attr].dtype == xp.float32 else 1.5e-14
+            xp_assert_close(res[attr], ref[attr], rtol=rtol)
 
     def test_step_direction_size(self, xp):
         # Check that `step_direction` and `initial_step` can be used to ensure that

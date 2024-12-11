@@ -743,6 +743,16 @@ class TestTanhSinh:
         for attr in attrs:
             assert res[attr].shape == shape
 
+    @pytest.mark.skip_xp_backends(np_only=True)
+    def test_compress_nodes_weights_gh21496(self, xp):
+        # See discussion in:
+        # https://github.com/scipy/scipy/pull/21496#discussion_r1878681049
+        # This would cause "ValueError: attempt to get argmax of an empty sequence"
+        # Check that this has been resolved.
+        x = np.full(65, 3)
+        x[-1] = 1000
+        _tanhsinh(np.sin, 1, x)
+
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")

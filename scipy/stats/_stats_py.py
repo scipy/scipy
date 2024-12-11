@@ -42,6 +42,8 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
+from scipy._lib.deprecation import _deprecate_positional_args
+
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -4670,26 +4672,39 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
                           alternative=alternative, x=x, y=y, axis=axis)
 
 
-def fisher_exact(table, alternative='two-sided'):
-    """Perform a Fisher exact test on a 2x2 contingency table.
+def fisher_exact(table, alternative=None, *, method=None):
+    """Perform a Fisher exact test on a contingency table.
 
-    The null hypothesis is that the true odds ratio of the populations
+    For a 2x2 table,
+    the null hypothesis is that the true odds ratio of the populations
     underlying the observations is one, and the observations were sampled
     from these populations under a condition: the marginals of the
-    resulting table must equal those of the observed table. The statistic
-    returned is the unconditional maximum likelihood estimate of the odds
+    resulting table must equal those of the observed table.
+    The statistic is the unconditional maximum likelihood estimate of the odds
     ratio, and the p-value is the probability under the null hypothesis of
     obtaining a table at least as extreme as the one that was actually
-    observed. There are other possible choices of statistic and two-sided
+    observed.
+
+    For other table sizes, or if `method` is provided, the null hypothesis
+    is that the rows and columns of the tables have fixed sums and are
+    independent; i.e., the table was sampled from a `scipy.stats.random_table`
+    distribution with the observed marginals. The statistic is the
+    probability mass of this distribution evaluated at `table`, and the
+    p-value is the percentage of the population of tables with statistic at
+    least as extreme (small) as that of `table`. There is only one alternative
+    hypothesis available: the rows and columns are not independent.
+
+    There are other possible choices of statistic and two-sided
     p-value definition associated with Fisher's exact test; please see the
     Notes for more information.
 
     Parameters
     ----------
     table : array_like of ints
-        A 2x2 contingency table.  Elements must be non-negative integers.
+        A contingency table.  Elements must be non-negative integers.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
+        Defines the alternative hypothesis for 2x2 tables; unused for other
+        table sizes.
         The following options are available (default is 'two-sided'):
 
         * 'two-sided': the odds ratio of the underlying population is not one
@@ -4699,13 +4714,29 @@ def fisher_exact(table, alternative='two-sided'):
 
         See the Notes for more details.
 
+    method : ResamplingMethod, optional
+        Defines the method used to compute the p-value.
+        If `method` is an instance of `PermutationMethod`/`MonteCarloMethod`,
+        the p-value is computed using
+        `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
+        provided configuration options and other appropriate settings.
+        Note that if `method` is an instance of `MonteCarloMethod`, the ``rvs``
+        attribute must be left unspecified; Monte Carlo samples are always drawn
+        using the ``rvs`` method of `scipy.stats.random_table`.
+        Otherwise, the p-value is computed as documented in the notes.
+
+        .. versionadded:: 1.15.0
+
     Returns
     -------
     res : SignificanceResult
         An object containing attributes:
 
         statistic : float
-            This is the prior odds ratio, not a posterior estimate.
+            For a 2x2 table with default `method`, this is the odds ratio - the
+            prior odds ratio not a posterior estimate. In all other cases, this
+            is the probability density of obtaining the observed table under the
+            null hypothesis of independence with marginals fixed.
         pvalue : float
             The probability under the null hypothesis of obtaining a
             table at least as extreme as the one that was actually observed.
@@ -4713,7 +4744,7 @@ def fisher_exact(table, alternative='two-sided'):
     Raises
     ------
     ValueError
-        If `table` is not a 2x2 contingency table with non-negative entries.
+        If `table` is not two-dimensional or has negative entries.
 
     See Also
     --------
@@ -4846,16 +4877,31 @@ def fisher_exact(table, alternative='two-sided'):
     >>> res.pvalue
     0.034965034965034975
 
+    For tables with shape other than ``(2, 2)``, provide an instance of
+    `scipy.stats.MonteCarloMethod` or `scipy.stats.PermutationMethod` for the
+    `method` parameter:
+
+    >>> import numpy as np
+    >>> from scipy.stats import MonteCarloMethod
+    >>> rng = np.random.default_rng(4507195762371367)
+    >>> method = MonteCarloMethod(rng=rng)
+    >>> fisher_exact([[8, 2, 3], [1, 5, 4]], method=method)
+    SignificanceResult(statistic=np.float64(0.005782), pvalue=np.float64(0.0603))
+
     For a more detailed example, see :ref:`hypothesis_fisher_exact`.
     """
     hypergeom = distributions.hypergeom
     # int32 is not enough for the algorithm
     c = np.asarray(table, dtype=np.int64)
-    if not c.shape == (2, 2):
-        raise ValueError("The input `table` must be of shape (2, 2).")
+    if not c.ndim == 2:
+        raise ValueError("The input `table` must have two dimensions.")
 
     if np.any(c < 0):
         raise ValueError("All values in `table` must be nonnegative.")
+
+    if not c.shape == (2, 2) or method is not None:
+        return _fisher_exact_rxc(c, alternative, method)
+    alternative = 'two-sided' if alternative is None else alternative
 
     if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
         # If both values in a row or column are zero, the p-value is 1 and
@@ -4911,6 +4957,98 @@ def fisher_exact(table, alternative='two-sided'):
     pvalue = min(pvalue, 1.0)
 
     return SignificanceResult(oddsratio, pvalue)
+
+
+def _fisher_exact_rxc(table, alternative, method):
+    if alternative is not None:
+        message = ('`alternative` must be the default (None) unless '
+                  '`table` has shape `(2, 2)` and `method is None`.')
+        raise ValueError(message)
+
+    if table.size == 0:
+        raise ValueError("`table` must have at least one row and one column.")
+
+    if table.shape[0] == 1 or table.shape[1] == 1 or np.all(table == 0):
+        # Only one such table with those marginals
+        return SignificanceResult(1.0, 1.0)
+
+    if method is None:
+        method = stats.MonteCarloMethod()
+
+    if isinstance(method, stats.PermutationMethod):
+        res = _fisher_exact_permutation_method(table, method)
+    elif isinstance(method, stats.MonteCarloMethod):
+        res = _fisher_exact_monte_carlo_method(table, method)
+    else:
+        message = (f'`{method=}` not recognized; if provided, `method` must be an '
+                   'instance of `PermutationMethod` or `MonteCarloMethod`.')
+        raise ValueError(message)
+
+    return SignificanceResult(np.clip(res.statistic, None, 1.0), res.pvalue)
+
+
+def _fisher_exact_permutation_method(table, method):
+    x, y = _untabulate(table)
+    colsums = np.sum(table, axis=0)
+    rowsums = np.sum(table, axis=1)
+    X = stats.random_table(rowsums, colsums)
+
+    # `permutation_test` with `permutation_type='pairings' permutes the order of `x`,
+    # which pairs observations in `x` with different observations in `y`.
+    def statistic(x):
+        # crosstab the resample and compute the statistic
+        table = stats.contingency.crosstab(x, y)[1]
+        return X.pmf(table)
+
+    # tables with *smaller* probability mass are considered to be more extreme
+    return stats.permutation_test((x,), statistic, permutation_type='pairings',
+                                  alternative='less', **method._asdict())
+
+
+def _fisher_exact_monte_carlo_method(table, method):
+    method = method._asdict()
+
+    if method.pop('rvs', None) is not None:
+        message = ('If the `method` argument of `fisher_exact` is an '
+                   'instance of `MonteCarloMethod`, its `rvs` attribute '
+                   'must be unspecified. Use the `MonteCarloMethod` `rng` argument '
+                   'to control the random state.')
+        raise ValueError(message)
+    rng = np.random.default_rng(method.pop('rng', None))
+
+    # `random_table.rvs` produces random contingency tables with the given marginals
+    # under the null hypothesis of independence
+    shape = table.shape
+    colsums = np.sum(table, axis=0)
+    rowsums = np.sum(table, axis=1)
+    totsum = np.sum(table)
+    X = stats.random_table(rowsums, colsums, seed=rng)
+
+    def rvs(size):
+        n_resamples = size[0]
+        return X.rvs(size=n_resamples).reshape(size)
+
+    # axis signals to `monte_carlo_test` that statistic is vectorized, but we know
+    # how it will pass the table(s), so we don't need to use `axis` explicitly.
+    def statistic(table, axis):
+        shape_ = (-1,) + shape if table.size > totsum else shape
+        return X.pmf(table.reshape(shape_))
+
+    # tables with *smaller* probability mass are considered to be more extreme
+    return stats.monte_carlo_test(table.ravel(), rvs, statistic,
+                                  alternative='less', **method)
+
+
+def _untabulate(table):
+    # converts a contingency table to paired samples indicating the
+    # correspondence between row and column indices
+    r, c = table.shape
+    x, y = [], []
+    for i in range(r):
+        for j in range(c):
+            x.append([i] * table[i, j])
+            y.append([j] * table[i, j])
+    return np.concatenate(x), np.concatenate(y)
 
 
 def spearmanr(a, b=None, axis=0, nan_policy='propagate',
@@ -6203,11 +6341,15 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
+_ttest_ind_dep_msg = "Use ``method`` to perform a permutation test."
+@_deprecate_positional_args(version='1.17.0',
+                            deprecated_args={'permutations', 'random_state'},
+                            custom_message=_ttest_ind_dep_msg)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
-def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
+def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
               permutations=None, random_state=None, alternative="two-sided",
-              trim=0):
+              trim=0, method=None):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -6250,7 +6392,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         the pooled data, an exact test is performed instead (i.e. each
         distinct partition is used exactly once). See Notes for details.
 
-        .. versionadded:: 1.7.0
+        .. deprecated:: 1.17.0
+            `permutations` is deprecated and will be removed in SciPy 1.7.0.
+            Use the `n_resamples` argument of `PermutationMethod`, instead,
+            and pass the instance as the `method` argument.
 
     random_state : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
@@ -6265,7 +6410,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         Pseudorandom number generator state used to generate permutations
         (used only when `permutations` is not None).
 
-        .. versionadded:: 1.7.0
+        .. deprecated:: 1.17.0
+            `random_state` is deprecated and will be removed in SciPy 1.7.0.
+            Use the `rng` argument of `PermutationMethod`, instead,
+            and pass the instance as the `method` argument.
 
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
@@ -6280,16 +6428,22 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
           sample is greater than the mean of the distribution underlying
           the second sample.
 
-        .. versionadded:: 1.6.0
-
     trim : float, optional
         If nonzero, performs a trimmed (Yuen's) t-test.
         Defines the fraction of elements to be trimmed from each end of the
         input samples. If 0 (default), no elements will be trimmed from either
         side. The number of trimmed elements from each tail is the floor of the
         trim times the number of elements. Valid range is [0, .5).
+    method : ResamplingMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`/`MonteCarloMethod`, the p-value is
+        computed using
+        `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
+        provided configuration options and other appropriate settings.
+        Otherwise, the p-value is computed by comparing the test statistic
+        against a theoretical t-distribution.
 
-        .. versionadded:: 1.7
+        .. versionadded:: 1.15.0
 
     Returns
     -------
@@ -6337,6 +6491,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     By default, the p-value is determined by comparing the t-statistic of the
     observed data against a theoretical t-distribution.
+
+    (In the following, note that the argument `permutations` itself is
+    deprecated, but a nearly identical test may be performed by creating
+    an instance of `scipy.stats.PermutationMethod` with ``n_resamples=permutuations``
+    and passing it as the `method` argument.)
     When ``1 < permutations < binom(n, k)``, where
 
     * ``k`` is the number of observations in `a`,
@@ -6446,16 +6605,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                 pvalue=0.06434714193919686,
                 df=109.32167496550137)
 
-    When performing a permutation test, more permutations typically yields
-    more accurate results. Use a ``np.random.Generator`` to ensure
-    reproducibility:
-
-    >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
-    ...                 random_state=rng)
-    TtestResult(statistic=-2.8415950600298774,
-                pvalue=0.0052994700529947,
-                df=nan)
-
     Take these two samples, one of which has an extreme tail.
 
     >>> a = (56, 128.6, 12, 123.8, 64.34, 78, 763.3)
@@ -6481,6 +6630,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
+
+    if not isinstance(method, PermutationMethod | MonteCarloMethod | None):
+        message = ("`method` must be an instance of `PermutationMethod`, an instance "
+                   "of `MonteCarloMethod`, or None (default).")
+        raise ValueError(message)
+
+    if not is_numpy(xp) and method is not None:
+        message = "Use of resampling methods is compatible only with NumPy arrays."
+        raise NotImplementedError(message)
 
     result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
     NaN = xp.full(result_shape, _get_nan(a, b, xp=xp))
@@ -6534,7 +6692,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
-    t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+
+    if method is None:
+        t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+    else:
+        # nan_policy is taken care of by axis_nan_policy decorator
+        ttest_kwargs = dict(equal_var=equal_var, trim=trim)
+        t, prob = _ttest_resampling(a, b, axis, alternative, ttest_kwargs, method)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = xp.broadcast_to(df, t.shape)
@@ -6543,6 +6707,27 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
                        standard_error=denom, estimate=estimate)
+
+
+def _ttest_resampling(x, y, axis, alternative, ttest_kwargs, method):
+    def statistic(x, y, axis):
+        return ttest_ind(x, y, axis=axis, **ttest_kwargs).statistic
+
+    test = (permutation_test if isinstance(method, PermutationMethod)
+            else monte_carlo_test)
+    method = method._asdict()
+
+    if test is monte_carlo_test:
+        # `monte_carlo_test` accepts an `rvs` tuple of callables, not an `rng`
+        # If the user specified an `rng`, replace it with the default callables
+        if (rng := method.pop('rng', None)) is not None:
+            rng = np.random.default_rng(rng)
+            method['rvs'] = rng.normal, rng.normal
+
+    res = test((x, y,), statistic=statistic, axis=axis,
+               alternative=alternative, **method)
+
+    return res.statistic, res.pvalue
 
 
 def _ttest_trim_var_mean_len(a, trim, axis):

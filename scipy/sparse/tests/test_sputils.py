@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_equal
 import pytest
 from pytest import raises as assert_raises
-from scipy.sparse import _sputils as sputils
+from scipy.sparse import _sputils as sputils, csr_array, bsr_array, dia_array, coo_array
 from scipy.sparse._sputils import matrix
 
 
@@ -114,6 +114,139 @@ class TestSparseUtils:
         # These function calls should not raise errors
         for axis in (-2, -1, 0, 1, None):
             sputils.validateaxis(axis)
+
+    @pytest.mark.parametrize("container", [csr_array, bsr_array])
+    def test_safely_cast_index_compressed(self, container):
+        # This is slow to test completely as nnz > imax is big
+        # and indptr is big for some shapes
+        # So we don't test large nnz, nor csc_array (same code as csr_array)
+        imax = np.int64(np.iinfo(np.int32).max)
+
+        # Shape 32bit
+        A32 = container((1, imax))
+        # indices big type, small values
+        B32 = A32.copy()
+        B32.indices = B32.indices.astype(np.int64)
+        B32.indptr = B32.indptr.astype(np.int64)
+
+        # Shape 64bit
+        # indices big type, small values
+        A64 = csr_array((1, imax + 1))
+        # indices small type, small values
+        B64 = A64.copy()
+        B64.indices = B64.indices.astype(np.int32)
+        B64.indptr = B64.indptr.astype(np.int32)
+        # indices big type, big values
+        C64 = A64.copy()
+        C64.indices = np.array([imax + 1], dtype=np.int64)
+        C64.indptr = np.array([0, 1], dtype=np.int64)
+        C64.data = np.array([2.2])
+
+        assert (A32.indices.dtype, A32.indptr.dtype) == (np.int32, np.int32)
+        assert (B32.indices.dtype, B32.indptr.dtype) == (np.int64, np.int64)
+        assert (A64.indices.dtype, A64.indptr.dtype) == (np.int64, np.int64)
+        assert (B64.indices.dtype, B64.indptr.dtype) == (np.int32, np.int32)
+        assert (C64.indices.dtype, C64.indptr.dtype) == (np.int64, np.int64)
+
+        for A in [A32, B32, A64, B64]:
+            indices, indptr = sputils.safely_cast_index_arrays(A, np.int32)
+            assert (indices.dtype, indptr.dtype) == (np.int32, np.int32)
+            indices, indptr = sputils.safely_cast_index_arrays(A, np.int64)
+            assert (indices.dtype, indptr.dtype) == (np.int64, np.int64)
+
+            indices, indptr = sputils.safely_cast_index_arrays(A, A.indices.dtype)
+            assert indices is A.indices
+            assert indptr is A.indptr
+
+        with assert_raises(ValueError):
+            sputils.safely_cast_index_arrays(C64, np.int32)
+        indices, indptr = sputils.safely_cast_index_arrays(C64, np.int64)
+        assert indices is C64.indices
+        assert indptr is C64.indptr
+
+    def test_safely_cast_index_coo(self):
+        # This is slow to test completely as nnz > imax is big
+        # So we don't test large nnz
+        imax = np.int64(np.iinfo(np.int32).max)
+
+        # Shape 32bit
+        A32 = coo_array((1, imax))
+        # coords big type, small values
+        B32 = A32.copy()
+        B32.coords = tuple(co.astype(np.int64) for co in B32.coords)
+
+        # Shape 64bit
+        # coords big type, small values
+        A64 = coo_array((1, imax + 1))
+        # coords small type, small values
+        B64 = A64.copy()
+        B64.coords = tuple(co.astype(np.int32) for co in B64.coords)
+        # coords big type, big values
+        C64 = A64.copy()
+        C64.coords = (np.array([imax + 1]), np.array([0]))
+        C64.data = np.array([2.2])
+
+        assert A32.coords[0].dtype == np.int32
+        assert B32.coords[0].dtype == np.int64
+        assert A64.coords[0].dtype == np.int64
+        assert B64.coords[0].dtype == np.int32
+        assert C64.coords[0].dtype == np.int64
+
+        for A in [A32, B32, A64, B64]:
+            coords = sputils.safely_cast_index_arrays(A, np.int32)
+            assert coords[0].dtype == np.int32
+            coords = sputils.safely_cast_index_arrays(A, np.int64)
+            assert coords[0].dtype == np.int64
+
+            coords = sputils.safely_cast_index_arrays(A, A.coords[0].dtype)
+            assert coords[0] is A.coords[0]
+
+        with assert_raises(ValueError):
+            sputils.safely_cast_index_arrays(C64, np.int32)
+        coords = sputils.safely_cast_index_arrays(C64, np.int64)
+        assert coords[0] is C64.coords[0]
+
+    def test_safely_cast_index_dia(self):
+        # This is slow to test completely as nnz > imax is big
+        # So we don't test large nnz
+        imax = np.int64(np.iinfo(np.int32).max)
+
+        # Shape 32bit
+        A32 = dia_array((1, imax))
+        # offsets big type, small values
+        B32 = A32.copy()
+        B32.offsets = B32.offsets.astype(np.int64)
+
+        # Shape 64bit
+        # offsets big type, small values
+        A64 = dia_array((1, imax + 2))
+        # offsets small type, small values
+        B64 = A64.copy()
+        B64.offsets = B64.offsets.astype(np.int32)
+        # offsets big type, big values
+        C64 = A64.copy()
+        C64.offsets = np.array([imax + 1])
+        C64.data = np.array([2.2])
+
+        assert A32.offsets.dtype == np.int32
+        assert B32.offsets.dtype == np.int64
+        assert A64.offsets.dtype == np.int64
+        assert B64.offsets.dtype == np.int32
+        assert C64.offsets.dtype == np.int64
+
+        for A in [A32, B32, A64, B64]:
+            offsets = sputils.safely_cast_index_arrays(A, np.int32)
+            assert offsets.dtype == np.int32
+            offsets = sputils.safely_cast_index_arrays(A, np.int64)
+            assert offsets.dtype == np.int64
+
+            offsets = sputils.safely_cast_index_arrays(A, A.offsets.dtype)
+            assert offsets is A.offsets
+
+        with assert_raises(ValueError):
+            sputils.safely_cast_index_arrays(C64, np.int32)
+        offsets = sputils.safely_cast_index_arrays(C64, np.int64)
+        assert offsets is C64.offsets
 
     def test_get_index_dtype(self):
         imax = np.int64(np.iinfo(np.int32).max)

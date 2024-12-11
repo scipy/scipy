@@ -1129,14 +1129,16 @@ def emit_cmdstr(cmd):
     console.print(f"{EMOJI.cmd} [cmd] {cmd}")
 
 
-@task_params([{"name": "fix", "default": False}])
-def task_lint(fix):
+@task_params([{"name": "fix", "default": False}, {"name": "all", "default": False}])
+def task_lint(fix, all):
     # Lint just the diff since branching off of main using a
     # stricter configuration.
     # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
     cmd = str(Dirs().root / 'tools' / 'lint.py') + ' --diff-against=main'
     if fix:
         cmd += ' --fix'
+    if all:
+        cmd += ' --all'
     return {
         'basename': 'lint',
         'actions': [cmd],
@@ -1161,11 +1163,11 @@ def task_check_python_h_first():
     }
 
 
-def task_unicode_check():
-    # emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
+def task_check_unicode():
+    # emit_cmdstr(os.path.join('tools', 'check_unicode.py'))
     return {
-        'basename': 'unicode-check',
-        'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
+        'basename': 'check_unicode',
+        'actions': [str(Dirs().root / 'tools' / 'check_unicode.py')],
         'doc': 'Check for disallowed Unicode characters in the SciPy Python '
                'and Cython source code.',
     }
@@ -1174,7 +1176,7 @@ def task_unicode_check():
 def task_check_test_name():
     # emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
     return {
-        "basename": "check-testname",
+        "basename": "check_testname",
         "actions": [str(Dirs().root / "tools" / "check_test_name.py")],
         "doc": "Check tests are correctly named so that pytest runs them."
     }
@@ -1182,18 +1184,22 @@ def task_check_test_name():
 
 @cli.cls_cmd('lint')
 class Lint:
-    """:dash: Run linter on modified files and check for
+    """:dash: Run linter on modified (or all) files and check for
     disallowed Unicode characters and possibly-invalid test names."""
     fix = Option(
         ['--fix'], default=False, is_flag=True, help='Attempt to auto-fix errors'
     )
+    all = Option(
+        ['--all'], default=False, is_flag=True,
+        help='lint all files instead of just modified files.'
+    )
 
     @classmethod
-    def run(cls, fix):
+    def run(cls, fix, all):
         run_doit_task({
-            'lint': {'fix': fix},
-            'unicode-check': {},
-            'check-testname': {},
+            'lint': {'fix': fix, 'all': all},
+            'check_unicode': {},
+            'check_testname': {},
             'check_python_h_first': {},
         })
 

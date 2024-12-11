@@ -86,7 +86,10 @@ class Normal(ContinuousDistribution):
 
     def _logentropy_formula(self, *, mu, sigma, **kwargs):
         lH0 = StandardNormal._logentropy_formula(self)
-        lls = np.log(np.log(abs(sigma))+0j)
+        with np.errstate(divide='ignore'):
+            # sigma = 1 -> log(sigma) = 0 -> log(log(sigma)) = -inf
+            # Silence the unnecessary runtime warning
+            lls = np.log(np.log(abs(sigma))+0j)
         return special.logsumexp(np.broadcast_arrays(lH0, lls), axis=0)
 
     def _median_formula(self, *, mu, sigma, **kwargs):
@@ -309,6 +312,21 @@ class _Uniform(ContinuousDistribution):
 
     def _mode_formula(self, *, a, b, ab, **kwargs):
         return a + 0.5*ab
+
+
+class _Gamma(ContinuousDistribution):
+    # Gamma distribution for testing only
+    _a_domain = _RealDomain(endpoints=(0, inf))
+    _x_support = _RealDomain(endpoints=(0, inf), inclusive=(False, False))
+
+    _a_param = _RealParameter('a', domain=_a_domain, typical=(0.1, 10))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(0.1, 10))
+
+    _parameterizations = [_Parameterization(_a_param)]
+    _variable = _x_param
+
+    def _pdf_formula(self, x, *, a, **kwargs):
+        return x ** (a - 1) * np.exp(-x) / special.gamma(a)
 
 
 # Distribution classes need only define the summary and beginning of the extended
