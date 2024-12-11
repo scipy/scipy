@@ -3991,6 +3991,12 @@ def test_nonnumeric_dtypes(func, xp):
         func(*args, x=1.)
 
 
+# XXX: restore testing on CuPy, where possible. Multiple issues in this test:
+#  1. _zi functions deliberately incompatible in cupy
+#     (https://github.com/scipy/scipy/pull/21713#issuecomment-2417494443)
+#  2. a CuPy issue to be fixed in 14.0 only
+#      (https://github.com/cupy/cupy/pull/8677)
+#  3. an issue with CuPy's __array__ not numpy-2.0 compatible
 @skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize('dt', ['float32', 'float64', 'complex64', 'complex128'])
 class TestSOSFilt:
@@ -4006,16 +4012,16 @@ class TestSOSFilt:
         # Test simple IIR
         y_r = xp.asarray([0, 2, 4, 6, 8, 10.], dtype=dt)
         sos = tf2sos(b, a)
-        sos = xp.asarray(sos)   # XXX until tf2sos is numpy only
+        sos = xp.asarray(sos)   # XXX while tf2sos is numpy only
         assert_array_almost_equal(sosfilt(sos, x), y_r)
 
         # Test simple FIR
-        b = xp.asarray([1, 1],  dtype=dt)
+        b = xp.asarray([1, 1], dtype=dt)
         # NOTE: This was changed (rel. to TestLinear...) to add a pole @zero:
         a = xp.asarray([1, 0], dtype=dt)
         y_r = xp.asarray([0, 1, 3, 5, 7, 9.], dtype=dt)
         sos = tf2sos(b, a)
-        sos = xp.asarray(sos)   # XXX until tf2sos is numpy only
+        sos = xp.asarray(sos)   # XXX while tf2sos is numpy only
         assert_array_almost_equal(sosfilt(sos, x), y_r)
 
         b = xp.asarray([1.0, 1, 0])
@@ -4239,6 +4245,7 @@ class TestSOSFilt:
             sosfilt(sos, x)
 
 
+@skip_xp_backends(cpu_only=True, reason='lfilter is CPU-only compiled code')
 @skip_xp_backends('jax.numpy', reason='item assignment')
 class TestDeconvolve:
 
