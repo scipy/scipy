@@ -582,7 +582,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         result.ravel('A'), fortran)
         else:
             self.sum_duplicates()
-            result[*self.coords] += self.data
+            result[self.coords] += self.data
         return self._container(result, copy=False)
 
 
