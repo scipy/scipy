@@ -69,7 +69,8 @@ def test_discrete_basic(distname, arg, first_case):
         if distname != 'sample distribution':
             check_scale_docstring(distfn)
         check_random_state_property(distfn, arg)
-        check_pickling(distfn, arg)
+        if distname not in {'poisson_binom'}:  # can't be pickled
+            check_pickling(distfn, arg)
         check_freezing(distfn, arg)
 
         # Entropy
@@ -117,8 +118,7 @@ def test_rvs_broadcast(dist, shape_args):
     # test might also have to be changed.
     shape_only = dist in ['betabinom', 'betanbinom', 'skellam', 'yulesimon',
                           'dlaplace', 'nchypergeom_fisher',
-                          'nchypergeom_wallenius']
-
+                          'nchypergeom_wallenius', 'poisson_binom']
     try:
         distfunc = getattr(stats, dist)
     except TypeError:
@@ -128,6 +128,16 @@ def test_rvs_broadcast(dist, shape_args):
     nargs = distfunc.numargs
     allargs = []
     bshape = []
+
+    if dist == 'poisson_binom':
+        # normal rules apply except the last axis of `p` is ignored
+        p = np.full((3, 1, 10), 0.5)
+        allargs = (p, loc)
+        bshape = (3, 2)
+        check_rvs_broadcast(distfunc, dist, allargs,
+                            bshape, shape_only, [np.dtype(int)])
+        return
+
     # Generate shape parameter arguments...
     for k in range(nargs):
         shp = (k + 3,) + (1,)*(k + 1)

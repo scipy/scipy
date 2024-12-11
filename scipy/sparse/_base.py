@@ -65,6 +65,7 @@ class _spbase:
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
+    _allow_nd = (2,)
 
     @property
     def ndim(self) -> int:
@@ -157,8 +158,8 @@ class _spbase:
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
-        is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_1d=is_array)
+        # Don't restrict ndim on this first call. That happens in constructor
+        shape = check_shape(args, self.shape, allow_nd=range(1, 65))
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
             if copy:
@@ -499,6 +500,12 @@ class _spbase:
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
 
+    def _broadcast_to(self, shape, copy=False):
+        if self.shape == shape:
+            return self.copy() if copy else self
+        else:
+            return self.tocsr()._broadcast_to(shape, copy)
+
     def __eq__(self, other):
         return self.tocsr().__eq__(other)
 
@@ -678,8 +685,7 @@ class _spbase:
 
             return result
 
-        else:
-            raise ValueError('could not interpret dimensions')
+        return NotImplemented
 
     def __mul__(self, other):
         return self.multiply(other)
@@ -1403,6 +1409,11 @@ def issparse(x):
     -------
     bool
         True if `x` is a sparse array or a sparse matrix, False otherwise
+
+    Notes
+    -----
+    Use `isinstance(x, sp.sparse.sparray)` to check between an array or matrix.
+    Use `a.format` to check the sparse format, e.g. `a.format == 'csr'`.
 
     Examples
     --------

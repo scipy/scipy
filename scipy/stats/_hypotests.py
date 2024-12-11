@@ -599,7 +599,7 @@ def cramervonmises(rvs, cdf, args=()):
     w = 1/(12*n) + np.sum((u - cdfvals)**2)
 
     # avoid small negative values that can occur due to the approximation
-    p = max(0, 1. - _cdf_cvm(w, n))
+    p = np.clip(1. - _cdf_cvm(w, n), 0., None)
 
     return CramerVonMisesResult(statistic=w, pvalue=p)
 

@@ -421,7 +421,7 @@ class Complex:
                     if (self.bounds[symmetry[i]] is not
                             self.bounds[symmetry[j]]):
                         logging.warning(f"Variable {i} was specified as "
-                                        f"symmetetric to variable {j}, however"
+                                        f"symmetric to variable {j}, however"
                                         f", the bounds {i} ="
                                         f" {self.bounds[symmetry[i]]} and {j}"
                                         f" ="
@@ -1046,7 +1046,7 @@ class Complex:
                     try:
                         vn_pool.remove(vn)
                     except KeyError:
-                        pass  # NOTE: Not all neigbouds are in initial pool
+                        pass  # NOTE: Not all neighbours are in initial pool
         return vn_pool
 
     def vf_to_vv(self, vertices, simplices):
@@ -1219,7 +1219,7 @@ class Complex:
         #       dimensions higher than 2?
         # TODO: Literature seems to suggest using proj.T, but why is this
         #       needed?
-        if np.linalg.det(proj) == 0.0:  # TODO: Repalace with tolerance?
+        if np.linalg.det(proj) == 0.0:  # TODO: Replace with tolerance?
             return True  # Simplex is degenerate
         else:
             return False  # Simplex is not degenerate

@@ -69,7 +69,7 @@ _LPProblem.__doc__ = \
 
         For mixed integrality constraints, supply an array of shape `c.shape`.
         To infer a constraint on each decision variable from shorter inputs,
-        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+        the argument will be broadcast to `c.shape` using `np.broadcast_to`.
 
         This argument is currently used only by the ``'highs'`` method and
         ignored otherwise.
@@ -1215,7 +1215,7 @@ def _get_Abc(lp, c0):
     if sparse:
         b = b.reshape(-1, 1)
         A = A.tocsc()
-        b -= (A[:, i_shift] * sps.diags(lb_shift)).sum(axis=1)
+        b -= (A[:, i_shift] @ sps.diags(lb_shift)).sum(axis=1)
         b = b.ravel()
     else:
         b -= (A[:, i_shift] * lb_shift).sum(axis=1)
@@ -1249,7 +1249,7 @@ def _autoscale(A, b, c, x0):
             R = R.toarray().flatten()
         R[R == 0] = 1
         R = 1/_round_to_power_of_two(R)
-        A = sps.diags(R)*A if sps.issparse(A) else A*R.reshape(m, 1)
+        A = sps.diags(R)@A if sps.issparse(A) else A*R.reshape(m, 1)
         b = b*R
 
         C = np.max(np.abs(A), axis=0)
@@ -1257,7 +1257,7 @@ def _autoscale(A, b, c, x0):
             C = C.toarray().flatten()
         C[C == 0] = 1
         C = 1/_round_to_power_of_two(C)
-        A = A*sps.diags(C) if sps.issparse(A) else A*C
+        A = A@sps.diags(C) if sps.issparse(A) else A*C
         c = c*C
 
     b_scale = np.max(np.abs(b)) if b.size > 0 else 1

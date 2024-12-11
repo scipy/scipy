@@ -95,8 +95,8 @@ fitpack_lib = static_library('fitpack_lib',
   gnu_symbol_visibility: 'hidden',
 )
 
-py3.extension_module('interpnd',
-  spt_cython_gen.process('interpnd.pyx'),
+py3.extension_module('_interpnd',
+  spt_cython_gen.process('_interpnd.pyx'),
   c_args: [Wno_discarded_qualifiers, cython_c_args],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -123,7 +123,7 @@ py3.extension_module('_rgi_cython',
 
 __fitpack_lib = static_library('__fitpack',
     ['src/__fitpack.h', 'src/__fitpack.cc'],
-    dependencies:[lapack, np_dep, py3_dep]
+    dependencies:[lapack, np_dep, py3_dep],
 )
 
 __fitpack_dep = declare_dependency(
@@ -138,6 +138,16 @@ py3.extension_module('_bspl',
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
+)
+
+
+py3.extension_module('_dierckx',
+    ['src/_dierckxmodule.cc'],
+    include_directories: 'src/',
+    dependencies: [py3_dep, np_dep, __fitpack_dep],
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/interpolate'
 )
 
 # TODO: Add flags for 64 bit ints
@@ -203,6 +213,7 @@ py3.install_sources([
     'fitpack2.py',
     'interpolate.py',
     'ndgriddata.py',
+    'interpnd.py',
     'polyint.py',
     'rbf.py'
   ],

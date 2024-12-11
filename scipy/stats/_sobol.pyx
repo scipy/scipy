@@ -66,10 +66,13 @@ def get_poly_vinit(kind, dtype):
         poly_vinit = _vinit_dict.get(dtype)
 
     if poly_vinit is None:
-        _poly_dict[dtype] = np.empty((MAXDIM,), dtype=dtype)
-        _vinit_dict[dtype] = np.empty((MAXDIM, MAXDEG), dtype=dtype)
+        poly = np.empty((MAXDIM,), dtype=dtype)
+        vinit = np.empty((MAXDIM, MAXDEG), dtype=dtype)
 
-        _initialize_direction_numbers(_poly_dict[dtype], _vinit_dict[dtype], dtype)
+        _initialize_direction_numbers(poly, vinit, dtype)
+
+        _poly_dict[dtype] = poly
+        _vinit_dict[dtype] = vinit
 
         if kind == 'poly':
             poly_vinit = _poly_dict.get(dtype)

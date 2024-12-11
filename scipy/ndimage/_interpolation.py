@@ -172,7 +172,7 @@ def spline_filter(input, order=3, output=np.float64, mode='mirror'):
 
     Examples
     --------
-    We can filter an image using multidimentional splines:
+    We can filter an image using multidimensional splines:
 
     >>> from scipy.ndimage import spline_filter
     >>> import numpy as np

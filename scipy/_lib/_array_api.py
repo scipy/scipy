@@ -6,13 +6,10 @@ https://data-apis.org/array-api/latest/purpose_and_scope.html
 The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
-from __future__ import annotations
-
 import os
-import warnings
 
 from types import ModuleType
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -22,7 +19,12 @@ from scipy._lib.array_api_compat import (
     is_array_api_obj,
     size as xp_size,
     numpy as np_compat,
-    device as xp_device
+    device as xp_device,
+    is_numpy_namespace as is_numpy,
+    is_cupy_namespace as is_cupy,
+    is_torch_namespace as is_torch,
+    is_jax_namespace as is_jax,
+    is_array_api_strict_namespace as is_array_api_strict
 )
 
 __all__ = [
@@ -31,7 +33,7 @@ __all__ = [
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_atleast_nd', 'xp_copy', 'xp_copysign', 'xp_device',
+    'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
     'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
 ]
@@ -48,12 +50,11 @@ _GLOBAL_CONFIG = {
 }
 
 
-if TYPE_CHECKING:
-    Array = Any  # To be changed to a Protocol later (see array-api#589)
-    ArrayLike = Array | npt.ArrayLike
+Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
+ArrayLike: TypeAlias = Array | npt.ArrayLike
 
 
-def _compliance_scipy(arrays: list[ArrayLike]) -> list[Array]:
+def _compliance_scipy(arrays):
     """Raise exceptions on known-bad subclasses.
 
     The following subclasses are not supported and raise and error:
@@ -194,17 +195,6 @@ def _asarray(
     return array
 
 
-def xp_atleast_nd(x: Array, *, ndim: int, xp: ModuleType | None = None) -> Array:
-    """Recursively expand the dimension to have at least `ndim`."""
-    if xp is None:
-        xp = array_namespace(x)
-    x = xp.asarray(x)
-    if x.ndim < ndim:
-        x = xp.expand_dims(x, axis=0)
-        x = xp_atleast_nd(x, ndim=ndim, xp=xp)
-    return x
-
-
 def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     """
     Copies an array.
@@ -231,26 +221,6 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
         xp = array_namespace(x)
 
     return _asarray(x, copy=True, xp=xp)
-
-
-def is_numpy(xp: ModuleType) -> bool:
-    return xp.__name__ in ('numpy', 'scipy._lib.array_api_compat.numpy')
-
-
-def is_cupy(xp: ModuleType) -> bool:
-    return xp.__name__ in ('cupy', 'scipy._lib.array_api_compat.cupy')
-
-
-def is_torch(xp: ModuleType) -> bool:
-    return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
-
-
-def is_jax(xp):
-    return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
-
-
-def is_array_api_strict(xp):
-    return xp.__name__ == 'array_api_strict'
 
 
 def _strict_check(actual, desired, xp, *,
@@ -280,7 +250,7 @@ def _strict_check(actual, desired, xp, *,
         assert actual.shape == desired.shape, _msg
 
     desired = xp.broadcast_to(desired, actual.shape)
-    return desired
+    return actual, desired
 
 
 def _assert_matching_namespace(actual, desired):
@@ -300,9 +270,13 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
-    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape,
-                            check_0d=check_0d)
+
+    actual, desired = _strict_check(
+        actual, desired, xp, check_namespace=check_namespace,
+        check_dtype=check_dtype, check_shape=check_shape,
+        check_0d=check_0d
+    )
+
     if is_cupy(xp):
         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
     elif is_torch(xp):
@@ -321,9 +295,12 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
-    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape,
-                            check_0d=check_0d)
+
+    actual, desired = _strict_check(
+        actual, desired, xp,
+        check_namespace=check_namespace, check_dtype=check_dtype,
+        check_shape=check_shape, check_0d=check_0d
+    )
 
     floating = xp.isdtype(actual.dtype, ('real floating', 'complex floating'))
     if rtol is None and floating:
@@ -351,9 +328,13 @@ def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
-    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                            check_dtype=check_dtype, check_shape=check_shape,
-                            check_0d=check_0d)
+
+    actual, desired = _strict_check(
+        actual, desired, xp, check_namespace=check_namespace,
+        check_dtype=check_dtype, check_shape=check_shape,
+        check_0d=check_0d
+    )
+
     if is_cupy(xp):
         return xp.testing.assert_array_less(actual, desired,
                                             err_msg=err_msg, verbose=verbose)
@@ -383,34 +364,6 @@ def assert_almost_equal(actual, desired, decimal=7, *args, **kwds):
     return xp_assert_close(actual, desired,
                            atol=atol, rtol=rtol, check_dtype=False, check_shape=False,
                            *args, **kwds)
-
-
-def xp_cov(x: Array, *, xp: ModuleType | None = None) -> Array:
-    if xp is None:
-        xp = array_namespace(x)
-
-    X = xp_copy(x, xp=xp)
-    dtype = xp.result_type(X, xp.float64)
-
-    X = xp_atleast_nd(X, ndim=2, xp=xp)
-    X = xp.asarray(X, dtype=dtype)
-
-    avg = xp.mean(X, axis=1)
-    fact = X.shape[1] - 1
-
-    if fact <= 0:
-        warnings.warn("Degrees of freedom <= 0 for slice",
-                      RuntimeWarning, stacklevel=2)
-        fact = 0.0
-
-    X -= avg[:, None]
-    X_T = X.T
-    if xp.isdtype(X_T.dtype, 'complex floating'):
-        X_T = xp.conj(X_T)
-    c = X @ X_T
-    c /= fact
-    axes = tuple(axis for axis, length in enumerate(c.shape) if length == 1)
-    return xp.squeeze(c, axis=axes)
 
 
 def xp_unsupported_param_msg(param: Any) -> str:
@@ -580,11 +533,23 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
     args_not_none = [arg for arg in args if arg is not None]
 
     # determine minimum dtype
-    dtypes = [arg.dtype for arg in args_not_none
-              if not xp.isdtype(arg.dtype, 'integral')]
-    if force_floating:
-        dtypes.append(xp.asarray(1.).dtype)
-    dtype = xp.result_type(*dtypes)
+    default_float = xp.asarray(1.).dtype
+    dtypes = [arg.dtype for arg in args_not_none]
+    try:  # follow library's prefered mixed promotion rules
+        dtype = xp.result_type(*dtypes)
+        if force_floating and xp.isdtype(dtype, 'integral'):
+            # If we were to add `default_float` before checking whether the result
+            # type is otherwise integral, we risk promotion from lower float.
+            dtype = xp.result_type(dtype, default_float)
+    except TypeError:  # mixed type promotion isn't defined
+        float_dtypes = [dtype for dtype in dtypes
+                        if not xp.isdtype(dtype, 'integral')]
+        if float_dtypes:
+            dtype = xp.result_type(*float_dtypes, default_float)
+        elif force_floating:
+            dtype = default_float
+        else:
+            dtype = xp.result_type(*dtypes)
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}

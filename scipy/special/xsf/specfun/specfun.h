@@ -3534,7 +3534,7 @@ inline void kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2) {
     dn[m] = pow(-1, ip) * dnp * cs / ((2.0 * m - 1.0) * (2.0 * m + 1.0 - 4.0 * ip) * tp[m]);
 
     for (k = m + 2; k <= nn; k++)
-        dn[k - 1] *= rk[k - 1];
+        dn[k - 1] = rk[k - 1] * dn[k - 2];
 
     r1 = 1.0;
     for (j = 1; j <= (n + m + ip) / 2; j++) {
@@ -3582,10 +3582,10 @@ inline void kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2) {
     for (j = 1; j <= m; ++j)
         r5 = r5 * (j + m) / c;
 
-    g0 = dn[m - 1];
-
     if (m == 0)
         g0 = df[0];
+    else
+        g0 = dn[m - 1];
 
     sb0 = (ip + 1.0) * pow(c, ip + 1) / (2.0 * ip * (m - 2.0) + 1.0) / (2.0 * m - 1.0);
     *ck2 = pow(-1, ip) * sb0 * r4 * r5 * g0 / r1 * su0;
@@ -5024,14 +5024,16 @@ void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     //          and joining factors
     // ======================================================
 
-    int k, j, j1, j2, l1, ki, nm3, sum, sdm;
+    int k, j, j1, j2, l1, ki, nm3;
     T ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,\
-           sf, gb, spl, gc, sd, r4, spd1, spd2, su2, ck1, ck2;
+           sf, gb, spl, gc, sd, r4, spd1, spd2, su2, ck1, ck2, sum, sdm;
 
+    // fortran index start from 0
     T *pm = (T *) malloc(252*sizeof(T));
     T *pd = (T *) malloc(252*sizeof(T));
     T *qm = (T *) malloc(252*sizeof(T));
     T *qd = (T *) malloc(252*sizeof(T));
+    // fortran index start from 1
     T *dn = (T *) malloc(201*sizeof(T));
     const T eps = 1.0e-14;
 
@@ -5048,7 +5050,7 @@ void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     sw = 0.0;
     for (k = 1; k <= nm; k++) {
         j = 2 * k - 2 + m + ip;
-        su0 += df[k - 1] * qm[j - 1];
+        su0 += df[k - 1] * qm[j];
         if ((k > nm1) && (fabs(su0 - sw) < fabs(su0) * eps)) { break; }
         sw = su0;
     }
@@ -5056,7 +5058,7 @@ void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     sd0 = 0.0;
     for (k = 1; k <= nm; k++) {
         j = 2 * k - 2 + m + ip;
-        sd0 += df[k - 1] * qd[j - 1];
+        sd0 += df[k - 1] * qd[j];
         if (k > nm1 && fabs(sd0 - sw) < fabs(sd0) * eps) { break; }
         sw = sd0;
     }
@@ -5068,8 +5070,8 @@ void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
         if (j < 0) {
             j = -j - 1;
         }
-        su1 += dn[k - 1] * qm[j - 1];
-        sd1 += dn[k - 1] * qd[j - 1];
+        su1 += dn[k - 1] * qm[j];
+        sd1 += dn[k - 1] * qd[j];
     }
 
     ga = pow((x - 1.0) / (x + 1.0), 0.5 * m);
@@ -5112,17 +5114,19 @@ void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     }
     su2 = 0.0;
     ki = (2 * m + 1 + ip) / 2;
+    ki = std::max(1, ki);
+    assert((ki-1) >= 0);
     nm3 = nm + ki;
     for (k = ki; k <= nm3; k++) {
         j = 2 * k - 1 - m - ip;
-        su2 += dn[k - 1] * pm[j - 1];
+        su2 += dn[k - 1] * pm[j];
         if ((j > m) && (fabs(su2 - sw) < fabs(su2) * eps)) { break; }
         sw = su2;
     }
     sd2 = 0.0;
     for (k = ki; k < nm3; k++) {
         j = 2 * k - 1 - m - ip;
-        sd2 += dn[k - 1] * pd[j - 1];
+        sd2 += dn[k - 1] * pd[j];
         if (j > m && fabs(sd2 - sw) < fabs(sd2) * eps) { break; }
         sw = sd2;
     }

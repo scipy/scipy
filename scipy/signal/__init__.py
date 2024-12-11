@@ -63,6 +63,7 @@ Filtering
    sosfiltfilt   -- A forward-backward filter for second-order sections.
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
+   envelope      -- Compute the envelope of a real- or complex-valued signal.
 
    decimate      -- Downsample a signal.
    detrend       -- Remove linear and/or constant trends from data.
@@ -316,6 +317,9 @@ from . import (
     bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
     spectral, signaltools, waveforms, wavelets, spline
 )
+
+# overwrite supported names/objects star-imported above
+from ._support_alternative_backends import *
 
 __all__ = [
     s for s in dir() if not s.startswith("_")
