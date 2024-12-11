@@ -261,12 +261,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             warn("Comparing sparse matrices using == is inefficient, try using"
                  " != instead.", SparseEfficiencyWarning, stacklevel=3)
             # TODO sparse broadcasting
-            if self.shape != other.shape:
-                return False
-            elif self.format != other.format:
+            if self.format != other.format:
                 other = other.asformat(self.format)
+
             res = self._binopt(other, '_ne_')
-            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+            all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
         else:
             return NotImplemented
@@ -296,12 +295,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return NotImplemented
         # Sparse other.
         elif issparse(other):
-            # TODO sparse broadcasting
-            if self.shape != other.shape:
-                return True
-            elif self.format != other.format:
+            if self.format != other.format:
                 other = other.asformat(self.format)
-            return self._binopt(other, '_ne_')
+            res = self._binopt(other, '_ne_')
+            return res
         else:
             return NotImplemented
 
@@ -323,19 +320,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return op(self.todense(), other)
         # Sparse other.
         elif issparse(other):
-            # TODO sparse broadcasting
-            if self.shape != other.shape:
-                raise ValueError("inconsistent shapes")
-            elif self.format != other.format:
+            if self.format != other.format:
                 other = other.asformat(self.format)
+
             if op_name not in ('_ge_', '_le_'):
                 return self._binopt(other, op_name)
 
             warn("Comparing sparse matrices using >= and <= is inefficient, "
                  "using <, >, or !=, instead.",
                  SparseEfficiencyWarning, stacklevel=3)
-            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
+            all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
         else:
             return NotImplemented
@@ -370,7 +366,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+            # This will raise an error if the shapes are not broadcastable
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+
+            self = self._broadcast_to(bshape)
+            other = np.broadcast_to(other, bshape)
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         order = self._swap('CF')[0]
         result = np.array(other, dtype=dtype, order=order, copy=True)
@@ -434,7 +434,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if sN == 1 and sM == oM:
                 new_self = _make_diagonal_csr(self.toarray().ravel(), is_array)
                 return new_self._matmul_sparse(other)
-            raise ValueError("inconsistent shapes")
+            raise ValueError("cannot be broadcast")
 
         # Assume other is a dense matrix/array, which produces a single-item
         # object array if other isn't convertible to ndarray.
@@ -470,7 +470,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif other2d.shape[1] == self.shape[-1]:  # Dense 2d matrix.
                 data = np.multiply(ret.data, other2d[:, ret.col])
             else:
-                raise ValueError("inconsistent shapes")
+                raise ValueError("cannot be broadcast")
             idx_dtype = self._get_index_dtype(ret.col,
                                               maxval=ret.nnz * other2d.shape[0])
             row = np.repeat(np.arange(other2d.shape[0], dtype=idx_dtype), ret.nnz)
@@ -487,7 +487,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif other2d.shape[0] == self.shape[0]:  # Dense 2d array.
                 data = np.multiply(ret.data[:, None], other2d[ret.row])
             else:
-                raise ValueError("inconsistent shapes")
+                raise ValueError("cannot be broadcast")
             idx_dtype = self._get_index_dtype(ret.row,
                                               maxval=ret.nnz * other2d.shape[1])
             row = np.repeat(ret.row.astype(idx_dtype, copy=False), other2d.shape[1])
@@ -504,7 +504,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif other2d.shape[1] == 1 and self.shape[0] == other2d.shape[0]:
             data = np.multiply(ret.data, other2d[ret.row].ravel())
         else:
-            raise ValueError("inconsistent shapes")
+            raise ValueError("cannot be broadcast")
         ret.data = data.view(np.ndarray).ravel()
         return ret
 
@@ -1351,7 +1351,20 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _binopt(self, other, op):
         """apply the binary operation fn to two sparse matrices."""
-        other = self.__class__(other)
+        different_shapes = self.shape != other.shape
+        if different_shapes: # we need to broadcast
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+
+            both_are_1d = self.ndim == 1 and other.ndim == 1
+            result_shape_if_1d = self.shape[0]
+            self = self.reshape(self._shape_as_2d).tocsr()
+            other = other.reshape(other._shape_as_2d).tocsr()
+
+            bshape2d = np.broadcast_shapes(self.shape, other.shape)
+            self = self._broadcast_to(bshape2d)
+            other = other._broadcast_to(bshape2d)
+        else:
+            other = self.__class__(other)
 
         # e.g. csr_plus_csr, csr_minus_csr, etc.
         fn = getattr(_sparsetools, self.format + op + self.format)
@@ -1380,6 +1393,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            indptr, indices, data)
 
         A = self.__class__((data, indices, indptr), shape=self.shape)
+        if different_shapes:
+            if both_are_1d:
+                A = A.reshape(result_shape_if_1d).tocsr()
+            else:
+                A = A.tocsr().reshape(bshape)
         A.prune()
 
         return A
@@ -1388,9 +1406,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """
         Divide this matrix by a second sparse matrix.
         """
-        if other.shape != self.shape:
-            raise ValueError('inconsistent shapes')
-
         r = self._binopt(other, '_eldiv_')
 
         if np.issubdtype(r.dtype, np.inexact):
@@ -1415,17 +1430,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _broadcast_to(self, shape, copy=False):
         if self.shape == shape:
             return self.copy() if copy else self
-        
+
         shape = check_shape(shape, allow_nd=(self._allow_nd))
 
         if broadcast_shapes(self.shape, shape) != shape:
             raise ValueError("cannot be broadcast")
-        
+
         if len(self.shape) == 1 and len(shape) == 1:
             self.sum_duplicates()
             if self.nnz == 0: # array has no non zero elements
                 return self.__class__(shape, dtype=self.dtype, copy=False)
-            
+
             N = shape[0]
             data = np.full(N, self.data[0])
             indices = np.arange(0,N)
@@ -1434,14 +1449,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # treat 1D as a 2D row
         old_shape = self._shape_as_2d
-            
+
         if len(shape) != 2:
             ndim = len(shape)
             raise ValueError(f'CSR/CSC broadcast_to cannot have shape >2D. Got {ndim}D')
-        
+
         if self.nnz == 0: # array has no non zero elements
             return self.__class__(shape, dtype=self.dtype, copy=False)
-        
+
         self.sum_duplicates()
         M, N = self._swap(shape)
         oM, oN = self._swap(old_shape)

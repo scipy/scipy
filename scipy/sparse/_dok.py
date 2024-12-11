@@ -296,6 +296,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                     new[key] = aij
         elif issparse(other):
             if other.shape != self.shape:
+                # TODO aupport broadcasting in DOK __add__
                 raise ValueError("Matrix dimensions are not equal.")
             res_dtype = upcast(self.dtype, other.dtype)
             new = self._dok_container(self.shape, dtype=res_dtype)
