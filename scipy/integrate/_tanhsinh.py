@@ -386,7 +386,6 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         # Using RichResult to allow dot notation, but a dictionary would suffice
         pair_cache=_RichResult(xjc=None, wj=None, indices=[0], h0=None))  # pair cache
 
-
     # Constant scalars don't need to be put in `work` unless they need to be
     # passed outside `tanhsinh`. Examples: atol, rtol, h0, minlevel.
 
