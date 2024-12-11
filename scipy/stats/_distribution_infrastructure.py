@@ -1791,7 +1791,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         class_name = self.__class__.__name__
         parameters = list(self._original_parameters.items())
         info = []
-        str_parameters = [f"{symbol}={repr(value)}" for symbol, value in parameters]
+        with np.printoptions(threshold=10):
+            str_parameters = [f"{symbol}={repr(value)}" for symbol, value in parameters]
         str_parameters = f"{', '.join(str_parameters)}"
         info.append(str_parameters)
         return f"{class_name}({', '.join(info)})"
@@ -1816,7 +1817,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
         # Fill in repr_pattern with the repr of self before taking abs.
         # Avoids having unnecessary abs in the repr.
-        repr_pattern = f"({repr(self)})**{repr(other)}"
+        with np.printoptions(threshold=10):
+            repr_pattern = f"({repr(self)})**{repr(other)}"
         X = abs(self) if other % 2 == 0 else self
 
         funcs = dict(g=lambda u: u**other, repr_pattern=repr_pattern,
@@ -1837,8 +1839,10 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def __rtruediv__(self, other):
         a, b = self.support()
-        funcs = dict(g=lambda u: 1 / u, repr_pattern=f"{repr(other)}/({repr(self)})",
-                     h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
+        with np.printoptions(threshold=10):
+            funcs = dict(g=lambda u: 1 / u,
+                         repr_pattern=f"{repr(other)}/({repr(self)})",
+                         h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
         if np.all(a >= 0) or np.all(b <= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
         else:
@@ -1851,10 +1855,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
             return out * other
 
     def __rpow__(self, other):
-        funcs = dict(g=lambda u: other**u,
-                     h=lambda u: np.log(u) / np.log(other),
-                     dh=lambda u: 1 / np.abs(u * np.log(other)),
-                     repr_pattern=f"{repr(other)}**({repr(self)})")
+        with np.printoptions(threshold=10):
+            funcs = dict(g=lambda u: other**u,
+                         h=lambda u: np.log(u) / np.log(other),
+                         dh=lambda u: 1 / np.abs(u * np.log(other)),
+                         repr_pattern=f"{repr(other)}**({repr(self)})")
 
         if not np.isscalar(other) or other <= 0 or other == 1:
             message = ("Raising an argument to the power of a random variable is only "
@@ -3785,7 +3790,10 @@ class TruncatedDistribution(TransformedDistribution):
         return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
 
     def __repr__(self):
-        return f"truncate({repr(self._dist)}, lb={repr(self.lb)}, ub={repr(self.ub)})"
+        with np.printoptions(threshold=10):
+            return (
+                f"truncate({repr(self._dist)}, lb={repr(self.lb)}, ub={repr(self.ub)})"
+            )
 
 
 def truncate(X, lb=-np.inf, ub=np.inf):
@@ -3888,11 +3896,12 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return np.where(sign, a, b)[()], np.where(sign, b, a)[()]
 
     def __repr__(self):
-        result =  f"{repr(self.scale)}*{repr(self._dist)}"
-        if not self.loc.ndim and self.loc < 0:
-            result += f" - {repr(-self.loc)}"
-        elif np.any(self.loc > 0):
-            result += f" + {repr(self.loc)}"
+        with np.printoptions(threshold=10):
+            result =  f"{repr(self.scale)}*{repr(self._dist)}"
+            if not self.loc.ndim and self.loc < 0:
+                result += f" - {repr(-self.loc)}"
+            elif np.any(self.loc > 0):
+                result += f" + {repr(self.loc)}"
         return result
 
     # Here, we override all the `_dispatch` methods rather than the public
@@ -4158,9 +4167,11 @@ class OrderStatisticDistribution(TransformedDistribution):
         return self._dist._icdf_dispatch(p_, **kwargs)
 
     def __repr__(self):
-        return (
-            f"order_statistic({repr(self._dist)}, r={repr(self.r)}, n={repr(self.n)})"
-        )
+        with np.printoptions(threshold=10):
+            return (
+                f"order_statistic({repr(self._dist)}, r={repr(self.r)},"
+                f" n={repr(self.n)})"
+            )
 
 
 def order_statistic(X, /, *, r, n):
@@ -4539,10 +4550,11 @@ class Mixture(_ProbabilityDistribution):
     def __repr__(self):
         result = "Mixture(\n"
         result += "    [\n"
-        for component in self.components:
-            result += f"        {repr(component)},\n"
-        result += "    ],\n"
-        result += f"    weights={repr(self.weights)},\n"
+        with np.printoptions(threshold=10):
+            for component in self.components:
+                result += f"        {repr(component)},\n"
+            result += "    ],\n"
+            result += f"    weights={repr(self.weights)},\n"
         result += ")"
         return result
 
@@ -4608,7 +4620,8 @@ class MonotonicTransformedDistribution(TransformedDistribution):
         self._increasing = increasing
         if repr_pattern is None:
             repr_pattern = f"{g.__name__}(...)"
-        self.__repr = repr_pattern.replace("...", repr(X))
+        with np.printoptions(threshold=10):
+            self.__repr = repr_pattern.replace("...", repr(X))
 
 
     def __repr__(self):
@@ -4738,7 +4751,8 @@ class FoldedDistribution(TransformedDistribution):
         return np.abs(rvs)
 
     def __repr__(self):
-        return f"abs({repr(self._dist)})"
+        with np.printoptions(threshold=10):
+            return f"abs({repr(self._dist)})"
 
 
 def abs(X, /):
