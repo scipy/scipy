@@ -47,58 +47,62 @@ class TestBartHann:
 
     def test_basic(self, xp):
         xp_assert_close(windows.barthann(6, sym=True, xp=xp),
-                        [0, 0.35857354213752, 0.8794264578624801,
-                         0.8794264578624801, 0.3585735421375199, 0],
+                        xp.asarray([0, 0.35857354213752, 0.8794264578624801,
+                         0.8794264578624801, 0.3585735421375199, 0]),
                         rtol=1e-15, atol=1e-15)
         xp_assert_close(windows.barthann(7, xp=xp),
-                        [0, 0.27, 0.73, 1.0, 0.73, 0.27, 0],
+                        xp.asarray([0, 0.27, 0.73, 1.0, 0.73, 0.27, 0]),
                         rtol=1e-15, atol=1e-15)
         xp_assert_close(windows.barthann(6, False, xp=xp),
-                        [0, 0.27, 0.73, 1.0, 0.73, 0.27],
+                        xp.asarray([0, 0.27, 0.73, 1.0, 0.73, 0.27]),
                         rtol=1e-15, atol=1e-15)
 
 
 class TestBartlett:
 
     def test_basic(self, xp):
-        xp_assert_close(windows.bartlett(6, xp=xp), [0, 0.4, 0.8, 0.8, 0.4, 0])
-        xp_assert_close(windows.bartlett(7, xp=xp), [0, 1/3, 2/3, 1.0, 2/3, 1/3, 0])
+        xp_assert_close(windows.bartlett(6, xp=xp),
+                        xp.asarray([0, 0.4, 0.8, 0.8, 0.4, 0]))
+        xp_assert_close(windows.bartlett(7, xp=xp),
+                        xp.asarray([0, 1/3, 2/3, 1.0, 2/3, 1/3, 0]))
         xp_assert_close(windows.bartlett(6, False, xp=xp),
-                        [0, 1/3, 2/3, 1.0, 2/3, 1/3])
+                        xp.asarray([0, 1/3, 2/3, 1.0, 2/3, 1/3]))
 
 
 class TestBlackman:
 
     def test_basic(self, xp):
         xp_assert_close(windows.blackman(6, sym=False, xp=xp),
-                        [0, 0.13, 0.63, 1.0, 0.63, 0.13], atol=1e-14)
+                        xp.asarray([0, 0.13, 0.63, 1.0, 0.63, 0.13]), atol=1e-14)
         xp_assert_close(windows.blackman(7, sym=False, xp=xp),
-                        [0, 0.09045342435412804, 0.4591829575459636,
-                         0.9203636180999081, 0.9203636180999081,
-                         0.4591829575459636, 0.09045342435412804], atol=1e-8)
+                        xp.asarray([0, 0.09045342435412804, 0.4591829575459636,
+                                    0.9203636180999081, 0.9203636180999081,
+                                    0.4591829575459636, 0.09045342435412804]),
+                        atol=1e-8)
         xp_assert_close(windows.blackman(6, xp=xp),
-                        [0, 0.2007701432625305, 0.8492298567374694,
-                         0.8492298567374694, 0.2007701432625305, 0],
+                        xp.asarray([0, 0.2007701432625305, 0.8492298567374694,
+                                    0.8492298567374694, 0.2007701432625305, 0]),
                         atol=1e-14)
         xp_assert_close(windows.blackman(7, True, xp=xp),
-                        [0, 0.13, 0.63, 1.0, 0.63, 0.13, 0], atol=1e-14)
+                        xp.asarray([0, 0.13, 0.63, 1.0, 0.63, 0.13, 0]), atol=1e-14)
 
 
 class TestBlackmanHarris:
 
     def test_basic(self, xp):
         xp_assert_close(windows.blackmanharris(6, False, xp=xp),
-                        [6.0e-05, 0.055645, 0.520575, 1.0, 0.520575, 0.055645])
+                        xp.asarray([6.0e-05, 0.055645, 0.520575,
+                                    1.0, 0.520575, 0.055645]))
         xp_assert_close(windows.blackmanharris(7, sym=False, xp=xp),
-                        [6.0e-05, 0.03339172347815117, 0.332833504298565,
-                         0.8893697722232837, 0.8893697722232838,
-                         0.3328335042985652, 0.03339172347815122])
+                        xp.asarray([6.0e-05, 0.03339172347815117, 0.332833504298565,
+                                    0.8893697722232837, 0.8893697722232838,
+                                    0.3328335042985652, 0.03339172347815122]))
         xp_assert_close(windows.blackmanharris(6, xp=xp),
-                        [6.0e-05, 0.1030114893456638, 0.7938335106543362,
-                         0.7938335106543364, 0.1030114893456638, 6.0e-05])
+                        xp.asarray([6.0e-05, 0.1030114893456638, 0.7938335106543362,
+                                    0.7938335106543364, 0.1030114893456638, 6.0e-05]))
         xp_assert_close(windows.blackmanharris(7, sym=True, xp=xp),
-                        [6.0e-05, 0.055645, 0.520575, 1.0, 0.520575, 0.055645,
-                         6.0e-05])
+                        xp.asarray([6.0e-05, 0.055645, 0.520575, 1.0, 0.520575,
+                                    0.055645, 6.0e-05]))
 
 
 @skip_xp_backends('jax.numpy', reason='item assignment')
@@ -185,14 +189,14 @@ class TestBohman:
 
     def test_basic(self, xp):
         xp_assert_close(windows.bohman(6, xp=xp),
-                        [0, 0.1791238937062839, 0.8343114522576858,
-                         0.8343114522576858, 0.1791238937062838, 0])
+                        xp.asarray([0, 0.1791238937062839, 0.8343114522576858,
+                                    0.8343114522576858, 0.1791238937062838, 0]))
         xp_assert_close(windows.bohman(7, sym=True, xp=xp),
-                        [0, 0.1089977810442293, 0.6089977810442293, 1.0,
-                         0.6089977810442295, 0.1089977810442293, 0])
+                        xp.asarray([0, 0.1089977810442293, 0.6089977810442293, 1.0,
+                                    0.6089977810442295, 0.1089977810442293, 0]))
         xp_assert_close(windows.bohman(6, False, xp=xp),
-                        [0, 0.1089977810442293, 0.6089977810442293, 1.0,
-                         0.6089977810442295, 0.1089977810442293])
+                        xp.asarray([0, 0.1089977810442293, 0.6089977810442293, 1.0,
+                                    0.6089977810442295, 0.1089977810442293]))
 
 
 class TestBoxcar:
@@ -248,37 +252,38 @@ class TestChebWin:
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             xp_assert_close(windows.chebwin(6, 100, xp=xp),
-                            [0.1046401879356917, 0.5075781475823447, 1.0, 1.0,
-                             0.5075781475823447, 0.1046401879356917],
+                            xp.asarray([0.1046401879356917, 0.5075781475823447,
+                                        1.0, 1.0,
+                                        0.5075781475823447, 0.1046401879356917]),
                             atol=1e-8
             )
             xp_assert_close(windows.chebwin(7, 100, xp=xp),
-                            [0.05650405062850233, 0.316608530648474,
-                             0.7601208123539079, 1.0, 0.7601208123539079,
-                             0.316608530648474, 0.05650405062850233])
+                            xp.asarray([0.05650405062850233, 0.316608530648474,
+                                        0.7601208123539079, 1.0, 0.7601208123539079,
+                                        0.316608530648474, 0.05650405062850233]))
             xp_assert_close(windows.chebwin(6, 10, xp=xp),
-                            [1.0, 0.6071201674458373, 0.6808391469897297,
-                             0.6808391469897297, 0.6071201674458373, 1.0])
+                            xp.asarray([1.0, 0.6071201674458373, 0.6808391469897297,
+                                        0.6808391469897297, 0.6071201674458373, 1.0]))
             xp_assert_close(windows.chebwin(7, 10, xp=xp),
-                            [1.0, 0.5190521247588651, 0.5864059018130382,
-                             0.6101519801307441, 0.5864059018130382,
-                             0.5190521247588651, 1.0])
+                            xp.asarray([1.0, 0.5190521247588651, 0.5864059018130382,
+                                        0.6101519801307441, 0.5864059018130382,
+                                        0.5190521247588651, 1.0]))
             xp_assert_close(windows.chebwin(6, 10, False, xp=xp),
-                            [1.0, 0.5190521247588651, 0.5864059018130382,
-                             0.6101519801307441, 0.5864059018130382,
-                             0.5190521247588651])
+                            xp.asarray([1.0, 0.5190521247588651, 0.5864059018130382,
+                                        0.6101519801307441, 0.5864059018130382,
+                                        0.5190521247588651]))
 
     def test_cheb_odd_high_attenuation(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             cheb_odd = windows.chebwin(53, at=-40, xp=xp)
-        assert_array_almost_equal(cheb_odd, cheb_odd_true, decimal=4)
+        assert_array_almost_equal(cheb_odd, xp.asarray(cheb_odd_true), decimal=4)
 
     def test_cheb_even_high_attenuation(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             cheb_even = windows.chebwin(54, at=40, xp=xp)
-        assert_array_almost_equal(cheb_even, cheb_even_true, decimal=4)
+        assert_array_almost_equal(cheb_even, xp.asarray(cheb_even_true), decimal=4)
 
     def test_cheb_odd_low_attenuation(self, xp):
         cheb_odd_low_at_true = xp.asarray([1.000000, 0.519052, 0.586405,
@@ -341,41 +346,41 @@ class TestFlatTop:
 
     def test_basic(self, xp):
         xp_assert_close(windows.flattop(6, sym=False, xp=xp),
-                        [-0.000421051, -0.051263156, 0.19821053, 1.0,
-                         0.19821053, -0.051263156])
+                        xp.asarray([-0.000421051, -0.051263156, 0.19821053, 1.0,
+                                     0.19821053, -0.051263156]))
         xp_assert_close(windows.flattop(7, sym=False, xp=xp),
-                        [-0.000421051, -0.03684078115492348,
-                         0.01070371671615342, 0.7808739149387698,
-                         0.7808739149387698, 0.01070371671615342,
-                         -0.03684078115492348])
+                        xp.asarray([-0.000421051, -0.03684078115492348,
+                                     0.01070371671615342, 0.7808739149387698,
+                                     0.7808739149387698, 0.01070371671615342,
+                                    -0.03684078115492348]))
         xp_assert_close(windows.flattop(6, xp=xp),
-                        [-0.000421051, -0.0677142520762119, 0.6068721525762117,
-                         0.6068721525762117, -0.0677142520762119,
-                         -0.000421051])
+                        xp.asarray([-0.000421051, -0.0677142520762119,
+                                     0.6068721525762117, 0.6068721525762117,
+                                    -0.0677142520762119, -0.000421051]))
         xp_assert_close(windows.flattop(7, True, xp=xp),
-                        [-0.000421051, -0.051263156, 0.19821053, 1.0,
-                         0.19821053, -0.051263156, -0.000421051])
+                        xp.asarray([-0.000421051, -0.051263156, 0.19821053, 1.0,
+                                     0.19821053, -0.051263156, -0.000421051]))
 
 
 class TestGaussian:
 
     def test_basic(self, xp):
         xp_assert_close(windows.gaussian(6, 1.0, xp=xp),
-                        [0.04393693362340742, 0.3246524673583497,
-                         0.8824969025845955, 0.8824969025845955,
-                         0.3246524673583497, 0.04393693362340742])
+                        xp.asarray([0.04393693362340742, 0.3246524673583497,
+                                    0.8824969025845955, 0.8824969025845955,
+                                    0.3246524673583497, 0.04393693362340742]))
         xp_assert_close(windows.gaussian(7, 1.2, xp=xp),
-                        [0.04393693362340742, 0.2493522087772962,
-                         0.7066482778577162, 1.0, 0.7066482778577162,
-                         0.2493522087772962, 0.04393693362340742])
+                        xp.asarray([0.04393693362340742, 0.2493522087772962,
+                                    0.7066482778577162, 1.0, 0.7066482778577162,
+                                    0.2493522087772962, 0.04393693362340742]))
         xp_assert_close(windows.gaussian(7, 3, xp=xp),
-                        [0.6065306597126334, 0.8007374029168081,
-                         0.9459594689067654, 1.0, 0.9459594689067654,
-                         0.8007374029168081, 0.6065306597126334])
+                        xp.asarray([0.6065306597126334, 0.8007374029168081,
+                                    0.9459594689067654, 1.0, 0.9459594689067654,
+                                    0.8007374029168081, 0.6065306597126334]))
         xp_assert_close(windows.gaussian(6, 3, False, xp=xp),
-                        [0.6065306597126334, 0.8007374029168081,
-                         0.9459594689067654, 1.0, 0.9459594689067654,
-                         0.8007374029168081])
+                        xp.asarray([0.6065306597126334, 0.8007374029168081,
+                                    0.9459594689067654, 1.0, 0.9459594689067654,
+                                    0.8007374029168081]))
 
 
 class TestGeneralCosine:
@@ -383,59 +388,59 @@ class TestGeneralCosine:
     def test_basic(self, xp):
         a = xp.asarray([0.5, 0.3, 0.2])
         xp_assert_close(windows.general_cosine(5, a),
-                        [0.4, 0.3, 1, 0.3, 0.4])
+                        xp.asarray([0.4, 0.3, 1, 0.3, 0.4]))
 
         a = xp.asarray([0.5, 0.3, 0.2])
         xp_assert_close(windows.general_cosine(4, a, sym=False),
-                        [0.4, 0.3, 1, 0.3])
+                        xp.asarray([0.4, 0.3, 1, 0.3]))
 
 
 class TestGeneralHamming:
 
     def test_basic(self, xp):
         xp_assert_close(windows.general_hamming(5, 0.7, xp=xp),
-                        [0.4, 0.7, 1.0, 0.7, 0.4])
+                        xp.asarray([0.4, 0.7, 1.0, 0.7, 0.4]))
         xp_assert_close(windows.general_hamming(5, 0.75, sym=False, xp=xp),
-                        [0.5, 0.6727457514, 0.9522542486,
-                         0.9522542486, 0.6727457514])
+                        xp.asarray([0.5, 0.6727457514, 0.9522542486,
+                                    0.9522542486, 0.6727457514]))
         xp_assert_close(windows.general_hamming(6, 0.75, sym=True, xp=xp),
-                        [0.5, 0.6727457514, 0.9522542486,
-                        0.9522542486, 0.6727457514, 0.5])
+                        xp.asarray([0.5, 0.6727457514, 0.9522542486,
+                                    0.9522542486, 0.6727457514, 0.5]))
 
 
 class TestHamming:
 
     def test_basic(self, xp):
         xp_assert_close(windows.hamming(6, False, xp=xp),
-                        [0.08, 0.31, 0.77, 1.0, 0.77, 0.31])
+                        xp.asarray([0.08, 0.31, 0.77, 1.0, 0.77, 0.31]))
         xp_assert_close(windows.hamming(7, sym=False, xp=xp),
-                        [0.08, 0.2531946911449826, 0.6423596296199047,
-                         0.9544456792351128, 0.9544456792351128,
-                         0.6423596296199047, 0.2531946911449826])
+                        xp.asarray([0.08, 0.2531946911449826, 0.6423596296199047,
+                                    0.9544456792351128, 0.9544456792351128,
+                                    0.6423596296199047, 0.2531946911449826]))
         xp_assert_close(windows.hamming(6, xp=xp),
-                        [0.08, 0.3978521825875242, 0.9121478174124757,
-                         0.9121478174124757, 0.3978521825875242, 0.08])
+                        xp.asarray([0.08, 0.3978521825875242, 0.9121478174124757,
+                                    0.9121478174124757, 0.3978521825875242, 0.08]))
         xp_assert_close(windows.hamming(7, sym=True, xp=xp),
-                        [0.08, 0.31, 0.77, 1.0, 0.77, 0.31, 0.08])
+                        xp.asarray([0.08, 0.31, 0.77, 1.0, 0.77, 0.31, 0.08]))
 
 
 class TestHann:
 
     def test_basic(self, xp):
         xp_assert_close(windows.hann(6, sym=False, xp=xp),
-                        [0, 0.25, 0.75, 1.0, 0.75, 0.25],
+                        xp.asarray([0, 0.25, 0.75, 1.0, 0.75, 0.25]),
                         rtol=1e-15, atol=1e-15)
         xp_assert_close(windows.hann(7, sym=False, xp=xp),
-                        [0, 0.1882550990706332, 0.6112604669781572,
-                         0.9504844339512095, 0.9504844339512095,
-                         0.6112604669781572, 0.1882550990706332],
+                        xp.asarray([0, 0.1882550990706332, 0.6112604669781572,
+                                    0.9504844339512095, 0.9504844339512095,
+                                    0.6112604669781572, 0.1882550990706332]),
                         rtol=1e-15, atol=1e-15)
         xp_assert_close(windows.hann(6, True, xp=xp),
-                        [0, 0.3454915028125263, 0.9045084971874737,
-                         0.9045084971874737, 0.3454915028125263, 0],
+                        xp.asarray([0, 0.3454915028125263, 0.9045084971874737,
+                                    0.9045084971874737, 0.3454915028125263, 0]),
                         rtol=1e-15, atol=1e-15)
         xp_assert_close(windows.hann(7, xp=xp),
-                        [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0],
+                        xp.asarray([0, 0.25, 0.75, 1.0, 0.75, 0.25, 0]),
                         rtol=1e-15, atol=1e-15)
 
 
@@ -443,25 +448,25 @@ class TestKaiser:
 
     def test_basic(self, xp):
         xp_assert_close(windows.kaiser(6, 0.5, xp=xp),
-                        [0.9403061933191572, 0.9782962393705389,
-                         0.9975765035372042, 0.9975765035372042,
-                         0.9782962393705389, 0.9403061933191572])
+                        xp.asarray([0.9403061933191572, 0.9782962393705389,
+                                    0.9975765035372042, 0.9975765035372042,
+                                    0.9782962393705389, 0.9403061933191572]))
         xp_assert_close(windows.kaiser(7, 0.5, xp=xp),
-                        [0.9403061933191572, 0.9732402256999829,
-                         0.9932754654413773, 1.0, 0.9932754654413773,
-                         0.9732402256999829, 0.9403061933191572])
+                        xp.asarray([0.9403061933191572, 0.9732402256999829,
+                                    0.9932754654413773, 1.0, 0.9932754654413773,
+                                    0.9732402256999829, 0.9403061933191572]))
         xp_assert_close(windows.kaiser(6, 2.7, xp=xp),
-                        [0.2603047507678832, 0.6648106293528054,
-                         0.9582099802511439, 0.9582099802511439,
-                         0.6648106293528054, 0.2603047507678832])
+                        xp.asarray([0.2603047507678832, 0.6648106293528054,
+                                    0.9582099802511439, 0.9582099802511439,
+                                    0.6648106293528054, 0.2603047507678832]))
         xp_assert_close(windows.kaiser(7, 2.7, xp=xp),
-                        [0.2603047507678832, 0.5985765418119844,
-                         0.8868495172060835, 1.0, 0.8868495172060835,
-                         0.5985765418119844, 0.2603047507678832])
+                        xp.asarray([0.2603047507678832, 0.5985765418119844,
+                                    0.8868495172060835, 1.0, 0.8868495172060835,
+                                    0.5985765418119844, 0.2603047507678832]))
         xp_assert_close(windows.kaiser(6, 2.7, False, xp=xp),
-                        [0.2603047507678832, 0.5985765418119844,
-                         0.8868495172060835, 1.0, 0.8868495172060835,
-                         0.5985765418119844])
+                        xp.asarray([0.2603047507678832, 0.5985765418119844,
+                                    0.8868495172060835, 1.0, 0.8868495172060835,
+                                    0.5985765418119844]))
 
 
 @skip_xp_backends("torch", reason="implementation needs 2023.12 standard")
@@ -488,10 +493,10 @@ class TestKaiserBesselDerived:
         xp_assert_close(actual, desired)
 
         xp_assert_close(windows.kaiser_bessel_derived(4, beta=np.pi / 2, xp=xp)[:2],
-                        [0.518562710536, 0.855039598640])
+                        xp.asarray([0.518562710536, 0.855039598640]))
 
         xp_assert_close(windows.kaiser_bessel_derived(6, beta=np.pi / 2, xp=xp)[:3],
-                        [0.436168993154, 0.707106781187, 0.899864772847])
+                        xp.asarray([0.436168993154, 0.707106781187, 0.899864772847]))
 
     def test_exceptions(self, xp):
         M = 100
@@ -512,34 +517,36 @@ class TestNuttall:
 
     def test_basic(self, xp):
         xp_assert_close(windows.nuttall(6, sym=False, xp=xp),
-                        [0.0003628, 0.0613345, 0.5292298, 1.0, 0.5292298,
-                         0.0613345])
+                        xp.asarray([0.0003628, 0.0613345, 0.5292298, 1.0, 0.5292298,
+                                    0.0613345]))
         xp_assert_close(windows.nuttall(7, sym=False, xp=xp),
-                        [0.0003628, 0.03777576895352025, 0.3427276199688195,
-                         0.8918518610776603, 0.8918518610776603,
-                         0.3427276199688196, 0.0377757689535203])
+                        xp.asarray([0.0003628, 0.03777576895352025,
+                                    0.3427276199688195,
+                                    0.8918518610776603, 0.8918518610776603,
+                                    0.3427276199688196, 0.0377757689535203]))
         xp_assert_close(windows.nuttall(6, xp=xp),
-                        [0.0003628, 0.1105152530498718, 0.7982580969501282,
-                         0.7982580969501283, 0.1105152530498719, 0.0003628])
+                        xp.asarray([0.0003628, 0.1105152530498718,
+                                    0.7982580969501282, 0.7982580969501283,
+                                    0.1105152530498719, 0.0003628]))
         xp_assert_close(windows.nuttall(7, True, xp=xp),
-                        [0.0003628, 0.0613345, 0.5292298, 1.0, 0.5292298,
-                         0.0613345, 0.0003628])
+                        xp.asarray([0.0003628, 0.0613345, 0.5292298, 1.0,
+                                    0.5292298, 0.0613345, 0.0003628]))
 
 
 class TestParzen:
 
     def test_basic(self, xp):
         xp_assert_close(windows.parzen(6, xp=xp),
-                        [0.009259259259259254, 0.25, 0.8611111111111112,
-                         0.8611111111111112, 0.25, 0.009259259259259254])
+                        xp.asarray([0.009259259259259254, 0.25, 0.8611111111111112,
+                                    0.8611111111111112, 0.25, 0.009259259259259254]))
         xp_assert_close(windows.parzen(7, sym=True, xp=xp),
-                        [0.00583090379008747, 0.1574344023323616,
-                         0.6501457725947521, 1.0, 0.6501457725947521,
-                         0.1574344023323616, 0.00583090379008747])
+                        xp.asarray([0.00583090379008747, 0.1574344023323616,
+                                    0.6501457725947521, 1.0, 0.6501457725947521,
+                                    0.1574344023323616, 0.00583090379008747]))
         xp_assert_close(windows.parzen(6, False, xp=xp),
-                        [0.00583090379008747, 0.1574344023323616,
-                         0.6501457725947521, 1.0, 0.6501457725947521,
-                         0.1574344023323616])
+                        xp.asarray([0.00583090379008747, 0.1574344023323616,
+                                    0.6501457725947521, 1.0, 0.6501457725947521,
+                                    0.1574344023323616]))
 
 
 class TestTriang:
@@ -547,11 +554,11 @@ class TestTriang:
     def test_basic(self, xp):
 
         xp_assert_close(windows.triang(6, True, xp=xp),
-                        [1/6, 1/2, 5/6, 5/6, 1/2, 1/6])
+                        xp.asarray([1/6, 1/2, 5/6, 5/6, 1/2, 1/6]))
         xp_assert_close(windows.triang(7, xp=xp),
-                        [1/4, 1/2, 3/4, 1, 3/4, 1/2, 1/4])
+                        xp.asarray([1/4, 1/2, 3/4, 1, 3/4, 1/2, 1/4]))
         xp_assert_close(windows.triang(6, sym=False, xp=xp),
-                        [1/4, 1/2, 3/4, 1, 3/4, 1/2])
+                        xp.asarray([1/4, 1/2, 3/4, 1, 3/4, 1/2]))
 
 
 tukey_data = {
@@ -706,19 +713,19 @@ class TestLanczos:
         # sinc(3 pi / 5) = 0.504551152
         # sinc(pi / 5) = 0.935489284
         xp_assert_close(windows.lanczos(6, sym=False, xp=xp),
-                        [0., 0.413496672,
-                         0.826993343, 1., 0.826993343,
-                         0.413496672],
+                        xp.asarray([0., 0.413496672,
+                                    0.826993343, 1., 0.826993343,
+                                    0.413496672]),
                         atol=1e-9)
         xp_assert_close(windows.lanczos(6, xp=xp),
-                        [0., 0.504551152,
-                         0.935489284, 0.935489284,
-                         0.504551152, 0.],
+                        xp.asarray([0., 0.504551152,
+                                    0.935489284, 0.935489284,
+                                    0.504551152, 0.]),
                         atol=1e-9)
         xp_assert_close(windows.lanczos(7, sym=True, xp=xp),
-                        [0., 0.413496672,
-                         0.826993343, 1., 0.826993343,
-                         0.413496672, 0.],
+                        xp.asarray([0., 0.413496672,
+                                    0.826993343, 1., 0.826993343,
+                                    0.413496672, 0.]),
                         atol=1e-9)
 
     def test_array_size(self, xp):
@@ -742,14 +749,14 @@ class TestGetWindow:
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             w = windows.get_window(('chebwin', -40), 53, fftbins=False, xp=xp)
-        assert_array_almost_equal(w, cheb_odd_true, decimal=4)
+        assert_array_almost_equal(w, xp.asarray(cheb_odd_true), decimal=4)
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_cheb_even(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             w = windows.get_window(('chebwin', 40), 54, fftbins=False, xp=xp)
-        assert_array_almost_equal(w, cheb_even_true, decimal=4)
+        assert_array_almost_equal(w, xp.asarray(cheb_even_true), decimal=4)
 
     @skip_xp_backends(cpu_only=True, reason='eigh_tridiagonal is CPU-only')
     def test_dpss(self, xp):
@@ -791,17 +798,17 @@ class TestGetWindow:
 
     def test_general_hamming(self, xp):
         xp_assert_close(get_window(('general_hamming', 0.7), 5, xp=xp),
-                        [0.4, 0.6072949, 0.9427051, 0.9427051, 0.6072949])
+                        xp.asarray([0.4, 0.6072949, 0.9427051, 0.9427051, 0.6072949]))
         xp_assert_close(get_window(('general_hamming', 0.7), 5, fftbins=False, xp=xp),
-                        [0.4, 0.7, 1.0, 0.7, 0.4])
+                        xp.asarray([0.4, 0.7, 1.0, 0.7, 0.4]))
 
     def test_lanczos(self, xp):
         xp_assert_close(get_window('lanczos', 6, xp=xp),
-                        [0., 0.413496672, 0.826993343, 1., 0.826993343,
-                         0.413496672], atol=1e-9)
+                        xp.asarray([0., 0.413496672, 0.826993343, 1., 0.826993343,
+                                    0.413496672]), atol=1e-9)
         xp_assert_close(get_window('lanczos', 6, fftbins=False, xp=xp),
-                        [0., 0.504551152, 0.935489284, 0.935489284,
-                         0.504551152, 0.], atol=1e-9)
+                        xp.asarray([0., 0.504551152, 0.935489284, 0.935489284,
+                                    0.504551152, 0.]), atol=1e-9)
         xp_assert_close(get_window('lanczos', 6, xp=xp),
                         get_window('sinc', 6, xp=xp))
 
@@ -839,10 +846,10 @@ def test_windowfunc_basics(xp):
             assert_raises(ValueError, window, -7, *params, xp=xp)
 
             # Check degenerate cases
-            xp_assert_equal(window(0, *params, sym=True, xp=xp), [])
-            xp_assert_equal(window(0, *params, sym=False, xp=xp), [])
-            xp_assert_equal(window(1, *params, sym=True, xp=xp), [1])
-            xp_assert_equal(window(1, *params, sym=False, xp=xp), [1])
+            xp_assert_equal(window(0, *params, sym=True, xp=xp), xp.asarray([]))
+            xp_assert_equal(window(0, *params, sym=False, xp=xp), xp.asarray([]))
+            xp_assert_equal(window(1, *params, sym=True, xp=xp), xp.asarray([1.]))
+            xp_assert_equal(window(1, *params, sym=False, xp=xp), xp.asarray([1.]))
 
             # Check dtype
             assert window(0, *params, sym=True, xp=xp).dtype == xp.float64
