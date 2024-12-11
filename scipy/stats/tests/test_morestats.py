@@ -1780,7 +1780,7 @@ class TestWilcoxon:
         with pytest.raises(ValueError, match=message):
             stats.wilcoxon([1, 2, 3], [4, 5], _no_deco=True)
 
-        AxisError = getattr(np, 'AxisError', np.exceptions.AxisError)
+        AxisError = getattr(np, 'AxisError', None) or np.exceptions.AxisError
         message = "source: axis 3 is out of bounds for array of dimension 1"
         with pytest.raises(AxisError, match=message):
             stats.wilcoxon([1, 2, 3], [4, 5, 6], axis=3)

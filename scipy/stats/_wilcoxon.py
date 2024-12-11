@@ -57,7 +57,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         raise ValueError(message)
 
     message = '`axis` must be compatible with the shape(s) of `x` (and `y`)'
-    AxisError = getattr(np, 'AxisError', np.exceptions.AxisError)
+    AxisError = getattr(np, 'AxisError', None) or np.exceptions.AxisError
     try:
         if y is None:
             x = np.asarray(x)
