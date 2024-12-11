@@ -1373,10 +1373,6 @@ class TestTransforms:
     def test_monotonic_transforms(self):
         # Some tests of monotonic transforms that are better to be grouped or
         # don't fit well above
-        X = _Uniform(a=1, b=2)
-        assert repr(stats.log(X)) == str(stats.log(X)) == "log(_Uniform(a=1.0, b=2.0))"
-        assert repr(1 / X) == str(1 / X) == "inv(_Uniform(a=1.0, b=2.0))"
-        assert repr(stats.exp(X)) == str(stats.exp(X)) == "exp(_Uniform(a=1.0, b=2.0))"
 
         X = _Uniform(a=-1, b=2)
         message = "Division by a random variable is only implemented when the..."
@@ -1598,17 +1594,68 @@ class TestFullCoverage:
         msg = _generate_domain_support(_LogUniform)
         assert "accepts two parameterizations" in msg
 
-    def test_ContinuousDistribution__str__(self):
+    def test_ContinuousDistribution__repr__(self):
         X = _Uniform(a=0, b=1)
-        assert str(X) == "_Uniform(a=0.0, b=1.0)"
+        assert repr(X) == "_Uniform(a=0.0, b=1.0)"
 
-        assert str(X*3 + 2) == "ShiftedScaled_Uniform(a=0.0, b=1.0, loc=2.0, scale=3.0)"
+        assert repr(X*3 + 2) == "3.0*_Uniform(a=0.0, b=1.0) + 2.0"
 
         X = _Uniform(a=np.zeros(4), b=1)
-        assert str(X) == "_Uniform(a, b, shape=(4,))"
+        assert repr(X) == "_Uniform(a, b, shape=(4,))"
 
         X = _Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
-        assert str(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
+        assert repr(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
+
+
+
+class TestReprs:
+    U = _Uniform(a=0, b=1)
+    X = Normal(mu=-1, sigma=1)
+    Y = Normal(mu=1, sigma=1)
+
+    def _get_fingerprint(self, dist):
+        # Get a sample from a distribution or array of distributions for use
+        # as a fingerprint for loosely testing equality of distributions
+        # or arrays of distributions.
+        dist = np.asarray(dist)
+        if dist.ndim:
+            return np.fromiter(
+                (val for x in np.asarray(dist) for val in x.sample(shape=10, rng=1234)),
+                dtype=float)
+        return dist[()].sample(shape=10, rng=1234)
+
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            U,
+            3*U + 2,
+            U**4,
+            (3*U + 2)**4,
+            (3*U + 2)**3,
+            2**U,
+            2**(3*U + 1),
+            1 / (1 + U),
+            stats.order_statistic(U, r=3, n=5),
+            stats.truncate(U, 0.2, 0.8),
+            stats.Mixture([X, Y], weights=[0.3, 0.7]),
+            abs(U),
+            stats.exp(U),
+            stats.log(1 + U),
+            np.array([1.0, 2.0])*U + np.array([2.0, 3.0]),
+        ]
+    )
+    def test_executable(self, dist):
+        # Test that reprs actually evaluate to proper distribution
+        # provided relevant imports are made.
+        from numpy import array  # noqa: F401
+        from scipy.stats import abs, exp, log, order_statistic, truncate # noqa: F401
+        from scipy.stats import Mixture, Normal # noqa: F401
+        from scipy.stats._new_distributions import _Uniform # noqa: F401
+        new_dist = eval(repr(dist))
+        # A basic check that the distributions are the same
+        sample1 = self._get_fingerprint(dist)
+        sample2 = self._get_fingerprint(new_dist)
+        assert_equal(sample1, sample2)
 
 
 class MixedDist(ContinuousDistribution):
