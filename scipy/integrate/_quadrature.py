@@ -894,7 +894,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
                 width = show[1]
             except (TypeError, IndexError):
                 width = 8
-            formstr = "%%%d.%df" % (width, precis)
+            formstr = f"%{width}.{precis}f"
 
             title = "Richardson Extrapolation Table for Romberg Integration"
             print(title, "=" * len(title), sep="\n", end="\n")
