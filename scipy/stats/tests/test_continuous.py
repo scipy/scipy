@@ -1634,8 +1634,7 @@ class TestFullCoverage:
         if np.__version__ < "2":
             assert repr(X) == "_Uniform(a=0.0, b=1.0)"
         else:
-            assert repr(X) == "_Uniform(a=0.0, b=1.0)"
-
+            assert repr(X) == "_Uniform(a=np.float64(0.0), b=np.float64(1.0))"
         if np.__version__ < "2":
             assert repr(X*3 + 2) == "3.0*_Uniform(a=0.0, b=1.0) + 2.0"
         else:
