@@ -1791,13 +1791,9 @@ class ContinuousDistribution(_ProbabilityDistribution):
         class_name = self.__class__.__name__
         parameters = list(self._original_parameters.items())
         info = []
-        if parameters:
-            if self._size <= 3:
-                str_parameters = [f"{symbol}={repr(value)}" for symbol, value in parameters]
-                str_parameters = f"{', '.join(str_parameters)}"
-            else:
-                str_parameters = f"{', '.join([symbol for symbol, _ in parameters])}"
-            info.append(str_parameters)
+        str_parameters = [f"{symbol}={repr(value)}" for symbol, value in parameters]
+        str_parameters = f"{', '.join(str_parameters)}"
+        info.append(str_parameters)
         return f"{class_name}({', '.join(info)})"
 
     def __add__(self, loc):
