@@ -1558,18 +1558,21 @@ class TestFullCoverage:
 
     def test_ContinuousDistribution__repr__(self):
         X = _Uniform(a=0, b=1)
-        assert repr(X) == "_Uniform(a=0.0, b=1.0)"
+        assert repr(X) == "_Uniform(a=np.float64(0.0), b=np.float64(1.0))"
 
         assert repr(X*3 + 2) == (
-            "np.float64(3.0)*_Uniform(a=0.0, b=1.0) + np.float64(2.0)"
+            "np.float64(3.0)*_Uniform(a=np.float64(0.0), b=np.float64(1.0))"
+            " + np.float64(2.0)"
         )
 
         X = _Uniform(a=np.zeros(4), b=1)
-        assert repr(X) == "_Uniform(a, b, shape=(4,))"
+        assert repr(X) == "_Uniform(a=array([0., 0., 0., 0.]), b=1)"
 
         X = _Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
-        assert repr(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
-
+        assert repr(X) == (
+            "_Uniform(a=array([0., 0., 0., 0.], dtype=float32),"
+            " b=array([1., 1., 1., 1.], dtype=float32))"
+        )
 
 
 class TestReprs:
