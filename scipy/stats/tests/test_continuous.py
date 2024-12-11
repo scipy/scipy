@@ -1626,6 +1626,7 @@ class TestReprs:
             U,
             U - np.array([1.0, 2.0]),
             V,
+            np.ones(2, dtype=np.float32)*V + np.zeros(2, dtype=np.float64),
             3*U + 2,
             U**4,
             (3*U + 2)**4,
@@ -1646,6 +1647,7 @@ class TestReprs:
         # Test that reprs actually evaluate to proper distribution
         # provided relevant imports are made.
         from numpy import array  # noqa: F401
+        from numpy import float32  # noqa: F401
         from scipy.stats import abs, exp, log, order_statistic, truncate # noqa: F401
         from scipy.stats import Mixture, Normal # noqa: F401
         from scipy.stats._new_distributions import _Uniform # noqa: F401
@@ -1654,6 +1656,7 @@ class TestReprs:
         sample1 = dist.sample(shape=10, rng=1234)
         sample2 = new_dist.sample(shape=10, rng=1234)
         assert_equal(sample1, sample2)
+        assert sample1.dtype is sample2.dtype
 
     @pytest.mark.parametrize(
         "dist",
