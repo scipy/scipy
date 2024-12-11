@@ -32,6 +32,7 @@ import warnings
 import operator
 
 import numpy as np
+from scipy._lib._array_api import xp_asarray, xp_copy
 from . import _ni_support
 from . import _nd_image
 from . import _filters
@@ -102,7 +103,7 @@ def iterate_structure(structure, iterations, origin=None):
            [0, 0, 0, 1, 0, 0, 0]])
 
     """
-    structure = np.asarray(structure)
+    structure = xp_asarray(structure, xp=np)
     if iterations < 2:
         return structure.copy()
     ni = iterations - 1
@@ -220,7 +221,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
     except TypeError as e:
         raise TypeError('iterations parameter should be an integer') from e
 
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     # The Cython code can't cope with broadcasted inputs
     if not input.flags.c_contiguous and not input.flags.f_contiguous:
         input = np.ascontiguousarray(input)
@@ -233,7 +234,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
     if structure is None:
         structure = generate_binary_structure(num_axes, 1)
     else:
-        structure = np.asarray(structure, dtype=bool)
+        structure = xp_asarray(structure, dtype=bool, xp=np)
     if ndim > num_axes:
         structure = _filters._expand_footprint(ndim, axes, structure,
                                                footprint_name="structure")
@@ -245,7 +246,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
     if structure.size < 1:
         raise RuntimeError('structure must not be empty')
     if mask is not None:
-        mask = np.asarray(mask)
+        mask = xp_asarray(mask, xp=np)
         if mask.shape != input.shape:
             raise RuntimeError('mask and input must have equal sizes')
     origin = _ni_support._normalize_sequence(origin, num_axes)
@@ -525,13 +526,13 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
            [ 0.,  0.,  1.,  0.,  0.]])
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     axes = _ni_support._check_axes(axes, input.ndim)
     num_axes = len(axes)
     if structure is None:
         structure = generate_binary_structure(num_axes, 1)
     origin = _ni_support._normalize_sequence(origin, num_axes)
-    structure = np.asarray(structure)
+    structure = xp_asarray(structure, xp=np)
     structure = structure[tuple([slice(None, None, -1)] *
                                 structure.ndim)]
     for ii in range(len(origin)):
@@ -661,7 +662,7 @@ def binary_opening(input, structure=None, iterations=1, output=None,
            [0, 0, 0, 0, 0]])
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     axes = _ni_support._check_axes(axes, input.ndim)
     num_axes = len(axes)
     if structure is None:
@@ -814,7 +815,7 @@ def binary_closing(input, structure=None, iterations=1, output=None,
            [0, 0, 0, 0, 0, 0, 0]])
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     axes = _ni_support._check_axes(axes, input.ndim)
     num_axes = len(axes)
     if structure is None:
@@ -916,13 +917,13 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
            [0, 0, 0, 0, 0, 0, 0]])
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     axes = _ni_support._check_axes(axes, input.ndim)
     num_axes = len(axes)
     if structure1 is None:
         structure1 = generate_binary_structure(num_axes, 1)
     else:
-        structure1 = np.asarray(structure1)
+        structure1 = xp_asarray(structure1, xp=np)
     if structure2 is None:
         structure2 = np.logical_not(structure1)
     origin1 = _ni_support._normalize_sequence(origin1, num_axes)
@@ -1157,7 +1158,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0, *,
            [0, 0, 0, 0, 0]])
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     mask = np.logical_not(input)
     tmp = np.zeros(mask.shape, bool)
     inplace = isinstance(output, np.ndarray)
@@ -1417,15 +1418,15 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
     if size is None and footprint is None and structure is None:
         raise ValueError("size, footprint, or structure must be specified")
     if structure is not None:
-        structure = np.asarray(structure)
+        structure = xp_asarray(structure, xp=np)
         structure = structure[tuple([slice(None, None, -1)] *
                                     structure.ndim)]
     if footprint is not None:
-        footprint = np.asarray(footprint)
+        footprint = xp_asarray(footprint, xp=np)
         footprint = footprint[tuple([slice(None, None, -1)] *
                                     footprint.ndim)]
 
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     axes = _ni_support._check_axes(axes, input.ndim)
     origin = _ni_support._normalize_sequence(origin, len(axes))
     for ii in range(len(origin)):
@@ -1798,6 +1799,7 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
     input = np.asarray(input)
     tmp1 = grey_dilation(input, size, footprint, structure, None, mode,
                          cval, origin, axes=axes)
+    tmp1 = xp_asarray(tmp1, xp=np)
     if isinstance(output, np.ndarray):
         grey_erosion(input, size, footprint, structure, output, mode,
                      cval, origin, axes=axes)
@@ -1807,7 +1809,9 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
     else:
         tmp2 = grey_erosion(input, size, footprint, structure, None, mode,
                             cval, origin, axes=axes)
+        tmp2 = xp_copy(xp_asarray(tmp2, xp=np))
         np.add(tmp1, tmp2, tmp2)
+        input = xp_asarray(input, xp=np)
         np.subtract(tmp2, input, tmp2)
         np.subtract(tmp2, input, tmp2)
         return tmp2
@@ -1880,7 +1884,7 @@ def white_tophat(input, size=None, footprint=None, structure=None,
            [0, 0, 0, 0, 0]])
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
 
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set",
@@ -1965,7 +1969,7 @@ def black_tophat(input, size=None, footprint=None, structure=None, output=None,
            [0, 0, 0, 0, 0]])
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
 
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set",
@@ -2146,7 +2150,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         dt_inplace, ft_inplace, return_distances, return_indices
     )
 
-    tmp1 = np.asarray(input) != 0
+    tmp1 = xp_asarray(input, xp=np) != 0
     struct = generate_binary_structure(tmp1.ndim, tmp1.ndim)
     tmp2 = binary_dilation(tmp1, struct)
     tmp2 = np.logical_xor(tmp1, tmp2)
@@ -2162,7 +2166,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         raise RuntimeError('distance metric not supported')
     if sampling is not None:
         sampling = _ni_support._normalize_sequence(sampling, tmp1.ndim)
-        sampling = np.asarray(sampling, dtype=np.float64)
+        sampling = xp_asarray(sampling, dtype=np.float64, xp=np)
         if not sampling.flags.contiguous:
             sampling = sampling.copy()
     if return_indices:
@@ -2357,7 +2361,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     _distance_tranform_arg_check(
         dt_inplace, ft_inplace, return_distances, return_indices
     )
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if isinstance(metric, str):
         if metric in ['taxicab', 'cityblock', 'manhattan']:
             rank = input.ndim
@@ -2369,7 +2373,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
             raise ValueError('invalid metric provided')
     else:
         try:
-            metric = np.asarray(metric)
+            metric = xp_asarray(metric, xp=np)
         except Exception as e:
             raise ValueError('invalid metric provided') from e
         for s in metric.shape:
@@ -2566,6 +2570,7 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
     )
 
     # calculate the feature transform
+    input = xp_asarray(input, xp=np)
     input = np.atleast_1d(np.where(input, 1, 0).astype(np.int8))
     if sampling is not None:
         sampling = _ni_support._normalize_sequence(sampling, input.ndim)

@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as np
+from scipy._lib._array_api import xp_asarray
 from . import _ni_support
 from . import _ni_label
 from . import _nd_image
@@ -172,12 +173,12 @@ def label(input, structure=None, output=None):
            [0, 0, 0, 1, 0, 0]], dtype=int32)
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     if structure is None:
         structure = _morphology.generate_binary_structure(input.ndim, 1)
-    structure = np.asarray(structure, dtype=bool)
+    structure = xp_asarray(structure, dtype=bool, xp=np)
     if structure.ndim != input.ndim:
         raise RuntimeError('structure and input must have equal rank')
     for ii in structure.shape:
@@ -298,7 +299,7 @@ def find_objects(input, max_label=0):
            [0, 0, 1]])
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
 
@@ -495,7 +496,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default,
     """
 
     as_scalar = np.isscalar(index)
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
 
     if pass_positions:
         positions = np.arange(input.size).reshape(input.shape)
@@ -508,7 +509,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default,
         else:
             return func(input.ravel(), positions.ravel())
 
-    labels = np.asarray(labels)
+    labels = xp_asarray(labels, xp=np)
 
     try:
         input, labels = np.broadcast_arrays(input, labels)
@@ -626,12 +627,13 @@ def _stats(input, labels=None, index=None, centered=False):
         else:
             return vals.size, vals.sum()
 
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if labels is None:
         return single_group(input)
 
     labels = np.asarray(labels)
     # ensure input and labels match sizes
+    labels = xp_asarray(labels, xp=np)
     input, labels = np.broadcast_arrays(input, labels)
 
     if index is None:
@@ -639,6 +641,8 @@ def _stats(input, labels=None, index=None, centered=False):
 
     if np.isscalar(index):
         return single_group(input[labels == index])
+    
+    index = xp_asarray(index, xp=np)
 
     def _sum_centered(labels):
         # `labels` is expected to be an ndarray with the same shape as `input`.
@@ -921,7 +925,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
     """Returns min, max, or both, plus their positions (if requested), and
     median."""
 
-    input = np.asanyarray(input)
+    input = xp_asarray(input, xp=np, subok=True)
 
     find_positions = find_min_positions or find_max_positions
     positions = None
@@ -944,6 +948,8 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
 
     if labels is None:
         return single_group(input, positions)
+    
+    labels = xp_asarray(labels, xp=np, subok=True)
 
     labels = np.asarray(labels)
     # ensure input and labels match sizes
@@ -963,7 +969,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
             masked_positions = positions[mask]
         return single_group(input[mask], masked_positions)
 
-    index = np.asarray(index)
+    index = xp_asarray(index, xp=np)
 
     # remap labels to unique integers if necessary, or if the largest
     # label is larger than the number of values.
@@ -1306,7 +1312,7 @@ def minimum_position(input, labels=None, index=None):
     [(0, 0), (0, 3), (3, 1)]
 
     """
-    dims = np.array(np.asarray(input).shape)
+    dims = np.array(xp_asarray(input, xp=np).shape)
     # see np.unravel_index to understand this line.
     dim_prod = np.cumprod([1] + list(dims[:0:-1]))[::-1]
 
@@ -1391,7 +1397,7 @@ def maximum_position(input, labels=None, index=None):
     (0, 2)
 
     """
-    dims = np.array(np.asarray(input).shape)
+    dims = np.array(xp_asarray(input, xp=np).shape)
     # see np.unravel_index to understand this line.
     dim_prod = np.cumprod([1] + list(dims[:0:-1]))[::-1]
 
@@ -1457,7 +1463,7 @@ def extrema(input, labels=None, index=None):
     (1, 9, (0, 0), (3, 0))
 
     """
-    dims = np.array(np.asarray(input).shape)
+    dims = np.array(xp_asarray(input, xp=np).shape)
     # see np.unravel_index to understand this line.
     dim_prod = np.cumprod([1] + list(dims[:0:-1]))[::-1]
 
@@ -1543,7 +1549,7 @@ def center_of_mass(input, labels=None, index=None):
     >>> ndimage.center_of_mass(d)
     (inf,)
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     normalizer = sum_labels(input, labels, index)
     grids = np.ogrid[[slice(0, i) for i in input.shape]]
 
@@ -1649,13 +1655,13 @@ def watershed_ift(input, markers, structure=None, output=None):
            Pattern Analysis and Machine Intelligence, vol. 26, pp. 19-29, 2004.
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if input.dtype.type not in [np.uint8, np.uint16]:
         raise TypeError('only 8 and 16 unsigned inputs are supported')
 
     if structure is None:
         structure = _morphology.generate_binary_structure(input.ndim, 1)
-    structure = np.asarray(structure, dtype=bool)
+    structure = xp_asarray(structure, dtype=bool, xp=np)
     if structure.ndim != input.ndim:
         raise RuntimeError('structure and input must have equal rank')
     for ii in structure.shape:
@@ -1664,7 +1670,7 @@ def watershed_ift(input, markers, structure=None, output=None):
 
     if not structure.flags.contiguous:
         structure = structure.copy()
-    markers = np.asarray(markers)
+    markers = xp_asarray(markers, xp=np)
     if input.shape != markers.shape:
         raise RuntimeError('input and markers must have equal shape')
 
