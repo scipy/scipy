@@ -1560,7 +1560,9 @@ class TestFullCoverage:
         X = _Uniform(a=0, b=1)
         assert repr(X) == "_Uniform(a=0.0, b=1.0)"
 
-        assert repr(X*3 + 2) == "3.0*_Uniform(a=0.0, b=1.0) + 2.0"
+        assert repr(X*3 + 2) == (
+            "np.float64(3.0)*_Uniform(a=0.0, b=1.0) + np.float64(2.0)"
+        )
 
         X = _Uniform(a=np.zeros(4), b=1)
         assert repr(X) == "_Uniform(a, b, shape=(4,))"
@@ -1572,6 +1574,7 @@ class TestFullCoverage:
 
 class TestReprs:
     U = _Uniform(a=0, b=1)
+    V = _Uniform(a=np.float32(0.0), b=np.float32(1.0))
     X = Normal(mu=-1, sigma=1)
     Y = Normal(mu=1, sigma=1)
 
@@ -1579,6 +1582,7 @@ class TestReprs:
         "dist",
         [
             U,
+            V,
             3*U + 2,
             U**4,
             (3*U + 2)**4,
