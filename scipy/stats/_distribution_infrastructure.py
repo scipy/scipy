@@ -3900,7 +3900,7 @@ class ShiftedScaledDistribution(TransformedDistribution):
             result =  f"{repr(self.scale)}*{repr(self._dist)}"
             if not self.loc.ndim and self.loc < 0:
                 result += f" - {repr(-self.loc)}"
-            elif np.any(self.loc > 0):
+            elif np.any(self.loc != 0):
                 result += f" + {repr(self.loc)}"
         return result
 
