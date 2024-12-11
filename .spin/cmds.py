@@ -651,17 +651,24 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
     root = Path(__file__).parent.parent
-    cmd = [os.path.join(root, 'tools', 'lint.py'),
+
+    cmd_lint = [os.path.join(root, 'tools', 'lint.py'),
            f'--diff-against={diff_against}']
     if files != "":
-        cmd += [f'--files={files}']
+        cmd_lint += [f'--files={files}']
     if all:
-        cmd += ['--all']
+        cmd_lint += ['--all']
     if no_cython:
-        cmd += ['--no-cython']
+        cmd_lint += ['--no-cython']
     if fix:
-        cmd += ['--fix']
-    util.run(cmd)
+        cmd_lint += ['--fix']
+    util.run(cmd_lint)
+
+    cmd_unicode = [os.path.join(root, 'tools', 'check_unicode.py')]
+    util.run(cmd_unicode)
+
+    cmd_check_test_name = [os.path.join(root, 'tools', 'check_test_name.py')]
+    util.run(cmd_check_test_name)
 
 # From scipy: benchmarks/benchmarks/common.py
 def _set_mem_rlimit(max_mem=None):
