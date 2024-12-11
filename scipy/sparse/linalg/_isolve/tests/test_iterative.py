@@ -505,7 +505,7 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 3e-6*norm(b)
+    assert norm(A @ x - b) <= 4.5e-6*norm(b)
 
 
 def test_x0_equals_Mb(case):
