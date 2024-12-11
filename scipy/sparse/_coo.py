@@ -581,12 +581,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                         result.ravel('A'), fortran)
         else:
-            result_shape = self.shape
-            self = self.reshape(1, -1)
-            other = other.reshape(1, -1)
-            result = _spbase._add_dense(self, other)
-            # reshape back to n-D
-            result = result.reshape(result_shape)
+            self.sum_duplicates()
+            result[*self.coords] += self.data
         return self._container(result, copy=False)
 
 
