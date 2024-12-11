@@ -1496,6 +1496,7 @@ class TestTransforms:
         sample = Y.sample(10)
         assert np.all(sample > 0)
 
+class TestOrderStatistic:
     @pytest.mark.fail_slow(20)  # Moments require integration
     def test_order_statistic(self):
         rng = np.random.default_rng(7546349802439582)
@@ -1538,6 +1539,15 @@ class TestTransforms:
             stats.order_statistic(X, n=n, r=1.5)
         with pytest.raises(ValueError, match=message):
             stats.order_statistic(X, n=1.5, r=r)
+
+    def test_support_gh22037(self):
+        # During review of gh-22037, it was noted that the `support`
+        # of OrderStatisticDistribution was not overridden properly
+        Uniform = stats.make_distribution(stats.uniform)
+        X = Uniform()
+        Y = X*5 + 2
+        Z = stats.order_statistic(Y, r=3, n=5)
+        assert_allclose(Z.support(), Y.support())
 
 
 class TestFullCoverage:
