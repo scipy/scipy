@@ -1580,6 +1580,7 @@ class TestReprs:
     V = _Uniform(a=np.float32(0.0), b=np.float32(1.0))
     X = Normal(mu=-1, sigma=1)
     Y = Normal(mu=1, sigma=1)
+    Z = Normal(mu=np.zeros(1000), sigma=1)
 
     @pytest.mark.parametrize(
         "dist",
@@ -1614,6 +1615,26 @@ class TestReprs:
         sample1 = dist.sample(shape=10, rng=1234)
         sample2 = new_dist.sample(shape=10, rng=1234)
         assert_equal(sample1, sample2)
+
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            Z,
+            np.full(1000, 2.0) * X + 1.0,
+            2.0 * X + np.full(1000, 1.0),
+            np.full(1000, 2.0) * X + 1.0,
+            stats.truncate(Z, -1, 1),
+            stats.truncate(Z, -np.ones(1000), np.ones(1000)),
+            stats.order_statistic(X, r=np.arange(1, 1000), n=1000),
+            Z**2,
+            1.0 / (1 + stats.exp(Z)),
+            2**Z,
+        ]
+    )
+    def test_not_too_long(self, dist):
+        # Tests that array summarization is working to ensure reprs aren't too long.
+        # None of the reprs above will be executable.
+        assert len(repr(dist)) < 250
 
 
 class MixedDist(ContinuousDistribution):
