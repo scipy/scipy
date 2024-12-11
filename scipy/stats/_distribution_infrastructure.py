@@ -4583,11 +4583,11 @@ class MonotonicTransformedDistribution(TransformedDistribution):
         or strictly decreasing (False).
     repr_pattern : str, optional
         A string pattern for determining the __repr__. The __repr__
-        for X will be substituted into the position where `...` appears.
+        for X will be substituted into the position where `***` appears.
         For example:
-            ``"exp(...)"`` for the repr of an exponentially transformed
+            ``"exp(***)"`` for the repr of an exponentially transformed
             distribution
-        The default is ``f"{g.__name__}(...)"``.
+        The default is ``f"{g.__name__}(***)"``.
 
     """
 
@@ -4619,9 +4619,9 @@ class MonotonicTransformedDistribution(TransformedDistribution):
             self._ilogcxdf = self._dist._ilogcdf_dispatch
         self._increasing = increasing
         if repr_pattern is None:
-            repr_pattern = f"{g.__name__}(...)"
+            repr_pattern = f"{g.__name__}(***)"
         with np.printoptions(threshold=10):
-            self.__repr = repr_pattern.replace("...", repr(X))
+            self.__repr = repr_pattern.replace("***", repr(X))
 
 
     def __repr__(self):
