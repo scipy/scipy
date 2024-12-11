@@ -1106,11 +1106,11 @@ class TestMakeDistribution:
             assert hasattr(stats, dist)
 
         dist = stats.make_distribution(stats.gamma)
-        assert str(dist(a=2)) == "Gamma(a=2.0)"
+        assert str(dist(a=2)) == "Gamma(a=np.float64(2.0))"
         assert 'Gamma' in dist.__doc__
 
         dist = stats.make_distribution(stats.halfgennorm)
-        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
+        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
 
