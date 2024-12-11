@@ -633,14 +633,32 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
 
 @click.command()
 @click.option(
-    '--fix', default=False, is_flag=True, help='Attempt to auto-fix errors'
-)
+    '--fix', default=False, is_flag=True,
+    help='Attempt to auto-fix errors')
+@click.option("--diff-against", default="main", help="Diff against "
+    "this branch and lint modified files. Use either "
+    "`--diff-against` or `--files`, but not both.")
+@click.option("--files", default="",
+    help="Lint these files or directories; "
+         "use **/*.py to lint all files")
+@click.option("--all", default=False, is_flag=True,
+    help="This overrides `--diff-against` and `--files` "
+         "to lint all local files (excluding subprojects).")
+@click.option("--no-cython", default=True, is_flag=True,
+    help="Do not run cython-lint.")
 @click.pass_context
-def lint(ctx, fix):
+def lint(ctx, fix, diff_against, files, all, no_cython):
     """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
     root = Path(__file__).parent.parent
-    cmd = [os.path.join(root, 'tools', 'lint.py'), '--diff-against=main']
+    cmd = [os.path.join(root, 'tools', 'lint.py'),
+           f'--diff-against={diff_against}']
+    if files != "":
+        cmd += [f'--files={files}']
+    if all:
+        cmd += ['--all']
+    if no_cython:
+        cmd += ['--no-cython']
     if fix:
         cmd += ['--fix']
     util.run(cmd)
