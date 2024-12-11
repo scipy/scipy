@@ -1106,11 +1106,17 @@ class TestMakeDistribution:
             assert hasattr(stats, dist)
 
         dist = stats.make_distribution(stats.gamma)
-        assert str(dist(a=2)) == "Gamma(a=np.float64(2.0))"
+        if np.__version__ < "2":
+            assert str(dist(a=2)) == "Gamma(a=2.0)"
+        else:
+            assert str(dist(a=2)) == "Gamma(a=np.float64(2.0))"
         assert 'Gamma' in dist.__doc__
 
         dist = stats.make_distribution(stats.halfgennorm)
-        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
+        if np.__version__ < "2":
+            str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
+        else:
+            assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
 
@@ -1622,14 +1628,21 @@ class TestFullCoverage:
         msg = _generate_domain_support(_LogUniform)
         assert "accepts two parameterizations" in msg
 
+
     def test_ContinuousDistribution__repr__(self):
         X = _Uniform(a=0, b=1)
-        assert repr(X) == "_Uniform(a=np.float64(0.0), b=np.float64(1.0))"
+        if np.__version__ < "2":
+            assert repr(X) == "_Uniform(a=0.0, b=1.0)"
+        else:
+            assert repr(X) == "_Uniform(a=0.0, b=1.0)"
 
-        assert repr(X*3 + 2) == (
-            "np.float64(3.0)*_Uniform(a=np.float64(0.0), b=np.float64(1.0))"
-            " + np.float64(2.0)"
-        )
+        if np.__version__ < "2":
+            assert repr(X*3 + 2) == "3.0*_Uniform(a=0.0, b=1.0) + 2.0"
+        else:
+            assert repr(X*3 + 2) == (
+                "np.float64(3.0)*_Uniform(a=np.float64(0.0), b=np.float64(1.0))"
+                " + np.float64(2.0)"
+            )
 
         X = _Uniform(a=np.zeros(4), b=1)
         assert repr(X) == "_Uniform(a=array([0., 0., 0., 0.]), b=1)"
@@ -1653,8 +1666,20 @@ class TestReprs:
         [
             U,
             U - np.array([1.0, 2.0]),
-            V,
-            np.ones(2, dtype=np.float32)*V + np.zeros(2, dtype=np.float64),
+            pytest.param(
+                V,
+                marks=pytest.mark.skipif(
+                    np.__version__ < "2",
+                    reason="numpy 1.x didn't have dtype in repr",
+                )
+            ),
+            pytest.param(
+                np.ones(2, dtype=np.float32)*V + np.zeros(2, dtype=np.float64),
+                marks=pytest.mark.skipif(
+                    np.__version__ < "2",
+                    reason="numpy 1.x didn't have dtype in repr",
+                )
+            ),
             3*U + 2,
             U**4,
             (3*U + 2)**4,
