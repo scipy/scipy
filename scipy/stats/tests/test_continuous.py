@@ -1541,13 +1541,31 @@ class TestOrderStatistic:
             stats.order_statistic(X, n=1.5, r=r)
 
     def test_support_gh22037(self):
-        # During review of gh-22037, it was noted that the `support`
-        # of OrderStatisticDistribution was not overridden properly
+        # During review of gh-22037, it was noted that the `support` of
+        # an `OrderStatisticDistribution` returned incorrect results;
+        # this was resolved by overriding `_support`.
         Uniform = stats.make_distribution(stats.uniform)
         X = Uniform()
         Y = X*5 + 2
         Z = stats.order_statistic(Y, r=3, n=5)
         assert_allclose(Z.support(), Y.support())
+
+    def test_composition_gh22037(self):
+        # During review of gh-22037, it was noted that an error was
+        # raised when creating an `OrderStatisticDistribution` from
+        # a `TruncatedDistribution`. This was resolved by overriding
+        # `_update_parameters`.
+        Normal = stats.make_distribution(stats.norm)
+        TruncatedNormal = stats.make_distribution(stats.truncnorm)
+        a, b = [-2, -1], 1
+        r, n = 3, [[4], [5]]
+        x = [[[-0.3]], [[0.1]]]
+        X1 = Normal()
+        Y1 = stats.truncate(X1, a, b)
+        Z1 = stats.order_statistic(Y1, r=r, n=n)
+        X2 = TruncatedNormal(a=a, b=b)
+        Z2 = stats.order_statistic(X2, r=r, n=n)
+        np.testing.assert_allclose(Z1.cdf(x), Z2.cdf(x))
 
 
 class TestFullCoverage:
