@@ -1174,11 +1174,11 @@ def _log1mexp(x):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.special import log1m
+    >>> from scipy.stats._distribution_infrastructure import _log1mexp
     >>> x = 1e-300  # log of a number very close to 1
     >>> _log1mexp(x)  # log of the complement of a number very close to 1
     -690.7755278982137
-    >>> # p.log(1 - np.exp(x))  # -inf; emits warning
+    >>> # np.log1p(-np.exp(x))  # -inf; emits warning
 
     """
     def f1(x):
@@ -4217,11 +4217,12 @@ class OrderStatisticDistribution(TransformedDistribution):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+    >>> from scipy.stats._distribution_infrastructure import OrderStatisticDistribution
     >>>
     >>> X = stats.Normal()
     >>> data = X.sample(shape=(10000, 5))
     >>> ranks = np.sort(data, axis=1)
-    >>> Y = stats.OrderStatisticDistribution(X, r=4, n=5)
+    >>> Y = OrderStatisticDistribution(X, r=4, n=5)
     >>>
     >>> ax = plt.gca()
     >>> Y.plot(ax=ax)
