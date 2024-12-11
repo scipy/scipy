@@ -1827,7 +1827,6 @@ class ContinuousDistribution(_ProbabilityDistribution):
         repr_pattern = f"({repr(self)})**{repr(other)}"
         X = abs(self) if other % 2 == 0 else self
 
-        # This notation for g_name is nonstandard
         funcs = dict(g=lambda u: u**other, repr_pattern=repr_pattern,
                      h=lambda u: np.sign(u) * np.abs(u)**(1 / other),
                      dh=lambda u: 1/other * np.abs(u)**(1/other - 1))
