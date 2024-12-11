@@ -985,10 +985,10 @@ def _apply_over_batch(*argdefs):
 
     Example:
     --------
-    `linalg.eig` accepts two matrices as the first two arguments `a` and `b` and
-    returns one array or a tuple of arrays  depending on the values of other
-    positional or keyword arguments. To generate a wrapper that applies the function
-    over batches of matrices:
+    `linalg.eig` accepts two matrices as the first two arguments `a` and `b`, where
+    `b` is optional, and returns one array or a tuple of arrays, depending on the
+    values of other positional or keyword arguments. To generate a wrapper that applies
+    the function over batches of `a` and optionally `b` :
 
     >>> _apply_over_batch(('a', 2), ('b', 2))
     """
