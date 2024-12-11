@@ -1480,6 +1480,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     text.
 
     """
+    __array_priority__ = 1
     _parameterizations = []  # type: ignore[var-annotated]
 
     ### Initialization
