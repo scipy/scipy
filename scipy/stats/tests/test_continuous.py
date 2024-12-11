@@ -1018,34 +1018,28 @@ class TestMakeDistribution:
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
-                'johnsonsb', 'kstwobign', 'powerlognorm', 'powernorm', 'recipinvgauss',
-                'vonmises_line'}
+                'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'powerlognorm',
+                'powernorm', 'recipinvgauss', 'studentized_range', 'vonmises_line'}
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
-
         if distname in {  # skip these distributions
-            'genpareto', 'genextreme', 'genhalflogistic',  # complicated support
-            'kstwo', 'kappa4', 'tukeylambda',  # complicated support
-            'levy_stable',  # levy_stable does things differently...
-            'ksone',  # tolerance issues
-            'norminvgauss',  # private methods seem to have broadcasting issues
+            'levy_stable',  # private methods seem to require >= 1d args
             'vonmises',  # circular distribution; shouldn't work
-            'irwinhall',  # requires dtype of shape parameter to be integer
-            'studentized_range',  # too slow
         }:
             return
 
         # skip single test, mostly due to slight disagreement
+        custom_tolerances = {'ksone': 1e-5, 'kstwo': 1e-5}  # discontinuous PDF
         skip_entropy = {'kstwobign', 'pearson3'}  # tolerance issue
-        skip_skewness = {'exponpow'}  # tolerance issue
-        skip_kurtosis = {'chi', 'exponpow', 'invgamma', 'johnsonsb'}  # tolerance issue
-        skip_logccdf = {'jf_skew_t', # check this out later
-                        'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_skewness = {'exponpow', 'ksone'}  # tolerance issue
+        skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance issue
+                         'johnsonsb', 'ksone', 'kstwo'}  # tolerance issue
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
-        skip_standardized = {'exponpow'}  # tolerances
+        skip_standardized = {'exponpow', 'ksone'}  # tolerances
 
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
@@ -1055,39 +1049,69 @@ class TestMakeDistribution:
         Y = dist(**params)
         x = X.sample(shape=10, rng=rng)
         p = X.cdf(x)
+        rtol = custom_tolerances.get(distname, 1e-7)
         atol = 1e-12
 
         with np.errstate(divide='ignore', invalid='ignore'):
             m, v, s, k = Y.stats('mvsk')
+            assert_allclose(X.support(), Y.support())
             if distname not in skip_entropy:
-                assert_allclose(X.entropy(), Y.entropy())
-            assert_allclose(X.median(), Y.median())
-            assert_allclose(X.mean(), m, atol=atol)
-            assert_allclose(X.variance(), v, atol=atol)
+                assert_allclose(X.entropy(), Y.entropy(), rtol=rtol)
+            assert_allclose(X.median(), Y.median(), rtol=rtol)
+            assert_allclose(X.mean(), m, rtol=rtol, atol=atol)
+            assert_allclose(X.variance(), v, rtol=rtol, atol=atol)
             if distname not in skip_skewness:
-                assert_allclose(X.skewness(), s, atol=atol)
+                assert_allclose(X.skewness(), s, rtol=rtol, atol=atol)
             if distname not in skip_kurtosis:
-                assert_allclose(X.kurtosis(convention='excess'), k, atol=atol)
-            assert_allclose(X.logpdf(x), Y.logpdf(x))
-            assert_allclose(X.pdf(x), Y.pdf(x))
-            assert_allclose(X.logcdf(x), Y.logcdf(x))
-            assert_allclose(X.cdf(x), Y.cdf(x))
+                assert_allclose(X.kurtosis(convention='excess'), k,
+                                rtol=rtol, atol=atol)
+            assert_allclose(X.logpdf(x), Y.logpdf(x), rtol=rtol)
+            assert_allclose(X.pdf(x), Y.pdf(x), rtol=rtol)
+            assert_allclose(X.logcdf(x), Y.logcdf(x), rtol=rtol)
+            assert_allclose(X.cdf(x), Y.cdf(x), rtol=rtol)
             if distname not in skip_logccdf:
-                assert_allclose(X.logccdf(x), Y.logsf(x))
-            assert_allclose(X.ccdf(x), Y.sf(x))
-            assert_allclose(X.icdf(p), Y.ppf(p))
-            assert_allclose(X.iccdf(p), Y.isf(p))
+                assert_allclose(X.logccdf(x), Y.logsf(x), rtol=rtol)
+            assert_allclose(X.ccdf(x), Y.sf(x), rtol=rtol)
+            assert_allclose(X.icdf(p), Y.ppf(p), rtol=rtol)
+            assert_allclose(X.iccdf(p), Y.isf(p), rtol=rtol)
             for order in range(5):
                 if distname not in skip_raw.get(order, {}):
                     assert_allclose(X.moment(order, kind='raw'),
-                                    Y.moment(order), atol=atol)
+                                    Y.moment(order), rtol=rtol, atol=atol)
             for order in range(3, 4):
                 if distname not in skip_standardized:
                     assert_allclose(X.moment(order, kind='standardized'),
-                                    Y.stats('mvsk'[order-1]), atol=atol)
+                                    Y.stats('mvsk'[order-1]), rtol=rtol, atol=atol)
             seed = 845298245687345
             assert_allclose(X.sample(shape=10, rng=seed),
-                            Y.rvs(size=10, random_state=np.random.default_rng(seed)))
+                            Y.rvs(size=10, random_state=np.random.default_rng(seed)),
+                            rtol=rtol)
+
+    def test_input_validation(self):
+        message = '`levy_stable` is not supported.'
+        with pytest.raises(NotImplementedError, match=message):
+            stats.make_distribution(stats.levy_stable)
+
+        message = '`vonmises` is not supported.'
+        with pytest.raises(NotImplementedError, match=message):
+            stats.make_distribution(stats.vonmises)
+
+        message = "The argument must be an instance of `rv_continuous`."
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(object())
+
+    def test_repr_str_docs(self):
+        from scipy.stats._distribution_infrastructure import _distribution_names
+        for dist in _distribution_names.keys():
+            assert hasattr(stats, dist)
+
+        dist = stats.make_distribution(stats.gamma)
+        assert str(dist(a=2)) == "Gamma(a=2.0)"
+        assert 'Gamma' in dist.__doc__
+
+        dist = stats.make_distribution(stats.halfgennorm)
+        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
+        assert 'HalfGeneralizedNormal' in dist.__doc__
 
 
 class TestTransforms:
@@ -1427,6 +1451,20 @@ class TestTransforms:
         sample = Y.sample(10)
         assert np.all(sample > 0)
 
+    def test_abs_finite_support(self):
+        # The original implementation of `FoldedDistribution` might evaluate
+        # the private distribution methods outside the support. Check that this
+        # is resolved.
+        Weibull = stats.make_distribution(stats.weibull_min)
+        X = Weibull(c=2)
+        Y = abs(-X)
+        assert_equal(X.logpdf(1), Y.logpdf(1))
+        assert_equal(X.pdf(1), Y.pdf(1))
+        assert_equal(X.logcdf(1), Y.logcdf(1))
+        assert_equal(X.cdf(1), Y.cdf(1))
+        assert_equal(X.logccdf(1), Y.logccdf(1))
+        assert_equal(X.ccdf(1), Y.ccdf(1))
+
     def test_pow(self):
         rng = np.random.default_rng(81345982345826)
 
@@ -1651,6 +1689,14 @@ class TestMixture:
         y = X.sample(shape, rng=rng)
         assert y.shape == shape
         assert stats.ks_1samp(y.ravel(), X.cdf).pvalue > 0.05
+
+    def test_default_weights(self):
+        a = 1.1
+        Gamma = stats.make_distribution(stats.gamma)
+        X = Gamma(a=a)
+        Y = stats.Mixture((X, -X))
+        x = np.linspace(-4, 4, 300)
+        assert_allclose(Y.pdf(x), stats.dgamma(a=a).pdf(x))
 
     def test_properties(self):
         components = [Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)]

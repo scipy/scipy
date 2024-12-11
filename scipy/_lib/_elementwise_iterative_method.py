@@ -134,7 +134,10 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     ----------
     work : _RichResult
         All variables that need to be retained between iterations. Must
-        contain attributes `nit`, `nfev`, and `success`
+        contain attributes `nit`, `nfev`, and `success`. All arrays are
+        subject to being "compressed" if `preserve_shape is False`; nest
+        arrays that should not be compressed inside another object (e.g.
+        `dict` or `_RichResult`).
     callback : callable
         User-specified callback function
     shape : tuple of ints
@@ -175,6 +178,9 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
         copied to the appropriate indices of `res` when appropriate. The order
         determines the order in which _RichResult attributes will be
         pretty-printed.
+    preserve_shape : bool, default: False
+        Whether to compress the attributes of `work` (to avoid unnecessary
+        computation on elements that have already converged).
 
     Returns
     -------

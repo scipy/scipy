@@ -1234,9 +1234,11 @@ def _log_real_standardize(x):
     return y.reshape(shape)[()]
 
 
-def _combine_docs(dist_family):
+def _combine_docs(dist_family, *, include_examples=True):
     fields = set(NumpyDocString.sections)
     fields.remove('index')
+    if not include_examples:
+        fields.remove('Examples')
 
     doc = ClassDoc(dist_family)
     superdoc = ClassDoc(ContinuousDistribution)
@@ -3469,6 +3471,84 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # fit method removed for initial PR
 
 
+# Special case the names of some new-style distributions in `make_distribution`
+_distribution_names = {
+    'argus': 'ARGUS',
+    'betaprime': 'BetaPrime',
+    'chi2': 'ChiSquared',
+    'crystalball': 'CrystalBall',
+    'dgamma': 'DoubleGamma',
+    'dweibull': 'DoubleWeibull',
+    'expon': 'Exponential',
+    'exponnorm': 'ExponentiallyModifiedNormal',
+    'exponweib': 'ExponentialWeibull',
+    'exponpow': 'ExponentialPower',
+    'fatiguelife': 'FatigueLife',
+    'foldcauchy': 'FoldedCauchy',
+    'foldnorm': 'FoldedNormal',
+    'genlogistic': 'GeneralizedLogistic',
+    'gennorm': 'GeneralizedNormal',
+    'genpareto': 'GeneralizedPareto',
+    'genexpon': 'GeneralizedExponential',
+    'genextreme': 'GeneralizedExtremeValue',
+    'gausshyper': 'GaussHypergeometric',
+    'gengamma': 'GeneralizedGamma',
+    'genhalflogistic': 'GeneralizedHalfLogistic',
+    'geninvgauss': 'GeneralizedInverseGaussian',
+    'gumbel_r': 'Gumbel',
+    'gumbel_l': 'ReflectedGumbel',
+    'halfcauchy': 'HalfCauchy',
+    'halflogistic': 'HalfLogistic',
+    'halfnorm': 'HalfNormal',
+    'halfgennorm': 'HalfGeneralizedNormal',
+    'hypsecant': 'HyperbolicSecant',
+    'invgamma': 'InverseGammma',
+    'invgauss': 'InverseGaussian',
+    'invweibull': 'InverseWeibull',
+    'irwinhall': 'IrwinHall',
+    'jf_skew_t': 'JonesFaddySkewT',
+    'johnsonsb': 'JohnsonSB',
+    'johnsonsu': 'JohnsonSU',
+    'ksone': 'KSOneSided',
+    'kstwo': 'KSTwoSided',
+    'kstwobign': 'KSTwoSidedAsymptotic',
+    'laplace_asymmetric': 'LaplaceAsymmetric',
+    'levy_l': 'LevyLeft',
+    'levy_stable': 'LevyStable',
+    'loggamma': 'ExpGamma',  # really the Exponential Gamma Distribution
+    'loglaplace': 'LogLaplace',
+    'lognorm': 'LogNormal',
+    'loguniform': 'LogUniform',
+    'ncx2': 'NoncentralChiSquared',
+    'nct': 'NoncentralT',
+    'norm': 'Normal',
+    'norminvgauss': 'NormalInverseGaussian',
+    'powerlaw': 'PowerLaw',
+    'powernorm': 'PowerNormal',
+    'rdist': 'R',
+    'rel_breitwigner': 'RelativisticBreitWigner',
+    'recipinvgauss': 'ReciprocalInverseGaussian',
+    'reciprocal': 'LogUniform',
+    'semicircular': 'SemiCircular',
+    'skewcauchy': 'SkewCauchy',
+    'skewnorm': 'SkewNormal',
+    'studentized_range': 'StudentizedRange',
+    't': 'StudentT',
+    'trapezoid': 'Trapezoidal',
+    'triang': 'Triangular',
+    'truncexpon': 'TruncatedExponential',
+    'truncnorm': 'TruncatedNormal',
+    'truncpareto': 'TruncatedPareto',
+    'truncweibull_min': 'TruncatedWeibull',
+    'tukeylambda': 'TukeyLambda',
+    'vonmises_line': 'VonMisesLine',
+    'weibull_min': 'Weibull',
+    'weibull_max': 'ReflectedWeibull',
+    'wrapcauchy': 'WrappedCauchyLine',
+}
+
+
+# beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 def make_distribution(dist):
     """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
 
@@ -3480,10 +3560,10 @@ def make_distribution(dist):
 
     .. note::
 
-        `make_distribution` does not work with all instances of `rv_continuous`.
-        Known failures include 'genpareto', 'genextreme', 'genhalflogistic',
-        'irwinhall', 'kstwo', 'kappa4', 'levy_stable', 'norminvgauss',
-        'tukeylambda', and `vonmises`.
+        `make_distribution` does not work perfectly with all instances of
+        `rv_continuous`. Known failures include `levy_stable` and `vonmises`,
+        and some methods of some distributions will not support array shape
+        parameters.
 
     Parameters
     ----------
@@ -3496,6 +3576,14 @@ def make_distribution(dist):
         A subclass of `ContinuousDistribution` corresponding with `dist`. The
         initializer requires all shape parameters to be passed as keyword arguments
         (using the same names as the instance of `rv_continuous`).
+
+    Notes
+    -----
+    The documentation of `ContinuousDistribution` is not rendered. See below for
+    an example of how to instantiate the class (i.e. pass all shape parameters of
+    `dist` to the initializer as keyword arguments). Documentation of all methods
+    is identical to that of `scipy.stats.Normal`. Use ``help`` on the returned
+    class or its methods for more information.
 
     Examples
     --------
@@ -3513,7 +3601,13 @@ def make_distribution(dist):
     >>> plt.show()
 
     """
-    # todo: check genpareto, genextreme, genhalflogistic, kstwo, kappa4, tukeylambda
+    if dist in {stats.levy_stable, stats.vonmises}:
+        raise NotImplementedError(f"`{dist.name}` is not supported.")
+
+    if not isinstance(dist, stats.rv_continuous):
+        message = "The argument must be an instance of `rv_continuous`."
+        raise ValueError(message)
+
     parameters = []
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
@@ -3527,16 +3621,29 @@ def make_distribution(dist):
     _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
+    repr_str = _distribution_names.get(dist.name, dist.name.capitalize())
+
     class CustomDistribution(ContinuousDistribution):
         _parameterizations = ([_Parameterization(*parameters)] if parameters
                               else [])
         _variable = _x_param
 
+        def __repr__(self):
+            s = super().__repr__()
+            return s.replace('CustomDistribution', repr_str)
+
+    # override the domain's `get_numerical_endpoints` rather than the
+    # distribution's `_support` to ensure that `_support` takes care
+    # of any required broadcasting, etc.
+    def get_numerical_endpoints(parameter_values):
+        a, b = dist._get_support(**parameter_values)
+        return np.asarray(a)[()], np.asarray(b)[()]
+
     def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
         return dist._rvs(size=full_shape, random_state=rng, **kwargs)
 
-    def _moment_raw_formula(self, n, **kwargs):
-        return dist._munp(int(n), **kwargs)
+    def _moment_raw_formula(self, order, **kwargs):
+        return dist._munp(int(order), **kwargs)
 
     def _moment_raw_formula_1(self, order, **kwargs):
         if order != 1:
@@ -3572,7 +3679,12 @@ def make_distribution(dist):
                '_entropy': '_entropy_formula',
                '_median': '_median_formula'}
 
+    # These are not desirable overrides for the new infrastructure
+    skip_override = {'norminvgauss': {'_sf', '_isf'}}
+
     for old_method, new_method in methods.items():
+        if dist.name in skip_override and old_method in skip_override[dist.name]:
+            continue
         # If method of old distribution overrides generic implementation...
         method = getattr(dist.__class__, old_method, None)
         super_method = getattr(stats.rv_continuous, old_method, None)
@@ -3583,6 +3695,10 @@ def make_distribution(dist):
     def _overrides(method_name):
         return (getattr(dist.__class__, method_name, None)
                 is not getattr(stats.rv_continuous, method_name, None))
+
+    if _overrides('_get_support'):
+        domain = CustomDistribution._variable.domain
+        domain.get_numerical_endpoints = get_numerical_endpoints
 
     if _overrides('_munp'):
         CustomDistribution._moment_raw_formula = _moment_raw_formula
@@ -3595,6 +3711,15 @@ def make_distribution(dist):
         if not _overrides('_munp'):
             CustomDistribution._moment_raw_formula = _moment_raw_formula_1
             CustomDistribution._moment_central_formula = _moment_central_formula
+
+    support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
+    docs = [
+        f"This class represents `scipy.stats.{dist.name}` as a subclass of "
+        "`ContinuousDistribution`.",
+        f"The `repr`/`str` of class instances is `{repr_str}`.",
+        f"The PDF of the distribution is defined {support_etc}"
+    ]
+    CustomDistribution.__doc__ = ("\n".join(docs))
 
     return CustomDistribution
 
@@ -4240,9 +4365,10 @@ class Mixture(_ProbabilityDistribution):
         The underlying instances of `ContinuousDistribution`.
         All must have scalar shape parameters (if any); e.g., the `pdf` evaluated
         at a scalar argument must return a scalar.
-    weights : sequence of floats
+    weights : sequence of floats, optional
         The corresponding probabilities of selecting each random variable.
-        Must be non-negative and sum to one.
+        Must be non-negative and sum to one. The default behavior is to weight
+        all components equally.
 
     Attributes
     ----------
@@ -4302,7 +4428,6 @@ class Mixture(_ProbabilityDistribution):
 
     """
     # Todo:
-    # Fix Normal(mu=0.5).logentropy() runtime warning
     # Add support for array shapes, weights
 
     def _input_validation(self, components, weights):
@@ -4322,7 +4447,7 @@ class Mixture(_ProbabilityDistribution):
                 raise ValueError(message)
 
         if weights is None:
-            return
+            return components, weights
 
         weights = np.asarray(weights)
         if weights.shape != (len(components),):
@@ -4684,30 +4809,57 @@ class FoldedDistribution(TransformedDistribution):
         a_[i] = 0
         return a_[()], b_[()]
 
-    def _logpdf_dispatch(self, x, *args, **params):
-        logpdfs = np.stack([self._dist._logpdf_dispatch(x, *args, **params),
-                            self._dist._logpdf_dispatch(-x, *args, **params)])
+    def _logpdf_dispatch(self, x, *args, method=None, **params):
+        x = np.abs(x)
+        right = self._dist._logpdf_dispatch(x, *args, method=method, **params)
+        left = self._dist._logpdf_dispatch(-x, *args, method=method, **params)
+        left = np.asarray(left)
+        right = np.asarray(right)
+        a, b = self._dist._support(**params)
+        left[-x < a] = -np.inf
+        right[x > b] = -np.inf
+        logpdfs = np.stack([left, right])
         return special.logsumexp(logpdfs, axis=0)
 
-    def _pdf_dispatch(self, x, *args, **params):
-        return (self._dist._pdf_dispatch(x, *args, **params)
-                + self._dist._pdf_dispatch(-x, *args, **params))
-
-    def _logcdf_dispatch(self, x, *args, **params):
+    def _pdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
-        return self._dist._logcdf2_dispatch(-x, x, *args, **params).real
+        right = self._dist._pdf_dispatch(x, *args, method=method, **params)
+        left = self._dist._pdf_dispatch(-x, *args, method=method, **params)
+        left = np.asarray(left)
+        right = np.asarray(right)
+        a, b = self._dist._support(**params)
+        left[-x < a] = 0
+        right[x > b] = 0
+        return left + right
 
-    def _cdf_dispatch(self, x, *args, **params):
+    def _logcdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
-        return self._dist._cdf2_dispatch(-x, x, *args, **params)
+        a, b = self._dist._support(**params)
+        xl = np.maximum(-x, a)
+        xr = np.minimum(x, b)
+        return self._dist._logcdf2_dispatch(xl, xr, *args, method=method, **params).real
 
-    def _logccdf_dispatch(self, x, *args, **params):
+    def _cdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
-        return self._dist._logccdf2_dispatch(-x, x, *args, **params).real
+        a, b = self._dist._support(**params)
+        xl = np.maximum(-x, a)
+        xr = np.minimum(x, b)
+        return self._dist._cdf2_dispatch(xl, xr, *args, **params)
 
-    def _ccdf_dispatch(self, x, *args, **params):
+    def _logccdf_dispatch(self, x, *args, method=None, **params):
         x = np.abs(x)
-        return self._dist._ccdf2_dispatch(-x, x, *args, **params)
+        a, b = self._dist._support(**params)
+        xl = np.maximum(-x, a)
+        xr = np.minimum(x, b)
+        return self._dist._logccdf2_dispatch(xl, xr, *args, method=method, 
+                                             **params).real
+
+    def _ccdf_dispatch(self, x, *args, method=None, **params):
+        x = np.abs(x)
+        a, b = self._dist._support(**params)
+        xl = np.maximum(-x, a)
+        xr = np.minimum(x, b)
+        return self._dist._ccdf2_dispatch(xl, xr, *args, method=method, **params)
 
     def _sample_dispatch(self, sample_shape, full_shape, *,
                          method, rng, **params):
