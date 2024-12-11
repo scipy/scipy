@@ -4618,14 +4618,11 @@ class MonotonicTransformedDistribution(TransformedDistribution):
             self._ilogxdf = self._dist._ilogccdf_dispatch
             self._ilogcxdf = self._dist._ilogcdf_dispatch
         self._increasing = increasing
-        if repr_pattern is None:
-            repr_pattern = f"{g.__name__}(***)"
-        with np.printoptions(threshold=10):
-            self.__repr = repr_pattern.replace("***", repr(X))
-
+        self.repr_pattern = repr_pattern or f"{g.__name__}(***)"
 
     def __repr__(self):
-        return self.__repr
+        with np.printoptions(threshold=10):
+            return self.repr_pattern.replace("***", repr(self._dist))
 
     def _overrides(self, method_name):
         # Do not use the generic overrides of TransformedDistribution
