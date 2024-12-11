@@ -1823,7 +1823,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
         # Fill in repr_pattern with the repr of self before taking abs.
         # Avoids having unnecessary abs in the repr.
-        repr_pattern = f"({repr(self)})**{other}"
+        repr_pattern = f"({repr(self)})**{repr(other)}"
         X = abs(self) if other % 2 == 0 else self
 
         # This notation for g_name is nonstandard
@@ -1845,7 +1845,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def __rtruediv__(self, other):
         a, b = self.support()
-        funcs = dict(g=lambda u: 1 / u, repr_pattern=f"{other}/({repr(self)})",
+        funcs = dict(g=lambda u: 1 / u, repr_pattern=f"{repr(other)}/({repr(self)})",
                      h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
         if np.all(a >= 0) or np.all(b <= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
@@ -1862,7 +1862,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         funcs = dict(g=lambda u: other**u,
                      h=lambda u: np.log(u) / np.log(other),
                      dh=lambda u: 1 / np.abs(u * np.log(other)),
-                     repr_pattern=f"{other}**({repr(self)})")
+                     repr_pattern=f"{repr(other)}**({repr(self)})")
 
         if not np.isscalar(other) or other <= 0 or other == 1:
             message = ("Raising an argument to the power of a random variable is only "
@@ -3793,7 +3793,7 @@ class TruncatedDistribution(TransformedDistribution):
         return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
 
     def __repr__(self):
-        return f"truncate({repr(self._dist)}, lb={self.lb}, ub={self.ub})"
+        return f"truncate({repr(self._dist)}, lb={repr(self.lb)}, ub={repr(self.ub)})"
 
 
 def truncate(X, lb=-np.inf, ub=np.inf):
@@ -3896,11 +3896,11 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return np.where(sign, a, b)[()], np.where(sign, b, a)[()]
 
     def __repr__(self):
-        result =  f"{self.scale}*{repr(self._dist)}"
+        result =  f"{repr(self.scale)}*{repr(self._dist)}"
         if not self.loc.ndim and self.loc < 0:
-            result += f" - {-self.loc}"
+            result += f" - {repr(-self.loc)}"
         elif np.any(self.loc > 0):
-            result += f" + {self.loc}"
+            result += f" + {repr(self.loc)}"
         return result
 
     # Here, we override all the `_dispatch` methods rather than the public
@@ -4166,7 +4166,9 @@ class OrderStatisticDistribution(TransformedDistribution):
         return self._dist._icdf_dispatch(p_, **kwargs)
 
     def __repr__(self):
-        return f"order_statistic({repr(self._dist)}, r={self.r}, n={self.n})"
+        return (
+            f"order_statistic({repr(self._dist)}, r={repr(self.r)}, n={repr(self.n)})"
+        )
 
 
 def order_statistic(X, /, *, r, n):
