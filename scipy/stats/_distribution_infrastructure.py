@@ -4112,6 +4112,14 @@ class OrderStatisticDistribution(TransformedDistribution):
     def __init__(self, dist, /, *args, r, n, **kwargs):
         super().__init__(dist, *args, r=r, n=n, **kwargs)
 
+    def _support(self, *args, r, n, **kwargs):
+        return self._dist._support(*args, **kwargs)
+
+    def _process_parameters(self, r=None, n=None, **params):
+        parameters = self._dist._process_parameters(**params)
+        parameters.update(dict(r=r, n=n))
+        return parameters
+
     def _overrides(self, method_name):
         return method_name in {'_logpdf_formula', '_pdf_formula',
                                '_cdf_formula', '_ccdf_formula',
