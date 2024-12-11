@@ -1784,8 +1784,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         r""" Returns a string representation of the distribution.
 
         Includes the name of the distribution family, the names of the
-        parameters, and the broadcasted shape and result dtype of the
-        parameters.
+        parameters and the `repr` of each of their values.
+
 
         """
         class_name = self.__class__.__name__
@@ -1793,15 +1793,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
         info = []
         if parameters:
             if self._size <= 3:
-                str_parameters = [f"{symbol}={value}" for symbol, value in parameters]
+                str_parameters = [f"{symbol}={repr(value)}" for symbol, value in parameters]
                 str_parameters = f"{', '.join(str_parameters)}"
             else:
                 str_parameters = f"{', '.join([symbol for symbol, _ in parameters])}"
             info.append(str_parameters)
-        if self._shape:
-            info.append(f"shape={self._shape}")
-        if self._dtype != np.float64:
-            info.append(f"dtype={self._dtype}")
         return f"{class_name}({', '.join(info)})"
 
     def __add__(self, loc):
