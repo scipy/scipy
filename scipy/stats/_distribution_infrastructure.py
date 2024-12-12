@@ -4050,6 +4050,7 @@ class OrderStatisticDistribution(TransformedDistribution):
     r : array_like
         The (integer) rank of the order statistic :math:`r`
 
+
     Notes
     -----
     If we make :math:`n` observations of a continuous random variable
@@ -4170,6 +4171,12 @@ def order_statistic(X, /, *, r, n):
         The (positive integer) rank of the order statistic :math:`r`
     n : array_like
         The (positive integer) sample size :math:`n`
+
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable that follows the distribution of the prescribed
+        order statistic.
 
     Notes
     -----
@@ -4765,6 +4772,7 @@ def exp(X, /):
     ----------
     X : `ContinuousDistribution`
         The random variable :math:`X`.
+
     Returns
     -------
     Y : `ContinuousDistribution`
@@ -4810,6 +4818,7 @@ def log(X, /):
     ----------
     X : `ContinuousDistribution`
         The random variable :math:`X` with positive support.
+
     Returns
     -------
     Y : `ContinuousDistribution`
