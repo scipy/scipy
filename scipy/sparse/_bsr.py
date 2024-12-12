@@ -192,7 +192,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
                     raise ValueError(
-                        f"column index values must be < {N//C} (now max {self.indices.max()})"
+                        f"column index values must be < {N//C}"
+                        f" (now max {self.indices.max()})"
                     )
                 if self.indices.min() < 0:
                     raise ValueError("column index values must be >= 0")

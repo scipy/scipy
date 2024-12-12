@@ -201,7 +201,8 @@ class Tokenizer:
                     self.curpos = m.end()
                     return Token(self.tokens[i], m.group(), self.curpos)
             raise SyntaxError(
-                f"Unknown character at position {self.curpos} ({self.data[self.curpos]})"
+                f"Unknown character at position {self.curpos} "
+                f"({self.data[self.curpos]})"
             )
 
 

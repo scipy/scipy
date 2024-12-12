@@ -978,7 +978,8 @@ class IterInv(LinearOperator):
         b, info = self.ifunc(self.M, x, tol=self.tol)
         if info != 0:
             raise ValueError(
-                f"Error in inverting M: function {self.ifunc.__name__} did not converge (info = {info})."
+                f"Error in inverting M: function {self.ifunc.__name__} "
+                f"did not converge (info = {info})."
             )
         return b
 
@@ -1025,7 +1026,8 @@ class IterOpInv(LinearOperator):
         b, info = self.ifunc(self.OP, x, tol=self.tol)
         if info != 0:
             raise ValueError(
-                f"Error in inverting [A-sigma*M]: function {self.ifunc.__name__} did not converge (info = {info})."
+                f"Error in inverting [A-sigma*M]: function {self.ifunc.__name__} "
+                f"did not converge (info = {info})."
             )
         return b
 

@@ -371,7 +371,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Notes
     -----
-    When a real array is factorized and the returned SuperLU object's ``solve()`` method 
+    When a real array is factorized and the returned SuperLU object's ``solve()`` method
     is used with complex arguments an error is generated. Instead, cast the initial
     array to complex and then factorize.
 

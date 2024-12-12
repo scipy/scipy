@@ -365,7 +365,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     msg = f"Tolerance of {p1 - p0} reached."
                     if disp:
                         msg += (
-                            f" Failed to converge after {itr + 1} iterations, value is {p1}"
+                            f" Failed to converge after {itr + 1} iterations,"
+                            f" value is {p1}"
                         )
                         raise RuntimeError(msg)
                     warnings.warn(msg, RuntimeWarning, stacklevel=2)

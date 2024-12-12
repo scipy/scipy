@@ -334,7 +334,9 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     input_checks = []
     for j in range(len(func_inputs)):
         if (ufunc_inputs[j], func_inputs[j]) in DANGEROUS_DOWNCAST:
-            chk = f"<{CY_TYPES[func_inputs[j]]}>(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0] == (<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0]"
+            chk = (f"<{CY_TYPES[func_inputs[j]]}>("
+                   f"<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0] =="
+                   f"(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0]")
             input_checks.append(chk)
 
     if input_checks:
@@ -352,13 +354,16 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     for j, (outtype, fouttype) in enumerate(zip(ufunc_outputs, outtypecodes)):
         if (fouttype, outtype) in DANGEROUS_DOWNCAST:
             body += f"        if ov{j} == <{CY_TYPES[outtype]}>ov{j}:\n"
-            body += f"            (<{CY_TYPES[outtype]} *>op{j})[0] = <{CY_TYPES[outtype]}>ov{j}\n"
+            body += (f"            (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>ov{j}\n")
             body += "        else:\n"
             body += ("            sf_error.error(func_name, sf_error.DOMAIN, "
                      "\"invalid output\")\n")
-            body += f"            (<{CY_TYPES[outtype]} *>op{j})[0] = <{CY_TYPES[outtype]}>{NAN_VALUE[outtype]}\n"
+            body += (f"            (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>{NAN_VALUE[outtype]}\n")
         else:
-            body += f"        (<{CY_TYPES[outtype]} *>op{j})[0] = <{CY_TYPES[outtype]}>ov{j}\n"
+            body += (f"        (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>ov{j}\n")
     for j in range(len(ufunc_inputs)):
         body += f"        ip{j} += steps[{j}]\n"
     for j in range(len(ufunc_outputs)):
@@ -532,7 +537,8 @@ class Ufunc(Func):
             if "v" in outp:
                 raise ValueError(f"{self.name}: void signature {sig!r}")
             if len(inp) != inarg_num or len(outp) != outarg_num:
-                raise ValueError(f"{self.name}: signature {sig!r} does not have {inarg_num}/{outarg_num} input/output args")
+                raise ValueError(f"{self.name}: signature {sig!r} does "
+                                 f"not have {inarg_num}/{outarg_num} input/output args")
 
             loop_name, loop = generate_loop(inarg, outarg, ret, inp, outp)
             all_loops[loop_name] = loop
@@ -594,11 +600,13 @@ class Ufunc(Func):
         )
 
         for j, function in enumerate(loops):
-            toplevel += f"ufunc_{self.name}_loops[{j}] = <np.PyUFuncGenericFunction>{function}\n"
+            toplevel += (f"ufunc_{self.name}_loops[{j}] = "
+                        f"<np.PyUFuncGenericFunction>{function}\n")
         for j, type in enumerate(types):
             toplevel += f"ufunc_{self.name}_types[{j}] = <char>{type}\n"
         for j, func in enumerate(funcs):
-            toplevel += f"ufunc_{self.name}_ptr[2*{j}] = <void*>{self.cython_func_name(func, specialized=True)}\n"
+            toplevel += (f"ufunc_{self.name}_ptr[2*{j}] = <void*>"
+                        f"{self.cython_func_name(func, specialized=True)}\n")
             toplevel += f"ufunc_{self.name}_ptr[2*{j}+1] = <void*>(<char*>{self.name})\n"
         for j, func in enumerate(funcs):
             toplevel += f"ufunc_{self.name}_data[{j}] = &ufunc_{self.name}_ptr[2*{j}]\n"

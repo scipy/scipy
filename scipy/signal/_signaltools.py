@@ -4717,7 +4717,8 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
         raise ValueError(
-            f"The length of the input vector x must be greater than padlen, which is {edge}."
+            f"The length of the input vector x must be greater than padlen, "
+            f"which is {edge}."
         )
 
     if padtype is not None and edge > 0:
@@ -4843,8 +4844,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
         zi = xp_copy(zi, xp=array_namespace(zi))
         if zi.shape != x_zi_shape:
             raise ValueError(
-                f"Invalid zi shape. With axis={axis!r}, an input with shape {x.shape!r}, "
-                f"and an sos array with {n_sections} sections, zi must have shape {x_zi_shape!r}, got {zi.shape!r}."
+                f"Invalid zi shape. With axis={axis!r}, "
+                f"an input with shape {x.shape!r}, "
+                f"and an sos array with {n_sections} sections, zi must have "
+                f"shape {x_zi_shape!r}, got {zi.shape!r}."
             )
         return_zi = True
     else:

@@ -90,7 +90,8 @@ class _dia_base(_data_matrix):
 
         if self.data.shape[0] != len(self.offsets):
             raise ValueError(
-                f'number of diagonals ({self.data.shape[0]}) does not match the number of offsets ({len(self.offsets)})'
+                f'number of diagonals ({self.data.shape[0]}) does not match the number '
+                f'of offsets ({len(self.offsets)})'
             )
         if len(np.unique(self.offsets)) != len(self.offsets):
             raise ValueError('offset array contains duplicate values')

@@ -172,7 +172,8 @@ class BasinHoppingRunner:
             self.print_report(minres.fun, accept)
             if new_global_min:
                 print(
-                    f"found new global minimum on step {self.nstep} with function value {self.energy:g}"
+                    f"found new global minimum on step {self.nstep} with "
+                    f"function value {self.energy:g}"
                 )
 
         # save some variables as BasinHoppingRunner attributes
@@ -186,8 +187,9 @@ class BasinHoppingRunner:
         """print a status update"""
         minres = self.storage.get_lowest()
         print(
-            f"basinhopping step {self.nstep}: f {self.energy:g} trial_f {energy_trial:g} "
-            f"accepted {accept} lowest_f {minres.fun:g}"
+            f"basinhopping step {self.nstep}: f {self.energy:g} "
+            f"trial_f {energy_trial:g} accepted {accept} "
+            f"lowest_f {minres.fun:g}"
         )
 
 

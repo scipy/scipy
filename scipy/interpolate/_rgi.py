@@ -28,7 +28,8 @@ def _check_points(points):
                 p = np.flip(p)
             else:
                 raise ValueError(
-                    f"The points in dimension {i} must be strictly ascending or descending"
+                    f"The points in dimension {i} must be strictly ascending or "
+                    f"descending"
                 )
         # see https://github.com/scipy/scipy/issues/17716
         p = np.ascontiguousarray(p)
@@ -39,14 +40,16 @@ def _check_points(points):
 def _check_dimensionality(points, values):
     if len(points) > values.ndim:
         raise ValueError(
-            f"There are {len(points)} point arrays, but values has {values.ndim} dimensions"
+            f"There are {len(points)} point arrays, but values has "
+            f"{values.ndim} dimensions"
         )
     for i, p in enumerate(points):
         if not np.asarray(p).ndim == 1:
             raise ValueError(f"The points in dimension {i} must be 1-dimensional")
         if not values.shape[i] == len(p):
             raise ValueError(
-                f"There are {len(p)} points and {values.shape[i]} values in dimension {i}"
+                f"There are {len(p)} points and {values.shape[i]} values in "
+                f"dimension {i}"
             )
 
 

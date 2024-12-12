@@ -580,8 +580,8 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     if nfreqs is not None and numtaps >= nfreqs:
         raise ValueError(
-            f'ntaps must be less than nfreqs, but firwin2 was called with ntaps={numtaps} '
-            f'and nfreqs={nfreqs}'
+            f'ntaps must be less than nfreqs, but firwin2 was called with '
+            f'ntaps={numtaps} and nfreqs={nfreqs}'
         )
 
     if freq[0] != 0 or freq[-1] != nyq:
