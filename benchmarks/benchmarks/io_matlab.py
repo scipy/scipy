@@ -76,7 +76,12 @@ class MemUsage(Benchmark):
         import numpy as np
         from scipy.io import savemat
         x = np.random.rand({size}//8).view(dtype=np.uint8)
-        savemat('{self.filename}', dict(x=x), do_compression={compressed}, oned_as='row')
+        savemat(
+            '{self.filename}', 
+            dict(x=x), 
+            do_compression={compressed}, 
+            oned_as='row'
+        )
         """
         time, peak_mem = run_monitored(code)
         return peak_mem / size
