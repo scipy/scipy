@@ -27,7 +27,8 @@ _null = object()
 def _isnull(x):
     return type(x) is object or x is None
 
-__all__ = ['ContinuousDistribution']
+__all__ = ['make_distribution', 'Mixture', 'order_statistic',
+           'truncate', 'abs', 'exp', 'log']
 
 # Could add other policies for broadcasting and edge/out-of-bounds case handling
 # For instance, when edge case handling is known not to be needed, it's much
@@ -1482,6 +1483,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     text.
 
     """
+    __array_priority__ = 1
     _parameterizations = []  # type: ignore[var-annotated]
 
     ### Initialization
@@ -1501,7 +1503,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         # IDEs can suggest parameter names. If there are multiple parameterizations,
         # we'll need the default values of parameters to be None; this will
         # filter out the parameters that were not actually specified by the user.
-        parameters = {key: val for key, val in parameters.items() if val is not None}
+        parameters = {key: val for key, val in
+                      sorted(parameters.items()) if val is not None}
         self._update_parameters(**parameters)
 
     def _update_parameters(self, *, validation_policy=None, **params):
@@ -1701,9 +1704,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _get_parameter_str(self, parameters):
         # Get a string representation of the parameters like "{a, b, c}".
-        parameter_names_list = list(parameters.keys())
-        parameter_names_list.sort()
-        return f"{{{', '.join(parameter_names_list)}}}"
+        return f"{{{', '.join(parameters.keys())}}}"
 
     def _copy_parameterization(self):
         self._parameterizations = self._parameterizations.copy()
@@ -1786,25 +1787,17 @@ class ContinuousDistribution(_ProbabilityDistribution):
         r""" Returns a string representation of the distribution.
 
         Includes the name of the distribution family, the names of the
-        parameters, and the broadcasted shape and result dtype of the
-        parameters.
+        parameters and the `repr` of each of their values.
+
 
         """
         class_name = self.__class__.__name__
         parameters = list(self._original_parameters.items())
         info = []
-        if parameters:
-            parameters.sort()
-            if self._size <= 3:
-                str_parameters = [f"{symbol}={value}" for symbol, value in parameters]
-                str_parameters = f"{', '.join(str_parameters)}"
-            else:
-                str_parameters = f"{', '.join([symbol for symbol, _ in parameters])}"
-            info.append(str_parameters)
-        if self._shape:
-            info.append(f"shape={self._shape}")
-        if self._dtype != np.float64:
-            info.append(f"dtype={self._dtype}")
+        with np.printoptions(threshold=10):
+            str_parameters = [f"{symbol}={repr(value)}" for symbol, value in parameters]
+        str_parameters = f"{', '.join(str_parameters)}"
+        info.append(str_parameters)
         return f"{class_name}({', '.join(info)})"
 
     def __add__(self, loc):
@@ -1825,10 +1818,13 @@ class ContinuousDistribution(_ProbabilityDistribution):
                        "implemented when the argument is a positive integer.")
             raise NotImplementedError(message)
 
-        X = abs(self) if (other % 2 == 0) else self
+        # Fill in repr_pattern with the repr of self before taking abs.
+        # Avoids having unnecessary abs in the repr.
+        with np.printoptions(threshold=10):
+            repr_pattern = f"({repr(self)})**{repr(other)}"
+        X = abs(self) if other % 2 == 0 else self
 
-        # This notation for g_name is nonstandard
-        funcs = dict(g=lambda u: u**other, g_name=f'pow_{other}',
+        funcs = dict(g=lambda u: u**other, repr_pattern=repr_pattern,
                      h=lambda u: np.sign(u) * np.abs(u)**(1 / other),
                      dh=lambda u: 1/other * np.abs(u)**(1/other - 1))
 
@@ -1846,8 +1842,10 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def __rtruediv__(self, other):
         a, b = self.support()
-        funcs = dict(g=lambda u: 1 / u, g_name='inv',
-                     h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
+        with np.printoptions(threshold=10):
+            funcs = dict(g=lambda u: 1 / u,
+                         repr_pattern=f"{repr(other)}/({repr(self)})",
+                         h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
         if np.all(a >= 0) or np.all(b <= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
         else:
@@ -1860,9 +1858,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
             return out * other
 
     def __rpow__(self, other):
-        funcs = dict(g=lambda u: other**u, g_name=f'{other}**',
-                     h=lambda u: np.log(u) / np.log(other),
-                     dh=lambda u: 1 / np.abs(u * np.log(other)))
+        with np.printoptions(threshold=10):
+            funcs = dict(g=lambda u: other**u,
+                         h=lambda u: np.log(u) / np.log(other),
+                         dh=lambda u: 1 / np.abs(u * np.log(other)),
+                         repr_pattern=f"{repr(other)}**({repr(self)})")
 
         if not np.isscalar(other) or other <= 0 or other == 1:
             message = ("Raising an argument to the power of a random variable is only "
@@ -3837,9 +3837,7 @@ class TransformedDistribution(ContinuousDistribution):
         return self._dist._process_parameters(**params)
 
     def __repr__(self):
-        s = super().__repr__()
-        return s.replace("Distribution",
-                         self._dist.__class__.__name__)
+        raise NotImplementedError()
 
 
 class TruncatedDistribution(TransformedDistribution):
@@ -3916,6 +3914,11 @@ class TruncatedDistribution(TransformedDistribution):
         cFb = self._dist._ccdf_dispatch(_b, *args, **params)
         p_adjusted = cFb + p*np.exp(logmass)
         return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
+
+    def __repr__(self):
+        with np.printoptions(threshold=10):
+            return (f"truncate({repr(self._dist)}, "
+                    f"lb={repr(self.lb)}, ub={repr(self.ub)})")
 
 
 def truncate(X, lb=-np.inf, ub=np.inf):
@@ -4016,6 +4019,18 @@ class ShiftedScaledDistribution(TransformedDistribution):
         a, b = self._dist._support(**params)
         a, b = self._itransform(a, loc, scale), self._itransform(b, loc, scale)
         return np.where(sign, a, b)[()], np.where(sign, b, a)[()]
+
+    def __repr__(self):
+        with np.printoptions(threshold=10):
+            result =  f"{repr(self.scale)}*{repr(self._dist)}"
+            if not self.loc.ndim and self.loc < 0:
+                result += f" - {repr(-self.loc)}"
+            elif (np.any(self.loc != 0)
+                  or not np.can_cast(self.loc.dtype, self.scale.dtype)):
+                # We don't want to hide a zero array loc if it can cause
+                # a type promotion.
+                result += f" + {repr(self.loc)}"
+        return result
 
     # Here, we override all the `_dispatch` methods rather than the public
     # methods or _function methods. Why not the public methods?
@@ -4287,6 +4302,11 @@ class OrderStatisticDistribution(TransformedDistribution):
     def _iccdf_formula(self, p, r, n, **kwargs):
         p_ = special.betainccinv(r, n-r+1, p)
         return self._dist._icdf_dispatch(p_, **kwargs)
+
+    def __repr__(self):
+        with np.printoptions(threshold=10):
+            return (f"order_statistic({repr(self._dist)}, r={repr(self.r)}, "
+                    f"n={repr(self.n)})")
 
 
 def order_statistic(X, /, *, r, n):
@@ -4668,6 +4688,17 @@ class Mixture(_ProbabilityDistribution):
         x = np.reshape(rng.permuted(np.concatenate(x)), shape)
         return x[()]
 
+    def __repr__(self):
+        result = "Mixture(\n"
+        result += "    [\n"
+        with np.printoptions(threshold=10):
+            for component in self.components:
+                result += f"        {repr(component)},\n"
+            result += "    ],\n"
+            result += f"    weights={repr(self.weights)},\n"
+        result += ")"
+        return result
+
 
 class MonotonicTransformedDistribution(TransformedDistribution):
     r"""Distribution underlying a strictly monotonic function of a random variable
@@ -4691,14 +4722,18 @@ class MonotonicTransformedDistribution(TransformedDistribution):
     increasing : bool, optional
         Whether the function is strictly increasing (True, default)
         or strictly decreasing (False).
-    g_name : str, optional
-        The name of the mathematical function represented by `g`,
-        used in `__repr__` and `__str__`. The default is ``g.__name__``.
+    repr_pattern : str, optional
+        A string pattern for determining the __repr__. The __repr__
+        for X will be substituted into the position where `***` appears.
+        For example:
+            ``"exp(***)"`` for the repr of an exponentially transformed
+            distribution
+        The default is ``f"{g.__name__}(***)"``.
 
     """
 
     def __init__(self, X, /, *args, g, h, dh, logdh=None,
-                 increasing=True, g_name=None, **kwargs):
+                 increasing=True, repr_pattern=None, **kwargs):
         super().__init__(X, *args, **kwargs)
         self._g = g
         self._h = h
@@ -4724,13 +4759,11 @@ class MonotonicTransformedDistribution(TransformedDistribution):
             self._ilogxdf = self._dist._ilogccdf_dispatch
             self._ilogcxdf = self._dist._ilogcdf_dispatch
         self._increasing = increasing
-        self._g_name = g.__name__ if g_name is None else g_name
+        self._repr_pattern = repr_pattern or f"{g.__name__}(***)"
 
     def __repr__(self):
-        return f"{self._g_name}({repr(self._dist)})"
-
-    def __str__(self):
-        return f"{self._g_name}({str(self._dist)})"
+        with np.printoptions(threshold=10):
+            return self._repr_pattern.replace("***", repr(self._dist))
 
     def _overrides(self, method_name):
         # Do not use the generic overrides of TransformedDistribution
@@ -4854,6 +4887,10 @@ class FoldedDistribution(TransformedDistribution):
         rvs = self._dist._sample_dispatch(
             sample_shape, full_shape, method=method, rng=rng, **params)
         return np.abs(rvs)
+
+    def __repr__(self):
+        with np.printoptions(threshold=10):
+            return f"abs({repr(self._dist)})"
 
 
 def abs(X, /):
