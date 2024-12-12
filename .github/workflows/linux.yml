@@ -14,6 +14,7 @@ permissions:
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  BOOST_DIR: "${{ github.workspace }}/boost"
   INSTALLDIR: "build-install"
 
 concurrency:
@@ -30,9 +31,6 @@ jobs:
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -61,6 +59,15 @@ jobs:
         # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
         sudo apt-get update
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+    - name: Install Boost
+      run: |
+        wget -O boost_1_87_0.tar.bz2 https://boostorg.jfrog.io/artifactory/main/release/1.87.0/source/boost_1_87_0.tar.bz2
+        tar --bzip2 -xf boost_1_82_0.tar.bz2
+        mkdir -p "${BOOST_DIR}"
+        cd ${{ env.BOOST_DIR }}
+        ./bootstrap.sh --prefix=${{ env.BOOST_DIR }} --show-libraries --with-libraries=math
+        ./b2 install
 
     - name: Install Python packages
       if: matrix.python-version == '3.10'
