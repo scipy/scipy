@@ -607,11 +607,15 @@ class Ufunc(Func):
         for j, func in enumerate(funcs):
             toplevel += (f"ufunc_{self.name}_ptr[2*{j}] = <void*>"
                         f"{self.cython_func_name(func, specialized=True)}\n")
-            toplevel += f"ufunc_{self.name}_ptr[2*{j}+1] = <void*>(<char*>{self.name})\n"
+            toplevel += (f"ufunc_{self.name}_ptr[2*{j}+1] = <void*>"
+                        f"(<char*>{self.name})\n")
         for j, func in enumerate(funcs):
             toplevel += f"ufunc_{self.name}_data[{j}] = &ufunc_{self.name}_ptr[2*{j}]\n"
 
-        toplevel += f"@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, ufunc_@_data, ufunc_@_types, {len(types) // (inarg_num + outarg_num)}, {inarg_num}, {outarg_num}, 0, '@', ufunc_@_doc, 0)\n".replace('@', self.name)
+        toplevel += (f"@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, ufunc_@_data, "
+                    f"ufunc_@_types, {len(types) // (inarg_num + outarg_num)}, "
+                    f"{inarg_num}, {outarg_num}, 0, '@', ufunc_@_doc, 0)"
+                    f"\n").replace('@', self.name)
 
         return toplevel
 

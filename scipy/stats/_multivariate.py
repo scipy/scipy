@@ -481,10 +481,12 @@ class multivariate_normal_gen(multi_rv_generic):
                 msg = ("Array 'cov' must be square if it is two dimensional,"
                        f" but cov.shape = {str(cov.shape)}.")
             else:
-                msg = f"Dimension mismatch: array 'cov' is of shape {cov.shape}, but 'mean' is a vector of length {len(mean)}."
+                msg = (f"Dimension mismatch: array 'cov' is of shape {cov.shape}, "
+                       f"but 'mean' is a vector of length {len(mean)}.")
             raise ValueError(msg)
         elif cov.ndim > 2:
-            raise ValueError(f"Array 'cov' must be at most two-dimensional, but cov.ndim = {cov.ndim}")
+            raise ValueError(f"Array 'cov' must be at most two-dimensional, "
+                             f"but cov.ndim = {cov.ndim}")
 
         return dim, mean, cov
 
@@ -2007,7 +2009,8 @@ class wishart_gen(multi_rv_generic):
             raise ValueError("Array 'scale' must be square if it is two dimensional,"
                              f" but scale.scale = {str(scale.shape)}.")
         elif scale.ndim > 2:
-            raise ValueError(f"Array 'scale' must be at most two-dimensional, but scale.ndim = {scale.ndim}")
+            raise ValueError(f"Array 'scale' must be at most two-dimensional, "
+                             f"but scale.ndim = {scale.ndim}")
 
         dim = scale.shape[0]
 
@@ -2047,7 +2050,9 @@ class wishart_gen(multi_rv_generic):
                     "Quantiles must be square in the first two dimensions "
                     f"if they are three dimensional, but x.shape = {str(x.shape)}.")
         elif x.ndim > 3:
-            raise ValueError(f"Quantiles must be at most two-dimensional with an additional dimension for multiple components, but x.ndim = {x.ndim}")
+            raise ValueError(f"Quantiles must be at most two-dimensional with an "
+                             f"additional dimension for multiple components, "
+                             f"but x.ndim = {x.ndim}")
 
         # Now we have 3-dim array; should have shape [dim, dim, *]
         if not x.shape[0:2] == (dim, dim):
@@ -3284,7 +3289,9 @@ class multinomial_gen(multi_rv_generic):
             raise ValueError("x must be an array.")
 
         if xx.size != 0 and not xx.shape[-1] == p.shape[-1]:
-            raise ValueError(f"Size of each quantile should be size of p: received {xx.shape[-1]}, but expected {p.shape[-1]}.")
+            raise ValueError(f"Size of each quantile should be size of p: "
+                             f"received {xx.shape[-1]}, but expected "
+                             f"{p.shape[-1]}.")
 
         # true for x out of the domain
         cond = np.any(xx != x, axis=-1)
@@ -4770,7 +4777,8 @@ class multivariate_t_gen(multi_rv_generic):
                 msg = msg % (str(shape.shape), len(loc))
             raise ValueError(msg)
         elif shape.ndim > 2:
-            raise ValueError(f"Array 'cov' must be at most two-dimensional, but cov.ndim = {shape.ndim}")
+            raise ValueError(f"Array 'cov' must be at most two-dimensional, "
+                             f"but cov.ndim = {shape.ndim}")
 
         # Process degrees of freedom.
         if df is None:

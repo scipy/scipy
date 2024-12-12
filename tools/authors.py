@@ -68,7 +68,8 @@ def main():
             name = m.group(2)
             if name not in ('this',):
                 if disp:
-                    stdout_b.write((f"    - Log   : {line.strip().decode('utf-8')}\n").encode())
+                    stdout_b.write((f"    - Log   : {line.strip().decode('utf-8')}"
+                                    f"\n").encode())
                 name = NAME_MAP.get(name, name)
                 names.update((name,))
 

@@ -294,7 +294,9 @@ class FuncData:
                 msg = [""]
                 msg.append(f"Max |adiff|: {diff[bad_j].max():g}")
                 msg.append(f"Max |rdiff|: {rdiff[bad_j].max():g}")
-                msg.append(f"Bad results ({np.sum(bad_j)} out of {point_count}) for the following points (in output {output_num}):")
+                msg.append(f"Bad results ({np.sum(bad_j)} out of "
+                           f"{point_count}) for the following points "
+                           f"(in output {output_num}):")
                 for j in np.nonzero(bad_j)[0]:
                     j = int(j)
                     def fmt(x):
