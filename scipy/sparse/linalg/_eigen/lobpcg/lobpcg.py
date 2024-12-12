@@ -332,7 +332,7 @@ def lobpcg(
            ...,
            [  0,   0,   0, ...,  98,   0,   0],
            [  0,   0,   0, ...,   0,  99,   0],
-           [  0,   0,   0, ...,   0,   0, 100]], dtype=int16)
+           [  0,   0,   0, ...,   0,   0, 100]], shape=(100, 100), dtype=int16)
 
     The second mandatory input parameter `X` is a 2D array with the
     row dimension determining the number of requested eigenvalues.

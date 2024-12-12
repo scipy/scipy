@@ -811,6 +811,61 @@ class TestCurveFit:
         assert_allclose(popt1, 2, atol=1e-14)
         assert_allclose(popt2, 2, atol=1e-14)
 
+    @pytest.mark.parametrize("sigma_dim", [0, 1, 2])
+    def test_curvefit_omitnan(self, sigma_dim):
+        def exponential(x, a, b):
+            return b * np.exp(a * x)
+
+        rng = np.random.default_rng(578285731148908)
+        N = 100
+        x = np.linspace(1, 10, N)
+        y = exponential(x, 0.2, 0.5)
+
+        if (sigma_dim == 0):
+            sigma = 0.05
+            y += rng.normal(0, sigma, N)
+
+        elif (sigma_dim == 1):
+            sigma = x * 0.05
+            y += rng.normal(0, sigma, N)
+
+        elif (sigma_dim == 2):
+            # The covariance matrix must be symmetric positive-semidefinite
+            a = rng.normal(0, 2, (N, N))
+            sigma = a @ a.T
+            y += rng.multivariate_normal(np.zeros_like(x), sigma)
+        else:
+            assert False, "The sigma must be a scalar, 1D array or 2D array."
+
+        p0 = [0.1, 1.0]
+
+        # Choose indices to place NaNs.
+        i_x = rng.integers(N, size=5)
+        i_y = rng.integers(N, size=5)
+
+        # Add NaNs and compute result using `curve_fit`
+        x[i_x] = np.nan
+        y[i_y] = np.nan
+        res_opt, res_cov = curve_fit(exponential, x, y, p0=p0, sigma=sigma,
+                                     nan_policy="omit")
+
+        # Manually remove elements that should be eliminated, and
+        # calculate reference using `curve_fit`
+        i_delete = np.unique(np.concatenate((i_x, i_y)))
+        x = np.delete(x, i_delete, axis=0)
+        y = np.delete(y, i_delete, axis=0)
+
+        sigma = np.asarray(sigma)
+        if sigma.ndim == 1:
+            sigma = np.delete(sigma, i_delete)
+        elif sigma.ndim == 2:
+            sigma = np.delete(sigma, i_delete, axis=0)
+            sigma = np.delete(sigma, i_delete, axis=1)
+        ref_opt, ref_cov = curve_fit(exponential, x, y, p0=p0, sigma=sigma)
+
+        assert_allclose(res_opt, ref_opt, atol=1e-14)
+        assert_allclose(res_cov, ref_cov, atol=1e-14)
+
     def test_curvefit_simplecovariance(self):
 
         def func(x, a, b):

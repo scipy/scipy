@@ -1768,6 +1768,27 @@ class TestWilcoxon:
         res = stats.wilcoxon(np.zeros(5), method=method)
         assert_allclose(res, [0, 1])
 
+    def test_wilcoxon_axis_broadcasting_errors_gh22051(self):
+        # In previous versions of SciPy, `wilcoxon` gave an incorrect error
+        # message when `AxisError` was not found in the base NumPy namespace.
+        # Check that this is resolved with and without the ANP decorator.
+        message = "Array shapes are incompatible for broadcasting."
+        with pytest.raises(ValueError, match=message):
+            stats.wilcoxon([1, 2, 3], [4, 5])
+
+        message = "operands could not be broadcast together with..."
+        with pytest.raises(ValueError, match=message):
+            stats.wilcoxon([1, 2, 3], [4, 5], _no_deco=True)
+
+        AxisError = getattr(np, 'AxisError', None) or np.exceptions.AxisError
+        message = "source: axis 3 is out of bounds for array of dimension 1"
+        with pytest.raises(AxisError, match=message):
+            stats.wilcoxon([1, 2, 3], [4, 5, 6], axis=3)
+
+        message = "`axis` must be compatible with the shape..."
+        with pytest.raises(AxisError, match=message):
+            stats.wilcoxon([1, 2, 3], [4, 5, 6], axis=3, _no_deco=True)
+
 
 # data for k-statistics tests from
 # https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf

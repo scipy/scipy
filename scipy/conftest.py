@@ -64,6 +64,10 @@ def pytest_configure(config):
             "markers",
             "thread_unsafe: mark the test function as single-threaded",
         )
+        config.addinivalue_line(
+            "markers",
+            "iterations(n): run the given test function `n` times in each thread",
+        )
 
 
 def pytest_runtest_setup(item):
@@ -191,8 +195,16 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
                 msg = f"'--array-api-backend' must be in {xp_available_backends.keys()}"
                 raise ValueError(msg)
 
+
 if 'cupy' in xp_available_backends:
     SCIPY_DEVICE = 'cuda'
+
+    # this is annoying in CuPy 13.x
+    warnings.filterwarnings(
+        'ignore', 'cupyx.jit.rawkernel is experimental', category=FutureWarning
+    )
+    from cupyx.scipy import signal
+    del signal
 
 array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
 

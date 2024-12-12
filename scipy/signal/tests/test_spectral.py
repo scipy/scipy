@@ -985,8 +985,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1020,7 +1020,7 @@ class TestLombscargle:
         ampl = 2.
         w = 1.
         phi = 0.5 * np.pi
-        nin = 100
+        nin = 1000
         nout = 1000
         p = 0.7  # Fraction of points to select
 
@@ -1039,11 +1039,11 @@ class TestLombscargle:
         pgram = lombscargle(t, y, f)
 
         # convert to the amplitude
-        pgram = np.sqrt(4 * pgram / t.shape[0])
+        pgram = np.sqrt(4.0 * pgram / t.shape[0])
 
         # Check if amplitude is correct (this will not exactly match, due to
         # numerical differences when data is removed)
-        assert_allclose(np.max(pgram), ampl, rtol=5e-2)
+        assert_allclose(pgram[f==w], ampl, rtol=5e-2)
 
     def test_precenter(self):
         # Test if precenter gives the same result as manually precentering
@@ -1129,29 +1129,29 @@ class TestLombscargle:
         f = np.linspace(0, 1, 3) + 0.1
         assert_raises(ValueError, lombscargle, t, y, f)
 
-        # t is 2D
-        t = np.expand_dims(np.linspace(0, 1, 2), 1)
+        # t is 2D, with both axes length > 1
+        t = np.repeat(np.expand_dims(np.linspace(0, 1, 2), 1), 2, axis=1)
         y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
         assert_raises(ValueError, lombscargle, t, y, f)
 
-        # y is 2D
+        # y is 2D, with both axes length > 1
         t = np.linspace(0, 1, 2)
-        y = np.expand_dims(np.linspace(0, 1, 2), 1)
+        y = np.repeat(np.expand_dims(np.linspace(0, 1, 2), 1), 2, axis=1)
         f = np.linspace(0, 1, 3) + 0.1
         assert_raises(ValueError, lombscargle, t, y, f)
 
-        # f is 2D
+        # f is 2D, with both axes length > 1
         t = np.linspace(0, 1, 2)
         y = np.linspace(0, 1, 2)
-        f = np.expand_dims(np.linspace(0, 1, 3) + 0.1, 1)
+        f = np.repeat(np.expand_dims(np.linspace(0, 1, 3), 1) + 0.1, 2, axis=1)
         assert_raises(ValueError, lombscargle, t, y, f)
 
-        # weights is 2D
+        # weights is 2D, with both axes length > 1
         t = np.linspace(0, 1, 2)
         y = np.linspace(0, 1, 2)
         f = np.linspace(0, 1, 3) + 0.1
-        weights = np.expand_dims(np.linspace(0, 1, 2), 1)
+        weights = np.repeat(np.expand_dims(np.linspace(0, 1, 2), 1), 2, axis=1)
         assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
 
     def test_lombscargle_atan_vs_atan2(self):
@@ -1192,8 +1192,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1243,8 +1243,8 @@ class TestLombscargle:
         offset = 2.15  # Large offset
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1338,6 +1338,126 @@ class TestLombscargle:
         f = np.ones(1)
         weights = -np.ones(1)
         assert_raises(ValueError, lombscargle, t, y, f, weights=weights)
+
+    def test_list_input(self):
+        # Test that input can be passsed in as lists and with a numerical issue
+        # https://github.com/scipy/scipy/issues/8787
+
+        t = [1.98201652e+09, 1.98201752e+09, 1.98201852e+09, 1.98201952e+09,
+            1.98202052e+09, 1.98202152e+09, 1.98202252e+09, 1.98202352e+09,
+            1.98202452e+09, 1.98202552e+09, 1.98202652e+09, 1.98202752e+09,
+            1.98202852e+09, 1.98202952e+09, 1.98203052e+09, 1.98203152e+09,
+            1.98203252e+09, 1.98203352e+09, 1.98203452e+09, 1.98203552e+09,
+            1.98205452e+09, 1.98205552e+09, 1.98205652e+09, 1.98205752e+09,
+            1.98205852e+09, 1.98205952e+09, 1.98206052e+09, 1.98206152e+09,
+            1.98206252e+09, 1.98206352e+09, 1.98206452e+09, 1.98206552e+09,
+            1.98206652e+09, 1.98206752e+09, 1.98206852e+09, 1.98206952e+09,
+            1.98207052e+09, 1.98207152e+09, 1.98207252e+09, 1.98207352e+09,
+            1.98209652e+09, 1.98209752e+09, 1.98209852e+09, 1.98209952e+09,
+            1.98210052e+09, 1.98210152e+09, 1.98210252e+09, 1.98210352e+09,
+            1.98210452e+09, 1.98210552e+09, 1.98210652e+09, 1.98210752e+09,
+            1.98210852e+09, 1.98210952e+09, 1.98211052e+09, 1.98211152e+09,
+            1.98211252e+09, 1.98211352e+09, 1.98211452e+09, 1.98211552e+09,
+            1.98217252e+09, 1.98217352e+09, 1.98217452e+09, 1.98217552e+09,
+            1.98217652e+09, 1.98217752e+09, 1.98217852e+09, 1.98217952e+09,
+            1.98218052e+09, 1.98218152e+09, 1.98218252e+09, 1.98218352e+09,
+            1.98218452e+09, 1.98218552e+09, 1.98218652e+09, 1.98218752e+09,
+            1.98218852e+09, 1.98218952e+09, 1.98219052e+09, 1.98219152e+09,
+            1.98219352e+09, 1.98219452e+09, 1.98219552e+09, 1.98219652e+09,
+            1.98219752e+09, 1.98219852e+09, 1.98219952e+09, 1.98220052e+09,
+            1.98220152e+09, 1.98220252e+09, 1.98220352e+09, 1.98220452e+09,
+            1.98220552e+09, 1.98220652e+09, 1.98220752e+09, 1.98220852e+09,
+            1.98220952e+09, 1.98221052e+09, 1.98221152e+09, 1.98221252e+09,
+            1.98222752e+09, 1.98222852e+09, 1.98222952e+09, 1.98223052e+09,
+            1.98223152e+09, 1.98223252e+09, 1.98223352e+09, 1.98223452e+09,
+            1.98223552e+09, 1.98223652e+09, 1.98223752e+09, 1.98223852e+09,
+            1.98223952e+09, 1.98224052e+09, 1.98224152e+09, 1.98224252e+09,
+            1.98224352e+09, 1.98224452e+09, 1.98224552e+09, 1.98224652e+09,
+            1.98224752e+09]
+        y = [2.97600000e+03, 3.18200000e+03, 3.74900000e+03, 4.53500000e+03,
+            5.43300000e+03, 6.38000000e+03, 7.34000000e+03, 8.29200000e+03,
+            9.21900000e+03, 1.01120000e+04, 1.09620000e+04, 1.17600000e+04,
+            1.25010000e+04, 1.31790000e+04, 1.37900000e+04, 1.43290000e+04,
+            1.47940000e+04, 1.51800000e+04, 1.54870000e+04, 1.57110000e+04,
+            5.74200000e+03, 4.82300000e+03, 3.99100000e+03, 3.33600000e+03,
+            2.99600000e+03, 3.08400000e+03, 3.56700000e+03, 4.30700000e+03,
+            5.18200000e+03, 6.11900000e+03, 7.07900000e+03, 8.03400000e+03,
+            8.97000000e+03, 9.87300000e+03, 1.07350000e+04, 1.15480000e+04,
+            1.23050000e+04, 1.30010000e+04, 1.36300000e+04, 1.41890000e+04,
+            6.00000000e+03, 5.06800000e+03, 4.20500000e+03, 3.49000000e+03,
+            3.04900000e+03, 3.01600000e+03, 3.40400000e+03, 4.08800000e+03,
+            4.93500000e+03, 5.86000000e+03, 6.81700000e+03, 7.77500000e+03,
+            8.71800000e+03, 9.63100000e+03, 1.05050000e+04, 1.13320000e+04,
+            1.21050000e+04, 1.28170000e+04, 1.34660000e+04, 1.40440000e+04,
+            1.32730000e+04, 1.26040000e+04, 1.18720000e+04, 1.10820000e+04,
+            1.02400000e+04, 9.35300000e+03, 8.43000000e+03, 7.48100000e+03,
+            6.52100000e+03, 5.57000000e+03, 4.66200000e+03, 3.85400000e+03,
+            3.24600000e+03, 2.97900000e+03, 3.14700000e+03, 3.68800000e+03,
+            4.45900000e+03, 5.35000000e+03, 6.29400000e+03, 7.25400000e+03,
+            9.13800000e+03, 1.00340000e+04, 1.08880000e+04, 1.16910000e+04,
+            1.24370000e+04, 1.31210000e+04, 1.37380000e+04, 1.42840000e+04,
+            1.47550000e+04, 1.51490000e+04, 1.54630000e+04, 1.56950000e+04,
+            1.58430000e+04, 1.59070000e+04, 1.58860000e+04, 1.57800000e+04,
+            1.55910000e+04, 1.53190000e+04, 1.49650000e+04, 1.45330000e+04,
+            3.01000000e+03, 3.05900000e+03, 3.51200000e+03, 4.23400000e+03,
+            5.10000000e+03, 6.03400000e+03, 6.99300000e+03, 7.95000000e+03,
+            8.88800000e+03, 9.79400000e+03, 1.06600000e+04, 1.14770000e+04,
+            1.22400000e+04, 1.29410000e+04, 1.35770000e+04, 1.41430000e+04,
+            1.46350000e+04, 1.50500000e+04, 1.53850000e+04, 1.56400000e+04,
+            1.58110000e+04]
+
+        periods = np.linspace(400, 120, 1000)
+        angular_freq = 2 * np.pi / periods
+
+        lombscargle(t, y, angular_freq, precenter=True, normalize=True)
+
+    def test_zero_freq(self):
+        # Verify that function works when freqs includes 0
+        # The value at f=0 will depend on the seed
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.12
+        nin = 100
+        nout = 1001
+        p = 0.7  # Fraction of points to select
+        offset = 0
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.cos(w*t + phi) + offset
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, y, f, normalize=True, floating_mean=True)
+
+        # exact value will change based on seed
+        # testing to make sure it is very small
+        assert(pgram[0] < 1e-4)
+
+    def test_simple_div_zero(self):
+        # these are bare-minimum examples that would, without the eps adjustments,
+        # cause division-by-zero errors
+
+        # first, test with example that will cause first SS sum to be 0.0
+        t = [t + 1 for t in range(0, 32)]
+        y = np.ones(len(t))
+        freqs = [2.0*np.pi] * 2  # must have 2+ elements
+        lombscargle(t, y, freqs)
+
+        # second, test with example that will cause first CC sum to be 0.0
+        t = [t*4 + 1 for t in range(0, 32)]
+        y = np.ones(len(t))
+        freqs = [np.pi/2.0] * 2  # must have 2+ elements
+
+        lombscargle(t, y, freqs)
 
 
 class TestSTFT:

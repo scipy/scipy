@@ -1184,9 +1184,6 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     >>> S = sp.sparse.random_array((3, 4), density=0.25,
     ...                            rng=rng, data_sampler=Y)
     """
-    # Use the more efficient RNG by default.
-    if rng is None:
-        rng = np.random.default_rng()
     data, ind = _random(shape, density, format, dtype, rng, data_sampler)
 
     # downcast, if safe, before calling coo_constructor

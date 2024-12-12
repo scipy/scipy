@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
@@ -2123,6 +2121,7 @@ class ResamplingMethod:
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
+
     """
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
@@ -2158,13 +2157,30 @@ class MonteCarloMethod(ResamplingMethod):
         samples are drawn from the standard normal distribution, so
         ``rvs = (rng.normal, rng.normal)`` where
         ``rng = np.random.default_rng()``.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
     """
     rvs: object = None
+    rng: object = None
+
+    def __init__(self, n_resamples=9999, batch=None, rvs=None, rng=None):
+        if (rvs is not None) and (rng is not None):
+            message = 'Use of `rvs` and `rng` are mutually exclusive.'
+            raise ValueError(message)
+
+        self.n_resamples = n_resamples
+        self.batch = batch
+        self.rvs = rvs
+        self.rng = rng
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
         return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    rvs=self.rvs)
+                    rvs=self.rvs, rng=self.rng)
 
 
 _rs_deprecation = ("Use of attribute `random_state` is deprecated and replaced by "
@@ -2203,7 +2219,7 @@ class PermutationMethod(ResamplingMethod):
 
         If `rng` is passed by keyword to the initializer or the `rng` attribute is used
         directly, types other than `numpy.random.Generator` are passed to
-        `numpy.random.default_rng` to instantiate a ``Generator``.
+        `numpy.random.default_rng` to instantiate a ``Generator`` before use.
         If `rng` is already a ``Generator`` instance, then the provided instance is
         used. Specify `rng` for repeatable behavior.
 
@@ -2237,30 +2253,34 @@ class PermutationMethod(ResamplingMethod):
     def random_state(self):
         # Uncomment in SciPy 1.17.0
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
-        return self._rng
+        return self._random_state
 
     @random_state.setter
     def random_state(self, val):
         # Uncomment in SciPy 1.17.0
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
-        self._rng = val
+        self._random_state = val
 
     @property  # type: ignore[no-redef]
     def rng(self):  # noqa: F811
         return self._rng
 
-    @random_state.setter
-    def rng(self, val):  # noqa: F811
-        self._rng = np.random.default_rng(val)
-
-    @_transition_to_rng('random_state', position_num=3, replace_doc=False)
-    def __init__(self, n_resamples=9999, batch=None, rng=None):
-        self._rng = rng  # don't validate with `default_rng` during SPEC 7 transition
+    def __init__(self, n_resamples=9999, batch=None, random_state=None, *, rng=None):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation.replace('attribute', 'argument'),
+        #               DeprecationWarning, stacklevel=2)
+        self._rng = rng
+        self._random_state = random_state
         super().__init__(n_resamples=n_resamples, batch=batch)
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
-        return dict(n_resamples=self.n_resamples, batch=self.batch, rng=self.rng)
+        d = dict(n_resamples=self.n_resamples, batch=self.batch)
+        if self.rng is not None:
+            d['rng'] = self.rng
+        if self.random_state is not None:
+            d['random_state'] = self.random_state
+        return d
 
 
 @dataclass
@@ -2284,7 +2304,7 @@ class BootstrapMethod(ResamplingMethod):
 
         If `rng` is passed by keyword to the initializer or the `rng` attribute is used
         directly, types other than `numpy.random.Generator` are passed to
-        `numpy.random.default_rng` to instantiate a ``Generator``.
+        `numpy.random.default_rng` to instantiate a ``Generator``  before use.
         If `rng` is already a ``Generator`` instance, then the provided instance is
         used. Specify `rng` for repeatable behavior.
 
@@ -2324,29 +2344,34 @@ class BootstrapMethod(ResamplingMethod):
     def random_state(self):
         # Uncomment in SciPy 1.17.0
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
-        return self._rng
+        return self._random_state
 
     @random_state.setter
     def random_state(self, val):
         # Uncomment in SciPy 1.17.0
         # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
-        self._rng = val
+        self._random_state = val
 
     @property  # type: ignore[no-redef]
     def rng(self):  # noqa: F811
         return self._rng
 
-    @random_state.setter
-    def rng(self, val):  # noqa: F811
-        self._rng = np.random.default_rng(val)
-
-    @_transition_to_rng('random_state', position_num=3, replace_doc=False)
-    def __init__(self, n_resamples=9999, batch=None, rng=None, method='BCa'):
-        self._rng = rng  # don't validate with `default_rng` during SPEC 7 transition
+    def __init__(self, n_resamples=9999, batch=None, random_state=None,
+                 method='BCa', *, rng=None):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation.replace('attribute', 'argument'),
+        #               DeprecationWarning, stacklevel=2)
+        self._rng = rng  # don't validate with `default_rng`
+        self._random_state = random_state
         self.method = method
         super().__init__(n_resamples=n_resamples, batch=batch)
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
-        return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    random_state=self.random_state, method=self.method)
+        d = dict(n_resamples=self.n_resamples, batch=self.batch,
+                 method=self.method)
+        if self.rng is not None:
+            d['rng'] = self.rng
+        if self.random_state is not None:
+            d['random_state'] = self.random_state
+        return d

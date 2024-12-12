@@ -1,4 +1,3 @@
-from __future__ import annotations
 from collections.abc import Callable
 
 import pytest
@@ -252,7 +251,7 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.pro_rad1_cv, cython_special._pro_rad1_cv_pywrap, ('ddddd',),
      "see gh-6211"),
     (special.pro_rad2, cython_special._pro_rad2_pywrap, ('dddd',), "see gh-6211"),
-    (special.pro_rad2_cv, cython_special._pro_rad2_cv_pywrap, ('ddddd',), 
+    (special.pro_rad2_cv, cython_special._pro_rad2_cv_pywrap, ('ddddd',),
      "see gh-6211"),
     (special.pseudo_huber, cython_special.pseudo_huber, ('dd',), None),
     (special.psi, cython_special.psi, ('d', 'D'), None),
@@ -318,6 +317,7 @@ def test_cython_api_completeness():
                 raise RuntimeError(f"{name} missing from tests!")
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(20)
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
 def test_cython_api(param):

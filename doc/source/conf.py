@@ -182,6 +182,14 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
+
+# see: https://github.com/scipy/scipy/issues/22020
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*py:obj reference target not found: scipy.misc.*',
+    category=Warning,
+)
+
 # See https://github.com/sphinx-doc/sphinx/issues/12589
 suppress_warnings = [
     'autosummary.import_cycle',
@@ -343,7 +351,6 @@ plot_pre_code = """
 import warnings
 for key in (
         'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
-        'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')

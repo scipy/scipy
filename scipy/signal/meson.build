@@ -88,7 +88,8 @@ py3.install_sources([
     'spectral.py',
     'spline.py',
     'waveforms.py',
-    'wavelets.py'
+    'wavelets.py',
+    '_support_alternative_backends.py',
   ],
   subdir: 'scipy/signal'
 )

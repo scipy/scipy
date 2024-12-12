@@ -8,7 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.spatial._qhull as qhull
-from scipy.spatial import cKDTree as KDTree
+from scipy.spatial import cKDTree as KDTree  # type: ignore[attr-defined]
 from scipy.spatial import Voronoi
 
 import itertools

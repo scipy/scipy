@@ -11,8 +11,8 @@ import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy, is_numpy
 from scipy import special, stats
-from scipy.integrate import quad_vec, nsum
-from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
+from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
+from scipy.integrate._tanhsinh import _pair_cache
 from scipy.stats._discrete_distns import _gen_harmonic_gt1
 
 
@@ -192,16 +192,16 @@ class TestTanhSinh:
         message = '...must be integers.'
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, zero, f_b, maxlevel=object())
-        with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, zero, f_b, maxfun=1+1j)
+        # with pytest.raises(ValueError, match=message):  # unused for now
+        #     _tanhsinh(f, zero, f_b, maxfun=1+1j)
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, zero, f_b, minlevel="migratory coconut")
 
         message = '...must be non-negative.'
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, zero, f_b, maxlevel=-1)
-        with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, zero, f_b, maxfun=-1)
+        # with pytest.raises(ValueError, match=message):  # unused for now
+        #     _tanhsinh(f, zero, f_b, maxfun=-1)
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, zero, f_b, minlevel=-1)
 
@@ -742,6 +742,16 @@ class TestTanhSinh:
         attrs = ['integral', 'error', 'success', 'status', 'nfev', 'maxlevel']
         for attr in attrs:
             assert res[attr].shape == shape
+
+    @pytest.mark.skip_xp_backends(np_only=True)
+    def test_compress_nodes_weights_gh21496(self, xp):
+        # See discussion in:
+        # https://github.com/scipy/scipy/pull/21496#discussion_r1878681049
+        # This would cause "ValueError: attempt to get argmax of an empty sequence"
+        # Check that this has been resolved.
+        x = np.full(65, 3)
+        x[-1] = 1000
+        _tanhsinh(np.sin, 1, x)
 
 
 @array_api_compatible
