@@ -220,6 +220,7 @@ py3.install_sources(
 py3.install_sources(
   [
     'array_api_extra/src/array_api_extra/_lib/_compat.py',
+    'array_api_extra/src/array_api_extra/_lib/_compat.pyi',    
     'array_api_extra/src/array_api_extra/_lib/_utils.py',
     'array_api_extra/src/array_api_extra/_lib/_typing.py',
   ],
