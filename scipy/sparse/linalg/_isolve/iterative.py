@@ -121,7 +121,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         rho_cur = dotprod(rtilde, z)
 
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            return None, -10
+            return x, -10
 
         if iteration > 0:
             beta = rho_cur / rho_prev
@@ -528,7 +528,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
 
         rho_cur = dotprod(rtilde, r)
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            return None, -10
+            return x, -10
 
         if iteration > 0:
             beta = rho_cur / rho_prev
