@@ -27,7 +27,8 @@ _null = object()
 def _isnull(x):
     return type(x) is object or x is None
 
-__all__ = ['ContinuousDistribution']
+__all__ = ['make_distribution', 'Mixture', 'order_statistic',
+           'truncate', 'abs', 'exp', 'log']
 
 # Could add other policies for broadcasting and edge/out-of-bounds case handling
 # For instance, when edge case handling is known not to be needed, it's much
@@ -3925,9 +3926,8 @@ class TruncatedDistribution(TransformedDistribution):
 
     def __repr__(self):
         with np.printoptions(threshold=10):
-            return (
-                f"truncate({repr(self._dist)}, lb={repr(self.lb)}, ub={repr(self.ub)})"
-            )
+            return (f"truncate({repr(self._dist)}, "
+                    f"lb={repr(self.lb)}, ub={repr(self.ub)})")
 
 
 def truncate(X, lb=-np.inf, ub=np.inf):
@@ -4034,12 +4034,10 @@ class ShiftedScaledDistribution(TransformedDistribution):
             result =  f"{repr(self.scale)}*{repr(self._dist)}"
             if not self.loc.ndim and self.loc < 0:
                 result += f" - {repr(-self.loc)}"
-            elif (
-                    np.any(self.loc != 0)
-                    # We don't want to hide a zero array loc if it can cause
-                    # a type promotion.
-                    or not np.can_cast(self.loc.dtype, self.scale.dtype)
-            ):
+            elif (np.any(self.loc != 0)
+                  or not np.can_cast(self.loc.dtype, self.scale.dtype)):
+                # We don't want to hide a zero array loc if it can cause
+                # a type promotion.
                 result += f" + {repr(self.loc)}"
         return result
 
@@ -4316,10 +4314,8 @@ class OrderStatisticDistribution(TransformedDistribution):
 
     def __repr__(self):
         with np.printoptions(threshold=10):
-            return (
-                f"order_statistic({repr(self._dist)}, r={repr(self.r)},"
-                f" n={repr(self.n)})"
-            )
+            return (f"order_statistic({repr(self._dist)}, r={repr(self.r)}, "
+                    f"n={repr(self.n)})")
 
 
 def order_statistic(X, /, *, r, n):
@@ -4766,11 +4762,11 @@ class MonotonicTransformedDistribution(TransformedDistribution):
             self._ilogxdf = self._dist._ilogccdf_dispatch
             self._ilogcxdf = self._dist._ilogcdf_dispatch
         self._increasing = increasing
-        self.repr_pattern = repr_pattern or f"{g.__name__}(***)"
+        self._repr_pattern = repr_pattern or f"{g.__name__}(***)"
 
     def __repr__(self):
         with np.printoptions(threshold=10):
-            return self.repr_pattern.replace("***", repr(self._dist))
+            return self._repr_pattern.replace("***", repr(self._dist))
 
     def _overrides(self, method_name):
         # Do not use the generic overrides of TransformedDistribution
