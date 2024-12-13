@@ -11,8 +11,7 @@ import numpy as np
 from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
 from scipy import optimize
-from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
-                            OptimizeResult)
+from scipy.optimize import (_zeros_py as zeros, newton, root_scalar, OptimizeResult)
 
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
@@ -25,7 +24,7 @@ _FLOAT_EPS = finfo(float).eps
 
 bracket_methods = [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth,
                    zeros.toms748]
-gradient_methods = [zeros.newton]
+gradient_methods = [zeros.newton, zeros.muller]
 all_methods = bracket_methods + gradient_methods
 
 # A few test functions used frequently:
@@ -961,5 +960,153 @@ def test_maxiter_int_check_gh10236(method):
     # gh-10236 reported that the error message when `maxiter` is not an integer
     # was difficult to interpret. Check that this was resolved (by gh-10907).
     message = "'float' object cannot be interpreted as an integer"
-    with pytest.raises(TypeError, match=message):
-        method(f1, 0.0, 1.0, maxiter=72.45)
+    if method != zeros.muller:
+        with pytest.raises(TypeError, match=message):
+            method(f1, 0.0, 1.0, maxiter=72.45)
+    else:
+        with pytest.raises(TypeError, match=message):
+            method(f1, 0.0, 1.0, 2.0, maxiter=72.45)
+
+class TestMuller(TestScalarRootFinders):
+    def test_muller_real_roots(self):
+        for f in [f1, f2]:
+            x = zeros.muller(f, x0=3, x1=4, x2=5, tol=1e-6)
+            assert_allclose(f(x), 0, atol=1e-6)
+        
+    def test_muller_complex_roots(self):
+        def f1(x):
+            return x + 1+1j
+        
+        def f2(x):
+            return x**2 + 1
+        
+        def f3(x):
+            return x**4 + 1j
+        
+        for f in [f1, f2, f3]:
+            x = zeros.muller(f, x0=1, x1=2, x2=3, tol=1e-6)
+            assert_allclose(f(x), 0, atol=1e-6)
+
+            x = zeros.muller(f, x0=1.5j, x1=2j, x2=3, tol=1e-6)
+            assert_allclose(f(x), 0, atol=1e-6)
+
+
+    def test_muller_by_name(self):
+        r"""Invoke muller through root_scalar()"""
+        for f in [f1, f2]:
+            r = root_scalar(f, method='muller', x0=3, x1=4, x2=5, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+
+
+    def test_muller_fail(self):
+        message = 'x0, x1, and x2 must be different'
+        with pytest.raises(ValueError, match=message):
+            zeros.muller(f1, x0=3, x1=3, x2=5, tol=1e-6)
+        with pytest.raises(ValueError, match=message):
+            zeros.muller(f1, x0=3, x1=5, x2=5, tol=1e-6)
+        with pytest.raises(ValueError, match=message):
+            zeros.muller(f1, x0=3, x1=5, x2=3, tol=1e-6)
+        with pytest.raises(ValueError, match=message):
+            zeros.muller(f1, x0=3, x1=3, x2=3, tol=1e-6)
+
+    def test_array_muller(self):
+        """test muller with array"""
+
+        def f1(x, *a):
+            b = a[0] + x * a[3]
+            return a[1] - a[2] * (np.exp(b / a[5]) - 1.0) - b / a[4] - x
+
+
+        a0 = np.array([
+            5.32725221, 5.48673747, 5.49539973,
+            5.36387202, 4.80237316, 1.43764452,
+            5.23063958, 5.46094772, 5.50512718,
+            5.42046290
+        ])
+        a1 = (np.sin(range(10)) + 1.0) * 7.0
+        args = (a0, a1, 1e-09, 0.004, 10, 0.27456)
+        x0 = [7.0] * 10
+        x1 = [6.0] * 10
+        x2 = [8.0] * 10
+        x = zeros.muller(f1, x0, x1, x2, args)
+        x_expected = (
+            6.17264965, 11.7702805, 12.2219954,
+            7.11017681, 1.18151293, 0.143707955,
+            4.31928228, 10.5419107, 12.7552490,
+            8.91225749
+        )
+        assert_allclose(x, x_expected)
+
+        def f2(x, a):
+            return x**2 + a
+        
+        a0 = np.linspace(0, 100, 1001)
+        x0 = np.sqrt(5) * np.linspace(0, 10, 1001)
+        x1 = np.sqrt(3) * np.linspace(0, 10, 1001) * 1j
+        x2 = -np.sqrt(2) * np.linspace(0, 10, 1001)
+        # This is expected to fail for some values because zeros overlap.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in divide")
+            x, converged, failed = zeros.muller(f2, x0, x1, x2, args=(a0, ),
+                                                tol=1e-6, full_output=True)
+        
+        assert_allclose(f2(x[converged], a0[converged]), 0, atol=1e-6)
+        assert_allclose(f2(x[~failed], a0[~failed]), 0, atol=1e-6)
+
+
+    def test_muller_full_output(self, capsys):
+        # Test the full_output capability, both when converging and not.
+        # Use simple polynomials, to avoid hitting platform dependencies
+        # (e.g., exp & trig) in number of iterations
+
+        x0 = 3
+        x1 = 4
+        x2 = 5
+
+        def f1(x):
+            return x ** 2 + 1
+
+        expected_counts = (31, 33)
+
+        kwargs = {'tol': 1e-6, 'full_output': True, }
+
+        x, r = zeros.muller(f1, x0, x1, x2, disp=False, **kwargs)
+        assert_(r.converged)
+        assert_equal(x, r.root)
+        assert_equal((r.iterations, r.function_calls), expected_counts)
+
+
+        # Now repeat, allowing one fewer iteration to force convergence failure
+        iters = r.iterations - 1
+        x, r = zeros.muller(f1, x0, x1, x2, maxiter=iters, disp=False, **kwargs)
+        assert_(not r.converged)
+        assert_equal(x, r.root)
+        assert_equal(r.iterations, iters)
+
+        msg = 'Failed to converge after %d iterations, value is .*' % (iters)
+        with pytest.raises(RuntimeError, match=msg):
+            x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
+
+    def test_muller_does_not_modify_x0(self):
+        # https://github.com/scipy/scipy/issues/9964
+        def f2(x, a):
+            return x**2 + a
+        
+        a0 = np.linspace(0, 100, 1001)
+        x0 = np.sqrt(5) * np.linspace(0, 10, 1001)
+        x1 = np.sqrt(3) * np.linspace(0, 10, 1001) * 1j
+        x2 = -np.sqrt(2) * np.linspace(0, 10, 1001)
+
+        x0_copy = x0.copy()
+        x1_copy = x1.copy()
+        x2_copy = x2.copy()
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in divide")
+            x, converged, failed = zeros.muller(f2, x0, x1, x2, args=(a0, ), 
+                                                tol=1e-6, full_output=True)
+        
+        assert_array_equal(x0, x0_copy)
+        assert_array_equal(x1, x1_copy)
+        assert_array_equal(x2, x2_copy)
+

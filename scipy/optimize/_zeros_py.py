@@ -11,7 +11,7 @@ _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
-           'RootResults']
+           'muller', 'RootResults']
 
 # Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 _ECONVERGED = 0
@@ -1393,3 +1393,328 @@ def toms748(f, a, b, args=(), k=1,
     x, function_calls, iterations, flag = result
     return _results_select(full_output, (x, function_calls, iterations, flag),
                            "toms748")
+
+
+def muller(f, x0, x1, x2, args=(), tol=1.48e-8, maxiter=50,
+           rtol=0.0, full_output=False, disp=True):
+    """
+    Find a root of a real or complex function using the Muller's method.
+
+    Find a root of the scalar-valued function `func` given a nearby scalar
+    starting points `x0`, `x1`, and `x2`.
+    The Muller method requires three starting points, but no derivatives,
+    and it works well for complex-valued roots. It will converge towards
+    complex roots even with real starting points. As with other root-finding
+    methods, initial guesses should be distinct.
+
+    If `x0`, `x1`, and `x2` are a sequence with more than one item, `muller`
+    returns an array of the roots of the function from each trio of starting points.
+    In this case, `func` must be vectorized to return a sequence or array of
+    the same shape as its first argument.
+
+    `muller` is for finding roots of a scalar-valued functions of a single
+    variable. For problems involving several variables, see `root`.
+
+    Parameters
+    ----------
+    f : callable
+        The function whose root is wanted. It must be a function of a
+        single variable of the form ``f(x,a,b,c...)``, where ``a,b,c...``
+        are extra arguments that can be passed in the `args` parameter.
+    x0 : float, complex, sequence, or ndarray
+        An initial estimate of the root that should be somewhere near the
+        actual root. If not scalar, then `func` must be vectorized and return
+        a sequence or array of the same shape as its first argument.
+    x1 : float, complex, sequence, or ndarray
+        Another estimate of the root.
+    x2 : float, complex, sequence, or ndarray
+        Another estimate of the root.
+    args : tuple, optional
+        Extra arguments to be used in the function call.
+    tol : float, optional
+        The allowable error of the root's value. If `func` is complex-valued,
+        a larger `tol` is recommended as both the real and imaginary parts
+        of `x` contribute to ``|x - x0|``.
+    maxiter : int, optional
+        Maximum number of iterations.
+    rtol : float, optional
+        Tolerance (relative) for termination.
+    full_output : bool, optional
+        If `full_output` is False (default), the root is returned.
+        If True and `x0` is scalar, the return value is ``(x, r)``, where ``x``
+        is the root and ``r`` is a `RootResults` object.
+        If True and `x0` is non-scalar, the return value is ``(x, converged,
+        zero_der)`` (see Returns section for details).
+    disp : bool, optional
+        If True, raise a RuntimeError if the algorithm didn't converge, with
+        the error message containing the number of iterations and current
+        function value. Otherwise, the convergence status is recorded in a
+        `RootResults` return object.
+        Ignored if `x0` is not scalar.
+        *Note: this has little to do with displaying, however,
+        the `disp` keyword cannot be renamed for backwards compatibility.*
+
+    Returns
+    -------
+    root : float, complex, sequence, or ndarray
+        Estimated location where function is zero.
+    r : `RootResults`, optional
+        Present if ``full_output=True`` and `x0` is scalar.
+        Object containing information about the convergence. In particular,
+        ``r.converged`` is True if the routine converged.
+    converged : ndarray of bool, optional
+        Present if ``full_output=True`` and `x0` is non-scalar.
+        For vector functions, indicates which elements converged successfully.
+    zero_der : ndarray of bool, optional
+        Present if ``full_output=True`` and `x0` is non-scalar.
+        For vector functions, indicates which elements had a zero derivative.
+
+    See Also
+    --------
+    root_scalar : interface to root solvers for scalar functions
+    root : interface to root solvers for multi-input, multi-output functions
+
+    Notes
+    -----
+    The order of convergence of the Muller's method is approximately 1.84.
+    This is slightly faster than secant method, but slower than Newton's
+    method which is quadratic.
+
+    When `muller` is used with arrays, it is best suited for the following
+    types of problems:
+
+    * The initial guesses are all relatively the same distance from
+      the roots.
+    * The size of the initial guesses is larger than O(100) elements.
+      Otherwise, a naive loop may perform as well or better than a vector.
+      You should test this for your usecase, as there's significant overhead
+      to using arrays.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize import muller
+
+    >>> def f(x):
+    ...     return (x**2 + 1)  # roots at x = 1j and x = -1j
+
+    >>> root = muller(f, 0, 1, 2 + 1j)
+    >>> root
+    -1.2168152957711588e-17+1j
+
+    When we want to find roots for a set of related starting values and/or
+    function parameters, we can provide both of those as an array of inputs:
+
+    >>> f2 = lambda x, a: x**3 + a
+    >>> a0 = np.linspace(0, 100, 1001)
+    >>> x0 = np.sqrt(5) * np.linspace(1, 10, 1001)
+    >>> x1 = np.sqrt(3) * np.linspace(1, 10, 1001) * 1j
+    >>> x2 = -np.sqrt(2) * np.linspace(1, 10, 1001)
+
+    >>> vec_res, converged, failed = muller(f2, x0, x1, x2, args=(a0, ), 
+    ...             maxiter=200, full_output=True)
+
+    The above is the equivalent of solving for each value in ``(x, a)``
+    separately in a for-loop, just faster:
+
+    >>> loop_res = [muller(f2, x_0, x_1, x_2, args=(a_0,), maxiter=200)
+    ...             for x_0, x_1, x_2, a_0 in zip(x0, x1, x2, a0)]
+    >>> np.allclose(vec_res, loop_res)
+    True
+
+    Note that in general some values in `vec_res` may not converge, or may 
+    fail as nan.nan due to a poor combination of starting points. These 
+    values are kept to ensure that the array size of `vec_res` is always 
+    identical to sizes of initial guesses.
+
+    In case where size compatibility of `vec_res` is irrelevant (e.g. when
+    searching a `np.linspace` of possible starting points to find different
+    roots), you can easily remove failed and non-converged results:
+
+    >>> vec_res[converged | ~failed]
+
+    """
+
+    if tol <= 0:
+        raise ValueError(f"tol too small ({tol:g} <= 0)")
+    maxiter = operator.index(maxiter)
+    if maxiter < 1:
+        raise ValueError("maxiter must be greater than 0")
+    if np.size(x0) > 1:
+        if np.size(x0) == np.size(x1) == np.size(x2):
+            return _array_muller(f, x0, x1, x2, args, tol, rtol, maxiter, full_output)
+        else:
+           raise ValueError("x0, x1, x2 arrays must be of the same size")
+
+    funcalls = 0
+
+    # Ensure inputs are numpy arrays and converted to complex.
+    p0 = np.asarray(x0, dtype=complex)[()] * 1.0
+    p1 = np.asarray(x1, dtype=complex)[()] * 1.0
+    p2 = np.asarray(x2, dtype=complex)[()] * 1.0
+
+    converged = False
+    method = "muller"
+
+    if x0 == x1 or x0 == x2 or x1 == x2:
+        raise ValueError("x0, x1, and x2 must be different")
+
+    f0, f1, f2 = f(p0, *args), f(p1, *args), f(p2, *args)
+    funcalls += 3
+
+    # If one of the guesses is a root, return it immediately.
+    if np.isclose(f0, 0, rtol=rtol, atol=tol):
+        return _results_select(full_output, (x0, funcalls, 0, _ECONVERGED), method)
+    if np.isclose(f1, 0, rtol=rtol, atol=tol):
+        return _results_select(full_output, (x1, funcalls, 0, _ECONVERGED), method)
+    if np.isclose(f2, 0, rtol=rtol, atol=tol):
+        return _results_select(full_output, (x2, funcalls, 0, _ECONVERGED), method)
+
+    for itr in range(maxiter):
+        p1p0 = p1 - p0
+        p2p1 = p2 - p1
+        p0p2 = p0 - p2
+
+        # Gracefully handle division by zero.
+        # This can be avoided entirely by taking the zero value to be some epsilon > 0,
+        # but in my experience this leads to silent failure to converge that's
+        # difficult to diagnose.
+        if p1p0 == 0 or p2p1 == 0 or p0p2 == 0:
+            msg = "Division by zero has occured. Two initial values might be too close."
+            if disp:
+                msg += (
+                    " Failed to converge after %d iterations, value is %s."
+                    % (itr + 1, p2))
+                raise RuntimeError(msg)
+            warnings.warn(msg, RuntimeWarning, stacklevel=2)
+            return _results_select(
+                full_output, (p2, funcalls, itr + 1, _ECONVERR), method)
+
+        f0_f1_diff = (f0 - f1) / p1p0
+        f1_f2_diff = (f1 - f2) / p2p1
+        f0_f2_diff = (f0 - f2) / p0p2
+
+        w = f1_f2_diff + f0_f2_diff - f0_f1_diff
+
+        discriminant = np.sqrt(w**2 - 4 * f2 * f0_f2_diff)
+
+        # Chose maximal denominator for individual values.
+        denominator = (
+            w + discriminant
+            if np.abs(w + discriminant) > np.abs(w - discriminant)
+            else w - discriminant
+        )
+
+        h = -2 * f2 / denominator
+        p = p2 + h
+
+        converged = np.isclose(h, 0, rtol=rtol, atol=tol)
+
+        if converged:
+            return _results_select(
+                full_output, (p, funcalls, itr + 1, _ECONVERGED), method
+            )
+        
+        p0, p1, p2 = p1, p2, p
+
+        f0, f1, f2 = f1, f2, f(p2, *args)
+        funcalls += 1
+
+    if disp:
+        msg = "Failed to converge after %d iterations, value is %s." % (itr + 1, p2)
+        raise RuntimeError(msg)
+    
+    return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR), method)
+
+
+def _array_muller(f, x0, x1, x2, args, tol, rtol,
+           maxiter, full_output):
+    """
+    A vectorized version of Muller method for arrays.
+
+    Do not use this method directly. This method is called from `muller`
+    when ``np.size(x0) > 1`` is ``True``. For docstring, see `muller`.
+    """
+
+    # Explicitly copy the arrays as `p`'s will be modified inplace, but the
+    # user's array should not be altered.
+    p0 = np.array(x0, dtype=complex, copy=True)
+    p1 = np.array(x1, dtype=complex, copy=True)
+    p2 = np.array(x2, dtype=complex, copy=True)
+
+    # Track convergence of individual terms.
+    converged = np.zeros_like(p0, dtype=bool)
+    failed = np.zeros_like(p0, dtype=bool)
+
+    # See the test_array_muller() test.
+    should_mask_args = any(isinstance(arg, np.ndarray) for arg in args)
+
+    f0, f1, f2 = f(p0, *args), f(p1, *args), f(p2, *args)
+
+    # Initialize all arrays so they are modified in place, instead
+    # of creating a new array every loop. Noticable difference only
+    # for very large arrays, 100k+.
+    f0_f1_diff = np.zeros_like(f0, dtype=complex)
+    f1_f2_diff = np.zeros_like(f0, dtype=complex)
+    f0_f2_diff = np.zeros_like(f0, dtype=complex)
+    w = np.zeros_like(f0, dtype=complex)
+    discriminant = np.zeros_like(f0, dtype=complex)
+    denominator = np.zeros_like(f0, dtype=complex)
+    h = np.zeros_like(f0, dtype=complex)
+    p = np.zeros_like(f0, dtype=complex)
+
+    for iteration in range(maxiter):
+        # This will occasionally fail for some initial guesses resulting in a nan.
+        # All failures are returned as bool array, and can be masked by user.
+        # Keeping track and masking failed values is computationally more 
+        # expensive than just keeping them as nans. Creating p1p0 etc. arrays
+        # analogous to non-vectorized version above adds significant overhead.
+        f0_f1_diff = (f0 - f1) / (p1 - p0)
+        f1_f2_diff = (f1 - f2) / (p2 - p1)
+        f0_f2_diff = (f0 - f2) / (p0 - p2)
+
+        w = f1_f2_diff + f0_f2_diff - f0_f1_diff
+
+        discriminant = np.sqrt(w**2 - 4 * f2 * f0_f2_diff)
+
+        # Chose maximal denominator for individual values.
+        denominator = np.where(
+            np.abs(w + discriminant) > np.abs(w - discriminant),
+            w + discriminant,
+            w - discriminant,
+        )
+
+        h = -2 * f2 / denominator
+        p = p2 + h
+
+        # Check convergence for all items.
+        new_converged = np.isclose(h, 0, rtol=rtol, atol=tol)
+        converged = converged | new_converged
+
+        if np.all(converged):
+            break
+
+        # Update points for next iteration only for those not yet converged.
+        p0[~converged], p1[~converged], p2[~converged] = (
+            p1[~converged],
+            p2[~converged],
+            p[~converged],
+        )
+
+        if should_mask_args:
+            masked_args = tuple(arg[~converged] if isinstance(arg, np.ndarray)
+                                else arg for arg in args)
+
+        f0[~converged], f1[~converged], f2[~converged] = (
+            f1[~converged],
+            f2[~converged],
+            f(p2[~converged], *masked_args),
+        )
+    
+    failed = np.isnan(p)
+
+    if full_output:
+        result = namedtuple('result', ('root', 'converged', 'failed'))
+        p = result(p, converged, failed)
+
+    return p

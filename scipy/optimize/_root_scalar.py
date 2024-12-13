@@ -14,7 +14,7 @@ from ._numdiff import approx_derivative
 __all__ = ['root_scalar']
 
 ROOT_SCALAR_METHODS = ['bisect', 'brentq', 'brenth', 'ridder', 'toms748',
-                       'newton', 'secant', 'halley']
+                       'newton', 'secant', 'halley', 'muller']
 
 
 class MemoizeDer:
@@ -61,7 +61,7 @@ class MemoizeDer:
 
 def root_scalar(f, args=(), method=None, bracket=None,
                 fprime=None, fprime2=None,
-                x0=None, x1=None,
+                x0=None, x1=None, x2=None,
                 xtol=None, rtol=None, maxiter=None,
                 options=None):
     """
@@ -91,6 +91,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
         - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
         - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
         - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
+        - 'muller'    :ref:`(see here) <optimize.root_scalar-muller>`
 
     bracket: A sequence of 2 floats, optional
         An interval bracketing a root.  ``f(x, *args)`` must have different
@@ -99,6 +100,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
         Initial guess.
     x1 : float, optional
         A second guess.
+    x2 : float, optional
+        A third guess.
     fprime : bool or callable, optional
         If `fprime` is a boolean and is True, `f` is assumed to return the
         value of the objective function and of the derivative.
@@ -148,25 +151,27 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     Arguments for each method are as follows (x=required, o=optional).
 
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    |                    method                     | f | args | bracket | x0 | x1 | fprime | fprime2 | xtol | rtol | maxiter | options |
-    +===============================================+===+======+=========+====+====+========+=========+======+======+=========+=========+
-    | :ref:`bisect <optimize.root_scalar-bisect>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`brentq <optimize.root_scalar-brentq>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`brenth <optimize.root_scalar-brenth>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`ridder <optimize.root_scalar-ridder>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`toms748 <optimize.root_scalar-toms748>` | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`secant <optimize.root_scalar-secant>`   | x |  o   |         | x  | o  |        |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`newton <optimize.root_scalar-newton>`   | x |  o   |         | x  |    |   o    |         |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`halley <optimize.root_scalar-halley>`   | x |  o   |         | x  |    |   x    |    x    |  o   |  o   |    o    |   o     |
-    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    |                    method                     | f | args | bracket | x0 | x1 | x2 | fprime | fprime2 | xtol | rtol | maxiter | options |
+    +===============================================+===+======+=========+====+====+====+========+=========+======+======+=========+=========+
+    | :ref:`bisect <optimize.root_scalar-bisect>`   | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`brentq <optimize.root_scalar-brentq>`   | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`brenth <optimize.root_scalar-brenth>`   | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`ridder <optimize.root_scalar-ridder>`   | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`toms748 <optimize.root_scalar-toms748>` | x |  o   |    x    |    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`secant <optimize.root_scalar-secant>`   | x |  o   |         | x  | o  |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`newton <optimize.root_scalar-newton>`   | x |  o   |         | x  |    |    |   o    |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`halley <optimize.root_scalar-halley>`   | x |  o   |         | x  |    |    |   x    |    x    |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`muller <optimize.root_scalar-muller>`   | x |  o   |         | x  | x  | x  |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+----+--------+---------+------+------+---------+---------+
 
     Examples
     --------
@@ -255,6 +260,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
     if not method:
         if bracket is not None:
             method = 'brentq'
+        elif x2 is not None:
+            method = 'muller'
         elif x0 is not None:
             if fprime:
                 if fprime2:
@@ -336,6 +343,16 @@ def root_scalar(f, args=(), method=None, bracket=None,
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=fprime2, **kwargs)
+    elif meth in ['muller']:
+        if x0 is None:
+            raise ValueError(f'x0 must not be None for {method}')
+        if x1 is None:
+            raise ValueError(f'x1 must not be None for {method}')
+        if x2 is None:
+            raise ValueError(f'x2 must not be None for {method}')
+        if 'xtol' in kwargs:
+            kwargs['tol'] = kwargs.pop('xtol')
+        r, sol = methodc(f, x0, x1, x2, args=args, **kwargs)
     else:
         raise ValueError(f'Unknown solver {method}')
 
@@ -436,6 +453,29 @@ def _root_scalar_secant_doc():
     """
     pass
 
+def _root_scalar_muller_doc():
+    r"""
+    Options
+    -------
+    args : tuple, optional
+        Extra arguments passed to the objective function.
+    xtol : float, optional
+        Tolerance (absolute) for termination.
+    rtol : float, optional
+        Tolerance (relative) for termination.
+    maxiter : int, optional
+        Maximum number of iterations.
+    x0 : float, required
+        Initial guess.
+    x1 : float, optional
+        A second guess. Must be different from `x0`.
+    x2 : float, optional
+        A second guess. Must be different from `x0` and `x1`.
+    options: dict, optional
+        Specifies any method-specific options not covered above.
+
+    """
+    pass
 
 def _root_scalar_newton_doc():
     r"""
