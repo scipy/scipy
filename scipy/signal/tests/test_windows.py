@@ -1,7 +1,8 @@
+import math
+
 import numpy as np
 from numpy import array
-from numpy.testing import (assert_array_almost_equal, assert_array_equal,
-                           assert_, assert_array_less, suppress_warnings)
+from numpy.testing import  suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 
@@ -13,6 +14,7 @@ from scipy._lib._array_api import (
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 window_funcs = [
@@ -99,6 +101,7 @@ class TestBlackmanHarris:
                          6.0e-05])
 
 
+@skip_xp_backends('jax.numpy', reason='item assignment')
 class TestTaylor:
 
     def test_normalized(self, xp):
@@ -106,17 +109,19 @@ class TestTaylor:
         documentation for the Taylor window for more information on
         normalization.
         """
-        xp_assert_close(windows.taylor(1, 2, 15, xp=xp), 1.0)
+        xp_assert_close(windows.taylor(1, 2, 15, xp=xp),
+                        xp.asarray([1.0], dtype=xp.float64))
         xp_assert_close(
             windows.taylor(5, 2, 15, xp=xp),
-            np.array([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341])
+            xp.asarray([0.75803341, 0.90757699, 1.0, 0.90757699, 0.75803341],
+                       dtype=xp.float64)
         )
         xp_assert_close(
             windows.taylor(6, 2, 15, xp=xp),
-            np.array([
+            xp.asarray([
                 0.7504082, 0.86624416, 0.98208011, 0.98208011, 0.86624416,
                 0.7504082
-            ])
+            ], dtype=xp.float64)
         )
 
     def test_non_normalized(self, xp):
@@ -126,17 +131,18 @@ class TestTaylor:
         """
         xp_assert_close(
             windows.taylor(5, 2, 15, norm=False, xp=xp),
-            np.array([
+            xp.asarray([
                 0.87508054, 1.04771499, 1.15440894, 1.04771499, 0.87508054
-            ])
+            ], dtype=xp.float64)
         )
         xp_assert_close(
             windows.taylor(6, 2, 15, norm=False, xp=xp),
-            np.array([
+            xp.asarray([
                 0.86627793, 1.0, 1.13372207, 1.13372207, 1.0, 0.86627793
-            ])
+            ], dtype=xp.float64)
         )
 
+    @skip_xp_backends(cpu_only=True)
     def test_correctness(self, xp):
         """This test ensures the correctness of the implemented Taylor
         Windowing function. A Taylor Window of 1024 points is created, its FFT
@@ -159,11 +165,13 @@ class TestTaylor:
         # changes the sidelobe level from the desired value.
         w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False, xp=xp)
         f = fft(w, N_fft)
-        spec = 20 * np.log10(np.abs(f / np.amax(f)))
+
+        f_np = np.asarray(f)
+        spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
 
         first_zero = np.argmax(np.diff(spec) > 0)
 
-        PSLL = np.amax(spec[first_zero:-first_zero])
+        PSLL = np.max(spec[first_zero:-first_zero])
 
         BW_3dB = 2*np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
         BW_18dB = 2*np.argmax(spec <= -18.061799739838872) / N_fft * M_win
@@ -190,46 +198,50 @@ class TestBohman:
 class TestBoxcar:
 
     def test_basic(self, xp):
-        xp_assert_close(windows.boxcar(6, xp=xp), [1, 1, 1, 1, 1, 1])
-        xp_assert_close(windows.boxcar(7, xp=xp), [1, 1, 1, 1, 1, 1, 1])
-        xp_assert_close(windows.boxcar(6, False, xp=xp), [1, 1, 1, 1, 1, 1])
+        xp_assert_close(windows.boxcar(6, xp=xp),
+                        xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
+        xp_assert_close(windows.boxcar(7, xp=xp),
+                        xp.asarray([1.0, 1, 1, 1, 1, 1, 1], dtype=xp.float64))
+        xp_assert_close(windows.boxcar(6, False, xp=xp),
+                        xp.asarray([1.0, 1, 1, 1, 1, 1], dtype=xp.float64))
 
 
-cheb_odd_true = array([0.200938, 0.107729, 0.134941, 0.165348,
-                       0.198891, 0.235450, 0.274846, 0.316836,
-                       0.361119, 0.407338, 0.455079, 0.503883,
-                       0.553248, 0.602637, 0.651489, 0.699227,
-                       0.745266, 0.789028, 0.829947, 0.867485,
-                       0.901138, 0.930448, 0.955010, 0.974482,
-                       0.988591, 0.997138, 1.000000, 0.997138,
-                       0.988591, 0.974482, 0.955010, 0.930448,
-                       0.901138, 0.867485, 0.829947, 0.789028,
-                       0.745266, 0.699227, 0.651489, 0.602637,
-                       0.553248, 0.503883, 0.455079, 0.407338,
-                       0.361119, 0.316836, 0.274846, 0.235450,
-                       0.198891, 0.165348, 0.134941, 0.107729,
-                       0.200938])
+cheb_odd_true = [0.200938, 0.107729, 0.134941, 0.165348,
+                 0.198891, 0.235450, 0.274846, 0.316836,
+                 0.361119, 0.407338, 0.455079, 0.503883,
+                 0.553248, 0.602637, 0.651489, 0.699227,
+                 0.745266, 0.789028, 0.829947, 0.867485,
+                 0.901138, 0.930448, 0.955010, 0.974482,
+                 0.988591, 0.997138, 1.000000, 0.997138,
+                 0.988591, 0.974482, 0.955010, 0.930448,
+                 0.901138, 0.867485, 0.829947, 0.789028,
+                 0.745266, 0.699227, 0.651489, 0.602637,
+                 0.553248, 0.503883, 0.455079, 0.407338,
+                 0.361119, 0.316836, 0.274846, 0.235450,
+                 0.198891, 0.165348, 0.134941, 0.107729,
+                 0.200938]
 
-cheb_even_true = array([0.203894, 0.107279, 0.133904,
-                        0.163608, 0.196338, 0.231986,
-                        0.270385, 0.311313, 0.354493,
-                        0.399594, 0.446233, 0.493983,
-                        0.542378, 0.590916, 0.639071,
-                        0.686302, 0.732055, 0.775783,
-                        0.816944, 0.855021, 0.889525,
-                        0.920006, 0.946060, 0.967339,
-                        0.983557, 0.994494, 1.000000,
-                        1.000000, 0.994494, 0.983557,
-                        0.967339, 0.946060, 0.920006,
-                        0.889525, 0.855021, 0.816944,
-                        0.775783, 0.732055, 0.686302,
-                        0.639071, 0.590916, 0.542378,
-                        0.493983, 0.446233, 0.399594,
-                        0.354493, 0.311313, 0.270385,
-                        0.231986, 0.196338, 0.163608,
-                        0.133904, 0.107279, 0.203894])
+cheb_even_true = [0.203894, 0.107279, 0.133904,
+                  0.163608, 0.196338, 0.231986,
+                  0.270385, 0.311313, 0.354493,
+                  0.399594, 0.446233, 0.493983,
+                  0.542378, 0.590916, 0.639071,
+                  0.686302, 0.732055, 0.775783,
+                  0.816944, 0.855021, 0.889525,
+                  0.920006, 0.946060, 0.967339,
+                  0.983557, 0.994494, 1.000000,
+                  1.000000, 0.994494, 0.983557,
+                  0.967339, 0.946060, 0.920006,
+                  0.889525, 0.855021, 0.816944,
+                  0.775783, 0.732055, 0.686302,
+                  0.639071, 0.590916, 0.542378,
+                  0.493983, 0.446233, 0.399594,
+                  0.354493, 0.311313, 0.270385,
+                  0.231986, 0.196338, 0.163608,
+                  0.133904, 0.107279, 0.203894]
 
 
+@skip_xp_backends('jax.numpy', reason='item assignment')
 class TestChebWin:
 
     def test_basic(self, xp):
@@ -237,7 +249,9 @@ class TestChebWin:
             sup.filter(UserWarning, "This window is not suitable")
             xp_assert_close(windows.chebwin(6, 100, xp=xp),
                             [0.1046401879356917, 0.5075781475823447, 1.0, 1.0,
-                             0.5075781475823447, 0.1046401879356917])
+                             0.5075781475823447, 0.1046401879356917],
+                            atol=1e-8
+            )
             xp_assert_close(windows.chebwin(7, 100, xp=xp),
                             [0.05650405062850233, 0.316608530648474,
                              0.7601208123539079, 1.0, 0.7601208123539079,
@@ -267,18 +281,18 @@ class TestChebWin:
         assert_array_almost_equal(cheb_even, cheb_even_true, decimal=4)
 
     def test_cheb_odd_low_attenuation(self, xp):
-        cheb_odd_low_at_true = array([1.000000, 0.519052, 0.586405,
-                                      0.610151, 0.586405, 0.519052,
-                                      1.000000])
+        cheb_odd_low_at_true = xp.asarray([1.000000, 0.519052, 0.586405,
+                                           0.610151, 0.586405, 0.519052,
+                                           1.000000])
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             cheb_odd = windows.chebwin(7, at=10, xp=xp)
         assert_array_almost_equal(cheb_odd, cheb_odd_low_at_true, decimal=4)
 
     def test_cheb_even_low_attenuation(self, xp):
-        cheb_even_low_at_true = array([1.000000, 0.451924, 0.51027,
-                                       0.541338, 0.541338, 0.51027,
-                                       0.451924, 1.000000])
+        cheb_even_low_at_true = xp.asarray([1.000000, 0.451924, 0.51027,
+                                            0.541338, 0.541338, 0.51027,
+                                            0.451924, 1.000000])
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             cheb_even = windows.chebwin(8, at=-10, xp=xp)
@@ -320,7 +334,7 @@ def test_exponential(xp):
             assert_raises(ValueError, windows.exponential, *k, xp=xp)
         else:
             win = windows.exponential(*k, xp=xp)
-            xp_assert_close(win, v, rtol=1e-14)
+            xp_assert_close(win, xp.asarray(v), rtol=1e-14)
 
 
 class TestFlatTop:
@@ -367,9 +381,12 @@ class TestGaussian:
 class TestGeneralCosine:
 
     def test_basic(self, xp):
-        xp_assert_close(windows.general_cosine(5, [0.5, 0.3, 0.2], xp=xp),
+        a = xp.asarray([0.5, 0.3, 0.2])
+        xp_assert_close(windows.general_cosine(5, a),
                         [0.4, 0.3, 1, 0.3, 0.4])
-        xp_assert_close(windows.general_cosine(4, [0.5, 0.3, 0.2], sym=False, xp=xp),
+
+        a = xp.asarray([0.5, 0.3, 0.2])
+        xp_assert_close(windows.general_cosine(4, a, sym=False),
                         [0.4, 0.3, 1, 0.3])
 
 
@@ -447,6 +464,7 @@ class TestKaiser:
                          0.5985765418119844])
 
 
+@skip_xp_backends("torch", reason="implementation needs 2023.12 standard")
 class TestKaiserBesselDerived:
 
     def test_basic(self, xp):
@@ -457,15 +475,17 @@ class TestKaiserBesselDerived:
         xp_assert_close(w, w2)
 
         # Test for Princen-Bradley condition
-        xp_assert_close(w[:M // 2] ** 2 + w[-M // 2:] ** 2, 1.)
+        actual = w[:M // 2] ** 2 + w[-M // 2:] ** 2
+        xp_assert_close(actual, xp.ones(actual.shape, dtype=actual.dtype))
 
         # Test actual values from other implementations
         # M = 2:  sqrt(2) / 2
         # M = 4:  0.518562710536, 0.855039598640
         # M = 6:  0.436168993154, 0.707106781187, 0.899864772847
         # Ref:https://github.com/scipy/scipy/pull/4747#issuecomment-172849418
-        xp_assert_close(windows.kaiser_bessel_derived(2, beta=np.pi / 2, xp=xp)[:1],
-                        np.sqrt(2) / 2)
+        actual = windows.kaiser_bessel_derived(2, beta=np.pi / 2, xp=xp)[:1]
+        desired = xp.ones_like(actual) * math.sqrt(2) / 2.0
+        xp_assert_close(actual, desired)
 
         xp_assert_close(windows.kaiser_bessel_derived(4, beta=np.pi / 2, xp=xp)[:2],
                         [0.518562710536, 0.855039598640])
@@ -548,10 +568,10 @@ tukey_data = {
                            1.0, 0.69134171618254492, 0.0]),
     (5, 1.0, True): array([0.0, 0.5, 1.0, 0.5, 0.0]),
 
-    (6, 0): [1, 1, 1, 1, 1, 1],
-    (7, 0): [1, 1, 1, 1, 1, 1, 1],
-    (6, .25): [0, 1, 1, 1, 1, 0],
-    (7, .25): [0, 1, 1, 1, 1, 1, 0],
+    (6, 0): [1.0, 1, 1, 1, 1, 1],
+    (7, 0): [1.0, 1, 1, 1, 1, 1, 1],
+    (6, .25): [0.0, 1, 1, 1, 1, 0],
+    (7, .25): [0.0, 1, 1, 1, 1, 1, 0],
     (6,): [0, 0.9045084971874737, 1.0, 1.0, 0.9045084971874735, 0],
     (7,): [0, 0.75, 1.0, 1.0, 1.0, 0.75, 0],
     (6, .75): [0, 0.5522642316338269, 1.0, 1.0, 0.5522642316338267, 0],
@@ -571,8 +591,14 @@ class TestTukey:
             if v is None:
                 assert_raises(ValueError, windows.tukey, *k, xp=xp)
             else:
+                if is_torch(xp) and k in [(6,), (6, .75), (7, .75), (6,1)]:
+                     atol_rtol = {'rtol': 3e-8, 'atol': 1e-8}
+                else:
+                     atol_rtol = {'rtol': 1e-15, 'atol': 1e-15 }
+
                 win = windows.tukey(*k, xp=xp)
-                xp_assert_close(win, v, rtol=1e-15, atol=1e-15)
+                xp_assert_close(win, xp.asarray(v),
+                                check_dtype=False, **atol_rtol)
 
     def test_extremes(self, xp):
         # Test extremes of alpha correspond to boxcar and hann
@@ -596,6 +622,7 @@ dpss_data = {
 }
 
 
+@skip_xp_backends(np_only=True, reason='banded linear algebra is numpy-only')
 class TestDPSS:
 
     def test_basic(self, xp):
@@ -629,11 +656,11 @@ class TestDPSS:
     def test_extremes(self, xp):
         # Test extremes of alpha
         lam = windows.dpss(31, 6, 4, return_ratios=True, xp=xp)[1]
-        xp_assert_close(lam, 1.)
+        xp_assert_close(lam, xp.ones_like(lam))
         lam = windows.dpss(31, 7, 4, return_ratios=True, xp=xp)[1]
-        xp_assert_close(lam, 1.)
+        xp_assert_close(lam, xp.ones_like(lam))
         lam = windows.dpss(31, 8, 4, return_ratios=True, xp=xp)[1]
-        xp_assert_close(lam, 1.)
+        xp_assert_close(lam, xp.ones_like(lam))
 
     def test_degenerate(self, xp):
         # Test failures
@@ -696,32 +723,35 @@ class TestLanczos:
 
     def test_array_size(self, xp):
         for n in [0, 10, 11]:
-            xp_assert_equal(len(windows.lanczos(n, sym=False, xp=xp)), n)
-            xp_assert_equal(len(windows.lanczos(n, sym=True, xp=xp)), n)
+            xp_assert_equal(windows.lanczos(n, sym=False, xp=xp).shape[0], n)
+            xp_assert_equal(windows.lanczos(n, sym=True, xp=xp).shape[0], n)
 
 
 class TestGetWindow:
 
     def test_boxcar(self, xp):
         w = windows.get_window('boxcar', 12, xp=xp)
-        assert_array_equal(w, np.ones_like(w))
+        xp_assert_equal(w, xp.ones_like(w))
 
         # window is a tuple of len 1
         w = windows.get_window(('boxcar',), 16, xp=xp)
-        assert_array_equal(w, np.ones_like(w))
+        xp_assert_equal(w, xp.ones_like(w))
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_cheb_odd(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             w = windows.get_window(('chebwin', -40), 53, fftbins=False, xp=xp)
         assert_array_almost_equal(w, cheb_odd_true, decimal=4)
 
+    @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_cheb_even(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             w = windows.get_window(('chebwin', 40), 54, fftbins=False, xp=xp)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
 
+    @skip_xp_backends(cpu_only=True, reason='eigh_tridiagonal is CPU-only')
     def test_dpss(self, xp):
         win1 = windows.get_window(('dpss', 3), 64, fftbins=False, xp=xp)
         win2 = windows.dpss(64, 3, xp=xp)
@@ -739,6 +769,7 @@ class TestGetWindow:
         # Unknown window type error
         assert_raises(ValueError, windows.get_window, 'broken', 4, xp=xp)
 
+    @xfail_xp_backends(np_only=True, reason='TODO: make resample array API ready')
     def test_array_as_window(self, xp):
         # github issue 3603
         osfactor = 128
@@ -749,11 +780,14 @@ class TestGetWindow:
             resample(sig, len(sig) * osfactor, window=win)
 
     def test_general_cosine(self, xp):
-        xp_assert_close(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4, xp=xp),
+        xp_assert_close(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4),
                         [0.4, 0.3, 1, 0.3])
         xp_assert_close(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4,
-                                   fftbins=False, xp=xp),
+                                   fftbins=False),
                         [0.4, 0.55, 0.55, 0.4])
+
+        with pytest.raises(ValueError):
+            get_window(('general_cosine', [0.5, 0.3, 0.2]), 4, xp=xp)
 
     def test_general_hamming(self, xp):
         xp_assert_close(get_window(('general_hamming', 0.7), 5, xp=xp),
@@ -775,6 +809,14 @@ class TestGetWindow:
 def test_windowfunc_basics(xp):
     for window_name, params in window_funcs:
         window = getattr(windows, window_name)
+        if is_jax(xp) and window_name in ['taylor', 'chebwin']:
+            pytest.skip(reason=f'{window_name = }: item assignment')
+        if window_name in ['dpss']:
+            if is_cupy(xp):
+                pytest.skip(reason='dpss window is not implemented for cupy')
+            if is_torch(xp) and SCIPY_DEVICE != 'cpu':
+                pytest.skip(reason='needs eight_tridiagonal which is CPU only')
+
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
             # Check symmetry for odd and even lengths
@@ -787,40 +829,43 @@ def test_windowfunc_basics(xp):
             xp_assert_close(w1[:-1], w2)
 
             # Check that functions run and output lengths are correct
-            xp_assert_equal(len(window(6, *params, sym=True, xp=xp)), 6)
-            xp_assert_equal(len(window(6, *params, sym=False, xp=xp)), 6)
-            xp_assert_equal(len(window(7, *params, sym=True, xp=xp)), 7)
-            xp_assert_equal(len(window(7, *params, sym=False, xp=xp)), 7)
+            xp_assert_equal(window(6, *params, sym=True, xp=xp).shape[0], 6)
+            xp_assert_equal(window(6, *params, sym=False, xp=xp).shape[0], 6)
+            xp_assert_equal(window(7, *params, sym=True, xp=xp).shape[0], 7)
+            xp_assert_equal(window(7, *params, sym=False, xp=xp).shape[0], 7)
 
             # Check invalid lengths
             assert_raises(ValueError, window, 5.5, *params, xp=xp)
             assert_raises(ValueError, window, -7, *params, xp=xp)
 
             # Check degenerate cases
-            assert_array_equal(window(0, *params, sym=True, xp=xp), [])
-            assert_array_equal(window(0, *params, sym=False, xp=xp), [])
-            assert_array_equal(window(1, *params, sym=True, xp=xp), [1])
-            assert_array_equal(window(1, *params, sym=False, xp=xp), [1])
+            xp_assert_equal(window(0, *params, sym=True, xp=xp), [])
+            xp_assert_equal(window(0, *params, sym=False, xp=xp), [])
+            xp_assert_equal(window(1, *params, sym=True, xp=xp), [1])
+            xp_assert_equal(window(1, *params, sym=False, xp=xp), [1])
 
             # Check dtype
-            assert_(window(0, *params, sym=True, xp=xp).dtype == 'float')
-            assert_(window(0, *params, sym=False, xp=xp).dtype == 'float')
-            assert_(window(1, *params, sym=True, xp=xp).dtype == 'float')
-            assert_(window(1, *params, sym=False, xp=xp).dtype == 'float')
-            assert_(window(6, *params, sym=True, xp=xp).dtype == 'float')
-            assert_(window(6, *params, sym=False, xp=xp).dtype == 'float')
+            assert window(0, *params, sym=True, xp=xp).dtype == xp.float64
+            assert window(0, *params, sym=False, xp=xp).dtype == xp.float64
+            assert window(1, *params, sym=True, xp=xp).dtype == xp.float64
+            assert window(1, *params, sym=False, xp=xp).dtype == xp.float64
+            assert window(6, *params, sym=True, xp=xp).dtype == xp.float64
+            assert window(6, *params, sym=False, xp=xp).dtype == xp.float64
 
             # Check normalization
-            assert_array_less(window(10, *params, sym=True, xp=xp), 1.01)
-            assert_array_less(window(10, *params, sym=False, xp=xp), 1.01)
-            assert_array_less(window(9, *params, sym=True, xp=xp), 1.01)
-            assert_array_less(window(9, *params, sym=False, xp=xp), 1.01)
+            assert xp.all(window(10, *params, sym=True, xp=xp) < 1.01)
+            assert xp.all(window(10, *params, sym=False, xp=xp) < 1.01)
+            assert xp.all(window(9, *params, sym=True, xp=xp) < 1.01)
+            assert xp.all(window(9, *params, sym=False, xp=xp) < 1.01)
 
             # Check that DFT-even spectrum is purely real for odd and even
-            xp_assert_close(fft(window(10, *params, sym=False, xp=xp)).imag,
-                            0, atol=1e-14)
-            xp_assert_close(fft(window(11, *params, sym=False, xp=xp)).imag,
-                            0, atol=1e-14)
+            res = fft(window(10, *params, sym=False, xp=xp))
+            res = xp.imag(res)
+            xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
+
+            res = fft(window(11, *params, sym=False, xp=xp))
+            res = xp.imag(res)
+            xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
 
 def test_needs_params(xp):
@@ -834,29 +879,34 @@ def test_needs_params(xp):
         assert_raises(ValueError, get_window, winstr, 7, xp=xp)
 
 
-def test_not_needs_params(xp):
-    for winstr in ['barthann',
-                   'bartlett',
-                   'blackman',
-                   'blackmanharris',
-                   'bohman',
-                   'boxcar',
-                   'cosine',
-                   'flattop',
-                   'hamming',
-                   'nuttall',
-                   'parzen',
-                   'taylor',
-                   'exponential',
-                   'poisson',
-                   'tukey',
-                   'tuk',
-                   'triangle',
-                   'lanczos',
-                   'sinc',
-                   ]:
-        win = get_window(winstr, 7, xp=xp)
-        xp_assert_equal(len(win), 7)
+_winstr = ['barthann',
+           'bartlett',
+           'blackman',
+           'blackmanharris',
+           'bohman',
+           'boxcar',
+           'cosine',
+           'flattop',
+           'hamming',
+           'nuttall',
+           'parzen',
+           'taylor',
+           'exponential',
+           'poisson',
+           'tukey',
+           'tuk',
+           'triangle',
+           'lanczos',
+           'sinc',
+]
+
+
+@pytest.mark.parametrize('winstr', _winstr)
+def test_not_needs_params(xp, winstr):
+    if is_jax(xp) and winstr in ['taylor']:
+        pytest.skip(reason=f'{winstr}: item assignment')
+    win = get_window(winstr, 7, xp=xp)
+    xp_assert_equal(win.shape[0], 7)
 
 
 def test_symmetric(xp):
@@ -864,10 +914,11 @@ def test_symmetric(xp):
     for win in [windows.lanczos]:
         # Even sampling points
         w = win(4096, xp=xp)
-        error = np.max(np.abs(w-np.flip(w)))
-        xp_assert_equal(error, 0.0)
+        flip = array_namespace(w).flip
+        error = xp.max(xp.abs(w - flip(w)))
+        xp_assert_equal(error, xp.asarray(0.0), check_dtype=False, check_0d=False)
 
         # Odd sampling points
         w = win(4097, xp=xp)
-        error = np.max(np.abs(w-np.flip(w)))
-        xp_assert_equal(error, 0.0)
+        error = xp.max(xp.abs(w - flip(w)))
+        xp_assert_equal(error, xp.asarray(0.0), check_dtype=False, check_0d=False)
