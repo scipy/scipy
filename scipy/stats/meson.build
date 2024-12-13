@@ -133,7 +133,6 @@ py3.install_sources([
     '_multicomp.py',
     '_multivariate.py',
     '_new_distributions.py',
-    '_new_distribution_docs.json',
     '_odds_ratio.py',
     '_page_trend_test.py',
     '_probability_distribution.py',

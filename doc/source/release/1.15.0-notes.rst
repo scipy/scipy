@@ -194,8 +194,8 @@ and support several Array API compatible array libraries in addition to NumPy
   incompatible data types, such as ``float16``.
 - ``min``, ``max``, ``argmin``, and ``argmax`` now support computation
   over nonzero elements only via the new ``explicit`` argument.
-- New function ``safely_cast_index_arrays`` has been added
-  to facilitate casting challenges in ``sparse``.
+- New functions ``get_index_dtype`` and ``safely_cast_index_arrays`` are
+  available to facilitate index array casting in ``sparse``.
 
 
 `scipy.spatial` improvements
@@ -490,9 +490,9 @@ Other changes
   `scipy.interpolate`.
 
 
-*******
-Authors
-*******
+*****************
+Authors (commits)
+*****************
 
 * endolith (4)
 * h-vetinari (61)
@@ -515,9 +515,9 @@ Authors
 * Matthew Brett (1)
 * Keith Briggs (1) +
 * Olly Britton (145) +
-* Dietrich Brunn (10)
+* Dietrich Brunn (11)
 * Clemens Brunner (1)
-* Evgeni Burovski (181)
+* Evgeni Burovski (182)
 * Matthias Bussonnier (7)
 * CJ Carey (32)
 * Cesar Carrasco (4) +
@@ -537,13 +537,13 @@ Authors
 * Sahil Garje (1) +
 * Gabriel Gerlero (2)
 * Yotam Gingold (1) +
-* Ralf Gommers (105)
+* Ralf Gommers (107)
 * Rohit Goswami (62)
 * Anil Gurses (1) +
 * Oscar Gustafsson (1) +
-* Matt Haberland (362)
+* Matt Haberland (371)
 * Matt Hall (1) +
-* Joren Hammudoglu (2) +
+* Joren Hammudoglu (3) +
 * CY Han (1) +
 * Daniel Isaac (4) +
 * Maxim Ivanov (1)
@@ -595,9 +595,10 @@ Authors
 * Tom M. Ragonneau (2)
 * Peter Ralph (1) +
 * Stephan Rave (1) +
-* Tyler Reddy (126)
+* Tyler Reddy (131)
 * redha2404 (2) +
 * Ritvik1sharma (1) +
+* Érico Nogueira Rolim (1) +
 * Heshy Roskes (1)
 * Pamphile Roy (34)
 * Mikhail Ryazanov (1) +
@@ -606,7 +607,7 @@ Authors
 * Clemens Schmid (1) +
 * Daniel Schmitz (15)
 * Moritz Schreiber (1) +
-* Dan Schult (87)
+* Dan Schult (88)
 * Searchingdays (1) +
 * Matias Senger (1) +
 * Scott Shambaugh (1)
@@ -614,7 +615,7 @@ Authors
 * Sheila-nk (4)
 * Romain Simon (2) +
 * Gagandeep Singh (31)
-* Albert Steppi (35)
+* Albert Steppi (36)
 * Kai Striega (1)
 * Anushka Suyal (143) +
 * Alex Szatmary (1)
@@ -642,7 +643,7 @@ Authors
 * Gang Zhao (1)
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (10)
 
-A total of 147 people contributed to this release.
+A total of 148 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -893,6 +894,7 @@ Issues closed for 1.15.0
 * `#21837 <https://github.com/scipy/scipy/issues/21837>`__: BUG: linalg.svd: Segmentation Fault, Integer overflow in LAPACK...
 * `#21838 <https://github.com/scipy/scipy/issues/21838>`__: ENH: sparse: revisit default index dtype selection in sparray...
 * `#21855 <https://github.com/scipy/scipy/issues/21855>`__: TST, MAINT: torch + GPU failures for test_create_diagonal
+* `#21862 <https://github.com/scipy/scipy/issues/21862>`__: BUG: large number of fails with macOS 15.1 using Accelerate
 * `#21885 <https://github.com/scipy/scipy/issues/21885>`__: BUG: ``interpolate/tests/test_interpnd.py::TestLinearNDInterpolation::test_threa``...
 * `#21900 <https://github.com/scipy/scipy/issues/21900>`__: BUG: stats: New XSLOW test failure in test_sampling.py
 * `#21908 <https://github.com/scipy/scipy/issues/21908>`__: BUG: integrate.trapezoid: broadcasting failure after #21524
@@ -906,6 +908,9 @@ Issues closed for 1.15.0
 * `#21963 <https://github.com/scipy/scipy/issues/21963>`__: DOC: Deprecation warning in ``sphinx`` when used with Python...
 * `#21988 <https://github.com/scipy/scipy/issues/21988>`__: refguide_check currently failing
 * `#22005 <https://github.com/scipy/scipy/issues/22005>`__: TST: ``TestJacobian::test_attrs`` tol bump?
+* `#22022 <https://github.com/scipy/scipy/issues/22022>`__: TST: tolerance violation in ``test_x0_working[tfqmr]`` on windows
+* `#22029 <https://github.com/scipy/scipy/issues/22029>`__: ``Test_SVDS_LOBPCG.test_svd_rng_3`` test failure in wheel build...
+* `#22031 <https://github.com/scipy/scipy/issues/22031>`__: BUG: mypy failure in main
 
 ************************
 Pull requests for 1.15.0
@@ -1008,6 +1013,7 @@ Pull requests for 1.15.0
 * `#20900 <https://github.com/scipy/scipy/pull/20900>`__: ENH: stats: add array API support to combine_pvalues
 * `#20906 <https://github.com/scipy/scipy/pull/20906>`__: DOC: linalg.schur: update doc for the argument ``sort``
 * `#20907 <https://github.com/scipy/scipy/pull/20907>`__: CI: Make sure nightly free-threaded wheels are tested with GIL...
+* `#20908 <https://github.com/scipy/scipy/pull/20908>`__: DOC: signal.dbode: improve docstring
 * `#20912 <https://github.com/scipy/scipy/pull/20912>`__: DOC: Add more information about how to use Accelerate
 * `#20913 <https://github.com/scipy/scipy/pull/20913>`__: BUG: sparse.csgraph.dijkstra: fix dtype and shape bugs
 * `#20915 <https://github.com/scipy/scipy/pull/20915>`__: DOC: ``integrate.quad_vec``\ : Add example when using ``workers``
@@ -1490,6 +1496,7 @@ Pull requests for 1.15.0
 * `#21977 <https://github.com/scipy/scipy/pull/21977>`__: ENH: integrate.tanhsinh: make ``_tanhsinh`` public
 * `#21979 <https://github.com/scipy/scipy/pull/21979>`__: API: integrate.simpson: allow ``x`` to be passed positionally
 * `#21981 <https://github.com/scipy/scipy/pull/21981>`__: MAINT: purge ``from __future__ import annotations``
+* `#21982 <https://github.com/scipy/scipy/pull/21982>`__: DOC: SciPy 1.15.0 relnotes
 * `#21983 <https://github.com/scipy/scipy/pull/21983>`__: BUG: linalg: fix cython import order
 * `#21984 <https://github.com/scipy/scipy/pull/21984>`__: BUG: signal: actually reject objects in correlate/convolve
 * `#21985 <https://github.com/scipy/scipy/pull/21985>`__: DOC: optimize.root: fix docs for ``inner_\*`` parameters
@@ -1503,4 +1510,18 @@ Pull requests for 1.15.0
 * `#22002 <https://github.com/scipy/scipy/pull/22002>`__: TST: Run complex zeta avoid underflow tests only on platforms...
 * `#22003 <https://github.com/scipy/scipy/pull/22003>`__: DEV: unified git submodule exclusion for tools
 * `#22009 <https://github.com/scipy/scipy/pull/22009>`__: TST: differentiate.jacobian: tolerance bump for float32
+* `#22024 <https://github.com/scipy/scipy/pull/22024>`__: MAINT: version pins/prep for 1.15.0rc1
+* `#22026 <https://github.com/scipy/scipy/pull/22026>`__: MAINT: stats.Mixture: fix default ``weights``
+* `#22027 <https://github.com/scipy/scipy/pull/22027>`__: MAINT: stats.ContinuousDistribution: improve doc generation;...
+* `#22030 <https://github.com/scipy/scipy/pull/22030>`__: MAINT: ``stats.FoldedDistribution``\ : accommodate for private...
+* `#22032 <https://github.com/scipy/scipy/pull/22032>`__: MAINT: fix mypy complaints
+* `#22033 <https://github.com/scipy/scipy/pull/22033>`__: TST: fix sparse.linalg failures for tfmqr and svds
+* `#22036 <https://github.com/scipy/scipy/pull/22036>`__: DOC: adapt to NumPy 2.2 changes for abbreviation of large arrays
+* `#22037 <https://github.com/scipy/scipy/pull/22037>`__: MAINT: stats: Add custom reprs for transformed distributions
+* `#22040 <https://github.com/scipy/scipy/pull/22040>`__: MAINT: ``stats.make_distribution``\ : support more existing distributions
+* `#22043 <https://github.com/scipy/scipy/pull/22043>`__: ENH: sparse: make two sputils public for easier index array casting
+* `#22048 <https://github.com/scipy/scipy/pull/22048>`__: TST: integrate.tanhsinh: fix abscissae/weight "compression" bug
+* `#22050 <https://github.com/scipy/scipy/pull/22050>`__: MAINT: ``stats.order_statistic``\ : override ``support``
+* `#22058 <https://github.com/scipy/scipy/pull/22058>`__: DOC: ``stats.order_statistic``\ : add 'Returns' section
+* `#22059 <https://github.com/scipy/scipy/pull/22059>`__: TST: temp skip of extending tests
 
