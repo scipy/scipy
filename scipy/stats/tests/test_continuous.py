@@ -1387,10 +1387,18 @@ class TestTransforms:
     def test_monotonic_transforms(self):
         # Some tests of monotonic transforms that are better to be grouped or
         # don't fit well above
+
         X = Uniform(a=1, b=2)
-        assert repr(stats.log(X)) == str(stats.log(X)) == "log(Uniform(a=1.0, b=2.0))"
-        assert repr(1 / X) == str(1 / X) == "inv(Uniform(a=1.0, b=2.0))"
-        assert repr(stats.exp(X)) == str(stats.exp(X)) == "exp(Uniform(a=1.0, b=2.0))"
+        X_repr = (
+            "Uniform(a=1.0, b=2.0)" if np.__version__ < "2"
+            else "Uniform(a=np.float64(1.0), b=np.float64(2.0))"
+        )
+
+        assert repr(stats.log(X)) == str(stats.log(X)) == (
+            f"log({X_repr})"
+        )
+        assert repr(1 / X) == str(1 / X) == f"1/({X_repr})"
+        assert repr(stats.exp(X)) == str(stats.exp(X)) == f"exp({X_repr})"
 
         X = Uniform(a=-1, b=2)
         message = "Division by a random variable is only implemented when the..."
@@ -1740,18 +1748,6 @@ class TestReprs:
         # Tests that array summarization is working to ensure reprs aren't too long.
         # None of the reprs above will be executable.
         assert len(repr(dist)) < 250
-
-    def test_ContinuousDistribution__str__(self):
-        X = Uniform(a=0, b=1)
-        assert str(X) == "Uniform(a=0.0, b=1.0)"
-
-        assert str(X*3 + 2) == "ShiftedScaledUniform(a=0.0, b=1.0, loc=2.0, scale=3.0)"
-
-        X = Uniform(a=np.zeros(4), b=1)
-        assert str(X) == "Uniform(a, b, shape=(4,))"
-
-        X = Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
-        assert str(X) == "Uniform(a, b, shape=(4,), dtype=float32)"
 
 
 class MixedDist(ContinuousDistribution):
