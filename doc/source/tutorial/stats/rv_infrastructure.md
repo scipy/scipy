@@ -17,11 +17,11 @@ kernelspec:
    :new_tab: True
 ```
 
-## Random Variable Transition Guide
+# Random Variable Transition Guide
 
 +++
 
-### Background
+## Background
 
 +++
 
@@ -39,7 +39,7 @@ isinstance(dist, stats.rv_continuous)
 
 There were two obvious ways to work these objects.
 
-According to the more common way, both arguments (e.g. `x`) and distribution parameters (e.g. `loc`, `scale`) were provided as inputs to methods of the object.
+According to the more common way, both "arguments" (e.g. `x`) and "distribution parameters" (e.g. `loc`, `scale`) were provided as inputs to methods of the object.
 
 ```{code-cell} ipython3
 x, loc, scale = 1., 0., 1.
@@ -61,13 +61,15 @@ frozen.pdf(x)
 
 In a sense, the instances of `rv_continuous` like `norm` represented "distribution families", which require parameters to identify a particular probability distribution, and an instance of `rv_continuous_frozen` was akin to a "random variable" - a mathematical object that follows a particular probability distribution.
 
-Both approaches are valid and have advantages in certain situations. For instance, `stats.norm.pdf(x)` may appear more natural than `stats.norm().pdf(x)` for simple invocations. However, the former approach has a few inherent disadvantages; e.g., all of SciPy's 125 continuous distributions have to be instantiated at import time, distribution parameters must be validated every time a method is called, and documentation of methods must either a) be generated separately for every method of every distribution or b) omit the shape parameters that are unique for each distribution.
+Both approaches are valid and have advantages in certain situations. For instance, `stats.norm.pdf(x)` appears more natural than `stats.norm().pdf(x)` for such a simple invocation or when methods are viewed as functions of distribution parameters rather than the usual arguments (e.g., likelihood). However, the former approach has a few inherent disadvantages; e.g., all of SciPy's 125 continuous distributions have to be instantiated at import time, distribution parameters must be validated every time a method is called, and documentation of methods must either a) be generated separately for every method of every distribution or b) omit the shape parameters that are unique for each distribution.
+]
+To address these and other shortcomings, [gh-15928](https://github.com/scipy/scipy/issues/15928) proposed a new, separate infrastructure based on the latter (random variable) approach. This transition guide documents how users of `rv_continuous` and `rv_continuous_frozen` can migrate to the new infrastructure.
 
-To address these and other shortcomings, gh-15928 proposed a new, separate infrastructure based on the latter (random variable) approach. This transition guide documents how users of `rv_continuous` and `rv_continuous_frozen` can migrate to the new infrastructure.
+*Note: The new infrastructure may not yet be as convenient for some use cases, especially fitting distribution parameters to data. Users are welcome to continue to use the old infrastructure if it suits their needs; it is not deprecated at this time.*
 
 +++
 
-### Basics
+## Basics
 
 +++
 
@@ -76,7 +78,8 @@ In the new infrastructure, distributions families are classes named according to
 
 ```{code-cell} ipython3
 from scipy import stats
-X = stats.Normal(mu=0, sigma=1)
+mu, sigma = 0, 1
+X = stats.Normal(mu=mu, sigma=sigma)
 X
 ```
 
@@ -88,6 +91,12 @@ X.mu, X.sigma
 
 Note that the documentation of [`scipy.stats.Normal`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Normal.html#scipy.stats.Normal) contains links to more detailed documentation of each of its methods. (Compare, for instance, against the documentation of [`scipy.stats.norm`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.norm.html).)
 
+Methods are then called by passing only the argument(s), if there are any, not distribution parameters.
+
+```{code-cell} ipython3
+X.mean()
+```
+
 ```{code-cell} ipython3
 X.pdf(x)
 ```
@@ -95,7 +104,7 @@ X.pdf(x)
 For simple calls like this (e.g. the argument is a valid float), calls to methods of the new random variables will typically be faster than comparable calls to the old distribution methods.
 
 ```{code-cell} ipython3
-%timeit dist.pdf(x, loc=mu, scale=sigma)
+%timeit X.pdf(x)
 ```
 
 ```{code-cell} ipython3
@@ -103,10 +112,10 @@ For simple calls like this (e.g. the argument is a valid float), calls to method
 ```
 
 ```{code-cell} ipython3
-%timeit X.pdf(x)
+%timeit dist.pdf(x, loc=mu, scale=sigma)
 ```
 
-Note that the calls to `frozen.pdf` and `X.pdf` are identical, and the call to `dist.pdf` is very similar to the call to `X.pdf` - the only difference is that the call to `dist.pdf` includes the shape parameters, whereas in the new infrastructure, shape parameters are only provided when the random variable is instantiated.
+Note that the calls to `X.pdf` and `frozen.pdf` are identical, and the call to `dist.pdf` is very similar - the only difference is that the call to `dist.pdf` includes the shape parameters, whereas in the new infrastructure, shape parameters are only provided when the random variable is instantiated.
 
 Besides `pdf`, several other methods of the new infrastructure are essentially the same as the old methods.
 
@@ -117,12 +126,11 @@ Besides `pdf`, several other methods of the new infrastructure are essentially t
 - `logcdf` (logarithm of cumulative distribution function)
 - `entropy` (differential entropy)
 - `median`
-- `mean`
 - `support`
 
 +++
 
-Others methods have new names, but are otherwise very similar.
+Others methods have new names, but are otherwise drop-in replacements.
 - `sf` (survival function) $\rightarrow$ `ccdf` (complementary cumulative distribution function)
 - `logsf` $\rightarrow$ `logccdf`
 - `ppf` (percent point function) $\rightarrow$ `icdf` (inverse cumulative distribution function)
@@ -153,6 +161,7 @@ Most of the remaining methods of the old infrastructure (`rvs`, `moment`, `stats
 
 ```{code-cell} ipython3
 Weibull = stats.make_distribution(stats.weibull_min)
+print(Weibull.__doc__[:288])  # help(Weibull) prints this and (too much) more
 ```
 
 According to the documentation of [`weibull_min`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weibull_min.html#scipy.stats.weibull_min), the shape parameter is denoted `c`, so we can instantiate a random variable by passing `c` as a keyword argument to the new `Weibull` class.
@@ -163,7 +172,8 @@ X = Weibull(c=c)
 X.plot();
 ```
 
-Previously, all distributions inherited `loc` and `scale` parameters; now, random variables can be shifted and scaled with arithmetic operators.
+Previously, all distributions inherited `loc` and `scale` distribution parameters.
+*These are no longer accepted.* Instead, random variables can be shifted and scaled with arithmetic operators.
 
 ```{code-cell} ipython3
 Y = 2*X + 1
@@ -177,17 +187,17 @@ Y = -X
 Y.plot();
 ```
 
-#### Moments
+### Moments
 
 +++
 
-The previous infrastructure offered a `moments` method for raw moments. When only the order is specified, the new `moment` method is a drop-in replacement.
+The old infrastructure offers a `moments` method for raw moments. When only the order is specified, the new `moment` method is a drop-in replacement.
 
 ```{code-cell} ipython3
 stats.weibull_min.moment(1, c), X.moment(1)  # first raw moment of the Weibull distribution with shape c
 ```
 
-However, the previous infrastructure also had a `stats` method, which provided various statistics of the distribution. The following statistics were associated with the indicated characters.
+However, the old infrastructure also has a `stats` method, which provided various statistics of the distribution. The following statistics were associated with the indicated characters.
 
 +++
 
@@ -205,7 +215,10 @@ stats.weibull_min.stats(c, moments='mvsk')
 Now, moments of any `order` and `kind` (raw, central, and standardized) can be computed by passing the appropriate arguments to the new `moment` method.
 
 ```{code-cell} ipython3
-X.moment(order=1, kind='raw'), X.moment(order=2, kind='central'), X.moment(order=3, kind='standardized'), X.moment(order=4, kind='standardized') 
+(X.moment(order=1, kind='raw'), 
+ X.moment(order=2, kind='central'), 
+ X.moment(order=3, kind='standardized'), 
+ X.moment(order=4, kind='standardized'))
 ```
 
 Note the difference in definition of [kurtosis](https://en.wikipedia.org/wiki/Kurtosis). Previously, the "excess" (AKA "Fisher's") kurtosis was provided. As a matter of convention (rather than the natural mathematical definition), this is the standardized fourth moment shifted by a constant value (`3`) to give a value of `0.0` for the normal distribution.
@@ -214,23 +227,23 @@ Note the difference in definition of [kurtosis](https://en.wikipedia.org/wiki/Ku
 stats.norm.stats(moments='k')
 ```
 
-The new `moment` and `kurtosis` methods do not observe this convention by default; they report the standardized fourth moment according to the standard mathematical definition. This is also known as the "non-excess" (or "Pearson's") kurtosis, and the standard normal has a value of `3.0`.
+The new `moment` and `kurtosis` methods do not observe this convention by default; they report the standardized fourth moment according to the mathematical definition. This is also known as the "non-excess" (or "Pearson's") kurtosis, and for the standard normal, it has a value of `3.0`.
 
 ```{code-cell} ipython3
-stats.Normal().moment(4, kind='standardized'), stats.Normal().kurtosis()
+stats.Normal().moment(4, kind='standardized') 
 ```
 
 For convenience, the `kurtosis` method offers a `convention` argument to select between the two.
 
 ```{code-cell} ipython3
-stats.Normal().kurtosis(convention='non-excess'), stats.Normal().kurtosis(convention='excess') 
+stats.Normal().kurtosis(convention='excess'), stats.Normal().kurtosis(convention='non-excess')
 ```
 
-#### Random Variates
+### Random Variates
 
 +++
 
-The old `rvs` method has been replaced with `sample`, but there are a two differences that should be noted.
+The old infrastructure's `rvs` method has been replaced with `sample`, but there are a two differences that should be noted when either 1) control of the random state is required or 2) arrays are used for shape, location, or scale parameters.
 
 First, `random_state` is replaced by `rng` per [SPEC 7](https://scientific-python.org/specs/spec-0007/). A pattern to control the random state in the past has been to use `numpy.random.seed` or to pass integer seeds to the `random_state` argument. The integer seeds were converted to instances of `numpy.random.RandomState`, so behavior for a given integer seed would be identical in these two cases:
 
@@ -272,11 +285,7 @@ Y = stats.Normal(mu = [0, 1])
 Y.sample(shape=(3, 4)).shape  # the sample has shape (3, 4); each element is of shape (2,)
 ```
 
-```{code-cell} ipython3
-
-```
-
-#### Probability Mass (AKA "Confidence") Intervals
+### Probability Mass (AKA "Confidence") Intervals
 
 +++
 
@@ -287,7 +296,7 @@ a = 0.95
 dist.interval(confidence=a)
 ```
 
-Now, call the inverse CDF and complementary CDF methods with the desired probability mass.
+Now, call the inverse CDF and complementary CDF methods with the desired probability mass in each tail.
 
 ```{code-cell} ipython3
 p = 1 - a
@@ -298,7 +307,7 @@ X.icdf(p/2), X.iccdf(p/2)
 
 +++
 
-The old infrastructure offered a function to compute the *n*egative *l*og-*l*ikelihood *f*unction, erroneously named `nnlf` (instead of `nllf`). It accepts the parameters of the distribution as a tuple and observations as an array.
+The old infrastructure offers a function to compute the **n**egative **l**og-[**l**ikelihood **f**unction](https://en.wikipedia.org/wiki/Likelihood_function), erroneously named `nnlf` (instead of `nllf`). It accepts the parameters of the distribution as a tuple and observations as an array.
 
 ```{code-cell} ipython3
 mu = 0
@@ -307,14 +316,14 @@ data = stats.norm.rvs(size=100, loc=mu, scale=sigma)
 stats.norm.nnlf((mu, sigma), data)
 ```
 
-Now, simply compute the negative [log-likehood function](https://en.wikipedia.org/wiki/Likelihood_function) according to its mathematical definition.
+Now, simply compute the negative log-likehood according to its mathematical definition.
 
 ```{code-cell} ipython3
 X = stats.Normal(mu=mu, sigma=sigma)
 -X.logpdf(data).sum()
 ```
 
-#### Expected Values
+### Expected Values
 
 +++
 
@@ -353,7 +362,7 @@ Using `quad` directly, that is:
 ```{code-cell} ipython3
 def f(x): return x**4 * stats.norm.pdf(x)
 prob = stats.norm.cdf(b) - stats.norm.cdf(a)
-integrate.quad(f, a=a, b=b)[0]/prob
+integrate.quad(f, a=a, b=b)[0] / prob
 ```
 
 And with the new random variables:
@@ -366,17 +375,19 @@ Note that the `cdf` method of the new random variables accepts two arguments to 
 
 +++
 
-#### Fitting
+### Fitting
 
 +++
 
+#### Location / Scale Estimation
 The old infrastructure offered a function to estimate location and scale parameters of the distribution from data.
 
 ```{code-cell} ipython3
 dist = stats.weibull_min
-c, loc, scale = 0.5, 3., 4.
-data = dist.rvs(size=100, c=c, loc=loc, scale=scale)
+c, scale = 0.5, 4.
+data = dist.rvs(size=100, c=c, scale=scale)
 dist.fit_loc_scale(data, c)
+# compare against 0 (default location) and 4 (specified scale)
 ```
 
 Based on the source code, it is easy to replicate the method.
@@ -395,6 +406,8 @@ fit_loc_scale(X, data)
 
 Note that the estimates are quite poor in this example, and poor performance of the heuristic factored into the decision not to provide a replacement.
 
+#### Maximum Likelihood Estimation
+
 The last method of the old infrastructure is `fit`, which estimates the location, scale, and shape parameters of an underlying distribution given a sample from the distribution.
 
 ```{code-cell} ipython3
@@ -402,11 +415,16 @@ params = stats.weibull_min.fit(data)
 params
 ```
 
-The convenience of this method is a blessing a curse. When it works, the simplicity is much appreciated. For some distributions, analytical expressions for the [maximum likelihood estimates](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation) (MLE) of the parameters have been programmed manually, and for these distributions, the `fit` method is quite reliable. For most distributions, however, fitting is performed by numerical minimization of the negative log-likelihood function. This is not guaranteed to be successful - both because of inherent limitations of MLE and the state of the art of numerical optimization - and in these cases, the user of `fit` is stuck. However, a modicum of understanding goes a long way toward ensuring success, so here we present a mini-tutorial of fitting using the new infrastructure. 
+The convenience of this method is a blessing and a curse. 
+
+When it works, the simplicity is much appreciated. For some distributions, analytical expressions for the [maximum likelihood estimates](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation) (MLE) of the parameters have been programmed manually, and for these distributions, the `fit` method is quite reliable. 
+
+For most distributions, however, fitting is performed by numerical minimization of the negative log-likelihood function. This is not guaranteed to be successful - both because of inherent limitations of MLE and the state of the art of numerical optimization - and in these cases, the user of `fit` is stuck. However, a modicum of understanding goes a long way toward ensuring success, so here we present a mini-tutorial of fitting using the new infrastructure. 
 
 First, note that MLE is one of several potential strategies for fitting distributions to data. It does nothing more than find the values of the distribution parameters for which the negative log-likelihood (NLLF) is minimized. Note that for the original data, the NLLF is:
 
 ```{code-cell} ipython3
+loc = 0
 stats.weibull_min.nnlf((c, loc, scale), data)
 ```
 
@@ -416,17 +434,42 @@ The NLLF of the parameters estimated using `fit` are lower:
 stats.weibull_min.nnlf(params, data)
 ```
 
-Therefore, `fit` considers its job done, whether or not this satisfies the user's notions of a "good fit" or whether the parameters are within reasonable bounds.
+Therefore, `fit` considers its job done, whether or not this satisfies the user's notions of a "good fit" or whether the parameters are within reasonable bounds. It gives the user no control over the process (other than specifying a guess).
 
-At its simplest, then, it is not so hard to replicate what `fit` does using tools available in SciPy. As discussed above, the NLLF is given by:
++++
+
+Another problem is that MLE is an inherently problematic for some distributions. In this example, for instance, we can make the NLLF as low as we please simply by setting the location to the minimum of the data - even for bogus values of the shape and scale parameters.
+
+```{code-cell} ipython3
+stats.weibull_min.nnlf((0.1, np.min(data), 10), data)
+```
+
+Compounding with these issues is that `fit` estimates all distribution parameters by default. In the example above, we are probably only interested in the more common two-parameter Weibull distribution because the actual location is zero. `fit` *can* accommodate this by specifing that the location is fixed parameter.
+
+```{code-cell} ipython3
+# params = stats.weibull_min.fit(data, loc=0)  # careful! this provides loc=0 as a *guess*
+params = stats.weibull_min.fit(data, floc=0)
+params
+```
+
+```{code-cell} ipython3
+stats.weibull_min.nnlf(params, data)
+```
+
+By relying on a `fit` method to "just work", users are encouraged to neglect some of these important details. 
+
+Instead, we suggest that it is almost as simple to fit distributions to data using the generic optimization tools provided by SciPy. However, this allows the user to perform the fit according to their preferred objective function, provides options when things don't work as expected, and helps the user to avoid the most common pitfalls.
+
+For instance, suppose our desired objective function is indeed the negative log likelihood function. It is simple to define as a function of the shape parameter `c` and scale only, leaving the location at its default of zero.
 
 ```{code-cell} ipython3
 def nllf(params):
-    c, loc, scale = params
-    X = Weibull(c=c) * scale + loc
+    c, scale = params
+    X = Weibull(c=c) * scale
     return -X.logpdf(data).sum()
 
-nllf(params)
+c_, loc_, scale_ = params
+nllf((c_, scale_))
 ```
 
 To perform the minimization, we can use `scipy.optimize.minimize`.
@@ -434,35 +477,39 @@ To perform the minimization, we can use `scipy.optimize.minimize`.
 ```{code-cell} ipython3
 from scipy import optimize
 eps = 1e-10  # numerical tolerance to avoid invalid parameters
-lb = [eps, -10, eps]  # lower bound on `c`, `location`, and `scale`
-ub = [10, np.min(data)-eps, 10]  # upper bound on `c`, `location`, and `scale`
-x0 = [1, 1, 1]  # guess to get optimization started
+lb = [eps, eps]  # lower bound on `c` and `scale`
+ub = [10, 10]  # upper bound on `c` and `scale`
+x0 = [1, 1]  # guess to get optimization started
 bounds = optimize.Bounds(lb, ub)
 res = optimize.minimize(nllf, x0, bounds=bounds)
 res
 ```
 
-Although the value of `fun` (the NLLF) is not quite as low as with the solution provided by `weibull_min.fit`, the PDFs are not so different.
+The value of the objective function is almost identical, and the PDFs are indistinguishable.
 
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
-x = np.linspace(2, 10, 300)
+x = np.linspace(0, 15, 300)
 
-c, loc, scale = res.x
-X = Weibull(c=c)*scale + loc
+c, scale = res.x
+X = Weibull(c=c)*scale
 plt.plot(x, X.pdf(x), '-', label='numerical optimization')
 
 c, loc, scale = params
-Y = Weibull(c=c)*scale + loc
+Y = Weibull(c=c)*scale
 plt.plot(x, Y.pdf(x), '--', label='`scipy.stats.fit`')
 
-plt.hist(data, bins=np.linspace(2, 10, 30), density=True, alpha=0.1)
+plt.hist(data, bins=np.linspace(0, 20, 30), density=True, alpha=0.1)
 plt.xlabel('x')
 plt.ylabel('pdf(x)')
 plt.legend()
 ```
 
-## New Features
+However, wi
+
++++
+
+## New and Advanced Features
 
 +++
 
@@ -562,7 +609,7 @@ plt.plot(x, Y.pdf(x))
 plt.plot(x, stats.dgamma(a=a).pdf(x), '--')
 ```
 
-*Limitations*:
+#### Limitations
 
 While most arithmetic transformations between random variables and Python scalars or NumPy arrays are supported, there are a few restrictions.
 
@@ -754,7 +801,7 @@ The `plot` method is quite flexible, with a signature inspired by grammar of gra
 X.plot('cdf', 'pdf', t=('x', -10, 10))
 ```
 
-### Order statistics distributions
+### Order Statistics
 There is support for distributions of [order statistics](https://en.wikipedia.org/wiki/Order_statistic) of random samples from distribution. For example, we can plot the probability density functions of the order statistics of a normal distribution with sample size 4.
 
 ```{code-cell} ipython3
@@ -762,7 +809,7 @@ n = 4
 r = np.arange(1, n+1)
 X = stats.Normal()
 Y = stats.order_statistic(X, r=r, n=n)
-Y.plot()
+Y.plot();
 ```
 
 Compute the expected values of these order statistics:
