@@ -113,6 +113,7 @@ py3.extension_module('messagestream',
 python_sources = [
   '__init__.py',
   '_array_api.py',
+  '_array_api_compat_vendor.py',
   '_array_api_no_0d.py',
   '_bunch.py',
   '_ccallback.py',
@@ -218,9 +219,19 @@ py3.install_sources(
 
 py3.install_sources(
   [
+    'array_api_extra/src/array_api_extra/_lib/__init__.py',
+    'array_api_extra/src/array_api_extra/_lib/_compat.py',
+    'array_api_extra/src/array_api_extra/_lib/_compat.pyi',    
+    'array_api_extra/src/array_api_extra/_lib/_utils.py',
+    'array_api_extra/src/array_api_extra/_lib/_typing.py',
+  ],
+  subdir: 'scipy/_lib/array_api_extra/_lib',
+)
+
+py3.install_sources(
+  [
     'array_api_extra/src/array_api_extra/__init__.py',
     'array_api_extra/src/array_api_extra/_funcs.py',
-    'array_api_extra/src/array_api_extra/_typing.py',
   ],
   subdir: 'scipy/_lib/array_api_extra',
 )
