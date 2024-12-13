@@ -115,6 +115,12 @@ jobs:
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
 
+        # configure system boost
+        mamba install libboost-headers
+        export BOOST_INCLUDEDIR=${{ env.CONDA }}/envs/scipy-dev/include/boost
+        export BOOST_LIBRARYDIR=${{ env.CONDA }}/envs/scipy-dev/lib
+        rm subprojects/boost_math.wrap  # so will fail if system boost doesn't work
+
         CC="ccache $CC" python dev.py build
 
     - name: Test SciPy

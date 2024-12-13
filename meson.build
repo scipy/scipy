@@ -153,4 +153,6 @@ if use_pythran
   xsimd_dep = dependency('xsimd', required: false)
 endif
 
+boost_math_dep = dependency('boost', version : '1.88.0')
+
 subdir('scipy')
