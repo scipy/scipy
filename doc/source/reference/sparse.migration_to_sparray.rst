@@ -449,19 +449,23 @@ The function signatures are::
     def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
 
-Example idioms include the following::
+Example idioms include the following for ``get_index_dtype``::
 
    .. code-block:: python
 
        # select index dtype before construction based on shape
        shape = (3, 3)
-       idx_dtype = scipy.sparse._sputils.get_index_dtype(maxval=max(shape))
+       idx_dtype = scipy.sparse.get_index_dtype(maxval=max(shape))
        indices = np.array([0, 1, 0], dtype=idx_dtype)
        indptr = np.arange(3, dtype=idx_dtype)
        A = csr_array((data, indices, indptr), shape=shape)
 
-       # rescast after construction, raising exception before overflow
-       indices, indptr = scipy.sparse._sputils.safely_cast_index_arrays(B, np.int32)
+and for ``safely_cast_index_arrays``::
+
+   .. code-block:: python
+
+       # rescast after construction, raising exception if shape too big
+       indices, indptr = scipy.sparse.safely_cast_index_arrays(B, np.int32)
        B.indices, B.indptr = indices, indptr
 
 Other
