@@ -1702,13 +1702,13 @@ def _array_muller(f, x0, x1, x2, args, tol, rtol,
         )
 
         if should_mask_args:
-            masked_args = tuple(arg[~converged] if isinstance(arg, np.ndarray)
+            args = tuple(arg[~converged] if isinstance(arg, np.ndarray)
                                 else arg for arg in args)
 
         f0[~converged], f1[~converged], f2[~converged] = (
             f1[~converged],
             f2[~converged],
-            f(p2[~converged], *masked_args),
+            f(p2[~converged], *args),
         )
     
     failed = np.isnan(p)
