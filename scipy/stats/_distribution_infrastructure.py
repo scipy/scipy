@@ -5000,7 +5000,7 @@ class FoldedDistribution(TransformedDistribution):
 
     def __str__(self):
         with np.printoptions(threshold=10):
-            return f"abs({repr(self._dist)})"
+            return f"abs({str(self._dist)})"
 
 
 def abs(X, /):
