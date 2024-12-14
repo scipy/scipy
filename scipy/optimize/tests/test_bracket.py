@@ -471,10 +471,10 @@ class TestBracketMinimum:
             funcs = [lambda x: (x - 1.5)**2,
                      lambda x: x,
                      lambda x: x,
-                     lambda x: xp.nan,
+                     lambda x: xp.asarray(xp.nan),
                      lambda x: x**2]
 
-            return [funcs[j](x) for x, j in zip(xs, js)]
+            return [funcs[int(j)](x) for x, j in zip(xs, js)]
 
         args = (xp.arange(5, dtype=xp.int64),)
         xl0 = xp.asarray([-1.0, -1.0, -1.0, -1.0, 6.0])

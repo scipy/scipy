@@ -26,6 +26,13 @@ from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
+from scipy._lib._array_api import (
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size
+
+)
+import scipy._lib.array_api_compat.numpy as np_compat
+import scipy._lib.array_api_extra as xpx
+
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
@@ -243,13 +250,24 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> plt.show()
 
     """
-    in1 = np.asarray(in1)
-    in2 = np.asarray(in2)
-    _reject_objects(in1, 'correlate')
-    _reject_objects(in2, 'correlate')
+    try:
+        xp = array_namespace(in1, in2)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(in1, 'correlate')
+        _reject_objects(in2, 'correlate')
+
+    in1 = xp.asarray(in1)
+    in2 = xp.asarray(in2)
 
     if in1.ndim == in2.ndim == 0:
-        return in1 * in2.conj()
+        in2_conj = (xp.conj(in2)
+                    if xp.isdtype(in2.dtype, 'complex floating')
+                    else in2)
+        return in1 * in2_conj
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
 
@@ -262,47 +280,56 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     # this either calls fftconvolve or this function with method=='direct'
     if method in ('fft', 'auto'):
-        return convolve(in1, _reverse_and_conj(in2), mode, method)
+        return convolve(in1, _reverse_and_conj(in2, xp), mode, method)
 
     elif method == 'direct':
         # fastpath to faster numpy.correlate for 1d inputs when possible
-        if _np_conv_ok(in1, in2, mode):
-            return np.correlate(in1, in2, mode)
+        if _np_conv_ok(in1, in2, mode, xp):
+            a_in1 = np.asarray(in1)
+            a_in2 = np.asarray(in2)
+            out = np.correlate(a_in1, a_in2, mode)
+            return xp.asarray(out)
 
         # _correlateND is far slower when in2.size > in1.size, so swap them
         # and then undo the effect afterward if mode == 'full'.  Also, it fails
         # with 'valid' mode if in2 is larger than in1, so swap those, too.
         # Don't swap inputs for 'same' mode, since shape of in1 matters.
-        swapped_inputs = ((mode == 'full') and (in2.size > in1.size) or
+        swapped_inputs = ((mode == 'full') and (xp_size(in2) > xp_size(in1)) or
                           _inputs_swap_needed(mode, in1.shape, in2.shape))
 
         if swapped_inputs:
             in1, in2 = in2, in1
 
+        # convert to numpy & back for _sigtools._correlateND
+        a_in1 = np.asarray(in1)
+        a_in2 = np.asarray(in2)
+
         if mode == 'valid':
             ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
-            out = np.empty(ps, in1.dtype)
+            out = np.empty(ps, a_in1.dtype)
 
-            z = _sigtools._correlateND(in1, in2, out, val)
+            z = _sigtools._correlateND(a_in1, a_in2, out, val)
 
         else:
             ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
 
             # zero pad input
-            in1zpadded = np.zeros(ps, in1.dtype)
+            in1zpadded = np.zeros(ps, a_in1.dtype)
             sc = tuple(slice(0, i) for i in in1.shape)
-            in1zpadded[sc] = in1.copy()
+            in1zpadded[sc] = a_in1.copy()
 
             if mode == 'full':
-                out = np.empty(ps, in1.dtype)
+                out = np.empty(ps, a_in1.dtype)
             elif mode == 'same':
-                out = np.empty(in1.shape, in1.dtype)
+                out = np.empty(in1.shape, a_in1.dtype)
 
-            z = _sigtools._correlateND(in1zpadded, in2, out, val)
+            z = _sigtools._correlateND(in1zpadded, a_in2, out, val)
+
+        z = xp.asarray(z)
 
         if swapped_inputs:
             # Reverse and conjugate to undo the effect of swapping inputs
-            z = _reverse_and_conj(z)
+            z = _reverse_and_conj(z, xp)
 
         return z
 
@@ -481,7 +508,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     return in1, in2, axes
 
 
-def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False):
+def _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=False):
     """Convolve two arrays in the frequency domain.
 
     This function implements only base the FFT-related operations.
@@ -515,7 +542,8 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False):
     if not len(axes):
         return in1 * in2
 
-    complex_result = (in1.dtype.kind == 'c' or in2.dtype.kind == 'c')
+    complex_result = (xp.isdtype(in1.dtype, 'complex floating') or
+                      xp.isdtype(in2.dtype, 'complex floating'))
 
     if calc_fast_len:
         # Speed up FFT by padding to optimal size.
@@ -529,6 +557,11 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False):
     else:
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
+    if xp.isdtype(in1.dtype, 'integral'):
+        in1 = xp.astype(in1, xp.float64)
+    if xp.isdtype(in2.dtype, 'integral'):
+        in2 = xp.astype(in2, xp.float64)
+
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
 
@@ -541,7 +574,7 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False):
     return ret
 
 
-def _apply_conv_mode(ret, s1, s2, mode, axes):
+def _apply_conv_mode(ret, s1, s2, mode, axes, xp):
     """Calculate the convolution result shape based on the `mode` argument.
 
     Returns the result sliced to the correct size for the given mode.
@@ -567,13 +600,13 @@ def _apply_conv_mode(ret, s1, s2, mode, axes):
 
     """
     if mode == "full":
-        return ret.copy()
+        return xp_copy(ret, xp=xp)
     elif mode == "same":
-        return _centered(ret, s1).copy()
+        return xp_copy(_centered(ret, s1), xp=xp)
     elif mode == "valid":
         shape_valid = [ret.shape[a] if a not in axes else s1[a] - s2[a] + 1
                        for a in range(ret.ndim)]
-        return _centered(ret, shape_valid).copy()
+        return xp_copy(_centered(ret, shape_valid), xp=xp)
     else:
         raise ValueError("acceptable mode flags are 'valid',"
                          " 'same', or 'full'")
@@ -673,15 +706,17 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     >>> fig.show()
 
     """
-    in1 = np.asarray(in1)
-    in2 = np.asarray(in2)
+    xp = array_namespace(in1, in2)
+
+    in1 = xp.asarray(in1)
+    in2 = xp.asarray(in2)
 
     if in1.ndim == in2.ndim == 0:  # scalar inputs
         return in1 * in2
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
-    elif in1.size == 0 or in2.size == 0:  # empty arrays
-        return np.array([])
+    elif xp_size(in1) == 0 or xp_size(in2) == 0:  # empty arrays
+        return xp.array([])
 
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=False)
@@ -692,9 +727,9 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     shape = [max((s1[i], s2[i])) if i not in axes else s1[i] + s2[i] - 1
              for i in range(in1.ndim)]
 
-    ret = _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=True)
+    ret = _freq_domain_conv(xp, in1, in2, axes, shape, calc_fast_len=True)
 
-    return _apply_conv_mode(ret, s1, s2, mode, axes)
+    return _apply_conv_mode(ret, s1, s2, mode, axes, xp=xp)
 
 
 def _calc_oa_lens(s1, s2):
@@ -888,8 +923,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     >>> fig.show()
 
     """
-    in1 = np.asarray(in1)
-    in2 = np.asarray(in2)
+    xp = array_namespace(in1, in2)
+
+    in1 = xp.asarray(in1)
+    in2 = xp.asarray(in2)
 
     if in1.ndim == in2.ndim == 0:  # scalar inputs
         return in1 * in2
@@ -908,7 +945,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
 
     if not axes:
         ret = in1 * in2
-        return _apply_conv_mode(ret, s1, s2, mode, axes)
+        return _apply_conv_mode(ret, s1, s2, mode, axes, xp)
 
     # Calculate this now since in1 is changed later
     shape_final = [None if i not in axes else
@@ -966,10 +1003,14 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     # Pad the array to a size that can be reshaped to the desired shape
     # if necessary.
     if not all(curpad == (0, 0) for curpad in pad_size1):
+        # XXX: xp.pad is available on numpy, cupy and jax.numpy; on torch, can reuse
+        # http://github.com/pytorch/pytorch/blob/main/torch/_numpy/_funcs_impl.py#L2045
         in1 = np.pad(in1, pad_size1, mode='constant', constant_values=0)
+        in1 = xp.asarray(in1)
 
     if not all(curpad == (0, 0) for curpad in pad_size2):
         in2 = np.pad(in2, pad_size2, mode='constant', constant_values=0)
+        in2 = xp.asarray(in2)
 
     # Reshape the overlap-add parts to input block sizes.
     split_axes = [iax+i for i, iax in enumerate(axes)]
@@ -983,12 +1024,12 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         reshape_size1.insert(iax, nsteps1[i])
         reshape_size2.insert(iax, nsteps2[i])
 
-    in1 = in1.reshape(*reshape_size1)
-    in2 = in2.reshape(*reshape_size2)
+    in1 = xp.reshape(in1, tuple(reshape_size1))
+    in2 = xp.reshape(in2, tuple(reshape_size2))
 
     # Do the convolution.
     fft_shape = [block_size[i] for i in axes]
-    ret = _freq_domain_conv(in1, in2, fft_axes, fft_shape, calc_fast_len=False)
+    ret = _freq_domain_conv(xp, in1, in2, fft_axes, fft_shape, calc_fast_len=False)
 
     # Do the overlap-add.
     for ax, ax_fft, ax_split in zip(axes, fft_axes, split_axes):
@@ -1013,10 +1054,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     slice_final = tuple([slice(islice) for islice in shape_final])
     ret = ret[slice_final]
 
-    return _apply_conv_mode(ret, s1, s2, mode, axes)
+    return _apply_conv_mode(ret, s1, s2, mode, axes, xp)
 
 
-def _numeric_arrays(arrays, kinds='buifc'):
+def _numeric_arrays(arrays, kinds='buifc', xp=None):
     """
     See if a list of arrays are all numeric.
 
@@ -1029,7 +1070,12 @@ def _numeric_arrays(arrays, kinds='buifc'):
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
     """
-    if isinstance(arrays, np.ndarray):
+    if xp is None:
+        xp = array_namespace(*arrays)
+    if not is_numpy(xp):
+        return True
+
+    if type(arrays) is np.ndarray:
         return arrays.dtype.kind in kinds
     for array_ in arrays:
         if array_.dtype.kind not in kinds:
@@ -1122,15 +1168,26 @@ def _fftconv_faster(x, h, mode):
     return O_fft * fft_ops < O_direct * direct_ops + O_offset
 
 
-def _reverse_and_conj(x):
+def _reverse_and_conj(x, xp):
     """
     Reverse array `x` in all dimensions and perform the complex conjugate
     """
-    reverse = (slice(None, None, -1),) * x.ndim
-    return x[reverse].conj()
+    if not is_torch(xp):
+        reverse = (slice(None, None, -1),) * x.ndim
+        x_rev = x[reverse]
+    else:
+        # NB: is a copy, not a view as torch does not allow negative indices
+        # in slices, x-ref https://github.com/pytorch/pytorch/issues/59786
+        x_rev = xp.flip(x)
+
+    # cf https://github.com/data-apis/array-api/issues/824
+    if xp.isdtype(x.dtype, 'complex floating'):
+        return xp.conj(x_rev)
+    else:
+        return x_rev
 
 
-def _np_conv_ok(volume, kernel, mode):
+def _np_conv_ok(volume, kernel, mode, xp):
     """
     See if numpy supports convolution of `volume` and `kernel` (i.e. both are
     1D ndarrays and of the appropriate shape).  NumPy's 'same' mode uses the
@@ -1142,7 +1199,7 @@ def _np_conv_ok(volume, kernel, mode):
         if mode in ('full', 'valid'):
             return True
         elif mode == 'same':
-            return volume.size >= kernel.size
+            return xp_size(volume) >= xp_size(kernel)
     else:
         return False
 
@@ -1290,11 +1347,18 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     `convolve`.
 
     """
-    volume = np.asarray(in1)
-    kernel = np.asarray(in2)
+    try:
+        xp = array_namespace(in1, in2)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
 
-    _reject_objects(volume, 'choose_conv_method')
-    _reject_objects(kernel, 'choose_conv_method')
+    if is_numpy(xp):
+        _reject_objects(in1, 'choose_conv_method')
+        _reject_objects(in2, 'choose_conv_method')
+
+    volume = xp.asarray(in1)
+    kernel = xp.asarray(in2)
 
     if measure:
         times = {}
@@ -1308,16 +1372,16 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     # for integer input,
     # catch when more precision required than float provides (representing an
     # integer as float can lose precision in fftconvolve if larger than 2**52)
-    if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
-        max_value = int(np.abs(volume).max()) * int(np.abs(kernel).max())
-        max_value *= int(min(volume.size, kernel.size))
+    if any([_numeric_arrays([x], kinds='ui', xp=xp) for x in [volume, kernel]]):
+        max_value = int(xp.max(xp.abs(volume))) * int(xp.max(xp.abs(kernel)))
+        max_value *= int(min(xp_size(volume), xp_size(kernel)))
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
-    if _numeric_arrays([volume, kernel], kinds='b'):
+    if _numeric_arrays([volume, kernel], kinds='b', xp=xp):
         return 'direct'
 
-    if _numeric_arrays([volume, kernel]):
+    if _numeric_arrays([volume, kernel], xp=xp):
         if _fftconv_faster(volume, kernel, mode):
             return 'fft'
 
@@ -1422,11 +1486,18 @@ def convolve(in1, in2, mode='full', method='auto'):
     >>> fig.show()
 
     """
-    volume = np.asarray(in1)
-    kernel = np.asarray(in2)
+    try:
+        xp = array_namespace(in1, in2)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
 
-    _reject_objects(volume, 'correlate')
-    _reject_objects(kernel, 'correlate')
+    if is_numpy(xp):
+        _reject_objects(in1, 'correlate')
+        _reject_objects(in2, 'correlate')
+
+    volume = xp.asarray(in1)
+    kernel = xp.asarray(in2)
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
@@ -1443,23 +1514,27 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
-        result_type = np.result_type(volume, kernel)
-        if result_type.kind in {'u', 'i'}:
-            out = np.around(out)
+        result_type = xp.result_type(volume, kernel)
+        if xp.isdtype(result_type, 'integral'):
+            out = xp.round(out)
 
-        if np.isnan(out.flat[0]) or np.isinf(out.flat[0]):
+        if xp.isnan(xp.reshape(out, (-1,))[0]) or xp.isinf(xp.reshape(out, (-1,))[0]):
             warnings.warn("Use of fft convolution on input with NAN or inf"
                           " results in NAN or inf output. Consider using"
                           " method='direct' instead.",
                           category=RuntimeWarning, stacklevel=2)
 
-        return out.astype(result_type)
+        return xp.astype(out, result_type)
     elif method == 'direct':
         # fastpath to faster numpy.convolve for 1d inputs when possible
-        if _np_conv_ok(volume, kernel, mode):
-            return np.convolve(volume, kernel, mode)
+        if _np_conv_ok(volume, kernel, mode, xp):
+            # convert to numpy and back
+            a_volume = np.asarray(volume)
+            a_kernel = np.asarray(kernel)
+            out = np.convolve(a_volume, a_kernel, mode)
+            return xp.asarray(out)
 
-        return correlate(volume, _reverse_and_conj(kernel), mode, 'direct')
+        return correlate(volume, _reverse_and_conj(kernel, xp), mode, 'direct')
     else:
         raise ValueError("Acceptable method flags are 'auto',"
                          " 'direct', or 'fft'.")
@@ -1519,17 +1594,19 @@ def order_filter(a, domain, rank):
            [ 20,  21,  22,  23,  24]])
 
     """
-    domain = np.asarray(domain)
+    xp = array_namespace(a, domain)
+
+    domain = xp.asarray(domain)
     for dimsize in domain.shape:
         if (dimsize % 2) != 1:
             raise ValueError("Each dimension of domain argument "
                              "should have an odd number of elements.")
 
-    a = np.asarray(a)
-    if not (np.issubdtype(a.dtype, np.integer)
-            or a.dtype in [np.float32, np.float64]):
+    a = xp.asarray(a)
+    if not (
+        xp.isdtype(a.dtype, "integral") or a.dtype in (xp.float32, xp.float64)
+    ):
         raise ValueError(f"dtype={a.dtype} is not supported by order_filter")
-
     result = ndimage.rank_filter(a, rank, footprint=domain, mode='constant')
     return result
 
@@ -1576,16 +1653,20 @@ def medfilt(volume, kernel_size=None):
     the specialised function `scipy.signal.medfilt2d` may be faster.
 
     """
-    volume = np.atleast_1d(volume)
-    if not (np.issubdtype(volume.dtype, np.integer)
-            or volume.dtype in [np.float32, np.float64]):
+    xp = array_namespace(volume)
+    volume = xp.asarray(volume)
+    if volume.ndim == 0:
+        volume = xpx.atleast_nd(volume, ndim=1, xp=xp)
+
+    if not (xp.isdtype(volume.dtype, "integral") or
+            volume.dtype in [xp.float32, xp.float64]):
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
     if kernel_size is None:
         kernel_size = [3] * volume.ndim
-    kernel_size = np.asarray(kernel_size)
+    kernel_size = xp.asarray(kernel_size)
     if kernel_size.shape == ():
-        kernel_size = np.repeat(kernel_size.item(), volume.ndim)
+        kernel_size = xp.repeat(kernel_size, volume.ndim)
 
     for k in range(volume.ndim):
         if (kernel_size[k] % 2) != 1:
@@ -1651,28 +1732,32 @@ def wiener(im, mysize=None, noise=None):
     >>> plt.show()
 
     """
-    im = np.asarray(im)
+    xp = array_namespace(im)
+
+    im = xp.asarray(im)
     if mysize is None:
         mysize = [3] * im.ndim
-    mysize = np.asarray(mysize)
-    if mysize.shape == ():
-        mysize = np.repeat(mysize.item(), im.ndim)
+    mysize_arr = xp.asarray(mysize)
+    if mysize_arr.shape == ():
+        mysize = [mysize] * im.ndim
 
     # Estimate the local mean
     size = math.prod(mysize)
-    lMean = correlate(im, np.ones(mysize), 'same') / size
+    lMean = correlate(im, xp.ones(mysize), 'same')
+    lsize = float(size)
+    lMean = lMean / lsize
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, np.ones(mysize), 'same') / size - lMean ** 2)
+    lVar = (correlate(im ** 2, xp.ones(mysize), 'same') / lsize - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
-        noise = np.mean(np.ravel(lVar), axis=0)
+        noise = xp.mean(xp.reshape(lVar, (-1,)), axis=0)
 
     res = (im - lMean)
     res *= (1 - noise / lVar)
     res += lMean
-    out = np.where(lVar < noise, lMean, res)
+    out = xp.where(lVar < noise, lMean, res)
 
     return out
 
@@ -1752,6 +1837,10 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     >>> fig.show()
 
     """
+    xp = array_namespace(in1, in2)
+
+    # NB: do work in NumPy, only convert the output
+
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
 
@@ -1764,7 +1853,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
     out = _sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
-    return out
+    return xp.asarray(out)
 
 
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
@@ -1849,6 +1938,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     >>> fig.show()
 
     """
+    xp = array_namespace(in1, in2)
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
 
@@ -1866,7 +1956,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     if swapped_inputs:
         out = out[::-1, ::-1]
 
-    return out
+    return xp.asarray(out)
 
 
 def medfilt2d(input, kernel_size=3):
@@ -1957,12 +2047,14 @@ def medfilt2d(input, kernel_size=3):
     # kernel numbers must be odd and not exceed original array dim
 
     """
+    xp = array_namespace(input)
+
     image = np.asarray(input)
 
     # checking dtype.type, rather than just dtype, is necessary for
     # excluding np.longdouble with MS Visual C.
     if image.dtype.type not in (np.ubyte, np.float32, np.float64):
-        return medfilt(image, kernel_size)
+        return xp.asarray(medfilt(image, kernel_size))
 
     if kernel_size is None:
         kernel_size = [3] * 2
@@ -1974,7 +2066,8 @@ def medfilt2d(input, kernel_size=3):
         if (size % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
-    return _sigtools._medfilt2d(image, kernel_size)
+    result_np = _sigtools._medfilt2d(image, kernel_size)
+    return xp.asarray(result_np)
 
 
 def lfilter(b, a, x, axis=-1, zi=None):
@@ -2101,12 +2194,22 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    try:
+        xp = array_namespace(b, a, x, zi)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(x, 'lfilter')
+        _reject_objects(a, 'lfilter')
+        _reject_objects(b, 'lfilter')
+
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
-
-    _reject_objects(x, 'lfilter')
-    _reject_objects(a, 'lfilter')
-    _reject_objects(b, 'lfilter')
+    x = np.asarray(x)
+    if zi is not None:
+       zi = np.asarray(zi)
 
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
@@ -2165,16 +2268,18 @@ def lfilter(b, a, x, axis=-1, zi=None):
         out = out_full[tuple(ind)]
 
         if zi is None:
-            return out
+            return xp.asarray(out)
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
             zf = out_full[tuple(ind)]
-            return out, zf
+            return xp.asarray(out), xp.asarray(zf)
     else:
         if zi is None:
-            return _sigtools._linear_filter(b, a, x, axis)
+            result =_sigtools._linear_filter(b, a, x, axis)
+            return xp.asarray(result)
         else:
-            return _sigtools._linear_filter(b, a, x, axis, zi)
+            out, zf = _sigtools._linear_filter(b, a, x, axis, zi)
+            return xp.asarray(out), xp.asarray(zf)
 
 
 def lfiltic(b, a, y, x=None):
@@ -2217,40 +2322,59 @@ def lfiltic(b, a, y, x=None):
     lfilter, lfilter_zi
 
     """
-    N = np.size(a) - 1
-    M = np.size(b) - 1
+    try:
+        xp = array_namespace(a, b, y, x)
+    except TypeError:
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(a, 'lfiltic')
+        _reject_objects(b, 'lfiltic')
+        _reject_objects(y, 'lfiltic')
+        if x is not None:
+            _reject_objects(x, 'lfiltic')
+
+    a = xp.asarray(a)
+    b = xp.asarray(b)
+
+    N = xp_size(a) - 1
+    M = xp_size(b) - 1
     K = max(M, N)
-    y = np.asarray(y)
+    y = xp.asarray(y)
 
     if x is None:
-        result_type = np.result_type(np.asarray(b), np.asarray(a), y)
-        if result_type.kind in 'bui':
-            result_type = np.float64
-        x = np.zeros(M, dtype=result_type)
+        result_type = xp.result_type(b, a, y)
+        if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
+            result_type = xp.float64
+        x = xp.zeros(M, dtype=result_type)
     else:
-        x = np.asarray(x)
+        x = xp.asarray(x)
 
-        result_type = np.result_type(np.asarray(b), np.asarray(a), y, x)
-        if result_type.kind in 'bui':
-            result_type = np.float64
-        x = x.astype(result_type)
+        result_type = xp.result_type(b, a, y, x)
+        if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
+            result_type = xp.float64
+        x = xp.astype(x, result_type)
 
-        L = np.size(x)
+        concat = array_namespace(a).concat
+
+        L = xp_size(x)
         if L < M:
-            x = np.r_[x, np.zeros(M - L)]
+            x = concat((x, xp.zeros(M - L)))
 
-    y = y.astype(result_type)
-    zi = np.zeros(K, result_type)
+    y = xp.astype(y, result_type)
+    zi = xp.zeros(K, dtype=result_type)
 
-    L = np.size(y)
+    concat = array_namespace(xp.ones(3)).concat
+
+    L = xp_size(y)
     if L < N:
-        y = np.r_[y, np.zeros(N - L)]
+        y = concat((y, np.zeros(N - L)))
 
     for m in range(M):
-        zi[m] = np.sum(b[m + 1:] * x[:M - m], axis=0)
+        zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
 
     for m in range(N):
-        zi[m] -= np.sum(a[m + 1:] * y[:N - m], axis=0)
+        zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
 
     return zi
 
@@ -2296,19 +2420,21 @@ def deconvolve(signal, divisor):
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
 
     """
-    num = np.atleast_1d(signal)
-    den = np.atleast_1d(divisor)
+    xp = array_namespace(signal, divisor)
+
+    num = xpx.atleast_nd(xp.asarray(signal), ndim=1, xp=xp)
+    den = xpx.atleast_nd(xp.asarray(divisor), ndim=1, xp=xp)
     if num.ndim > 1:
         raise ValueError("signal must be 1-D.")
     if den.ndim > 1:
         raise ValueError("divisor must be 1-D.")
-    N = len(num)
-    D = len(den)
+    N = num.shape[0]
+    D = den.shape[0]
     if D > N:
         quot = []
         rem = num
     else:
-        input = np.zeros(N - D + 1, float)
+        input = xp.zeros(N - D + 1, dtype=xp.float64)
         input[0] = 1
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
@@ -2408,16 +2534,19 @@ def hilbert(x, N=None, axis=-1):
     >>> plt.show()
 
     """
-    x = np.asarray(x)
-    if np.iscomplexobj(x):
+    xp = array_namespace(x)
+
+    x = xp.asarray(x)
+    if xp.isdtype(x.dtype, 'complex floating'):
         raise ValueError("x must be real.")
+
     if N is None:
         N = x.shape[axis]
     if N <= 0:
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis)
-    h = np.zeros(N, dtype=Xf.dtype)
+    h = xp.zeros(N, dtype=Xf.dtype)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
         h[1:N // 2] = 2
@@ -2426,7 +2555,7 @@ def hilbert(x, N=None, axis=-1):
         h[1:(N + 1) // 2] = 2
 
     if x.ndim > 1:
-        ind = [np.newaxis] * x.ndim
+        ind = [xp.newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[tuple(ind)]
     x = sp_fft.ifft(Xf * h, axis=axis)
@@ -2455,24 +2584,26 @@ def hilbert2(x, N=None):
         https://en.wikipedia.org/wiki/Analytic_signal
 
     """
-    x = np.atleast_2d(x)
+    xp = array_namespace(x)
+    x = xpx.atleast_nd(xp.asarray(x), ndim=2, xp=xp)
     if x.ndim > 2:
         raise ValueError("x must be 2-D.")
-    if np.iscomplexobj(x):
+    if xp.isdtype(x.dtype, 'complex floating'):
         raise ValueError("x must be real.")
+
     if N is None:
         N = x.shape
     elif isinstance(N, int):
         if N <= 0:
             raise ValueError("N must be positive.")
         N = (N, N)
-    elif len(N) != 2 or np.any(np.asarray(N) <= 0):
+    elif len(N) != 2 or xp.any(xp.asarray(N) <= 0):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = np.zeros(N[0], dtype=Xf.dtype)
-    h2 = np.zeros(N[1], dtype=Xf.dtype)
+    h1 = xp.zeros(N[0], dtype=Xf.dtype)
+    h2 = xp.zeros(N[1], dtype=Xf.dtype)
     for h in (h1, h2):
         N1 = h.shape[0]
         if N1 % 2 == 0:
@@ -2482,10 +2613,10 @@ def hilbert2(x, N=None):
             h[0] = 1
             h[1:(N1 + 1) // 2] = 2
 
-    h = h1[:, np.newaxis] * h2[np.newaxis, :]
+    h = h1[:, xp.newaxis] * h2[xp.newaxis, :]
     k = x.ndim
     while k > 2:
-        h = h[:, np.newaxis]
+        h = h[:, xp.newaxis]
         k -= 1
     x = sp_fft.ifft2(Xf * h, axes=(0, 1))
     return x
@@ -3916,13 +4047,20 @@ def detrend(data: np.ndarray, axis: int = -1,
     """
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
+
+    # XXX simplify when data-apis/array-api-compat#147 is available
+    if isinstance(bp, int):
+       xp = array_namespace(data)
+    else:
+       xp = array_namespace(data, bp)
+
     data = np.asarray(data)
     dtype = data.dtype.char
     if dtype not in 'dfDF':
         dtype = 'd'
     if type in ['constant', 'c']:
         ret = data - np.mean(data, axis, keepdims=True)
-        return ret
+        return xp.asarray(ret)
     else:
         dshape = data.shape
         N = dshape[axis]
@@ -3958,7 +4096,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         # Put data back in original shape.
         newdata = newdata.reshape(newdata_shape)
         ret = np.moveaxis(newdata, 0, axis)
-        return ret
+        return xp.asarray(ret)
 
 
 def lfilter_zi(b, a):
@@ -4043,6 +4181,7 @@ def lfilter_zi(b, a):
     transient until the input drops from 0.5 to 0.0.
 
     """
+    xp = array_namespace(b, a)
 
     # FIXME: Can this function be replaced with an appropriate
     # use of lfiltic?  For example, when b,a = butter(N,Wn),
@@ -4052,16 +4191,16 @@ def lfilter_zi(b, a):
     # We could use scipy.signal.normalize, but it uses warnings in
     # cases where a ValueError is more appropriate, and it allows
     # b to be 2D.
-    b = np.atleast_1d(b)
+    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
     if b.ndim != 1:
         raise ValueError("Numerator b must be 1-D.")
-    a = np.atleast_1d(a)
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
     if a.ndim != 1:
         raise ValueError("Denominator a must be 1-D.")
 
-    while len(a) > 1 and a[0] == 0.0:
+    while a.shape[0] > 1 and a[0] == 0.0:
         a = a[1:]
-    if a.size < 1:
+    if xp_size(a) < 1:
         raise ValueError("There must be at least one nonzero `a` coefficient.")
 
     if a[0] != 1.0:
@@ -4069,18 +4208,20 @@ def lfilter_zi(b, a):
         b = b / a[0]
         a = a / a[0]
 
-    n = max(len(a), len(b))
+    n = max(a.shape[0], b.shape[0])
 
     # Pad a or b with zeros so they are the same length.
-    if len(a) < n:
-        a = np.r_[a, np.zeros(n - len(a), dtype=a.dtype)]
-    elif len(b) < n:
-        b = np.r_[b, np.zeros(n - len(b), dtype=b.dtype)]
+    if a.shape[0] < n:
+        a = xp.concat((a, xp.zeros(n - a.shape[0], dtype=a.dtype)))
+    elif b.shape[0] < n:
+        b = xp.concat((b, xp.zeros(n - b.shape[0], dtype=b.dtype)))
 
-    IminusA = np.eye(n - 1, dtype=np.result_type(a, b)) - linalg.companion(a).T
+    dt = xp.result_type(a, b)
+    IminusA = np.eye(n - 1) - linalg.companion(a).T
+    IminusA = xp.asarray(IminusA, dtype=dt)
     B = b[1:] - a[1:] * b[0]
     # Solve zi = A*zi + B
-    zi = np.linalg.solve(IminusA, B)
+    zi = xp.linalg.solve(IminusA, B)
 
     # For future reference: we could also use the following
     # explicit formulas to solve the linear system:
@@ -4151,24 +4292,26 @@ def sosfilt_zi(sos):
     >>> plt.show()
 
     """
-    sos = np.asarray(sos)
+    xp = array_namespace(sos)
+
+    sos = xp.asarray(sos)
     if sos.ndim != 2 or sos.shape[1] != 6:
         raise ValueError('sos must be shape (n_sections, 6)')
 
-    if sos.dtype.kind in 'bui':
-        sos = sos.astype(np.float64)
+    if xp.isdtype(sos.dtype, ("integral", "bool")):
+        sos = xp.astype(sos, xp.float64)
 
     n_sections = sos.shape[0]
-    zi = np.empty((n_sections, 2), dtype=sos.dtype)
+    zi = xp.empty((n_sections, 2), dtype=sos.dtype)
     scale = 1.0
     for section in range(n_sections):
         b = sos[section, :3]
         a = sos[section, 3:]
-        zi[section] = scale * lfilter_zi(b, a)
+        zi[section, ...] = scale * lfilter_zi(b, a)
         # If H(z) = B(z)/A(z) is this section's transfer function, then
         # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
         # state value of this section's step response.
-        scale *= b.sum() / a.sum()
+        scale *= xp.sum(b) / xp.sum(a)
 
     return zi
 
@@ -4526,6 +4669,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     2.875334415008979e-10
 
     """
+    xp = array_namespace(b, a, x)
+
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
     x = np.asarray(x)
@@ -4535,7 +4680,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     if method == "gust":
         y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
-        return y
+        return xp.asarray(y)
 
     # method == "pad"
     edge, ext = _validate_pad(padtype, padlen, x, axis,
@@ -4568,7 +4713,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
 
-    return y
+    return xp.asarray(y)
 
 
 def _validate_pad(padtype, padlen, x, axis, ntaps):
@@ -4682,10 +4827,17 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    _reject_objects(sos, 'sosfilt')
-    _reject_objects(x, 'sosfilt')
-    if zi is not None:
-        _reject_objects(zi, 'sosfilt')
+    try:
+        xp = array_namespace(sos, x, zi)
+    except TypeError:
+        # either in1 or in2 are object arrays
+        xp = np_compat
+
+    if is_numpy(xp):
+        _reject_objects(sos, 'sosfilt')
+        _reject_objects(x, 'sosfilt')
+        if zi is not None:
+            _reject_objects(zi, 'sosfilt')
 
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
@@ -4699,7 +4851,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
     if dtype.char not in 'fdgFDGO':
         raise NotImplementedError(f"input type '{dtype}' not supported")
     if zi is not None:
-        zi = np.array(zi, dtype)  # make a copy so that we can operate in place
+        zi = np.asarray(zi, dtype=dtype)
+
+        # make a copy so that we can operate in place
+        # NB: 1. use xp_copy to paper over numpy 1/2 copy= keyword
+        #     2. make sure the copied zi remains a numpy array
+        zi = xp_copy(zi, xp=array_namespace(zi))
         if zi.shape != x_zi_shape:
             raise ValueError('Invalid zi shape. With axis=%r, an input with '
                              'shape %r, and an sos array with %d sections, zi '
@@ -4711,7 +4868,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         return_zi = False
     axis = axis % x.ndim  # make positive
     x = np.moveaxis(x, axis, -1)
-    zi = np.moveaxis(zi, [0, axis + 1], [-2, -1])
+    zi = np.moveaxis(zi, (0, axis + 1), (-2, -1))
     x_shape, zi_shape = x.shape, zi.shape
     x = np.reshape(x, (-1, x.shape[-1]))
     x = np.array(x, dtype, order='C')  # make a copy, can modify in place
@@ -4722,10 +4879,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     x = np.moveaxis(x, -1, axis)
     if return_zi:
         zi.shape = zi_shape
-        zi = np.moveaxis(zi, [-2, -1], [0, axis + 1])
-        out = (x, zi)
+        zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
+        out = (xp.asarray(x), xp.asarray(zi))
     else:
-        out = x
+        out = xp.asarray(x)
     return out
 
 
@@ -4818,6 +4975,8 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(sos, x)
+
     sos, n_sections = _validate_sos(sos)
     x = _validate_x(x)
 
@@ -4839,7 +4998,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     y = axis_reverse(y, axis=axis)
     if edge > 0:
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
-    return y
+    return xp.asarray(y)
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):

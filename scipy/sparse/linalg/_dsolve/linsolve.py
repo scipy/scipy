@@ -371,6 +371,10 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Notes
     -----
+    When a real array is factorized and the returned SuperLU object's ``solve()``
+    method is used with complex arguments an error is generated. Instead, cast the
+    initial array to complex and then factorize.
+
     This function uses the SuperLU library.
 
     References
@@ -468,6 +472,10 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Notes
     -----
+    When a real array is factorized and the returned SuperLU object's ``solve()`` method
+    is used with complex arguments an error is generated. Instead, cast the initial 
+    array to complex and then factorize.
+
     To improve the better approximation to the inverse, you may need to
     increase `fill_factor` AND decrease `drop_tol`.
 
