@@ -1114,11 +1114,17 @@ class TestMakeDistribution:
             assert hasattr(stats, dist)
 
         dist = stats.make_distribution(stats.gamma)
-        assert str(dist(a=2)) == "Gamma(a=2.0)"
+        if np.__version__ < "2":
+            assert str(dist(a=2)) == "Gamma(a=2.0)"
+        else:
+            assert str(dist(a=2)) == "Gamma(a=np.float64(2.0))"
         assert 'Gamma' in dist.__doc__
 
         dist = stats.make_distribution(stats.halfgennorm)
-        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
+        if np.__version__ < "2":
+            str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
+        else:
+            assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
 
@@ -1381,10 +1387,18 @@ class TestTransforms:
     def test_monotonic_transforms(self):
         # Some tests of monotonic transforms that are better to be grouped or
         # don't fit well above
+
         X = Uniform(a=1, b=2)
-        assert repr(stats.log(X)) == str(stats.log(X)) == "log(Uniform(a=1.0, b=2.0))"
-        assert repr(1 / X) == str(1 / X) == "inv(Uniform(a=1.0, b=2.0))"
-        assert repr(stats.exp(X)) == str(stats.exp(X)) == "exp(Uniform(a=1.0, b=2.0))"
+        X_repr = (
+            "Uniform(a=1.0, b=2.0)" if np.__version__ < "2"
+            else "Uniform(a=np.float64(1.0), b=np.float64(2.0))"
+        )
+
+        assert repr(stats.log(X)) == str(stats.log(X)) == (
+            f"log({X_repr})"
+        )
+        assert repr(1 / X) == str(1 / X) == f"1/({X_repr})"
+        assert repr(stats.exp(X)) == str(stats.exp(X)) == f"exp({X_repr})"
 
         X = Uniform(a=-1, b=2)
         message = "Division by a random variable is only implemented when the..."
@@ -1634,17 +1648,106 @@ class TestFullCoverage:
         msg = _generate_domain_support(_LogUniform)
         assert "accepts two parameterizations" in msg
 
-    def test_ContinuousDistribution__str__(self):
+    def test_ContinuousDistribution__repr__(self):
         X = Uniform(a=0, b=1)
-        assert str(X) == "Uniform(a=0.0, b=1.0)"
-
-        assert str(X*3 + 2) == "ShiftedScaledUniform(a=0.0, b=1.0, loc=2.0, scale=3.0)"
+        if np.__version__ < "2":
+            assert repr(X) == "Uniform(a=0.0, b=1.0)"
+        else:
+            assert repr(X) == "Uniform(a=np.float64(0.0), b=np.float64(1.0))"
+        if np.__version__ < "2":
+            assert repr(X*3 + 2) == "3.0*Uniform(a=0.0, b=1.0) + 2.0"
+        else:
+            assert repr(X*3 + 2) == (
+                "np.float64(3.0)*Uniform(a=np.float64(0.0), b=np.float64(1.0))"
+                " + np.float64(2.0)"
+            )
 
         X = Uniform(a=np.zeros(4), b=1)
-        assert str(X) == "Uniform(a, b, shape=(4,))"
+        assert repr(X) == "Uniform(a=array([0., 0., 0., 0.]), b=1)"
 
         X = Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
-        assert str(X) == "Uniform(a, b, shape=(4,), dtype=float32)"
+        assert repr(X) == (
+            "Uniform(a=array([0., 0., 0., 0.], dtype=float32),"
+            " b=array([1., 1., 1., 1.], dtype=float32))"
+        )
+
+
+class TestReprs:
+    U = Uniform(a=0, b=1)
+    V = Uniform(a=np.float32(0.0), b=np.float32(1.0))
+    X = Normal(mu=-1, sigma=1)
+    Y = Normal(mu=1, sigma=1)
+    Z = Normal(mu=np.zeros(1000), sigma=1)
+
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            U,
+            U - np.array([1.0, 2.0]),
+            pytest.param(
+                V,
+                marks=pytest.mark.skipif(
+                    np.__version__ < "2",
+                    reason="numpy 1.x didn't have dtype in repr",
+                )
+            ),
+            pytest.param(
+                np.ones(2, dtype=np.float32)*V + np.zeros(2, dtype=np.float64),
+                marks=pytest.mark.skipif(
+                    np.__version__ < "2",
+                    reason="numpy 1.x didn't have dtype in repr",
+                )
+            ),
+            3*U + 2,
+            U**4,
+            (3*U + 2)**4,
+            (3*U + 2)**3,
+            2**U,
+            2**(3*U + 1),
+            1 / (1 + U),
+            stats.order_statistic(U, r=3, n=5),
+            stats.truncate(U, 0.2, 0.8),
+            stats.Mixture([X, Y], weights=[0.3, 0.7]),
+            abs(U),
+            stats.exp(U),
+            stats.log(1 + U),
+            np.array([1.0, 2.0])*U + np.array([2.0, 3.0]),
+        ]
+    )
+    def test_executable(self, dist):
+        # Test that reprs actually evaluate to proper distribution
+        # provided relevant imports are made.
+        from numpy import array  # noqa: F401
+        from numpy import float32  # noqa: F401
+        from scipy.stats import abs, exp, log, order_statistic, truncate # noqa: F401
+        from scipy.stats import Mixture, Normal # noqa: F401
+        from scipy.stats._new_distributions import Uniform # noqa: F401
+        new_dist = eval(repr(dist))
+        # A basic check that the distributions are the same
+        sample1 = dist.sample(shape=10, rng=1234)
+        sample2 = new_dist.sample(shape=10, rng=1234)
+        assert_equal(sample1, sample2)
+        assert sample1.dtype is sample2.dtype
+
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            Z,
+            np.full(1000, 2.0) * X + 1.0,
+            2.0 * X + np.full(1000, 1.0),
+            np.full(1000, 2.0) * X + 1.0,
+            stats.truncate(Z, -1, 1),
+            stats.truncate(Z, -np.ones(1000), np.ones(1000)),
+            stats.order_statistic(X, r=np.arange(1, 1000), n=1000),
+            Z**2,
+            1.0 / (1 + stats.exp(Z)),
+            2**Z,
+        ]
+    )
+    def test_not_too_long(self, dist):
+        # Tests that array summarization is working to ensure reprs aren't too long.
+        # None of the reprs above will be executable.
+        assert len(repr(dist)) < 250
 
 
 class MixedDist(ContinuousDistribution):
