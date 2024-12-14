@@ -17,11 +17,11 @@ kernelspec:
 ```
 
 (rv_infrastructure)=
-## Random Variable Transition Guide
+# Random Variable Transition Guide
 
 +++
 
-### Background
+## Background
 
 +++
 
@@ -69,7 +69,7 @@ To address these and other shortcomings, [gh-15928](https://github.com/scipy/sci
 
 +++
 
-### Basics
+## Basics
 
 +++
 
@@ -194,7 +194,7 @@ Y.plot()
 plt.show()
 ```
 
-#### Moments
+### Moments
 
 +++
 
@@ -246,7 +246,7 @@ For convenience, the `kurtosis` method offers a `convention` argument to select 
 stats.Normal().kurtosis(convention='excess'), stats.Normal().kurtosis(convention='non-excess')
 ```
 
-#### Random Variates
+### Random Variates
 
 +++
 
@@ -292,7 +292,7 @@ Y = stats.Normal(mu = [0, 1])
 Y.sample(shape=(3, 4)).shape  # the sample has shape (3, 4); each element is of shape (2,)
 ```
 
-#### Probability Mass (AKA "Confidence") Intervals
+### Probability Mass (AKA "Confidence") Intervals
 
 +++
 
@@ -310,7 +310,7 @@ p = 1 - a
 X.icdf(p/2), X.iccdf(p/2)
 ```
 
-##### Likelihood Function
+#### Likelihood Function
 
 +++
 
@@ -330,7 +330,7 @@ X = stats.Normal(mu=mu, sigma=sigma)
 -X.logpdf(data).sum()
 ```
 
-#### Expected Values
+### Expected Values
 
 +++
 
@@ -382,11 +382,11 @@ Note that the `cdf` method of the new random variables accepts two arguments to 
 
 +++
 
-#### Fitting
+### Fitting
 
 +++
 
-##### Location / Scale Estimation
+#### Location / Scale Estimation
 The old infrastructure offered a function to estimate location and scale parameters of the distribution from data.
 
 ```{code-cell} ipython3
@@ -414,7 +414,7 @@ fit_loc_scale(X, data)
 
 Note that the estimates are quite poor in this example, and poor performance of the heuristic factored into the decision not to provide a replacement.
 
-##### Maximum Likelihood Estimation
+#### Maximum Likelihood Estimation
 
 The last method of the old infrastructure is `fit`, which estimates the location, scale, and shape parameters of an underlying distribution given a sample from the distribution.
 
@@ -577,12 +577,12 @@ res = optimize.minimize(f, x0, bounds=bounds, method='slsqp')  # easily change t
 res
 ```
 
-### New and Advanced Features
+## New and Advanced Features
 
 +++
 
 <a id='Transformations'></a>
-#### Transformations
+### Transformations
 
 Mathematical transformations can be applied to random variables. For instance, many elementary arithmetic operations (`+`, `-`, `*`, `/`, `**`) between random variables and scalars work.
 
@@ -699,7 +699,7 @@ plt.title("Double Gammma PDF")
 plt.show()
 ```
 
-##### Limitations
+#### Limitations
 
 While most arithmetic transformations between random variables and Python scalars or NumPy arrays are supported, there are a few restrictions.
 
@@ -724,7 +724,7 @@ plt.ylim(0, 2)
 plt.show()
 ```
 
-#### Quasi-Monte Carlo Sampling
+### Quasi-Monte Carlo Sampling
 
 +++
 
@@ -769,7 +769,7 @@ plt.legend()
 plt.show()
 ```
 
-#### Accuracy
+### Accuracy
 
 +++
 
@@ -841,7 +841,7 @@ When in doubt, consider trying different `method`s to compute a given quantity.
 
 +++
 
-#### Performance
+### Performance
 
 +++
 
@@ -877,7 +877,7 @@ Comparable performance improvements can be expected for array calculations whene
 
 +++
 
-#### Visualization
+### Visualization
 
 We can readily visualize functions of the distribution underlying random variables using the convenience method, `plot`.
 
@@ -899,7 +899,7 @@ X.plot('cdf', 'pdf', t=('x', -10, 10))
 plt.show()
 ```
 
-#### Order Statistics
+### Order Statistics
 As seen in the "Fit" section above, there is now support for distributions of [order statistics](https://en.wikipedia.org/wiki/Order_statistic) of random samples from distribution. For example, we can plot the probability density functions of the order statistics of a normal distribution with sample size 4.
 
 ```{code-cell} ipython3
@@ -917,7 +917,7 @@ Compute the expected values of these order statistics:
 Y.mean()
 ```
 
-### Conclusion
+## Conclusion
 
 +++
 
