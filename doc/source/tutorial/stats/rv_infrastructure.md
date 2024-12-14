@@ -154,7 +154,9 @@ The new infrastructure has several *new* methods in the same vein as those above
 And it has a new `plot` method for convenience
 
 ```{code-cell} ipython3
-X.plot();
+import matplotlib.pyplot as plt
+X.plot()
+plt.show()
 ```
 
 Most of the remaining methods of the old infrastructure (`rvs`, `moment`, `stats`, `interval`, `fit`, `nnlf`, `fit_loc_scale`, and `expect`) can be replaced, but some care is required. Before describing the replacements, we briefly mention how to work with random variables that are not normally distributed: almost all old distribution objects can be converted into a new distribution class with `scipy.stats.make_distribution`, and the new distribution class can be instantiated by passing the shape parameters as keyword arguments. For instance, consider the [Weibull distribution](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weibull_min.html#scipy.stats.weibull_min). We can create a new class that is an abstraction of the distribution family like:
@@ -169,7 +171,8 @@ According to the documentation of [`weibull_min`](https://docs.scipy.org/doc/sci
 ```{code-cell} ipython3
 c = 2.
 X = Weibull(c=c)
-X.plot();
+X.plot()
+plt.show()
 ```
 
 Previously, all distributions inherited `loc` and `scale` distribution parameters.
@@ -177,14 +180,16 @@ Previously, all distributions inherited `loc` and `scale` distribution parameter
 
 ```{code-cell} ipython3
 Y = 2*X + 1
-Y.plot();  # note the change in the abscissae
+Y.plot()  # note the change in the abscissae
+plt.show()
 ```
 
 A separate distribution, `weibull_max`, was provided as the reflection of `weibull_min` about the origin. Now, this is just `-X`.
 
 ```{code-cell} ipython3
 Y = -X
-Y.plot();
+Y.plot()
+plt.show()
 ```
 
 ### Moments
@@ -490,7 +495,7 @@ The value of the objective function is essentially identical, and the PDFs are i
 
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
-x = np.linspace(0, 15, 300)
+x = np.linspace(eps, 15, 300)
 
 c, scale = res_mle.x
 X = Weibull(c=c)*scale
@@ -504,6 +509,8 @@ plt.hist(data, bins=np.linspace(0, 20, 30), density=True, alpha=0.1)
 plt.xlabel('x')
 plt.ylabel('pdf(x)')
 plt.legend()
+plt.ylim(0, 0.5)
+plt.show()
 ```
 
 However, with this approach, it is trivial to make changes to the fitting procedure to suit our needs, enabling estimation procedures other than those provided by [`rv_continuous.fit`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit). For instance, we can perform [maximum spacing estimation](https://en.wikipedia.org/wiki/Maximum_spacing_estimation) (MSE) by changing the objective function as follows.
@@ -533,24 +540,26 @@ def lmoment_residual(params):
 
 x0 = [0.4, 3]  # This method is a bit sensitive to the initial guess
 res_lmom = optimize.minimize(lmoment_residual, x0, bounds=bounds)
-res_lmom.x, res_lmom.fun  # fun should be ~0
+res_lmom.x, res_lmom.fun  # residual should be ~0
 ```
 
 The plots for all three methods look similar and seem to describe the data, giving us some confidence that we have a good fit.
 
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
-x = np.linspace(0, 15, 300)
+x = np.linspace(eps, 10, 300)
 
 for res, label in [(res_mle, "MLE"), (res_mps, "MPS"), (res_lmom, "L-moments")]:
     c, scale = res.x
     X = Weibull(c=c)*scale
     plt.plot(x, X.pdf(x), '-', label=label)
 
-plt.hist(data, bins=np.linspace(0, 20, 30), density=True, alpha=0.1)
+plt.hist(data, bins=np.linspace(0, 10, 30), density=True, alpha=0.1)
 plt.xlabel('x')
 plt.ylabel('pdf(x)')
 plt.legend()
+plt.ylim(0, 0.3)
+plt.show()
 ```
 
 Estimation does not always involve fitting distributions to data. For instance, in gh-12134, a user needed to calculate the shape and scale parameters of the Weibull distribution to achieve a given mean and standard deviation. This fits easily into the same framework.
@@ -560,7 +569,7 @@ moments_0 = np.asarray([8, 20])  # desired mean and standard deviation
 def f(params):
     c, scale = params
     X = Weibull(c=c) * scale
-    moments_X = X.mean(), X.standard_deviation() 
+    moments_X = X.mean(), X.standard_deviation()
     return np.linalg.norm(moments_X - moments_0)
 
 bounds.lb = np.asarray([0.1, 0.1])  # the Weibull distribution is problematic for very small c
@@ -584,10 +593,11 @@ c = 10.6
 
 X = Weibull(c=10.6)  
 Y = 1 / X  # compare to `invweibull`
-Y.plot();
+Y.plot()
 
 x = np.linspace(0.8, 2.05, 300)
-plt.plot(x, stats.invweibull(c=c).pdf(x), '--');
+plt.plot(x, stats.invweibull(c=c).pdf(x), '--')
+plt.show()
 ```
 
 `scipy.stats.chis2` describes a sum of the squares of normally-distributed random variables.
@@ -595,10 +605,12 @@ plt.plot(x, stats.invweibull(c=c).pdf(x), '--');
 ```{code-cell} ipython3
 X = stats.Normal()
 Y = X**2  # compare to chi2
-Y.plot(t=('x', 0, 5));
+Y.plot(t=('x', eps, 5));
 
-x = np.linspace(0, 5, 300)
+x = np.linspace(eps, 5, 300)
 plt.plot(x, stats.chi2(df=1).pdf(x), '--')
+plt.ylim(0, 3)
+plt.show()
 ```
 
 `scipy.stats.foldcauchy` describes the absolute value of a Cauchy-distributed random variable. (A "folded" distribution is the distribution underlying the absolute value of a random variable.)
@@ -609,10 +621,11 @@ c = 4.72
 
 X = Cauchy() + c  
 Y = abs(X)  # compare to `foldcauchy`
-Y.plot(t=('x', 0, 60));
+Y.plot(t=('x', 0, 60))
 
 x = np.linspace(0, 60, 300)
 plt.plot(x, stats.foldcauchy(c=c).pdf(x), '--')
+plt.show()
 ```
 
 `scipy.stats.lognormal` describes the exponential of a normally distributed random variable. It is so-named because the logarithm of the resulting random variable is normally distributed. (In general, a "log" distribution is typically the distribution underlying the *exponential* of a random variable.)
@@ -622,13 +635,14 @@ u, s = 1, 0.5
 
 X = stats.Normal()*s + u
 Y = stats.exp(X)  # compare to `lognorm`
-Y.plot(t=('x', 0, 9));
+Y.plot(t=('x', eps, 9))
 
-x = np.linspace(0, 9, 300)
+x = np.linspace(eps, 9, 300)
 plt.plot(x, stats.lognorm(s=s, scale=np.exp(u)).pdf(x), '--')
+plt.show()
 ```
 
-`scipy.stats.loggamma` describes the logarithm of of a Gamma-distributed random variable. Note that the more common name of this distribution would be [exp-gamma](https://reference.wolfram.com/language/ref/ExpGammaDistribution.html.en#:~:text=The%20term%20exp%2Dgamma%20is,of%20qualitatively%20similar%20probability%20distributions.) because the exponential of the RV is gamma-distributed.
+`scipy.stats.loggamma` describes the logarithm of of a Gamma-distributed random variable. Note that according to typical conventions, the appropriate name of this distribution would be [exp-gamma](https://reference.wolfram.com/language/ref/ExpGammaDistribution.html.en#:~:text=The%20term%20exp%2Dgamma%20is,of%20qualitatively%20similar%20probability%20distributions.) because the exponential of the RV is gamma-distributed.
 
 ```{code-cell} ipython3
 Gamma = stats.make_distribution(stats.gamma)
@@ -636,24 +650,28 @@ a = 0.414
 
 X = Gamma(a=a)  
 Y = stats.log(X)  # compare to `loggamma`
-Y.plot();
+Y.plot()
 
 x = np.linspace(-17.5, 2, 300)
 plt.plot(x, stats.loggamma(c=a).pdf(x), '--')
+plt.show()
 ```
 
 `scipy.stats.truncnorm` is the distribution underlying a truncated normal random variable. Note that the truncation transformation can be applied either before or after shifting and scaling the normally-distributed random variable, which can make it much easier to achieve the desired result than `scipy.stats.truncnorm` (which inherently shifts and scales *after* truncation).
 
-```{code-cell} ipython3
++++
+
 a, b = 0.1, 2
 
 X = stats.Normal()  
 Y = stats.truncate(X, a, b)  # compare to `truncnorm`
-Y.plot();
+Y.plot()
 
 x = np.linspace(a, b, 300)
 plt.plot(x, stats.truncnorm(a, b).pdf(x), '--')
-```
+plt.show()
+
++++
 
 `scipy.stats.dgamma` is a mixture of two gamma-distributed RVs, one of which is reflected about the origin. (Typically, a "double" distribution is the distribution underlying a mixture of RVs, one of which is reflected.)
 
@@ -666,6 +684,7 @@ Y = stats.Mixture((X, -X), weights=[0.5, 0.5])
 x = np.linspace(-4, 4, 300)
 plt.plot(x, Y.pdf(x))
 plt.plot(x, stats.dgamma(a=a).pdf(x), '--')
+plt.show()
 ```
 
 #### Limitations
@@ -674,25 +693,24 @@ While most arithmetic transformations between random variables and Python scalar
 
 - Raising a random variable to the power of an argument is only implemented when the argument is a positive integer.
 - Raising an argument to the power of a random variable is only implemented when the argument is a positive scalar other than 1.
-- Division by a random variable is only implemented when the support is either non-negative or non-positive.
+- Division by a random variable is only implemented when the support is either entirely non-negative or non-positive.
 - The logarithm of a random variable is only implemented when the support is non-negative. (The logarithm of negative values is imaginary.)
 
 Arithmetic operations between two random variables are *not* yet supported. Note that such operations are much more complex mathematically; for instance, the PDF of the sum of the two random variables involves convolution of the two PDFs.
 
 Also, while transformations are composable, a) truncation and b) shifting/scaling can each be done only once. For instance, `Y = 2 * stats.exp(X + 1)` will raise an error because this would require shifting before exponentiation and scaling after exponentiation; this is treated as "shifting/scaling" twice. However, a mathematical simplification is possible here (and in many cases) to avoid the problem: `Y = (2*math.exp(2)) * stats.exp(X)` is equivalent and requires only one scaling operation.
 
-Although the transformations are fairly robust, they all reply on generic implementations which may cause numerical difficulties. If you are concerned about the accuracy of the results of a transformation, consider comparing the resulting PDF against a histogram of a random sample.
+Although the transformations are fairly robust, they all rely on generic implementations which may cause numerical difficulties. If you are concerned about the accuracy of the results of a transformation, consider comparing the resulting PDF against a histogram of a random sample.
 
-+++
-
+```{code-cell} ipython3
 X = stats.Normal()
 Y = X**3
 x = np.linspace(-5, 5, 300)
 plt.plot(x, Y.pdf(x), label='pdf')
 plt.hist(X.sample(100000)**3, density=True, bins=np.linspace(-5, 5, 100), alpha=0.5);
 plt.ylim(0, 2)
-
-+++
+plt.show()
+```
 
 ### Quasi-Monte Carlo Sampling
 
@@ -762,7 +780,7 @@ However, another aproach would be to numerically integrate the PDF from `x` to `
 integrate.quad(frozen.pdf, x, 1)[0]
 ```
 
-These are distince but equally valid approaches, so assuming the PDF is accurate, it is unlikely that the two results are inaccurate in the same way. Therefore, we can estimate the accuracy of the results by comparing them.
+These are distinct but equally valid approaches, so assuming the PDF is accurate, it is unlikely that the two results are inaccurate in the same way. Therefore, we can estimate the accuracy of the results by comparing them.
 
 ```{code-cell} ipython3
 res1 = frozen.sf(x)
@@ -772,15 +790,15 @@ abs((res1 - res2) / res1)
 
 The new infrastructure is aware of several different ways for computing most quantities. For example, this diagram illustrates the relationships between various distribution functions.
 
-![image.png](attachment:c7742b7b-e07f-4bc4-9e05-3566bc7bde2b.png)
+![image.png](rv_infrastructure_1.png)
 
-It follows a decision tree to choose what is expected to be the most accurate way of estimating the quantity. These decision trees are subject to change, but an example for computing the complementary CDF might look something like:
+It follows a decision tree to choose what is expected to be the most accurate way of estimating the quantity. These specific decision trees for the "best" method are subject to change between versions of SciPy, but an example for computing the complementary CDF might look something like:
 
-![image.png](attachment:ee923abe-2ba7-43ec-815a-04e69e6f2b73.png)
+![image.png](rv_infrastructure_2.png)
 
 and for calculating a moment:
 
-![image.png](attachment:68d09366-2cca-477c-ad70-72541b64b29a.png)
+![image.png](rv_infrastructure_3.png)
 
 However, you can override the method it uses with the `method` argument.
 
@@ -789,13 +807,19 @@ GaussHyper = stats.make_distribution(stats.gausshyper)
 X = GaussHyper(a=a, b=b, c=c, z=z)
 ```
 
+For `ccdf`, `method='quadrature'` integrates the PDF in right tail.
+
 ```{code-cell} ipython3
 X.ccdf(x, method='quadrature') == integrate.tanhsinh(X.pdf, x, 1).integral
 ```
 
+`method='complement'` takes the complement of the CDF.
+
 ```{code-cell} ipython3
 X.ccdf(x, method='complement') == (1 - integrate.tanhsinh(X.pdf, 0, x).integral)
 ```
+
+`method='logexp'` takes the exponential of the logarithm of the CCDF.
 
 ```{code-cell} ipython3
 X.ccdf(x, method='logexp') == np.exp(integrate.tanhsinh(lambda x: X.logpdf(x), x, 1, log=True).integral)
@@ -823,7 +847,7 @@ Consider the performance of calculations involving the Gauss hypergeometric dist
 np.isclose(X.cdf(x), stats.gausshyper.cdf(x, a, b, c, z))
 ```
 
-But the new infrastructure is much faster when arrays are involved. This is because the underlying integrator ([`scipy.integrate.tanhsinh`](https://scipy.github.io/devdocs/reference/generated/scipy.integrate.tanhsinh.html#scipy.integrate.tanhsinh)) and root finder ([`scipy.optimize.elementwise.find_root`](https://scipy.github.io/devdocs/reference/generated/scipy.optimize.elementwise.find_root.html)) of the new infrastructure are natively vectorized, whereas the old routines (`scipy.integrate.quad` and `scipy.optimize.brentq`) are not.
+But the new infrastructure is much faster when arrays are involved. This is because the underlying integrator ([`scipy.integrate.tanhsinh`](https://scipy.github.io/devdocs/reference/generated/scipy.integrate.tanhsinh.html#scipy.integrate.tanhsinh)) and root finder ([`scipy.optimize.elementwise.find_root`](https://scipy.github.io/devdocs/reference/generated/scipy.optimize.elementwise.find_root.html)) developed for the new infrastructure are natively vectorized, whereas the legacy routines used by the old infrastructure (`scipy.integrate.quad` and `scipy.optimize.brentq`) are not.
 
 ```{code-cell} ipython3
 x = np.linspace(0, 1, 1000)
@@ -848,27 +872,31 @@ We can readily visualize functions of the distribution underlying random variabl
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
 ax = X.plot()
+plt.show()
 ```
 
 ```{code-cell} ipython3
 X.plot(y='cdf')
+plt.show()
 ```
 
 The `plot` method is quite flexible, with a signature inspired by grammar of graphics. For instance, with the argument `x` on [-10, 10], plot the `pdf` against the `cdf`.
 
 ```{code-cell} ipython3
 X.plot('cdf', 'pdf', t=('x', -10, 10))
+plt.show()
 ```
 
 ### Order Statistics
-There is support for distributions of [order statistics](https://en.wikipedia.org/wiki/Order_statistic) of random samples from distribution. For example, we can plot the probability density functions of the order statistics of a normal distribution with sample size 4.
+As seen in the "Fit" section above, there is now support for distributions of [order statistics](https://en.wikipedia.org/wiki/Order_statistic) of random samples from distribution. For example, we can plot the probability density functions of the order statistics of a normal distribution with sample size 4.
 
 ```{code-cell} ipython3
 n = 4
 r = np.arange(1, n+1)
 X = stats.Normal()
 Y = stats.order_statistic(X, r=r, n=n)
-Y.plot();
+Y.plot()
+plt.show()
 ```
 
 Compute the expected values of these order statistics:
@@ -876,3 +904,17 @@ Compute the expected values of these order statistics:
 ```{code-cell} ipython3
 Y.mean()
 ```
+
+## Conclusion
+
++++
+
+Although change can be uncomfortable, the new infrastructure paves the road to an improved experience for users of SciPy's probability distributions. 
+It is not complete, of course! At the time this guide was written, the following features are planned for future releases:
+- Discrete distributions
+- Circular distributions, including the ability to wrap arbitrary continuous distributions around the circle
+- Support for other Python Array API Compatible backends beyond NumPy (e.g. CuPy, PyTorch, JAX)
+
+As always, development of SciPy is done for the SciPy community *by* the SciPy community. Suggestions for other features and help implementing them are always appreciated.
+
+We hope this guide motivates the advantages of trying the new infrastructure and simplifies the process.
