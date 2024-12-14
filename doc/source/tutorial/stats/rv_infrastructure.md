@@ -383,9 +383,10 @@ Note that the `cdf` method of the new random variables accepts two arguments to 
 The old infrastructure offered a function to estimate location and scale parameters of the distribution from data.
 
 ```{code-cell} ipython3
+rng = np.random.default_rng(91392794601852341588152500276639671056)
 dist = stats.weibull_min
 c, scale = 0.5, 4.
-data = dist.rvs(size=100, c=c, scale=scale)
+data = dist.rvs(size=100, c=c, scale=scale, random_state=rng)
 dist.fit_loc_scale(data, c)
 # compare against 0 (default location) and 4 (specified scale)
 ```
@@ -481,17 +482,17 @@ lb = [eps, eps]  # lower bound on `c` and `scale`
 ub = [10, 10]  # upper bound on `c` and `scale`
 x0 = [1, 1]  # guess to get optimization started
 bounds = optimize.Bounds(lb, ub)
-res = optimize.minimize(nllf, x0, bounds=bounds)
-res
+res_mle = optimize.minimize(nllf, x0, bounds=bounds)
+res_mle
 ```
 
-The value of the objective function is almost identical, and the PDFs are indistinguishable.
+The value of the objective function is essentially identical, and the PDFs are indistinguishable.
 
 ```{code-cell} ipython3
 import matplotlib.pyplot as plt
 x = np.linspace(0, 15, 300)
 
-c, scale = res.x
+c, scale = res_mle.x
 X = Weibull(c=c)*scale
 plt.plot(x, X.pdf(x), '-', label='numerical optimization')
 
@@ -505,9 +506,67 @@ plt.ylabel('pdf(x)')
 plt.legend()
 ```
 
-However, wi
+However, with this approach, it is trivial to make changes to the fitting procedure to suit our needs, enabling estimation procedures other than those provided by [`rv_continuous.fit`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit). For instance, we can perform [maximum spacing estimation](https://en.wikipedia.org/wiki/Maximum_spacing_estimation) (MSE) by changing the objective function as follows.
 
-+++
+```{code-cell} ipython3
+def nlps(params):
+    c, scale = params
+    X = Weibull(c=c) * scale
+    x = np.sort(np.concatenate((data, X.support())))  # Append the endpoints of the support to the data
+    return -X.logcdf(x[:-1], x[1:]).sum().real  # Minimize the sum of the logs the probability mass between points
+
+res_mps = optimize.minimize(nlps, x0, bounds=bounds)
+res_mps.x
+```
+
+For method of [L-moments](https://en.wikipedia.org/wiki/L-moment) (which attempts to match the distribution and sample L-moments):
+
+```{code-cell} ipython3
+def lmoment_residual(params):
+    c, scale = params
+    X = Weibull(c=c) * scale
+    E11 = stats.order_statistic(X, r=1, n=1).mean()
+    E12, E22 = stats.order_statistic(X, r=[1, 2], n=2).mean()
+    lmoments_X = [E11, 0.5*(E22 - E12)]  # the first two l-moments of the distribution
+    lmoments_x = stats.lmoment(data, order=[1, 2])  # first two l-moments of the data
+    return np.linalg.norm(lmoments_x - lmoments_X)  # Minimize the norm of the difference
+
+x0 = [0.4, 3]  # This method is a bit sensitive to the initial guess
+res_lmom = optimize.minimize(lmoment_residual, x0, bounds=bounds)
+res_lmom.x, res_lmom.fun  # fun should be ~0
+```
+
+The plots for all three methods look similar and seem to describe the data, giving us some confidence that we have a good fit.
+
+```{code-cell} ipython3
+import matplotlib.pyplot as plt
+x = np.linspace(0, 15, 300)
+
+for res, label in [(res_mle, "MLE"), (res_mps, "MPS"), (res_lmom, "L-moments")]:
+    c, scale = res.x
+    X = Weibull(c=c)*scale
+    plt.plot(x, X.pdf(x), '-', label=label)
+
+plt.hist(data, bins=np.linspace(0, 20, 30), density=True, alpha=0.1)
+plt.xlabel('x')
+plt.ylabel('pdf(x)')
+plt.legend()
+```
+
+Estimation does not always involve fitting distributions to data. For instance, in gh-12134, a user needed to calculate the shape and scale parameters of the Weibull distribution to achieve a given mean and standard deviation. This fits easily into the same framework.
+
+```{code-cell} ipython3
+moments_0 = np.asarray([8, 20])  # desired mean and standard deviation
+def f(params):
+    c, scale = params
+    X = Weibull(c=c) * scale
+    moments_X = X.mean(), X.standard_deviation() 
+    return np.linalg.norm(moments_X - moments_0)
+
+bounds.lb = np.asarray([0.1, 0.1])  # the Weibull distribution is problematic for very small c
+res = optimize.minimize(f, x0, bounds=bounds, method='slsqp')  # easily change the minimization method
+res
+```
 
 ## New and Advanced Features
 
@@ -528,7 +587,7 @@ Y = 1 / X  # compare to `invweibull`
 Y.plot();
 
 x = np.linspace(0.8, 2.05, 300)
-plt.plot(x, stats.invweibull(c=c).pdf(x), '--')
+plt.plot(x, stats.invweibull(c=c).pdf(x), '--');
 ```
 
 `scipy.stats.chis2` describes a sum of the squares of normally-distributed random variables.
