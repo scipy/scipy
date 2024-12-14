@@ -11,13 +11,9 @@ kernelspec:
   name: python3
 ---
 
-(rv_infrastructure)=
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_bartlett.ipynb
+.. jupyterlite:: ../../_contents/rv_infrastructure.ipynb
    :new_tab: True
-```
-
-# Random Variable Transition Guide
 
 +++
 
@@ -444,7 +440,7 @@ Therefore, `fit` considers its job done, whether or not this satisfies the user'
 
 +++
 
-Another problem is that MLE is an inherently problematic for some distributions. In this example, for instance, we can make the NLLF as low as we please simply by setting the location to the minimum of the data - even for bogus values of the shape and scale parameters.
+Another problem is that MLE is inherently problematic for some distributions. In this example, for instance, we can make the NLLF as low as we please simply by setting the location to the minimum of the data - even for bogus values of the shape and scale parameters.
 
 ```{code-cell} ipython3
 stats.weibull_min.nnlf((0.1, np.min(data), 10), data)
@@ -911,6 +907,7 @@ Y.mean()
 
 Although change can be uncomfortable, the new infrastructure paves the road to an improved experience for users of SciPy's probability distributions. 
 It is not complete, of course! At the time this guide was written, the following features are planned for future releases:
+- Additional built-in distributions (besides `Normal` and `Uniform`)
 - Discrete distributions
 - Circular distributions, including the ability to wrap arbitrary continuous distributions around the circle
 - Support for other Python Array API Compatible backends beyond NumPy (e.g. CuPy, PyTorch, JAX)
