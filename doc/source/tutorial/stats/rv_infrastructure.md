@@ -11,17 +11,17 @@ kernelspec:
   name: python3
 ---
 
-(rv_infrastructure)=
 ```{eval-rst}
 .. jupyterlite:: ../../_contents/hypothesis_bartlett.ipynb
    :new_tab: True
 ```
 
-# Random Variable Transition Guide
+(rv_infrastructure)=
+## Random Variable Transition Guide
 
 +++
 
-## Background
+### Background
 
 +++
 
@@ -69,7 +69,7 @@ To address these and other shortcomings, [gh-15928](https://github.com/scipy/sci
 
 +++
 
-## Basics
+### Basics
 
 +++
 
@@ -89,7 +89,9 @@ Once instantiated, shape parameters can be read (but not written) as attributes.
 X.mu, X.sigma
 ```
 
-Note that the documentation of [`scipy.stats.Normal`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Normal.html#scipy.stats.Normal) contains links to more detailed documentation of each of its methods. (Compare, for instance, against the documentation of [`scipy.stats.norm`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.norm.html).)
+The documentation of [`scipy.stats.Normal`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Normal.html#scipy.stats.Normal) contains links to detailed documentation of each of its methods. (Compare, for instance, against the documentation of [`scipy.stats.norm`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.norm.html).)[^1]
+
+*Note: Although only [`Normal`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Normal.html) and [`Uniform`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Uniform.html) have rendered documentation and can be imported directly from `stats` as of SciPy 1.15, almost all other old distributions can be used with the new interface via [`make_distribution`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.make_distribution.html) (discussed shortly).*
 
 Methods are then called by passing only the argument(s), if there are any, not distribution parameters.
 
@@ -192,7 +194,7 @@ Y.plot()
 plt.show()
 ```
 
-### Moments
+#### Moments
 
 +++
 
@@ -244,7 +246,7 @@ For convenience, the `kurtosis` method offers a `convention` argument to select 
 stats.Normal().kurtosis(convention='excess'), stats.Normal().kurtosis(convention='non-excess')
 ```
 
-### Random Variates
+#### Random Variates
 
 +++
 
@@ -290,7 +292,7 @@ Y = stats.Normal(mu = [0, 1])
 Y.sample(shape=(3, 4)).shape  # the sample has shape (3, 4); each element is of shape (2,)
 ```
 
-### Probability Mass (AKA "Confidence") Intervals
+#### Probability Mass (AKA "Confidence") Intervals
 
 +++
 
@@ -308,7 +310,7 @@ p = 1 - a
 X.icdf(p/2), X.iccdf(p/2)
 ```
 
-#### Likelihood Function
+##### Likelihood Function
 
 +++
 
@@ -328,7 +330,7 @@ X = stats.Normal(mu=mu, sigma=sigma)
 -X.logpdf(data).sum()
 ```
 
-### Expected Values
+#### Expected Values
 
 +++
 
@@ -380,18 +382,18 @@ Note that the `cdf` method of the new random variables accepts two arguments to 
 
 +++
 
-### Fitting
+#### Fitting
 
 +++
 
-#### Location / Scale Estimation
+##### Location / Scale Estimation
 The old infrastructure offered a function to estimate location and scale parameters of the distribution from data.
 
 ```{code-cell} ipython3
 rng = np.random.default_rng(91392794601852341588152500276639671056)
 dist = stats.weibull_min
-c, scale = 0.5, 4.
-data = dist.rvs(size=100, c=c, scale=scale, random_state=rng)
+c, loc, scale = 0.5, 0, 4.
+data = dist.rvs(size=100, c=c, loc=loc, scale=scale, random_state=rng)
 dist.fit_loc_scale(data, c)
 # compare against 0 (default location) and 4 (specified scale)
 ```
@@ -412,13 +414,13 @@ fit_loc_scale(X, data)
 
 Note that the estimates are quite poor in this example, and poor performance of the heuristic factored into the decision not to provide a replacement.
 
-#### Maximum Likelihood Estimation
+##### Maximum Likelihood Estimation
 
 The last method of the old infrastructure is `fit`, which estimates the location, scale, and shape parameters of an underlying distribution given a sample from the distribution.
 
 ```{code-cell} ipython3
-params = stats.weibull_min.fit(data)
-params
+c_, loc_, scale_ = stats.weibull_min.fit(data)
+c_, loc_, scale_
 ```
 
 The convenience of this method is a blessing and a curse. 
@@ -430,43 +432,42 @@ For most distributions, however, fitting is performed by numerical minimization 
 First, note that MLE is one of several potential strategies for fitting distributions to data. It does nothing more than find the values of the distribution parameters for which the negative log-likelihood (NLLF) is minimized. Note that for the original data, the NLLF is:
 
 ```{code-cell} ipython3
-loc = 0
 stats.weibull_min.nnlf((c, loc, scale), data)
 ```
 
 The NLLF of the parameters estimated using `fit` are lower:
 
 ```{code-cell} ipython3
-stats.weibull_min.nnlf(params, data)
+stats.weibull_min.nnlf((c_, loc_, scale_), data)
 ```
 
 Therefore, `fit` considers its job done, whether or not this satisfies the user's notions of a "good fit" or whether the parameters are within reasonable bounds. It gives the user no control over the process (other than specifying a guess).
 
 +++
 
-Another problem is that MLE is an inherently problematic for some distributions. In this example, for instance, we can make the NLLF as low as we please simply by setting the location to the minimum of the data - even for bogus values of the shape and scale parameters.
+Another problem is that MLE is inherently poorly behaved for some distributions. In this example, for instance, we can make the NLLF as low as we please simply by setting the location to the minimum of the data - even for bogus values of the shape and scale parameters.
 
 ```{code-cell} ipython3
 stats.weibull_min.nnlf((0.1, np.min(data), 10), data)
 ```
 
-Compounding with these issues is that `fit` estimates all distribution parameters by default. In the example above, we are probably only interested in the more common two-parameter Weibull distribution because the actual location is zero. `fit` *can* accommodate this by specifing that the location is fixed parameter.
+Compounding with these issues is that `fit` estimates all distribution parameters by default, including the location. In the example above, we are probably only interested in the more common two-parameter Weibull distribution because the actual location is zero. `fit` *can* accommodate this by specifing that the location is fixed parameter.
 
 ```{code-cell} ipython3
 # params = stats.weibull_min.fit(data, loc=0)  # careful! this provides loc=0 as a *guess*
-params = stats.weibull_min.fit(data, floc=0)
-params
+c_, loc_, scale_ = stats.weibull_min.fit(data, floc=0)
+c_, loc_, scale_
 ```
 
 ```{code-cell} ipython3
-stats.weibull_min.nnlf(params, data)
+stats.weibull_min.nnlf((c_, loc_, scale_), data)
 ```
 
-By relying on a `fit` method to "just work", users are encouraged to neglect some of these important details. 
+But by providing a `fit` method that purportedly "just works", users are encouraged to neglect some of these important details.
 
 Instead, we suggest that it is almost as simple to fit distributions to data using the generic optimization tools provided by SciPy. However, this allows the user to perform the fit according to their preferred objective function, provides options when things don't work as expected, and helps the user to avoid the most common pitfalls.
 
-For instance, suppose our desired objective function is indeed the negative log likelihood function. It is simple to define as a function of the shape parameter `c` and scale only, leaving the location at its default of zero.
+For instance, suppose our desired objective function is indeed the negative log likelihood. It is simple to define as a function of the shape parameter `c` and scale only, leaving the location at its default of zero.
 
 ```{code-cell} ipython3
 def nllf(params):
@@ -474,7 +475,6 @@ def nllf(params):
     X = Weibull(c=c) * scale
     return -X.logpdf(data).sum()
 
-c_, loc_, scale_ = params
 nllf((c_, scale_))
 ```
 
@@ -497,13 +497,13 @@ The value of the objective function is essentially identical, and the PDFs are i
 import matplotlib.pyplot as plt
 x = np.linspace(eps, 15, 300)
 
-c, scale = res_mle.x
-X = Weibull(c=c)*scale
+c_, scale_ = res_mle.x
+X = Weibull(c=c_)*scale_
 plt.plot(x, X.pdf(x), '-', label='numerical optimization')
 
-c, loc, scale = params
-Y = Weibull(c=c)*scale
-plt.plot(x, Y.pdf(x), '--', label='`scipy.stats.fit`')
+c_, _, scale_ = stats.weibull_min.fit(data, floc=0)
+Y = Weibull(c=c_)*scale_
+plt.plot(x, Y.pdf(x), '--', label='`weibull_min.fit`')
 
 plt.hist(data, bins=np.linspace(0, 20, 30), density=True, alpha=0.1)
 plt.xlabel('x')
@@ -513,7 +513,7 @@ plt.ylim(0, 0.5)
 plt.show()
 ```
 
-However, with this approach, it is trivial to make changes to the fitting procedure to suit our needs, enabling estimation procedures other than those provided by [`rv_continuous.fit`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit). For instance, we can perform [maximum spacing estimation](https://en.wikipedia.org/wiki/Maximum_spacing_estimation) (MSE) by changing the objective function as follows.
+However, with this approach, it is trivial to make changes to the fitting procedure to suit our needs, enabling estimation procedures other than those provided by [`rv_continuous.fit`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit). For instance, we can perform [maximum spacing estimation](https://en.wikipedia.org/wiki/Maximum_spacing_estimation) (MSE) by changing the objective function to the **n**egative **l**og **p**roduct **s**pacing as follows.
 
 ```{code-cell} ipython3
 def nlps(params):
@@ -550,8 +550,8 @@ import matplotlib.pyplot as plt
 x = np.linspace(eps, 10, 300)
 
 for res, label in [(res_mle, "MLE"), (res_mps, "MPS"), (res_lmom, "L-moments")]:
-    c, scale = res.x
-    X = Weibull(c=c)*scale
+    c_, scale_ = res.x
+    X = Weibull(c=c_)*scale_
     plt.plot(x, X.pdf(x), '-', label=label)
 
 plt.hist(data, bins=np.linspace(0, 10, 30), density=True, alpha=0.1)
@@ -562,7 +562,7 @@ plt.ylim(0, 0.3)
 plt.show()
 ```
 
-Estimation does not always involve fitting distributions to data. For instance, in gh-12134, a user needed to calculate the shape and scale parameters of the Weibull distribution to achieve a given mean and standard deviation. This fits easily into the same framework.
+Estimation does not always involve fitting distributions to data. For instance, in [gh-12134](https://github.com/scipy/scipy/issues/12134), a user needed to calculate the shape and scale parameters of the Weibull distribution to achieve a given mean and standard deviation. This fits easily into the same framework.
 
 ```{code-cell} ipython3
 moments_0 = np.asarray([8, 20])  # desired mean and standard deviation
@@ -577,12 +577,12 @@ res = optimize.minimize(f, x0, bounds=bounds, method='slsqp')  # easily change t
 res
 ```
 
-## New and Advanced Features
+### New and Advanced Features
 
 +++
 
 <a id='Transformations'></a>
-### Transformations
+#### Transformations
 
 Mathematical transformations can be applied to random variables. For instance, many elementary arithmetic operations (`+`, `-`, `*`, `/`, `**`) between random variables and scalars work.
 
@@ -597,10 +597,12 @@ Y.plot()
 
 x = np.linspace(0.8, 2.05, 300)
 plt.plot(x, stats.invweibull(c=c).pdf(x), '--')
+plt.legend(['`1 / X`', '`invweibull`'])
+plt.title("Inverse Weibull PDF")
 plt.show()
 ```
 
-`scipy.stats.chis2` describes a sum of the squares of normally-distributed random variables.
+`scipy.stats.chi2` describes a sum of the squares of normally-distributed random variables.
 
 ```{code-cell} ipython3
 X = stats.Normal()
@@ -610,6 +612,8 @@ Y.plot(t=('x', eps, 5));
 x = np.linspace(eps, 5, 300)
 plt.plot(x, stats.chi2(df=1).pdf(x), '--')
 plt.ylim(0, 3)
+plt.legend(['`X**2`', '`chi2`'])
+plt.title("Chi-squared PDF")
 plt.show()
 ```
 
@@ -625,6 +629,8 @@ Y.plot(t=('x', 0, 60))
 
 x = np.linspace(0, 60, 300)
 plt.plot(x, stats.foldcauchy(c=c).pdf(x), '--')
+plt.legend(['`abs(X)`', '`foldcauchy`'])
+plt.title("Folded Cauchy PDF")
 plt.show()
 ```
 
@@ -639,6 +645,8 @@ Y.plot(t=('x', eps, 9))
 
 x = np.linspace(eps, 9, 300)
 plt.plot(x, stats.lognorm(s=s, scale=np.exp(u)).pdf(x), '--')
+plt.legend(['`exp(X)`', '`lognorm`'])
+plt.title("Log-Normal PDF")
 plt.show()
 ```
 
@@ -654,13 +662,14 @@ Y.plot()
 
 x = np.linspace(-17.5, 2, 300)
 plt.plot(x, stats.loggamma(c=a).pdf(x), '--')
+plt.legend(['`log(X)`', '`loggamma`'])
+plt.title("Exp-Gamma PDF")
 plt.show()
 ```
 
 `scipy.stats.truncnorm` is the distribution underlying a truncated normal random variable. Note that the truncation transformation can be applied either before or after shifting and scaling the normally-distributed random variable, which can make it much easier to achieve the desired result than `scipy.stats.truncnorm` (which inherently shifts and scales *after* truncation).
 
-+++
-
+```{code-cell} ipython3
 a, b = 0.1, 2
 
 X = stats.Normal()  
@@ -669,9 +678,10 @@ Y.plot()
 
 x = np.linspace(a, b, 300)
 plt.plot(x, stats.truncnorm(a, b).pdf(x), '--')
+plt.legend(['`truncate(X, a, b)`', '`truncnorm`'])
+plt.title("Truncated Normal PDF")
 plt.show()
-
-+++
+```
 
 `scipy.stats.dgamma` is a mixture of two gamma-distributed RVs, one of which is reflected about the origin. (Typically, a "double" distribution is the distribution underlying a mixture of RVs, one of which is reflected.)
 
@@ -684,10 +694,12 @@ Y = stats.Mixture((X, -X), weights=[0.5, 0.5])
 x = np.linspace(-4, 4, 300)
 plt.plot(x, Y.pdf(x))
 plt.plot(x, stats.dgamma(a=a).pdf(x), '--')
+plt.legend(['`Mixture(X, -X)`', '`dgamma`'])
+plt.title("Double Gammma PDF")
 plt.show()
 ```
 
-#### Limitations
+##### Limitations
 
 While most arithmetic transformations between random variables and Python scalars or NumPy arrays are supported, there are a few restrictions.
 
@@ -712,7 +724,7 @@ plt.ylim(0, 2)
 plt.show()
 ```
 
-### Quasi-Monte Carlo Sampling
+#### Quasi-Monte Carlo Sampling
 
 +++
 
@@ -757,7 +769,7 @@ plt.legend()
 plt.show()
 ```
 
-### Accuracy
+#### Accuracy
 
 +++
 
@@ -829,7 +841,7 @@ When in doubt, consider trying different `method`s to compute a given quantity.
 
 +++
 
-### Performance
+#### Performance
 
 +++
 
@@ -865,7 +877,7 @@ Comparable performance improvements can be expected for array calculations whene
 
 +++
 
-### Visualization
+#### Visualization
 
 We can readily visualize functions of the distribution underlying random variables using the convenience method, `plot`.
 
@@ -887,7 +899,7 @@ X.plot('cdf', 'pdf', t=('x', -10, 10))
 plt.show()
 ```
 
-### Order Statistics
+#### Order Statistics
 As seen in the "Fit" section above, there is now support for distributions of [order statistics](https://en.wikipedia.org/wiki/Order_statistic) of random samples from distribution. For example, we can plot the probability density functions of the order statistics of a normal distribution with sample size 4.
 
 ```{code-cell} ipython3
@@ -905,12 +917,13 @@ Compute the expected values of these order statistics:
 Y.mean()
 ```
 
-## Conclusion
+### Conclusion
 
 +++
 
 Although change can be uncomfortable, the new infrastructure paves the road to an improved experience for users of SciPy's probability distributions. 
 It is not complete, of course! At the time this guide was written, the following features are planned for future releases:
+- Additional built-in distributions (besides `Normal` and `Uniform`)
 - Discrete distributions
 - Circular distributions, including the ability to wrap arbitrary continuous distributions around the circle
 - Support for other Python Array API Compatible backends beyond NumPy (e.g. CuPy, PyTorch, JAX)
