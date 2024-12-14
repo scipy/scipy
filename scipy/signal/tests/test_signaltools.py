@@ -2766,7 +2766,7 @@ class TestFiltFilt:
         xp_assert_close(y, expected)
 
 
-    def test_complex_coeff(self):
+    def test_complex_coeff(self, xp):
         # gh-17877: complex coefficient filters
         if self.filtfilt_kind != 'tf':
             pytest.skip('complex coefficents only for tf')
@@ -2778,39 +2778,39 @@ class TestFiltFilt:
         # sample rate [/time]
         fs = 1e3
 
-        z, p, k = signal.butter(2, 2*np.pi*fwidth/2, output='zpk', fs=fs)
+        z, p, k = signal.butter(2, 2*xp.pi*fwidth/2, output='zpk', fs=fs)
 
         z = z.astype(complex)
         p = p.astype(complex)
 
         # rotate filter zeros and poles to be centred about fcentre
-        z *= np.exp(2j * np.pi * fcentre/fs)
-        p *= np.exp(2j * np.pi * fcentre/fs)
+        z *= xp.exp(2j * xp.pi * fcentre/fs)
+        p *= xp.exp(2j * xp.pi * fcentre/fs)
 
         b, a = signal.zpk2tf(z, p, k)
 
         # time [time]
-        t = np.arange(500) / fs
+        t = xp.arange(500) / fs
 
         # filter input
-        u = 2 * np.cos(2*np.pi*fcentre*t)
+        u = 2 * xp.cos(2*xp.pi*fcentre*t)
 
         # first-order transient iterations to 0.5% settling level.
         # filter isn't first-order, use 0.5% to allow for headroom
         # for 1% assertion later
-        ntrans = int(np.log(5e-3) / np.log(max(abs(p))))
+        ntrans = int(xp.log(5e-3) / xp.log(max(abs(p))))
 
         assert 2*ntrans < len(t)
 
-        # 2*cos(x) = np.exp(2j*x) + np.exp(-2j*x); filter above should
-        # remove np.exp(-2j*x)
-        yref = np.exp(2j*np.pi*fcentre*t)
+        # 2*cos(x) = xp.exp(2j*x) + xp.exp(-2j*x); filter above should
+        # remove xp.exp(-2j*x)
+        yref = xp.exp(2j*xp.pi*fcentre*t)
 
-        y = self.filtfilt((z,p,k), u)
-        assert_array_less(abs(y - yref)[ntrans:-ntrans], 1e-2)
+        y = self.filtfilt((z,p,k), u, xp=xp)
+        xp.testing.assert_array_less(abs(y - yref)[ntrans:-ntrans], 1e-2)
 
-        ygust = self.filtfilt((z,p,k), u, method='gust')
-        assert_array_less(abs(ygust - yref)[ntrans:-ntrans], 1e-2)
+        ygust = self.filtfilt((z,p,k), u, method='gust', xp=xp)
+        xp.testing.assert_array_less(abs(ygust - yref)[ntrans:-ntrans], 1e-2)
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
