@@ -334,8 +334,8 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     input_checks = []
     for j in range(len(func_inputs)):
         if (ufunc_inputs[j], func_inputs[j]) in DANGEROUS_DOWNCAST:
-            chk = (f"<{CY_TYPES[func_inputs[j]]}>("
-                   f"<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0] =="
+            chk = (f"<{CY_TYPES[func_inputs[j]]}>"
+                   f"(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0] == "
                    f"(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0]")
             input_checks.append(chk)
 
@@ -608,12 +608,12 @@ class Ufunc(Func):
             toplevel += (f"ufunc_{self.name}_ptr[2*{j}] = <void*>"
                         f"{self.cython_func_name(func, specialized=True)}\n")
             toplevel += (f"ufunc_{self.name}_ptr[2*{j}+1] = <void*>"
-                        f"(<char*>{self.name})\n")
+                        f"(<char*>\"{self.name}\")\n")
         for j, func in enumerate(funcs):
             toplevel += f"ufunc_{self.name}_data[{j}] = &ufunc_{self.name}_ptr[2*{j}]\n"
 
         toplevel += (f"@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, ufunc_@_data, "
-                    f"ufunc_@_types, {len(types) // (inarg_num + outarg_num)}, "
+                    f"ufunc_@_types, {len(types)/(inarg_num + outarg_num)}, "
                     f"{inarg_num}, {outarg_num}, 0, '@', ufunc_@_doc, 0)"
                     f"\n").replace('@', self.name)
 
