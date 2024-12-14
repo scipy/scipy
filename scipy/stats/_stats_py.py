@@ -7237,7 +7237,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
         dtype = default_float if xp.isdtype(f_exp.dtype, 'integral') else f_exp.dtype
         f_exp = xp.asarray(f_exp, dtype=dtype)
 
-        bshape = np.broadcast_shapes(f_obs_float.shape, f_exp.shape)
+        bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = xp.broadcast_to(f_obs_float, bshape)
         f_exp = xp.broadcast_to(f_exp, bshape)
 

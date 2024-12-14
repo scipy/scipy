@@ -22,7 +22,6 @@ from numpy.testing import (assert_, assert_equal,
                            assert_array_less)
 import pytest
 from pytest import raises as assert_raises
-import numpy.ma.testutils as mat
 from numpy import array, arange, float32, power
 import numpy as np
 
