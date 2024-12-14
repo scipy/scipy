@@ -119,7 +119,7 @@ For simple calls like this (e.g. the argument is a valid float), calls to method
 
 Note that the calls to `X.pdf` and `frozen.pdf` are identical, and the call to `dist.pdf` is very similar - the only difference is that the call to `dist.pdf` includes the shape parameters, whereas in the new infrastructure, shape parameters are only provided when the random variable is instantiated.
 
-Besides `pdf`, several other methods of the new infrastructure are essentially the same as the old methods.
+Besides `pdf` and `mean`, several other methods of the new infrastructure are essentially the same as the old methods.
 
 +++
 
@@ -454,7 +454,7 @@ stats.weibull_min.nnlf((0.1, np.min(data), 10), data)
 Compounding with these issues is that `fit` estimates all distribution parameters by default, including the location. In the example above, we are probably only interested in the more common two-parameter Weibull distribution because the actual location is zero. `fit` *can* accommodate this by specifing that the location is fixed parameter.
 
 ```{code-cell} ipython3
-# params = stats.weibull_min.fit(data, loc=0)  # careful! this provides loc=0 as a *guess*
+# c_, loc_, scale_ = stats.weibull_min.fit(data, loc=0)  # careful! this provides loc=0 as a *guess*
 c_, loc_, scale_ = stats.weibull_min.fit(data, floc=0)
 c_, loc_, scale_
 ```
@@ -470,8 +470,8 @@ Instead, we suggest that it is almost as simple to fit distributions to data usi
 For instance, suppose our desired objective function is indeed the negative log likelihood. It is simple to define as a function of the shape parameter `c` and scale only, leaving the location at its default of zero.
 
 ```{code-cell} ipython3
-def nllf(params):
-    c, scale = params
+def nllf(x):
+    c, scale = x  # pass (only) `c` and `scale` as elements of `x`
     X = Weibull(c=c) * scale
     return -X.logpdf(data).sum()
 
@@ -516,8 +516,8 @@ plt.show()
 However, with this approach, it is trivial to make changes to the fitting procedure to suit our needs, enabling estimation procedures other than those provided by [`rv_continuous.fit`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit). For instance, we can perform [maximum spacing estimation](https://en.wikipedia.org/wiki/Maximum_spacing_estimation) (MSE) by changing the objective function to the **n**egative **l**og **p**roduct **s**pacing as follows.
 
 ```{code-cell} ipython3
-def nlps(params):
-    c, scale = params
+def nlps(x):
+    c, scale = x
     X = Weibull(c=c) * scale
     x = np.sort(np.concatenate((data, X.support())))  # Append the endpoints of the support to the data
     return -X.logcdf(x[:-1], x[1:]).sum().real  # Minimize the sum of the logs the probability mass between points
@@ -529,8 +529,8 @@ res_mps.x
 For method of [L-moments](https://en.wikipedia.org/wiki/L-moment) (which attempts to match the distribution and sample L-moments):
 
 ```{code-cell} ipython3
-def lmoment_residual(params):
-    c, scale = params
+def lmoment_residual(x):
+    c, scale = x
     X = Weibull(c=c) * scale
     E11 = stats.order_statistic(X, r=1, n=1).mean()
     E12, E22 = stats.order_statistic(X, r=[1, 2], n=2).mean()
@@ -566,8 +566,8 @@ Estimation does not always involve fitting distributions to data. For instance, 
 
 ```{code-cell} ipython3
 moments_0 = np.asarray([8, 20])  # desired mean and standard deviation
-def f(params):
-    c, scale = params
+def f(x):
+    c, scale = x
     X = Weibull(c=c) * scale
     moments_X = X.mean(), X.standard_deviation()
     return np.linalg.norm(moments_X - moments_0)
