@@ -272,12 +272,16 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
         m_star, s = 0, 1
     else:
         ell = 2
-        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+        norm_info = LazyOperatorNormInfo(
+                t*A,
+                A_1_norm=abs(t)*A_1_norm,
+                ell=ell)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
     return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance)
 
 
-def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
+def _expm_multiply_simple_core(A, B, t, mu, m_star, s,
+                               tol=None, balance=False):
     """
     A helper function.
     """
@@ -675,6 +679,10 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         linspace_kwargs['num'] = num
     if endpoint is not None:
         linspace_kwargs['endpoint'] = endpoint
+    reverse = False
+    if start > stop:
+        reverse = True
+        stop, start = start, stop
     samples, step = np.linspace(start, stop, **linspace_kwargs)
 
     # Convert the linspace output to the notation used by the publication.
@@ -695,36 +703,46 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     A = A - mu * ident
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     ell = 2
-    norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+
+    # Compute the expm action up to the initial time point.
+    if t_0*A_1_norm == 0:
+        m_star_0, s_0 = 0, 1
+    else:
+        norm_info_0 = LazyOperatorNormInfo(
+                t_0*A,
+                A_1_norm=abs(t_0)*A_1_norm,
+                ell=ell)
+        m_star_0, s_0 = _fragment_3_1(norm_info_0, n0, tol, ell=ell)
+    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star_0, s_0)
+
+    norm_info = LazyOperatorNormInfo(t*A, A_1_norm=abs(t)*A_1_norm, ell=ell)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
-
-    # Compute the expm action up to the initial time point.
-    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s)
 
     # Compute the expm action at the rest of the time points.
     if q <= s:
         if status_only:
             return 0
         else:
-            return _expm_multiply_interval_core_0(A, X,
+            X, status = _expm_multiply_interval_core_0(A, X,
                     h, mu, q, norm_info, tol, ell,n0)
     elif not (q % s):
         if status_only:
             return 1
         else:
-            return _expm_multiply_interval_core_1(A, X,
+            X, status = _expm_multiply_interval_core_1(A, X,
                     h, mu, m_star, s, q, tol)
     elif (q % s):
         if status_only:
             return 2
         else:
-            return _expm_multiply_interval_core_2(A, X,
+            X, status = _expm_multiply_interval_core_2(A, X,
                     h, mu, m_star, s, q, tol)
     else:
         raise Exception('internal error')
+    return X if not reverse else X[::-1], status
 
 
 def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
