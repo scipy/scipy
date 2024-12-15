@@ -119,7 +119,8 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
                            subproblem=None, initial_trust_radius=1.0,
                            max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
                            maxiter=None, disp=False, return_all=False,
-                           callback=None, inexact=True, **unknown_options):
+                           callback=None, inexact=True, subproblem_maxiter=None,
+                           **unknown_options):
     """
     Minimization of scalar function of one or more variables using a
     trust-region algorithm.
@@ -142,6 +143,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             Accuracy to solve subproblems. If True requires less nonlinear
             iterations, but more vector products. Only effective for method
             trust-krylov.
+        subproblem_maxiter : int or None
+            Maximum number of iterations to perform per subproblem. Only
+            affects trust-exact. Zero means infinite.
 
     This function is called by the `minimize` function.
     It is not supposed to be called directly.
@@ -210,7 +214,12 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     x = x0
     if return_all:
         allvecs = [x]
-    m = subproblem(x, fun, jac, hess, hessp)
+
+    subproblem_init_kw = {}
+    if hasattr(subproblem, 'MAXITER_DEFAULT'):
+        subproblem_init_kw['maxiter'] = subproblem_maxiter
+
+    m = subproblem(x, fun, jac, hess, hessp, **subproblem_init_kw)
     k = 0
 
     # search for the function min
@@ -232,7 +241,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         # define the local approximation at the proposed point
         x_proposed = x + p
-        m_proposed = subproblem(x_proposed, fun, jac, hess, hessp)
+        m_proposed = subproblem(x_proposed, fun, jac, hess, hessp, **subproblem_init_kw)
 
         # evaluate the ratio defined in equation (4.4)
         actual_reduction = m.fun - m_proposed.fun
