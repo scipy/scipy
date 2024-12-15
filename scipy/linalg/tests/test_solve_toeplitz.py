@@ -100,6 +100,22 @@ def test_reflection_coeffs():
     assert_allclose(reflection_coeffs_z, ref_z[:-1])
 
 
+@pytest.mark.parametrize('bshape', ((10,), (10, 3)))
+def test_return_reflection(bshape):
+    # Check that solve_toeplitz returns solution and reflection coefficients
+    # of correct shape
+
+    random = np.random.RandomState(1234)
+    c = random.randn(bshape[0])
+    b = random.randn(*bshape)
+
+    x_without_refl = solve_toeplitz(c, b)
+    x_with_refl, refl = solve_toeplitz(c, b, return_reflection=True)
+
+    assert_allclose(x_without_refl, x_with_refl)
+    assert refl.shape == (bshape[0] + 1, *bshape[1:])
+
+
 @pytest.mark.xfail(reason='Instability of Levinson iteration')
 def test_unstable():
     # this is a "Gaussian Toeplitz matrix", as mentioned in Example 2 of
