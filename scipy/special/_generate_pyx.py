@@ -613,7 +613,7 @@ class Ufunc(Func):
             toplevel += f"ufunc_{self.name}_data[{j}] = &ufunc_{self.name}_ptr[2*{j}]\n"
 
         toplevel += (f"@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, ufunc_@_data, "
-                    f"ufunc_@_types, {len(types)/(inarg_num + outarg_num)}, "
+                    f"ufunc_@_types, {int(len(types)/(inarg_num + outarg_num))}, "
                     f"{inarg_num}, {outarg_num}, 0, '@', ufunc_@_doc, 0)"
                     f"\n").replace('@', self.name)
 
