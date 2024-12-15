@@ -1,5 +1,6 @@
 from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
+from ._utils import CacheDir
 
 try:
     import pooch
@@ -7,12 +8,9 @@ except ImportError:
     pooch = None
     data_fetcher = None
 else:
+    cache_dir = CacheDir()
     data_fetcher = pooch.create(
-        # Use the default cache folder for the operating system
-        # Pooch uses appdirs (https://github.com/ActiveState/appdirs) to
-        # select an appropriate directory for the cache on each platform.
-        path=pooch.os_cache("scipy-data"),
-
+        path=cache_dir.get_cache_path(),
         # The remote data is on Github
         # base_url is a required param, even though we override this
         # using individual urls in the registry.
@@ -27,6 +25,8 @@ def fetch_data(dataset_name, data_fetcher=data_fetcher):
         raise ImportError("Missing optional dependency 'pooch' required "
                           "for scipy.datasets module. Please use pip or "
                           "conda to install 'pooch'.")
+    # Set path again in case of changes
+    data_fetcher.path = cache_dir.get_cache_path()
     # The "fetch" method returns the full path to the downloaded data file.
     return data_fetcher.fetch(dataset_name)
 
