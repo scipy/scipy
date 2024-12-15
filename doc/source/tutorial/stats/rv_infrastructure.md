@@ -89,7 +89,7 @@ Once instantiated, shape parameters can be read (but not written) as attributes.
 X.mu, X.sigma
 ```
 
-The documentation of [`scipy.stats.Normal`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Normal.html#scipy.stats.Normal) contains links to detailed documentation of each of its methods. (Compare, for instance, against the documentation of [`scipy.stats.norm`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.norm.html).)[^1]
+The documentation of [`scipy.stats.Normal`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Normal.html#scipy.stats.Normal) contains links to detailed documentation of each of its methods. (Compare, for instance, against the documentation of [`scipy.stats.norm`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.norm.html).)
 
 *Note: Although only [`Normal`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Normal.html) and [`Uniform`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.Uniform.html) have rendered documentation and can be imported directly from `stats` as of SciPy 1.15, almost all other old distributions can be used with the new interface via [`make_distribution`](https://scipy.github.io/devdocs/reference/generated/scipy.stats.make_distribution.html) (discussed shortly).*
 
@@ -117,7 +117,7 @@ For simple calls like this (e.g. the argument is a valid float), calls to method
 %timeit dist.pdf(x, loc=mu, scale=sigma)
 ```
 
-Note that the calls to `X.pdf` and `frozen.pdf` are identical, and the call to `dist.pdf` is very similar - the only difference is that the call to `dist.pdf` includes the shape parameters, whereas in the new infrastructure, shape parameters are only provided when the random variable is instantiated.
+Note that the way `X.pdf` and `frozen.pdf` are called is identical, and the call to `dist.pdf` is very similar - the only difference is that the call to `dist.pdf` includes the shape parameters, whereas in the new infrastructure, shape parameters are only provided when the random variable is instantiated.
 
 Besides `pdf` and `mean`, several other methods of the new infrastructure are essentially the same as the old methods.
 
@@ -892,7 +892,7 @@ X.plot(y='cdf')
 plt.show()
 ```
 
-The `plot` method is quite flexible, with a signature inspired by grammar of graphics. For instance, with the argument `x` on [-10, 10], plot the `pdf` against the `cdf`.
+The `plot` method is quite flexible, with a signature inspired by [The Grammar of Graphics](https://books.google.com/books?id=_kRX4LoFfGQC&printsec=frontcover&source=gbs_ge_summary_r&cad=0#v=onepage&q&f=false). For instance, with the argument $x$ on $[-10, 10]$, plot the PDF against the CDF.
 
 ```{code-cell} ipython3
 X.plot('cdf', 'pdf', t=('x', -10, 10))
