@@ -142,7 +142,7 @@ class TestLineSearch:
 
         assert c > 3  # check that the iterator really works...
 
-    def test_scalar_search_wolfe2_with_maxiter(self):
+    def test_scalar_search_wolfe2_with_zoom_maxiter(self):
         def phi(alpha):
             return (alpha - 1) ** 2
 
@@ -151,7 +151,7 @@ class TestLineSearch:
         
         p_large = 1e5
         s, _, _, derphi1 = ls.scalar_search_wolfe2(
-                phi, derphi, phi(0), p_large, maxiter=100)
+                phi, derphi, phi(0), p_large, zoom_maxiter=40)
         assert s is not None
         assert derphi1 is not None
 

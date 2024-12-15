@@ -329,7 +329,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 def scalar_search_wolfe2(phi, derphi, phi0=None,
                          old_phi0=None, derphi0=None,
                          c1=1e-4, c2=0.9, amax=None,
-                         extra_condition=None, maxiter=10):
+                         extra_condition=None, maxiter=10,
+                         zoom_maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     alpha > 0 is assumed to be a descent direction.
@@ -362,6 +363,8 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         the strong Wolfe conditions.
     maxiter : int, optional
         Maximum number of iterations to perform.
+    zoom_maxiter : int, optional
+        Maximum number of iterations for the zoom step.
 
     Returns
     -------
@@ -436,7 +439,8 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition, maxiter)
+                              phi0, derphi0, c1, c2, extra_condition,
+                              zoom_maxiter)
             break
 
         derphi_a1 = derphi(alpha1)
@@ -451,7 +455,8 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition, maxiter)
+                              phi0, derphi0, c1, c2, extra_condition, 
+                              zoom_maxiter)
             break
 
         alpha2 = 2 * alpha1  # increase by factor of two on each iteration
