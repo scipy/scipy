@@ -185,7 +185,7 @@ line_search = line_search_wolfe1
 
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
-                       extra_condition=None, maxiter=10):
+                       extra_condition=None, maxiter=10, zoom_maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     Parameters
@@ -224,7 +224,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         new iterates. The callable is only called for iterates
         satisfying the strong Wolfe conditions.
     maxiter : int, optional
-        Maximum number of iterations to perform.
+        Maximum number of iterations to perform. Defaults to 10.
+    zoom_maxiter : int, optional
+        Maximum number of iterations to perform in the zoom step. Defaults
+        to 10.
+
 
     Returns
     -------
@@ -311,7 +315,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     alpha_star, phi_star, old_fval, derphi_star = scalar_search_wolfe2(
             phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax,
-            extra_condition2, maxiter=maxiter)
+            extra_condition2, maxiter=maxiter, zoom_maxiter=zoom_maxiter)
 
     if derphi_star is None:
         warn('The line search algorithm did not converge',
@@ -329,7 +333,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 def scalar_search_wolfe2(phi, derphi, phi0=None,
                          old_phi0=None, derphi0=None,
                          c1=1e-4, c2=0.9, amax=None,
-                         extra_condition=None, maxiter=10,
+                         extra_condition=None, maxiter=10, *,
                          zoom_maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
