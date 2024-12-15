@@ -366,9 +366,10 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         The callable is only called for iterates satisfying
         the strong Wolfe conditions.
     maxiter : int, optional
-        Maximum number of iterations to perform.
+        Maximum number of iterations to perform. Defaults to 10.
     zoom_maxiter : int, optional
-        Maximum number of iterations for the zoom step.
+        Maximum number of iterations for the zoom step. Defaults to
+        10.
 
     Returns
     -------
