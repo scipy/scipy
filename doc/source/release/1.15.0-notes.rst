@@ -46,8 +46,8 @@ Highlights of this release
   as do new ``integrate`` functions ``tanhsinh``, ``nsum``, and ``cubature``.
 - `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
   approximation of real or complex functions.
-- `scipy.special` adds new functions offering substantially improved
-   Legendre function implementations with a more consistent interface.
+- `scipy.special` adds new functions offering improved Legendre function
+   implementations with a more consistent interface.
 
 
 ************
@@ -208,9 +208,8 @@ and support several Array API compatible array libraries in addition to NumPy
 
 `scipy.special` improvements
 ============================
-- New functions offering substantially improved Legendre function
-  implementations with a more consistent interface. See respective
-  docstrings for more information.
+- New functions offering improved Legendre function implementations with a
+  more consistent interface. See respective docstrings for more information.
 
   - `scipy.special.legendre_p`, `scipy.special.legendre_p_all`
   - `scipy.special.assoc_legendre_p`, `scipy.special.assoc_legendre_p_all`
