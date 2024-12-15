@@ -289,7 +289,7 @@ def _remove_redundancy_pivot_sparse(A, rhs):
     d = []                  # Indices of dependent rows
 
     A_orig = A
-    A = scipy.sparse.hstack((scipy.sparse.eye(m), A)).tocsc()
+    A = scipy.sparse.hstack((scipy.sparse.eye_array(m), A)).tocsc()
     e = np.zeros(m)
 
     # Implements basic algorithm from [2]

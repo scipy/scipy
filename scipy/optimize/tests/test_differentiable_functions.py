@@ -5,7 +5,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
 from scipy._lib._gcutils import assert_deallocated
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_array
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
                                                       VectorFunction,
@@ -693,7 +693,7 @@ def test_LinearVectorFunction():
         [0, 4, 2]
     ])
     x0 = np.zeros(3)
-    A_sparse = csr_matrix(A_dense)
+    A_sparse = csr_array(A_dense)
     x = np.array([1, -1, 0])
     v = np.array([-1, 1])
     Ax = np.array([-3, -4])
@@ -800,6 +800,6 @@ def test_LinearVectorFunctionNoReferenceCycle():
         [0, 4, 2]
     ])
     x0 = np.zeros(3)
-    A_sparse = csr_matrix(A_dense)
+    A_sparse = csr_array(A_dense)
     with assert_deallocated(lambda: LinearVectorFunction(A_sparse, x0, None)):
         pass
