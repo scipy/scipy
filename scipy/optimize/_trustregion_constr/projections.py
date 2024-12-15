@@ -5,7 +5,7 @@ from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 import scipy.sparse.linalg
 try:
-    from sksparse.cholmod import cholesky_AAt
+    from sksparse.cholmod import cholesky_AAt, CholmodTypeConversionWarning
     sksparse_available = True
 except ImportError:
     import warnings
@@ -58,7 +58,12 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A using ``NormalEquation`` approach.
     """
     # Cholesky factorization
-    factor = cholesky_AAt(A)
+    # TODO: revert this once the warning bug fix in sksparse is merged/released
+    # Add suppression of spurious warning bug from sksparse when csc_array is used
+    # factor = cholesky_AAt(A)
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(CholmodTypeConversionWarning, "converting matrix of class")
+        factor = cholesky_AAt(A)
 
     # z = x - A.T inv(A A.T) A x
     def null_space(x):
