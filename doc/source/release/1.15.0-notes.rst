@@ -240,7 +240,7 @@ and support several Array API compatible array libraries in addition to NumPy
   - `scipy.special.rel_entr` is improved when ``x/y`` overflows, underflows,
     or is close to ``1``.
 
-- `scipy.special.ndtr` is now more efficient for ``1 < |x| < sqrt(2)/2``.
+- `scipy.special.ndtr` is now more efficient for ``sqrt(2)/2 < |x| < 1``.
 
 `scipy.stats` improvements
 ==========================
