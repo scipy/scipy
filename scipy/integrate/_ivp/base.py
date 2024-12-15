@@ -100,6 +100,9 @@ class OdeSolver:
         Whether integration in a complex domain should be supported.
         Generally determined by a derived solver class capabilities.
         Default is False.
+    nstep : int, optional
+        Initial value for ``nstep`` attribute. Useful when restarting
+        integration to keep track of total steps. Default is 0.
 
     Attributes
     ----------
@@ -125,16 +128,19 @@ class OdeSolver:
         Number of the Jacobian evaluations.
     nlu : int
         Number of LU decompositions.
+    nstep : int
+        Number of steps performed.
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     def __init__(self, fun, t0, y0, t_bound, vectorized,
-                 support_complex=False):
+                 support_complex=False, nstep0=0):
         self.t_old = None
         self.t = t0
         self._fun, self.y = check_arguments(fun, y0, support_complex)
         self.t_bound = t_bound
         self.vectorized = vectorized
+        self._nstep = nstep0
 
         if vectorized:
             def fun_single(t, y):
@@ -172,6 +178,10 @@ class OdeSolver:
         else:
             return np.abs(self.t - self.t_old)
 
+    @property
+    def nstep(self):
+        return self._nstep
+
     def step(self):
         """Perform one integration step.
 
@@ -195,6 +205,7 @@ class OdeSolver:
         else:
             t = self.t
             success, message = self._step_impl()
+            self._nstep += 1
 
             if not success:
                 self.status = 'failed'
