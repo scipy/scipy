@@ -46,6 +46,8 @@ Highlights of this release
   as do new ``integrate`` functions ``tanhsinh``, ``nsum``, and ``cubature``.
 - `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
   approximation of real or complex functions.
+- `scipy.special` adds new functions offering improved Legendre function
+  implementations with a more consistent interface.
 
 
 ************
@@ -206,6 +208,14 @@ and support several Array API compatible array libraries in addition to NumPy
 
 `scipy.special` improvements
 ============================
+- New functions offering improved Legendre function implementations with a
+  more consistent interface. See respective docstrings for more information.
+
+  - `scipy.special.legendre_p`, `scipy.special.legendre_p_all`
+  - `scipy.special.assoc_legendre_p`, `scipy.special.assoc_legendre_p_all`
+  - `scipy.special.sph_harm_y`, `scipy.special.sph_harm_y_all`
+  - `scipy.special.sph_legendre_p`, `scipy.special.sph_legendre_p_all`,
+
 - The factorial functions ``special.{factorial,factorial2,factorialk}`` now
   offer an extension to the complex domain by passing the kwarg
   ``extend='complex'``. This is opt-in because it changes the values for
@@ -222,17 +232,15 @@ and support several Array API compatible array libraries in addition to NumPy
   sum has magnitude much bigger than the rest.
 - The accuracy of several functions has been improved:
 
-  - `scipy.special.ncfdtr` and `scipy.special.nctdtr` have been improved
-    throughout the domain.
+  - `scipy.special.ncfdtr`, `scipy.special.nctdtr`, and
+    `scipy.special.gdtrib` have been improved throughout the domain.
   - `scipy.special.hyperu` is improved for the case of ``b=1``, small ``x``,
     and small ``a``.
   - `scipy.special.logit` is improved near the argument ``p=0.5``.
   - `scipy.special.rel_entr` is improved when ``x/y`` overflows, underflows,
     or is close to ``1``.
 
-- `scipy.special.gdtrib` may now be used in a CuPy ``ElementwiseKernel`` on
-  GPUs.
-- `scipy.special.ndtr` is now more efficient.
+- `scipy.special.ndtr` is now more efficient for ``1 < |x| < sqrt(2)/2``.
 
 `scipy.stats` improvements
 ==========================
