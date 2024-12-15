@@ -233,15 +233,15 @@ and support several Array API compatible array libraries in addition to NumPy
   sum has magnitude much bigger than the rest.
 - The accuracy of several functions has been improved:
 
-  - `scipy.special.ncfdtr` and `scipy.special.nctdtr` have been improved
-    throughout the domain.
+  - `scipy.special.ncfdtr`, `scipy.special.nctdtr`, and
+    `scipy.special.gdtrib` have been improved throughout the domain.
   - `scipy.special.hyperu` is improved for the case of ``b=1``, small ``x``,
     and small ``a``.
   - `scipy.special.logit` is improved near the argument ``p=0.5``.
   - `scipy.special.rel_entr` is improved when ``x/y`` overflows, underflows,
     or is close to ``1``.
 
-- `scipy.special.ndtr` is now more efficient.
+- `scipy.special.ndtr` is now more efficient for ``1 < |x| < sqrt(2)/2``.
 
 `scipy.stats` improvements
 ==========================
