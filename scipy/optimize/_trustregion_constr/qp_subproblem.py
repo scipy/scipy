@@ -1,6 +1,6 @@
 """Equality-constrained quadratic programming solvers."""
 
-from scipy.sparse import (linalg, bmat, csc_matrix)
+from scipy.sparse import linalg, block_array
 from math import copysign
 import numpy as np
 from numpy.linalg import norm
@@ -47,7 +47,7 @@ def eqp_kktfact(H, c, A, b):
     # Karush-Kuhn-Tucker matrix of coefficients.
     # Defined as in Nocedal/Wright "Numerical
     # Optimization" p.452 in Eq. (16.4).
-    kkt_matrix = csc_matrix(bmat([[H, A.T], [A, None]]))
+    kkt_matrix = block_array([[H, A.T], [A, None]], format="csc")
     # Vector of coefficients.
     kkt_vec = np.hstack([-c, -b])
 

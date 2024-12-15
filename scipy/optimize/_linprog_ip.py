@@ -199,7 +199,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
     if A.shape[0] == 0:
         # If there are no constraints, some solvers fail (understandably)
         # rather than returning empty solution. This gets the job done.
-        sparse, lstsq, sym_pos, cholesky = False, False, True, False
+        lstsq, sym_pos, cholesky = False, True, False
     n_x = len(x)
 
     # [4] Equation 8.8
@@ -212,7 +212,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
     Dinv = x / z
 
     if sparse:
-        M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
+        M = A.dot(sps.diags_array(Dinv, format="csc").dot(A.T))
     else:
         M = A.dot(Dinv.reshape(-1, 1) * A.T)
     solve = _get_solver(M, sparse, lstsq, sym_pos, cholesky, permc_spec)
@@ -723,7 +723,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     message = "Optimization terminated successfully."
 
     if sparse:
-        A = sps.csc_matrix(A)
+        A = sps.csc_array(A)
 
     while go:
 

@@ -1,7 +1,7 @@
 """Linear least squares with bound constraints on independent variables."""
 import numpy as np
 from numpy.linalg import norm
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse, csr_array
 from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
 from scipy.optimize._minimize import Bounds
@@ -254,7 +254,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("`verbose` must be in [0, 1, 2].")
 
     if issparse(A):
-        A = csr_matrix(A)
+        A = csr_array(A)
     elif not isinstance(A, LinearOperator):
         A = np.atleast_2d(np.asarray(A))
 

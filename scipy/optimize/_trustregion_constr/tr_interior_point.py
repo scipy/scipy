@@ -158,11 +158,11 @@ class BarrierSubproblem:
         else:
             if sps.issparse(J_eq) or sps.issparse(J_ineq):
                 # It is expected that J_eq and J_ineq
-                # are already `csr_matrix` because of
+                # are already `csr_array` because of
                 # the way ``BoxConstraint``, ``NonlinearConstraint``
                 # and ``LinearConstraint`` are defined.
-                J_eq = sps.csr_matrix(J_eq)
-                J_ineq = sps.csr_matrix(J_ineq)
+                J_eq = sps.csr_array(J_eq)
+                J_ineq = sps.csr_array(J_ineq)
                 return self._assemble_sparse_jacobian(J_eq, J_ineq, s)
             else:
                 S = np.diag(s)
@@ -203,8 +203,8 @@ class BarrierSubproblem:
         new_indices[~mask] = indices
         new_data[mask] = s
         new_data[~mask] = data
-        J = sps.csr_matrix((new_data, new_indices, new_indptr),
-                           (n_eq + n_ineq, n_vars + n_ineq))
+        J = sps.csr_array((new_data, new_indices, new_indptr),
+                          (n_eq + n_ineq, n_vars + n_ineq))
         return J
 
     def lagrangian_hessian_x(self, z, v):
