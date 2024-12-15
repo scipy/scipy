@@ -213,8 +213,8 @@ and support several Array API compatible array libraries in addition to NumPy
 
   - `scipy.special.legendre_p`, `scipy.special.legendre_p_all`
   - `scipy.special.assoc_legendre_p`, `scipy.special.assoc_legendre_p_all`
-  - `sph_harm_y`, `sph_harm_y_all`
-  - `sph_legendre_p`, `sph_legendre_p_all`,
+  - `scipy.special.sph_harm_y`, `scipy.special.sph_harm_y_all`
+  - `scipy.special.sph_legendre_p`, `scipy.special.sph_legendre_p_all`,
 
 - The factorial functions ``special.{factorial,factorial2,factorialk}`` now
   offer an extension to the complex domain by passing the kwarg
