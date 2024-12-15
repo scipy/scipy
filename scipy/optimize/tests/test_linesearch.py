@@ -143,8 +143,11 @@ class TestLineSearch:
         assert c > 3  # check that the iterator really works...
 
     def test_scalar_search_wolfe2_zoom_maxiter(self):
-        f = lambda x: (x - 1) ** 2
-        fprime = lambda x: 2 * (x - 1)
+        def f(x):
+            return (x - 1) ** 2
+        
+        def fprime(x):
+            return 2 * (x - 1)
 
         x0 = 0  # starting point
         p_large = 1e5  # large initial step size
