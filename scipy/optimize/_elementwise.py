@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import (_chandrupatla, _chandrupatla_minimize,
                                           _chandrupatla_iv)
@@ -856,8 +858,8 @@ def _secant(func, a, b, *, args=(), xatol=None, xrtol=None,
                       ('fl', 'f1'), ('xr', 'x2'), ('fr', 'f2')]
 
     def pre_func_eval(work):
-        # [1] Figure 1 (first box)
-        x = (work.x2*work.f1 - work.x1*work.f2) / (work.f1 - work.f2)
+        with np.errstate(divide='ignore'):
+            x = (work.x2*work.f1 - work.x1*work.f2) / (work.f1 - work.f2)
         return x
 
     def post_func_eval(x, f, work):
