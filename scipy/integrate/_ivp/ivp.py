@@ -25,6 +25,15 @@ class OdeResult(OptimizeResult):
     pass
 
 
+def _print_iteration_header():
+    print("{:^15}{:^15}{:^15}{:^15}".format(
+        "Step Number", "Time", "Time Step", "Events"))
+
+
+def _print_iteration_progress(n, time, t_step, events):
+    print("{:^15}{:^15.2e}{:^15.2e}{:^15}".format(n, time, t_step, events))
+
+
 def prepare_events(events):
     """Standardize event functions and extract attributes."""
     if callable(events):
@@ -157,7 +166,8 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, args=None, **options):
+              events=None, vectorized=False, args=None, verbose=0,
+              **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
@@ -294,6 +304,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
         then `jac` (if given) and any event functions must have the same
         signature, and `args` must be a tuple of length 3.
+    verbose : {0, 1, 2}, optional
+        Level of algorithm's verbosity:
+
+        * 0 : work silently. (default)
+        * 1 : display a termination report.
+        * 2 : display progress during iterations.
+
     **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -574,6 +591,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             inspect.isclass(method) and issubclass(method, OdeSolver)):
         raise ValueError(f"`method` must be one of {METHODS} or OdeSolver class.")
 
+    if verbose not in [0, 1, 2]:
+        raise ValueError("`verbose` must be in [0, 1, 2].")
+
     t0, tf = map(float, t_span)
 
     if args is not None:
@@ -650,7 +670,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         t_events = None
         y_events = None
 
+    n = 0
     status = None
+    if verbose == 2:
+        _print_iteration_header()
+        _print_iteration_progress(n, solver.t, 0, events is not None)
+
     while status is None:
         message = solver.step()
 
@@ -718,6 +743,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         if t_eval is not None and dense_output:
             ti.append(t)
 
+        # Print status
+        n += 1
+        if verbose == 2:
+            _print_iteration_progress(n, solver.t, solver.t - solver.t_old,
+                                      events is not None)
+
     message = MESSAGES.get(status, message)
 
     if t_events is not None:
@@ -742,6 +773,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             )
     else:
         sol = None
+
+    if verbose > 0:
+        print(f"Termination status {status}: {message}")
 
     return OdeResult(t=ts, y=ys, sol=sol, t_events=t_events, y_events=y_events,
                      nfev=solver.nfev, njev=solver.njev, nlu=solver.nlu,
