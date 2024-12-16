@@ -14,7 +14,6 @@ from scipy.optimize.elementwise import find_minimum, find_root
 from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS
 
 from itertools import permutations
-from .test_zeros import TestScalarRootFinders
 
 
 def _vectorize(xp):
@@ -560,7 +559,7 @@ class TestChandrupatlaMinimize:
                               reason='JAX arrays do not support item assignment.')
 @pytest.mark.skip_xp_backends('cupy',
                               reason='cupy/cupy#8391')
-class TestFindRoot(TestScalarRootFinders):
+class TestFindRoot:
 
     def f(self, q, p):
         return special.ndtr(q) - p
