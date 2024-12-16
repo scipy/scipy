@@ -283,7 +283,7 @@ def least_squares(
         always uses the '2-point' scheme. If callable, it is used as
         ``jac(x, *args, **kwargs)`` and should return a good approximation
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
-        is applied), a sparse matrix (csr_array preferred for performance) or
+        is applied), a sparse array (csr_array preferred for performance) or
         a `scipy.sparse.linalg.LinearOperator`.
     bounds : 2-tuple of array_like or `Bounds`, optional
         There are two ways to specify bounds:
@@ -423,7 +423,7 @@ def least_squares(
           normal equation, which improves convergence if the Jacobian is
           rank-deficient [Byrd]_ (eq. 3.4).
 
-    jac_sparsity : {None, array_like, sparse matrix}, optional
+    jac_sparsity : {None, array_like, sparse array}, optional
         Defines the sparsity structure of the Jacobian matrix for finite
         difference estimation, its shape must be (m, n). If the Jacobian has
         only few non-zero elements in *each* row, providing the sparsity
@@ -456,7 +456,7 @@ def least_squares(
             Value of the cost function at the solution.
         fun : ndarray, shape (m,)
             Vector of residuals at the solution.
-        jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
+        jac : ndarray, sparse array or LinearOperator, shape (m, n)
             Modified Jacobian matrix at the solution, in the sense that J^T J
             is a Gauss-Newton approximation of the Hessian of the cost function.
             The type is the same as the one used by the algorithm.

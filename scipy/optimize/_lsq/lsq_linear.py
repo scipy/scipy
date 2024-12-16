@@ -50,7 +50,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Parameters
     ----------
-    A : array_like, sparse matrix of LinearOperator, shape (m, n)
+    A : array_like, sparse array or LinearOperator, shape (m, n)
         Design matrix. Can be `scipy.sparse.linalg.LinearOperator`.
     b : array_like, shape (m,)
         Target vector.
@@ -222,18 +222,18 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Examples
     --------
-    In this example, a problem with a large sparse matrix and bounds on the
+    In this example, a problem with a large sparse arrays and bounds on the
     variables is solved.
 
     >>> import numpy as np
-    >>> from scipy.sparse import rand
+    >>> from scipy.sparse import random_array
     >>> from scipy.optimize import lsq_linear
     >>> rng = np.random.default_rng()
     ...
     >>> m = 2000
     >>> n = 1000
     ...
-    >>> A = rand(m, n, density=1e-4, random_state=rng)
+    >>> A = random_array((m, n), density=1e-4, random_state=rng)
     >>> b = rng.standard_normal(m)
     ...
     >>> lb = rng.standard_normal(n)
