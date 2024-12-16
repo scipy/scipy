@@ -31,6 +31,7 @@ try:
     import sksparse  # noqa: F401
     from sksparse.cholmod import cholesky as cholmod  # noqa: F401
     from sksparse.cholmod import analyze as cholmod_analyze
+    from sksparse.cholmod import CholmodTypeConversionWarning
 except ImportError:
     has_cholmod = False
 try:
@@ -92,8 +93,10 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                     # or when the matrix changes due to a new problem
                     _get_solver.cholmod_factor.cholesky_inplace(M)
                 except Exception:
-                    _get_solver.cholmod_factor = cholmod_analyze(M)
-                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                    with np.testing.suppress_warnings() as sup:
+                        sup.filter(CholmodTypeConversionWarning, "converting matrix of class")
+                        _get_solver.cholmod_factor = cholmod_analyze(M)
+                        _get_solver.cholmod_factor.cholesky_inplace(M)
                 solve = _get_solver.cholmod_factor
             else:
                 if has_umfpack and sym_pos:
