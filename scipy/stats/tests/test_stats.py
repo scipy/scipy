@@ -2147,14 +2147,6 @@ class TestFindRepeats:
 
 
 class TestRegression:
-
-    def test_one_arg_deprecation(self):
-        x = np.arange(20).reshape((2, 10))
-        message = "Inference of the two sets..."
-        with pytest.deprecated_call(match=message):
-            stats.linregress(x)
-        stats.linregress(x[0], x[1])
-
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
         result = stats.linregress(X, BIG)
@@ -2245,42 +2237,6 @@ class TestRegression:
         assert_allclose(res.pvalue, 1.16440531074e-06)
         assert_allclose(res.stderr, 0.0519051424731)
         assert_allclose(res.intercept_stderr, 8.0490133029927)
-
-    # TODO: remove this test once single-arg support is dropped;
-    # deprecation warning tested in `test_one_arg_deprecation`
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_regress_simple_onearg_rows(self):
-        # Regress a line w sinusoidal noise,
-        # with a single input of shape (2, N)
-        x = np.linspace(0, 100, 100)
-        y = 0.2 * np.linspace(0, 100, 100) + 10
-        y += np.sin(np.linspace(0, 20, 100))
-        rows = np.vstack((x, y))
-
-        result = stats.linregress(rows)
-        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
-        assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
-
-    # TODO: remove this test once single-arg support is dropped;
-    # deprecation warning tested in `test_one_arg_deprecation`
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_regress_simple_onearg_cols(self):
-        x = np.linspace(0, 100, 100)
-        y = 0.2 * np.linspace(0, 100, 100) + 10
-        y += np.sin(np.linspace(0, 20, 100))
-        columns = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
-
-        result = stats.linregress(columns)
-        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
-        assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
-
-    # TODO: remove this test once single-arg support is dropped;
-    # deprecation warning tested in `test_one_arg_deprecation`
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_regress_shape_error(self):
-        # Check that a single input argument to linregress with wrong shape
-        # results in a ValueError.
-        assert_raises(ValueError, stats.linregress, np.ones((3, 3)))
 
     def test_linregress(self):
         # compared with multivariate ols with pinv
