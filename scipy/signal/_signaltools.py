@@ -4523,15 +4523,15 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     b : (N,) array_like
         The numerator coefficient vector of the filter.
 
-        .. versionchanged:: 1.15.0
-           Complex `b` is correctly handled.
+        .. versionchanged:: 1.16.0
+           Change in behaviour for complex `b`, see ``Notes``.
 
     a : (N,) array_like
         The denominator coefficient vector of the filter.  If ``a[0]``
         is not 1, then both `a` and `b` are normalized by ``a[0]``.
 
-        .. versionchanged:: 1.15.0
-           Complex `a` is correctly handled.
+        .. versionchanged:: 1.16.0
+           Change in behaviour for complex `a`, see ``Notes``.
 
     x : array_like
         The array of data to be filtered.
@@ -4585,6 +4585,13 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     filter.
 
     The option to use Gustaffson's method was added in scipy version 0.16.0.
+
+    .. versionchanged:: 1.16.0
+
+       `b` and `a` are complex-conjugated when applying the backward
+       filter.  This conjugation reflects the filter's frequency
+       spectrum through zero, corresponding to the effect on the
+       signal's frequency spectrum when it is reversed in time.
 
     References
     ----------
