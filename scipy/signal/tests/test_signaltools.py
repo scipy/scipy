@@ -2777,7 +2777,7 @@ class TestFiltFilt:
         # filter passband width [/time]
         fwidth = 5
         # sample rate [/time]
-        fs = float(1e3)
+        fs = 1.0e3
 
         z, p, k = signal.butter(2, 2*xp.pi*fwidth/2, output='zpk', fs=fs)
 
