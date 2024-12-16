@@ -434,6 +434,9 @@ Backwards incompatible changes
 - `scipy.stats.wilcoxon` now respects the ``method`` argument provided by the
   user. Previously, even if ``method='exact'`` was specified, the function
   would resort to ``method='approx'`` in some cases.
+- ``scipy.integrate.AccuracyWarning`` has been removed as the functions the
+  warning was emitted from (``scipy.integrate.quadrature`` and
+  ``scipy.integrate.romberg``) have been removed.
 
 *************
 Other changes
