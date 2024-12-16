@@ -94,7 +94,7 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                     _get_solver.cholmod_factor.cholesky_inplace(M)
                 except Exception:
                     with np.testing.suppress_warnings() as sup:
-                        sup.filter(CholmodTypeConversionWarning, "converting matrix of class")
+                        sup.filter(CholmodTypeConversionWarning, "converting *of class")
                         _get_solver.cholmod_factor = cholmod_analyze(M)
                         _get_solver.cholmod_factor.cholesky_inplace(M)
                 solve = _get_solver.cholmod_factor
