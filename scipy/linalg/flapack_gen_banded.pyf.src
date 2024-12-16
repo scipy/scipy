@@ -77,3 +77,29 @@ subroutine <prefix>gbtrs(ab,kl,ku,b,ipiv,trans,n,nrhs,ldab,ldb,info) ! in :Band:
     integer intent(out):: info
 
 end subroutine <prefix>gbtrs
+
+
+subroutine <prefix>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,iwork,info)
+    ! ?GBCON estimates the reciprocal of the condition number of a real
+    ! general band matrix A, in either the 1-norm or the infinity-norm,
+    ! using the LU factorization computed by DGBTRF.
+    ! An estimate is obtained for norm(inv(A)), and the reciprocal of the
+    ! condition number is computed as
+    ! RCOND = 1 / ( norm(A) * norm(inv(A)) ).
+    threadsafe
+    callstatement (*f2py_func)(norm,&n,kl,ku,ab,ldab,ipiv,&anorm,&rcond,work,iwork,&info)
+    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype>*, F_INT*, F_INT*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
+
+    character optional, intent(in) :: norm = '1'
+    integer optional,depend(ab) :: n=shape(ab,1)
+    integer intent(in) :: kl
+    integer intent(in) :: ku
+    <ftype> dimension(ldab,n),intent(in) :: ab
+    integer optional,intent(in),depend(ab) :: ldab=shape(ab,0)
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(hide, cache), dimension(3*n), depend(n) :: work
+    integer intent(hide, cache), dimension(n), depend(n) :: iwork
+    integer intent(out) :: info
+end subroutine <prefix>gtcon

@@ -44,6 +44,11 @@ All functions
 .. autosummary::
    :toctree: generated/
 
+   sgbcon
+   dgbcon
+   cgbcon
+   zgbcon
+
    sgbsv
    dgbsv
    cgbsv
