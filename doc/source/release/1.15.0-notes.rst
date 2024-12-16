@@ -402,8 +402,9 @@ Expired Deprecations
   ``daub``, ``qmf``, ``cascade``, ``morlet``, ``morlet2``, ``ricker``,
   and ``cwt``. Users should use ``pywavelets`` instead.
 - ``scipy.signal.cmplx_sort`` has been removed.
-- ``scipy.integrate.quadrature`` and ``scipy.integrate.romberg`` have been
-  removed in favour of `scipy.integrate.quad`.
+- ``scipy.integrate.quadrature``, ``scipy.integrate.romberg``, and
+  ``scipy.integrate.AccuracyWarning`` have been removed in favour of
+  `scipy.integrate.quad`.
 - ``scipy.stats.rvs_ratio_uniforms`` has been removed in favor of
   `scipy.stats.sampling.RatioUniforms`.
 - `scipy.special.factorial` now raises an error for non-integer scalars when
