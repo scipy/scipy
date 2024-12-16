@@ -402,9 +402,8 @@ Expired Deprecations
   ``daub``, ``qmf``, ``cascade``, ``morlet``, ``morlet2``, ``ricker``,
   and ``cwt``. Users should use ``pywavelets`` instead.
 - ``scipy.signal.cmplx_sort`` has been removed.
-- ``scipy.integrate.quadrature``, ``scipy.integrate.romberg``, and
-  ``scipy.integrate.AccuracyWarning`` have been removed in favour of
-  `scipy.integrate.quad`.
+- ``scipy.integrate.quadrature`` and ``scipy.integrate.romberg`` have been
+  removed in favour of `scipy.integrate.quad`.
 - ``scipy.stats.rvs_ratio_uniforms`` has been removed in favor of
   `scipy.stats.sampling.RatioUniforms`.
 - `scipy.special.factorial` now raises an error for non-integer scalars when
@@ -427,6 +426,9 @@ Backwards incompatible changes
 - `scipy.stats.wilcoxon` now respects the ``method`` argument provided by the
   user. Previously, even if ``method='exact'`` was specified, the function
   would resort to ``method='approx'`` in some cases.
+- ``scipy.integrate.AccuracyWarning`` has been removed as the functions the
+  warning was emitted from (``scipy.integrate.quadrature`` and
+  ``scipy.integrate.romberg``) have been removed.
 
 *************
 Other changes
