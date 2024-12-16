@@ -48,7 +48,7 @@ class NonlinearConstraint:
         'cs'} select a finite difference scheme for the numerical estimation.
         A callable must have the following signature::
 
-            jac(x) -> {ndarray, sparse matrix}, shape (m, n)
+            jac(x) -> {ndarray, sparse array}, shape (m, n)
 
         Default is '2-point'.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy, None}, optional
@@ -63,7 +63,7 @@ class NonlinearConstraint:
 
         A callable must return the Hessian matrix of ``dot(fun, v)`` and
         must have the following signature:
-        ``hess(x, v) -> {LinearOperator, sparse matrix, array_like}, shape (n, n)``.
+        ``hess(x, v) -> {LinearOperator, sparse array, array_like}, shape (n, n)``.
         Here ``v`` is ndarray with shape (m,) containing Lagrange multipliers.
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
@@ -73,7 +73,7 @@ class NonlinearConstraint:
         Relative step size for the finite difference approximation. Default is
         None, which will select a reasonable value automatically depending
         on a finite difference scheme.
-    finite_diff_jac_sparsity: {None, array_like, sparse matrix}, optional
+    finite_diff_jac_sparsity: {None, array_like, sparse array}, optional
         Defines the sparsity structure of the Jacobian matrix for finite
         difference estimation, its shape must be (m, n). If the Jacobian has
         only few non-zero elements in *each* row, providing the sparsity
@@ -135,7 +135,7 @@ class LinearConstraint:
 
     Parameters
     ----------
-    A : {array_like, sparse matrix}, shape (m, n)
+    A : {array_like, sparse array}, shape (m, n)
         Matrix defining the constraint.
     lb, ub : dense array_like, optional
         Lower and upper limits on the constraint. Each array must have the

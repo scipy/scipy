@@ -293,7 +293,7 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
 
     Parameters
     ----------
-    A : sparse matrix (or ndarray), shape (m, n)
+    A : sparse array (or ndarray), shape (m, n)
         Matrix ``A`` used in the projection.
     method : string, optional
         Method used for compute the given linear
@@ -374,7 +374,7 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
         if method is None:
             method = "AugmentedSystem"
         if method not in ("NormalEquation", "AugmentedSystem"):
-            raise ValueError("Method not allowed for sparse matrix.")
+            raise ValueError("Method not allowed for sparse array.")
         if method == "NormalEquation" and not sksparse_available:
             warnings.warn("Only accepts 'NormalEquation' option when "
                           "scikit-sparse is available. Using "
