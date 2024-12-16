@@ -59,7 +59,7 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
     """
     # Cholesky factorization
     # TODO: revert this once the warning bug fix in sksparse is merged/released
-    # Add suppression of spurious warning bug from sksparse when csc_array is used
+    # Add suppression of spurious warning bug from sksparse with csc_array gh-22089
     # factor = cholesky_AAt(A)
     with np.testing.suppress_warnings() as sup:
         sup.filter(CholmodTypeConversionWarning, "converting matrix of class")
