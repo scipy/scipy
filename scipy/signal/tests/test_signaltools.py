@@ -1,5 +1,6 @@
 import sys
 import math
+import cmath
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
@@ -2776,21 +2777,25 @@ class TestFiltFilt:
         # filter passband width [/time]
         fwidth = 5
         # sample rate [/time]
-        fs = 1e3
+        fs = float(1e3)
 
         z, p, k = signal.butter(2, 2*xp.pi*fwidth/2, output='zpk', fs=fs)
 
-        z = z.astype(complex)
-        p = p.astype(complex)
+        z = xp.asarray(z, dtype=xp.complex128)
+        p = xp.asarray(p, dtype=xp.complex128)
 
         # rotate filter zeros and poles to be centred about fcentre
-        z *= xp.exp(2j * xp.pi * fcentre/fs)
-        p *= xp.exp(2j * xp.pi * fcentre/fs)
+        z *= cmath.exp(2j * xp.pi * fcentre/fs)
+        p *= cmath.exp(2j * xp.pi * fcentre/fs)
 
         b, a = signal.zpk2tf(z, p, k)
 
+        # XXX - while zpk is numpy only
+        b = xp.asarray(b)
+        a = xp.asarray(a)
+
         # time [time]
-        t = xp.arange(500) / fs
+        t = xp.arange(500, dtype=xp.complex128) / fs
 
         # filter input
         u = 2 * xp.cos(2*xp.pi*fcentre*t)
@@ -2798,19 +2803,19 @@ class TestFiltFilt:
         # first-order transient iterations to 0.5% settling level.
         # filter isn't first-order, use 0.5% to allow for headroom
         # for 1% assertion later
-        ntrans = int(xp.log(5e-3) / xp.log(max(abs(p))))
+        ntrans = int(math.log(5e-3) / math.log(max(abs(p))))
 
-        assert 2*ntrans < len(t)
+        assert 2*ntrans < t.size
 
         # 2*cos(x) = xp.exp(2j*x) + xp.exp(-2j*x); filter above should
         # remove xp.exp(-2j*x)
         yref = xp.exp(2j*xp.pi*fcentre*t)
 
         y = self.filtfilt((z,p,k), u, xp=xp)
-        xp.testing.assert_array_less(abs(y - yref)[ntrans:-ntrans], 1e-2)
+        assert xp.all(xp.abs(y-yref)[ntrans:-ntrans] < 1e-2)
 
         ygust = self.filtfilt((z,p,k), u, method='gust', xp=xp)
-        xp.testing.assert_array_less(abs(ygust - yref)[ntrans:-ntrans], 1e-2)
+        assert xp.all(xp.abs(ygust-yref)[ntrans:-ntrans] < 1e-2)
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
