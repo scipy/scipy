@@ -14,7 +14,7 @@ def find_root(f, init, /, *, args=(), method=None, tolerances=None, maxiter=None
     """Find the root of a real-valued function of a real variable.
 
     For each element of the output of `f`, `find_root` seeks the scalar
-    root that makes the element 0. By default, this function currently Chandrupatla's
+    root that makes the element 0. By default, this function uses Chandrupatla's
     bracketing algorithm [1]_ and therefore requires argument `init` to
     provide a bracket around the root: the function values at the two endpoints
     must have opposite signs. Other methods are available via the `method` argument.
@@ -44,7 +44,7 @@ def find_root(f, init, /, *, args=(), method=None, tolerances=None, maxiter=None
         `find_root` seeks an array ``x`` such that ``f(x)`` is an array of zeros.
     init : 2-tuple of float array_like
         The initial point(s) from which to begin root finding.
-        Arrays be broadcastable with one another and `args`.
+        Arrays must be broadcastable with one another and `args`.
 
         For bracketing methods, this must be
         the lower and upper endpoints of a bracket surrounding the desired root.
@@ -62,7 +62,8 @@ def find_root(f, init, /, *, args=(), method=None, tolerances=None, maxiter=None
 
         - ``'chandrupatla'``: uses Chandrupatla's algorithm [1]_. `initial` must
           be a bracket.
-        - ``'secant'``: uses the secant method. `initial` may be any two points.
+        - ``'secant'``: uses the secant method [2]_. `initial` may be any two points,
+          but convergence is not guaranteed.
     tolerances : dictionary of floats, optional
         Absolute and relative tolerances on the root and function value.
         Valid keys of the dictionary are:
