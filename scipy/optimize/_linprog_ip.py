@@ -31,6 +31,7 @@ try:
     import sksparse  # noqa: F401
     from sksparse.cholmod import cholesky as cholmod  # noqa: F401
     from sksparse.cholmod import analyze as cholmod_analyze
+    from sksparse.cholmod import CholmodTypeConversionWarning
 except ImportError:
     has_cholmod = False
 try:
@@ -87,13 +88,25 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
             elif cholesky:
-                try:
-                    # Will raise an exception in the first call,
-                    # or when the matrix changes due to a new problem
-                    _get_solver.cholmod_factor.cholesky_inplace(M)
-                except Exception:
-                    _get_solver.cholmod_factor = cholmod_analyze(M)
-                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                # TODO: revert this suppress_warning once the warning bug fix in
+                # sksparse is merged/released
+                # Suppress spurious warning bug from sksparse with csc_array gh-22089
+                # try:
+                #     # Will raise an exception in the first call,
+                #     # or when the matrix changes due to a new problem
+                #     _get_solver.cholmod_factor.cholesky_inplace(M)
+                # except Exception:
+                #     _get_solver.cholmod_factor = cholmod_analyze(M)
+                #     _get_solver.cholmod_factor.cholesky_inplace(M)
+                with np.testing.suppress_warnings() as sup:
+                    sup.filter(CholmodTypeConversionWarning)
+                    try:
+                        # Will raise an exception in the first call,
+                        # or when the matrix changes due to a new problem
+                        _get_solver.cholmod_factor.cholesky_inplace(M)
+                    except Exception:
+                        _get_solver.cholmod_factor = cholmod_analyze(M)
+                        _get_solver.cholmod_factor.cholesky_inplace(M)
                 solve = _get_solver.cholmod_factor
             else:
                 if has_umfpack and sym_pos:
