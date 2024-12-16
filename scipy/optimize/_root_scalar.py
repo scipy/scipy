@@ -277,7 +277,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
                          'nor starting point provided.')
 
     meth = method.lower()
-    map2underlying = {'halley': 'newton', 'secant': 'newton'}
+    map2underlying = {'halley': 'newton', 'secant': 'newton', "muller" : "_muller"}
 
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
