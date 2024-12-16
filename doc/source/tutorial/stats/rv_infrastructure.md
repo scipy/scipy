@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
 .. jupyterlite:: ../../_contents/hypothesis_bartlett.ipynb
    :new_tab: True
 ```
 
 (rv_infrastructure)=
+
++++
+
 # Random Variable Transition Guide
 
 +++
