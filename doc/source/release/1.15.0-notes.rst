@@ -39,11 +39,15 @@ Highlights of this release
 - New probability distribution features in `scipy.stats` can be used to improve
   the speed and accuracy of existing continuous distributions and perform new
   probability calculations.
-- `scipy.differentiate` is a new top-level submodule for accurate
-  estimation of derivatives of black box functions.
-- `scipy.optimize.elementwise` provides vectorized root-finding and
-  minimization of univariate functions, and it supports the array API
-  as do new ``integrate`` functions ``tanhsinh``, ``nsum``, and ``cubature``.
+- Several new features support vectorized calculations with Python Array API
+  Standard compatible input (see "Array API Standard Support" below):
+  - `scipy.differentiate` is a new top-level submodule for accurate
+    estimation of derivatives of black box functions.
+  - `scipy.optimize.elementwise` contains new functions for root-finding and
+    minimization of univariate functions.
+  - `scipy.integrate` offers new functions ``cubature``, ``tanhsinh``, and
+    ``nsum`` for multivariate integration, univariate integration, and
+    univariate series summation, respectively.
 - `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
   approximation of real or complex functions.
 
@@ -71,17 +75,16 @@ and support several Array API compatible array libraries in addition to NumPy
 
 `scipy.integrate` improvements
 ==============================
-- The ``QUADPACK`` Fortran77 package has been ported to C.
-- `scipy.integrate.lebedev_rule` computes abscissae and weights for
-  integration over the surface of a sphere.
-- `scipy.integrate.nsum` evaluates finite and infinite series and their
-  logarithms.
-- `scipy.integrate.tanhsinh` is now exposed for public use, allowing
-  evaluation of a convergent integral using tanh-sinh quadrature.
 - The new `scipy.integrate.cubature` function supports multidimensional
   integration, and has support for approximating integrals with
   one or more sets of infinite limits.
-
+- `scipy.integrate.tanhsinh` is now exposed for public use, allowing
+  evaluation of a convergent integral using tanh-sinh quadrature.
+- `scipy.integrate.nsum` evaluates finite and infinite series and their
+  logarithms.
+- `scipy.integrate.lebedev_rule` computes abscissae and weights for
+  integration over the surface of a sphere.
+- The ``QUADPACK`` Fortran77 package has been ported to C.
 
 `scipy.interpolate` improvements
 ================================
@@ -237,22 +240,24 @@ and support several Array API compatible array libraries in addition to NumPy
 `scipy.stats` improvements
 ==========================
 - A new probability distribution infrastructure has been added for the
-  implementation of univariate, continuous distributions with speed,
-  accuracy, and memory advantages:
+  implementation of univariate, continuous distributions. It has several
+  speed, accuracy, memory, and interface advantages compared to the
+  previous infrastructure. See :doc:`rv_infrastructure` for a tutorial.
 
-  - `scipy.stats.Normal` represents the normal distribution with the new
-    interface. In typical cases, its methods are faster and more accurate than
-    those of `scipy.stats.norm`.
   - Use `scipy.stats.make_distribution` to treat an existing continuous
     distribution (e.g. `scipy.stats.norm`) with the new infrastructure.
     This can improve the speed and accuracy of existing distributions,
-    especially for methods not overridden with custom formulas in the
-    implementation.
+    especially those with methods not overridden with distribution-specific
+    formulas.
+  - `scipy.stats.Normal` and `scipy.stats.Uniform` are pre-defined classes
+    to represents the normal and uniform distributions, respectively.
+    Their interfaces may be faster and more convenient than those produced by
+    ``make_distribution``.
+  - `scipy.stats.Mixture` can be used to represent mixture distributions.
 
-- `scipy.stats.Mixture` has been added to represent mixture distributions.
-- Instances of `scipy.stats.Normal` and the classes returned by
-  `scipy.stats.make_distribution` are supported by several new mathematical
-  transformations.
+- Instances of `scipy.stats.Normal`, `scipy.stats.Uniform`, and the classes
+  returned by `scipy.stats.make_distribution` are supported by several new
+  mathematical transformations.
 
   - `scipy.stats.truncate` for truncation of the support.
   - `scipy.stats.order_statistic` for the order statistics of a given number
