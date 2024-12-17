@@ -730,6 +730,9 @@ def read(filename, mmap=False):
         else:
             fid.seek(0)
 
+    if not data_chunk_received:
+        raise ValueError(f'Wav file {filename} is corrupted: No data chunks found.')
+
     return fs, data
 
 
