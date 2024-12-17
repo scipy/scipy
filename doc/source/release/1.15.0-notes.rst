@@ -41,6 +41,7 @@ Highlights of this release
   probability calculations.
 - Several new features support vectorized calculations with Python Array API
   Standard compatible input (see "Array API Standard Support" below):
+
   - `scipy.differentiate` is a new top-level submodule for accurate
     estimation of derivatives of black box functions.
   - `scipy.optimize.elementwise` contains new functions for root-finding and
@@ -48,6 +49,7 @@ Highlights of this release
   - `scipy.integrate` offers new functions ``cubature``, ``tanhsinh``, and
     ``nsum`` for multivariate integration, univariate integration, and
     univariate series summation, respectively.
+
 - `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
   approximation of real or complex functions.
 
@@ -242,7 +244,7 @@ and support several Array API compatible array libraries in addition to NumPy
 - A new probability distribution infrastructure has been added for the
   implementation of univariate, continuous distributions. It has several
   speed, accuracy, memory, and interface advantages compared to the
-  previous infrastructure. See :doc:`rv_infrastructure` for a tutorial.
+  previous infrastructure. See :ref:`rv_infrastructure` for a tutorial.
 
   - Use `scipy.stats.make_distribution` to treat an existing continuous
     distribution (e.g. `scipy.stats.norm`) with the new infrastructure.
