@@ -31,6 +31,8 @@ jobs:
         run: |
           set -xe
           RUN="1"
+          # For running a job locally with Act (https://github.com/nektos/act),
+          # always run the job rather than skip based on commit message
           if [[ $ACT != true ]]; then
             COMMIT_MSG=$(git log --no-merges -1)
             if [[ "$COMMIT_MSG" == *"[lint only]"* || "$COMMIT_MSG" == *"[docs only]"* ]]; then
