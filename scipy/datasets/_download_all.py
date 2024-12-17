@@ -39,7 +39,7 @@ def download_all(path=None):
     if path is None:
         path = pooch.os_cache('scipy-data')
     # https://github.com/scipy/scipy/issues/21879
-    downloader = pooch.HTTPDownloader(headers={"User-Agent": f"SciPy"})
+    downloader = pooch.HTTPDownloader(headers={"User-Agent": "SciPy"})
     for dataset_name, dataset_hash in _registry.registry.items():
         pooch.retrieve(url=_registry.registry_urls[dataset_name],
                        known_hash=dataset_hash,
