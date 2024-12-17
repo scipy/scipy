@@ -409,14 +409,13 @@ class _ProbabilityDistribution(ABC):
         --------
         Instantiate a distribution with the desired parameters:
 
-        >>> from scipy import stats
-        >>> X = stats.Uniform(a=0., b=10.)
+        >>> X = Uniform(a=0., b=10.)
 
         Compute the median:
 
         >>> X.median()
         np.float64(5.0)
-        >>> X.median() == X.icdf(0.5) == X.iccdf(0.5)
+        >>> X.median() == X.icdf(0.4) == X.iccdf(0.4)
         True
 
         """
