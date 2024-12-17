@@ -36,8 +36,7 @@ algorithms are beneficial to most science domains and use cases.  We have
 established an API design pattern for multiprocessing - using the ``workers``
 keyword - that can be adopted in many more functions.
 
-Enabling the use of an accelerator like Pythran, possibly via Transonic, and
-making it easier for users to use Numba's ``@njit`` in their code that relies
+Making it easier for users to use Numba's ``@njit`` in their code that relies
 on SciPy functionality would unlock a lot of performance gain.  That needs a
 strategy though, all solutions are still maturing (see for example
 `this overview <https://fluiddyn.netlify.app/transonic-vision.html>`__).

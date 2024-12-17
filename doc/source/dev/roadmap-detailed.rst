@@ -81,10 +81,9 @@ happen it must be clear that the maintenance burden is low enough.
 Use of Fortran libraries
 ````````````````````````
 SciPy owes a lot of its success to relying on wrapping well established
-Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). Some of these
-libraries are aging well, others less so. We should audit our use of these
-libraries with respect to the maintenance effort, the functionality, and the
-existence of (possibly partial) alternatives, *including those inside SciPy*.
+Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). For <reasons>,
+however, we are transitioning all Fortran libraries to more maintainable
+implementations; see `gh-18566 <https://github.com/scipy/scipy/issues/18566>`__.
 
 
 Continuous integration
@@ -108,7 +107,7 @@ checking. Stripping of debug symbols in ``multibuild`` can perhaps be improved
 (see `this issue <https://github.com/multi-build/multibuild/issues/162>`__).
 An effort should be made to slim down where possible, and not add new large
 files. In the future, things that are being considered (very tentatively) and
-may help are separating out the bundled` ``libopenblas`` and removing support
+may help are separating out the bundled ``libopenblas`` and removing support
 for ``long double``.
 
 
@@ -207,6 +206,7 @@ Needed:
 - ``get_lapack_funcs`` should always use ``flapack``
 - Wrap more LAPACK functions
 - One too many funcs for LU decomposition, remove one
+- Add batch support for most functions (`gh-21466 <https://github.com/scipy/scipy/issues/21466>`__)
 
 Ideas for new features:
 
@@ -237,13 +237,8 @@ is in good shape, however we can make a number of improvements:
 
 misc
 ````
-``scipy.misc`` will be removed as a public module.  Most functions in it have
-been moved to another submodule or deprecated.  The few that are left:
-
-- ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
-  with more extensive functionality for numerical differentiation.
-- ``ascent``, ``face``, ``electrocardiogram`` : remove or move to the
-  appropriate subpackages (e.g. ``scipy.ndimage``, ``scipy.signal``).
+All features have been removed from ``scipy.misc``, and the namespace itself
+will eventually be removed.
 
 
 ndimage
