@@ -4298,7 +4298,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Axis along which to perform the calculation. Default is 0.
         If None, ravel both arrays before performing the calculation.
 
-        .. versionadded:: 1.13.0
+        .. versionadded:: 1.14.0
     alternative : {'two-sided', 'greater', 'less'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
