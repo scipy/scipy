@@ -129,8 +129,20 @@ differentiate
 `````````````
 This module was added with the understanding that its scope would be limited.
 The goal is to provide basic differentiation of black-box functions, not
-replicate all features of existing differentiation tools. The primary goal
-is to improve the reliability of existing functions.
+replicate all features of existing differentiation tools. With that in mind,
+items for future work include:
+
+- Improve support for functions that accept additional arguments (e.g. add
+  ``*args`` to ``jacobian`` and ``hessian``). Note that this is not trivial
+  due to the way elements of the arrays are eliminated when their corresponding
+  calculations have converged.
+- Improve implementation of `scipy.differentiate.hessian`: rather than chaining
+  first-order differentiation, use a second-order differentiation stencil.
+- Consider the addition of an option to use relative step sizes.
+- Consider generalizing the approach to use "polynomial extrapolation"; i.e.,
+  rather than estimating derivatives of a given order from the minimal number
+  of function evaluations, use a least-squares approach to improve robustness
+  to numerical noise.
 
 fft
 ````
@@ -276,11 +288,16 @@ maintenance.  No major plans or wishes here.
 
 optimize
 ````````
+It is very challenging to write and maintain optimizers that approach the
+state of the art for large-scale problems. In many cases, it will be more
+appropriate for SciPy to add interfaces to carefully-vetted,
+externally-maintained projects (e.g. HiGHS, PRIMA) rather than vendor
+existing optimizers or introduce custom implementations. Other areas
+for future work include the following.
 
-- Add high-performance optimizers for large-scale problems.
+- Improve the interfaces of existing optimizers (e.g. ``shgo``).
 - Improve usability of the benchmark system, and add features for comparing
   results more easily (e.g. summary plots).
-
 
 signal
 ``````
@@ -434,12 +451,11 @@ The following improvements will help SciPy better serve this role.
   intervals, and implement exact and randomized p-value calculations -
   considering the possibility of ties - where computationally feasible.
 - Extend the new univariate distribution infrastructure, adding support
-  for discrete distributions and circular continuous distributions. Add
-  generic transformations and compositions of distributions, such as
-  mixture, truncated, wrapped, double, half, and folded distributions.
+  for discrete distributions and circular continuous distributions.
   Add a selection of the most widely used statistical distributions
   under the new infrastructure, performing rigorous accuracy testing
-  and documenting the results.
+  and documenting the results. Enable users to create custom distributions
+  that leverage the new infrastructure.
 - Improve the multivariate distribution infrastructure to ensure a
   consistent API, thorough testing, and complete documentation.
 - Continue to make the APIs of functions more consistent, with standard
