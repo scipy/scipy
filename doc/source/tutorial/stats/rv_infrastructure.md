@@ -67,7 +67,6 @@ frozen.pdf(x)
 In a sense, the instances of `rv_continuous` like `norm` represented "distribution families", which require parameters to identify a particular probability distribution, and an instance of `rv_continuous_frozen` was akin to a "random variable" - a mathematical object that follows a particular probability distribution.
 
 Both approaches are valid and have advantages in certain situations. For instance, `stats.norm.pdf(x)` appears more natural than `stats.norm().pdf(x)` for such a simple invocation or when methods are viewed as functions of distribution parameters rather than the usual arguments (e.g., likelihood). However, the former approach has a few inherent disadvantages; e.g., all of SciPy's 125 continuous distributions have to be instantiated at import time, distribution parameters must be validated every time a method is called, and documentation of methods must either a) be generated separately for every method of every distribution or b) omit the shape parameters that are unique for each distribution.
-]
 To address these and other shortcomings, [gh-15928](https://github.com/scipy/scipy/issues/15928) proposed a new, separate infrastructure based on the latter (random variable) approach. This transition guide documents how users of `rv_continuous` and `rv_continuous_frozen` can migrate to the new infrastructure.
 
 *Note: The new infrastructure may not yet be as convenient for some use cases, especially fitting distribution parameters to data. Users are welcome to continue to use the old infrastructure if it suits their needs; it is not deprecated at this time.*
@@ -166,7 +165,7 @@ X.plot()
 plt.show()
 ```
 
-Most of the remaining methods of the old infrastructure (`rvs`, `moment`, `stats`, `interval`, `fit`, `nnlf`, `fit_loc_scale`, and `expect`) can be replaced, but some care is required. Before describing the replacements, we briefly mention how to work with random variables that are not normally distributed: almost all old distribution objects can be converted into a new distribution class with `scipy.stats.make_distribution`, and the new distribution class can be instantiated by passing the shape parameters as keyword arguments. For instance, consider the [Weibull distribution](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weibull_min.html#scipy.stats.weibull_min). We can create a new class that is an abstraction of the distribution family like:
+Most of the remaining methods of the old infrastructure (`rvs`, `moment`, `stats`, `interval`, `fit`, `nnlf`, `fit_loc_scale`, and `expect`) have analogous functionality, but some care is required. Before describing the replacements, we briefly mention how to work with random variables that are not normally distributed: almost all old distribution objects can be converted into a new distribution class with `scipy.stats.make_distribution`, and the new distribution class can be instantiated by passing the shape parameters as keyword arguments. For instance, consider the [Weibull distribution](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.weibull_min.html#scipy.stats.weibull_min). We can create a new class that is an abstraction of the distribution family like:
 
 ```{code-cell} ipython3
 Weibull = stats.make_distribution(stats.weibull_min)
@@ -257,7 +256,7 @@ stats.Normal().kurtosis(convention='excess'), stats.Normal().kurtosis(convention
 
 The old infrastructure's `rvs` method has been replaced with `sample`, but there are a two differences that should be noted when either 1) control of the random state is required or 2) arrays are used for shape, location, or scale parameters.
 
-First, `random_state` is replaced by `rng` per [SPEC 7](https://scientific-python.org/specs/spec-0007/). A pattern to control the random state in the past has been to use `numpy.random.seed` or to pass integer seeds to the `random_state` argument. The integer seeds were converted to instances of `numpy.random.RandomState`, so behavior for a given integer seed would be identical in these two cases:
+First, argument `random_state` is replaced by `rng` per [SPEC 7](https://scientific-python.org/specs/spec-0007/). A pattern to control the random state in the past has been to use `numpy.random.seed` or to pass integer seeds to the `random_state` argument. The integer seeds were converted to instances of `numpy.random.RandomState`, so behavior for a given integer seed would be identical in these two cases:
 
 ```{code-cell} ipython3
 import numpy as np
@@ -434,7 +433,7 @@ When it works, the simplicity is much appreciated. For some distributions, analy
 
 For most distributions, however, fitting is performed by numerical minimization of the negative log-likelihood function. This is not guaranteed to be successful - both because of inherent limitations of MLE and the state of the art of numerical optimization - and in these cases, the user of `fit` is stuck. However, a modicum of understanding goes a long way toward ensuring success, so here we present a mini-tutorial of fitting using the new infrastructure. 
 
-First, note that MLE is one of several potential strategies for fitting distributions to data. It does nothing more than find the values of the distribution parameters for which the negative log-likelihood (NLLF) is minimized. Note that for the original data, the NLLF is:
+First, note that MLE is one of several potential strategies for fitting distributions to data. It does nothing more than find the values of the distribution parameters for which the negative log-likelihood (NLLF) is minimized. Note that for the distribution from which the data were generated, the NLLF is:
 
 ```{code-cell} ipython3
 stats.weibull_min.nnlf((c, loc, scale), data)
@@ -446,7 +445,7 @@ The NLLF of the parameters estimated using `fit` are lower:
 stats.weibull_min.nnlf((c_, loc_, scale_), data)
 ```
 
-Therefore, `fit` considers its job done, whether or not this satisfies the user's notions of a "good fit" or whether the parameters are within reasonable bounds. It gives the user no control over the process (other than specifying a guess).
+Therefore, `fit` considers its job done, whether or not this satisfies the user's notions of a "good fit" or whether the parameters are within reasonable bounds. Besides allowing the user to specify a guess for distribution parameters, it gives little control over the process. (*Note: technically, the `optimizer` argument can be used for greater control, but this is not well documented, and its use negates any convenience offered by the `fit` method.*)
 
 +++
 
