@@ -349,7 +349,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
 
     Parameters
     ----------
-    m : int or tuple of ints
+    m : int
         Number of rows requested.
     n : int, optional
         Number of columns. Default: `m`.
