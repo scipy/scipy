@@ -358,11 +358,6 @@ def expm_cond(A, check_finite=True):
     """
     Relative condition number of the matrix exponential in the Frobenius norm.
 
-    The documentation is written assuming array arguments are of specified
-    "core" shapes. However, array argument(s) of this function may have additional
-    "batch" dimensions prepended to the core shape. In this case, the array is treated
-    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-
     Parameters
     ----------
     A : 2-D array_like
