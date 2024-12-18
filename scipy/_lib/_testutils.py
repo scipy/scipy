@@ -7,6 +7,7 @@ import inspect
 import os
 import re
 import shutil
+import threading
 import subprocess
 import sys
 import sysconfig
@@ -15,6 +16,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 
 import numpy as np
 import scipy
+import pytest
 
 try:
     # Need type: ignore[import-untyped] for mypy >= 1.6
@@ -199,12 +201,17 @@ class _TestPythranFunc:
             args_array.append(self.arguments[arg_idx][0][::-1][::-1])
         self.pythranfunc(*args_array)
 
-    def test_strided(self):
-        args_array = []
-        for arg_idx in self.arguments:
-            args_array.append(np.repeat(self.arguments[arg_idx][0],
-                                        2, axis=0)[::2])
-        self.pythranfunc(*args_array)
+    @pytest.fixture
+    def strided_lock(self):
+        return threading.Lock()
+
+    def test_strided(self, strided_lock):
+        with strided_lock:
+            args_array = []
+            for arg_idx in self.arguments:
+                args_array.append(np.repeat(self.arguments[arg_idx][0],
+                                            2, axis=0)[::2])
+            self.pythranfunc(*args_array)
 
 
 def _pytest_has_xdist():

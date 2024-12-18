@@ -45,6 +45,7 @@ class Test_RealDomain:
            inclusive_a=strategies.booleans(),
            inclusive_b=strategies.booleans(),
            data=strategies.data())
+    @pytest.mark.thread_unsafe
     def test_contains(self, shapes, inclusive_a, inclusive_b, data):
         # Test `contains` when endpoints are defined by parameters
         input_shapes, result_shape = shapes
@@ -105,6 +106,7 @@ class Test_RealDomain:
            inclusive_a=strategies.booleans(),
            inclusive_b=strategies.booleans(),
            )
+    @pytest.mark.thread_unsafe
     def test_str2(self, a, b, inclusive_a, inclusive_b):
         # I wrote this independently from the implementation of __str__, but
         # I imagine it looks pretty similar to __str__.
@@ -175,6 +177,7 @@ class TestDistributions:
     @settings(max_examples=20)
     @pytest.mark.parametrize('family', families)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
+    @pytest.mark.thread_unsafe
     def test_support_moments_sample(self, family, data, seed):
         rng = np.random.default_rng(seed)
 
@@ -214,6 +217,7 @@ class TestDistributions:
                               ])
     @settings(max_examples=20)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
+    @pytest.mark.thread_unsafe
     def test_funcs(self, family, data, seed, func, methods, arg):
         if family == Uniform and func == 'mode':
             pytest.skip("Mode is not unique; `method`s disagree.")
@@ -1317,6 +1321,7 @@ class TestTransforms:
 
     @pytest.mark.fail_slow(10)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
+    @pytest.mark.thread_unsafe
     def test_loc_scale(self, data, seed):
         # Need tests with negative scale
         rng = np.random.default_rng(seed)

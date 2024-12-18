@@ -9,6 +9,7 @@ import keyword
 import re
 import types
 import warnings
+import threading
 from itertools import zip_longest
 
 from scipy._lib import doccer
