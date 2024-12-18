@@ -81,9 +81,14 @@ happen it must be clear that the maintenance burden is low enough.
 Use of Fortran libraries
 ````````````````````````
 SciPy owes a lot of its success to relying on wrapping well established
-Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). For <reasons>,
-however, we are transitioning all Fortran libraries to more maintainable
-implementations; see `gh-18566 <https://github.com/scipy/scipy/issues/18566>`__.
+Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). The Fortran 77
+that these libraries are written in is quite hard to maintain, and the use
+of Fortran is problematic for many reasons; e.g., it makes our wheel builds
+much harder to maintain, it has repeatedly been problematic for supporting
+new platforms like macOS arm64 and Windows on Arm, and it is highly problematic
+for Pyodide's SciPy support. Our goal is to remove all Fortran code from SciPy
+by replacing the functionality with code written in other languages. Progress
+towards this goal is tracked in `gh-18566 <https://github.com/scipy/scipy/issues/18566>`__.
 
 
 Continuous integration
