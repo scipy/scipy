@@ -147,26 +147,44 @@ complex-valued functions and integrating multiple intervals (see `gh-3325
 interpolate
 ```````````
 
-*Spline fitting*: we need spline fitting routines with better user control. This
-includes 
 
-    - user-selectable alternatives for the smoothing criteria (manual,
-      cross-validation etc); gh-16653 makes a start in this direction;
+*FITPACK replacements*
 
-    - several strategies for knot placement, both manual and automatic (using
-      algorithms by Dierckx, de Boor, possibly other). 
+We need to finish providing functional equivalents of the FITPACK Fortran library.
+The aim is to reimplement the algorithmic content of the FITPACK monolith in a
+modular fashion, to allow better user control and extensibility.
+To this end, we need
 
-Once we have a reasonably feature complete set, we can start taking a long look
-at the future of the venerable FITPACK Fortran library, which currently is the
-only way of constructing smoothing splines in SciPy.
+- 1D splines: add the periodic spline fitting to `make_splrep` function.
+- 2D splines: provide functional replacements of the `BivariateSpline` family
+  of classes for scattered and gridded data.  
 
-*Scalability and performance*: For the FITPACK-based functionality, the data
-size is limited by 32-bit Fortran integer size (for non-ILP64 builds).
-For N-D scattered interpolators (which are QHull based) and N-D regular grid
-interpolators we need to check performance on large data sets and improve
-where lacking (gh-16483 makes progress in this direction).
+Once we have a feature-complete set of replacements, we can gracefully sunset
+our use of FITPACK.
 
-*Ideas for new features*: NURBS support could be added.
+*Ideas for new features*
+
+
+- add the ability to construct smoothing splines with variable number of knots
+  to `make_smoothing_spline`. Currently, `make_smoothing_spline` always uses all
+  data points for the knot vector.
+- experiment with user-selectable smoothing criteria: add the P-splines penality
+  form to complement the 2nd derivative penality of `make_smoothing_spline` and
+  jumps of the 3rd derivative of `make_splrep`
+- investigate ways of vectorizing the spline construction for batches of the
+  independent variable. This class of features have been requested by
+  `scipy.stats` developers
+- allow specifying the boundary conditions for spline fitting.
+- investigate constrained spline fitting problems which the FITPACK library was
+  providing in Fortran, but were never exposed to the python interfaces
+- NURBS support can be added if there is sufficient user interest
+
+*Scalability and performance*
+
+We need to check performance on large data sets and improve where lacking. This
+is relevant for both regular grid N-D interpolators and QHull-based scattered
+N-D interpolators. For the latter ones, we additionally need to investigate if
+we can improve on the 32-bit integer limitations of the QHull library.
 
 
 io
