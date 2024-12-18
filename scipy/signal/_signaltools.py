@@ -843,6 +843,33 @@ def _calc_oa_lens(s1, s2):
     return block_size, overlap, in1_step, in2_step
 
 
+def _swapaxes(x, ax1, ax2, xp):
+    """np.swapaxes"""
+    shp = list(range(x.ndim))
+    shp[ax1], shp[ax2] = shp[ax2], shp[ax1]
+    return xp.permute_dims(x, shp)
+
+
+def _split(x, indices_or_sections, axis, xp):
+    """A simplified version of np.split, with `indices` being an list.
+    """
+    # https://github.com/numpy/numpy/blob/v2.2.0/numpy/lib/_shape_base_impl.py#L743
+    Ntotal = x.shape[axis]
+
+    # handle array case.
+    Nsections = len(indices_or_sections) + 1
+    div_points = [0] + list(indices_or_sections) + [Ntotal]    
+
+    sub_arys = []
+    sary = _swapaxes(x, axis, 0, xp=xp)
+    for i in range(Nsections):
+        st = div_points[i]
+        end = div_points[i + 1]
+        sub_arys.append(_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
+
+    return sub_arys
+
+
 def oaconvolve(in1, in2, mode="full", axes=None):
     """Convolve two N-dimensional arrays using the overlap-add method.
 
@@ -1037,18 +1064,18 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         if overlap is None:
             continue
 
-        ret, overpart = np.split(ret, [-overlap], ax_fft)
-        overpart = np.split(overpart, [-1], ax_split)[0]
+        ret, overpart = _split(ret, [-overlap], ax_fft, xp=xp)
+        overpart = _split(overpart, [-1], ax_split, xp=xp)[0]
 
-        ret_overpart = np.split(ret, [overlap], ax_fft)[0]
-        ret_overpart = np.split(ret_overpart, [1], ax_split)[1]
+        ret_overpart = _split(ret, [overlap], ax_fft, xp=xp)[0]
+        ret_overpart = _split(ret_overpart, [1], ax_split, xp)[1]
         ret_overpart += overpart
 
     # Reshape back to the correct dimensionality.
     shape_ret = [ret.shape[i] if i not in fft_axes else
                  ret.shape[i]*ret.shape[i-1]
                  for i in range(ret.ndim) if i not in split_axes]
-    ret = ret.reshape(*shape_ret)
+    ret = xp.reshape(ret, shape_ret)
 
     # Slice to the correct size.
     slice_final = tuple([slice(islice) for islice in shape_final])
