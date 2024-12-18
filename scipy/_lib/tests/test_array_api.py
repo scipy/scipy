@@ -6,6 +6,7 @@ from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat,
 )
+from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -53,6 +54,14 @@ class TestArrayAPI:
         array_namespace([0, 1, 2])
         array_namespace(1, 2, 3)
         array_namespace(1)
+
+    def test_array_api_extra_hook(self):
+        """Test that the `array_namespace` function used by
+        array-api-extra has been overridden by scipy
+        """
+        msg = "only boolean and numerical dtypes are supported"
+        with pytest.raises(TypeError, match=msg):
+            xpx.atleast_nd("abc", ndim=0)
 
     @skip_xp_backends('jax.numpy',
                       reason="JAX arrays do not support item assignment")
@@ -112,7 +121,6 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="Array-ness does not match."):
                 xp_assert_equal(x, y, **options)
 
-
     @array_api_compatible
     def test_check_scalar(self, xp):
         if not is_numpy(xp):
@@ -146,7 +154,6 @@ class TestArrayAPI:
 
         # as an alternative to `check_0d=False`, explicitly expect scalar
         xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
-
 
     @array_api_compatible
     def test_check_scalar_no_0d(self, xp):

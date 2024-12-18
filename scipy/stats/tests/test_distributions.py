@@ -66,7 +66,7 @@ def test_distributions_submodule():
     continuous = [dist[0] for dist in distcont]    # continuous dist names
     discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
     other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
-             'entropy', 'trapz']
+             'entropy']
     expected = continuous + discrete + other
 
     # need to remove, e.g.,
@@ -7920,24 +7920,6 @@ class TestTrapezoid:
             res[i] = stats.trapezoid.stats(c1, d1, moments="mvsk")
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
-
-    def test_trapz(self):
-        # Basic test for alias
-        x = np.linspace(0, 1, 10)
-        with pytest.deprecated_call(match="`trapz.pdf` is deprecated"):
-            result = stats.trapz.pdf(x, 0, 1)
-        assert_almost_equal(result, stats.uniform.pdf(x))
-
-    @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
-                                        'sf', 'logsf', 'ppf', 'isf'])
-    def test_trapz_deprecation(self, method):
-        c, d = 0.2, 0.8
-        expected = getattr(stats.trapezoid, method)(1, c, d)
-        with pytest.deprecated_call(
-            match=f"`trapz.{method}` is deprecated",
-        ):
-            result = getattr(stats.trapz, method)(1, c, d)
-        assert result == expected
 
 
 class TestTriang:

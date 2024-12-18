@@ -11,7 +11,7 @@ from scipy.optimize import differential_evolution, OptimizeResult
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen, minimize
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_array
 from scipy import stats
 
 import numpy as np
@@ -965,7 +965,7 @@ class TestDifferentialEvolutionSolver:
             violations.append(pc.violation(x))
         np.testing.assert_allclose(pc.violation(xs.T), np.array(violations).T)
 
-        pc = _ConstraintWrapper(LinearConstraint(csr_matrix(A), -np.inf, 0),
+        pc = _ConstraintWrapper(LinearConstraint(csr_array(A), -np.inf, 0),
                                 x0)
         assert (pc.violation(x0) > 0).any()
         assert (pc.violation([-10, 2, -10, 4]) == 0).all()
@@ -1070,10 +1070,10 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
         # now repeat the same solve, using the same overall constraints,
-        # but using a sparse matrix for the LinearConstraint instead of an
+        # but using a sparse array for the LinearConstraint instead of an
         # array
 
-        L = LinearConstraint(csr_matrix(A), -np.inf, b)
+        L = LinearConstraint(csr_array(A), -np.inf, b)
 
         # using a lower popsize to speed the test up
         res = differential_evolution(

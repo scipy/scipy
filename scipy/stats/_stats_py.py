@@ -4298,7 +4298,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Axis along which to perform the calculation. Default is 0.
         If None, ravel both arrays before performing the calculation.
 
-        .. versionadded:: 1.13.0
+        .. versionadded:: 1.14.0
     alternative : {'two-sided', 'greater', 'less'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -7048,46 +7048,6 @@ _power_div_lambda_names = {
 }
 
 
-def _m_count(a, *, axis, xp):
-    """Count the number of non-masked elements of an array.
-
-    This function behaves like `np.ma.count`, but is much faster
-    for ndarrays.
-    """
-    if hasattr(a, 'count'):
-        num = a.count(axis=axis)
-        if isinstance(num, np.ndarray) and num.ndim == 0:
-            # In some cases, the `count` method returns a scalar array (e.g.
-            # np.array(3)), but we want a plain integer.
-            num = int(num)
-    else:
-        if axis is None:
-            num = xp_size(a)
-        else:
-            num = a.shape[axis]
-    return num
-
-
-def _m_broadcast_to(a, shape, *, xp):
-    if np.ma.isMaskedArray(a):
-        return np.ma.masked_array(np.broadcast_to(a, shape),
-                                  mask=np.broadcast_to(a.mask, shape))
-    return xp.broadcast_to(a, shape)
-
-
-def _m_sum(a, *, axis, preserve_mask, xp):
-    if np.ma.isMaskedArray(a):
-        sum = a.sum(axis)
-        return sum if preserve_mask else np.asarray(sum)
-    return xp.sum(a, axis=axis)
-
-
-def _m_mean(a, *, axis, keepdims, xp):
-    if np.ma.isMaskedArray(a):
-        return np.asarray(a.mean(axis=axis, keepdims=keepdims))
-    return xp.mean(a, axis=axis, keepdims=keepdims)
-
-
 Power_divergenceResult = namedtuple('Power_divergenceResult',
                                     ('statistic', 'pvalue'))
 
@@ -7103,19 +7063,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     ----------
     f_obs : array_like
         Observed frequencies in each category.
-
-        .. deprecated:: 1.14.0
-            Support for masked array input was deprecated in
-            SciPy 1.14.0 and will be removed in version 1.16.0.
-
     f_exp : array_like, optional
         Expected frequencies in each category.  By default the categories are
         assumed to be equally likely.
-
-        .. deprecated:: 1.14.0
-            Support for masked array input was deprecated in
-            SciPy 1.14.0 and will be removed in version 1.16.0.
-
     ddof : int, optional
         "Delta degrees of freedom": adjustment to the degrees of freedom
         for the p-value.  The p-value is computed using a chi-squared
@@ -7277,38 +7227,26 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     elif lambda_ is None:
         lambda_ = 1
 
-    def warn_masked(arg):
-        if isinstance(arg, ma.MaskedArray):
-            message = (
-                "`power_divergence` and `chisquare` support for masked array input was "
-                "deprecated in SciPy 1.14.0 and will be removed in version 1.16.0.")
-            warnings.warn(message, DeprecationWarning, stacklevel=2)
-
-    warn_masked(f_obs)
-    f_obs = f_obs if np.ma.isMaskedArray(f_obs) else xp.asarray(f_obs)
+    f_obs = xp.asarray(f_obs)
     dtype = default_float if xp.isdtype(f_obs.dtype, 'integral') else f_obs.dtype
-    f_obs = (f_obs.astype(dtype) if np.ma.isMaskedArray(f_obs)
-             else xp.asarray(f_obs, dtype=dtype))
-    f_obs_float = (f_obs.astype(np.float64) if hasattr(f_obs, 'mask')
-                   else xp.asarray(f_obs, dtype=xp.float64))
+    f_obs = xp.asarray(f_obs, dtype=dtype)
+    f_obs_float = xp.asarray(f_obs, dtype=xp.float64)
 
     if f_exp is not None:
-        warn_masked(f_exp)
-        f_exp = f_exp if np.ma.isMaskedArray(f_obs) else xp.asarray(f_exp)
+        f_exp = xp.asarray(f_exp)
         dtype = default_float if xp.isdtype(f_exp.dtype, 'integral') else f_exp.dtype
-        f_exp = (f_exp.astype(dtype) if np.ma.isMaskedArray(f_exp)
-                 else xp.asarray(f_exp, dtype=dtype))
+        f_exp = xp.asarray(f_exp, dtype=dtype)
 
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
-        f_obs_float = _m_broadcast_to(f_obs_float, bshape, xp=xp)
-        f_exp = _m_broadcast_to(f_exp, bshape, xp=xp)
+        f_obs_float = xp.broadcast_to(f_obs_float, bshape)
+        f_exp = xp.broadcast_to(f_exp, bshape)
 
         if sum_check:
             dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
             rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
             with np.errstate(invalid='ignore'):
-                f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
-                f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
+                f_obs_sum = xp.sum(f_obs_float, axis=axis)
+                f_exp_sum = xp.sum(f_exp, axis=axis)
                 relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
                                  xp.minimum(f_obs_sum, f_exp_sum))
                 diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
@@ -7324,7 +7262,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
         # Ignore 'invalid' errors so the edge case of a data set with length 0
         # is handled without spurious warnings.
         with np.errstate(invalid='ignore'):
-            f_exp = _m_mean(f_obs, axis=axis, keepdims=True, xp=xp)
+            f_exp = xp.mean(f_obs, axis=axis, keepdims=True)
 
     # `terms` is the array of terms that are summed along `axis` to create
     # the test statistic.  We use some specialized code for a few special
@@ -7343,9 +7281,9 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
         terms = f_obs * ((f_obs / f_exp)**lambda_ - 1)
         terms /= 0.5 * lambda_ * (lambda_ + 1)
 
-    stat = _m_sum(terms, axis=axis, preserve_mask=True, xp=xp)
+    stat = xp.sum(terms, axis=axis)
 
-    num_obs = _m_count(terms, axis=axis, xp=xp)
+    num_obs = xp_size(terms) if axis is None else terms.shape[axis]
     ddof = xp.asarray(ddof)
 
     df = xp.asarray(num_obs - 1 - ddof)
@@ -10559,24 +10497,14 @@ LinregressResult = _make_tuple_bunch('LinregressResult',
                                      extra_field_names=['intercept_stderr'])
 
 
-def linregress(x, y=None, alternative='two-sided'):
+def linregress(x, y, alternative='two-sided'):
     """
     Calculate a linear least-squares regression for two sets of measurements.
 
     Parameters
     ----------
     x, y : array_like
-        Two sets of measurements.  Both arrays should have the same length N.  If
-        only `x` is given (and ``y=None``), then it must be a two-dimensional
-        array where one dimension has length 2.  The two sets of measurements
-        are then found by splitting the array along the length-2 dimension. In
-        the case where ``y=None`` and `x` is a 2xN array, ``linregress(x)`` is
-        equivalent to ``linregress(x[0], x[1])``.
-
-        .. deprecated:: 1.14.0
-            Inference of the two sets of measurements from a single argument `x`
-            is deprecated will result in an error in SciPy 1.16.0; the sets
-            must be specified separately as `x` and `y`.
+        Two sets of measurements.  Both arrays should have the same length N.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -10678,24 +10606,8 @@ def linregress(x, y=None, alternative='two-sided'):
 
     """
     TINY = 1.0e-20
-    if y is None:  # x is a (2, N) or (N, 2) shaped array_like
-        message = ('Inference of the two sets of measurements from a single "'
-                   'argument `x` is deprecated will result in an error in "'
-                   'SciPy 1.16.0; the sets must be specified separately as "'
-                   '`x` and `y`.')
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
-        x = np.asarray(x)
-        if x.shape[0] == 2:
-            x, y = x
-        elif x.shape[1] == 2:
-            x, y = x.T
-        else:
-            raise ValueError("If only `x` is given as input, it has to "
-                             "be of shape (2, N) or (N, 2); provided shape "
-                             f"was {x.shape}.")
-    else:
-        x = np.asarray(x)
-        y = np.asarray(y)
+    x = np.asarray(x)
+    y = np.asarray(y)
 
     if x.size == 0 or y.size == 0:
         raise ValueError("Inputs must not be empty.")

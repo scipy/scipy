@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
 .. jupyterlite:: ../../_contents/hypothesis_normaltest.ipynb
    :new_tab: True
 ```
 
 (hypothesis_normaltest)=
+
++++
+
 # Normal test
 
 The {func}`scipy.stats.normaltest` function tests the null hypothesis that a

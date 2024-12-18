@@ -3236,8 +3236,8 @@ def test_gh12594():
                                          coo_array, csr_array, csc_array])
 def test_sparse_hessian(method, sparse_type):
     # gh-8792 reported an error for minimization with `newton_cg` when `hess`
-    # returns a sparse matrix. Check that results are the same whether `hess`
-    # returns a dense or sparse matrix for optimization methods that accept
+    # returns a sparse array. Check that results are the same whether `hess`
+    # returns a dense or sparse array for optimization methods that accept
     # sparse Hessian matrices.
 
     def sparse_rosen_hess(x):

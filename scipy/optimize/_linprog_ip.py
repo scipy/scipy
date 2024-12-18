@@ -31,6 +31,7 @@ try:
     import sksparse  # noqa: F401
     from sksparse.cholmod import cholesky as cholmod  # noqa: F401
     from sksparse.cholmod import analyze as cholmod_analyze
+    from sksparse.cholmod import CholmodTypeConversionWarning
 except ImportError:
     has_cholmod = False
 try:
@@ -87,13 +88,25 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
             elif cholesky:
-                try:
-                    # Will raise an exception in the first call,
-                    # or when the matrix changes due to a new problem
-                    _get_solver.cholmod_factor.cholesky_inplace(M)
-                except Exception:
-                    _get_solver.cholmod_factor = cholmod_analyze(M)
-                    _get_solver.cholmod_factor.cholesky_inplace(M)
+                # TODO: revert this suppress_warning once the warning bug fix in
+                # sksparse is merged/released
+                # Suppress spurious warning bug from sksparse with csc_array gh-22089
+                # try:
+                #     # Will raise an exception in the first call,
+                #     # or when the matrix changes due to a new problem
+                #     _get_solver.cholmod_factor.cholesky_inplace(M)
+                # except Exception:
+                #     _get_solver.cholmod_factor = cholmod_analyze(M)
+                #     _get_solver.cholmod_factor.cholesky_inplace(M)
+                with np.testing.suppress_warnings() as sup:
+                    sup.filter(CholmodTypeConversionWarning)
+                    try:
+                        # Will raise an exception in the first call,
+                        # or when the matrix changes due to a new problem
+                        _get_solver.cholmod_factor.cholesky_inplace(M)
+                    except Exception:
+                        _get_solver.cholmod_factor = cholmod_analyze(M)
+                        _get_solver.cholmod_factor.cholesky_inplace(M)
                 solve = _get_solver.cholmod_factor
             else:
                 if has_umfpack and sym_pos:
@@ -199,7 +212,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
     if A.shape[0] == 0:
         # If there are no constraints, some solvers fail (understandably)
         # rather than returning empty solution. This gets the job done.
-        sparse, lstsq, sym_pos, cholesky = False, False, True, False
+        lstsq, sym_pos, cholesky = False, True, False
     n_x = len(x)
 
     # [4] Equation 8.8
@@ -212,7 +225,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
     Dinv = x / z
 
     if sparse:
-        M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
+        M = A.dot(sps.diags_array(Dinv, format="csc").dot(A.T))
     else:
         M = A.dot(Dinv.reshape(-1, 1) * A.T)
     solve = _get_solver(M, sparse, lstsq, sym_pos, cholesky, permc_spec)
@@ -723,7 +736,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     message = "Optimization terminated successfully."
 
     if sparse:
-        A = sps.csc_matrix(A)
+        A = sps.csc_array(A)
 
     while go:
 

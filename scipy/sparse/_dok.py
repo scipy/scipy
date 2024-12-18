@@ -5,7 +5,6 @@ __docformat__ = "restructuredtext en"
 __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 
 import itertools
-from warnings import warn
 import numpy as np
 
 from ._matrix import spmatrix
@@ -420,28 +419,6 @@ class _dok_base(_spbase, IndexMixin, dict):
         return new
 
     transpose.__doc__ = _spbase.transpose.__doc__
-
-    def conjtransp(self):
-        """DEPRECATED: Return the conjugate transpose.
-
-        .. deprecated:: 1.14.0
-
-            `conjtransp` is deprecated and will be removed in v1.16.0.
-            Use ``.T.conj()`` instead.
-        """
-        msg = ("`conjtransp` is deprecated and will be removed in v1.16.0. "
-                   "Use `.T.conj()` instead.")
-        warn(msg, DeprecationWarning, stacklevel=2)
-
-        if self.ndim == 1:
-            new = self.tocoo()
-            new.data = new.data.conjugate()
-            return new
-
-        M, N = self.shape
-        new = self._dok_container((N, M), dtype=self.dtype)
-        new._dict = {(right, left): np.conj(val) for (left, right), val in self.items()}
-        return new
 
     def copy(self):
         new = self._dok_container(self.shape, dtype=self.dtype)

@@ -382,8 +382,8 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
         xr0=xr0, fr0=fr0, wr0=wr0, xl0=xl0, fl0=fl0, wl0=wl0, d4=d4,  # err est
         ainf=ainf, binf=binf, abinf=abinf, a0=xp.reshape(a0, (-1, 1)),  # transforms
-        # Store the weights in an object so they can't get compressed
-        # Using RichResult to allow dot notation, but a dict would work
+        # Store the xjc/wj pair cache in an object so they can't get compressed
+        # Using RichResult to allow dot notation, but a dictionary would suffice
         pair_cache=_RichResult(xjc=None, wj=None, indices=[0], h0=None))  # pair cache
 
     # Constant scalars don't need to be put in `work` unless they need to be

@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
-from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
+from ..sparse import issparse, isspmatrix, find, csc_array, csr_array, csr_matrix
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import array_namespace
 from scipy._lib import array_api_extra as xpx
@@ -221,7 +221,7 @@ def group_columns(A, order=0):
 
     Parameters
     ----------
-    A : array_like or sparse matrix, shape (m, n)
+    A : array_like or sparse array, shape (m, n)
         Matrix of which to group columns.
     order : int, iterable of int with shape (n,) or None
         Permutation array which defines the order of columns enumeration.
@@ -244,7 +244,7 @@ def group_columns(A, order=0):
            and its Applications, 13 (1974), pp. 117-120.
     """
     if issparse(A):
-        A = csc_matrix(A)
+        A = csc_array(A)
     else:
         A = np.atleast_2d(A)
         A = (A != 0).astype(np.int32)
@@ -325,20 +325,20 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         case the bound will be the same for all variables. Use it to limit the
         range of function evaluation. Bounds checking is not implemented
         when `as_linear_operator` is True.
-    sparsity : {None, array_like, sparse matrix, 2-tuple}, optional
+    sparsity : {None, array_like, sparse array, 2-tuple}, optional
         Defines a sparsity structure of the Jacobian matrix. If the Jacobian
         matrix is known to have only few non-zero elements in each row, then
         it's possible to estimate its several columns by a single function
         evaluation [3]_. To perform such economic computations two ingredients
         are required:
 
-        * structure : array_like or sparse matrix of shape (m, n). A zero
+        * structure : array_like or sparse array of shape (m, n). A zero
           element means that a corresponding element of the Jacobian
           identically equals to zero.
         * groups : array_like of shape (n,). A column grouping for a given
           sparsity structure, use `group_columns` to obtain it.
 
-        A single array or a sparse matrix is interpreted as a sparsity
+        A single array or a sparse array is interpreted as a sparsity
         structure, and groups are computed inside the function. A tuple is
         interpreted as (structure, groups). If None (default), a standard
         dense differencing will be used.
@@ -347,7 +347,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         matrices where each row contains few non-zero elements.
     as_linear_operator : bool, optional
         When True the function returns an `scipy.sparse.linalg.LinearOperator`.
-        Otherwise it returns a dense array or a sparse matrix depending on
+        Otherwise it returns a dense array or a sparse array depending on
         `sparsity`. The linear operator provides an efficient way of computing
         ``J.dot(p)`` for any vector ``p`` of shape (n,), but does not allow
         direct access to individual elements of the matrix. By default
@@ -358,15 +358,16 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     Returns
     -------
-    J : {ndarray, sparse matrix, LinearOperator}
+    J : {ndarray, sparse array, LinearOperator}
         Finite difference approximation of the Jacobian matrix.
         If `as_linear_operator` is True returns a LinearOperator
         with shape (m, n). Otherwise it returns a dense array or sparse
-        matrix depending on how `sparsity` is defined. If `sparsity`
+        array depending on how `sparsity` is defined. If `sparsity`
         is None then a ndarray with shape (m, n) is returned. If
-        `sparsity` is not None returns a csr_matrix with shape (m, n).
-        For sparse matrices and linear operators it is always returned as
-        a 2-D structure, for ndarrays, if m=1 it is returned
+        `sparsity` is not None returns a csr_array or csr_matrix with
+        shape (m, n) following the array/matrix type of the incoming structure.
+        For sparse arrays and linear operators it is always returned as
+        a 2-D structure. For ndarrays, if m=1 it is returned
         as a 1-D gradient array with shape (n,).
 
     See Also
@@ -530,7 +531,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                 groups = group_columns(sparsity)
 
             if issparse(structure):
-                structure = csc_matrix(structure)
+                structure = structure.tocsc()
             else:
                 structure = np.atleast_2d(structure)
 
@@ -693,7 +694,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             raise ValueError("Never be here.")
 
         # All that's left is to compute the fraction. We store i, j and
-        # fractions as separate arrays and later construct coo_matrix.
+        # fractions as separate arrays and later construct csr_array.
         row_indices.append(i)
         col_indices.append(j)
         fractions.append(df[i] / dx[j])
@@ -701,8 +702,9 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     row_indices = np.hstack(row_indices)
     col_indices = np.hstack(col_indices)
     fractions = np.hstack(fractions)
-    J = coo_matrix((fractions, (row_indices, col_indices)), shape=(m, n))
-    return csr_matrix(J)
+    if isspmatrix(structure):
+        return csr_matrix((fractions, (row_indices, col_indices)), shape=(m, n))
+    return csr_array((fractions, (row_indices, col_indices)), shape=(m, n))
 
 
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
@@ -719,7 +721,7 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     jac : callable
         Function which computes Jacobian matrix of `fun`. It must work with
         argument x the same way as `fun`. The return value must be array_like
-        or sparse matrix with an appropriate shape.
+        or sparse array with an appropriate shape.
     x0 : array_like of shape (n,) or float
         Point at which to estimate the derivatives. Float will be converted
         to 1-D array.
@@ -772,7 +774,7 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     if issparse(J_to_test):
         J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,
                                    args=args, kwargs=kwargs)
-        J_to_test = csr_matrix(J_to_test)
+        J_to_test = csr_array(J_to_test)
         abs_err = J_to_test - J_diff
         i, j, abs_err_data = find(abs_err)
         J_diff_data = np.asarray(J_diff[i, j]).ravel()
