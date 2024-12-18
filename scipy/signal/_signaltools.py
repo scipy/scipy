@@ -27,7 +27,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size
+    array_namespace, is_torch, is_numpy, is_array_api_strict, xp_copy, xp_size
 
 )
 import scipy._lib.array_api_compat.numpy as np_compat
@@ -870,6 +870,29 @@ def _split(x, indices_or_sections, axis, xp):
     return sub_arys
 
 
+def xp_pad(x, pad_width, mode='constant', *, xp, **kwargs):
+    # xp.pad is available on numpy, cupy and jax.numpy; on torch, reuse
+    # http://github.com/pytorch/pytorch/blob/main/torch/_numpy/_funcs_impl.py#L2045
+    # for mode = 'constant'
+    if mode != 'constant':
+        raise NotImplementedError()
+
+    value = kwargs.get("constant_values", 0)
+
+    if is_array_api_strict(xp):
+        np_x = np.asarray(x)
+        padded = np.pad(np_x, pad_width, mode=mode, **kwargs)
+        return xp.asarray(padded)
+    elif is_torch(xp):
+        pad_width = xp.asarray(pad_width)
+        pad_width = xp.broadcast_to(pad_width, (x.ndim, 2))
+        pad_width = xp.flip(pad_width, axis=(0,)).flatten()
+        return xp.nn.functional.pad(x, tuple(pad_width), value=value)
+
+    else:
+        return xp.pad(x, pad_width, mode=mode, **kwargs)
+
+
 def oaconvolve(in1, in2, mode="full", axes=None):
     """Convolve two N-dimensional arrays using the overlap-add method.
 
@@ -1030,14 +1053,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     # Pad the array to a size that can be reshaped to the desired shape
     # if necessary.
     if not all(curpad == (0, 0) for curpad in pad_size1):
-        # XXX: xp.pad is available on numpy, cupy and jax.numpy; on torch, can reuse
-        # http://github.com/pytorch/pytorch/blob/main/torch/_numpy/_funcs_impl.py#L2045
-        in1 = np.pad(in1, pad_size1, mode='constant', constant_values=0)
-        in1 = xp.asarray(in1)
+        in1 = xp_pad(in1, pad_size1, mode='constant', constant_values=0, xp=xp)
 
     if not all(curpad == (0, 0) for curpad in pad_size2):
-        in2 = np.pad(in2, pad_size2, mode='constant', constant_values=0)
-        in2 = xp.asarray(in2)
+         in2 = xp_pad(in2, pad_size2, mode='constant', constant_values=0, xp=xp)
 
     # Reshape the overlap-add parts to input block sizes.
     split_axes = [iax+i for i, iax in enumerate(axes)]
