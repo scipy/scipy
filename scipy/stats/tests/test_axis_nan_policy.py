@@ -7,8 +7,10 @@
 from itertools import product, combinations_with_replacement, permutations
 import os
 import re
+import copy
 import pickle
 import pytest
+import threading
 import warnings
 
 import numpy as np
@@ -919,14 +921,21 @@ def paired_non_broadcastable_cases():
         yield case + (rng,)
 
 
+@pytest.fixture
+def rng_barrier(num_parallel_threads):
+    barrier = threading.Barrier(num_parallel_threads)
+    return barrier
+
+
 @pytest.mark.parametrize("axis", [0, 1])
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker", "rng"),
                          paired_non_broadcastable_cases())
 def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
-                           unpacker, rng, axis):
+                           unpacker, rng, rng_barrier, axis):
     # test for correct error message when shapes are not broadcastable
-
+    original_rng = rng
+    rng = copy.deepcopy(rng)
     get_samples = True
     while get_samples:
         samples = [rng.random(size=rng.integers(2, 100, size=2))
@@ -952,6 +961,9 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
     with pytest.raises(ValueError, match=message):
         hypotest(other_sample, *most_samples, *args, **kwds)
 
+    tid = rng_barrier.wait()
+    if tid == 0:
+        original_rng.bit_generator.state = rng.bit_generator.state
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays
