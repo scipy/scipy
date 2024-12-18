@@ -39,11 +39,17 @@ Highlights of this release
 - New probability distribution features in `scipy.stats` can be used to improve
   the speed and accuracy of existing continuous distributions and perform new
   probability calculations.
-- `scipy.differentiate` is a new top-level submodule for accurate
-  estimation of derivatives of black box functions.
-- `scipy.optimize.elementwise` provides vectorized root-finding and
-  minimization of univariate functions, and it supports the array API
-  as do new ``integrate`` functions ``tanhsinh``, ``nsum``, and ``cubature``.
+- Several new features support vectorized calculations with Python Array API
+  Standard compatible input (see "Array API Standard Support" below):
+
+  - `scipy.differentiate` is a new top-level submodule for accurate
+    estimation of derivatives of black box functions.
+  - `scipy.optimize.elementwise` contains new functions for root-finding and
+    minimization of univariate functions.
+  - `scipy.integrate` offers new functions ``cubature``, ``tanhsinh``, and
+    ``nsum`` for multivariate integration, univariate integration, and
+    univariate series summation, respectively.
+
 - `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
   approximation of real or complex functions.
 
@@ -52,8 +58,8 @@ Highlights of this release
 New features
 ************
 
-`scipy.differentiate` introduction
-==================================
+``scipy.differentiate`` introduction
+====================================
 The new `scipy.differentiate` sub-package contains functions for accurate
 estimation of derivatives of black box functions.
 
@@ -69,22 +75,21 @@ step size. To facilitate batch computation, these functions are vectorized
 and support several Array API compatible array libraries in addition to NumPy
 (see "Array API Standard Support" below).
 
-`scipy.integrate` improvements
-==============================
-- The ``QUADPACK`` Fortran77 package has been ported to C.
-- `scipy.integrate.lebedev_rule` computes abscissae and weights for
-  integration over the surface of a sphere.
-- `scipy.integrate.nsum` evaluates finite and infinite series and their
-  logarithms.
-- `scipy.integrate.tanhsinh` is now exposed for public use, allowing
-  evaluation of a convergent integral using tanh-sinh quadrature.
+``scipy.integrate`` improvements
+================================
 - The new `scipy.integrate.cubature` function supports multidimensional
   integration, and has support for approximating integrals with
   one or more sets of infinite limits.
+- `scipy.integrate.tanhsinh` is now exposed for public use, allowing
+  evaluation of a convergent integral using tanh-sinh quadrature.
+- `scipy.integrate.nsum` evaluates finite and infinite series and their
+  logarithms.
+- `scipy.integrate.lebedev_rule` computes abscissae and weights for
+  integration over the surface of a sphere.
+- The ``QUADPACK`` Fortran77 package has been ported to C.
 
-
-`scipy.interpolate` improvements
-================================
+``scipy.interpolate`` improvements
+==================================
 - `scipy.interpolate.AAA` adds the AAA algorithm for barycentric rational
   approximation of real or complex functions.
 - `scipy.interpolate.FloaterHormannInterpolator` adds barycentric rational
@@ -101,8 +106,8 @@ and support several Array API compatible array libraries in addition to NumPy
   selection that ``splrep`` and ``*UnivariateSpline`` was using.
 
 
-`scipy.linalg` improvements
-===========================
+``scipy.linalg`` improvements
+=============================
 - `scipy.linalg.interpolative` Fortran77 code has been ported to Cython.
 - `scipy.linalg.solve` supports several new values for the ``assume_a``
   argument, enabling faster computation for diagonal, tri-diagonal, banded, and
@@ -125,8 +130,8 @@ and support several Array API compatible array libraries in addition to NumPy
 - ``id_dist`` Fortran code was rewritten in Cython.
 
 
-`scipy.ndimage` improvements
-============================
+``scipy.ndimage`` improvements
+==============================
 - Several additional filtering functions now support an ``axes`` argument
   that specifies which axes of the input filtering is to be performed on.
   These include ``correlate``, ``convolve``, ``generic_laplace``, ``laplace``,
@@ -140,8 +145,8 @@ and support several Array API compatible array libraries in addition to NumPy
 
 
 
-`scipy.optimize` improvements
-=============================
+``scipy.optimize`` improvements
+===============================
 - The vendored HiGHS library has been upgraded from ``1.4.0`` to ``1.8.0``,
   bringing accuracy and performance improvements to solvers.
 - The ``MINPACK`` Fortran77 package has been ported to C.
@@ -162,8 +167,8 @@ and support several Array API compatible array libraries in addition to NumPy
 - ``HessianUpdateStrategy`` now supports ``__matmul__``.
 
 
-`scipy.signal` improvements
-===========================
+``scipy.signal`` improvements
+=============================
 - Add functionality of complex-valued waveforms to ``signal.chirp()``.
 - `scipy.signal.lombscargle` has two new arguments, ``weights`` and
   ``floating_mean``, enabling sample weighting and removal of an unknown
@@ -174,8 +179,8 @@ and support several Array API compatible array libraries in addition to NumPy
   real or complex valued signal.
 
 
-`scipy.sparse` improvements
-===========================
+``scipy.sparse`` improvements
+=============================
 - A :ref:`migration guide<migration_to_sparray>` is now available for
   moving from sparse.matrix to sparse.array in your code/library.
 - Sparse arrays now support indexing for 1-D and 2-D arrays. So, sparse
@@ -198,14 +203,14 @@ and support several Array API compatible array libraries in addition to NumPy
   available to facilitate index array casting in ``sparse``.
 
 
-`scipy.spatial` improvements
-============================
+``scipy.spatial`` improvements
+==============================
 - ``Rotation.concatenate`` now accepts a bare ``Rotation`` object, and will
   return a copy of it.
 
 
-`scipy.special` improvements
-============================
+``scipy.special`` improvements
+==============================
 - The factorial functions ``special.{factorial,factorial2,factorialk}`` now
   offer an extension to the complex domain by passing the kwarg
   ``extend='complex'``. This is opt-in because it changes the values for
@@ -234,25 +239,27 @@ and support several Array API compatible array libraries in addition to NumPy
   GPUs.
 - `scipy.special.ndtr` is now more efficient.
 
-`scipy.stats` improvements
-==========================
+``scipy.stats`` improvements
+============================
 - A new probability distribution infrastructure has been added for the
-  implementation of univariate, continuous distributions with speed,
-  accuracy, and memory advantages:
+  implementation of univariate, continuous distributions. It has several
+  speed, accuracy, memory, and interface advantages compared to the
+  previous infrastructure. See :ref:`rv_infrastructure` for a tutorial.
 
-  - `scipy.stats.Normal` represents the normal distribution with the new
-    interface. In typical cases, its methods are faster and more accurate than
-    those of `scipy.stats.norm`.
   - Use `scipy.stats.make_distribution` to treat an existing continuous
     distribution (e.g. `scipy.stats.norm`) with the new infrastructure.
     This can improve the speed and accuracy of existing distributions,
-    especially for methods not overridden with custom formulas in the
-    implementation.
+    especially those with methods not overridden with distribution-specific
+    formulas.
+  - `scipy.stats.Normal` and `scipy.stats.Uniform` are pre-defined classes
+    to represent the normal and uniform distributions, respectively.
+    Their interfaces may be faster and more convenient than those produced by
+    ``make_distribution``.
+  - `scipy.stats.Mixture` can be used to represent mixture distributions.
 
-- `scipy.stats.Mixture` has been added to represent mixture distributions.
-- Instances of `scipy.stats.Normal` and the classes returned by
-  `scipy.stats.make_distribution` are supported by several new mathematical
-  transformations.
+- Instances of `scipy.stats.Normal`, `scipy.stats.Uniform`, and the classes
+  returned by `scipy.stats.make_distribution` are supported by several new
+  mathematical transformations.
 
   - `scipy.stats.truncate` for truncation of the support.
   - `scipy.stats.order_statistic` for the order statistics of a given number
