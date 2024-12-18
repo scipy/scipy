@@ -40,6 +40,7 @@ if __name__ == '__main__':
     os.makedirs(os.path.expanduser(_contents_path), exist_ok=True)
 
     md_files = glob.glob("source/tutorial/stats/*.md")
+    md_files += glob.glob("source/tutorial/*.md")
     is_dirty = call_jupytext(
         md_files,
         _contents_path,

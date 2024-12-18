@@ -956,3 +956,21 @@ Van der Monde         `numpy.vander`                     Create a Van der Monde 
 
 
 For examples of the use of these functions, see their respective docstrings.
+
+Advanced Features
+-----------------
+
+Batch Support
+^^^^^^^^^^^^^
+Some of SciPy's linear algebra functions can process batches of scalars, 1D-, or
+2D-arrays given N-d array input.
+For example, a linear algebra function that typically accepts a (2D) matrix may accept
+an array of shape ``(4, 3, 2)``, which it would interpret as a batch of four 3-by-2
+matrices. In this case, we say that the the *core shape* of the input is (3, 2) and the
+*batch shape* is ``(4,)``. Likewise, a linear algebra function that typically accepts
+a (1D) vector would treat a ``(4, 3, 2)`` array as a ``(4, 3)`` batch of vectors,
+in which case the *core shape* of the input is ``(2,)`` and the *batch shape* is
+``(4, 3)``. The length of the core shape is also referred to as the *core dimension*.
+In these cases, the final shape of the output is the batch shape of the input
+concatenated with the core shape of the output (i.e., the shape of the output when
+the batch shape of the input is ``()``). For more information, see :doc:`linalg_batch`.
