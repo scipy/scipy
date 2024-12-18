@@ -1276,9 +1276,9 @@ class TestCorrSpearmanr:
     def test_gh_8111(self):
         # Regression test for gh-8111 (different result for float/int/bool).
         n = 100
-        np.random.seed(234568)
-        x = np.random.rand(n)
-        m = np.random.rand(n) > 0.7
+        rng = np.random.RandomState(234568)
+        x = rng.rand(n)
+        m = rng.rand(n) > 0.7
 
         # bool against float, no nans
         a = (x > .5)
@@ -1314,9 +1314,9 @@ class TestCorrSpearmanr2:
         assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
 
     def test_normal_draws(self):
-        np.random.seed(7546)
-        x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                      np.random.normal(loc=1, scale=1, size=500)])
+        rng = np.random.RandomState(7546)
+        x = np.array([rng.normal(loc=1, scale=1, size=500),
+                      rng.normal(loc=1, scale=1, size=500)])
         corr = [[1.0, 0.3],
                 [0.3, 1.0]]
         x = np.dot(np.linalg.cholesky(corr), x)
@@ -1669,9 +1669,9 @@ def test_kendalltau():
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
     # check with larger arrays
-    np.random.seed(7546)
-    x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                  np.random.normal(loc=1, scale=1, size=500)])
+    rng = np.random.RandomState(7546)
+    x = np.array([rng.normal(loc=1, scale=1, size=500),
+                  rng.normal(loc=1, scale=1, size=500)])
     corr = [[1.0, 0.3],
             [0.3, 1.0]]
     x = np.dot(np.linalg.cholesky(corr), x)
@@ -1719,15 +1719,15 @@ def test_kendalltau():
 
 
 def test_kendalltau_vs_mstats_basic():
-    np.random.seed(42)
+    rng = np.random.RandomState(42)
     for s in range(2,10):
         a = []
         # Generate rankings with ties
         for i in range(s):
             a += [i]*i
         b = list(a)
-        np.random.shuffle(a)
-        np.random.shuffle(b)
+        rng.shuffle(a)
+        rng.shuffle(b)
         expected = mstats_basic.kendalltau(a, b)
         actual = stats.kendalltau(a, b)
         assert_approx_equal(actual[0], expected[0])
@@ -1744,6 +1744,7 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
 
 
+@pytest.mark.thread_unsafe
 def test_kendalltau_gh18139_overflow():
     # gh-18139 reported an overflow in `kendalltau` that appeared after
     # SciPy 0.15.1. Check that this particular overflow does not occur.
@@ -1908,9 +1909,9 @@ class TestKendallTauAlternative:
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_lt_171b)
     def test_against_R_lt_171b(self, alternative, p_expected, rev):
-        np.random.seed(0)
-        x = np.random.rand(100)
-        y = np.random.rand(100)
+        rng = np.random.RandomState(0)
+        x = rng.rand(100)
+        y = rng.rand(100)
         stat_expected = -0.04686868686868687
         self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
 
@@ -1920,9 +1921,9 @@ class TestKendallTauAlternative:
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_lt_171c)
     def test_against_R_lt_171c(self, alternative, p_expected, rev):
-        np.random.seed(0)
-        x = np.random.rand(170)
-        y = np.random.rand(170)
+        rng = np.random.RandomState(0)
+        x = rng.rand(170)
+        y = rng.rand(170)
         stat_expected = 0.1115906717716673
         self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
 
@@ -1931,9 +1932,9 @@ class TestKendallTauAlternative:
 
     @pytest.mark.parametrize("alternative, rev", case_gt_171)
     def test_gt_171(self, alternative, rev):
-        np.random.seed(0)
-        x = np.random.rand(400)
-        y = np.random.rand(400)
+        rng = np.random.RandomState(0)
+        x = rng.rand(400)
+        y = rng.rand(400)
         res0 = stats.kendalltau(x, y, method='exact',
                                 alternative=alternative)
         res1 = stats.kendalltau(x, y, method='asymptotic',
@@ -2368,7 +2369,7 @@ class TestRegression:
     def test_nist_norris(self):
         # If this causes a lint failure in the future, please note the history of
         # requests to allow extra whitespace in table formatting (e.g. gh-12367).
-        # Also see https://github.com/scipy/scipy/wiki/Why-do-we-not-use-an-auto%E2%80%90formatter%3F  # noqa: E501 
+        # Also see https://github.com/scipy/scipy/wiki/Why-do-we-not-use-an-auto%E2%80%90formatter%3F  # noqa: E501
         x = [  0.2, 337.4, 118.2, 884.6, 10.1,  226.5,
              666.3, 996.3, 448.6, 777.0, 558.2,   0.4,
                0.6, 775.5, 666.9, 338.0, 447.5,  11.6,
@@ -4933,9 +4934,9 @@ class TestKSTwoSamples:
 
     def test_gh11184(self):
         # 3000, 3001, exact two-sided
-        np.random.seed(123456)
-        x = np.random.normal(size=3000)
-        y = np.random.normal(size=3001) * 1.5
+        rng = np.random.RandomState(123456)
+        x = rng.normal(size=3000)
+        y = rng.normal(size=3001) * 1.5
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15,
                       mode='asymp')
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15,
@@ -4944,9 +4945,9 @@ class TestKSTwoSamples:
     @pytest.mark.xslow
     def test_gh11184_bigger(self):
         # 10000, 10001, exact two-sided
-        np.random.seed(123456)
-        x = np.random.normal(size=10000)
-        y = np.random.normal(size=10001) * 1.5
+        rng = np.random.RandomState(123456)
+        x = rng.normal(size=10000)
+        y = rng.normal(size=10001) * 1.5
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 3.3149311398483503e-49,
                       mode='asymp')
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 2.7755575615628914e-15,
@@ -4958,10 +4959,10 @@ class TestKSTwoSamples:
 
     @pytest.mark.xslow
     def test_gh12999(self):
-        np.random.seed(123456)
+        rng = np.random.RandomState(123456)
         for x in range(1000, 12000, 1000):
-            vals1 = np.random.normal(size=(x))
-            vals2 = np.random.normal(size=(x + 10), loc=0.5)
+            vals1 = rng.normal(size=(x))
+            vals2 = rng.normal(size=(x + 10), loc=0.5)
             exact = stats.ks_2samp(vals1, vals2, mode='exact').pvalue
             asymp = stats.ks_2samp(vals1, vals2, mode='asymp').pvalue
             # these two p-values should be in line with each other
@@ -5490,6 +5491,7 @@ class Test_ttest_ind_permutations:
         (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         ]
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("a,b,update,p_d", params)
     def test_ttest_ind_permutations(self, a, b, update, p_d):
         options_a = {'axis': None, 'equal_var': False}
@@ -5504,10 +5506,10 @@ class Test_ttest_ind_permutations:
         assert_array_almost_equal(pvalue, p_d)
 
     def test_ttest_ind_exact_alternative(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 3
-        a = np.random.rand(2, N, 2)
-        b = np.random.rand(2, N, 2)
+        a = rng.rand(2, N, 2)
+        b = rng.rand(2, N, 2)
 
         options_p = {'axis': 1, 'permutations': 1000}
 
@@ -5547,10 +5549,10 @@ class Test_ttest_ind_permutations:
 
     def test_ttest_ind_exact_selection(self):
         # test the various ways of activating the exact test
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 3
-        a = np.random.rand(N)
-        b = np.random.rand(N)
+        a = rng.rand(N)
+        b = rng.rand(N)
         res0 = stats.ttest_ind(a, b)
         res1 = stats.ttest_ind(a, b, permutations=1000)
         res2 = stats.ttest_ind(a, b, permutations=0)
@@ -5563,9 +5565,9 @@ class Test_ttest_ind_permutations:
         # the exact distribution of the test statistic should have
         # binom(na + nb, na) elements, all unique. This was not always true
         # in gh-4824; fixed by gh-13661.
-        np.random.seed(0)
-        a = np.random.rand(3)
-        b = np.random.rand(4)
+        rng = np.random.RandomState(0)
+        a = rng.rand(3)
+        b = rng.rand(4)
 
         data = np.concatenate((a, b))
         na, nb = len(a), len(b)
@@ -5579,10 +5581,10 @@ class Test_ttest_ind_permutations:
         assert len(t_stat) == n_unique
 
     def test_ttest_ind_randperm_alternative(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 50
-        a = np.random.rand(2, 3, N)
-        b = np.random.rand(3, N)
+        a = rng.rand(2, 3, N)
+        b = rng.rand(3, N)
         options_p = {'axis': -1, 'permutations': 1000, "random_state": 0}
 
         options_p.update(alternative="greater")
@@ -5609,10 +5611,10 @@ class Test_ttest_ind_permutations:
 
     @pytest.mark.slow()
     def test_ttest_ind_randperm_alternative2(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 50
-        a = np.random.rand(N, 4)
-        b = np.random.rand(N, 4)
+        a = rng.rand(N, 4)
+        b = rng.rand(N, 4)
         options_p = {'permutations': 20000, "random_state": 0}
 
         options_p.update(alternative="greater")
@@ -5642,10 +5644,10 @@ class Test_ttest_ind_permutations:
                         res_2_ab.pvalue[mask], atol=2e-2)
 
     def test_ttest_ind_permutation_nanpolicy(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 50
-        a = np.random.rand(N, 5)
-        b = np.random.rand(N, 5)
+        a = rng.rand(N, 5)
+        b = rng.rand(N, 5)
         a[5, 1] = np.nan
         b[8, 2] = np.nan
         a[9, 3] = np.nan
