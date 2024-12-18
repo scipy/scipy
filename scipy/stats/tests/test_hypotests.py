@@ -202,12 +202,12 @@ class TestMannWhitneyU:
     def test_auto(self):
         # Test that default method ('auto') chooses intended method
 
-        np.random.seed(1)
+        rng = np.random.RandomState(1)
         n = 8  # threshold to switch from exact to asymptotic
 
         # both inputs are smaller than threshold; should use exact
-        x = np.random.rand(n-1)
-        y = np.random.rand(n-1)
+        x = rng.rand(n-1)
+        y = rng.rand(n-1)
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -215,8 +215,8 @@ class TestMannWhitneyU:
         assert auto.pvalue != asymptotic.pvalue
 
         # one input is smaller than threshold; should use exact
-        x = np.random.rand(n-1)
-        y = np.random.rand(n+1)
+        x = rng.rand(n-1)
+        y = rng.rand(n+1)
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -231,8 +231,8 @@ class TestMannWhitneyU:
         assert auto.pvalue != asymptotic.pvalue
 
         # both inputs are larger than threshold; should use asymptotic
-        x = np.random.rand(n+1)
-        y = np.random.rand(n+1)
+        x = rng.rand(n+1)
+        y = rng.rand(n+1)
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -241,8 +241,8 @@ class TestMannWhitneyU:
 
         # both inputs are smaller than threshold, but there is a tie
         # should use asymptotic
-        x = np.random.rand(n-1)
-        y = np.random.rand(n-1)
+        x = rng.rand(n-1)
+        y = rng.rand(n-1)
         y[3] = x[3]
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
@@ -394,19 +394,19 @@ class TestMannWhitneyU:
                 assert_allclose(pmf, pmf2)
 
     def test_asymptotic_behavior(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
 
         # for small samples, the asymptotic test is not very accurate
-        x = np.random.rand(5)
-        y = np.random.rand(5)
+        x = rng.random(5)
+        y = rng.random(5)
         res1 = mannwhitneyu(x, y, method="exact")
         res2 = mannwhitneyu(x, y, method="asymptotic")
         assert res1.statistic == res2.statistic
         assert np.abs(res1.pvalue - res2.pvalue) > 1e-2
 
         # for large samples, they agree reasonably well
-        x = np.random.rand(40)
-        y = np.random.rand(40)
+        x = rng.random(40)
+        y = rng.random(40)
         res1 = mannwhitneyu(x, y, method="exact")
         res2 = mannwhitneyu(x, y, method="asymptotic")
         assert res1.statistic == res2.statistic
@@ -860,8 +860,8 @@ class TestSomersD(_TestPythranFunc):
         shape = 4, 6
         size = np.prod(shape)
 
-        np.random.seed(0)
-        s = stats.multinomial.rvs(N, p=np.ones(size)/size).reshape(shape)
+        rng = np.random.RandomState(0)
+        s = stats.multinomial.rvs(N, p=np.ones(size)/size, random_state=rng).reshape(shape)
         res = stats.somersd(s)
 
         s2 = np.insert(s, 2, np.zeros(shape[1]), axis=0)
@@ -889,9 +889,9 @@ class TestSomersD(_TestPythranFunc):
         shape = 4, 6
         size = np.prod(shape)
 
-        np.random.seed(0)
+        rng = np.random.default_rng(0)
         # start with a valid contingency table
-        s = stats.multinomial.rvs(N, p=np.ones(size)/size).reshape(shape)
+        s = stats.multinomial.rvs(N, p=np.ones(size)/size, random_state=rng).reshape(shape)
 
         s5 = s - 2
         message = "All elements of the contingency table must be non-negative"
@@ -1003,6 +1003,7 @@ class TestSomersD(_TestPythranFunc):
         assert res.statistic == expected_statistic
         assert res.pvalue == (0 if positive_correlation else 1)
 
+    @pytest.mark.thread_unsafe
     def test_somersd_large_inputs_gh18132(self):
         # Test that large inputs where potential overflows could occur give
         # the expected output. This is tested in the case of binary inputs.
@@ -1375,18 +1376,18 @@ class TestCvm_2samp:
     def test_large_sample(self):
         # for large samples, the statistic U gets very large
         # do a sanity check that p-value is not 0, 1 or nan
-        np.random.seed(4367)
-        x = distributions.norm.rvs(size=1000000)
-        y = distributions.norm.rvs(size=900000)
+        rng = np.random.default_rng(4367)
+        x = distributions.norm.rvs(size=1000000, random_state=rng)
+        y = distributions.norm.rvs(size=900000, random_state=rng)
         r = cramervonmises_2samp(x, y)
         assert_(0 < r.pvalue < 1)
         r = cramervonmises_2samp(x, y+0.1)
         assert_(0 < r.pvalue < 1)
 
     def test_exact_vs_asymptotic(self):
-        np.random.seed(0)
-        x = np.random.rand(7)
-        y = np.random.rand(8)
+        rng = np.random.RandomState(0)
+        x = rng.rand(7)
+        y = rng.rand(8)
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='asymptotic')
         assert_equal(r1.statistic, r2.statistic)
