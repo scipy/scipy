@@ -252,7 +252,7 @@ and support several Array API compatible array libraries in addition to NumPy
     especially those with methods not overridden with distribution-specific
     formulas.
   - `scipy.stats.Normal` and `scipy.stats.Uniform` are pre-defined classes
-    to represents the normal and uniform distributions, respectively.
+    to represent the normal and uniform distributions, respectively.
     Their interfaces may be faster and more convenient than those produced by
     ``make_distribution``.
   - `scipy.stats.Mixture` can be used to represent mixture distributions.
