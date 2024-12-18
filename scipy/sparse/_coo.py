@@ -65,13 +65,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
             if issparse(arg1):
                 if arg1.format == self.format and copy:
                     self.coords = tuple(idx.copy() for idx in arg1.coords)
-                    self.data = arg1.data.copy()
+                    self.data = arg1.data.astype(getdtype(dtype, arg1))  # copy=True
                     self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
                     self.has_canonical_format = arg1.has_canonical_format
                 else:
                     coo = arg1.tocoo()
                     self.coords = tuple(coo.coords)
-                    self.data = coo.data
+                    self.data = coo.data.astype(getdtype(dtype, coo), copy=False)
                     self._shape = check_shape(coo.shape, allow_nd=self._allow_nd)
                     self.has_canonical_format = False
             else:
@@ -92,15 +92,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 coords = M.nonzero()
                 self.coords = tuple(idx.astype(index_dtype, copy=False)
                                      for idx in coords)
-                self.data = M[coords]
+                self.data = getdata(M[coords], copy=copy, dtype=dtype)
                 self.has_canonical_format = True
 
         if len(self._shape) > 2:
             self.coords = tuple(idx.astype(np.int64, copy=False) for idx in self.coords)
-
-        if dtype is not None:
-            newdtype = getdtype(dtype)
-            self.data = self.data.astype(newdtype, copy=False)
 
         self._check()
 
