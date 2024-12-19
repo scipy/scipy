@@ -1,7 +1,4 @@
 fs = import('fs')
-if not fs.exists('boost_math/README.md')
-  error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
