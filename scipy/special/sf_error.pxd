@@ -12,6 +12,8 @@ cdef extern from "sf_error.h":
         DOMAIN "SF_ERROR_DOMAIN"
         ARG "SF_ERROR_ARG"
         OTHER "SF_ERROR_OTHER"
+        MEMORY "SF_ERROR_MEMORY"
+        LAST "SF_ERROR__LAST"
 
     ctypedef enum sf_action_t:
         IGNORE "SF_ERROR_IGNORE"
@@ -32,7 +34,7 @@ cdef inline int _sf_error_test_function(int code) noexcept nogil:
     """
     cdef sf_error_t sf_error_code
     
-    if code < 0 or code >= 10:
+    if code < 0 or code >= LAST:
         sf_error_code = OTHER
     else:
         sf_error_code = <sf_error_t>code
