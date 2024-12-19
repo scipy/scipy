@@ -724,6 +724,7 @@ def funm(A, func, disp=True):
         return F, err
 
 
+@_apply_over_batch(('A', 2))
 def signm(A, disp=True):
     """
     Matrix sign function.

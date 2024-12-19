@@ -69,7 +69,7 @@ class TestMatrixInScalarOut:
         A = rng.random((5, 3, 4)).astype(dtype)
         self.batch_test(linalg.diagsvd, A, args=(6, 4), core_dim=1)
 
-    @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm])
+    @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm, linalg.signm])
     @pytest.mark.parametrize('dtype', floating)
     def test_matmat(self, fun, dtype, rng):  # matrix in, matrix out
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
