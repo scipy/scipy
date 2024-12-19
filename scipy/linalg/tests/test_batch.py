@@ -21,36 +21,44 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
 
 class TestMatrixInScalarOut:
 
-    def batch_test(self, fun, args=(), kwargs=None, dtype=np.float64,
-                   batch_shape=(5, 3), core_shape=(4, 4), seed=8342310302941288912051):
+    def batch_test(self, fun, A, core_dim=2, args=(), kwargs=None, dtype=None):
         kwargs = {} if kwargs is None else kwargs
-        rng = np.random.default_rng(seed)
-        # test_expm_cond doesn't need symmetric/hermitian matrices, and
-        # test_issymmetric doesn't need hermitian matrices, but it doesn't hurt.
-        A = get_nearly_hermitian(batch_shape + core_shape, dtype, 3e-4, rng)
-
         res = fun(A, *args, **kwargs)
-
+        batch_shape = A.shape[:-core_dim]
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
-                ref = fun(A[i, j], *args, **kwargs)
+                ref = np.asarray(fun(A[i, j], *args, **kwargs))
                 assert_allclose(res[i, j], ref)
+                assert np.shape(res[i, j]) == ref.shape
 
+        out_dtype = ref.dtype if dtype is None else dtype
+        assert res.dtype == out_dtype
         return res
 
     @pytest.mark.parametrize('dtype', floating)
     def test_expm_cond(self, dtype):
-        self.batch_test(linalg.expm_cond, dtype=dtype)
+        rng = np.random.default_rng(8342310302941288912051)
+        A = rng.random((5, 3, 4, 4)).astype(dtype)
+        self.batch_test(linalg.expm_cond, A)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_issymmetric(self, dtype):
-        res = self.batch_test(linalg.issymmetric, dtype=dtype, kwargs=dict(atol=1e-3))
+        rng = np.random.default_rng(8342310302941288912051)
+        A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
+        res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3))
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to issymmetric
 
     @pytest.mark.parametrize('dtype', floating)
     def test_ishermitian(self, dtype):
-        res = self.batch_test(linalg.issymmetric, dtype=dtype, kwargs=dict(atol=1e-3))
+        rng = np.random.default_rng(8342310302941288912051)
+        A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
+        res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3))
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to ishermitian
 
+    @pytest.mark.parametrize('dtype', floating)
+    def test_diagsvd(self, dtype):
+        rng = np.random.default_rng(8342310302941288912051)
+        A = rng.random((5, 3, 4)).astype(dtype)
+        self.batch_test(linalg.diagsvd, A, args=(6, 4), core_dim=1)

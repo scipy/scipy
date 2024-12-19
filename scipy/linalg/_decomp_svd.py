@@ -2,10 +2,13 @@
 import numpy as np
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports.
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._decomp import _asarray_validated
+
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
@@ -249,6 +252,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
                check_finite=check_finite)
 
 
+@_apply_over_batch(('s', 1))
 def diagsvd(s, M, N):
     """
     Construct the sigma matrix in SVD from singular values and size M, N.
