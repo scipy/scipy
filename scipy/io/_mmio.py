@@ -389,7 +389,9 @@ class MMFile:
             # skip comments
             # line.startswith('%')
             while line:
-                if line.lstrip() and line.lstrip()[0] in ['%', 37]:
+                line_tmp = line.lstrip()
+                curly_brace = '{' if isinstance(line, str) else b'{'
+                if line_tmp and (line_tmp[0] in ['%', 37] or line_tmp.startswith(curly_brace)):
                     line = stream.readline()
                 else:
                     break
@@ -549,12 +551,12 @@ class MMFile:
     # -------------------------------------------------------------------------
     @staticmethod
     def _field_template(field, precision):
-        return {MMFile.FIELD_REAL: '%%.%ie\n' % precision,
-                MMFile.FIELD_INTEGER: '%i\n',
-                MMFile.FIELD_UNSIGNED: '%u\n',
-                MMFile.FIELD_COMPLEX: '%%.%ie %%.%ie\n' %
-                    (precision, precision)
-                }.get(field, None)
+        return {MMFile.FIELD_REAL: f'{{val:.{precision}e}}\n',
+                MMFile.FIELD_INTEGER: '{val}\n',
+                MMFile.FIELD_UNSIGNED: '{val}\n',
+                MMFile.FIELD_COMPLEX: (
+                    f'{{real:.{precision}e}} {{imag:.{precision}e}}\n'
+                )}.get(field, None)
 
     # -------------------------------------------------------------------------
     def __init__(self, **kwargs):
@@ -858,14 +860,14 @@ class MMFile:
 
         # write comments
         for line in comment.split('\n'):
-            data = f'%{line}\n'
+            data = f'{{}}{line}\n'
             stream.write(data.encode('latin1'))
 
         template = self._field_template(field, precision)
         # write dense format
         if rep == self.FORMAT_ARRAY:
             # write shape spec
-            data = '%i %i\n' % (rows, cols)
+            data = f'{rows} {cols}\n'
             stream.write(data.encode('latin1'))
 
             if field in (self.FIELD_INTEGER, self.FIELD_REAL,
@@ -873,19 +875,19 @@ class MMFile:
                 if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
-                            data = template % a[i, j]
+                            data = template.format(val=a[i, j])
                             stream.write(data.encode('latin1'))
 
                 elif symmetry == self.SYMMETRY_SKEW_SYMMETRIC:
                     for j in range(cols):
                         for i in range(j + 1, rows):
-                            data = template % a[i, j]
+                            data = template.format(val=a[i, j])
                             stream.write(data.encode('latin1'))
 
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
-                            data = template % a[i, j]
+                            data = template.format(val=a[i, j])
                             stream.write(data.encode('latin1'))
 
             elif field == self.FIELD_COMPLEX:
@@ -894,13 +896,13 @@ class MMFile:
                     for j in range(cols):
                         for i in range(rows):
                             aij = a[i, j]
-                            data = template % (real(aij), imag(aij))
+                            data = template.format(real=real(aij), imag=imag(aij))
                             stream.write(data.encode('latin1'))
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
                             aij = a[i, j]
-                            data = template % (real(aij), imag(aij))
+                            data = template.format(real=real(aij), imag=imag(aij))
                             stream.write(data.encode('latin1'))
 
             elif field == self.FIELD_PATTERN:
@@ -922,23 +924,23 @@ class MMFile:
                                 shape=coo.shape)
 
             # write shape spec
-            data = '%i %i %i\n' % (rows, cols, coo.nnz)
+            data = f'{rows} {cols} {coo.nnz}\n'
             stream.write(data.encode('latin1'))
 
             template = self._field_template(field, precision-1)
 
             if field == self.FIELD_PATTERN:
                 for r, c in zip(coo.row+1, coo.col+1):
-                    data = "%i %i\n" % (r, c)
+                    data = f'{r} {c}\n'
                     stream.write(data.encode('latin1'))
             elif field in (self.FIELD_INTEGER, self.FIELD_REAL,
                            self.FIELD_UNSIGNED):
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
-                    data = ("%i %i " % (r, c)) + (template % d)
+                    data = f'{r} {c} ' + template.format(val=d)
                     stream.write(data.encode('latin1'))
             elif field == self.FIELD_COMPLEX:
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
-                    data = ("%i %i " % (r, c)) + (template % (d.real, d.imag))
+                    data = f'{r} {c} ' + template.format(real=d.real, imag=d.imag)
                     stream.write(data.encode('latin1'))
             else:
                 raise TypeError(f'Unknown field type {field}')
