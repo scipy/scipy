@@ -1176,6 +1176,14 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
     return s
 
 
+_batch_note = """
+The documentation is written assuming array arguments are of specified
+"core" shapes. However, array argument(s) of this function may have additional
+"batch" dimensions prepended to the core shape. In this case, the array is treated
+as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+"""
+
+
 def _apply_over_batch(*argdefs):
     """
     Factory for decorator that applies a function over batched arguments.
@@ -1265,6 +1273,10 @@ def _apply_over_batch(*argdefs):
             # a `tuple` otherwise. This is easily generalized by allowing the
             # contributor to pass an `pack_result` callable to the decorator factory.
             return results[0] if len(results) == 1 else results
+
+        doc = FunctionDoc(wrapper)
+        doc['Extended Summary'].append(_batch_note.rstrip())
+        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
 
         return wrapper
     return decorator

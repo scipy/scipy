@@ -124,11 +124,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     where ``.H`` is the Hermitian conjugation.
 
-    The documentation is written assuming array arguments are of specified
-    "core" shapes. However, array argument(s) of this function may have additional
-    "batch" dimensions prepended to the core shape. In this case, the array is treated
-    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-
     Parameters
     ----------
     a : (M, M) array_like
