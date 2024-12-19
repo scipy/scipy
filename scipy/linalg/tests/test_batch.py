@@ -9,6 +9,12 @@ complex_floating = [np.complex64, np.complex128]
 floating = real_floating + complex_floating
 
 
+def get_random(shape, *, dtype, rng):
+    A = rng.random(shape)
+    if np.issubdtype(dtype, np.complexfloating):
+        A = A + rng.random(shape) * 1j
+    return A.astype(dtype)
+
 def get_nearly_hermitian(shape, dtype, atol, rng):
     # Generate a batch of nearly Hermitian matrices with specified
     # `shape` and `dtype`. `atol` controls the level of noise in
@@ -35,30 +41,35 @@ class TestMatrixInScalarOut:
         assert res.dtype == out_dtype
         return res
 
+    @pytest.fixture
+    def rng(self):
+        return np.random.default_rng(8342310302941288912051)
+
     @pytest.mark.parametrize('dtype', floating)
-    def test_expm_cond(self, dtype):
-        rng = np.random.default_rng(8342310302941288912051)
+    def test_expm_cond(self, dtype, rng):
         A = rng.random((5, 3, 4, 4)).astype(dtype)
         self.batch_test(linalg.expm_cond, A)
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_issymmetric(self, dtype):
-        rng = np.random.default_rng(8342310302941288912051)
+    def test_issymmetric(self, dtype, rng):
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
         res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3))
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to issymmetric
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_ishermitian(self, dtype):
-        rng = np.random.default_rng(8342310302941288912051)
+    def test_ishermitian(self, dtype, rng):
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
         res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3))
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to ishermitian
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_diagsvd(self, dtype):
-        rng = np.random.default_rng(8342310302941288912051)
+    def test_diagsvd(self, dtype, rng):
         A = rng.random((5, 3, 4)).astype(dtype)
         self.batch_test(linalg.diagsvd, A, args=(6, 4), core_dim=1)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_inv(self, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.inv, A)

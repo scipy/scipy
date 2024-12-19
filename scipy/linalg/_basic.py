@@ -8,6 +8,7 @@ from warnings import warn
 from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
+from scipy._lib._util import _apply_over_batch
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -1089,6 +1090,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
+@_apply_over_batch(('a', 2))
 def inv(a, overwrite_a=False, check_finite=True):
     """
     Compute the inverse of a matrix.
