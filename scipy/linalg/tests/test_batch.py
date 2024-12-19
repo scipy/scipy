@@ -84,3 +84,8 @@ class TestMatrixInScalarOut:
     def test_funm(self, dtype, rng):
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
         self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_fractional_matrix_power(self, dtype, rng):
+        A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
+        self.batch_test(linalg.fractional_matrix_power, A, args=(1.5,))
