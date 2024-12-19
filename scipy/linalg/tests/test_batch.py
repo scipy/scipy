@@ -73,3 +73,8 @@ class TestMatrixInScalarOut:
     def test_inv(self, dtype, rng):
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(linalg.inv, A)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_null_space(self, dtype, rng):
+        A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
+        res = self.batch_test(linalg.null_space, A)

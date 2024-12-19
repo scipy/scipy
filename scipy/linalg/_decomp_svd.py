@@ -353,6 +353,7 @@ def orth(A, rcond=None):
     return Q
 
 
+@_apply_over_batch(('s', 2))
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """
