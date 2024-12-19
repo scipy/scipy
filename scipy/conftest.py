@@ -229,11 +229,13 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
         if marker.kwargs.get('np_only'):
             kwargs['np_only'] = True
             kwargs['exceptions'] = marker.kwargs.get('exceptions', [])
+            kwargs['reason'] = marker.kwargs.get('reason', None)
         elif marker.kwargs.get('cpu_only'):
             if not kwargs.get('np_only'):
                 # if np_only is given, it is certainly cpu only
                 kwargs['cpu_only'] = True
                 kwargs['exceptions'] = marker.kwargs.get('exceptions', [])
+                kwargs['reason'] = marker.kwargs.get('reason', None)
 
         # add backends, if any
         if len(marker.args) > 0:
@@ -330,16 +332,20 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
         raise ValueError("`exceptions` is only valid alongside `cpu_only` or `np_only`")
 
     if np_only:
-        reason = kwargs.get("reason", "do not run with non-NumPy backends.")
-        if not isinstance(reason, str) and len(reason) > 1:
-            raise ValueError("please provide a singleton `reason` "
-                             "when using `np_only`")
+        reason = kwargs.get("reason")
+        if not reason:
+            reason = "do not run with non-NumPy backends"
+
         if xp.__name__ != 'numpy' and xp.__name__ not in exceptions:
             skip_or_xfail(reason=reason)
         return
+
     if cpu_only:
-        reason = ("no array-agnostic implementation or delegation available "
-                  "for this backend and device")
+        reason = kwargs.get("reason")
+        if not reason:
+            reason = ("no array-agnostic implementation or delegation available "
+                      "for this backend and device")
+
         exceptions = [] if exceptions is None else exceptions
         if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
             if xp.__name__ == 'cupy' and 'cupy' not in exceptions:
