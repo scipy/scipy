@@ -144,6 +144,7 @@ def fractional_matrix_power(A, t):
     return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
 
 
+@_apply_over_batch(('A', 2))
 def logm(A, disp=True):
     """
     Compute matrix logarithm.
@@ -394,6 +395,7 @@ def _exp_sinch(x):
     return lexp_diff
 
 
+@_apply_over_batch(('A', 2))
 def cosm(A):
     """
     Compute the matrix cosine.
@@ -434,6 +436,7 @@ def cosm(A):
         return expm(1j*A).real
 
 
+@_apply_over_batch(('A', 2))
 def sinm(A):
     """
     Compute the matrix sine.
@@ -474,6 +477,7 @@ def sinm(A):
         return expm(1j*A).imag
 
 
+@_apply_over_batch(('A', 2))
 def tanm(A):
     """
     Compute the matrix tangent.
@@ -513,6 +517,7 @@ def tanm(A):
     return _maybe_real(A, solve(cosm(A), sinm(A)))
 
 
+@_apply_over_batch(('A', 2))
 def coshm(A):
     """
     Compute the hyperbolic matrix cosine.
@@ -552,6 +557,7 @@ def coshm(A):
     return _maybe_real(A, 0.5 * (expm(A) + expm(-A)))
 
 
+@_apply_over_batch(('A', 2))
 def sinhm(A):
     """
     Compute the hyperbolic matrix sine.
@@ -591,6 +597,7 @@ def sinhm(A):
     return _maybe_real(A, 0.5 * (expm(A) - expm(-A)))
 
 
+@_apply_over_batch(('A', 2))
 def tanhm(A):
     """
     Compute the hyperbolic matrix tangent.

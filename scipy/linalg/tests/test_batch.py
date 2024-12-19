@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -69,7 +71,9 @@ class TestMatrixInScalarOut:
         A = rng.random((5, 3, 4)).astype(dtype)
         self.batch_test(linalg.diagsvd, A, args=(6, 4), core_dim=1)
 
-    @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm, linalg.signm])
+    @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm, linalg.signm,
+                                     linalg.sinm, linalg.cosm, linalg.tanhm,
+                                     linalg.sinhm, linalg.coshm, linalg.tanhm])
     @pytest.mark.parametrize('dtype', floating)
     def test_matmat(self, fun, dtype, rng):  # matrix in, matrix out
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
@@ -89,3 +93,11 @@ class TestMatrixInScalarOut:
     def test_fractional_matrix_power(self, dtype, rng):
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
         self.batch_test(linalg.fractional_matrix_power, A, args=(1.5,))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_logm(self, dtype, rng):
+        with warnings.catch_warnings():  # "result not accurate"
+            warnings.simplefilter("ignore", RuntimeWarning)
+            A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+            A = A + 3*np.eye(4)  # avoid complex output for real input
+            self.batch_test(linalg.logm, A)
