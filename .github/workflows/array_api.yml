@@ -16,23 +16,23 @@ env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   INSTALLDIR: "build-install"
   XP_TESTS: >-
+    -t scipy._lib.tests.test__util
+    -t scipy._lib.tests.test_array_api
     -t scipy.cluster
     -t scipy.constants
-    -t scipy.fft
-    -t scipy.special.tests.test_logsumexp
-    -t scipy.special.tests.test_support_alternative_backends
-    -t scipy._lib.tests.test_array_api
-    -t scipy._lib.tests.test__util
     -t scipy.differentiate.tests.test_differentiate
-    -t scipy.integrate.tests.test_tanhsinh
+    -t scipy.fft
     -t scipy.integrate.tests.test_cubature
+    -t scipy.integrate.tests.test_quadrature
+    -t scipy.integrate.tests.test_tanhsinh
+    -t scipy.ndimage
     -t scipy.optimize.tests.test_bracket
     -t scipy.optimize.tests.test_chandrupatla
     -t scipy.optimize.tests.test_optimize
-    -t scipy.stats
-    -t scipy.ndimage
-    -t scipy.integrate.tests.test_quadrature
     -t scipy.signal.tests.test_signaltools
+    -t scipy.special.tests.test_logsumexp
+    -t scipy.special.tests.test_support_alternative_backends
+    -t scipy.stats
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
