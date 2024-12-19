@@ -293,22 +293,20 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
         Backends to skip/xfail, e.g. ``("array_api_strict", "torch")``.
         These are overriden when ``np_only`` is ``True``, and are not
         necessary to provide for non-CPU backends when ``cpu_only`` is ``True``.
-        For a custom reason to apply, you should pass a dict ``{'reason': '...'}``
-        to a keyword matching the name of the backend.
-    reason : str, optional
-        A reason for the skip/xfail in the case of ``np_only=True``.
-        If unprovided, a default reason is used. Note that it is not possible
-        to specify a custom reason with ``cpu_only``.
+        For a custom reason to apply, you should pass
+        ``kwargs={<backend name>: {'reason': '...'}, ...}``.
     np_only : bool, optional
         When ``True``, the test is skipped/xfailed for all backends other
         than the default NumPy backend. There is no need to provide
-        any ``backends`` in this case. To specify a reason, pass a
-        value to ``reason``. Default: ``False``.
+        any ``backends`` in this case. Default: ``False``.
     cpu_only : bool, optional
         When ``True``, the test is skipped/xfailed on non-CPU devices.
         There is no need to provide any ``backends`` in this case,
         but any ``backends`` will also be skipped on the CPU.
         Default: ``False``.
+    reason : str, optional
+        A reason for the skip/xfail in the case of ``np_only=True`` or
+        ``cpu_only=True``. If omitted, a default reason is used.
     exceptions : list, optional
         A list of exceptions for use with ``cpu_only`` or ``np_only``.
         This should be provided when delegation is implemented for some,
