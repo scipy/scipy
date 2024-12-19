@@ -331,6 +331,17 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
     if exceptions and not (cpu_only or np_only):
         raise ValueError("`exceptions` is only valid alongside `cpu_only` or `np_only`")
 
+    # Test explicit backends first so that their reason can override
+    # those from np_only/cpu_only
+    if backends is not None:
+        for i, backend in enumerate(backends):
+            if xp.__name__ == backend:
+                reason = kwargs[backend].get('reason')
+                if not reason:
+                    reason = f"do not run with array API backend: {backend}"
+
+                skip_or_xfail(reason=reason)
+
     if np_only:
         reason = kwargs.get("reason")
         if not reason:
@@ -357,15 +368,6 @@ def skip_or_xfail_xp_backends(xp, backends, kwargs, skip_or_xfail='skip'):
                 for d in xp.empty(0).devices():
                     if 'cpu' not in d.device_kind:
                         skip_or_xfail(reason=reason)
-
-    if backends is not None:
-        for i, backend in enumerate(backends):
-            if xp.__name__ == backend:
-                reason = kwargs[backend].get('reason')
-                if not reason:
-                    reason = f"do not run with array API backend: {backend}"
-
-                skip_or_xfail(reason=reason)
 
 
 # Following the approach of NumPy's conftest.py...
