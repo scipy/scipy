@@ -412,6 +412,7 @@ def test_api_importable():
                           ('scipy.signal.ltisys', None),
                           ('scipy.signal.signaltools', None),
                           ('scipy.signal.spectral', None),
+                          ('scipy.signal.spline', None),
                           ('scipy.signal.waveforms', None),
                           ('scipy.signal.wavelets', None),
                           ('scipy.signal.windows.windows', 'windows'),
