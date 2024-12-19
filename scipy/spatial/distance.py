@@ -222,9 +222,8 @@ def _validate_hamming_kwargs(X, m, n, **kwargs):
     w = kwargs.get('w', np.ones((n,), dtype='double'))
 
     if w.ndim != 1 or w.shape[0] != n:
-        raise ValueError(
-            "Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n)
-        )
+        raise ValueError(f"Weights must have same size as input vector. "
+                         f"{w.shape[0]} vs. {n}")
 
     kwargs['w'] = _validate_weights(w)
     return kwargs
@@ -236,11 +235,10 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
         if m <= n:
             # There are fewer observations than the dimension of
             # the observations.
-            raise ValueError("The number of observations (%d) is too "
-                             "small; the covariance matrix is "
-                             "singular. For observations with %d "
-                             "dimensions, at least %d observations "
-                             "are required." % (m, n, n + 1))
+            raise ValueError(
+                f"The number of observations ({m}) is too small; "
+                f"the covariance matrix is singular. For observations "
+                f"with {n} dimensions, at least {n + 1} observations are required.")
         if isinstance(X, tuple):
             X = np.vstack(X)
         CV = np.atleast_2d(np.cov(X.astype(np.float64, copy=False).T))
