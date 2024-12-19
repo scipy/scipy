@@ -33,7 +33,7 @@ from scipy._lib._util import ComplexWarning
 
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
-    assert_array_almost_equal, assert_almost_equal,
+    array_namespace, assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, xp_default_dtype
 )
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -964,7 +964,6 @@ def gen_oa_shapes_eq(sizes):
             if a >= b]
 
 
-@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 @skip_xp_backends("jax.numpy", reason="fails all around")
 class TestOAConvolve:
     @pytest.mark.slow()
