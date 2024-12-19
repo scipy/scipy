@@ -8,6 +8,8 @@ import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
 from ._misc import norm
@@ -627,6 +629,7 @@ def tanhm(A):
     return _maybe_real(A, solve(coshm(A), sinhm(A)))
 
 
+@_apply_over_batch(('A', 2))
 def funm(A, func, disp=True):
     """
     Evaluate a matrix function specified by a callable.

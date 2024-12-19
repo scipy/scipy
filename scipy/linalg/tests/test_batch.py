@@ -69,12 +69,18 @@ class TestMatrixInScalarOut:
         A = rng.random((5, 3, 4)).astype(dtype)
         self.batch_test(linalg.diagsvd, A, args=(6, 4), core_dim=1)
 
+    @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm])
     @pytest.mark.parametrize('dtype', floating)
-    def test_inv(self, dtype, rng):
+    def test_matmat(self, fun, dtype, rng):  # matrix in, matrix out
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.inv, A)
+        self.batch_test(fun, A)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_null_space(self, dtype, rng):
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
-        res = self.batch_test(linalg.null_space, A)
+        self.batch_test(linalg.null_space, A)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_funm(self, dtype, rng):
+        A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
+        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin))
