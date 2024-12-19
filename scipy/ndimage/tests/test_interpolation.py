@@ -294,54 +294,58 @@ class TestGeometricTransform:
         assert_array_almost_equal(out, xp.asarray([1, 2, 3, 4], dtype=out.dtype))
 
     def test_geometric_transform15(self, order, xp):
-        data = [1, 2, 3, 4]
+        data = xp.asarray([1, 2, 3, 4])
 
         def mapping(x):
             return (x[0] / 2,)
 
         out = ndimage.geometric_transform(data, mapping, [8], order=order)
-        assert_array_almost_equal(out[::2], [1, 2, 3, 4])
+        assert_array_almost_equal(out[::2], xp.asarray([1, 2, 3, 4]))
 
     def test_geometric_transform16(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9.0, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0], x[1] * 2)
 
         out = ndimage.geometric_transform(data, mapping, (3, 2),
                                           order=order)
-        assert_array_almost_equal(out, [[1, 3], [5, 7], [9, 11]])
+        assert_array_almost_equal(out, xp.asarray([[1, 3], [5, 7], [9, 11]]))
 
     def test_geometric_transform17(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0] * 2, x[1])
 
         out = ndimage.geometric_transform(data, mapping, (1, 4),
                                           order=order)
-        assert_array_almost_equal(out, [[1, 2, 3, 4]])
+        assert_array_almost_equal(out, xp.asarray([[1, 2, 3, 4]]))
 
     def test_geometric_transform18(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0] * 2, x[1] * 2)
 
         out = ndimage.geometric_transform(data, mapping, (1, 2),
                                           order=order)
-        assert_array_almost_equal(out, [[1, 3]])
+        assert_array_almost_equal(out, xp.asarray([[1, 3]]))
 
     def test_geometric_transform19(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0], x[1] / 2)
@@ -354,6 +358,7 @@ class TestGeometricTransform:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0] / 2, x[1])
@@ -366,6 +371,7 @@ class TestGeometricTransform:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0] / 2, x[1] / 2)
@@ -375,9 +381,10 @@ class TestGeometricTransform:
         assert_array_almost_equal(out[::2, ::2], data)
 
     def test_geometric_transform22(self, order, xp):
-        data = xp.asarray([[1, 2, 3, 4],
-                           [5, 6, 7, 8],
-                           [9, 10, 11, 12]], dtype=xp.float64)
+        data = [[1, 2, 3, 4],
+                [5, 6, 7, 8],
+                [9, 10, 11, 12]]
+        data = xp.asarray(data, dtype=xp.float64)
 
         def mapping1(x):
             return (x[0] / 2, x[1] / 2)
@@ -395,18 +402,19 @@ class TestGeometricTransform:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (1, x[0] * 2)
 
         out = ndimage.geometric_transform(data, mapping, (2,), order=order)
-        out = out.astype(np.int32)
-        assert_array_almost_equal(out, [5, 7])
+        assert_array_almost_equal(out, xp.asarray([5, 7]))
 
     def test_geometric_transform24(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x, a, b):
             return (a, x[0] * b)
@@ -414,7 +422,7 @@ class TestGeometricTransform:
         out = ndimage.geometric_transform(
             data, mapping, (2,), order=order, extra_arguments=(1,),
             extra_keywords={'b': 2})
-        assert_array_almost_equal(out, [5, 7])
+        assert_array_almost_equal(out, xp.asarray([5, 7]))
 
 
 @skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
@@ -1479,6 +1487,6 @@ class TestRotate:
         if is_cupy(xp):
             pytest.xfail("https://github.com/cupy/cupy/issues/8400")
 
-        a = np.tile(xp.arange(5), (5, 1))
+        a = xp.asarray(np.tile(np.arange(5), (5, 1)))
         b = ndimage.rotate(ndimage.rotate(a, 180), -180)
         xp_assert_equal(a, b)

@@ -2042,9 +2042,9 @@ class TestNdimageFilters:
 
     def test_rank16(self, xp):
         # test that lists are accepted and interpreted as numpy arrays
-        array = [3, 2, 5, 1, 4]
+        array = xp.asarray([3, 2, 5, 1, 4])
         # expected values are: median(3, 2, 5) = 3, median(2, 5, 1) = 2, etc
-        expected = np.asarray([3, 3, 2, 4, 4])
+        expected = xp.asarray([3, 3, 2, 4, 4])
         output = ndimage.rank_filter(array, -2, size=3)
         xp_assert_equal(expected, output)
 
