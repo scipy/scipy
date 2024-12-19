@@ -1,9 +1,11 @@
 import itertools
 
+import pytest
 import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
 from scipy import linalg
+from scipy.conftest import mac_acclrt_gh21862
 import scipy.linalg._decomp_update as _decomp_update
 from scipy.linalg._decomp_update import qr_delete, qr_update, qr_insert
 
@@ -626,6 +628,11 @@ class TestQRdelete_F(BaseQRdelete):
 class TestQRdelete_d(BaseQRdelete):
     dtype = np.dtype('d')
 
+
+@pytest.mark.skipif(
+    mac_acclrt_gh21862,
+    reason="macOS Sequoia <15.2 fails several of these tests"
+)
 class TestQRdelete_D(BaseQRdelete):
     dtype = np.dtype('D')
 
@@ -1170,6 +1177,11 @@ class TestQRinsert_F(BaseQRinsert):
 class TestQRinsert_d(BaseQRinsert):
     dtype = np.dtype('d')
 
+
+@pytest.mark.skipif(
+    mac_acclrt_gh21862,
+    reason="macOS Sequoia <15.2 fails several of these tests"
+)
 class TestQRinsert_D(BaseQRinsert):
     dtype = np.dtype('D')
 
@@ -1641,6 +1653,10 @@ class TestQRupdate_F(BaseQRupdate):
 class TestQRupdate_d(BaseQRupdate):
     dtype = np.dtype('d')
 
+@pytest.mark.skipif(
+    mac_acclrt_gh21862,
+    reason="macOS Sequoia <15.2 fails several of these tests"
+)
 class TestQRupdate_D(BaseQRupdate):
     dtype = np.dtype('D')
 

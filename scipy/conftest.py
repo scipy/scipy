@@ -1,6 +1,8 @@
 # Pytest customization
+import sys
 import json
 import os
+from platform import mac_ver
 import warnings
 import tempfile
 from contextlib import contextmanager
@@ -564,3 +566,10 @@ if HAVE_SCPDT:
 
     dt_config.strict_check = True
 ############################################################################
+
+if sys.platform == "darwin":
+    mac_acclrt_gh21862 = (
+            (15, 0) < _pep440._parse_local_version(mac_ver()[0]) < (15, 2)
+    )
+else:
+    mac_acclrt_gh21862 = False

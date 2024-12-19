@@ -22,6 +22,7 @@ from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
 
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
+from scipy.conftest import mac_acclrt_gh21862
 
 import scipy.sparse as sps
 try:
@@ -39,6 +40,20 @@ from scipy.linalg.blas import get_blas_funcs
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+# gh21862 had failing tests on macOS accelerate for Sequoia <15.2.
+# Here we modify the parameterization of some of the tests.
+MODIFIED_DTYPES_GH21862 = list(DTYPES)
+MODIFIED_DTYPES_GH21862.remove(np.complex128)
+_p = pytest.param(
+    np.complex128,
+    marks=pytest.mark.skipif(
+        mac_acclrt_gh21862,
+        reason="macOS Sequoia <15.2 fails several of these tests"
+    )
+)
+MODIFIED_DTYPES_GH21862.append(_p)
+
 
 blas_provider = blas_version = None
 if CONFIG is not None:
@@ -502,8 +517,8 @@ class TestDlasd4:
             res = lasd4(i, sgm, mvc)
             roots.append(res[1])
 
-            assert_((res[3] <= 0), "LAPACK root finding dlasd4 failed to find \
-                                    the singular value %i" % i)
+            assert (res[3] <= 0), "LAPACK root finding dlasd4 failed to find" \
+                                  f" the singular value {i}"
         roots = np.array(roots)[::-1]
 
         assert_((not np.any(np.isnan(roots)), "There are NaN roots"))
@@ -3055,7 +3070,7 @@ def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
     assert_(abs(1/rcond - np.linalg.cond(a, p=1))*rcond < 1)
 
 
-@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('dtype', MODIFIED_DTYPES_GH21862)
 def test_gees_trexc(dtype):
     rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
@@ -3132,7 +3147,7 @@ def test_trexc_NAG(t, ifst, ilst, expect):
     assert_allclose(expect, t, atol=atol)
 
 
-@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('dtype', MODIFIED_DTYPES_GH21862)
 def test_gges_tgexc(dtype):
     rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
@@ -3180,7 +3195,10 @@ def test_gges_tgexc(dtype):
     assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
 
 
-@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize(
+    'dtype',
+    MODIFIED_DTYPES_GH21862
+)
 def test_gees_trsen(dtype):
     rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
@@ -3301,7 +3319,7 @@ def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
     assert_allclose(expect_sep, 1 / sep, atol=atol2)
 
 
-@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('dtype', MODIFIED_DTYPES_GH21862)
 def test_gges_tgsen(dtype):
     rng = np.random.RandomState(1234)
     atol = np.finfo(dtype).eps*100
