@@ -1,3 +1,4 @@
+import threading
 import numpy as np
 from collections import namedtuple
 from scipy import special
@@ -143,7 +144,7 @@ class _MWU:
         return configurations / total
 
 
-_mwu_state = _MWU(0, 0)
+_mwu_state = threading.local()
 
 
 def _get_mwu_z(U, n1, n2, t, axis=0, continuity=True):
@@ -461,8 +462,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         method = _mwu_choose_method(n1, n2, np.any(t > 1))
 
     if method == "exact":
-        _mwu_state.set_shapes(n1, n2)
-        p = _mwu_state.sf(U.astype(int))
+        if not hasattr(_mwu_state, 's'):
+            _mwu_state.s = _MWU(0, 0)
+        _mwu_state.s.set_shapes(n1, n2)
+        p = _mwu_state.s.sf(U.astype(int))
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity)
         p = stats.norm.sf(z)
