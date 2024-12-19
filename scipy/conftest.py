@@ -29,12 +29,6 @@ except Exception:
 
 
 def pytest_configure(config):
-    config.addinivalue_line("markers",
-        "slow: Tests that are very slow.")
-    config.addinivalue_line("markers",
-        "xslow: mark test as extremely slow (not run unless explicitly requested)")
-    config.addinivalue_line("markers",
-        "xfail_on_32bit: mark test as failing on 32-bit platforms")
     try:
         import pytest_timeout  # noqa:F401
     except Exception:
@@ -47,14 +41,7 @@ def pytest_configure(config):
     except Exception:
         config.addinivalue_line(
             "markers", 'fail_slow: mark a test for a non-default timeout failure')
-    config.addinivalue_line("markers",
-        "skip_xp_backends(backends, reason=None, np_only=False, cpu_only=False, "
-        "exceptions=None): "
-        "mark the desired skip configuration for the `skip_xp_backends` fixture.")
-    config.addinivalue_line("markers",
-        "xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, "
-        "exceptions=None): "
-        "mark the desired xfail configuration for the `xfail_xp_backends` fixture.")
+
     if not PARALLEL_RUN_AVAILABLE:
         config.addinivalue_line(
             'markers',
@@ -206,7 +193,21 @@ if 'cupy' in xp_available_backends:
     from cupyx.scipy import signal
     del signal
 
-array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
+
+@pytest.fixture(params=[
+    pytest.param(v, id=k, marks=pytest.mark.array_api_backends)
+    for k, v in xp_available_backends.items()
+])
+def xp(request):
+    if SCIPY_ARRAY_API:
+        from scipy._lib._array_api import default_xp
+
+        with default_xp(request.param):
+            yield request.param
+    else:
+        yield request.param
+
+array_api_compatible = pytest.mark.array_api_compatible
 
 skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
     reason = ('Test involves masked arrays, object arrays, or other types '
