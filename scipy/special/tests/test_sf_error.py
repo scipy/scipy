@@ -20,7 +20,7 @@ _sf_error_code_map = {
     'domain': 7,
     'arg': 8,
     'other': 9,
-    'nomem': 10,
+    'memory': 10,
 }
 
 _sf_error_actions = [

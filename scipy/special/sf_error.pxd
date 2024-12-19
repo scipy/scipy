@@ -12,7 +12,7 @@ cdef extern from "sf_error.h":
         DOMAIN "SF_ERROR_DOMAIN"
         ARG "SF_ERROR_ARG"
         OTHER "SF_ERROR_OTHER"
-        NOMEM "SF_ERROR_NOMEM"
+        MEMORY "SF_ERROR_MEMORY"
         LAST "SF_ERROR__LAST"
 
     ctypedef enum sf_action_t:

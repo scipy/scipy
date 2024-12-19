@@ -17,7 +17,7 @@ T prolate_segv(T m, T n, T c) {
     int_n = (int) n;
     eg = (T *) malloc(sizeof(T) * (n - m + 2));
     if (eg == NULL) {
-        set_error("prolate_segv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("prolate_segv", SF_ERROR_MEMORY, "memory allocation error");
         return std::numeric_limits<T>::quiet_NaN();
     }
     specfun::segv(int_m, int_n, c, kd, &cv, eg);
@@ -38,7 +38,7 @@ T oblate_segv(T m, T n, T c) {
     int_n = (int) n;
     eg = (T *) malloc(sizeof(T) * (n - m + 2));
     if (eg == NULL) {
-        set_error("oblate_segv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("oblate_segv", SF_ERROR_MEMORY, "memory allocation error");
         return std::numeric_limits<T>::quiet_NaN();
     }
     specfun::segv(int_m, int_n, c, kd, &cv, eg);
@@ -62,7 +62,7 @@ void prolate_aswfa_nocv(T m, T n, T c, T x, T &s1f, T &s1d) {
     int_n = (int) n;
     eg = (T *) malloc(sizeof(T) * (n - m + 2));
     if (eg == NULL) {
-        set_error("prolate_aswfa_nocv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("prolate_aswfa_nocv", SF_ERROR_MEMORY, "memory allocation error");
         s1d = std::numeric_limits<T>::quiet_NaN();
         s1f = std::numeric_limits<T>::quiet_NaN();
         return;
@@ -71,7 +71,7 @@ void prolate_aswfa_nocv(T m, T n, T c, T x, T &s1f, T &s1d) {
     specfun::Status status = specfun::aswfa(x, int_m, int_n, c, kd, cv, &s1f, &s1d);
     free(eg);
     if (status == specfun::Status::NoMemory) {
-        set_error("prolate_aswfa_nocv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("prolate_aswfa_nocv", SF_ERROR_MEMORY, "memory allocation error");
         s1d = std::numeric_limits<T>::quiet_NaN();
         s1f = std::numeric_limits<T>::quiet_NaN();
         return;
@@ -94,7 +94,7 @@ void oblate_aswfa_nocv(T m, T n, T c, T x, T &s1f, T &s1d) {
     int_n = (int) n;
     eg = (T *) malloc(sizeof(T) * (n - m + 2));
     if (eg == NULL) {
-        set_error("oblate_aswfa_nocv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("oblate_aswfa_nocv", SF_ERROR_MEMORY, "memory allocation error");
         s1d = std::numeric_limits<T>::quiet_NaN();
         s1f = std::numeric_limits<T>::quiet_NaN();
         return;
@@ -103,7 +103,7 @@ void oblate_aswfa_nocv(T m, T n, T c, T x, T &s1f, T &s1d) {
     specfun::Status status = specfun::aswfa(x, int_m, int_n, c, kd, cv, &s1f, &s1d);
     free(eg);
     if (status == specfun::Status::NoMemory) {
-        set_error("oblate_aswfa_nocv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("oblate_aswfa_nocv", SF_ERROR_MEMORY, "memory allocation error");
         s1d = std::numeric_limits<T>::quiet_NaN();
         s1f = std::numeric_limits<T>::quiet_NaN();
         return;
@@ -119,7 +119,7 @@ void prolate_aswfa(T m, T n, T c, T cv, T x, T &s1f, T &s1d) {
     } else {
         specfun::Status status = specfun::aswfa(x, static_cast<int>(m), static_cast<int>(n), c, 1, cv, &s1f, &s1d);
         if (status == specfun::Status::NoMemory) {
-            set_error("prolate_aswfa", SF_ERROR_NOMEM, "memory allocation error");
+            set_error("prolate_aswfa", SF_ERROR_MEMORY, "memory allocation error");
             s1d = std::numeric_limits<T>::quiet_NaN();
             s1f = std::numeric_limits<T>::quiet_NaN();
             return;
@@ -136,7 +136,7 @@ void oblate_aswfa(T m, T n, T c, T cv, T x, T &s1f, T &s1d) {
     } else {
         specfun::Status status = specfun::aswfa(x, static_cast<int>(m), static_cast<int>(n), c, -1, cv, &s1f, &s1d);
         if (status == specfun::Status::NoMemory) {
-            set_error("oblate_aswfa", SF_ERROR_NOMEM, "memory allocation error");
+            set_error("oblate_aswfa", SF_ERROR_MEMORY, "memory allocation error");
             s1d = std::numeric_limits<T>::quiet_NaN();
             s1f = std::numeric_limits<T>::quiet_NaN();
             return;
@@ -160,7 +160,7 @@ void prolate_radial1_nocv(T m, T n, T c, T x, T &r1f, T &r1d) {
     int_n = (int) n;
     eg = (T *) malloc(sizeof(T) * (n - m + 2));
     if (eg == NULL) {
-        set_error("prolate_radial1_nocv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("prolate_radial1_nocv", SF_ERROR_MEMORY, "memory allocation error");
         r1d = std::numeric_limits<T>::quiet_NaN();
         r1f = std::numeric_limits<T>::quiet_NaN();
         return;
@@ -186,7 +186,7 @@ void prolate_radial2_nocv(T m, T n, T c, T x, T &r2f, T &r2d) {
     int_n = (int) n;
     eg = (T *) malloc(sizeof(T) * (n - m + 2));
     if (eg == NULL) {
-        set_error("prolate_radial2_nocv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("prolate_radial2_nocv", SF_ERROR_MEMORY, "memory allocation error");
         r2d = std::numeric_limits<T>::quiet_NaN();
         r2f = std::numeric_limits<T>::quiet_NaN();
         return;
@@ -246,7 +246,7 @@ void oblate_radial1_nocv(T m, T n, T c, T x, T &r1f, T &r1d) {
     int_n = (int) n;
     eg = (T *) malloc(sizeof(T) * (n - m + 2));
     if (eg == NULL) {
-        set_error("oblate_radial1_nocv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("oblate_radial1_nocv", SF_ERROR_MEMORY, "memory allocation error");
         r1d = std::numeric_limits<T>::quiet_NaN();
         r1f = std::numeric_limits<T>::quiet_NaN();
         return;
@@ -272,7 +272,7 @@ void oblate_radial2_nocv(T m, T n, T c, T x, T &r2f, T &r2d) {
     int_n = (int) n;
     eg = (T *) malloc(sizeof(T) * (n - m + 2));
     if (eg == NULL) {
-        set_error("oblate_radial2_nocv", SF_ERROR_NOMEM, "memory allocation error");
+        set_error("oblate_radial2_nocv", SF_ERROR_MEMORY, "memory allocation error");
         r2d = std::numeric_limits<T>::quiet_NaN();
         r2f = std::numeric_limits<T>::quiet_NaN();
         return;

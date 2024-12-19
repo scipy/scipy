@@ -15,7 +15,7 @@ static volatile sf_action_t sf_error_actions[] = {
     SF_ERROR_IGNORE, /* SF_ERROR_DOMAIN */
     SF_ERROR_IGNORE, /* SF_ERROR_ARG */
     SF_ERROR_IGNORE, /* SF_ERROR_OTHER */
-    SF_ERROR_RAISE,  /* SF_ERROR_NOMEM */
+    SF_ERROR_RAISE,  /* SF_ERROR_MEMORY */
     SF_ERROR_IGNORE  /* SF_ERROR__LAST */
 };
 

@@ -91,7 +91,7 @@ namespace ellint_carlson
 	bad_args,
 	bad_rerr,
 	other,
-	nomem,
+	memory,
 	unused
     };
 
