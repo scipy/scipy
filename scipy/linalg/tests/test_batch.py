@@ -96,8 +96,6 @@ class TestMatrixInScalarOut:
 
     @pytest.mark.parametrize('dtype', floating)
     def test_logm(self, dtype, rng):
-        with warnings.catch_warnings():  # "result not accurate"
-            warnings.simplefilter("ignore", RuntimeWarning)
-            A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-            A = A + 3*np.eye(4)  # avoid complex output for real input
-            self.batch_test(linalg.logm, A)
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        A = A + 3*np.eye(4)  # avoid complex output for real input
+        self.batch_test(linalg.logm, A)
