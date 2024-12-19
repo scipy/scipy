@@ -51,16 +51,17 @@ jobs:
         run: |
           pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis
           python -m pip install -r requirements/openblas.txt
+          pip install git+https://github.com/scientific-python/spin.git@main
 
       - name: Build
         run: |
-          python dev.py build --with-scipy-openblas
+          spin build --with-scipy-openblas
 
       - name: Test
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
-          python dev.py test -j2 -- --durations=0 --durations-min=0.25 --fail-slow=1.0
+          spin test -j2 -- --durations=0 --durations-min=0.25 --fail-slow=1.0
 
 
   #############################################################################
@@ -93,17 +94,18 @@ jobs:
           # 1.23.5 is currently the oldest numpy usable on cp3.10 according
           # to pyproject.toml
           python -m pip install numpy==1.23.5 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis
+          pip install git+https://github.com/scientific-python/spin.git@main
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
         run: |
-          python dev.py build --with-scipy-openblas
+          spin build --with-scipy-openblas
 
       - name: Test
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
-          python dev.py test -j2 --mode full -- --durations=0 --durations-min=1.0 --timeout=60 --fail-slow=5.0
+          spin test -j2 --mode full -- --durations=0 --durations-min=1.0 --timeout=60 --fail-slow=5.0
 
 
   #############################################################################
@@ -144,6 +146,7 @@ jobs:
       - name: pip-packages
         run: |
           python -m pip install build delvewheel cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
+          pip install git+https://github.com/scientific-python/spin.git@main
           python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
       - name: Build
