@@ -813,6 +813,58 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
 
     def dot(self, other):
+        """Return the dot product of two arrays.
+
+        Strictly speaking a dot product involves two vectors.
+        But in the sense that an array with ndim >= 1 is a collection
+        of vectors, the function computes the collection of dot products
+        between each vector in the first array with each vector in the
+        second array. The axis upon which the sum of products is performed
+        is the last axis of the first array and the second to last axis of
+        the second array. If the second array is 1-D, the last axis is used.
+
+        Thus, if both arrays are 1-D, the inner product is returned.
+        If both are 2-D, we have matrix multiplication. If `other` is 1-D,
+        the sum product is taken along the last axis of each array. If
+        `other` is N-D for N>=2, the sum product is over the last axis of
+        the first array and the second-to-last axis of the second array.
+
+        Parameters
+        ----------
+        other : array_like (dense of sparse)
+            Second array
+
+        Returns
+        -------
+        output : array (sparse or dense)
+            The dot product of this array with `other`.
+            It will be dense/sparse if `other` is dense/sparse.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from scipy.sparse import coo_array
+        >>> A = coo_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+        >>> v = np.array([1, 0, -1])
+        >>> A.dot(v)
+        array([ 1, -3, -1], dtype=int64)
+
+        For 2-D arrays it is the matrix product:
+
+        >>> A = coo_array([[1, 0], [0, 1]])
+        >>> B = coo_array([[4, 1], [2, 2]])
+        >>> A.dot(B).toarray()
+        array([[4, 1],
+               [2, 2]])
+
+        For 3-D arrays the shape extends unused axes by other unused axes.
+
+        >>> A = coo_array(np.arange(3*4*5*6)).reshape((3,4,5,6))
+        >>> B = coo_array(np.arange(3*4*5*6)).reshape((5,4,6,3))
+        >>> A.dot(B).shape
+        (3, 4, 5, 5, 4, 3)
+        """
         if not (issparse(other) or isdense(other) or isscalarlike(other)):
             # If it's a list or whatever, treat it like an array
             o_array = np.asanyarray(other)
@@ -941,13 +993,100 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return prod_arr
 
     def tensordot(self, other, axes=2):
+        """Return the tensordot product with another array along the given axes.
+
+        The tensordot differs from dot and matmul in that any axis can be
+        chosen for each of the first and second array and the sum of the
+        producs is computed just like for matrix multiplication, only not
+        just for the rows fo the first times the columns of the second. It
+        takes the dot product of the collection of vectors along the specified
+        axes.  Here we can even take the sum of the products along two or even
+        more axes if desired. So, tensordot is a dot product computation
+        applied to arrays of any dimension >= 1. It is like matmul but over
+        arbitrary axes for each matrix.
+
+        Given two tensors, `a` and `b`, and the desired axes specified as a
+        2-tuple/list/array containing two sequences of axis numbers,
+        ``(a_axes, b_axes)``, sum the products of `a`'s and `b`'s elements
+        (components) over the axes specified by``a_axes`` and ``b_axes``.
+        The `axes` input can be a single non-negative integer, ``N``;
+        if it is, then the last ``N`` dimensions of `a` and the first
+        ``N`` dimensions of `b` are summed over.
+
+        Parameters
+        ----------
+        a, b : array_like
+            Tensors to "dot".
+
+        axes : int or (2,) array_like
+            * integer_like
+              If an int N, sum over the last N axes of `a` and the first N axes
+              of `b` in order. The sizes of the corresponding axes must match.
+            * (2,) array_like
+              A 2-tuple of sequences of axes to be summed over, the first applying
+              to `a`, the second to `b`. The sequences must be the same length.
+              The shape of the corresponding axes must match between `a` and `b`.
+
+        Returns
+        -------
+        output : coo_array
+            The tensor dot product of this array with `other`.
+            It will be dense/sparse if `other` is dense/sparse.
+
+        See Also
+        --------
+        dot
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> import scipy.sparse
+        >>> A = scipy.sparse.coo_array([[[2, 3], [0, 0]], [[0, 1], [0, 5]]])
+        >>> A.shape
+        (2, 2, 2)
+
+        Integer axes N are shorthand for (range(-N, 0), range(0, N)):
+
+        >>> A.tensordot(A, axes=1).toarray()
+        array([[[[ 4,  9],
+                 [ 0, 15]],
+        <BLANKLINE>
+                [[ 0,  0],
+                 [ 0,  0]]],
+        <BLANKLINE>
+        <BLANKLINE>
+               [[[ 0,  1],
+                 [ 0,  5]],
+        <BLANKLINE>
+                [[ 0,  5],
+                 [ 0, 25]]]])
+        >>> A.tensordot(A, axes=2).toarray()
+        array([[ 4,  6],
+               [ 0, 25]])
+        >>> A.tensordot(A, axes=3)
+        array(39)
+
+        Using tuple for axes:
+
+        >>> a = scipy.sparse.coo_array(np.arange(60).reshape(3,4,5))
+        >>> b = np.arange(24).reshape(4,3,2)
+        >>> c = a.tensordot(b, axes=([1,0],[0,1]))
+        >>> c.shape
+        (5, 2)
+        >>> c
+        array([[4400, 4730],
+               [4532, 4874],
+               [4664, 5018],
+               [4796, 5162],
+               [4928, 5306]])
+
+        """
         if not isdense(other) and not issparse(other):
             # If it's a list or whatever, treat it like an array
             other_array = np.asanyarray(other)
 
             if other_array.ndim == 0 and other_array.dtype == np.object_:
-                # Not interpretable as an array; return NotImplemented so that
-                # other's __rmatmul__ can kick in if that's implemented.
+                # Not interpretable as an array; return NotImplemented
                 return NotImplemented
 
             try:
