@@ -1,6 +1,5 @@
 # Created by Pearu Peterson, June 2003
 import itertools
-from threading import Lock
 import numpy as np
 from numpy.testing import suppress_warnings
 import pytest
