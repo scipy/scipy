@@ -1089,6 +1089,16 @@ class TestInv:
         assert a_inv.dtype == inv(np.eye(2, dtype=dt)).dtype
 
 
+    def test_batched(self):
+        a = np.diag([1, 2.])
+        aa = np.stack([a, np.linalg.inv(a)])
+
+        aa_inv = inv(aa)
+        assert aa_inv.shape == (2, 2, 2)
+        assert_allclose(aa_inv @ aa,
+                        np.stack((np.eye(2), np.eye(2))), atol=1e-15)
+
+
 class TestDet:
     def setup_method(self):
         self.rng = np.random.default_rng(1680305949878959)
