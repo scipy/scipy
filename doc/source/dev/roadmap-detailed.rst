@@ -168,11 +168,11 @@ our use of FITPACK.
 - add the ability to construct smoothing splines with variable number of knots
   to `make_smoothing_spline`. Currently, `make_smoothing_spline` always uses all
   data points for the knot vector.
-- experiment with user-selectable smoothing criteria: add the P-splines penality
-  form to complement the 2nd derivative penality of `make_smoothing_spline` and
+- experiment with user-selectable smoothing criteria: add the P-splines penalty
+  form to complement the 2nd derivative penalty of `make_smoothing_spline` and
   jumps of the 3rd derivative of `make_splrep`
 - investigate ways of vectorizing the spline construction for batches of the
-  independent variable. This class of features have been requested by
+  independent variable. This class of features has been requested by
   `scipy.stats` developers
 - allow specifying the boundary conditions for spline fitting.
 - investigate constrained spline fitting problems which the FITPACK library was
