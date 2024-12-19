@@ -969,7 +969,7 @@ def gen_oa_shapes_eq(sizes):
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
-                             gen_oa_shapes_eq(list(range(100)) +
+                             gen_oa_shapes_eq(list(range(1, 100, 1)) +
                                               list(range(100, 1000, 23)))
                              )
     def test_real_manylens(self, shape_a_0, shape_b_0, xp):

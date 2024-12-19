@@ -8,6 +8,7 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
 
+from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
@@ -225,10 +226,10 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     return _asarray(x, copy=True, xp=xp)
 
 
-_default_xp = ContextVar("_default_xp", default=None)
+_default_xp: ContextVar[ModuleType | None] = ContextVar("_default_xp", default=None)
 
 @contextmanager
-def default_xp(xp: ModuleType):
+def default_xp(xp: ModuleType | None) -> Generator[None, None, None]:
     """In all ``xp_assert_*`` and ``assert_*`` function calls executed within this
     context manager, test by default that the array namespace is 
     the provided across all arrays, unless one explicitly passes the ``xp=``
