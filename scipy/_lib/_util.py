@@ -1276,7 +1276,7 @@ def _apply_over_batch(*argdefs):
 
         doc = FunctionDoc(wrapper)
         doc['Extended Summary'].append(_batch_note.rstrip())
-        wrapper.__doc__ = str(doc)
+        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
 
         return wrapper
     return decorator

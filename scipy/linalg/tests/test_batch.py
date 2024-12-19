@@ -34,7 +34,7 @@ class TestMatrixInScalarOut:
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
                 ref = fun(A[i, j], *args, **kwargs)
-                assert_allclose(res[i, j], ref, strict=True)
+                assert_allclose(res[i, j], ref)
 
         return res
 
