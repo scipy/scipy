@@ -8,7 +8,7 @@ __all__ = ['sqrtm']
 
 import numpy as np
 
-from scipy._lib._util import _asarray_validated
+from scipy._lib._util import _asarray_validated, _apply_over_batch
 
 # Local imports
 from ._misc import norm
@@ -115,6 +115,7 @@ def _sqrtm_triu(T, blocksize=64):
     return R
 
 
+@_apply_over_batch(('A', 2))
 def sqrtm(A, disp=True, blocksize=64):
     """
     Matrix square root.
