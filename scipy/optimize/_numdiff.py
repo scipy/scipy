@@ -276,7 +276,8 @@ def group_columns(A, order=0):
 
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
-                      as_linear_operator=False, args=(), kwargs=None):
+                      as_linear_operator=False, args=(), kwargs=None,
+                      workers=None):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -355,6 +356,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)``.
+    workers : map-like callable
+        map-like used to call user function with different steps.
 
     Returns
     -------
@@ -466,17 +469,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     if kwargs is None:
         kwargs = {}
 
-    def fun_wrapped(x):
-        # send user function same fp type as x0. (but only if cs is not being
-        # used
-        if xp.isdtype(x.dtype, "real floating"):
-            x = xp.astype(x, x0.dtype)
-
-        f = np.atleast_1d(fun(x, *args, **kwargs))
-        if f.ndim > 1:
-            raise RuntimeError("`fun` return value has "
-                               "more than 1 dimension.")
-        return f
+    fun_wrapped = _Fun_Wrapper(fun, x0, args, kwargs)
 
     if f0 is None:
         f0 = fun_wrapped(x0)
@@ -487,6 +480,9 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     if np.any((x0 < lb) | (x0 > ub)):
         raise ValueError("`x0` violates bound constraints.")
+
+    # check the map function for parallelisation
+    workers = workers or map
 
     if as_linear_operator:
         if rel_step is None:
@@ -522,7 +518,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
         if sparsity is None:
             return _dense_difference(fun_wrapped, x0, f0, h,
-                                     use_one_sided, method)
+                                     use_one_sided, method,
+                                     workers)
         else:
             if not issparse(sparsity) and len(sparsity) == 2:
                 structure, groups = sparsity
@@ -538,7 +535,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
             groups = np.atleast_1d(groups)
             return _sparse_difference(fun_wrapped, x0, f0, h,
                                       use_one_sided, structure,
-                                      groups, method)
+                                      groups, method, workers)
 
 
 def _linear_operator_difference(fun, x0, f0, h, method):
@@ -582,43 +579,77 @@ def _linear_operator_difference(fun, x0, f0, h, method):
     return LinearOperator((m, n), matvec)
 
 
-def _dense_difference(fun, x0, f0, h, use_one_sided, method):
+def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
     m = f0.size
     n = x0.size
     J_transposed = np.empty((n, m))
-    x1 = x0.copy()
-    x2 = x0.copy()
-    xc = x0.astype(complex, copy=True)
 
-    for i in range(h.size):
-        if method == '2-point':
-            x1[i] += h[i]
-            dx = x1[i] - x0[i]  # Recompute dx as exactly representable number.
-            df = fun(x1) - f0
-        elif method == '3-point' and use_one_sided[i]:
-            x1[i] += h[i]
-            x2[i] += 2 * h[i]
-            dx = x2[i] - x0[i]
-            f1 = fun(x1)
-            f2 = fun(x2)
-            df = -3.0 * f0 + 4 * f1 - f2
-        elif method == '3-point' and not use_one_sided[i]:
-            x1[i] -= h[i]
-            x2[i] += h[i]
-            dx = x2[i] - x1[i]
-            f1 = fun(x1)
-            f2 = fun(x2)
-            df = f2 - f1
-        elif method == 'cs':
-            xc[i] += h[i] * 1.j
-            f1 = fun(xc)
-            df = f1.imag
-            dx = h[i]
-        else:
-            raise RuntimeError("Never be here.")
+    if method == '2-point':
+        def x_generator2(x0, h):
+            for i in range(n):
+                # If copying isn't done then it's possible for different workers
+                # to see the same values of x1. (At least that's what happened
+                # when I used `multiprocessing.dummy.Pool`).
+                # I also considered creating all the vectors at once, but that
+                # means assembling a very large N x N array. It's therefore a
+                # trade-off between N array copies or creating an NxN array.
+                x1 = np.copy(x0)
+                x1[i] = x0[i] + h[i]
+                yield x1
 
-        J_transposed[i] = df / dx
-        x1[i] = x2[i] = xc[i] = x0[i]
+        f_evals = workers(fun, x_generator2(x0, h))
+        dx = [(x0[i] + h[i]) - x0[i] for i in range(n)]
+        df = [f_eval - f0 for f_eval in f_evals]
+        df_dx = [delf / delx for delf, delx in zip(df, dx)]
+
+    elif method == '3-point':
+        def x_generator3(x0, h, use_one_sided):
+            for i, one_sided in enumerate(use_one_sided):
+                x1 = np.copy(x0)
+                x2 = np.copy(x0)
+                if one_sided:
+                    x1[i] = x0[i] + h[i]
+                    x2[i] = x0[i] + 2*h[i]
+                else:
+                    x1[i] = x0[i] - h[i]
+                    x2[i] = x0[i] + h[i]
+                yield x1
+                yield x2
+
+        # workers may return something like a list that needs to be turned
+        # into an iterable (can't call `next` on a list)
+        f_evals = iter(workers(fun, x_generator3(x0, h, use_one_sided)))
+        gen = x_generator3(x0, h, use_one_sided)
+        dx = list()
+        df = list()
+        for i, one_sided in enumerate(use_one_sided):
+            l = next(gen)
+            u = next(gen)
+
+            f1 = next(f_evals)
+            f2 = next(f_evals)
+            if one_sided:
+                dx.append(u[i] - x0[i])
+                df.append(-3.0 * f0 + 4 * f1 - f2)
+            else:
+                dx.append(u[i] - l[i])
+                df.append(f2 - f1)
+        df_dx = [delf / delx for delf, delx in zip(df, dx)]
+
+    elif method == 'cs':
+        def x_generator_cs(x0, h):
+            for i in range(n):
+                xc = x0.astype(complex, copy=True)
+                xc[i] += h[i] * 1.j
+                yield xc
+
+        f_evals = iter(workers(fun, x_generator_cs(x0, h)))
+        df_dx = [f1.imag / hi for f1, hi in zip(f_evals, h)]
+    else:
+        raise RuntimeError("Never be here.")
+
+    for i, v in enumerate(df_dx):
+        J_transposed[i] = v
 
     if m == 1:
         J_transposed = np.ravel(J_transposed)
@@ -627,7 +658,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
 
 
 def _sparse_difference(fun, x0, f0, h, use_one_sided,
-                       structure, groups, method):
+                       structure, groups, method, workers):
     m = f0.size
     n = x0.size
     row_indices = []
@@ -635,24 +666,23 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     fractions = []
 
     n_groups = np.max(groups) + 1
-    for group in range(n_groups):
+
+    def e_generator():
         # Perturb variables which are in the same group simultaneously.
-        e = np.equal(group, groups)
-        h_vec = h * e
-        if method == '2-point':
+        for group in range(n_groups):
+            yield np.equal(group, groups)
+
+    def x_generator2():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
             x = x0 + h_vec
-            dx = x - x0
-            df = fun(x) - f0
-            # The result is  written to columns which correspond to perturbed
-            # variables.
-            cols, = np.nonzero(e)
-            # Find all non-zero elements in selected columns of Jacobian.
-            i, j, _ = find(structure[:, cols])
-            # Restore column indices in the full array.
-            j = cols[j]
-        elif method == '3-point':
-            # Here we do conceptually the same but separate one-sided
-            # and two-sided schemes.
+            yield x
+
+    def x_generator3():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
             x1 = x0.copy()
             x2 = x0.copy()
 
@@ -663,17 +693,52 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             mask_2 = ~use_one_sided & e
             x1[mask_2] -= h_vec[mask_2]
             x2[mask_2] += h_vec[mask_2]
+            yield x1
+            yield x2
+
+    def x_generator_cs():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
+            yield x0 + h_vec * 1.j
+
+    # evaluate the function for each of the groups
+    if method == '2-point':
+        f_evals = iter(workers(fun, x_generator2()))
+        xs = x_generator2()
+    elif method == '3-point':
+        f_evals = iter(workers(fun, x_generator3()))
+        xs = x_generator3()
+    elif method == 'cs':
+        f_evals = iter(workers(fun, x_generator_cs()))
+
+    for e in e_generator():
+        # The result is written to columns which correspond to perturbed
+        # variables.
+        cols, = np.nonzero(e)
+        # Find all non-zero elements in selected columns of Jacobian.
+        i, j, _ = find(structure[:, cols])
+        # Restore column indices in the full array.
+        j = cols[j]
+
+        if method == '2-point':
+            dx = next(xs) - x0
+            df = next(f_evals) - f0
+        elif method == '3-point':
+            # Here we do conceptually the same but separate one-sided
+            # and two-sided schemes.
+            x1 = next(xs)
+            x2 = next(xs)
+
+            mask_1 = use_one_sided & e
+            mask_2 = ~use_one_sided & e
 
             dx = np.zeros(n)
             dx[mask_1] = x2[mask_1] - x0[mask_1]
             dx[mask_2] = x2[mask_2] - x1[mask_2]
 
-            f1 = fun(x1)
-            f2 = fun(x2)
-
-            cols, = np.nonzero(e)
-            i, j, _ = find(structure[:, cols])
-            j = cols[j]
+            f1 = next(f_evals)
+            f2 = next(f_evals)
 
             mask = use_one_sided[j]
             df = np.empty(m)
@@ -684,12 +749,9 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             rows = i[~mask]
             df[rows] = f2[rows] - f1[rows]
         elif method == 'cs':
-            f1 = fun(x0 + h_vec*1.j)
+            f1 = next(f_evals)
             df = f1.imag
-            dx = h_vec
-            cols, = np.nonzero(e)
-            i, j, _ = find(structure[:, cols])
-            j = cols[j]
+            dx = h * e
         else:
             raise ValueError("Never be here.")
 
@@ -705,6 +767,29 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     if isspmatrix(structure):
         return csr_matrix((fractions, (row_indices, col_indices)), shape=(m, n))
     return csr_array((fractions, (row_indices, col_indices)), shape=(m, n))
+
+
+class _Fun_Wrapper:
+    # Permits pickling of a wrapped function
+    def __init__(self, fun, x0, args, kwargs):
+        self.fun = fun
+        self.x0 = x0
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, x):
+        # send user function same fp type as x0. (but only if cs is not being
+        # used
+        xp = array_namespace(self.x0)
+
+        if xp.isdtype(x.dtype, "real floating"):
+            x = xp.astype(x, self.x0.dtype)
+
+        f = np.atleast_1d(self.fun(x, *self.args, **self.kwargs))
+        if f.ndim > 1:
+            raise RuntimeError("`fun` return value has "
+                               "more than 1 dimension.")
+        return f
 
 
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
