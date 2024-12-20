@@ -267,11 +267,10 @@ class _SimpleDomain(_Domain):
 
     """
     def __init__(self, endpoints=(-inf, inf), inclusive=(False, False)):
+        self.symbols = super().symbols.copy()
         a, b = endpoints
         self.endpoints = np.asarray(a)[()], np.asarray(b)[()]
         self.inclusive = inclusive
-        # self.all_inclusive = (endpoints == (-inf, inf)
-        #                       and inclusive == (True, True))
 
     def define_parameters(self, *parameters):
         r""" Records any parameters used to define the endpoints of the domain.
