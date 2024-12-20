@@ -470,17 +470,6 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         kwargs = {}
 
     fun_wrapped = _Fun_Wrapper(fun, x0, args, kwargs)
-    # def fun_wrapped(x):
-    #     # send user function same fp type as x0. (but only if cs is not being
-    #     # used
-    #     if xp.isdtype(x.dtype, "real floating"):
-    #         x = xp.astype(x, x0.dtype)
-    #
-    #     f = np.atleast_1d(fun(x, *args, **kwargs))
-    #     if f.ndim > 1:
-    #         raise RuntimeError("`fun` return value has "
-    #                            "more than 1 dimension.")
-    #     return f
 
     if f0 is None:
         f0 = fun_wrapped(x0)
@@ -644,8 +633,6 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
                 dx.append(u[i] - l[i])
                 df.append(f2 - f1)
         df_dx = [delf / delx for delf, delx in zip(df, dx)]
-        for i, v in enumerate(df_dx):
-            J_transposed[i] = v
 
     elif method == 'cs':
         def x_generator(x0, h):
