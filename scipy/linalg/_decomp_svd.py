@@ -2,14 +2,18 @@
 import numpy as np
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports.
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._decomp import _asarray_validated
 
+
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
+@_apply_over_batch(('a', 2))
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         check_finite=True, lapack_driver='gesdd'):
     """
@@ -249,6 +253,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
                check_finite=check_finite)
 
 
+@_apply_over_batch(('s', 1))
 def diagsvd(s, M, N):
     """
     Construct the sigma matrix in SVD from singular values and size M, N.
@@ -301,6 +306,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
+@_apply_over_batch(('A', 2))
 def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD
@@ -349,6 +355,7 @@ def orth(A, rcond=None):
     return Q
 
 
+@_apply_over_batch(('A', 2))
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """

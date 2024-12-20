@@ -657,6 +657,7 @@ def _check_select(select, select_range, max_ev, max_len):
     return select, vl, vu, il, iu, max_ev
 
 
+@_apply_over_batch(('a_band', 2))
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
                select='a', select_range=None, max_ev=0, check_finite=True):
     """
@@ -1029,6 +1030,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
                 driver=driver)
 
 
+@_apply_over_batch(('a_band', 2))
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None, check_finite=True):
     """
@@ -1391,6 +1393,7 @@ def _check_info(info, driver, positive='did not converge (LAPACK info=%d)'):
         raise LinAlgError(("%s " + positive) % (driver, info,))
 
 
+@_apply_over_batch(('a', 2))
 def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     """
     Compute Hessenberg form of a matrix.

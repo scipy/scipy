@@ -8,6 +8,7 @@ from warnings import warn
 from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
+from scipy._lib._util import _apply_over_batch
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -1089,6 +1090,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
+@_apply_over_batch(('a', 2))
 def inv(a, overwrite_a=False, check_finite=True):
     """
     Compute the inverse of a matrix.
@@ -1499,6 +1501,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
+@_apply_over_batch(('a', 2))
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1622,6 +1625,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
         return B
 
 
+@_apply_over_batch(('a', 2))
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True):
     """
@@ -1715,6 +1719,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
         return B
 
 
+@_apply_over_batch(('A', 2))
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """

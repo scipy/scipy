@@ -1,3 +1,4 @@
+import inspect
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -9,6 +10,12 @@ complex_floating = [np.complex64, np.complex128]
 floating = real_floating + complex_floating
 
 
+def get_random(shape, *, dtype, rng):
+    A = rng.random(shape)
+    if np.issubdtype(dtype, np.complexfloating):
+        A = A + rng.random(shape) * 1j
+    return A.astype(dtype)
+
 def get_nearly_hermitian(shape, dtype, atol, rng):
     # Generate a batch of nearly Hermitian matrices with specified
     # `shape` and `dtype`. `atol` controls the level of noise in
@@ -19,38 +26,178 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
     return A + At + noise
 
 
-class TestMatrixInScalarOut:
+class TestOneArrayIn:
+    # Test the functions that accept one array argument
 
-    def batch_test(self, fun, args=(), kwargs=None, dtype=np.float64,
-                   batch_shape=(5, 3), core_shape=(4, 4), seed=8342310302941288912051):
+    def batch_test(self, fun, A, core_dim=2, n_out=1, kwargs=None, dtype=None):
+        # Check that all outputs of batched call `fun(A, **kwargs)` are the same
+        # as if we loop over the separate vectors/matrices in `A`. Also check
+        # that `fun` accepts `A` by position or keyword and that results are
+        # identical. This is important because the name of the array argument
+        # is manually specified to the decorator, and it's easy to mess up.
+        # However, this makes it hard to test positional arguments passed
+        # after the array, so we test that separately for a few functions to
+        # make sure the decorator is working as it should.
+
         kwargs = {} if kwargs is None else kwargs
-        rng = np.random.default_rng(seed)
-        # test_expm_cond doesn't need symmetric/hermitian matrices, and
-        # test_issymmetric doesn't need hermitian matrices, but it doesn't hurt.
-        A = get_nearly_hermitian(batch_shape + core_shape, dtype, 3e-4, rng)
+        parameters = list(inspect.signature(fun).parameters.keys())
 
-        res = fun(A, *args, **kwargs)
+        # Identical results when passing argument by keyword or position
+        res1 = fun(**{parameters[0]: A}, **kwargs)
+        res2 = fun(A, **kwargs)
+        for out1, out2 in zip(res1, res2):  # even a single array output is iterable...
+            np.testing.assert_equal(out1, out2)
 
+        # Check results vs looping over
+        res = (res2,) if n_out == 1 else res2
+        batch_shape = A.shape[:-core_dim]
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
-                ref = fun(A[i, j], *args, **kwargs)
-                assert_allclose(res[i, j], ref)
+                ref = fun(A[i, j], **kwargs)
+                ref = ((np.asarray(ref),) if n_out == 1 else
+                       tuple(np.asarray(refk) for refk in ref))
+                for k in range(n_out):
+                    assert_allclose(res[k][i, j], ref[k])
+                    assert np.shape(res[k][i, j]) == ref[k].shape
 
-        return res
+        for k in range(len(ref)):
+            out_dtype = ref[k].dtype if dtype is None else dtype
+            assert res[k].dtype == out_dtype
+
+        return res1  # return original, non-tuplized result
+
+    @pytest.fixture
+    def rng(self):
+        return np.random.default_rng(8342310302941288912051)
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_expm_cond(self, dtype):
-        self.batch_test(linalg.expm_cond, dtype=dtype)
+    def test_expm_cond(self, dtype, rng):
+        A = rng.random((5, 3, 4, 4)).astype(dtype)
+        self.batch_test(linalg.expm_cond, A)
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_issymmetric(self, dtype):
-        res = self.batch_test(linalg.issymmetric, dtype=dtype, kwargs=dict(atol=1e-3))
+    def test_issymmetric(self, dtype, rng):
+        A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
+        res = self.batch_test(linalg.issymmetric, A, kwargs=dict(atol=1e-3))
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to issymmetric
 
     @pytest.mark.parametrize('dtype', floating)
-    def test_ishermitian(self, dtype):
-        res = self.batch_test(linalg.issymmetric, dtype=dtype, kwargs=dict(atol=1e-3))
+    def test_ishermitian(self, dtype, rng):
+        A = get_nearly_hermitian((5, 3, 4, 4), dtype, 3e-4, rng)
+        res = self.batch_test(linalg.ishermitian, A, kwargs=dict(atol=1e-3))
         assert not np.all(res)  # ensure test is not trivial: not all True or False;
         assert np.any(res)      # also confirms that `atol` is passed to ishermitian
 
+    @pytest.mark.parametrize('dtype', floating)
+    def test_diagsvd(self, dtype, rng):
+        A = rng.random((5, 3, 4)).astype(dtype)
+        res1 = self.batch_test(linalg.diagsvd, A, kwargs=dict(M=6, N=4), core_dim=1)
+        # test that `M, N` can be passed by position
+        res2 = linalg.diagsvd(A, 6, 4)
+        np.testing.assert_equal(res1, res2)
+
+    @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm, linalg.signm,
+                                     linalg.sinm, linalg.cosm, linalg.tanhm,
+                                     linalg.sinhm, linalg.coshm, linalg.tanhm,
+                                     linalg.pinv, linalg.pinvh, linalg.orth])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_matmat(self, fun, dtype, rng):  # matrix in, matrix out
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(fun, A)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_null_space(self, dtype, rng):
+        A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
+        self.batch_test(linalg.null_space, A)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_funm(self, dtype, rng):
+        A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
+        self.batch_test(linalg.funm, A, kwargs=dict(func=np.sin))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_fractional_matrix_power(self, dtype, rng):
+        A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
+        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5})
+        # test that `t` can be passed by position
+        res2 = linalg.fractional_matrix_power(A, 1.5)
+        np.testing.assert_equal(res1, res2)
+
+    @pytest.mark.parametrize('disp', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_logm(self, dtype, disp):
+        # One test failed absolute tolerance with default random seed
+        rng = np.random.default_rng(89940026998903887141749720079406074936)
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        A = A + 3*np.eye(4)  # avoid complex output for real input
+        n_out = 1 if disp else 2
+        res1 = self.batch_test(linalg.logm, A, n_out=n_out, kwargs=dict(disp=disp))
+        # test that `disp` can be passed by position
+        res2 = linalg.logm(A, disp)
+        for res1i, res2i in zip(res1, res2):
+            np.testing.assert_equal(res1i, res2i)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_pinv(self, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.pinv, A, n_out=2, kwargs=dict(return_rank=True))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_matrix_balance(self, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.matrix_balance, A, n_out=2)
+        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs={'separate':True})
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_bandwidth(self, dtype, rng):
+        A = get_random((4, 4), dtype=dtype, rng=rng)
+        A = np.asarray([np.triu(A, k) for k in range(-3, 3)]).reshape((2, 3, 4, 4))
+        self.batch_test(linalg.bandwidth, A, n_out=2)
+
+    @pytest.mark.parametrize('fun_n_out', [(linalg.cholesky, 1), (linalg.ldl, 3)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_ldl_cholesky(self, fun_n_out, dtype, rng):
+        fun, n_out = fun_n_out
+        A = get_nearly_hermitian((5, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
+        A = A + 4*np.eye(4, dtype=dtype)  # ensure positive definite for Cholesky
+        self.batch_test(fun, A, n_out=n_out)
+
+    @pytest.mark.parametrize('compute_uv', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_svd(self, compute_uv, dtype, rng):
+        A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        n_out = 3 if compute_uv else 1
+        self.batch_test(linalg.svd, A, n_out=n_out, kwargs=dict(compute_uv=compute_uv))
+
+    @pytest.mark.parametrize('fun', [linalg.polar, linalg.qr, linalg.rq])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_polar_qr_rq(self, fun, dtype, rng):
+        A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        self.batch_test(fun, A, n_out=2)
+
+    @pytest.mark.parametrize('fun', [linalg.schur, linalg.lu_factor])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_schur_lu(self, fun, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(fun, A, n_out=2)
+
+    @pytest.mark.parametrize('calc_q', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_hessenberg(self, calc_q, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        n_out = 2 if calc_q else 1
+        self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q))
+
+    @pytest.mark.parametrize('eigvals_only', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_eig_banded(self, eigvals_only, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        n_out = 1 if eigvals_only else 2
+        self.batch_test(linalg.eig_banded, A, n_out=n_out,
+                        kwargs=dict(eigvals_only=eigvals_only))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_eigvals_banded(self, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.eigvals_banded, A)
