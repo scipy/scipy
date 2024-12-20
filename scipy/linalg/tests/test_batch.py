@@ -25,7 +25,8 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
     return A + At + noise
 
 
-class TestMatrixInScalarOut:
+class TestOneArrayIn:
+    # Test the functions that accept one array argument
 
     def batch_test(self, fun, A, core_dim=2, n_out=1, args=(), kwargs=None, dtype=None):
         kwargs = {} if kwargs is None else kwargs
@@ -112,3 +113,9 @@ class TestMatrixInScalarOut:
     def test_pinv(self, dtype, rng):
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(linalg.pinv, A, n_out=2, kwargs=dict(return_rank=True))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_matrix_balance(self, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.matrix_balance, A, n_out=2)
+        self.batch_test(linalg.matrix_balance, A, n_out=4, kwargs={'separate':True})
