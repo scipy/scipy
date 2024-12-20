@@ -1,10 +1,8 @@
-import sys
 import functools
 from scipy._lib._array_api import (
-    array_namespace, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
+    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
 )
 
-import numpy as np
 from ._signal_api import *   # noqa: F403
 from . import _signal_api
 from . import _delegators
@@ -56,13 +54,14 @@ def delegate_xp(delegator, module_name):
 
 
 # ### decorate ###
-for func_name in _signal_api.__all__:
-    bare_func = getattr(_signal_api, func_name)
-    delegator = getattr(_delegators, func_name + "_signature", None)
+for obj_name in _signal_api.__all__:
+    bare_obj = getattr(_signal_api, obj_name)
+    delegator = getattr(_delegators, obj_name + "_signature", None)
 
-    f = (delegate_xp(delegator, MODULE_NAME)(bare_func)
-         if SCIPY_ARRAY_API
-         else bare_func)
+    if SCIPY_ARRAY_API and delegator is not None:
+        f = delegate_xp(delegator, MODULE_NAME)(bare_obj)
+    else:
+        f = bare_obj
 
     # add the decorated function to the namespace, to be imported in __init__.py
-    vars()[func_name] = f
+    vars()[obj_name] = f

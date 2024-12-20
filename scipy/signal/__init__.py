@@ -289,8 +289,11 @@ repeatedly generate the same chirp signal with every call.  In these cases,
 use the classes to create a reusable function instead.
 
 """
+# bring in the public functionality from private namespaces
 
-from ._support_alternative_backends import *    # TODO: double-check extra names
+# mypy: ignore-errors
+
+from ._support_alternative_backends import *
 from . import _support_alternative_backends
 __all__ = _support_alternative_backends.__all__
 del _support_alternative_backends, _signal_api, _delegators  # noqa: F821

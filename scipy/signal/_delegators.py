@@ -29,7 +29,7 @@ are arrays.
 """
 import numpy as np
 from scipy._lib._array_api import array_namespace
-from scipy.ndimage._ni_support import _skip_if_dtype, _skip_if_int
+from scipy.ndimage._ni_support import _skip_if_int
 
 
 def _skip_if_lti(arg):
@@ -132,7 +132,9 @@ def iirpeak_signature(w0, Q, fs=2.0):
     return np
 
 
-def savgol_coeffs_signature(window_length, polyorder, deriv=0, delta=1.0, pos=None, use='conv'):
+def savgol_coeffs_signature(
+    window_length, polyorder, deriv=0, delta=1.0, pos=None, use='conv'
+):
     return np
 
 
@@ -306,11 +308,16 @@ def lfilter_signature(b, a, x, axis=-1, zi=None):
     return array_namespace(b, a, x, zi)
 
 
-def find_peaks_signature(x, height=None, threshold=None, distance=None, prominence=None, width=None, wlen=None, rel_height=0.5, plateau_size=None):
+def find_peaks_signature(
+    x, height=None, threshold=None, distance=None, prominence=None, width=None,
+    wlen=None, rel_height=0.5, plateau_size=None
+):
     return array_namespace(x, height, threshold, prominence, width, plateau_size)
 
 
-def find_peaks_cwt_signature(vector, widths, wavelet=None, max_distances=None, *args, **kwds):
+def find_peaks_cwt_signature(
+    vector, widths, wavelet=None, max_distances=None, *args, **kwds
+):
     return array_namespace(vector, widths, max_distances)
 
 
@@ -363,11 +370,11 @@ def hilbert_signature(x, N=None, axis=-1):
 hilbert2_signature = hilbert_signature
 
 
-def iirdesign_signature(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba', fs=None):
+def iirdesign_signature(wp, ws, *args, **kwds):
     return array_namespace(wp, ws)
 
 
-def iirfilter_signature(N, Wn, rp=None, rs=None, btype='band', analog=False, ftype='butter', output='ba', fs=None):
+def iirfilter_signature(N, Wn, *args, **kwds):
     return array_namespace(Wn)
 
 
@@ -385,7 +392,7 @@ def sosfilt_zi_signature(sos):
     return array_namespace(sos)
 
 # needs to be blacklisted on CuPy (is not implemented)
-def remez_signature(numtaps, bands, desired, *, weight=None, type='bandpass', maxiter=25, grid_density=16, fs=None):
+def remez_signature(numtaps, bands, desired, *, weight=None, **kwds):
     return array_namespace(bands, desired, weight)
 #############################################
 
@@ -393,7 +400,10 @@ def lfiltic_signature(b, a, y, x=None):
     return array_namespace(b, a, y, x)
 
 
-def lombscargle_signature(x, y, freqs, precenter=False, normalize=False, *, weights=None, floating_mean=False):
+def lombscargle_signature(
+    x, y, freqs, precenter=False, normalize=False, *,
+    weights=None, floating_mean=False
+):
     return array_namespace(x, y, freqs, weights)
 
 
