@@ -1116,10 +1116,8 @@ class TestNdimageMorphology:
                                      border_value=1, iterations=3)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(np_only=True, exceptions=["numpy"],
+    @skip_xp_backends(np_only=True,
                       reason='inplace out= arguments are numpy-specific')
-    @xfail_xp_backends("cupy",
-                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion30(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
