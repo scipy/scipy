@@ -532,7 +532,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
             groups = np.atleast_1d(groups)
             return _sparse_difference(fun_wrapped, x0, f0, h,
                                       use_one_sided, structure,
-                                      groups, method)
+                                      groups, method, workers)
 
 
 def _linear_operator_difference(fun, x0, f0, h, method):
@@ -655,7 +655,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
 
 
 def _sparse_difference(fun, x0, f0, h, use_one_sided,
-                       structure, groups, method):
+                       structure, groups, method, workers):
     m = f0.size
     n = x0.size
     row_indices = []
@@ -663,24 +663,23 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     fractions = []
 
     n_groups = np.max(groups) + 1
-    for group in range(n_groups):
+
+    def e_generator():
         # Perturb variables which are in the same group simultaneously.
-        e = np.equal(group, groups)
-        h_vec = h * e
-        if method == '2-point':
+        for group in range(n_groups):
+            yield np.equal(group, groups)
+
+    def x_generator2():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
             x = x0 + h_vec
-            dx = x - x0
-            df = fun(x) - f0
-            # The result is written to columns which correspond to perturbed
-            # variables.
-            cols, = np.nonzero(e)
-            # Find all non-zero elements in selected columns of Jacobian.
-            i, j, _ = find(structure[:, cols])
-            # Restore column indices in the full array.
-            j = cols[j]
-        elif method == '3-point':
-            # Here we do conceptually the same but separate one-sided
-            # and two-sided schemes.
+            yield x
+
+    def x_generator3():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
             x1 = x0.copy()
             x2 = x0.copy()
 
@@ -691,17 +690,52 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             mask_2 = ~use_one_sided & e
             x1[mask_2] -= h_vec[mask_2]
             x2[mask_2] += h_vec[mask_2]
+            yield x1
+            yield x2
+
+    def x_generator_cs():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
+            yield x0 + h_vec * 1.j
+
+    # evaluate the function for each of the groups
+    if method == '2-point':
+        f_evals = iter(workers(fun, x_generator2()))
+        xs = x_generator2()
+    elif method == '3-point':
+        f_evals = iter(workers(fun, x_generator3()))
+        xs = x_generator3()
+    elif method == 'cs':
+        f_evals = iter(workers(fun, x_generator_cs()))
+
+    for e in e_generator():
+        # The result is written to columns which correspond to perturbed
+        # variables.
+        cols, = np.nonzero(e)
+        # Find all non-zero elements in selected columns of Jacobian.
+        i, j, _ = find(structure[:, cols])
+        # Restore column indices in the full array.
+        j = cols[j]
+
+        if method == '2-point':
+            dx = next(xs) - x0
+            df = next(f_evals) - f0
+        elif method == '3-point':
+            # Here we do conceptually the same but separate one-sided
+            # and two-sided schemes.
+            x1 = next(xs)
+            x2 = next(xs)
+
+            mask_1 = use_one_sided & e
+            mask_2 = ~use_one_sided & e
 
             dx = np.zeros(n)
             dx[mask_1] = x2[mask_1] - x0[mask_1]
             dx[mask_2] = x2[mask_2] - x1[mask_2]
 
-            f1 = fun(x1)
-            f2 = fun(x2)
-
-            cols, = np.nonzero(e)
-            i, j, _ = find(structure[:, cols])
-            j = cols[j]
+            f1 = next(f_evals)
+            f2 = next(f_evals)
 
             mask = use_one_sided[j]
             df = np.empty(m)
@@ -712,12 +746,9 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             rows = i[~mask]
             df[rows] = f2[rows] - f1[rows]
         elif method == 'cs':
-            f1 = fun(x0 + h_vec*1.j)
+            f1 = next(f_evals)
             df = f1.imag
-            dx = h_vec
-            cols, = np.nonzero(e)
-            i, j, _ = find(structure[:, cols])
-            j = cols[j]
+            dx = h * e
         else:
             raise ValueError("Never be here.")
 
