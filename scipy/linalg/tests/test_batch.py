@@ -194,3 +194,16 @@ class TestOneArrayIn:
         A = get_random((2, 3, 6, 4), dtype=dtype, rng=rng)
         self.batch_test(linalg.clarkson_woodruff_transform, A,
                         kwargs=dict(sketch_size=5, rng=23598158972358))
+
+    @pytest.mark.parametrize('eigvals_only', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_eig_banded(self, eigvals_only, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        n_out = 1 if eigvals_only else 2
+        self.batch_test(linalg.eig_banded, A, n_out=n_out,
+                        kwargs=dict(eigvals_only=eigvals_only))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_eigvals_banded(self, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.eigvals_banded, A)
