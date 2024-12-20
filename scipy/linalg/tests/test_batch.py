@@ -154,3 +154,8 @@ class TestOneArrayIn:
         A = get_random((4, 4), dtype=dtype, rng=rng)
         A = np.asarray([np.triu(A, k) for k in range(-3, 3)]).reshape((2, 3, 4, 4))
         self.batch_test(linalg.bandwidth, A, n_out=2)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_ldl(self, dtype, rng):
+        A = get_nearly_hermitian((5, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
+        self.batch_test(linalg.ldl, A, n_out=3)
