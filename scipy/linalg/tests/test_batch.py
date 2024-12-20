@@ -204,3 +204,15 @@ class TestOneArrayIn:
     def test_eigvals_banded(self, dtype, rng):
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(linalg.eigvals_banded, A)
+
+    @pytest.mark.parametrize('two_in', [False, True])
+    @pytest.mark.parametrize('two_out', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_eigh(self, two_in, two_out, dtype, rng):
+        A = get_nearly_hermitian((1, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
+        B = get_nearly_hermitian((2, 1, 4, 4), dtype, 0, rng)  # exactly Hermitian
+        B = B + 4*np.eye(4).astype(dtype)  # needs to be positive definite
+        args = (A, B) if two_in else (A,)
+        kwargs = dict(eigvals_only=True) if not two_out else {}
+        n_out = 2 if two_out else 1
+        self.batch_test(linalg.eigh, args, n_out=n_out, kwargs=kwargs)

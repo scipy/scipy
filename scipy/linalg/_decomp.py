@@ -281,6 +281,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     return w, vr
 
 
+@_apply_over_batch(('a', 2), ('b', 2))
 def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
          subset_by_value=None, driver=None):
