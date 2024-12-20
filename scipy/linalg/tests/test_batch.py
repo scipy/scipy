@@ -148,3 +148,9 @@ class TestOneArrayIn:
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(linalg.matrix_balance, A, n_out=2)
         self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs={'separate':True})
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_bandwidth(self, dtype, rng):
+        A = get_random((4, 4), dtype=dtype, rng=rng)
+        A = np.asarray([np.triu(A, k) for k in range(-3, 3)]).reshape((2, 3, 4, 4))
+        self.batch_test(linalg.bandwidth, A, n_out=2)
