@@ -117,6 +117,14 @@ class Test_RealDomain:
         ref = f"{left_bracket}{a}, {b}{right_bracket}"
         assert str(domain) == ref
 
+    def test_symbols_gh22137(self):
+        # `symbols` was accidentally shared between instances originally
+        # Check that this is not longer the case
+        domain1 = _RealDomain(endpoints=(0, 1))
+        domain2 = _RealDomain(endpoints=(0, 1))
+        assert domain1.symbols is not domain2.symbols
+
+
 def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
