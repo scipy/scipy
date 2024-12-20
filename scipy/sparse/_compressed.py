@@ -86,8 +86,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 raise ValueError(f"unrecognized {self.__class__.__name__} "
                                  f"constructor input: {arg1}") from e
-            if isinstance(self, sparray) and arg1.ndim < 2 and self.format == "csc":
+            if isinstance(self, sparray) and arg1.ndim != 2 and self.format == "csc":
                 raise ValueError(f"CSC arrays don't support {arg1.ndim}D input. Use 2D")
+            if arg1.ndim > 2:
+                raise ValueError(f"CSR arrays don't yet support {arg1.ndim}D.")
+
             coo = self._coo_container(arg1, dtype=dtype)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, self._shape = arrays
@@ -1415,17 +1418,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _broadcast_to(self, shape, copy=False):
         if self.shape == shape:
             return self.copy() if copy else self
-        
+
         shape = check_shape(shape, allow_nd=(self._allow_nd))
 
         if broadcast_shapes(self.shape, shape) != shape:
             raise ValueError("cannot be broadcast")
-        
+
         if len(self.shape) == 1 and len(shape) == 1:
             self.sum_duplicates()
             if self.nnz == 0: # array has no non zero elements
                 return self.__class__(shape, dtype=self.dtype, copy=False)
-            
+
             N = shape[0]
             data = np.full(N, self.data[0])
             indices = np.arange(0,N)
@@ -1434,14 +1437,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # treat 1D as a 2D row
         old_shape = self._shape_as_2d
-            
+
         if len(shape) != 2:
             ndim = len(shape)
             raise ValueError(f'CSR/CSC broadcast_to cannot have shape >2D. Got {ndim}D')
-        
+
         if self.nnz == 0: # array has no non zero elements
             return self.__class__(shape, dtype=self.dtype, copy=False)
-        
+
         self.sum_duplicates()
         M, N = self._swap(shape)
         oM, oN = self._swap(old_shape)

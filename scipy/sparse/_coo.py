@@ -667,24 +667,24 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 o_ndim = other.ndim
             perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
             tr = other.transpose(perm)
-            
+
             s_ndim = self.ndim
             perm = tuple(range(s_ndim)[:-2]) + tuple(range(s_ndim)[-2:][::-1])
             ret = self.transpose(perm)._matmul_dispatch(tr)
             if ret is NotImplemented:
                 return NotImplemented
-            
+
             if s_ndim == 1 or o_ndim == 1:
                 perm = range(ret.ndim)
             else:
                 perm = tuple(range(ret.ndim)[:-2]) + tuple(range(ret.ndim)[-2:][::-1])
             return ret.transpose(perm)
-        
+
 
     def _matmul_dispatch(self, other):
         if isscalarlike(other):
             return self.multiply(other)
-        
+
         if not (issparse(other) or isdense(other)):
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
@@ -723,14 +723,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         np.broadcast_shapes(batch_shape_A, batch_shape_B)
                     except ValueError:
                         raise ValueError("Batch dimensions are not broadcastable")
-            
+
                 return self._matmul_multivector(other)
             else:
                 raise ValueError(
                     f"{err_prefix} (n,..,k={N}),(k={other.shape[-2]},..,m)->(n,..,m)"
                 )
-        
-            
+
+
         if isscalarlike(other):
             # scalar value
             return self._mul_scalar(other)
@@ -751,7 +751,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 raise ValueError(
                     f"{err_prefix} (n,..,k={N}),(k={other.shape[-2]},..,m)->(n,..,m)"
                 )
-            
+
             # If A or B has more than 2 dimensions, check for
             # batch dimensions compatibility
             if self.ndim > 2 or other.ndim > 2:
@@ -763,7 +763,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         np.broadcast_shapes(batch_shape_A, batch_shape_B)
                     except ValueError:
                         raise ValueError("Batch dimensions are not broadcastable")
-            
+
             result = self._matmul_sparse(other)
 
             # reshape back if a or b were originally 1-D
@@ -783,11 +783,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
             if self.ndim == 1:
                 result = self.reshape(1, self.shape[0])._matmul_multivector(other)
                 return result.reshape(tuple(other.shape[:-2]) + tuple(other.shape[-1:]))
-            
+
             broadcast_shape = np.broadcast_shapes(self.shape[:-2], other.shape[:-2])
             self_shape = broadcast_shape + self.shape[-2:]
             other_shape = broadcast_shape + other.shape[-2:]
-            
+
             self = self._broadcast_to(self_shape)
             other = np.broadcast_to(other, other_shape)
             result_shape = broadcast_shape + self.shape[-2:-1] + other.shape[-1:]
@@ -797,7 +797,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                 np.concatenate(self.coords),
                                 self.data, other.ravel('C'), result)
             return result
-        
+
         if self.ndim == 2:
             result_shape = (self.shape[0], other.shape[1])
             col = self.col
@@ -813,6 +813,58 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
 
     def dot(self, other):
+        """Return the dot product of two arrays.
+
+        Strictly speaking a dot product involves two vectors.
+        But in the sense that an array with ndim >= 1 is a collection
+        of vectors, the function computes the collection of dot products
+        between each vector in the first array with each vector in the
+        second array. The axis upon which the sum of products is performed
+        is the last axis of the first array and the second to last axis of
+        the second array. If the second array is 1-D, the last axis is used.
+
+        Thus, if both arrays are 1-D, the inner product is returned.
+        If both are 2-D, we have matrix multiplication. If `other` is 1-D,
+        the sum product is taken along the last axis of each array. If
+        `other` is N-D for N>=2, the sum product is over the last axis of
+        the first array and the second-to-last axis of the second array.
+
+        Parameters
+        ----------
+        other : array_like (dense or sparse)
+            Second array
+
+        Returns
+        -------
+        output : array (sparse or dense)
+            The dot product of this array with `other`.
+            It will be dense/sparse if `other` is dense/sparse.
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from scipy.sparse import coo_array
+        >>> A = coo_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+        >>> v = np.array([1, 0, -1])
+        >>> A.dot(v)
+        array([ 1, -3, -1], dtype=int64)
+
+        For 2-D arrays it is the matrix product:
+
+        >>> A = coo_array([[1, 0], [0, 1]])
+        >>> B = coo_array([[4, 1], [2, 2]])
+        >>> A.dot(B).toarray()
+        array([[4, 1],
+               [2, 2]])
+
+        For 3-D arrays the shape extends unused axes by other unused axes.
+
+        >>> A = coo_array(np.arange(3*4*5*6)).reshape((3,4,5,6))
+        >>> B = coo_array(np.arange(3*4*5*6)).reshape((5,4,6,3))
+        >>> A.dot(B).shape
+        (3, 4, 5, 5, 4, 3)
+        """
         if not (issparse(other) or isdense(other) or isscalarlike(other)):
             # If it's a list or whatever, treat it like an array
             o_array = np.asanyarray(other)
@@ -851,7 +903,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             return self._sparse_dot(other)
 
-    
+
     def _sparse_dot(self, other):
         self_is_1d = self.ndim == 1
         other_is_1d = other.ndim == 1
@@ -865,7 +917,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.shape[-1] != other.shape[-2]:
                 raise ValueError(f"shapes {self.shape} and {other.shape}"
                                  " are not aligned for n-D dot")
-        
+
         # Prepare the tensors for dot operation
         # Ravel non-reduced axes coordinates
         self_raveled_coords = _ravel_non_reduced_axes(self.coords,
@@ -876,17 +928,17 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Get the shape of the non-reduced axes
         self_nonreduced_shape = self.shape[:-1]
         other_nonreduced_shape = other.shape[:-2] + other.shape[-1:]
-        
+
         # Create 2D coords arrays
         ravel_coords_shape_self = (math.prod(self_nonreduced_shape), self.shape[-1])
         ravel_coords_shape_other = (other.shape[-2], math.prod(other_nonreduced_shape))
-        
+
         self_2d_coords = (self_raveled_coords, self.coords[-1])
         other_2d_coords = (other.coords[-2], other_raveled_coords)
 
         self_2d = coo_array((self.data, self_2d_coords), ravel_coords_shape_self)
         other_2d = coo_array((other.data, other_2d_coords), ravel_coords_shape_other)
-        
+
         prod = (self_2d @ other_2d).tocoo() # routes via 2-D CSR
 
         # Combine the shapes of the non-reduced axes
@@ -899,7 +951,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             prod_coords.extend(np.unravel_index(c, s))
 
         prod_arr = coo_array((prod.data, prod_coords), combined_shape)
-        
+
         # reshape back if a or b were originally 1-D
         # TODO: Move this logic before computation of prod_coords for efficiency
         if self_is_1d:
@@ -908,7 +960,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             prod_arr = prod_arr.reshape(combined_shape[:-1])
 
         return prod_arr
-    
+
     def _dense_dot(self, other):
         self_is_1d = self.ndim == 1
         other_is_1d = other.ndim == 1
@@ -941,13 +993,100 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return prod_arr
 
     def tensordot(self, other, axes=2):
+        """Return the tensordot product with another array along the given axes.
+
+        The tensordot differs from dot and matmul in that any axis can be
+        chosen for each of the first and second array and the sum of the
+        products is computed just like for matrix multiplication, only not
+        just for the rows of the first times the columns of the second. It
+        takes the dot product of the collection of vectors along the specified
+        axes.  Here we can even take the sum of the products along two or even
+        more axes if desired. So, tensordot is a dot product computation
+        applied to arrays of any dimension >= 1. It is like matmul but over
+        arbitrary axes for each matrix.
+
+        Given two tensors, `a` and `b`, and the desired axes specified as a
+        2-tuple/list/array containing two sequences of axis numbers,
+        ``(a_axes, b_axes)``, sum the products of `a`'s and `b`'s elements
+        (components) over the axes specified by ``a_axes`` and ``b_axes``.
+        The `axes` input can be a single non-negative integer, ``N``;
+        if it is, then the last ``N`` dimensions of `a` and the first
+        ``N`` dimensions of `b` are summed over.
+
+        Parameters
+        ----------
+        a, b : array_like
+            Tensors to "dot".
+
+        axes : int or (2,) array_like
+            * integer_like
+              If an int N, sum over the last N axes of `a` and the first N axes
+              of `b` in order. The sizes of the corresponding axes must match.
+            * (2,) array_like
+              A 2-tuple of sequences of axes to be summed over, the first applying
+              to `a`, the second to `b`. The sequences must be the same length.
+              The shape of the corresponding axes must match between `a` and `b`.
+
+        Returns
+        -------
+        output : coo_array
+            The tensor dot product of this array with `other`.
+            It will be dense/sparse if `other` is dense/sparse.
+
+        See Also
+        --------
+        dot
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> import scipy.sparse
+        >>> A = scipy.sparse.coo_array([[[2, 3], [0, 0]], [[0, 1], [0, 5]]])
+        >>> A.shape
+        (2, 2, 2)
+
+        Integer axes N are shorthand for (range(-N, 0), range(0, N)):
+
+        >>> A.tensordot(A, axes=1).toarray()
+        array([[[[ 4,  9],
+                 [ 0, 15]],
+        <BLANKLINE>
+                [[ 0,  0],
+                 [ 0,  0]]],
+        <BLANKLINE>
+        <BLANKLINE>
+               [[[ 0,  1],
+                 [ 0,  5]],
+        <BLANKLINE>
+                [[ 0,  5],
+                 [ 0, 25]]]])
+        >>> A.tensordot(A, axes=2).toarray()
+        array([[ 4,  6],
+               [ 0, 25]])
+        >>> A.tensordot(A, axes=3)
+        array(39)
+
+        Using tuple for axes:
+
+        >>> a = scipy.sparse.coo_array(np.arange(60).reshape(3,4,5))
+        >>> b = np.arange(24).reshape(4,3,2)
+        >>> c = a.tensordot(b, axes=([1,0],[0,1]))
+        >>> c.shape
+        (5, 2)
+        >>> c
+        array([[4400, 4730],
+               [4532, 4874],
+               [4664, 5018],
+               [4796, 5162],
+               [4928, 5306]])
+
+        """
         if not isdense(other) and not issparse(other):
             # If it's a list or whatever, treat it like an array
             other_array = np.asanyarray(other)
 
             if other_array.ndim == 0 and other_array.dtype == np.object_:
-                # Not interpretable as an array; return NotImplemented so that
-                # other's __rmatmul__ can kick in if that's implemented.
+                # Not interpretable as an array; return NotImplemented
                 return NotImplemented
 
             try:
@@ -961,7 +1100,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if any(self.shape[ax] != other.shape[bx]
                for ax, bx in zip(axes_self, axes_other)):
             raise ValueError("sizes of the corresponding axes must match")
-        
+
         if isdense(other):
             return self._dense_tensordot(other, axes_self, axes_other)
         else:
@@ -972,7 +1111,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         ndim_self = len(self.shape)
         ndim_other = len(other.shape)
 
-        # Prepare the tensors for tensordot operation       
+        # Prepare the tensors for tensordot operation
         # Ravel non-reduced axes coordinates
         self_non_red_coords = _ravel_non_reduced_axes(self.coords, self.shape,
                                                       axes_self)
@@ -988,7 +1127,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               if ax not in axes_self)
         other_nonreduced_shape = tuple(other.shape[ax] for ax in range(ndim_other)
                                if ax not in axes_other)
-        
+
         # Create 2D coords arrays
         ravel_coords_shape_self = (math.prod(self_nonreduced_shape),
                                 math.prod([self.shape[ax] for ax in axes_self]))
@@ -1015,7 +1154,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         if coords == []:  # if result is scalar
             return sum(prod.data)
-            
+
         # Construct the resulting COO array with combined coordinates and shape
         return coo_array((prod.data, coords), shape=combined_shape)
 
@@ -1053,11 +1192,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
         The method converts input n-D arrays to 2-D block array format,
         uses csr_matmat to multiply them, and then converts the
         result back to n-D COO array.
-        
+
         Parameters:
         self (COO): The first n-D sparse array in COO format.
         other (COO): The second n-D sparse array in COO format.
-        
+
         Returns:
         prod (COO): The resulting n-D sparse array after multiplication.
         """
@@ -1067,7 +1206,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Get the shapes of self and other
         self_shape = self.shape
         other_shape = other.shape
-        
+
         # Determine the new shape to broadcast self and other
         broadcast_shape = np.broadcast_shapes(self_shape[:-2], other_shape[:-2])
         self_new_shape = tuple(broadcast_shape) + self_shape[-2:]
@@ -1075,14 +1214,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         self_broadcasted = self._broadcast_to(self_new_shape)
         other_broadcasted = other._broadcast_to(other_new_shape)
-        
+
         # Convert n-D COO arrays to 2-D block diagonal arrays
         self_block_diag = _block_diag(self_broadcasted)
         other_block_diag = _block_diag(other_broadcasted)
-        
+
         # Use csr_matmat to perform sparse matrix multiplication
         prod_block_diag = (self_block_diag @ other_block_diag).tocoo()
-        
+
         # Convert the 2-D block diagonal array back to n-D
         return _extract_block_diag(
             prod_block_diag,
@@ -1093,17 +1232,17 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def _broadcast_to(self, new_shape, copy=False):
         if self.shape == new_shape:
             return self.copy() if copy else self
-        
+
         old_shape = self.shape
 
         # Check if the new shape is compatible for broadcasting
         if len(new_shape) < len(old_shape):
             raise ValueError("New shape must have at least as many dimensions"
                              " as the current shape")
-        
-        # Add leading ones to shape to ensure same length as `new_shape` 
+
+        # Add leading ones to shape to ensure same length as `new_shape`
         shape = (1,) * (len(new_shape) - len(old_shape)) + tuple(old_shape)
-        
+
         # Ensure the old shape can be broadcast to the new shape
         if any((o != 1 and o != n) for o, n in zip(shape, new_shape)):
             raise ValueError(f"current shape {old_shape} cannot be "
@@ -1112,18 +1251,19 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Reshape the COO array to match the new dimensions
         self = self.reshape(shape)
 
+        idx_dtype = get_index_dtype(self.coords, maxval=max(new_shape))
         coords = self.coords
         new_data = self.data
         new_coords = coords[-1:]  # Copy last coordinate to start
         cum_repeat = 1 # Cumulative repeat factor for broadcasting
-        
+
         if shape[-1] != new_shape[-1]: # broadcasting the n-th (col) dimension
             repeat_count = new_shape[-1]
             cum_repeat *= repeat_count
             new_data = np.tile(new_data, repeat_count)
-            new_dim = np.repeat(np.arange(0, repeat_count), self.nnz)
+            new_dim = np.repeat(np.arange(0, repeat_count, dtype=idx_dtype), self.nnz)
             new_coords = (new_dim,)
-        
+
         for i in range(-2, -(len(shape)+1), -1):
             if shape[i] != new_shape[i]:
                 repeat_count = new_shape[i] # number of times to repeat data, coords
@@ -1135,15 +1275,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 new_coords = tuple(np.tile(new_coords[i+1:], repeat_count))
 
                 # Create new dimensions and stack them
-                new_dim = np.repeat(np.arange(0, repeat_count), nnz)
+                new_dim = np.repeat(np.arange(0, repeat_count, dtype=idx_dtype), nnz)
                 new_coords = (new_dim,) + new_coords
             else:
                 # If no broadcasting needed, tile the coordinates
                 new_dim = np.tile(coords[i], cum_repeat)
                 new_coords = (new_dim,) + new_coords
-                
+
         return coo_array((new_data, new_coords), new_shape)
-        
+
 
 def _block_diag(self):
     """
@@ -1179,7 +1319,7 @@ def _extract_block_diag(self, shape):
 
     # Initialize new coordinates array
     new_coords = np.empty((len(shape), self.nnz), dtype=int)
-    
+
     # Calculate within-block indices
     new_coords[-2] = row % n_row
     new_coords[-1] = col % n_col
@@ -1212,7 +1352,7 @@ def _process_axes(ndim_a, ndim_b, axes):
             raise ValueError("axes indices are out of bounds for input arrays")
     else:
         raise TypeError("axes must be an integer or a tuple/list of integers")
-    
+
     axes_a = [axis + ndim_a if axis < 0 else axis for axis in axes_a]
     axes_b = [axis + ndim_b if axis < 0 else axis for axis in axes_b]
     return axes_a, axes_b
@@ -1225,13 +1365,13 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     if not non_reduced_axes:
         # Return an array with one row
         return np.zeros_like(coords[0])
-    
+
     # Extract the shape of the non-reduced axes
     non_reduced_shape = [shape[ax] for ax in non_reduced_axes]
-    
+
     # Extract the coordinates of the non-reduced axes
     non_reduced_coords = tuple(coords[idx] for idx in non_reduced_axes)
-    
+
     # Ravel the coordinates into 1D
     return np.ravel_multi_index(non_reduced_coords, non_reduced_shape)
 
