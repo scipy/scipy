@@ -469,17 +469,18 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     if kwargs is None:
         kwargs = {}
 
-    def fun_wrapped(x):
-        # send user function same fp type as x0. (but only if cs is not being
-        # used
-        if xp.isdtype(x.dtype, "real floating"):
-            x = xp.astype(x, x0.dtype)
-
-        f = np.atleast_1d(fun(x, *args, **kwargs))
-        if f.ndim > 1:
-            raise RuntimeError("`fun` return value has "
-                               "more than 1 dimension.")
-        return f
+    fun_wrapped = _Fun_Wrapper(fun, x0, args, kwargs)
+    # def fun_wrapped(x):
+    #     # send user function same fp type as x0. (but only if cs is not being
+    #     # used
+    #     if xp.isdtype(x.dtype, "real floating"):
+    #         x = xp.astype(x, x0.dtype)
+    #
+    #     f = np.atleast_1d(fun(x, *args, **kwargs))
+    #     if f.ndim > 1:
+    #         raise RuntimeError("`fun` return value has "
+    #                            "more than 1 dimension.")
+    #     return f
 
     if f0 is None:
         f0 = fun_wrapped(x0)
@@ -590,27 +591,28 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
     m = f0.size
     n = x0.size
     J_transposed = np.empty((n, m))
-    x1 = x0.copy()
-    x2 = x0.copy()
     xc = x0.astype(complex, copy=True)
 
     if method == '2-point':
         def x_generator(x0, h):
             for i in range(n):
+                # if copying isn't done then it's possible for different workers
+                # to see the same values of x1. (at least that's what happened
+                # when I used `multiprocessing.dummy.Pool`).
+                x1 = np.copy(x0)
                 x1[i] = x0[i] + h[i]
                 yield x1
-                x1[i] = x0[i]
 
         f_evals = workers(fun, x_generator(x0, h))
         dx = [(x0[i] + h[i]) - x0[i] for i in range(n)]
         df = [f_eval - f0 for f_eval in f_evals]
         df_dx = [delf / delx for delf, delx in zip(df, dx)]
-        for i, v in enumerate(df_dx):
-            J_transposed[i] = v
 
     elif method == '3-point':
         def x_generator(x0, h, use_one_sided):
             for i, one_sided in enumerate(use_one_sided):
+                x1 = np.copy(x0)
+                x2 = np.copy(x0)
                 if one_sided:
                     x1[i] = x0[i] + h[i]
                     x2[i] = x0[i] + 2*h[i]
@@ -619,9 +621,10 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
                     x2[i] = x0[i] + h[i]
                 yield x1
                 yield x2
-                x1[i] = x2[i] = x0[i]
 
-        f_evals = workers(fun, x_generator(x0, h, use_one_sided))
+        # workers may return something like a list that needs to be turned
+        # into an iterable (can't call `next` on a list)
+        f_evals = iter(workers(fun, x_generator(x0, h, use_one_sided)))
         gen = x_generator(x0, h, use_one_sided)
         dx = list()
         df = list()
@@ -641,35 +644,20 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
         for i, v in enumerate(df_dx):
             J_transposed[i] = v
 
-    for i in range(h.size):
-        if method == '2-point':
-            continue
-        elif method == '3-point' and use_one_sided[i]:
-            continue
-            x1[i] += h[i]
-            x2[i] += 2 * h[i]
-            dx = x2[i] - x0[i]
-            f1 = fun(x1)
-            f2 = fun(x2)
-            df = -3.0 * f0 + 4 * f1 - f2
-        elif method == '3-point' and not use_one_sided[i]:
-            continue
-            x1[i] -= h[i]
-            x2[i] += h[i]
-            dx = x2[i] - x1[i]
-            f1 = fun(x1)
-            f2 = fun(x2)
-            df = f2 - f1
-        elif method == 'cs':
-            xc[i] += h[i] * 1.j
-            f1 = fun(xc)
-            df = f1.imag
-            dx = h[i]
-        else:
-            raise RuntimeError("Never be here.")
+    elif method == 'cs':
+        def x_generator(x0, h):
+            for i in range(n):
+                xc = x0.astype(complex, copy=True)
+                xc[i] += h[j] * 1.j
+                yield xc
 
-        J_transposed[i] = df / dx
-        x1[i] = x2[i] = xc[i] = x0[i]
+        f_evals = iter(workers(fun, x_generator(x0, h)))
+        df_dx = [f1.imag / hi for f1, hi in zip(f_evals, h)]
+    else:
+        raise RuntimeError("Never be here.")
+
+    for i, v in enumerate(df_dx):
+        J_transposed[i] = v
 
     if m == 1:
         J_transposed = np.ravel(J_transposed)
@@ -756,6 +744,29 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     if isspmatrix(structure):
         return csr_matrix((fractions, (row_indices, col_indices)), shape=(m, n))
     return csr_array((fractions, (row_indices, col_indices)), shape=(m, n))
+
+
+class _Fun_Wrapper:
+    # Permits pickling of a wrapped function
+    def __init__(self, fun, x0, args, kwargs):
+        self.fun = fun
+        self.x0 = x0
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, x):
+        # send user function same fp type as x0. (but only if cs is not being
+        # used
+        xp = array_namespace(self.x0)
+
+        if xp.isdtype(x.dtype, "real floating"):
+            x = xp.astype(x, self.x0.dtype)
+
+        f = np.atleast_1d(self.fun(x, *self.args, **self.kwargs))
+        if f.ndim > 1:
+            raise RuntimeError("`fun` return value has "
+                               "more than 1 dimension.")
+        return f
 
 
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
