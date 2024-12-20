@@ -18,7 +18,8 @@ from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
-                       check_shape, check_reshape_kwargs, isscalarlike, isdense)
+                       check_shape, check_reshape_kwargs, isscalarlike, isdense,
+                       is_pydata_spmatrix)
 
 import operator
 
@@ -302,15 +303,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
             M, N = self.shape
             coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                         B.ravel('A'), fortran)
-        else:
-            if fortran:
-                strides = np.append(1, np.cumprod(self.shape[:-1]))
-            else:
-                strides = np.append(np.cumprod(self.shape[1:][::-1])[::-1], 1)
-            coords = np.concatenate(self.coords)
-            coo_todense_nd(strides, self.nnz, self.ndim,
-                           coords, self.data, B.ravel('A'), fortran)
-        # Note: reshape() doesn't copy here, but does return a new array (view).
+
+        else: # dim>2
+            flat_indices = np.ravel_multi_index(self.coords, self.shape)
+            B = np.zeros(self.shape, dtype=self.dtype)
+            np.add.at(B.ravel(), flat_indices, self.data)
         return B.reshape(self.shape)
 
     toarray.__doc__ = _spbase.toarray.__doc__
@@ -572,49 +569,58 @@ class _coo_base(_data_matrix, _minmax_mixin):
     #######################
 
     def _add_dense(self, other):
-        if other.shape != self.shape:
-            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+        if self.shape != other.shape:
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self._broadcast_to(bshape)
+            other = np.broadcast_to(other, bshape)
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
-        if self.ndim == 1:
-            coo_todense_nd(np.array([1]), self.nnz, self.ndim,
-                           self.coords[0], self.data, result.ravel('A'), fortran)
-        elif self.ndim == 2:
+        if self.ndim < 3 and len(other.shape) < 3:
             M, N = self._shape_as_2d
             coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                         result.ravel('A'), fortran)
         else:
-            if fortran:
-                strides = np.append(1, np.cumprod(self.shape[:-1]))
-            else:
-                strides = np.append(np.cumprod(self.shape[1:][::-1])[::-1], 1)
-            coords = np.concatenate(self.coords)
-            coo_todense_nd(strides, self.nnz, self.ndim,
-                           coords, self.data, result.ravel('A'), fortran)
+            self.sum_duplicates()
+            result[self.coords] += self.data
         return self._container(result, copy=False)
 
 
     def _add_sparse(self, other):
-        if self.ndim < 3:
+        if self.ndim < 3 and other.ndim < 3:
             return self.tocsr()._add_sparse(other)
 
-        if other.shape != self.shape:
-            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         other = self.__class__(other)
+        if other.shape != self.shape:
+            # This will raise an error if the shapes are not broadcastable
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self._broadcast_to(bshape)
+            other = other._broadcast_to(bshape)
+
         new_data = np.concatenate((self.data, other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
         A = self.__class__((new_data, new_coords), shape=self.shape)
         return A
 
+    def _sub_dense(self, other):
+        if self.shape != other.shape:
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self._broadcast_to(bshape)
+            other = np.broadcast_to(other, bshape)
+
+        return self.todense() - other
 
     def _sub_sparse(self, other):
-        if self.ndim < 3:
+        if self.ndim < 3 and other.ndim < 3:
             return self.tocsr()._sub_sparse(other)
 
-        if other.shape != self.shape:
-            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         other = self.__class__(other)
+        if other.shape != self.shape:
+            # This will raise an error if the shapes are not broadcastable
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+            self = self._broadcast_to(bshape)
+            other = other._broadcast_to(bshape)
+
         new_data = np.concatenate((self.data, -other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
         A = coo_array((new_data, new_coords), shape=self.shape)
@@ -667,24 +673,24 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 o_ndim = other.ndim
             perm = tuple(range(o_ndim)[:-2]) + tuple(range(o_ndim)[-2:][::-1])
             tr = other.transpose(perm)
-            
+
             s_ndim = self.ndim
             perm = tuple(range(s_ndim)[:-2]) + tuple(range(s_ndim)[-2:][::-1])
             ret = self.transpose(perm)._matmul_dispatch(tr)
             if ret is NotImplemented:
                 return NotImplemented
-            
+
             if s_ndim == 1 or o_ndim == 1:
                 perm = range(ret.ndim)
             else:
                 perm = tuple(range(ret.ndim)[:-2]) + tuple(range(ret.ndim)[-2:][::-1])
             return ret.transpose(perm)
-        
+
 
     def _matmul_dispatch(self, other):
         if isscalarlike(other):
             return self.multiply(other)
-        
+
         if not (issparse(other) or isdense(other)):
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
@@ -723,14 +729,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         np.broadcast_shapes(batch_shape_A, batch_shape_B)
                     except ValueError:
                         raise ValueError("Batch dimensions are not broadcastable")
-            
+
                 return self._matmul_multivector(other)
             else:
                 raise ValueError(
                     f"{err_prefix} (n,..,k={N}),(k={other.shape[-2]},..,m)->(n,..,m)"
                 )
-        
-            
+
+
         if isscalarlike(other):
             # scalar value
             return self._mul_scalar(other)
@@ -751,7 +757,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 raise ValueError(
                     f"{err_prefix} (n,..,k={N}),(k={other.shape[-2]},..,m)->(n,..,m)"
                 )
-            
+
             # If A or B has more than 2 dimensions, check for
             # batch dimensions compatibility
             if self.ndim > 2 or other.ndim > 2:
@@ -763,7 +769,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                         np.broadcast_shapes(batch_shape_A, batch_shape_B)
                     except ValueError:
                         raise ValueError("Batch dimensions are not broadcastable")
-            
+
             result = self._matmul_sparse(other)
 
             # reshape back if a or b were originally 1-D
@@ -783,11 +789,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
             if self.ndim == 1:
                 result = self.reshape(1, self.shape[0])._matmul_multivector(other)
                 return result.reshape(tuple(other.shape[:-2]) + tuple(other.shape[-1:]))
-            
+
             broadcast_shape = np.broadcast_shapes(self.shape[:-2], other.shape[:-2])
             self_shape = broadcast_shape + self.shape[-2:]
             other_shape = broadcast_shape + other.shape[-2:]
-            
+
             self = self._broadcast_to(self_shape)
             other = np.broadcast_to(other, other_shape)
             result_shape = broadcast_shape + self.shape[-2:-1] + other.shape[-1:]
@@ -797,7 +803,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                 np.concatenate(self.coords),
                                 self.data, other.ravel('C'), result)
             return result
-        
+
         if self.ndim == 2:
             result_shape = (self.shape[0], other.shape[1])
             col = self.col
@@ -851,7 +857,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             return self._sparse_dot(other)
 
-    
+
     def _sparse_dot(self, other):
         self_is_1d = self.ndim == 1
         other_is_1d = other.ndim == 1
@@ -865,7 +871,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.shape[-1] != other.shape[-2]:
                 raise ValueError(f"shapes {self.shape} and {other.shape}"
                                  " are not aligned for n-D dot")
-        
+
         # Prepare the tensors for dot operation
         # Ravel non-reduced axes coordinates
         self_raveled_coords = _ravel_non_reduced_axes(self.coords,
@@ -876,17 +882,17 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Get the shape of the non-reduced axes
         self_nonreduced_shape = self.shape[:-1]
         other_nonreduced_shape = other.shape[:-2] + other.shape[-1:]
-        
+
         # Create 2D coords arrays
         ravel_coords_shape_self = (math.prod(self_nonreduced_shape), self.shape[-1])
         ravel_coords_shape_other = (other.shape[-2], math.prod(other_nonreduced_shape))
-        
+
         self_2d_coords = (self_raveled_coords, self.coords[-1])
         other_2d_coords = (other.coords[-2], other_raveled_coords)
 
         self_2d = coo_array((self.data, self_2d_coords), ravel_coords_shape_self)
         other_2d = coo_array((other.data, other_2d_coords), ravel_coords_shape_other)
-        
+
         prod = (self_2d @ other_2d).tocoo() # routes via 2-D CSR
 
         # Combine the shapes of the non-reduced axes
@@ -899,7 +905,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             prod_coords.extend(np.unravel_index(c, s))
 
         prod_arr = coo_array((prod.data, prod_coords), combined_shape)
-        
+
         # reshape back if a or b were originally 1-D
         # TODO: Move this logic before computation of prod_coords for efficiency
         if self_is_1d:
@@ -908,7 +914,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             prod_arr = prod_arr.reshape(combined_shape[:-1])
 
         return prod_arr
-    
+
     def _dense_dot(self, other):
         self_is_1d = self.ndim == 1
         other_is_1d = other.ndim == 1
@@ -961,7 +967,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if any(self.shape[ax] != other.shape[bx]
                for ax, bx in zip(axes_self, axes_other)):
             raise ValueError("sizes of the corresponding axes must match")
-        
+
         if isdense(other):
             return self._dense_tensordot(other, axes_self, axes_other)
         else:
@@ -972,7 +978,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         ndim_self = len(self.shape)
         ndim_other = len(other.shape)
 
-        # Prepare the tensors for tensordot operation       
+        # Prepare the tensors for tensordot operation
         # Ravel non-reduced axes coordinates
         self_non_red_coords = _ravel_non_reduced_axes(self.coords, self.shape,
                                                       axes_self)
@@ -988,7 +994,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               if ax not in axes_self)
         other_nonreduced_shape = tuple(other.shape[ax] for ax in range(ndim_other)
                                if ax not in axes_other)
-        
+
         # Create 2D coords arrays
         ravel_coords_shape_self = (math.prod(self_nonreduced_shape),
                                 math.prod([self.shape[ax] for ax in axes_self]))
@@ -1015,7 +1021,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         if coords == []:  # if result is scalar
             return sum(prod.data)
-            
+
         # Construct the resulting COO array with combined coordinates and shape
         return coo_array((prod.data, coords), shape=combined_shape)
 
@@ -1053,11 +1059,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
         The method converts input n-D arrays to 2-D block array format,
         uses csr_matmat to multiply them, and then converts the
         result back to n-D COO array.
-        
+
         Parameters:
         self (COO): The first n-D sparse array in COO format.
         other (COO): The second n-D sparse array in COO format.
-        
+
         Returns:
         prod (COO): The resulting n-D sparse array after multiplication.
         """
@@ -1067,7 +1073,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Get the shapes of self and other
         self_shape = self.shape
         other_shape = other.shape
-        
+
         # Determine the new shape to broadcast self and other
         broadcast_shape = np.broadcast_shapes(self_shape[:-2], other_shape[:-2])
         self_new_shape = tuple(broadcast_shape) + self_shape[-2:]
@@ -1075,14 +1081,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         self_broadcasted = self._broadcast_to(self_new_shape)
         other_broadcasted = other._broadcast_to(other_new_shape)
-        
+
         # Convert n-D COO arrays to 2-D block diagonal arrays
         self_block_diag = _block_diag(self_broadcasted)
         other_block_diag = _block_diag(other_broadcasted)
-        
+
         # Use csr_matmat to perform sparse matrix multiplication
         prod_block_diag = (self_block_diag @ other_block_diag).tocoo()
-        
+
         # Convert the 2-D block diagonal array back to n-D
         return _extract_block_diag(
             prod_block_diag,
@@ -1093,17 +1099,17 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def _broadcast_to(self, new_shape, copy=False):
         if self.shape == new_shape:
             return self.copy() if copy else self
-        
+
         old_shape = self.shape
 
         # Check if the new shape is compatible for broadcasting
         if len(new_shape) < len(old_shape):
             raise ValueError("New shape must have at least as many dimensions"
                              " as the current shape")
-        
-        # Add leading ones to shape to ensure same length as `new_shape` 
+
+        # Add leading ones to shape to ensure same length as `new_shape`
         shape = (1,) * (len(new_shape) - len(old_shape)) + tuple(old_shape)
-        
+
         # Ensure the old shape can be broadcast to the new shape
         if any((o != 1 and o != n) for o, n in zip(shape, new_shape)):
             raise ValueError(f"current shape {old_shape} cannot be "
@@ -1112,18 +1118,19 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # Reshape the COO array to match the new dimensions
         self = self.reshape(shape)
 
+        idx_dtype = get_index_dtype(self.coords, maxval=max(new_shape))
         coords = self.coords
         new_data = self.data
         new_coords = coords[-1:]  # Copy last coordinate to start
         cum_repeat = 1 # Cumulative repeat factor for broadcasting
-        
+
         if shape[-1] != new_shape[-1]: # broadcasting the n-th (col) dimension
             repeat_count = new_shape[-1]
             cum_repeat *= repeat_count
             new_data = np.tile(new_data, repeat_count)
-            new_dim = np.repeat(np.arange(0, repeat_count), self.nnz)
+            new_dim = np.repeat(np.arange(0, repeat_count, dtype=idx_dtype), self.nnz)
             new_coords = (new_dim,)
-        
+
         for i in range(-2, -(len(shape)+1), -1):
             if shape[i] != new_shape[i]:
                 repeat_count = new_shape[i] # number of times to repeat data, coords
@@ -1135,15 +1142,545 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 new_coords = tuple(np.tile(new_coords[i+1:], repeat_count))
 
                 # Create new dimensions and stack them
-                new_dim = np.repeat(np.arange(0, repeat_count), nnz)
+                new_dim = np.repeat(np.arange(0, repeat_count, dtype=idx_dtype), nnz)
                 new_coords = (new_dim,) + new_coords
             else:
                 # If no broadcasting needed, tile the coordinates
                 new_dim = np.tile(coords[i], cum_repeat)
                 new_coords = (new_dim,) + new_coords
-                
+
         return coo_array((new_data, new_coords), new_shape)
-        
+
+
+    def _process_arrays_for_comparison(self, other, op_name):
+        if is_pydata_spmatrix(other):
+            return NotImplemented
+
+        if not (issparse(other) or isdense(other) or isscalarlike(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and (isscalarlike(other) or other.ndim < 3):
+            return getattr(_data_matrix, op_name)(self.tocsr(), other)
+
+        # Scalar other.
+        if isscalarlike(other):
+            result_shape = self.shape
+            self = self.reshape(1,-1)
+            result = getattr(_data_matrix, op_name)(self.tocsr(), other)
+            if isinstance(result, sparray):
+                result = result.tocoo()
+            if isinstance(result, (np.ndarray, sparray)):
+                result = result.reshape(result_shape)
+            return result
+
+        elif isdense(other) or issparse(other):
+            if self.shape != other.shape:
+                # This will raise an error if the shapes are not broadcastable
+                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
+                # Broadcasting the arrays if they have different shapes
+                # that are compatible for broadcasting
+                self = self._broadcast_to(broadcast_shape)
+                if isdense(other):
+                    other = np.broadcast_to(other, broadcast_shape)
+                else:
+                    other = other._broadcast_to(broadcast_shape)
+
+            result_shape = self.shape
+
+            # reshaping n-D arrays to 2-D arrays
+            self = self.reshape(1,-1)
+            other = other.reshape(1,-1)
+
+            # routing via 2-D CSR
+            result = getattr(_data_matrix, op_name)(self.tocsr(), other)
+
+            if isinstance(result, sparray):
+                result = result.tocoo()
+
+            # reshaping back to n-D if output is 2-D boolean array
+            if isinstance(result, (np.ndarray, sparray)):
+                result = result.reshape(result_shape)
+
+            return result
+        else:
+            return NotImplemented
+
+    def __eq__(self, other):
+        return self._process_arrays_for_comparison(other, '__eq__')
+
+    def __ne__(self, other):
+        return self._process_arrays_for_comparison(other, '__ne__')
+
+    def __lt__(self, other):
+        return self._process_arrays_for_comparison(other, '__lt__')
+
+    def __gt__(self, other):
+        return self._process_arrays_for_comparison(other, '__gt__')
+
+    def __le__(self, other):
+        return self._process_arrays_for_comparison(other, '__le__')
+
+    def __ge__(self, other):
+        return self._process_arrays_for_comparison(other, '__ge__')
+
+    def multiply(self, other):
+        """Point-wise multiplication by another array/matrix."""
+
+        if isscalarlike(other):
+            return self._mul_scalar(other)
+
+        if not (issparse(other) or isdense(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and other.ndim < 3:
+            result = _data_matrix.multiply(self.tocsr(), other)
+            if isinstance(result, sparray):
+                result = result.tocoo()
+            return result
+
+        if issparse(other):
+            if self.shape == other.shape: # no broadcasting required
+                result_shape = self.shape
+
+                # reshape n-D COO to 2-D
+                self = self.reshape(1, -1)
+                other = other.reshape(1, -1)
+
+                # route via 2-D CSR multiply
+                result = _data_matrix.multiply(self.tocsr(), other)
+
+                # convert to COO format before reshaping to n-D
+                # this is important because other formats don't support n-D
+                if isinstance(result, sparray):
+                    result = result.tocoo()
+
+                # reshape back to n-D
+                if isinstance(result, (np.ndarray, sparray)):
+                    result = result.reshape(result_shape)
+
+                return result
+
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+
+            # single element
+            if math.prod(other.shape) == 1:
+                result = self._mul_scalar(other.toarray().ravel()[0])
+                return result.reshape(bshape)
+            if math.prod(self.shape) == 1:
+                result = other._mul_scalar(self.toarray().ravel()[0])
+                result = result.reshape(bshape)
+                return result
+
+            # different but broadcastable shapes
+            self = self._broadcast_to(bshape)
+            other = other._broadcast_to(bshape)
+            # reshape to 2-D
+            self = self.reshape(1, -1)
+            other = other.reshape(1, -1)
+            # route via 2-D CSR multiply
+            result = _data_matrix.multiply(self.tocsr(), other)
+            # convert to COO
+            if isinstance(result, sparray):
+                result = result.tocoo()
+
+            # reshape back to n-D
+            if isinstance(result, (np.ndarray, sparray)):
+                result = result.reshape(bshape)
+
+            return result
+
+        else: # if other is dense
+        # no broadcasting required if same shapes,
+        # just reshape to 2-D, route via CSR, convert to COO,
+        # and reshape back
+            if self.shape == other.shape:
+                result_shape = self.shape
+                self = self.reshape(1, -1)
+                other = other.reshape(1, -1)
+                result = _data_matrix.multiply(self.tocsr(), other)
+                # convert to COO
+                if isinstance(result, sparray):
+                    result = result.tocoo()
+                # reshape back to n-D
+                if isinstance(result, (np.ndarray, sparray)):
+                    result = result.reshape(result_shape)
+                return result
+
+            # This will raise an error if the shapes are not broadcastable
+            bshape = np.broadcast_shapes(self.shape, other.shape)
+
+            # single element
+            if math.prod(other.shape) == 1:
+                result = self._mul_scalar(other.ravel()[0])
+                result = result.reshape(bshape)
+                return result
+
+            # if self is a single element and other is dense,
+            # use np.multiply and reshape
+            if math.prod(self.shape) == 1:
+                result = np.multiply(self.toarray().ravel()[0], other)
+                result = result.reshape(bshape)
+                return result
+
+            # different but broadcastable shapes
+            self = self._broadcast_to(bshape)
+            other = np.broadcast_to(other, bshape)
+            self = self.reshape(1, -1)
+            other = other.reshape(1, -1)
+            result = _data_matrix.multiply(self.tocsr(), other)
+            # convert to COO
+            if isinstance(result, sparray):
+                result = result.tocoo()
+            # reshape back to n-D
+            if isinstance(result, (np.ndarray, sparray)):
+                result = result.reshape(bshape)
+            return result
+
+    def _divide(self, other, true_divide=False, rdivide=False):
+        """Point-wise division by another array/matrix."""
+        # Scalar other.
+        if isscalarlike(other):
+            if rdivide:
+                if true_divide:
+                    return np.true_divide(other, self.todense())
+                else:
+                    return np.divide(other, self.todense())
+
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                return self.astype(np.float64)._mul_scalar(1./other)
+
+        if not (issparse(other) or isdense(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and other.ndim < 3:
+            return _data_matrix._divide(self.tocsr(), other, true_divide, rdivide)
+
+        else:
+            return NotImplemented
+
+    def mean(self, axis=None, dtype=None, out=None):
+        if axis == ():
+            return self.toarray()
+
+        if self.ndim < 3:
+            result = _spbase.mean(self, axis, dtype, out)
+            return result
+
+        axis = _validateaxes(axis, self.ndim, self.shape)
+
+        if out is not None:
+            out_shape = out.shape
+
+        if axis is None:
+            res_dtype = self.dtype.type
+            integral = (np.issubdtype(self.dtype, np.integer) or
+                        np.issubdtype(self.dtype, np.bool_))
+
+            # output dtype
+            if dtype is None:
+                if integral:
+                    res_dtype = np.float64
+            else:
+                res_dtype = np.dtype(dtype).type
+
+            # intermediate dtype for summation
+            inter_dtype = np.float64 if integral else res_dtype
+            inter_self = self.astype(inter_dtype)
+
+            if 0 in self.shape:
+                raise ValueError("zero-size array to reduction operation")
+            ret = (inter_self / math.prod(self.shape)).sum(dtype=res_dtype, out=out)
+            result_shape = ret.shape
+        else:
+            result_shape = tuple(self.shape[ax] for ax in range(self.ndim)
+                                 if ax not in axis)
+
+        if out is not None and out_shape != result_shape:
+            raise ValueError("dimensions do not match")
+
+        if axis is not None:
+            non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
+            axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :],
+                                               [self.shape[ax] for ax in axis])
+            coords_2d = np.vstack((non_axis_coords, axis_coords))
+
+            shape_2d = (math.prod(result_shape), math.prod([self.shape[ax]
+                                                            for ax in axis]))
+
+            if out is not None:
+                out = out.reshape(math.prod(result_shape))
+
+            self = coo_array((self.data, coords_2d), shape_2d)
+            ret_flattened = _spbase.mean(self, axis=1, dtype=dtype, out=out)
+            ret = ret_flattened.reshape(result_shape)
+            if out is not None:
+                out = out.reshape(result_shape)
+
+        return ret
+
+
+    def sum(self, axis=None, dtype=None, out=None):
+        if axis == ():
+            ret = self.todense()
+            if out is not None:
+                if out.shape != self.shape:
+                    raise ValueError("dimensions do not match")
+                out[...] = ret
+            return ret
+
+        if self.ndim < 3:
+            result = _spbase.sum(self, axis, dtype, out)
+            return result
+
+        axis = _validateaxes(axis, self.ndim, self.shape)
+
+        if out is not None:
+            out_shape = out.shape
+
+        if axis is None:
+            self = self.reshape(-1)
+            ret = _spbase.sum(self, axis, dtype, out)
+            result_shape = ret.shape
+        else:
+            result_shape = tuple(self.shape[ax] for ax in range(self.ndim)
+                                 if ax not in axis)
+
+        if out is not None and out_shape != result_shape:
+            raise ValueError("dimensions do not match")
+
+        if axis is not None:
+            non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
+            axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :],
+                                               [self.shape[ax] for ax in axis])
+            coords_2d = np.vstack((non_axis_coords, axis_coords))
+
+            shape_2d = (math.prod(result_shape), math.prod([self.shape[ax]
+                                                            for ax in axis]))
+
+            if out is not None:
+                out = out.reshape(math.prod(result_shape))
+
+            self = coo_array((self.data, coords_2d), shape_2d)
+            ret_flattened = _spbase.sum(self, axis=1, dtype=dtype, out=out)
+            ret = ret_flattened.reshape(result_shape)
+
+            if out is not None:
+                out = out.reshape(result_shape)
+
+        return ret
+
+
+    def _maximum_minimum_coo(self, other, op_name):
+        if not (issparse(other) or isdense(other) or isscalarlike(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and (isscalarlike(other) or other.ndim < 3):
+            return  getattr(_data_matrix, op_name)(self.tocsr(), other)
+
+         # Scalar other
+        if isscalarlike(other):
+            result_shape = self.shape
+            self = self.reshape(1, -1)
+            result =  getattr(_data_matrix, op_name)(self.tocsr(), other)
+            # convert to COO
+            if isinstance(result, sparray):
+                result = result.tocoo()
+            # reshape back to n-D
+            if isinstance(result, (np.ndarray, sparray)):
+                result = result.reshape(result_shape)
+            return result
+
+        elif isdense(other) or issparse(other):
+            if self.shape != other.shape:
+                # This will raise an error if the shapes are not broadcastable
+                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
+
+                # Broadcasting the arrays if they have different shapes
+                # that are compatible for broadcasting
+                self = self._broadcast_to(broadcast_shape)
+                if isdense(other):
+                    other = np.broadcast_to(other, broadcast_shape)
+                else:
+                    other = other._broadcast_to(broadcast_shape)
+
+            result_shape = self.shape
+
+            # reshaping n-D arrays to 2-D arrays
+            self = self.reshape(1,-1)
+            other = other.reshape(1,-1)
+
+            # routing via 2-D CSR
+            result =  getattr(_data_matrix, op_name)(self.tocsr(), other)
+
+            if isinstance(result, sparray):
+                result = result.tocoo()
+
+            # reshaping back to n-D if output is 2-D boolean array
+            if isinstance(result, (np.ndarray, sparray)):
+                result = result.reshape(result_shape)
+
+            return result
+
+        else:
+            return NotImplemented
+
+    def _find_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis, explicit):
+        zero = self.dtype.type(0)
+
+        if axis is None:
+            return _max_or_min((*self.data, zero))
+
+        if not isinstance(axis, (int, tuple)):
+            raise ValueError("'axis' should be int/tuple of ints")
+
+        if axis == ():
+            return self.copy()
+
+        if type(axis) is int:
+            axis = [axis]
+
+        if any(ax >= self.ndim or ax < -self.ndim for ax in axis):
+            raise ValueError("axis out of range")
+
+        axis = [ax if ax>=0 else ax+self.ndim for ax in axis]
+
+        if any(self.shape[d] == 0 for d in axis):
+            raise ValueError("zero-size array to reduction operation")
+
+        # Check for duplicates
+        if len(axis) != len(set(axis)):
+            raise ValueError("duplicate value in 'axis'")
+
+        if len(axis) == self.ndim:
+            return _max_or_min((*self.data, zero))
+
+        non_axis_coords = _ravel_non_reduced_axes(self.coords, self.shape, axis)
+        axis_coords = np.ravel_multi_index(np.array(self.coords)[axis, :],
+                                           [self.shape[ax] for ax in axis])
+        coords_2d = np.vstack((non_axis_coords, axis_coords))
+
+        result_shape = tuple(self.shape[ax] for ax in range(self.ndim)
+                             if ax not in axis)
+        shape_2d = (math.prod(result_shape), math.prod([self.shape[ax] for ax in axis]))
+
+        self = coo_array((self.data, coords_2d), shape_2d)
+        res = (self._min_or_max(1, out, _max_or_min_axis, explicit))
+        unraveled_coords = np.concatenate(np.unravel_index(res.coords, result_shape))
+
+        return (coo_array((res.data, unraveled_coords), result_shape))
+
+
+    def max(self, axis=None, out=None, *, explicit=False):
+        if self.ndim<3:
+            return _minmax_mixin.max(self, axis, out, explicit=explicit)
+
+        return self._find_max_or_min(axis, out, np.max, np.maximum, explicit)
+
+    def min(self, axis=None, out=None, *, explicit=False):
+        if self.ndim<3:
+            return _minmax_mixin.min(self, axis, out, explicit=explicit)
+
+        return self._find_max_or_min(axis, out, np.min, np.minimum, explicit)
+
+    def nanmax(self, axis=None, out=None, *, explicit=False):
+        if self.ndim<3:
+            return _minmax_mixin.nanmax(self, axis, out, explicit=explicit)
+
+        return self._find_max_or_min(axis, out, np.nanmax, np.fmax, explicit)
+
+    def nanmin(self, axis=None, out=None, *, explicit=False):
+        if self.ndim<3:
+            return _minmax_mixin.nanmin(self, axis, out, explicit=explicit)
+
+        return self._find_max_or_min(axis, out, np.nanmin, np.fmin, explicit)
+
+    def _find_arg_max_or_min(self, axis, out, _max_or_min, _max_or_min_axis, explicit):
+        if axis is None:
+            flat = self.reshape(-1)
+            return flat._arg_min_or_max(0, out, _max_or_min, _max_or_min_axis, explicit)
+
+        if not isinstance(axis, int):
+            raise ValueError("'axis' should be int or None")
+
+        if axis >= self.ndim or axis < -self.ndim:
+            raise ValueError("axis out of range")
+
+        axis = axis if axis>=0 else axis+self.ndim
+
+        non_reduced_axes = [ax for ax in range(self.ndim) if ax != axis]
+        non_reduced_shape = [self.shape[ax] for ax in non_reduced_axes]
+
+        non_axis_coords = np.ravel_multi_index(
+            np.array(self.coords)[non_reduced_axes, :], non_reduced_shape)
+
+        axis_coords = np.ravel_multi_index(tuple([np.array(self.coords)[axis, :]]),
+                                           tuple([self.shape[axis]]))
+        coords_2d = np.vstack((non_axis_coords, axis_coords))
+
+        result_shape = tuple(non_reduced_shape)
+        shape_2d = (math.prod(result_shape), self.shape[axis])
+
+        self = coo_array((self.data, coords_2d), shape_2d)
+        res_flattened = self._arg_min_or_max(1, out, _max_or_min, _max_or_min_axis,
+                                             explicit)
+        res = res_flattened.reshape(result_shape)
+        return res
+
+    def argmax(self, axis=None, out=None, *, explicit=False):
+        if self.ndim<3:
+            return _minmax_mixin.argmax(self, axis, out, explicit=explicit)
+        return self._find_arg_max_or_min(axis, out, np.argmax, np.greater, explicit)
+
+    def argmin(self, axis=None, out=None, *, explicit=False):
+        if self.ndim<3:
+            return _minmax_mixin.argmin(self, axis, out, explicit=explicit)
+        return self._find_arg_max_or_min(axis, out, np.argmin, np.less, explicit)
+
+    def maximum(self, other):
+        """Element-wise maximum between this and another array/matrix."""
+        return self._maximum_minimum_coo(other, 'maximum')
+
+
+    def minimum(self, other):
+        """Element-wise minimum between this and another array/matrix."""
+        return self._maximum_minimum_coo(other, 'minimum')
+
 
 def _block_diag(self):
     """
@@ -1179,7 +1716,7 @@ def _extract_block_diag(self, shape):
 
     # Initialize new coordinates array
     new_coords = np.empty((len(shape), self.nnz), dtype=int)
-    
+
     # Calculate within-block indices
     new_coords[-2] = row % n_row
     new_coords[-1] = col % n_col
@@ -1212,7 +1749,7 @@ def _process_axes(ndim_a, ndim_b, axes):
             raise ValueError("axes indices are out of bounds for input arrays")
     else:
         raise TypeError("axes must be an integer or a tuple/list of integers")
-    
+
     axes_a = [axis + ndim_a if axis < 0 else axis for axis in axes_a]
     axes_b = [axis + ndim_b if axis < 0 else axis for axis in axes_b]
     return axes_a, axes_b
@@ -1225,15 +1762,43 @@ def _ravel_non_reduced_axes(coords, shape, axes):
     if not non_reduced_axes:
         # Return an array with one row
         return np.zeros_like(coords[0])
-    
+
     # Extract the shape of the non-reduced axes
     non_reduced_shape = [shape[ax] for ax in non_reduced_axes]
-    
+
     # Extract the coordinates of the non-reduced axes
     non_reduced_coords = tuple(coords[idx] for idx in non_reduced_axes)
-    
+
     # Ravel the coordinates into 1D
     return np.ravel_multi_index(non_reduced_coords, non_reduced_shape)
+
+
+def _validateaxes(axis, ndim, shape):
+    if axis is not None:
+        if not isinstance(axis, (int, tuple)):
+            raise ValueError("'axis' should be int/tuple of ints")
+
+        if type(axis) is int:
+            axis = [axis]
+
+        if len(axis)>ndim:
+            raise ValueError("axis tuple has too many elements")
+
+        if any(ax >= ndim or ax < -ndim for ax in axis):
+            raise ValueError("axis out of range")
+
+        axis = [ax if ax>=0 else ax+ndim for ax in axis]
+
+        if any(shape[d] == 0 for d in axis):
+            raise ValueError("zero-size array to reduction operation")
+
+        # Check for duplicates
+        if len(axis) != len(set(axis)):
+            raise ValueError("duplicate value in 'axis'")
+
+        if len(axis) == ndim:
+            axis = None
+        return axis
 
 
 def _ravel_coords(coords, shape, order='C'):

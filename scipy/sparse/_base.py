@@ -554,11 +554,9 @@ class _spbase:
             raise NotImplementedError('adding a nonzero scalar to a '
                                       'sparse array is not supported')
         elif issparse(other):
-            if other.shape != self.shape:
-                raise ValueError("inconsistent shapes")
             return self._add_sparse(other)
+
         elif isdense(other):
-            other = np.broadcast_to(other, self.shape)
             return self._add_dense(other)
         else:
             return NotImplemented
@@ -573,11 +571,9 @@ class _spbase:
             raise NotImplementedError('subtracting a nonzero scalar from a '
                                       'sparse array is not supported')
         elif issparse(other):
-            if other.shape != self.shape:
-                raise ValueError("inconsistent shapes")
             return self._sub_sparse(other)
+
         elif isdense(other):
-            other = np.broadcast_to(other, self.shape)
             return self._sub_dense(other)
         else:
             return NotImplemented
@@ -1132,10 +1128,21 @@ class _spbase:
         numpy.matrix.sum : NumPy's implementation of 'sum' for matrices
 
         """
+        if axis == ():
+            ret = self.todense()
+            if out is not None:
+                if out.shape != self.shape:
+                    raise ValueError("dimensions do not match")
+                out[...] = ret
+            return ret
+
         validateaxis(axis)
 
         # Mimic numpy's casting.
         res_dtype = get_sum_dtype(self.dtype)
+
+        if isinstance(axis, tuple) and len(axis) == 1:
+            axis = axis[0]
 
         if self.ndim == 1:
             if axis not in (None, -1, 0):
@@ -1151,6 +1158,17 @@ class _spbase:
         # We use multiplication by a matrix of ones to achieve this.
         # For some sparse array formats more efficient methods are
         # possible -- these should override this function.
+
+        # if axis is tuple of all dimensions then same as axis=None
+        if isinstance(axis, tuple) and len(axis) == self.ndim:
+            # adjust axes
+            axis = [ax if ax >= 0 else ax + self.ndim for ax in axis]
+            # check for duplicates
+            if len(axis) != len(set(axis)):
+                raise ValueError("duplicate value in 'axis'")
+            # if no duplicates
+            axis = None
+
         M, N = self.shape
 
         if axis is None:
@@ -1221,6 +1239,14 @@ class _spbase:
         numpy.matrix.mean : NumPy's implementation of 'mean' for matrices
 
         """
+        if axis == ():
+            ret = self.todense()
+            if out is not None:
+                if out.shape != self.shape:
+                    raise ValueError("dimensions do not match")
+                out[...] = ret
+            return ret
+
         validateaxis(axis)
 
         res_dtype = self.dtype.type
@@ -1238,13 +1264,30 @@ class _spbase:
         inter_dtype = np.float64 if integral else res_dtype
         inter_self = self.astype(inter_dtype)
 
+        if isinstance(axis, tuple) and len(axis) == 1:
+            axis = axis[0]
+
+        # if 1-d, axis should be 0, -1, or None
         if self.ndim == 1:
             if axis not in (None, -1, 0):
                 raise ValueError("axis must be None, -1 or 0")
             res = inter_self / self.shape[-1]
             return res.sum(dtype=res_dtype, out=out)
 
+        # if axis is tuple of all dimensions then same as axis=None
+        if isinstance(axis, tuple):
+            # adjust axes
+            axis = [ax if ax >= 0 else ax + self.ndim for ax in axis]
+            if len(axis) == self.ndim:
+                # check for duplicates
+                if len(axis) != len(set(axis)):
+                    raise ValueError("duplicate value in 'axis'")
+                # if no duplicates
+                axis = None
+
         if axis is None:
+            if 0 in self.shape:
+                raise ValueError("zero-size array to reduction operation")
             return (inter_self / (self.shape[0] * self.shape[1]))\
                 .sum(dtype=res_dtype, out=out)
 
