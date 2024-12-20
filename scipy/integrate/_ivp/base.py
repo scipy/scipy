@@ -134,7 +134,7 @@ class OdeSolver:
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     def __init__(self, fun, t0, y0, t_bound, vectorized,
-                 support_complex=False, nstep0=0):
+                 support_complex=False, *, nstep0=0):
         self.t_old = None
         self.t = t0
         self._fun, self.y = check_arguments(fun, y0, support_complex)

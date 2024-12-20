@@ -157,7 +157,7 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, vectorized=False, args=None, callback=None, **options):
+              events=None, vectorized=False, args=None, *, callback=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ordinary differential
