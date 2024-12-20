@@ -30,8 +30,8 @@ def is_longdouble_binary_compatible():
 def reference_data():
     # Matlab reference data
     MDATA = np.load(join(fftpack_test_dir, 'test.npz'))
-    X = [MDATA['x%d' % i] for i in range(MDATA_COUNT)]
-    Y = [MDATA['y%d' % i] for i in range(MDATA_COUNT)]
+    X = [MDATA[f'x{i}'] for i in range(MDATA_COUNT)]
+    Y = [MDATA[f'y{i}'] for i in range(MDATA_COUNT)]
 
     # FFTW reference data: the data are organized as follows:
     #    * SIZES is an array containing all available sizes
@@ -100,7 +100,7 @@ def fftw_dct_ref(type, size, dt, reference_data):
         data = reference_data['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
-    y = (data['dct_%d_%d' % (type, size)]).astype(dt)
+    y = (data[f'dct_{type}_{size}']).astype(dt)
     return x, y, dt
 
 
@@ -115,7 +115,7 @@ def fftw_dst_ref(type, size, dt, reference_data):
         data = reference_data['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
-    y = (data['dst_%d_%d' % (type, size)]).astype(dt)
+    y = (data[f'dst_{type}_{size}']).astype(dt)
     return x, y, dt
 
 

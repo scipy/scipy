@@ -507,15 +507,15 @@ def lobpcg(
         if M is None:
             aux += "out"
         aux += " preconditioning\n\n"
-        aux += "matrix size %d\n" % n
-        aux += "block size %d\n\n" % sizeX
+        aux += f"matrix size {n}\n"
+        aux += f"block size {sizeX}\n\n"
         if blockVectorY is None:
             aux += "No constraints\n\n"
         else:
             if sizeY > 1:
-                aux += "%d constraints\n\n" % sizeY
+                aux += f"{sizeY} constraints\n\n"
             else:
-                aux += "%d constraint\n\n" % sizeY
+                aux += f"{sizeY} constraint\n\n"
         print(aux)
 
     if (n - sizeY) < (5 * sizeX):
