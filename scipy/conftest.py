@@ -199,9 +199,18 @@ if 'cupy' in xp_available_backends:
     for k, v in xp_available_backends.items()
 ])
 def xp(request):
+    """Run the test that uses this fixture on each available array API library.
+
+    You can select all and only the tests that use the `xp` fixture by
+    passing `-m array_api_backends` to pytest.
+    """
     if SCIPY_ARRAY_API:
         from scipy._lib._array_api import default_xp
 
+        # Throughout all calls to assert_almost_equal, assert_array_almost_equal, and
+        # xp_assert_* functions, test that the array namespace is xp in both the
+        # expected and actual arrays. This is to detect the case where both arrays are
+        # erroneously just plain numpy while xp is something else.
         with default_xp(request.param):
             yield request.param
     else:
