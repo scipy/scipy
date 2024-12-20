@@ -831,7 +831,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         Parameters
         ----------
-        other : array_like (dense of sparse)
+        other : array_like (dense or sparse)
             Second array
 
         Returns
@@ -997,8 +997,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         The tensordot differs from dot and matmul in that any axis can be
         chosen for each of the first and second array and the sum of the
-        producs is computed just like for matrix multiplication, only not
-        just for the rows fo the first times the columns of the second. It
+        products is computed just like for matrix multiplication, only not
+        just for the rows of the first times the columns of the second. It
         takes the dot product of the collection of vectors along the specified
         axes.  Here we can even take the sum of the products along two or even
         more axes if desired. So, tensordot is a dot product computation
@@ -1008,7 +1008,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         Given two tensors, `a` and `b`, and the desired axes specified as a
         2-tuple/list/array containing two sequences of axis numbers,
         ``(a_axes, b_axes)``, sum the products of `a`'s and `b`'s elements
-        (components) over the axes specified by``a_axes`` and ``b_axes``.
+        (components) over the axes specified by ``a_axes`` and ``b_axes``.
         The `axes` input can be a single non-negative integer, ``N``;
         if it is, then the last ``N`` dimensions of `a` and the first
         ``N`` dimensions of `b` are summed over.
