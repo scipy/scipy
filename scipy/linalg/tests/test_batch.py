@@ -169,3 +169,8 @@ class TestOneArrayIn:
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         n_out = 3 if compute_uv else 1
         self.batch_test(linalg.svd, A, n_out=n_out, kwargs=dict(compute_uv=compute_uv))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_polar(self, dtype, rng):
+        A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.polar, A, n_out=2)
