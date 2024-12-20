@@ -638,7 +638,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
         def x_generator(x0, h):
             for i in range(n):
                 xc = x0.astype(complex, copy=True)
-                xc[i] += h[j] * 1.j
+                xc[i] += h[i] * 1.j
                 yield xc
 
         f_evals = iter(workers(fun, x_generator(x0, h)))
