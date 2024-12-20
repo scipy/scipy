@@ -170,7 +170,20 @@ class TestOneArrayIn:
         n_out = 3 if compute_uv else 1
         self.batch_test(linalg.svd, A, n_out=n_out, kwargs=dict(compute_uv=compute_uv))
 
+    @pytest.mark.parametrize('fun', [linalg.polar, linalg.qr, linalg.rq])
     @pytest.mark.parametrize('dtype', floating)
-    def test_polar(self, dtype, rng):
+    def test_polar_qr_rq(self, fun, dtype, rng):
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.polar, A, n_out=2)
+        self.batch_test(fun, A, n_out=2)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_schur(self, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.schur, A, n_out=2)
+
+    @pytest.mark.parametrize('calc_q', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_hessenberg(self, calc_q, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        n_out = 2 if calc_q else 1
+        self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q))

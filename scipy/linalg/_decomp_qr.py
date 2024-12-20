@@ -1,6 +1,8 @@
 """QR decomposition functions."""
 import numpy as np
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports
 from .lapack import get_lapack_funcs
 from ._misc import _datacopied
@@ -23,6 +25,7 @@ def safecall(f, name, *args, **kwargs):
     return ret[:-2]
 
 
+@_apply_over_batch(('a', 2))
 def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
        check_finite=True):
     """
@@ -366,6 +369,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     return (cQ,) + raw[1:]
 
 
+@_apply_over_batch(('a', 2))
 def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     """
     Compute RQ decomposition of a matrix.
