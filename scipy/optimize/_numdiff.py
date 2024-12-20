@@ -596,9 +596,12 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
     if method == '2-point':
         def x_generator(x0, h):
             for i in range(n):
-                # if copying isn't done then it's possible for different workers
-                # to see the same values of x1. (at least that's what happened
+                # If copying isn't done then it's possible for different workers
+                # to see the same values of x1. (At least that's what happened
                 # when I used `multiprocessing.dummy.Pool`).
+                # I also considered creating all the vectors at once, but that
+                # means assembling a very large N x N array. It's therefore a
+                # trade-off between N array copies or creating an NxN array.
                 x1 = np.copy(x0)
                 x1[i] = x0[i] + h[i]
                 yield x1
