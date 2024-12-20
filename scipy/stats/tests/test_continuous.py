@@ -119,7 +119,7 @@ class Test_RealDomain:
 
     def test_symbols_gh22137(self):
         # `symbols` was accidentally shared between instances originally
-        # Check that this is not longer the case
+        # Check that this is no longer the case
         domain1 = _RealDomain(endpoints=(0, 1))
         domain2 = _RealDomain(endpoints=(0, 1))
         assert domain1.symbols is not domain2.symbols
