@@ -1,5 +1,3 @@
-import warnings
-
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -29,18 +27,23 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
 
 class TestMatrixInScalarOut:
 
-    def batch_test(self, fun, A, core_dim=2, args=(), kwargs=None, dtype=None):
+    def batch_test(self, fun, A, core_dim=2, n_out=1, args=(), kwargs=None, dtype=None):
         kwargs = {} if kwargs is None else kwargs
         res = fun(A, *args, **kwargs)
+        res = (res,) if n_out == 1 else res
         batch_shape = A.shape[:-core_dim]
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
-                ref = np.asarray(fun(A[i, j], *args, **kwargs))
-                assert_allclose(res[i, j], ref)
-                assert np.shape(res[i, j]) == ref.shape
+                ref = fun(A[i, j], *args, **kwargs)
+                ref = ((np.asarray(ref),) if n_out == 1 else
+                       tuple(np.asarray(refk) for refk in ref))
+                for k in range(len(ref)):
+                    assert_allclose(res[k][i, j], ref[k])
+                    assert np.shape(res[k][i, j]) == ref[k].shape
 
-        out_dtype = ref.dtype if dtype is None else dtype
-        assert res.dtype == out_dtype
+        for k in range(len(ref)):
+            out_dtype = ref[k].dtype if dtype is None else dtype
+            assert res[k].dtype == out_dtype
         return res
 
     @pytest.fixture
@@ -73,7 +76,8 @@ class TestMatrixInScalarOut:
 
     @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm, linalg.signm,
                                      linalg.sinm, linalg.cosm, linalg.tanhm,
-                                     linalg.sinhm, linalg.coshm, linalg.tanhm])
+                                     linalg.sinhm, linalg.coshm, linalg.tanhm,
+                                     linalg.pinv, linalg.pinvh])
     @pytest.mark.parametrize('dtype', floating)
     def test_matmat(self, fun, dtype, rng):  # matrix in, matrix out
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
@@ -94,8 +98,17 @@ class TestMatrixInScalarOut:
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
         self.batch_test(linalg.fractional_matrix_power, A, args=(1.5,))
 
+    @pytest.mark.parametrize('disp', [False, True])
     @pytest.mark.parametrize('dtype', floating)
-    def test_logm(self, dtype, rng):
+    def test_logm(self, dtype, disp):
+        # One test failed absolute tolerance with default random seed
+        rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 3*np.eye(4)  # avoid complex output for real input
-        self.batch_test(linalg.logm, A)
+        n_out = 1 if disp else 2
+        self.batch_test(linalg.logm, A, n_out=n_out, args=(disp,))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_pinv(self, dtype, rng):
+        A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.pinv, A, n_out=2, kwargs=dict(return_rank=True))
