@@ -45,7 +45,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 raise TypeError('Invalid input format.') from e
 
             if arg1.ndim > 2:
-                raise TypeError('Expected rank <=2 dense array or matrix.')
+                raise ValueError(f"DOK arrays don't yet support {arg1.ndim}D input.")
 
             if arg1.ndim == 1:
                 if dtype is not None:
