@@ -80,9 +80,10 @@ class TestConvolve:
         z = convolve(x, y)
         xp_assert_equal(z, xp.asarray([2j, 2 + 6j, 5 + 8j, 5 + 5j]))
 
+    @xfail_xp_backends("jax.numpy", reason="wrong output dtype")
     def test_zero_rank(self, xp):
-        a = 1289
-        b = 4567
+        a = xp.asarray(1289)
+        b = xp.asarray(4567)
         c = convolve(a, b)
         xp_assert_equal(c, a * b)
 
@@ -97,9 +98,10 @@ class TestConvolve:
             y = convolve(a, xp.reshape(b, b_shape), method='fft')
             xp_assert_close(x, y, atol=1e-14)
 
+    @xfail_xp_backends("jax.numpy", reason="wrong output dtype")
     def test_single_element(self, xp):
-        a = np.array([4967])
-        b = np.array([3920])
+        a = xp.asarray([4967])
+        b = xp.asarray([3920])
         c = convolve(a, b)
         xp_assert_equal(c, a * b)
 
@@ -814,11 +816,15 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'valid', axes=1)
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    def test_empty(self, xp):
+    @xfail_xp_backends("cupy", reason="dtypes do not match")
+    @xfail_xp_backends("jax.numpy", reason="assorted error messages")
+    @pytest.mark.parametrize("a,b", [([], []), ([5, 6], []), ([], [7])])
+    def test_empty(self, a, b, xp):
         # Regression test for #1745: crashes with 0-length input.
-        assert fftconvolve([], []).size == 0
-        assert fftconvolve([5, 6], []).size == 0
-        assert fftconvolve([], [7]).size == 0
+        xp_assert_equal(
+            fftconvolve(xp.asarray(a), xp.asarray(b)),
+            xp.asarray([]),
+        )
 
     @skip_xp_backends("jax.numpy", reason="jnp.pad: pad_width with nd=0")
     def test_zero_rank(self, xp):
@@ -963,7 +969,7 @@ def gen_oa_shapes_eq(sizes):
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
-                             gen_oa_shapes_eq(list(range(100)) +
+                             gen_oa_shapes_eq(list(range(1, 100, 1)) +
                                               list(range(100, 1000, 23)))
                              )
     def test_real_manylens(self, shape_a_0, shape_b_0, xp):
@@ -1092,12 +1098,14 @@ class TestOAConvolve:
 
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(np_only=True)
-    def test_empty(self, xp):
+    @xfail_xp_backends("torch", reason="ValueError: Target length must be positive")
+    @pytest.mark.parametrize("a,b", [([], []), ([5, 6], []), ([], [7])])
+    def test_empty(self, a, b, xp):
         # Regression test for #1745: crashes with 0-length input.
-        assert oaconvolve([], []).size == 0
-        assert oaconvolve([5, 6], []).size == 0
-        assert oaconvolve([], [7]).size == 0
+        xp_assert_equal(
+            oaconvolve(xp.asarray(a), xp.asarray(b)),
+            xp.asarray([]),
+        )
 
     def test_zero_rank(self, xp):
         a = xp.asarray(4967)
@@ -1106,8 +1114,8 @@ class TestOAConvolve:
         xp_assert_equal(out, a * b)
 
     def test_single_element(self, xp):
-        a = np.asarray([4967])
-        b = np.asarray([3920])
+        a = xp.asarray([4967])
+        b = xp.asarray([3920])
         out = oaconvolve(a, b)
         xp_assert_equal(out, a * b)
 
@@ -1615,8 +1623,9 @@ class TestCSpline1DEval:
 class TestOrderFilt:
 
     def test_basic(self, xp):
-        xp_assert_equal(signal.order_filter([1, 2, 3], [1, 0, 1], 1),
-                           [2, 3, 2])
+        actual = signal.order_filter(xp.asarray([1, 2, 3]), xp.asarray([1, 0, 1]), 1)
+        expect = xp.asarray([2, 3, 2])
+        xp_assert_equal(actual, expect)
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
