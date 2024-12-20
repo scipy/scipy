@@ -1728,15 +1728,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     triangular parts of the matrix and, again if scaling is also enabled,
     only the remaining subblocks are subjected to scaling.
 
-    The balanced matrix satisfies the following equality
-
-    .. math::
-
-                        B = T^{-1} A T
-
-    The scaling coefficients are approximated to the nearest power of 2
-    to avoid round-off errors.
-
     Parameters
     ----------
     A : (n, n) array_like
@@ -1769,6 +1760,14 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     Notes
     -----
+    The balanced matrix satisfies the following equality
+
+    .. math::
+        B = T^{-1} A T
+
+    The scaling coefficients are approximated to the nearest power of 2
+    to avoid round-off errors.
+
     This algorithm is particularly useful for eigenvalue and matrix
     decompositions and in many cases it is already called by various
     LAPACK routines.
