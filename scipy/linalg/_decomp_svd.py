@@ -13,6 +13,7 @@ from ._decomp import _asarray_validated
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
+@_apply_over_batch(('a', 2))
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         check_finite=True, lapack_driver='gesdd'):
     """

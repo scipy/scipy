@@ -159,3 +159,10 @@ class TestOneArrayIn:
     def test_ldl(self, dtype, rng):
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
         self.batch_test(linalg.ldl, A, n_out=3)
+
+    @pytest.mark.parametrize('compute_uv', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_svd(self, compute_uv, dtype, rng):
+        A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
+        n_out = 3 if compute_uv else 1
+        self.batch_test(linalg.svd, A, n_out=n_out, kwargs=dict(compute_uv=compute_uv))
