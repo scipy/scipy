@@ -1,3 +1,4 @@
+import inspect
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -28,24 +29,42 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
 class TestOneArrayIn:
     # Test the functions that accept one array argument
 
-    def batch_test(self, fun, A, core_dim=2, n_out=1, args=(), kwargs=None, dtype=None):
+    def batch_test(self, fun, A, core_dim=2, n_out=1, kwargs=None, dtype=None):
+        # Check that all outputs of batched call `fun(A, **kwargs)` are the same
+        # as if we loop over the separate vectors/matrices in `A`. Also check
+        # that `fun` accepts `A` by position or keyword and that results are
+        # identical. This is important because the name of the array argument
+        # is manually specified to the decorator, and it's easy to mess up.
+        # However, this makes it hard to test positional arguments passed
+        # after the array, so we test that separately for a few functions to
+        # make sure the decorator is working as it should.
+
         kwargs = {} if kwargs is None else kwargs
-        res = fun(A, *args, **kwargs)
-        res = (res,) if n_out == 1 else res
+        parameters = list(inspect.signature(fun).parameters.keys())
+
+        # Identical results when passing argument by keyword or position
+        res1 = fun(**{parameters[0]: A}, **kwargs)
+        res2 = fun(A, **kwargs)
+        for out1, out2 in zip(res1, res2):  # even a single array output is iterable...
+            np.testing.assert_equal(out1, out2)
+
+        # Check results vs looping over
+        res = (res2,) if n_out == 1 else res2
         batch_shape = A.shape[:-core_dim]
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
-                ref = fun(A[i, j], *args, **kwargs)
+                ref = fun(A[i, j], **kwargs)
                 ref = ((np.asarray(ref),) if n_out == 1 else
                        tuple(np.asarray(refk) for refk in ref))
-                for k in range(len(ref)):
+                for k in range(n_out):
                     assert_allclose(res[k][i, j], ref[k])
                     assert np.shape(res[k][i, j]) == ref[k].shape
 
         for k in range(len(ref)):
             out_dtype = ref[k].dtype if dtype is None else dtype
             assert res[k].dtype == out_dtype
-        return res
+
+        return res1  # return original, non-tuplized result
 
     @pytest.fixture
     def rng(self):
@@ -73,7 +92,10 @@ class TestOneArrayIn:
     @pytest.mark.parametrize('dtype', floating)
     def test_diagsvd(self, dtype, rng):
         A = rng.random((5, 3, 4)).astype(dtype)
-        self.batch_test(linalg.diagsvd, A, args=(6, 4), core_dim=1)
+        res1 = self.batch_test(linalg.diagsvd, A, kwargs=dict(M=6, N=4), core_dim=1)
+        # test that `M, N` can be passed by position
+        res2 = linalg.diagsvd(A, 6, 4)
+        np.testing.assert_equal(res1, res2)
 
     @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm, linalg.signm,
                                      linalg.sinm, linalg.cosm, linalg.tanhm,
@@ -97,7 +119,10 @@ class TestOneArrayIn:
     @pytest.mark.parametrize('dtype', floating)
     def test_fractional_matrix_power(self, dtype, rng):
         A = get_random((2, 4, 3, 3), dtype=dtype, rng=rng)
-        self.batch_test(linalg.fractional_matrix_power, A, args=(1.5,))
+        res1 = self.batch_test(linalg.fractional_matrix_power, A, kwargs={'t':1.5})
+        # test that `t` can be passed by position
+        res2 = linalg.fractional_matrix_power(A, 1.5)
+        np.testing.assert_equal(res1, res2)
 
     @pytest.mark.parametrize('disp', [False, True])
     @pytest.mark.parametrize('dtype', floating)
@@ -107,7 +132,11 @@ class TestOneArrayIn:
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 3*np.eye(4)  # avoid complex output for real input
         n_out = 1 if disp else 2
-        self.batch_test(linalg.logm, A, n_out=n_out, args=(disp,))
+        res1 = self.batch_test(linalg.logm, A, n_out=n_out, kwargs=dict(disp=disp))
+        # test that `disp` can be passed by position
+        res2 = linalg.logm(A, disp)
+        for res1i, res2i in zip(res1, res2):
+            np.testing.assert_equal(res1i, res2i)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_pinv(self, dtype, rng):
@@ -118,4 +147,4 @@ class TestOneArrayIn:
     def test_matrix_balance(self, dtype, rng):
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(linalg.matrix_balance, A, n_out=2)
-        self.batch_test(linalg.matrix_balance, A, n_out=4, kwargs={'separate':True})
+        self.batch_test(linalg.matrix_balance, A, n_out=2, kwargs={'separate':True})

@@ -1719,7 +1719,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
         return B
 
 
-@_apply_over_batch(('a', 2))
+@_apply_over_batch(('A', 2))
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """
