@@ -6,7 +6,7 @@
 import numpy as np
 
 from scipy._lib._util import (check_random_state, rng_integers,
-                              _transition_to_rng, _apply_over_batch)
+                              _transition_to_rng)
 from scipy.sparse import csc_matrix
 
 __all__ = ['clarkson_woodruff_transform']
@@ -53,7 +53,6 @@ def cwt_matrix(n_rows, n_columns, rng=None):
     return S
 
 
-@_apply_over_batch(('input_matrix', 2))
 @_transition_to_rng("seed", position_num=2)
 def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     r"""

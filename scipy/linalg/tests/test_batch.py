@@ -189,12 +189,6 @@ class TestOneArrayIn:
         n_out = 2 if calc_q else 1
         self.batch_test(linalg.hessenberg, A, n_out=n_out, kwargs=dict(calc_q=calc_q))
 
-    @pytest.mark.parametrize('dtype', floating)
-    def test_cwt(self, dtype, rng):
-        A = get_random((2, 3, 6, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.clarkson_woodruff_transform, A,
-                        kwargs=dict(sketch_size=5, rng=23598158972358))
-
     @pytest.mark.parametrize('eigvals_only', [False, True])
     @pytest.mark.parametrize('dtype', floating)
     def test_eig_banded(self, eigvals_only, dtype, rng):
