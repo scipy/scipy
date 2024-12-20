@@ -1057,11 +1057,11 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         def check(dtype):
-            dat_mean = dat.mean(dtype=dtype)
-            datsp_mean = datsp.mean(dtype=dtype)
+            dat_sum = dat.sum(dtype=dtype)
+            datsp_sum = datsp.sum(dtype=dtype)
 
-            assert_array_almost_equal(dat_mean, datsp_mean)
-            assert_equal(dat_mean.dtype, datsp_mean.dtype)
+            assert_array_almost_equal(dat_sum, datsp_sum)
+            assert_equal(dat_sum.dtype, datsp_sum.dtype)
 
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -1094,11 +1094,11 @@ class _TestCommon:
                      [-6, 7, 9]])
         datsp = self.spcreator(dat)
 
-        dat_mean = np.sum(dat)
-        datsp_mean = np.sum(datsp)
+        dat_sum = np.sum(dat)
+        datsp_sum = np.sum(datsp)
 
-        assert_array_almost_equal(dat_mean, datsp_mean)
-        assert_equal(dat_mean.dtype, datsp_mean.dtype)
+        assert_array_almost_equal(dat_sum, datsp_sum)
+        assert_equal(dat_sum.dtype, datsp_sum.dtype)
 
     def test_mean(self):
         keep = not self.is_array_test

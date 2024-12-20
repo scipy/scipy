@@ -117,6 +117,14 @@ class Test_RealDomain:
         ref = f"{left_bracket}{a}, {b}{right_bracket}"
         assert str(domain) == ref
 
+    def test_symbols_gh22137(self):
+        # `symbols` was accidentally shared between instances originally
+        # Check that this is no longer the case
+        domain1 = _RealDomain(endpoints=(0, 1))
+        domain2 = _RealDomain(endpoints=(0, 1))
+        assert domain1.symbols is not domain2.symbols
+
+
 def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
@@ -1114,17 +1122,15 @@ class TestMakeDistribution:
             assert hasattr(stats, dist)
 
         dist = stats.make_distribution(stats.gamma)
-        if np.__version__ < "2":
-            assert str(dist(a=2)) == "Gamma(a=2.0)"
-        else:
-            assert str(dist(a=2)) == "Gamma(a=np.float64(2.0))"
+        assert str(dist(a=2)) == "Gamma(a=2.0)"
+        if np.__version__ >= "2":
+            assert repr(dist(a=2)) == "Gamma(a=np.float64(2.0))"
         assert 'Gamma' in dist.__doc__
 
         dist = stats.make_distribution(stats.halfgennorm)
-        if np.__version__ < "2":
-            str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
-        else:
-            assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
+        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
+        if np.__version__ >= "2":
+            assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
 
@@ -1389,16 +1395,11 @@ class TestTransforms:
         # don't fit well above
 
         X = Uniform(a=1, b=2)
-        X_repr = (
-            "Uniform(a=1.0, b=2.0)" if np.__version__ < "2"
-            else "Uniform(a=np.float64(1.0), b=np.float64(2.0))"
-        )
+        X_str = "Uniform(a=1.0, b=2.0)"
 
-        assert repr(stats.log(X)) == str(stats.log(X)) == (
-            f"log({X_repr})"
-        )
-        assert repr(1 / X) == str(1 / X) == f"1/({X_repr})"
-        assert repr(stats.exp(X)) == str(stats.exp(X)) == f"exp({X_repr})"
+        assert str(stats.log(X)) == f"log({X_str})"
+        assert str(1 / X) == f"1/({X_str})"
+        assert str(stats.exp(X)) == f"exp({X_str})"
 
         X = Uniform(a=-1, b=2)
         message = "Division by a random variable is only implemented when the..."

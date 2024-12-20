@@ -219,7 +219,7 @@ def _deprecate_positional_args(func=None, *, version=None,
             if intersection:
                 message = (f"Arguments {intersection} are deprecated, whether passed "
                            "by position or keyword. They will be removed in SciPy "
-                           "{version}. ")
+                           f"{version}. ")
                 message += custom_message
                 warnings.warn(message, category=DeprecationWarning, stacklevel=3)
 

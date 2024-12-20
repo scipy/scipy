@@ -479,6 +479,14 @@ if HAVE_SCPDT:
         'scipy.optimize.show_options',  # does not have much to doctest
         'scipy.signal.normalize',       # manipulates warnings (XXX temp skip)
         'scipy.sparse.linalg.norm',     # XXX temp skip
+        # these below test things which inherit from np.ndarray
+        # cross-ref https://github.com/numpy/numpy/issues/28019
+        'scipy.io.matlab.MatlabObject.strides',
+        'scipy.io.matlab.MatlabObject.dtype',
+        'scipy.io.matlab.MatlabOpaque.dtype',
+        'scipy.io.matlab.MatlabOpaque.strides',
+        'scipy.io.matlab.MatlabFunction.strides',
+        'scipy.io.matlab.MatlabFunction.dtype'
     ])
 
     # these are affected by NumPy 2.0 scalar repr: rely on string comparison
