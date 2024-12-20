@@ -277,7 +277,7 @@ def group_columns(A, order=0):
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
                       as_linear_operator=False, args=(), kwargs=None,
-                      workers=map):
+                      workers=None):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -480,6 +480,9 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     if np.any((x0 < lb) | (x0 > ub)):
         raise ValueError("`x0` violates bound constraints.")
+
+    # check the map function for parallelisation
+    workers = workers or map
 
     if as_linear_operator:
         if rel_step is None:
