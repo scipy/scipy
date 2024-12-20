@@ -580,10 +580,9 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
     m = f0.size
     n = x0.size
     J_transposed = np.empty((n, m))
-    xc = x0.astype(complex, copy=True)
 
     if method == '2-point':
-        def x_generator(x0, h):
+        def x_generator2(x0, h):
             for i in range(n):
                 # If copying isn't done then it's possible for different workers
                 # to see the same values of x1. (At least that's what happened
@@ -595,13 +594,13 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
                 x1[i] = x0[i] + h[i]
                 yield x1
 
-        f_evals = workers(fun, x_generator(x0, h))
+        f_evals = workers(fun, x_generator2(x0, h))
         dx = [(x0[i] + h[i]) - x0[i] for i in range(n)]
         df = [f_eval - f0 for f_eval in f_evals]
         df_dx = [delf / delx for delf, delx in zip(df, dx)]
 
     elif method == '3-point':
-        def x_generator(x0, h, use_one_sided):
+        def x_generator3(x0, h, use_one_sided):
             for i, one_sided in enumerate(use_one_sided):
                 x1 = np.copy(x0)
                 x2 = np.copy(x0)
@@ -616,8 +615,8 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
 
         # workers may return something like a list that needs to be turned
         # into an iterable (can't call `next` on a list)
-        f_evals = iter(workers(fun, x_generator(x0, h, use_one_sided)))
-        gen = x_generator(x0, h, use_one_sided)
+        f_evals = iter(workers(fun, x_generator3(x0, h, use_one_sided)))
+        gen = x_generator3(x0, h, use_one_sided)
         dx = list()
         df = list()
         for i, one_sided in enumerate(use_one_sided):
@@ -635,13 +634,13 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
         df_dx = [delf / delx for delf, delx in zip(df, dx)]
 
     elif method == 'cs':
-        def x_generator(x0, h):
+        def x_generator_cs(x0, h):
             for i in range(n):
                 xc = x0.astype(complex, copy=True)
                 xc[i] += h[i] * 1.j
                 yield xc
 
-        f_evals = iter(workers(fun, x_generator(x0, h)))
+        f_evals = iter(workers(fun, x_generator_cs(x0, h)))
         df_dx = [f1.imag / hi for f1, hi in zip(f_evals, h)]
     else:
         raise RuntimeError("Never be here.")
@@ -672,7 +671,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             x = x0 + h_vec
             dx = x - x0
             df = fun(x) - f0
-            # The result is  written to columns which correspond to perturbed
+            # The result is written to columns which correspond to perturbed
             # variables.
             cols, = np.nonzero(e)
             # Find all non-zero elements in selected columns of Jacobian.
