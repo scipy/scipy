@@ -246,7 +246,7 @@ class TestDunnett:
             )
             ref = stats.ttest_ind(
                 sample, control,
-                alternative=alternative, random_state=rng
+                alternative=alternative
             )
 
             assert_allclose(res.statistic, ref.statistic, rtol=1e-3, atol=1e-5)

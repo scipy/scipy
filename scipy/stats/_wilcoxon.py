@@ -1,4 +1,3 @@
-import warnings
 import numpy as np
 
 from scipy import stats
@@ -58,6 +57,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         raise ValueError(message)
 
     message = '`axis` must be compatible with the shape(s) of `x` (and `y`)'
+    AxisError = getattr(np, 'AxisError', None) or np.exceptions.AxisError
     try:
         if y is None:
             x = np.asarray(x)
@@ -66,8 +66,8 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
             x, y = _broadcast_arrays((x, y), axis=axis)
             d = x - y
         d = np.moveaxis(d, axis, -1)
-    except np.AxisError as e:
-        raise ValueError(message) from e
+    except AxisError as e:
+        raise AxisError(message) from e
 
     message = "`x` and `y` must have the same length along `axis`."
     if y is not None and x.shape[axis] != y.shape[axis]:
@@ -110,15 +110,6 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
     n_zero = np.sum(d == 0)
     if method == "auto" and d.shape[-1] > 50:
         method = "asymptotic"
-
-    if n_zero > 0 and method == "exact":
-        warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Consider using method `asymptotic` or "
-                      "`stats.PermutationMethod`",
-                      stacklevel=2)
-
-    if 0 < d.shape[-1] < 10 and method == "asymptotic":
-        warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
     return d, zero_method, correction, alternative, method, axis, output_z, n_zero
 

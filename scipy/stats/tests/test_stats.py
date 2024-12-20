@@ -22,7 +22,6 @@ from numpy.testing import (assert_, assert_equal,
                            assert_array_less)
 import pytest
 from pytest import raises as assert_raises
-import numpy.ma.testutils as mat
 from numpy import array, arange, float32, power
 import numpy as np
 
@@ -621,23 +620,31 @@ class TestPearsonr:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(method="exact")
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.xfail_on_32bit("Monte Carlo method needs > a few kB of memory")
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
-    def test_resampling_pvalue(self, method, alternative):
+    @pytest.mark.parametrize('method_name',
+                             ('permutation', 'monte_carlo', 'monte_carlo2'))
+    def test_resampling_pvalue(self, method_name, alternative):
         rng = np.random.default_rng(24623935790378923)
-        size = (2, 100) if method == 'permutation' else (2, 1000)
+        size = (2, 100) if method_name == 'permutation' else (2, 1000)
         x = rng.normal(size=size)
         y = rng.normal(size=size)
         methods = {'permutation': stats.PermutationMethod(rng=rng),
-                   'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2)}
-        method = methods[method]
+                   'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2),
+                   'monte_carlo2': stats.MonteCarloMethod(rng=1294)}
+        method = methods[method_name]
         res = stats.pearsonr(x, y, alternative=alternative, method=method, axis=-1)
         ref = stats.pearsonr(x, y, alternative=alternative, axis=-1)
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
+
+        if method_name == 'monte_carlo2':
+            method = stats.MonteCarloMethod(rng=1294)
+            res2 = stats.pearsonr(x, y, alternative=alternative, method=method, axis=-1)
+            assert_equal(res2.statistic, res.statistic)
+            assert_equal(res2.pvalue, res.pvalue)
 
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
@@ -878,9 +885,10 @@ class TestFisherExact:
         assert_approx_equal(res, 0.2751, significant=4)
 
     def test_raises(self):
-        # test we raise an error for wrong shape of input.
-        assert_raises(ValueError, stats.fisher_exact,
-                      np.arange(6).reshape(2, 3))
+        # test we raise an error for wrong number of dimensions.
+        message = "The input `table` must have two dimensions."
+        with pytest.raises(ValueError, match=message):
+            stats.fisher_exact(np.arange(6))
 
     def test_row_or_col_zero(self):
         tables = ([[0, 0], [5, 10]],
@@ -936,6 +944,102 @@ class TestFisherExact:
         table = np.array([[14500, 20000], [30000, 40000]])
         res = stats.fisher_exact(table, alternative=alternative)
         assert_equal((res.statistic, res.pvalue), res)
+
+    def test_input_validation_edge_cases_rxc(self):
+        rng = np.random.default_rng(2345783457834572345)
+        table = np.asarray([[2, 7], [8, 2]])
+
+        message = r"`alternative` must be the default \(None\) unless..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.PermutationMethod(rng=rng)
+            stats.fisher_exact(table, method=method, alternative='less')
+
+        message = "...not recognized; if provided, `method` must be an..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.BootstrapMethod(rng=rng)
+            stats.fisher_exact(table, method=method)
+
+        message = "If the `method` argument of `fisher_exact` is an..."
+        with pytest.raises(ValueError, match=message):
+            method = stats.MonteCarloMethod(rvs=stats.norm.rvs)
+            stats.fisher_exact(table, method=method)
+
+        message = "`table` must have at least one row and one column."
+        with pytest.raises(ValueError, match=message):
+            stats.fisher_exact(np.zeros((0, 1)))
+
+        # Specical case: when there is only one table with given marginals, the
+        # PMF of that case is 1.0, so the p-value is 1.0
+        np.testing.assert_equal(stats.fisher_exact([[1, 2, 3]]), (1, 1))
+        np.testing.assert_equal(stats.fisher_exact([[1], [2], [3]]), (1, 1))
+        np.testing.assert_equal(stats.fisher_exact(np.zeros((2, 3))), (1, 1))
+
+
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.slow()
+    def test_resampling_2x2(self):
+        rng = np.random.default_rng(2345783457834572345)
+        table = np.asarray([[2, 7], [8, 2]])
+        ref = stats.fisher_exact(table)
+        ref_pvalue = ref.pvalue
+        ref_stat = stats.random_table(table.sum(axis=1), table.sum(axis=0)).pmf(table)
+
+        method = stats.MonteCarloMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=0.0025)
+        assert_equal(res.statistic, ref_stat)
+
+        method = stats.PermutationMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref.pvalue, atol=0.0025)
+        assert_equal(res.statistic, ref_stat)
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.slow()
+    def test_resampling_rxc(self):
+        # Compare against R fisher.exact
+        # options(digits=16)
+        # MP6 < - rbind(
+        #     c(1, 2, 2, 1, 1, 0, 1),
+        #     c(2, 0, 0, 2, 3, 0, 0),
+        #     c(0, 1, 1, 1, 2, 7, 3),
+        #     c(1, 1, 2, 0, 0, 0, 1),
+        #     c(0, 1, 1, 1, 1, 0, 0))
+        # fisher.test(MP6)
+
+        table = [[1, 2, 2, 1, 1, 0, 1],
+                 [2, 0, 0, 2, 3, 0, 0],
+                 [0, 1, 1, 1, 2, 7, 3],
+                 [1, 1, 2, 0, 0, 0, 1],
+                 [0, 1, 1, 1, 1, 0, 0]]
+        table = np.asarray(table)
+
+        ref_pvalue = 0.03928964365533
+        rng = np.random.default_rng(3928964365533)
+
+        method = stats.PermutationMethod(rng=rng)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=5e-4)
+
+        method = stats.MonteCarloMethod(rng=rng, n_resamples=99999)
+        res = stats.fisher_exact(table, method=method)
+        assert_allclose(res.pvalue, ref_pvalue, atol=5e-4)
+
+    @pytest.mark.xslow()
+    def test_resampling_exact_2x2(self):
+        # Test that exact permutation p-value matches result of `fisher_exact`
+        rng = np.random.default_rng(2345783457834572345)
+        method = stats.PermutationMethod(rng=rng)
+
+        for a in range(1, 3):
+            for b in range(1, 3):
+                for c in range(1, 3):
+                    for d in range(1, 4):
+                        table = np.asarray([[a, b], [c, d]])
+                        ref = stats.fisher_exact(table)
+                        res = stats.fisher_exact(table, method=method)
+                        assert_allclose(res.pvalue, ref.pvalue, atol=1e-14)
 
 
 class TestCorrSpearmanr:
@@ -2043,14 +2147,6 @@ class TestFindRepeats:
 
 
 class TestRegression:
-
-    def test_one_arg_deprecation(self):
-        x = np.arange(20).reshape((2, 10))
-        message = "Inference of the two sets..."
-        with pytest.deprecated_call(match=message):
-            stats.linregress(x)
-        stats.linregress(x[0], x[1])
-
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
         result = stats.linregress(X, BIG)
@@ -2141,42 +2237,6 @@ class TestRegression:
         assert_allclose(res.pvalue, 1.16440531074e-06)
         assert_allclose(res.stderr, 0.0519051424731)
         assert_allclose(res.intercept_stderr, 8.0490133029927)
-
-    # TODO: remove this test once single-arg support is dropped;
-    # deprecation warning tested in `test_one_arg_deprecation`
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_regress_simple_onearg_rows(self):
-        # Regress a line w sinusoidal noise,
-        # with a single input of shape (2, N)
-        x = np.linspace(0, 100, 100)
-        y = 0.2 * np.linspace(0, 100, 100) + 10
-        y += np.sin(np.linspace(0, 20, 100))
-        rows = np.vstack((x, y))
-
-        result = stats.linregress(rows)
-        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
-        assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
-
-    # TODO: remove this test once single-arg support is dropped;
-    # deprecation warning tested in `test_one_arg_deprecation`
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_regress_simple_onearg_cols(self):
-        x = np.linspace(0, 100, 100)
-        y = 0.2 * np.linspace(0, 100, 100) + 10
-        y += np.sin(np.linspace(0, 20, 100))
-        columns = np.hstack((np.expand_dims(x, 1), np.expand_dims(y, 1)))
-
-        result = stats.linregress(columns)
-        assert_almost_equal(result.stderr, 2.3957814497838803e-3)
-        assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
-
-    # TODO: remove this test once single-arg support is dropped;
-    # deprecation warning tested in `test_one_arg_deprecation`
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_regress_shape_error(self):
-        # Check that a single input argument to linregress with wrong shape
-        # results in a ValueError.
-        assert_raises(ValueError, stats.linregress, np.ones((3, 3)))
 
     def test_linregress(self):
         # compared with multivariate ols with pinv
@@ -4383,93 +4443,6 @@ class TestChisquare:
         xp_assert_equal(res.pvalue, p)
 
 
-@skip_xp_invalid_arg
-class TestChisquareMA:
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_chisquare_masked_arrays(self):
-        # Test masked arrays.
-        obs = np.array([[8, 8, 16, 32, -1], [-1, -1, 3, 4, 5]]).T
-        mask = np.array([[0, 0, 0, 0, 1], [1, 1, 0, 0, 0]]).T
-        mobs = np.ma.masked_array(obs, mask)
-        expected_chisq = np.array([24.0, 0.5])
-        expected_g = np.array([2*(2*8*np.log(0.5) + 32*np.log(2.0)),
-                               2*(3*np.log(0.75) + 5*np.log(1.25))])
-
-        chi2 = stats.distributions.chi2
-
-        chisq, p = stats.chisquare(mobs)
-        mat.assert_array_equal(chisq, expected_chisq)
-        mat.assert_array_almost_equal(p, chi2.sf(expected_chisq,
-                                                 mobs.count(axis=0) - 1))
-
-        g, p = stats.power_divergence(mobs, lambda_='log-likelihood')
-        mat.assert_array_almost_equal(g, expected_g, decimal=15)
-        mat.assert_array_almost_equal(p, chi2.sf(expected_g,
-                                                 mobs.count(axis=0) - 1))
-
-        chisq, p = stats.chisquare(mobs.T, axis=1)
-        mat.assert_array_equal(chisq, expected_chisq)
-        mat.assert_array_almost_equal(p, chi2.sf(expected_chisq,
-                                                 mobs.T.count(axis=1) - 1))
-        g, p = stats.power_divergence(mobs.T, axis=1, lambda_="log-likelihood")
-        mat.assert_array_almost_equal(g, expected_g, decimal=15)
-        mat.assert_array_almost_equal(p, chi2.sf(expected_g,
-                                                 mobs.count(axis=0) - 1))
-
-        obs1 = np.ma.array([3, 5, 6, 99, 10], mask=[0, 0, 0, 1, 0])
-        exp1 = np.ma.array([2, 4, 8, 10, 99], mask=[0, 0, 0, 0, 1])
-        chi2, p = stats.chisquare(obs1, f_exp=exp1)
-        # Because of the mask at index 3 of obs1 and at index 4 of exp1,
-        # only the first three elements are included in the calculation
-        # of the statistic.
-        mat.assert_array_equal(chi2, 1/2 + 1/4 + 4/8)
-
-        # When axis=None, the two values should have type np.float64.
-        chisq, p = stats.chisquare(np.ma.array([1,2,3]), axis=None)
-        assert_(isinstance(chisq, np.float64))
-        assert_(isinstance(p, np.float64))
-        assert_equal(chisq, 1.0)
-        assert_almost_equal(p, stats.distributions.chi2.sf(1.0, 2))
-
-        # Empty arrays:
-        # A data set with length 0 returns a masked scalar.
-        with np.errstate(invalid='ignore'):
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning, "Mean of empty slice")
-                chisq, p = stats.chisquare(np.ma.array([]))
-        assert_(isinstance(chisq, np.ma.MaskedArray))
-        assert_equal(chisq.shape, ())
-        assert_(chisq.mask)
-
-        empty3 = np.ma.array([[],[],[]])
-
-        # empty3 is a collection of 0 data sets (whose lengths would be 3, if
-        # there were any), so the return value is an array with length 0.
-        chisq, p = stats.chisquare(empty3)
-        assert_(isinstance(chisq, np.ma.MaskedArray))
-        mat.assert_array_equal(chisq, [])
-
-        # empty3.T is an array containing 3 data sets, each with length 0,
-        # so an array of size (3,) is returned, with all values masked.
-        with np.errstate(invalid='ignore'):
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning, "Mean of empty slice")
-                chisq, p = stats.chisquare(empty3.T)
-
-        assert_(isinstance(chisq, np.ma.MaskedArray))
-        assert_equal(chisq.shape, (3,))
-        assert_(np.all(chisq.mask))
-
-    def test_deprecation_warning(self):
-        a = np.asarray([1., 2., 3.])
-        ma = np.ma.masked_array(a)
-        message = "`power_divergence` and `chisquare` support for masked..."
-        with pytest.warns(DeprecationWarning, match=message):
-            stats.chisquare(ma)
-        with pytest.warns(DeprecationWarning, match=message):
-            stats.chisquare(a, ma)
-
-
 def test_friedmanchisquare():
     # see ticket:113
     # verified with matlab and R
@@ -5321,14 +5294,14 @@ def test_ttest_ind_nan_policy():
         return 1 - (p / 2)
     converter = np.vectorize(convert)
 
-    tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit')
+    tr, pr = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit')
 
-    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
+    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit',
                            alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
-    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, 0, nan_policy='omit',
+    t, p = stats.ttest_ind(rvs1_3D, rvs2_3D, axis=0, nan_policy='omit',
                            alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
     assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
@@ -5343,6 +5316,7 @@ def test_ttest_ind_scalar():
     assert np.isnan(p)
 
 
+@pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
 class Test_ttest_ind_permutations:
     N = 20
 
@@ -5589,20 +5563,99 @@ class Test_ttest_ind_permutations:
         print(0.0 not in p_values)
         assert 0.0 not in p_values
 
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("shape", [(12,), (2, 12)])
+    def test_permutation_method(self, alternative, shape):
+        rng = np.random.default_rng(2348934579834565)
+        x = rng.random(size=shape)
+        y = rng.random(size=13)
+
+        kwargs = dict(n_resamples=999)
+
+        # Use ttest_ind with `method`
+        rng = np.random.default_rng(348934579834565)
+        method = stats.PermutationMethod(rng=rng, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+
+        # Use `permutation_test` directly
+        def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
+        rng =  np.random.default_rng(348934579834565)
+        ref = stats.permutation_test((x, y), statistic, axis=-1, rng=rng,
+                                     alternative=alternative, **kwargs)
+
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Sanity check against theoretical t-test
+        ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
+        assert_equal(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=3e-2)
+
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize("shape", [(12,), (2, 12)])
+    def test_monte_carlo_method(self, alternative, shape):
+        rng = np.random.default_rng(2348934579834565)
+        x = rng.random(size=shape)
+        y = rng.random(size=13)
+
+        kwargs = dict(n_resamples=999)
+
+        # Use `monte_carlo` directly
+        def statistic(x, y, axis): return stats.ttest_ind(x, y, axis=axis).statistic
+        rng = np.random.default_rng(348934579834565)
+        rvs = [rng.standard_normal, rng.standard_normal]
+        ref = stats.monte_carlo_test((x, y), rvs=rvs, statistic=statistic, axis=-1,
+                                     alternative=alternative, **kwargs)
+
+        # Use ttest_ind with `method`
+        rng = np.random.default_rng(348934579834565)
+        rvs = [rng.standard_normal, rng.standard_normal]
+        method = stats.MonteCarloMethod(rvs=rvs, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Passing `rng` instead of `rvs`
+        method = stats.MonteCarloMethod(rng=348934579834565, **kwargs)
+        res = stats.ttest_ind(x, y, axis=-1, alternative=alternative, method=method)
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        # Sanity check against theoretical t-test
+        ref = stats.ttest_ind(x, y, axis=-1, alternative=alternative)
+        assert_equal(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=6e-2)
+
+    def test_resampling_input_validation(self):
+        message = "`method` must be an instance of `PermutationMethod`, an instance..."
+        with pytest.raises(ValueError, match=message):
+            stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
+
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,
                                   reason='Uses NumPy for pvalue, CI')
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_permutation_not_implement_for_xp(self, xp):
-        message = "Use of `permutations` is compatible only with NumPy arrays."
         a2, b2 = xp.asarray(self.a2), xp.asarray(self.b2)
+
+        message = "Use of `permutations` is compatible only with NumPy arrays."
         if is_numpy(xp):  # no error
             stats.ttest_ind(a2, b2, permutations=10)
         else:  # NotImplementedError
             with pytest.raises(NotImplementedError, match=message):
                 stats.ttest_ind(a2, b2, permutations=10)
 
+        message = "Use of resampling methods is compatible only with NumPy arrays."
+        rng = np.random.default_rng(7457345872572348)
+        method = stats.PermutationMethod(rng=rng)
+        if is_numpy(xp):  # no error
+            stats.ttest_ind(a2, b2, method=method)
+        else:  # NotImplementedError
+            with pytest.raises(NotImplementedError, match=message):
+                stats.ttest_ind(a2, b2, method=method)
 
+
+@pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
 class Test_ttest_ind_common:
     # for tests that are performed on variations of the t-test such as
     # permutations and trimming
@@ -5797,7 +5850,15 @@ class Test_ttest_trim:
         # confirm that attempting to trim with permutations raises an error
         match = "Use of `permutations` is incompatible with with use of `trim`."
         with assert_raises(NotImplementedError, match=match):
-            stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
+            message = "Arguments {'permutations'} are deprecated, whether..."
+            with pytest.warns(DeprecationWarning, match=message):
+                stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
+
+        with assert_raises(NotImplementedError, match=match):
+            message = "Arguments {.*'random_state'.*} are deprecated, whether..."
+            with pytest.warns(DeprecationWarning, match=message):
+                stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2,
+                                random_state=2)
 
     @array_api_compatible
     @pytest.mark.skip_xp_backends(cpu_only=True,
@@ -5860,12 +5921,12 @@ class Test_ttest_CI:
     r[1, 0, 1] = [-0.2452886, 11.427896, 0.40529115, -np.inf, 0.1865829074]
     r[2, 0, 1] = [-0.2452886, 11.427896, 0.5947089, -0.268683541, np.inf]
     # confidence interval not available for equal_var=True
-    r[0, 1, 0] = [-0.2345625322555006, 22, 0.8167175905643815, None, None]
-    r[1, 1, 0] = [-0.2345625322555006, 22, 0.4083587952821908, None, None]
-    r[2, 1, 0] = [-0.2345625322555006, 22, 0.5916412047178092, None, None]
-    r[0, 1, 1] = [-0.2505369406507428, 14, 0.8058115135702835, None, None]
-    r[1, 1, 1] = [-0.2505369406507428, 14, 0.4029057567851417, None, None]
-    r[2, 1, 1] = [-0.2505369406507428, 14, 0.5970942432148583, None, None]
+    r[0, 1, 0] = [-0.2345625322555006, 22, 0.8167175905643815, np.nan, np.nan]
+    r[1, 1, 0] = [-0.2345625322555006, 22, 0.4083587952821908, np.nan, np.nan]
+    r[2, 1, 0] = [-0.2345625322555006, 22, 0.5916412047178092, np.nan, np.nan]
+    r[0, 1, 1] = [-0.2505369406507428, 14, 0.8058115135702835, np.nan, np.nan]
+    r[1, 1, 1] = [-0.2505369406507428, 14, 0.4029057567851417, np.nan, np.nan]
+    r[2, 1, 1] = [-0.2505369406507428, 14, 0.5970942432148583, np.nan, np.nan]
     @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])

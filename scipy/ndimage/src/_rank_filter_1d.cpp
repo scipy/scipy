@@ -304,7 +304,20 @@ static struct PyModuleDef _rank_filter_1d = {
     myMethods};
 
 // init the module
-PyMODINIT_FUNC PyInit__rank_filter_1d(void) {
-  import_array();
-  return PyModule_Create(&_rank_filter_1d);
+PyMODINIT_FUNC
+PyInit__rank_filter_1d(void)
+{
+    PyObject *module;
+
+    import_array();
+    module = PyModule_Create(&_rank_filter_1d);
+    if (module == NULL) {
+        return module;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+  return module;
 }

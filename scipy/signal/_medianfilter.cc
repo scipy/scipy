@@ -17,7 +17,7 @@ void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*,int*);
  * Author: Thouis R. Jones, 2008
  */
 
-#define ELEM_SWAP(t, a, x, y) {register t temp = (a)[x]; (a)[x] = (a)[y]; (a)[y] = temp;}
+#define ELEM_SWAP(t, a, x, y) {t temp = (a)[x]; (a)[x] = (a)[y]; (a)[y] = temp;}
 #define FIRST_LOWEST(x, y, z) (((x) < (y)) && ((x) < (z)))
 #define FIRST_HIGHEST(x, y, z) (((x) > (y)) && ((x) > (z)))
 #define LOWEST_IDX(a, x, y) (((a)[x] < (a)[y]) ? (x) : (y))

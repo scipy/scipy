@@ -196,13 +196,13 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
 
 @pytest.mark.parametrize('n', (10, 100, 1000))
 def test_dijkstra_min_only_random(n):
-    np.random.seed(1234)
+    rng = np.random.default_rng(7345782358920239234)
     data = scipy.sparse.random_array((n, n), density=0.5, format='lil',
-                                     random_state=42, dtype=np.float64)
+                                     rng=rng, dtype=np.float64)
     data.setdiag(np.zeros(n, dtype=np.bool_))
     # choose some random vertices
     v = np.arange(n)
-    np.random.shuffle(v)
+    rng.shuffle(v)
     indices = v[:int(n*.1)]
     ds, pred, sources = dijkstra(data,
                                  directed=True,
@@ -255,7 +255,7 @@ def test_gh_17782_segfault():
                 43 33 4.000000000000000e+00
                 44 43 6.028000259399414e+01
     """
-    data = mmread(StringIO(text))
+    data = mmread(StringIO(text), spmatrix=False)
     dijkstra(data, directed=True, return_predecessors=True)
 
 

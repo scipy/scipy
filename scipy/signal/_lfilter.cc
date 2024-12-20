@@ -8,28 +8,23 @@
 #include <numpy/ndarrayobject.h>
 #include "npy_2_compat.h"
 
-#include "_sigtools.h"
-
-{{py:
-
-TNAMES = ['FLOAT', 'DOUBLE', 'EXTENDED']
-TYPES = ['float', 'double', 'npy_longdouble']
-
-}}
+#include "_sigtools.hh"
 
 
-{{for TNAME in TNAMES}}
-static void {{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
+template<int TYPECODE>
+static void filt(char *b, char *a, char *x, char *y, char *Z,
+                 npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
+                 npy_intp stride_Y);
+
+template<int TYPECODE>
+static void cmplx_filt(char *b, char *a, char *x, char *y, char *Z,
                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                        npy_intp stride_Y);
-static void C{{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
-                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
-                        npy_intp stride_Y);
-{{endfor}}
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                         npy_intp stride_Y);
+
 
 typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *,
                                     npy_intp, npy_uintp, npy_intp, npy_intp);
@@ -43,12 +38,12 @@ scipy_signal__sigtools_linear_filter_module_init(void)
     for (k = 0; k < 256; ++k) {
         BasicFilterFunctions[k] = NULL;
     }
-    BasicFilterFunctions[NPY_FLOAT] = FLOAT_filt;
-    BasicFilterFunctions[NPY_DOUBLE] = DOUBLE_filt;
-    BasicFilterFunctions[NPY_LONGDOUBLE] = EXTENDED_filt;
-    BasicFilterFunctions[NPY_CFLOAT] = CFLOAT_filt;
-    BasicFilterFunctions[NPY_CDOUBLE] = CDOUBLE_filt;
-    BasicFilterFunctions[NPY_CLONGDOUBLE] = CEXTENDED_filt;
+    BasicFilterFunctions[NPY_FLOAT] = filt<NPY_FLOAT>;
+    BasicFilterFunctions[NPY_DOUBLE] = filt<NPY_DOUBLE>;
+    BasicFilterFunctions[NPY_LONGDOUBLE] = filt<NPY_LONGDOUBLE>;
+    BasicFilterFunctions[NPY_CFLOAT] = cmplx_filt<NPY_CFLOAT>;
+    BasicFilterFunctions[NPY_CDOUBLE] = cmplx_filt<NPY_CDOUBLE>;
+    BasicFilterFunctions[NPY_CLONGDOUBLE] = cmplx_filt<NPY_CLONGDOUBLE>;
     BasicFilterFunctions[NPY_OBJECT] = OBJECT_filt;
 }
 
@@ -212,7 +207,7 @@ scipy_signal__sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * ar
     if (azero == NULL) {
         goto fail;
     }
-    ara_ptr = PyArray_DATA(ara);
+    ara_ptr = (char *)PyArray_DATA(ara);
     nal = PyArray_ITEMSIZE(ara);
     st = memcmp(ara_ptr, azero, nal);
     PyDataMem_FREE(azero);
@@ -425,19 +420,19 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
 
     nfilt = na > nb ? na : nb;
 
-    azfilled = malloc(nal * nfilt);
+    azfilled = (char *)malloc(nal * nfilt);
     if (azfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create azfilled");
         goto clean_itzf;
     }
-    bzfilled = malloc(nbl * nfilt);
+    bzfilled = (char *)malloc(nbl * nfilt);
     if (bzfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create bzfilled");
         goto clean_azfilled;
     }
 
     nxl = PyArray_ITEMSIZE(x);
-    zfzfilled = malloc(nxl * (nfilt - 1));
+    zfzfilled = (char *)malloc(nxl * (nfilt - 1));
     if (zfzfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create zfzfilled");
         goto clean_bzfilled;
@@ -539,19 +534,20 @@ fail:
  *   dimension of an N-D array.                                  *
  *****************************************************************/
 
-
-{{for TNAME, TYPE in zip(TNAMES, TYPES)}}
-static void {{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
+template<int TYPECODE>
+static void filt(char *b, char *a, char *x, char *y, char *Z,
                        npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                        npy_intp stride_Y)
 {
+    typedef typename traits<TYPECODE>::real_type real_type;
+
     Py_BEGIN_ALLOW_THREADS
     char *ptr_x = x, *ptr_y = y;
-    {{TYPE}} *ptr_Z;
-    {{TYPE}} *ptr_b = ({{TYPE}}*)b;
-    {{TYPE}} *ptr_a = ({{TYPE}}*)a;
-    {{TYPE}} *xn, *yn;
-    const {{TYPE}} a0 = *(({{TYPE}} *) a);
+    real_type *ptr_Z;
+    real_type *ptr_b = (real_type *)b;
+    real_type *ptr_a = (real_type *)a;
+    real_type *xn, *yn;
+    const real_type a0 = *((real_type *) a);
     npy_intp n;
     npy_uintp k;
 
@@ -562,12 +558,12 @@ static void {{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
     }
 
     for (k = 0; k < len_x; k++) {
-        ptr_b = ({{TYPE}} *) b;   /* Reset a and b pointers */
-        ptr_a = ({{TYPE}} *) a;
-        xn = ({{TYPE}} *) ptr_x;
-        yn = ({{TYPE}} *) ptr_y;
+        ptr_b = (real_type *) b;   /* Reset a and b pointers */
+        ptr_a = (real_type *) a;
+        xn = (real_type *) ptr_x;
+        yn = (real_type *) ptr_y;
         if (len_b > 1) {
-            ptr_Z = (({{TYPE}} *) Z);
+            ptr_Z = ((real_type *) Z);
             *yn = *ptr_Z + *ptr_b  * *xn;   /* Calculate first delay (output) */
             ptr_b++;
             ptr_a++;
@@ -592,29 +588,32 @@ static void {{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
 }
 
 
-static void C{{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
+template<int TYPECODE>
+static void cmplx_filt(char *b, char *a, char *x, char *y, char *Z,
                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,
                         npy_intp stride_Y)
 {
+    typedef typename traits<TYPECODE>::real_type real_type;
+
     Py_BEGIN_ALLOW_THREADS
     char *ptr_x = x, *ptr_y = y;
-    {{TYPE}} *ptr_Z, *ptr_b;
-    {{TYPE}} *ptr_a;
-    {{TYPE}} *xn, *yn;
-    {{TYPE}} a0r = (({{TYPE}} *) a)[0];
-    {{TYPE}} a0i = (({{TYPE}} *) a)[1];
-    {{TYPE}} a0_mag, tmpr, tmpi;
+    real_type *ptr_Z, *ptr_b;
+    real_type *ptr_a;
+    real_type *xn, *yn;
+    real_type a0r = ((real_type *) a)[0];
+    real_type a0i = ((real_type *) a)[1];
+    real_type a0_mag, tmpr, tmpi;
     npy_intp n;
     npy_uintp k;
 
     a0_mag = a0r * a0r + a0i * a0i;
     for (k = 0; k < len_x; k++) {
-        ptr_b = ({{TYPE}} *) b;   /* Reset a and b pointers */
-        ptr_a = ({{TYPE}} *) a;
-        xn = ({{TYPE}} *) ptr_x;
-        yn = ({{TYPE}} *) ptr_y;
+        ptr_b = (real_type *) b;   /* Reset a and b pointers */
+        ptr_a = (real_type *) a;
+        xn = (real_type *) ptr_x;
+        yn = (real_type *) ptr_y;
         if (len_b > 1) {
-            ptr_Z = (({{TYPE}} *) Z);
+            ptr_Z = ((real_type *) Z);
             tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
             tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
             /* Calculate first delay (output) */
@@ -661,7 +660,7 @@ static void C{{TNAME}}_filt(char *b, char *a, char *x, char *y, char *Z,
     }
     Py_END_ALLOW_THREADS
 }
-{{endfor}}
+
 
 static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
                         npy_intp len_b, npy_uintp len_x, npy_intp stride_X,

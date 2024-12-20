@@ -1369,7 +1369,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         if not footprint.flags.contiguous:
             footprint = footprint.copy()
         if structure is not None:
-            if len(structure.shape) != input.ndim:
+            if len(structure.shape) != num_axes:
                 raise RuntimeError("structure array has incorrect shape")
             if num_axes != structure.ndim:
                 structure = np.expand_dims(

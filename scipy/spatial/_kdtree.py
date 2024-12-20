@@ -1,7 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-from ._ckdtree import cKDTree, cKDTreeNode
+from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',

@@ -84,7 +84,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 
 
 @docfiller
-def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     """
     Load MATLAB file.
 
@@ -98,6 +98,9 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     appendmat : bool, optional
        True to append the .mat extension to the end of the given
        filename, if not already present. Default is True.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        Only relevant for sparse variables.
     byte_order : str or None, optional
        None by default, implying byte order guessed from mat
        file. Otherwise can be one of ('native', '=', 'little', '<',
@@ -147,8 +150,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     Returns
     -------
     mat_dict : dict
-       dictionary with variable names as keys, and loaded matrices as
-       values.
+       dictionary with variable names as keys, and loaded matrices as values.
 
     Notes
     -----
@@ -170,7 +172,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
 
     Load the .mat file contents.
 
-    >>> mat_contents = sio.loadmat(mat_fname)
+    >>> mat_contents = sio.loadmat(mat_fname, spmatrix=False)
 
     The result is a dictionary, one key/value pair for each variable:
 
@@ -231,6 +233,11 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
+    if spmatrix:
+        from scipy.sparse import issparse, coo_matrix
+        for name, var in list(matfile_dict.items()):
+            if issparse(var):
+                matfile_dict[name] = coo_matrix(var)
 
     if mdict is not None:
         mdict.update(matfile_dict)

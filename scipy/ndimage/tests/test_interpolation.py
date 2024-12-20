@@ -6,7 +6,7 @@ from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close,
     assert_array_almost_equal,
 )
-from scipy._lib._array_api import is_cupy, is_jax, _asarray, array_namespace
+from scipy._lib._array_api import is_jax, _asarray, array_namespace
 
 import pytest
 from pytest import raises as assert_raises
@@ -16,7 +16,9 @@ from . import types
 
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
+              pytest.mark.usefixtures("xfail_xp_backends"),
               skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
 
 
@@ -450,7 +452,7 @@ class TestGeometricTransformExtra:
         x = np.arange(144, dtype=float).reshape(12, 12)
         npad = 24
         pad_mode = ndimage_to_numpy_mode.get(mode)
-        x_padded = np.pad(x, npad, mode=pad_mode) 
+        x_padded = np.pad(x, npad, mode=pad_mode)
 
         x = xp.asarray(x)
         x_padded = xp.asarray(x_padded)
@@ -796,11 +798,9 @@ class TestAffineTransform:
                                        (3, 4), order=order)
         assert_array_almost_equal(out, data)
 
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8394")
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform20(self, order, xp):
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8394")
-
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
@@ -809,11 +809,9 @@ class TestAffineTransform:
                                        order=order)
         assert_array_almost_equal(out, xp.asarray([1, 3]))
 
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8394")
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform21(self, order, xp):
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8394")
-
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
@@ -893,10 +891,8 @@ class TestAffineTransform:
                                                        [0, 4, 1, 3],
                                                        [0, 7, 6, 8]]))
 
+    @xfail_xp_backends("cupy", reason="does not raise")
     def test_affine_transform27(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not raise")
-
         # test valid homogeneous transformation matrix
         data = xp.asarray([[4, 1, 3, 2],
                            [7, 6, 8, 5],
@@ -1306,6 +1302,7 @@ class TestZoom:
         )
 
     @pytest.mark.parametrize('mode', ['constant', 'wrap'])
+    @pytest.mark.thread_unsafe
     def test_zoom_grid_mode_warnings(self, mode, xp):
         # Warn on use of non-grid modes when grid_mode is True
         x = xp.reshape(xp.arange(9, dtype=xp.float64), (3, 3))
@@ -1474,10 +1471,9 @@ class TestRotate:
         #assert_array_almost_equal(out, expected)
         xp_assert_close(out, expected, rtol=1e-6, atol=2e-6)
 
-    def test_rotate_exact_180(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8400")
 
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8400")
+    def test_rotate_exact_180(self, xp):
         a = np.tile(xp.arange(5), (5, 1))
         b = ndimage.rotate(ndimage.rotate(a, 180), -180)
         xp_assert_equal(a, b)

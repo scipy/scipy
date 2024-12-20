@@ -468,8 +468,15 @@ Random Variables
 .. autosummary::
    :toctree: generated/
 
+   make_distribution
    Normal
+   Uniform
    Mixture
+   order_statistic
+   truncate
+   abs
+   exp
+   log
 
 Quasi-Monte Carlo
 =================
@@ -639,8 +646,10 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
-from ._distribution_infrastructure import Mixture
-from ._new_distributions import Normal
+from ._distribution_infrastructure import (
+    make_distribution, Mixture, order_statistic, truncate, exp, log, abs
+)
+from ._new_distributions import Normal, Uniform
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi
 

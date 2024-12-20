@@ -7,7 +7,7 @@
 #define NO_IMPORT_ARRAY
 #include "numpy/ndarrayobject.h"
 #include "npy_2_compat.h"
-#include "_sigtools.h"
+#include "_sigtools.hh"
 
 enum {
     CORR_MODE_VALID=0,
@@ -106,47 +106,28 @@ clean_ax:
  * Implementation of the type-specific correlation 'kernels'
  */
 
-{{py:
-
-INT_TYPES = ['npy_ubyte', 'npy_byte', 'npy_ushort', 'short', 'npy_uint', 'int',
-             'npy_ulong', 'long', 'npy_ulonglong', 'npy_longlong']
-INT_FSUFS = ['ubyte', 'byte', 'ushort', 'short', 'uint', 'int',
-             'ulong', 'long', 'ulonglong', 'longlong']
-
-
-REAL_TYPES = ['float', 'double', 'npy_longdouble']
-REAL_FSUFS = ['float', 'double', 'longdouble']
-
-ALL_TYPENUMS = ['UBYTE', 'BYTE', 'USHORT', 'SHORT', 'UINT', 'INT',
-                'ULONG', 'LONG', 'ULONGLONG', 'LONGLONG',
-                'FLOAT', 'DOUBLE', 'LONGDOUBLE',
-                'CFLOAT', 'CDOUBLE', 'CLONGDOUBLE']
-
-CMPLX_FSUFS = ['cfloat', 'cdouble', 'clongdouble']
-
-}}
-
-
-{{for FSUF, TYPE in zip(INT_FSUFS + REAL_FSUFS, INT_TYPES + REAL_TYPES)}}
-static int _imp_correlate_nd_{{FSUF}}(PyArrayNeighborhoodIterObject *curx,
+template<int TYPECODE>
+static int _imp_correlate_nd(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
         PyArrayIterObject *itz)
 {
+    typedef typename traits<TYPECODE>::real_type real_type;
+
     npy_intp i, j;
-    {{TYPE}} acc;
+    real_type acc;
 
     for(i = 0; i < curx->size; ++i) {
         acc = 0;
         PyArrayNeighborhoodIter_Reset(curneighx);
         for(j = 0; j < curneighx->size; ++j) {
-            acc += *(({{TYPE}}*)(curneighx->dataptr)) * *(({{TYPE}}*)(ity->dataptr));
+            acc += *((real_type *)(curneighx->dataptr)) * *((real_type *)(ity->dataptr));
 
             PyArrayNeighborhoodIter_Next(curneighx);
             PyArray_ITER_NEXT(ity);
         }
         PyArrayNeighborhoodIter_Next(curx);
 
-        *(({{TYPE}}*)(itz->dataptr)) = acc;
+        *((real_type *)(itz->dataptr)) = acc;
         PyArray_ITER_NEXT(itz);
 
         PyArray_ITER_RESET(ity);
@@ -155,28 +136,29 @@ static int _imp_correlate_nd_{{FSUF}}(PyArrayNeighborhoodIterObject *curx,
     return 0;
 }
 
-{{endfor}}
-
 
 /*
  * Complex-valued kernels
  */
-{{for FSUF, TYPE in zip(REAL_FSUFS, REAL_TYPES)}}
-static int _imp_correlate_nd_c{{FSUF}}(PyArrayNeighborhoodIterObject *curx,
+
+template<int TYPECODE>
+static int _imp_correlate_nd_cmplx(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
         PyArrayIterObject *itz)
 {
+    typedef typename traits<TYPECODE>::real_type real_type;
+
     npy_intp i, j;
-    {{TYPE}} racc, iacc;
-    {{TYPE}} *ptr1, *ptr2;
+    real_type racc, iacc;
+    real_type *ptr1, *ptr2;
 
     for(i = 0; i < curx->size; ++i) {
         racc = 0;
         iacc = 0;
         PyArrayNeighborhoodIter_Reset(curneighx);
         for(j = 0; j < curneighx->size; ++j) {
-            ptr1 = (({{TYPE}}*)(curneighx->dataptr));
-            ptr2 = (({{TYPE}}*)(ity->dataptr));
+            ptr1 = ((real_type *)(curneighx->dataptr));
+            ptr2 = ((real_type *)(ity->dataptr));
             racc += ptr1[0] * ptr2[0] + ptr1[1] * ptr2[1];
             iacc += ptr1[1] * ptr2[0] - ptr1[0] * ptr2[1];
 
@@ -185,8 +167,8 @@ static int _imp_correlate_nd_c{{FSUF}}(PyArrayNeighborhoodIterObject *curx,
         }
         PyArrayNeighborhoodIter_Next(curx);
 
-        (({{TYPE}}*)(itz->dataptr))[0] = racc;
-        (({{TYPE}}*)(itz->dataptr))[1] = iacc;
+        ((real_type *)(itz->dataptr))[0] = racc;
+        ((real_type *)(itz->dataptr))[1] = iacc;
         PyArray_ITER_NEXT(itz);
 
         PyArray_ITER_RESET(ity);
@@ -194,7 +176,6 @@ static int _imp_correlate_nd_c{{FSUF}}(PyArrayNeighborhoodIterObject *curx,
 
     return 0;
 }
-{{endfor}}
 
 
 static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
@@ -310,11 +291,54 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
 
     switch(typenum) {
 
-        {{for TYPENUM, FSUF in zip(ALL_TYPENUMS, INT_FSUFS+REAL_FSUFS+CMPLX_FSUFS)}}
-        case NPY_{{TYPENUM}}:
-            _imp_correlate_nd_{{FSUF}}(curx, curneighx, ity, itz);
+        case NPY_UBYTE:
+            _imp_correlate_nd<NPY_UBYTE>(curx, curneighx, ity, itz);
             break;
-        {{endfor}}
+        case NPY_BYTE:
+            _imp_correlate_nd<NPY_BYTE>(curx, curneighx, ity, itz);
+            break;
+        case NPY_USHORT:
+            _imp_correlate_nd<NPY_USHORT>(curx, curneighx, ity, itz);
+            break;
+        case NPY_SHORT:
+            _imp_correlate_nd<NPY_SHORT>(curx, curneighx, ity, itz);
+            break;
+        case NPY_UINT:
+            _imp_correlate_nd<NPY_UINT>(curx, curneighx, ity, itz);
+            break;
+        case NPY_INT:
+            _imp_correlate_nd<NPY_INT>(curx, curneighx, ity, itz);
+            break;
+        case NPY_ULONG:
+            _imp_correlate_nd<NPY_ULONG>(curx, curneighx, ity, itz);
+            break;
+        case NPY_LONG:
+            _imp_correlate_nd<NPY_LONG>(curx, curneighx, ity, itz);
+            break;
+        case NPY_ULONGLONG:
+            _imp_correlate_nd<NPY_ULONGLONG>(curx, curneighx, ity, itz);
+            break;
+        case NPY_LONGLONG:
+            _imp_correlate_nd<NPY_LONGLONG>(curx, curneighx, ity, itz);
+            break;
+        case NPY_FLOAT:
+            _imp_correlate_nd<NPY_FLOAT>(curx, curneighx, ity, itz);
+            break;
+        case NPY_DOUBLE:
+            _imp_correlate_nd<NPY_DOUBLE>(curx, curneighx, ity, itz);
+            break;
+        case NPY_LONGDOUBLE:
+            _imp_correlate_nd<NPY_LONGDOUBLE>(curx, curneighx, ity, itz);
+            break;
+        case NPY_CFLOAT:
+            _imp_correlate_nd_cmplx<NPY_CFLOAT>(curx, curneighx, ity, itz);
+            break;
+        case NPY_CDOUBLE:
+            _imp_correlate_nd_cmplx<NPY_CDOUBLE>(curx, curneighx, ity, itz);
+            break;
+        case NPY_CLONGDOUBLE:
+            _imp_correlate_nd_cmplx<NPY_CLONGDOUBLE>(curx, curneighx, ity, itz);
+            break;
 
         /* The object array case does not worth being optimized, since most of
            the cost is numerical operations, not iterators moving in this case ? */

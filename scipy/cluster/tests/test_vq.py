@@ -1,6 +1,7 @@
 import warnings
 import sys
 from copy import deepcopy
+from threading import Lock
 
 import numpy as np
 from numpy.testing import (
@@ -95,9 +96,13 @@ class TestWhiten:
                           [0.45067590, 0.45464607]])
         xp_assert_close(whiten(obs), desired, rtol=1e-5)
 
+    @pytest.fixture
+    def whiten_lock(self):
+        return Lock()
+
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
-    def test_whiten_zero_std(self, xp):
+    def test_whiten_zero_std(self, xp, whiten_lock):
         desired = xp.asarray([[0., 1.0, 2.86666544],
                               [0., 1.0, 1.32460034],
                               [0., 1.0, 3.74382172]])
@@ -105,13 +110,15 @@ class TestWhiten:
         obs = xp.asarray([[0., 1., 0.74109533],
                           [0., 1., 0.34243798],
                           [0., 1., 0.96785929]])
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
 
-            xp_assert_close(whiten(obs), desired, rtol=1e-5)
+        with whiten_lock:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
 
-            assert_equal(len(w), 1)
-            assert_(issubclass(w[-1].category, RuntimeWarning))
+                xp_assert_close(whiten(obs), desired, rtol=1e-5)
+
+                assert_equal(len(w), 1)
+                assert_(issubclass(w[-1].category, RuntimeWarning))
 
     def test_whiten_not_finite(self, xp):
         for bad_value in xp.nan, xp.inf, -xp.inf:
@@ -310,7 +317,7 @@ class TestKMean:
 
         initc = data1[:3]
         code = xp_copy(initc, xp=xp)
-        
+
         # use `seed` to ensure backwards compatibility after SPEC7
         kmeans2(data1, code, iter=1, seed=1)[0]
         kmeans2(data1, code, iter=2)[0]
@@ -346,20 +353,25 @@ class TestKMean:
             kmeans2(data, k, minit='random', rng=rng)
             kmeans2(data[:, 1], k, minit='random', rng=rng)  # special case (1-D)
 
+    @pytest.fixture
+    def krand_lock(self):
+        return Lock()
+
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
-    def test_krandinit(self, xp):
+    def test_krandinit(self, xp, krand_lock):
         data = xp.asarray(TESTDATA_2D)
         datas = [xp.reshape(data, (200, 2)),
                  xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
         xp_test = array_namespace(data)
-        for data in datas:
-            rng = np.random.default_rng(1234)
-            init = _krandinit(data, k, rng, xp_test)
-            orig_cov = xpx.cov(data.T, xp=xp_test)
-            init_cov = xpx.cov(init.T, xp=xp_test)
-            xp_assert_close(orig_cov, init_cov, atol=1.1e-2)
+        with krand_lock:
+            for data in datas:
+                rng = np.random.default_rng(1234)
+                init = _krandinit(data, k, rng, xp_test)
+                orig_cov = xpx.cov(data.T, xp=xp_test)
+                init_cov = xpx.cov(init.T, xp=xp_test)
+                xp_assert_close(orig_cov, init_cov, atol=1.1e-2)
 
     def test_kmeans2_empty(self, xp):
         # Regression test for gh-1032.
@@ -388,6 +400,7 @@ class TestKMean:
         res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++', rng=rng)
         xp_assert_close(res, prev_res)
 
+    @pytest.mark.thread_unsafe
     @skip_xp_backends('jax.numpy',
                       reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_high_dim(self, xp):

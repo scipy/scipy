@@ -193,7 +193,7 @@ cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_num
 cpdef double ncfdtridfd(double x0, double x1, double x2, double x3) noexcept nogil
 cpdef double ncfdtridfn(double x0, double x1, double x2, double x3) noexcept nogil
 cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogil
-cpdef double nctdtr(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double nctdtridf(double x0, double x1, double x2) noexcept nogil
 cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil
 cpdef double nctdtrit(double x0, double x1, double x2) noexcept nogil

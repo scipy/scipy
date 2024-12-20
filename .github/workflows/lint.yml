@@ -45,7 +45,7 @@ jobs:
       run: |
         set -euo pipefail
         python tools/lint.py --diff-against origin/$GITHUB_BASE_REF
-        python tools/unicode-check.py
+        python tools/check_unicode.py
         python tools/check_test_name.py
 
     - name: Check that Python.h is first in any file including it.

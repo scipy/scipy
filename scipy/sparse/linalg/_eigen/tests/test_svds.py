@@ -286,7 +286,7 @@ class SVDSCommonTests:
             svds(np.eye(10), return_singular_vectors=rsv, solver=self.solver, rng=0)
 
     # --- Test Parameters ---
-
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("k", [3, 5])
     @pytest.mark.parametrize("which", ["LM", "SM"])
     def test_svds_parameter_k_which(self, k, which):
@@ -405,15 +405,12 @@ class SVDSCommonTests:
         with pytest.raises(AssertionError, match=message):
             assert_equal(res1a, res1b)
 
-    @pytest.mark.parametrize("rng", (0, 1,
-                                     np.random.default_rng(0)))
-    def test_svd_rng_2(self, rng):
+    def test_svd_rng_2(self):
         n = 100
         k = 1
 
-        tmp_rng = np.random.default_rng(0)
-        A = tmp_rng.random((n, n))
-
+        rng = np.random.default_rng(234981)
+        A = rng.random((n, n))
         rng_2 = copy.deepcopy(rng)
 
         # with the same rng, solutions are the same and accurate
@@ -423,23 +420,20 @@ class SVDSCommonTests:
             assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
-    @pytest.mark.parametrize("rng", (None,
-                                     np.random.default_rng(0)))
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
-    def test_svd_rng_3(self, rng):
+    def test_svd_rng_3(self):
         n = 100
         k = 5
 
-        tmp_rng = np.random.default_rng(0)
-        A = tmp_rng.random((n, n))
-
-        rng = copy.deepcopy(rng)
+        rng1 = np.random.default_rng(0)
+        rng2 = np.random.default_rng(234832)
+        A = rng1.random((n, n))
 
         # rng in different state produces accurate - but not
         # not necessarily identical - results
-        res1a = svds(A, k, solver=self.solver, rng=rng, maxiter=1000)
-        res2a = svds(A, k, solver=self.solver, rng=rng, maxiter=1000)
+        res1a = svds(A, k, solver=self.solver, rng=rng1, maxiter=1000)
+        res2a = svds(A, k, solver=self.solver, rng=rng2, maxiter=1000)
         _check_svds(A, k, *res1a, atol=2e-7)
         _check_svds(A, k, *res2a, atol=2e-7)
 
@@ -447,6 +441,7 @@ class SVDSCommonTests:
         with pytest.raises(AssertionError, match=message):
             assert_equal(res1a, res2a)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings("ignore:Exited postprocessing")
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
@@ -478,6 +473,7 @@ class SVDSCommonTests:
         assert_allclose(np.abs(vhd), np.abs(vh), atol=1e-8)
         assert_allclose(np.abs(sd), np.abs(s), atol=1e-9)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
     @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
     def test_svd_return_singular_vectors(self, rsv, shape):
@@ -550,6 +546,7 @@ class SVDSCommonTests:
     A1 = [[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]]
     A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings("ignore:k >= N - 1",
                                 reason="needed to demonstrate #16725")
     @pytest.mark.parametrize('A', (A1, A2))
@@ -586,6 +583,7 @@ class SVDSCommonTests:
             u, s, vh = svds(A2, k, solver=self.solver, rng=0)
         _check_svds(A, k, u, s, vh, atol=atol)
 
+    @pytest.mark.thread_unsafe
     def test_svd_linop(self):
         solver = self.solver
 
@@ -688,9 +686,9 @@ class SVDSCommonTests:
         rng = np.random.default_rng(0)
         k = 5
         (m, n) = shape
-        S = random_array(shape=(m, n), density=0.1, random_state=rng)
+        S = random_array(shape=(m, n), density=0.1, rng=rng)
         if dtype is complex:
-            S = + 1j * random_array(shape=(m, n), density=0.1, random_state=rng)
+            S = + 1j * random_array(shape=(m, n), density=0.1, rng=rng)
         e = np.ones(m)
         e[0:5] *= 1e1 ** np.arange(-5, 0, 1)
         S = dia_array((e, 0), shape=(m, m)) @ S
@@ -701,7 +699,7 @@ class SVDSCommonTests:
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
-
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("shape", ((6, 5), (5, 5), (5, 6)))
     @pytest.mark.parametrize("dtype", (float, complex))
     def test_svd_LM_ones_matrix(self, shape, dtype):
@@ -725,6 +723,7 @@ class SVDSCommonTests:
         z = np.ones_like(s)
         assert_allclose(s, z)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings("ignore:k >= N - 1",
                                 reason="needed to demonstrate #16725")
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))

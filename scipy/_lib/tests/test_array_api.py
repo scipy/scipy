@@ -4,10 +4,10 @@ import pytest
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    xp_create_diagonal
+    np_compat,
 )
+from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
-import scipy._lib.array_api_compat.numpy as np_compat
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -54,6 +54,14 @@ class TestArrayAPI:
         array_namespace([0, 1, 2])
         array_namespace(1, 2, 3)
         array_namespace(1)
+
+    def test_array_api_extra_hook(self):
+        """Test that the `array_namespace` function used by
+        array-api-extra has been overridden by scipy
+        """
+        msg = "only boolean and numerical dtypes are supported"
+        with pytest.raises(TypeError, match=msg):
+            xpx.atleast_nd("abc", ndim=0)
 
     @skip_xp_backends('jax.numpy',
                       reason="JAX arrays do not support item assignment")
@@ -113,7 +121,6 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="Array-ness does not match."):
                 xp_assert_equal(x, y, **options)
 
-
     @array_api_compatible
     def test_check_scalar(self, xp):
         if not is_numpy(xp):
@@ -147,7 +154,6 @@ class TestArrayAPI:
 
         # as an alternative to `check_0d=False`, explicitly expect scalar
         xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
-
 
     @array_api_compatible
     def test_check_scalar_no_0d(self, xp):
@@ -186,17 +192,3 @@ class TestArrayAPI:
         # scalars-vs-0d passes (if values match) also with regular python objects
         xp_assert_equal_no_0d(0., xp.asarray(0.))
         xp_assert_equal_no_0d(42, xp.asarray(42))
-
-    @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")
-    @array_api_compatible
-    @pytest.mark.parametrize('n', range(1, 10))
-    @pytest.mark.parametrize('offset', range(1, 10))
-    def test_create_diagonal(self, n, offset, xp):
-        rng = np.random.default_rng(2347823)
-        one = xp.asarray(1.)
-        x = rng.random(n)
-        A = xp_create_diagonal(xp.asarray(x, dtype=one.dtype), offset=offset, xp=xp)
-        B = xp.asarray(np.diag(x, offset), dtype=one.dtype)
-        xp_assert_equal(A, B)

@@ -86,7 +86,7 @@ MD5
 ~~~
 
 """)
-        ftarget.writelines(['{c}\n' for c in compute_md5(idirs)])
+        ftarget.writelines([f'{c}\n' for c in compute_md5(idirs)])
         ftarget.writelines("""
 SHA256
 ~~~~~~

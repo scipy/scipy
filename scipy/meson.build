@@ -29,6 +29,19 @@ endif
 
 thread_dep = dependency('threads', required: false)
 
+
+# Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
+# Will work for numpy>=2.0, hence not required (it'll be a while until 2.0 is
+# our minimum supported version). Using this now to be able to detect the
+# version easily for >=2.0.
+_numpy_dep = dependency('numpy', required: false)
+f2py_freethreading_arg = []
+if _numpy_dep.found()
+  if _numpy_dep.version().version_compare('>=2.1.0')
+    f2py_freethreading_arg = ['--free-threading']
+  endif
+endif
+
 # NumPy include directory - needed in all submodules
 # The chdir is needed because within numpy there's an `import signal`
 # statement, and we don't want that to pick up scipy's signal module rather
@@ -200,14 +213,12 @@ if f2py_version.version_compare('<'+min_numpy_version)
   error(f'Found f2py executable is too old: @f2py_version@')
 endif
 
-# Note: this generato cannot handle:
+# Note: this generator cannot handle:
 # 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
 # 2. targets with #include's (due to no `depend_files` - see feature request
 #    at meson#8295)
-# TODO: add argument to mark extension modules as safe to run without the GIL,
-#       once f2py supports that (see numpy#26157).
 f2py_gen = generator(generate_f2pymod,
-  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'] + f2py_freethreading_arg,
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
 )
 
@@ -349,9 +360,6 @@ python_sources = [
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
-  'linalg.pxd',
-  'optimize.pxd',
-  'special.pxd',
 ]
 
 if fs.exists('_distributor_init_local.py')
@@ -363,15 +371,11 @@ py3.install_sources(
   subdir: 'scipy'
 )
 
-# Copy the main __init__.py and pxd files to the build dir.
+# Copy the main __init__.py to the build dir.
+# Some submodules (linalg, special, optimize) add pxd files to this.
 # Needed to trick Cython, it won't do a relative import outside a package
 #_cython_tree = declare_dependency(sources: [
-_cython_tree = [
-  fs.copyfile('__init__.py'),
-  fs.copyfile('linalg.pxd'),
-  fs.copyfile('optimize.pxd'),
-  fs.copyfile('special.pxd'),
-]
+_cython_tree = [fs.copyfile('__init__.py')]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
 if cy.version().version_compare('>=3.1.0')
@@ -397,12 +401,6 @@ if use_pythran
     output : '@BASENAME@.cpp',
   )
 endif
-
-# Used for templated C code (not Cython code since Cython is path-dependent)
-tempita_gen = generator(tempita,
-  arguments : ['@INPUT@', '--outfile', '@OUTPUT@'],
-  output : '@BASENAME@',
-)
 
 # Check if compiler flags are supported. This is necessary to ensure that SciPy
 # can be built with any supported compiler. We need so many warning flags

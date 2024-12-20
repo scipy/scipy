@@ -685,8 +685,7 @@ class _spbase:
 
             return result
 
-        else:
-            raise ValueError('could not interpret dimensions')
+        return NotImplemented
 
     def __mul__(self, other):
         return self.multiply(other)
@@ -895,9 +894,9 @@ class _spbase:
         Examples
         --------
         >>> from scipy.sparse import csr_array
-        >>> A = csr_array([[1,2,0],[0,0,3],[4,0,5]])
+        >>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
         >>> A.nonzero()
-        (array([0, 0, 1, 2, 2]), array([0, 1, 2, 0, 2]))
+        (array([0, 0, 1, 2, 2], dtype=int32), array([0, 1, 2, 0, 2], dtype=int32))
 
         """
 
