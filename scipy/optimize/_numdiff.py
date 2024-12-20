@@ -276,7 +276,8 @@ def group_columns(A, order=0):
 
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
-                      as_linear_operator=False, args=(), kwargs=None):
+                      as_linear_operator=False, args=(), kwargs=None,
+                      workers=map):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -355,6 +356,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)``.
+    workers : map-like callable
+        map-like used to call user function with different steps.
 
     Returns
     -------
@@ -522,7 +525,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
         if sparsity is None:
             return _dense_difference(fun_wrapped, x0, f0, h,
-                                     use_one_sided, method)
+                                     use_one_sided, method,
+                                     workers)
         else:
             if not issparse(sparsity) and len(sparsity) == 2:
                 structure, groups = sparsity
@@ -582,7 +586,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
     return LinearOperator((m, n), matvec)
 
 
-def _dense_difference(fun, x0, f0, h, use_one_sided, method):
+def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
     m = f0.size
     n = x0.size
     J_transposed = np.empty((n, m))
@@ -590,12 +594,58 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
     x2 = x0.copy()
     xc = x0.astype(complex, copy=True)
 
+    if method == '2-point':
+        def x_generator(x0, h):
+            for i in range(n):
+                x1[i] = x0[i] + h[i]
+                yield x1
+                x1[i] = x0[i]
+
+        f_evals = workers(fun, x_generator(x0, h))
+        dx = [(x0[i] + h[i]) - x0[i] for i in range(n)]
+        df = [f_eval - f0 for f_eval in f_evals]
+        df_dx = [delf / delx for delf, delx in zip(df, dx)]
+        for i, v in enumerate(df_dx):
+            J_transposed[i] = v
+
+    elif method == '3-point':
+        def x_generator(x0, h, use_one_sided):
+            for i, one_sided in enumerate(use_one_sided):
+                if one_sided:
+                    x1[i] = x0[i] + h[i]
+                    x2[i] = x0[i] + 2*h[i]
+                else:
+                    x1[i] = x0[i] - h[i]
+                    x2[i] = x0[i] + h[i]
+                yield x1
+                yield x2
+                x1[i] = x2[i] = x0[i]
+
+        f_evals = workers(fun, x_generator(x0, h, use_one_sided))
+        gen = x_generator(x0, h, use_one_sided)
+        dx = list()
+        df = list()
+        for i, one_sided in enumerate(use_one_sided):
+            l = next(gen)
+            u = next(gen)
+
+            f1 = next(f_evals)
+            f2 = next(f_evals)
+            if one_sided:
+                dx.append(u[i] - x0[i])
+                df.append(-3.0 * f0 + 4 * f1 - f2)
+            else:
+                dx.append(u[i] - l[i])
+                df.append(f2 - f1)
+        df_dx = [delf / delx for delf, delx in zip(df, dx)]
+        for i, v in enumerate(df_dx):
+            J_transposed[i] = v
+
     for i in range(h.size):
         if method == '2-point':
-            x1[i] += h[i]
-            dx = x1[i] - x0[i]  # Recompute dx as exactly representable number.
-            df = fun(x1) - f0
+            continue
         elif method == '3-point' and use_one_sided[i]:
+            continue
             x1[i] += h[i]
             x2[i] += 2 * h[i]
             dx = x2[i] - x0[i]
@@ -603,6 +653,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
             f2 = fun(x2)
             df = -3.0 * f0 + 4 * f1 - f2
         elif method == '3-point' and not use_one_sided[i]:
+            continue
             x1[i] -= h[i]
             x2[i] += h[i]
             dx = x2[i] - x1[i]
