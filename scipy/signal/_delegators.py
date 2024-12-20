@@ -41,7 +41,7 @@ def _skip_if_lti(arg):
     if isinstance(arg, tuple):
         return arg
     else:
-        return None
+        return (None,)
 
 
 def _skip_if_str_or_tuple(window):
@@ -174,42 +174,42 @@ def get_window_signature(window, Nx, fftbins=True):
 
 
 def bode_signature(system, w=None, n=100):
-    return array_namespace(_skip_if_lti(system), w)
+    return array_namespace(*_skip_if_lti(system), w)
 
 dbode_signature = bode_signature
 
 
 def freqresp_signature(system, w=None, n=10000):
-    return array_namespace(_skip_if_lti(system), w)
+    return array_namespace(*_skip_if_lti(system), w)
 
 dfreqresp_signature = freqresp_signature
 
 
 def impulse_signature(system, X0=None, T=None, N=None):
-    return array_namespace(_skip_if_lti(system), X0, T)
+    return array_namespace(*_skip_if_lti(system), X0, T)
 
 
 def dimpulse_signature(system, x0=None, t=None, n=None):
-    return array_namespace(_skip_if_lti(system), x0, t)
+    return array_namespace(*_skip_if_lti(system), x0, t)
 
 
 def lsim_signature(system, U, T, X0=None, interp=True):
-    return array_namespace(_skip_if_lti(system), U, T, X0)
+    return array_namespace(*_skip_if_lti(system), U, T, X0)
 
 
 def dlsim_signature(system, u, t=None, x0=None):
-    return array_namespace(_skip_if_lti(system), u, t, x0)
+    return array_namespace(*_skip_if_lti(system), u, t, x0)
 
 
 def step_signature(system, X0=None, T=None, N=None):
-    return array_namespace(_skip_if_lti(system), X0, T)
+    return array_namespace(*_skip_if_lti(system), X0, T)
 
 def dstep_signature(system, x0=None, t=None, n=None):
-    return array_namespace(_skip_if_lti(system), x0, t)
+    return array_namespace(*_skip_if_lti(system), x0, t)
 
 
 def cont2discrete_signature(system, dt, method='zoh', alpha=None):
-    return array_namespace(_skip_if_lti(system))
+    return array_namespace(*_skip_if_lti(system))
 
 
 def bilinear_signature(b, a, fs=1.0):
