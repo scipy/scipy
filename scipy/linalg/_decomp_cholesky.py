@@ -4,6 +4,7 @@ import numpy as np
 from numpy import asarray_chkfinite, asarray, atleast_2d, empty_like
 
 # Local imports
+from scipy._lib._util import _apply_over_batch
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
@@ -43,6 +44,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     return c, lower
 
 
+@_apply_over_batch(('a', 2))
 def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix.

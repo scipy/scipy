@@ -155,10 +155,13 @@ class TestOneArrayIn:
         A = np.asarray([np.triu(A, k) for k in range(-3, 3)]).reshape((2, 3, 4, 4))
         self.batch_test(linalg.bandwidth, A, n_out=2)
 
+    @pytest.mark.parametrize('fun_n_out', [(linalg.cholesky, 1), (linalg.ldl, 3)])
     @pytest.mark.parametrize('dtype', floating)
-    def test_ldl(self, dtype, rng):
+    def test_ldl_cholesky(self, fun_n_out, dtype, rng):
+        fun, n_out = fun_n_out
         A = get_nearly_hermitian((5, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
-        self.batch_test(linalg.ldl, A, n_out=3)
+        A = A + 4*np.eye(4, dtype=dtype)  # ensure positive definite for Cholesky
+        self.batch_test(fun, A, n_out=n_out)
 
     @pytest.mark.parametrize('compute_uv', [False, True])
     @pytest.mark.parametrize('dtype', floating)
