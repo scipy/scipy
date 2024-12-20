@@ -6,6 +6,8 @@ from numpy import asarray, asarray_chkfinite
 import numpy as np
 from itertools import product
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
@@ -17,6 +19,7 @@ lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
 __all__ = ['lu', 'lu_solve', 'lu_factor']
 
 
+@_apply_over_batch(('a', 2))
 def lu_factor(a, overwrite_a=False, check_finite=True):
     """
     Compute pivoted LU decomposition of a matrix.

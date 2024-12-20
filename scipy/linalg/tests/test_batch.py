@@ -100,7 +100,7 @@ class TestOneArrayIn:
     @pytest.mark.parametrize('fun', [linalg.inv, linalg.sqrtm, linalg.signm,
                                      linalg.sinm, linalg.cosm, linalg.tanhm,
                                      linalg.sinhm, linalg.coshm, linalg.tanhm,
-                                     linalg.pinv, linalg.pinvh])
+                                     linalg.pinv, linalg.pinvh, linalg.orth])
     @pytest.mark.parametrize('dtype', floating)
     def test_matmat(self, fun, dtype, rng):  # matrix in, matrix out
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
@@ -176,10 +176,11 @@ class TestOneArrayIn:
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, A, n_out=2)
 
+    @pytest.mark.parametrize('fun', [linalg.schur, linalg.lu_factor])
     @pytest.mark.parametrize('dtype', floating)
-    def test_schur(self, dtype, rng):
+    def test_schur_lu(self, fun, dtype, rng):
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.schur, A, n_out=2)
+        self.batch_test(fun, A, n_out=2)
 
     @pytest.mark.parametrize('calc_q', [False, True])
     @pytest.mark.parametrize('dtype', floating)
