@@ -29,7 +29,7 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
 class TestOneArrayIn:
     # Test the functions that accept one array argument
 
-    def batch_test(self, fun, A, core_dim=2, n_out=1, kwargs=None, dtype=None):
+    def batch_test(self, fun, arrays, core_dim=2, n_out=1, kwargs=None, dtype=None):
         # Check that all outputs of batched call `fun(A, **kwargs)` are the same
         # as if we loop over the separate vectors/matrices in `A`. Also check
         # that `fun` accepts `A` by position or keyword and that results are
@@ -41,19 +41,22 @@ class TestOneArrayIn:
 
         kwargs = {} if kwargs is None else kwargs
         parameters = list(inspect.signature(fun).parameters.keys())
+        arrays = (arrays,) if not isinstance(arrays, tuple) else arrays
 
         # Identical results when passing argument by keyword or position
-        res1 = fun(**{parameters[0]: A}, **kwargs)
-        res2 = fun(A, **kwargs)
+        res1 = fun(**dict(zip(parameters, arrays)), **kwargs)
+        res2 = fun(*arrays, **kwargs)
         for out1, out2 in zip(res1, res2):  # even a single array output is iterable...
             np.testing.assert_equal(out1, out2)
 
         # Check results vs looping over
         res = (res2,) if n_out == 1 else res2
-        batch_shape = A.shape[:-core_dim]
+        arrays = np.broadcast_arrays(*arrays)
+        batch_shape = arrays[0].shape[:-core_dim]
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
-                ref = fun(A[i, j], **kwargs)
+                arrays_ij = (array[i, j] for array in arrays)
+                ref = fun(*arrays_ij, **kwargs)
                 ref = ((np.asarray(ref),) if n_out == 1 else
                        tuple(np.asarray(refk) for refk in ref))
                 for k in range(n_out):
