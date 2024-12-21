@@ -229,3 +229,9 @@ class TestOneArrayIn:
         A = get_random((1, 3, M, N), dtype=dtype, rng=rng)
         B = get_random((2, 1, M, K), dtype=dtype, rng=rng)
         assert linalg.subspace_angles(A, B).shape == (2, 3, min(N, K))
+
+    @pytest.mark.parametrize('fun', [linalg.svdvals])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_svdvals(self, fun, dtype, rng):
+        A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
+        self.batch_test(fun, A)

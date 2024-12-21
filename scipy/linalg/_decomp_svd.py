@@ -177,6 +177,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         return s
 
 
+@_apply_over_batch(('a', 2))
 def svdvals(a, overwrite_a=False, check_finite=True):
     """
     Compute singular values of a matrix.
