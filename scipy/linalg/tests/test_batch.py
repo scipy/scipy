@@ -247,12 +247,14 @@ class TestOneArrayIn:
         self.batch_test(fun, A)
 
     @pytest.mark.parametrize('fun_n_out', [(linalg.orthogonal_procrustes, 2),
-                                           (linalg.khatri_rao, 1)])
+                                           (linalg.khatri_rao, 1),
+                                           (linalg.solve_continuous_lyapunov, 1),
+                                           (linalg.solve_discrete_lyapunov, 1)])
     @pytest.mark.parametrize('dtype', floating)
-    def test_orthogonal_procrustes_khatri_rao(self, fun_n_out, dtype, rng):
+    def test_orthogonal_procrustes_khatri_rao_lyapunov(self, fun_n_out, dtype, rng):
         fun, n_out = fun_n_out
-        A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
-        B = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
+        A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
+        B = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, (A, B), n_out=n_out)
 
     @pytest.mark.parametrize('dtype', floating)
