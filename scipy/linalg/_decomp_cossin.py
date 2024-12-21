@@ -1,14 +1,13 @@
 from collections.abc import Iterable
 import numpy as np
 
-from scipy._lib._util import _asarray_validated, _apply_over_batch
+from scipy._lib._util import _asarray_validated
 from scipy.linalg import block_diag, LinAlgError
 from .lapack import _compute_lwork, get_lapack_funcs
 
 __all__ = ['cossin']
 
 
-@_apply_over_batch(('X', 2))
 def cossin(X, p=None, q=None, separate=False,
            swap_sign=False, compute_u=True, compute_vh=True):
     """
