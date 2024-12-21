@@ -29,7 +29,7 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
 class TestOneArrayIn:
     # Test the functions that accept one array argument
 
-    def batch_test(self, fun, A, core_dim=2, n_out=1, kwargs=None, dtype=None):
+    def batch_test(self, fun, arrays, core_dim=2, n_out=1, kwargs=None, dtype=None):
         # Check that all outputs of batched call `fun(A, **kwargs)` are the same
         # as if we loop over the separate vectors/matrices in `A`. Also check
         # that `fun` accepts `A` by position or keyword and that results are
@@ -41,19 +41,24 @@ class TestOneArrayIn:
 
         kwargs = {} if kwargs is None else kwargs
         parameters = list(inspect.signature(fun).parameters.keys())
+        arrays = (arrays,) if not isinstance(arrays, tuple) else arrays
 
         # Identical results when passing argument by keyword or position
-        res1 = fun(**{parameters[0]: A}, **kwargs)
-        res2 = fun(A, **kwargs)
+        res1 = fun(**dict(zip(parameters, arrays)), **kwargs)
+        res2 = fun(*arrays, **kwargs)
         for out1, out2 in zip(res1, res2):  # even a single array output is iterable...
             np.testing.assert_equal(out1, out2)
 
         # Check results vs looping over
         res = (res2,) if n_out == 1 else res2
-        batch_shape = A.shape[:-core_dim]
+        # This is not the general behavior (only batch dimensions get
+        # broadcasted by the decorator) but it's easier for testing.
+        arrays = np.broadcast_arrays(*arrays)
+        batch_shape = arrays[0].shape[:-core_dim]
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
-                ref = fun(A[i, j], **kwargs)
+                arrays_ij = (array[i, j] for array in arrays)
+                ref = fun(*arrays_ij, **kwargs)
                 ref = ((np.asarray(ref),) if n_out == 1 else
                        tuple(np.asarray(refk) for refk in ref))
                 for k in range(n_out):
@@ -201,3 +206,83 @@ class TestOneArrayIn:
     def test_eigvals_banded(self, dtype, rng):
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(linalg.eigvals_banded, A)
+
+    @pytest.mark.parametrize('two_in', [False, True])
+    @pytest.mark.parametrize('fun_n_nout', [(linalg.eigh, 1), (linalg.eigh, 2),
+                                            (linalg.eigvalsh, 1)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_eigh(self, two_in, fun_n_nout, dtype, rng):
+        fun, n_out = fun_n_nout
+        A = get_nearly_hermitian((1, 3, 4, 4), dtype, 0, rng)  # exactly Hermitian
+        B = get_nearly_hermitian((2, 1, 4, 4), dtype, 0, rng)  # exactly Hermitian
+        B = B + 4*np.eye(4).astype(dtype)  # needs to be positive definite
+        args = (A, B) if two_in else (A,)
+        kwargs = dict(eigvals_only=True) if (n_out == 1 and fun==linalg.eigh) else {}
+        self.batch_test(fun, args, n_out=n_out, kwargs=kwargs)
+
+    @pytest.mark.parametrize('compute_expm', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_expm_frechet(self, compute_expm, dtype, rng):
+        A = get_random((1, 3, 4, 4), dtype=dtype, rng=rng)
+        E = get_random((2, 1, 4, 4), dtype=dtype, rng=rng)
+        n_out = 2 if compute_expm else 1
+        self.batch_test(linalg.expm_frechet, (A, E), n_out=n_out,
+                        kwargs=dict(compute_expm=compute_expm))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_subspace_angles(self, dtype, rng):
+        A = get_random((1, 3, 4, 3), dtype=dtype, rng=rng)
+        B = get_random((2, 1, 4, 3), dtype=dtype, rng=rng)
+        self.batch_test(linalg.subspace_angles, (A, B))
+        # just to show that A and B don't need to be broadcastable
+        M, N, K = 4, 5, 3
+        A = get_random((1, 3, M, N), dtype=dtype, rng=rng)
+        B = get_random((2, 1, M, K), dtype=dtype, rng=rng)
+        assert linalg.subspace_angles(A, B).shape == (2, 3, min(N, K))
+
+    @pytest.mark.parametrize('fun', [linalg.svdvals])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_svdvals(self, fun, dtype, rng):
+        A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
+        self.batch_test(fun, A)
+
+    @pytest.mark.parametrize('fun_n_out', [(linalg.orthogonal_procrustes, 2),
+                                           (linalg.khatri_rao, 1),
+                                           (linalg.solve_continuous_lyapunov, 1),
+                                           (linalg.solve_discrete_lyapunov, 1),
+                                           (linalg.qz, 4),
+                                           (linalg.ordqz, 6)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_two_generic_matrix_inputs(self, fun_n_out, dtype, rng):
+        fun, n_out = fun_n_out
+        A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
+        B = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(fun, (A, B), n_out=n_out)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_sylvester(self, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        B = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        C = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        self.batch_test(linalg.solve_sylvester, (A, B, C))
+
+    @pytest.mark.parametrize('fun', [linalg.solve_continuous_are,
+                                     linalg.solve_discrete_are])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_are(self, fun, dtype, rng):
+        a = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        b = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        a = a + 5*np.eye(5)  # making these positive definite seems to help
+        b = b + 5*np.eye(5)
+        q = q + 5*np.eye(5)
+        r = r + 5*np.eye(5)
+        # can't easily generate valid random e, s
+        self.batch_test(fun, (a, b, q, r))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_rsf2cs(self, dtype, rng):
+        A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
+        T, Z = linalg.schur(A)
+        self.batch_test(linalg.rsf2csf, (T, Z), n_out=2)
