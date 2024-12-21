@@ -26,7 +26,7 @@ from typing import get_args, Literal
 import numpy as np
 
 import scipy.fft as fft_lib
-from scipy.signal import detrend
+from scipy.signal._signaltools import detrend
 from scipy.signal.windows import get_window
 
 __all__ = ['ShortTimeFFT']
