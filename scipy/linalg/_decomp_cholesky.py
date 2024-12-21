@@ -105,6 +105,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     return c
 
 
+@_apply_over_batch(("a", 2))
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix, to use in cho_solve
