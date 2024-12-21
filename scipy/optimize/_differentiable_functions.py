@@ -5,51 +5,43 @@ from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
 from scipy._lib._array_api import array_namespace
 from scipy._lib import array_api_extra as xpx
+from scipy._lib._util import _ScalarFunctionWrapper
 
 
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
-def _wrapper_fun(fun, args=()):
-    ncalls = [0]
+class _GradWrapper:
+    """
+    Wrapper class for gradient calculation
+    """
+    def __init__(
+            self,
+            grad,
+            fun=None,
+            args=None,
+            finite_diff_options=None,
+            workers=None
+    ):
+        self.fun = fun
+        self.grad = grad
+        self.args = [] if args is None else args
+        self.finite_diff_options = finite_diff_options
+        self.workers = workers or map
+        self.ngev = 0
 
-    def wrapped(x):
-        ncalls[0] += 1
+    def __call__(self, x, f0=None, **kwds):
         # Send a copy because the user may overwrite it.
         # Overwriting results in undefined behaviour because
         # fun(self.x) will change self.x, with the two no longer linked.
-        fx = fun(np.copy(x), *args)
-        # Make sure the function returns a true scalar
-        if not np.isscalar(fx):
-            try:
-                fx = np.asarray(fx).item()
-            except (TypeError, ValueError) as e:
-                raise ValueError(
-                    "The user-provided objective function "
-                    "must return a scalar value."
-                ) from e
-        return fx
-    return wrapped, ncalls
-
-
-def _wrapper_grad(grad, fun=None, args=(), finite_diff_options=None):
-    ncalls = [0]
-
-    if callable(grad):
-        def wrapped(x, **kwds):
-            # kwds present to give function same signature as numdiff variant
-            ncalls[0] += 1
-            return np.atleast_1d(grad(np.copy(x), *args))
-        return wrapped, ncalls
-
-    elif grad in FD_METHODS:
-        def wrapped1(x, f0=None):
-            ncalls[0] += 1
-            return approx_derivative(
-                fun, x, f0=f0, **finite_diff_options
+        if callable(self.grad):
+            g = np.atleast_1d(self.grad(np.copy(x), *self.args))
+        elif self.grad in FD_METHODS:
+            g = approx_derivative(
+                self.fun, x, f0=f0, **self.finite_diff_options, workers=self.workers
             )
-
-        return wrapped1, ncalls
+        self.ngev += 1
+        return g
 
 
 def _wrapper_hess(hess, grad=None, x0=None, args=(), finite_diff_options=None):
@@ -151,6 +143,8 @@ class ScalarFunction:
         For ``method='3-point'`` the sign of `epsilon` is ignored. By default
         relative steps are used, only if ``epsilon is not None`` are absolute
         steps used.
+    workers : map-like callable
+        map-like used to call user function with different steps.
 
     Notes
     -----
@@ -164,7 +158,8 @@ class ScalarFunction:
            of *any* of the methods may overwrite the attribute.
     """
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
-                 finite_diff_bounds, epsilon=None):
+                 finite_diff_bounds, epsilon=None, workers=None):
+
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError(
                 f"`grad` must be either callable or one of {FD_METHODS}."
@@ -182,7 +177,6 @@ class ScalarFunction:
                              "finite-differences, we require the Hessian "
                              "to be estimated using one of the "
                              "quasi-Newton strategies.")
-
         self.xp = xp = array_namespace(x0)
         _x = xpx.atleast_nd(xp.asarray(x0), ndim=1, xp=xp)
         _dtype = xp.float64
@@ -190,7 +184,7 @@ class ScalarFunction:
             _dtype = _x.dtype
 
         # original arguments
-        self._wrapped_fun, self._nfev = _wrapper_fun(fun, args=args)
+        self._wrapped_fun = _ScalarFunctionWrapper(fun, args)
         self._orig_fun = fun
         self._orig_grad = grad
         self._orig_hess = hess
@@ -223,11 +217,12 @@ class ScalarFunction:
         self._update_fun()
 
         # Initial gradient evaluation
-        self._wrapped_grad, self._ngev = _wrapper_grad(
+        self._wrapped_grad = _GradWrapper(
             grad,
             fun=self._wrapped_fun,
             args=args,
-            finite_diff_options=finite_diff_options
+            finite_diff_options=finite_diff_options,
+            workers=workers
         )
         self._update_grad()
 
@@ -257,11 +252,11 @@ class ScalarFunction:
 
     @property
     def nfev(self):
-        return self._nfev[0]
+        return self._wrapped_fun.nfev
 
     @property
     def ngev(self):
-        return self._ngev[0]
+        return self._wrapped_grad.ngev
 
     @property
     def nhev(self):
