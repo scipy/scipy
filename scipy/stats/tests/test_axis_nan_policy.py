@@ -147,6 +147,8 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.kendalltau, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.weightedtau, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -188,7 +190,7 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
                        "Sample size too small for normal approximation."}
 
 # For some functions, nan_policy='propagate' should not just return NaNs
-override_propagate_funcs = {stats.mode}
+override_propagate_funcs = {stats.mode, stats.weightedtau}
 
 # For some functions, empty arrays produce non-NaN results
 empty_special_case_funcs = {stats.entropy}

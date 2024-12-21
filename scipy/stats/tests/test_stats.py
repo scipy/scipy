@@ -2027,10 +2027,12 @@ def test_weightedtau():
                                      np.asarray(y, dtype=np.float64))
     assert_approx_equal(tau, -0.56694968153682723)
     # All ties
-    tau, p_value = stats.weightedtau([], [])
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        tau, p_value = stats.weightedtau([], [])
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
-    tau, p_value = stats.weightedtau([0], [0])
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        tau, p_value = stats.weightedtau([0], [0])
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
     # Size mismatches
@@ -2069,10 +2071,12 @@ def test_segfault_issue_9710():
     # https://github.com/scipy/scipy/issues/9710
     # This test was created to check segfault
     # In issue SEGFAULT only repros in optimized builds after calling the function twice
-    stats.weightedtau([1], [1.0])
-    stats.weightedtau([1], [1.0])
-    # The code below also caused SEGFAULT
-    stats.weightedtau([np.nan], [52])
+    message = "One or more sample arguments is too small"
+    with pytest.warns(SmallSampleWarning, match=message):
+        stats.weightedtau([1], [1.0])
+        stats.weightedtau([1], [1.0])
+        # The code below also caused SEGFAULT
+        stats.weightedtau([np.nan], [52])
 
 
 def test_kendall_tau_large():

@@ -5632,6 +5632,14 @@ def kendalltau(x, y, *, nan_policy='propagate',
     return res
 
 
+def _weightedtau_n_samples(kwargs):
+    rank = kwargs.get('rank', False)
+    return 2 if rank in {True, False} else 3
+
+
+@_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
+                          result_to_tuple=_unpack_CorrelationResult, paired=True,
+                          too_small=1, n_outputs=3, override={'nan_propagation': False})
 def weightedtau(x, y, rank=True, weigher=None, additive=True):
     r"""Compute a weighted version of Kendall's :math:`\tau`.
 
@@ -5767,15 +5775,14 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     """
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
+    NaN = _get_nan(x, y)
 
     if x.size != y.size:
-        raise ValueError("All inputs to `weightedtau` must be "
-                         "of the same size, "
-                         f"found x-size {x.size} and y-size {y.size}")
+        raise ValueError("Array shapes are incompatible for broadcasting.")
     if not x.size:
         # Return NaN if arrays are empty
-        res = SignificanceResult(np.nan, np.nan)
-        res.correlation = np.nan
+        res = SignificanceResult(NaN, NaN)
+        res.correlation = NaN
         return res
 
     # If there are NaNs we apply _toint64()
@@ -5796,11 +5803,11 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
             y = _toint64(y)
 
     if rank is True:
-        tau = (
+        tau = np.asarray(
             _weightedrankedtau(x, y, None, weigher, additive) +
             _weightedrankedtau(y, x, None, weigher, additive)
-        ) / 2
-        res = SignificanceResult(tau, np.nan)
+        )[()] / 2
+        res = SignificanceResult(tau, NaN)
         res.correlation = tau
         return res
 
@@ -5814,8 +5821,8 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
                 f"found x-size {x.size} and rank-size {rank.size}"
             )
 
-    tau = _weightedrankedtau(x, y, rank, weigher, additive)
-    res = SignificanceResult(tau, np.nan)
+    tau = np.asarray(_weightedrankedtau(x, y, rank, weigher, additive))[()]
+    res = SignificanceResult(tau, NaN)
     res.correlation = tau
     return res
 
