@@ -151,6 +151,8 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.linregress, tuple(), dict(), 2, 6, True,
      lambda res: tuple(res) + (res.intercept_stderr,)),
+    (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
+    (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
 ]
 
 # If the message is one of those expected, put nans in
@@ -185,6 +187,7 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "divide by zero encountered",
                       "`x` and `y` must have length at least 2.",
                       "Inputs must not be empty.",
+                      "All `x` coordinates are identical.",
 }
 
 # If the message is one of these, results of the function may be inaccurate,
