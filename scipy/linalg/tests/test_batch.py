@@ -220,6 +220,15 @@ class TestOneArrayIn:
         kwargs = dict(eigvals_only=True) if (n_out == 1 and fun==linalg.eigh) else {}
         self.batch_test(fun, args, n_out=n_out, kwargs=kwargs)
 
+    @pytest.mark.parametrize('compute_expm', [False, True])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_expm_frechet(self, compute_expm, dtype, rng):
+        A = get_random((1, 3, 4, 4), dtype=dtype, rng=rng)
+        E = get_random((2, 1, 4, 4), dtype=dtype, rng=rng)
+        n_out = 2 if compute_expm else 1
+        self.batch_test(linalg.expm_frechet, (A, E), n_out=n_out,
+                        kwargs=dict(compute_expm=compute_expm))
+
     @pytest.mark.parametrize('dtype', floating)
     def test_subspace_angles(self, dtype, rng):
         A = get_random((1, 3, 4, 3), dtype=dtype, rng=rng)
