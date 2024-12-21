@@ -10500,6 +10500,18 @@ LinregressResult = _make_tuple_bunch('LinregressResult',
                                      extra_field_names=['intercept_stderr'])
 
 
+def _pack_LinregressResult(slope, intercept, rvalue, pvalue, stderr, intercept_stderr):
+    return LinregressResult(slope, intercept, rvalue, pvalue, stderr,
+                            intercept_stderr=intercept_stderr)
+
+
+def _unpack_LinregressResult(res):
+    return tuple(res) + (res.intercept_stderr,)
+
+
+@_axis_nan_policy_factory(_pack_LinregressResult, default_axis=0, n_samples=2,
+                          result_to_tuple=_unpack_LinregressResult, paired=True,
+                          too_small=1, n_outputs=6)
 def linregress(x, y, alternative='two-sided'):
     """
     Calculate a linear least-squares regression for two sets of measurements.
@@ -10632,7 +10644,7 @@ def linregress(x, y, alternative='two-sided'):
     #   r = ssxym / sqrt( ssxm * ssym )
     if ssxm == 0.0 or ssym == 0.0:
         # If the denominator was going to be 0
-        r = 0.0
+        r = np.asarray(np.nan if ssxym == 0 else 0.0)[()]
     else:
         r = ssxym / np.sqrt(ssxm * ssym)
         # Test for numerical error propagation (make sure -1 < r < 1)

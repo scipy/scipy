@@ -2189,7 +2189,9 @@ class TestRegression:
         # total sum of squares of exactly 0.
         result = stats.linregress(X, ZERO)
         assert_almost_equal(result.intercept, 0.0)
-        assert_almost_equal(result.rvalue, 0.0)
+        with pytest.warns(stats.ConstantInputWarning, match="An input array..."):
+            ref_rvalue = stats.pearsonr(X, ZERO).statistic
+        assert_almost_equal(result.rvalue, ref_rvalue)
 
     def test_regress_simple(self):
         # Regress a line with sinusoidal noise.
@@ -2364,7 +2366,9 @@ class TestRegression:
         assert_almost_equal(result.intercept, poly[1])
 
     def test_empty_input(self):
-        assert_raises(ValueError, stats.linregress, [], [])
+        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+            res = stats.linregress([], [])
+            assert np.all(np.isnan(res))
 
     def test_nan_input(self):
         x = np.arange(10.)
