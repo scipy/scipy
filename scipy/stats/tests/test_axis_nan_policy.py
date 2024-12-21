@@ -153,6 +153,8 @@ axis_nan_policy_cases = [
      lambda res: tuple(res) + (res.intercept_stderr,)),
     (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
     (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
+    (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
+    (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
 ]
 
 # If the message is one of those expected, put nans in
