@@ -245,3 +245,10 @@ class TestOneArrayIn:
     def test_svdvals(self, fun, dtype, rng):
         A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
         self.batch_test(fun, A)
+
+    @pytest.mark.parametrize('fun', [linalg.orthogonal_procrustes])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_orthogonal_procrustes(self, fun, dtype, rng):
+        A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
+        B = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
+        self.batch_test(fun, (A, B), n_out=2)
