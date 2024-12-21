@@ -2,6 +2,7 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
+import threading
 import numpy as np
 import scipy.linalg
 from scipy._lib import doccer
@@ -38,6 +39,7 @@ __all__ = ['multivariate_normal',
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
 _LOG_PI = np.log(np.pi)
+MVN_LOCK = threading.Lock()
 
 
 _doc_random_state = """\
@@ -638,8 +640,9 @@ class multivariate_normal_gen(multi_rv_generic):
 
         # mvnun expects 1-d arguments, so process points sequentially
         def func1d(limits):
-            return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
-                              maxpts, abseps, releps)[0]
+            with MVN_LOCK:
+                return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
+                                maxpts, abseps, releps)[0]
 
         out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
