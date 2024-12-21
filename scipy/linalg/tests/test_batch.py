@@ -2,7 +2,7 @@ import inspect
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy import linalg
+from scipy import linalg, stats
 
 
 real_floating = [np.float32, np.float64]
@@ -251,7 +251,7 @@ class TestOneArrayIn:
                                            (linalg.solve_continuous_lyapunov, 1),
                                            (linalg.solve_discrete_lyapunov, 1),
                                            (linalg.qz, 4),
-                                           (linalg.ordqz, 6)])
+                                           (linalg.ordqz, 6),])
     @pytest.mark.parametrize('dtype', floating)
     def test_two_generic_matrix_inputs(self, fun_n_out, dtype, rng):
         fun, n_out = fun_n_out
@@ -286,3 +286,12 @@ class TestOneArrayIn:
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         T, Z = linalg.schur(A)
         self.batch_test(linalg.rsf2csf, (T, Z), n_out=2)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_cossin(self, dtype, rng):
+        if dtype in complex_floating:
+            X = stats.unitary_group.rvs(5, size=6, random_state=rng)
+        else:
+            X = stats.ortho_group.rvs(5, size=6, random_state=rng)
+        X = X.reshape((2, 3, 5, 5)).astype(dtype)
+        self.batch_test(linalg.cossin, X, n_out=3, kwargs=dict(p=1, q=2))
