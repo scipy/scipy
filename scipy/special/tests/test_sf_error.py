@@ -19,7 +19,8 @@ _sf_error_code_map = {
     'no_result': 6,
     'domain': 7,
     'arg': 8,
-    'other': 9
+    'other': 9,
+    'memory': 10,
 }
 
 _sf_error_actions = [

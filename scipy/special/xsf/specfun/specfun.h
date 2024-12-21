@@ -75,6 +75,16 @@
 namespace xsf {
 namespace specfun {
 
+// The Status enum is the return type of a few private, low-level functions
+// defined here.  Currently the only use is by functions that allocate
+// memory internally.  If the allocation fails, the function returns
+// Status::NoMemory.
+
+enum class Status {
+    OK = 0,
+    NoMemory
+};
+
 void airyb(double, double*, double*, double*, double*);
 void bjndd(double, int, double *, double *, double *);
 
@@ -123,7 +133,7 @@ template <typename T>
 void sphy(T, int, int *, T *, T *);
 
 template <typename T>
-void aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
+Status aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
 
     // ===========================================================
     // Purpose: Compute the prolate and oblate spheroidal angular
@@ -138,14 +148,28 @@ void aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     // Output:  S1F --- Angular function of the first kind
     //          S1D --- Derivative of the angular function of
     //                  the first kind
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed. The output
+    //              values will be set to nan.
     // Routine called:
+    //          SDMN for computing expansion coefficients df
     //          SCKB for computing expansion coefficients ck
     // ===========================================================
 
     int ip, k, nm, nm2;
     T a0, d0, d1, r, su1, su2, x0, x1;
     T *ck = (T *) calloc(200, sizeof(T));
+    if (ck == nullptr) {
+        return Status::NoMemory;
+    }
     T *df = (T *) calloc(200, sizeof(T));
+    if (df == nullptr) {
+        free(ck);
+        return Status::NoMemory;
+    }
     const T eps = 1e-14;
     x0 = x;
     x = fabs(x);
@@ -191,8 +215,9 @@ void aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     if ((x0 < 0.0) && (ip == 0)) { *s1d = -*s1d; }
     if ((x0 < 0.0) && (ip == 1)) { *s1f = -*s1f; }
     x = x0;
-    free(ck); free(df);
-    return;
+    free(ck);
+    free(df);
+    return Status::OK;
 }
 
 
