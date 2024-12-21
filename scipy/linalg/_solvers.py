@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
+from scipy._lib._util import _apply_over_batch
 from ._basic import solve, solve_triangular, matrix_balance
 from .lapack import get_lapack_funcs
 from ._decomp_schur import schur
@@ -27,6 +28,7 @@ __all__ = ['solve_sylvester',
            'solve_continuous_are', 'solve_discrete_are']
 
 
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2))
 def solve_sylvester(a, b, q):
     """
     Computes a solution (X) to the Sylvester equation :math:`AX + XB = Q`.

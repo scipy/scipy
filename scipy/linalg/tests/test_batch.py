@@ -254,3 +254,10 @@ class TestOneArrayIn:
         A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
         B = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
         self.batch_test(fun, (A, B), n_out=n_out)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_sylvester(self, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        B = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        C = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        self.batch_test(linalg.solve_sylvester, (A, B, C))
