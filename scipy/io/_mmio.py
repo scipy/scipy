@@ -391,7 +391,8 @@ class MMFile:
             while line:
                 line_tmp = line.lstrip()
                 curly_brace = '{' if isinstance(line, str) else b'{'
-                if line_tmp and (line_tmp[0] in ['%', 37] or line_tmp.startswith(curly_brace)):
+                if line_tmp and (line_tmp[0] in ['%', 37]
+                                 or line_tmp.startswith(curly_brace)):
                     line = stream.readline()
                 else:
                     break
