@@ -280,3 +280,9 @@ class TestOneArrayIn:
         r = r + 5*np.eye(5)
         # can't easily generate valid random e, s
         self.batch_test(fun, (a, b, q, r))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_rsf2cs(self, dtype, rng):
+        A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
+        T, Z = linalg.schur(A)
+        self.batch_test(linalg.rsf2csf, (T, Z), n_out=2)
