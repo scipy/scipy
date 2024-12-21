@@ -5313,6 +5313,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return res
 
 
+@_axis_nan_policy_factory(SignificanceResult, default_axis=0, n_samples=2,
+                          paired=True, too_small=1)
 def pointbiserialr(x, y):
     r"""Calculate a point biserial correlation coefficient and its p-value.
 

@@ -143,6 +143,7 @@ axis_nan_policy_cases = [
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.pointbiserialr, tuple(), dict(), 2, 2, True, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -175,6 +176,7 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "One or more sample arguments is too small",
                       "invalid value encountered",
                       "divide by zero encountered",
+                      "`x` and `y` must have length at least 2.",
 }
 
 # If the message is one of these, results of the function may be inaccurate,
