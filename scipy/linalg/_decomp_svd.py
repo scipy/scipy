@@ -434,6 +434,7 @@ def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
     return Q
 
 
+@_apply_over_batch(('A', 2), ('B', 2))
 def subspace_angles(A, B):
     r"""
     Compute the subspace angles between two matrices.

@@ -51,6 +51,8 @@ class TestOneArrayIn:
 
         # Check results vs looping over
         res = (res2,) if n_out == 1 else res2
+        # This is not the general behavior (only batch dimensions get
+        # broadcasted by the decorator) but it's easier for testing.
         arrays = np.broadcast_arrays(*arrays)
         batch_shape = arrays[0].shape[:-core_dim]
         for i in range(batch_shape[0]):
@@ -216,3 +218,14 @@ class TestOneArrayIn:
         kwargs = dict(eigvals_only=True) if not two_out else {}
         n_out = 2 if two_out else 1
         self.batch_test(linalg.eigh, args, n_out=n_out, kwargs=kwargs)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_subspace_angles(self, dtype, rng):
+        A = get_random((1, 3, 4, 3), dtype=dtype, rng=rng)
+        B = get_random((2, 1, 4, 3), dtype=dtype, rng=rng)
+        self.batch_test(linalg.subspace_angles, (A, B))
+        # just to show that A and B don't need to be broadcastable
+        M, N, K = 4, 5, 3
+        A = get_random((1, 3, M, N), dtype=dtype, rng=rng)
+        B = get_random((2, 1, M, K), dtype=dtype, rng=rng)
+        assert linalg.subspace_angles(A, B).shape == (2, 3, min(N, K))
