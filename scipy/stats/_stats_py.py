@@ -3719,7 +3719,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
 
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
-def f_oneway(*samples, axis=0):
+def f_oneway(*samples, axis=0, equal_var=True):
     """Perform one-way ANOVA.
 
     The one-way ANOVA tests the null hypothesis that two or more groups have
@@ -3735,6 +3735,14 @@ def f_oneway(*samples, axis=0):
     axis : int, optional
         Axis of the input arrays along which the test is applied.
         Default is 0.
+    equal_var: bool, optional
+        If True (default), perform a standard one-way ANOVA test that
+        assumes equal population variances [2]_.
+        If False, perform Welch's ANOVA test, which does not assume
+        equal population variances [4]_. Modified F-statistics and
+        dof will be calculated by each samples [5]_
+
+        .. versionadded:: 1.15.0
 
     Returns
     -------
@@ -3796,10 +3804,16 @@ def f_oneway(*samples, axis=0):
     .. [3] G.H. McDonald, "Handbook of Biological Statistics", One-way ANOVA.
            http://www.biostathandbook.com/onewayanova.html
 
+    .. [4] B. L. Welch, “On the Comparison of Several Mean Values: An Alternative Approach,”
+           Biometrika, vol. 38, no. 3/4, pp. 330–336, 1951, doi: 10.2307/2332579.
+
+    .. [5] D. C. Howell, Statistical Methods for Psychology. in International student edition.
+           Wadsworth Cengage Learning, 2013.
+
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats import f_oneway
+    >>> from scipy.stats import f_oneway, levene
 
     Here are some data [3]_ on a shell measurement (the length of the anterior
     adductor muscle scar, standardized by dividing by length) in the mussel
@@ -3817,6 +3831,20 @@ def f_oneway(*samples, axis=0):
     >>> tvarminne = [0.0703, 0.1026, 0.0956, 0.0973, 0.1039, 0.1045]
     >>> f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
     F_onewayResult(statistic=7.121019471642447, pvalue=0.0002812242314534544)
+
+    Welch ANOVA will be performed if sample variances are not equal
+    and `equal_var` is False. The sample variances can be checked by
+    `scipy.stats.levene` or `scipy.stats.bartlett`. The following toy samples
+    reject the null hypothesis that all input samples are from populations
+    with equal variances. Therefore, Welch ANOVA is preferred.
+
+    >>> samples = [[-50.42, 40.31, -18.09, 35.58, -6.8],
+    ...            [23.44, 4.5, 15.1, 9.66, 27.71],
+    ...            [11.94, 11.1 , 9.87, 9.09, 3.33]]
+    >>> levene(*samples)
+    LeveneResult(statistic=6.029482722461123, pvalue=0.01539663399479616)
+    >>> f_oneway(*samples, equal_var=False)
+    F_onewayResult(statistic=1.22114568638392, pvalue=0.3593865924697167)
 
     `f_oneway` accepts multidimensional input arrays.  When the inputs
     are multidimensional and `axis` is not given, the test is performed
@@ -3895,34 +3923,68 @@ def f_oneway(*samples, axis=0):
     # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
     all_same_const = (_first(alldata, axis) == alldata).all(axis=axis)
 
-    # Determine the mean of the data, and subtract that from all inputs to a
-    # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
-    # to a shift in location, and centering all data around zero vastly
-    # improves numerical stability.
-    offset = alldata.mean(axis=axis, keepdims=True)
-    alldata = alldata - offset
+    if equal_var:
+        # Determine the mean of the data, and subtract that from all inputs to a
+        # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
+        # to a shift in location, and centering all data around zero vastly
+        # improves numerical stability.
+        offset = alldata.mean(axis=axis, keepdims=True)
+        alldata = alldata - offset
 
-    normalized_ss = _square_of_sums(alldata, axis=axis) / bign
+        normalized_ss = _square_of_sums(alldata, axis=axis) / bign
 
-    sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
+        sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
 
-    ssbn = 0
-    for sample in samples:
-        smo_ss = _square_of_sums(sample - offset, axis=axis)
-        ssbn = ssbn + smo_ss / sample.shape[axis]
+        ssbn = 0
+        for sample in samples:
+            smo_ss = _square_of_sums(sample - offset, axis=axis)
+            ssbn = ssbn + smo_ss / sample.shape[axis]
 
-    # Naming: variables ending in bn/b are for "between treatments", wn/w are
-    # for "within treatments"
-    ssbn = ssbn - normalized_ss
-    sswn = sstot - ssbn
-    dfbn = num_groups - 1
-    dfwn = bign - num_groups
-    msb = ssbn / dfbn
-    msw = sswn / dfwn
-    with np.errstate(divide='ignore', invalid='ignore'):
-        f = msb / msw
+        # Naming: variables ending in bn/b are for "between treatments", wn/w are
+        # for "within treatments"
+        ssbn = ssbn - normalized_ss
+        sswn = sstot - ssbn
+        dfbn = num_groups - 1
+        dfwn = bign - num_groups
+        msb = ssbn / dfbn
+        msw = sswn / dfwn
+        with np.errstate(divide='ignore', invalid='ignore'):
+            f = msb / msw
 
-    prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+        prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+
+    # if population variances are not equeal, perform Welch ANOVA
+    # the related issue: https://github.com/scipy/scipy/issues/11122
+    else:
+        # calculate basic statistics for each sample
+        samples_arrs = np.array(samples)
+        means = samples_arrs.mean(axis=1)
+        ns = np.apply_along_axis(np.size, 1, samples_arrs)
+        k = np.size(samples_arrs, 0)
+        vars_ = np.var(samples_arrs, axis=1, ddof=1)
+
+        # calculate weight by number of data and varianc
+        ws = ns / vars_
+
+        # calculate adjusted grand mean
+        mean_prime = np.sum(ws * means) / np.sum(ws)
+
+        numerator = np.sum(ws * (means - mean_prime)**2) / (k - 1)
+        denominator = (
+                1 + 2 * (k - 2) / (k ** 2 - 1) *
+                np.sum((1 / (ns - 1)) *
+                       (1 - ws / np.sum(ws)) **2)
+        )
+        f = numerator / denominator
+
+        # adjusted degree of freedom
+        df = (
+                (k ** 2 - 1) /
+                (3 * np.sum((1 / (ns - 1)) *
+                            (1 - ws / np.sum(ws)) **2))
+        )
+
+        prob = 1 - stats.f.cdf(f, k - 1, df)
 
     # Fix any f values that should be inf or nan because the corresponding
     # inputs were constant.
