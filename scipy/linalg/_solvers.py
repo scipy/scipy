@@ -338,6 +338,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     return x
 
 
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
 def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     r"""
     Solves the continuous-time algebraic Riccati equation (CARE).

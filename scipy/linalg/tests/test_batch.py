@@ -261,3 +261,16 @@ class TestOneArrayIn:
         B = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
         C = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
         self.batch_test(linalg.solve_sylvester, (A, B, C))
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_continuous_are(self, dtype, rng):
+        a = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        b = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        a = a + 5*np.eye(5)  # making these positive definite seems to help
+        b = b + 5*np.eye(5)
+        q = q + 5*np.eye(5)
+        r = r + 5*np.eye(5)
+        # can't easily generate valid random e, s
+        self.batch_test(linalg.solve_continuous_are, (a, b, q, r))
