@@ -672,6 +672,7 @@ class _ScalarFunctionWrapper:
         # fun(self.x) will change self.x, with the two no longer linked.
         fx = self.f(np.copy(x), *self.args)
         self.nfev += 1
+
         # Make sure the function returns a true scalar
         if not np.isscalar(fx):
             try:
@@ -682,7 +683,6 @@ class _ScalarFunctionWrapper:
                     "must return a scalar value."
                 ) from e
         return fx
-
 
 class MapWrapper:
     """

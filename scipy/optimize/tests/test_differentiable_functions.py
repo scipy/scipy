@@ -5,6 +5,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
 from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._util import MapWrapper
 from scipy.sparse import csr_array
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
@@ -129,6 +130,19 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
+
+    def test_workers(self):
+        ex = ExScalarFunction()
+        x0 = np.array([2.0, 0.3])
+        with MapWrapper(2) as mapper:
+            approx = ScalarFunction(ex.fun, x0, (), '2-point',
+                                    ex.hess, None, (-np.inf, np.inf),
+                                    workers=mapper)
+        approx_series = ScalarFunction(ex.fun, x0, (), '2-point',
+                                       ex.hess, None, (-np.inf, np.inf),
+                                      )
+        assert_allclose(approx.grad(x0), approx_series.grad(x0))
+        assert_equal(approx.nfev, approx_series.nfev)
 
     def test_fun_and_grad(self):
         ex = ExScalarFunction()
