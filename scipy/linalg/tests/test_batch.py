@@ -26,8 +26,8 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
     return A + At + noise
 
 
-class TestOneArrayIn:
-    # Test the functions that accept one array argument
+class TestBatch:
+    # Test batch support for most linalg functions
 
     def batch_test(self, fun, arrays, *, core_dim=2, n_out=1, kwargs=None, dtype=None,
                    broadcast=True):
