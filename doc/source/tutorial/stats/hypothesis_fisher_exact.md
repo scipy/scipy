@@ -14,7 +14,7 @@ kernelspec:
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_fisher_exact.ipynb
+.. jupyterlite:: hypothesis_fisher_exact.md
    :new_tab: True
 ```
 

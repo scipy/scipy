@@ -14,7 +14,7 @@ kernelspec:
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/rv_infrastructure.ipynb
+.. jupyterlite:: rv_infrastructure.md
    :new_tab: True
 ```
 

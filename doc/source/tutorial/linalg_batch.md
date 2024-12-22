@@ -12,12 +12,17 @@ kernelspec:
 orphan: true
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../_contents/linalg_batch.ipynb
+.. jupyterlite:: linalg_batch.md
    :new_tab: True
 ```
 
 (linalg_batch)=
+
++++
+
 # Batched Linear Operations
 
 Some of SciPy's linear algebra functions support N-dimensional array input. These operations have not been mathematically generalized to higher-order tensors; rather, the indicated operation is performed on a *batch* (or "stack") of input scalars, vectors, and/or matrices.

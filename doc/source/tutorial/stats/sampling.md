@@ -14,7 +14,7 @@ kernelspec:
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/sampling.ipynb
+.. jupyterlite:: sampling.md
    :new_tab: True
 ```
 

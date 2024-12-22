@@ -14,7 +14,7 @@ kernelspec:
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_chi2_contingency.ipynb
+.. jupyterlite:: hypothesis_chi2_contingency.md
    :new_tab: True
 ```
 
