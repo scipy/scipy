@@ -29,6 +29,8 @@ class _GradWrapper:
         self.finite_diff_options = finite_diff_options
         self.workers = workers or map
         self.ngev = 0
+        # number of function evaluations consumed by finite difference
+        self.nfev = 0
 
     def __call__(self, x, f0=None, **kwds):
         # Send a copy because the user may overwrite it.
@@ -37,9 +39,16 @@ class _GradWrapper:
         if callable(self.grad):
             g = np.atleast_1d(self.grad(np.copy(x), *self.args))
         elif self.grad in FD_METHODS:
-            g = approx_derivative(
-                self.fun, x, f0=f0, **self.finite_diff_options, workers=self.workers
+            g, dct = approx_derivative(
+                self.fun,
+                x,
+                f0=f0,
+                **self.finite_diff_options,
+                workers=self.workers,
+                full_output=True
             )
+            self.nfev += dct['nfev']
+
         self.ngev += 1
         return g
 
@@ -214,6 +223,7 @@ class ScalarFunction:
             finite_diff_options["as_linear_operator"] = True
 
         # Initial function evaluation
+        self._nfev = 0
         self._update_fun()
 
         # Initial gradient evaluation
@@ -252,7 +262,7 @@ class ScalarFunction:
 
     @property
     def nfev(self):
-        return self._wrapped_fun.nfev
+        return self._nfev + self._wrapped_grad.nfev
 
     @property
     def ngev(self):
@@ -288,6 +298,7 @@ class ScalarFunction:
     def _update_fun(self):
         if not self.f_updated:
             fx = self._wrapped_fun(self.x)
+            self._nfev += 1
             if fx < self._lowest_f:
                 self._lowest_x = self.x
                 self._lowest_f = fx

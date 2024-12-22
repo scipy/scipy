@@ -661,7 +661,7 @@ class _ScalarFunctionWrapper:
     """
     Object to wrap scalar user function, allowing picklability
     """
-    def __init__(self, f, args):
+    def __init__(self, f, args=None):
         self.f = f
         self.args = [] if args is None else args
         self.nfev = 0

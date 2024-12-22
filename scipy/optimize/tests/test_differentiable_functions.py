@@ -144,6 +144,16 @@ class TestScalarFunction(TestCase):
         assert_allclose(approx.grad(x0), approx_series.grad(x0))
         assert_equal(approx.nfev, approx_series.nfev)
 
+        with MapWrapper(2) as mapper:
+            approx = ScalarFunction(ex.fun, x0, (), '3-point',
+                                    ex.hess, None, (-np.inf, np.inf),
+                                    workers=mapper)
+        approx_series = ScalarFunction(ex.fun, x0, (), '3-point',
+                                       ex.hess, None, (-np.inf, np.inf),
+                                      )
+        assert_allclose(approx.grad(x0), approx_series.grad(x0))
+        assert_equal(approx.nfev, approx_series.nfev)
+
     def test_fun_and_grad(self):
         ex = ExScalarFunction()
 
