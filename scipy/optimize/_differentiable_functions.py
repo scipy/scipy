@@ -1,3 +1,4 @@
+from collections import namedtuple
 import numpy as np
 import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
@@ -21,13 +22,11 @@ class _GradWrapper:
             fun=None,
             args=None,
             finite_diff_options=None,
-            workers=None
     ):
         self.fun = fun
         self.grad = grad
         self.args = [] if args is None else args
         self.finite_diff_options = finite_diff_options
-        self.workers = workers or map
         self.ngev = 0
         # number of function evaluations consumed by finite difference
         self.nfev = 0
@@ -44,8 +43,6 @@ class _GradWrapper:
                 x,
                 f0=f0,
                 **self.finite_diff_options,
-                workers=self.workers,
-                full_output=True
             )
             self.nfev += dct['nfev']
 
@@ -53,40 +50,70 @@ class _GradWrapper:
         return g
 
 
-def _wrapper_hess(hess, grad=None, x0=None, args=(), finite_diff_options=None):
-    if callable(hess):
-        H = hess(np.copy(x0), *args)
-        ncalls = [1]
+class _HessWrapper:
+    """
+    Wrapper class for hess calculation via finite differences
+    """
+    def __init__(
+            self,
+            hess,
+            x0=None,
+            grad=None,
+            args=None,
+            finite_diff_options=None,
+    ):
+        self.hess = hess
+        self.grad = grad
+        self.args = [] if args is None else args
+        self.finite_diff_options = finite_diff_options
+        # keep track of any finite difference function evaluations for grad
+        self.ngev = 0
+        self.nhev = 0
+        self.H = None
+        self._hess_func = None
 
-        if sps.issparse(H):
-            def wrapped(x, **kwds):
-                ncalls[0] += 1
-                return sps.csr_array(hess(np.copy(x), *args))
+        if callable(hess):
+            self.H = hess(np.copy(x0), *args)
+            self.nhev += 1
 
-            H = sps.csr_array(H)
+            if sps.issparse(self.H):
+                self._hess_func = self._sparse_callable
+                self.H = sps.csr_array(self.H)
+            elif isinstance(self.H, LinearOperator):
+                self._hess_func = self._linearoperator_callable
+            else:
+                # dense
+                self._hess_func = self._dense_callable
+                self.H = np.atleast_2d(np.asarray(self.H))
+        elif hess in FD_METHODS:
+                self._hess_func = self._fd_hess
 
-        elif isinstance(H, LinearOperator):
-            def wrapped(x, **kwds):
-                ncalls[0] += 1
-                return hess(np.copy(x), *args)
+    def __call__(self, x, f0=None, **kwds):
+        return self._hess_func(np.copy(x), f0=f0)
 
-        else:  # dense
-            def wrapped(x, **kwds):
-                ncalls[0] += 1
-                return np.atleast_2d(np.asarray(hess(np.copy(x), *args)))
+    def _fd_hess(self, x, f0=None, **kwds):
+        self.H, dct = approx_derivative(
+            self.grad, x, f0=f0, **self.finite_diff_options
+        )
+        self.ngev += dct["nfev"]
+        return self.H
 
-            H = np.atleast_2d(np.asarray(H))
+    def _sparse_callable(self, x, **kwds):
+        self.nhev += 1
+        self.H = sps.csr_array(self.hess(x, *self.args))
+        return self.H
 
-        return wrapped, ncalls, H
-    elif hess in FD_METHODS:
-        ncalls = [0]
+    def _dense_callable(self, x, **kwds):
+        self.nhev += 1
+        self.H = np.atleast_2d(
+            np.asarray(self.hess(x, *self.args))
+        )
+        return self.H
 
-        def wrapped1(x, f0=None):
-            return approx_derivative(
-                grad, x, f0=f0, **finite_diff_options
-            )
-
-        return wrapped1, ncalls, None
+    def _linearoperator_callable(self, x, **kwds):
+        self.nhev += 1
+        self.H = self.hess(x, *self.args)
+        return self.H
 
 
 class ScalarFunction:
@@ -216,11 +243,15 @@ class ScalarFunction:
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["abs_step"] = epsilon
             finite_diff_options["bounds"] = finite_diff_bounds
+            finite_diff_options["workers"] = workers
+            finite_diff_options["full_output"] = True
         if hess in FD_METHODS:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["abs_step"] = epsilon
             finite_diff_options["as_linear_operator"] = True
+            finite_diff_options["workers"] = workers
+            finite_diff_options["full_output"] = True
 
         # Initial function evaluation
         self._nfev = 0
@@ -232,33 +263,39 @@ class ScalarFunction:
             fun=self._wrapped_fun,
             args=args,
             finite_diff_options=finite_diff_options,
-            workers=workers
         )
         self._update_grad()
 
         # Hessian evaluation
-        if callable(hess):
-            self._wrapped_hess, self._nhev, self.H = _wrapper_hess(
-                hess, x0=x0, args=args
-            )
-            self.H_updated = True
-        elif hess in FD_METHODS:
-            self._wrapped_hess, self._nhev, self.H = _wrapper_hess(
-                hess,
-                grad=self._wrapped_grad,
-                x0=x0,
-                finite_diff_options=finite_diff_options
-            )
-            self._update_grad()
-            self.H = self._wrapped_hess(self.x, f0=self.g)
-            self.H_updated = True
-        elif isinstance(hess, HessianUpdateStrategy):
+        if isinstance(hess, HessianUpdateStrategy):
             self.H = hess
             self.H.initialize(self.n, 'hess')
             self.H_updated = True
             self.x_prev = None
             self.g_prev = None
-            self._nhev = [0]
+            _FakeCounter = namedtuple('_FakeCounter', ['ngev', 'nhev'])
+            self._wrapped_hess = _FakeCounter(ngev=0, nhev=0)
+        else:
+            if callable(hess):
+                self._wrapped_hess = _HessWrapper(
+                    hess,
+                    x0=x0,
+                    args=args,
+                    finite_diff_options=finite_diff_options
+                )
+                self.H = self._wrapped_hess.H
+                self.H_updated = True
+            elif hess in FD_METHODS:
+                self._wrapped_hess = _HessWrapper(
+                    hess,
+                    x0=x0,
+                    args=args,
+                    grad=self._wrapped_grad,
+                    finite_diff_options=finite_diff_options
+                )
+                self._update_grad()
+                self.H = self._wrapped_hess(self.x, f0=self.g)
+                self.H_updated = True
 
     @property
     def nfev(self):
@@ -266,11 +303,11 @@ class ScalarFunction:
 
     @property
     def ngev(self):
-        return self._wrapped_grad.ngev
+        return self._wrapped_grad.ngev  #+ self._wrapped_hess.ngev
 
     @property
     def nhev(self):
-        return self._nhev[0]
+        return self._wrapped_hess.nhev
 
     def _update_x(self, x):
         if isinstance(self._orig_hess, HessianUpdateStrategy):

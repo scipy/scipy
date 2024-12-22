@@ -482,12 +482,13 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     fun_wrapped = _Fun_Wrapper(fun, x0, args, kwargs)
 
-    # How many function evaluations are consumed by `approx_derivative`.
-    # Historically this was done by a wrapper around `fun`. However, with
-    # parallelization via workers it was going to be impossible to keep that
-    # counter updated across Processes. Counter synchronisation can be achieved
-    # via multiprocessing.Value and a Pool. However, workers can be any map-like,
-    # not necessarily a Pool.
+    # Record how function evaluations are consumed by `approx_derivative`.
+    # Historically this was done by upstream functions wrapping `fun`.
+    # However, with parallelization via workers it was going to be impossible to
+    # keep that counter updated across Processes. Counter synchronisation can
+    # be achieved via multiprocessing.Value and a Pool. However, workers can be
+    # any map-like, not necessarily a Pool, so initialization of the Value would
+    # be difficult.
     nfev = _nfev = 0
 
     if f0 is None:
