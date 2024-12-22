@@ -84,13 +84,17 @@ def legendre_p_via_assoc_(nu, x):
     return lpmv(0, nu, x)
 
 def lpn_(n, x):
-    return lpn(n.astype('l'), x)[0][-1]
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        return lpn(n.astype('l'), x)[0][-1]
 
 def lqn_(n, x):
     return lqn(n.astype('l'), x)[0][-1]
 
 def legendre_p_via_lpmn(n, x):
-    return lpmn(0, n, x)[0][0,-1]
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        return lpmn(0, n, x)[0][0,-1]
 
 def legendre_q_via_lqmn(n, x):
     return lqmn(0, n, x)[0][0,-1]
