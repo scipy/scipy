@@ -7,7 +7,6 @@ import inspect
 import os
 import re
 import shutil
-import threading
 import subprocess
 import sys
 import sysconfig
@@ -16,7 +15,6 @@ from importlib.util import module_from_spec, spec_from_file_location
 
 import numpy as np
 import scipy
-import pytest
 
 try:
     # Need type: ignore[import-untyped] for mypy >= 1.6
@@ -150,6 +148,8 @@ class _TestPythranFunc:
     `self.partialfunc`: A function used to freeze some non-array argument
                         that of no interests in the original function
     '''
+    import pytest
+
     ALL_INTEGER = [np.int8, np.int16, np.int32, np.int64, np.intc, np.intp]
     ALL_FLOAT = [np.float32, np.float64]
     ALL_COMPLEX = [np.complex64, np.complex128]

@@ -339,7 +339,7 @@ def test_bootstrap_against_itself_1samp(method, expected):
                     batch=50,
                     method=method,
                     axis=-1,
-                    random_state=rng)
+                    rng=rng)
     ci = res.confidence_interval
 
     # ci contains vectors of lower and upper confidence interval bounds

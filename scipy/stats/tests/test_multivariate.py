@@ -1879,7 +1879,7 @@ class TestWishart:
         assert_allclose(w.pdf(X), c.pdf(X))
 
         # rvs
-        rvs = w.rvs(size=sn)
+        rvs = w.rvs(size=sn, random_state=rng)
         args = (df,0,sigma_lamda)
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)

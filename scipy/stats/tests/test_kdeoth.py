@@ -588,7 +588,6 @@ def test_weights_intact():
 
 def test_weights_integer():
     # integer weights are OK, cf gh-9709 (comment)
-    rng = np.random.default_rng(12345)
     values = [0.2, 13.5, 21.0, 75.0, 99.0]
     weights = [1, 2, 4, 8, 16]  # a list of integers
     pdf_i = stats.gaussian_kde(values, weights=weights)

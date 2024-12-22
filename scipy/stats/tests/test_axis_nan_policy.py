@@ -637,7 +637,7 @@ def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
     if not unpacker:
         def unpacker(res):
             return res
-    rng = np.random.RandomState(0)
+    rng = np.random.default_rng(0)
     data = [rng.random(sample_shape) for _ in range(n_samples)]
     nan_data = [sample.copy() for sample in data]
     nan_mask = [rng.random(sample_shape) < 0.2 for _ in range(n_samples)]
