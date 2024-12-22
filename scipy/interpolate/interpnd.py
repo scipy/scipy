@@ -7,10 +7,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'CloughTocher2DInterpolator',
-    'GradientEstimationWarning',
     'LinearNDInterpolator',
-    'NDInterpolatorBase',
-    'estimate_gradients_2d_global',
 ]
 
 
@@ -22,4 +19,3 @@ def __getattr__(name):
     return _sub_module_deprecation(sub_package="interpolate", module="interpnd",
                                    private_modules=["_interpnd"], all=__all__,
                                    attribute=name)
-
