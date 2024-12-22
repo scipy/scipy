@@ -838,6 +838,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
+@_apply_over_batch(('a', 2), ('b', 2))
 def eigvals(a, b=None, overwrite_a=False, check_finite=True,
             homogeneous_eigvals=False):
     """

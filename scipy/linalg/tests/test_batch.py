@@ -212,7 +212,7 @@ class TestOneArrayIn:
 
     @pytest.mark.parametrize('two_in', [False, True])
     @pytest.mark.parametrize('fun_n_nout', [(linalg.eigh, 1), (linalg.eigh, 2),
-                                            (linalg.eigvalsh, 1)])
+                                            (linalg.eigvalsh, 1), (linalg.eigvals, 1)])
     @pytest.mark.parametrize('dtype', floating)
     def test_eigh(self, two_in, fun_n_nout, dtype, rng):
         fun, n_out = fun_n_nout
