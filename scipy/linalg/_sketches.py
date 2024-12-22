@@ -68,8 +68,8 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
 
     Parameters
     ----------
-    input_matrix : array_like
-        Input matrix, of shape ``(n, d)``.
+    input_matrix : array_like, shape (..., n, d)
+        Input matrix.
     sketch_size : int
         Number of rows for the sketch.
     rng : `numpy.random.Generator`, optional
@@ -174,5 +174,5 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     166.58473879945151
 
     """
-    S = cwt_matrix(sketch_size, input_matrix.shape[0], rng=rng)
-    return S.dot(input_matrix)
+    S = cwt_matrix(sketch_size, input_matrix.shape[-2], rng=rng)
+    return S @ input_matrix
