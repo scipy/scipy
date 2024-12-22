@@ -658,9 +658,11 @@ class TestBSpline:
 
         expected = b(xx)
 
-        t_mm = np.memmap(str(tmpdir.join('t.dat')), mode='w+', dtype=b.t.dtype, shape=b.t.shape)
+        t_mm = np.memmap(
+            str(tmpdir.join('t.dat')), mode='w+', dtype=b.t.dtype, shape=b.t.shape)
         t_mm[:] = b.t
-        c_mm = np.memmap(str(tmpdir.join('c.dat')), mode='w+', dtype=b.c.dtype, shape=b.c.shape)
+        c_mm = np.memmap(
+            str(tmpdir.join('c.dat')), mode='w+', dtype=b.c.dtype, shape=b.c.shape)
         c_mm[:] = b.c
         b.t = t_mm
         b.c = c_mm
