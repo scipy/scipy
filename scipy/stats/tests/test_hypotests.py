@@ -394,7 +394,7 @@ class TestMannWhitneyU:
                 assert_allclose(pmf, pmf2)
 
     def test_asymptotic_behavior(self):
-        rng = np.random.RandomState(0)
+        rng = np.random.default_rng(12543)
 
         # for small samples, the asymptotic test is not very accurate
         x = rng.random(5)
@@ -861,7 +861,8 @@ class TestSomersD(_TestPythranFunc):
         size = np.prod(shape)
 
         rng = np.random.RandomState(0)
-        s = stats.multinomial.rvs(N, p=np.ones(size)/size, random_state=rng).reshape(shape)
+        s = stats.multinomial.rvs(N, p=np.ones(size)/size,
+                                  random_state=rng).reshape(shape)
         res = stats.somersd(s)
 
         s2 = np.insert(s, 2, np.zeros(shape[1]), axis=0)
@@ -891,7 +892,8 @@ class TestSomersD(_TestPythranFunc):
 
         rng = np.random.default_rng(0)
         # start with a valid contingency table
-        s = stats.multinomial.rvs(N, p=np.ones(size)/size, random_state=rng).reshape(shape)
+        s = stats.multinomial.rvs(N, p=np.ones(size)/size,
+                                  random_state=rng).reshape(shape)
 
         s5 = s - 2
         message = "All elements of the contingency table must be non-negative"
