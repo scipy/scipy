@@ -647,6 +647,26 @@ class TestBSpline:
         _run_concurrent_barrier(10, worker_fn, b)
 
 
+    def test_memmap(self, tmpdir):
+        # Make sure that memmaps can be used as t and c atrributes after the
+        # spline has been constructed. This is similar to what happens in a
+        # scikit-learn context, where joblib can create read-only memmap to
+        # share objects between workers. For more details, see
+        # https://github.com/scipy/scipy/issues/22143
+        b = _make_random_spline()
+        xx = np.linspace(0, 1, 10)
+
+        expected = b(xx)
+
+        t_mm = np.memmap(str(tmpdir.join('t.dat')), mode='w+', dtype=b.t.dtype, shape=b.t.shape)
+        t_mm[:] = b.t
+        c_mm = np.memmap(str(tmpdir.join('c.dat')), mode='w+', dtype=b.c.dtype, shape=b.c.shape)
+        c_mm[:] = b.c
+        b.t = t_mm
+        b.c = c_mm
+
+        xp_assert_close(b(xx), expected)
+
 class TestInsert:
 
     @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
