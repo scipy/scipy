@@ -813,6 +813,7 @@ def signm(A, disp=True):
         return S0, errest
 
 
+@_apply_over_batch(('a', 2), ('b', 2))
 def khatri_rao(a, b):
     r"""
     Khatri-rao product
