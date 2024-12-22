@@ -3804,10 +3804,12 @@ def f_oneway(*samples, axis=0, equal_var=True):
     .. [3] G.H. McDonald, "Handbook of Biological Statistics", One-way ANOVA.
            http://www.biostathandbook.com/onewayanova.html
 
-    .. [4] B. L. Welch, “On the Comparison of Several Mean Values: An Alternative Approach,”
-           Biometrika, vol. 38, no. 3/4, pp. 330–336, 1951, doi: 10.2307/2332579.
+    .. [4] B. L. Welch, "On the Comparison of Several Mean Values:
+           An Alternative Approach,"Biometrika, vol. 38, no. 3/4,
+           pp. 330-336, 1951, doi: 10.2307/2332579.
 
-    .. [5] D. C. Howell, Statistical Methods for Psychology. in International student edition.
+    .. [5] D. C. Howell, Statistical Methods for Psychology.
+           in International student edition.
            Wadsworth Cengage Learning, 2013.
 
     Examples
