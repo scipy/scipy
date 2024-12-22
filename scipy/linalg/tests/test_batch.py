@@ -296,10 +296,12 @@ class TestOneArrayIn:
         ab[..., -1, :] = 10  # make diagonal dominant
         self.batch_test(linalg.cholesky_banded, ab)
 
+    @pytest.mark.parametrize('fun_n_out', [(linalg.eigh_tridiagonal, 2),
+                                           (linalg.eigvalsh_tridiagonal, 1)])
     @pytest.mark.parametrize('dtype', real_floating)
     # "Only real arrays currently supported"
-    def test_eigh_tridiagonal(self, dtype, rng):
+    def test_eigh_tridiagonal(self, fun_n_out, dtype, rng):
+        fun, n_out = fun_n_out
         d = get_random((3, 4, 5), dtype=dtype, rng=rng)
         e = get_random((3, 4, 4), dtype=dtype, rng=rng)
-        self.batch_test(linalg.eigh_tridiagonal, (d, e),
-                        core_dim=1, n_out=2, broadcast=False)
+        self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False)
