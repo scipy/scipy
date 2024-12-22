@@ -3,7 +3,7 @@ Test SciPy functions versus mpmath, if available.
 
 """
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, suppress_warnings
 from numpy import pi
 import pytest
 import itertools
@@ -1321,7 +1321,7 @@ class TestSystematic:
         assert_mpmath_equal(
             sc.gamma,
             exception_to_nan(mpmath.gamma),
-            [ComplexArg()], 
+            [ComplexArg()],
             rtol=5e-13,
         )
 
@@ -1659,7 +1659,9 @@ class TestSystematic:
     def test_legenp(self):
         def lpnm(n, m, z):
             try:
-                v = sc.lpmn(m, n, z)[0][-1,-1]
+                with suppress_warnings() as sup:
+                    sup.filter(category=DeprecationWarning)
+                    v = sc.lpmn(m, n, z)[0][-1,-1]
             except ValueError:
                 return np.nan
             if abs(v) > 1e306:
@@ -1710,7 +1712,9 @@ class TestSystematic:
     def test_legenp_complex_2(self):
         def clpnm(n, m, z):
             try:
-                return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
+                with suppress_warnings() as sup:
+                    sup.filter(category=DeprecationWarning)
+                    return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
             except ValueError:
                 return np.nan
 
@@ -1738,7 +1742,9 @@ class TestSystematic:
     def test_legenp_complex_3(self):
         def clpnm(n, m, z):
             try:
-                return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
+                with suppress_warnings() as sup:
+                    sup.filter(category=DeprecationWarning)
+                    return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
             except ValueError:
                 return np.nan
 
