@@ -133,7 +133,7 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
     m, v = distfn.stats(*arg)
 
     if distname not in {'laplace_asymmetric'}:
-        check_sample_meanvar_(m, v, rvs)
+        check_sample_meanvar_(m, v, rvs, rng)
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
     check_cdf_sf(distfn, arg, distname)
@@ -583,11 +583,11 @@ def test_method_of_moments():
     npt.assert_almost_equal(loc+scale, b, decimal=4)
 
 
-def check_sample_meanvar_(popmean, popvar, sample):
+def check_sample_meanvar_(popmean, popvar, sample, rng):
     if np.isfinite(popmean):
         check_sample_mean(sample, popmean)
     if np.isfinite(popvar):
-        check_sample_var(sample, popvar)
+        check_sample_var(sample, popvar, rng)
 
 
 def check_sample_mean(sample, popmean):
@@ -596,7 +596,7 @@ def check_sample_mean(sample, popmean):
     assert prob > 0.01
 
 
-def check_sample_var(sample, popvar):
+def check_sample_var(sample, popvar, rng):
     # check that population mean lies within the CI bootstrapped from the
     # sample. This used to be a chi-squared test for variance, but there were
     # too many false positives
@@ -604,6 +604,7 @@ def check_sample_var(sample, popvar):
         (sample,),
         lambda x, axis: x.var(ddof=1, axis=axis),
         confidence_level=0.995,
+        rng=rng,
     )
     conf = res.confidence_interval
     low, high = conf.low, conf.high
