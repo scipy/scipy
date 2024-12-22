@@ -140,6 +140,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
         x = np.array(x, dtype=float, copy=True).ravel()
         if len(x) != len(y):
             raise ValueError("Array shapes are incompatible for broadcasting.")
+    if len(x) < 2:
+        raise ValueError("`x` and `y` must have length at least 2.")
 
     # Compute sorted slopes only when deltax > 0
     deltax = x[:, np.newaxis] - x

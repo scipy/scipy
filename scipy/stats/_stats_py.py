@@ -155,14 +155,14 @@ def _convert_common_float(*arrays, xp=None):
 
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
                                        ['statistic', 'pvalue'], [])
-
-
-CorrelationResult = _make_tuple_bunch('SignificanceResult',
-                                      ['statistic', 'pvalue'], ['correlation'])
+# Let's call a SignificanceResult with legacy :correlation" attribute a
+# "CorrelationResult". Don't add to `extra_field_names`- shouldn't be in repr.
 
 
 def _pack_CorrelationResult(statistic, pvalue, correlation):
-    return CorrelationResult(statistic, pvalue, correlation=correlation)
+    res = SignificanceResult(statistic, pvalue)
+    res.correlation = correlation
+    return res
 
 
 def _unpack_CorrelationResult(res):
