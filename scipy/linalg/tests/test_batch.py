@@ -287,3 +287,10 @@ class TestOneArrayIn:
         A = get_random((2, 3, 4, 4), dtype=dtype, rng=rng)
         T, Z = linalg.schur(A)
         self.batch_test(linalg.rsf2csf, (T, Z), n_out=2)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_cholesky_banded(self, dtype, rng):
+        ab = get_random((5, 4, 3, 6), dtype=dtype, rng=rng)
+        ab[..., 0, 0] = 0
+        ab[..., -1, :] = 10  # make diagonal dominant
+        self.batch_test(linalg.cholesky_banded, ab)
