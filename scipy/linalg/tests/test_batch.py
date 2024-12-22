@@ -305,3 +305,12 @@ class TestOneArrayIn:
         d = get_random((3, 4, 5), dtype=dtype, rng=rng)
         e = get_random((3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False)
+
+    @pytest.mark.parametrize('dtype', floating)
+    # "expected complex-conjugate pairs of eigenvalues"
+    def test_cdf2rdf(self, dtype, rng):
+        A = get_nearly_hermitian((3, 4, 6, 6), dtype=dtype, atol=0, rng=rng)
+        w, v = linalg.eigh(A)
+        wr, vr = linalg.cdf2rdf(w, v)
+        atol = 1e-5 if dtype in {np.float32, np.complex64} else 1e-12
+        assert_allclose(vr @ wr, A @ vr, atol=atol)
