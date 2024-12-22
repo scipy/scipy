@@ -148,8 +148,6 @@ class _TestPythranFunc:
     `self.partialfunc`: A function used to freeze some non-array argument
                         that of no interests in the original function
     '''
-    import pytest
-
     ALL_INTEGER = [np.int8, np.int16, np.int32, np.int64, np.intc, np.intp]
     ALL_FLOAT = [np.float32, np.float64]
     ALL_COMPLEX = [np.complex64, np.complex128]
@@ -201,17 +199,12 @@ class _TestPythranFunc:
             args_array.append(self.arguments[arg_idx][0][::-1][::-1])
         self.pythranfunc(*args_array)
 
-    @pytest.fixture
-    def strided_lock(self):
-        return threading.Lock()
-
-    def test_strided(self, strided_lock):
-        with strided_lock:
-            args_array = []
-            for arg_idx in self.arguments:
-                args_array.append(np.repeat(self.arguments[arg_idx][0],
-                                            2, axis=0)[::2])
-            self.pythranfunc(*args_array)
+    def test_strided(self):
+        args_array = []
+        for arg_idx in self.arguments:
+            args_array.append(np.repeat(self.arguments[arg_idx][0],
+                                        2, axis=0)[::2])
+        self.pythranfunc(*args_array)
 
 
 def _pytest_has_xdist():
