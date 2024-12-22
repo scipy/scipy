@@ -1207,6 +1207,7 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
         check_finite=check_finite, tol=tol, lapack_driver=lapack_driver)
 
 
+@_apply_over_batch(('d', 1), ('e', 1))
 def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
                      check_finite=True, tol=0., lapack_driver='auto'):
     """

@@ -29,7 +29,8 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
 class TestOneArrayIn:
     # Test the functions that accept one array argument
 
-    def batch_test(self, fun, arrays, core_dim=2, n_out=1, kwargs=None, dtype=None):
+    def batch_test(self, fun, arrays, *, core_dim=2, n_out=1, kwargs=None, dtype=None,
+                   broadcast=True):
         # Check that all outputs of batched call `fun(A, **kwargs)` are the same
         # as if we loop over the separate vectors/matrices in `A`. Also check
         # that `fun` accepts `A` by position or keyword and that results are
@@ -53,7 +54,8 @@ class TestOneArrayIn:
         res = (res2,) if n_out == 1 else res2
         # This is not the general behavior (only batch dimensions get
         # broadcasted by the decorator) but it's easier for testing.
-        arrays = np.broadcast_arrays(*arrays)
+        if broadcast:
+            arrays = np.broadcast_arrays(*arrays)
         batch_shape = arrays[0].shape[:-core_dim]
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
@@ -291,6 +293,13 @@ class TestOneArrayIn:
     @pytest.mark.parametrize('dtype', floating)
     def test_cholesky_banded(self, dtype, rng):
         ab = get_random((5, 4, 3, 6), dtype=dtype, rng=rng)
-        ab[..., 0, 0] = 0
         ab[..., -1, :] = 10  # make diagonal dominant
         self.batch_test(linalg.cholesky_banded, ab)
+
+    @pytest.mark.parametrize('dtype', real_floating)
+    # "Only real arrays currently supported"
+    def test_eigh_tridiagonal(self, dtype, rng):
+        d = get_random((3, 4, 5), dtype=dtype, rng=rng)
+        e = get_random((3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(linalg.eigh_tridiagonal, (d, e),
+                        core_dim=1, n_out=2, broadcast=False)
