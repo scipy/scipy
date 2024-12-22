@@ -4652,3 +4652,8 @@ class TestLegendreDeprecation:
         message = f"`scipy.special.{xlpmn.__name__}` is deprecated..."
         with pytest.deprecated_call(match=message):
             _ = xlpmn(1, 1, 0)
+
+    def test_warn_sph_harm(self):
+        msg = "`scipy.special.sph_harm` is deprecated..."
+        with pytest.deprecated_call(match=msg):
+            _ = special.sph_harm(1, 1, 0, 0)
