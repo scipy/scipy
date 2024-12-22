@@ -14,7 +14,7 @@ kernelspec:
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. jupyterlite:: hypothesis_bartlett.md
+.. notebooklite:: hypothesis_bartlett.md
    :new_tab: True
 ```
 

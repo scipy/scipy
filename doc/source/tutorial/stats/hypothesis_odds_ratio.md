@@ -14,7 +14,7 @@ kernelspec:
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. jupyterlite:: hypothesis_odds_ratio.md
+.. notebooklite:: hypothesis_odds_ratio.md
    :new_tab: True
 ```
 

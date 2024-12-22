@@ -15,7 +15,7 @@ orphan: true
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. jupyterlite:: linalg_batch.md
+.. notebooklite:: linalg_batch.md
    :new_tab: True
 ```
 
