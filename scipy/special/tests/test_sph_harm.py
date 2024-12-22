@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, suppress_warnings
 import scipy.special as sc
 
 class TestSphHarm:
@@ -75,7 +75,9 @@ def test_first_harmonics():
     theta, phi = np.meshgrid(theta, phi)
 
     for harm, m, n in zip(harms, m, n):
-        assert_allclose(sc.sph_harm(m, n, theta, phi),
-                        harm(theta, phi),
-                        rtol=1e-15, atol=1e-15,
-                        err_msg=f"Y^{m}_{n} incorrect")
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            assert_allclose(sc.sph_harm(m, n, theta, phi),
+                            harm(theta, phi),
+                            rtol=1e-15, atol=1e-15,
+                            err_msg=f"Y^{m}_{n} incorrect")

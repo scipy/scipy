@@ -3,7 +3,7 @@ Test SciPy functions versus mpmath, if available.
 
 """
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, suppress_warnings
 from numpy import pi
 import pytest
 import itertools
@@ -2009,7 +2009,9 @@ class TestSystematic:
         def spherharm(l, m, theta, phi):
             if m > l:
                 return np.nan
-            return sc.sph_harm(m, l, phi, theta)
+            with suppress_warnings() as sup:
+                sup.filter(category=DeprecationWarning)
+                return sc.sph_harm(m, l, phi, theta)
         assert_mpmath_equal(
             spherharm,
             mpmath.spherharm,

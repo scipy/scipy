@@ -187,7 +187,9 @@ def spherical_yn_(n, x):
     return spherical_yn(n.astype('l'), x)
 
 def sph_harm_(m, n, theta, phi):
-    y = sph_harm(m, n, theta, phi)
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        y = sph_harm(m, n, theta, phi)
     return (y.real, y.imag)
 
 def cexpm1(x, y):

@@ -4119,35 +4119,39 @@ def test_sph_harm():
     sqrt = np.sqrt
     sin = np.sin
     cos = np.cos
-    assert_array_almost_equal(sh(0,0,0,0),
-           0.5/sqrt(pi))
-    assert_array_almost_equal(sh(-2,2,0.,pi/4),
-           0.25*sqrt(15./(2.*pi)) *
-           (sin(pi/4))**2.)
-    assert_array_almost_equal(sh(-2,2,0.,pi/2),
-           0.25*sqrt(15./(2.*pi)))
-    assert_array_almost_equal(sh(2,2,pi,pi/2),
-           0.25*sqrt(15/(2.*pi)) *
-           exp(0+2.*pi*1j)*sin(pi/2.)**2.)
-    assert_array_almost_equal(sh(2,4,pi/4.,pi/3.),
-           (3./8.)*sqrt(5./(2.*pi)) *
-           exp(0+2.*pi/4.*1j) *
-           sin(pi/3.)**2. *
-           (7.*cos(pi/3.)**2.-1))
-    assert_array_almost_equal(sh(4,4,pi/8.,pi/6.),
-           (3./16.)*sqrt(35./(2.*pi)) *
-           exp(0+4.*pi/8.*1j)*sin(pi/6.)**4.)
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        assert_array_almost_equal(sh(0,0,0,0),
+               0.5/sqrt(pi))
+        assert_array_almost_equal(sh(-2,2,0.,pi/4),
+               0.25*sqrt(15./(2.*pi)) *
+               (sin(pi/4))**2.)
+        assert_array_almost_equal(sh(-2,2,0.,pi/2),
+               0.25*sqrt(15./(2.*pi)))
+        assert_array_almost_equal(sh(2,2,pi,pi/2),
+               0.25*sqrt(15/(2.*pi)) *
+               exp(0+2.*pi*1j)*sin(pi/2.)**2.)
+        assert_array_almost_equal(sh(2,4,pi/4.,pi/3.),
+               (3./8.)*sqrt(5./(2.*pi)) *
+               exp(0+2.*pi/4.*1j) *
+               sin(pi/3.)**2. *
+               (7.*cos(pi/3.)**2.-1))
+        assert_array_almost_equal(sh(4,4,pi/8.,pi/6.),
+               (3./16.)*sqrt(35./(2.*pi)) *
+               exp(0+4.*pi/8.*1j)*sin(pi/6.)**4.)
 
 
 def test_sph_harm_ufunc_loop_selection():
     # see https://github.com/scipy/scipy/issues/4895
     dt = np.dtype(np.complex128)
-    assert_equal(special.sph_harm(0, 0, 0, 0).dtype, dt)
-    assert_equal(special.sph_harm([0], 0, 0, 0).dtype, dt)
-    assert_equal(special.sph_harm(0, [0], 0, 0).dtype, dt)
-    assert_equal(special.sph_harm(0, 0, [0], 0).dtype, dt)
-    assert_equal(special.sph_harm(0, 0, 0, [0]).dtype, dt)
-    assert_equal(special.sph_harm([0], [0], [0], [0]).dtype, dt)
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        assert_equal(special.sph_harm(0, 0, 0, 0).dtype, dt)
+        assert_equal(special.sph_harm([0], 0, 0, 0).dtype, dt)
+        assert_equal(special.sph_harm(0, [0], 0, 0).dtype, dt)
+        assert_equal(special.sph_harm(0, 0, [0], 0).dtype, dt)
+        assert_equal(special.sph_harm(0, 0, 0, [0]).dtype, dt)
+        assert_equal(special.sph_harm([0], [0], [0], [0]).dtype, dt)
 
 
 class TestStruve:
