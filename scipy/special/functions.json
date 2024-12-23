@@ -57,11 +57,6 @@
             "cephes__struve_power_series": "ddp*d->d"
         }
     },
-    "voigt_profile" : {
-        "_faddeeva.h++" : {
-            "faddeeva_voigt_profile": "ddd->d"
-        }
-    },
     "agm": {
         "_agm.pxd": {
             "agm": "dd->d"
@@ -179,12 +174,6 @@
         "_cdflib_wrappers.pxd": {
             "chndtrix": "ddd->d"        }
     },
-    "dawsn": {
-        "_faddeeva.h++": {
-            "faddeeva_dawsn": "d->d",
-            "faddeeva_dawsn_complex": "D->D"
-        }
-    },
     "_factorial": {
 	"_factorial.pxd": {
 	    "_factorial": "d->d"
@@ -223,12 +212,6 @@
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
-        }
-    },
-    "erfi": {
-        "_faddeeva.h++": {
-            "faddeeva_erfi": "d->d",
-            "faddeeva_erfi_complex": "D->D"
         }
     },
     "erfinv": {
@@ -612,14 +595,6 @@
             "nctdtrit": "ddd->d"
         }
     },
-    "ndtr": {
-        "_faddeeva.h++": {
-            "faddeeva_ndtr": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "xsf_ndtr": "d->d"
-        }
-    },
     "ndtri": {
         "xsf_wrappers.h": {
             "xsf_ndtri": "d->d"
@@ -769,11 +744,6 @@
     "tklmbda": {
         "xsf_wrappers.h": {
             "xsf_tukeylambdacdf": "dd->d"
-        }
-    },
-    "wofz": {
-        "_faddeeva.h++": {
-            "faddeeva_w": "D->D"
         }
     },
     "wrightomega": {

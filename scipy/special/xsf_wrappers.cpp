@@ -414,6 +414,18 @@ double xsf_erfcx(double x) { return xsf::erfcx(x); }
 
 npy_cdouble xsf_cerfcx(npy_cdouble z) { return to_ccomplex(xsf::erfcx(to_complex(z))); }
 
+double xsf_dawsn(double x) { return xsf::dawsn(x); }
+
+npy_cdouble xsf_cdawsn(npy_cdouble z) { return to_ccomplex(xsf::dawsn(to_complex(z))); }
+
+double xsf_erfi(double x) { return xsf::erfi(x); }
+
+npy_cdouble xsf_cerfi(npy_cdouble z) { return to_ccomplex(xsf::erfi(to_complex(z))); }
+
+npy_cdouble xsf_cwofz(npy_cdouble z) { return to_ccomplex(xsf::wofz(to_complex(z))); }
+
+double xsf_voigt_profile(double x, double sigma, double gamma) { return xsf::voigt_profile(x, sigma, gamma); }
+
 double cephes_ellpk(double x) { return xsf::ellipkm1(x); }
 
 double cephes_ellie(double phi, double m) { return xsf::ellipeinc(phi, m); }
@@ -601,6 +613,8 @@ double xsf_nbdtrc(int k, int n, double p) { return xsf::nbdtrc(k, n, p); }
 double xsf_nbdtri(int k, int n, double p) { return xsf::nbdtri(k, n, p); }
 
 double xsf_ndtr(double x) { return xsf::ndtr(x); }
+
+npy_cdouble xsf_cndtr(npy_cdouble x) { return to_ccomplex(xsf::ndtr(to_complex(x))); }
 
 double xsf_ndtri(double x) { return xsf::ndtri(x); }
 

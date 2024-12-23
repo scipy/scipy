@@ -28,6 +28,7 @@
 #include "xsf/sph_bessel.h"
 #include "xsf/sph_harm.h"
 #include "xsf/sphd_wave.h"
+#include "xsf/stats.h"
 #include "xsf/struve.h"
 #include "xsf/trig.h"
 #include "xsf/wright_bessel.h"
@@ -344,6 +345,33 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            static_cast<xsf::numpy::D_D>(xsf::erfcx), static_cast<xsf::numpy::F_F>(xsf::erfcx)},
                           "erfcx", nullptr);
     PyModule_AddObjectRef(_special_ufuncs, "erfcx", erfcx);
+
+    PyObject *erfi =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfi), static_cast<xsf::numpy::f_f>(xsf::erfi),
+                           static_cast<xsf::numpy::D_D>(xsf::erfi), static_cast<xsf::numpy::F_F>(xsf::erfi)},
+                          "erfi", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "erfi", erfi);
+
+    PyObject *voigt_profile = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ddd_d>(xsf::voigt_profile), static_cast<xsf::numpy::fff_f>(xsf::voigt_profile)},
+        "voigt_profile", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "voigt_profile", voigt_profile);
+
+    PyObject *wofz = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::D_D>(xsf::wofz), static_cast<xsf::numpy::F_F>(xsf::wofz)}, "wofz", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "wofz", wofz);
+
+    PyObject *dawsn =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::dawsn), static_cast<xsf::numpy::f_f>(xsf::dawsn),
+                           static_cast<xsf::numpy::D_D>(xsf::dawsn), static_cast<xsf::numpy::F_F>(xsf::dawsn)},
+                          "dawsn", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "dawsn", dawsn);
+
+    PyObject *ndtr =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::ndtr), static_cast<xsf::numpy::f_f>(xsf::ndtr),
+                           static_cast<xsf::numpy::D_D>(xsf::ndtr), static_cast<xsf::numpy::F_F>(xsf::ndtr)},
+                          "ndtr", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "ndtr", ndtr);
 
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_dd>(xsf::fresnel), static_cast<xsf::numpy::f_ff>(xsf::fresnel),

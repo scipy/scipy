@@ -1288,12 +1288,18 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_igam_fac(double a, double x) nogil
     double cephes_lanczos_sum_expg_scaled(double x) nogil
     double cephes_erf(double x) nogil
+    npy_cdouble xsf_cwofz(npy_cdouble x) nogil
     double xsf_erf(double x) nogil
     npy_cdouble xsf_cerf(npy_cdouble x) nogil
     double xsf_erfc(double x) nogil
     npy_cdouble xsf_cerfc(npy_cdouble x) nogil
     double xsf_erfcx(double x) nogil
     npy_cdouble xsf_cerfcx(npy_cdouble x) nogil
+    double xsf_erfi(double x) nogil
+    npy_cdouble xsf_cerfi(npy_cdouble x) nogil
+    double xsf_dawsn(double x) nogil
+    npy_cdouble xsf_cdawsn(npy_cdouble x) nogil
+    double xsf_voigt_profile(double x, double sigma, double gamma) nogil
     double cephes_poch(double x, double m) nogil
     double cephes_rgamma(double x) nogil
     double xsf_zetac(double x) nogil
@@ -1348,6 +1354,7 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_nbdtrc(int k, int n, double p) nogil
     double xsf_nbdtri(int k, int n, double p) nogil
     double xsf_ndtr(double x) nogil
+    npy_cdouble xsf_cndtr(npy_cdouble x) nogil
     double xsf_ndtri(double x) nogil
     double xsf_owens_t(double h, double a) nogil
     double xsf_pdtr(double k, double m) nogil
@@ -1804,7 +1811,7 @@ cdef _proto_ndtri_exp_t *_proto_ndtri_exp_t_var = &_func_ndtri_exp
 
 cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.voigt_profile"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_voigt_profile)(x0, x1, x2)
+    return xsf_voigt_profile(x0, x1, x2)
 
 cpdef double agm(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.agm"""
@@ -2065,9 +2072,9 @@ cpdef double cotdg(double x0) noexcept nogil:
 cpdef Dd_number_t dawsn(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.dawsn"""
     if Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_dawsn)(x0)
+        return xsf_dawsn(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_dawsn_complex)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cdawsn(_complexstuff.npy_cdouble_from_double_complex(x0)))
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2209,9 +2216,9 @@ cpdef Dd_number_t erfcx(Dd_number_t x0) noexcept nogil:
 cpdef Dd_number_t erfi(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfi"""
     if Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfi)(x0)
+        return xsf_erfi(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfi_complex)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cerfi(_complexstuff.npy_cdouble_from_double_complex(x0)))
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3197,7 +3204,7 @@ cpdef double nctdtrit(double x0, double x1, double x2) noexcept nogil:
 cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.ndtr"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_ndtr)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cndtr(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
         return xsf_ndtr(x0)
     else:
@@ -3582,7 +3589,7 @@ cpdef double tklmbda(double x0, double x1) noexcept nogil:
 
 cpdef double complex wofz(double complex x0) noexcept nogil:
     """See the documentation for scipy.special.wofz"""
-    return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_w)(x0)
+    return _complexstuff.double_complex_from_npy_cdouble(xsf_cwofz(_complexstuff.npy_cdouble_from_double_complex(x0)))
 
 cpdef Dd_number_t wrightomega(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.wrightomega"""

@@ -7,80 +7,6 @@ using namespace std;
 
 extern "C" {
 
-npy_cdouble faddeeva_w(npy_cdouble zp)
-{
-    complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = Faddeeva::w(z);
-    return npy_cpack(real(w), imag(w));
-}
-
-npy_cdouble faddeeva_erf(npy_cdouble zp)
-{
-    complex<double> z(npy_creal(zp), npy_cimag(zp));
-    complex<double> w = Faddeeva::erf(z);
-    return npy_cpack(real(w), imag(w));
-}
-
-double faddeeva_erfc(double x)
-{
-    return Faddeeva::erfc(x);
-}
-
-npy_cdouble faddeeva_erfc_complex(npy_cdouble zp)
-{
-    complex<double> z(npy_creal(zp), npy_cimag(zp));
-    complex<double> w = Faddeeva::erfc(z);
-    return npy_cpack(real(w), imag(w));
-}
-
-double faddeeva_erfcx(double x)
-{
-    return Faddeeva::erfcx(x);
-}
-
-npy_cdouble faddeeva_erfcx_complex(npy_cdouble zp)
-{
-    complex<double> z(npy_creal(zp), npy_cimag(zp));
-    complex<double> w = Faddeeva::erfcx(z);
-    return npy_cpack(real(w), imag(w));
-}
-
-double faddeeva_erfi(double x)
-{
-    return Faddeeva::erfi(x);
-}
-
-npy_cdouble faddeeva_erfi_complex(npy_cdouble zp)
-{
-    complex<double> z(npy_creal(zp), npy_cimag(zp));
-    complex<double> w = Faddeeva::erfi(z);
-    return npy_cpack(real(w), imag(w));
-}
-
-double faddeeva_dawsn(double x)
-{
-    return Faddeeva::Dawson(x);
-}
-
-npy_cdouble faddeeva_dawsn_complex(npy_cdouble zp)
-{
-    complex<double> z(npy_creal(zp), npy_cimag(zp));
-    complex<double> w = Faddeeva::Dawson(z);
-    return npy_cpack(real(w), imag(w));
-}
-
-/*
- * A wrapper for a normal CDF for complex argument
- */
-
-npy_cdouble faddeeva_ndtr(npy_cdouble zp)
-{
-    complex<double> z(npy_creal(zp), npy_cimag(zp));
-    z *= M_SQRT1_2;
-    complex<double> w = 0.5 * Faddeeva::erfc(-z);
-    return npy_cpack(real(w), imag(w));
-}
-
 /*
  * Log of the CDF of the normal distribution for double x.
  *
@@ -107,10 +33,10 @@ double faddeeva_log_ndtr(double x)
 {
     double t = x*M_SQRT1_2;
     if (x < -1.0) {
-        return log(faddeeva_erfcx(-t)/2) - t*t;
+        return log(Faddeeva::erfcx(-t)/2) - t*t;
     }
     else {
-        return log1p(-faddeeva_erfc(t)/2);
+        return log1p(-Faddeeva::erfc(t)/2);
     }
 }
 
@@ -159,32 +85,6 @@ npy_cdouble faddeeva_log_ndtr_complex(npy_cdouble zp)
     if (im < -M_PI){ im += 2*M_PI; }
 
     return npy_cpack(real(result), im);
-}
-
-double faddeeva_voigt_profile(double x, double sigma, double gamma)
-{
-    const double INV_SQRT_2 = 0.707106781186547524401;
-    const double SQRT_2PI = 2.5066282746310002416123552393401042;
-
-    if(sigma == 0){
-        if (gamma == 0){
-            if (std::isnan(x))
-                return x;
-            if (x == 0)
-                return INFINITY;
-            return 0;
-        }
-        return gamma / M_PI / (x*x + gamma*gamma);
-    }
-    if (gamma == 0){
-        return 1 / SQRT_2PI / sigma * exp(-(x/sigma)*(x/sigma) / 2);
-    }
-
-    double zreal = x / sigma * INV_SQRT_2;
-    double zimag = gamma / sigma * INV_SQRT_2;
-    std::complex<double> z(zreal, zimag);
-    std::complex<double> w = Faddeeva::w(z);
-    return real(w) / sigma / SQRT_2PI;
 }
 
 }  // extern "C"

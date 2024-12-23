@@ -13,6 +13,7 @@
 #include "xsf/cephes/owens_t.h"
 #include "xsf/cephes/pdtr.h"
 #include "xsf/cephes/tukey.h"
+#include "xsf/erf.h"
 
 namespace xsf {
 
@@ -49,6 +50,14 @@ inline double kolmogci(double x) { return cephes::kolmogci(x); }
 inline double kolmogp(double x) { return cephes::kolmogp(x); }
 
 inline double ndtr(double x) { return cephes::ndtr(x); }
+
+inline float ndtr(float x) { return cephes::ndtr(static_cast<double>(x)); }
+
+inline std::complex<double> ndtr(std::complex<double> z) { return 0.5 * xsf::erfc(-z * M_SQRT1_2); }
+
+inline std::complex<float> ndtr(std::complex<float> z) {
+    return static_cast<std::complex<float>>(ndtr(static_cast<std::complex<double>>(z)));
+}
 
 inline double nbdtr(int k, int n, double p) { return cephes::nbdtr(k, n, p); }
 
