@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Faddeeva.hh"
+#include "third_party/Faddeeva/Faddeeva.hh"
 #include "cephes/ndtr.h"
 #include "config.h"
 
