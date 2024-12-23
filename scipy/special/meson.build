@@ -55,7 +55,6 @@ ufuncs_sources = [
 ]
 
 ufuncs_cxx_sources = [
-  '_faddeeva.cxx',
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
   'Faddeeva.cc',

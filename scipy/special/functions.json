@@ -506,12 +506,6 @@
             "cephes_log1p": "d->d"
         }
     },
-    "log_ndtr": {
-        "_faddeeva.h++": {
-            "faddeeva_log_ndtr": "d->d",
-            "faddeeva_log_ndtr_complex": "D->D"
-        }
-    },
     "lpmv": {
         "xsf_wrappers.h": {
             "pmv_wrap": "ddd->d"

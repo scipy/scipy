@@ -1287,7 +1287,6 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_igamci(double a, double p) nogil
     double cephes_igam_fac(double a, double x) nogil
     double cephes_lanczos_sum_expg_scaled(double x) nogil
-    double cephes_erf(double x) nogil
     npy_cdouble xsf_cwofz(npy_cdouble x) nogil
     double xsf_erf(double x) nogil
     npy_cdouble xsf_cerf(npy_cdouble x) nogil
@@ -1355,6 +1354,8 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_nbdtri(int k, int n, double p) nogil
     double xsf_ndtr(double x) nogil
     npy_cdouble xsf_cndtr(npy_cdouble x) nogil
+    double xsf_log_ndtr(double x) nogil
+    npy_cdouble xsf_clog_ndtr(npy_cdouble x) nogil
     double xsf_ndtri(double x) nogil
     double xsf_owens_t(double h, double a) nogil
     double xsf_pdtr(double k, double m) nogil
@@ -2962,9 +2963,9 @@ cpdef dfg_number_t log_expit(dfg_number_t x0) noexcept nogil:
 cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.log_ndtr"""
     if Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_log_ndtr)(x0)
+        return xsf_log_ndtr(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_log_ndtr_complex)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_clog_ndtr(_complexstuff.npy_cdouble_from_double_complex(x0)))
     else:
         if Dd_number_t is double_complex:
             return NAN

@@ -179,8 +179,6 @@ double cephes_igam_fac(double a, double x);
 
 double cephes_lanczos_sum_expg_scaled(double x);
 
-double cephes_erf(double x);
-
 double cephes_erfc(double x);
 
 double cephes_poch(double x, double m);
@@ -349,6 +347,8 @@ double xsf_nbdtrc(int k, int n, double p);
 double xsf_nbdtri(int k, int n, double p);
 double xsf_ndtr(double x);
 npy_cdouble xsf_cndtr(npy_cdouble x);
+double xsf_log_ndtr(double x);
+npy_cdouble xsf_clog_ndtr(npy_cdouble x);
 double xsf_ndtri(double x);
 double xsf_owens_t(double h, double a);
 double xsf_pdtr(double k, double m);

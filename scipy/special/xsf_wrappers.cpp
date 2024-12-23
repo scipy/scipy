@@ -380,8 +380,6 @@ double cephes_igam_fac(double a, double x) { return xsf::cephes::detail::igam_fa
 
 double cephes_lanczos_sum_expg_scaled(double x) { return xsf::cephes::lanczos_sum_expg_scaled(x); }
 
-double cephes_erf(double x) { return xsf::cephes::erf(x); }
-
 double cephes_erfc(double x) { return xsf::cephes::erfc(x); }
 
 double cephes_poch(double x, double m) { return xsf::cephes::poch(x, m); }
@@ -615,6 +613,10 @@ double xsf_nbdtri(int k, int n, double p) { return xsf::nbdtri(k, n, p); }
 double xsf_ndtr(double x) { return xsf::ndtr(x); }
 
 npy_cdouble xsf_cndtr(npy_cdouble x) { return to_ccomplex(xsf::ndtr(to_complex(x))); }
+
+double xsf_log_ndtr(double x) { return xsf::log_ndtr(x); }
+
+npy_cdouble xsf_clog_ndtr(npy_cdouble x) { return to_ccomplex(xsf::log_ndtr(to_complex(x))); }
 
 double xsf_ndtri(double x) { return xsf::ndtri(x); }
 

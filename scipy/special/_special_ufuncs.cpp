@@ -373,6 +373,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           "ndtr", nullptr);
     PyModule_AddObjectRef(_special_ufuncs, "ndtr", ndtr);
 
+    PyObject *log_ndtr =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log_ndtr), static_cast<xsf::numpy::f_f>(xsf::log_ndtr),
+                           static_cast<xsf::numpy::D_D>(xsf::log_ndtr), static_cast<xsf::numpy::F_F>(xsf::log_ndtr)},
+                          "log_ndtr", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "log_ndtr", log_ndtr);
+
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_dd>(xsf::fresnel), static_cast<xsf::numpy::f_ff>(xsf::fresnel),
                            static_cast<xsf::numpy::D_DD>(xsf::fresnel), static_cast<xsf::numpy::F_FF>(xsf::fresnel)},
