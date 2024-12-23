@@ -32,6 +32,7 @@ try:
     from sksparse.cholmod import cholesky as cholmod  # noqa: F401
     from sksparse.cholmod import analyze as cholmod_analyze
     from sksparse.cholmod import CholmodTypeConversionWarning
+    from warnings import catch_warnings
 except ImportError:
     has_cholmod = False
 try:
@@ -98,8 +99,9 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 # except Exception:
                 #     _get_solver.cholmod_factor = cholmod_analyze(M)
                 #     _get_solver.cholmod_factor.cholesky_inplace(M)
-                with np.testing.suppress_warnings() as sup:
-                    sup.filter(CholmodTypeConversionWarning)
+                with catch_warnings(
+                    action='ignore', category=CholmodTypeConversionWarning
+                ):
                     try:
                         # Will raise an exception in the first call,
                         # or when the matrix changes due to a new problem

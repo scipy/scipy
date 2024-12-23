@@ -11,7 +11,7 @@ except ImportError:
     import warnings
     sksparse_available = False
 import numpy as np
-from warnings import warn
+from warnings import warn, catch_warnings
 
 __all__ = [
     'orthogonality',
@@ -61,8 +61,7 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
     # TODO: revert this once the warning bug fix in sksparse is merged/released
     # Add suppression of spurious warning bug from sksparse with csc_array gh-22089
     # factor = cholesky_AAt(A)
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(CholmodTypeConversionWarning, "converting matrix of class")
+    with catch_warnings(action='ignore', category=CholmodTypeConversionWarning):
         factor = cholesky_AAt(A)
 
     # z = x - A.T inv(A A.T) A x
