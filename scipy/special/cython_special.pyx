@@ -1290,7 +1290,10 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_erf(double x) nogil
     double xsf_erf(double x) nogil
     npy_cdouble xsf_cerf(npy_cdouble x) nogil
-    double cephes_erfc(double x) nogil
+    double xsf_erfc(double x) nogil
+    npy_cdouble xsf_cerfc(npy_cdouble x) nogil
+    double xsf_erfcx(double x) nogil
+    npy_cdouble xsf_cerfcx(npy_cdouble x) nogil
     double cephes_poch(double x, double m) nogil
     double cephes_rgamma(double x) nogil
     double xsf_zetac(double x) nogil
@@ -2182,9 +2185,9 @@ cpdef Dd_number_t erf(Dd_number_t x0) noexcept nogil:
 cpdef Dd_number_t erfc(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfc"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfc_complex)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cerfc(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return cephes_erfc(x0)
+        return xsf_erfc(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2194,9 +2197,9 @@ cpdef Dd_number_t erfc(Dd_number_t x0) noexcept nogil:
 cpdef Dd_number_t erfcx(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erfcx"""
     if Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfcx)(x0)
+        return xsf_erfcx(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfcx_complex)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cerfcx(_complexstuff.npy_cdouble_from_double_complex(x0)))
     else:
         if Dd_number_t is double_complex:
             return NAN

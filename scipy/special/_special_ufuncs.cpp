@@ -211,9 +211,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           "_sinpi", _sinpi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_sinpi", _sinpi);
 
-    PyObject *_zeta = xsf::numpy::ufunc(
-	{static_cast<xsf::numpy::ff_f>(xsf::zeta), static_cast<xsf::numpy::Ff_F>(xsf::zeta),
-	 static_cast<xsf::numpy::dd_d>(xsf::zeta), static_cast<xsf::numpy::Dd_D>(xsf::zeta)}, "_zeta", _zeta_doc);
+    PyObject *_zeta =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ff_f>(xsf::zeta), static_cast<xsf::numpy::Ff_F>(xsf::zeta),
+                           static_cast<xsf::numpy::dd_d>(xsf::zeta), static_cast<xsf::numpy::Dd_D>(xsf::zeta)},
+                          "_zeta", _zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_zeta", _zeta);
 
     PyObject *airy =
@@ -327,10 +328,22 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         {static_cast<xsf::numpy::d_d>(xsf::exprel), static_cast<xsf::numpy::f_f>(xsf::exprel)}, "exprel", exprel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "exprel", exprel);
 
-    PyObject *erf = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::d_d>(xsf::erf), static_cast<xsf::numpy::f_f>(xsf::erf),
-        static_cast<xsf::numpy::D_D>(xsf::erf), static_cast<xsf::numpy::F_F>(xsf::erf)}, "erf", nullptr);
+    PyObject *erf = xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erf), static_cast<xsf::numpy::f_f>(xsf::erf),
+                                       static_cast<xsf::numpy::D_D>(xsf::erf), static_cast<xsf::numpy::F_F>(xsf::erf)},
+                                      "erf", nullptr);
     PyModule_AddObjectRef(_special_ufuncs, "erf", erf);
+
+    PyObject *erfc =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfc), static_cast<xsf::numpy::f_f>(xsf::erfc),
+                           static_cast<xsf::numpy::D_D>(xsf::erfc), static_cast<xsf::numpy::F_F>(xsf::erfc)},
+                          "erfc", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "erfc", erfc);
+
+    PyObject *erfcx =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfcx), static_cast<xsf::numpy::f_f>(xsf::erfcx),
+                           static_cast<xsf::numpy::D_D>(xsf::erfcx), static_cast<xsf::numpy::F_F>(xsf::erfcx)},
+                          "erfcx", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "erfcx", erfcx);
 
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_dd>(xsf::fresnel), static_cast<xsf::numpy::f_ff>(xsf::fresnel),
@@ -472,7 +485,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio", iv_ratio);
 
     PyObject *iv_ratio_c = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::iv_ratio_c), static_cast<xsf::numpy::ff_f>(xsf::iv_ratio_c)}, "_iv_ratio_c", iv_ratio_c_doc);
+        {static_cast<xsf::numpy::dd_d>(xsf::iv_ratio_c), static_cast<xsf::numpy::ff_f>(xsf::iv_ratio_c)}, "_iv_ratio_c",
+        iv_ratio_c_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio_c", iv_ratio_c);
 
     PyObject *ive = xsf::numpy::ufunc(
@@ -849,9 +863,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
 
     PyObject *_riemann_zeta = xsf::numpy::ufunc(
-	 {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::D_D>(xsf::riemann_zeta),
-	 static_cast<xsf::numpy::f_f>(xsf::riemann_zeta), static_cast<xsf::numpy::F_F>(xsf::riemann_zeta)
-	},
+        {static_cast<xsf::numpy::d_d>(xsf::riemann_zeta), static_cast<xsf::numpy::D_D>(xsf::riemann_zeta),
+         static_cast<xsf::numpy::f_f>(xsf::riemann_zeta), static_cast<xsf::numpy::F_F>(xsf::riemann_zeta)},
         "_riemann_zeta", _riemann_zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_riemann_zeta", _riemann_zeta);
 

@@ -49,6 +49,7 @@ sf_error_state_dep = declare_dependency(
 ufuncs_sources = [
   '_cosine.c',
   'xsf_wrappers.cpp',
+  'Faddeeva.cc',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]

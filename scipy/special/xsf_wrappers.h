@@ -205,6 +205,14 @@ double xsf_erf(double x);
 
 npy_cdouble xsf_cerf(npy_cdouble z);
 
+double xsf_erfc(double x);
+
+npy_cdouble xsf_cerfc(npy_cdouble z);
+
+double xsf_erfcx(double x);
+
+npy_cdouble xsf_cerfcx(npy_cdouble z);
+
 double cephes_ellpk(double x);
 
 double cephes_ellie(double phi, double m);

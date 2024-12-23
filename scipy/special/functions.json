@@ -225,20 +225,6 @@
             "entr": "d->d"
         }
     },
-    "erfc": {
-        "_faddeeva.h++": {
-            "faddeeva_erfc_complex": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_erfc": "d->d"
-        }
-    },
-    "erfcx": {
-        "_faddeeva.h++": {
-            "faddeeva_erfcx": "d->d",
-            "faddeeva_erfcx_complex": "D->D"
-        }
-    },
     "erfi": {
         "_faddeeva.h++": {
             "faddeeva_erfi": "d->d",

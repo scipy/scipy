@@ -315,15 +315,12 @@ int xsf_sici(double x, double *si, double *ci) { return xsf::sici(x, si, ci); }
 int xsf_shichi(double x, double *si, double *ci) { return xsf::shichi(x, si, ci); }
 
 int xsf_csici(npy_cdouble x, npy_cdouble *si, npy_cdouble *ci) {
-    return xsf::sici(to_complex(x),
-		     reinterpret_cast<complex<double> *>(si),
-		     reinterpret_cast<complex<double> *>(ci));
+    return xsf::sici(to_complex(x), reinterpret_cast<complex<double> *>(si), reinterpret_cast<complex<double> *>(ci));
 }
 
 int xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
-    return xsf::shichi(to_complex(x),
-		       reinterpret_cast<complex<double> *>(shi),
-		       reinterpret_cast<complex<double> *>(chi));
+    return xsf::shichi(to_complex(x), reinterpret_cast<complex<double> *>(shi),
+                       reinterpret_cast<complex<double> *>(chi));
 }
 
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err) {
@@ -408,6 +405,14 @@ double xsf_ellipe(double x) { return xsf::ellipe(x); }
 double xsf_erf(double x) { return xsf::erf(x); }
 
 npy_cdouble xsf_cerf(npy_cdouble z) { return to_ccomplex(xsf::erf(to_complex(z))); }
+
+double xsf_erfc(double x) { return xsf::erfc(x); }
+
+npy_cdouble xsf_cerfc(npy_cdouble z) { return to_ccomplex(xsf::erfc(to_complex(z))); }
+
+double xsf_erfcx(double x) { return xsf::erfcx(x); }
+
+npy_cdouble xsf_cerfcx(npy_cdouble z) { return to_ccomplex(xsf::erfcx(to_complex(z))); }
 
 double cephes_ellpk(double x) { return xsf::ellipkm1(x); }
 
@@ -577,7 +582,7 @@ double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
 
 double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }
 
-double xsf_gdtrib(double a, double p, double x) {return xsf::gdtrib(a, p, x); }
+double xsf_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }
 
 double xsf_kolmogorov(double x) { return xsf::kolmogorov(x); }
 
