@@ -49,7 +49,6 @@ sf_error_state_dep = declare_dependency(
 ufuncs_sources = [
   '_cosine.c',
   'xsf_wrappers.cpp',
-  'xsf/third_party/Faddeeva/Faddeeva.cc',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]
@@ -57,7 +56,6 @@ ufuncs_sources = [
 ufuncs_cxx_sources = [
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
-  'xsf/third_party/Faddeeva/Faddeeva.cc',
   'sf_error.cc',
   'wright.cc'
 ]
@@ -77,7 +75,7 @@ if meson.get_compiler('cpp').get_id() == 'gcc'
 endif
 
 py3.extension_module('_special_ufuncs',
-  ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc', 'xsf/third_party/Faddeeva/Faddeeva.cc'],
+  ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [np_dep, sf_error_state_dep],
   link_args: version_link_args,
@@ -215,7 +213,6 @@ py3.extension_module('cython_special',
     '_cosine.c',
     'xsf_wrappers.cpp',
     'sf_error.cc',
-    'xsf/third_party/Faddeeva/Faddeeva.cc',
     'dd_real_wrappers.cpp'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
