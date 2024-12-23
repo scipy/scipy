@@ -472,18 +472,16 @@ def block_diag(*arrs):
         arrs = ([],)
     arrs = [np.atleast_2d(a) for a in arrs]
 
-    bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
-    if bad_args:
-        raise ValueError("arguments in the following positions "
-                         f"have dimension greater than 2: {bad_args}")
-
-    shapes = np.array([a.shape for a in arrs])
+    batch_shapes = [a.shape[:-2] for a in arrs]
+    batch_shape = np.broadcast_shapes(*batch_shapes)
+    arrs = [np.broadcast_to(a, batch_shape + a.shape[-2:]) for a in arrs]
     out_dtype = np.result_type(*[arr.dtype for arr in arrs])
-    out = np.zeros(np.sum(shapes, axis=0), dtype=out_dtype)
+    block_shapes = np.array([a.shape[-2:] for a in arrs])
+    out = np.zeros(batch_shape + tuple(np.sum(block_shapes, axis=0)), dtype=out_dtype)
 
     r, c = 0, 0
-    for i, (rr, cc) in enumerate(shapes):
-        out[r:r + rr, c:c + cc] = arrs[i]
+    for i, (rr, cc) in enumerate(block_shapes):
+        out[..., r:r + rr, c:c + cc] = arrs[i]
         r += rr
         c += cc
     return out
