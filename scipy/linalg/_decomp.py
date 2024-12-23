@@ -838,6 +838,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
+@_apply_over_batch(('a', 2), ('b', 2))
 def eigvals(a, b=None, overwrite_a=False, check_finite=True,
             homogeneous_eigvals=False):
     """
@@ -1126,6 +1127,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                       select_range=select_range, check_finite=check_finite)
 
 
+@_apply_over_batch(('d', 1), ('e', 1))
 def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
                          check_finite=True, tol=0., lapack_driver='auto'):
     """
@@ -1207,6 +1209,7 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
         check_finite=check_finite, tol=tol, lapack_driver=lapack_driver)
 
 
+@_apply_over_batch(('d', 1), ('e', 1))
 def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
                      check_finite=True, tol=0., lapack_driver='auto'):
     """
