@@ -144,6 +144,9 @@ class _MWU:
         return configurations / total
 
 
+# Maintain state for faster repeat calls to `mannwhitneyu`.
+# _MWU() is calculated once per thread and stored as an attribute on
+# this thread-local variable inside mannwhitneyu().
 _mwu_state = threading.local()
 
 

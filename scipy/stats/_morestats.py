@@ -2629,6 +2629,8 @@ class _ABW:
 
 
 # Maintain state for faster repeat calls to ansari w/ method='exact'
+# _ABW() is calculated once per thread and stored as an attribute on
+# this thread-local variable inside ansari().
 _abw_state = threading.local()
 
 

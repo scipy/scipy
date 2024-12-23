@@ -37,7 +37,7 @@ from ._stats import gaussian_kernel_estimate, gaussian_kernel_estimate_log
 
 __all__ = ['gaussian_kde']
 
-mvn_lock = threading.Lock()
+MVN_LOCK = threading.Lock()
 
 
 class gaussian_kde:
@@ -387,7 +387,7 @@ class gaussian_kde:
         else:
             extra_kwds = {}
 
-        with mvn_lock:
+        with MVN_LOCK:
             value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
                                                 self.dataset, self.weights,
                                                 self.covariance, **extra_kwds)
