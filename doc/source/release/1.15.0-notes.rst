@@ -404,6 +404,8 @@ Deprecated features
 - `scipy.special.lpn` is deprecated in favor of `scipy.special.legendre_p_all`.
 - `scipy.special.lpmn` and `scipy.special.clpmn` are deprecated in favor of
   `scipy.special.assoc_legendre_p_all`.
+- `scipy.special.sph_harm` has been deprecated in favor of
+  `scipy.special.sph_harm_y`.
 - The raveling of multi-dimensional input by `scipy.linalg.toeplitz` has
   been deprecated. It will support batching in SciPy ``1.17.0``.
 - The ``random_state`` and ``permutations`` arguments of
