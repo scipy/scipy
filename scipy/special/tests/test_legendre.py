@@ -10,6 +10,14 @@ from scipy import special
 from scipy.special import (legendre_p, legendre_p_all, assoc_legendre_p,
     assoc_legendre_p_all, sph_legendre_p, sph_legendre_p_all)
 
+# The functions lpn, lpmn, clpmn, appearing below are
+# deprecated in favor of legendre_p_all, assoc_legendre_p_all, and
+# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn)
+# respectively. The deprecated functions listed above are implemented as
+# shims around their respective replacements. The replacements are tested
+# separately, but tests for the deprecated functions remain to verify the
+# correctness of the shims.
+
 # Base polynomials come from Abrahmowitz and Stegan
 class TestLegendre:
     def test_legendre(self):
