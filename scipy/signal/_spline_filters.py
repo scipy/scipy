@@ -4,6 +4,9 @@ from numpy import (asarray, pi, zeros_like,
                    moveaxis, abs, arctan, complex64, float32)
 import numpy as np
 
+from scipy._lib._array_api import array_namespace
+import scipy._lib.array_api_extra as xpx
+
 from scipy._lib._util import normalize_axis_index
 
 # From splinemodule.c
@@ -680,7 +683,12 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     output : ndarray
         The filtered signal.
     """
-    if np.abs(z1) >= 1:
+    xp = array_namespace(signal)
+
+    # internals of symiirorder1 are numpy-only
+    signal = np.asarray(signal)
+
+    if abs(z1) >= 1:
         raise ValueError('|z1| must be less than 1.0')
 
     if signal.ndim > 2:
@@ -722,7 +730,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     if squeeze_dim:
         out = out[0]
 
-    return out
+    return xp.asarray(out)
 
 
 def symiirorder2(input, r, omega, precision=-1.0):
@@ -758,6 +766,12 @@ def symiirorder2(input, r, omega, precision=-1.0):
     output : ndarray
         The filtered signal.
     """
+    xp = array_namespace(input)
+
+    # internals are numpy-only
+    input = np.asarray(input)
+    omega = np.asarray(omega)
+
     if r >= 1.0:
         raise ValueError('r must be less than 1.0')
 
@@ -805,4 +819,4 @@ def symiirorder2(input, r, omega, precision=-1.0):
     if squeeze_dim:
         out = out[0]
 
-    return out
+    return xp.asarray(out)

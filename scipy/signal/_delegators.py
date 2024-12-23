@@ -518,7 +518,7 @@ def symiirorder1_signature(signal, c0, z1, precision=-1.0):
 
 
 def symiirorder2_signature(input, r, omega, precision=-1.0):
-    return array_namespace(input)
+    return array_namespace(input, _skip_if_int(r), _skip_if_int(omega))
 
 
 def cspline1d_signature(signal, *args, **kwds):
