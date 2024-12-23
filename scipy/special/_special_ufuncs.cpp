@@ -12,6 +12,7 @@
 #include "xsf/binom.h"
 #include "xsf/digamma.h"
 #include "xsf/ellip.h"
+#include "xsf/erf.h"
 #include "xsf/expint.h"
 #include "xsf/fresnel.h"
 #include "xsf/gamma.h"
@@ -325,6 +326,11 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *exprel = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::d_d>(xsf::exprel), static_cast<xsf::numpy::f_f>(xsf::exprel)}, "exprel", exprel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "exprel", exprel);
+
+    PyObject *erf = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::d_d>(xsf::erf), static_cast<xsf::numpy::f_f>(xsf::erf),
+        static_cast<xsf::numpy::D_D>(xsf::erf), static_cast<xsf::numpy::F_F>(xsf::erf)}, "erf", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "erf", erf);
 
     PyObject *fresnel =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_dd>(xsf::fresnel), static_cast<xsf::numpy::f_ff>(xsf::fresnel),

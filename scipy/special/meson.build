@@ -77,7 +77,7 @@ if meson.get_compiler('cpp').get_id() == 'gcc'
 endif
 
 py3.extension_module('_special_ufuncs',
-  ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
+  ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc', 'Faddeeva.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [np_dep, sf_error_state_dep],
   link_args: version_link_args,
@@ -215,6 +215,7 @@ py3.extension_module('cython_special',
     '_cosine.c',
     'xsf_wrappers.cpp',
     'sf_error.cc',
+    'Faddeeva.cc',
     'dd_real_wrappers.cpp'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],

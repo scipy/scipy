@@ -1288,6 +1288,8 @@ cdef extern from r"xsf_wrappers.h":
     double cephes_igam_fac(double a, double x) nogil
     double cephes_lanczos_sum_expg_scaled(double x) nogil
     double cephes_erf(double x) nogil
+    double xsf_erf(double x) nogil
+    npy_cdouble xsf_cerf(npy_cdouble x) nogil
     double cephes_erfc(double x) nogil
     double cephes_poch(double x, double m) nogil
     double cephes_rgamma(double x) nogil
@@ -2168,9 +2170,9 @@ cpdef double entr(double x0) noexcept nogil:
 cpdef Dd_number_t erf(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.erf"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_faddeeva_erf)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(xsf_cerf(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return cephes_erf(x0)
+        return xsf_erf(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN

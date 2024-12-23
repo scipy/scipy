@@ -8,6 +8,7 @@
 #include "xsf/cdflib.h"
 #include "xsf/digamma.h"
 #include "xsf/ellip.h"
+#include "xsf/erf.h"
 #include "xsf/expint.h"
 #include "xsf/fresnel.h"
 #include "xsf/gamma.h"
@@ -403,6 +404,10 @@ double cephes_expm1(double x) { return xsf::cephes::expm1(x); }
 double cephes_expn(int n, double x) { return xsf::cephes::expn(n, x); }
 
 double xsf_ellipe(double x) { return xsf::ellipe(x); }
+
+double xsf_erf(double x) { return xsf::erf(x); }
+
+npy_cdouble xsf_cerf(npy_cdouble z) { return to_ccomplex(xsf::erf(to_complex(z))); }
 
 double cephes_ellpk(double x) { return xsf::ellipkm1(x); }
 

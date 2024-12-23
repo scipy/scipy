@@ -201,6 +201,10 @@ double cephes_expn(int n, double x);
 
 double xsf_ellipe(double x);
 
+double xsf_erf(double x);
+
+npy_cdouble xsf_cerf(npy_cdouble z);
+
 double cephes_ellpk(double x);
 
 double cephes_ellie(double phi, double m);
