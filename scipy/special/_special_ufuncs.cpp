@@ -59,12 +59,17 @@ extern const char *cbrt_doc;
 extern const char *cosdg_doc;
 extern const char *cosm1_doc;
 extern const char *cotdg_doc;
+extern const char *dawsn_doc;
 extern const char *ellipe_doc;
 extern const char *ellipeinc_doc;
 extern const char *ellipj_doc;
 extern const char *ellipk_doc;
 extern const char *ellipkm1_doc;
 extern const char *ellipkinc_doc;
+extern const char *erf_doc;
+extern const char *erfc_doc;
+extern const char *erfcx_doc;
+extern const char *erfi_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
 extern const char *expit_doc;
@@ -117,6 +122,7 @@ extern const char *lambertw_doc;
 extern const char *logit_doc;
 extern const char *loggamma_doc;
 extern const char *log_expit_doc;
+extern const char *log_ndtr_doc;
 extern const char *log_wright_bessel_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
@@ -128,6 +134,7 @@ extern const char *mathieu_modsem2_doc;
 extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
+extern const char *ndtr_doc;
 extern const char *obl_ang1_doc;
 extern const char *obl_ang1_cv_doc;
 extern const char *obl_cv_doc;
@@ -164,6 +171,8 @@ extern const char *sph_harm_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
 extern const char *tandg_doc;
+extern const char *voigt_profile_doc;
+extern const char *wofz_doc;
 extern const char *wright_bessel_doc;
 extern const char *y0_doc;
 extern const char *y1_doc;
@@ -331,52 +340,52 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *erf = xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erf), static_cast<xsf::numpy::f_f>(xsf::erf),
                                        static_cast<xsf::numpy::D_D>(xsf::erf), static_cast<xsf::numpy::F_F>(xsf::erf)},
-                                      "erf", nullptr);
+                                      "erf", erf_doc);
     PyModule_AddObjectRef(_special_ufuncs, "erf", erf);
 
     PyObject *erfc =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfc), static_cast<xsf::numpy::f_f>(xsf::erfc),
                            static_cast<xsf::numpy::D_D>(xsf::erfc), static_cast<xsf::numpy::F_F>(xsf::erfc)},
-                          "erfc", nullptr);
+                          "erfc", erfc_doc);
     PyModule_AddObjectRef(_special_ufuncs, "erfc", erfc);
 
     PyObject *erfcx =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfcx), static_cast<xsf::numpy::f_f>(xsf::erfcx),
                            static_cast<xsf::numpy::D_D>(xsf::erfcx), static_cast<xsf::numpy::F_F>(xsf::erfcx)},
-                          "erfcx", nullptr);
+                          "erfcx", erfcx_doc);
     PyModule_AddObjectRef(_special_ufuncs, "erfcx", erfcx);
 
     PyObject *erfi =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::erfi), static_cast<xsf::numpy::f_f>(xsf::erfi),
                            static_cast<xsf::numpy::D_D>(xsf::erfi), static_cast<xsf::numpy::F_F>(xsf::erfi)},
-                          "erfi", nullptr);
+                          "erfi", erfi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "erfi", erfi);
 
     PyObject *voigt_profile = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ddd_d>(xsf::voigt_profile), static_cast<xsf::numpy::fff_f>(xsf::voigt_profile)},
-        "voigt_profile", nullptr);
+        "voigt_profile", voigt_profile_doc);
     PyModule_AddObjectRef(_special_ufuncs, "voigt_profile", voigt_profile);
 
     PyObject *wofz = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::D_D>(xsf::wofz), static_cast<xsf::numpy::F_F>(xsf::wofz)}, "wofz", nullptr);
+        {static_cast<xsf::numpy::D_D>(xsf::wofz), static_cast<xsf::numpy::F_F>(xsf::wofz)}, "wofz", wofz_doc);
     PyModule_AddObjectRef(_special_ufuncs, "wofz", wofz);
 
     PyObject *dawsn =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::dawsn), static_cast<xsf::numpy::f_f>(xsf::dawsn),
                            static_cast<xsf::numpy::D_D>(xsf::dawsn), static_cast<xsf::numpy::F_F>(xsf::dawsn)},
-                          "dawsn", nullptr);
+                          "dawsn", dawsn_doc);
     PyModule_AddObjectRef(_special_ufuncs, "dawsn", dawsn);
 
     PyObject *ndtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::ndtr), static_cast<xsf::numpy::f_f>(xsf::ndtr),
                            static_cast<xsf::numpy::D_D>(xsf::ndtr), static_cast<xsf::numpy::F_F>(xsf::ndtr)},
-                          "ndtr", nullptr);
+                          "ndtr", ndtr_doc);
     PyModule_AddObjectRef(_special_ufuncs, "ndtr", ndtr);
 
     PyObject *log_ndtr =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log_ndtr), static_cast<xsf::numpy::f_f>(xsf::log_ndtr),
                            static_cast<xsf::numpy::D_D>(xsf::log_ndtr), static_cast<xsf::numpy::F_F>(xsf::log_ndtr)},
-                          "log_ndtr", nullptr);
+                          "log_ndtr", log_ndtr_doc);
     PyModule_AddObjectRef(_special_ufuncs, "log_ndtr", log_ndtr);
 
     PyObject *fresnel =
