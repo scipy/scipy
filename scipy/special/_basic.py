@@ -2972,8 +2972,9 @@ def _factorialx_approx_core(n, k, extend):
         with warnings.catch_warnings():
             # do not warn about 0 * inf, nan / nan etc.; the results are correct
             warnings.simplefilter("ignore", RuntimeWarning)
-            result = np.power(k, (n - 1) / k, dtype=p_dtype) * _gamma1p(n / k)
-            result *= rgamma(1 / k + 1)
+            # don't use `(n-1)/k` in np.power; underflows if 0 is of a uintX type
+            result = np.power(k, n / k, dtype=p_dtype) * _gamma1p(n / k)
+            result *= rgamma(1 / k + 1) / np.power(k, 1 / k, dtype=p_dtype)
         if isinstance(n, np.ndarray):
             # ensure we keep array-ness for 0-dim inputs; already n/k above loses it
             result = np.array(result)
