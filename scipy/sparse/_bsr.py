@@ -137,7 +137,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                 self._shape = check_shape(shape)
 
         if dtype is not None:
-            self.data = self.data.astype(dtype, copy=False)
+            self.data = self.data.astype(getdtype(dtype, self.data), copy=False)
 
         self.check_format(full_check=False)
 
