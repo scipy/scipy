@@ -408,9 +408,9 @@ def kron(a, b):
 
 def block_diag(*arrs):
     """
-    Create a block diagonal matrix from provided arrays.
+    Create a block diagonal array from provided arrays.
 
-    Given the inputs `A`, `B` and `C`, the output will have these
+    For example, given 2-D inputs `A`, `B` and `C`, the output will have these
     arrays arranged on the diagonal::
 
         [[A, 0, 0],
@@ -419,15 +419,17 @@ def block_diag(*arrs):
 
     Parameters
     ----------
-    A, B, C, ... : array_like, up to 2-D
-        Input arrays.  A 1-D array or array_like sequence of length `n` is
-        treated as a 2-D array with shape ``(1,n)``.
+    A, B, C, ... : array_like
+        Input arrays.  A 1-D array or array_like sequence of length ``n`` is
+        treated as a 2-D array with shape ``(1, n)``. Any dimensions before
+        the last two are treated as batch dimensions; see :ref:`linalg_batch`.
 
     Returns
     -------
     D : ndarray
-        Array with `A`, `B`, `C`, ... on the diagonal. `D` has the
-        same dtype as `A`.
+        Array with `A`, `B`, `C`, ... on the diagonal of the last two
+        dimensions. `D` has the same dtype as the result type of the
+        inputs.
 
     Notes
     -----
@@ -435,7 +437,8 @@ def block_diag(*arrs):
     block diagonal matrix.
 
     Empty sequences (i.e., array-likes of zero size) will not be ignored.
-    Noteworthy, both [] and [[]] are treated as matrices with shape ``(1,0)``.
+    Noteworthy, both ``[]`` and ``[[]]`` are treated as matrices with shape
+    ``(1,0)``.
 
     Examples
     --------
