@@ -4110,6 +4110,8 @@ class TestRound:
         rndrl = (10,10,10,11)
         assert_array_equal(rnd,rndrl)
 
+# sph_harm is deprecated and is implemented as a shim around sph_harm_y.
+# The following two tests are maintained to verify the correctness of the shim.
 
 def test_sph_harm():
     # Tests derived from tables in

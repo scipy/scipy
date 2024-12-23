@@ -53,6 +53,9 @@ def test_first_harmonics():
     # `phi` as the polar angle, and include the Condon-Shortley
     # phase.
 
+    # sph_harm is deprecated and is implemented as a shim around sph_harm_y.
+    # This test is maintained to verify the correctness of the shim.
+
     # Notation is Ymn
     def Y00(theta, phi):
         return 0.5*np.sqrt(1/np.pi)

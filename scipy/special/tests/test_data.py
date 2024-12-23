@@ -56,6 +56,15 @@ def data_local(func, dataname, *a, **kw):
     return FuncData(func, DATASETS_LOCAL[dataname], *a, **kw)
 
 
+# The functions lpn, lpmn, clpmn, and sph_harm appearing below are
+# deprecated in favor of legendre_p_all, assoc_legendre_p_all,
+# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn),
+# and sph_harm_y respectively. The deprecated functions listed above are
+# implemented as shims around their respective replacements. The replacements
+# are tested separately, but tests for the deprecated functions remain to
+# verify the correctness of the shims.
+
+
 def ellipk_(k):
     return ellipk(k*k)
 
