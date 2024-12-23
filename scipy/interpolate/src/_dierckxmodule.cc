@@ -754,7 +754,18 @@ static struct PyModuleDef dierckxmodule = {
 PyMODINIT_FUNC
 PyInit__dierckx(void)
 {
+    PyObject *module;
+
     import_array();
 
-    return PyModule_Create(&dierckxmodule);
+    module = PyModule_Create(&dierckxmodule);
+    if (module == NULL) {
+        return NULL;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }
