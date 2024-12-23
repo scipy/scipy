@@ -515,7 +515,7 @@ Authors (commits)
 *****************
 
 * endolith (4)
-* h-vetinari (61)
+* h-vetinari (62)
 * a-drenaline (1) +
 * Afleloup (1) +
 * Ahmad Alkadri (1) +
@@ -530,14 +530,14 @@ Authors (commits)
 * Christoph Baumgarten (1)
 * Nickolai Belakovski (3)
 * Krishan Bhasin (1) +
-* Jake Bowhay (85)
+* Jake Bowhay (89)
 * Michael Bratsch (2) +
 * Matthew Brett (1)
 * Keith Briggs (1) +
 * Olly Britton (145) +
 * Dietrich Brunn (11)
 * Clemens Brunner (1)
-* Evgeni Burovski (182)
+* Evgeni Burovski (185)
 * Matthias Bussonnier (7)
 * CJ Carey (32)
 * Cesar Carrasco (4) +
@@ -557,13 +557,13 @@ Authors (commits)
 * Sahil Garje (1) +
 * Gabriel Gerlero (2)
 * Yotam Gingold (1) +
-* Ralf Gommers (107)
+* Ralf Gommers (110)
 * Rohit Goswami (62)
 * Anil Gurses (1) +
 * Oscar Gustafsson (1) +
-* Matt Haberland (371)
+* Matt Haberland (389)
 * Matt Hall (1) +
-* Joren Hammudoglu (3) +
+* Joren Hammudoglu (6) +
 * CY Han (1) +
 * Daniel Isaac (4) +
 * Maxim Ivanov (1)
@@ -576,7 +576,7 @@ Authors (commits)
 * Guus Kamphuis (1) +
 * Aditya Karumanchi (2) +
 * Robert Kern (5)
-* Agriya Khetarpal (10)
+* Agriya Khetarpal (11)
 * Andrew Knyazev (7)
 * Gideon Genadi Kogan (1) +
 * Damien LaRocque (1) +
@@ -586,6 +586,7 @@ Authors (commits)
 * Boyu Liu (1) +
 * Drew Allan Loney (1) +
 * Christian Lorentzen (1)
+* Loïc Estève (2)
 * Smit Lunagariya (1)
 * Henry Lunn (1) +
 * Marco Maggi (4)
@@ -615,7 +616,7 @@ Authors (commits)
 * Tom M. Ragonneau (2)
 * Peter Ralph (1) +
 * Stephan Rave (1) +
-* Tyler Reddy (131)
+* Tyler Reddy (182)
 * redha2404 (2) +
 * Ritvik1sharma (1) +
 * Érico Nogueira Rolim (1) +
@@ -625,9 +626,9 @@ Authors (commits)
 * Sina Saber (1) +
 * Atsushi Sakai (1)
 * Clemens Schmid (1) +
-* Daniel Schmitz (15)
+* Daniel Schmitz (17)
 * Moritz Schreiber (1) +
-* Dan Schult (88)
+* Dan Schult (91)
 * Searchingdays (1) +
 * Matias Senger (1) +
 * Scott Shambaugh (1)
@@ -635,7 +636,7 @@ Authors (commits)
 * Sheila-nk (4)
 * Romain Simon (2) +
 * Gagandeep Singh (31)
-* Albert Steppi (36)
+* Albert Steppi (40)
 * Kai Striega (1)
 * Anushka Suyal (143) +
 * Alex Szatmary (1)
@@ -663,7 +664,7 @@ Authors (commits)
 * Gang Zhao (1)
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (10)
 
-A total of 148 people contributed to this release.
+A total of 149 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -886,6 +887,7 @@ Issues closed for 1.15.0
 * `#21661 <https://github.com/scipy/scipy/issues/21661>`__: BUG: fft.fht: should set ``u.imag[-1] = 0`` only when ``n`` is...
 * `#21670 <https://github.com/scipy/scipy/issues/21670>`__: BUG: ndimage: ``_normalize_sequence`` fails on 0d array
 * `#21671 <https://github.com/scipy/scipy/issues/21671>`__: BUG: signal.ShortTimeFFT: inverse tranform error with multichannel...
+* `#21675 <https://github.com/scipy/scipy/issues/21675>`__: BUG: Errors at compiling through pip for python 3.13 with option...
 * `#21677 <https://github.com/scipy/scipy/issues/21677>`__: BLD: build warnings from quadpack
 * `#21696 <https://github.com/scipy/scipy/issues/21696>`__: MAINT: lombscargle numerical backward-compat
 * `#21704 <https://github.com/scipy/scipy/issues/21704>`__: DOC: stats.bootstrap: clarify meaning of ``paired`` argument
@@ -931,6 +933,15 @@ Issues closed for 1.15.0
 * `#22022 <https://github.com/scipy/scipy/issues/22022>`__: TST: tolerance violation in ``test_x0_working[tfqmr]`` on windows
 * `#22029 <https://github.com/scipy/scipy/issues/22029>`__: ``Test_SVDS_LOBPCG.test_svd_rng_3`` test failure in wheel build...
 * `#22031 <https://github.com/scipy/scipy/issues/22031>`__: BUG: mypy failure in main
+* `#22077 <https://github.com/scipy/scipy/issues/22077>`__: DOC, REL: a few release notes/process issues
+* `#22094 <https://github.com/scipy/scipy/issues/22094>`__: API: unannounced breaking change: ``scipy.integrate.AccuracyWarning``...
+* `#22095 <https://github.com/scipy/scipy/issues/22095>`__: DOC: sparse: ``sparse.eye_array`` does not accept ``tuple[int,``...
+* `#22097 <https://github.com/scipy/scipy/issues/22097>`__: DEP: ``interpolate.interpnd.GradientEstimationWarning`` still...
+* `#22112 <https://github.com/scipy/scipy/issues/22112>`__: BUG/DOC: sparse: ND COO unexpected behaviour 1.15.0rc1
+* `#22123 <https://github.com/scipy/scipy/issues/22123>`__: DOC: stats: random variable transition guide launches wrong notebook
+* `#22137 <https://github.com/scipy/scipy/issues/22137>`__: BUG: ``stats._distribution_infrastructure._Domain.symbols`` class...
+* `#22143 <https://github.com/scipy/scipy/issues/22143>`__: BUG: Fail to call ``BSpline`` after unpickling with ``mmap_mode="r"``
+* `#22146 <https://github.com/scipy/scipy/issues/22146>`__: BUG:``stats.ContinuousDistribution.llf``\ : should not be public
 
 ************************
 Pull requests for 1.15.0
@@ -1531,6 +1542,7 @@ Pull requests for 1.15.0
 * `#22003 <https://github.com/scipy/scipy/pull/22003>`__: DEV: unified git submodule exclusion for tools
 * `#22009 <https://github.com/scipy/scipy/pull/22009>`__: TST: differentiate.jacobian: tolerance bump for float32
 * `#22024 <https://github.com/scipy/scipy/pull/22024>`__: MAINT: version pins/prep for 1.15.0rc1
+* `#22025 <https://github.com/scipy/scipy/pull/22025>`__: DOC: stats: probability tutorial/transition guide
 * `#22026 <https://github.com/scipy/scipy/pull/22026>`__: MAINT: stats.Mixture: fix default ``weights``
 * `#22027 <https://github.com/scipy/scipy/pull/22027>`__: MAINT: stats.ContinuousDistribution: improve doc generation;...
 * `#22030 <https://github.com/scipy/scipy/pull/22030>`__: MAINT: ``stats.FoldedDistribution``\ : accommodate for private...
@@ -1544,4 +1556,28 @@ Pull requests for 1.15.0
 * `#22050 <https://github.com/scipy/scipy/pull/22050>`__: MAINT: ``stats.order_statistic``\ : override ``support``
 * `#22058 <https://github.com/scipy/scipy/pull/22058>`__: DOC: ``stats.order_statistic``\ : add 'Returns' section
 * `#22059 <https://github.com/scipy/scipy/pull/22059>`__: TST: temp skip of extending tests
+* `#22067 <https://github.com/scipy/scipy/pull/22067>`__: MAINT: 1.15.0rc1 backports
+* `#22078 <https://github.com/scipy/scipy/pull/22078>`__: REL: set 1.15.0rc2 unreleased
+* `#22081 <https://github.com/scipy/scipy/pull/22081>`__: MAINT: Add ``__str__`` overrides for distributions in new infra...
+* `#22082 <https://github.com/scipy/scipy/pull/22082>`__: BUG, DOC: fixup md5 hash reporting
+* `#22085 <https://github.com/scipy/scipy/pull/22085>`__: DOC: sparse: explicit dtypes for nonzero()
+* `#22091 <https://github.com/scipy/scipy/pull/22091>`__: DOC: Update special release notes
+* `#22098 <https://github.com/scipy/scipy/pull/22098>`__: DOC: mention the removal of AccuracyWarning
+* `#22099 <https://github.com/scipy/scipy/pull/22099>`__: DEP: update version in deprecation warning of interpnd
+* `#22104 <https://github.com/scipy/scipy/pull/22104>`__: DOC: 1.15.0 release note updates
+* `#22106 <https://github.com/scipy/scipy/pull/22106>`__: DOC: sparse: correct ``eye_array`` docs for first shape input...
+* `#22107 <https://github.com/scipy/scipy/pull/22107>`__: MAINT/DOC: Doctests fix scpdt 1.6
+* `#22113 <https://github.com/scipy/scipy/pull/22113>`__: ENH: sparse: enhance dtype checking in constructors
+* `#22124 <https://github.com/scipy/scipy/pull/22124>`__: DOC: Fix incorrect reference to "Random Variable Transition Guide"...
+* `#22129 <https://github.com/scipy/scipy/pull/22129>`__: ENH: sparse: nD cleanup and docs
+* `#22135 <https://github.com/scipy/scipy/pull/22135>`__: MAINT: _lib: add missing f string to _deprecate_positional_args
+* `#22139 <https://github.com/scipy/scipy/pull/22139>`__: MAINT: stats._SimpleDomain: ensure that instances do not share...
+* `#22149 <https://github.com/scipy/scipy/pull/22149>`__: MAINT: stats.ContinuousDistribution.llf: remove method
+* `#22156 <https://github.com/scipy/scipy/pull/22156>`__: DEP: deprecation warnings for ``special.lpn`` and ``[c]lpmn``
+* `#22158 <https://github.com/scipy/scipy/pull/22158>`__: MAINT: accept ndarray subclasses in interpolate._dierckx
+* `#22162 <https://github.com/scipy/scipy/pull/22162>`__: TYP: temporarily ignore the ``numpy==2.2.1`` mypy errors
+* `#22167 <https://github.com/scipy/scipy/pull/22167>`__: DEP: special: deprecation warning for ``sph_harm`` + comments
+* `#22168 <https://github.com/scipy/scipy/pull/22168>`__: BUG: fix incorrect values in factorial for 0 with uint dtypes
+* `#22175 <https://github.com/scipy/scipy/pull/22175>`__: MAINT: stats: fix thread-safety issues under free-threaded CPython
+* `#22177 <https://github.com/scipy/scipy/pull/22177>`__: MAINT: fix extension module not declaring free-threading support,...
 
