@@ -2351,6 +2351,7 @@ class TestFactorialFunctions:
         assert_func(special.factorialk(n, 3, exact=exact),
                     np.array(exp_nucleus[3], ndmin=level))
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.parametrize("dtype", [np.uint8, np.uint16, np.uint32, np.uint64])
     @pytest.mark.parametrize("exact,extend",
                              [(True, "zero"), (False, "zero"), (False, "complex")])
@@ -2364,10 +2365,38 @@ class TestFactorialFunctions:
             assert_func(special.factorial2(n, **kw), special.factorial2(n_ref, **kw))
             assert_func(special.factorialk(n, k=3, **kw),
                         special.factorialk(n_ref, k=3, **kw))
+        def _check_inf(n):
+            # produce inf of same type/dimension
+            with suppress_warnings() as sup:
+                sup.filter(RuntimeWarning)
+                shaped_inf = n / 0
+            assert_func(special.factorial(n, **kw), shaped_inf)
+            assert_func(special.factorial2(n, **kw), shaped_inf)
+            assert_func(special.factorialk(n, k=3, **kw), shaped_inf)
+
         _check(dtype(0))
         _check(dtype(1))
         _check(np.array(0, dtype=dtype))
         _check(np.array([0, 1], dtype=dtype))
+        # test that maximal uint values work as well
+        N = dtype(np.iinfo(dtype).max)
+        # TODO: cannot use N itself yet; factorial uses `gamma(N+1)` resp. `(hi+lo)//2`
+        if dtype == np.uint64:
+            if exact:
+                # avoid attempting huge calculation
+                pass
+            elif np.lib.NumpyVersion(np.__version__) >= "2.0.0":
+                # N does not fit into int64 --> cannot use _check
+                _check_inf(dtype(N-1))
+                _check_inf(np.array(N-1, dtype=dtype))
+                _check_inf(np.array([N-1], dtype=dtype))
+        elif dtype in [np.uint8, np.uint16] or not exact:
+            # factorial(65535, exact=True) has 287189 digits and is calculated almost
+            # instantaneously on modern hardware; however, dtypes bigger than uint16
+            # would blow up runtime and memory consumption for exact=True
+            _check(N-1)
+            _check(np.array(N-1, dtype=dtype))
+            _check(np.array([N-2, N-1], dtype=dtype))
 
     # note that n=170 is the last integer such that factorial(n) fits float64
     @pytest.mark.parametrize('n', range(30, 180, 10))
