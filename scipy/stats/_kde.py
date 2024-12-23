@@ -18,6 +18,7 @@
 #-------------------------------------------------------------------------------
 
 # Standard library imports.
+import threading
 import warnings
 
 # SciPy imports.
@@ -35,6 +36,8 @@ from ._stats import gaussian_kernel_estimate, gaussian_kernel_estimate_log
 
 
 __all__ = ['gaussian_kde']
+
+MVN_LOCK = threading.Lock()
 
 
 class gaussian_kde:
@@ -384,9 +387,10 @@ class gaussian_kde:
         else:
             extra_kwds = {}
 
-        value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
-                                            self.dataset, self.weights,
-                                            self.covariance, **extra_kwds)
+        with MVN_LOCK:
+            value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
+                                                self.dataset, self.weights,
+                                                self.covariance, **extra_kwds)
         if inform:
             msg = f'An integral in _mvn.mvnun requires more points than {self.d * 1000}'
             warnings.warn(msg, stacklevel=2)
