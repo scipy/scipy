@@ -26,8 +26,8 @@ def get_nearly_hermitian(shape, dtype, atol, rng):
     return A + At + noise
 
 
-class TestOneArrayIn:
-    # Test the functions that accept one array argument
+class TestBatch:
+    # Test batch support for most linalg functions
 
     def batch_test(self, fun, arrays, *, core_dim=2, n_out=1, kwargs=None, dtype=None,
                    broadcast=True, check_kwargs=True):
@@ -48,7 +48,7 @@ class TestOneArrayIn:
         res2 = fun(*arrays, **kwargs)
         if check_kwargs:
             res1 = fun(**dict(zip(parameters, arrays)), **kwargs)
-            for out1, out2 in zip(res1, res2):  # even a single array output is iterable...
+            for out1, out2 in zip(res1, res2):  # even a single array is iterable...
                 np.testing.assert_equal(out1, out2)
 
         # Check results vs looping over
@@ -213,7 +213,7 @@ class TestOneArrayIn:
 
     @pytest.mark.parametrize('two_in', [False, True])
     @pytest.mark.parametrize('fun_n_nout', [(linalg.eigh, 1), (linalg.eigh, 2),
-                                            (linalg.eigvalsh, 1)])
+                                            (linalg.eigvalsh, 1), (linalg.eigvals, 1)])
     @pytest.mark.parametrize('dtype', floating)
     def test_eigh(self, two_in, fun_n_nout, dtype, rng):
         fun, n_out = fun_n_nout
@@ -294,7 +294,6 @@ class TestOneArrayIn:
     @pytest.mark.parametrize('dtype', floating)
     def test_cholesky_banded(self, dtype, rng):
         ab = get_random((5, 4, 3, 6), dtype=dtype, rng=rng)
-        ab[..., 0, 0] = 0
         ab[..., -1, :] = 10  # make diagonal dominant
         self.batch_test(linalg.cholesky_banded, ab)
 
@@ -315,3 +314,13 @@ class TestOneArrayIn:
         # Check that `block_diag` broadcasts the batch shapes as expected.
         res = linalg.block_diag(a, b, c)
         assert_allclose(res, ref)
+
+    @pytest.mark.parametrize('fun_n_out', [(linalg.eigh_tridiagonal, 2),
+                                           (linalg.eigvalsh_tridiagonal, 1)])
+    @pytest.mark.parametrize('dtype', real_floating)
+    # "Only real arrays currently supported"
+    def test_eigh_tridiagonal(self, fun_n_out, dtype, rng):
+        fun, n_out = fun_n_out
+        d = get_random((3, 4, 5), dtype=dtype, rng=rng)
+        e = get_random((3, 4, 4), dtype=dtype, rng=rng)
+        self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False)
