@@ -5887,8 +5887,8 @@ const char *sph_harm_doc = R"(
     where :math:`P_n^m` are the associated Legendre functions; see `lpmv`.
 
     .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in a future version.
-        Use `scipy.special.sph_harm_y` instead.
+        This function is deprecated and will be removed in SciPy 1.17.0.
+        Please use `scipy.special.sph_harm_y` instead.
 
     Parameters
     ----------

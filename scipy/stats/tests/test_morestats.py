@@ -671,7 +671,7 @@ class TestAnsari:
         assert pval_g < 0.05  # level of significance.
         # also check if the p-values sum up to 1 plus the probability
         # mass under the calculated statistic.
-        prob = _abw_state.pmf(statistic, len(x1), len(x2))
+        prob = _abw_state.a.pmf(statistic, len(x1), len(x2))
         assert_allclose(pval_g + pval_l, 1 + prob, atol=1e-12)
         # also check if one of the one-sided p-value equals half the
         # two-sided p-value and the other one-sided p-value is its
