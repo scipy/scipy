@@ -456,6 +456,42 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     array([ 1.])
     >>> approx_derivative(g, x0, bounds=(1.0, np.inf))
     array([ 2.])
+
+    We can also parallelize the derivative calculation using the workers
+    keyword.
+
+    >>> from multiprocessing import Pool
+    >>> import time
+    >>> def fun2(x):       # import from an external file for use with multiprocessing
+    ...     time.sleep(0.002)
+    ...     return rosen(x)
+
+    >>> rng = np.random.default_rng()
+    >>> x0 = rng.uniform(high=10, size=(2000,))
+    >>> f0 = rosen(x0)
+
+    >>> %timeit approx_derivative(fun2, x0, f0=f0)     # may vary
+    10.5 s ± 5.91 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+    >>> elapsed = []
+    >>> with Pool() as workers:
+    ...     for i in range(10):
+    ...         t = time.perf_counter()
+    ...         approx_derivative(fun2, x0, workers=workers.map, f0=f0)
+    ...         et = time.perf_counter()
+    ...         elapsed.append(et - t)
+    >>> np.mean(elapsed)    # may vary
+    np.float64(1.442545195999901)
+
+    Create a map-like vectorised version. Note that the first argument to
+    approx_derivative is effectively ignored in the way I've written it.
+
+    >>> def fun(f, x, *args, **kwds):
+    ...     xx = np.r_[[xs for xs in x]]
+    ...     return f(xx.T)
+    >>> %timeit approx_derivative(fun2, x0, workers=fun, f0=f0)    # may vary
+    91.8 ms ± 755 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
     """
     if method not in ['2-point', '3-point', 'cs']:
         raise ValueError(f"Unknown method '{method}'. ")
