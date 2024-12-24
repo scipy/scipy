@@ -419,6 +419,16 @@ interface is self-documenting, so please see ``python dev.py --help`` and
     on how things work under the hood.
 
 
+Installing static type stubs
+----------------------------
+
+If you would like to install static type stubs to aid your development of SciPy,
+you can include the ``scipy-stubs`` package in your development environment.
+It is available on PyPI and conda-forge - see the scipy-stubs_ installation guide.
+
+.. _scipy-stubs: https://github.com/jorenham/scipy-stubs?tab=readme-ov-file#installation
+
+
 Customizing builds
 ------------------
 
