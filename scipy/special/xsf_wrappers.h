@@ -179,8 +179,6 @@ double cephes_igam_fac(double a, double x);
 
 double cephes_lanczos_sum_expg_scaled(double x);
 
-double cephes_erf(double x);
-
 double cephes_erfc(double x);
 
 double cephes_poch(double x, double m);
@@ -201,6 +199,30 @@ double cephes_expn(int n, double x);
 
 double xsf_ellipe(double x);
 
+double xsf_erf(double x);
+
+npy_cdouble xsf_cerf(npy_cdouble z);
+
+double xsf_erfc(double x);
+
+npy_cdouble xsf_cerfc(npy_cdouble z);
+
+double xsf_erfcx(double x);
+
+npy_cdouble xsf_cerfcx(npy_cdouble z);
+
+double xsf_dawsn(double x);
+
+npy_cdouble xsf_cdawsn(npy_cdouble z);
+
+double xsf_erfi(double x);
+
+npy_cdouble xsf_cerfi(npy_cdouble z);
+
+double xsf_voigt_profile(double x, double sigma, double gamma);
+
+npy_cdouble xsf_cwofz(npy_cdouble z);
+
 double cephes_ellpk(double x);
 
 double cephes_ellie(double phi, double m);
@@ -220,7 +242,6 @@ double cephes_spence(double x);
 double xsf_struve_h(double v, double z);
 
 double xsf_struve_l(double v, double z);
-
 
 // Cylindrical Bessel
 
@@ -325,6 +346,9 @@ double xsf_nbdtr(int k, int n, double p);
 double xsf_nbdtrc(int k, int n, double p);
 double xsf_nbdtri(int k, int n, double p);
 double xsf_ndtr(double x);
+npy_cdouble xsf_cndtr(npy_cdouble x);
+double xsf_log_ndtr(double x);
+npy_cdouble xsf_clog_ndtr(npy_cdouble x);
 double xsf_ndtri(double x);
 double xsf_owens_t(double h, double a);
 double xsf_pdtr(double k, double m);
