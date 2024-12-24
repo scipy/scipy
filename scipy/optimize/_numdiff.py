@@ -7,6 +7,7 @@ from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, isspmatrix, find, csc_array, csr_array, csr_matrix
 from ._group_columns import group_dense, group_sparse
 from scipy._lib._array_api import array_namespace
+from scipy._lib._util import MapWrapper
 from scipy._lib import array_api_extra as xpx
 
 
@@ -359,8 +360,14 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     full_output : bool, optional
         If True then the function also returns a dictionary with extra information
         about the calculation.
-    workers : map-like callable, optional
-        map-like used to call user function with different steps.
+    workers : int or map-like callable, optional
+        If `workers` is an int the task is subdivided into `workers`
+        sections and the functevaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
+        Supply -1 to use all available CPU cores.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
 
     Returns
     -------
@@ -502,9 +509,6 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     if np.any((x0 < lb) | (x0 > ub)):
         raise ValueError("`x0` violates bound constraints.")
 
-    # check the map function for parallelisation
-    workers = workers or map
-
     if as_linear_operator:
         if rel_step is None:
             rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
@@ -537,26 +541,27 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         elif method == 'cs':
             use_one_sided = False
 
-        if sparsity is None:
-            J, _nfev = _dense_difference(fun_wrapped, x0, f0, h,
-                                     use_one_sided, method,
-                                     workers)
-        else:
-            if not issparse(sparsity) and len(sparsity) == 2:
-                structure, groups = sparsity
+        with MapWrapper(workers) as mf:
+            if sparsity is None:
+                J, _nfev = _dense_difference(fun_wrapped, x0, f0, h,
+                                         use_one_sided, method,
+                                         mf)
             else:
-                structure = sparsity
-                groups = group_columns(sparsity)
+                if not issparse(sparsity) and len(sparsity) == 2:
+                    structure, groups = sparsity
+                else:
+                    structure = sparsity
+                    groups = group_columns(sparsity)
 
-            if issparse(structure):
-                structure = structure.tocsc()
-            else:
-                structure = np.atleast_2d(structure)
+                if issparse(structure):
+                    structure = structure.tocsc()
+                else:
+                    structure = np.atleast_2d(structure)
 
-            groups = np.atleast_1d(groups)
-            J, _nfev = _sparse_difference(fun_wrapped, x0, f0, h,
-                                         use_one_sided, structure,
-                                         groups, method, workers)
+                groups = np.atleast_1d(groups)
+                J, _nfev = _sparse_difference(fun_wrapped, x0, f0, h,
+                                             use_one_sided, structure,
+                                             groups, method, mf)
 
     if full_output:
         nfev += _nfev
