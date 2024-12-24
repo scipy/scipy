@@ -610,7 +610,7 @@ class TestApproxDerivativeSparse:
         with MapWrapper(2) as mapper:
             for method, groups, l, u, mf in product(
                     ['2-point', '3-point', 'cs'], [groups_1, groups_2],
-                    [-np.inf, self.lb], [np.inf, self.ub], [None, map, mapper]):
+                    [-np.inf, self.lb], [np.inf, self.ub], [2, map, mapper]):
                 J = approx_derivative(self.fun, self.x0, method=method,
                                       bounds=(l, u), sparsity=(A, groups),
                                       workers=mf)
