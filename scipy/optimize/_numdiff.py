@@ -278,7 +278,7 @@ def group_columns(A, order=0):
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
                       as_linear_operator=False, args=(), kwargs=None,
-                      full_output=False, workers=None):
+                      full_output=False, workers=map):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -362,7 +362,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         about the calculation.
     workers : int or map-like callable, optional
         If `workers` is an int the task is subdivided into `workers`
-        sections and the functevaluated in parallel
+        sections and the fun evaluated in parallel
         (uses `multiprocessing.Pool <multiprocessing>`).
         Supply -1 to use all available CPU cores.
         Alternatively supply a map-like callable, such as

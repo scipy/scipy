@@ -179,8 +179,14 @@ class ScalarFunction:
         For ``method='3-point'`` the sign of `epsilon` is ignored. By default
         relative steps are used, only if ``epsilon is not None`` are absolute
         steps used.
-    workers : map-like callable
-        map-like used to call user function with different steps.
+    workers : int or map-like callable, optional
+        If `workers` is an int any numerical differentiation task is subdivided
+        into `workers` sections and the fun evaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
+        Supply -1 to use all available CPU cores.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
 
     Notes
     -----
@@ -194,7 +200,7 @@ class ScalarFunction:
            of *any* of the methods may overwrite the attribute.
     """
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
-                 finite_diff_bounds, epsilon=None, workers=None):
+                 finite_diff_bounds, epsilon=None, workers=map):
 
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError(
