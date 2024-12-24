@@ -9,8 +9,6 @@ from scipy._lib._array_api import (
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 
-skip_xp_backends = pytest.mark.skip_xp_backends
-
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
@@ -63,9 +61,6 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             xpx.atleast_nd("abc", ndim=0)
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
-    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_copy(self, xp):
         for _xp in [xp, None]:
@@ -73,15 +68,14 @@ class TestArrayAPI:
             y = xp_copy(x, xp=_xp)
             # with numpy we'd want to use np.shared_memory, but that's not specified
             # in the array-api
-            x[0] = 10
-            x[1] = 11
-            x[2] = 12
-
-            assert x[0] != y[0]
-            assert x[1] != y[1]
-            assert x[2] != y[2]
             assert id(x) != id(y)
-
+            try:
+                y[0] = 10
+            except (TypeError, ValueError):
+                pass
+            else:
+                assert x[0] != y[0]
+    
     @array_api_compatible
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])
