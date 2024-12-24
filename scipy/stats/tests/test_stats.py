@@ -7919,6 +7919,27 @@ class TestFOneWay:
         assert_equal(F, 2.0)
         assert_allclose(p, 1 - np.sqrt(0.5), rtol=1e-14)
 
+    def test_unequal_var(self):
+        # toy samples with unequal variances
+        samples = [[-50.42, 40.31, -18.09, 35.58, -6.8],
+                   [23.44, 4.5, 15.1, 9.66, 27.71],
+                   [11.94, 11.1 , 9.87, 9.09, 3.33]]
+        F, p = stats.f_oneway(*samples, equal_var=False)
+
+        # R language oneway.test as the benchmark
+        # df_long <- data.frame(
+        #   group = rep(1:3, each = 5),
+        #   value = c(-50.42, 40.31, -18.09, 35.58, -6.80,
+        #             23.44, 4.5, 15.1, 9.66, 27.71,
+        #             11.94, 11.1, 9.87, 9.09, 3.33)
+        # )
+        # oneway.test(value ~ factor(group), data = df_long)
+        ## statistic is 1.22114568638392
+        ## p-value is 0.35938659246972
+
+        assert_allclose(F, 1.22114568638392, rtol=1e-14)
+        assert_allclose(p, 0.35938659246972, rtol=1e-14)
+
     def test_known_exact(self):
         # Another trivial dataset for which the exact F and p can be
         # calculated.
