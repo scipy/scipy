@@ -411,6 +411,9 @@ myst_update_mathjax = False
 # interactive renditions of the notebooks
 strip_tagged_cells = True
 
+# Enable overrides for JupyterLite settings at runtime
+jupyterlite_overrides = "overrides.json"
+
 #------------------------------------------------------------------------------
 # Interactive examples with jupyterlite-sphinx
 #------------------------------------------------------------------------------

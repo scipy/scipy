@@ -14,7 +14,7 @@ kernelspec:
 +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_friedmanchisquare.ipynb
+.. notebooklite:: hypothesis_friedmanchisquare.md
    :new_tab: True
 ```
 
