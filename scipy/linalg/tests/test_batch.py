@@ -30,7 +30,7 @@ class TestBatch:
     # Test batch support for most linalg functions
 
     def batch_test(self, fun, arrays, *, core_dim=2, n_out=1, kwargs=None, dtype=None,
-                   broadcast=True):
+                   broadcast=True, check_kwargs=True):
         # Check that all outputs of batched call `fun(A, **kwargs)` are the same
         # as if we loop over the separate vectors/matrices in `A`. Also check
         # that `fun` accepts `A` by position or keyword and that results are
@@ -45,10 +45,11 @@ class TestBatch:
         arrays = (arrays,) if not isinstance(arrays, tuple) else arrays
 
         # Identical results when passing argument by keyword or position
-        res1 = fun(**dict(zip(parameters, arrays)), **kwargs)
         res2 = fun(*arrays, **kwargs)
-        for out1, out2 in zip(res1, res2):  # even a single array output is iterable...
-            np.testing.assert_equal(out1, out2)
+        if check_kwargs:
+            res1 = fun(**dict(zip(parameters, arrays)), **kwargs)
+            for out1, out2 in zip(res1, res2):  # even a single array is iterable...
+                np.testing.assert_equal(out1, out2)
 
         # Check results vs looping over
         res = (res2,) if n_out == 1 else res2
@@ -71,7 +72,7 @@ class TestBatch:
             out_dtype = ref[k].dtype if dtype is None else dtype
             assert res[k].dtype == out_dtype
 
-        return res1  # return original, non-tuplized result
+        return res2  # return original, non-tuplized result
 
     @pytest.fixture
     def rng(self):
@@ -295,6 +296,24 @@ class TestBatch:
         ab = get_random((5, 4, 3, 6), dtype=dtype, rng=rng)
         ab[..., -1, :] = 10  # make diagonal dominant
         self.batch_test(linalg.cholesky_banded, ab)
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_block_diag(self, dtype, rng):
+        a = get_random((1, 3, 1, 3), dtype=dtype, rng=rng)
+        b = get_random((2, 1, 3, 6), dtype=dtype, rng=rng)
+        c = get_random((1, 1, 3, 2), dtype=dtype, rng=rng)
+
+        # batch_test doesn't have the logic to broadcast just the batch shapes,
+        # so do it manually.
+        a2 = np.broadcast_to(a, (2, 3, 1, 3))
+        b2 = np.broadcast_to(b, (2, 3, 3, 6))
+        c2 = np.broadcast_to(c, (2, 3, 3, 2))
+        ref = self.batch_test(linalg.block_diag, (a2, b2, c2),
+                              check_kwargs=False, broadcast=False)
+
+        # Check that `block_diag` broadcasts the batch shapes as expected.
+        res = linalg.block_diag(a, b, c)
+        assert_allclose(res, ref)
 
     @pytest.mark.parametrize('fun_n_out', [(linalg.eigh_tridiagonal, 2),
                                            (linalg.eigvalsh_tridiagonal, 1)])
