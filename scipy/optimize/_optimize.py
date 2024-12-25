@@ -202,7 +202,7 @@ def vecnorm(x, ord=2):
 
 def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
                              epsilon=None, finite_diff_rel_step=None,
-                             hess=None):
+                             hess=None, workers=map):
     """
     Creates a ScalarFunction object for use with scalar minimizers
     (BFGS/LBFGSB/SLSQP/TNC/CG/etc).
@@ -255,6 +255,14 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         Whenever the gradient is estimated via finite-differences, the Hessian
         cannot be estimated with options {'2-point', '3-point', 'cs'} and needs
         to be estimated using one of the quasi-Newton strategies.
+    workers : int or map-like callable, optional
+        If `workers` is an int any numerical differentiation task is subdivided
+        into `workers` sections and the fun evaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
+        Supply -1 to use all available CPU cores.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
 
     Returns
     -------
@@ -289,7 +297,8 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
     # ScalarFunction caches. Reuse of fun(x) during grad
     # calculation reduces overall function evaluations.
     sf = ScalarFunction(fun, x0, args, grad, hess,
-                        finite_diff_rel_step, bounds, epsilon=epsilon)
+                        finite_diff_rel_step, bounds, epsilon=epsilon,
+                        workers=workers)
 
     return sf
 
