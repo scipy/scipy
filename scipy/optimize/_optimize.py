@@ -202,7 +202,7 @@ def vecnorm(x, ord=2):
 
 def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
                              epsilon=None, finite_diff_rel_step=None,
-                             hess=None, workers=map):
+                             hess=None, workers=None):
     """
     Creates a ScalarFunction object for use with scalar minimizers
     (BFGS/LBFGSB/SLSQP/TNC/CG/etc).
@@ -293,6 +293,9 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
 
     if bounds is None:
         bounds = (-np.inf, np.inf)
+
+    # normalize workers
+    workers = workers or map
 
     # ScalarFunction caches. Reuse of fun(x) during grad
     # calculation reduces overall function evaluations.

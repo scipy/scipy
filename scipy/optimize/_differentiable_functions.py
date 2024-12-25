@@ -200,7 +200,7 @@ class ScalarFunction:
            of *any* of the methods may overwrite the attribute.
     """
     def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
-                 finite_diff_bounds, epsilon=None, workers=map):
+                 finite_diff_bounds, epsilon=None, workers=None):
 
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError(
@@ -242,6 +242,9 @@ class ScalarFunction:
 
         self._lowest_x = None
         self._lowest_f = np.inf
+
+        # normalize workers
+        workers = workers or map
 
         finite_diff_options = {}
         if grad in FD_METHODS:

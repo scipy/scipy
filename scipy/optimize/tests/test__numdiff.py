@@ -272,40 +272,45 @@ class TestApproxDerivativesDense:
         with MapWrapper(2) as mapper:
             jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
                                            method='2-point', workers=mapper)
-            jac_diff_3 = approx_derivative(self.fun_scalar_vector, x0, workers=mapper)
-            jac_diff_4 = approx_derivative(self.fun_scalar_vector, x0,
-                                           method='cs', workers=mapper)
+        jac_diff_3 = approx_derivative(self.fun_scalar_vector, x0, workers=map)
+        jac_diff_4 = approx_derivative(self.fun_scalar_vector, x0,
+                                       method='cs', workers=None)
         jac_true = self.jac_scalar_vector(np.atleast_1d(x0))
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
-    def test_nfev(self):
+    def test_workers(self):
         # check that nfev consumed by approx_derivative is tracked properly
+        # and that parallel evaluation is same as series
         x0 = [0.5, 1.5, 2.0]
         with MapWrapper(2) as mapper:
-            _, mdct2 = approx_derivative(rosen, x0,
+            md2, mdct2 = approx_derivative(rosen, x0,
                                          method='2-point', workers=mapper,
                                          full_output=True)
-            _, mdct3 = approx_derivative(rosen, x0,
+            md3, mdct3 = approx_derivative(rosen, x0,
                                          workers=mapper, full_output=True)
-            _, mdct4 = approx_derivative(rosen, x0,
+            md4, mdct4 = approx_derivative(rosen, x0,
                                          method='cs', workers=mapper,
                                          full_output=True)
 
         sfr = _ScalarFunctionWrapper(rosen)
-        _, dct2 = approx_derivative(sfr, x0, method='2-point', full_output=True)
+        d2, dct2 = approx_derivative(sfr, x0, method='2-point', full_output=True)
         assert_equal(dct2['nfev'], sfr.nfev)
         sfr.nfev = 0
-        _, dct3 = approx_derivative(sfr, x0, full_output=True)
+        d3, dct3 = approx_derivative(sfr, x0, full_output=True)
         assert_equal(dct3['nfev'], sfr.nfev)
         sfr.nfev = 0
-        _, dct4 = approx_derivative(sfr, x0, method='cs', full_output=True)
+        d4, dct4 = approx_derivative(sfr, x0, method='cs', full_output=True)
         assert_equal(dct4['nfev'], sfr.nfev)
 
         assert_equal(mdct2['nfev'], dct2['nfev'])
         assert_equal(mdct3['nfev'], dct3['nfev'])
         assert_equal(mdct4['nfev'], dct4['nfev'])
+        # also check that gradients are equivalent
+        assert_equal(md2, d2)
+        assert_equal(md3, d3)
+        assert_equal(md4, d4)
 
     def test_vector_scalar(self):
         x0 = np.array([100.0, -0.5])
@@ -610,7 +615,7 @@ class TestApproxDerivativeSparse:
         with MapWrapper(2) as mapper:
             for method, groups, l, u, mf in product(
                     ['2-point', '3-point', 'cs'], [groups_1, groups_2],
-                    [-np.inf, self.lb], [np.inf, self.ub], [2, map, mapper]):
+                    [-np.inf, self.lb], [np.inf, self.ub], [map, mapper]):
                 J = approx_derivative(self.fun, self.x0, method=method,
                                       bounds=(l, u), sparsity=(A, groups),
                                       workers=mf)

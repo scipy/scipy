@@ -291,7 +291,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                      disp=None, maxcor=10, ftol=2.2204460492503131e-09,
                      gtol=1e-5, eps=1e-8, maxfun=15000, maxiter=15000,
                      iprint=-1, callback=None, maxls=20,
-                     finite_diff_rel_step=None, workers=map,
+                     finite_diff_rel_step=None, workers=None,
                      **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B

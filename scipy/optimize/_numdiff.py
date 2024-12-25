@@ -278,7 +278,7 @@ def group_columns(A, order=0):
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
                       as_linear_operator=False, args=(), kwargs=None,
-                      full_output=False, workers=map):
+                      full_output=False, workers=None):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -577,6 +577,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         elif method == 'cs':
             use_one_sided = False
 
+        # normalize workers
+        workers = workers or map
         with MapWrapper(workers) as mf:
             if sparsity is None:
                 J, _nfev = _dense_difference(fun_wrapped, x0, f0, h,
@@ -593,7 +595,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                     structure = structure.tocsc()
                 else:
                     structure = np.atleast_2d(structure)
-
+                print(groups)
                 groups = np.atleast_1d(groups)
                 J, _nfev = _sparse_difference(fun_wrapped, x0, f0, h,
                                              use_one_sided, structure,
