@@ -44,9 +44,9 @@ maintainers = [
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "numpy>=1.23.5",
+    "numpy>=1.25.2",
 ] # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
@@ -57,7 +57,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
