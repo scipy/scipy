@@ -185,6 +185,13 @@ class ScalarFunction:
         This evaluation is carried out as ``workers(fun, iterable)``, or
         ``workers(grad, iterable)``, depending on what is being numerically
         differentiated.
+        Alternatively, if `workers` is an int the task is subdivided into `workers`
+        sections and the function evaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
+        Supply -1 to use all available CPU cores.
+        It is recommended that a map-like be used instead of int, as repeated
+        calls to `approx_derivative` will incur large overhead from setting up
+        new processes.
 
     Notes
     -----

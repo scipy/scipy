@@ -255,14 +255,19 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         Whenever the gradient is estimated via finite-differences, the Hessian
         cannot be estimated with options {'2-point', '3-point', 'cs'} and needs
         to be estimated using one of the quasi-Newton strategies.
-    workers : int or map-like callable, optional
-        If `workers` is an int any numerical differentiation task is subdivided
-        into `workers` sections and the fun evaluated in parallel
+   workers : int or map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``, or
+        ``workers(grad, iterable)``, depending on what is being numerically
+        differentiated.
+        Alternatively, if `workers` is an int the task is subdivided into `workers`
+        sections and the function evaluated in parallel
         (uses `multiprocessing.Pool <multiprocessing>`).
         Supply -1 to use all available CPU cores.
-        Alternatively supply a map-like callable, such as
-        `multiprocessing.Pool.map` for evaluating the population in parallel.
-        This evaluation is carried out as ``workers(fun, iterable)``.
+        It is recommended that a map-like be used instead of int, as repeated
+        calls to `approx_derivative` will incur large overhead from setting up
+        new processes.
 
     Returns
     -------
