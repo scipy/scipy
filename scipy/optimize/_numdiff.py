@@ -598,7 +598,6 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                     structure = structure.tocsc()
                 else:
                     structure = np.atleast_2d(structure)
-                print(groups)
                 groups = np.atleast_1d(groups)
                 J, _nfev = _sparse_difference(fun_wrapped, x0, f0, h,
                                              use_one_sided, structure,

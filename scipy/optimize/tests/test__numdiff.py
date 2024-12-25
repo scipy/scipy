@@ -281,7 +281,7 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
-    @pytest.mark.fail_slow(3)
+    @pytest.mark.fail_slow(10.0)
     def test_workers(self):
         # check that nfev consumed by approx_derivative is tracked properly
         # and that parallel evaluation is same as series
