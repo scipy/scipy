@@ -1057,9 +1057,10 @@ class TestNdimageMorphology:
                                      iterations=2)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion28(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1116,8 +1117,10 @@ class TestNdimageMorphology:
                                      border_value=1, iterations=3)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(np_only=True,
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
                       reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion30(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1151,9 +1154,8 @@ class TestNdimageMorphology:
                                iterations=3, output=data)
         assert_array_almost_equal(data, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
     def test_binary_erosion31(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1277,9 +1279,8 @@ class TestNdimageMorphology:
                                      border_value=1, mask=mask)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"], 
+                      reason='inplace out= arguments are numpy-specific')
     def test_binary_erosion35(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1364,9 +1365,10 @@ class TestNdimageMorphology:
                                      border_value=1, origin=(-1, -1))
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion37(self, xp):
         a = np.asarray([[1, 0, 1],
                         [0, 1, 0],
@@ -1390,9 +1392,10 @@ class TestNdimageMorphology:
         with assert_raises(TypeError):
             _ = ndimage.binary_erosion(data, iterations=iterations)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion39(self, xp):
         iterations = np.int32(3)
         struct = [[0, 1, 0],
@@ -1422,9 +1425,10 @@ class TestNdimageMorphology:
                                iterations=iterations, output=out)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion40(self, xp):
         iterations = np.int64(3)
         struct = [[0, 1, 0],
@@ -2680,11 +2684,10 @@ class TestNdimageMorphology:
             out = func(data, axes=axes, **kwargs)
         xp_assert_close(out, expected)
 
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason="inplace output= is numpy-specific")
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss01(self, dtype, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("inplace output= is numpy-specific")
-
         dtype = getattr(xp, dtype)
         struct = [[0, 1, 0],
                   [1, 1, 1],
