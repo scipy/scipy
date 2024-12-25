@@ -172,8 +172,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         # check index pointer
         if (len(self.indptr) != M//R + 1):
-            raise ValueError("index pointer size (%d) should be (%d)" %
-                                (len(self.indptr), M//R + 1))
+            raise ValueError(
+                f"index pointer size ({len(self.indptr)}) should be ({M//R + 1})"
+            )
         if (self.indptr[0] != 0):
             raise ValueError("index pointer should start with 0")
 
@@ -190,8 +191,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
-                    raise ValueError("column index values must be < %d (now max %d)"
-                                     % (N//C, self.indices.max()))
+                    raise ValueError(
+                        f"column index values must be < {N//C}"
+                        f" (now max {self.indices.max()})"
+                    )
                 if self.indices.min() < 0:
                     raise ValueError("column index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:

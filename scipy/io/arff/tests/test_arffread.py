@@ -147,7 +147,7 @@ class TestHeader:
         # Test numerical attributes
         assert_(len(attrs) == 5)
         for i in range(4):
-            assert_(attrs[i].name == 'attr%d' % i)
+            assert_(attrs[i].name == f'attr{i}')
             assert_(attrs[i].type_name == 'numeric')
 
         # Test nominal attribute

@@ -100,7 +100,7 @@ class _csc_base(_cs_matrix):
         if i < 0:
             i += M
         if i < 0 or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         return self._get_submatrix(minor=i).tocsr()
 
     def _getcol(self, i):
@@ -112,7 +112,7 @@ class _csc_base(_cs_matrix):
         if i < 0:
             i += N
         if i < 0 or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         return self._get_submatrix(major=i, copy=True)
 
     def _get_intXarray(self, row, col):

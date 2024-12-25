@@ -516,10 +516,8 @@ def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
     if info == 0:
         return x, info
     if info > 0:
-        raise LinAlgError("singular matrix: resolution failed at diagonal %d" %
-                          (info-1))
-    raise ValueError('illegal value in %dth argument of internal trtrs' %
-                     (-info))
+        raise LinAlgError(f"singular matrix: resolution failed at diagonal {info-1}")
+    raise ValueError(f'illegal value in {info}-th argument of internal trtrs')
 
 
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
@@ -601,9 +599,10 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     (nlower, nupper) = l_and_u
     if nlower + nupper + 1 != a1.shape[0]:
-        raise ValueError("invalid values for the number of lower and upper "
-                         "diagonals: l+u+1 (%d) does not equal ab.shape[0] "
-                         "(%d)" % (nlower + nupper + 1, ab.shape[0]))
+        raise ValueError(
+            f"invalid values for the number of lower and upper diagonals: l+u+1 "
+            f"({nlower + nupper + 1}) does not equal ab.shape[0] ({a1.shape[0]})"
+        )
 
     # accommodate empty arrays
     if b1.size == 0:
@@ -638,8 +637,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         return x
     if info > 0:
         raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal '
-                     'gbsv/gtsv' % -info)
+    raise ValueError(f'illegal value in {-info}-th argument of internal gbsv/gtsv')
 
 
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
@@ -775,10 +773,9 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         c, x, info = pbsv(a1, b1, lower=lower, overwrite_ab=overwrite_ab,
                           overwrite_b=overwrite_b)
     if info > 0:
-        raise LinAlgError("%dth leading minor not positive definite" % info)
+        raise LinAlgError(f"{info}th leading minor not positive definite")
     if info < 0:
-        raise ValueError('illegal value in %dth argument of internal '
-                         'pbsv' % -info)
+        raise ValueError(f'illegal value in {-info}th argument of internal pbsv')
     return x
 
 
@@ -1159,8 +1156,9 @@ def inv(a, overwrite_a=False, check_finite=True):
     if info > 0:
         raise LinAlgError("singular matrix")
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal '
-                         'getrf|getri' % -info)
+        raise ValueError(
+            f'illegal value in {-info}-th argument of internal getrf|getri'
+        )
     return inv_a
 
 
@@ -1474,8 +1472,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         if info > 0:
             raise LinAlgError("SVD did not converge in Linear Least Squares")
         if info < 0:
-            raise ValueError('illegal value in %d-th argument of internal %s'
-                             % (-info, lapack_driver))
+            raise ValueError(
+                f'illegal value in {-info}-th argument of internal {lapack_driver}'
+            )
         resids = np.asarray([], dtype=x.dtype)
         if m > n:
             x1 = x[:n]
@@ -1490,8 +1489,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         v, x, j, rank, info = lapack_func(a1, b1, jptv, cond,
                                           lwork, False, False)
         if info < 0:
-            raise ValueError("illegal value in %d-th argument of internal "
-                             "gelsy" % -info)
+            raise ValueError(f'illegal value in {-info}-th argument of internal gelsy')
         if m > n:
             x1 = x[:n]
             x = x1

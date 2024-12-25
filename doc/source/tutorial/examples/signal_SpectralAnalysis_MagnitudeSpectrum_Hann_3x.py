@@ -37,6 +37,6 @@ for c_, (ax_, X_, Y_, fx_) in enumerate(zip(axx, XX, YY, fcc)):
             ylim=(0, 0.59))
 
 axx[0].set(ylabel=r'Magnitude $|X(f)/\tau|$')
-fg1.suptitle(r"Magnitude Spectrum (Hann window, $%d\times$oversampled)" % q,
+fg1.suptitle(rf"Magnitude Spectrum (Hann window, ${q}\times$oversampled)",
              x=0.55, y=0.93)
 plt.show()
