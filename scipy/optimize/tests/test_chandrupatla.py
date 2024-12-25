@@ -187,6 +187,7 @@ cases = [
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('dask.array', reason='no argsort in Dask')
 @pytest.mark.skip_xp_backends('jax.numpy',
                               reason='JAX arrays do not support item assignment.')
 @pytest.mark.skip_xp_backends('array_api_strict',
@@ -553,6 +554,7 @@ class TestChandrupatlaMinimize:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
 @pytest.mark.skip_xp_backends('array_api_strict',
                               reason='Currently uses fancy indexing assignment.')
 @pytest.mark.skip_xp_backends('jax.numpy',

@@ -1803,6 +1803,7 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
         tmp2 = grey_erosion(input, size, footprint, structure, None, mode,
                             cval, origin, axes=axes)
         np.add(tmp1, tmp2, tmp2)
+        input = np.asarray(input)
         np.subtract(tmp2, input, tmp2)
         np.subtract(tmp2, input, tmp2)
         return tmp2

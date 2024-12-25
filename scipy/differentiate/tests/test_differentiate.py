@@ -21,6 +21,7 @@ jax_skip_reason = 'JAX arrays do not support item assignment.'
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
 class TestDerivative:
 
     def f(self, x):

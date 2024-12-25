@@ -49,6 +49,9 @@ def _vectorize(xp):
     'array_api_strict', reason='Currently uses fancy indexing assignment.'
 )
 @pytest.mark.skip_xp_backends(
+    'dask.array', reason='boolean indexing assignment'
+)
+@pytest.mark.skip_xp_backends(
     'jax.numpy', reason='JAX arrays do not support item assignment.'
 )
 class TestTanhSinh:
