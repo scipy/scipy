@@ -3,6 +3,7 @@ from itertools import product
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
+import pytest
 from pytest import raises as assert_raises
 
 from scipy._lib._util import MapWrapper, _ScalarFunctionWrapper
