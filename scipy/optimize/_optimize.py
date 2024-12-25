@@ -1348,7 +1348,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
                    xrtol=0, c1=1e-4, c2=0.9,
-                   hess_inv0=None, **unknown_options):
+                   hess_inv0=None, workers=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1386,6 +1386,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     hess_inv0 : None or ndarray, optional
         Initial inverse hessian estimate, shape (n, n). If None (default) then
         the identity matrix is used.
+    workers : map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
 
     Notes
     -----
@@ -1410,7 +1414,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         maxiter = len(x0) * 200
 
     sf = _prepare_scalar_function(fun, x0, jac, args=args, epsilon=eps,
-                                  finite_diff_rel_step=finite_diff_rel_step)
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  workers=workers)
 
     f = sf.fun
     myfprime = sf.grad

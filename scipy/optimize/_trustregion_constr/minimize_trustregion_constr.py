@@ -125,7 +125,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                  initial_barrier_parameter=0.1,
                                  initial_barrier_tolerance=0.1,
                                  factorization_method=None,
-                                 disp=False):
+                                 disp=False,
+                                 workers=None):
     """Minimize a scalar function subject to constraints.
 
     Parameters
@@ -223,7 +224,12 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         * 3 : display progress during iterations (more complete report).
 
     disp : bool, optional
+    workers : map-like
         If True (default), then `verbose` will be set to 1 if it was 0.
+        workers : map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
 
     Returns
     -------
@@ -343,7 +349,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Define Objective Function
     objective = ScalarFunction(fun, x0, args, grad, hess,
-                               finite_diff_rel_step, finite_diff_bounds)
+                               finite_diff_rel_step, finite_diff_bounds,
+                               workers=workers)
 
     # Put constraints in list format when needed.
     if isinstance(constraints, (NonlinearConstraint | LinearConstraint)):

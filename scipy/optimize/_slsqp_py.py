@@ -217,7 +217,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
                     eps=_epsilon, callback=None, finite_diff_rel_step=None,
-                    **unknown_options):
+                    workers=None, **unknown_options):
     """
     Minimize a scalar function of one or more variables using Sequential
     Least Squares Programming (SLSQP).
@@ -240,6 +240,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+    workers : map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
     """
     _check_unknown_options(unknown_options)
     iter = maxiter - 1
@@ -380,7 +384,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # ScalarFunction provides function and gradient evaluation
     sf = _prepare_scalar_function(func, x, jac=jac, args=args, epsilon=eps,
                                   finite_diff_rel_step=finite_diff_rel_step,
-                                  bounds=new_bounds)
+                                  bounds=new_bounds, workers=workers)
     # gh11403 SLSQP sometimes exceeds bounds by 1 or 2 ULP, make sure this
     # doesn't get sent to the func/grad evaluator.
     wrapped_fun = _clip_x_for_func(sf.fun, new_bounds)
