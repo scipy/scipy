@@ -324,3 +324,14 @@ class TestBatch:
         d = get_random((3, 4, 5), dtype=dtype, rng=rng)
         e = get_random((3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False)
+
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solve(self, bdim, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solve(A, b)
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        assert_allclose(A @ x - b, 0, atol=1e-6)

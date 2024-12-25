@@ -72,6 +72,7 @@ def _find_matrix_structure(a):
     return kind, n_below, n_above
 
 
+@_apply_over_batch(('a', 2), ('b', '1|2'))
 def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
