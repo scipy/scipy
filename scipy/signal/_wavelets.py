@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve
+from scipy.signal._signaltools import convolve
 
 
 def _ricker(points, a):
