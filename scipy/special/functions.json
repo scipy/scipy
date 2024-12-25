@@ -57,11 +57,6 @@
             "cephes__struve_power_series": "ddp*d->d"
         }
     },
-    "voigt_profile" : {
-        "_faddeeva.h++" : {
-            "faddeeva_voigt_profile": "ddd->d"
-        }
-    },
     "agm": {
         "_agm.pxd": {
             "agm": "dd->d"
@@ -179,12 +174,6 @@
         "_cdflib_wrappers.pxd": {
             "chndtrix": "ddd->d"        }
     },
-    "dawsn": {
-        "_faddeeva.h++": {
-            "faddeeva_dawsn": "d->d",
-            "faddeeva_dawsn_complex": "D->D"
-        }
-    },
     "_factorial": {
 	"_factorial.pxd": {
 	    "_factorial": "d->d"
@@ -223,34 +212,6 @@
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
-        }
-    },
-    "erf": {
-        "_faddeeva.h++": {
-            "faddeeva_erf": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_erf": "d->d"
-        }
-    },
-    "erfc": {
-        "_faddeeva.h++": {
-            "faddeeva_erfc_complex": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_erfc": "d->d"
-        }
-    },
-    "erfcx": {
-        "_faddeeva.h++": {
-            "faddeeva_erfcx": "d->d",
-            "faddeeva_erfcx_complex": "D->D"
-        }
-    },
-    "erfi": {
-        "_faddeeva.h++": {
-            "faddeeva_erfi": "d->d",
-            "faddeeva_erfi_complex": "D->D"
         }
     },
     "erfinv": {
@@ -545,12 +506,6 @@
             "cephes_log1p": "d->d"
         }
     },
-    "log_ndtr": {
-        "_faddeeva.h++": {
-            "faddeeva_log_ndtr": "d->d",
-            "faddeeva_log_ndtr_complex": "D->D"
-        }
-    },
     "lpmv": {
         "xsf_wrappers.h": {
             "pmv_wrap": "ddd->d"
@@ -632,14 +587,6 @@
     "nctdtrit": {
         "_cdflib_wrappers.pxd": {
             "nctdtrit": "ddd->d"
-        }
-    },
-    "ndtr": {
-        "_faddeeva.h++": {
-            "faddeeva_ndtr": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "xsf_ndtr": "d->d"
         }
     },
     "ndtri": {
@@ -791,11 +738,6 @@
     "tklmbda": {
         "xsf_wrappers.h": {
             "xsf_tukeylambdacdf": "dd->d"
-        }
-    },
-    "wofz": {
-        "_faddeeva.h++": {
-            "faddeeva_w": "D->D"
         }
     },
     "wrightomega": {
