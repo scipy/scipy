@@ -1457,10 +1457,12 @@ class TestProbplot:
                       (np.nan, np.nan, 0.0)))
 
     def test_array_of_size_one(self):
-        with np.errstate(invalid='ignore'):
+        message = "One or more sample arguments is too small..."
+        with (np.errstate(invalid='ignore'),
+              pytest.warns(SmallSampleWarning, match=message)):
             assert_equal(stats.probplot([1], fit=True),
                          ((np.array([0.]), np.array([1])),
-                          (np.nan, np.nan, 0.0)))
+                          (np.nan, np.nan, np.nan)))
 
 
 class TestWilcoxon:

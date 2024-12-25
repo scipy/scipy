@@ -143,6 +143,18 @@ axis_nan_policy_cases = [
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.kendalltau, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.weightedtau, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.linregress, tuple(), dict(), 2, 6, True,
+     lambda res: tuple(res) + (res.intercept_stderr,)),
+    (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
+    (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
+    (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
+    (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
 ]
 
 # If the message is one of those expected, put nans in
@@ -175,6 +187,9 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "One or more sample arguments is too small",
                       "invalid value encountered",
                       "divide by zero encountered",
+                      "`x` and `y` must have length at least 2.",
+                      "Inputs must not be empty.",
+                      "All `x` coordinates are identical.",
 }
 
 # If the message is one of these, results of the function may be inaccurate,
@@ -183,7 +198,7 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
                        "Sample size too small for normal approximation."}
 
 # For some functions, nan_policy='propagate' should not just return NaNs
-override_propagate_funcs = {stats.mode}
+override_propagate_funcs = {stats.mode, stats.weightedtau}
 
 # For some functions, empty arrays produce non-NaN results
 empty_special_case_funcs = {stats.entropy}
