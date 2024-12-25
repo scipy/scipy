@@ -179,14 +179,12 @@ class ScalarFunction:
         For ``method='3-point'`` the sign of `epsilon` is ignored. By default
         relative steps are used, only if ``epsilon is not None`` are absolute
         steps used.
-    workers : int or map-like callable, optional
-        If `workers` is an int any numerical differentiation task is subdivided
-        into `workers` sections and the fun evaluated in parallel
-        (uses `multiprocessing.Pool <multiprocessing>`).
-        Supply -1 to use all available CPU cores.
-        Alternatively supply a map-like callable, such as
-        `multiprocessing.Pool.map` for evaluating the population in parallel.
-        This evaluation is carried out as ``workers(fun, iterable)``.
+    workers : map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``, or
+        ``workers(grad, iterable)``, depending on what is being numerically
+        differentiated.
 
     Notes
     -----

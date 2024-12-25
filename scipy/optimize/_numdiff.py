@@ -361,13 +361,16 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         If True then the function also returns a dictionary with extra information
         about the calculation.
     workers : int or map-like callable, optional
-        If `workers` is an int the task is subdivided into `workers`
+        Supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+        Alternatively, if `workers` is an int the task is subdivided into `workers`
         sections and the fun evaluated in parallel
         (uses `multiprocessing.Pool <multiprocessing>`).
         Supply -1 to use all available CPU cores.
-        Alternatively supply a map-like callable, such as
-        `multiprocessing.Pool.map` for evaluating the population in parallel.
-        This evaluation is carried out as ``workers(fun, iterable)``.
+        It is recommended that a map-like be used instead of int, as repeated
+        calls to `approx_derivative` will incur large overhead from setting up
+        new processes.
 
     Returns
     -------

@@ -290,9 +290,11 @@ class TestApproxDerivativesDense:
                                          full_output=True)
             md3, mdct3 = approx_derivative(rosen, x0,
                                          workers=mapper, full_output=True)
-            md4, mdct4 = approx_derivative(rosen, x0,
-                                         method='cs', workers=mapper,
-                                         full_output=True)
+        # supply a number for workers. This is not normally recommended
+        # for upstream workers as setting up processes incurs a large overhead
+        md4, mdct4 = approx_derivative(rosen, x0,
+                                     method='cs', workers=2,
+                                     full_output=True)
 
         sfr = _ScalarFunctionWrapper(rosen)
         d2, dct2 = approx_derivative(sfr, x0, method='2-point', full_output=True)

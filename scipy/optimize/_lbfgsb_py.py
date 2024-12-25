@@ -345,13 +345,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
-    workers : int or map-like callable, optional
-        If `workers` is an int any numerical differentiation task is subdivided
-        into `workers` sections and the fun evaluated in parallel
-        (uses `multiprocessing.Pool <multiprocessing>`).
-        Supply -1 to use all available CPU cores.
-        Alternatively supply a map-like callable, such as
-        `multiprocessing.Pool.map` for evaluating the population in parallel.
+    workers : map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
         This evaluation is carried out as ``workers(fun, iterable)``.
 
     Notes
