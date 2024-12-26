@@ -12,15 +12,20 @@ kernelspec:
 orphan: true
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
 .. jupyterlite:: ../_contents/linalg_batch.ipynb
    :new_tab: True
 ```
 
 (linalg_batch)=
+
++++
+
 # Batched Linear Operations
 
-Some of SciPy's linear algebra functions support N-dimensional array input. These operations have not been mathematically generalized to higher-order tensors; rather, the indicated operation is performed on a *batch* (or "stack") of input scalars, vectors, and/or matrices.
+Almost all of SciPy's linear algebra functions now support N-dimensional array input. These operations have not been mathematically generalized to higher-order tensors; rather, the indicated operation is performed on a *batch* (or "stack") of input scalars, vectors, and/or matrices.
 
 Consider the `linalg.det` function, which maps a matrix to a scalar.
 
@@ -150,4 +155,37 @@ input_a = rng.random(batch_shape_a + core_shape_a)
 input_b = rng.random(batch_shape_b + core_shape_b)
 evals, evecs = linalg.eig(input_a, b=input_b)
 evals.shape, evecs.shape
+```
+
+There are a few functions for which the core dimensionality (i.e., the length of the core shape) of an argument or output can be either 1 or 2. In these cases, the core dimensionality is taken to be 1 if the array has only one dimension and 2 if the array has two or more dimensions. For instance, consider the following calls to {func}`scipy.linalg.solve`. The simplest case is a single square matrix `A` and a single vector `b`:
+
+```{code-cell} ipython3
+A = np.eye(5)
+b = np.arange(5)
+linalg.solve(A, b)
+```
+
+In this case, the core dimensionality of `A` is 2 (shape `(5, 5)`), the core dimensionality of `b` is 1  (shape `(5,)`), and the core dimensionality of the output is 1  (shape `(5,)`).
+
+However, `b` can also be a two-dimensional array in which the *columns* are taken to be one-dimensional vectors.
+
+```{code-cell} ipython3
+b = np.empty((5, 2))
+b[:, 0] = np.arange(5)
+b[:, 1] = np.arange(5, 10)
+linalg.solve(A, b)
+```
+
+```{code-cell} ipython3
+b.shape
+```
+
+At first glance, it might seem that the core shape of `b` is still `(5,)`, and we have simply performed the operation with a batch shape of `(2,)`. However, if this were the case, the batch shape of `b` would be *prepended* to the core shape, resulting in `b` and the output having shape `(2, 5)`. Thinking more carefully, it is correct to consider the core dimensionality of both inputs and the output to be 2; the batch shape is `()`.
+
+Likewise, whenever `b` has more than two dimensions, the core dimensionality of `b` and the output is considered to be 2. For example, to solve a batch of three entirely separate linear systems, each with only one right hand side, `b` must be provided as a three-dimensional array: one dimensions for the batch shape (`(3,)`) and two for the core shape (`(5, 1)`).
+
+```{code-cell} ipython3
+A = rng.random((3, 5, 5))
+b = rng.random((3, 5, 1))  # batch shape (3,), core shape (5, 1)
+linalg.solve(A, b).shape
 ```
