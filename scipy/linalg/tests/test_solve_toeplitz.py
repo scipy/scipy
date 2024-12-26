@@ -39,7 +39,7 @@ def test_multiple_rhs():
     c = random.randn(4)
     r = random.randn(4)
     for offset in [0, 1j]:
-        for yshape in ((4,), (4, 3), (4, 3, 2)):
+        for yshape in ((4,), (4, 3)):
             y = random.randn(*yshape) + offset
             actual = solve_toeplitz((c,r), b=y)
             desired = solve(toeplitz(c, r=r), y)

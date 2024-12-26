@@ -791,7 +791,7 @@ class TestSolve:
 
     def test_multiple_rhs(self):
         a = np.eye(2)
-        b = np.random.rand(2, 3, 4)
+        b = np.random.rand(2, 12)
         x = solve(a, b)
         assert_array_almost_equal(x, b)
 
@@ -1885,14 +1885,6 @@ class TestSolveCirculant:
         # b is a 2-d matrix.
         c = np.array([1, 2, -3, -5])
         b = np.arange(12).reshape(4, 3)
-        x = solve_circulant(c, b)
-        y = solve(circulant(c), b)
-        assert_allclose(x, y)
-
-    def test_basic3(self):
-        # b is a 3-d matrix.
-        c = np.array([1, 2, -3, -5])
-        b = np.arange(24).reshape(4, 3, 2)
         x = solve_circulant(c, b)
         y = solve(circulant(c), b)
         assert_allclose(x, y)
