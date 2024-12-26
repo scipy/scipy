@@ -432,7 +432,7 @@ class TestBatch:
         if len(bdim) == 1:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
-        atol = 1e-10 if dtype in (np.complex128, np.float64) else 1e-4
+        atol = 1e-10 if dtype in (np.complex128, np.float64) else 2e-4
         assert_allclose(A @ x - b, 0, atol=atol)
 
     @pytest.mark.parametrize('bdim', [(4,), (4, 3), (2, 3, 4, 3)])

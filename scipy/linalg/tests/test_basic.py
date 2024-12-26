@@ -1889,6 +1889,13 @@ class TestSolveCirculant:
         y = solve(circulant(c), b)
         assert_allclose(x, y)
 
+    def test_basic3(self):
+        # b is a 3-d matrix.
+        c = np.array([1, 2, -3, -5])
+        b = np.arange(24).reshape(4, 3, 2)
+        x = solve_circulant(c, b)
+        y = solve(circulant(c), b.reshape(4, -1)).reshape(b.shape)
+        assert_allclose(x, y)
     def test_complex(self):
         # Complex b and c
         c = np.array([1+2j, -3, 4j, 5])
