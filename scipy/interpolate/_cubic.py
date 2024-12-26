@@ -775,8 +775,9 @@ class CubicSpline(CubicHermiteSpline):
                 b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
                 b[2] = 2 * slope[1]
 
-                s = solve(A, b, overwrite_a=True, overwrite_b=True,
-                          check_finite=False)
+                m = b.shape[0]
+                s = solve(A, b.reshape(m, -1), overwrite_a=True, overwrite_b=True,
+                          check_finite=False).reshape(b.shape)
             elif n == 3 and bc[0] == 'periodic':
                 # In case when number of points is 3 we compute the derivatives
                 # manually
@@ -836,11 +837,15 @@ class CubicSpline(CubicHermiteSpline):
                     b2[-1] = -a_m2_m1
 
                     # s1 and s2 are the solutions of (n-2, n-2) system
-                    s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
+                    m = b1.shape[0]
+                    s1 = solve_banded((1, 1), Ac, b1.reshape(m, -1), overwrite_ab=False,
                                       overwrite_b=False, check_finite=False)
+                    s1 = s1.reshape(b1.shape)
 
-                    s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
+                    m = b2.shape[0]
+                    s2 = solve_banded((1, 1), Ac, b2.reshape(m, -1), overwrite_ab=False,
                                       overwrite_b=False, check_finite=False)
+                    s2 = s2.reshape(b2.shape)
 
                     # computing the s[n-2] solution:
                     s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
@@ -882,8 +887,10 @@ class CubicSpline(CubicHermiteSpline):
                         A[-1, -2] = dx[-1]
                         b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
 
-                    s = solve_banded((1, 1), A, b, overwrite_ab=True,
+                    m = b.shape[0]
+                    s = solve_banded((1, 1), A, b.reshape(m, -1), overwrite_ab=True,
                                      overwrite_b=True, check_finite=False)
+                    s = s.reshape(b.shape)
 
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
