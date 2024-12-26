@@ -349,6 +349,22 @@ class TestBatch:
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
 
+    @pytest.mark.parametrize('lower', [False, True])
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_cho_solve_banded(self, lower, bdim, dtype, rng):
+        A = get_random((2, 3, 3, 5), dtype=dtype, rng=rng)
+        row_diag = 0 if lower else -1
+        A[:, :, row_diag] = 10
+        cb = linalg.cholesky_banded(A, lower=lower)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.cho_solve_banded((cb, lower), b)
+        for i in range(2):
+            for j in range(3):
+                bij = b if len(bdim) <= 2 else b[i, j]
+                xij = linalg.cho_solve_banded((cb[i, j], lower), bij)
+                assert_allclose(x[i, j], xij)
+
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
     def test_solveh_banded(self, bdim, dtype, rng):
