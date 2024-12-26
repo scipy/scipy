@@ -336,6 +336,18 @@ class TestBatch:
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
 
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_lu_solve(self, bdim, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        lu_and_piv = linalg.lu_factor(A)
+        x = linalg.lu_solve(lu_and_piv, b)
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        assert_allclose(A @ x - b, 0, atol=1e-6)
+
     @pytest.mark.parametrize('separate_r', [False, True])
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
