@@ -2795,7 +2795,7 @@ class TestFiltFilt:
         a = xp.asarray(a)
 
         # time [time]
-        t = xp.astype(xp.arange(500), xp.complex128) / fs
+        t = xp.asarray(xp.arange(500), dtype=xp.complex128) / fs
 
         # filter input
         u = 2 * xp.cos(2*xp.pi*fcentre*t)
