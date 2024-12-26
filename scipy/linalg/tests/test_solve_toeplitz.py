@@ -2,7 +2,7 @@
 """
 import numpy as np
 from scipy.linalg._solve_toeplitz import levinson
-from scipy.linalg import solve, toeplitz, solve_toeplitz
+from scipy.linalg import solve, toeplitz, solve_toeplitz, matmul_toeplitz
 from numpy.testing import assert_equal, assert_allclose
 
 import pytest
@@ -136,13 +136,15 @@ def test_empty(dt_c, dt_b):
     assert x1.dtype == x.dtype
 
 
-def test_nd_FutureWarning():
+@pytest.mark.parametrize('fun', [solve_toeplitz, matmul_toeplitz])
+def test_nd_FutureWarning(fun):
+    # Test future warnings with n-D `c`/`r`
     rng = np.random.default_rng(283592436523456)
     c = rng.random((2, 3, 4))
     r = rng.random((2, 3, 4))
-    b = rng.random(24)
+    b_or_x = rng.random(24)
     message = "Beginning in SciPy 1.17, multidimensional input will be..."
     with pytest.warns(FutureWarning, match=message):
-         solve_toeplitz(c, b)
+         fun(c, b_or_x)
     with pytest.warns(FutureWarning, match=message):
-         solve_toeplitz((c, r), b)
+         fun((c, r), b_or_x)

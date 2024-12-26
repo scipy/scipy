@@ -1962,7 +1962,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
-    """Efficient Toeplitz Matrix-Matrix Multiplication using FFT
+    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT
 
     This function returns the matrix multiplication between a Toeplitz
     matrix and a dense matrix.
@@ -1971,15 +1971,19 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
 
+    .. warning::
+
+    Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
+    not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+    before passing them to `toeplitz`.
+
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
-        The vector ``c``, or a tuple of arrays (``c``, ``r``). Whatever the
-        actual shape of ``c``, it will be converted to a 1-D array. If not
+        The vector ``c``, or a tuple of arrays (``c``, ``r``). If not
         supplied, ``r = conjugate(c)`` is assumed; in this case, if c[0] is
         real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
-        of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
-        of ``r``, it will be converted to a 1-D array.
+        of the Toeplitz matrix is ``[c[0], r[1:]]``.
     x : (M,) or (M, K) array_like
         Matrix with which to multiply.
     check_finite : bool, optional
