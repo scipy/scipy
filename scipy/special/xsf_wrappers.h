@@ -179,45 +179,21 @@ double cephes_igam_fac(double a, double x);
 
 double cephes_lanczos_sum_expg_scaled(double x);
 
-double cephes_erfc(double x);
-
 double cephes_poch(double x, double m);
 
 double cephes_rgamma(double x);
 
 double xsf_zetac(double x);
 
-double cephes_log1p(double x);
-
-double cephes_log1pmx(double x);
-
 double cephes_lgam1p(double x);
-
-double cephes_expm1(double x);
 
 double cephes_expn(int n, double x);
 
 double xsf_ellipe(double x);
 
-double xsf_erf(double x);
-
-npy_cdouble xsf_cerf(npy_cdouble z);
-
-double xsf_erfc(double x);
-
-npy_cdouble xsf_cerfc(npy_cdouble z);
-
-double xsf_erfcx(double x);
-
-npy_cdouble xsf_cerfcx(npy_cdouble z);
-
 double xsf_dawsn(double x);
 
 npy_cdouble xsf_cdawsn(npy_cdouble z);
-
-double xsf_erfi(double x);
-
-npy_cdouble xsf_cerfi(npy_cdouble z);
 
 double xsf_voigt_profile(double x, double sigma, double gamma);
 
@@ -231,10 +207,6 @@ double xsf_ellipkinc(double phi, double m);
 
 double cephes_erfcinv(double y);
 
-double cephes_exp10(double x);
-
-double cephes_exp2(double x);
-
 double cephes_round(double x);
 
 double cephes_spence(double x);
@@ -242,6 +214,40 @@ double cephes_spence(double x);
 double xsf_struve_h(double v, double z);
 
 double xsf_struve_l(double v, double z);
+
+// Exp
+
+double xsf_expm1(double x);
+npy_cdouble xsf_cexpm1(npy_cdouble z);
+
+double xsf_exp2(double x);
+
+double xsf_exp10(double x);
+
+// Erf
+
+double xsf_erf(double x);
+npy_cdouble xsf_cerf(npy_cdouble z);
+
+double xsf_erfi(double x);
+npy_cdouble xsf_cerfi(npy_cdouble z);
+
+double xsf_erfc(double x);
+npy_cdouble xsf_cerfc(npy_cdouble z);
+
+double xsf_erfcx(double x);
+npy_cdouble xsf_cerfcx(npy_cdouble z);
+
+// Log
+
+double xsf_log1p(double x);
+npy_cdouble xsf_clog1p(npy_cdouble x);
+
+double xsf_xlogy(double x, double y);
+npy_cdouble xsf_cxlogy(npy_cdouble x, npy_cdouble y);
+
+double xsf_xlog1py(double x, double y);
+npy_cdouble xsf_cxlog1py(npy_cdouble x, npy_cdouble y);
 
 // Cylindrical Bessel
 
