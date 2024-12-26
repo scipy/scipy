@@ -178,7 +178,8 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
 
     """
     (lu, piv) = lu_and_piv
-    return _lu_solve(lu, piv, b, trans=trans, overwrite_b=overwrite_b, check_finite=check_finite)
+    return _lu_solve(lu, piv, b, trans=trans, overwrite_b=overwrite_b,
+                     check_finite=check_finite)
 
 
 @_apply_over_batch(('lu', 2), ('piv', 1), ('b', '1|2'))

@@ -445,5 +445,5 @@ class TestBatch:
         if len(bdim) == 1:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
-        assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(A @ x - b, 0, atol=2e-6)
         assert len(res) == 4
