@@ -2805,7 +2805,7 @@ class TestFiltFilt:
         # for 1% assertion later
         ntrans = int(math.log(5e-3) / math.log(max(abs(p))))
 
-        assert 2*ntrans < t.size
+        assert 2*ntrans < t.shape[0]
 
         # 2*cos(x) = xp.exp(2j*x) + xp.exp(-2j*x); filter above should
         # remove xp.exp(-2j*x)
