@@ -335,3 +335,16 @@ class TestBatch:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
+
+    @pytest.mark.parametrize('bdim', [(4,), (4, 3)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_lstsq(self, bdim, dtype, rng):
+        A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        res = linalg.lstsq(A, b)
+        x = res[0]
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert len(res) == 4

@@ -1296,6 +1296,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
 
 # Linear Least Squares
+@_apply_over_batch(('a', 2), ('b', '1|2'))
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
