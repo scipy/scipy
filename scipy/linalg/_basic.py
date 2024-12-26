@@ -856,9 +856,13 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     # If numerical stability of this algorithm is a problem, a future
     # developer might consider implementing other O(N^2) Toeplitz solvers,
     # such as GKO (https://www.jstor.org/stable/2153371) or Bareiss.
+    c, r = c_or_cr if isinstance(c_or_cr, tuple) else (c_or_cr, np.conjugate(c_or_cr))
+    return _solve_toeplitz(c, r, b, check_finite)
 
+@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
+def _solve_toeplitz(c, r, b, check_finite):
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
-        c_or_cr, b, check_finite, keep_b_shape=True)
+        (c, r), b, check_finite, keep_b_shape=True)
 
     # accommodate empty arrays
     if b.size == 0:
