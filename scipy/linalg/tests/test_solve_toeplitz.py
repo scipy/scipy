@@ -134,3 +134,15 @@ def test_empty(dt_c, dt_b):
     x1 = solve_toeplitz(c, b)
     assert x1.shape == (0, 0)
     assert x1.dtype == x.dtype
+
+
+def test_nd_FutureWarning():
+    rng = np.random.default_rng(283592436523456)
+    c = rng.random((2, 3, 4))
+    r = rng.random((2, 3, 4))
+    b = rng.random(24)
+    message = "Beginning in SciPy 1.17, multidimensional input will be..."
+    with pytest.warns(FutureWarning, match=message):
+         solve_toeplitz(c, b)
+    with pytest.warns(FutureWarning, match=message):
+         solve_toeplitz((c, r), b)
