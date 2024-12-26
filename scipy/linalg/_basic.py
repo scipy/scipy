@@ -593,7 +593,13 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     array([-2.37288136,  3.93220339, -4.        ,  4.3559322 , -1.3559322 ])
 
     """
+    (nlower, nupper) = l_and_u
+    return _solve_banded(nlower, nupper, ab, b, overwrite_ab=overwrite_ab,
+                         overwrite_b=overwrite_b, check_finite=check_finite)
 
+
+@_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'))
+def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
 
@@ -601,7 +607,6 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
 
-    (nlower, nupper) = l_and_u
     if nlower + nupper + 1 != a1.shape[0]:
         raise ValueError("invalid values for the number of lower and upper "
                          "diagonals: l+u+1 (%d) does not equal ab.shape[0] "

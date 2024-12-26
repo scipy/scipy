@@ -348,6 +348,22 @@ class TestBatch:
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
 
+    @pytest.mark.parametrize('l_and_u', [(1, 1), ([2, 1, 0], [0, 1 , 2])])
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solve_banded(self, l_and_u, bdim, dtype, rng):
+        l, u = l_and_u
+        ab = get_random((2, 3, 3, 5), dtype=dtype, rng=rng)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solve_banded((l, u), ab, b)
+        for i in range(2):
+            for j in range(3):
+                bij = b if len(bdim) <= 2 else b[i, j]
+                lj = l if np.ndim(l) == 0 else l[j]
+                uj = u if np.ndim(u) == 0 else u[j]
+                xij = linalg.solve_banded((lj, uj), ab[i, j], bij)
+                assert_allclose(x[i, j], xij)
+
     @pytest.mark.parametrize('separate_r', [False, True])
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)

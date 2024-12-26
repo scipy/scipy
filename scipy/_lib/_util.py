@@ -1241,7 +1241,7 @@ def _apply_over_batch(*argdefs):
 
                 arrays[i] = array
                 batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
-                core_shapes.append(shape[-ndim:] if ndim > 0 else shape)
+                core_shapes.append(shape[-ndim:] if ndim > 0 else ())
 
             # Early exit if call is not batched
             if not any(batch_shapes):
