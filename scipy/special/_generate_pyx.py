@@ -97,7 +97,8 @@ special_ufuncs = [
     'beta', 'betaln', 'besselpoly', 'gammaln', 'gammasgn', 'cbrt', 'radian', 'cosm1',
     'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel', 'ellipe',
     'ellipeinc', 'ellipk', 'ellipkinc', 'ellipkm1', 'ellipj', '_riemann_zeta', 'erf',
-    'erfc', 'erfcx', 'erfi', 'voigt_profile', 'wofz', 'dawsn', 'ndtr', 'log_ndtr'
+    'erfc', 'erfcx', 'erfi', 'voigt_profile', 'wofz', 'dawsn', 'ndtr', 'log_ndtr',
+    'exp2', 'exp10', 'expm1', 'log1p', 'xlogy', 'xlog1py', '_log1pmx'
 ]
 
 # -----------------------------------------------------------------------------

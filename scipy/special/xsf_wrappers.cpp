@@ -9,12 +9,14 @@
 #include "xsf/digamma.h"
 #include "xsf/ellip.h"
 #include "xsf/erf.h"
+#include "xsf/exp.h"
 #include "xsf/expint.h"
 #include "xsf/fresnel.h"
 #include "xsf/gamma.h"
 #include "xsf/hyp2f1.h"
 #include "xsf/kelvin.h"
 #include "xsf/lambertw.h"
+#include "xsf/log.h"
 #include "xsf/log_exp.h"
 #include "xsf/loggamma.h"
 #include "xsf/mathieu.h"
@@ -33,8 +35,6 @@
 
 #include "xsf/cephes/cbrt.h"
 #include "xsf/cephes/erfinv.h"
-#include "xsf/cephes/exp10.h"
-#include "xsf/cephes/exp2.h"
 #include "xsf/cephes/expn.h"
 #include "xsf/cephes/fresnl.h"
 #include "xsf/cephes/hyperg.h"
@@ -380,21 +380,13 @@ double cephes_igam_fac(double a, double x) { return xsf::cephes::detail::igam_fa
 
 double cephes_lanczos_sum_expg_scaled(double x) { return xsf::cephes::lanczos_sum_expg_scaled(x); }
 
-double cephes_erfc(double x) { return xsf::cephes::erfc(x); }
-
 double cephes_poch(double x, double m) { return xsf::cephes::poch(x, m); }
 
 double cephes_rgamma(double x) { return xsf::cephes::rgamma(x); }
 
 double xsf_zetac(double x) { return xsf::zetac(x); }
 
-double cephes_log1p(double x) { return xsf::cephes::log1p(x); }
-
-double cephes_log1pmx(double x) { return xsf::cephes::log1pmx(x); }
-
 double cephes_lgam1p(double x) { return xsf::cephes::lgam1p(x); }
-
-double cephes_expm1(double x) { return xsf::cephes::expm1(x); }
 
 double cephes_expn(int n, double x) { return xsf::cephes::expn(n, x); }
 
@@ -434,10 +426,6 @@ double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
 
 double cephes_erfcinv(double y) { return xsf::cephes::erfcinv(y); }
 
-double cephes_exp10(double x) { return xsf::cephes::exp10(x); }
-
-double cephes_exp2(double x) { return xsf::cephes::exp2(x); }
-
 double cephes_round(double x) { return xsf::cephes::round(x); }
 
 double cephes_spence(double x) { return xsf::cephes::spence(x); }
@@ -445,6 +433,32 @@ double cephes_spence(double x) { return xsf::cephes::spence(x); }
 double xsf_struve_h(double v, double z) { return xsf::struve_h(v, z); }
 
 double xsf_struve_l(double v, double z) { return xsf::struve_l(v, z); }
+
+// Exp
+
+double xsf_expm1(double x) { return xsf::expm1(x); }
+
+npy_cdouble xsf_cexpm1(npy_cdouble z) { return to_ccomplex(xsf::expm1(to_complex(z))); }
+
+double xsf_exp2(double x) { return xsf::exp2(x); }
+
+double xsf_exp10(double x) { return xsf::exp10(x); }
+
+// Log
+
+double xsf_log1p(double x) { return xsf::log1p(x); }
+
+npy_cdouble xsf_clog1p(npy_cdouble z) { return to_ccomplex(xsf::log1p(to_complex(z))); }
+
+double xsf_xlogy(double x, double y) { return xsf::xlogy(x, y); }
+
+npy_cdouble xsf_cxlogy(npy_cdouble x, npy_cdouble y) { return to_ccomplex(xsf::xlogy(to_complex(x), to_complex(y))); }
+
+double xsf_xlog1py(double x, double y) { return xsf::xlog1py(x, y); }
+
+npy_cdouble xsf_cxlog1py(npy_cdouble x, npy_cdouble y) {
+    return to_ccomplex(xsf::xlog1py(to_complex(x), to_complex(y)));
+}
 
 // Cylindrical Bessel
 
