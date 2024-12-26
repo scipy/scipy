@@ -325,7 +325,7 @@ class TestBatch:
         e = get_random((3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False)
 
-    @pytest.mark.parametrize('bdim', [(5,), (5, 4)])
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
     def test_solve(self, bdim, dtype, rng):
         A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
@@ -336,7 +336,20 @@ class TestBatch:
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
 
-    @pytest.mark.parametrize('bdim', [(5,), (5, 4)])
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solveh_banded(self, bdim, dtype, rng):
+        A = get_random((2, 3, 3, 5), dtype=dtype, rng=rng)
+        A[:, :, -1] = 10
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solveh_banded(A, b)
+        for i in range(2):
+            for j in range(3):
+                bij = b if len(bdim) <= 2 else b[i, j]
+                xij = linalg.solveh_banded(A[i, j], bij)
+                assert_allclose(x[i, j], xij)
+
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
     def test_solve_triangular(self, bdim, dtype, rng):
         A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
@@ -349,7 +362,7 @@ class TestBatch:
         atol = 1e-10 if dtype in (np.complex128, np.float64) else 1e-4
         assert_allclose(A @ x - b, 0, atol=atol)
 
-    @pytest.mark.parametrize('bdim', [(4,), (4, 3)])
+    @pytest.mark.parametrize('bdim', [(4,), (4, 3), (2, 3, 4, 3)])
     @pytest.mark.parametrize('dtype', floating)
     def test_lstsq(self, bdim, dtype, rng):
         A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)

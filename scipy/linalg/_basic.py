@@ -644,6 +644,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                      'gbsv/gtsv' % -info)
 
 
+@_apply_over_batch(('a', 2), ('b', '1|2'))
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
