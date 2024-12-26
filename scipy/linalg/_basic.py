@@ -409,6 +409,7 @@ def _ensure_dtype_cdsz(*arrays):
     return (array.astype(dtype, copy=False) for array in arrays)
 
 
+@_apply_over_batch(('a', 2), ('b', '1|2'))
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """

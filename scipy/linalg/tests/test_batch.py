@@ -336,6 +336,19 @@ class TestBatch:
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
 
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solve_triangular(self, bdim, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        A = np.tril(A)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solve_triangular(A, b, lower=True)
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        atol = 1e-10 if dtype in (np.complex128, np.float64) else 1e-4
+        assert_allclose(A @ x - b, 0, atol=atol)
+
     @pytest.mark.parametrize('bdim', [(4,), (4, 3)])
     @pytest.mark.parametrize('dtype', floating)
     def test_lstsq(self, bdim, dtype, rng):
