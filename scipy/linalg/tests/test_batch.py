@@ -338,6 +338,19 @@ class TestBatch:
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
+    def test_cho_solve(self, bdim, dtype, rng):
+        A = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        A = A + 5*np.eye(5)
+        c_and_lower = linalg.cho_factor(A)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.cho_solve(c_and_lower, b)
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        assert_allclose(A @ x - b, 0, atol=1e-6)
+
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
     def test_solveh_banded(self, bdim, dtype, rng):
         A = get_random((2, 3, 3, 5), dtype=dtype, rng=rng)
         A[:, :, -1] = 10
