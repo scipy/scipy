@@ -71,6 +71,7 @@ from . cimport cython_blas as blas_pointers
 from . cimport cython_lapack as lapack_pointers
 
 import numpy as np
+from scipy._lib._util import _apply_over_batch
 
 #------------------------------------------------------------------------------
 # These are a set of fused type wrappers around the BLAS and LAPACK calls used.
@@ -2030,6 +2031,7 @@ RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
                     raise MemoryError("Unable to allocate memory for array")
         return q1, rnew
 
+@_apply_over_batch(('Q', 2), ('R', 2), ('u', '1|2'), ('v', '1|2'))
 @cython.embedsignature(True)
 def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     """

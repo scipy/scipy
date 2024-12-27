@@ -197,6 +197,22 @@ class TestBatch:
         assert_allclose(res[0], ref, atol=atol)
         assert_allclose(res[1], r, atol=atol)
 
+    @pytest.mark.parametrize('uvdim', [[(5,), (3,)], [(4, 5, 2), (4, 3, 2)]])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_update(self, uvdim, dtype, rng):
+        udim, vdim = uvdim
+        A = get_random((4, 5, 3), dtype=dtype, rng=rng)
+        u = get_random(udim, dtype=dtype, rng=rng)
+        v = get_random(vdim, dtype=dtype, rng=rng)
+        q, r = linalg.qr(A)
+        res = linalg.qr_update(q, r, u, v)
+        for i in range(4):
+            qi, ri = q[i], r[i]
+            ui, vi = (u, v) if u.ndim == 1 else (u[i], v[i])
+            ref_i = linalg.qr_update(qi, ri, ui, vi)
+            assert_allclose(res[0][i], ref_i[0])
+            assert_allclose(res[1][i], ref_i[1])
+
     @pytest.mark.parametrize('fun', [linalg.schur, linalg.lu_factor])
     @pytest.mark.parametrize('dtype', floating)
     def test_schur_lu(self, fun, dtype, rng):
