@@ -360,7 +360,6 @@ def test_api_importable():
                           ('scipy.interpolate.dfitpack', None),
                           ('scipy.interpolate.fitpack', None),
                           ('scipy.interpolate.fitpack2', None),
-                          ('scipy.interpolate.interpnd', None),
                           ('scipy.interpolate.interpolate', None),
                           ('scipy.interpolate.ndgriddata', None),
                           ('scipy.interpolate.polyint', None),
