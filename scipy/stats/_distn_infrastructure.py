@@ -1837,13 +1837,13 @@ class rv_continuous(rv_generic):
     >>> print("Theoretical bounds: a =", p.a, ", b =", p.b)
     Theoretical bounds: a = 0.0 , b = 1.0
     >>> print("Adjusted bounds with loc and scale:", p.support())
-    Adjusted bounds with loc and scale: (2, 7)
+    Adjusted bounds with loc and scale: (np.float64(2.0), np.float64(7.0))
 
     >>> p = beta(a=100, b=100, loc=2, scale=5)
     >>> print("Theoretical bounds: a =", p.a, ", b =", p.b)
     Theoretical bounds: a = 0.0 , b = 1.0
     >>> print("Adjusted bounds with loc and scale:", p.support())
-    Adjusted bounds with loc and scale: (2, 7)
+    Adjusted bounds with loc and scale: (np.float64(2.0), np.float64(7.0))
 
     To create a new Gaussian distribution, we would do the following:
 
