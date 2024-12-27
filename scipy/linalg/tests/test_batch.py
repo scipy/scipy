@@ -264,6 +264,23 @@ class TestBatch:
         self.batch_test(fun, (A, B), n_out=n_out)
 
     @pytest.mark.parametrize('dtype', floating)
+    def test_cossin(self, dtype, rng):
+        p, q = 3, 4
+        X = get_random((2, 3, 10, 10), dtype=dtype, rng=rng)
+        x11, x12, x21, x22 = (X[..., :p, :q], X[..., :p, q:],
+                              X[..., p:, :q], X[..., p:, q:])
+        res = linalg.cossin(X, p, q)
+        ref = linalg.cossin((x11, x12, x21, x22))
+        for res_i, ref_i in zip(res, ref):
+            np.testing.assert_equal(res_i, ref_i)
+
+        for j in range(2):
+            for k in range(3):
+                ref_jk = linalg.cossin(X[j, k], p, q)
+                for res_i, ref_ijk in zip(res, ref_jk):
+                    np.testing.assert_equal(res_i[j, k], ref_ijk)
+
+    @pytest.mark.parametrize('dtype', floating)
     def test_sylvester(self, dtype, rng):
         A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
         B = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
