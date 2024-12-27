@@ -1615,6 +1615,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
     else:
         raise ValueError("'which' must be either 'row' or 'col'")
 
+@_apply_over_batch(('Q', 2), ('R', 2), ('u', '1|2'), ('k', 0))
 @cython.embedsignature(True)
 def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_finite=True):
     """
