@@ -185,6 +185,65 @@ class TestBatch:
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, A, n_out=2)
 
+    @pytest.mark.parametrize('cdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_multiply(self, cdim, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        c = get_random(cdim, dtype=dtype, rng=rng)
+        res = linalg.qr_multiply(A, c, mode='left')
+        q, r = linalg.qr(A)
+        ref = q @ c
+        atol = 1e-6 if dtype in {np.float32, np.complex64} else 1e-12
+        assert_allclose(res[0], ref, atol=atol)
+        assert_allclose(res[1], r, atol=atol)
+
+    @pytest.mark.parametrize('uvdim', [[(5,), (3,)], [(4, 5, 2), (4, 3, 2)]])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_update(self, uvdim, dtype, rng):
+        udim, vdim = uvdim
+        A = get_random((4, 5, 3), dtype=dtype, rng=rng)
+        u = get_random(udim, dtype=dtype, rng=rng)
+        v = get_random(vdim, dtype=dtype, rng=rng)
+        q, r = linalg.qr(A)
+        res = linalg.qr_update(q, r, u, v)
+        for i in range(4):
+            qi, ri = q[i], r[i]
+            ui, vi = (u, v) if u.ndim == 1 else (u[i], v[i])
+            ref_i = linalg.qr_update(qi, ri, ui, vi)
+            assert_allclose(res[0][i], ref_i[0])
+            assert_allclose(res[1][i], ref_i[1])
+
+    @pytest.mark.parametrize('udim', [(5,), (4, 3, 5)])
+    @pytest.mark.parametrize('kdim', [(), (4,)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_insert(self, udim, kdim, dtype, rng):
+        A = get_random((4, 5, 5), dtype=dtype, rng=rng)
+        u = get_random(udim, dtype=dtype, rng=rng)
+        k = rng.integers(0, 5, size=kdim)
+        q, r = linalg.qr(A)
+        res = linalg.qr_insert(q, r, u, k)
+        for i in range(4):
+            qi, ri = q[i], r[i]
+            ki = k if k.ndim == 0 else k[i]
+            ui = u if u.ndim == 1 else u[i]
+            ref_i = linalg.qr_insert(qi, ri, ui, ki)
+            assert_allclose(res[0][i], ref_i[0])
+            assert_allclose(res[1][i], ref_i[1])
+
+    @pytest.mark.parametrize('kdim', [(), (4,)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_delete(self, kdim, dtype, rng):
+        A = get_random((4, 5, 5), dtype=dtype, rng=rng)
+        k = rng.integers(0, 4, size=kdim)
+        q, r = linalg.qr(A)
+        res = linalg.qr_delete(q, r, k)
+        for i in range(4):
+            qi, ri = q[i], r[i]
+            ki = k if k.ndim == 0 else k[i]
+            ref_i = linalg.qr_delete(qi, ri, ki)
+            assert_allclose(res[0][i], ref_i[0])
+            assert_allclose(res[1][i], ref_i[1])
+
     @pytest.mark.parametrize('fun', [linalg.schur, linalg.lu_factor])
     @pytest.mark.parametrize('dtype', floating)
     def test_schur_lu(self, fun, dtype, rng):
