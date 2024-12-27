@@ -4,6 +4,7 @@
 # w/ additions by Travis Oliphant, March 2002
 #              and Jake Vanderplas, August 2012
 
+import warnings
 from warnings import warn
 from itertools import product
 import numpy as np
@@ -782,21 +783,25 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
 
 def solve_toeplitz(c_or_cr, b, check_finite=True):
-    """Solve a Toeplitz system using Levinson Recursion
+    r"""Solve a Toeplitz system using Levinson Recursion
 
     The Toeplitz matrix has constant diagonals, with c as its first column
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
 
+    .. warning::
+
+        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
+        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+        before passing them to `solve_toeplitz`.
+
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
-        The vector ``c``, or a tuple of arrays (``c``, ``r``). Whatever the
-        actual shape of ``c``, it will be converted to a 1-D array. If not
+        The vector ``c``, or a tuple of arrays (``c``, ``r``). If not
         supplied, ``r = conjugate(c)`` is assumed; in this case, if c[0] is
         real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
-        of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
-        of ``r``, it will be converted to a 1-D array.
+        of the Toeplitz matrix is ``[c[0], r[1:]]``.
     b : (M,) or (M, K) array_like
         Right-hand side in ``T x = b``.
     check_finite : bool, optional
@@ -1915,11 +1920,20 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
 
     if isinstance(c_or_cr, tuple):
         c, r = c_or_cr
-        c = _asarray_validated(c, check_finite=check_finite).ravel()
-        r = _asarray_validated(r, check_finite=check_finite).ravel()
+        c = _asarray_validated(c, check_finite=check_finite)
+        r = _asarray_validated(r, check_finite=check_finite)
     else:
-        c = _asarray_validated(c_or_cr, check_finite=check_finite).ravel()
+        c = _asarray_validated(c_or_cr, check_finite=check_finite)
         r = c.conjugate()
+
+    if c.ndim > 1 or r.ndim > 1:
+        msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
+               "batch, not `ravel`ed. To preserve the existing behavior and silence "
+               "this warning, `ravel` arguments before passing them to "
+               "`toeplitz`, `matmul_toeplitz`, and `solve_toeplitz`.")
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+        c = c.ravel()
+        r = r.ravel()
 
     if b is None:
         raise ValueError('`b` must be an array, not None.')
@@ -1944,7 +1958,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
-    """Efficient Toeplitz Matrix-Matrix Multiplication using FFT
+    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT
 
     This function returns the matrix multiplication between a Toeplitz
     matrix and a dense matrix.
@@ -1953,15 +1967,19 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
 
+    .. warning::
+
+        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
+        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+        before passing them to `matmul_toeplitz`.
+
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
-        The vector ``c``, or a tuple of arrays (``c``, ``r``). Whatever the
-        actual shape of ``c``, it will be converted to a 1-D array. If not
+        The vector ``c``, or a tuple of arrays (``c``, ``r``). If not
         supplied, ``r = conjugate(c)`` is assumed; in this case, if c[0] is
         real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
-        of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
-        of ``r``, it will be converted to a 1-D array.
+        of the Toeplitz matrix is ``[c[0], r[1:]]``.
     x : (M,) or (M, K) array_like
         Matrix with which to multiply.
     check_finite : bool, optional

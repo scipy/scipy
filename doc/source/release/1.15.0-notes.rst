@@ -376,9 +376,9 @@ with support added for SciPy ``1.15.0`` include:
   and for other backends will transit via NumPy arrays on the host.
 
 
-*******************
-Deprecated features
-*******************
+**************************************
+Deprecated features and future changes
+**************************************
 - Functions `scipy.linalg.interpolative.rand` and
   `scipy.linalg.interpolative.seed` have been deprecated and will be removed
   in SciPy ``1.17.0``.
@@ -388,7 +388,7 @@ Deprecated features
 - `scipy.spatial.distance.kulczynski1` and
   `scipy.spatial.distance.sokalmichener` were deprecated and will be removed
   in SciPy ``1.17.0``.
-- `scipy.stats.find_repeats` is deprecated as of SciPy ``1.15.0`` and will be
+- `scipy.stats.find_repeats` is deprecated and will be
   removed in SciPy ``1.17.0``. Please use
   ``numpy.unique``/``numpy.unique_counts`` instead.
 - `scipy.linalg.kron` is deprecated in favour of ``numpy.kron``.
@@ -396,8 +396,7 @@ Deprecated features
   convolution/correlation functions (`scipy.signal.correlate`,
   `scipy.signal.convolve` and `scipy.signal.choose_conv_method`) and
   filtering functions (`scipy.signal.lfilter`, `scipy.signal.sosfilt`) has
-  been deprecated as of SciPy ``1.15.0`` and will be removed in SciPy
-  ``1.17.0``.
+  been deprecated and will be removed in SciPy ``1.17.0``.
 - `scipy.stats.linregress` has deprecated one-argument use; the two
   variables must be specified as separate arguments.
 - ``scipy.stats.trapz`` is deprecated in favor of `scipy.stats.trapezoid`.
@@ -406,8 +405,9 @@ Deprecated features
   `scipy.special.assoc_legendre_p_all`.
 - `scipy.special.sph_harm` has been deprecated in favor of
   `scipy.special.sph_harm_y`.
-- The raveling of multi-dimensional input by `scipy.linalg.toeplitz` has
-  been deprecated. It will support batching in SciPy ``1.17.0``.
+- Multi-dimensional ``r`` and ``c`` arrays passed to `scipy.linalg.toeplitz`,
+  `scipy.linalg.matmul_toeplitz`, or `scipy.linalg.solve_toeplitz` will be
+  treated as batches of 1-D coefficients beginning in SciPy ``1.17.0``.
 - The ``random_state`` and ``permutations`` arguments of
   `scipy.stats.ttest_ind` are deprecated. Use ``method`` to perform a
   permutation test, instead.
