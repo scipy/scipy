@@ -794,7 +794,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
 
         Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
         not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
-        before passing them to `toeplitz`.
+        before passing them to `solve_toeplitz`.
 
     Parameters
     ----------
@@ -1934,7 +1934,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
                "batch, not `ravel`ed. To preserve the existing behavior and silence "
                "this warning, `ravel` arguments before passing them to "
-               "`solve_toeplitz`.")
+               "`toeplitz`, `matmul_toeplitz`, and `solve_toeplitz`.")
         warnings.warn(msg, FutureWarning, stacklevel=2)
         c = c.ravel()
         r = r.ravel()
@@ -1973,9 +1973,9 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
 
     .. warning::
 
-    Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
-    not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
-    before passing them to `toeplitz`.
+        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
+        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+        before passing them to `matmul_toeplitz`.
 
     Parameters
     ----------

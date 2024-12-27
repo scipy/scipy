@@ -1,7 +1,6 @@
 """Test functions for linalg.matmul_toeplitz function
 """
 
-import pytest
 import numpy as np
 from scipy.linalg import toeplitz, matmul_toeplitz
 
