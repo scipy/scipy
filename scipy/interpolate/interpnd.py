@@ -21,5 +21,4 @@ def __dir__():
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="interpolate", module="interpnd",
                                    private_modules=["_interpnd"], all=__all__,
-                                   attribute=name)
-
+                                   attribute=name, dep_version="1.17.0")
