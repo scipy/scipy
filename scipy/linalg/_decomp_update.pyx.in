@@ -1398,6 +1398,7 @@ cdef void* extract(cnp.ndarray arr, int* arrs) noexcept:
             arrs[1] = 0
     return cnp.PyArray_DATA(arr)
 
+@_apply_over_batch(('Q', 2), ('R', 2), ('k', 0))
 @cython.embedsignature(True)
 def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
               check_finite=True):

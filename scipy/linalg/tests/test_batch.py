@@ -230,6 +230,20 @@ class TestBatch:
             assert_allclose(res[0][i], ref_i[0])
             assert_allclose(res[1][i], ref_i[1])
 
+    @pytest.mark.parametrize('kdim', [(), (4,)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_delete(self, kdim, dtype, rng):
+        A = get_random((4, 5, 5), dtype=dtype, rng=rng)
+        k = rng.integers(0, 4, size=kdim)
+        q, r = linalg.qr(A)
+        res = linalg.qr_delete(q, r, k)
+        for i in range(4):
+            qi, ri = q[i], r[i]
+            ki = k if k.ndim == 0 else k[i]
+            ref_i = linalg.qr_delete(qi, ri, ki)
+            assert_allclose(res[0][i], ref_i[0])
+            assert_allclose(res[1][i], ref_i[1])
+
     @pytest.mark.parametrize('fun', [linalg.schur, linalg.lu_factor])
     @pytest.mark.parametrize('dtype', floating)
     def test_schur_lu(self, fun, dtype, rng):
