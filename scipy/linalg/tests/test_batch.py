@@ -185,6 +185,18 @@ class TestBatch:
         A = get_random((5, 3, 2, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, A, n_out=2)
 
+    @pytest.mark.parametrize('cdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_qr_multiply(self, cdim, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        c = get_random(cdim, dtype=dtype, rng=rng)
+        res = linalg.qr_multiply(A, c, mode='left')
+        q, r = linalg.qr(A)
+        ref = q @ c
+        atol = 1e-6 if dtype in {np.float32, np.complex64} else 1e-12
+        assert_allclose(res[0], ref, atol=atol)
+        assert_allclose(res[1], r, atol=atol)
+
     @pytest.mark.parametrize('fun', [linalg.schur, linalg.lu_factor])
     @pytest.mark.parametrize('dtype', floating)
     def test_schur_lu(self, fun, dtype, rng):
