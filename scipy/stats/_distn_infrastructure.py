@@ -1660,9 +1660,17 @@ class rv_continuous(rv_generic):
     a : float, optional
         Lower bound of the support of the distribution, default is minus
         infinity.
+        Note: This value is unaffected by the `loc` and `scale` parameters.
+        It represents the theoretical lower bound of the unscaled distribution.
+        To calculate the adjusted lower bound after applying `loc` and `scale`,
+        use the `support()` method.
     b : float, optional
         Upper bound of the support of the distribution, default is plus
         infinity.
+        Note: This value is unaffected by the `loc` and `scale` parameters.
+        It represents the theoretical lower bound of the unscaled distribution.
+        To calculate the adjusted lower bound after applying `loc` and `scale`,
+        use the `support()` method.
     xtol : float, optional
         The tolerance for fixed point calculation for generic ppf.
     badvalue : float, optional
@@ -1821,6 +1829,22 @@ class rv_continuous(rv_generic):
 
     Examples
     --------
+    To demonstrate the difference between theoretical bounds (`a` and `b`)
+    and the adjusted bounds after applying `loc` and `scale` using `support()`:
+
+    >>> from scipy.stats import uniform, beta
+    >>> p = uniform(loc=2, scale=5)
+    >>> print("Theoretical bounds: a =", p.a, ", b =", p.b)
+    Theoretical bounds: a = 0.0 , b = 1.0
+    >>> print("Adjusted bounds with loc and scale:", p.support())
+    Adjusted bounds with loc and scale: (2, 7)
+
+    >>> p = beta(a=100, b=100, loc=2, scale=5)
+    >>> print("Theoretical bounds: a =", p.a, ", b =", p.b)
+    Theoretical bounds: a = 0.0 , b = 1.0
+    >>> print("Adjusted bounds with loc and scale:", p.support())
+    Adjusted bounds with loc and scale: (2, 7)
+
     To create a new Gaussian distribution, we would do the following:
 
     >>> from scipy.stats import rv_continuous
