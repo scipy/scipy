@@ -117,7 +117,6 @@ html-build:
 convert-notebooks:
 	$(PYTHON) convert_notebooks.py
 
-
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees
 	$(SPHINXBUILD) -b coverage $(ALLSPHINXOPTS) build/coverage $(FILES)

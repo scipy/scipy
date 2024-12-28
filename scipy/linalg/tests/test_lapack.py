@@ -681,7 +681,7 @@ def test_trcon(dtype, norm, uplo, diag, n):
         norm_inv_A = np.linalg.norm(np.linalg.inv(A), ord=np.inf)
         ref = 1 / (norm_A * norm_inv_A)
     else:
-        anorm = np.abs(A).sum(axis=0).max()
+        anorm = np.linalg.norm(A, ord=1)
         gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
         lu, ipvt, info = getrf(A)
         ref, _ = gecon(lu, anorm, norm=norm)
@@ -2207,7 +2207,7 @@ def test_gtcon(dtype, norm, n):
         A, d, dl, du = A.real, d.real, dl.real, du.real
     A, d, dl, du = A.astype(dtype), d.astype(dtype), dl.astype(dtype), du.astype(dtype)
 
-    anorm = np.abs(A).sum(axis=0).max()
+    anorm = np.linalg.norm(A, ord=np.inf if norm == 'I' else 1)
 
     gttrf, gtcon = get_lapack_funcs(('gttrf', 'gtcon'), (A,))
     dl, d, du, du2, ipiv, info = gttrf(dl, d, du)

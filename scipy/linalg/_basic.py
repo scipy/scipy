@@ -4,10 +4,12 @@
 # w/ additions by Travis Oliphant, March 2002
 #              and Jake Vanderplas, August 2012
 
+import warnings
 from warnings import warn
 from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
+from scipy._lib._util import _apply_over_batch
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
@@ -782,21 +784,25 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
 
 def solve_toeplitz(c_or_cr, b, check_finite=True):
-    """Solve a Toeplitz system using Levinson Recursion
+    r"""Solve a Toeplitz system using Levinson Recursion
 
     The Toeplitz matrix has constant diagonals, with c as its first column
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
 
+    .. warning::
+
+        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
+        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+        before passing them to `solve_toeplitz`.
+
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
-        The vector ``c``, or a tuple of arrays (``c``, ``r``). Whatever the
-        actual shape of ``c``, it will be converted to a 1-D array. If not
+        The vector ``c``, or a tuple of arrays (``c``, ``r``). If not
         supplied, ``r = conjugate(c)`` is assumed; in this case, if c[0] is
         real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
-        of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
-        of ``r``, it will be converted to a 1-D array.
+        of the Toeplitz matrix is ``[c[0], r[1:]]``.
     b : (M,) or (M, K) array_like
         Right-hand side in ``T x = b``.
     check_finite : bool, optional
@@ -1089,6 +1095,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
+@_apply_over_batch(('a', 2))
 def inv(a, overwrite_a=False, check_finite=True):
     """
     Compute the inverse of a matrix.
@@ -1499,6 +1506,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
+@_apply_over_batch(('a', 2))
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1622,6 +1630,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
         return B
 
 
+@_apply_over_batch(('a', 2))
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True):
     """
@@ -1715,6 +1724,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
         return B
 
 
+@_apply_over_batch(('A', 2))
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """
@@ -1727,15 +1737,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     Moreover, if enabled, the matrix is first permuted to isolate the upper
     triangular parts of the matrix and, again if scaling is also enabled,
     only the remaining subblocks are subjected to scaling.
-
-    The balanced matrix satisfies the following equality
-
-    .. math::
-
-                        B = T^{-1} A T
-
-    The scaling coefficients are approximated to the nearest power of 2
-    to avoid round-off errors.
 
     Parameters
     ----------
@@ -1769,6 +1770,14 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     Notes
     -----
+    The balanced matrix satisfies the following equality
+
+    .. math::
+        B = T^{-1} A T
+
+    The scaling coefficients are approximated to the nearest power of 2
+    to avoid round-off errors.
+
     This algorithm is particularly useful for eigenvalue and matrix
     decompositions and in many cases it is already called by various
     LAPACK routines.
@@ -1915,11 +1924,20 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
 
     if isinstance(c_or_cr, tuple):
         c, r = c_or_cr
-        c = _asarray_validated(c, check_finite=check_finite).ravel()
-        r = _asarray_validated(r, check_finite=check_finite).ravel()
+        c = _asarray_validated(c, check_finite=check_finite)
+        r = _asarray_validated(r, check_finite=check_finite)
     else:
-        c = _asarray_validated(c_or_cr, check_finite=check_finite).ravel()
+        c = _asarray_validated(c_or_cr, check_finite=check_finite)
         r = c.conjugate()
+
+    if c.ndim > 1 or r.ndim > 1:
+        msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
+               "batch, not `ravel`ed. To preserve the existing behavior and silence "
+               "this warning, `ravel` arguments before passing them to "
+               "`toeplitz`, `matmul_toeplitz`, and `solve_toeplitz`.")
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+        c = c.ravel()
+        r = r.ravel()
 
     if b is None:
         raise ValueError('`b` must be an array, not None.')
@@ -1944,7 +1962,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
 
 
 def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
-    """Efficient Toeplitz Matrix-Matrix Multiplication using FFT
+    r"""Efficient Toeplitz Matrix-Matrix Multiplication using FFT
 
     This function returns the matrix multiplication between a Toeplitz
     matrix and a dense matrix.
@@ -1953,15 +1971,19 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
 
+    .. warning::
+
+        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
+        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+        before passing them to `matmul_toeplitz`.
+
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
-        The vector ``c``, or a tuple of arrays (``c``, ``r``). Whatever the
-        actual shape of ``c``, it will be converted to a 1-D array. If not
+        The vector ``c``, or a tuple of arrays (``c``, ``r``). If not
         supplied, ``r = conjugate(c)`` is assumed; in this case, if c[0] is
         real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
-        of the Toeplitz matrix is ``[c[0], r[1:]]``. Whatever the actual shape
-        of ``r``, it will be converted to a 1-D array.
+        of the Toeplitz matrix is ``[c[0], r[1:]]``.
     x : (M,) or (M, K) array_like
         Matrix with which to multiply.
     check_finite : bool, optional

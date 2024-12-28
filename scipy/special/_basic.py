@@ -21,6 +21,7 @@ from . import _specfun
 from ._comb import _comb_int
 from ._multiufuncs import (assoc_legendre_p_all,
                            legendre_p_all)
+from scipy._lib.deprecation import _deprecated
 
 
 __all__ = [
@@ -86,6 +87,11 @@ __all__ = [
     'zeta'
 ]
 
+
+__DEPRECATION_MSG_1_15 = (
+    "`scipy.special.{}` is deprecated as of SciPy 1.15.0 and will be "
+    "removed in SciPy 1.17.0. Please use `scipy.special.{}` instead."
+)
 
 # mapping k to last n such that factorialk(n, k) < np.iinfo(np.int64).max
 _FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
@@ -1703,6 +1709,7 @@ def mathieu_odd_coef(m, q):
     return fc[:km]
 
 
+@_deprecated(__DEPRECATION_MSG_1_15.format("lpmn", "assoc_legendre_p_all"))
 def lpmn(m, n, z):
     """Sequence of associated Legendre functions of the first kind.
 
@@ -1715,8 +1722,8 @@ def lpmn(m, n, z):
     use clpmn instead.
 
     .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in a future version.
-        Use `scipy.special.assoc_legendre_p_all` instead.
+        This function is deprecated and will be removed in SciPy 1.17.0.
+        Please `scipy.special.assoc_legendre_p_all` instead.
 
     Parameters
     ----------
@@ -1782,6 +1789,7 @@ def lpmn(m, n, z):
     return p, pd
 
 
+@_deprecated(__DEPRECATION_MSG_1_15.format("clpmn", "assoc_legendre_p_all"))
 def clpmn(m, n, z, type=3):
     """Associated Legendre function of the first kind for complex arguments.
 
@@ -1791,8 +1799,8 @@ def clpmn(m, n, z, type=3):
     ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
 
     .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in a future version.
-        Use `scipy.special.assoc_legendre_p_all` instead.
+        This function is deprecated and will be removed in SciPy 1.17.0.
+        Please use `scipy.special.assoc_legendre_p_all` instead.
 
     Parameters
     ----------
@@ -2033,6 +2041,7 @@ def euler(n):
     return _specfun.eulerb(n1)[:(n+1)]
 
 
+@_deprecated(__DEPRECATION_MSG_1_15.format("lpn", "legendre_p_all"))
 def lpn(n, z):
     """Legendre function of the first kind.
 
@@ -2042,8 +2051,8 @@ def lpn(n, z):
     See also special.legendre for polynomial class.
 
     .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in a future version.
-        Use `scipy.special.legendre_p_all` instead.
+        This function is deprecated and will be removed in SciPy 1.17.0.
+        Please use `scipy.special.legendre_p_all` instead.
 
     References
     ----------
@@ -2728,12 +2737,9 @@ def comb(N, k, *, exact=False, repetition=False):
         if int(N) == N and int(k) == k:
             # _comb_int casts inputs to integers, which is safe & intended here
             return _comb_int(N, k)
-        # otherwise, we disregard `exact=True`; it makes no sense for
-        # non-integral arguments
-        msg = ("`exact=True` is deprecated for non-integer `N` and `k` and will raise "
-               "an error in SciPy 1.16.0")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        return comb(N, k)
+        else:
+            raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
+                             "supported.")
     else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
@@ -2787,19 +2793,17 @@ def perm(N, k, exact=False):
         N = np.squeeze(N)[()]  # for backward compatibility (accepted size 1 arrays)
         k = np.squeeze(k)[()]
         if not (isscalar(N) and isscalar(k)):
-            raise ValueError("`N` and `k` must scalar integers be with `exact=True`.")
+            raise ValueError("`N` and `k` must be scalar integers with `exact=True`.")
 
         floor_N, floor_k = int(N), int(k)
         non_integral = not (floor_N == N and floor_k == k)
-        if (k > N) or (N < 0) or (k < 0):
-            if non_integral:
-                msg = ("Non-integer `N` and `k` with `exact=True` is deprecated and "
-                       "will raise an error in SciPy 1.16.0.")
-                warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            return 0
         if non_integral:
             raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
                              "supported.")
+
+        if (k > N) or (N < 0) or (k < 0):
+            return 0
+
         val = 1
         for i in range(floor_N - floor_k + 1, floor_N + 1):
             val *= i
@@ -2968,8 +2972,9 @@ def _factorialx_approx_core(n, k, extend):
         with warnings.catch_warnings():
             # do not warn about 0 * inf, nan / nan etc.; the results are correct
             warnings.simplefilter("ignore", RuntimeWarning)
-            result = np.power(k, (n - 1) / k, dtype=p_dtype) * _gamma1p(n / k)
-            result *= rgamma(1 / k + 1)
+            # don't use `(n-1)/k` in np.power; underflows if 0 is of a uintX type
+            result = np.power(k, n / k, dtype=p_dtype) * _gamma1p(n / k)
+            result *= rgamma(1 / k + 1) / np.power(k, 1 / k, dtype=p_dtype)
         if isinstance(n, np.ndarray):
             # ensure we keep array-ness for 0-dim inputs; already n/k above loses it
             result = np.array(result)
@@ -2980,14 +2985,20 @@ def _factorialx_approx_core(n, k, extend):
     # scalar case separately, unified handling would be inefficient for arrays;
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if not isinstance(n, np.ndarray):
-        return (
-            np.power(k, (n - n_mod_k) / k)
-            * gamma(n / k + 1) / gamma(n_mod_k / k + 1)
-            * max(n_mod_k, 1)
-        )
+        with warnings.catch_warnings():
+            # large n cause overflow warnings, but infinity is fine
+            warnings.simplefilter("ignore", RuntimeWarning)
+            return (
+                np.power(k, (n - n_mod_k) / k)
+                * gamma(n / k + 1) / gamma(n_mod_k / k + 1)
+                * max(n_mod_k, 1)
+            )
 
     # factor that's independent of the residue class (see factorialk docstring)
-    result = np.power(k, n / k) * gamma(n / k + 1)
+    with warnings.catch_warnings():
+        # large n cause overflow warnings, but infinity is fine
+        warnings.simplefilter("ignore", RuntimeWarning)
+        result = np.power(k, n / k) * gamma(n / k + 1)
     # factor dependent on residue r (for `r=0` it's 1, so we skip `r=0`
     # below and thus also avoid evaluating `max(r, 1)`)
     def corr(k, r): return np.power(k, -r / k) / gamma(r / k + 1) * r
@@ -3094,8 +3105,8 @@ def _factorialx_wrapper(fname, n, k, exact, extend):
         elif n in {0, 1}:
             return 1 if exact else np.float64(1)
         elif exact and _is_subdtype(type(n), "i"):
-            # calculate with integers
-            return _range_prod(1, n, k=k)
+            # calculate with integers; cast away other int types (like unsigned)
+            return _range_prod(1, int(n), k=k)
         elif exact:
             # only relevant for factorial
             raise ValueError(msg_exact_not_possible.format(dtype=type(n)))
@@ -3469,7 +3480,7 @@ def zeta(x, q=None, out=None):
         ``None``, complex inputs `x` are supported. If `q` is not ``None``,
         then currently only real inputs `x` with ``x >= 1`` are supported,
         even when ``q = 1.0`` (corresponding to the Riemann zeta function).
-        
+
     out : ndarray, optional
         Output array for the computed values.
 
@@ -3535,7 +3546,7 @@ def zeta(x, q=None, out=None):
     else:
         return _ufuncs._zeta(x, q, out)
 
-      
+
 def softplus(x, **kwargs):
     r"""
     Compute the softplus function element-wise.
@@ -3559,7 +3570,7 @@ def softplus(x, **kwargs):
     Examples
     --------
     >>> from scipy import special
-    
+
     >>> special.softplus(0)
     0.6931471805599453
 

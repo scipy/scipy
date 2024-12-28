@@ -1,6 +1,6 @@
 import numpy as np
 from scipy._lib._array_api import (
-    is_cupy, is_numpy, is_torch, array_namespace,
+    is_cupy, is_numpy, array_namespace,
     xp_assert_close, xp_assert_equal, assert_array_almost_equal
 )
 import pytest
@@ -118,7 +118,7 @@ class TestNdimageMorphology:
                      [0, 1, 2, 3, 4, 5, 6, 7, 8],
                      [0, 1, 2, 3, 4, 5, 6, 7, 8]]]
         expected = xp.asarray(expected)
-        assert_array_almost_equal(expected, ft)
+        assert_array_almost_equal(ft, expected)
 
     @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
     @pytest.mark.parametrize('dtype', types)
@@ -224,7 +224,7 @@ class TestNdimageMorphology:
         for ft in fts:
             assert_array_almost_equal(tft, ft)
 
-    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
+    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf')
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf05(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -273,7 +273,7 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
-    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
+    @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf')
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_bf06(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -322,10 +322,8 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
+    @xfail_xp_backends("cupy", reason="CuPy does not have distance_transform_bf")
     def test_distance_transform_bf07(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_bf.")
-
         # test input validation per discussion on PR #13302
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -341,11 +339,10 @@ class TestNdimageMorphology:
                 data, return_distances=False, return_indices=False
             )
 
+    @xfail_xp_backends("cupy", reason="CuPy does not have distance_transform_cdt")
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt01(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_cdt.")
 
         # chamfer type distance (cdt) transform
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -383,12 +380,10 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
         assert_array_almost_equal(ft, expected)
 
+    @xfail_xp_backends("cupy", reason="CuPy does not have distance_transform_cdt")
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt02(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_cdt.")
-
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
@@ -500,13 +495,11 @@ class TestNdimageMorphology:
                 indices=indices_out
             )
 
+    @xfail_xp_backends("cupy", reason="CuPy does not have distance_transform_cdt")
+    @xfail_xp_backends("torch", reason="int overflow")
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_cdt05(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_cdt.")
-        elif is_torch(xp):
-            pytest.xfail("int overflow")
 
         # test custom metric type per discussion on issue #17381
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -522,11 +515,10 @@ class TestNdimageMorphology:
         actual = ndimage.distance_transform_cdt(data, metric=metric_arg)
         assert xp.sum(actual) == -21
 
+    @xfail_xp_backends("cupy", reason="CuPy does not have distance_transform_bf")
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt01(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_bf")
 
         # euclidean distance transform (edt)
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -617,11 +609,10 @@ class TestNdimageMorphology:
         for ft in fts:
             assert_array_almost_equal(tft, ft)
 
+    @xfail_xp_backends("cupy", reason="CuPy does not have distance_transform_bf")
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt03(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_bf")
 
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -634,13 +625,12 @@ class TestNdimageMorphology:
                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=dtype)
         ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 2])
         out = ndimage.distance_transform_edt(data, sampling=[2, 2])
-        assert_array_almost_equal(ref, out)
+        assert_array_almost_equal(out, ref)
 
+    @xfail_xp_backends("cupy", reason="CuPy does not have distance_transform_bf")
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt4(self, dtype, xp):
         dtype = getattr(xp, dtype)
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not have distance_transform_bf")
 
         data = xp.asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -653,14 +643,14 @@ class TestNdimageMorphology:
                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=dtype)
         ref = ndimage.distance_transform_bf(data, 'euclidean', sampling=[2, 1])
         out = ndimage.distance_transform_edt(data, sampling=[2, 1])
-        assert_array_almost_equal(ref, out)
+        assert_array_almost_equal(out, ref)
 
     def test_distance_transform_edt5(self, xp):
         # Ticket #954 regression test
         out = ndimage.distance_transform_edt(False)
         assert_array_almost_equal(out, [0.])
 
-    @skip_xp_backends(
+    @xfail_xp_backends(
         np_only=True, reason='XXX: does not raise unless indices is a numpy array'
     )
     def test_distance_transform_edt6(self, xp):
@@ -1039,10 +1029,10 @@ class TestNdimageMorphology:
                                      origin=(-1, -1))
         assert_array_almost_equal(out, expected)
 
+    @xfail_xp_backends(
+        "cupy", reason="CuPy: NotImplementedError: only brute_force iteration"
+    )
     def test_binary_erosion27(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -1067,9 +1057,10 @@ class TestNdimageMorphology:
                                      iterations=2)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion28(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1098,10 +1089,10 @@ class TestNdimageMorphology:
                                iterations=2, output=out)
         assert_array_almost_equal(out, expected)
 
+    @xfail_xp_backends(
+        "cupy", reason="CuPy: NotImplementedError: only brute_force iteration"
+    )
     def test_binary_erosion29(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -1126,13 +1117,11 @@ class TestNdimageMorphology:
                                      border_value=1, iterations=3)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion30(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -1165,9 +1154,8 @@ class TestNdimageMorphology:
                                iterations=3, output=data)
         assert_array_almost_equal(data, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
     def test_binary_erosion31(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1196,10 +1184,9 @@ class TestNdimageMorphology:
                                iterations=1, output=out, origin=(-1, -1))
         assert_array_almost_equal(out, expected)
 
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion32(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -1224,10 +1211,9 @@ class TestNdimageMorphology:
                                      border_value=1, iterations=2)
         assert_array_almost_equal(out, expected)
 
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion33(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -1293,9 +1279,8 @@ class TestNdimageMorphology:
                                      border_value=1, mask=mask)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"], 
+                      reason='inplace out= arguments are numpy-specific')
     def test_binary_erosion35(self, xp):
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -1337,10 +1322,9 @@ class TestNdimageMorphology:
                                origin=(-1, -1), mask=mask)
         assert_array_almost_equal(out, expected)
 
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion36(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 0, 1],
                   [0, 1, 0]]
@@ -1381,9 +1365,10 @@ class TestNdimageMorphology:
                                      border_value=1, origin=(-1, -1))
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion37(self, xp):
         a = np.asarray([[1, 0, 1],
                         [0, 1, 0],
@@ -1407,9 +1392,10 @@ class TestNdimageMorphology:
         with assert_raises(TypeError):
             _ = ndimage.binary_erosion(data, iterations=iterations)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion39(self, xp):
         iterations = np.int32(3)
         struct = [[0, 1, 0],
@@ -1439,9 +1425,10 @@ class TestNdimageMorphology:
                                iterations=iterations, output=out)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace out= arguments are numpy-specific'
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace out= arguments are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_erosion40(self, xp):
         iterations = np.int64(3)
         struct = [[0, 1, 0],
@@ -1801,10 +1788,9 @@ class TestNdimageMorphology:
         out = ndimage.binary_dilation(data, border_value=1)
         assert_array_almost_equal(out, expected)
 
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_dilation29(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1],
                   [1, 1]]
         expected = [[0, 0, 0, 0, 0],
@@ -1823,10 +1809,11 @@ class TestNdimageMorphology:
         out = ndimage.binary_dilation(data, struct, iterations=2)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(np_only=True, reason='output= arrays are numpy-specific')
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='output= arrays are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_dilation30(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
         struct = [[0, 1],
                   [1, 1]]
         expected = [[0, 0, 0, 0, 0],
@@ -1847,10 +1834,9 @@ class TestNdimageMorphology:
         ndimage.binary_dilation(data, struct, iterations=2, output=out)
         assert_array_almost_equal(out, expected)
 
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_dilation31(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1],
                   [1, 1]]
         expected = [[0, 0, 0, 1, 0],
@@ -1869,11 +1855,11 @@ class TestNdimageMorphology:
         out = ndimage.binary_dilation(data, struct, iterations=3)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(np_only=True, reason='output= arrays are numpy-specific')
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='output= arrays are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_dilation32(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1],
                   [1, 1]]
         expected = [[0, 0, 0, 1, 0],
@@ -1894,9 +1880,9 @@ class TestNdimageMorphology:
         ndimage.binary_dilation(data, struct, iterations=3, output=out)
         assert_array_almost_equal(out, expected)
 
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_dilation33(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -1933,13 +1919,11 @@ class TestNdimageMorphology:
                                       mask=mask, border_value=0)
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(
-        np_only=True, reason='inplace output= arrays are numpy-specific',
-    )
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='inplace output= arrays are numpy-specific')
+    @xfail_xp_backends("cupy",
+                       reason="NotImplementedError: only brute_force iteration")
     def test_binary_dilation34(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
         struct = [[0, 1, 0],
                   [1, 1, 1],
                   [0, 1, 0]]
@@ -2437,7 +2421,7 @@ class TestNdimageMorphology:
         tmp = ndimage.grey_dilation(array, footprint=footprint)
         expected = ndimage.grey_erosion(tmp, footprint=footprint)
         output = ndimage.grey_closing(array, footprint=footprint)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     def test_grey_closing02(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2451,7 +2435,7 @@ class TestNdimageMorphology:
                                         structure=structure)
         output = ndimage.grey_closing(array, footprint=footprint,
                                       structure=structure)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     @skip_xp_backends(np_only=True, reason='output= arrays are numpy-specific')
     def test_morphological_gradient01(self, xp):
@@ -2468,7 +2452,7 @@ class TestNdimageMorphology:
         output = xp.zeros(array.shape, dtype=array.dtype)
         ndimage.morphological_gradient(array, footprint=footprint,
                                        structure=structure, output=output)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     def test_morphological_gradient02(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2483,7 +2467,7 @@ class TestNdimageMorphology:
         expected = tmp1 - tmp2
         output = ndimage.morphological_gradient(array, footprint=footprint,
                                                 structure=structure)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     @skip_xp_backends(np_only=True, reason='output= arrays are numpy-specific')
     def test_morphological_laplace01(self, xp):
@@ -2500,7 +2484,7 @@ class TestNdimageMorphology:
         output = xp.zeros(array.shape, dtype=array.dtype)
         ndimage.morphological_laplace(array, footprint=footprint,
                                       structure=structure, output=output)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     def test_morphological_laplace02(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2515,7 +2499,7 @@ class TestNdimageMorphology:
         expected = tmp1 + tmp2 - 2 * array
         output = ndimage.morphological_laplace(array, footprint=footprint,
                                                structure=structure)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_white_tophat01(self, xp):
@@ -2530,7 +2514,7 @@ class TestNdimageMorphology:
         output = xp.zeros(array.shape, dtype=array.dtype)
         ndimage.white_tophat(array, footprint=footprint,
                              structure=structure, output=output)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     def test_white_tophat02(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2543,7 +2527,7 @@ class TestNdimageMorphology:
         expected = array - tmp
         output = ndimage.white_tophat(array, footprint=footprint,
                                       structure=structure)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     @xfail_xp_backends('cupy', reason="cupy#8399")
     def test_white_tophat03(self, xp):
@@ -2568,7 +2552,7 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
 
         output = ndimage.white_tophat(array, structure=structure)
-        xp_assert_equal(expected, output)
+        xp_assert_equal(output, expected)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_white_tophat04(self, xp):
@@ -2595,7 +2579,7 @@ class TestNdimageMorphology:
         output = xp.zeros(array.shape, dtype=array.dtype)
         ndimage.black_tophat(array, footprint=footprint,
                              structure=structure, output=output)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     def test_black_tophat02(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -2608,7 +2592,7 @@ class TestNdimageMorphology:
         expected = tmp - array
         output = ndimage.black_tophat(array, footprint=footprint,
                                       structure=structure)
-        assert_array_almost_equal(expected, output)
+        assert_array_almost_equal(output, expected)
 
     @xfail_xp_backends('cupy', reason="cupy/cupy#8399")
     def test_black_tophat03(self, xp):
@@ -2633,7 +2617,7 @@ class TestNdimageMorphology:
         expected = xp.asarray(expected)
 
         output = ndimage.black_tophat(array, structure=structure)
-        xp_assert_equal(expected, output)
+        xp_assert_equal(output, expected)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
     def test_black_tophat04(self, xp):
@@ -2700,11 +2684,10 @@ class TestNdimageMorphology:
             out = func(data, axes=axes, **kwargs)
         xp_assert_close(out, expected)
 
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason="inplace output= is numpy-specific")
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss01(self, dtype, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("inplace output= is numpy-specific")
-
         dtype = getattr(xp, dtype)
         struct = [[0, 1, 0],
                   [1, 1, 1],
@@ -2729,7 +2712,7 @@ class TestNdimageMorphology:
                            [0, 0, 0, 0, 0]], dtype=dtype)
         out = xp.asarray(np.zeros(data.shape, dtype=bool))
         ndimage.binary_hit_or_miss(data, struct, output=out)
-        assert_array_almost_equal(expected, out)
+        assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss02(self, dtype, xp):
@@ -2748,7 +2731,7 @@ class TestNdimageMorphology:
                            [0, 1, 0, 1, 1, 1, 1, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype=dtype)
         out = ndimage.binary_hit_or_miss(data, struct)
-        assert_array_almost_equal(expected, out)
+        assert_array_almost_equal(out, expected)
 
     @pytest.mark.parametrize('dtype', types)
     def test_hit_or_miss03(self, dtype, xp):
@@ -2779,7 +2762,7 @@ class TestNdimageMorphology:
                            [0, 1, 1, 1, 1, 1, 1, 0],
                            [0, 0, 0, 0, 0, 0, 0, 0]], dtype=dtype)
         out = ndimage.binary_hit_or_miss(data, struct1, struct2)
-        assert_array_almost_equal(expected, out)
+        assert_array_almost_equal(out, expected)
 
 
 class TestDilateFix:
@@ -2802,7 +2785,6 @@ class TestDilateFix:
         else:
             astype = array_namespace(dilated3x3).astype
             self.dilated3x3 = astype(dilated3x3, xp.uint8)
-
 
     def test_dilation_square_structure(self, xp):
         self._setup(xp)
@@ -2874,14 +2856,12 @@ def test_binary_closing_noninteger_iterations(xp):
     assert_raises(TypeError, ndimage.binary_closing, data, iterations=1.5)
 
 
+@xfail_xp_backends(
+    "cupy", reason="CuPy: NotImplementedError: only brute_force iteration"
+)
 def test_binary_closing_noninteger_brute_force_passes_when_true(xp):
-    # regression test for gh-9905, gh-9909: ValueError for
-    # non integer iterations
-    if is_cupy(xp):
-        pytest.xfail("CuPy: NotImplementedError: only brute_force iteration")
-
+    # regression test for gh-9905, gh-9909: ValueError for non integer iterations
     data = xp.ones([1])
-
     xp_assert_equal(ndimage.binary_erosion(data, iterations=2, brute_force=1.5),
                     ndimage.binary_erosion(data, iterations=2, brute_force=bool(1.5))
     )
@@ -2908,13 +2888,12 @@ def test_binary_input_as_output(function, iterations, brute_force, xp):
 
     # data should now contain the expected result
     ndi_func(data, brute_force=brute_force, iterations=iterations, output=data)
-    xp_assert_equal(expected, data)
+    xp_assert_equal(data, expected)
 
 
+@skip_xp_backends(np_only=True, exception=["cupy"],
+                  reason="inplace output= is numpy-specific")
 def test_binary_hit_or_miss_input_as_output(xp):
-    if not (is_numpy(xp) or is_cupy(xp)):
-        pytest.xfail("inplace output= is numpy-specific")
-
     rstate = np.random.RandomState(123)
     data = rstate.randint(low=0, high=2, size=100).astype(bool)
 
@@ -2925,13 +2904,12 @@ def test_binary_hit_or_miss_input_as_output(xp):
 
     # data should now contain the expected result
     ndimage.binary_hit_or_miss(data, output=data)
-    xp_assert_equal(expected, data)
+    xp_assert_equal(data, expected)
 
 
+@xfail_xp_backends("cupy",
+                   reason="CuPy does not have distance_transform_cdt")
 def test_distance_transform_cdt_invalid_metric(xp):
-    if is_cupy(xp):
-        pytest.xfail("CuPy does not have distance_transform_cdt")
-
     msg = 'invalid metric provided'
     with pytest.raises(ValueError, match=msg):
         ndimage.distance_transform_cdt(xp.ones((5, 5)),

@@ -17,7 +17,7 @@ run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
 1.16.x branch, and on adding new features on the main branch.
 
-This release requires Python 3.11-3.13 and NumPy 1.24.4 or greater.
+This release requires Python 3.11-3.13 and NumPy 1.26.4 or greater.
 
 
 **************************
@@ -29,45 +29,48 @@ Highlights of this release
 New features
 ************
 
-`scipy.cluster` improvements
-============================
+``scipy.cluster`` improvements
+==============================
 
 
-`scipy.interpolate` improvements
-================================
+``scipy.differentiate`` improvements
+====================================
 
 
-`scipy.linalg` improvements
-===========================
+``scipy.interpolate`` improvements
+==================================
 
 
-`scipy.ndimage` improvements
-============================
-
-
-`scipy.optimize` improvements
+``scipy.linalg`` improvements
 =============================
 
 
-`scipy.signal` improvements
-===========================
+``scipy.ndimage`` improvements
+==============================
 
 
-`scipy.sparse` improvements
-===========================
+``scipy.optimize`` improvements
+===============================
 
 
+``scipy.signal`` improvements
+=============================
 
-`scipy.spatial` improvements
+
+``scipy.sparse`` improvements
+=============================
+
+
+``scipy.spatial`` improvements
+==============================
+
+
+``scipy.special`` improvements
+==============================
+
+
+``scipy.stats`` improvements
 ============================
-
-
-`scipy.special` improvements
-============================
-
-
-`scipy.stats` improvements
-==========================
 
 
 
@@ -75,12 +78,12 @@ New features
 Deprecated features
 *******************
 
-`scipy.linalg` deprecations
-===========================
+``scipy.linalg`` deprecations
+=============================
 
 
-`scipy.spatial` deprecations
-============================
+``scipy.spatial`` deprecations
+==============================
 
 
 
