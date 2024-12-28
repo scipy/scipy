@@ -7,7 +7,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_convex_analysis.pxd'),
-  fs.copyfile('_cunity.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_ellipk.pxd'),
@@ -18,7 +17,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
-  fs.copyfile('_xlogy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
@@ -54,10 +52,8 @@ ufuncs_sources = [
 ]
 
 ufuncs_cxx_sources = [
-  '_faddeeva.cxx',
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
-  'Faddeeva.cc',
   'sf_error.cc',
   'wright.cc'
 ]

@@ -27,19 +27,17 @@ def toeplitz(c, r=None):
     Parameters
     ----------
     c : array_like
-        First column of the matrix.  Whatever the actual shape of `c`, it
-        will be converted to a 1-D array.
+        First column of the matrix.
     r : array_like, optional
         First row of the matrix. If None, ``r = conjugate(c)`` is assumed;
         in this case, if c[0] is real, the result is a Hermitian matrix.
         r[0] is ignored; the first row of the returned matrix is
-        ``[c[0], r[1:]]``.  Whatever the actual shape of `r`, it will be
-        converted to a 1-D array.
+        ``[c[0], r[1:]]``.
 
         .. warning::
 
             Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
-            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` aruments
+            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
             before passing them to `toeplitz`.
 
     Returns
@@ -81,7 +79,7 @@ def toeplitz(c, r=None):
     if c.ndim > 1 or r.ndim > 1:
         msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
                "batch, not `ravel`ed. To preserve the existing behavior and silence "
-               "this warning, `ravel` aruments before passing them to `toeplitz`.")
+               "this warning, `ravel` arguments before passing them to `toeplitz`.")
         warnings.warn(msg, FutureWarning, stacklevel=2)
 
     c, r = c.ravel(), r.ravel()
