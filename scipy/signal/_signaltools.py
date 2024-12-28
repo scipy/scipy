@@ -4687,7 +4687,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     if method == "gust":
         y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
-        return xp.asarray(y)
+        if not is_torch(xp):
+            return xp.asarray(y)
+        else:
+            # torch doesn't allow negative strides
+            # https://github.com/pytorch/pytorch/issues/59786
+            return xp.asarray(y.copy())
 
     # method == "pad"
     edge, ext = _validate_pad(padtype, padlen, x, axis,
@@ -4720,7 +4725,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
 
-    return xp.asarray(y)
+    if not is_torch(xp):
+        return xp.asarray(y)
+    else:
+        # torch doesn't allow negative strides
+        # https://github.com/pytorch/pytorch/issues/59786
+        return xp.asarray(y.copy())
 
 
 def _validate_pad(padtype, padlen, x, axis, ntaps):
