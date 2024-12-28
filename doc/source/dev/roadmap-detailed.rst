@@ -136,7 +136,7 @@ The goal is to provide basic differentiation of black-box functions, not
 replicate all features of existing differentiation tools. With that in mind,
 items for future work include:
 
-- Improve support for functions that accept additional arguments (e.g. add
+- Improve support for callables that accept additional arguments (e.g. add
   ``*args`` to ``jacobian`` and ``hessian``). Note that this is not trivial
   due to the way elements of the arrays are eliminated when their corresponding
   calculations have converged.
@@ -229,7 +229,6 @@ Needed:
 - ``get_lapack_funcs`` should always use ``flapack``
 - Wrap more LAPACK functions
 - One too many funcs for LU decomposition, remove one
-- Add batch support for most functions (`gh-21466 <https://github.com/scipy/scipy/issues/21466>`__)
 
 Ideas for new features:
 
@@ -306,12 +305,10 @@ maintenance.  No major plans or wishes here.
 
 optimize
 ````````
-It is very challenging to write and maintain optimizers that approach the
-state of the art for large-scale problems. In many cases, it will be more
-appropriate for SciPy to add interfaces to carefully-vetted,
-externally-maintained projects (e.g. HiGHS, PRIMA) rather than vendor
-existing optimizers or introduce custom implementations. Other areas
-for future work include the following.
+We aim to continuously improve the set of optimizers provided by this module.
+For large scale problems, the state of the art continues to advance and we aim
+to keep up by leveraging implementations from domain-specific libraries like
+HiGHS and PRIMA. Other areas for future work include the following.
 
 - Improve the interfaces of existing optimizers (e.g. ``shgo``).
 - Improve usability of the benchmark system, and add features for comparing
