@@ -869,7 +869,9 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     c, r = c_or_cr if isinstance(c_or_cr, tuple) else (c_or_cr, np.conjugate(c_or_cr))
     return _solve_toeplitz(c, r, b, check_finite)
 
-@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
+
+# Can uncomment when `solve_toeplitz` deprecation is done (SciPy 1.17)
+# @_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
 def _solve_toeplitz(c, r, b, check_finite):
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
