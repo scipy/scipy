@@ -1896,6 +1896,7 @@ class TestSolveCirculant:
         x = solve_circulant(c, b)
         y = solve(circulant(c), b.reshape(4, -1)).reshape(b.shape)
         assert_allclose(x, y)
+
     def test_complex(self):
         # Complex b and c
         c = np.array([1+2j, -3, 4j, 5])

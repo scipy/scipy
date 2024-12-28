@@ -335,6 +335,7 @@ class TestBatch:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
@@ -347,6 +348,7 @@ class TestBatch:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
 
     @pytest.mark.parametrize('l_and_u', [(1, 1), ([2, 1, 0], [0, 1 , 2])])
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
@@ -392,6 +394,7 @@ class TestBatch:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
 
     @pytest.mark.parametrize('lower', [False, True])
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
@@ -434,6 +437,7 @@ class TestBatch:
             b = b[..., np.newaxis]
         atol = 1e-10 if dtype in (np.complex128, np.float64) else 2e-4
         assert_allclose(A @ x - b, 0, atol=atol)
+        assert_allclose(x, np.linalg.solve(A, b), atol=3*atol)
 
     @pytest.mark.parametrize('bdim', [(4,), (4, 3), (2, 3, 4, 3)])
     @pytest.mark.parametrize('dtype', floating)
