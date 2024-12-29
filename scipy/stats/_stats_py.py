@@ -5325,7 +5325,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return res
 
 
-@_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=0, n_samples=2,
+@_axis_nan_policy_factory(_pack_CorrelationResult, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
 def pointbiserialr(x, y):
@@ -5634,10 +5634,11 @@ def kendalltau(x, y, *, nan_policy='propagate',
 
 def _weightedtau_n_samples(kwargs):
     rank = kwargs.get('rank', False)
-    return 2 if rank in {True, False} else 3
+    return 2 if (isinstance(rank, bool) or rank is None) else 3
 
 
-@_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
+@_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None,
+                          n_samples=_weightedtau_n_samples,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3, override={'nan_propagation': False})
 def weightedtau(x, y, rank=True, weigher=None, additive=True):
@@ -5815,6 +5816,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         rank = np.arange(x.size, dtype=np.intp)
     elif rank is not None:
         rank = np.asarray(rank).ravel()
+        rank = _toint64(rank)
         if rank.size != x.size:
             raise ValueError(
                 "All inputs to `weightedtau` must be of the same size, "
@@ -10509,7 +10511,7 @@ def _unpack_LinregressResult(res):
     return tuple(res) + (res.intercept_stderr,)
 
 
-@_axis_nan_policy_factory(_pack_LinregressResult, default_axis=0, n_samples=2,
+@_axis_nan_policy_factory(_pack_LinregressResult, n_samples=2,
                           result_to_tuple=_unpack_LinregressResult, paired=True,
                           too_small=1, n_outputs=6)
 def linregress(x, y, alternative='two-sided'):

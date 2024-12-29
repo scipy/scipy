@@ -61,6 +61,13 @@ def combine_pvalues_weighted(*args, **kwargs):
                                  method='stouffer', **kwargs)
 
 
+def weightedtau_weighted(x, y, rank, **kwargs):
+    axis = kwargs.get('axis', 0)
+    nan_policy = kwargs.get('nan_policy', 'propagate')
+    rank = stats.rankdata(rank, axis=axis, nan_policy=nan_policy)
+    return stats.weightedtau(x, y, rank, **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -149,6 +156,8 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.weightedtau, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (weightedtau_weighted, tuple(), dict(), 3, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.linregress, tuple(), dict(), 2, 6, True,
      lambda res: tuple(res) + (res.intercept_stderr,)),
     (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
@@ -198,7 +207,7 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
                        "Sample size too small for normal approximation."}
 
 # For some functions, nan_policy='propagate' should not just return NaNs
-override_propagate_funcs = {stats.mode, stats.weightedtau}
+override_propagate_funcs = {stats.mode, weightedtau_weighted, stats.weightedtau}
 
 # For some functions, empty arrays produce non-NaN results
 empty_special_case_funcs = {stats.entropy}
@@ -609,6 +618,8 @@ def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                            stats.differential_entropy}
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
+    if hypotest in {weightedtau_weighted}:
+        pytest.skip("`rankdata` used in testing doesn't support axis tuple.")
     # test if keepdims parameter works correctly
     if not unpacker:
         def unpacker(res):

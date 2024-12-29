@@ -2037,7 +2037,7 @@ def test_weightedtau():
     assert_equal(np.nan, p_value)
     # Size mismatches
     assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1, 2])
-    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0])
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0, 1, 2])
     # NaNs
     x = [12, 2, 1, 12, 2]
     y = [1, 4, 7, 1, np.nan]
