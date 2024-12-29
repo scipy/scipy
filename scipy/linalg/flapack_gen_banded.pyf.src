@@ -114,7 +114,7 @@ subroutine <prefix2c>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,rwork,info
     ! RCOND = 1 / ( norm(A) * norm(inv(A)) ).
     threadsafe
     callstatement (*f2py_func)(norm,&n,&kl,&ku,ab,&ldab,ipiv,&anorm,&rcond,work,rwork,&info)
-    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype2c>*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*
+    callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype2c>*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2c>*, <ctype2>*, F_INT*
 
     character optional, intent(in) :: norm = '1'
     integer optional,depend(ab) :: n=shape(ab,1)
@@ -125,7 +125,7 @@ subroutine <prefix2c>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,rwork,info
     integer intent(in), depend(n), dimension(n) :: ipiv
     <ftype2> intent(in) :: anorm
     <ftype2> intent(out) :: rcond
-    <ftype2> intent(hide, cache), dimension(3*n), depend(n) :: work
+    <ftype2c> intent(hide, cache), dimension(2*n), depend(n) :: work
     <ftype2> intent(hide, cache), dimension(n), depend(n) :: rwork
     integer intent(out) :: info
 end subroutine <prefix2c>gtcon

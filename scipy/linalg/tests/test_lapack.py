@@ -19,7 +19,6 @@ from numpy.random import rand, randint, seed
 
 from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
                           solve, ldl, norm, block_diag, qr, eigh, qz)
-from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
