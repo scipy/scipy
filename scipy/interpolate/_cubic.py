@@ -414,6 +414,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     __call__
     derivative
     antiderivative
+    integrate
     roots
 
     See Also
