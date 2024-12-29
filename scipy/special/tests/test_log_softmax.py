@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -18,6 +19,26 @@ import scipy.special as sc
 ])
 def test_log_softmax(x, expected):
     assert_allclose(sc.log_softmax(x), expected, rtol=1e-13)
+
+
+@pytest.mark.parametrize('x, expected', [
+    # we shouldn't return zero on the smallest subnormal input
+    (np.array([-np.log(np.finfo(np.float32).smallest_subnormal), 0], dtype=np.float32),
+     np.array([float.fromhex('-0x1.00000p-149'), float.fromhex('-0x1.9d1dap+6')],
+              dtype=np.float32)),
+    (np.array([-np.log(np.finfo(np.float64).smallest_subnormal), 0], dtype=np.float64),
+     np.array([float.fromhex('-0x0.0000000000001p-1022'),
+               float.fromhex('-0x1.74385446d71c3p+9')],
+              dtype=np.float64)),
+])
+def test_log_softmax_use_atol_on_windows(x, expected):
+    # Windows has a bugged implementation of floating point arithmetic, see
+    # https://github.com/scipy/scipy/pull/19549#discussion_r1458551340
+    if os.name == 'nt':  # Check if the operating system is Windows
+        atol = np.finfo(x.dtype).smallest_subnormal
+        assert_allclose(sc.log_softmax(x), expected, atol=atol)
+    else:
+        assert_allclose(sc.log_softmax(x), expected, rtol=1e-13)
 
 
 @pytest.fixture
