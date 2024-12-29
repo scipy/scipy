@@ -161,7 +161,6 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         xp_available_backends.update({'torch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
-        torch.set_default_dtype(torch.float64)
     except ImportError:
         pass
 
