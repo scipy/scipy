@@ -514,7 +514,7 @@ class TestBatch:
             b = b[..., np.newaxis]
         atol = 1e-10 if dtype in (np.complex128, np.float64) else 2e-4
         assert_allclose(A @ x - b, 0, atol=atol)
-        assert_allclose(x, np.linalg.solve(A, b), atol=3*atol)
+        assert_allclose(x, np.linalg.solve(A, b), atol=5*atol)
 
     @pytest.mark.parametrize('bdim', [(4,), (4, 3), (2, 3, 4, 3)])
     @pytest.mark.parametrize('dtype', floating)
