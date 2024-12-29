@@ -20,6 +20,7 @@ pytestmark = [
 
 
 def npr(xp, *args):
+    xp = array_namespace(xp.ones(1))
     return xp.concat(tuple(xpx.atleast_nd(x, ndim=1, xp=xp) for x in args))
 
 
@@ -267,8 +268,10 @@ class TestSymIIR:
              r**(n_exp + 3) * xp.sin(omega * (n_exp + 4)) +
              r**(n_exp + 4) * xp.sin(omega * (n_exp + 3))) / xp.sin(omega))
 
+        astype = array_namespace(xp.ones(2)).astype
+
         expected = npr(xp, fwd_initial_1, fwd_initial_2)[None, :]
-        expected = xp.astype(expected, dtype)
+        expected = astype(expected, dtype)
 
         n = 100
         signal = np.ones(n, dtype=dtype)

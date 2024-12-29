@@ -155,8 +155,9 @@ class TestBSplines:
         raises(ValueError, signal.qspline1d, xp.asarray([1., 2, 3, 4, 5]), -1.)
         q1d0 = xp.asarray([0.85350007, 2.02441743, 2.99999534, 3.97561055,
                            5.14634135], dtype=xp.float64)
-        xp_assert_close(signal.qspline1d(xp.asarray([1., 2, 3, 4, 5], dtype=xp.float64)),
-                        q1d0)
+        xp_assert_close(
+            signal.qspline1d(xp.asarray([1., 2, 3, 4, 5], dtype=xp.float64)), q1d0
+        )
 
     @skip_xp_backends(cpu_only=True)
     def test_cspline1d_eval(self, xp):
@@ -183,7 +184,9 @@ class TestBSplines:
                            2.24889482, 4.094, 2.24889482, 1.396, 3.18686814, 5.879,
                            7.41525761, 7.874, 7.79560142, 7.433, 6.98971173, 6.759,
                            6.80717667, 6.203, 4.41570658], dtype=xp.float64)
-        xp_assert_close(signal.cspline1d_eval(cj, xp.asarray(newx), dx=dx, x0=x[0]), newy)
+        xp_assert_close(
+            signal.cspline1d_eval(cj, xp.asarray(newx), dx=dx, x0=x[0]), newy
+        )
 
     @skip_xp_backends(cpu_only=True)
     def test_qspline1d_eval(self, xp):
@@ -209,7 +212,9 @@ class TestBSplines:
                            2.34046013, 4.094, 2.34046013, 1.396, 3.23872593, 5.879,
                            7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
                            6.71900226, 6.203, 4.49418159], dtype=xp.float64)
-        r = signal.qspline1d_eval(cj, xp.asarray(newx, dtype=xp.float64), dx=dx, x0=x[0])
+        r = signal.qspline1d_eval(
+            cj, xp.asarray(newx, dtype=xp.float64), dx=dx, x0=x[0]
+        )
         xp_assert_close(r, newy)
 
 
@@ -352,5 +357,5 @@ def test_cspline2d(xp):
 
 def test_qspline2d(xp):
     rng = np.random.RandomState(181819143)
-    image = np.random.rand(71, 73)
+    image = rng.rand(71, 73)
     signal.qspline2d(image)

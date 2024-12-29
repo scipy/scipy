@@ -1,13 +1,11 @@
 import math
 
-from numpy import (zeros_like,
-                   array, arctan2, tan, ones, arange, floor,
-                   r_, atleast_1d, exp, greater, cos, add, sin,
-                   moveaxis, abs, arctan, complex64, float32)
+from numpy import (zeros_like, array, tan, arange, floor,
+                   r_, atleast_1d, greater, cos, add, sin,
+                   moveaxis, abs, complex64, float32)
 import numpy as np
 
 from scipy._lib._array_api import array_namespace
-import scipy._lib.array_api_extra as xpx
 
 from scipy._lib._util import normalize_axis_index
 
