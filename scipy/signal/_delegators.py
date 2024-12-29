@@ -56,6 +56,10 @@ def _skip_if_str_or_tuple(window):
 def _skip_if_poly1d(arg):
     return None if isinstance(arg, np.poly1d) else arg
 
+
+def _skip_if_float(arg):
+    return None if isinstance(arg, float) else arg
+
 ###################
 
 def abcd_normalize_signature(A=None, B=None, C=None, D=None):
@@ -518,7 +522,7 @@ def symiirorder1_signature(signal, c0, z1, precision=-1.0):
 
 
 def symiirorder2_signature(input, r, omega, precision=-1.0):
-    return array_namespace(input, _skip_if_int(r), _skip_if_int(omega))
+    return array_namespace(input, _skip_if_float(r), _skip_if_float(omega))
 
 
 def cspline1d_signature(signal, *args, **kwds):

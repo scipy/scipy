@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import xp_assert_close, array_namespace
+from scipy._lib._array_api import xp_assert_close, array_namespace, is_cupy
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
@@ -105,6 +105,8 @@ class TestSymIIR:
     @skip_xp_backends(
         cpu_only=True, exceptions=["cupy"], reason="internals are numpy-only"
     )
+    @xfail_xp_backends("cupy", reason="sum did not converge")
+    @skip_xp_backends("jax.numpy", reason="item assignment in tests")
     @pytest.mark.parametrize(
         'dtype', ['float32', 'float64', 'complex64', 'complex128'])
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
@@ -178,6 +180,7 @@ class TestSymIIR:
         out = symiirorder1(signal, c0, z1, precision)
         xp_assert_close(out, exp_out, atol=4e-6, rtol=6e-7)
 
+    @xfail_xp_backends("cupy", reason="sum did not converge")
     @skip_xp_backends(
         cpu_only=True, exceptions=["cupy"], reason="internals are numpy-only"
     )
@@ -318,16 +321,17 @@ class TestSymIIR:
 
         diff = (_compute_symiirorder2_bwd_hs(idx - 1, cs, r * r, omega) +
                 _compute_symiirorder2_bwd_hs(idx + 2, cs, r * r, omega))
-        ic2_1_all = xp.cumulative_sum(diff * out[:1:-1])
+
+        cumulative_sum = array_namespace(ic2).cumulative_sum
+        ic2_1_all = cumulative_sum(diff * out[:1:-1])
         pos = xp.nonzero(diff ** 2 < c_precision)[0]
         ic2[1] = ic2_1_all[pos[0]]
 
         out_ic = symiirorder2_ic_bwd(out, r, omega, precision)[0]
         xp_assert_close(out_ic, ic2, atol=4e-6, rtol=6e-7)
 
-    @skip_xp_backends(
-        cpu_only=True, reason="internals are numpy-only", exceptions=["cupy"]
-    )
+    @skip_xp_backends(cpu_only=True, reason="internals are numpy-only")
+    @skip_xp_backends("jax.numpy", reason="item assignment in tests")
     @pytest.mark.parametrize(
         'dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
@@ -387,7 +391,10 @@ class TestSymIIR:
              0.53539183], dtype=dtyp
         )
 
-        assert res.dtype == dtyp
+        if not is_cupy(xp):
+            # cupy returns f64 for f32 inputs
+            assert res.dtype == dtyp
+
         # The values in SciPy 1.14 agree with those in SciPy 1.9.1 to this
         # accuracy only. Implementation differences are twofold:
         # 1. boundary conditions are computed differently
@@ -396,22 +403,26 @@ class TestSymIIR:
         # test_symiir2_initial_{fwd,bwd} above, so the difference is likely
         # due to a different way roundoff errors accumulate in the filter.
         # In that respect, sosfilt is likely doing a better job.
-        xp_assert_close(res, exp_res, atol=2e-6)
+        xp_assert_close(res, exp_res, atol=2e-6, check_dtype=False)
 
         s = s + 1j*s
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             res = symiirorder2(s, 0.5, 0.1)
 
+    @xfail_xp_backends("cupy", reason="cupy does not accept integer arrays")
     def test_symiir1_integer_input(self, xp):
         astype = array_namespace(xp.ones(1)).astype
-        s = xp.where(astype(xp.arange(100) % 2, xp.bool), -1, 1)
+        bool_ = array_namespace(xp.ones(1)).bool
+        s = xp.where(astype(xp.arange(100) % 2, bool_), -1, 1)
         expected = symiirorder1(astype(s, xp.float64), 0.5, 0.5)
         out = symiirorder1(s, 0.5, 0.5)
         xp_assert_close(out, expected)
 
+    @xfail_xp_backends("cupy", reason="cupy does not accept integer arrays")
     def test_symiir2_integer_input(self, xp):
         astype = array_namespace(xp.ones(1)).astype
-        s = xp.where(astype(xp.arange(100) % 2, xp.bool), -1, 1)
+        bool_ = array_namespace(xp.ones(1)).bool
+        s = xp.where(astype(xp.arange(100) % 2, bool_), -1, 1)
         expected = symiirorder2(astype(s, xp.float64), 0.5, xp.pi / 3.0)
         out = symiirorder2(s, 0.5, xp.pi / 3.0)
         xp_assert_close(out, expected)
