@@ -374,6 +374,7 @@ class TestSymIIR:
         out = symiirorder2(signal, r, omega, precision)
         xp_assert_close(out, exp, atol=4e-6, rtol=6e-7)
 
+    @skip_xp_backends(cpu_only=True)
     @pytest.mark.parametrize('dtyp', ['float32', 'float64'])
     def test_symiir2_values(self, dtyp, xp):
         rng = np.random.RandomState(1234)
@@ -409,6 +410,7 @@ class TestSymIIR:
         with pytest.raises((TypeError, ValueError)):
             res = symiirorder2(s, 0.5, 0.1)
 
+    @skip_xp_backends(cpu_only=True)
     @xfail_xp_backends("cupy", reason="cupy does not accept integer arrays")
     def test_symiir1_integer_input(self, xp):
         astype = array_namespace(xp.ones(1)).astype
@@ -418,6 +420,7 @@ class TestSymIIR:
         out = symiirorder1(s, 0.5, 0.5)
         xp_assert_close(out, expected)
 
+    @skip_xp_backends(cpu_only=True)
     @xfail_xp_backends("cupy", reason="cupy does not accept integer arrays")
     def test_symiir2_integer_input(self, xp):
         astype = array_namespace(xp.ones(1)).astype

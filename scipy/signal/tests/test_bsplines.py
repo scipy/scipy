@@ -8,7 +8,6 @@ from scipy._lib._array_api import (
 import pytest
 from pytest import raises
 
-import scipy.signal._spline_filters as bsp
 from scipy import signal
 
 from scipy.conftest import array_api_compatible
@@ -31,7 +30,7 @@ class TestBSplines:
     def test_spline_filter(self, xp):
         rng = np.random.RandomState(12457)
         # Test the type-error branch
-        raises(TypeError, bsp.spline_filter, xp.asarray([0]), 0)
+        raises(TypeError, signal.spline_filter, xp.asarray([0]), 0)
         # Test the real branch
         data_array_real = rng.rand(12, 12)
         # make the magnitude exceed 1, and make some negative
@@ -74,7 +73,7 @@ class TestBSplines:
              [9.86326886, 1.05134482, -7.75950607, -3.64429655,
               7.81848957, -9.02270373, 3.73399754, -4.71962549,
               -7.71144306, 3.78263161, 6.46034818, -4.43444731]], dtype=xp.float64)
-        xp_assert_close(bsp.spline_filter(data_array_real, 0),
+        xp_assert_close(signal.spline_filter(data_array_real, 0),
                         result_array_real)
 
     @skip_xp_backends(cpu_only=True, exceptions=["cupy"])
@@ -117,13 +116,13 @@ class TestBSplines:
         # FIXME: for complex types, the computations are done in
         # single precision (reason unclear). When this is changed,
         # this test needs updating.
-        xp_assert_close(bsp.spline_filter(data_array_complex, 0),
+        xp_assert_close(signal.spline_filter(data_array_complex, 0),
                         result_array_complex, rtol=1e-6)
 
     def test_gauss_spline(self, xp):
-        assert math.isclose(bsp.gauss_spline(0, 0), 1.381976597885342)
+        assert math.isclose(signal.gauss_spline(0, 0), 1.381976597885342)
 
-        xp_assert_close(bsp.gauss_spline(xp.asarray([1.]), 1),
+        xp_assert_close(signal.gauss_spline(xp.asarray([1.]), 1),
                         xp.asarray([0.04865217]), atol=1e-9
         )
 
@@ -131,38 +130,41 @@ class TestBSplines:
     def test_gauss_spline_list(self, xp):
         # regression test for gh-12152 (accept array_like)
         knots = [-1.0, 0.0, -1.0]
-        assert_almost_equal(bsp.gauss_spline(knots, 3),
+        assert_almost_equal(signal.gauss_spline(knots, 3),
                             np.asarray([0.15418033, 0.6909883, 0.15418033])
         )
 
+    @skip_xp_backends(cpu_only=True)
     def test_cspline1d(self, xp):
-        xp_assert_equal(bsp.cspline1d(xp.asarray([0])),
+        xp_assert_equal(signal.cspline1d(xp.asarray([0])),
                         xp.asarray([0.], dtype=xp.float64))
         c1d = xp.asarray([1.21037185, 1.86293902, 2.98834059, 4.11660378,
                           4.78893826], dtype=xp.float64)
         # test lamda != 0
-        xp_assert_close(bsp.cspline1d(xp.asarray([1., 2, 3, 4, 5]), 1), c1d)
+        xp_assert_close(signal.cspline1d(xp.asarray([1., 2, 3, 4, 5]), 1), c1d)
         c1d0 = xp.asarray([0.78683946, 2.05333735, 2.99981113, 3.94741812,
                            5.21051638], dtype=xp.float64)
-        xp_assert_close(bsp.cspline1d(xp.asarray([1., 2, 3, 4, 5])), c1d0)
+        xp_assert_close(signal.cspline1d(xp.asarray([1., 2, 3, 4, 5])), c1d0)
 
+    @skip_xp_backends(cpu_only=True)
     def test_qspline1d(self, xp):
-        xp_assert_equal(bsp.qspline1d(xp.asarray([0])),
+        xp_assert_equal(signal.qspline1d(xp.asarray([0])),
                         xp.asarray([0.], dtype=xp.float64))
         # test lamda != 0
-        raises(ValueError, bsp.qspline1d, xp.asarray([1., 2, 3, 4, 5]), 1.)
-        raises(ValueError, bsp.qspline1d, xp.asarray([1., 2, 3, 4, 5]), -1.)
+        raises(ValueError, signal.qspline1d, xp.asarray([1., 2, 3, 4, 5]), 1.)
+        raises(ValueError, signal.qspline1d, xp.asarray([1., 2, 3, 4, 5]), -1.)
         q1d0 = xp.asarray([0.85350007, 2.02441743, 2.99999534, 3.97561055,
                            5.14634135], dtype=xp.float64)
-        xp_assert_close(bsp.qspline1d(xp.asarray([1., 2, 3, 4, 5], dtype=xp.float64)),
+        xp_assert_close(signal.qspline1d(xp.asarray([1., 2, 3, 4, 5], dtype=xp.float64)),
                         q1d0)
 
+    @skip_xp_backends(cpu_only=True)
     def test_cspline1d_eval(self, xp):
-        r = bsp.cspline1d_eval(xp.asarray([0., 0], dtype=xp.float64),
+        r = signal.cspline1d_eval(xp.asarray([0., 0], dtype=xp.float64),
                                xp.asarray([0.], dtype=xp.float64))
         xp_assert_close(r, xp.asarray([0.], dtype=xp.float64))
 
-        r = bsp.cspline1d_eval(xp.asarray([1., 0, 1], dtype=xp.float64),
+        r = signal.cspline1d_eval(xp.asarray([1., 0, 1], dtype=xp.float64),
                                xp.asarray([], dtype=xp.float64))
         xp_assert_equal(r, xp.asarray([], dtype=xp.float64))
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
@@ -173,7 +175,7 @@ class TestBSplines:
                 12.5]
         y = xp.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                         1.396, 4.094])
-        cj = bsp.cspline1d(y)
+        cj = signal.cspline1d(y)
         newy = xp.asarray([6.203, 4.41570658, 3.514, 5.16924703, 6.864, 6.04643068,
                            4.21600281, 6.04643068, 6.864, 5.16924703, 3.514,
                            4.41570658, 6.203, 6.80717667, 6.759, 6.98971173, 7.433,
@@ -181,13 +183,14 @@ class TestBSplines:
                            2.24889482, 4.094, 2.24889482, 1.396, 3.18686814, 5.879,
                            7.41525761, 7.874, 7.79560142, 7.433, 6.98971173, 6.759,
                            6.80717667, 6.203, 4.41570658], dtype=xp.float64)
-        xp_assert_close(bsp.cspline1d_eval(cj, xp.asarray(newx), dx=dx, x0=x[0]), newy)
+        xp_assert_close(signal.cspline1d_eval(cj, xp.asarray(newx), dx=dx, x0=x[0]), newy)
 
+    @skip_xp_backends(cpu_only=True)
     def test_qspline1d_eval(self, xp):
-        xp_assert_close(bsp.qspline1d_eval(xp.asarray([0., 0]), xp.asarray([0.])),
+        xp_assert_close(signal.qspline1d_eval(xp.asarray([0., 0]), xp.asarray([0.])),
                         xp.asarray([0.])
         )
-        xp_assert_equal(bsp.qspline1d_eval(xp.asarray([1., 0, 1]), xp.asarray([])),
+        xp_assert_equal(signal.qspline1d_eval(xp.asarray([1., 0, 1]), xp.asarray([])),
                         xp.asarray([])
         )
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
@@ -198,7 +201,7 @@ class TestBSplines:
                 12.5]
         y = xp.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                         1.396, 4.094])
-        cj = bsp.qspline1d(y)
+        cj = signal.qspline1d(y)
         newy = xp.asarray([6.203, 4.49418159, 3.514, 5.18390821, 6.864, 5.91436915,
                            4.21600002, 5.91436915, 6.864, 5.18390821, 3.514,
                            4.49418159, 6.203, 6.71900226, 6.759, 7.03980488, 7.433,
@@ -206,7 +209,7 @@ class TestBSplines:
                            2.34046013, 4.094, 2.34046013, 1.396, 3.23872593, 5.879,
                            7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
                            6.71900226, 6.203, 4.49418159], dtype=xp.float64)
-        r = bsp.qspline1d_eval(cj, xp.asarray(newx, dtype=xp.float64), dx=dx, x0=x[0])
+        r = signal.qspline1d_eval(cj, xp.asarray(newx, dtype=xp.float64), dx=dx, x0=x[0])
         xp_assert_close(r, newy)
 
 
@@ -216,7 +219,7 @@ sepfir_dtype_map = {np.uint8: np.float32, int: np.float64,
                     np.complex64: np.complex64, complex: complex}
 
 
-@skip_xp_backends(np_only=True, exceptions=["cupy"])
+@skip_xp_backends(np_only=True)
 class TestSepfir2d:
     def test_sepfir2d_invalid_filter(self, xp):
         filt = xp.asarray([1.0, 2.0, 4.0, 2.0, 1.0])
@@ -341,14 +344,12 @@ class TestSepfir2d:
         assert result.dtype == sepfir_dtype_map[dtyp]
 
 
-@skip_xp_backends(np_only=True)
 def test_cspline2d(xp):
     rng = np.random.RandomState(181819142)
     image = rng.rand(71, 73)
     signal.cspline2d(image, 8.0)
 
 
-@skip_xp_backends(np_only=True)
 def test_qspline2d(xp):
     rng = np.random.RandomState(181819143)
     image = np.random.rand(71, 73)
