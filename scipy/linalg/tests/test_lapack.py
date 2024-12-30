@@ -19,6 +19,7 @@ from numpy.random import rand, randint, seed
 
 from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
                           solve, ldl, norm, block_diag, qr, eigh, qz)
+from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -3525,13 +3526,11 @@ def test_gbcon(dtype, norm):
     A[np.tril_indices(n, -kl - 1)] = 0
 
     # construct banded form
+    tmp = _to_banded(kl, ku, A)
+    # add rows required by ?gbtrf
     LDAB = 2*kl + ku + 1
     ab = np.zeros((LDAB, n), dtype=dtype)
-    for i in range(kl):
-            # superdiagonals
-            ab[2*kl-1-i, i+1:n] = np.diag(A, i+1)
-            # subdiagonals
-            ab[2*kl+1+i, 0:n-1-i] = np.diag(A, -i-1)
+    ab[kl:, :] = tmp
 
     anorm = np.linalg.norm(A, ord=np.inf if norm == 'I' else 1)
     gbcon, gbtrf = get_lapack_funcs(("gbcon", "gbtrf"), (ab,))
