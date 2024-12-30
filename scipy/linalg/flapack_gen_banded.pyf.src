@@ -91,7 +91,7 @@ subroutine <prefix2>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,iwork,info)
     callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype2>*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2>*, F_INT*, F_INT*
 
     character optional, intent(in) :: norm = '1'
-    integer optional,depend(ab),check(n>=0) :: n=shape(ab,1)
+    integer depend(ab),intent(hide) :: n=shape(ab,1)
     integer intent(in),check(kl >= 0) :: kl
     integer intent(in),check(ku>0) :: ku
     <ftype2> dimension(ldab,n),intent(in) :: ab
@@ -117,7 +117,7 @@ subroutine <prefix2c>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,rwork,info
     callprotoargument char*, F_INT*, F_INT*, F_INT*, <ctype2c>*, F_INT*, F_INT*, <ctype2>*, <ctype2>*, <ctype2c>*, <ctype2>*, F_INT*
 
     character optional, intent(in) :: norm = '1'
-    integer optional,depend(ab),check(n>=0) :: n=shape(ab,1)
+    integer depend(ab),intent(hide) :: n=shape(ab,1)
     integer intent(in),check(kl>=0) :: kl
     integer intent(in),check(ku>=0) :: ku
     <ftype2c> dimension(ldab,n),intent(in) :: ab
