@@ -400,3 +400,131 @@ class TestBatch:
         d = get_random((3, 4, 5), dtype=dtype, rng=rng)
         e = get_random((3, 4, 4), dtype=dtype, rng=rng)
         self.batch_test(fun, (d, e), core_dim=1, n_out=n_out, broadcast=False)
+
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solve(self, bdim, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solve(A, b)
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
+
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_lu_solve(self, bdim, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        lu_and_piv = linalg.lu_factor(A)
+        x = linalg.lu_solve(lu_and_piv, b)
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
+
+    @pytest.mark.parametrize('l_and_u', [(1, 1), ([2, 1, 0], [0, 1 , 2])])
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solve_banded(self, l_and_u, bdim, dtype, rng):
+        l, u = l_and_u
+        ab = get_random((2, 3, 3, 5), dtype=dtype, rng=rng)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solve_banded((l, u), ab, b)
+        for i in range(2):
+            for j in range(3):
+                bij = b if len(bdim) <= 2 else b[i, j]
+                lj = l if np.ndim(l) == 0 else l[j]
+                uj = u if np.ndim(u) == 0 else u[j]
+                xij = linalg.solve_banded((lj, uj), ab[i, j], bij)
+                assert_allclose(x[i, j], xij)
+
+    # Can uncomment when `solve_toeplitz` deprecation is done (SciPy 1.17)
+    # @pytest.mark.parametrize('separate_r', [False, True])
+    # @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    # @pytest.mark.parametrize('dtype', floating)
+    # def test_solve_toeplitz(self, separate_r, bdim, dtype, rng):
+    #     c = get_random((2, 3, 5), dtype=dtype, rng=rng)
+    #     r = get_random((2, 3, 5), dtype=dtype, rng=rng)
+    #     c_or_cr = (c, r) if separate_r else c
+    #     b = get_random(bdim, dtype=dtype, rng=rng)
+    #     x = linalg.solve_toeplitz(c_or_cr, b)
+    #     for i in range(2):
+    #         for j in range(3):
+    #             bij = b if len(bdim) <= 2 else b[i, j]
+    #             c_or_cr_ij = (c[i, j], r[i, j]) if separate_r else c[i, j]
+    #             xij = linalg.solve_toeplitz(c_or_cr_ij, bij)
+    #             assert_allclose(x[i, j], xij)
+
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_cho_solve(self, bdim, dtype, rng):
+        A = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        A = A + 5*np.eye(5)
+        c_and_lower = linalg.cho_factor(A)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.cho_solve(c_and_lower, b)
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
+
+    @pytest.mark.parametrize('lower', [False, True])
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_cho_solve_banded(self, lower, bdim, dtype, rng):
+        A = get_random((2, 3, 3, 5), dtype=dtype, rng=rng)
+        row_diag = 0 if lower else -1
+        A[:, :, row_diag] = 10
+        cb = linalg.cholesky_banded(A, lower=lower)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.cho_solve_banded((cb, lower), b)
+        for i in range(2):
+            for j in range(3):
+                bij = b if len(bdim) <= 2 else b[i, j]
+                xij = linalg.cho_solve_banded((cb[i, j], lower), bij)
+                assert_allclose(x[i, j], xij)
+
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solveh_banded(self, bdim, dtype, rng):
+        A = get_random((2, 3, 3, 5), dtype=dtype, rng=rng)
+        A[:, :, -1] = 10
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solveh_banded(A, b)
+        for i in range(2):
+            for j in range(3):
+                bij = b if len(bdim) <= 2 else b[i, j]
+                xij = linalg.solveh_banded(A[i, j], bij)
+                assert_allclose(x[i, j], xij)
+
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solve_triangular(self, bdim, dtype, rng):
+        A = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        A = np.tril(A)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solve_triangular(A, b, lower=True)
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        atol = 1e-10 if dtype in (np.complex128, np.float64) else 2e-4
+        assert_allclose(A @ x - b, 0, atol=atol)
+        assert_allclose(x, np.linalg.solve(A, b), atol=5*atol)
+
+    @pytest.mark.parametrize('bdim', [(4,), (4, 3), (2, 3, 4, 3)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_lstsq(self, bdim, dtype, rng):
+        A = get_random((2, 3, 4, 5), dtype=dtype, rng=rng)
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        res = linalg.lstsq(A, b)
+        x = res[0]
+        if len(bdim) == 1:
+            x = x[..., np.newaxis]
+            b = b[..., np.newaxis]
+        assert_allclose(A @ x - b, 0, atol=2e-6)
+        assert len(res) == 4

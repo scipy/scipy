@@ -73,6 +73,7 @@ def _find_matrix_structure(a):
     return kind, n_below, n_above
 
 
+@_apply_over_batch(('a', 2), ('b', '1|2'))
 def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
@@ -409,6 +410,7 @@ def _ensure_dtype_cdsz(*arrays):
     return (array.astype(dtype, copy=False) for array in arrays)
 
 
+@_apply_over_batch(('a', 2), ('b', '1|2'))
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """
@@ -592,7 +594,13 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     array([-2.37288136,  3.93220339, -4.        ,  4.3559322 , -1.3559322 ])
 
     """
+    (nlower, nupper) = l_and_u
+    return _solve_banded(nlower, nupper, ab, b, overwrite_ab=overwrite_ab,
+                         overwrite_b=overwrite_b, check_finite=check_finite)
 
+
+@_apply_over_batch(('nlower', 0), ('nupper', 0), ('ab', 2), ('b', '1|2'))
+def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite):
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
 
@@ -600,7 +608,6 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
 
-    (nlower, nupper) = l_and_u
     if nlower + nupper + 1 != a1.shape[0]:
         raise ValueError("invalid values for the number of lower and upper "
                          "diagonals: l+u+1 (%d) does not equal ab.shape[0] "
@@ -643,6 +650,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                      'gbsv/gtsv' % -info)
 
 
+@_apply_over_batch(('a', 2), ('b', '1|2'))
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
@@ -858,9 +866,15 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     # If numerical stability of this algorithm is a problem, a future
     # developer might consider implementing other O(N^2) Toeplitz solvers,
     # such as GKO (https://www.jstor.org/stable/2153371) or Bareiss.
+    c, r = c_or_cr if isinstance(c_or_cr, tuple) else (c_or_cr, np.conjugate(c_or_cr))
+    return _solve_toeplitz(c, r, b, check_finite)
 
+
+# Can uncomment when `solve_toeplitz` deprecation is done (SciPy 1.17)
+# @_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
+def _solve_toeplitz(c, r, b, check_finite):
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
-        c_or_cr, b, check_finite, keep_b_shape=True)
+        (c, r), b, check_finite, keep_b_shape=True)
 
     # accommodate empty arrays
     if b.size == 0:
@@ -1300,6 +1314,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
 
 # Linear Least Squares
+@_apply_over_batch(('a', 2), ('b', '1|2'))
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
