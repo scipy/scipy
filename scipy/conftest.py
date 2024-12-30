@@ -148,6 +148,14 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         xp_available_backends.update({'torch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
+
+        # default dtype: XXX flip the default to float64
+        default = os.getenv('SCIPY_DEFAULT_DTYPE', default='float32')
+        if default == 'float64':
+            torch.set_default_dtype(torch.float64)
+
+        print(f"default dtype set for {torch.get_default_dtype()}")
+
     except ImportError:
         pass
 
