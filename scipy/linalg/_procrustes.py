@@ -3,12 +3,14 @@ Solve the orthogonal Procrustes problem.
 
 """
 import numpy as np
+from scipy._lib._util import _apply_over_batch
 from ._decomp_svd import svd
 
 
 __all__ = ['orthogonal_procrustes']
 
 
+@_apply_over_batch(('A', 2), ('B', 2))
 def orthogonal_procrustes(A, B, check_finite=True):
     """
     Compute the matrix solution of the orthogonal (or unitary) Procrustes problem.

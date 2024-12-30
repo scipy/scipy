@@ -185,7 +185,7 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
         python-version: ["3.11"]
@@ -203,7 +203,7 @@ jobs:
 
     - name: Build and Install SciPy
       run: |
-        sudo xcode-select -s /Applications/Xcode_15.2.app
+        sudo xcode-select -s /Applications/Xcode_16.app
 
         git submodule update --init
         GFORTRAN_LOC=$(which gfortran-13)

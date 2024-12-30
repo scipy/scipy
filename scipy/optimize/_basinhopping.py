@@ -451,7 +451,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         cause of the termination. The ``OptimizeResult`` object returned by the
         selected minimizer at the lowest minimum is also contained within this
         object and can be accessed through the ``lowest_optimization_result``
-        attribute.  See `OptimizeResult` for a description of other attributes.
+        attribute. ``lowest_optimization_result`` will only be updated if a
+        local minimization was successful.          
+        See `OptimizeResult` for a description of other attributes.
 
     See Also
     --------

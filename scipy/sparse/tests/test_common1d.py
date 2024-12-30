@@ -43,6 +43,16 @@ def test_no_1d_support_in_init(spcreator):
         spcreator([0, 1, 2, 3])
 
 
+# Test init with nD dense input
+# sparrays which do not yet support nD
+@pytest.mark.parametrize(
+    "spcreator", [csr_array, dok_array, bsr_array, csc_array, dia_array, lil_array]
+)
+def test_no_nd_support_in_init(spcreator):
+    with pytest.raises(ValueError, match="arrays don't.*support 3D"):
+        spcreator(np.ones((3, 2, 4)))
+
+
 # Main tests class
 @pytest.mark.parametrize("spcreator", spcreators)
 class TestCommon1D:
