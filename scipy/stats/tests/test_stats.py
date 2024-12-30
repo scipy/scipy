@@ -1665,7 +1665,8 @@ def test_kendalltau():
                      (np.nan, np.nan))
 
     # empty arrays provided as input
-    assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
     # check with larger arrays
     np.random.seed(7546)
@@ -1702,10 +1703,8 @@ def test_kendalltau():
     assert_raises(ValueError, stats.kendalltau, x, y)
 
     # test all ties
-    tau, p_value = stats.kendalltau([], [])
-    assert_equal(np.nan, tau)
-    assert_equal(np.nan, p_value)
-    tau, p_value = stats.kendalltau([0], [0])
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        tau, p_value = stats.kendalltau([0], [0])
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
 
@@ -1714,12 +1713,12 @@ def test_kendalltau():
     x = np.ma.masked_greater(x, 1995)
     y = np.arange(2000, dtype=float)
     y = np.concatenate((y[1000:], y[:1000]))
-    assert_(np.isfinite(stats.kendalltau(x,y)[1]))
+    assert_(np.isfinite(stats.mstats.kendalltau(x,y)[1]))
 
 
 def test_kendalltau_vs_mstats_basic():
     np.random.seed(42)
-    for s in range(2,10):
+    for s in range(3, 10):
         a = []
         # Generate rankings with ties
         for i in range(s):
@@ -1840,7 +1839,8 @@ class TestKendallTauAlternative:
     def test_against_R_n1(self, alternative, p_expected, rev):
         x, y = [1], [2]
         stat_expected = np.nan
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+            self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
 
     case_R_n2 = (list(zip(alternatives, p_n2, [False]*3))
                  + list(zip(alternatives, reversed(p_n2), [True]*3)))
@@ -2027,15 +2027,17 @@ def test_weightedtau():
                                      np.asarray(y, dtype=np.float64))
     assert_approx_equal(tau, -0.56694968153682723)
     # All ties
-    tau, p_value = stats.weightedtau([], [])
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        tau, p_value = stats.weightedtau([], [])
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
-    tau, p_value = stats.weightedtau([0], [0])
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        tau, p_value = stats.weightedtau([0], [0])
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
     # Size mismatches
     assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1, 2])
-    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0])
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0, 1, 2])
     # NaNs
     x = [12, 2, 1, 12, 2]
     y = [1, 4, 7, 1, np.nan]
@@ -2069,10 +2071,12 @@ def test_segfault_issue_9710():
     # https://github.com/scipy/scipy/issues/9710
     # This test was created to check segfault
     # In issue SEGFAULT only repros in optimized builds after calling the function twice
-    stats.weightedtau([1], [1.0])
-    stats.weightedtau([1], [1.0])
-    # The code below also caused SEGFAULT
-    stats.weightedtau([np.nan], [52])
+    message = "One or more sample arguments is too small"
+    with pytest.warns(SmallSampleWarning, match=message):
+        stats.weightedtau([1], [1.0])
+        stats.weightedtau([1], [1.0])
+        # The code below also caused SEGFAULT
+        stats.weightedtau([np.nan], [52])
 
 
 def test_kendall_tau_large():
@@ -2185,7 +2189,9 @@ class TestRegression:
         # total sum of squares of exactly 0.
         result = stats.linregress(X, ZERO)
         assert_almost_equal(result.intercept, 0.0)
-        assert_almost_equal(result.rvalue, 0.0)
+        with pytest.warns(stats.ConstantInputWarning, match="An input array..."):
+            ref_rvalue = stats.pearsonr(X, ZERO).statistic
+        assert_almost_equal(result.rvalue, ref_rvalue)
 
     def test_regress_simple(self):
         # Regress a line with sinusoidal noise.
@@ -2360,7 +2366,9 @@ class TestRegression:
         assert_almost_equal(result.intercept, poly[1])
 
     def test_empty_input(self):
-        assert_raises(ValueError, stats.linregress, [], [])
+        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+            res = stats.linregress([], [])
+            assert np.all(np.isnan(res))
 
     def test_nan_input(self):
         x = np.arange(10.)
