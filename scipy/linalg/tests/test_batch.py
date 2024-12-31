@@ -1,6 +1,4 @@
 import inspect
-import copy
-
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -47,9 +45,9 @@ class TestBatch:
         arrays = (arrays,) if not isinstance(arrays, tuple) else arrays
 
         # Identical results when passing argument by keyword or position
-        res2 = fun(*arrays, **copy.deepcopy(kwargs))
+        res2 = fun(*arrays, **kwargs)
         if check_kwargs:
-            res1 = fun(**dict(zip(parameters, arrays)), **copy.deepcopy(kwargs))
+            res1 = fun(**dict(zip(parameters, arrays)), **kwargs)
             for out1, out2 in zip(res1, res2):  # even a single array is iterable...
                 np.testing.assert_equal(out1, out2)
 
@@ -63,7 +61,7 @@ class TestBatch:
         for i in range(batch_shape[0]):
             for j in range(batch_shape[1]):
                 arrays_ij = (array[i, j] for array in arrays)
-                ref = fun(*arrays_ij, **copy.deepcopy(kwargs))
+                ref = fun(*arrays_ij, **kwargs)
                 ref = ((np.asarray(ref),) if n_out == 1 else
                        tuple(np.asarray(refk) for refk in ref))
                 for k in range(n_out):
@@ -535,7 +533,7 @@ class TestBatch:
     def test_clarkson_woodruff_transform(self, dtype, rng):
         A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
         self.batch_test(linalg.clarkson_woodruff_transform, A,
-                        kwargs=dict(sketch_size=3, rng=rng))
+                        kwargs=dict(sketch_size=3, rng=311224))
 
     def test_clarkson_woodruff_transform_sparse(self, rng):
         A = get_random((5, 3, 4, 6), dtype=np.float64, rng=rng)
