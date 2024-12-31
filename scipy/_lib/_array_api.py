@@ -103,11 +103,8 @@ def _compliance_scipy(arrays):
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
     """Check for NaNs or Infs."""
-    msg = "array must not contain infs or NaNs"
-    try:
-        if not xp.all(xp.isfinite(array)):
-            raise ValueError(msg)
-    except TypeError:
+    if not xp.all(xp.isfinite(array)):
+        msg = "array must not contain infs or NaNs"
         raise ValueError(msg)
 
 
