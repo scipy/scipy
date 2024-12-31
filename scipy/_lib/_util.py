@@ -1235,9 +1235,13 @@ def _apply_over_batch(*argdefs):
             for i, (array, ndim) in enumerate(zip(arrays, ndims)):
                 array = None if array is None else np.asarray(array)
                 shape = () if array is None else array.shape
+
+                if ndim == "1|2":  # special case for `solve`, etc.
+                    ndim = 2 if array.ndim >= 2 else 1
+
                 arrays[i] = array
                 batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
-                core_shapes.append(shape[-ndim:] if ndim > 0 else shape)
+                core_shapes.append(shape[-ndim:] if ndim > 0 else ())
 
             # Early exit if call is not batched
             if not any(batch_shapes):

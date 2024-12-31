@@ -15,7 +15,7 @@
 static int
 check_array(PyObject *obj, npy_intp ndim, int typenum) {
 
-    int cond = (PyArray_CheckExact(obj) &&
+    int cond = (PyArray_Check(obj) &&
                (PyArray_TYPE((PyArrayObject*)obj) == typenum) &&
                (PyArray_NDIM((PyArrayObject*)obj) == ndim) &&
                 PyArray_CHKFLAGS((PyArrayObject*)obj, NPY_ARRAY_ALIGNED | NPY_ARRAY_C_CONTIGUOUS)
@@ -754,7 +754,18 @@ static struct PyModuleDef dierckxmodule = {
 PyMODINIT_FUNC
 PyInit__dierckx(void)
 {
+    PyObject *module;
+
     import_array();
 
-    return PyModule_Create(&dierckxmodule);
+    module = PyModule_Create(&dierckxmodule);
+    if (module == NULL) {
+        return NULL;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }
