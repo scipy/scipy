@@ -6,8 +6,8 @@
 import numpy as np
 
 from scipy._lib._util import (check_random_state, rng_integers,
-                              _transition_to_rng)
-from scipy.sparse import csc_matrix
+                              _transition_to_rng, _apply_over_batch)
+from scipy.sparse import csc_matrix, issparse
 
 __all__ = ['clarkson_woodruff_transform']
 
@@ -68,8 +68,8 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
 
     Parameters
     ----------
-    input_matrix : array_like
-        Input matrix, of shape ``(n, d)``.
+    input_matrix : array_like, shape (..., n, d)
+        Input matrix.
     sketch_size : int
         Number of rows for the sketch.
     rng : `numpy.random.Generator`, optional
@@ -174,5 +174,16 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     166.58473879945151
 
     """
-    S = cwt_matrix(sketch_size, input_matrix.shape[0], rng=rng)
-    return S.dot(input_matrix)
+    if issparse(input_matrix) and input_matrix.ndim > 2:
+        message = "Batch support for sparse arrays is not available."
+        raise NotImplementedError(message)
+
+    S = cwt_matrix(sketch_size, input_matrix.shape[-2], rng=rng)
+    # Despite argument order (required by decorator), this is  S @ input_matrix
+    # Can avoid _batch_dot when gh-22153 is resolved.
+    return S @ input_matrix if input_matrix.ndim <= 2 else _batch_dot(input_matrix, S)
+
+
+@_apply_over_batch(('input_matrix', 2))
+def _batch_dot(input_matrix, S):
+    return S @ input_matrix

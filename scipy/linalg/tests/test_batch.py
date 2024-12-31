@@ -2,7 +2,7 @@ import inspect
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy import linalg
+from scipy import linalg, sparse
 
 
 real_floating = [np.float32, np.float64]
@@ -528,3 +528,16 @@ class TestBatch:
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=2e-6)
         assert len(res) == 4
+
+    @pytest.mark.parametrize('dtype', floating)
+    def test_clarkson_woodruff_transform(self, dtype, rng):
+        A = get_random((5, 3, 4, 6), dtype=dtype, rng=rng)
+        self.batch_test(linalg.clarkson_woodruff_transform, A,
+                        kwargs=dict(sketch_size=3, rng=311224))
+
+    def test_clarkson_woodruff_transform_sparse(self, rng):
+        A = get_random((5, 3, 4, 6), dtype=np.float64, rng=rng)
+        A = sparse.coo_array(A)
+        message = "Batch support for sparse arrays is not available."
+        with pytest.raises(NotImplementedError, match=message):
+            linalg.clarkson_woodruff_transform(A, sketch_size=3, rng=rng)
