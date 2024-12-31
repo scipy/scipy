@@ -855,7 +855,7 @@ class TestBracketMinimum:
 
         result = _bracket_minimum(f, xp.asarray(0.5535723499480897), xmin=xmin,
                                   xmax=xmax)
-        assert xmin == result.xl
+        xp_assert_close(result.xl, xmin)
 
     def test_gh_20562_right(self, xp):
         # Regression test for https://github.com/scipy/scipy/issues/20562
@@ -868,4 +868,4 @@ class TestBracketMinimum:
 
         result = _bracket_minimum(f, xp.asarray(-0.5535723499480897),
                                   xmin=xmin, xmax=xmax)
-        assert xmax == result.xr
+        xp_assert_close(result.xr, xmax)
