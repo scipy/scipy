@@ -300,7 +300,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
 
     xp = array_namespace(fs_a[0], fs_b[0], *args)
 
-    shape = xp.broadcast_shapes(shape_a, shape_b)
+    shape = np.broadcast_shapes(shape_a, shape_b)  # OK to use NumPy on tuples
     dtype = xp.result_type(dtype_a, dtype_b)
     an = xp.astype(xp_ravel(xp.broadcast_to(xp.reshape(fs_a[0], shape_a), shape)), dtype)  # noqa: E501
     bn = xp.astype(xp_ravel(xp.broadcast_to(xp.reshape(fs_b[0], shape_b), shape)), dtype)  # noqa: E501

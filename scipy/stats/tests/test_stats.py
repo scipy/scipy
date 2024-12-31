@@ -188,7 +188,7 @@ class TestTrimmedStats:
 
         # check that if a full slice is masked, the output returns a
         # nan instead of a garbage value.
-        x = xp.arange(16).reshape(4, 4)
+        x = xp.reshape(xp.arange(16), (4, 4))
         res = stats.tmin(x, lowerlimit=4, axis=1)
         xp_assert_equal(res, xp.asarray([np.nan, 4, 8, 12]))
 
