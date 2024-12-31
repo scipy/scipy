@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
+from scipy._lib._util import _apply_over_batch
 
 
 __all__ = ['toeplitz', 'circulant', 'hankel',
@@ -269,6 +270,7 @@ def hadamard(n, dtype=int):
     return H
 
 
+@_apply_over_batch(("f", 1), ("s", 1))
 def leslie(f, s):
     """
     Create a Leslie matrix.
@@ -279,35 +281,28 @@ def leslie(f, s):
 
     Parameters
     ----------
-    f : (..., N,) array_like
+    f : (N,) array_like
         The "fecundity" coefficients.
-    s : (..., N-1,) array_like
-        The "survival" coefficients. The length of each slice of `s` (along the last
-        axis) must be one less than the length of `f`, and it must be at least 1.
+    s : (N-1,) array_like
+        The "survival" coefficients. The length of `s` must be one less
+        than the length of `f`, and it must be at least 1.
 
     Returns
     -------
-    L : (..., N, N) ndarray
+    L : (N, N) ndarray
         The array is zero except for the first row,
         which is `f`, and the first sub-diagonal, which is `s`.
-        For 1-D input, the data-type of the array will be the data-type of
+        The data-type of the array will be the data-type of
         ``f[0]+s[0]``.
 
     Notes
     -----
-    .. versionadded:: 0.8.0
-
     The Leslie matrix is used to model discrete-time, age-structured
     population growth [1]_ [2]_. In a population with `n` age classes, two sets
     of parameters define a Leslie matrix: the `n` "fecundity coefficients",
     which give the number of offspring per-capita produced by each age
     class, and the `n` - 1 "survival coefficients", which give the
     per-capita survival rate of each age class.
-
-    N-dimensional input are treated as a batches of coefficient arrays: each
-    slice along the last axis of the input arrays is a 1-D coefficient array,
-    and each slice along the last two dimensions of the output is the
-    corresponding Leslie matrix.
 
     References
     ----------
@@ -337,12 +332,6 @@ def leslie(f, s):
         raise ValueError("The length of s must be at least 1.")
 
     n = f.shape[-1]
-
-    if f.ndim > 1 or s.ndim > 1:
-        from scipy.stats._resampling import _vectorize_statistic
-        _leslie_nd = _vectorize_statistic(leslie)
-        return np.moveaxis(_leslie_nd(f, s, axis=-1), [0, 1], [-2, -1])
-
     tmp = f[0] + s[0]
     a = np.zeros((n, n), dtype=tmp.dtype)
     a[0] = f
