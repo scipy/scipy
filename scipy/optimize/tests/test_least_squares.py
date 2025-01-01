@@ -850,11 +850,11 @@ def test_callback():
             # Call the different implemented methods
             res = call(my_callback)
             # Check that callback was called
-            assert(len(results) > 0)
+            assert len(results) > 0
             # Check that results data makes sense
-            assert(results[-1].nit > 0)
+            assert results[-1].nit > 0
             # Check that it didn´t stop because of the callback
-            assert(res.status != -2)
+            assert res.status != -2
     
     for my_callback in callbacks_stop:
         for call in calls:
@@ -862,11 +862,11 @@ def test_callback():
             # Call the different implemented methods
             res = call(my_callback)
             # Check that callback was called
-            assert(len(results) > 0)
+            assert len(results) > 0
             # Check that only one iteration was run
-            assert(results[-1].nit == 1)
+            assert results[-1].nit == 1
             # Check that it stopped because of the callback
-            assert(res.status == -2)
+            assert res.status == -2
 
 
 def test_small_tolerances_for_lm():

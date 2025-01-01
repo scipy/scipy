@@ -15,7 +15,7 @@ from .dogbox import dogbox
 from .common import EPS, in_bounds, make_strictly_feasible
 
     
-from .._optimize import (_wrap_callback)
+from scipy.optimize._optimize import _wrap_callback
 
 TERMINATION_MESSAGES = {
     -2: "Stopped because `callback` function raised `StopIteration` or returned `True`",
@@ -463,7 +463,7 @@ def least_squares(
         If the `callback` function raises `StopIteration` or returns `True`,
         the optimization algorithm will stop and return with status code -2.
         
-        .. versionadded:: 1.15.0
+        .. versionadded:: 1.16.0
 
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
@@ -971,7 +971,7 @@ def least_squares(
     if method == 'lm':
         if callback is not None:
             warn("Callback function specified, but not supported with `lm` method.",
-                stacklevel=2)
+                 stacklevel=2)
         result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
                               max_nfev, x_scale, diff_step)
 
