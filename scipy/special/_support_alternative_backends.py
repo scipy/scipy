@@ -5,7 +5,6 @@ import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, SCIPY_ARRAY_API
 )
-from scipy.optimize.elementwise import bracket_root, find_root
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
@@ -155,6 +154,8 @@ def _stdtrit(xp, spx):
     # conversions: in this case, just evaluate `stdtrit` with SciPy/NumPy.
     if betainc is None:
         return None
+
+    from scipy.optimize.elementwise import bracket_root, find_root
 
     def __stdtrit(df, p):
         def fun(t, df, p):  return stdtr(df, t) - p
