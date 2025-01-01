@@ -3886,9 +3886,6 @@ def ttest_data_axis_strategy(draw):
     return data, axis
 
 
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 class TestStudentTest:
     # Preserving original test cases.
@@ -3973,6 +3970,8 @@ class TestStudentTest:
         xp_assert_close(p, xp.asarray(self.P1_1_g))
         xp_assert_close(t, xp.asarray(self.T1_1))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
         # test confidence interval method against reference values
@@ -4005,6 +4004,8 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason='Too slow.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.xslow
     @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
                       data_axis=ttest_data_axis_strategy())
@@ -5170,9 +5171,6 @@ def _desc_stats(x1, x2, axis=0, *, xp=None):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind(xp):
     # regression test
     tr = xp.asarray(1.0912746897927283)
@@ -5889,9 +5887,6 @@ class Test_ttest_trim:
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 class Test_ttest_CI:
     # indices in order [alternative={two-sided, less, greater},
     #                   equal_var={False, True}, trim={0, 0.2}]
@@ -5938,6 +5933,8 @@ class Test_ttest_CI:
     @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_confidence_interval(self, alternative, equal_var, trim, xp):
         if equal_var and trim:
             pytest.xfail('Discrepancy in `main`; needs further investigation.')
@@ -5986,9 +5983,6 @@ def test__broadcast_concatenate():
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_with_uneq_var(xp):
     # check vs. R `t.test`, e.g.
     # options(digits=20)
@@ -6071,9 +6065,6 @@ def test_ttest_ind_with_uneq_var(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_zero_division(xp):
     # test zero division problem
     x = xp.zeros(3)
@@ -6196,9 +6187,6 @@ def test_gh5686(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_from_stats_inputs_zero(xp):
     # Regression test for gh-6409.
     zero = xp.asarray(0.)
@@ -6210,8 +6198,7 @@ def test_ttest_ind_from_stats_inputs_zero(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
+@pytest.mark.skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
@@ -6236,9 +6223,8 @@ def test_ttest_uniform_pvalues(xp):
     x, y = xp.asarray([2, 3, 5]), xp.asarray([1.5])
 
     res = stats.ttest_ind(x, y, equal_var=True)
-    rtol = 1e-6 if is_torch(xp) else 1e-10
-    xp_assert_close(res.statistic, xp.asarray(1.0394023007754), rtol=rtol)
-    xp_assert_close(res.pvalue, xp.asarray(0.407779907736), rtol=rtol)
+    xp_assert_close(res.statistic, xp.asarray(1.0394023007754))
+    xp_assert_close(res.pvalue, xp.asarray(0.407779907736))
 
 
 def _convert_pvalue_alternative(t, p, alt, xp):
@@ -6251,9 +6237,6 @@ def _convert_pvalue_alternative(t, p, alt, xp):
 
 
 @pytest.mark.slow
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_ttest_1samp_new(xp):
     n1, n2, n3 = (10, 15, 20)
@@ -6341,10 +6324,9 @@ def test_ttest_1samp_new_omit(xp):
     xp_assert_close(t, tr)
 
 
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
+@pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
     # if the user wants to test multiple null hypotheses simultaneously,

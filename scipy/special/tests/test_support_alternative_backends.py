@@ -60,10 +60,13 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
 
     if (SCIPY_DEVICE != 'cpu'
         and is_torch(xp)
-        and f_name in {'stdtr', 'betaincc', 'betainc'}
+        and f_name in {'stdtr', 'stdtrit', 'betaincc', 'betainc'}
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
                     f"and cannot delegate to PyTorch.")
+
+    if is_jax(xp) and f_name in {'stdtrit'}:
+        pytest.skip(f"`{f_name}` generic implementation require array mutation.")
 
     shapes = shapes[:n_args]
     f = getattr(special, f_name)
