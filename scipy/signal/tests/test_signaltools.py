@@ -35,7 +35,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     array_namespace,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy, xp_size,
+    xp_copy, xp_size, xp_default_dtype
 )
 from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -4338,7 +4338,7 @@ class TestDetrend:
         # regression test for https://github.com/scipy/scipy/issues/18675
         rng = np.random.RandomState(12345)
         x = rng.rand(10)
-        x = xp.asarray(x)
+        x = xp.asarray(x, dtype=xp_default_dtype(xp))
         if isinstance(bp, np.ndarray):
             bp = xp.asarray(bp)
         else:
@@ -4350,9 +4350,8 @@ class TestDetrend:
             -1.11128506e-01, -1.69470553e-01,  1.14710683e-01,  6.35468419e-02,
             3.53533144e-01, -3.67877935e-02, -2.00417675e-02, -1.94362049e-01])
 
-        # torch default float if f32
-        dtype_arg = {"check_dtype": False} if is_torch(xp) else {}
-        xp_assert_close(res, res_scipy_191, atol=1e-14, **dtype_arg)
+        atol = 3e-7 if xp_default_dtype(xp) == xp.float32 else 1e-14
+        xp_assert_close(res, res_scipy_191, atol=atol)
 
 
 @skip_xp_backends(np_only=True)
