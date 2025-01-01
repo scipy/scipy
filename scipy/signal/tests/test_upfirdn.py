@@ -157,28 +157,27 @@ class TestUpfirdn:
         expected = np.asarray(expected, dtype=np.float64)
         xp_assert_close(y, expected)
 
+    @pytest.mark.parametrize('dtype', [int, np.float32, np.complex64, float, complex])
     @pytest.mark.parametrize('down, want_len', [  # lengths from MATLAB
         (2, 5015),
         (11, 912),
         (79, 127),
     ])
-    def test_vs_convolve(self, down, want_len):
+    def test_vs_convolve(self, down, want_len, dtype):
         # Check that up=1.0 gives same answer as convolve + slicing
         random_state = np.random.RandomState(17)
-        try_types = (int, np.float32, np.complex64, float, complex)
         size = 10000
 
-        for dtype in try_types:
-            x = random_state.randn(size).astype(dtype)
-            if dtype in (np.complex64, np.complex128):
-                x += 1j * random_state.randn(size)
+        x = random_state.randn(size).astype(dtype)
+        if dtype in (np.complex64, np.complex128):
+            x += 1j * random_state.randn(size)
 
-            h = firwin(31, 1. / down, window='hamming')
-            yl = upfirdn_naive(x, h, 1, down)
-            y = upfirdn(h, x, up=1, down=down)
-            assert y.shape == (want_len,)
-            assert yl.shape[0] == y.shape[0]
-            xp_assert_close(yl, y, atol=1e-7, rtol=1e-7)
+        h = firwin(31, 1. / down, window='hamming')
+        yl = upfirdn_naive(x, h, 1, down)
+        y = upfirdn(h, x, up=1, down=down)
+        assert y.shape == (want_len,)
+        assert yl.shape[0] == y.shape[0]
+        xp_assert_close(yl, y, atol=1e-7, rtol=1e-7)
 
     @pytest.mark.parametrize('x_dtype', _UPFIRDN_TYPES)
     @pytest.mark.parametrize('h', (1., 1j))
