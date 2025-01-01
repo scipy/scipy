@@ -2263,8 +2263,8 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
         return _trimmed_stde_1D(a.ravel(),lolim,uplim,loinc,upinc)
     else:
         if a.ndim > 2:
-            raise ValueError("Array 'a' must be at most two dimensional, "
-                             "but got a.ndim = %d" % a.ndim)
+            raise ValueError(f"Array 'a' must be at most two dimensional, "
+                             f"but got a.ndim = {a.ndim}")
         return ma.apply_along_axis(_trimmed_stde_1D, axis, a,
                                    lolim,uplim,loinc,upinc)
 
@@ -3016,8 +3016,8 @@ def stde_median(data, axis=None):
         return _stdemed_1D(data)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         return ma.apply_along_axis(_stdemed_1D, axis, data)
 
 
@@ -3067,9 +3067,8 @@ def skewtest(a, axis=0, alternative='two-sided'):
     b2 = skew(a,axis)
     n = a.count(axis)
     if np.min(n) < 8:
-        raise ValueError(
-            "skewtest is not valid with less than 8 samples; %i samples"
-            " were given." % np.min(n))
+        raise ValueError(f"skewtest is not valid with less than 8 samples; "
+                         f"{np.min(n)} samples were given.")
 
     y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)))
     beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3)) / ((n-2.0)*(n+5)*(n+7)*(n+9))
@@ -3125,14 +3124,11 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
     if np.min(n) < 5:
-        raise ValueError(
-            "kurtosistest requires at least 5 observations; %i observations"
-            " were given." % np.min(n))
+        raise ValueError(f"kurtosistest requires at least 5 observations; "
+                         f"{np.min(n)} observations were given.")
     if np.min(n) < 20:
-        warnings.warn(
-            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % np.min(n),
-            stacklevel=2,
-        )
+        warnings.warn(f"kurtosistest only valid for n>=20 ... continuing "
+                      f"anyway, n={np.min(n)}", stacklevel=2)
 
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
@@ -3535,8 +3531,8 @@ def friedmanchisquare(*args):
     data = argstoarray(*args).astype(float)
     k = len(data)
     if k < 3:
-        raise ValueError("Less than 3 groups (%i): " % k +
-                         "the Friedman test is NOT appropriate.")
+        raise ValueError(f"Less than 3 groups ({k}): the Friedman test "
+                         f"is NOT appropriate.")
 
     ranked = ma.masked_values(rankdata(data, axis=0), 0)
     if ranked._mask is not nomask:

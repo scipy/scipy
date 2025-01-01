@@ -111,7 +111,7 @@ def _add_inc_data(name, chunksize):
     for j in range(nmin, len(points), chunksize):
         chunks.append(points[j:j+chunksize])
 
-    new_name = "%s-chunk-%d" % (name, chunksize)
+    new_name = f"{name}-chunk-{chunksize}"
     assert new_name not in INCREMENTAL_DATASETS
     INCREMENTAL_DATASETS[new_name] = (chunks, opts)
 
@@ -362,7 +362,7 @@ class TestUtilities:
                 list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))
             ].T
 
-            err_msg = "ndim=%d" % ndim
+            err_msg = f"ndim={ndim}"
 
             # Check using regular grid
             tri = qhull.Delaunay(grid)

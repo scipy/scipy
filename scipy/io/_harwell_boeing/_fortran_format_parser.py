@@ -72,20 +72,20 @@ class IntFormat:
     def __repr__(self):
         r = "IntFormat("
         if self.repeat:
-            r += "%d" % self.repeat
-        r += "I%d" % self.width
+            r += f"{self.repeat}"
+        r += f"I{self.width}"
         if self.min:
-            r += ".%d" % self.min
+            r += f".{self.min}"
         return r + ")"
 
     @property
     def fortran_format(self):
         r = "("
         if self.repeat:
-            r += "%d" % self.repeat
-        r += "I%d" % self.width
+            r += f"{self.repeat}"
+        r += f"I{self.width}"
         if self.min:
-            r += ".%d" % self.min
+            r += f".{self.min}"
         return r + ")"
 
     @property
@@ -145,20 +145,20 @@ class ExpFormat:
     def __repr__(self):
         r = "ExpFormat("
         if self.repeat:
-            r += "%d" % self.repeat
-        r += "E%d.%d" % (self.width, self.significand)
+            r += f"{self.repeat}"
+        r += f"E{self.width}.{self.significand}"
         if self.min:
-            r += "E%d" % self.min
+            r += f"E{self.min}"
         return r + ")"
 
     @property
     def fortran_format(self):
         r = "("
         if self.repeat:
-            r += "%d" % self.repeat
-        r += "E%d.%d" % (self.width, self.significand)
+            r += f"{self.repeat}"
+        r += f"E{self.width}.{self.significand}"
         if self.min:
-            r += "E%d" % self.min
+            r += f"E{self.min}"
         return r + ")"
 
     @property
@@ -200,8 +200,10 @@ class Tokenizer:
                 else:
                     self.curpos = m.end()
                     return Token(self.tokens[i], m.group(), self.curpos)
-            raise SyntaxError("Unknown character at position %d (%s)"
-                              % (self.curpos, self.data[curpos]))
+            raise SyntaxError(
+                f"Unknown character at position {self.curpos} "
+                f"({self.data[self.curpos]})"
+            )
 
 
 # Grammar for fortran format:
@@ -263,8 +265,9 @@ class FortranFormatParser:
 
     def _parse_format(self, tokens):
         if not tokens[0].type == "LPAR":
-            raise SyntaxError("Expected left parenthesis at position "
-                              "%d (got '%s')" % (0, tokens[0].value))
+            raise SyntaxError(
+                f"Expected left parenthesis at position {0} (got '{tokens[0].value}')"
+            )
         elif not tokens[-1].type == "RPAR":
             raise SyntaxError("Expected right parenthesis at position "
                               f"{len(tokens)} (got '{tokens[-1].value}')")

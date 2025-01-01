@@ -11,7 +11,7 @@ from scipy.spatial import cKDTree
 
 TOL = 1E-12
 NS = range(1, 13)
-NAMES = ["I", "O", "T"] + ["C%d" % n for n in NS] + ["D%d" % n for n in NS]
+NAMES = ["I", "O", "T"] + [f"C{n}" for n in NS] + [f"D{n}" for n in NS]
 SIZES = [60, 24, 12] + list(NS) + [2 * n for n in NS]
 
 
@@ -117,7 +117,7 @@ def test_dicyclic(n, axis):
     """Test that the dicyclic group correctly fixes the rotations of a
     prism."""
     P = _generate_prism(n, axis='XYZ'.index(axis))
-    for g in Rotation.create_group("D%d" % n, axis=axis):
+    for g in Rotation.create_group(f"D{n}", axis=axis):
         assert _calculate_rmsd(P, g.apply(P)) < TOL
 
 
@@ -127,7 +127,7 @@ def test_cyclic(n, axis):
     """Test that the cyclic group correctly fixes the rotations of a
     pyramid."""
     P = _generate_pyramid(n, axis='XYZ'.index(axis))
-    for g in Rotation.create_group("C%d" % n, axis=axis):
+    for g in Rotation.create_group(f"C{n}", axis=axis):
         assert _calculate_rmsd(P, g.apply(P)) < TOL
 
 
