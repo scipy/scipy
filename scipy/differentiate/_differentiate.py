@@ -823,7 +823,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     ``(m, k, ...)`` and return an array of shape ``(n, k, ...)``, and the ``df``
     attribute of the result would have shape ``(n, m, k)``.
 
-`   Suppose the desired callable ``f_not_vectorized`` is not vectorized; it can
+    Suppose the desired callable ``f_not_vectorized`` is not vectorized; it can
     only accept an array of shape ``(m,)``. A simple solution to satisfy the required
     interface is to wrap ``f_not_vectorized`` as follows::
 
