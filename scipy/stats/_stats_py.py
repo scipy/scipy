@@ -6126,8 +6126,8 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
         message = "`confidence_level` must be a number between 0 and 1."
         raise ValueError(message)
 
-    confidence_level = xp.asarray(confidence_level)
-    inf = xp.asarray(xp.inf)
+    confidence_level = xp.asarray(confidence_level, dtype=dtype)
+    inf = xp.asarray(xp.inf, dtype=dtype)
 
     if alternative < 0:  # 'less'
         p = confidence_level

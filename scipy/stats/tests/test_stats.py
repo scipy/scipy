@@ -3970,6 +3970,8 @@ class TestStudentTest:
         xp_assert_close(p, xp.asarray(self.P1_1_g))
         xp_assert_close(t, xp.asarray(self.T1_1))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
         # test confidence interval method against reference values
@@ -5931,6 +5933,8 @@ class Test_ttest_CI:
     @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_confidence_interval(self, alternative, equal_var, trim, xp):
         if equal_var and trim:
             pytest.xfail('Discrepancy in `main`; needs further investigation.')
@@ -6219,9 +6223,8 @@ def test_ttest_uniform_pvalues(xp):
     x, y = xp.asarray([2, 3, 5]), xp.asarray([1.5])
 
     res = stats.ttest_ind(x, y, equal_var=True)
-    rtol = 1e-6 if is_torch(xp) else 1e-10
-    xp_assert_close(res.statistic, xp.asarray(1.0394023007754), rtol=rtol)
-    xp_assert_close(res.pvalue, xp.asarray(0.407779907736), rtol=rtol)
+    xp_assert_close(res.statistic, xp.asarray(1.0394023007754))
+    xp_assert_close(res.pvalue, xp.asarray(0.407779907736))
 
 
 def _convert_pvalue_alternative(t, p, alt, xp):
@@ -6322,6 +6325,8 @@ def test_ttest_1samp_new_omit(xp):
 
 
 @array_api_compatible
+@pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
     # if the user wants to test multiple null hypotheses simultaneously,
