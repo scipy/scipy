@@ -802,26 +802,46 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     Notes
     -----
     Suppose we wish to evaluate the Jacobian of a function
-    :math:`f: \mathbf{R}^m \rightarrow \mathbf{R}^n`, and assign to variables
+    :math:`f: \mathbf{R}^m \rightarrow \mathbf{R}^n`. Assign to variables
     ``m`` and ``n`` the positive integer values of :math:`m` and :math:`n`,
-    respectively. If we wish to evaluate the Jacobian at a single point,
-    then:
+    respectively, and let ``...`` represent an arbitrary tuple of integers.
+    If we wish to evaluate the Jacobian at a single point, then:
 
     - argument `x` must be an array of shape ``(m,)``
-    - argument `f` must be vectorized to accept an array of shape ``(m, p)``.
-      The first axis represents the :math:`m` inputs of :math:`f`; the second
-      is for evaluating the function at multiple points in a single call.
-    - argument `f` must return an array of shape ``(n, p)``. The first
-      axis represents the :math:`n` outputs of :math:`f`; the second
-      is for the result of evaluating the function at multiple points.
+    - argument `f` must be vectorized to accept an array of shape ``(m, ...)``.
+      The first axis represents the :math:`m` inputs of :math:`f`; the remainder
+      are for evaluating the function at multiple points in a single call.
+    - argument `f` must return an array of shape ``(n, ...)``. The first
+      axis represents the :math:`n` outputs of :math:`f`; the remainder
+      are for the result of evaluating the function at multiple points.
     - attribute ``df`` of the result object will be an array of shape ``(n, m)``,
       the Jacobian.
 
     This function is also vectorized in the sense that the Jacobian can be
     evaluated at ``k`` points in a single call. In this case, `x` would be an
     array of shape ``(m, k)``, `f` would accept an array of shape
-    ``(m, k, p)`` and return an array of shape ``(n, k, p)``, and the ``df``
+    ``(m, k, ...)`` and return an array of shape ``(n, k, ...)``, and the ``df``
     attribute of the result would have shape ``(n, m, k)``.
+
+`   Suppose the desired callable ``f_not_vectorized`` is not vectorized; it can
+    only accept an array of shape ``(m,)``. A simple solution to satisfy the required
+    interface is to wrap ``f_not_vectorized`` as follows::
+
+        def f(x):
+            return np.apply_along_axis(f_not_vectorized, axis=0, arr=x)
+
+    Alternatively, suppose the desired callable ``f_vec_q`` is vectorized, but
+    only for 2-D arrays of shape ``(m, q)``. To satisfy the required interface,
+    consider::
+
+        def f(x):
+            m, batch = x.shape[0], x.shape[1:]  # x.shape is (m, ...)
+            x = np.reshape(x, (m, -1))  # `-1` is short for q = prod(batch)
+            res = f_vec_q(x)  # pass shape (m, q) to function
+            n = res.shape[0]
+            return np.reshape(res, (n,) + batch)  # return shape (n, ...)
+
+    Then pass the wrapped callable ``f`` as the first argument of `jacobian`.
 
     References
     ----------
