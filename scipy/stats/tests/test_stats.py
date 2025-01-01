@@ -3886,9 +3886,6 @@ def ttest_data_axis_strategy(draw):
     return data, axis
 
 
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 class TestStudentTest:
     # Preserving original test cases.
@@ -4005,6 +4002,8 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason='Too slow.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.xslow
     @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
                       data_axis=ttest_data_axis_strategy())
@@ -5170,9 +5169,6 @@ def _desc_stats(x1, x2, axis=0, *, xp=None):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind(xp):
     # regression test
     tr = xp.asarray(1.0912746897927283)
@@ -5889,9 +5885,6 @@ class Test_ttest_trim:
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 class Test_ttest_CI:
     # indices in order [alternative={two-sided, less, greater},
     #                   equal_var={False, True}, trim={0, 0.2}]
@@ -5986,9 +5979,6 @@ def test__broadcast_concatenate():
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_with_uneq_var(xp):
     # check vs. R `t.test`, e.g.
     # options(digits=20)
@@ -6071,9 +6061,6 @@ def test_ttest_ind_with_uneq_var(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_zero_division(xp):
     # test zero division problem
     x = xp.zeros(3)
@@ -6196,9 +6183,6 @@ def test_gh5686(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_from_stats_inputs_zero(xp):
     # Regression test for gh-6409.
     zero = xp.asarray(0.)
@@ -6210,8 +6194,7 @@ def test_ttest_ind_from_stats_inputs_zero(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
+@pytest.mark.skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
@@ -6251,9 +6234,6 @@ def _convert_pvalue_alternative(t, p, alt, xp):
 
 
 @pytest.mark.slow
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_ttest_1samp_new(xp):
     n1, n2, n3 = (10, 15, 20)
@@ -6341,9 +6321,6 @@ def test_ttest_1samp_new_omit(xp):
     xp_assert_close(t, tr)
 
 
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
