@@ -830,21 +830,23 @@ def test_callback():
                                        callback=callback)
     ]
 
-    for mycallback, call in functools.product(callbacks_nostop, calls):
+    for mycallback, call in product(callbacks_nostop, calls):
         results.clear()
         # Call the different implemented methods
-        res = call(my_callback)
+        res = call(mycallback)
         # Check that callback was called
         assert len(results) > 0
         # Check that results data makes sense
         assert results[-1].nit > 0
         # Check that it didn't stop because of the callback
         assert res.status != -2
+        # final callback x should be same as final result
+        assert_allclose(results[-1].x, res.x)
 
-    for mycallback, call in functools.product(callbacks_stop, calls):
+    for mycallback, call in product(callbacks_stop, calls):
         results.clear()
         # Call the different implemented methods
-        res = call(my_callback)
+        res = call(mycallback)
         # Check that callback was called
         assert len(results) > 0
         # Check that only one iteration was run

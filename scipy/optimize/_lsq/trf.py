@@ -393,8 +393,8 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
         # Call callback function and possibly stop optimization
         if callback is not None:
             intermediate_result = OptimizeResult(
-                x=x_new, fun=f_new, nit=iteration, nfev=nfev)
-            intermediate_result["cost"] = cost_new
+                x=x, fun=f_true, nit=iteration, nfev=nfev)
+            intermediate_result["cost"] = cost
 
             if _call_callback_maybe_halt(
                 callback, intermediate_result
@@ -568,8 +568,8 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
         # Call callback function and possibly stop optimization
         if callback is not None:
             intermediate_result = OptimizeResult(
-                x=x_new, fun=f_new, nit=iteration, nfev=nfev)
-            intermediate_result["cost"] = cost_new
+                x=x, fun=f_true, nit=iteration, nfev=nfev)
+            intermediate_result["cost"] = cost
 
             if _call_callback_maybe_halt(
                 callback, intermediate_result

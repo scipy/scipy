@@ -328,7 +328,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
         # Call callback function and possibly stop optimization
         if callback is not None:
             intermediate_result = OptimizeResult(
-                x=x_new, fun=f_new, nit=iteration, nfev=nfev)
+                x=x, fun=f, nit=iteration, nfev=nfev)
             intermediate_result["cost"] = cost_new
 
             if _call_callback_maybe_halt(
