@@ -2,8 +2,6 @@
 SciPy 1.15.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.15.0 is not released yet!
-
 .. contents::
 
 SciPy 1.15.0 is the culmination of 6 months of hard work. It contains
@@ -376,9 +374,9 @@ with support added for SciPy ``1.15.0`` include:
   and for other backends will transit via NumPy arrays on the host.
 
 
-*******************
-Deprecated features
-*******************
+**************************************
+Deprecated features and future changes
+**************************************
 - Functions `scipy.linalg.interpolative.rand` and
   `scipy.linalg.interpolative.seed` have been deprecated and will be removed
   in SciPy ``1.17.0``.
@@ -388,7 +386,7 @@ Deprecated features
 - `scipy.spatial.distance.kulczynski1` and
   `scipy.spatial.distance.sokalmichener` were deprecated and will be removed
   in SciPy ``1.17.0``.
-- `scipy.stats.find_repeats` is deprecated as of SciPy ``1.15.0`` and will be
+- `scipy.stats.find_repeats` is deprecated and will be
   removed in SciPy ``1.17.0``. Please use
   ``numpy.unique``/``numpy.unique_counts`` instead.
 - `scipy.linalg.kron` is deprecated in favour of ``numpy.kron``.
@@ -396,8 +394,7 @@ Deprecated features
   convolution/correlation functions (`scipy.signal.correlate`,
   `scipy.signal.convolve` and `scipy.signal.choose_conv_method`) and
   filtering functions (`scipy.signal.lfilter`, `scipy.signal.sosfilt`) has
-  been deprecated as of SciPy ``1.15.0`` and will be removed in SciPy
-  ``1.17.0``.
+  been deprecated and will be removed in SciPy ``1.17.0``.
 - `scipy.stats.linregress` has deprecated one-argument use; the two
   variables must be specified as separate arguments.
 - ``scipy.stats.trapz`` is deprecated in favor of `scipy.stats.trapezoid`.
@@ -406,8 +403,9 @@ Deprecated features
   `scipy.special.assoc_legendre_p_all`.
 - `scipy.special.sph_harm` has been deprecated in favor of
   `scipy.special.sph_harm_y`.
-- The raveling of multi-dimensional input by `scipy.linalg.toeplitz` has
-  been deprecated. It will support batching in SciPy ``1.17.0``.
+- Multi-dimensional ``r`` and ``c`` arrays passed to `scipy.linalg.toeplitz`,
+  `scipy.linalg.matmul_toeplitz`, or `scipy.linalg.solve_toeplitz` will be
+  treated as batches of 1-D coefficients beginning in SciPy ``1.17.0``.
 - The ``random_state`` and ``permutations`` arguments of
   `scipy.stats.ttest_ind` are deprecated. Use ``method`` to perform a
   permutation test, instead.
@@ -557,11 +555,11 @@ Authors (commits)
 * Sahil Garje (1) +
 * Gabriel Gerlero (2)
 * Yotam Gingold (1) +
-* Ralf Gommers (110)
+* Ralf Gommers (111)
 * Rohit Goswami (62)
 * Anil Gurses (1) +
 * Oscar Gustafsson (1) +
-* Matt Haberland (389)
+* Matt Haberland (392)
 * Matt Hall (1) +
 * Joren Hammudoglu (6) +
 * CY Han (1) +
@@ -616,7 +614,7 @@ Authors (commits)
 * Tom M. Ragonneau (2)
 * Peter Ralph (1) +
 * Stephan Rave (1) +
-* Tyler Reddy (182)
+* Tyler Reddy (192)
 * redha2404 (2) +
 * Ritvik1sharma (1) +
 * Érico Nogueira Rolim (1) +
@@ -939,9 +937,11 @@ Issues closed for 1.15.0
 * `#22097 <https://github.com/scipy/scipy/issues/22097>`__: DEP: ``interpolate.interpnd.GradientEstimationWarning`` still...
 * `#22112 <https://github.com/scipy/scipy/issues/22112>`__: BUG/DOC: sparse: ND COO unexpected behaviour 1.15.0rc1
 * `#22123 <https://github.com/scipy/scipy/issues/22123>`__: DOC: stats: random variable transition guide launches wrong notebook
+* `#22128 <https://github.com/scipy/scipy/issues/22128>`__: BUG/DOC: it's not clear how to use ``differentiate.jacobian``...
 * `#22137 <https://github.com/scipy/scipy/issues/22137>`__: BUG: ``stats._distribution_infrastructure._Domain.symbols`` class...
 * `#22143 <https://github.com/scipy/scipy/issues/22143>`__: BUG: Fail to call ``BSpline`` after unpickling with ``mmap_mode="r"``
 * `#22146 <https://github.com/scipy/scipy/issues/22146>`__: BUG:``stats.ContinuousDistribution.llf``\ : should not be public
+* `#22204 <https://github.com/scipy/scipy/issues/22204>`__: BUG: signal.ShortTimeFFT: ``istft`` with ``mfft > len(win)``...
 
 ************************
 Pull requests for 1.15.0
@@ -1368,6 +1368,7 @@ Pull requests for 1.15.0
 * `#21668 <https://github.com/scipy/scipy/pull/21668>`__: BUG: fft.fht: set ``u.imag[-1] = 0`` only when ``n`` is even
 * `#21672 <https://github.com/scipy/scipy/pull/21672>`__: BUG: ndimage: fix 0d arrays in ``_normalize_sequence``
 * `#21673 <https://github.com/scipy/scipy/pull/21673>`__: BUG: signal.ShortTimeFFT: fix multichannel roundtrip with ``mfft``...
+* `#21678 <https://github.com/scipy/scipy/pull/21678>`__: BUG: fix ``nan`` output of ``special.betaincinv``
 * `#21680 <https://github.com/scipy/scipy/pull/21680>`__: MAINT:integrate: Silence a few QUADPACK compiler warnings
 * `#21682 <https://github.com/scipy/scipy/pull/21682>`__: DOC: Reduce duplication in user guide
 * `#21686 <https://github.com/scipy/scipy/pull/21686>`__: BUG: signal: int handling for ``resample_poly``
@@ -1573,6 +1574,7 @@ Pull requests for 1.15.0
 * `#22135 <https://github.com/scipy/scipy/pull/22135>`__: MAINT: _lib: add missing f string to _deprecate_positional_args
 * `#22139 <https://github.com/scipy/scipy/pull/22139>`__: MAINT: stats._SimpleDomain: ensure that instances do not share...
 * `#22149 <https://github.com/scipy/scipy/pull/22149>`__: MAINT: stats.ContinuousDistribution.llf: remove method
+* `#22150 <https://github.com/scipy/scipy/pull/22150>`__: MAINT: SciPy 1.15.0rc2 backports
 * `#22156 <https://github.com/scipy/scipy/pull/22156>`__: DEP: deprecation warnings for ``special.lpn`` and ``[c]lpmn``
 * `#22158 <https://github.com/scipy/scipy/pull/22158>`__: MAINT: accept ndarray subclasses in interpolate._dierckx
 * `#22162 <https://github.com/scipy/scipy/pull/22162>`__: TYP: temporarily ignore the ``numpy==2.2.1`` mypy errors
@@ -1580,4 +1582,7 @@ Pull requests for 1.15.0
 * `#22168 <https://github.com/scipy/scipy/pull/22168>`__: BUG: fix incorrect values in factorial for 0 with uint dtypes
 * `#22175 <https://github.com/scipy/scipy/pull/22175>`__: MAINT: stats: fix thread-safety issues under free-threaded CPython
 * `#22177 <https://github.com/scipy/scipy/pull/22177>`__: MAINT: fix extension module not declaring free-threading support,...
+* `#22181 <https://github.com/scipy/scipy/pull/22181>`__: REL: set 1.15.0rc3 unreleased
+* `#22193 <https://github.com/scipy/scipy/pull/22193>`__: DEP: linalg.solve_toeplitz/matmul_toeplitz: warn on n-D ``c``\...
+* `#22225 <https://github.com/scipy/scipy/pull/22225>`__: DOC: differentiate.jacobian: correct/improve documentation about...
 
