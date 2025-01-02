@@ -1422,8 +1422,8 @@ subroutine <prefix>sytri(lower,n,a,lda,ipiv,work,info)
 
     integer optional intent(in), check(lower==0||lower==1) :: lower = 0
     integer intent(hide), depend(a) :: n=shape(a,1)
-    <ftype> dimension(n,n),intent(in,out,copy,out=inv_a) :: a
-    integer depend(n),intent(hide) :: lda = max(n,1)
+    <ftype> dimension(lda,n),intent(in,out,copy,out=inv_a) :: a
+    integer depend(a),intent(hide) :: lda = max(shape(a,0),1)
     integer depend(n),dimension(n),intent(in) :: ipiv
     <ftype> depend(n),dimension(n),intent(hide,cache) :: work
     integer intent(out):: info
@@ -1440,8 +1440,8 @@ subroutine <prefix2c>hetri(lower,n,a,lda,ipiv,work,info)
 
     integer optional intent(in), check(lower==0||lower==1) :: lower = 0
     integer intent(hide), depend(a) :: n=shape(a,1)
-    <ftype2c> dimension(n,n),intent(in,out,copy,out=inv_a) :: a
-    integer depend(n),intent(hide) :: lda = max(n,1)
+    <ftype2c> dimension(lda,n),intent(in,out,copy,out=inv_a) :: a
+    integer depend(a),intent(hide) :: lda = max(shape(a,0),1)
     integer depend(n),dimension(n),intent(in) :: ipiv
     <ftype2c> depend(n),dimension(n),intent(hide,cache) :: work
     integer intent(out):: info
