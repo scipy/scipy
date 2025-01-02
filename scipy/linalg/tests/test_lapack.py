@@ -3487,6 +3487,29 @@ def test_sy_hetrs(mtype, dtype, lower):
     assert_allclose(A@x, b, atol=100*n*eps)
 
 
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('lower', (0, 1))
+def test_sytri(dtype, lower):
+    rng = np.random.default_rng(1723059677121834)
+    n = 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A += A.T
+    trf, tri = get_lapack_funcs(("sytrf", "sytri"), dtype=dtype)
+    ldu, ipiv, info = trf(A, lower=lower)
+    assert info == 0
+    A_inv, info = tri(a=ldu, ipiv=ipiv, lower=lower)
+    assert info == 0
+    eps = np.finfo(dtype).eps
+    ref = np.linalg.inv(A)
+    if lower:
+        assert_allclose(np.tril(A_inv), np.tril(ref), atol=100*n*eps)
+    else:
+        assert_allclose(np.triu(A_inv), np.triu(ref), atol=100*n*eps)
+
+
 @pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
 @pytest.mark.parametrize('uplo, m, n', [('U', 5, 10), ('U', 10, 10),
                                         ('L', 10, 5), ('L', 10, 10)])

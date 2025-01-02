@@ -673,6 +673,11 @@ All functions
    csytrf_lwork
    zsytrf_lwork
 
+   ssytri
+   dsytri
+   csytri
+   zsytri
+
    ssytrs
    dsytrs
    csytrs
