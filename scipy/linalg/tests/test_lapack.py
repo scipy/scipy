@@ -3479,9 +3479,9 @@ def test_sy_hetrs(mtype, dtype, lower):
     names = f'{mtype}trf', f'{mtype}trf_lwork', f'{mtype}trs'
     trf, trf_lwork, trs = get_lapack_funcs(names, dtype=dtype)
     lwork = trf_lwork(n, lower=lower)
-    ldu, ipiv, info = trf(A, lwork=lwork)
+    ldu, ipiv, info = trf(A, lwork=lwork, lower=lower)
     assert info == 0
-    x, info = trs(a=ldu, ipiv=ipiv, b=b)
+    x, info = trs(a=ldu, ipiv=ipiv, b=b, lower=lower)
     assert info == 0
     eps = np.finfo(dtype).eps
     assert_allclose(A@x, b, atol=100*n*eps)
