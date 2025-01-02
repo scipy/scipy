@@ -1411,6 +1411,7 @@ subroutine <prefix2c>heequb(lower,n,a,lda,s,scond,amax,work,info)
 
 end subroutine <prefix2c>heequb
 
+
 subroutine <prefix>sytri(lower,n,a,lda,ipiv,work,info)
     ! ?SYTRI computes the inverse of a symmetric indefinite matrix
     ! A using the factorization A = U*D*U**T or A = L*D*L**T computed by
@@ -1427,3 +1428,22 @@ subroutine <prefix>sytri(lower,n,a,lda,ipiv,work,info)
     <ftype> depend(n),dimension(n),intent(hide,cache) :: work
     integer intent(out):: info
 end subroutine <prefix>sytri
+
+
+subroutine <prefix2c>hetri(lower,n,a,lda,ipiv,work,info)
+    ! ?HETRI computes the inverse of a complex Hermitian indefinite matrix
+    ! A using the factorization A = U*D*U**H or A = L*D*L**H computed by
+    ! ?HETRF.
+    threadsafe
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&info)
+    callprotoargument char*, F_INT*, <ctype2c>*, F_INT*, F_INT*, <ctype2c>*, F_INT*
+
+    integer optional intent(in), check(lower==0||lower==1) :: lower = 0
+    integer intent(hide), depend(a) :: n=shape(a,1)
+    <ftype2c> dimension(n,n),intent(in,out,copy,out=inv_a) :: a
+    integer depend(n),intent(hide) :: lda = max(n,1)
+    integer depend(n),dimension(n),intent(in) :: ipiv
+    <ftype2c> depend(n),dimension(n),intent(hide,cache) :: work
+    integer intent(out):: info
+end subroutine <prefix2c>hetri
+

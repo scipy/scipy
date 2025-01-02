@@ -350,6 +350,9 @@ All functions
    chetrf_lwork
    zhetrf_lwork
 
+   chetri
+   zhetri
+
    chetrs
    zhetrs
 
