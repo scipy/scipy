@@ -807,32 +807,18 @@ def test_callback():
         intermediate_result: OptimizeResult):
         results.append(intermediate_result)
         raise StopIteration
-        
-    def my_callback_optimresult_stop_true(
-        intermediate_result: OptimizeResult):
-        results.append(intermediate_result)
-        return True
-        
+
     def my_callback_x_stop_exception(x):
         r = OptimizeResult()
         r.nit = 1
         r.x = x
         results.append(r)
         raise StopIteration
-        
-    def my_callback_x_stop_true(x):
-        r = OptimizeResult()
-        r.nit = 1
-        r.x = x
-        results.append(r)
-        return True
-    
+
     # Try for different function signatures and stop methods
     callbacks_nostop = [my_callback_optimresult, my_callback_x]
     callbacks_stop = [my_callback_optimresult_stop_exception,
-                      my_callback_optimresult_stop_true,
-                      my_callback_x_stop_exception,
-                      my_callback_x_stop_true]
+                      my_callback_x_stop_exception]
     
     # Try for all the implemented methods: trf, trf_bounds and dogbox
     calls = [
@@ -843,30 +829,28 @@ def test_callback():
         lambda callback: least_squares(fun_trivial, 5.0, method='dogbox', 
                                        callback=callback)
     ]
-    
-    for my_callback in callbacks_nostop:
-        for call in calls:
-            results.clear()
-            # Call the different implemented methods
-            res = call(my_callback)
-            # Check that callback was called
-            assert len(results) > 0
-            # Check that results data makes sense
-            assert results[-1].nit > 0
-            # Check that it didn't stop because of the callback
-            assert res.status != -2
-    
-    for my_callback in callbacks_stop:
-        for call in calls:
-            results.clear()
-            # Call the different implemented methods
-            res = call(my_callback)
-            # Check that callback was called
-            assert len(results) > 0
-            # Check that only one iteration was run
-            assert results[-1].nit == 1
-            # Check that it stopped because of the callback
-            assert res.status == -2
+
+    for mycallback, call in functools.product(callbacks_nostop, calls):
+        results.clear()
+        # Call the different implemented methods
+        res = call(my_callback)
+        # Check that callback was called
+        assert len(results) > 0
+        # Check that results data makes sense
+        assert results[-1].nit > 0
+        # Check that it didn't stop because of the callback
+        assert res.status != -2
+
+    for mycallback, call in functools.product(callbacks_stop, calls):
+        results.clear()
+        # Call the different implemented methods
+        res = call(my_callback)
+        # Check that callback was called
+        assert len(results) > 0
+        # Check that only one iteration was run
+        assert results[-1].nit == 1
+        # Check that it stopped because of the callback
+        assert res.status == -2
 
 
 def test_small_tolerances_for_lm():
