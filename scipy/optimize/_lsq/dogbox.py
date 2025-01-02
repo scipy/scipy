@@ -45,6 +45,8 @@ from numpy.linalg import lstsq, norm
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from scipy.optimize import OptimizeResult
+from scipy._lib._util import _call_callback_maybe_halt
+
 
 from .common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
@@ -328,14 +330,10 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
             intermediate_result = OptimizeResult(
                 x=x_new, fun=f_new, nit=iteration, nfev=nfev)
             intermediate_result["cost"] = cost_new
-            
-            try:
-                if callback(intermediate_result):
-                    # Callback returns True, stop optimization
-                    termination_status = -2
-                    break
-            except StopIteration:
-                # Callback raises StopIteration, stop optimization
+
+            if _call_callback_maybe_halt(
+                callback, intermediate_result
+            ):
                 termination_status = -2
                 break
 

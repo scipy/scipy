@@ -107,6 +107,7 @@ from .common import (
     CL_scaling_vector, compute_grad, compute_jac_scale, check_termination,
     update_tr_radius, scale_for_robust_loss_function, print_header_nonlinear,
     print_iteration_nonlinear)
+from scipy._lib._util import _call_callback_maybe_halt
 
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
@@ -394,17 +395,12 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
             intermediate_result = OptimizeResult(
                 x=x_new, fun=f_new, nit=iteration, nfev=nfev)
             intermediate_result["cost"] = cost_new
-            
-            try:
-                if callback(intermediate_result):
-                    # Callback returns True, stop optimization
-                    termination_status = -2
-                    break
-            except StopIteration:
-                # Callback raises StopIteration, stop optimization
+
+            if _call_callback_maybe_halt(
+                callback, intermediate_result
+            ):
                 termination_status = -2
                 break
-                
 
     if termination_status is None:
         termination_status = 0
@@ -574,14 +570,10 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
             intermediate_result = OptimizeResult(
                 x=x_new, fun=f_new, nit=iteration, nfev=nfev)
             intermediate_result["cost"] = cost_new
-            
-            try:
-                if callback(intermediate_result):
-                    # Callback returns True, stop optimization
-                    termination_status = -2
-                    break
-            except StopIteration:
-                # Callback raises StopIteration, stop optimization
+
+            if _call_callback_maybe_halt(
+                callback, intermediate_result
+            ):
                 termination_status = -2
                 break
 

@@ -245,8 +245,9 @@ def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=1.0, loss='linear',
         f_scale=1.0, diff_step=None, tr_solver=None, tr_options=None,
-        jac_sparsity=None, max_nfev=None, verbose=0, callback=None, 
-        args=(), kwargs=None):
+        jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs=None,
+        callback=None
+):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
     Given the residuals f(x) (an m-D real function of n real
@@ -443,32 +444,31 @@ def least_squares(
         * 1 : display a termination report.
         * 2 : display progress during iterations (not supported by 'lm'
           method).
-          
-    callback : None or callable, optional
-        Callback function that is called by the algorithm on each iteration. 
-        This can be used to print or plot the optimization results at each
-        step, and to stop the optimization algorithm based on some user-defined
-        condition.  Only implemented for the `trf` and `dogbox` methods.
-        
-        The signature is ``callback(intermediate_result: OptimizeResult)``
-        
-        `intermediate_result is a `scipy.optimize.OptimizeResult` 
-        which contains the intermediate results of the optimization at the 
-        current iteration.
-        
-        The callback also supports a signature like: ``callback(x)``
-
-        Introspection is used to determine which of the signatures is invoked.
-       
-        If the `callback` function raises `StopIteration` or returns `True`,
-        the optimization algorithm will stop and return with status code -2.
-        
-        .. versionadded:: 1.16.0
 
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)`` and the same for
         `jac`.
+    callback : None or callable, optional
+        Callback function that is called by the algorithm on each iteration.
+        This can be used to print or plot the optimization results at each
+        step, and to stop the optimization algorithm based on some user-defined
+        condition.  Only implemented for the `trf` and `dogbox` methods.
+
+        The signature is ``callback(intermediate_result: OptimizeResult)``
+
+        `intermediate_result is a `scipy.optimize.OptimizeResult`
+        which contains the intermediate results of the optimization at the
+        current iteration.
+
+        The callback also supports a signature like: ``callback(x)``
+
+        Introspection is used to determine which of the signatures is invoked.
+
+        If the `callback` function raises `StopIteration` the optimization algorithm
+        will stop and return with status code -2.
+
+        .. versionadded:: 1.16.0
 
     Returns
     -------
@@ -512,7 +512,7 @@ def least_squares(
         status : int
             The reason for algorithm termination:
 
-            * -2 : terminated because callback raised StopIteration or returned True
+            * -2 : terminated because callback raised StopIteration.
             * -1 : improper input parameters status returned from MINPACK.
             *  0 : the maximum number of function evaluations is exceeded.
             *  1 : `gtol` termination condition is satisfied.
