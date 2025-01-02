@@ -853,7 +853,7 @@ def test_callback():
             assert len(results) > 0
             # Check that results data makes sense
             assert results[-1].nit > 0
-            # Check that it didn´t stop because of the callback
+            # Check that it didn't stop because of the callback
             assert res.status != -2
     
     for my_callback in callbacks_stop:
