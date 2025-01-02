@@ -147,7 +147,7 @@ def dogleg_step(x, newton_step, g, a, b, tr_bounds, lb, ub):
 
 
 def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
-           loss_function, tr_solver, tr_options, verbose):
+           loss_function, tr_solver, tr_options, verbose, callback=None):
     f = f0
     f_true = f.copy()
     nfev = 1
@@ -322,6 +322,22 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
             actual_reduction = 0
 
         iteration += 1
+        
+        # Call callback function and possibly stop optimization
+        if callback is not None:
+            intermediate_result = OptimizeResult(
+                x=x_new, fun=f_new, nit=iteration, nfev=nfev)
+            intermediate_result["cost"] = cost_new
+            
+            try:
+                if callback(intermediate_result):
+                    # Callback returns True, stop optimization
+                    termination_status = -2
+                    break
+            except StopIteration:
+                # Callback raises StopIteration, stop optimization
+                termination_status = -2
+                break
 
     if termination_status is None:
         termination_status = 0
