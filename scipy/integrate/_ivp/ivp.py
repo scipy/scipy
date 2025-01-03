@@ -787,10 +787,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             ti.append(t)
 
         if callback is not None:
-            int_result = IntermediateOdeResult(t=ts, y=ys, sol=sol, t_events=t_events, y_events=y_events,
-                    nfev=solver.nfev, njev=solver.njev, nlu=solver.nlu,
-                    solver=solver, current_t=solver.t, current_y=solver.y,
-                    active_events=active_events)
+            int_result = IntermediateOdeResult(
+                t=ts, y=ys, sol=sol, t_events=t_events, y_events=y_events,
+                nfev=solver.nfev, njev=solver.njev, nlu=solver.nlu, solver=solver,
+                current_t=solver.t, current_y=solver.y, active_events=active_events
+            )
             try:
                 callback(int_result)
             except StopIteration:

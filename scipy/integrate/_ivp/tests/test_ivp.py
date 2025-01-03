@@ -1298,9 +1298,10 @@ def test_callable():
 
 def test_callable_dense_output():
     callable_fun = Mock()
-    sol = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun, dense_output=True)
+    _ = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun,
+                  dense_output=True)
 
-    call_args, call_kwargs = callable_fun.call_args
+    call_args, _ = callable_fun.call_args
 
     assert isinstance(call_args[0].sol, DenseOutput)
 
@@ -1357,4 +1358,5 @@ def test_callable_events():
     def event_fun2(t, y):
         return t - 1.5
 
-    solve_ivp(fun_linear, [0, 2], [0, 2], events=[event_fun, event_fun2], callback=CallableCountingEvents(), max_step=0.1)
+    solve_ivp(fun_linear, [0, 2], [0, 2], events=[event_fun, event_fun2],
+              callback=CallableCountingEvents(), max_step=0.1)
