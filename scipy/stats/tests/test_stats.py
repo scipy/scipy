@@ -2873,9 +2873,9 @@ class TestZmapZscore:
 
     def test_zmap_axis(self, xp):
         # Test use of 'axis' keyword in zmap.
-        x = np.array([[0.0, 0.0, 1.0, 1.0],
-                      [1.0, 1.0, 1.0, 2.0],
-                      [2.0, 0.0, 2.0, 0.0]])
+        x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 2.0],
+                        [2.0, 0.0, 2.0, 0.0]])
 
         t1 = 1.0/(2.0/3)**0.5
         t2 = 3.**0.5/3
@@ -2890,6 +2890,8 @@ class TestZmapZscore:
         z1_expected = [[-1.0, -1.0, 1.0, 1.0],
                        [-t2, -t2, -t2, 3.**0.5],
                        [1.0, -1.0, 1.0, -1.0]]
+        z0_expected = xp.asarray(z0_expected)
+        z1_expected = xp.asarray(z1_expected)
 
         xp_assert_close(z0, z0_expected)
         xp_assert_close(z1, z1_expected)

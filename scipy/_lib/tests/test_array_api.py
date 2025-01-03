@@ -97,8 +97,16 @@ class TestArrayAPI:
         if xp == np:
             xp_assert_equal(x, y, **options)
         else:
-            with pytest.raises(AssertionError, match="Namespaces do not match."):
+            with pytest.raises(
+                AssertionError,
+                match="Namespace of desired array does not match",
+            ):
                 xp_assert_equal(x, y, **options)
+            with pytest.raises(
+                AssertionError,
+                match="Namespace of actual and desired arrays do not match",
+            ):
+                xp_assert_equal(y, x, **options)
 
         options = dict(zip(kwarg_names, [False, True, False, False]))
         if y.dtype.name in str(x.dtype):

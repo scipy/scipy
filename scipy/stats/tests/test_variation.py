@@ -32,9 +32,10 @@ class TestVariation:
         expected = xp.asarray(sgn*math.sqrt(2)/3)
         xp_assert_close(v, expected, rtol=1e-10)
 
-    def test_scalar(self, xp):
+    @skip_xp_backends(np_only=True, reason="test plain python scalar input")
+    def test_scalar(self):
         # A scalar is treated like a 1-d sequence with length 1.
-        xp_assert_equal(variation(4.0), 0.0)
+        assert variation(4.0) == 0.0
 
     @pytest.mark.parametrize('nan_policy, expected',
                              [('propagate', np.nan),
