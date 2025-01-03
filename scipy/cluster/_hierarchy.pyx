@@ -365,6 +365,10 @@ def cophenetic_distances(const double[:, :] Z, double[:] d, int n):
         # back to the root of current subtree
         dist = Z[root, 2]
         right_start = left_start[k] + n_lc
+        # NOTE: an invalid linkage matrix (gh-22183)
+        # can cause an out of bounds memory access
+        # of `j` on `members` memoryview below, if not
+        # caught ahead of time by `is_valid_linkage`
         for i in range(left_start[k], right_start):
             for j in range(right_start, right_start + n_rc):
                 d[condensed_index(n, members[i], members[j])] = dist
