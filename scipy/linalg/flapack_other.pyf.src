@@ -2353,7 +2353,7 @@ function <prefix>lantr(norm, uplo, diag, m, n, a, lda, work) result(n2)
     integer intent(hide), depend(m) :: lda = MAX(1, m)
     <ftypereal> intent(cache,hide), dimension(lda) :: work
 
-end subroutine <prefix>lantr
+end function <prefix>lantr
 
 subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
     integer intent(in), check(n>=1) :: n

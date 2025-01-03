@@ -359,6 +359,11 @@ All functions
    slamch
    dlamch
 
+   slangb
+   dlangb
+   clangb
+   zlangb
+
    slange
    dlange
    clange
