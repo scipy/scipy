@@ -1,6 +1,8 @@
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, xp_ravel, xp_copy
+from scipy._lib._array_api import (
+    array_namespace, xp_ravel, xp_copy, is_torch,  xp_default_dtype
+)
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy import special
@@ -291,8 +293,15 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     # on each callable to get the shape and dtype, then we broadcast these
     # shapes, compute the result dtype, and broadcast/promote the zeroth terms
     # and `*args` to this shape/dtype.
+
     # `float32` here avoids influencing precision of resulting float type
-    zero = xp.asarray(0, dtype=xp.float32)
+    # patch up promotion: in numpy (int64, float32) -> float64, while in torch
+    # (int64, float32) -> float32 irrespective of the default_dtype.
+    dt = {'dtype': None
+          if is_torch(xp) and xp_default_dtype(xp) == xp.float64
+          else xp.float32}
+    zero = xp.asarray(0, **dt)
+
     temp = eim._initialize(a, (zero,), args, complex_ok=True)
     _, _, fs_a, _, shape_a, dtype_a, xp_a = temp
     temp = eim._initialize(b, (zero,), args, complex_ok=True)
