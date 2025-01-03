@@ -5,6 +5,7 @@ from .radau import Radau
 from .rk import RK23, RK45, DOP853
 from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
+from scipy._lib._util import _RichResult
 from .common import EPS, OdeSolution
 from .base import OdeSolver
 
@@ -25,6 +26,46 @@ MESSAGES = {0: "The solver successfully reached the end of the integration inter
 class OdeResult(OptimizeResult):
     pass
 
+class IntermediateOdeResult(_RichResult):
+    """
+    Represents an in-progress ode result.
+
+    Attributes
+    ----------
+    t : list, length (n_points)
+        Time points of solution up to and including current time step.
+        Unlike the result from `solve_ivp`, this is a list.
+    y : ndarray, shape (n, n_points)
+        Values of the solution at time points `t`. Unlike the
+        result from `solve_ivp`, this is a list.  It is also
+        transposed with respect to the result from `solve_ivp`.
+    sol : `OdeSolution` or None
+        Found solution as `OdeSolution` instance; None if `dense_output` was
+        set to False.
+    t_events : list of ndarray or None
+        Contains for each event type a list of arrays at which an event of
+        that type event was detected. None if `events` was None.
+    y_events : list of ndarray or None
+        For each value of `t_events`, the corresponding value of the solution.
+        None if `events` was None.
+    nfev : int
+        Number of evaluations of the right-hand side.
+    njev : int
+        Number of evaluations of the Jacobian.
+    nlu : int
+        Number of LU decompositions.
+    solver : OdeSolver
+        Solver object. Can be used to interact with the solver directly.
+        It is not recommended to change the RHS ``fun`` or state, i.e. ``y``,
+        inside the solver during integration.
+    current_t : float
+        Time after last integration step.
+    current_y : ndarray, shape (n,)
+        Value of solution after last integration step.
+    active_events : ndarray or None
+        Indices of events that occured during last integration step.
+
+    """
 
 def prepare_events(events):
     """Standardize event functions and extract attributes."""
@@ -297,8 +338,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         signature, and `args` must be a tuple of length 3.
     callback : callable, optional
         Callable that is executed after every step. The function signature is
-        ``fun(solver)``, where ``solver`` is an ``OdeSolver`` object, e.g.
-        ``RK45``.
+        ``fun(sol)``, where ``sol`` is an `IntermediateOdeResult` object.
     **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -675,6 +715,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         else:
             sol = None
 
+        active_events = None
         if events is not None:
             g_new = [event(t, y) for event in events]
             active_events = find_active_events(g, g_new, event_dir)
@@ -724,8 +765,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             ti.append(t)
 
         if callback is not None:
+            int_result = IntermediateOdeResult(t=ts, y=ys, sol=sol, t_events=t_events, y_events=y_events,
+                    nfev=solver.nfev, njev=solver.njev, nlu=solver.nlu,
+                    solver=solver, current_t=solver.t, current_y=solver.y,
+                    active_events=active_events)
             try:
-                callback(solver)
+                callback(int_result)
             except StopIteration:
                 status = 2
 
