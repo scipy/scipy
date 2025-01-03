@@ -35,6 +35,7 @@ from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api_no_0d import xp_assert_equal, array_namespace
+from scipy._lib._util import MapWrapper
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -3255,3 +3256,31 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nfev == res_sparse.nfev
     assert res_dense.njev == res_sparse.njev
     assert res_dense.nhev == res_sparse.nhev
+
+
+@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize('method', ['l-bfgs-b'])
+class TestWorkers:
+
+    def setup_method(self):
+        self.x0 = np.array([1.0, 2.0, 3.0])
+
+    def test_smoke(self, workers, method):
+        workers = workers or map
+        with MapWrapper(workers) as mf:
+            optimize.minimize(
+                rosen, self.x0, options={"workers":mf}, method=method
+            )
+
+    def test_equal_bounds(self, workers, method):
+        workers = workers or map
+        if method not in ['l-bfgs-b']:
+            pytest.skip(f"{method} cannot use bounds")
+
+        bounds = Bounds([0, 2.0, 0.], [10., 2.0, 10.])
+        with MapWrapper(workers) as mf:
+            res = optimize.minimize(
+                rosen, self.x0, bounds=bounds, options={"workers": mf}, method=method
+            )
+        assert res.success
+        assert_equal(res.x[1], 2.0)
