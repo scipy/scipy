@@ -13,7 +13,6 @@
     {
         "name": "1.14.1",
         "version":"1.14.1",
-        "preferred": true,
         "url": "https://docs.scipy.org/doc/scipy-1.14.1/"
     },
     {
