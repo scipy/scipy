@@ -1659,6 +1659,116 @@ class TestTukeyHSD:
         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
 
 
+class TestGamesHowell:
+    # data with unequal variances
+    data_same_size = ([24., 23., 31., 51.],
+            [34., 18., 18., 26.],
+            [17., 68., 59.,  7.])
+
+    data_diff_size = ([30.0, 23.0, 51.0],
+                      [-81.0, 71.0, -27.0, 63.0],
+                      [42.0, 11.0, 29.0, 19.0, 50.0],
+                      [23.0, 22.0, 20.0, 18.0, 9.0])
+
+    spss_same_size = """
+            Mean Difference (I-J)  Lower Bound  Upper Bound  Sig
+    0 - 1   8.25                   -16.5493     33.0493      0.559  
+    0 - 2  -5.50                   -63.6702     52.6702      0.941  
+    1 - 2  -13.75                  -74.3174     46.8174      0.683
+    """
+
+    spss_diff_size = """
+            Mean Difference (I-J)  Lower Bound Upper Bound  Sig
+    0 - 1	28.16667	           -141.9854   198.3187	    0.873
+    0 - 2	4.46667	               -37.2831    46.2164	    0.975
+    0 - 3	16.26667	           -35.0933    67.6266	    0.426
+    1 - 2	-23.70000	           -195.3156   147.9156	    0.915
+    1 - 3	-11.90000	           -188.1055   164.3055	    0.986
+    2 - 3	11.80000	           -16.2895	   39.8895      0.476
+    """
+
+    @pytest.mark.parametrize("data, res_expect_str",
+                            ((data_same_size, spss_same_size),
+                            (data_diff_size, spss_diff_size)),
+                            ids=["equal size sample",
+                                 "unequal sample size"])
+    def test_compare_spss(self, data, res_expect_str):
+        """
+        ONEWAY Value BY Group
+          /MISSING ANALYSIS
+          /CRITERIA=CILEVEL(0.95)
+          /POSTHOC=GH ALPHA(0.05)
+        """
+        res_expect = np.asarray(
+            res_expect_str.replace(" - ", " ").split()[8:],
+            dtype=float).reshape(-1, 6)
+        res_games = stats.games_howell(*data)
+        conf = res_games.confidence_interval()
+        # loop over the comparisons
+        for i, j, s, l, h, p in res_expect:
+            i, j = int(i), int(j)
+            assert_allclose(conf.low[i, j], l, atol=1e-4)
+            assert_allclose(res_games.statistic[i, j], s, atol=1e-4)
+            assert_allclose(conf.high[i, j], h, atol=1e-4)
+            assert_allclose(res_games.pvalue[i, j], p, atol=1e-3)
+
+    r_same_size = """
+               q value Pr(>|q|)  
+    1 - 0 == 0   -1.52  0.55873 
+    2 - 0 == 0    0.48  0.94115
+    2 - 1 == 0    1.25  0.68298  
+    """
+
+    r_diff_size = """
+               q value Pr(>|q|)  
+    1 - 0 == 0  -1.059  0.87275  
+    2 - 0 == 0  -0.572  0.97526  
+    3 - 0 == 0  -2.621  0.42625  
+    2 - 1 == 0   0.897  0.91490
+    3 - 1 == 0   0.458  0.98614  
+    3 - 2 == 0  -2.199  0.47553
+    """
+
+    @pytest.mark.parametrize("data, res_expect_str",
+                            ((data_same_size, r_same_size),
+                            (data_diff_size, r_diff_size)),
+                            ids=["equal size sample",
+                                 "unequal sample size"])
+    def test_compare_r(self, data, res_expect_str):
+        """
+        games-howell is provided by PMCMRplus package
+        https://search.r-project.org/CRAN/refmans/PMCMRplus/html/gamesHowellTest.html
+        > library("PMCMRplus")
+        > table = data.frame(
+            values = c(24., 23., 31., 51., 34., 18., 18., 26., 17., 68., 59.,  7.),
+            groups = c("0", "0", "0", "0", "1", "1", "1", "1", "2", "2", "2", "2")
+          )
+        > table$groups = as.factor(table$groups)
+        > fit <-aov(values ~ groups, table)
+        > res = gamesHowellTest(fit)
+        > summary(res)
+        """
+        res_expect = np.asarray(
+            res_expect_str.replace(" - ", " ")
+            .replace(" == ", " ").split()[3:],
+            dtype=float).reshape(-1, 5)
+        res_games = stats.games_howell(*data)
+        # loop over the comparisons
+        # note confidence intervals are not provided by PMCMRplus
+        for j, i, _, _, p in res_expect:
+            i, j = int(i), int(j)
+            assert_allclose(res_games.pvalue[i, j], p, atol=1e-5)
+
+    @pytest.mark.parametrize("cl", [-.5, 0, 1, 2])
+    def test_conf_level_invalid(self, cl):
+        with assert_raises(ValueError, match="must be between 0 and 1"):
+            r = stats.games_howell([23, 7, 3], [3, 4], [9, 4])
+            r.confidence_interval(cl)
+
+    # Data validation test has been covered by TestTukeyHSD
+    # like empty, 1d, inf, and lack of tretments
+    # because games_howell leverage _tukey_hsd_iv()
+
 class TestPoissonMeansTest:
     @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
         # example from [1], 6. Illustrative examples: Example 1
