@@ -547,6 +547,28 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     [array([[-5.68434189e-14, -1.00000000e+01]]),
      array([[1.00000000e+02, 1.77635684e-15]])]
 
+    A callback after each integration step can be used for multiple purposes.
+    One purpose is to print the progress of the integration.
+
+    >>> def print_progress(int_result):
+    ...     if int_result.solver.nstep == 1:
+    ...         print(f"{'# steps':^15}|{'time':^15}|{'step size':^15}")
+    ...         print("_"*48)
+    ...     print(f"{int_result.solver.nstep:^15.0f}|"
+    ...           f"{int_result.current_t:^15.1e}|"
+    ...           f"{int_result.solver.step_size:^15.1e}")
+    >>> _ = solve_ivp(upward_cannon, [0, 100], [0, 10], events=(hit_ground,),
+    ...               callback=print_progress)
+        # steps    |     time      |   step size
+    ________________________________________________
+           1       |    1.0e-04    |    1.0e-04
+           2       |    1.1e-03    |    1.0e-03
+           3       |    1.1e-02    |    1.0e-02
+           4       |    1.1e-01    |    1.0e-01
+           5       |    1.1e+00    |    1.0e+00
+           6       |    1.1e+01    |    1.0e+01
+           7       |    1.0e+02    |    8.9e+01
+
     As an example of a system with additional parameters, we'll implement
     the Lotka-Volterra equations [12]_.
 
