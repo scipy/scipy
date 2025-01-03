@@ -55,7 +55,8 @@ class DijkstraDensity(Benchmark):
     param_names = ["n", "density"]
 
     def setup(self, n, density):
-       self.graph = (scipy.sparse.rand(n, n, density, format='csr') * 100).astype(np.uint32)
+       G = scipy.sparse.rand(n, n, density, format='csr') * 100
+       self.graph = G.astype(np.uint32)
 
 
     def time_test_shortest_path(self, n, density):
