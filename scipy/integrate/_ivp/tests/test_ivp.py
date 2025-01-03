@@ -1278,3 +1278,19 @@ def test_callable():
     assert call_kwargs == {}
     assert len(call_args) == 1
     assert isinstance(call_args[0], OdeSolver)
+
+
+def test_callable_stop_iteration():
+
+    # run first to confirm it normally runs more than 1 step
+    callable_fun = Mock()
+    sol = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun)
+    assert callable_fun.call_count > 1
+
+    # Stop iteration after 1 step using callback
+    callable_fun = Mock()
+    callable_fun.side_effect = StopIteration
+    sol = solve_ivp(fun_linear, [0, 2], [0, 2], callback=callable_fun)
+    assert callable_fun.call_count == 1  # Stopped after first iteration
+    assert sol.status == 2
+    assert sol.message == 'Solver stopped via callback.'

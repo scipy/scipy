@@ -18,7 +18,8 @@ METHODS = {'RK23': RK23,
 
 
 MESSAGES = {0: "The solver successfully reached the end of the integration interval.",
-            1: "A termination event occurred."}
+            1: "A termination event occurred.",
+            2: "Solver stopped via callback."}
 
 
 class OdeResult(OptimizeResult):
@@ -658,9 +659,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     while status is None:
         message = solver.step()
 
-        if callback is not None:
-            callback(solver)
-
         if solver.status == 'finished':
             status = 0
         elif solver.status == 'failed':
@@ -724,6 +722,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         if t_eval is not None and dense_output:
             ti.append(t)
+
+        if callback is not None:
+            try:
+                callback(solver)
+            except StopIteration:
+                status = 2
 
     message = MESSAGES.get(status, message)
 
