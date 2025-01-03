@@ -1,4 +1,6 @@
 """benchmarks for the scipy.sparse.csgraph module"""
+from functools import partial
+
 import numpy as np
 import scipy.sparse
 
@@ -55,8 +57,14 @@ class DijkstraDensity(Benchmark):
     param_names = ["n", "density"]
 
     def setup(self, n, density):
-       G = scipy.sparse.rand(n, n, density, format='csr') * 100
-       self.graph = G.astype(np.uint32)
+        rng = np.random.default_rng(42)
+        G = scipy.sparse.random_array(
+            shape=(n, n),
+            density=density,
+            format='csr',
+            rng=rng,
+        ) * 100
+        self.graph = G.astype(np.uint32)
 
 
     def time_test_shortest_path(self, n, density):
