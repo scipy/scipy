@@ -13,14 +13,13 @@ from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 
 from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
-                                   xp_copy, is_array_api_strict)
+                                   is_array_api_strict)
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
+import scipy._lib.array_api_extra as xpx
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
-
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 @pytest.mark.slow
@@ -347,17 +346,13 @@ class TestContainsNaNTest:
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)[0]
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
-    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))
         x = xp.asarray(x0)
-        x_nan = xp_copy(x, xp=xp)
-        x_nan[1, 2, 1] = np.nan
+        x_nan = xpx.at(x)[1, 2, 1].set(np.nan, copy=True)
 
         contains_nan, nan_policy_out = _contains_nan(x, nan_policy=nan_policy)
         assert not contains_nan
@@ -602,15 +597,11 @@ class TestLazywhere:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
-    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
     @pytest.mark.thread_unsafe
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
-        mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1,
-                                                 min_side=0)
+        mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1, min_side=0)
         input_shapes, result_shape = data.draw(mbs)
         cond_shape, *shapes = input_shapes
         elements = {'allow_subnormal': False}  # cupy/cupy#8382

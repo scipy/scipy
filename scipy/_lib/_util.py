@@ -12,6 +12,7 @@ from typing import TypeAlias, TypeVar
 import numpy as np
 from scipy._lib._array_api import array_namespace, is_numpy, xp_size
 from scipy._lib._docscrape import FunctionDoc, Parameter
+import scipy._lib.array_api_extra as xpx
 
 
 AxisError: type[Exception]
@@ -113,7 +114,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     -----
     ``xp.where(cond, x, fillvalue)`` requires explicitly forming `x` even where
     `cond` is False. This function evaluates ``f(arr1[cond], arr2[cond], ...)``
-    onle where `cond` ``is True.
+    only where `cond` is True.
 
     Examples
     --------
@@ -153,9 +154,9 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
         temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
         dtype = xp.result_type(temp1, temp2)
         out = xp.empty(cond.shape, dtype=dtype)
-        out[ncond] = temp2
+        out = xpx.at(out, ncond).set(temp2)
 
-    out[cond] = temp1
+    out = xpx.at(out, cond).set(temp1)
 
     return out
 
