@@ -2006,7 +2006,8 @@ class TestNdimageFilters:
                                      origin=[-1, 0])
         xp_assert_equal(expected, output)
 
-    def test_rank16(self, xp):
+    @skip_xp_backends(np_only=True, reason="test list input")
+    def test_rank16(self):
         # test that lists are accepted and interpreted as numpy arrays
         array = [3, 2, 5, 1, 4]
         # expected values are: median(3, 2, 5) = 3, median(2, 5, 1) = 2, etc

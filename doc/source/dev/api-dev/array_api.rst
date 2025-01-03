@@ -236,10 +236,11 @@ large and hard-to-detect performance bottleneck.
 Adding tests
 ------------
 
+To run a test on multiple array backends, you should add the ``xp`` fixture to it,
+which is valued to the currently tested array namespace. 
+
 The following pytest markers are available:
 
-* ``array_api_compatible -> xp``: use a parametrisation to run a test on
-  multiple array backends.
 * ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
   skip certain backends or categories of backends.
   ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
@@ -262,18 +263,33 @@ The following pytest markers are available:
   causing the test to fail. When ``SCIPY_ARRAY_API=1`` behavior becomes the
   default and only behavior, these tests (and the decorator itself) will be
   removed.
+* ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
+  all tests that use it. This is useful e.g. to select all and only such tests::
+
+    python dev.py test -b all -- -m array_api_backends
+
+  Note that this includes tests that use the ``xp`` fixture indirectly through another
+  array API fixture, such as ``@pytest.mark.usefixtures("skip_xp_backends")``, even if
+  they don't explicitly consume ``xp`` themselves.
+
+* OBSOLETE: ``array_api_compatible`` (does nothing; pending removal)
 
 ``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
 which can be used to replace assertions from `numpy.testing`.
 
+When these assertions are executed within a test that uses the ``xp`` fixture, they
+enforce that the namespaces of both the actual and desired arrays match the namespace
+which was set by the fixture. Tests without the ``xp`` fixture infer the namespace from
+the desired array. This machinery can be overridden by explicitly passing the ``xp=``
+parameter to the assertion functions.
+
 The following examples demonstrate how to use the markers::
 
-  from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
+  from scipy.conftest import skip_xp_invalid_arg
   from scipy._lib._array_api import xp_assert_close
   ...
   @pytest.mark.skip_xp_backends(np_only=True, reason='skip reason')
   @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
   def test_toto1(self, xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
@@ -284,7 +300,6 @@ The following examples demonstrate how to use the markers::
   @pytest.mark.skip_xp_backends('cupy',
                                 reason='skip reason 2')
   @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
   def test_toto2(self, xp):
       ...
   ...
@@ -310,7 +325,6 @@ for compiled code::
   @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
   @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
   def test_toto(self, xp):
       ...
 
@@ -318,9 +332,7 @@ When every test function in a file has been updated for array API
 compatibility, one can reduce verbosity by telling ``pytest`` to apply the
 markers to every test function using ``pytestmark``::
 
-    from scipy.conftest import array_api_compatible
-
-    pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+    pytestmark = [pytest.mark.usefixtures("skip_xp_backends")]
     skip_xp_backends = pytest.mark.skip_xp_backends
     ...
     @skip_xp_backends(np_only=True, reason='skip reason')

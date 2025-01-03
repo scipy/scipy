@@ -179,7 +179,7 @@ class TestBracketRoot:
             ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
             xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
-            xp_assert_equal(res_attr.shape, shape)
+            assert res_attr.shape == shape
 
         xp_test = array_namespace(xp.asarray(1.))
         assert res.success.dtype == xp_test.bool
@@ -784,7 +784,7 @@ class TestBracketMinimum:
             ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
             xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
-            xp_assert_equal(res_attr.shape, shape)
+            assert res_attr.shape == shape
 
         xp_test = array_namespace(xp.asarray(1.))
         assert res.success.dtype == xp_test.bool
