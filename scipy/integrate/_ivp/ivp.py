@@ -338,7 +338,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         signature, and `args` must be a tuple of length 3.
     callback : callable, optional
         Callable that is executed after every step. The function signature is
-        ``fun(sol)``, where ``sol`` is an `IntermediateOdeResult` object.
+        ``fun(sol)``, where ``sol`` is an `IntermediateOdeResult` object. If the
+        callback raises `StopIteration`, then the integration is stopped.
     **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
@@ -612,7 +613,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         53.17531184+103.80400411j]
      [ -2.26105874 +22.19277664j -15.1255713  +70.19616341j
        -38.34616845+153.29039931j]]
-
 
     """
     if method not in METHODS and not (
