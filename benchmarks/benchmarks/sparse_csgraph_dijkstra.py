@@ -5,7 +5,7 @@ import scipy.sparse
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy.sparse.csgraph import dijkstra
+    from scipy.sparse.csgraph import dijkstra, shortest_path
 
 
 class Dijkstra(Benchmark):
@@ -40,3 +40,23 @@ class Dijkstra(Benchmark):
                  directed=False,
                  indices=self.indices,
                  min_only=min_only)
+
+
+class DijkstraDensity(Benchmark):
+    """
+    Benchmark performance of Dijkstra, adapted from [^1]
+
+    [^1]: https://github.com/scipy/scipy/pull/20717#issuecomment-2562795171
+    """
+    params = [
+        [10, 100, 1000],
+        [0.1, 0.3, 0.5, 0.9],
+    ]
+    param_names = ["n", "density"]
+
+    def setup(self, n, density):
+       self.graph = (scipy.sparse.rand(n, n, density, format='csr') * 100).astype(np.uint32)
+
+
+    def time_test_shortest_path(self, n, density):
+        shortest_path(self.graph, method="D", directed=False)
