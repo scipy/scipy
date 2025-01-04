@@ -607,7 +607,7 @@ class TestRemezord:
         assert numtaps == 24
         xp_assert_close(bands, [0, 0.1875, 0.25, 0.5])
         xp_assert_close(desired, [1., 0.])
-        xp_assert_close(weights, [10, 1])
+        xp_assert_close(weights, [10., 1.])
 
 
 

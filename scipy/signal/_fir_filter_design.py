@@ -1016,7 +1016,7 @@ def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
     limitations of the earlier methods by providing a refined formula derived
     from extensive experimental results.
 
-    .. versionadded:: 1.15.0
+    .. versionadded:: 1.16.0
 
     References
     ----------
