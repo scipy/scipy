@@ -184,13 +184,13 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     ...    d2x = np.zeros_like(P)
     ...    d2y = np.zeros_like(P)
     ...
-    ...    d2x[1:-1] = (P[2:]   - 2*P[1:-1] + P[:-2]) / hx/hx
-    ...    d2x[0]    = (P[1]    - 2*P[0]    + P_left)/hx/hx
-    ...    d2x[-1]   = (P_right - 2*P[-1]   + P[-2])/hx/hx
+    ...    d2x[:,1:-1] = (P[:,2:] - 2*P[:,1:-1] + P[:,:-2])/hx/hx
+    ...    d2x[:,0]    = (P[:,1]  - 2*P[:,0]    + P_left)/hx/hx
+    ...    d2x[:,-1]   = (P_right - 2*P[:,-1]   + P[:,-2])/hx/hx
     ...
-    ...    d2y[:,1:-1] = (P[:,2:] - 2*P[:,1:-1] + P[:,:-2])/hy/hy
-    ...    d2y[:,0]    = (P[:,1]  - 2*P[:,0]    + P_bottom)/hy/hy
-    ...    d2y[:,-1]   = (P_top   - 2*P[:,-1]   + P[:,-2])/hy/hy
+    ...    d2y[1:-1] = (P[2:]   - 2*P[1:-1] + P[:-2]) / hy/hy
+    ...    d2y[0]    = (P[1]    - 2*P[0]    + P_bottom)/hy/hy
+    ...    d2y[-1]   = (P_top   - 2*P[-1]   + P[-2])/hy/hy
     ...
     ...    return d2x + d2y - 10*np.cosh(P).mean()**2
 
@@ -200,7 +200,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     Residual: 5.7972e-06  # may vary
 
     >>> import matplotlib.pyplot as plt
-    >>> x, y = np.mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
+    >>> y, x = np.mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
     >>> plt.pcolormesh(x, y, sol.x, shading='gouraud')
     >>> plt.colorbar()
     >>> plt.show()
