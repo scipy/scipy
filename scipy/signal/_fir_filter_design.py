@@ -996,6 +996,26 @@ def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
 
     Notes
     -----
+    This function estimates the filter parameters required for designing a
+    FIR filter using the Remez exchange algorithm (Parks-McClellan). Three
+    estimation methods are available: 'herrmann', 'kaiser', and 'ichige'.
+    Accurate filter length estimation is crucial for minimizing computational
+    cost (in software) and circuit complexity (in hardware), where shorter
+    filters translate to reduced cost, size, and power consumption.
+
+    The 'herrmann' and 'kaiser' methods provide relatively simple formulas for
+    estimating filter order. They suffer from several key drawbacks: the
+    original formulations were derived primarily from data for odd-length
+    filters, neglecting even-length filter designs. Furthermore, when these
+    formulas were developed, designing filters with a large number of taps
+    (e.g., greater than 150) was computationally challenging, leading to
+    decreased accuracy for longer filters, which are now commonly feasible.
+
+    The 'ichige' method, introduced by Ichige et al., offers a more accurate
+    estimation, especially for longer filters. Ichige's work addresses the
+    limitations of the earlier methods by providing a refined formula derived
+    from extensive experimental results.
+
     .. versionadded:: 1.15.0
 
     References
