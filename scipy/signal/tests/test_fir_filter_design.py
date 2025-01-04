@@ -593,9 +593,9 @@ class TestRemezord:
                                                     alg=alg)
 
         assert numtaps == numtaps
-        assert_allclose(bands, [0, 0.25, 0.3, 0.5])
-        assert_allclose(desired, [1., 0.])
-        assert_allclose(weights, [1., 17.09973573])
+        xp_assert_close(bands, [0, 0.25, 0.3, 0.5])
+        xp_assert_close(desired, [1., 0.])
+        xp_assert_close(weights, [1., 17.09973573])
 
 
     def test_remezord_example2(self):
@@ -605,9 +605,9 @@ class TestRemezord:
         rips = [0.01, 0.1]
         numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs)
         assert numtaps == 24
-        assert_allclose(bands, [0, 0.1875, 0.25, 0.5])
-        assert_allclose(desired, [1., 0.])
-        assert_allclose(weights, [10, 1])
+        xp_assert_close(bands, [0, 0.1875, 0.25, 0.5])
+        xp_assert_close(desired, [1., 0.])
+        xp_assert_close(weights, [10, 1])
 
 
 
