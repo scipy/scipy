@@ -18,9 +18,6 @@ integral_dtypes = ['int32', 'int64']
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason="JAX arrays do not support item assignment")
 def test_wrap_radians(xp):
     x = xp.asarray([-math.pi-1, -math.pi, -1, -1e-300,
                     0, 1e-300, 1, math.pi, math.pi+1])
@@ -35,6 +32,10 @@ def test_wrap_radians(xp):
 @pytest.mark.skip_xp_backends('jax.numpy',
                               reason="JAX arrays do not support item assignment")
 class TestLogSumExp:
+    # numpy warning filters don't work for dask
+    # (also we should not expect the numpy warning filter to work for any Array API
+    # library)
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered in log")
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])
@@ -69,6 +70,7 @@ class TestLogSumExp:
         nan = xp.asarray([xp.nan])
         xp_assert_equal(logsumexp(inf), inf[0])
         xp_assert_equal(logsumexp(-inf), -inf[0])
+
         xp_assert_equal(logsumexp(nan), nan[0])
         xp_assert_equal(logsumexp(xp.asarray([-xp.inf, -xp.inf])), -inf[0])
 
@@ -115,6 +117,7 @@ class TestLogSumExp:
         xp_assert_close(r, xp.asarray(1.))
         xp_assert_equal(s, xp.asarray(-1.))
 
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     def test_logsumexp_sign_zero(self, xp):
         a = xp.asarray([1, 1])
         b = xp.asarray([1, -1])
@@ -219,6 +222,7 @@ class TestLogSumExp:
         ref = xp.logaddexp(a[0], a[1])
         xp_assert_close(res, ref)
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning:dask")
     @pytest.mark.parametrize('dtype', ['complex64', 'complex128'])
     def test_gh21610(self, xp, dtype):
         # gh-21610 noted that `logsumexp` could return imaginary components

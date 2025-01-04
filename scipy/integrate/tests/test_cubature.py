@@ -540,6 +540,8 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
@@ -786,6 +788,8 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate, like `f(x, *args)`
@@ -977,6 +981,10 @@ class TestCubatureProblems:
         "jax.numpy",
         reasons=["transforms make use of indexing assignment"],
     )
+    @skip_xp_backends(
+        "dask.array",
+        reasons=["transforms make use of boolean index assignment"],
+    )
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
@@ -1126,6 +1134,10 @@ class TestCubatureProblems:
     @skip_xp_backends(
         "jax.numpy",
         reasons=["transforms make use of indexing assignment"],
+    )
+    @skip_xp_backends(
+        "dask.array",
+        reasons=["transforms make use of boolean index assignment"],
     )
     @pytest.mark.parametrize("problem", [
         (
@@ -1337,6 +1349,10 @@ class TestRulesCubature:
 @skip_xp_backends(
     "jax.numpy",
     reasons=["transforms make use of indexing assignment"],
+)
+@skip_xp_backends(
+    "dask.array",
+    reasons=["transforms make use of boolean index assignment"],
 )
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
