@@ -97,3 +97,8 @@ jobs:
         export OMP_NUM_THREADS=2
         python dev.py --no-build test -b all $XP_TESTS -- --durations 3 --timeout=60
 
+    - name: Test SciPy with torch/float32
+      run: |
+        export SCIPY_DEFAULT_DTYPE="float32"
+        python dev.py --no-build test -b torch $XP_TESTS -- --durations 3 --timeout=60
+

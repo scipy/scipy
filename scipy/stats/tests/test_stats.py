@@ -40,8 +40,8 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
-from scipy._lib._array_api import (array_namespace, xp_copy, is_numpy,
-                                   is_torch, xp_size, SCIPY_ARRAY_API)
+from scipy._lib._array_api import (array_namespace, xp_copy, is_numpy, is_torch,
+                                   xp_size, SCIPY_ARRAY_API, xp_default_dtype)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -3986,7 +3986,7 @@ class TestStudentTest:
         # x = c(2.75532884,  0.93892217,  0.94835861,  1.49489446, -0.62396595,
         #      -1.88019867, -1.55684465,  4.88777104,  5.15310979,  4.34656348)
         # t.test(x, conf.level=0.85, alternative='l')
-        dtype = xp.float32 if is_torch(xp) else xp.float64  # use default dtype
+        dtype = xp.asarray(1.0).dtype
         x = xp.asarray(x, dtype=dtype)
         popmean = xp.asarray(popmean, dtype=dtype)
 
@@ -6225,8 +6225,9 @@ def test_ttest_uniform_pvalues(xp):
     x, y = xp.asarray([2, 3, 5]), xp.asarray([1.5])
 
     res = stats.ttest_ind(x, y, equal_var=True)
-    xp_assert_close(res.statistic, xp.asarray(1.0394023007754))
-    xp_assert_close(res.pvalue, xp.asarray(0.407779907736))
+    rtol = 1e-6 if xp_default_dtype(xp) == xp.float32 else 1e-10
+    xp_assert_close(res.statistic, xp.asarray(1.0394023007754), rtol=rtol)
+    xp_assert_close(res.pvalue, xp.asarray(0.407779907736), rtol=rtol)
 
 
 def _convert_pvalue_alternative(t, p, alt, xp):
