@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 from numpy import array
-from numpy.testing import  suppress_warnings
+from numpy.testing import suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 
@@ -187,9 +187,9 @@ class TestTaylor:
         BW_3dB = 2*np.argmax(spec <= -3.0102999566398121) / N_fft * M_win
         BW_18dB = 2*np.argmax(spec <= -18.061799739838872) / N_fft * M_win
 
-        xp_assert_close(PSLL, -35.1672, atol=1)
-        xp_assert_close(BW_3dB, 1.1822, atol=0.1)
-        xp_assert_close(BW_18dB, 2.6112, atol=0.1)
+        assert math.isclose(PSLL, -35.1672, abs_tol=1)
+        assert math.isclose(BW_3dB, 1.1822, abs_tol=0.1)
+        assert math.isclose(BW_18dB, 2.6112, abs_tol=0.1)
 
 
 class TestBohman:
@@ -763,8 +763,8 @@ class TestLanczos:
 
     def test_array_size(self, xp):
         for n in [0, 10, 11]:
-            xp_assert_equal(windows.lanczos(n, sym=False, xp=xp).shape[0], n)
-            xp_assert_equal(windows.lanczos(n, sym=True, xp=xp).shape[0], n)
+            assert windows.lanczos(n, sym=False, xp=xp).shape[0] == n
+            assert windows.lanczos(n, sym=True, xp=xp).shape[0] == n
 
 
 class TestGetWindow:
@@ -822,11 +822,11 @@ class TestGetWindow:
             resample(sig, len(sig) * osfactor, window=win)
 
     def test_general_cosine(self, xp):
-        xp_assert_close(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4),
-                        [0.4, 0.3, 1, 0.3])
-        xp_assert_close(get_window(('general_cosine', [0.5, 0.3, 0.2]), 4,
+        xp_assert_close(get_window(('general_cosine', xp.asarray([0.5, 0.3, 0.2])), 4),
+                        xp.asarray([0.4, 0.3, 1, 0.3], dtype=xp.float64))
+        xp_assert_close(get_window(('general_cosine', xp.asarray([0.5, 0.3, 0.2])), 4,
                                    fftbins=False),
-                        [0.4, 0.55, 0.55, 0.4])
+                        xp.asarray([0.4, 0.55, 0.55, 0.4], dtype=xp.float64))
 
         with pytest.raises(ValueError):
             get_window(('general_cosine', [0.5, 0.3, 0.2]), 4, xp=xp)
@@ -872,10 +872,10 @@ def test_windowfunc_basics(xp):
             xp_assert_close(w1[:-1], w2)
 
             # Check that functions run and output lengths are correct
-            xp_assert_equal(window(6, *params, sym=True, xp=xp).shape[0], 6)
-            xp_assert_equal(window(6, *params, sym=False, xp=xp).shape[0], 6)
-            xp_assert_equal(window(7, *params, sym=True, xp=xp).shape[0], 7)
-            xp_assert_equal(window(7, *params, sym=False, xp=xp).shape[0], 7)
+            assert window(6, *params, sym=True, xp=xp).shape[0] == 6
+            assert window(6, *params, sym=False, xp=xp).shape[0] == 6
+            assert window(7, *params, sym=True, xp=xp).shape[0] == 7
+            assert window(7, *params, sym=False, xp=xp).shape[0] == 7
 
             # Check invalid lengths
             assert_raises(ValueError, window, 5.5, *params, xp=xp)
@@ -953,7 +953,7 @@ def test_not_needs_params(xp, winstr):
     if is_jax(xp) and winstr in ['taylor']:
         pytest.skip(reason=f'{winstr}: item assignment')
     win = get_window(winstr, 7, xp=xp)
-    xp_assert_equal(win.shape[0], 7)
+    assert win.shape[0] == 7
 
 
 def test_symmetric(xp):
