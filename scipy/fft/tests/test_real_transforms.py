@@ -7,7 +7,7 @@ from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn
 import scipy.fft as fft
 from scipy import fftpack
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_copy, xp_assert_close, array_namespace
+from scipy._lib._array_api import xp_assert_close
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends

@@ -4,7 +4,7 @@ import pytest
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    np_compat, is_dask
+    np_compat,
 )
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d

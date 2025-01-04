@@ -858,7 +858,8 @@ def test_median02(xp):
     assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
-@skip_xp_backends("dask.array", reason="dask.array.median only implemented for along an axis.")
+@skip_xp_backends("dask.array",
+                  reason="dask.array.median only implemented for along an axis.")
 def test_median03(xp):
     a = xp.asarray([[1, 2, 0, 1],
                     [5, 3, 0, 4],
@@ -923,7 +924,8 @@ def test_variance04(xp):
 
 # dask.array is maybe due to failed conversion to numpy?
 # array-api-strict should've caught use of non array API functions I think
-@skip_xp_backends("dask.array", reason="conjugate called on dask.array which doesn't exist")
+@skip_xp_backends("dask.array",
+                  reason="conjugate called on dask.array which doesn't exist")
 def test_variance05(xp):
     labels = xp.asarray([2, 2, 3])
     for type in types:
@@ -980,7 +982,8 @@ def test_standard_deviation04(xp):
 
 # dask.array is maybe due to failed conversion to numpy?
 # array-api-strict should've caught use of non array API functions I think
-@skip_xp_backends("dask.array", reason="conjugate called on dask.array which doesn't exist")
+@skip_xp_backends("dask.array",
+                  reason="conjugate called on dask.array which doesn't exist")
 def test_standard_deviation05(xp):
     labels = xp.asarray([2, 2, 3])
     for type in types:

@@ -2,7 +2,6 @@ import pytest
 
 import numpy as np
 
-from scipy.cluster.tests.test_vq import skip_xp_backends
 from scipy.optimize._bracket import _ELIMITS
 from scipy.optimize.elementwise import bracket_root, bracket_minimum
 import scipy._lib._elementwise_iterative_method as eim

@@ -6994,7 +6994,7 @@ def check_equal_pmean(*args, **kwargs):
 
 @array_api_compatible
 class TestHMean:
-    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings happen
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings
     def test_0(self, xp):
         a = [1, 0, 2]
         desired = 0
@@ -7010,13 +7010,13 @@ class TestHMean:
         desired = 4. / (1. / 1 + 1. / 2 + 1. / 3 + 1. / 4)
         check_equal_hmean(a, desired, xp=xp)
 
-    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings happen
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings
     def test_1d_with_zero(self, xp):
         a = np.array([1, 0])
         desired = 0.0
         check_equal_hmean(a, desired, xp=xp, rtol=0.0)
 
-    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings happen
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings
     @skip_xp_backends('array_api_strict',
                       reason=("`array_api_strict.where` `fillvalue` doesn't "
                                "accept Python scalars. See data-apis/array-api#807."))
@@ -7041,7 +7041,7 @@ class TestHMean:
         desired = np.array([22.88135593, 39.13043478, 52.90076336, 65.45454545])
         check_equal_hmean(a, desired, axis=0, xp=xp)
 
-    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings happen
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings
     def test_2d_axis0_with_zero(self, xp):
         a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([22.88135593, 0.0, 52.90076336, 65.45454545])
@@ -7053,7 +7053,7 @@ class TestHMean:
         desired = np.array([19.2, 63.03939962, 103.80078637])
         check_equal_hmean(a, desired, axis=1, xp=xp)
 
-    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings happen
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning") # for dask, multiple warnings
     def test_2d_axis1_with_zero(self, xp):
         a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([0.0, 63.03939962, 103.80078637])
