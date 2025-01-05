@@ -20,6 +20,18 @@ from scipy.sparse import coo_array, issparse, coo_matrix
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
+"""
+Maximum number of digits for `mmwrite` function.
+This can be calculated by below python codes:
+eps = np.finfo(np.float64).eps
+max_precision = np.floor(-np.log10(eps)).astype(int)
+"""
+MAX_PRECISION = 15
+
+
+def _validate_precision(precision):
+    if (precision is not None) and not (1 <= precision <= MAX_PRECISION):
+        raise ValueError(f'precision must be in [1, {MAX_PRECISION}]')
 
 # -----------------------------------------------------------------------------
 def asstr(s):
@@ -149,6 +161,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Either 'real', 'complex', 'pattern', or 'integer'.
     precision : None or int, optional
         Number of digits to display for real or complex values.
+        If not None, this value must be in the range [1, 15].
     symmetry : None or str, optional
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
@@ -241,6 +254,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     2.5e+00 0.0e+00
 
     """
+    _validate_precision(precision)
     MMFile().write(target, a, comment, field, precision, symmetry)
 
 
