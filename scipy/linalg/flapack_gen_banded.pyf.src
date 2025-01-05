@@ -131,7 +131,7 @@ subroutine <prefix2c>gbcon(norm,n,kl,ku,ab,ldab,ipiv,anorm,rcond,work,rwork,info
 end subroutine <prefix2c>gbcon
 
 
-function <prefix>langb(norm,n,kl,ku,ab,ldab,work)
+function <prefix>langb(norm,n,kl,ku,ab,ldab,work) result(n2)
     ! ?LANGB  returns the value of the one norm,  or the Frobenius norm, or
     ! the  infinity norm,  or the element of  largest absolute value  of an
     ! n by n band matrix  A,  with kl sub-diagonals and ku super-diagonals.
