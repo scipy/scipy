@@ -135,7 +135,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     ValueError
         If size mismatches detected or input a is not square.
     LinAlgError
-        If the matrix is singular.
+        If the computation fails because of matrix singularity.
     LinAlgWarning
         If an ill-conditioned input a is detected.
     NotImplementedError
