@@ -503,11 +503,9 @@ class BSpline:
         # [self.t[k], self.t[n]].
         if extrapolate == 'periodic':
             n = self.t.size - self.k - 1
-            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] -
-                                                         self.t[self.k])
+            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] - self.t[self.k])
             extrapolate = False
 
-        out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
 
         # if self.c is complex, so is `out`; cython code in _bspl.pyx expectes
@@ -516,12 +514,23 @@ class BSpline:
         # if c.dtype is complex of shape (n,), c.view(float).shape == (2*n,)
         # if c.dtype is complex of shape (n, m), c.view(float).shape == (n, 2*m)
 
-        cc = self.c.view(float)
-        if self.c.ndim == 1 and self.c.dtype.kind == 'c':
-            cc = cc.reshape(self.c.shape[0], 2)
+        is_complex = self.c.dtype.kind == 'c'
+        if is_complex:
+            cc = self.c.view(float)
+            if self.c.ndim == 1 and self.c.dtype.kind == 'c':
+                cc = cc.reshape(self.c.shape[0], 2)
+        else:
+            cc = self.c
 
-        _dierckx.evaluate_spline(self.t, cc.reshape(cc.shape[0], -1),
-                              self.k, x, nu, extrapolate, out.view(float))
+        # flatten the trailing dims
+        cc = cc.reshape(cc.shape[0], -1)
+
+        out = np.empty((len(x), cc.shape[-1]), dtype=cc.dtype)
+
+        _dierckx.evaluate_spline(self.t, cc, self.k, x, nu, extrapolate, out)
+
+        if is_complex:
+            out = out.view(complex)
 
         out = out.reshape(x_shape + self.c.shape[1:])
         if self.axis != 0:
