@@ -179,7 +179,7 @@ class TestBracketRoot:
             ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
             xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
-            xp_assert_equal(res_attr.shape, shape)
+            assert res_attr.shape == shape
 
         xp_test = array_namespace(xp.asarray(1.))
         assert res.success.dtype == xp_test.bool
@@ -784,7 +784,7 @@ class TestBracketMinimum:
             ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
             xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
-            xp_assert_equal(res_attr.shape, shape)
+            assert res_attr.shape == shape
 
         xp_test = array_namespace(xp.asarray(1.))
         assert res.success.dtype == xp_test.bool
@@ -855,7 +855,7 @@ class TestBracketMinimum:
 
         result = _bracket_minimum(f, xp.asarray(0.5535723499480897), xmin=xmin,
                                   xmax=xmax)
-        assert xmin == result.xl
+        xp_assert_close(result.xl, xmin)
 
     def test_gh_20562_right(self, xp):
         # Regression test for https://github.com/scipy/scipy/issues/20562
@@ -868,4 +868,4 @@ class TestBracketMinimum:
 
         result = _bracket_minimum(f, xp.asarray(-0.5535723499480897),
                                   xmin=xmin, xmax=xmax)
-        assert xmax == result.xr
+        xp_assert_close(result.xr, xmax)

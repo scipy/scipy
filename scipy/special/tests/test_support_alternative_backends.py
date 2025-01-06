@@ -17,13 +17,13 @@ except ImportError:
 
 @pytest.mark.skipif(not HAVE_ARRAY_API_STRICT,
                     reason="`array_api_strict` not installed")
-def test_dispatch_to_unrecognize_library():
+def test_dispatch_to_unrecognized_library():
     xp = array_api_strict
     f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
     x = [1, 2, 3]
     res = f(xp.asarray(x))
     ref = xp.asarray(special.ndtr(np.asarray(x)))
-    xp_assert_close(res, ref, xp=xp)
+    xp_assert_close(res, ref)
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
@@ -34,16 +34,20 @@ def test_rel_entr_generic(dtype):
     f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
-    x, y = [-1, 0, 0, 1], [1, 0, 2, 3]
+    x = [-1, 0, 0, 1]
+    y = [1, 0, 2, 3]
 
-    x_xp, y_xp = xp.asarray(x, dtype=dtype_xp), xp.asarray(y, dtype=dtype_xp)
+    x_xp = xp.asarray(x, dtype=dtype_xp)
+    y_xp = xp.asarray(y, dtype=dtype_xp)
     res = f(x_xp, y_xp)
 
-    x_np, y_np = np.asarray(x, dtype=dtype_np), np.asarray(y, dtype=dtype_np)
+    x_np = np.asarray(x, dtype=dtype_np)
+    y_np = np.asarray(y, dtype=dtype_np)
     ref = special.rel_entr(x_np[-1], y_np[-1])
     ref = np.asarray([np.inf, 0, 0, ref], dtype=ref.dtype)
+    ref = xp.asarray(ref)
 
-    xp_assert_close(res, xp.asarray(ref), xp=xp)
+    xp_assert_close(res, ref)
 
 
 @pytest.mark.fail_slow(5)
@@ -60,10 +64,13 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
 
     if (SCIPY_DEVICE != 'cpu'
         and is_torch(xp)
-        and f_name in {'stdtr', 'betaincc', 'betainc'}
+        and f_name in {'stdtr', 'stdtrit', 'betaincc', 'betainc'}
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
                     f"and cannot delegate to PyTorch.")
+
+    if is_jax(xp) and f_name in {'stdtrit'}:
+        pytest.skip(f"`{f_name}` generic implementation require array mutation.")
 
     shapes = shapes[:n_args]
     f = getattr(special, f_name)

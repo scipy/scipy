@@ -78,13 +78,17 @@ Pythran is still an optional build dependency, and can be disabled with
 happen it must be clear that the maintenance burden is low enough.
 
 
-Use of venerable Fortran libraries
-``````````````````````````````````
+Use of Fortran libraries
+````````````````````````
 SciPy owes a lot of its success to relying on wrapping well established
-Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). Some of these
-libraries are aging well, others less so. We should audit our use of these
-libraries with respect to the maintenance effort, the functionality, and the
-existence of (possibly partial) alternatives, *including those inside SciPy*.
+Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). The Fortran 77
+that these libraries are written in is quite hard to maintain, and the use
+of Fortran is problematic for many reasons; e.g., it makes our wheel builds
+much harder to maintain, it has repeatedly been problematic for supporting
+new platforms like macOS arm64 and Windows on Arm, and it is highly problematic
+for Pyodide's SciPy support. Our goal is to remove all Fortran code from SciPy
+by replacing the functionality with code written in other languages. Progress
+towards this goal is tracked in `gh-18566 <https://github.com/scipy/scipy/issues/18566>`__.
 
 
 Continuous integration
@@ -108,7 +112,7 @@ checking. Stripping of debug symbols in ``multibuild`` can perhaps be improved
 (see `this issue <https://github.com/multi-build/multibuild/issues/162>`__).
 An effort should be made to slim down where possible, and not add new large
 files. In the future, things that are being considered (very tentatively) and
-may help are separating out the bundled` ``libopenblas`` and removing support
+may help are separating out the bundled ``libopenblas`` and removing support
 for ``long double``.
 
 
@@ -123,8 +127,26 @@ feature requests.
 
 constants
 `````````
-This module is basically done, low-maintenance and without open issues.
+This module needs only periodic updates to the numerical values.
 
+differentiate
+`````````````
+This module was added with the understanding that its scope would be limited.
+The goal is to provide basic differentiation of black-box functions, not
+replicate all features of existing differentiation tools. With that in mind,
+items for future work include:
+
+- Improve support for callables that accept additional arguments (e.g. add
+  ``*args`` to ``jacobian`` and ``hessian``). Note that this is not trivial
+  due to the way elements of the arrays are eliminated when their corresponding
+  calculations have converged.
+- Improve implementation of `scipy.differentiate.hessian`: rather than chaining
+  first-order differentiation, use a second-order differentiation stencil.
+- Consider the addition of an option to use relative step sizes.
+- Consider generalizing the approach to use "polynomial extrapolation"; i.e.,
+  rather than estimating derivatives of a given order from the minimal number
+  of function evaluations, use a least-squares approach to improve robustness
+  to numerical noise.
 
 fft
 ````
@@ -133,15 +155,13 @@ This module is in good shape.
 
 integrate
 `````````
-Needed for ODE solvers:
-
-- Documentation is pretty bad, needs fixing
-- A new ODE solver interface  (``solve_ivp``) was added in SciPy 1.0.0.
-  In the future we can consider (soft-)deprecating the older API.
-
-The numerical integration functions are in good shape.  Support for integrating
-complex-valued functions and integrating multiple intervals (see `gh-3325
-<https://github.com/scipy/scipy/issues/3325>`__) could be added.
+- Complete the feature set of the new ``cubature`` function, and add an interface
+  tailored to one-dimensional integrals.
+- Migrate functions for generating quadrature rule points and weights from `special`,
+  improve their reliability, and add support for other important rules.
+- Complete the feature set of ``solve_ivp``, including all functionality of the
+  ``odeint`` interface.
+- Gracefully sunset superseded functions and classes.
 
 
 interpolate
@@ -239,13 +259,8 @@ is in good shape, however we can make a number of improvements:
 
 misc
 ````
-``scipy.misc`` will be removed as a public module.  Most functions in it have
-been moved to another submodule or deprecated.  The few that are left:
-
-- ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
-  with more extensive functionality for numerical differentiation.
-- ``ascent``, ``face``, ``electrocardiogram`` : remove or move to the
-  appropriate subpackages (e.g. ``scipy.ndimage``, ``scipy.signal``).
+All features have been removed from ``scipy.misc``, and the namespace itself
+will eventually be removed.
 
 
 ndimage
@@ -290,23 +305,14 @@ maintenance.  No major plans or wishes here.
 
 optimize
 ````````
-Overall this module is in good shape. Two good global optimizers were added in
-1.2.0; large-scale optimizers is still a gap that could be filled.  Other
-things that are needed:
+We aim to continuously improve the set of optimizers provided by this module.
+For large scale problems, the state of the art continues to advance and we aim
+to keep up by leveraging implementations from domain-specific libraries like
+HiGHS and PRIMA. Other areas for future work include the following.
 
-- Many ideas for additional functionality (e.g. integer constraints) in
-  ``linprog``, see `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
-- Add functionality to the benchmark suite to compare results more easily
-  (e.g. with summary plots).
-- deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
-  preferred.
-- ``scipy.optimize`` has an extensive set of benchmarks for accuracy and speed of
-  the global optimizers. That has allowed adding new optimizers (``shgo`` and
-  ``dual_annealing``) with significantly better performance than the existing
-  ones.  The ``optimize`` benchmark system itself is slow and hard to use
-  however; we need to make it faster and make it easier to compare performance of
-  optimizers via plotting performance profiles.
-
+- Improve the interfaces of existing optimizers (e.g. ``shgo``).
+- Improve usability of the benchmark system, and add features for comparing
+  results more easily (e.g. summary plots).
 
 signal
 ``````
@@ -390,7 +396,6 @@ This module is in good shape.
 sparse.linalg
 `````````````
 There are a significant number of open issues for ``_arpack`` and ``lobpcg``.
-``_propack`` is new in 1.8.0, TBD how robust it will turn out to be.
 
 ``_isolve``:
 
@@ -455,50 +460,18 @@ may also be included in SciPy, especially if no other widely used and
 well-supported package covers the topic.  Also note that *some* duplication
 with downstream projects is inevitable and not necessarily a bad thing.)
 
-In addition to the items described in the :ref:`scipy-roadmap`, the following
-improvements will help SciPy better serve this role.
+The following improvements will help SciPy better serve this role.
 
-- Add fundamental and widely used hypothesis tests, such as:
-
-  - post hoc tests (e.g. Dunnett's test)
-  - the various types of analysis of variance (ANOVA):
-
-    - two-way ANOVA (single replicate, uniform number of replicates, variable
-      number of replicates)
-    - multiway ANOVA (i.e. generalize two-way ANOVA)
-    - nested ANOVA
-    - analysis of covariance (ANCOVA)
-
-  Also, provide an infrastructure for implementing hypothesis tests.
-- Add additional tools for meta-analysis
-- Add tools for survival analysis
-- Speed up random variate sampling (method ``rvs``) of distributions, 
-  leveraging ``scipy.stats.sampling`` where appropriate
-- Expand QMC capabilities and performance
-- Enhance the `fit` method of the continuous probability distributions:
-
-  - Expand the options for fitting to include:
-
-    - maximal product spacings
-    - method of L-moments / probability weighted moments
-
-  - Include measures of goodness-of-fit in the results
-  - Handle censored data (e.g. merge `gh-13699 <https://github.com/scipy/scipy/pull/13699>`__)
-
-- Implement additional widely used continuous and discrete probability
-  distributions, e.g. mixture distributions.
-
-- Improve the core calculations provided by SciPy's probability distributions
-  so they can robustly handle wide ranges of parameter values.  Specifically,
-  replace many of the PDF and CDF methods from the Fortran library CDFLIB
-  used in ``scipy.special`` with Boost implementations as in
-  `gh-13328 <https://github.com/scipy/scipy/pull/13328>`__.
-
-In addition, we should:
-
-- Continue work on making the function signatures of ``stats`` and
-  ``stats.mstats`` more consistent, and add tests to ensure that that
-  remains the case.
-- Improve statistical tests: return confidence intervals for the test
-  statistic, and implement exact p-value calculations - considering the
-  possibility of ties - where computationally feasible.
+- Improve statistical tests: include methods for generating confidence
+  intervals, and implement exact and randomized p-value calculations -
+  considering the possibility of ties - where computationally feasible.
+- Extend the new univariate distribution infrastructure, adding support
+  for discrete distributions and circular continuous distributions.
+  Add a selection of the most widely used statistical distributions
+  under the new infrastructure, performing rigorous accuracy testing
+  and documenting the results. Enable users to create custom distributions
+  that leverage the new infrastructure.
+- Improve the multivariate distribution infrastructure to ensure a
+  consistent API, thorough testing, and complete documentation.
+- Continue to make the APIs of functions more consistent, with standard
+  support for batched calculations, NaN policies, and dtype preservation.

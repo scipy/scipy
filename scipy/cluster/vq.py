@@ -310,20 +310,18 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
     code_book = guess
     diff = xp.inf
     prev_avg_dists = deque([diff], maxlen=2)
+
+    np_obs = np.asarray(obs)
     while diff > thresh:
         # compute membership and distances between obs and code_book
         obs_code, distort = vq(obs, code_book, check_finite=False)
         prev_avg_dists.append(xp.mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
-        obs = np.asarray(obs)
         obs_code = np.asarray(obs_code)
-        code_book, has_members = _vq.update_cluster_means(obs, obs_code,
+        code_book, has_members = _vq.update_cluster_means(np_obs, obs_code,
                                                           code_book.shape[0])
-        obs = xp.asarray(obs)
-        obs_code = xp.asarray(obs_code)
-        code_book = xp.asarray(code_book)
-        has_members = xp.asarray(has_members)
         code_book = code_book[has_members]
+        code_book = xp.asarray(code_book)
         diff = xp.abs(prev_avg_dists[0] - prev_avg_dists[1])
 
     return code_book, prev_avg_dists[1]
@@ -814,7 +812,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     data = np.asarray(data)
     code_book = np.asarray(code_book)
-    for i in range(iter):
+    for _ in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids

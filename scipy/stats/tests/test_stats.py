@@ -40,8 +40,8 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
-from scipy._lib._array_api import (array_namespace, xp_copy, is_numpy,
-                                   is_torch, xp_size, SCIPY_ARRAY_API)
+from scipy._lib._array_api import (array_namespace, xp_copy, is_numpy, is_torch,
+                                   xp_size, SCIPY_ARRAY_API, xp_default_dtype)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -188,7 +188,7 @@ class TestTrimmedStats:
 
         # check that if a full slice is masked, the output returns a
         # nan instead of a garbage value.
-        x = xp.arange(16).reshape(4, 4)
+        x = xp.reshape(xp.arange(16), (4, 4))
         res = stats.tmin(x, lowerlimit=4, axis=1)
         xp_assert_equal(res, xp.asarray([np.nan, 4, 8, 12]))
 
@@ -380,7 +380,7 @@ class TestPearsonrWilkinson:
 @skip_xp_backends(cpu_only=True)
 class TestPearsonr:
     @skip_xp_backends(np_only=True)
-    def test_pearsonr_result_attributes(self):
+    def test_pearsonr_result_attributes(self, xp):
         res = stats.pearsonr(X, X)
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
@@ -557,7 +557,7 @@ class TestPearsonr:
              ('two-sided', 0.325800137536, -0.992306975236, 0.81493896884, -1),
              ('less', 0.1629000687684, -1.0, 0.6785654158217636, -1),
              ('greater', 0.8370999312316, -0.985600937290653, 1.0, -1)])
-    def test_basic_example(self, alternative, pval, rlow, rhigh, sign):
+    def test_basic_example(self, alternative, pval, rlow, rhigh, sign, xp):
         x = [1, 2, 3, 4]
         y = np.array([0, 1, 0.5, 1]) * sign
         result = stats.pearsonr(x, y, alternative=alternative)
@@ -593,7 +593,7 @@ class TestPearsonr:
         xp_assert_equal(high, one)
 
     @pytest.mark.skip_xp_backends(np_only=True)
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
         x = [1, 2, 3]
         y = [4, 5]
         message = '`x` and `y` must have the same length along `axis`.'
@@ -626,7 +626,7 @@ class TestPearsonr:
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('method_name',
                              ('permutation', 'monte_carlo', 'monte_carlo2'))
-    def test_resampling_pvalue(self, method_name, alternative):
+    def test_resampling_pvalue(self, method_name, alternative, xp):
         rng = np.random.default_rng(24623935790378923)
         size = (2, 100) if method_name == 'permutation' else (2, 1000)
         x = rng.normal(size=size)
@@ -648,7 +648,7 @@ class TestPearsonr:
 
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    def test_bootstrap_ci(self, alternative):
+    def test_bootstrap_ci(self, alternative, xp):
         rng = np.random.default_rng(2462935790378923)
         x = rng.normal(size=(2, 100))
         y = rng.normal(size=(2, 100))
@@ -1665,7 +1665,8 @@ def test_kendalltau():
                      (np.nan, np.nan))
 
     # empty arrays provided as input
-    assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
     # check with larger arrays
     np.random.seed(7546)
@@ -1702,10 +1703,8 @@ def test_kendalltau():
     assert_raises(ValueError, stats.kendalltau, x, y)
 
     # test all ties
-    tau, p_value = stats.kendalltau([], [])
-    assert_equal(np.nan, tau)
-    assert_equal(np.nan, p_value)
-    tau, p_value = stats.kendalltau([0], [0])
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        tau, p_value = stats.kendalltau([0], [0])
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
 
@@ -1714,12 +1713,12 @@ def test_kendalltau():
     x = np.ma.masked_greater(x, 1995)
     y = np.arange(2000, dtype=float)
     y = np.concatenate((y[1000:], y[:1000]))
-    assert_(np.isfinite(stats.kendalltau(x,y)[1]))
+    assert_(np.isfinite(stats.mstats.kendalltau(x,y)[1]))
 
 
 def test_kendalltau_vs_mstats_basic():
     np.random.seed(42)
-    for s in range(2,10):
+    for s in range(3, 10):
         a = []
         # Generate rankings with ties
         for i in range(s):
@@ -1840,7 +1839,8 @@ class TestKendallTauAlternative:
     def test_against_R_n1(self, alternative, p_expected, rev):
         x, y = [1], [2]
         stat_expected = np.nan
-        self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
+        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+            self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
 
     case_R_n2 = (list(zip(alternatives, p_n2, [False]*3))
                  + list(zip(alternatives, reversed(p_n2), [True]*3)))
@@ -2027,15 +2027,17 @@ def test_weightedtau():
                                      np.asarray(y, dtype=np.float64))
     assert_approx_equal(tau, -0.56694968153682723)
     # All ties
-    tau, p_value = stats.weightedtau([], [])
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        tau, p_value = stats.weightedtau([], [])
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
-    tau, p_value = stats.weightedtau([0], [0])
+    with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+        tau, p_value = stats.weightedtau([0], [0])
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
     # Size mismatches
     assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1, 2])
-    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0])
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0, 1, 2])
     # NaNs
     x = [12, 2, 1, 12, 2]
     y = [1, 4, 7, 1, np.nan]
@@ -2069,10 +2071,12 @@ def test_segfault_issue_9710():
     # https://github.com/scipy/scipy/issues/9710
     # This test was created to check segfault
     # In issue SEGFAULT only repros in optimized builds after calling the function twice
-    stats.weightedtau([1], [1.0])
-    stats.weightedtau([1], [1.0])
-    # The code below also caused SEGFAULT
-    stats.weightedtau([np.nan], [52])
+    message = "One or more sample arguments is too small"
+    with pytest.warns(SmallSampleWarning, match=message):
+        stats.weightedtau([1], [1.0])
+        stats.weightedtau([1], [1.0])
+        # The code below also caused SEGFAULT
+        stats.weightedtau([np.nan], [52])
 
 
 def test_kendall_tau_large():
@@ -2185,7 +2189,9 @@ class TestRegression:
         # total sum of squares of exactly 0.
         result = stats.linregress(X, ZERO)
         assert_almost_equal(result.intercept, 0.0)
-        assert_almost_equal(result.rvalue, 0.0)
+        with pytest.warns(stats.ConstantInputWarning, match="An input array..."):
+            ref_rvalue = stats.pearsonr(X, ZERO).statistic
+        assert_almost_equal(result.rvalue, ref_rvalue)
 
     def test_regress_simple(self):
         # Regress a line with sinusoidal noise.
@@ -2360,7 +2366,9 @@ class TestRegression:
         assert_almost_equal(result.intercept, poly[1])
 
     def test_empty_input(self):
-        assert_raises(ValueError, stats.linregress, [], [])
+        with pytest.warns(SmallSampleWarning, match="One or more sample..."):
+            res = stats.linregress([], [])
+            assert np.all(np.isnan(res))
 
     def test_nan_input(self):
         x = np.arange(10.)
@@ -2865,9 +2873,9 @@ class TestZmapZscore:
 
     def test_zmap_axis(self, xp):
         # Test use of 'axis' keyword in zmap.
-        x = np.array([[0.0, 0.0, 1.0, 1.0],
-                      [1.0, 1.0, 1.0, 2.0],
-                      [2.0, 0.0, 2.0, 0.0]])
+        x = xp.asarray([[0.0, 0.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 2.0],
+                        [2.0, 0.0, 2.0, 0.0]])
 
         t1 = 1.0/(2.0/3)**0.5
         t2 = 3.**0.5/3
@@ -2882,6 +2890,8 @@ class TestZmapZscore:
         z1_expected = [[-1.0, -1.0, 1.0, 1.0],
                        [-t2, -t2, -t2, 3.**0.5],
                        [1.0, -1.0, 1.0, -1.0]]
+        z0_expected = xp.asarray(z0_expected)
+        z1_expected = xp.asarray(z1_expected)
 
         xp_assert_close(z0, z0_expected)
         xp_assert_close(z1, z1_expected)
@@ -3878,9 +3888,6 @@ def ttest_data_axis_strategy(draw):
     return data, axis
 
 
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 class TestStudentTest:
     # Preserving original test cases.
@@ -3965,6 +3972,8 @@ class TestStudentTest:
         xp_assert_close(p, xp.asarray(self.P1_1_g))
         xp_assert_close(t, xp.asarray(self.T1_1))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
         # test confidence interval method against reference values
@@ -3977,7 +3986,7 @@ class TestStudentTest:
         # x = c(2.75532884,  0.93892217,  0.94835861,  1.49489446, -0.62396595,
         #      -1.88019867, -1.55684465,  4.88777104,  5.15310979,  4.34656348)
         # t.test(x, conf.level=0.85, alternative='l')
-        dtype = xp.float32 if is_torch(xp) else xp.float64  # use default dtype
+        dtype = xp.asarray(1.0).dtype
         x = xp.asarray(x, dtype=dtype)
         popmean = xp.asarray(popmean, dtype=dtype)
 
@@ -3997,6 +4006,8 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason='Too slow.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.xslow
     @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
                       data_axis=ttest_data_axis_strategy())
@@ -5162,9 +5173,6 @@ def _desc_stats(x1, x2, axis=0, *, xp=None):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind(xp):
     # regression test
     tr = xp.asarray(1.0912746897927283)
@@ -5881,9 +5889,6 @@ class Test_ttest_trim:
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 class Test_ttest_CI:
     # indices in order [alternative={two-sided, less, greater},
     #                   equal_var={False, True}, trim={0, 0.2}]
@@ -5930,6 +5935,8 @@ class Test_ttest_CI:
     @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_confidence_interval(self, alternative, equal_var, trim, xp):
         if equal_var and trim:
             pytest.xfail('Discrepancy in `main`; needs further investigation.')
@@ -5978,9 +5985,6 @@ def test__broadcast_concatenate():
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_with_uneq_var(xp):
     # check vs. R `t.test`, e.g.
     # options(digits=20)
@@ -6063,9 +6067,6 @@ def test_ttest_ind_with_uneq_var(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_zero_division(xp):
     # test zero division problem
     x = xp.zeros(3)
@@ -6188,9 +6189,6 @@ def test_gh5686(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_ind_from_stats_inputs_zero(xp):
     # Regression test for gh-6409.
     zero = xp.asarray(0.)
@@ -6202,8 +6200,7 @@ def test_ttest_ind_from_stats_inputs_zero(xp):
 
 
 @array_api_compatible
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
+@pytest.mark.skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
 @pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
@@ -6228,7 +6225,7 @@ def test_ttest_uniform_pvalues(xp):
     x, y = xp.asarray([2, 3, 5]), xp.asarray([1.5])
 
     res = stats.ttest_ind(x, y, equal_var=True)
-    rtol = 1e-6 if is_torch(xp) else 1e-10
+    rtol = 1e-6 if xp_default_dtype(xp) == xp.float32 else 1e-10
     xp_assert_close(res.statistic, xp.asarray(1.0394023007754), rtol=rtol)
     xp_assert_close(res.pvalue, xp.asarray(0.407779907736), rtol=rtol)
 
@@ -6243,9 +6240,6 @@ def _convert_pvalue_alternative(t, p, alt, xp):
 
 
 @pytest.mark.slow
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_ttest_1samp_new(xp):
     n1, n2, n3 = (10, 15, 20)
@@ -6333,10 +6327,9 @@ def test_ttest_1samp_new_omit(xp):
     xp_assert_close(t, tr)
 
 
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reason='Uses NumPy for pvalue, CI')
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
+@pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+@pytest.mark.usefixtures("skip_xp_backends")
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
     # if the user wants to test multiple null hypotheses simultaneously,
@@ -6707,7 +6700,7 @@ class TestJarqueBera:
 
     @skip_xp_backends(np_only=True)
     @pytest.mark.usefixtures("skip_xp_backends")
-    def test_jarque_bera_array_like(self):
+    def test_jarque_bera_array_like(self, xp):
         # array-like only relevant for NumPy
         np.random.seed(987654321)
         x = np.random.normal(0, 1, 100000)

@@ -217,6 +217,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     return (Q,) + Rj
 
 
+@_apply_over_batch(('a', 2), ('c', '1|2'))
 def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
                 overwrite_a=False, overwrite_c=False):
     """

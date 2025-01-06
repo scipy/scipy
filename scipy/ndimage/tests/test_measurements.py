@@ -112,6 +112,7 @@ class Test_measurements_stats:
             xp_assert_equal(centers, np.asarray([0.5, 8.0]))
 
 
+@skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
 class Test_measurements_select:
     """ndimage._measurements._select() is a utility used by other functions."""
 

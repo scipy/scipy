@@ -32,11 +32,6 @@
             "cephes_lgam1p": "d->d"
         }
     },
-    "_log1pmx": {
-        "xsf_wrappers.h": {
-            "cephes_log1pmx": "d->d"
-        }
-    },
     "_sf_error_test_function": {
         "sf_error.pxd": {
             "_sf_error_test_function": "i->i"
@@ -326,24 +321,6 @@
             "eval_sh_legendre_l": "pd->d"
         }
     },
-    "exp10": {
-        "xsf_wrappers.h": {
-            "cephes_exp10": "d->d"
-        }
-    },
-    "exp2": {
-        "xsf_wrappers.h": {
-            "cephes_exp2": "d->d"
-        }
-    },
-    "expm1": {
-        "_cunity.pxd": {
-            "cexpm1": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_expm1": "d->d"
-        }
-    },
     "expn": {
         "_legacy.pxd": {
             "expn_unsafe": "dd->d"
@@ -496,14 +473,6 @@
         "boost_special_functions.h++": {
             "landau_isf_float": "fff->f",
             "landau_isf_double": "ddd->d"
-        }
-    },
-    "log1p": {
-        "_cunity.pxd": {
-            "clog1p": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_log1p": "d->d"
         }
     },
     "lpmv": {
@@ -744,18 +713,6 @@
         "_wright.h++": {
             "wrightomega": "D->D",
             "wrightomega_real": "d->d"
-        }
-    },
-    "xlog1py": {
-        "_xlogy.pxd": {
-            "xlog1py[double]": "dd->d",
-            "xlog1py[double_complex]": "DD->D"
-        }
-    },
-    "xlogy": {
-        "_xlogy.pxd": {
-            "xlogy[double]": "dd->d",
-            "xlogy[double_complex]": "DD->D"
         }
     },
     "yn": {

@@ -15,24 +15,8 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   INSTALLDIR: "build-install"
-  XP_TESTS: >-
-    -t scipy.cluster
-    -t scipy.constants
-    -t scipy.fft
-    -t scipy.special.tests.test_logsumexp
-    -t scipy.special.tests.test_support_alternative_backends
-    -t scipy._lib.tests.test_array_api
-    -t scipy._lib.tests.test__util
-    -t scipy.differentiate.tests.test_differentiate
-    -t scipy.integrate.tests.test_tanhsinh
-    -t scipy.integrate.tests.test_cubature
-    -t scipy.optimize.tests.test_bracket
-    -t scipy.optimize.tests.test_chandrupatla
-    -t scipy.optimize.tests.test_optimize
-    -t scipy.stats
-    -t scipy.ndimage
-    -t scipy.integrate.tests.test_quadrature
-    -t scipy.signal.tests.test_signaltools
+  # Only run tests that use the `xp` fixture
+  XP_TESTS: -m array_api_backends
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -111,6 +95,10 @@ jobs:
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        # expand as more modules are supported by adding to `XP_TESTS` above
         python dev.py --no-build test -b all $XP_TESTS -- --durations 3 --timeout=60
+
+    - name: Test SciPy with torch/float32
+      run: |
+        export SCIPY_DEFAULT_DTYPE="float32"
+        python dev.py --no-build test -b torch $XP_TESTS -- --durations 3 --timeout=60
 
