@@ -1564,16 +1564,24 @@ def yen(
 
 
 ctypedef vector[int] yen_path_t
-ctypedef pair[double, yen_path_t] distance_path_pair_t
+
+cdef struct YenDistancePathStruct:
+    double distance
+    yen_path_t path
+    int spur_node
+
+
+cdef inline bint _yen_compare_distance(YenDistancePathStruct a, YenDistancePathStruct b):
+    return a.distance < b.distance
 
 
 cdef class _YenCandidatePaths:
     cdef:
-        vector[distance_path_pair_t] _distances_and_paths
-        int _required_paths
+        vector[YenDistancePathStruct] _distances_and_paths
+        size_t _required_paths
 
-    def __init__(self, K: int):
-        self._distances_and_paths = vector[distance_path_pair_t]()
+    def __cinit__(self, K: int):
+        self._distances_and_paths = vector[YenDistancePathStruct]()
         self._required_paths = K
 
     @cython.boundscheck(False)
@@ -1588,8 +1596,8 @@ cdef class _YenCandidatePaths:
         cdef:
             yen_path_t path_to_insert
             int idx = sink
-            distance_path_pair_t new_element, tmp_element
-            vector[distance_path_pair_t].iterator it
+            YenDistancePathStruct new_element
+            vector[YenDistancePathStruct].iterator it
 
         if self._distances_and_paths.size() >= self._required_paths and distance >= self.max_distance():
             # The new path is longer than the longest path in the vector - return
@@ -1604,18 +1612,11 @@ cdef class _YenCandidatePaths:
             path_to_insert.push_back(idx)
             idx = source_to_spur_path[idx]
 
-        new_element = distance_path_pair_t(distance, path_to_insert)
-        it = lower_bound(self._distances_and_paths.begin(), self._distances_and_paths.end(), new_element)
-        # Check if the path exists already
-        while it != self._distances_and_paths.end():
-            tmp_element = cython.operator.dereference(it)
-            if tmp_element.first != distance:
-                break
-            if tmp_element.second == path_to_insert:
-                # Path already exists - return
-                return
-            it += 1
-
+        new_element.distance = distance
+        new_element.path = path_to_insert
+        new_element.spur_node = spur_node
+        it = lower_bound(self._distances_and_paths.begin(), self._distances_and_paths.end(), new_element,
+                         _yen_compare_distance)
         self._distances_and_paths.insert(it, new_element)
 
         # Reduce the number of paths to amount required
@@ -1625,26 +1626,28 @@ cdef class _YenCandidatePaths:
     cdef double min_distance(self):
         if self.empty():
             return INFINITY
-        return self._distances_and_paths[0].first
+        return self._distances_and_paths[0].distance
 
     cdef double max_distance(self):
         if self.empty():
             return -INFINITY
-        return self._distances_and_paths[-1].first
+        return self._distances_and_paths.back().distance
 
     @cython.boundscheck(False)
-    cdef void pop_path_to_memory_view(
+    cdef int pop_path_to_memory_view(
         self,
         int[:] target,
     ):
         cdef:
             yen_path_t shortest_path
-            int idx
+            size_t idx
+            int spur_node
 
         if self.empty():
             raise RuntimeError("No paths to pop")
 
-        shortest_path = self._distances_and_paths[0].second
+        shortest_path = self._distances_and_paths[0].path
+        spur_node = self._distances_and_paths[0].spur_node
         self._distances_and_paths.erase(self._distances_and_paths.begin())
 
         # Restore the path in the correct order
@@ -1652,6 +1655,8 @@ cdef class _YenCandidatePaths:
             target[shortest_path[idx]] = shortest_path[idx + 1]
 
         self._required_paths -= 1
+
+        return spur_node
 
     cdef bint empty(self):
         return self._distances_and_paths.empty()
@@ -1701,6 +1706,7 @@ cdef void _yen(
         double[:] csrT_weights
 
         int k, i, spur_node, node, short_path_idx, tmp_i
+        int spur_node_k_minus_1
         double root_path_distance, total_distance, tmp_d
 
     # Avoid copying a size 0 memory view
@@ -1718,6 +1724,7 @@ cdef void _yen(
 
     # ---------------------------------------------------
     # Compute and store the K-1 shortest paths
+    spur_node_k_minus_1 = source
     for k in range(1, K):
         # Set spur node as sink
         spur_node = sink
@@ -1727,7 +1734,7 @@ cdef void _yen(
         # ---------------------------------------------------
         # For each spur_node in the previous k-shortest path
         # Search for a new short path from it to the sink
-        while spur_node != source:
+        while spur_node != spur_node_k_minus_1:
             # Decrease the root path distance by the distance of it's final edge and
             # set the source of the final edge as the new spur node
             tmp_i = shortest_paths_predecessors[k-1][spur_node] # previous node
@@ -1849,4 +1856,4 @@ cdef void _yen(
             break
         else:
             shortest_distances[k] = total_distance
-            candidate_paths.pop_path_to_memory_view(shortest_paths_predecessors[k])
+            spur_node_k_minus_1 = candidate_paths.pop_path_to_memory_view(shortest_paths_predecessors[k])
