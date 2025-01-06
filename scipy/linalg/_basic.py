@@ -254,7 +254,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     elif assume_a == 'banded':
         n_below, n_above = bandwidth(a1) if n_below is None else (n_below, n_above)
         a2, n_below, n_above = ((a1.T, n_above, n_below) if transposed
-                            else (a1, n_below, n_above))
+                                else (a1, n_below, n_above))
         ab = _to_banded(n_below, n_above, a2)
         anorm = _matrix_norm_banded(n_below, n_above, norm, ab, check_finite)
     elif assume_a in {'lower triangular', 'upper triangular'}:
@@ -377,7 +377,7 @@ def _matrix_norm_triangular(structure, norm, a, check_finite):
 
 
 def _matrix_norm_banded(kl, ku, norm, ab, check_finite):
-    av = np.asarray_chkfinite(ab) if check_finite else ab
+    ab = np.asarray_chkfinite(ab) if check_finite else ab
     langb = get_lapack_funcs('langb', (ab,))
     return langb(norm, kl, ku, ab)
 
