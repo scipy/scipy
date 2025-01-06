@@ -172,7 +172,8 @@ def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
         i = xpx.at(i, ~mask).set(-1)
         max_i = xp.max(i, axis=axis, keepdims=True)
         mask = i == max_i
-        a = xpx.at(a, ~mask).set(0, copy=True)
+        # FIXME https://github.com/data-apis/array-api/pull/860
+        a = xp.where(mask, a, xp.zeros((), dtype=a.dtype))
         max = xp.sum(a, axis=axis, dtype=a.dtype, keepdims=True)
     else:
         max = xp.max(a, axis=axis, keepdims=True)

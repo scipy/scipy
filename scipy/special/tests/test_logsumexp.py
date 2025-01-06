@@ -166,12 +166,12 @@ class TestLogSumExp:
         logsumexp(a, b=b)
 
     @pytest.mark.parametrize('arg', (1, [1, 2, 3]))
-    @pytest.mark.skip_xp_backends(np_only=True, reason="pure Python")
+    @pytest.mark.skip_xp_backends(np_only=True, reason="array-like input")
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_xp_invalid_input(self, arg, xp):
         assert logsumexp(arg) == logsumexp(np.asarray(np.atleast_1d(arg)))
 
-    @pytest.mark.skip_xp_backends(np_only=True, reason="pure Python")
+    @pytest.mark.skip_xp_backends(np_only=True, reason="array-like input")
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_list(self, xp):
         a = [1000, 1000]
