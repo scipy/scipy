@@ -45,7 +45,7 @@ def _solve_check(n, info, lamch=None, rcond=None):
     if lamch is None:
         return
     E = lamch('E')
-    if rcond < E:
+    if not (rcond >= E):  # `rcond < E` doesn't handle NaN
         warn(f'Ill-conditioned matrix (rcond={rcond:.6g}): '
              'result may not be accurate.',
              LinAlgWarning, stacklevel=3)

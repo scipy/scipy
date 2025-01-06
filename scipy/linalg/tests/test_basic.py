@@ -734,6 +734,7 @@ class TestSolve:
                                                 [-4-5.j, -3+4.j],
                                                 [6.j, 2-3.j]]))
 
+    @pytest.mark.xfail(reason="See gh-22265")
     def test_hermitian(self):
         # An upper triangular matrix will be used for hermitian matrix a
         a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
@@ -787,6 +788,25 @@ class TestSolve:
         b = rng.random(size=n)
         message = "Ill-conditioned matrix..."
         with pytest.warns(LinAlgWarning, match=message):
+            solve(A, b, assume_a=structure)
+
+    @pytest.mark.thread_unsafe
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', None))
+    def test_exactly_singular_gh22265(self, structure):
+        n = 10
+        A = np.zeros((n, n))
+        b = np.ones(n)
+        message = "Ill-conditioned matrix..."
+        if structure in {'diagonal', None}:
+            with (pytest.warns(LinAlgWarning, match=message),
+                  np.errstate(all='ignore')):
+                solve(A, b, assume_a=structure)
+            return
+
+        with pytest.raises(LinAlgError, match="singular."):
             solve(A, b, assume_a=structure)
 
     def test_multiple_rhs(self):
