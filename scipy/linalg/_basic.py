@@ -228,17 +228,6 @@ def solve(a, b, lower=False, overwrite_a=False,
     else:
         lamch = get_lapack_funcs('lamch', dtype='d')
 
-    # Currently we do not have the other forms of the norm calculators
-    #   lansy, lanpo, lanhe.
-    # However, in any case they only reduce computations slightly...
-    if assume_a == 'diagonal':
-        _matrix_norm = _matrix_norm_diagonal
-    elif assume_a == 'tridiagonal':
-        _matrix_norm = _matrix_norm_tridiagonal
-    elif assume_a in {'lower triangular', 'upper triangular'}:
-        _matrix_norm = _matrix_norm_triangular(assume_a)
-    else:
-        _matrix_norm = _matrix_norm_general
 
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
@@ -254,8 +243,24 @@ def solve(a, b, lower=False, overwrite_a=False,
     else:
         trans = 0
         norm = '1'
-
-    anorm = _matrix_norm(norm, a1, check_finite)
+    
+    # Currently we do not have the other forms of the norm calculators
+    #   lansy, lanpo, lanhe.
+    # However, in any case they only reduce computations slightly...
+    if assume_a == 'diagonal':
+        anorm = _matrix_norm_diagonal(a1, check_finite)
+    elif assume_a == 'tridiagonal':
+        anorm = _matrix_norm_tridiagonal(norm, a1, check_finite)
+    elif assume_a == 'banded':
+        n_below, n_above = bandwidth(a1) if n_below is None else (n_below, n_above)
+        a2, n_below, n_above = ((a1.T, n_above, n_below) if transposed
+                                else (a1, n_below, n_above))
+        ab = _to_banded(n_below, n_above, a2)
+        anorm = _matrix_norm_banded(n_below, n_above, norm, ab, check_finite)
+    elif assume_a in {'lower triangular', 'upper triangular'}:
+        anorm = _matrix_norm_triangular(assume_a, norm, a1, check_finite)
+    else:
+        anorm = _matrix_norm_general(norm, a1, check_finite)
 
     info, rcond = 0, np.inf
 
@@ -309,10 +314,6 @@ def solve(a, b, lower=False, overwrite_a=False,
         rcond, info = _gtcon(dl, d, du, du2, ipiv, anorm)
     # Banded case
     elif assume_a == 'banded':
-        a1, n_below, n_above = ((a1.T, n_above, n_below) if transposed
-                                else (a1, n_below, n_above))
-        n_below, n_above = bandwidth(a1) if n_below is None else (n_below, n_above)
-        ab = _to_banded(n_below, n_above, a1)
         gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
         # Next two lines copied from `solve_banded`
         a2 = np.zeros((2*n_below + n_above + 1, ab.shape[1]), dtype=gbsv.dtype)
@@ -347,7 +348,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     return x
 
 
-def _matrix_norm_diagonal(_, a, check_finite):
+def _matrix_norm_diagonal(a, check_finite):
     # Equivalent of dlange for diagonal matrix, assuming
     # norm is either 'I' or '1' (really just not the Frobenius norm)
     d = np.diag(a)
@@ -369,12 +370,16 @@ def _matrix_norm_tridiagonal(norm, a, check_finite):
     return d.max()
 
 
-def _matrix_norm_triangular(structure):
-    def fun(norm, a, check_finite):
-        a = np.asarray_chkfinite(a) if check_finite else a
-        lantr = get_lapack_funcs('lantr', (a,))
-        return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
-    return fun
+def _matrix_norm_triangular(structure, norm, a, check_finite):
+    a = np.asarray_chkfinite(a) if check_finite else a
+    lantr = get_lapack_funcs('lantr', (a,))
+    return lantr(norm, a, 'L' if structure == 'lower triangular' else 'U' )
+
+
+def _matrix_norm_banded(kl, ku, norm, ab, check_finite):
+    ab = np.asarray_chkfinite(ab) if check_finite else ab
+    langb = get_lapack_funcs('langb', (ab,))
+    return langb(norm, kl, ku, ab)
 
 
 def _matrix_norm_general(norm, a, check_finite):
