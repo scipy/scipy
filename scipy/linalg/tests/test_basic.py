@@ -795,7 +795,7 @@ class TestSolve:
                              ('diagonal', 'tridiagonal', 'lower triangular',
                               'upper triangular', 'symmetric', 'hermitian',
                               'positive definite', 'general', None))
-    def test_exactly_singular_gh22265(self, structure):
+    def test_exactly_singular_gh22263(self, structure):
         n = 10
         A = np.zeros((n, n))
         b = np.ones(n)
