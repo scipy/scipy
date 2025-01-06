@@ -203,8 +203,9 @@ class TestSymIIR:
         atol = {xp.float64: 1e-15, xp.float32: 1e-7}[dtype]
         xp_assert_close(res, exp_res, atol=atol)
 
+        xp_test = array_namespace(s)  # https://github.com/pytorch/pytorch/issues/51284
         I1 = xp.asarray(
-            1 + 1j, dtype=xp.result_type(s, xp.complex64)
+            1 + 1j, dtype=xp_test.result_type(s, xp.complex64)
         )
         s = s * I1
         res = symiirorder1(s, 0.5, 0.1)
@@ -412,8 +413,9 @@ class TestSymIIR:
         # In that respect, sosfilt is likely doing a better job.
         xp_assert_close(res, exp_res, atol=2e-6, check_dtype=False)
 
+        xp_test = array_namespce(s)  # https://github.com/pytorch/pytorch/issues/51284
         I1 = xp.asarray(
-            1 + 1j, dtype=xp.result_type(s, xp.complex64)
+            1 + 1j, dtype=xp_test.result_type(s, xp.complex64)
         )
         s = s * I1
 
