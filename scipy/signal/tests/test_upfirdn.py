@@ -35,12 +35,13 @@
 import numpy as np
 from itertools import product
 
-from scipy._lib._array_api import (
-    xp_assert_close, array_namespace, is_torch, is_array_api_strict
-)
 from pytest import raises as assert_raises
 import pytest
 
+from scipy._lib import array_api_extra as xpx
+from scipy._lib._array_api import (
+    xp_assert_close, array_namespace, is_torch, is_array_api_strict
+)
 from scipy.signal import upfirdn, firwin
 from scipy.signal._upfirdn import _output_len, _upfirdn_modes
 from scipy.signal._upfirdn_apply import _pad_test
@@ -133,7 +134,7 @@ class TestUpfirdn:
     def test_singleton(self, len_h, len_x, xp):
         # gh-9844: lengths producing expected outputs
         h = xp.zeros(len_h)
-        h[len_h // 2] = 1.  # make h a delta
+        h = xpx.at(h)[len_h // 2].set(1.)  # make h a delta
         x = xp.ones(len_x)
         y = upfirdn(h, x, 1, 1)
         want = xpx.pad(x, (len_h // 2, (len_h - 1) // 2), 'constant', xp=xp)
@@ -161,7 +162,7 @@ class TestUpfirdn:
     def test_length_factors(self, len_h, len_x, up, down, expected, xp):
         # gh-9844: weird factors
         h = xp.zeros(len_h)
-        h[0] = 1.
+        h = xpx.at(h)[0].set(1.)
         x = xp.ones(len_x, dtype=xp.float64)
         y = upfirdn(h, x, up, down)
         expected = xp.asarray(expected, dtype=xp.float64)
