@@ -194,7 +194,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     ...
     ...    return d2x + d2y - 10*np.cosh(P).mean()**2
 
-    >>> guess = np.zeros((nx, ny), float)
+    >>> guess = np.zeros((ny, nx), float)
     >>> sol = optimize.root(residual, guess, method='krylov')
     >>> print('Residual: %g' % abs(residual(sol.x)).max())
     Residual: 5.7972e-06  # may vary
