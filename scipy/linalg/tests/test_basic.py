@@ -734,8 +734,8 @@ class TestSolve:
                                                 [-4-5.j, -3+4.j],
                                                 [6.j, 2-3.j]]))
 
-    @pytest.mark.xfail(reason="See gh-22265")
-    def test_hermitian(self):
+    @pytest.mark.parametrize("assume_a", ['her', 'sym'])
+    def test_symmetric_hermitian(self, assume_a):
         # An upper triangular matrix will be used for hermitian matrix a
         a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
                       [0, -4.63, -1.84+0.03j, 2.21+0.21j],
@@ -745,15 +745,19 @@ class TestSolve:
                       [-9.58+3.88j, -24.79-8.40j],
                       [-0.77-16.05j, 4.23-70.02j],
                       [7.79+5.48j, -35.39+18.01j]])
-        res = np.array([[2.+1j, -8+6j],
-                        [3.-2j, 7-2j],
-                        [-1+2j, -1+5j],
-                        [1.-1j, 3-4j]])
-        x = solve(a, b, assume_a='her')
-        assert_array_almost_equal(x, res)
+
+        a2 = a.T if assume_a == 'sym' else a.conj().T  # for testing `lower`
+        a3 = a + a2                                    # for reference solution
+        a3[np.arange(4), np.arange(4)] = np.diag(a)
+        ref = solve(a3, b, assume_a='general')
+
+        x = solve(a, b, assume_a=assume_a)
+        assert_array_almost_equal(x, ref)
         # Also conjugate a and test for lower triangular data
-        x = solve(a.conj().T, b, assume_a='her', lower=True)
-        assert_array_almost_equal(x, res)
+        # This also tests gh-22265 resolution; otherwise, a warning would be emitted
+
+        x = solve(a2, b, assume_a=assume_a, lower=True)
+        assert_array_almost_equal(x, ref)
 
     def test_pos_and_sym(self):
         A = np.arange(1, 10).reshape(3, 3)

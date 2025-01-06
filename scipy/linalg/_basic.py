@@ -284,7 +284,7 @@ def solve(a, b, lower=False, overwrite_a=False,
                                  overwrite_a=overwrite_a,
                                  overwrite_b=overwrite_b)
         _solve_check(n, info)
-        rcond, info = hecon(lu, ipvt, anorm)
+        rcond, info = hecon(lu, ipvt, anorm, lower=lower)
     # Symmetric case 'sysv'
     elif assume_a in {'symmetric', 'sym'}:
         sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
@@ -295,7 +295,7 @@ def solve(a, b, lower=False, overwrite_a=False,
                                  overwrite_a=overwrite_a,
                                  overwrite_b=overwrite_b)
         _solve_check(n, info)
-        rcond, info = sycon(lu, ipvt, anorm)
+        rcond, info = sycon(lu, ipvt, anorm, lower=lower)
     # Diagonal case
     elif assume_a == 'diagonal':
         diag_a = np.diag(a1)
