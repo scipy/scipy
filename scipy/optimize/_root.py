@@ -200,7 +200,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     Residual: 5.7972e-06  # may vary
 
     >>> import matplotlib.pyplot as plt
-    >>> y, x = np.mgrid[0:1:(nx*1j), 0:1:(ny*1j)]
+    >>> y, x = np.mgrid[0:1:(ny*1j), 0:1:(nx*1j)]
     >>> plt.pcolormesh(x, y, sol.x, shading='gouraud')
     >>> plt.colorbar()
     >>> plt.show()
