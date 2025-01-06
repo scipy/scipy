@@ -266,7 +266,7 @@ The following pytest markers are available:
 * ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
   all tests that use it. This is useful e.g. to select all and only such tests::
 
-    python dev.py test -b all -- -m array_api_backends
+    python dev.py test -b all -m array_api_backends
 
   Note that this includes tests that use the ``xp`` fixture indirectly through another
   array API fixture, such as ``@pytest.mark.usefixtures("skip_xp_backends")``, even if
