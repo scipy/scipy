@@ -1585,7 +1585,7 @@ class TestResample:
                     xp_assert_close(y_g[::down], y_s)
 
     @pytest.mark.parametrize('dtype', [np.int32, np.float32])
-    def test_gh_15620(self, dtype):
+    def test_gh_15620(self, dtype, xp):
         data = np.array([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
         actual = signal.resample_poly(data,
                                       up=2,
@@ -3421,7 +3421,7 @@ class TestEnvelope:
         self.assert_close(Zr, np.array(Zr_desired).astype(complex),
                           msg="Residual calculation error")
 
-    def test_envelope_verify_axis_parameter(self):
+    def test_envelope_verify_axis_parameter(self, xp):
         """Test for multi-channel envelope calculations. """
         z = sp_fft.irfft([[1, 0, 2, 2, 0], [7, 0, 4, 4, 0]])
         Ze2_desired = np.array([[4, 2, 0, 0, 0], [16, 8, 0, 0, 0]],
@@ -3503,7 +3503,7 @@ class TestPartialFractionExpansion:
         xp_assert_close(unique, [1.0, 2.0, 3.0])
         xp_assert_close(multiplicity, [3, 2, 1])
 
-    def test_residue_general(self):
+    def test_residue_general(self, xp):
         # Test are taken from issue #4464, note that poles in scipy are
         # in increasing by absolute value order, opposite to MATLAB.
         r, p, k = residue([5, 3, -2, 7], [-4, 0, 8, 3])

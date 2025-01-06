@@ -1879,7 +1879,7 @@ class TestKstatVar:
     @skip_xp_backends(np_only=True,
                       reason='input validation of `n` does not depend on backend')
     @pytest.mark.usefixtures("skip_xp_backends")
-    def test_bad_arg(self):
+    def test_bad_arg(self, xp):
         # Raise ValueError is n is not 1 or 2.
         data = [1]
         n = 10

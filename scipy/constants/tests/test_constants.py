@@ -53,7 +53,7 @@ class TestConvertTemperature:
                         xp.asarray([273.15, 0.], dtype=xp.float64), rtol=0., atol=1e-13)
 
     @skip_xp_backends(np_only=True, reason='Python list input uses NumPy backend')
-    def test_convert_temperature_array_like(self):
+    def test_convert_temperature_array_like(self, xp):
         assert_allclose(sc.convert_temperature([491.67, 0.], 'rankine', 'kelvin'),
                         [273.15, 0.], rtol=0., atol=1e-13)
 
