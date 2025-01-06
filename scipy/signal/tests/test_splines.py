@@ -204,7 +204,7 @@ class TestSymIIR:
         xp_assert_close(res, exp_res, atol=atol)
 
         I1 = xp.asarray(
-            1 + 1j, dtype=xp.complex64 if s.dtype == xp.float32 else xp.complex128
+            1 + 1j, dtype=xp.result_type(s, xp.complex64)
         )
         s = s * I1
         res = symiirorder1(s, 0.5, 0.1)
@@ -413,7 +413,7 @@ class TestSymIIR:
         xp_assert_close(res, exp_res, atol=2e-6, check_dtype=False)
 
         I1 = xp.asarray(
-            1 + 1j, dtype=xp.complex64 if s.dtype == xp.float32 else xp.complex128
+            1 + 1j, dtype=xp.result_type(s, xp.complex64)
         )
         s = s * I1
 
