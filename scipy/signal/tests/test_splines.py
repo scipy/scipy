@@ -203,10 +203,14 @@ class TestSymIIR:
         atol = {xp.float64: 1e-15, xp.float32: 1e-7}[dtype]
         xp_assert_close(res, exp_res, atol=atol)
 
-        s = s + 1j*s
+        xp_test = array_namespace(s)  # https://github.com/pytorch/pytorch/issues/51284
+        I1 = xp.asarray(
+            1 + 1j, dtype=xp_test.result_type(s, xp.complex64)
+        )
+        s = s * I1
         res = symiirorder1(s, 0.5, 0.1)
         assert res.dtype == xp.complex64 if dtype == xp.float32 else xp.complex128
-        xp_assert_close(res, exp_res + 1j*exp_res, atol=atol)
+        xp_assert_close(res, I1 * exp_res, atol=atol)
 
     @skip_xp_backends(np_only=True,
                       reason="_initial_fwd functions are private and numpy-only")
@@ -409,7 +413,12 @@ class TestSymIIR:
         # In that respect, sosfilt is likely doing a better job.
         xp_assert_close(res, exp_res, atol=2e-6, check_dtype=False)
 
-        s = s + 1j*s
+        xp_test = array_namespace(s)  # https://github.com/pytorch/pytorch/issues/51284
+        I1 = xp.asarray(
+            1 + 1j, dtype=xp_test.result_type(s, xp.complex64)
+        )
+        s = s * I1
+
         with pytest.raises((TypeError, ValueError)):
             res = symiirorder2(s, 0.5, 0.1)
 
@@ -418,7 +427,7 @@ class TestSymIIR:
     def test_symiir1_integer_input(self, xp):
         astype = array_namespace(xp.ones(1)).astype
         bool_ = array_namespace(xp.ones(1)).bool
-        s = xp.where(astype(xp.arange(100) % 2, bool_), -1, 1)
+        s = xp.where(astype(xp.arange(100) % 2, bool_), xp.asarray(-1), xp.asarray(1))
         expected = symiirorder1(astype(s, xp.float64), 0.5, 0.5)
         out = symiirorder1(s, 0.5, 0.5)
         xp_assert_close(out, expected)
@@ -428,7 +437,7 @@ class TestSymIIR:
     def test_symiir2_integer_input(self, xp):
         astype = array_namespace(xp.ones(1)).astype
         bool_ = array_namespace(xp.ones(1)).bool
-        s = xp.where(astype(xp.arange(100) % 2, bool_), -1, 1)
+        s = xp.where(astype(xp.arange(100) % 2, bool_), xp.asarray(-1), xp.asarray(1))
         expected = symiirorder2(astype(s, xp.float64), 0.5, xp.pi / 3.0)
         out = symiirorder2(s, 0.5, xp.pi / 3.0)
         xp_assert_close(out, expected)
