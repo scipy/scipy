@@ -40,7 +40,7 @@ class TestDerivative:
 
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('case', stats._distr_params.distcont)
-    def test_accuracy(self, case):
+    def test_accuracy(self, case, xp):
         distname, params = case
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
@@ -435,7 +435,7 @@ class TestDerivative:
         (lambda x: (x - 1) ** 3, 1),
         (lambda x: np.where(x > 1, (x - 1) ** 5, (x - 1) ** 3), 1)
     ))
-    def test_saddle_gh18811(self, case):
+    def test_saddle_gh18811(self, case, xp):
         # With default settings, `derivative` will not always converge when
         # the true derivative is exactly zero. This tests that specifying a
         # (tight) `atol` alleviates the problem. See discussion in gh-18811.

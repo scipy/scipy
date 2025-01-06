@@ -33,7 +33,7 @@ class TestVariation:
         xp_assert_close(v, expected, rtol=1e-10)
 
     @skip_xp_backends(np_only=True, reason="test plain python scalar input")
-    def test_scalar(self):
+    def test_scalar(self, xp):
         # A scalar is treated like a 1-d sequence with length 1.
         assert variation(4.0) == 0.0
 

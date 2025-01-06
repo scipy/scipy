@@ -380,7 +380,7 @@ class TestPearsonrWilkinson:
 @skip_xp_backends(cpu_only=True)
 class TestPearsonr:
     @skip_xp_backends(np_only=True)
-    def test_pearsonr_result_attributes(self):
+    def test_pearsonr_result_attributes(self, xp):
         res = stats.pearsonr(X, X)
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
@@ -557,7 +557,7 @@ class TestPearsonr:
              ('two-sided', 0.325800137536, -0.992306975236, 0.81493896884, -1),
              ('less', 0.1629000687684, -1.0, 0.6785654158217636, -1),
              ('greater', 0.8370999312316, -0.985600937290653, 1.0, -1)])
-    def test_basic_example(self, alternative, pval, rlow, rhigh, sign):
+    def test_basic_example(self, alternative, pval, rlow, rhigh, sign, xp):
         x = [1, 2, 3, 4]
         y = np.array([0, 1, 0.5, 1]) * sign
         result = stats.pearsonr(x, y, alternative=alternative)
@@ -593,7 +593,7 @@ class TestPearsonr:
         xp_assert_equal(high, one)
 
     @pytest.mark.skip_xp_backends(np_only=True)
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
         x = [1, 2, 3]
         y = [4, 5]
         message = '`x` and `y` must have the same length along `axis`.'
@@ -626,7 +626,7 @@ class TestPearsonr:
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('method_name',
                              ('permutation', 'monte_carlo', 'monte_carlo2'))
-    def test_resampling_pvalue(self, method_name, alternative):
+    def test_resampling_pvalue(self, method_name, alternative, xp):
         rng = np.random.default_rng(24623935790378923)
         size = (2, 100) if method_name == 'permutation' else (2, 1000)
         x = rng.normal(size=size)
@@ -648,7 +648,7 @@ class TestPearsonr:
 
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    def test_bootstrap_ci(self, alternative):
+    def test_bootstrap_ci(self, alternative, xp):
         rng = np.random.default_rng(2462935790378923)
         x = rng.normal(size=(2, 100))
         y = rng.normal(size=(2, 100))
@@ -6700,7 +6700,7 @@ class TestJarqueBera:
 
     @skip_xp_backends(np_only=True)
     @pytest.mark.usefixtures("skip_xp_backends")
-    def test_jarque_bera_array_like(self):
+    def test_jarque_bera_array_like(self, xp):
         # array-like only relevant for NumPy
         np.random.seed(987654321)
         x = np.random.normal(0, 1, 100000)
