@@ -50,6 +50,7 @@ from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
+import scipy._lib.array_api_extra as xpx
 
 from threading import Lock
 
@@ -445,8 +446,6 @@ class TestIsValidLinkage:
             Z = linkage(y)
             assert_(is_valid_linkage(Z) is True)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_is_valid_linkage_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (left).
@@ -454,12 +453,10 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,0] = -2
+            Z = xpx.at(Z)[i//2, 0].set(-2)
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_is_valid_linkage_4_and_up_neg_index_right(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (right).
@@ -467,12 +464,10 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,1] = -2
+            Z = xpx.at(Z)[i//2, 1].set(-2)
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_is_valid_linkage_4_and_up_neg_dist(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative distances.
@@ -480,12 +475,10 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,2] = -0.5
+            Z = xpx.at(Z)[i//2, 2].set(-0.5)
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_is_valid_linkage_4_and_up_neg_counts(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative counts.
@@ -493,7 +486,7 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,3] = -2
+            Z = xpx.at(Z)[i//2, 3].set(-2)
             assert_(is_valid_linkage(Z) is False)
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -538,7 +531,6 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             assert_(is_valid_im(R) is True)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_is_valid_im_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height means.
@@ -547,11 +539,10 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,0] = -2.0
+            R = xpx.at(R)[i//2 , 0].set(-2.0)
             assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_is_valid_im_4_and_up_neg_index_right(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height standard deviations.
@@ -560,11 +551,10 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,1] = -2.0
+            R = xpx.at(R)[i//2 , 1].set(-2.0)
             assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_is_valid_im_4_and_up_neg_dist(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link counts.
@@ -573,7 +563,7 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,2] = -0.5
+            R = xpx.at(R)[i//2, 2].set(-0.5)
             assert_(is_valid_im(R) is False)
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
@@ -766,12 +756,11 @@ class TestIsMonotonic:
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
         assert is_monotonic(Z)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_is_monotonic_tdist_linkage2(self, xp):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # tdist data set. Perturbing. Expecting False.
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
-        Z[2,2] = 0.0
+        Z = xpx.at(Z)[2, 2].set(0.0)
         assert not is_monotonic(Z)
 
     def test_is_monotonic_Q_linkage(self, xp):
@@ -790,7 +779,6 @@ class TestMaxDists:
         Z = xp.zeros((0, 4), dtype=xp.float64)
         assert_raises(ValueError, maxdists, Z)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_maxdists_one_cluster_linkage(self, xp):
         # Tests maxdists(Z) on linkage with one cluster.
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
@@ -798,7 +786,6 @@ class TestMaxDists:
         expectedMD = calculate_maximum_distances(Z, xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_maxdists_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             self.check_maxdists_Q_linkage(method, xp)
@@ -829,8 +816,7 @@ class TestMaxInconsts:
         R = xp.asarray(R)
         assert_raises(ValueError, maxinconsts, Z, R)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment',
-                      cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
     def test_maxinconsts_one_cluster_linkage(self, xp):
         # Tests maxinconsts(Z, R) on linkage with one cluster.
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
@@ -839,8 +825,7 @@ class TestMaxInconsts:
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment',
-                      cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
     def test_maxinconsts_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             self.check_maxinconsts_Q_linkage(method, xp)
@@ -893,8 +878,7 @@ class TestMaxRStat:
         R = xp.asarray(R)
         assert_raises(ValueError, maxRstat, Z, R, i)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment',
-                      cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
     def test_maxRstat_one_cluster_linkage(self, xp):
         for i in range(4):
             self.check_maxRstat_one_cluster_linkage(i, xp)
@@ -907,8 +891,7 @@ class TestMaxRStat:
         expectedMD = calculate_maximum_inconsistencies(Z, R, 1, xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment',
-                      cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
     def test_maxRstat_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             for i in range(4):
@@ -1129,17 +1112,18 @@ def calculate_maximum_distances(Z, xp):
     # Used for testing correctness of maxdists.
     n = Z.shape[0] + 1
     B = xp.zeros((n-1,), dtype=Z.dtype)
-    q = xp.zeros((3,))
     for i in range(0, n - 1):
-        q[:] = 0.0
+        q = xp.zeros((3,))
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[xp.asarray(left, dtype=xp.int64) - n]
+            b_left = B[xp.asarray(left, dtype=xp.int64) - n]
+            q = xpx.at(q, 0).set(b_left)
         if right >= n:
-            q[1] = B[xp.asarray(right, dtype=xp.int64) - n]
-        q[2] = Z[i, 2]
-        B[i] = xp.max(q)
+            b_right = B[xp.asarray(right, dtype=xp.int64) - n]
+            q = xpx.at(q, 1).set(b_right)
+        q = xpx.at(q, 2).set(Z[i, 2])
+        B = xpx.at(B, i).set(xp.max(q))
     return B
 
 
@@ -1148,17 +1132,18 @@ def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
     n = Z.shape[0] + 1
     dtype = xp.result_type(Z, R)
     B = xp.zeros((n-1,), dtype=dtype)
-    q = xp.zeros((3,))
     for i in range(0, n - 1):
-        q[:] = 0.0
+        q = xp.zeros((3,))
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[xp.asarray(left, dtype=xp.int64) - n]
+            b_left = B[xp.asarray(left, dtype=xp.int64) - n]
+            q = xpx.at(q, 0).set(b_left)
         if right >= n:
-            q[1] = B[xp.asarray(right, dtype=xp.int64) - n]
-        q[2] = R[i, k]
-        B[i] = xp.max(q)
+            b_right = B[xp.asarray(right, dtype=xp.int64) - n]
+            q = xpx.at(q, 1).set(b_right)
+        q = xpx.at(q, 2).set(R[i, k])
+        B = xpx.at(B, i).set(xp.max(q))
     return B
 
 
