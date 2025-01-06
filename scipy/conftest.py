@@ -215,9 +215,16 @@ def xp(request):
     You can select all and only the tests that use the `xp` fixture by
     passing `-m array_api_backends` to pytest.
 
-    Please read: https://docs.scipy.org/doc/scipy/dev/api-dev/array_api.html
+    You can select where individual tests run through the `@skip_xp_backends`,
+    `@xfail_xp_backends`, and `@skip_xp_invalid_arg` pytest markers.
+
+    Please read: https://docs.scipy.org/doc/scipy/dev/api-dev/array_api.html#adding-tests
     """
+    # Read all @pytest.marks.skip_xp_backends markers that decorate to the test,
+    # if any, and raise pytest.skip() if the current xp is in the list.
     skip_or_xfail_xp_backends(request, "skip")
+    # Read all @pytest.marks.xfail_xp_backends markers that decorate the test,
+    # if any, and raise pytest.xfail() if the current xp is in the list.
     skip_or_xfail_xp_backends(request, "xfail")
 
     if SCIPY_ARRAY_API:
@@ -263,16 +270,16 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
     backends = []
     kwargs = {}
     for marker in markers:
-        if marker.kwargs.get('np_only'):
+        if marker.kwargs.get('np_only', False):
             kwargs['np_only'] = True
             kwargs['exceptions'] = marker.kwargs.get('exceptions', [])
-            kwargs['reason'] = marker.kwargs.get('reason')
-        elif marker.kwargs.get('cpu_only'):
-            if not kwargs.get('np_only'):
+            kwargs['reason'] = marker.kwargs.get('reason', None)
+        elif marker.kwargs.get('cpu_only', False):
+            if not kwargs.get('np_only', False):
                 # if np_only is given, it is certainly cpu only
                 kwargs['cpu_only'] = True
                 kwargs['exceptions'] = marker.kwargs.get('exceptions', [])
-                kwargs['reason'] = marker.kwargs.get('reason')
+                kwargs['reason'] = marker.kwargs.get('reason', None)
 
         # add backends, if any
         if len(marker.args) == 1:
