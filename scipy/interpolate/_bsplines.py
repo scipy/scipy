@@ -508,8 +508,8 @@ class BSpline:
 
         self._ensure_c_contiguous()
 
-        # if self.c is complex, so is `out`; cython code in _bspl.pyx expectes
-        # floats though, so make a view---this expands the last axis, and
+        # if self.c is complex: the C code in _dierckxmodule.cc expects
+        # floats, so make a view---this expands the last axis, and
         # the view is C contiguous if the original is.
         # if c.dtype is complex of shape (n,), c.view(float).shape == (2*n,)
         # if c.dtype is complex of shape (n, m), c.view(float).shape == (n, 2*m)
@@ -525,9 +525,8 @@ class BSpline:
         # flatten the trailing dims
         cc = cc.reshape(cc.shape[0], -1)
 
-        out = np.empty((len(x), cc.shape[-1]), dtype=cc.dtype)
-
-        _dierckx.evaluate_spline(self.t, cc, self.k, x, nu, extrapolate, out)
+        # heavy lifting: actually perform the evaluations
+        out = _dierckx.evaluate_spline(self.t, cc, self.k, x, nu, extrapolate)
 
         if is_complex:
             out = out.view(complex)
@@ -691,8 +690,6 @@ class BSpline:
                 integral = _fitpack_impl.splint(a, b, self.tck)
                 return np.asarray(integral * sign)
 
-        out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
-
         # Compute the antiderivative.
         c = self.c
         ct = len(self.t) - len(c)
@@ -712,8 +709,8 @@ class BSpline:
             if n_periods > 0:
                 # Evaluate the difference of antiderivatives.
                 x = np.asarray([ts, te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral = out[1] - out[0]
                 integral *= n_periods
             else:
@@ -728,24 +725,24 @@ class BSpline:
             # over [a, te] and from xs to what is remained.
             if b <= te:
                 x = np.asarray([a, b], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
             else:
                 x = np.asarray([a, te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
 
                 x = np.asarray([ts, ts + b - te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
         else:
             # Evaluate the difference of antiderivatives.
             x = np.asarray([a, b], dtype=np.float64)
-            _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                  ka, x, 0, extrapolate, out)
+            out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                  ka, x, 0, extrapolate)
             integral = out[1] - out[0]
 
         integral *= sign
