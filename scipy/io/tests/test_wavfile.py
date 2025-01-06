@@ -369,10 +369,10 @@ def test_streams():
             rate1, data1 = wavfile.read(fp1)
             rate2, data2 = wavfile.read(Nonseekable(fp2))
             rate3, data3 = wavfile.read(dfname, mmap=False)
-            assert_array_equal(rate1, rate3)
-            assert_array_equal(rate2, rate3)
-            assert_array_equal(data1, data3)
-            assert_array_equal(data2, data3)
+            assert_equal(rate1, rate3)
+            assert_equal(rate2, rate3)
+            assert_equal(data1, data3)
+            assert_equal(data2, data3)
 
 
 def test_read_unknown_filetype_fail():
