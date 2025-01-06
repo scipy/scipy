@@ -193,8 +193,8 @@ def test_orthogonalize_noop(func, type, norm, xp):
 
 
 @skip_xp_backends('jax.numpy',
-                  reason='jax arrays do not support item assignment',
-                  cpu_only=True)
+                  reason='jax arrays do not support item assignment')
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 def test_orthogonalize_dct1(norm, xp):
     x = xp.asarray(np.random.rand(100))
@@ -212,8 +212,8 @@ def test_orthogonalize_dct1(norm, xp):
 
 
 @skip_xp_backends('jax.numpy',
-                  reason='jax arrays do not support item assignment',
-                  cpu_only=True)
+                  reason='jax arrays do not support item assignment')
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst2(func, norm, xp):
@@ -226,8 +226,8 @@ def test_orthogonalize_dcst2(func, norm, xp):
 
 
 @skip_xp_backends('jax.numpy',
-                  reason='jax arrays do not support item assignment',
-                  cpu_only=True)
+                  reason='jax arrays do not support item assignment')
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst3(func, norm, xp):

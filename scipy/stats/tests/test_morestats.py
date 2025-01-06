@@ -761,7 +761,7 @@ class TestBartlett:
         check_named_results(res, attributes, xp=xp)
 
     @pytest.mark.skip_xp_backends(
-        "jax.numpy", cpu_only=True,
+        "jax.numpy",
         reason='`var` incorrect when `correction > n` (google/jax#21330)')
     @pytest.mark.usefixtures("skip_xp_backends")
     def test_empty_arg(self, xp):

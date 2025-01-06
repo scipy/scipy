@@ -48,7 +48,6 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 
 from threading import Lock
@@ -68,8 +67,6 @@ try:
 except Exception:
     have_matplotlib = False
 
-
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
@@ -829,8 +826,8 @@ class TestMaxInconsts:
         R = xp.asarray(R)
         assert_raises(ValueError, maxinconsts, Z, R)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment',
-                      cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
+    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_maxinconsts_one_cluster_linkage(self, xp):
         # Tests maxinconsts(Z, R) on linkage with one cluster.
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
@@ -839,8 +836,8 @@ class TestMaxInconsts:
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment',
-                      cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
+    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_maxinconsts_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             self.check_maxinconsts_Q_linkage(method, xp)
@@ -893,8 +890,8 @@ class TestMaxRStat:
         R = xp.asarray(R)
         assert_raises(ValueError, maxRstat, Z, R, i)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment',
-                      cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
+    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_maxRstat_one_cluster_linkage(self, xp):
         for i in range(4):
             self.check_maxRstat_one_cluster_linkage(i, xp)
@@ -907,8 +904,8 @@ class TestMaxRStat:
         expectedMD = calculate_maximum_inconsistencies(Z, R, 1, xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment',
-                      cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
+    @skip_xp_backends('jax.numpy', reason='jax arrays do not support item assignment')
     def test_maxRstat_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             for i in range(4):
