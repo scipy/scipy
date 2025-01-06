@@ -799,14 +799,7 @@ class TestSolve:
         n = 10
         A = np.zeros((n, n))
         b = np.ones(n)
-        message = "Ill-conditioned matrix..."
-        if structure in {'diagonal', None}:
-            with (pytest.warns(LinAlgWarning, match=message),
-                  np.errstate(all='ignore')):
-                solve(A, b, assume_a=structure)
-            return
-
-        with pytest.raises(LinAlgError, match="singular."):
+        with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
             solve(A, b, assume_a=structure)
 
     def test_multiple_rhs(self):
