@@ -1,4 +1,3 @@
-import math
 import numpy as np
 from scipy._lib._util import _asarray_validated
 from scipy._lib._array_api import (
@@ -6,7 +5,6 @@ from scipy._lib._array_api import (
     xp_size,
     xp_broadcast_promote,
     xp_real,
-    xp_copy,
     xp_float_to_complex,
 )
 from scipy._lib import array_api_extra as xpx
@@ -144,11 +142,10 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 def _wrap_radians(x, xp=None):
     xp = array_namespace(x) if xp is None else xp
     # Wrap radians to (-pi, pi] interval
-    out = -((-x + math.pi) % (2 * math.pi) - math.pi)
+    wrapped = -((-x + xp.pi) % (2 * xp.pi) - xp.pi)
     # preserve relative precision
     no_wrap = xp.abs(x) < xp.pi
-    out[no_wrap] = x[no_wrap]
-    return out
+    return xp.where(no_wrap, x, wrapped)
 
 
 def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
@@ -172,11 +169,10 @@ def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
         # simple, array-API compatible way of doing so that doesn't
         # have a problem with `axis` being a tuple or None.
         i = xp.reshape(xp.arange(xp_size(a)), a.shape)
-        i[~mask] = -1
+        i = xpx.at(i, ~mask).set(-1)
         max_i = xp.max(i, axis=axis, keepdims=True)
         mask = i == max_i
-        a = xp_copy(a)
-        a[~mask] = 0
+        a = xpx.at(a, ~mask).set(0, copy=True)
         max = xp.sum(a, axis=axis, dtype=a.dtype, keepdims=True)
     else:
         max = xp.max(a, axis=axis, keepdims=True)
@@ -195,14 +191,14 @@ def _logsumexp(a, b, axis, return_sign, xp):
     # Even if element of `a` is infinite or NaN, it adds nothing to the sum if
     # the corresponding weight is zero.
     if b is not None:
-        a[b == 0] = -xp.inf
+        a = xpx.at(a, b == 0).set(-xp.inf)
 
     # Find element with maximum real part, since this is what affects the magnitude
     # of the exponential. Possible enhancement: include log of `b` magnitude in `a`.
     a_max, i_max = _elements_and_indices_with_max_real(a, axis=axis, xp=xp)
 
     # for precision, these terms are separated out of the main sum.
-    a[i_max] = -xp.inf
+    a = xpx.at(a, i_max).set(-xp.inf)
     i_max_dt = xp.astype(i_max, a.dtype)
     # This is an inefficient way of getting `m` because it is the sum of a sparse
     # array; however, this is the simplest way I can think of to get the right shape.
