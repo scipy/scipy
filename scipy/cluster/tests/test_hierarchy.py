@@ -48,7 +48,6 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
@@ -69,8 +68,6 @@ try:
 except Exception:
     have_matplotlib = False
 
-
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
