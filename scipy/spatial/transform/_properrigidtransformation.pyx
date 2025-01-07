@@ -308,11 +308,13 @@ cdef class ProperRigidTransformation:
 
         single = expcoords.ndim == 1
         expcoords = np.atleast_2d(expcoords)
+
         rotations = Rotation.from_rotvec(expcoords[:, :3])
-        translations = np.empty((len(expcoords), 3), dtype=float)
 
         theta = np.linalg.norm(expcoords[:, :3], axis=-1)
         ind_only_translation = theta == 0.0
+
+        translations = np.empty((len(expcoords), 3), dtype=float)
 
         if not np.all(ind_only_translation):
             theta[ind_only_translation] = 1.0

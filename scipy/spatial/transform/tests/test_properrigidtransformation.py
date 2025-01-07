@@ -134,10 +134,39 @@ def test_from_expcoords():
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
-    T_expected = T2 * T1.inv()
-    T_actual = T.from_expcoords(
+    expected = T2 * T1.inv()
+    actual = T.from_expcoords(
         np.deg2rad(30.0) * np.array([0.0, 0.0, 1.0, 3.37, -3.37, 0.0]))
-    assert_allclose(T_actual.as_matrix(), T_expected.as_matrix(), atol=1e-2)
+    assert_allclose(actual.as_matrix(), expected.as_matrix(), atol=1e-2)
+
+    # only translation
+    expected_matrix = np.array([
+        [[1.0, 0.0, 0.0, 3.0],
+         [0.0, 1.0, 0.0, -5.4],
+         [0.0, 0.0, 1.0, 100.2],
+         [0.0, 0.0, 0.0, 1.0]],
+        [[1.0, 0.0, 0.0, -3.0],
+         [0.0, 1.0, 0.0, 13.3],
+         [0.0, 0.0, 1.0, 1.3],
+         [0.0, 0.0, 0.0, 1.0]]
+    ])
+    actual = T.from_expcoords([
+        [0.0, 0.0, 0.0, 3.0, -5.4, 100.2],
+        [0.0, 0.0, 0.0, -3.0, 13.3, 1.3],
+    ])
+    assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
+
+    # only rotation
+    rot = R.from_euler(
+        'zyx',
+        [[34, -12, 0.5],
+         [-102, -55, 30]],
+        degrees=True)
+    rotvec = rot.as_rotvec()
+    expected_matrix = np.array([np.eye(4), np.eye(4)])
+    expected_matrix[:, :3, :3] = rot.as_matrix()
+    actual = T.from_expcoords(np.hstack((rotvec, np.zeros((2, 3)))))
+    assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
 
 def test_identity():
