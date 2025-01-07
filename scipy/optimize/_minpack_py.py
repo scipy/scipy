@@ -801,7 +801,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     `curve_fit` is for local optimization of parameters to minimize the sum of squares
     of residuals. For global optimization, other choices of objective function, and
-    other advanced features, consider using SciPy's :ref:`_tutorial_optimize_global`
+    other advanced features, consider using SciPy's :ref:`tutorial_optimize_global`
     tools or the `LMFIT <https://lmfit.github.io/lmfit-py/index.html>`_ package.
 
     References
