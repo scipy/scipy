@@ -50,7 +50,6 @@ def test_rel_entr_generic(dtype):
 
 
 @pytest.mark.fail_slow(5)
-@array_api_compatible
 # `reversed` is for developer convenience: test new function first = less waiting
 @pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
