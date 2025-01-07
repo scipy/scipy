@@ -151,6 +151,7 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.github/workflows/.pixi
 .openblas
 scipy/_distributor_init_local.py
 scipy/__config__.py
