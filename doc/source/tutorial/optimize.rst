@@ -891,6 +891,8 @@ meet your needs (e.g. execution time, objective function value).
      - ✓
      - ✓
 
+.. _tutorial_optimize_global:
+
 Global optimization
 -------------------
 
