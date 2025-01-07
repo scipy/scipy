@@ -295,81 +295,71 @@ class TestRenameParameter:
                     self.old_keyword_deprecated(new=10, old=10)
 
 
-class TestContainsNaNTest:
-
+class TestContainsNaN:
     def test_policy(self):
         data = np.array([1, 2, 3, np.nan])
 
-        contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
-        assert contains_nan
-        assert nan_policy == "propagate"
+        assert _contains_nan(data)  # default policy is "propagate"
+        assert _contains_nan(data, nan_policy="propagate")
+        assert _contains_nan(data, nan_policy="omit")
+        assert not _contains_nan(data[:3])
+        assert not _contains_nan(data[:3], nan_policy="propagate")
+        assert not _contains_nan(data[:3], nan_policy="omit")
 
-        contains_nan, nan_policy = _contains_nan(data, nan_policy="omit")
-        assert contains_nan
-        assert nan_policy == "omit"
-
-        msg = "The input contains nan values"
-        with pytest.raises(ValueError, match=msg):
+        with pytest.raises(ValueError, match="The input contains nan values"):
             _contains_nan(data, nan_policy="raise")
+        assert not _contains_nan(data[:3], nan_policy="raise")
 
-        msg = "nan_policy must be one of"
-        with pytest.raises(ValueError, match=msg):
+        with pytest.raises(ValueError, match="nan_policy must be one of"):
             _contains_nan(data, nan_policy="nan")
 
     def test_contains_nan(self):
-        data1 = np.array([1, 2, 3])
-        assert not _contains_nan(data1)[0]
+        # Special case: empty array
+        assert not _contains_nan(np.array([], dtype=float))
 
-        data2 = np.array([1, 2, 3, np.nan])
-        assert _contains_nan(data2)[0]
-
-        data3 = np.array([np.nan, 2, 3, np.nan])
-        assert _contains_nan(data3)[0]
-
-        data4 = np.array([[1, 2], [3, 4]])
-        assert not _contains_nan(data4)[0]
-
-        data5 = np.array([[1, 2], [3, np.nan]])
-        assert _contains_nan(data5)[0]
+        # Integer arrays cannot contain NaN
+        assert not _contains_nan(np.array([1, 2, 3]))
+        assert not _contains_nan(np.array([[1, 2], [3, 4]]))
+        
+        assert not _contains_nan(np.array([1., 2., 3.]))
+        assert not _contains_nan(np.array([1., 2.j, 3.]))
+        assert _contains_nan(np.array([1., 2.j, np.nan]))
+        assert _contains_nan(np.array([1., 2., np.nan]))
+        assert _contains_nan(np.array([np.nan, 2., np.nan]))
+        assert not _contains_nan(np.array([[1., 2.], [3., 4.]]))
+        assert _contains_nan(np.array([[1., 2.], [3., np.nan]]))
 
     @skip_xp_invalid_arg
     def test_contains_nan_with_strings(self):
         data1 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
-        assert not _contains_nan(data1)[0]
+        assert not _contains_nan(data1)
 
         data2 = np.array([1, 2, "3", np.nan], dtype='object')
-        assert _contains_nan(data2)[0]
+        assert _contains_nan(data2)
 
         data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
-        assert not _contains_nan(data3)[0]
+        assert not _contains_nan(data3)
 
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
-        assert _contains_nan(data4)[0]
+        assert _contains_nan(data4)
 
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))
         x = xp.asarray(x0)
-        x_nan = xpx.at(x)[1, 2, 1].set(np.nan, copy=True)
+        assert not _contains_nan(x, nan_policy)
 
-        contains_nan, nan_policy_out = _contains_nan(x, nan_policy=nan_policy)
-        assert not contains_nan
-        assert nan_policy_out == nan_policy
+        x = xpx.at(x)[1, 2, 1].set(np.nan)
 
         if nan_policy == 'raise':
-            message = 'The input contains...'
-            with pytest.raises(ValueError, match=message):
-                _contains_nan(x_nan, nan_policy=nan_policy)
+            with pytest.raises(ValueError, match="The input contains nan values"):
+                _contains_nan(x, nan_policy)
         elif nan_policy == 'omit' and not is_numpy(xp):
-            message = "`nan_policy='omit' is incompatible..."
-            with pytest.raises(ValueError, match=message):
-                _contains_nan(x_nan, nan_policy=nan_policy)
+            with pytest.raises(ValueError, match="nan_policy='omit' is incompatible"):
+                _contains_nan(x, nan_policy)
         elif nan_policy == 'propagate':
-            contains_nan, nan_policy_out = _contains_nan(
-                x_nan, nan_policy=nan_policy)
-            assert contains_nan
-            assert nan_policy_out == nan_policy
+            assert _contains_nan(x, nan_policy)
 
 
 def test__rng_html_rewrite():
