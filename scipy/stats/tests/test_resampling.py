@@ -3,7 +3,6 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._util import rng_integers
 from scipy._lib._array_api import array_namespace, is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
@@ -773,7 +772,6 @@ class TestMonteCarloHypothesisTest:
             # return stats.ttest_1samp(x, popmean=0., axis=axis).statistic)
         return statistic
 
-    @array_api_compatible
     def test_input_validation(self, xp):
         # test that the appropriate error messages are raised for invalid input
 
@@ -840,7 +838,6 @@ class TestMonteCarloHypothesisTest:
         except ValueError as e:
             assert str(e).startswith(message)
 
-    @array_api_compatible
     def test_input_validation_xp(self, xp):
         def non_vectorized_statistic(x):
             return xp.mean(x)
@@ -857,7 +854,6 @@ class TestMonteCarloHypothesisTest:
             monte_carlo_test(sample, stats.norm.rvs, xp.mean, vectorized=False)
 
     @pytest.mark.xslow
-    @array_api_compatible
     def test_batch(self, xp):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
@@ -896,7 +892,6 @@ class TestMonteCarloHypothesisTest:
         xp_assert_equal(res1.pvalue, res3.pvalue)
         xp_assert_equal(res2.pvalue, res3.pvalue)
 
-    @array_api_compatible
     @pytest.mark.parametrize('axis', range(-3, 3))
     def test_axis_dtype(self, axis, xp):
         # test that Nd-array samples are handled correctly for valid values
@@ -931,7 +926,6 @@ class TestMonteCarloHypothesisTest:
         xp_assert_close(res.statistic, ref_statistic)
         xp_assert_close(res.pvalue, ref_pvalue, atol=self.atol)
 
-    @array_api_compatible
     @pytest.mark.parametrize('alternative', ("two-sided", "less", "greater"))
     def test_alternative(self, alternative, xp):
         # test that `alternative` is working as expected

@@ -1,12 +1,9 @@
 import pytest
 
 import scipy.constants as sc
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from numpy.testing import assert_allclose
 
-
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 

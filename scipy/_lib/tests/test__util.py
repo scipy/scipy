@@ -10,7 +10,7 @@ import pytest
 from pytest import raises as assert_raises
 import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
-from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
+from scipy.conftest import skip_xp_invalid_arg
 
 from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
                                    is_array_api_strict)
@@ -346,7 +346,6 @@ class TestContainsNaNTest:
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)[0]
 
-    @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
@@ -597,7 +596,6 @@ class TestLazywhere:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
-    @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
     @pytest.mark.thread_unsafe
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):

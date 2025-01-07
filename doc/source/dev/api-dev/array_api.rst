@@ -266,10 +266,6 @@ The following pytest markers are available:
 
     python dev.py test -b all -m array_api_backends
 
-* OBSOLETE: ``array_api_compatible`` (does nothing; pending removal)
-* OBSOLETE: ``pytest.mark.usefixtures("skip_xp_backends")`` (does nothing; pending removal)
-* OBSOLETE: ``pytest.mark.usefixtures("xfail_xp_backends")`` (does nothing; pending removal)
-
 ``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
 which can be used to replace assertions from `numpy.testing`.
 

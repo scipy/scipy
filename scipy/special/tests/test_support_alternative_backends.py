@@ -2,7 +2,6 @@ import pytest
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
-from scipy.conftest import array_api_compatible
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE
@@ -51,7 +50,6 @@ def test_rel_entr_generic(dtype):
 
 
 @pytest.mark.fail_slow(5)
-@array_api_compatible
 # `reversed` is for developer convenience: test new function first = less waiting
 @pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
@@ -106,7 +104,6 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
     xp_assert_close(res, ref, atol=10*eps)
 
 
-@array_api_compatible
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311
     # be sure to test at least these cases
