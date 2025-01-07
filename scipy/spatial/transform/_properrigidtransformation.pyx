@@ -299,9 +299,15 @@ cdef class ProperRigidTransformation:
             rotation and the last three components define the translation.
         """
         expcoords = np.asarray(expcoords, dtype=float)
+
+        if (expcoords.ndim not in [1, 2] or expcoords.shape[0] == 0
+                or expcoords.shape[-1] != 6):
+            raise ValueError(
+                "Expected `expcoords` to have shape (6,), or (N, 6), "
+                f"got {expcoords.shape}.")
+
         single = expcoords.ndim == 1
         expcoords = np.atleast_2d(expcoords)
-        # TODO check dimensions?
         rotations = Rotation.from_rotvec(expcoords[:, :3])
         translations = np.empty((len(expcoords), 3), dtype=float)
 
