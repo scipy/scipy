@@ -293,7 +293,7 @@ cdef class ProperRigidTransformation:
 
         Parameters
         ----------
-        expcoords : array_like, shape TODO
+        expcoords : array_like, shape (N, 6) or (6,)
             A single exponential coordinate vector or a stack of exponential
             coordinate vectors.
         """
