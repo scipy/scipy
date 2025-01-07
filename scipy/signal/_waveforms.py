@@ -73,7 +73,7 @@ def sawtooth(t, width=1):
     mask2 = (1 - mask1) & (tmod < w * 2 * pi)
     tsub = extract(mask2, tmod)
     wsub = extract(mask2, w)
-    values = (tsub / (pi * wsub) - 1)
+    values = tsub / (pi * wsub) - 1
     place(y, mask2, values.astype(y.dtype))
 
     # on the interval width*2*pi to 2*pi function is
