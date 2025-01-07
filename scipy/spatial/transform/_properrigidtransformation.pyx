@@ -579,12 +579,19 @@ cdef class ProperRigidTransformation:
             else:
                 return self.__class__(self._matrix, copy=True)
         else:
-            r = self.rotation ** abs(n)
-            t = self.translation * abs(n)
+            matrix = self.as_matrix()
+            if self._single:
+                matrix = matrix[None, :, :]
+            for i in range(len(matrix)):
+                matrix[i] = np.linalg.matrix_power(matrix[i], abs(n))
+            if self._single:
+                matrix = matrix[0]
+
+            T = self.__class__(matrix, copy=False)
             if n < 0:
-                r = r.inv()
-                t = -r.apply(t)
-            return self.__class__.from_transrot(t, r)
+                return T.inv()
+            else:
+                return T
 
     @cython.embedsignature(True)
     def inv(self):
@@ -672,7 +679,7 @@ cdef class ProperRigidTransformation:
     @cython.embedsignature(True)
     @property
     def rotation(self):
-        """Return the rotation of the transformation.
+        """Return the rotation component of the transformation.
 
         A transformation is a composition of a rotation and a translation, such
         that when applied to a vector, the vector is first rotated and then
@@ -691,7 +698,7 @@ cdef class ProperRigidTransformation:
     @cython.embedsignature(True)
     @property
     def translation(self):
-        """Return the translation of the transformation.
+        """Return the translation component of the transformation.
 
         A transformation is a composition of a rotation and a translation, such
         that when applied to a vector, the vector is first rotated and then
