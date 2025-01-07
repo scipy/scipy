@@ -297,7 +297,61 @@ cdef class ProperRigidTransformation:
             A single exponential coordinate vector or a stack of exponential
             coordinate vectors.
         """
-        raise NotImplementedError("from_expcoords not implemented")
+        expcoords = np.asarray(expcoords, dtype=float)
+        single = expcoords.ndim == 1
+        expcoords = np.atleast_2d(expcoords)
+        # TODO check dimensions?
+        rotations = Rotation.from_rotvec(expcoords[:, :3])
+        translations = np.empty((len(expcoords), 3), dtype=float)
+
+        theta = np.linalg.norm(expcoords[:, :3], axis=-1)
+        ind_only_translation = theta == 0.0
+
+        if not np.all(ind_only_translation):
+            theta[ind_only_translation] = 1.0
+            screw_axes = expcoords / theta[:, np.newaxis]
+
+            tms = theta - np.sin(theta)
+            cm1 = np.cos(theta) - 1.0
+            o0 = screw_axes[:, 0]
+            o1 = screw_axes[:, 1]
+            o2 = screw_axes[:, 2]
+            v0 = screw_axes[:, 3]
+            v1 = screw_axes[:, 4]
+            v2 = screw_axes[:, 5]
+            o01tms = o0 * o1 * tms
+            o12tms = o1 * o2 * tms
+            o02tms = o0 * o2 * tms
+            o0cm1 = o0 * cm1
+            o1cm1 = o1 * cm1
+            o2cm1 = o2 * cm1
+            o00tms = o0 * o0 * tms
+            o11tms = o1 * o1 * tms
+            o22tms = o2 * o2 * tms
+            translations[..., 0] = (-v0 * (o11tms + o22tms - theta)
+                + v1 * (o01tms + o2cm1)
+                + v2 * (o02tms - o1cm1))
+            translations[..., 1] = (v0 * (o01tms - o2cm1)
+                - v1 * (o00tms + o22tms - theta)
+                + v2 * (o0cm1 + o12tms))
+            translations[..., 2] = (v0 * (o02tms + o1cm1)
+                - v1 * (o0cm1 - o12tms)
+                - v2 * (o00tms + o11tms - theta))
+
+        translations[ind_only_translation] = expcoords[ind_only_translation, 3:]
+
+        # TODO alternatively, we could
+        # return cls.from_translation(translations) * cls.from_rotation(rotations)
+
+        matrix = np.empty((len(expcoords), 4, 4), dtype=float)
+        matrix[:, :3, :3] = rotations.as_matrix()
+        matrix[:, :3, 3] = translations
+        matrix[:, 3, :3] = 0.0
+        matrix[:, 3, 3] = 1.0
+        if single:
+            matrix = matrix[0]
+
+        return cls(matrix, copy=False)
 
     @cython.embedsignature(True)
     @classmethod

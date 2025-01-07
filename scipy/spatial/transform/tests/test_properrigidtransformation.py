@@ -117,6 +117,29 @@ def test_from_transrot():
         assert_allclose(t.as_matrix()[i], expected, atol=atol)
 
 
+def test_from_expcoords():
+    # example from 3.3 of
+    # https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf
+    angle1 = np.deg2rad(30.0)
+    T1 = T.from_matrix([
+        [np.cos(angle1), -np.sin(angle1), 0.0, 1.0],
+        [np.sin(angle1), np.cos(angle1), 0.0, 2.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0]
+    ])
+    angle2 = np.deg2rad(60.0)
+    T2 = T.from_matrix([
+        [np.cos(angle2), -np.sin(angle2), 0.0, 2.0],
+        [np.sin(angle2), np.cos(angle2), 0.0, 1.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0]
+    ])
+    T_expected = T2 * T1.inv()
+    T_actual = T.from_expcoords(
+        np.deg2rad(30.0) * np.array([0.0, 0.0, 1.0, 3.37, -3.37, 0.0]))
+    assert_allclose(T_actual.as_matrix(), T_expected.as_matrix(), atol=1e-2)
+
+
 def test_identity():
     atol = 1e-12
 
