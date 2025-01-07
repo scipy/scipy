@@ -9,14 +9,8 @@ from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
 from scipy.signal import symiirorder1, symiirorder2
 
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [
-    array_api_compatible,
-    pytest.mark.usefixtures("skip_xp_backends"),
-    pytest.mark.usefixtures("xfail_xp_backends"),
-]
 
 
 def npr(xp, *args):

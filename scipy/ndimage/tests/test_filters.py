@@ -15,7 +15,6 @@ from scipy._lib._array_api import (
     xp_assert_equal,
 )
 from scipy._lib._array_api import is_cupy, is_numpy, is_torch, array_namespace
-from scipy.conftest import array_api_compatible
 from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
@@ -23,9 +22,7 @@ from . import types, float_types, complex_types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              pytest.mark.usefixtures("xfail_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy']),]
+pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
 def sumsq(a, b, xp=None):

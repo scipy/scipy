@@ -13,7 +13,6 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.conftest import array_api_compatible
 from scipy.sparse._sputils import matrix
 
 from scipy._lib import array_api_extra as xpx
@@ -21,7 +20,6 @@ from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, xp_copy, xp_assert_close, xp_assert_equal
 )
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 TESTDATA_2D = np.array([

@@ -239,18 +239,6 @@ def xp(request):
     else:
         yield request.param
 
-# OBSOLETE, pending removal
-array_api_compatible = pytest.mark.array_api_compatible
-
-@pytest.fixture
-def skip_xp_backends():
-    pass
-
-@pytest.fixture
-def xfail_xp_backends():
-    pass
-# /OBSOLETE, pending removal
-
 
 skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
     reason = ('Test involves masked arrays, object arrays, or other types '

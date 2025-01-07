@@ -4,7 +4,6 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     array_namespace, is_array_api_strict, xp_default_dtype
 )
@@ -19,8 +18,6 @@ dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('jax.numpy',
                               reason="JAX arrays do not support item assignment")
 def test_wrap_radians(xp):
@@ -32,8 +29,6 @@ def test_wrap_radians(xp):
     xp_assert_close(res, ref, atol=0)
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('jax.numpy',
                               reason="JAX arrays do not support item assignment")
 class TestLogSumExp:
