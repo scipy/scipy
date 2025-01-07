@@ -18,8 +18,6 @@ dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
 
 
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason="JAX arrays do not support item assignment")
 def test_wrap_radians(xp):
     x = xp.asarray([-math.pi-1, -math.pi, -1, -1e-300,
                     0, 1e-300, 1, math.pi, math.pi+1])
@@ -29,8 +27,6 @@ def test_wrap_radians(xp):
     xp_assert_close(res, ref, atol=0)
 
 
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason="JAX arrays do not support item assignment")
 class TestLogSumExp:
     def test_logsumexp(self, xp):
         # Test with zero-size array
