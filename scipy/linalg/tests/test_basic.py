@@ -782,7 +782,7 @@ class TestSolve:
     @pytest.mark.parametrize('structure',
                              ('diagonal', 'tridiagonal', 'lower triangular',
                               'upper triangular', 'symmetric', 'hermitian',
-                              'positive definite', 'general', None))
+                              'positive definite', 'general', 'banded', None))
     def test_ill_condition_warning(self, structure):
         rng = np.random.default_rng(234859349452)
         n = 10
@@ -905,7 +905,7 @@ class TestSolve:
     # "pos" and "positive definite" need to be added
     @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
                                           'lower triangular', 'upper triangular',
-                                          'symmetric', 'hermitian',
+                                          'symmetric', 'hermitian', 'banded',
                                           'general', 'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
     @pytest.mark.parametrize('transposed', [True, False])
