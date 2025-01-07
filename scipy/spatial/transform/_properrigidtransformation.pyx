@@ -295,7 +295,8 @@ cdef class ProperRigidTransformation:
         ----------
         expcoords : array_like, shape (N, 6) or (6,)
             A single exponential coordinate vector or a stack of exponential
-            coordinate vectors.
+            coordinate vectors. The first three components define the
+            rotation and the last three components define the translation.
         """
         expcoords = np.asarray(expcoords, dtype=float)
         single = expcoords.ndim == 1
