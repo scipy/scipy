@@ -736,7 +736,7 @@ class TestSolve:
 
     @pytest.mark.parametrize("assume_a", ['her', 'sym'])
     def test_symmetric_hermitian(self, assume_a):
-        # An upper triangular matrix will be used for hermitian matrix a
+        # An upper triangular matrix will be used for symmetric/hermitian matrix a
         a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
                       [0, -4.63, -1.84+0.03j, 2.21+0.21j],
                       [0, 0, -8.87, 1.58-0.90j],
@@ -753,9 +753,8 @@ class TestSolve:
 
         x = solve(a, b, assume_a=assume_a)
         assert_array_almost_equal(x, ref)
-        # Also conjugate a and test for lower triangular data
+        # Also transpose(/conjugate) `a` and test for lower triangular data
         # This also tests gh-22265 resolution; otherwise, a warning would be emitted
-
         x = solve(a2, b, assume_a=assume_a, lower=True)
         assert_array_almost_equal(x, ref)
 
