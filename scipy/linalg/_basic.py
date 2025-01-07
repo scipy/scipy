@@ -39,13 +39,13 @@ def _solve_check(n, info, lamch=None, rcond=None):
     """ Check arguments during the different steps of the solution phase """
     if info < 0:
         raise ValueError(f'LAPACK reported an illegal value in {-info}-th argument.')
-    elif 0 < info:
+    elif 0 < info or rcond == 0:
         raise LinAlgError('Matrix is singular.')
 
     if lamch is None:
         return
     E = lamch('E')
-    if rcond < E:
+    if not (rcond >= E):  # `rcond < E` doesn't handle NaN
         warn(f'Ill-conditioned matrix (rcond={rcond:.6g}): '
              'result may not be accurate.',
              LinAlgWarning, stacklevel=3)
@@ -135,7 +135,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     ValueError
         If size mismatches detected or input a is not square.
     LinAlgError
-        If the matrix is singular.
+        If the computation fails because of matrix singularity.
     LinAlgWarning
         If an ill-conditioned input a is detected.
     NotImplementedError
@@ -284,7 +284,7 @@ def solve(a, b, lower=False, overwrite_a=False,
                                  overwrite_a=overwrite_a,
                                  overwrite_b=overwrite_b)
         _solve_check(n, info)
-        rcond, info = hecon(lu, ipvt, anorm)
+        rcond, info = hecon(lu, ipvt, anorm, lower=lower)
     # Symmetric case 'sysv'
     elif assume_a in {'symmetric', 'sym'}:
         sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
@@ -295,13 +295,14 @@ def solve(a, b, lower=False, overwrite_a=False,
                                  overwrite_a=overwrite_a,
                                  overwrite_b=overwrite_b)
         _solve_check(n, info)
-        rcond, info = sycon(lu, ipvt, anorm)
+        rcond, info = sycon(lu, ipvt, anorm, lower=lower)
     # Diagonal case
     elif assume_a == 'diagonal':
         diag_a = np.diag(a1)
         x = (b1.T / diag_a).T
         abs_diag_a = np.abs(diag_a)
-        rcond = abs_diag_a.min() / abs_diag_a.max()
+        diag_min = abs_diag_a.min()
+        rcond = diag_min if diag_min == 0 else diag_min / abs_diag_a.max()
     # Tri-diagonal case
     elif assume_a == 'tridiagonal':
         a1 = a1.T if transposed else a1
