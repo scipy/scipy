@@ -20,9 +20,6 @@ integral_dtypes = ['int32', 'int64']
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason="JAX arrays do not support item assignment")
 def test_wrap_radians(xp):
     x = xp.asarray([-math.pi-1, -math.pi, -1, -1e-300,
                     0, 1e-300, 1, math.pi, math.pi+1])
@@ -33,9 +30,6 @@ def test_wrap_radians(xp):
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason="JAX arrays do not support item assignment")
 class TestLogSumExp:
     def test_logsumexp(self, xp):
         # Test with zero-size array
@@ -172,12 +166,11 @@ class TestLogSumExp:
         logsumexp(a, b=b)
 
     @pytest.mark.parametrize('arg', (1, [1, 2, 3]))
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True, reason="array-like input")
     def test_xp_invalid_input(self, arg, xp):
         assert logsumexp(arg) == logsumexp(np.asarray(np.atleast_1d(arg)))
 
-    @pytest.mark.skip_xp_backends(np_only=True,
-                                  reason="Lists correspond with NumPy backend")
+    @pytest.mark.skip_xp_backends(np_only=True, reason="array-like input")
     def test_list(self, xp):
         a = [1000, 1000]
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=np.float64)
