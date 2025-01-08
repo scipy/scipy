@@ -51,22 +51,19 @@ def test_rel_entr_generic(dtype):
 
 @pytest.mark.fail_slow(5)
 # `reversed` is for developer convenience: test new function first = less waiting
-@pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))
+@pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
-def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
-    f_name, n_args = f_name_n_args
-
+def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
     if (SCIPY_DEVICE != 'cpu'
         and is_torch(xp)
         and f_name in {'stdtr', 'stdtrit', 'betaincc', 'betainc'}
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
-                    f"and cannot delegate to PyTorch.")
-
-    if is_jax(xp) and f_name in {'stdtrit'}:
-        pytest.skip(f"`{f_name}` generic implementation require array mutation.")
+                    "and cannot delegate to PyTorch.")
+    if is_jax(xp) and f_name == "stdtrit":
+        pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
 
     shapes = shapes[:n_args]
     f = getattr(special, f_name)
