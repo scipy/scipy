@@ -119,10 +119,8 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="Array-ness does not match."):
                 xp_assert_equal(x, y, **options)
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar(self, xp):
-        if not is_numpy(xp):
-            pytest.skip("Scalars only exist in NumPy")
-
         # identity always passes
         xp_assert_equal(xp.float64(0), xp.float64(0))
         xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
@@ -152,10 +150,8 @@ class TestArrayAPI:
         # as an alternative to `check_0d=False`, explicitly expect scalar
         xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar_no_0d(self, xp):
-        if not is_numpy(xp):
-            pytest.skip("Scalars only exist in NumPy")
-
         # identity passes, if first argument is not 0d (or check_0d=True)
         xp_assert_equal_no_0d(xp.float64(0), xp.float64(0))
         xp_assert_equal_no_0d(xp.float64(0), xp.float64(0), check_0d=True)
