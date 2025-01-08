@@ -1621,6 +1621,7 @@ class TestCSpline1DEval:
         assert ynew.dtype == y.dtype
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestOrderFilt:
 
     def test_basic(self, xp):
