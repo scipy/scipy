@@ -1,5 +1,31 @@
 name: GPU jobs
 
+# Updating the Pixi lock file:
+#
+# 1. Please try to avoid this unless it's actually necessary. Updating the lock
+#    file generates a large diff, and triggers a lot of large package downloads
+#    (also for local testing by maintainers).
+# 2. Consider committing the `pixi.lock` change in one commit, and the
+#    `pixi.lock` change in a second commit. This allows the reviewer to redo
+#    the lock file changes locally, or discard them in case of conflicts while
+#    still keeping the `pixi.toml` changes.
+#
+#
+# In order to run a CI job step locally on a Linux machine with an NVIDIA GPU:
+#
+#     $ cd .github/workflows
+#     $ pixi run build
+#     $ pixi run -e cupy test-cupy -v -m "array_api_backends and not slow"
+#
+# Or run different test commands in the same environments, e.g.:
+#
+#     $ pixi run test-torch-cuda -s special
+#     $ pixi run test-torch -s special
+#
+# To see available tasks per environment:
+#
+#     $ pixi task ls -s
+
 on:
   push:
     branches:
