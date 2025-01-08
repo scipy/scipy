@@ -62,7 +62,7 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
                     "and cannot delegate to PyTorch.")
-    if is_jax(xp) and f_name == "stdrit":
+    if is_jax(xp) and f_name == "stdtrit":
         pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
 
     shapes = shapes[:n_args]
