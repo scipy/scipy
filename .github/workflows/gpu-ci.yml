@@ -5,7 +5,7 @@ name: GPU jobs
 # 1. Please try to avoid this unless it's actually necessary. Updating the lock
 #    file generates a large diff, and triggers a lot of large package downloads
 #    (also for local testing by maintainers).
-# 2. Consider committing the `pixi.lock` change in one commit, and the
+# 2. Consider committing the `pixi.toml` change in one commit, and the
 #    `pixi.lock` change in a second commit. This allows the reviewer to redo
 #    the lock file changes locally, or discard them in case of conflicts while
 #    still keeping the `pixi.toml` changes.
