@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, ProperRigidTransformation
+from scipy._lib._util import check_random_state
 
 
 def test_from_rotation():
@@ -120,21 +121,21 @@ def test_from_expcoords():
     # example from 3.3 of
     # https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf
     angle1 = np.deg2rad(30.0)
-    T1 = T.from_matrix([
+    T1 = ProperRigidTransformation.from_matrix([
         [np.cos(angle1), -np.sin(angle1), 0.0, 1.0],
         [np.sin(angle1), np.cos(angle1), 0.0, 2.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
     angle2 = np.deg2rad(60.0)
-    T2 = T.from_matrix([
+    T2 = ProperRigidTransformation.from_matrix([
         [np.cos(angle2), -np.sin(angle2), 0.0, 2.0],
         [np.sin(angle2), np.cos(angle2), 0.0, 1.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
     expected = T2 * T1.inv()
-    actual = T.from_expcoords(
+    actual = ProperRigidTransformation.from_expcoords(
         np.deg2rad(30.0) * np.array([0.0, 0.0, 1.0, 3.37, -3.37, 0.0]))
     assert_allclose(actual.as_matrix(), expected.as_matrix(), atol=1e-2)
 
@@ -156,11 +157,13 @@ def test_from_expcoords():
          [0., 0., 0., 1.]]
     ]
     assert_allclose(
-        T.from_expcoords(expcoords).as_matrix(), expected_matrix, atol=1e-8)
+        ProperRigidTransformation.from_expcoords(expcoords).as_matrix(),
+        expected_matrix, atol=1e-8)
 
     # identity
     assert_allclose(
-        T.from_expcoords(np.zeros(6)).as_matrix(), np.eye(4), atol=1e-12)
+        ProperRigidTransformation.from_expcoords(np.zeros(6)).as_matrix(),
+        np.eye(4), atol=1e-12)
 
     # only translation
     expected_matrix = np.array([
@@ -173,14 +176,14 @@ def test_from_expcoords():
          [0.0, 0.0, 1.0, 1.3],
          [0.0, 0.0, 0.0, 1.0]]
     ])
-    actual = T.from_expcoords([
+    actual = ProperRigidTransformation.from_expcoords([
         [0.0, 0.0, 0.0, 3.0, -5.4, 100.2],
         [0.0, 0.0, 0.0, -3.0, 13.3, 1.3],
     ])
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # only rotation
-    rot = R.from_euler(
+    rot = Rotation.from_euler(
         'zyx',
         [[34, -12, 0.5],
          [-102, -55, 30]],
@@ -188,8 +191,36 @@ def test_from_expcoords():
     rotvec = rot.as_rotvec()
     expected_matrix = np.array([np.eye(4), np.eye(4)])
     expected_matrix[:, :3, :3] = rot.as_matrix()
-    actual = T.from_expcoords(np.hstack((rotvec, np.zeros((2, 3)))))
+    actual = ProperRigidTransformation.from_expcoords(
+        np.hstack((rotvec, np.zeros((2, 3)))))
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
+
+
+def test_as_expcoords():
+    # identity
+    expected = np.zeros(6)
+    actual = ProperRigidTransformation.from_expcoords(expected).as_expcoords()
+    assert_allclose(actual, expected, atol=1e-12)
+
+    rng = check_random_state(1)
+
+    # pure rotation
+    for _ in range(10):
+        expected = np.hstack((rng.normal(size=3), np.zeros(3)))
+        actual = ProperRigidTransformation.from_expcoords(expected).as_expcoords()
+        assert_allclose(actual, expected, atol=1e-12)
+
+    # pure translation
+    for _ in range(10):
+        expected = np.hstack((np.zeros(3), rng.normal(size=3)))
+        actual = ProperRigidTransformation.from_expcoords(expected).as_expcoords()
+        assert_allclose(actual, expected, atol=1e-12)
+
+    # rotation and translation
+    for _ in range(10):
+        expected = rng.normal(size=6)
+        actual = ProperRigidTransformation.from_expcoords(expected).as_expcoords()
+        assert_allclose(actual, expected, atol=1e-12)
 
 
 def test_identity():
