@@ -1703,7 +1703,7 @@ class rv_continuous(rv_generic):
         Lower/upper bound of the support of the unshifted/unscaled distribution.
         This value is unaffected by the `loc` and `scale` parameters.
         To calculate the support of the shifted/scaled distribution,
-        use the ``support`` method.
+        use the `support` method.
 
     Methods
     -------
@@ -3208,7 +3208,7 @@ class rv_discrete(rv_generic):
         Lower/upper bound of the support of the unshifted/unscaled distribution.
         This value is unaffected by the `loc` and `scale` parameters.
         To calculate the support of the shifted/scaled distribution,
-        use the ``support`` method.
+        use the `support` method.
 
     Methods
     -------
