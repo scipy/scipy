@@ -289,8 +289,6 @@ cdef class ProperRigidTransformation:
     def from_expcoords(cls, expcoords):
         """Initialize from exponential coordinates.
 
-        TODO: implement
-
         Parameters
         ----------
         expcoords : array_like, shape (N, 6) or (6,)
@@ -483,15 +481,61 @@ cdef class ProperRigidTransformation:
     def as_expcoords(self):
         """Return the exponential coordinates of the transformation.
 
-        TODO: implement
-
         Returns
         -------
-        expcoords : numpy.ndarray, shape TODO
+        expcoords : numpy.ndarray, shape (N, 6) or (6,)
             A single exponential coordinate vector or a stack of exponential
-            coordinate vectors.
+            coordinate vectors. The first three components define the
+            rotation and the last three components define the translation.
         """
-        raise NotImplementedError("as_expcoords not implemented")
+        expcoords = np.empty((self._matrix.shape[0], 6), dtype=float)
+        rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
+        expcoords[:, :3] = rotations.as_rotvec()
+        thetas = np.linalg.norm(expcoords[:, :3], axis=-1)
+        nonzero_angle = thetas != 0.0
+        expcoords[nonzero_angle, :3] /= thetas[nonzero_angle, np.newaxis]
+
+        thetas = np.maximum(thetas, np.finfo(float).tiny)
+        ti = 1.0 / thetas
+        tan_term = -0.5 / np.tan(thetas / 2.0) + ti
+        o0 = expcoords[:, 0]
+        o1 = expcoords[:, 1]
+        o2 = expcoords[:, 2]
+        p0 = self._matrix[:, 0, 3]
+        p1 = self._matrix[:, 1, 3]
+        p2 = self._matrix[:, 2, 3]
+        o00 = o0 * o0
+        o01 = o0 * o1
+        o02 = o0 * o2
+        o11 = o1 * o1
+        o12 = o1 * o2
+        o22 = o2 * o2
+        expcoords[:, 3] = (p0 * ((-o11 - o22) * tan_term + ti)
+                           + p1 * (o01 * tan_term + 0.5 * o2)
+                           + p2 * (o02 * tan_term - 0.5 * o1)
+                           )
+        expcoords[:, 4] = (p0 * (o01 * tan_term - 0.5 * o2)
+                           + p1 * ((-o00 - o22) * tan_term + ti)
+                           + p2 * (0.5 * o0 + o12 * tan_term)
+                           )
+        expcoords[:, 5] = (p0 * (o02 * tan_term + 0.5 * o1)
+                           + p1 * (-0.5 * o0 + o12 * tan_term)
+                           + p2 * ((-o00 - o11) * tan_term + ti)
+                           )
+
+        expcoords *= thetas[:, np.newaxis]
+
+        # pure translations
+        traces = np.einsum("nii", self._matrix[:, :3, :3])
+        ind_only_translation = np.where(traces >= 3.0 - np.finfo(float).eps)[0]
+        for i in ind_only_translation:
+            expcoords[i, :3] = 0.0
+            expcoords[i, 3:] = self._matrix[i, :3, 3]
+
+        if self._single:
+            return expcoords[0]
+        else:
+            return expcoords
 
     @cython.embedsignature(True)
     def as_dualquat(self):
