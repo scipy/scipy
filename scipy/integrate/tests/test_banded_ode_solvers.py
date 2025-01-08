@@ -242,7 +242,6 @@ def stiff_jac(t, y):
     ])
 
 def banded_stiff_jac(t, y):
-    print("hello")
     return np.array([
         [0,     0,                    0,  1e4*y[2], 0],
         [0,     0,             1e4*y[3], -1e4*y[2], 0],
