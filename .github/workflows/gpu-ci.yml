@@ -35,7 +35,13 @@ jobs:
         uses: cirruslabs/cache@v4  #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
         with:
           path: ${{ env.PIXI_CACHE_DIR }}
-          key: ${{ runner.os }}-gpu-pixi
+          # Cache hit if lock file did not change. If it did, still restore the cache,
+          # since most packages will still be the same - the cache save will
+          # then happen at the end (in case the lock file didn't change,
+          # nothing is saved at the end of a job).
+          key: ${{ runner.os }}-gpu-pixi-${{ hashFiles('.github/workflows/pixi.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-pixi-
 
       - name: Setup compiler cache
         uses: cirruslabs/cache@v4  #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
