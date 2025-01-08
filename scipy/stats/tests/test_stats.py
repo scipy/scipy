@@ -3874,6 +3874,7 @@ class TestStudentTest:
     P1_1_l = P1_1 / 2
     P1_1_g = 1 - (P1_1 / 2)
 
+    @skip_xp_backends(cpu_only=True)
     def test_onesample(self, xp):
         with suppress_warnings() as sup, \
                 np.errstate(invalid="ignore", divide="ignore"):
@@ -3926,6 +3927,7 @@ class TestStudentTest:
             assert_raises(ValueError, stats.ttest_1samp, x, 5.0,
                           nan_policy='foobar')
 
+    @skip_xp_backends(cpu_only=True)
     def test_1samp_alternative(self, xp):
         message = "`alternative` must be 'less', 'greater', or 'two-sided'."
         with pytest.raises(ValueError, match=message):
@@ -3939,6 +3941,7 @@ class TestStudentTest:
         xp_assert_close(p, xp.asarray(self.P1_1_g))
         xp_assert_close(t, xp.asarray(self.T1_1))
 
+    @skip_xp_backends(cpu_only=True)
     @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
@@ -3965,6 +3968,7 @@ class TestStudentTest:
         xp_assert_close(ci.high, xp.asarray(ref[alternative][1]))
         xp_assert_equal(res.df, xp.asarray(n-1))
 
+    @skip_xp_backends(cpu_only=True)
     def test_1samp_ci_iv(self, xp):
         # test `confidence_interval` method input validation
         res = stats.ttest_1samp(xp.arange(10.), 0.)
@@ -5135,6 +5139,7 @@ def _desc_stats(x1, x2, axis=0, *, xp=None):
     return _stats(x1, axis) + _stats(x2, axis)
 
 
+@skip_xp_backends(cpu_only=True)
 def test_ttest_ind(xp):
     # regression test
     tr = xp.asarray(1.0912746897927283)
@@ -5846,6 +5851,7 @@ class Test_ttest_trim:
             stats.ttest_ind([1, 2], [2, 1], trim=trim)
 
 
+@pytest.mark.skip_xp_backends(cpu_only=True)
 class Test_ttest_CI:
     # indices in order [alternative={two-sided, less, greater},
     #                   equal_var={False, True}, trim={0, 0.2}]
@@ -5940,6 +5946,7 @@ def test__broadcast_concatenate():
             assert b[i, j, k, l - a.shape[-3], m, n] == c[i, j, k, l, m, n]
 
 
+@pytest.mark.skip_xp_backends(cpu_only=True)
 def test_ttest_ind_with_uneq_var(xp):
     # check vs. R `t.test`, e.g.
     # options(digits=20)
@@ -6021,6 +6028,7 @@ def test_ttest_ind_with_uneq_var(xp):
     xp_assert_close(res.pvalue, pr_2D)
 
 
+@pytest.mark.skip_xp_backends(cpu_only=True)
 def test_ttest_ind_zero_division(xp):
     # test zero division problem
     x = xp.zeros(3)
@@ -6135,6 +6143,7 @@ def test_gh5686(xp):
     stats.ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2)
 
 
+@skip_xp_backends(cpu_only=True)
 def test_ttest_ind_from_stats_inputs_zero(xp):
     # Regression test for gh-6409.
     zero = xp.asarray(0.)
@@ -6268,6 +6277,7 @@ def test_ttest_1samp_new_omit(xp):
     xp_assert_close(t, tr)
 
 
+@pytest.mark.skip_xp_backends(cpu_only=True)
 @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
