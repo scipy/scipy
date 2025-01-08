@@ -509,12 +509,13 @@ class Akima1DInterpolator(CubicHermiteSpline):
         # Akima extrapolation historically False; parent class defaults to True.
         extrapolate = False if extrapolate is None else extrapolate
 
-        if x.shape[0] == 2:
+        if y.shape[0] == 2:
             # edge case: only have two points, use linear interpolation
-            hk = x[1:] - x[:-1]
+            xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
+            hk = xp[1:] - xp[:-1]
             mk = (y[1:] - y[:-1]) / hk
-            t = np.zeros_like(x)
-            t[:] = mk
+            t = np.zeros_like(y)
+            t[...] = mk
         else:
             # determine slopes between breakpoints
             m = np.empty((x.size + 3, ) + y.shape[1:])
