@@ -63,6 +63,7 @@ jobs:
         with:
           pixi-version: v0.39.2
           manifest-path: .github/workflows/pixi.toml
+          cache: false
 
       - name: Build SciPy
         working-directory: .github/workflows
