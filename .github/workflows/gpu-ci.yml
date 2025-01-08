@@ -47,7 +47,11 @@ jobs:
         uses: cirruslabs/cache@v4  #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ${{ runner.os }}-gpu-ccache
+          # Make primary key unique by using `run_id`, this ensures the cache
+          # is always saved at the end.
+          key: ${{ runner.os }}-gpu-ccache-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-ccache
 
       - name: run nvidia-smi
         run: nvidia-smi
@@ -75,11 +79,3 @@ jobs:
         #- name: Run CuPy tests
         #working-directory: .github/workflows
         #run: pixi run -e cupy test-cupy -v -m "array_api_backends and not slow"
-
-      - name: Save compiler cache
-        # saving ccache cache is always useful, and if we don't it'll go stale over time
-        if: always()
-        uses: cirruslabs/cache/save@v4
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ${{ runner.os }}-gpu-ccache
