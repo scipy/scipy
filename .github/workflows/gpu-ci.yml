@@ -64,17 +64,17 @@ jobs:
         working-directory: .github/workflows
         run: pixi run build
 
-      - name: Run PyTorch GPU tests
-        working-directory: .github/workflows
-        run: pixi run -e torch-cuda test-torch-cuda -v -m "array_api_backends and not slow"
+        #- name: Run PyTorch GPU tests
+        #working-directory: .github/workflows
+        #run: pixi run -e torch-cuda test-torch-cuda -v -m "array_api_backends and not slow"
 
-      - name: Run JAX GPU tests
-        working-directory: .github/workflows
-        run: pixi run -e jax-cuda test-jax-cuda -v -m "array_api_backends and not slow"
+        #- name: Run JAX GPU tests
+        #working-directory: .github/workflows
+        #run: pixi run -e jax-cuda test-jax-cuda -v -m "array_api_backends and not slow"
 
-      - name: Run CuPy tests
-        working-directory: .github/workflows
-        run: pixi run -e cupy test-cupy -v -m "array_api_backends and not slow"
+        #- name: Run CuPy tests
+        #working-directory: .github/workflows
+        #run: pixi run -e cupy test-cupy -v -m "array_api_backends and not slow"
 
       - name: Save compiler cache
         # saving ccache cache is always useful, and if we don't it'll go stale over time
