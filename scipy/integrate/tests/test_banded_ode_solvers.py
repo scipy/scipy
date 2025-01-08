@@ -4,6 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy.integrate import ode
 
+# first test vode
 
 def _band_count(a):
     """Returns ml and mu, the lower and upper band sizes of a."""
@@ -173,7 +174,7 @@ def test_banded_ode_solvers():
         assert_allclose(y, y_exact)
 
     for idx in range(len(real_matrices)):
-        p = [['vode', 'lsoda'],  # solver
+        p = [['vode',],  # solver
              ['bdf', 'adams'],   # method
              [False, True],      # use_jac
              [False, True],      # with_jacobian
@@ -218,3 +219,85 @@ def test_banded_ode_solvers():
              [False, True]]      # banded
         for meth, use_jac, with_jac, banded in itertools.product(*p):
             check_complex(idx, "zvode", meth, use_jac, with_jac, banded)
+
+# lsoda requires a stiffer problem to switch to stiff solver
+# Use the Robertson equation with surrounding trivial equations to make banded
+
+def stiff_f(t, y):
+    return np.array([
+        y[0],
+        -0.04 * y[1] + 1e4 * y[2] * y[3],
+        0.04 * y[1] - 1e4 * y[2] * y[3] - 3e7 * y[2]**2,
+        3e7 * y[2]**2,
+        y[4]
+    ])
+
+def stiff_jac(t, y):
+    return np.array([
+        [1,     0,                            0,         0, 0],
+        [0, -0.04,                     1e4*y[3],  1e4*y[2], 0],
+        [0,  0.04, -1e4 * y[3] - 3e7 * 2 * y[2], -1e4*y[2], 0],
+        [0,     0,                   3e7*2*y[2],         0, 0],
+        [0,     0,                            0,         0, 1]
+    ])
+
+def banded_stiff_jac(t, y):
+    print("hello")
+    return np.array([
+        [0,     0,                    0,  1e4*y[2], 0],
+        [0,     0,             1e4*y[3], -1e4*y[2], 0],
+        [1, -0.04, -1e4*y[3]-3e7*2*y[2],         0, 1],
+        [0,  0.04,           3e7*2*y[2],         0, 0]
+    ])
+
+def test_banded_lsoda():
+    # expected solution is given by problem with full jacobian
+    tfull, yfull = _solve_robertson_lsoda(use_jac=True, banded=False)
+
+    for use_jac in [True, False]:
+        t, y = _solve_robertson_lsoda(use_jac, True)
+        assert np.allclose(t, tfull)
+        assert np.allclose(y, yfull)
+
+def _solve_robertson_lsoda(use_jac, banded):
+
+    if use_jac:
+        if banded:
+            jac = banded_stiff_jac
+        else:
+            jac = stiff_jac
+    else:
+        jac = None
+
+    if banded:
+        lband = 1
+        uband = 2
+    else:
+        lband = None
+        uband = None
+
+    r = ode(stiff_f, jac)
+    r.set_integrator('lsoda',
+                     lband=lband, uband=uband,
+                     rtol=1e-9, atol=1e-10,
+                     )
+    t0 = 0
+    dt = 1
+    tend = 10
+    y0 = np.array([1.0, 1.0, 0.0, 0.0, 1.0])
+    r.set_initial_value(y0, t0)
+
+    t = [t0]
+    y = [y0]
+    while r.successful() and r.t < tend:
+        r.integrate(r.t + dt)
+        t.append(r.t)
+        y.append(r.y)
+
+    # Ensure that the Jacobian was evaluated
+    # iwork[12] has the number of Jacobian evaluations.
+    assert r._integrator.iwork[12] > 0
+
+    t = np.array(t)
+    y = np.array(y)
+    return t, y
