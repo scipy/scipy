@@ -906,6 +906,24 @@ class TestAkima1DInterpolator:
         yi[:, 1, 1] = 4. * yi_
         xp_assert_close(ak(xi), yi)
 
+    def test_linear_interpolant_edge_case(self):
+        # Reference - https://github.com/scipy/scipy/issues/22011
+        x = np.array([0.0, 1.0], dtype=float)
+        y = np.array([0.55, 0.55])
+        akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
+        xp_assert_close(akima(0.45), np.array(0.55))
+
+        x = np.array([0.0, 0.5, 1.0])
+        y = np.array([0.15, 0.67, 0.15])
+        akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
+        xp_assert_close(akima(0.45), np.array(0.6648))
+
+        x = np.array([0.0, 1.0])
+        y = np.array([0.55,  0.55])
+        akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
+        xp_assert_close(akima(0.45), np.array(0.55))
+
+
     def test_degenerate_case_multidimensional(self):
         # This test is for issue #5683.
         x = np.array([0, 1, 2])
