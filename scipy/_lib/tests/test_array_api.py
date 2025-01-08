@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_default_dtype
@@ -24,7 +23,6 @@ class TestArrayAPI:
         assert 'array_api_compat.numpy' in xp.__name__
         _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
-    @array_api_compatible
     def test_asarray(self, xp):
         x, y = _asarray([0, 1, 2], xp=xp), _asarray(np.arange(3), xp=xp)
         ref = xp.asarray([0, 1, 2])
@@ -61,7 +59,6 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             xpx.atleast_nd("abc", ndim=0)
 
-    @array_api_compatible
     def test_copy(self, xp):
         for _xp in [xp, None]:
             x = xp.asarray([1, 2, 3])
@@ -76,7 +73,6 @@ class TestArrayAPI:
             else:
                 assert x[0] != y[0]
     
-    @array_api_compatible
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])
     def test_strict_checks(self, xp, dtype, shape):
@@ -123,11 +119,8 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="Array-ness does not match."):
                 xp_assert_equal(x, y, **options)
 
-    @array_api_compatible
+    @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar(self, xp):
-        if not is_numpy(xp):
-            pytest.skip("Scalars only exist in NumPy")
-
         # identity always passes
         xp_assert_equal(xp.float64(0), xp.float64(0))
         xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
@@ -157,11 +150,8 @@ class TestArrayAPI:
         # as an alternative to `check_0d=False`, explicitly expect scalar
         xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
 
-    @array_api_compatible
+    @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar_no_0d(self, xp):
-        if not is_numpy(xp):
-            pytest.skip("Scalars only exist in NumPy")
-
         # identity passes, if first argument is not 0d (or check_0d=True)
         xp_assert_equal_no_0d(xp.float64(0), xp.float64(0))
         xp_assert_equal_no_0d(xp.float64(0), xp.float64(0), check_0d=True)
@@ -195,6 +185,5 @@ class TestArrayAPI:
         xp_assert_equal_no_0d(0., xp.asarray(0.))
         xp_assert_equal_no_0d(42, xp.asarray(42))
 
-    @array_api_compatible
     def test_default_dtype(self, xp):
         assert xp_default_dtype(xp) == xp.asarray(1.).dtype

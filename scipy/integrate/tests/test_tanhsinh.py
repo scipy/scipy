@@ -6,7 +6,6 @@ import math
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy, is_numpy
@@ -43,8 +42,6 @@ def _vectorize(xp):
     return decorator
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends(
     'array_api_strict', reason='Currently uses fancy indexing assignment.'
 )
@@ -754,8 +751,6 @@ class TestTanhSinh:
         _tanhsinh(np.sin, 1, x)
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing.')
 @pytest.mark.skip_xp_backends('jax.numpy', reason='No mutation.')
 class TestNSum:

@@ -3,7 +3,6 @@ import pytest
 
 import numpy as np
 
-from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 from scipy._lib._array_api import is_numpy, is_torch, array_namespace
@@ -11,9 +10,6 @@ from scipy._lib._array_api import is_numpy, is_torch, array_namespace
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
-
-
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
 jax_skip_reason = 'JAX arrays do not support item assignment.'

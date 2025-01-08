@@ -10,13 +10,11 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import sys
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     xp_assert_close, get_xp_devices, xp_device, array_namespace
 )
 from scipy import fft
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 _5_smooth_numbers = [

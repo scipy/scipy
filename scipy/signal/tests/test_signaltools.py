@@ -37,14 +37,8 @@ from scipy._lib._array_api import (
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, xp_default_dtype
 )
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [
-    array_api_compatible,
-    pytest.mark.usefixtures("skip_xp_backends"),
-    pytest.mark.usefixtures("xfail_xp_backends"),
-]
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])

@@ -9,7 +9,6 @@ from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less, array_namespace)
 from scipy._lib._array_api import xp_ravel
-from scipy.conftest import array_api_compatible
 
 
 # These tests were originally written for the private `optimize._bracket`
@@ -46,8 +45,6 @@ jax_skip_reason = 'JAX arrays do not support item assignment.'
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 class TestBracketRoot:
     @pytest.mark.parametrize("seed", (615655101, 3141866013, 238075752))
     @pytest.mark.parametrize("use_xmin", (False, True))
@@ -355,8 +352,6 @@ class TestBracketRoot:
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 class TestBracketMinimum:
     def init_f(self):
         def f(x, a, b):
