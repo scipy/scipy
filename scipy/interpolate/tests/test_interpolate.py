@@ -923,6 +923,42 @@ class TestAkima1DInterpolator:
         akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
         xp_assert_close(akima(0.45), np.array(0.55))
 
+        # 2D case
+        x = np.array([0., 1.])
+        y = np.array([0., 1.])
+        y = np.column_stack((y, 2. * y, 3. * y, 4. * y))
+
+        ak = Akima1DInterpolator(x, y)
+        xi = np.array([0.5, 1.])
+        yi = np.array([[0.5, 1., 1.5, 2. ],
+                       [1., 2., 3., 4.]])
+        xp_assert_close(ak(xi), yi)
+
+        ak = Akima1DInterpolator(x, y.T, axis=1)
+        xp_assert_close(ak(xi), yi.T)
+
+        x = np.arange(0., 2.)
+        y_ = np.array([0., 1.])
+        y = np.empty((2, 2, 2))
+        y[:, 0, 0] = y_
+        y[:, 1, 0] = 2. * y_
+        y[:, 0, 1] = 3. * y_
+        y[:, 1, 1] = 4. * y_
+        ak = Akima1DInterpolator(x, y)
+        yi_ = np.array([0.5, 1.])
+        yi = np.empty((2, 2, 2))
+        yi[:, 0, 0] = yi_
+        yi[:, 1, 0] = 2. * yi_
+        yi[:, 0, 1] = 3. * yi_
+        yi[:, 1, 1] = 4. * yi_
+        xp_assert_close(ak(xi), yi)
+
+        ak = Akima1DInterpolator(x, y.transpose(1, 0, 2), axis=1)
+        xp_assert_close(ak(xi), yi.transpose(1, 0, 2))
+
+        ak = Akima1DInterpolator(x, y.transpose(2, 1, 0), axis=2)
+        xp_assert_close(ak(xi), yi.transpose(2, 1, 0))
+
 
     def test_degenerate_case_multidimensional(self):
         # This test is for issue #5683.
