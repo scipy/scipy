@@ -405,10 +405,10 @@ class Akima1DInterpolator(CubicHermiteSpline):
         .. versionadded:: 1.13.0
 
     extrapolate : {bool, None}, optional
-        If bool, determines whether to extrapolate to out-of-bounds points 
-        based on first and last intervals, or to return NaNs. If None, 
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If None,
         ``extrapolate`` is set to False.
-        
+
     Methods
     -------
     __call__
@@ -491,7 +491,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima", 
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
             raise NotImplementedError(f"`method`={method} is unsupported.")
