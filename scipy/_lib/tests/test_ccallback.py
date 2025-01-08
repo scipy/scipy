@@ -23,7 +23,7 @@ def callback_python(a, user_data=None):
         return a + user_data
 
 def _get_cffi_func(base, signature):
-    pytest.importorskip("cffi")
+    cffi = pytest.importorskip("cffi")
 
     # Get function address
     voidp = ctypes.cast(base, ctypes.c_void_p)
