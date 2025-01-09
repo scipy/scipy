@@ -50,13 +50,13 @@ jobs:
   get_commit_message:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
-    if: >
-      needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
 
   pytorch_gpu:
     name: PyTorch, JAX, CuPy GPU
     needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:22.04
     steps:
       - name: Checkout scipy repo
