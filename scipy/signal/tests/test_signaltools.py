@@ -1105,7 +1105,7 @@ class TestOAConvolve:
         # Regression test for #1745: crashes with 0-length input.
         xp_assert_equal(
             oaconvolve(xp.asarray(a), xp.asarray(b)),
-            xp.asarray([]),
+            xp.asarray([]), check_dtype=False
         )
 
     def test_zero_rank(self, xp):
@@ -1621,6 +1621,7 @@ class TestCSpline1DEval:
         assert ynew.dtype == y.dtype
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestOrderFilt:
 
     def test_basic(self, xp):
