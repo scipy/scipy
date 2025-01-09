@@ -4,7 +4,6 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy.integrate import ode
 
-# first test vode
 
 def _band_count(a):
     """Returns ml and mu, the lower and upper band sizes of a."""
