@@ -1,5 +1,6 @@
 import operator
 from math import prod
+import threading
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
@@ -16,6 +17,9 @@ from itertools import combinations
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
+
+
+_bspline_lock = threading.Lock()
 
 
 def _get_dtype(dtype):
@@ -538,9 +542,11 @@ class BSpline:
 
         """
         if not self.t.flags.c_contiguous:
-            self.t = self.t.copy()
+            with _bspline_lock:
+                self.t = self.t.copy()
         if not self.c.flags.c_contiguous:
-            self.c = self.c.copy()
+            with _bspline_lock:
+                self.c = self.c.copy()
 
     def derivative(self, nu=1):
         """Return a B-spline representing the derivative.
