@@ -914,7 +914,6 @@ class TestAkima1DInterpolator:
 
     def test_linear_interpolant_edge_case_2d(self):
         x = np.array([0., 1.])
-        y = np.array([0., 1.])
         y = np.column_stack((x, 2. * x, 3. * x, 4. * x))
 
         ak = Akima1DInterpolator(x, y)
