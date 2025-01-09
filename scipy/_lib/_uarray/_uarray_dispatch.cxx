@@ -156,7 +156,7 @@ using local_state_t = std::unordered_map<std::string, local_backends>;
 
 static py_ref BackendNotImplementedError;
 static immortal<global_state_t> global_domain_map;
-thread_local immortal<global_state_t> * current_global_state = &global_domain_map;
+thread_local global_state_t * current_global_state = &global_domain_map;
 thread_local global_state_t thread_local_domain_map;
 thread_local local_state_t local_domain_map;
 
@@ -1548,14 +1548,8 @@ PyObject * set_state(PyObject * /* self */, PyObject * args) {
   local_domain_map = state->locals;
   bool use_thread_local_globals =
       (!reset_allowed) || state->use_thread_local_globals;
-
-  if(use_thread_local_globals) {
-    static immortal<global_state_t> thread_local_copy = immortal<global_state_t>(
-      thread_local_domain_map);
-    current_global_state = &thread_local_copy;
-  } else {
-    current_global_state = &global_domain_map;
-  }
+  current_global_state =
+      use_thread_local_globals ? &thread_local_domain_map : global_domain_map.get();
 
   if (use_thread_local_globals)
     thread_local_domain_map = state->globals;
