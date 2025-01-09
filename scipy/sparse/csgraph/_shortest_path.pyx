@@ -329,9 +329,9 @@ def floyd_warshall(csgraph, directed=True,
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
                                  copy_if_dense=not overwrite)
-    if not issparse(csgraph):
-        # for dense array input, zero entries represent non-edge
-        dist_matrix[dist_matrix == 0] = INFINITY
+    if not (issparse(csgraph) or np.ma.isMaskedArray(csgraph)):
+         # for dense array input, zero entries represent non-edge
+         dist_matrix[dist_matrix == 0] = INFINITY
 
     if unweighted:
         dist_matrix[~np.isinf(dist_matrix)] = 1
