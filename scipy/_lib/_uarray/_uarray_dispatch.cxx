@@ -156,7 +156,7 @@ using local_state_t = std::unordered_map<std::string, local_backends>;
 
 static py_ref BackendNotImplementedError;
 static immortal<global_state_t> global_domain_map;
-thread_local global_state_t * current_global_state = &global_domain_map;
+thread_local global_state_t * current_global_state = &*global_domain_map;
 thread_local global_state_t thread_local_domain_map;
 thread_local local_state_t local_domain_map;
 
@@ -610,7 +610,7 @@ PyObject * set_global_backend(PyObject * /* self */, PyObject * args) {
         options.coerce = coerce;
         options.only = only;
 
-        auto & domain_globals = (**current_global_state)[domain];
+        auto & domain_globals = (*current_global_state)[domain];
         domain_globals.global = options;
         domain_globals.try_global_backend_last = try_last;
         return LoopReturn::Continue;
@@ -633,7 +633,7 @@ PyObject * register_backend(PyObject * /* self */, PyObject * args) {
 
   const auto ret =
       backend_for_each_domain_string(backend, [&](const std::string & domain) {
-        (**current_global_state)[domain].registered.push_back(
+        (*current_global_state)[domain].registered.push_back(
             py_ref::ref(backend));
         return LoopReturn::Continue;
       });
@@ -644,12 +644,12 @@ PyObject * register_backend(PyObject * /* self */, PyObject * args) {
 }
 
 void clear_single(const std::string & domain, bool registered, bool global) {
-  auto domain_globals = (*current_global_state)->find(domain);
-  if (domain_globals == (*current_global_state)->end())
+  auto domain_globals = current_global_state->find(domain);
+  if (domain_globals == current_global_state->end())
     return;
 
   if (registered && global) {
-    (*current_global_state)->erase(domain_globals);
+    current_global_state->erase(domain_globals);
     return;
   }
 
@@ -670,7 +670,7 @@ PyObject * clear_backends(PyObject * /* self */, PyObject * args) {
     return nullptr;
 
   if (domain == Py_None && registered && global) {
-    (*current_global_state)->clear();
+    current_global_state->clear();
     Py_RETURN_NONE;
   }
 
@@ -956,8 +956,8 @@ const local_backends & get_local_backends(const std::string & domain_key) {
 const global_backends & get_global_backends(const std::string & domain_key) {
   static const global_backends null_global_backends;
   const auto & cur_globals = *current_global_state;
-  auto itr = cur_globals->find(domain_key);
-  if (itr == cur_globals->end()) {
+  auto itr = cur_globals.find(domain_key);
+  if (itr == cur_globals.end()) {
     return null_global_backends;
   }
   return itr->second;
@@ -1525,8 +1525,8 @@ PyObject * get_state(PyObject * /* self */, PyObject * /* args */) {
 
   output->locals = local_domain_map;
   output->use_thread_local_globals =
-      (current_global_state != &global_domain_map);
-  output->globals = **current_global_state;
+      (current_global_state != &*global_domain_map);
+  output->globals = *current_global_state;
 
   return ref.release();
 }
