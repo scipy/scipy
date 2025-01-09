@@ -405,10 +405,10 @@ class Akima1DInterpolator(CubicHermiteSpline):
         .. versionadded:: 1.13.0
 
     extrapolate : {bool, None}, optional
-        If bool, determines whether to extrapolate to out-of-bounds points 
-        based on first and last intervals, or to return NaNs. If None, 
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If None,
         ``extrapolate`` is set to False.
-        
+
     Methods
     -------
     __call__
@@ -491,7 +491,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima", 
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
             raise NotImplementedError(f"`method`={method} is unsupported.")
@@ -509,37 +509,45 @@ class Akima1DInterpolator(CubicHermiteSpline):
         # Akima extrapolation historically False; parent class defaults to True.
         extrapolate = False if extrapolate is None else extrapolate
 
-        # determine slopes between breakpoints
-        m = np.empty((x.size + 3, ) + y.shape[1:])
-        dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
-        m[2:-2] = np.diff(y, axis=0) / dx
-
-        # add two additional points on the left ...
-        m[1] = 2. * m[2] - m[3]
-        m[0] = 2. * m[1] - m[2]
-        # ... and on the right
-        m[-2] = 2. * m[-3] - m[-4]
-        m[-1] = 2. * m[-2] - m[-3]
-
-        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
-        # defined. This is the fill value:
-        t = .5 * (m[3:] + m[:-3])
-        # get the denominator of the slope t
-        dm = np.abs(np.diff(m, axis=0))
-        if method == "makima":
-            pm = np.abs(m[1:] + m[:-1])
-            f1 = dm[2:] + 0.5 * pm[2:]
-            f2 = dm[:-2] + 0.5 * pm[:-2]
+        if y.shape[0] == 2:
+            # edge case: only have two points, use linear interpolation
+            xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
+            hk = xp[1:] - xp[:-1]
+            mk = (y[1:] - y[:-1]) / hk
+            t = np.zeros_like(y)
+            t[...] = mk
         else:
-            f1 = dm[2:]
-            f2 = dm[:-2]
-        f12 = f1 + f2
-        # These are the mask of where the slope at breakpoint is defined:
-        ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
-        x_ind, y_ind = ind[0], ind[1:]
-        # Set the slope at breakpoint
-        t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                  f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+            # determine slopes between breakpoints
+            m = np.empty((x.size + 3, ) + y.shape[1:])
+            dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
+            m[2:-2] = np.diff(y, axis=0) / dx
+
+            # add two additional points on the left ...
+            m[1] = 2. * m[2] - m[3]
+            m[0] = 2. * m[1] - m[2]
+            # ... and on the right
+            m[-2] = 2. * m[-3] - m[-4]
+            m[-1] = 2. * m[-2] - m[-3]
+
+            # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
+            # defined. This is the fill value:
+            t = .5 * (m[3:] + m[:-3])
+            # get the denominator of the slope t
+            dm = np.abs(np.diff(m, axis=0))
+            if method == "makima":
+                pm = np.abs(m[1:] + m[:-1])
+                f1 = dm[2:] + 0.5 * pm[2:]
+                f2 = dm[:-2] + 0.5 * pm[:-2]
+            else:
+                f1 = dm[2:]
+                f2 = dm[:-2]
+            f12 = f1 + f2
+            # These are the mask of where the slope at breakpoint is defined:
+            ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
+            x_ind, y_ind = ind[0], ind[1:]
+            # Set the slope at breakpoint
+            t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
+                    f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
