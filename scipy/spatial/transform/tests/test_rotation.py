@@ -1524,6 +1524,22 @@ def test_align_vectors_primary_only():
         assert np.isclose(rssd, 0, atol=atol)
 
 
+def test_repr_single_rotation():
+    q = np.array([[0, 1, 0, 1]]) / np.sqrt(2)
+    actual = repr(Rotation.from_quat(q))
+    # drop whitespace for comparison
+    assert actual.replace(" ", "") == "Rotation(array([0.,0.70710678,0.,0.70710678]))"
+
+
+def test_repr_rotation_sequence():
+    q = np.array([[0, 1, 0, 1], [0, 0, 1, 1]]) / np.sqrt(2)
+    actual = f"{Rotation.from_quat(q)!r}"
+    # drop whitespace for comparison
+    expected = """Rotation(array([[0.,0.70710678,0.,0.70710678],
+                                  [0.,0.,0.70710678,0.70710678]]))""".replace(" ", "")
+    assert actual.replace(" ", "") == expected
+
+
 def test_slerp():
     rnd = np.random.RandomState(0)
 

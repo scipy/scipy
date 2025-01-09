@@ -3616,6 +3616,10 @@ cdef class Rotation:
         else:
             return cls.from_matrix(C), rssd
 
+    def __repr__(Rotation self):
+        q = np.asarray(self._quat).squeeze()
+        return f"Rotation({q!r})"
+
 class Slerp:
     """Spherical Linear Interpolation of Rotations.
 
