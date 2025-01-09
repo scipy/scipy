@@ -29,29 +29,25 @@ public:
         // Intentionally don't call destructor
     }
 
-    // T* get() const { return reinterpret_cast<T*>(&storage); }
+    T* get() { return reinterpret_cast<T*>(&storage); }
     const T* get() const { return reinterpret_cast<const T*>(&storage); }
     const T* get_const() const { return reinterpret_cast<const T*>(&storage); }
 
-
     const T* operator ->() const { return get(); }
-    // T* operator ->() const { return get(); }
+    T* operator ->() { return get(); }
 
-    friend bool operator==(const immortal<T> & lhs, const immortal<T> & rhs) {
-      return lhs.get() == rhs.get();
-    }
+    T& operator*() { return *get(); }
+    const T& operator*() const { return *get(); }
 
 };
 
 /** Handle to a python object that automatically DECREFs */
 class py_ref {
-  // explicit py_ref(PyObject * object): obj_(object) {}
+  explicit py_ref(PyObject * object): obj_(object) {}
 
 public:
   py_ref() noexcept: obj_(nullptr) {}
-  py_ref(PyObject * object): obj_(object) {}
   py_ref(std::nullptr_t) noexcept: py_ref() {}
-  py_ref(immortal<py_ref> other): obj_(other->get()) { Py_XINCREF(obj_); }
 
   py_ref(const py_ref & other) noexcept: obj_(other.obj_) { Py_XINCREF(obj_); }
   py_ref(py_ref && other) noexcept: obj_(other.obj_) { other.obj_ = nullptr; }
@@ -144,26 +140,9 @@ struct backend_options {
   }
 };
 
-struct global_backend_options {
-  immortal<py_ref> backend;
-  bool coerce = false;
-  bool only = false;
-
-  bool operator==(const global_backend_options & other) const {
-    return (
-        *backend.get_const() == *other.backend.get_const() &&
-        coerce == other.coerce &&
-        only == other.only);
-  }
-
-  bool operator!=(const global_backend_options & other) const {
-    return !(*this == other);
-  }
-};
-
 struct global_backends {
-  global_backend_options global;
-  std::vector<immortal<py_ref>> registered;
+  backend_options global;
+  std::vector<py_ref> registered;
   bool try_global_backend_last = false;
 };
 
@@ -176,8 +155,8 @@ using global_state_t = std::unordered_map<std::string, global_backends>;
 using local_state_t = std::unordered_map<std::string, local_backends>;
 
 static py_ref BackendNotImplementedError;
-static global_state_t global_domain_map;
-thread_local global_state_t * current_global_state = &global_domain_map;
+static immortal<global_state_t> global_domain_map;
+thread_local immortal<global_state_t> * current_global_state = &global_domain_map;
 thread_local global_state_t thread_local_domain_map;
 thread_local local_state_t local_domain_map;
 
@@ -192,25 +171,25 @@ struct {
   immortal<py_ref> ua_function;
 
   bool init() {
-    ua_convert = immortal<py_ref>(PyUnicode_InternFromString("__ua_convert__"));
-    if (!ua_convert->get())
+    *ua_convert = py_ref::steal(PyUnicode_InternFromString("__ua_convert__"));
+    if (!*ua_convert)
       return false;
 
-    ua_domain = immortal<py_ref>(PyUnicode_InternFromString("__ua_domain__"));
-    if (!ua_domain->get())
+    *ua_domain = py_ref::steal(PyUnicode_InternFromString("__ua_domain__"));
+    if (!*ua_domain)
       return false;
 
-    ua_function = immortal<py_ref>(PyUnicode_InternFromString("__ua_function__"));
-    if (!ua_function->get())
+    *ua_function = py_ref::steal(PyUnicode_InternFromString("__ua_function__"));
+    if (!*ua_function)
       return false;
 
     return true;
   }
 
   void clear() {
-    const_cast<py_ref*>(ua_convert.get_const())->reset();
-    const_cast<py_ref*>(ua_domain.get_const())->reset();
-    const_cast<py_ref*>(ua_function.get_const())->reset();
+    ua_convert->reset();
+    ua_domain->reset();
+    ua_function->reset();
   }
 } identifiers;
 
@@ -457,28 +436,7 @@ struct BackendState {
     return output;
   }
 
-  static global_backend_options convert_global_backend_options(PyObject * input) {
-    global_backend_options output;
-    int coerce, only;
-    PyObject * py_backend;
-    if (!PyArg_ParseTuple(input, "Opp", &py_backend, &coerce, &only))
-      throw std::invalid_argument("");
-
-    if (py_backend != Py_None) {
-      Py_XINCREF(py_backend);
-      output.backend = immortal<py_ref>(py_backend);
-    }
-    output.coerce = coerce;
-    output.only = only;
-
-    return output;
-  }
-
   static py_ref convert_backend(PyObject * input) { return py_ref::ref(input); }
-  static immortal<py_ref> convert_global_backend(PyObject * input) {
-    Py_XINCREF(input);
-    return immortal<py_ref>(input);
-  }
 
   static local_backends convert_local_backends(PyObject * input) {
     PyObject *py_skipped, *py_preferred;
@@ -502,9 +460,9 @@ struct BackendState {
       throw std::invalid_argument("");
 
     global_backends output;
-    output.global = BackendState::convert_global_backend_options(py_global);
+    output.global = BackendState::convert_backend_options(py_global);
     output.registered =
-        convert_iter<immortal<py_ref>>(py_registered, BackendState::convert_global_backend);
+        convert_iter<py_ref>(py_registered, BackendState::convert_backend);
     output.try_global_backend_last = try_global_backend_last;
 
     return output;
@@ -522,8 +480,6 @@ struct BackendState {
         BackendState::convert_local_backends);
   }
 
-  static py_ref convert_py(immortal<py_ref> input) { return *(input.get_const()); }
-
   static py_ref convert_py(py_ref input) { return input; }
 
   static py_ref convert_py(bool input) { return py_bool(input); }
@@ -534,17 +490,6 @@ struct BackendState {
     }
     py_ref output = py_make_tuple(
         input.backend, py_bool(input.coerce), py_bool(input.only));
-    if (!output)
-      throw std::runtime_error("");
-    return output;
-  }
-
-  static py_ref convert_py(global_backend_options input) {
-    if (!input.backend.get_const()) {
-      input.backend = immortal<py_ref>(Py_None);
-    }
-    py_ref output = py_make_tuple(
-        *(input.backend.get_const()), py_bool(input.coerce), py_bool(input.only));
     if (!output)
       throw std::runtime_error("");
     return output;
@@ -618,7 +563,7 @@ struct BackendState {
 
 /** Clean up global python references when the module is finalized. */
 void globals_free(void * /* self */) {
-  global_domain_map.clear();
+  global_domain_map->clear();
   BackendNotImplementedError.reset();
   identifiers.clear();
 }
@@ -631,12 +576,12 @@ void globals_free(void * /* self */) {
  * cleanup.
  */
 int globals_traverse(PyObject * self, visitproc visit, void * arg) {
-  for (const auto & kv : global_domain_map) {
+  for (const auto & kv : *global_domain_map) {
     const auto & globals = kv.second;
-    PyObject * backend = globals.global.backend.get_const()->get();
+    PyObject * backend = globals.global.backend.get();
     Py_VISIT(backend);
     for (const auto & reg : globals.registered) {
-      backend = reg.get_const()->get();
+      backend = reg.get();
       Py_VISIT(backend);
     }
   }
@@ -644,7 +589,7 @@ int globals_traverse(PyObject * self, visitproc visit, void * arg) {
 }
 
 int globals_clear(PyObject * /* self */) {
-  global_domain_map.clear();
+  global_domain_map->clear();
   return 0;
 }
 
@@ -660,13 +605,12 @@ PyObject * set_global_backend(PyObject * /* self */, PyObject * args) {
 
   const auto res =
       backend_for_each_domain_string(backend, [&](const std::string & domain) {
-        global_backend_options options;
-        Py_XINCREF(backend);
-        options.backend = immortal<py_ref>(backend);
+        backend_options options;
+        options.backend = py_ref::ref(backend);
         options.coerce = coerce;
         options.only = only;
 
-        auto & domain_globals = (*current_global_state)[domain];
+        auto & domain_globals = (**current_global_state)[domain];
         domain_globals.global = options;
         domain_globals.try_global_backend_last = try_last;
         return LoopReturn::Continue;
@@ -689,9 +633,8 @@ PyObject * register_backend(PyObject * /* self */, PyObject * args) {
 
   const auto ret =
       backend_for_each_domain_string(backend, [&](const std::string & domain) {
-        Py_XINCREF(backend);
-        (*current_global_state)[domain].registered.push_back(
-            immortal<py_ref>(backend));
+        (**current_global_state)[domain].registered.push_back(
+            py_ref::ref(backend));
         return LoopReturn::Continue;
       });
   if (ret == LoopReturn::Error)
@@ -701,12 +644,12 @@ PyObject * register_backend(PyObject * /* self */, PyObject * args) {
 }
 
 void clear_single(const std::string & domain, bool registered, bool global) {
-  auto domain_globals = current_global_state->find(domain);
-  if (domain_globals == current_global_state->end())
+  auto domain_globals = (*current_global_state)->find(domain);
+  if (domain_globals == (*current_global_state)->end())
     return;
 
   if (registered && global) {
-    current_global_state->erase(domain_globals);
+    (*current_global_state)->erase(domain_globals);
     return;
   }
 
@@ -715,8 +658,7 @@ void clear_single(const std::string & domain, bool registered, bool global) {
   }
 
   if (global) {
-    py_ref* backend = const_cast<py_ref*>(domain_globals->second.global.backend.get_const());
-    backend->reset();
+    domain_globals->second.global.backend.reset();
     domain_globals->second.try_global_backend_last = false;
   }
 }
@@ -728,7 +670,7 @@ PyObject * clear_backends(PyObject * /* self */, PyObject * args) {
     return nullptr;
 
   if (domain == Py_None && registered && global) {
-    current_global_state->clear();
+    (*current_global_state)->clear();
     Py_RETURN_NONE;
   }
 
@@ -1014,8 +956,8 @@ const local_backends & get_local_backends(const std::string & domain_key) {
 const global_backends & get_global_backends(const std::string & domain_key) {
   static const global_backends null_global_backends;
   const auto & cur_globals = *current_global_state;
-  auto itr = cur_globals.find(domain_key);
-  if (itr == cur_globals.end()) {
+  auto itr = cur_globals->find(domain_key);
+  if (itr == cur_globals->end()) {
     return null_global_backends;
   }
   return itr->second;
@@ -1064,16 +1006,16 @@ LoopReturn for_each_backend_in_domain(
   auto & globals = get_global_backends(domain_key);
   auto try_global_backend = [&] {
     auto & options = globals.global;
-    if (!options.backend.get())
+    if (!options.backend)
       return LoopReturn::Continue;
 
-    int skip_current = should_skip(options.backend->get());
+    int skip_current = should_skip(options.backend.get());
     if (skip_current < 0)
       return LoopReturn::Error;
     if (skip_current > 0)
       return LoopReturn::Continue;
 
-    return call(options.backend->get(), options.coerce);
+    return call(options.backend.get(), options.coerce);
   };
 
   if (!globals.try_global_backend_last) {
@@ -1086,14 +1028,14 @@ LoopReturn for_each_backend_in_domain(
   }
 
   for (size_t i = 0; i < globals.registered.size(); ++i) {
-    auto backend = globals.registered[i];
-    int skip_current = should_skip(backend->get());
+    py_ref backend = globals.registered[i];
+    int skip_current = should_skip(backend.get());
     if (skip_current < 0)
       return LoopReturn::Error;
     if (skip_current)
       continue;
 
-    ret = call(backend->get(), false);
+    ret = call(backend.get(), false);
     if (ret != LoopReturn::Continue)
       return ret;
   }
@@ -1584,7 +1526,7 @@ PyObject * get_state(PyObject * /* self */, PyObject * /* args */) {
   output->locals = local_domain_map;
   output->use_thread_local_globals =
       (current_global_state != &global_domain_map);
-  output->globals = *current_global_state;
+  output->globals = **current_global_state;
 
   return ref.release();
 }
@@ -1606,8 +1548,14 @@ PyObject * set_state(PyObject * /* self */, PyObject * args) {
   local_domain_map = state->locals;
   bool use_thread_local_globals =
       (!reset_allowed) || state->use_thread_local_globals;
-  current_global_state =
-      use_thread_local_globals ? &thread_local_domain_map : &global_domain_map;
+
+  if(use_thread_local_globals) {
+    static immortal<global_state_t> thread_local_copy = immortal<global_state_t>(
+      thread_local_domain_map);
+    current_global_state = &thread_local_copy;
+  } else {
+    current_global_state = &global_domain_map;
+  }
 
   if (use_thread_local_globals)
     thread_local_domain_map = state->globals;
