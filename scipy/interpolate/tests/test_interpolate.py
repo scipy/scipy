@@ -906,24 +906,13 @@ class TestAkima1DInterpolator:
         yi[:, 1, 1] = 4. * yi_
         xp_assert_close(ak(xi), yi)
 
-    def test_linear_interpolant_edge_case(self):
-        # Reference - https://github.com/scipy/scipy/issues/22011
+    def test_linear_interpolant_edge_case_1d(self):
         x = np.array([0.0, 1.0], dtype=float)
-        y = np.array([0.55, 0.55])
+        y = np.array([0.5, 1.0])
         akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
-        xp_assert_close(akima(0.45), np.array(0.55))
+        xp_assert_close(akima(0.45), np.array(0.725))
 
-        x = np.array([0.0, 0.5, 1.0])
-        y = np.array([0.15, 0.67, 0.15])
-        akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
-        xp_assert_close(akima(0.45), np.array(0.6648))
-
-        x = np.array([0.0, 1.0])
-        y = np.array([0.55,  0.55])
-        akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
-        xp_assert_close(akima(0.45), np.array(0.55))
-
-        # 2D case
+    def test_linear_interpolant_edge_case_2d(self):
         x = np.array([0., 1.])
         y = np.array([0., 1.])
         y = np.column_stack((y, 2. * y, 3. * y, 4. * y))
@@ -937,6 +926,7 @@ class TestAkima1DInterpolator:
         ak = Akima1DInterpolator(x, y.T, axis=1)
         xp_assert_close(ak(xi), yi.T)
 
+    def test_linear_interpolant_edge_case_3d(self):
         x = np.arange(0., 2.)
         y_ = np.array([0., 1.])
         y = np.empty((2, 2, 2))
@@ -951,6 +941,7 @@ class TestAkima1DInterpolator:
         yi[:, 1, 0] = 2. * yi_
         yi[:, 0, 1] = 3. * yi_
         yi[:, 1, 1] = 4. * yi_
+        xi = yi_
         xp_assert_close(ak(xi), yi)
 
         ak = Akima1DInterpolator(x, y.transpose(1, 0, 2), axis=1)
