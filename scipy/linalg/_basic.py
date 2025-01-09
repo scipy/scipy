@@ -315,14 +315,14 @@ def solve(a, b, lower=False, overwrite_a=False,
         rcond, info = _gtcon(dl, d, du, du2, ipiv, anorm)
     # Banded case
     elif assume_a == 'banded':
-        gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
+        gbsv, gbcon = get_lapack_funcs(('gbsv', 'gbcon'), (a1, b1))
         # Next two lines copied from `solve_banded`
         a2 = np.zeros((2*n_below + n_above + 1, ab.shape[1]), dtype=gbsv.dtype)
         a2[n_below:, :] = ab
-        _, _, x, info = gbsv(n_below, n_above, a2, b1,
-                             overwrite_ab=True, overwrite_b=overwrite_b)
+        lu, piv, x, info = gbsv(n_below, n_above, a2, b1,
+                                overwrite_ab=True, overwrite_b=overwrite_b)
         _solve_check(n, info)
-        # TODO: wrap gbcon and use to get rcond
+        rcond, info = gbcon(n_below, n_above, lu, piv, anorm)
     # Triangular case
     elif assume_a in {'lower triangular', 'upper triangular'}:
         lower = assume_a == 'lower triangular'
