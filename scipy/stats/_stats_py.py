@@ -1517,9 +1517,11 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    contains_nan = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    # Test nan_policy before the implicit call to bool(contains_nan)
+    # to avoid raising on lazy xps on the default nan_policy='propagate'
+    if nan_policy == 'omit' and contains_nan:
         # only NumPy gets here; `_contains_nan` raises error for the rest
         a = ma.masked_invalid(a)
         return mstats_basic.describe(a, axis, ddof, bias)
@@ -2172,11 +2174,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     score = np.asarray(score)
 
     # Nan treatment
-    cna, npa = _contains_nan(a, nan_policy)
-    cns, nps = _contains_nan(score, nan_policy)
-
-    if (cna or cns) and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
+    cna = _contains_nan(a, nan_policy)
+    cns = _contains_nan(score, nan_policy)
 
     if cns:
         # If a score is nan, then the output should be nan
@@ -3154,9 +3153,9 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
-    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    contains_nan = _contains_nan(x, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if nan_policy == 'omit' and contains_nan:
         percentile_func = np.nanpercentile
     else:
         percentile_func = np.percentile
@@ -3334,7 +3333,7 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
             return np.nan
         return np.full(nan_shape, np.nan)
 
-    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    contains_nan = _contains_nan(x, nan_policy)
 
     if contains_nan:
         if axis is None:
@@ -5283,7 +5282,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             res.correlation = np.nan
             return res
 
-    a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    a_contains_nan = _contains_nan(a, nan_policy)
     variable_has_nan = np.zeros(n_vars, dtype=bool)
     if a_contains_nan:
         if nan_policy == 'omit':
@@ -10149,7 +10148,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         dtype = float if method == 'average' else np.dtype("long")
         return np.empty(x.shape, dtype=dtype)
 
-    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    contains_nan = _contains_nan(x, nan_policy)
 
     x = np.swapaxes(x, axis, -1)
     ranks = _rankdata(x, method)
@@ -10800,20 +10799,22 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         return res
 
-    contains_nan, _ = _contains_nan(x, nan_policy, xp_omit_okay=True, xp=xp)
+    contains_nan = _contains_nan(x, nan_policy, xp_omit_okay=True, xp=xp)
     if weights is not None:
-        contains_nan_w, _ = _contains_nan(weights, nan_policy, xp_omit_okay=True, xp=xp)
+        contains_nan_w = _contains_nan(weights, nan_policy, xp_omit_okay=True, xp=xp)
         contains_nan = contains_nan | contains_nan_w
 
     # Handle `nan_policy='omit'` by giving zero weight to NaNs, whether they
     # appear in `x` or `weights`. Emit warning if there is an all-NaN slice.
-    message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
-               else too_small_nd_omit)
-    if contains_nan and nan_policy == 'omit':
+    # Test nan_policy before the implicit call to bool(contains_nan)
+    # to avoid raising on lazy xps on the default nan_policy='propagate'
+    if nan_policy == 'omit' and contains_nan:
         nan_mask = xp.isnan(x)
         if weights is not None:
             nan_mask |= xp.isnan(weights)
         if xp.any(xp.all(nan_mask, axis=axis)):
+            message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
+                       else too_small_nd_omit)
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         weights = xp.ones_like(x) if weights is None else weights
         x = xp.where(nan_mask, xp.asarray(0, dtype=x.dtype), x)

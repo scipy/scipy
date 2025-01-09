@@ -6389,7 +6389,7 @@ class TestDescribe:
         if is_numpy(xp):
             self.describe_nan_policy_omit_test()
         else:
-            message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
+            message = "nan_policy='omit' is incompatible with non-NumPy arrays."
             with pytest.raises(ValueError, match=message):
                 stats.describe(x, nan_policy='omit')
 
