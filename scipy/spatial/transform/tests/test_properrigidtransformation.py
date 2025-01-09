@@ -234,6 +234,28 @@ def test_as_expcoords():
         assert_allclose(actual, expected, atol=1e-12)
 
 
+def test_from_as_internal_consistency():
+    atol = 1e-12
+    n = 100
+    t = ProperRigidTransformation.random(n, rng=10)
+
+    T = ProperRigidTransformation.from_rottrans(*t.as_rottrans())
+    assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+
+    T = ProperRigidTransformation.from_rottrans(t.rotation, t.translation)
+    assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+
+    T = ProperRigidTransformation.from_expcoords(t.as_expcoords())
+    assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+
+    T = ProperRigidTransformation.from_matrix(t.as_matrix())
+    assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+
+    # TODO
+    # T = ProperRigidTransformation.from_dualquat(t.as_dualquat())
+    # assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+
+
 def test_identity():
     atol = 1e-12
 
