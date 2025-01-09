@@ -255,8 +255,8 @@ def test_banded_lsoda():
 
     for use_jac in [True, False]:
         t, y = _solve_robertson_lsoda(use_jac, True)
-        assert np.allclose(t, tfull)
-        assert np.allclose(y, yfull)
+        assert_allclose(t, tfull)
+        assert_allclose(y, yfull)
 
 def _solve_robertson_lsoda(use_jac, banded):
 
