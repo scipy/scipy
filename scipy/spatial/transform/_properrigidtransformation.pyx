@@ -44,10 +44,11 @@ cdef class ProperRigidTransformation:
     from_rotation
     from_translation
     from_matrix
-    from_transrot
+    from_rottrans
     from_expcoords
     from_dualquat
     as_matrix
+    as_rottrans
     as_expcoords
     as_dualquat
     concatenate
@@ -106,7 +107,7 @@ cdef class ProperRigidTransformation:
     translation:
 
     >>> t0 = T.identity()
-    >>> t1 = T.from_transrot([3, 0, 0], R.from_euler("ZYX", [90, 30, 0], degrees=True))
+    >>> t1 = T.from_rottrans(R.from_euler("ZYX", [90, 30, 0], degrees=True), [3, 0, 0])
 
     Add both transformations to a single plot:
 
@@ -262,14 +263,14 @@ cdef class ProperRigidTransformation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_transrot(cls, translation, rotation):
+    def from_rottrans(cls, rotation, translation):
         """Initialize from a translation and rotation.
 
         When composing a translation and rotation, the translation is applied
         after the rotation, such that
-        ``T0 = T.from_transrot(translation, rotation)``
+        ``T0 = T.from_rottrans(rotation, translation)``
         is equivalent to
-        ``T0 = T.from_translation(translation) * T.from_rotation(rotation)``.
+        ``T0 = T.from_rotation(rotation) * T.from_translation(translation)``.
 
         When applying a transformation to a vector, the result is the same as
         if the transformation was applied to the vector in the following way:
@@ -277,10 +278,10 @@ cdef class ProperRigidTransformation:
 
         Parameters
         ----------
-        translation : array_like, shape (N, 3) or (3,)
-            A single translation vector or a stack of translation vectors.
         rotation : `Rotation` instance
             A single rotation or a stack of rotations.
+        translation : array_like, shape (N, 3) or (3,)
+            A single translation vector or a stack of translation vectors.
         """
         return cls.from_translation(translation) * cls.from_rotation(rotation)
 
@@ -426,7 +427,7 @@ cdef class ProperRigidTransformation:
         rng = check_random_state(rng)
         r = Rotation.random(num, rng=rng)
         t = Rotation.random(num, rng=rng).apply([1, 0, 0])
-        return cls.from_transrot(t, r)
+        return cls.from_rottrans(r, t)
 
     @cython.embedsignature(True)
     @classmethod
@@ -476,6 +477,20 @@ cdef class ProperRigidTransformation:
             return np.array(self._matrix[0])
         else:
             return np.array(self._matrix)
+
+    @cython.embedsignature(True)
+    def as_rottrans(self):
+        """Return the rotation and translation of the transformation, where
+        the rotation is applied first, followed by the translation.
+
+        Returns
+        -------
+        rotation : `Rotation` instance
+            The rotation of the transformation.
+        translation : numpy.ndarray, shape (N, 3) or (3,)
+            The translation of the transformation.
+        """
+        return self.rotation, self.translation
 
     @cython.embedsignature(True)
     def as_expcoords(self):
@@ -714,7 +729,7 @@ cdef class ProperRigidTransformation:
         """
         r_inv = self.rotation.inv()
         t_inv = -r_inv.apply(self.translation)
-        return self.__class__.from_transrot(t_inv, r_inv)
+        return self.__class__.from_rottrans(r_inv, t_inv)
 
     @cython.embedsignature(True)
     def apply(self, vector, inverse=False):

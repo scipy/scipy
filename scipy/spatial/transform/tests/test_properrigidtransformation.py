@@ -75,13 +75,13 @@ def test_from_matrix():
         ProperRigidTransformation.from_matrix(invalid)
 
 
-def test_from_transrot():
+def test_from_rottrans():
     atol = 1e-12
 
     # Test single rotation and translation
     r = Rotation.from_euler('zyx', [90, 0, 0], degrees=True)
     trans = np.array([1, 2, 3])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
 
     expected = np.zeros((4, 4))
     expected[:3, :3] = r.as_matrix()
@@ -93,7 +93,7 @@ def test_from_transrot():
     # Test single rotation and multiple translations
     r = Rotation.from_euler('z', 90, degrees=True)
     trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
     assert not t.single
 
     for i in range(len(trans)):
@@ -106,7 +106,7 @@ def test_from_transrot():
     # Test multiple rotations and translations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
     assert not t.single
 
     for i in range(len(trans)):
@@ -115,6 +115,17 @@ def test_from_transrot():
         expected[:3, 3] = trans[i]
         expected[3, 3] = 1
         assert_allclose(t.as_matrix()[i], expected, atol=atol)
+
+
+def test_as_rottrans():
+    atol = 1e-12
+    n = 10
+    r = Rotation.random(n, rng=10)
+    trans = np.array([1, 2, 3] * n).reshape(n, 3)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
+    new_r, new_trans = t.as_rottrans()
+    assert all(new_r.approx_equal(r, atol=atol))
+    assert_allclose(new_trans, trans, atol=atol)
 
 
 def test_from_expcoords():
@@ -262,7 +273,7 @@ def test_apply():
     ## Single transformation
     r = Rotation.from_euler('z', 90, degrees=True)
     trans = np.array([2, 3, 4])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
 
     # Single vector, single transformation
     vec = np.array([1, 0, 0])
@@ -278,7 +289,7 @@ def test_apply():
     ## Multiple transformations
     r = Rotation.from_euler('z', [90, 0], degrees=True)
     trans = np.array([[2, 3, 4], [5, 6, 7]])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
 
     # Single vector, multiple transformations
     vec = np.array([1, 0, 0])
@@ -297,7 +308,7 @@ def test_inverse_apply():
     # Test applying inverse transformation
     r = Rotation.from_euler('z', 90, degrees=True)
     trans = np.array([1, 2, 3])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
 
     # Test single vector
     vec = np.array([1, 0, 0])
@@ -335,11 +346,11 @@ def test_composition():
     # Test composing single transformations
     r1 = Rotation.from_euler('z', 90, degrees=True)
     t1 = np.array([1, 0, 0])
-    tf1 = ProperRigidTransformation.from_transrot(t1, r1)
+    tf1 = ProperRigidTransformation.from_rottrans(r1, t1)
 
     r2 = Rotation.from_euler('x', 90, degrees=True)
     t2 = np.array([0, 1, 0])
-    tf2 = ProperRigidTransformation.from_transrot(t2, r2)
+    tf2 = ProperRigidTransformation.from_rottrans(r2, t2)
 
     composed = tf2 * tf1
     vec = np.array([1, 0, 0])
@@ -352,7 +363,7 @@ def test_composition():
 
     # Multiple transformations with single transformation
     t2 = np.array([[1, 2, 3], [4, 5, 6]])
-    tf2 = ProperRigidTransformation.from_transrot(t2, r2)
+    tf2 = ProperRigidTransformation.from_rottrans(r2, t2)
 
     composed = tf2 * tf1
     expected = tf2.apply(tf1.apply(vec))
@@ -364,7 +375,7 @@ def test_composition():
 
     # Multiple transformations with multiple transformations
     t1 = np.array([[1, 0, 0], [0, -1, 1]])
-    tf1 = ProperRigidTransformation.from_transrot(t1, r1)
+    tf1 = ProperRigidTransformation.from_rottrans(r1, t1)
 
     composed = tf2 * tf1
     expected = tf2.apply(tf1.apply(vec))
@@ -405,7 +416,7 @@ def test_inverse():
     # Test inverse transformation
     r = Rotation.from_euler('z', 90, degrees=True)
     trans = np.array([1, 2, 3])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
 
     # Test that t * t.inv() equals identity
     t_inv = t.inv()
@@ -421,7 +432,7 @@ def test_inverse():
     # Test multiple transformations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
     t_inv = t.inv()
     composed = t * t_inv
     assert_allclose(composed.as_matrix(), np.array([np.eye(4)] * 2), atol=atol)
@@ -433,7 +444,7 @@ def test_properties():
     # Test rotation and translation properties
     r = Rotation.from_euler('z', 90, degrees=True)
     trans = np.array([1, 2, 3])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
 
     assert_allclose(t.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert t.rotation.approx_equal(r)
@@ -446,7 +457,7 @@ def test_indexing():
     # Test indexing for multiple transformations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = ProperRigidTransformation.from_transrot(trans, r)
+    t = ProperRigidTransformation.from_rottrans(r, trans)
 
     # Test single index
     assert_allclose(t[0].as_matrix()[:3, :3], r[0].as_matrix(), atol=atol)
@@ -464,11 +475,11 @@ def test_concatenate():
     # Test concatenation of transformations
     r1 = Rotation.from_euler('z', 90, degrees=True)
     t1 = np.array([1, 0, 0])
-    tf1 = ProperRigidTransformation.from_transrot(t1, r1)
+    tf1 = ProperRigidTransformation.from_rottrans(r1, t1)
 
     r2 = Rotation.from_euler('x', 90, degrees=True)
     t2 = np.array([0, 1, 0])
-    tf2 = ProperRigidTransformation.from_transrot(t2, r2)
+    tf2 = ProperRigidTransformation.from_rottrans(r2, t2)
 
     # Concatenate single transformations
     concatenated1 = ProperRigidTransformation.concatenate([tf1, tf2])
