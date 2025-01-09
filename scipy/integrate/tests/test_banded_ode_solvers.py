@@ -130,6 +130,9 @@ def test_banded_ode_solvers():
     # Test the "lsoda", "vode" and "zvode" solvers of the `ode` class
     # with a system that has a banded Jacobian matrix.
 
+    # This test does not test the Jacobian evaluation (banded or not)
+    # of lsoda due to the nonstiff nature of the equations.
+
     t_exact = np.linspace(0, 1.0, 5)
 
     # --- Real arrays for testing the "lsoda" and "vode" solvers ---
