@@ -386,6 +386,24 @@ def test_masked_input():
     for method in methods:
         check(method)
 
+def test_masked_invalid_input():
+    csgraph = np.array(
+        [[0, 1, 0],
+        [1, 0, 0],
+        [0, 0, 0]]
+    )
+    csgraph_masked = np.ma.masked_invalid(csgraph)
+
+    zeros = np.zeros((3, 3))
+
+    def check(method):
+        SP = shortest_path(csgraph_masked, method=method, directed=True,
+                           overwrite=False)
+        assert_array_equal(SP, zeros)
+
+    for method in methods:
+        check(method)
+
 
 def test_overwrite():
     G = np.array([[0, 3, 3, 1, 2],
