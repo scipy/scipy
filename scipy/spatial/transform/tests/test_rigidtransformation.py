@@ -251,6 +251,72 @@ def test_as_expcoords():
         assert_allclose(actual, expected, atol=1e-12)
 
 
+def test_from_dualquat():
+    # identity
+    assert_allclose(
+        RigidTransformation.from_dualquat(
+            np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])).as_matrix(),
+        np.eye(4), atol=1e-12)
+    assert_allclose(
+        RigidTransformation.from_dualquat(
+            np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+            scalar_first=True).as_matrix(),
+        np.eye(4), atol=1e-12)
+
+    # only translation
+    actual = RigidTransformation.from_dualquat(
+        [0, 0, 0, 1, 0.25, 0.15, -0.7, 0])
+    expected_matrix = np.array([
+        [1, 0, 0, 0.5],
+        [0, 1, 0, 0.3],
+        [0, 0, 1, -1.4],
+        [0, 0, 0, 1]
+    ])
+    assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
+    actual = RigidTransformation.from_dualquat(
+        [1, 0, 0, 0, 0, 0.25, 0.15, -0.7], scalar_first=True)
+    expected_matrix = np.array([
+        [1, 0, 0, 0.5],
+        [0, 1, 0, 0.3],
+        [0, 0, 1, -1.4],
+        [0, 0, 0, 1]
+    ])
+    assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
+
+    # only rotation
+    actual_rot = Rotation.from_euler("xyz", [65, -13, 90], degrees=True)
+    actual = RigidTransformation.from_dualquat(
+        np.hstack((actual_rot.as_quat(), np.zeros(4))))
+    expected_matrix = np.eye(4)
+    expected_matrix[:3, :3] = actual_rot.as_matrix()
+    assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
+
+    actual = RigidTransformation.from_dualquat(
+        np.hstack((actual_rot.as_quat(scalar_first=True), np.zeros(4))),
+        scalar_first=True)
+    expected_matrix = np.eye(4)
+    expected_matrix[:3, :3] = actual_rot.as_matrix()
+    assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
+
+    # rotation and translation
+    actual = RigidTransformation.from_dualquat(
+        [0.0617101, -0.06483886, 0.31432811, 0.94508498,
+         0.04985168, -0.26119618, 0.1691491, -0.07743254])
+    expected_matrix = np.array([
+        [0.79398752, -0.60213598, -0.08376202, 0.24605262],
+        [0.58613113, 0.79477941, -0.15740392, -0.4932833],
+        [0.16135089, 0.07588122, 0.98397557, 0.34262676],
+        [0., 0., 0., 1.]
+    ])
+    assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
+
+    actual = RigidTransformation.from_dualquat(
+        [0.94508498, 0.0617101, -0.06483886, 0.31432811,
+         -0.07743254, 0.04985168, -0.26119618, 0.1691491],
+        scalar_first=True)
+    assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
+
+
 def test_as_dualquat():
     # identity
     expected = np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
@@ -260,6 +326,28 @@ def test_as_dualquat():
     expected = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     actual = RigidTransformation.identity().as_dualquat(scalar_first=True)
     assert_allclose(actual, expected, atol=1e-12)
+
+    rng = check_random_state(2)
+
+    # pure rotation
+    for _ in range(10):
+        real_part = Rotation.random(rng=rng).as_quat()
+        dual_part = np.zeros(4)
+        expected = np.hstack((real_part, dual_part))
+        actual = RigidTransformation.from_dualquat(expected).as_dualquat()
+        # because of double cover:
+        if np.sign(expected[0]) != np.sign(actual[0]):
+            actual *= -1.0
+        assert_allclose(actual, expected, atol=1e-12)
+
+    # rotation and translation
+    for _ in range(10):
+        expected = RigidTransformation.random(rng=rng).as_dualquat()
+        actual = RigidTransformation.from_dualquat(expected).as_dualquat()
+        # because of double cover:
+        if np.sign(expected[0]) != np.sign(actual[0]):
+            actual *= -1.0
+        assert_allclose(actual, expected, atol=1e-12)
 
 
 def test_from_as_internal_consistency():

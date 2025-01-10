@@ -872,15 +872,15 @@ cdef class RigidTransformation:
         real_part = dualquat[:, :4]
         dual_part = dualquat[:, 4:]
         if scalar_first:
-            real_parts = np.roll(real_part, -1, axis=1)
-            dual_parts = np.roll(dual_part, -1, axis=1)
+            real_part = np.roll(real_part, -1, axis=1)
+            dual_part = np.roll(dual_part, -1, axis=1)
 
         matrix = np.empty((len(dualquat), 4, 4), dtype=float)
         rotation = Rotation.from_quat(real_part)
 
         matrix[:, :3, :3] = rotation.as_matrix()
         matrix[:, :3, 3] = 2.0 * np.asarray(
-            _compose_quat(dualquat, rotation.inv().as_quat()))[:, :3]
+            _compose_quat(dual_part, rotation.inv().as_quat()))[:, :3]
         matrix[:, 3, :3] = 0.0
         matrix[:, 3, 3] = 1.0
 
