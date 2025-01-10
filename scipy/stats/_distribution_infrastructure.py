@@ -9,7 +9,7 @@ from numpy import inf
 from scipy._lib._util import _lazywhere, _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
-from scipy.integrate import tanhsinh as _tanhsinh
+from scipy.integrate import tanhsinh as _tanhsinh, nsum
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
 from scipy.stats._probability_distribution import _ProbabilityDistribution
@@ -2008,10 +2008,14 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         args = np.broadcast_arrays(*args)
         # If we know the median or mean, consider breaking up the interval
         rtol = None if _isnull(self.tol) else self.tol
-        res = _tanhsinh(f, a, b, args=args, log=log, rtol=rtol)
         # For now, we ignore the status, but I want to return the error
         # estimate - see question 5 at the top.
-        return res.integral
+        if isinstance(self, ContinuousDistribution):
+            res = _tanhsinh(f, a, b, args=args, log=log, rtol=rtol)
+            return res.integral
+        else:
+            res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol))
+            return res.sum
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None):
         # Finds the argument of a function that produces the desired output.
@@ -2076,7 +2080,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         # For more complete discussion of the considerations, see:
         # https://github.com/scipy/scipy/pull/21050#discussion_r1707798901
         method = getattr(self.__class__, method_name, None)
-        super_method = getattr(ContinuousDistribution, method_name, None)
+        super_method = getattr(_UnivariateDistribution, method_name, None)
         return method is not super_method
 
     ### Distribution properties
@@ -2205,8 +2209,8 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
     def _logentropy_quadrature(self, **params):
         def logintegrand(x, **params):
-            logpdf = self._logpdf_dispatch(x, **params)
-            return logpdf + np.log(0j+logpdf)
+            logpxf = self._logpxf_dispatch(x, **params)
+            return logpxf + np.log(0j+logpxf)
         res = self._quadrature(logintegrand, params=params, log=True)
         return _log_real_standardize(res + np.pi*1j)
 
@@ -2232,9 +2236,9 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
     def _entropy_quadrature(self, **params):
         def integrand(x, **params):
-            pdf = self._pdf_dispatch(x, **params)
-            logpdf = self._logpdf_dispatch(x, **params)
-            return logpdf * pdf
+            pxf = self._pxf_dispatch(x, **params)
+            logpxf = self._logpxf_dispatch(x, **params)
+            return logpxf * pxf
         return -self._quadrature(integrand, params=params)
 
     @_set_invalid_nan_property
@@ -2279,7 +2283,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         a, b = self._support(**params)
         m = self._median_dispatch(**params)
 
-        f, args = _kwargs2args(lambda x, **params: -self._pdf_dispatch(x, **params),
+        f, args = _kwargs2args(lambda x, **params: -self._pxf_dispatch(x, **params),
                                args=(), kwargs=params)
         res_b = _bracket_minimum(f, m, xmin=a, xmax=b, args=args)
         res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr, args=args)
@@ -2485,7 +2489,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         return out[()]
 
     def _logcdf2_quadrature(self, x, y, **params):
-        logres = self._quadrature(self._logpdf_dispatch, limits=(x, y),
+        logres = self._quadrature(self._logpxf_dispatch, limits=(x, y),
                                   log=True, params=params)
         return logres
 
@@ -2526,7 +2530,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
     def _logcdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
-        return self._quadrature(self._logpdf_dispatch, limits=(a, x),
+        return self._quadrature(self._logpxf_dispatch, limits=(a, x),
                                 params=params, log=True)
 
     def cdf(self, x, y=None, /, *, method=None):
@@ -2594,7 +2598,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         return out[()]
 
     def _cdf2_quadrature(self, x, y, **params):
-        return self._quadrature(self._pdf_dispatch, limits=(x, y), params=params)
+        return self._quadrature(self._pxf_dispatch, limits=(x, y), params=params)
 
     @_set_invalid_nan
     def _cdf1(self, x, *, method):
@@ -2636,7 +2640,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
     def _cdf_quadrature(self, x, **params):
         a, _ = self._support(**params)
-        return self._quadrature(self._pdf_dispatch, limits=(a, x),
+        return self._quadrature(self._pxf_dispatch, limits=(a, x),
                                 params=params)
 
     def logccdf(self, x, y=None, /, *, method=None):
@@ -2704,7 +2708,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
     def _logccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
-        return self._quadrature(self._logpdf_dispatch, limits=(x, b),
+        return self._quadrature(self._logpxf_dispatch, limits=(x, b),
                                 params=params, log=True)
 
     def ccdf(self, x, y=None, /, *, method=None):
@@ -2774,7 +2778,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
     def _ccdf_quadrature(self, x, **params):
         _, b = self._support(**params)
-        return self._quadrature(self._pdf_dispatch, limits=(x, b),
+        return self._quadrature(self._pxf_dispatch, limits=(x, b),
                                 params=params)
 
     ## Inverse cumulative distribution functions
@@ -3076,7 +3080,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
             moment = self._moment_raw_general(order, **params)
 
         if moment is None and 'quadrature' in methods:
-            moment = self._moment_integrate_pdf(order, center=self._zero, **params)
+            moment = self._moment_from_pxf(order, center=self._zero, **params)
 
         if moment is None and 'quadrature_icdf' in methods:
             moment = self._moment_integrate_icdf(order, center=self._zero, **params)
@@ -3139,7 +3143,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         if moment is None and 'quadrature' in methods:
             mean = self._moment_raw_dispatch(self._one, **params,
                                              methods=self._moment_methods)
-            moment = self._moment_integrate_pdf(order, center=mean, **params)
+            moment = self._moment_from_pxf(order, center=mean, **params)
 
         if moment is None and 'quadrature_icdf' in methods:
             mean = self._moment_raw_dispatch(self._one, **params,
@@ -3230,10 +3234,10 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         general_standard_moments = {0: self._one, 1: self._zero, 2: self._one}
         return general_standard_moments.get(order, None)
 
-    def _moment_integrate_pdf(self, order, center, **params):
+    def _moment_from_pxf(self, order, center, **params):
         def integrand(x, order, center, **params):
-            pdf = self._pdf_dispatch(x, **params)
-            return pdf*(x-center)**order
+            pxf = self._pxf_dispatch(x, **params)
+            return pxf*(x-center)**order
         return self._quadrature(integrand, args=(order, center), params=params)
 
     def _moment_integrate_icdf(self, order, center, **params):
@@ -3269,7 +3273,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
     def _logmoment_quad(self, order, logcenter, **params):
         def logintegrand(x, order, logcenter, **params):
-            logpdf = self._logpdf_dispatch(x, **params)
+            logpdf = self._logpxf_dispatch(x, **params)
             return logpdf + order * _logexpxmexpy(np.log(x + 0j), logcenter)
             ## if logx == logcenter, `_logexpxmexpy` returns (-inf + 0j)
             ## multiplying by order produces (-inf + nan j) - bad
@@ -3489,6 +3493,12 @@ class ContinuousDistribution(_UnivariateDistribution):
     def _logpmf_formula(self, x, **params):
         return np.full_like(x, -np.inf)
 
+    def _pxf_dispatch(self, x, *, method=None, **params):
+        return self._pdf_dispatch(x, method=method, **params)
+
+    def _logpxf_dispatch(self, x, *, method=None, **params):
+        return self._logpdf_dispatch(x, method=method, **params)
+
 
 class DiscreteDistribution(_UnivariateDistribution):
     ## Algorithms
@@ -3505,6 +3515,12 @@ class DiscreteDistribution(_UnivariateDistribution):
 
     def _pdf_formula(self, x, **params):
         return np.full_like(x, np.inf)
+
+    def _pxf_dispatch(self, x, *, method=None, **params):
+        return self._pmf_dispatch(x, method=method, **params)
+
+    def _logpxf_dispatch(self, x, *, method=None, **params):
+        return self._logpmf_dispatch(x, method=method, **params)
 
 
 # Special case the names of some new-style distributions in `make_distribution`
