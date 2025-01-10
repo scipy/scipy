@@ -7,8 +7,8 @@ py3.extension_module('_rotation',
   subdir: 'scipy/spatial/transform'
 )
 
-py3.extension_module('_properrigidtransformation',
-  [cython_gen.process('_properrigidtransformation.pyx')],
+py3.extension_module('_rigidtransformation',
+  [cython_gen.process('_rigidtransformation.pyx')],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   dependencies: np_dep,
   link_args: version_link_args,

@@ -9,24 +9,29 @@ cimport cython
 
 np.import_array()
 
-cdef class ProperRigidTransformation:
-    """Proper rigid transformation in 3 dimensions.
+cdef class RigidTransformation:
+    """Rigid transformation in 3 dimensions.
 
-    This class provides an interface to initialize from and represent proper
-    rigid transformations (rotation and translation) in 3D space.
+    This class provides an interface to initialize from and represent rigid
+    transformations (rotation and translation) in 3D space.
 
-    The following operations on proper rigid transformations are supported:
+    The following operations on rigid transformations are supported:
 
     - Application on vectors
     - Transformation Composition
     - Transformation Inversion
     - Transformation Indexing
 
-    Indexing within a transformation is supported since multiple transformations
-    can be stored within a single `ProperRigidTransformation` instance.
+    Note that reflections are not supported, and coordinate systems must be
+    right-handed. Because of this, this class more precisely represents
+    *proper* rigid transformations [1]_ rather than rigid transformations more
+    generally.
 
-    To create `ProperRigidTransformation` objects use ``from_...`` methods
-    (see examples below). ``ProperRigidTransformation(...)`` is not supposed
+    Indexing within a transformation is supported since multiple transformations
+    can be stored within a single `RigidTransformation` instance.
+
+    To create `RigidTransformation` objects use ``from_...`` methods
+    (see examples below). ``RigidTransformation(...)`` is not supposed
     to be instantiated directly.
 
     Attributes
@@ -57,6 +62,10 @@ cdef class ProperRigidTransformation:
     identity
     random
 
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
+
     Notes
     -----
     .. versionadded:: 1.16.0
@@ -64,13 +73,13 @@ cdef class ProperRigidTransformation:
     Examples
     --------
 
-    A `ProperRigidTransformation` instance can be initialized in any of the
+    A `RigidTransformation` instance can be initialized in any of the
     above formats and converted to any of the others. The underlying object is
     independent of the representation used for initialization.
 
     TODO: flesh this out
 
-    >>> from scipy.spatial.transform import ProperRigidTransformation as T
+    >>> from scipy.spatial.transform import RigidTransformation as T
     >>> from scipy.spatial.transform import Rotation as R
     >>> import numpy as np
 
@@ -157,7 +166,7 @@ cdef class ProperRigidTransformation:
         if normalize or copy:
             matrix = matrix.copy()
 
-        # Proper rigid transformations have the following matrix representation:
+        # Rigid transformations have the following matrix representation:
         # [R | t]
         # [0 | 1]
         # where R is a 3x3 orthonormal rotation matrix and t is a 3x1 translation
@@ -208,7 +217,7 @@ cdef class ProperRigidTransformation:
 
         Returns
         -------
-        transformation : `ProperRigidTransformation` instance
+        transformation : `RigidTransformation` instance
         """
         rotmat = rotation.as_matrix()
         if rotation.single:
@@ -233,7 +242,7 @@ cdef class ProperRigidTransformation:
 
         Returns
         -------
-        transformation : `ProperRigidTransformation` instance
+        transformation : `RigidTransformation` instance
         """
         translation = np.asarray(translation, dtype=float)
 
@@ -270,7 +279,7 @@ cdef class ProperRigidTransformation:
 
         Returns
         -------
-        transformation : `ProperRigidTransformation` instance
+        transformation : `RigidTransformation` instance
 
         Notes
         -----
@@ -416,7 +425,7 @@ cdef class ProperRigidTransformation:
 
         Returns
         -------
-        transformation : `ProperRigidTransformation` instance
+        transformation : `RigidTransformation` instance
             The identity transformation.
         """
         if num is None:  # single
@@ -447,7 +456,7 @@ cdef class ProperRigidTransformation:
 
         Returns
         -------
-        transformation : `ProperRigidTransformation` instance
+        transformation : `RigidTransformation` instance
             A single transformation or a stack of transformations.
         """
         rng = check_random_state(rng)
@@ -459,24 +468,24 @@ cdef class ProperRigidTransformation:
     @classmethod
     def concatenate(cls, transformations):
         """
-        Concatenate a sequence of `ProperRigidTransformation` objects into a
+        Concatenate a sequence of `RigidTransformation` objects into a
         single object.
 
         Parameters
         ----------
-        transformations : sequence of `ProperRigidTransformation` objects, or
-            a single `ProperRigidTransformation` object.
+        transformations : sequence of `RigidTransformation` objects, or
+            a single `RigidTransformation` object.
 
         Returns
         -------
-        transformation : `ProperRigidTransformation` instance
+        transformation : `RigidTransformation` instance
             The concatenated transformation.
         """
-        if isinstance(transformations, ProperRigidTransformation):
+        if isinstance(transformations, RigidTransformation):
             return cls(transformations._matrix, normalize=False, copy=True)
 
-        if not all(isinstance(x, ProperRigidTransformation) for x in transformations):
-            raise TypeError("input must contain ProperRigidTransformation objects only")
+        if not all(isinstance(x, RigidTransformation) for x in transformations):
+            raise TypeError("input must contain RigidTransformation objects only")
 
         ms = [x.as_matrix()[np.newaxis, :, :] if x.single else x.as_matrix()
               for x in transformations]
@@ -616,7 +625,7 @@ cdef class ProperRigidTransformation:
     def __getitem__(self, indexer):
         """Extract transformation(s) at given index(es) from this object.
 
-        Creates a new `ProperRigidTransformation` instance containing a subset
+        Creates a new `RigidTransformation` instance containing a subset
         of transformations stored in this object.
 
         Parameters
@@ -627,7 +636,7 @@ cdef class ProperRigidTransformation:
 
         Returns
         -------
-        transformation : `ProperRigidTransformation` instance
+        transformation : `RigidTransformation` instance
             Contains
                 - a single transformation, if `indexer` is a single index
                 - a stack of transformation(s), if `indexer` is a slice, or an
@@ -655,7 +664,7 @@ cdef class ProperRigidTransformation:
             Specifies which transformation(s) to replace. A single indexer must
             be specified, i.e. as if indexing a 1 dimensional array or list.
 
-        value : `ProperRigidTransformation` instance
+        value : `RigidTransformation` instance
             The transformation(s) to set.
 
         Raises
@@ -667,14 +676,14 @@ cdef class ProperRigidTransformation:
             raise TypeError("Single transformation is not subscriptable.")
 
         if not isinstance(value, self.__class__):
-            raise TypeError("value must be a ProperRigidTransformation object")
+            raise TypeError("value must be a RigidTransformation object")
 
         arr = np.asarray(self._matrix)
         arr[indexer] = value.as_matrix()
         self._matrix = arr
 
     @cython.embedsignature(True)
-    def __mul__(ProperRigidTransformation self, ProperRigidTransformation other):
+    def __mul__(RigidTransformation self, RigidTransformation other):
         """Compose this transformation with the other."""
         len_self = len(self._matrix)
         len_other = len(other._matrix)
@@ -690,7 +699,7 @@ cdef class ProperRigidTransformation:
         return self.__class__(result, copy=False)
 
     @cython.embedsignature(True)
-    def __pow__(ProperRigidTransformation self, int n):
+    def __pow__(RigidTransformation self, int n):
         """Compose this transformation with itself `n` times.
 
         If `n` is negative, the inverse of the transformation is composed with
@@ -705,7 +714,7 @@ cdef class ProperRigidTransformation:
 
         Returns
         -------
-        `ProperRigidTransformation` instance
+        `RigidTransformation` instance
             If the input Rotation ``p`` contains ``N`` multiple rotations, then
             the output will contain ``N`` rotations where the ``i`` th rotation
             is equal to ``p[i] ** n``
@@ -750,7 +759,7 @@ cdef class ProperRigidTransformation:
 
         Returns
         -------
-        `ProperRigidTransformation` instance
+        `RigidTransformation` instance
             The inverse of this transformation.
         """
         r_inv = self.rotation.inv()
