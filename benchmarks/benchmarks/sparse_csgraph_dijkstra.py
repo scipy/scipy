@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 import scipy.sparse
 
-from .common import Benchmark, safe_import
+from .common import Benchmark, safe_import, is_xslow
 
 with safe_import():
     from scipy.sparse.csgraph import dijkstra, shortest_path
@@ -57,6 +57,9 @@ class DijkstraDensity(Benchmark):
     param_names = ["n", "density"]
 
     def setup(self, n, density):
+        if n >= 1000 and not is_xslow():
+            raise NotImplementedError("skipped")
+
         rng = np.random.default_rng(42)
         G = scipy.sparse.random_array(
             shape=(n, n),
