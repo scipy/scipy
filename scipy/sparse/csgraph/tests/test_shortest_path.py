@@ -392,7 +392,7 @@ def test_masked_input():
 
 @pytest.mark.parametrize("method", ['FW', 'J', 'BF'])
 def test_masked_invalid_input(method):
-    # Reference - https://github.com/scipy/scipy/pull/22286
+    # Reference - https://github.com/scipy/scipy/issues/12424
     csgraph = np.array(
         [[0, 1, 0],
          [1, 0, 0],
