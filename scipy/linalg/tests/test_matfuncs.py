@@ -518,6 +518,10 @@ class TestSqrtM:
 
         assert s.shape == (0, 0)
         assert s.dtype == s0.dtype
+    
+    def test_bad_assume_a(self):
+        with pytest.raises(ValueError, match="Invalid"):
+            sqrtm(np.eye(2), assume_a="cheese")
 
 
 class TestFractionalMatrixPower:
