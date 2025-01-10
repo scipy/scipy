@@ -377,9 +377,9 @@ cdef class RigidTransformation:
         >>> r.apply([1, 0, 0])
         array([0.       , 0.8660254, -0.5     ])
         >>> d + r.apply([1, 0, 0])
-        array([2.5      , 3.8660254,  3.5     ])
+        array([2.       , 3.8660254,  3.5     ])
         >>> t.apply([1, 0, 0])
-        array([2.5      , 3.8660254,  3.5     ])
+        array([2.       , 3.8660254,  3.5     ])
         """
         return cls.from_translation(translation) * cls.from_rotation(rotation)
 
@@ -511,8 +511,9 @@ cdef class RigidTransformation:
         The identity transformation when composed with another transformation
         has no effect:
 
-        >>> np.allclose((T.identity() * T.random()).as_matrix(),
-        ...             T.random().as_matrix(), atol=1e-12)
+        >>> t = T.random()
+        >>> np.allclose((T.identity() * t).as_matrix(),
+        ...             t.as_matrix(), atol=1e-12)
         True
 
         Multiple identity transformations can be generated at once:
@@ -643,6 +644,7 @@ cdef class RigidTransformation:
         --------
         >>> from scipy.spatial.transform import RigidTransformation as T
         >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
 
         A transformation matrix is a 4x4 matrix formed from a 3x3 rotation
         matrix and a 3x1 translation vector:
@@ -650,7 +652,8 @@ cdef class RigidTransformation:
         >>> r = R.from_matrix([[0, 0, 1],
         ...                    [1, 0, 0],
         ...                    [0, 1, 0]])
-        >>> t = T.from_translation([2, 3, 4])
+        >>> d = np.array([2, 3, 4])
+        >>> t = T.from_rottrans(r, d)
         >>> t.as_matrix()
         array([[ 0., 0., 1., 2.],
                [ 1., 0., 0., 3.],
@@ -824,7 +827,9 @@ cdef class RigidTransformation:
         3
 
         >>> t = T.from_translation([1, 0, 0])
-        >>> len(t)
+        >>> len(t)  # doctest: +IGNORE_EXCEPTION_DETAIL
+        Traceback (most recent call last):
+            ...
         TypeError: Single transformation has no len().
         """
         if self._single:
@@ -861,7 +866,7 @@ cdef class RigidTransformation:
         Examples
         --------
         >>> from scipy.spatial.transform import RigidTransformation as T
-        >>> d = np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]])  # 3 translations
+        >>> d = [[0, 0, 0], [1, 0, 0], [2, 0, 0]]  # 3 translations
         >>> t = T.from_translation(d)
 
         A single index returns a single transformation:
@@ -1042,11 +1047,11 @@ cdef class RigidTransformation:
         A transformation composed with its inverse results in an identity
         transformation:
 
-        >>> t = T.random(1)
-        >>> t.inv() * t == T.identity(1)
+        >>> t = T.random()
+        >>> np.allclose((t.inv() * t).as_matrix(), np.eye(4), atol=1e-12)
         True
 
-        >>> t.inv().as_matrix()
+        >>> (t.inv * t).as_matrix()
         array([[[1., 0., 0., 0.],
                 [0., 1., 0., 0.],
                 [0., 0., 1., 0.],
