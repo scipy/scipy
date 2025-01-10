@@ -1,10 +1,8 @@
 import contextlib
 import os
 import sys
-import shutil
 import importlib
 import importlib.util
-import errno
 import json
 import traceback
 import warnings
