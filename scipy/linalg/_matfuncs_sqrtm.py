@@ -183,14 +183,16 @@ def sqrtm(A, disp=True, blocksize=64):
     failflag = False
     try:
         R = _sqrtm_triu(T, blocksize=blocksize)
-        ZH = np.conjugate(Z).T
-        X = Z.dot(R).dot(ZH)
-        dtype = np.result_type(A.dtype, 1j if np.iscomplexobj(X) else 1)
-        X = X.astype(dtype, copy=False)
     except SqrtmError:
         failflag = True
         X = np.empty_like(A)
         X.fill(np.nan)
+    else:
+        ZH = np.conjugate(Z).T
+        X = Z.dot(R).dot(ZH)
+        dtype = np.result_type(A.dtype, 1j if np.iscomplexobj(X) else 1)
+        X = X.astype(dtype, copy=False)
+
 
     if disp:
         if failflag:
