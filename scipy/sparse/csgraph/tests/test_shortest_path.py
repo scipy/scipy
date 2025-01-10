@@ -1,7 +1,10 @@
 from io import StringIO
 import warnings
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
+from numpy.testing import (assert_array_almost_equal,
+                           assert_array_equal,
+                           assert_allclose,
+                           assert_equal)
 from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix, yen,
@@ -400,7 +403,7 @@ def test_masked_invalid_input(method):
 
     SP = shortest_path(csgraph_masked, method=method, directed=True,
                         overwrite=False)
-    assert_array_equal(SP, zeros)
+    assert_equal(SP, zeros)
 
 
 
