@@ -116,7 +116,7 @@ def _sqrtm_triu(T, blocksize=64):
 
 
 @_apply_over_batch(('A', 2))
-def sqrtm(A, disp=True, blocksize=64):
+def sqrtm(A, disp=True, blocksize=64, *, assume_a='general'):
     """
     Matrix square root.
 
@@ -130,6 +130,9 @@ def sqrtm(A, disp=True, blocksize=64):
     blocksize : integer, optional
         If the blocksize is not degenerate with respect to the
         size of the input array, then use a blocked algorithm. (Default: 64)
+    assume_a : str, optional
+        Matrix structure of `A`. Either `'general'` (default),
+        `'upper triangular'`, or `'lower triangular'`.
 
     Returns
     -------
@@ -169,17 +172,26 @@ def sqrtm(A, disp=True, blocksize=64):
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
     A, = _ensure_dtype_cdsz(A)
-    keep_it_real = np.isrealobj(A)
-    if keep_it_real:
-        T, Z = schur(A)
-        d0 = np.diagonal(T)
-        d1 = np.diagonal(T, -1)
-        eps = np.finfo(T.dtype).eps
-        needs_conversion = abs(d1) > eps * (abs(d0[1:]) + abs(d0[:-1]))
-        if needs_conversion.any():
-            T, Z = rsf2csf(T, Z)
+
+    if assume_a == 'general':
+        keep_it_real = np.isrealobj(A)
+        if keep_it_real:
+            T, Z = schur(A)
+            d0 = np.diagonal(T)
+            d1 = np.diagonal(T, -1)
+            eps = np.finfo(T.dtype).eps
+            needs_conversion = abs(d1) > eps * (abs(d0[1:]) + abs(d0[:-1]))
+            if needs_conversion.any():
+                T, Z = rsf2csf(T, Z)
+        else:
+            T, Z = schur(A, output='complex')
+    elif assume_a == 'upper triangular':
+        T = A
+    elif assume_a == 'lower triangular':
+        T = A.T
     else:
-        T, Z = schur(A, output='complex')
+        raise ValueError(f"Invalid option {assume_a=}")
+
     failflag = False
     try:
         R = _sqrtm_triu(T, blocksize=blocksize)
@@ -188,11 +200,15 @@ def sqrtm(A, disp=True, blocksize=64):
         X = np.empty_like(A)
         X.fill(np.nan)
     else:
-        ZH = np.conjugate(Z).T
-        X = Z.dot(R).dot(ZH)
+        if assume_a == "general":
+            ZH = np.conjugate(Z).T
+            X = Z.dot(R).dot(ZH)
+        elif assume_a == "upper triangular":
+            X = Z
+        elif assume_a == "lower triangular":
+            X = Z.T
         dtype = np.result_type(A.dtype, 1j if np.iscomplexobj(X) else 1)
-        X = X.astype(dtype, copy=False)
-
+        X = X.astype(dtype, copy=False) 
 
     if disp:
         if failflag:
