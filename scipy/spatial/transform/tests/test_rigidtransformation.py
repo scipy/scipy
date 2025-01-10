@@ -251,6 +251,17 @@ def test_as_expcoords():
         assert_allclose(actual, expected, atol=1e-12)
 
 
+def test_as_dualquat():
+    # identity
+    expected = np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
+    actual = RigidTransformation.identity().as_dualquat()
+    assert_allclose(actual, expected, atol=1e-12)
+
+    expected = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    actual = RigidTransformation.identity().as_dualquat(scalar_first=True)
+    assert_allclose(actual, expected, atol=1e-12)
+
+
 def test_from_as_internal_consistency():
     atol = 1e-12
     n = 100
