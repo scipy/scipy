@@ -14,7 +14,7 @@ from scipy._lib._util import _asarray_validated, _apply_over_batch
 from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
 from ._decomp_schur import schur, rsf2csf
-from ._basic import _ensure_dtype_cdsz
+from ._basic import _ensure_dtype_cdsz, bandwidth
 
 
 
@@ -115,8 +115,22 @@ def _sqrtm_triu(T, blocksize=64):
     return R
 
 
+def _find_matrix_structure(a):
+    n = a.shape[0]
+    n_below, n_above = bandwidth(a)
+
+    if n_below == 0:
+        kind = 'upper triangular'
+    elif n_above == 0:
+        kind = 'lower triangular'
+
+    else:
+        kind = 'general'
+    return kind
+
+
 @_apply_over_batch(('A', 2))
-def sqrtm(A, disp=True, blocksize=64, *, assume_a='general'):
+def sqrtm(A, disp=True, blocksize=64, *, assume_a=None):
     """
     Matrix square root.
 
@@ -131,8 +145,9 @@ def sqrtm(A, disp=True, blocksize=64, *, assume_a='general'):
         If the blocksize is not degenerate with respect to the
         size of the input array, then use a blocked algorithm. (Default: 64)
     assume_a : str, optional
-        Matrix structure of `A`. Either `'general'` (default),
-        `'upper triangular'`, or `'lower triangular'`.
+        Matrix structure of `A`. Either `None` (default) in which case the
+        structure is detected automatically, `'general'`, `'upper triangular'`,
+        or `'lower triangular'`.
 
     Returns
     -------
@@ -172,6 +187,9 @@ def sqrtm(A, disp=True, blocksize=64, *, assume_a='general'):
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
     A, = _ensure_dtype_cdsz(A)
+
+    if assume_a is None:
+        assume_a = _find_matrix_structure(A)
 
     if assume_a == 'general':
         keep_it_real = np.isrealobj(A)

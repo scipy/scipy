@@ -523,18 +523,23 @@ class TestSqrtM:
         with pytest.raises(ValueError, match="Invalid"):
             sqrtm(np.eye(2), assume_a="cheese")
 
-    @pytest.mark.parametrize('assume_a', ['upper triangular', 'lower triangular'])
+    @pytest.mark.parametrize('mat_type', ['general', 'upper triangular', 
+                                          'lower triangular'])
+    @pytest.mark.parametrize('detect_structure', [True, False])
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
-    def test_assume_a(self, assume_a, dtype):
+    def test_assume_a(self, mat_type, detect_structure, dtype):
+        if mat_type == "general" and not detect_structure:
+            pytest.skip("`res` and `ref` function calls are identical.")
         rng = np.random.default_rng(74667588384801)
         n = 20
         A = rng.random((n, n)) + rng.random((n, n))*1j
         if np.issubdtype(dtype, np.floating):
             A = A.real
         A = A.astype(dtype)
-        A = np.triu(A) if assume_a == "upper triangular" else np.tril(A)
+        A = np.triu(A) if mat_type == "upper triangular" else np.tril(A)
+        assume_a = None if detect_structure else mat_type
         res = sqrtm(A, assume_a=assume_a)
-        ref = sqrtm(A)
+        ref = sqrtm(A, assume_a='general')
         assert_allclose(ref, res)
 
 
