@@ -389,22 +389,21 @@ def test_masked_input():
     for method in methods:
         check(method)
 
+
 @pytest.mark.parametrize("method", ['FW', 'J', 'BF'])
 def test_masked_invalid_input(method):
     # Reference - https://github.com/scipy/scipy/pull/22286
     csgraph = np.array(
         [[0, 1, 0],
-        [1, 0, 0],
-        [0, 0, 0]]
+         [1, 0, 0],
+         [0, 0, 0]]
     )
     csgraph_masked = np.ma.masked_invalid(csgraph)
-
     zeros = np.zeros((3, 3))
 
     SP = shortest_path(csgraph_masked, method=method, directed=True,
-                        overwrite=False)
+                       overwrite=False)
     assert_equal(SP, zeros)
-
 
 
 def test_overwrite():
