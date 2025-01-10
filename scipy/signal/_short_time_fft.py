@@ -1475,8 +1475,8 @@ class ShortTimeFFT:
 
         The nearest next smaller time sample p (where t[p] is the center
         position of the window of the p-th slice) is p_k = k // `hop`.
-        If `hop` is a divisor of `k` than `k` is returned.
-        If `left` is set than p_k * `hop` is returned else (p_k+1) * `hop`.
+        If `hop` is a divisor of `k` then `k` is returned.
+        If `left` is set then p_k * `hop` is returned else (p_k+1) * `hop`.
 
         This method can be used to slice an input signal into chunks for
         calculating the STFT and iSTFT incrementally.
