@@ -203,52 +203,6 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     For more, see `pytest --help`.
     """  # noqa: E501
 
-    def run_lcov(build_dir):
-        print("Capturing lcov info...")
-        LCOV_OUTPUT_FILE = os.path.join(build_dir, "lcov.info")
-        LCOV_OUTPUT_DIR = os.path.join(build_dir, "lcov")
-        BUILD_DIR = str(build_dir)
-
-        try:
-            os.unlink(LCOV_OUTPUT_FILE)
-        except OSError:
-            pass
-        try:
-            shutil.rmtree(LCOV_OUTPUT_DIR)
-        except OSError:
-            pass
-
-        lcov_cmd = [
-            "lcov", "--capture",
-            "--directory", BUILD_DIR,
-            "--output-file", LCOV_OUTPUT_FILE,
-            "--no-external"]
-        lcov_cmd_str = " ".join(lcov_cmd)
-        click.secho(" ".join(lcov_cmd), bold=True, fg="bright_blue")
-        try:
-            subprocess.call(lcov_cmd)
-        except OSError as err:
-            if err.errno == errno.ENOENT:
-                print(f"Error when running '{lcov_cmd_str}': {err}\n"
-                    "You need to install LCOV (https://lcov.readthedocs.io/en/latest/) "
-                    "to capture test coverage of C/C++/Fortran code in SciPy.")
-                return False
-            raise
-
-        print("Generating lcov HTML output...")
-        genhtml_cmd = [
-            "genhtml", "-q", LCOV_OUTPUT_FILE,
-            "--output-directory", LCOV_OUTPUT_DIR,
-            "--legend", "--highlight"]
-        click.secho(genhtml_cmd, bold=True, fg="bright_blue")
-        ret = subprocess.call(genhtml_cmd)
-        if ret != 0:
-            print("genhtml failed!")
-        else:
-            print("HTML output generated under build/lcov/")
-
-        return ret == 0
-
     build_dir = os.path.abspath(kwargs['build_dir'])
     site_package_dir = get_site_packages(build_dir)
 
@@ -315,12 +269,8 @@ def test(*, parent_callback, pytest_args, tests, coverage,
             os.path.join("scipy", "special")
         )
 
-    try:
-        parent_callback(**{"pytest_args": pytest_args, "tests": tests,
-                        "coverage": coverage, **kwargs})
-    finally:
-        if coverage and was_built_with_gcov_flag:
-            return run_lcov(build_dir)
+    parent_callback(**{"pytest_args": pytest_args, "tests": tests,
+                    "coverage": coverage, **kwargs})
 
 @click.option(
         '--list-targets', '-t', default=False, is_flag=True,
