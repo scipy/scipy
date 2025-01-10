@@ -201,12 +201,11 @@ def sqrtm(A, disp=True, blocksize=64, *, assume_a='general'):
         X.fill(np.nan)
     else:
         if assume_a == "general":
-            ZH = np.conjugate(Z).T
-            X = Z.dot(R).dot(ZH)
+            X = Z @ R @ Z.conj().T
         elif assume_a == "upper triangular":
-            X = Z
+            X = R
         elif assume_a == "lower triangular":
-            X = Z.T
+            X = R.T
         dtype = np.result_type(A.dtype, 1j if np.iscomplexobj(X) else 1)
         X = X.astype(dtype, copy=False) 
 

@@ -523,6 +523,20 @@ class TestSqrtM:
         with pytest.raises(ValueError, match="Invalid"):
             sqrtm(np.eye(2), assume_a="cheese")
 
+    @pytest.mark.parametrize('assume_a', ['upper triangular', 'lower triangular'])
+    @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
+    def test_assume_a(self, assume_a, dtype):
+        rng = np.random.default_rng(74667588384801)
+        n = 20
+        A = rng.random((n, n)) + rng.random((n, n))*1j
+        if np.issubdtype(dtype, np.floating):
+            A = A.real
+        A = A.astype(dtype)
+        A = np.triu(A) if assume_a == "upper triangular" else np.tril(A)
+        res = sqrtm(A, assume_a=assume_a)
+        ref = sqrtm(A)
+        assert_allclose(ref, res)
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
