@@ -839,22 +839,55 @@ cdef class RigidTransformation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_dualquat(cls, dualquat):
+    def from_dualquat(cls, dualquat, *, scalar_first=False):
         """Initialize from a dual quaternion.
-
-        TODO: implement
 
         Parameters
         ----------
         dualquat : array_like, shape (N, 8) or (8,)
-            A single dual quaternion or a stack of dual quaternions.
+            A single unit dual quaternion or a stack of unit dual quaternions.
+            The real part is stored in the first four components and the dual
+            part in the last four components.
+        scalar_first : bool, optional
+            Whether the scalar component goes first or last in the two
+            individual quaternions that represent the real and the dual part.
+            Default is False, i.e. the scalar-last order is used.
 
         Returns
         -------
         transformation : `RigidTransformation` instance
             A single transformation or a stack of transformations.
         """
-        raise NotImplementedError("from_dualquat not implemented")
+        dualquat = np.asarray(dualquat, dtype=float)
+
+        if (dualquat.ndim not in [1, 2] or dualquat.shape[0] == 0
+                or dualquat.shape[-1] != 8):
+            raise ValueError(
+                "Expected `dualquat` to have shape (8,), or (N, 8), "
+                f"got {dualquat.shape}.")
+
+        single = dualquat.ndim == 1
+        dualquat = np.atleast_2d(dualquat)
+
+        real_part = dualquat[:, :4]
+        dual_part = dualquat[:, 4:]
+        if scalar_first:
+            real_parts = np.roll(real_part, -1, axis=1)
+            dual_parts = np.roll(dual_part, -1, axis=1)
+
+        matrix = np.empty((len(dualquat), 4, 4), dtype=float)
+        rotation = Rotation.from_quat(real_part)
+
+        matrix[:, :3, :3] = rotation.as_matrix()
+        matrix[:, :3, 3] = 2.0 * np.asarray(
+            _compose_quat(dualquat, rotation.inv().as_quat()))[:, :3]
+        matrix[:, 3, :3] = 0.0
+        matrix[:, 3, 3] = 1.0
+
+        if single:
+            matrix = matrix[0]
+
+        return cls(matrix, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @classmethod
@@ -1225,12 +1258,12 @@ cdef class RigidTransformation:
             real_parts = np.roll(real_parts, 1, axis=1)
             dual_parts = np.roll(dual_parts, 1, axis=1)
 
-        dual_quats = np.hstack((real_parts, dual_parts))
+        dualquats = np.hstack((real_parts, dual_parts))
 
         if self._single:
-            return dual_quats[0]
+            return dualquats[0]
         else:
-            return dual_quats
+            return dualquats
 
     @cython.embedsignature(True)
     def __len__(self):
