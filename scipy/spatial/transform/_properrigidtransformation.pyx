@@ -133,10 +133,11 @@ cdef class ProperRigidTransformation:
     cdef double[:, :, :] _matrix
     cdef bint _single
 
-    def __init__(self, matrix, copy=True):
+    def __init__(self, matrix, normalize=True, copy=True):
         """Initialize from a 4x4 transformation matrix."""
         self._single = False
         matrix = np.asarray(matrix, dtype=float)
+
         if (matrix.ndim not in [2, 3]
                 or matrix.shape[0] == 0
                 or matrix.shape[-1] != 4
@@ -153,23 +154,45 @@ cdef class ProperRigidTransformation:
 
         cdef Py_ssize_t num_transformations = matrix.shape[0]
 
-        if copy:
+        if normalize or copy:
             matrix = matrix.copy()
 
         # Proper rigid transformations have the following matrix representation:
         # [R | t]
         # [0 | 1]
-        # where R is a 3x3 rotation matrix and t is a 3x1 translation vector.
-        # The last row is always [0, 0, 0, 1] exactly
+        # where R is a 3x3 orthonormal rotation matrix and t is a 3x1 translation
+        # vector. The last row is always [0, 0, 0, 1] exactly
+
+        # Check the last row
+        last_row_ok = np.all(np.isclose(matrix[:, 3, :], [0, 0, 0, 1]), axis=1)
+
+        # Check the determinant of the rotation matrix
+        # (should be positive for right-handed rotations)
+        dets = np.linalg.det(matrix[:, :3, :3])
+
+        # Gramian orthonormality check
+        # (should be the identity matrix for orthonormal matrices)
+        grams = matrix[:, :3, :3] @ np.swapaxes(matrix[:, :3, :3], 1, 2)
+        orthonormal_ok = np.all(np.isclose(grams, np.eye(3)), axis=(1, 2))
+
         for ind in range(num_transformations):
-            if not np.allclose(matrix[ind, 3, :], np.array([0, 0, 0, 1])):
-                raise ValueError("Expected last row of transformation matrix to be "
+            if not last_row_ok[ind]:
+                raise ValueError(f"Expected last row of transformation matrix {ind} to be "
                                  f"[0, 0, 0, 1], got {matrix[ind, 3, :]}.")
-            if not np.isclose(np.linalg.det(matrix[ind, :3, :3]), 1):
-                # TODO: do we want to allow for non-unit determinants,
-                # like Rotation.from_matrix?
-                raise ValueError("Expected rotation matrix to have determinant 1, "
-                                 f"got {np.linalg.det(matrix[ind, :3, :3])}.")
+
+            # Check that the rotation matrix is orthonormal
+            if not np.isclose(dets[ind], 1) or not orthonormal_ok[ind]:
+                if normalize:
+                    if dets[ind] <= 0:
+                        raise ValueError("Non-positive determinant in rotation component of "
+                                         f"matrix {ind}: {matrix[ind]}.")
+                    else:
+                        # Orthonormalize the rotation matrix
+                        U, _, Vt = np.linalg.svd(matrix[ind, :3, :3])
+                        matrix[ind, :3, :3] = U @ Vt
+                else:
+                    raise ValueError("Expected rotation component of transformation "
+                                     f"matrix {ind} be orthonormal: {matrix[ind]}.")
 
         self._matrix = matrix
 
@@ -196,7 +219,7 @@ cdef class ProperRigidTransformation:
         matrix[:, 3, 3] = 1
         if rotation.single:
             matrix = matrix[0]
-        return cls(matrix, copy=False)
+        return cls(matrix, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @classmethod
@@ -233,11 +256,11 @@ cdef class ProperRigidTransformation:
 
         if single:
             matrix = matrix[0]
-        return cls(matrix, copy=False)
+        return cls(matrix, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @classmethod
-    def from_matrix(cls, matrix, copy=True):
+    def from_matrix(cls, matrix):
         """Initialize from a 4x4 transformation matrix.
 
         Parameters
@@ -257,9 +280,11 @@ cdef class ProperRigidTransformation:
             [0 | 1]
 
         where ``R`` is a 3x3 rotation matrix and ``t`` is a 3x1 translation vector
-        ``[tx, ty, tz]``.
+        ``[tx, ty, tz]``. As rotation matrices must be proper orthogonal, the
+        rotation component is orthonormalized using singular value decomposition
+        before initialization.
         """
-        return cls(matrix, copy=copy)
+        return cls(matrix, normalize=True, copy=True)
 
     @cython.embedsignature(True)
     @classmethod
@@ -359,7 +384,7 @@ cdef class ProperRigidTransformation:
         if single:
             matrix = matrix[0]
 
-        return cls(matrix, copy=False)
+        return cls(matrix, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @classmethod
@@ -395,9 +420,10 @@ cdef class ProperRigidTransformation:
             The identity transformation.
         """
         if num is None:  # single
-            return cls(np.eye(4, dtype=float))
+            return cls(np.eye(4, dtype=float), normalize=False, copy=False)
         else:
-            return cls(np.eye(4, dtype=float)[None, :, :].repeat(num, axis=0))
+            return cls(np.eye(4, dtype=float)[None, :, :].repeat(num, axis=0),
+                       normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @classmethod
@@ -447,14 +473,14 @@ cdef class ProperRigidTransformation:
             The concatenated transformation.
         """
         if isinstance(transformations, ProperRigidTransformation):
-            return cls(transformations._matrix, copy=True)
+            return cls(transformations._matrix, normalize=False, copy=True)
 
         if not all(isinstance(x, ProperRigidTransformation) for x in transformations):
             raise TypeError("input must contain ProperRigidTransformation objects only")
 
         ms = [x.as_matrix()[np.newaxis, :, :] if x.single else x.as_matrix()
               for x in transformations]
-        return cls(np.concatenate(ms), copy=False)
+        return cls(np.concatenate(ms), normalize=False, copy=False)
 
     @cython.embedsignature(True)
     def as_matrix(self):

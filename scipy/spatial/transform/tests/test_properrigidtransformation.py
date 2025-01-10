@@ -68,6 +68,23 @@ def test_from_matrix():
     assert_allclose(t.as_matrix(), matrices, atol=atol)
     assert not t.single
 
+    # Test non-1 determinant
+    matrix = np.diag([2, 2, 2, 1])
+    t = ProperRigidTransformation.from_matrix(matrix)
+    assert_allclose(t.as_matrix(), np.eye(4), atol=atol)
+
+    # Test non-orthogonal rotation matrix
+    matrix = np.array([[1, 1, 0, 0],
+                       [0, 1, 0, 0],
+                       [0, 0, 1, 0],
+                       [0, 0, 0, 1]])
+    t = ProperRigidTransformation.from_matrix(matrix)
+    expected = np.array([[0.894427,  0.447214, 0, 0],
+                         [-0.447214,  0.894427, 0, 0],
+                         [0, 0, 1, 0],
+                         [0, 0, 0, 1]])
+    assert_allclose(t.as_matrix(), expected, atol=1e-6)
+
     # Test invalid matrix
     with pytest.raises(ValueError):
         invalid = np.eye(4)
@@ -540,10 +557,17 @@ def test_input_validation():
 
     # Test non-rotation matrix
     with pytest.raises(ValueError,
-                       match="Expected rotation matrix to have determinant 1"):
+                       match="matrix 0 be orthonormal:"):
         matrix = np.eye(4)
         matrix[:3, :3] *= 2
-        ProperRigidTransformation.from_matrix(matrix)
+        ProperRigidTransformation(matrix, normalize=False)
+
+    # Test left handed rotation matrix
+    with pytest.raises(ValueError,
+                       match="Non-positive determinant in rotation component"):
+        matrix = np.eye(4)
+        matrix[0, 0] = -1
+        ProperRigidTransformation(matrix, normalize=True)
 
 
 def test_translation_validation():
@@ -627,12 +651,12 @@ def test_setitem_validation():
 def test_copy_flag():
     # Test that copy=True creates new memory
     matrix = np.eye(4)
-    t = ProperRigidTransformation.from_matrix(matrix, copy=True)
+    t = ProperRigidTransformation(matrix, normalize=False, copy=True)
     matrix[0, 0] = 2
     assert t.as_matrix()[0, 0] == 1
 
     # Test that copy=False shares memory
     matrix = np.eye(4)
-    t = ProperRigidTransformation.from_matrix(matrix, copy=False)
+    t = ProperRigidTransformation(matrix, normalize=False, copy=False)
     matrix[0, 0] = 2
     assert t.as_matrix()[0, 0] == 2
