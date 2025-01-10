@@ -846,6 +846,152 @@ class _ProbabilityDistribution(ABC):
         """
         raise NotImplementedError()
 
+    def pmf(self, x, /, *, method=None):
+        r"""Probability mass function
+
+        The probability density function ("PMF"), denoted :math:`f(x)`, is the
+        probability that the random variable :math:`X` will assume the value :math:`x`.
+
+        .. math::
+
+            f(x) = P(X = x)
+
+        `pmf` accepts `x` for :math:`x`.
+
+        Parameters
+        ----------
+        x : array_like
+            The argument of the PMF.
+        method : {None, 'formula', 'logexp'}
+            The strategy used to evaluate the PMF. By default (``None``), the
+            infrastructure chooses between the following options, listed in
+            order of precedence.
+
+            - ``'formula'``: use a formula for the PMF itself
+            - ``'logexp'``: evaluate the log-PMF and exponentiate
+
+            Not all `method` options are available for all distributions.
+            If the selected `method` is not available, a ``NotImplementedError``
+            will be raised.
+
+        Returns
+        -------
+        out : array
+            The PMF evaluated at the argument `x`.
+
+        See Also
+        --------
+        cdf
+        logpmf
+
+        Notes
+        -----
+        Suppose a discrete probability distribution has support :math:`[l, r]`.
+        By definition of the support, the PMF evaluates to its minimum value
+        of :math:`0` outside the support; i.e. for :math:`x < l` or
+        :math:`x > r`.
+
+        References
+        ----------
+        .. [1] Probability mass function, *Wikipedia*,
+               https://en.wikipedia.org/wiki/Probability_mass_function
+
+        Examples
+        --------
+        Instantiate a distribution with the desired parameters:
+
+        >>> from scipy import stats
+        >>> X = stats.Binomial(n=10, b=0.5)
+
+        Evaluate the PMF at the desired argument:
+
+        >>> X.pmf(5)
+        0.5
+
+        """
+        raise NotImplementedError()
+
+    def logpmf(self, x, /, *, method=None):
+        r"""Log of the probability mass function
+
+        The probability density function ("PMF"), denoted :math:`f(x)`, is the
+        probability that the random variable :math:`X` will assume the value :math:`x`.
+
+        .. math::
+
+            f(x) = \frac{d}{dx} F(x)
+
+        `logpmf` computes the logarithm of the probability density function
+        ("log-PMF"), :math:`\log(f(x))`, but it may be numerically favorable
+        compared to the naive implementation (computing :math:`f(x)` and
+        taking the logarithm).
+
+        `logpmf` accepts `x` for :math:`x`.
+
+        Parameters
+        ----------
+        x : array_like
+            The argument of the log-PMF.
+        method : {None, 'formula', 'logexp'}
+            The strategy used to evaluate the log-PMF. By default (``None``), the
+            infrastructure chooses between the following options, listed in order
+            of precedence.
+
+            - ``'formula'``: use a formula for the log-PMF itself
+            - ``'logexp'``: evaluate the PMF and takes its logarithm
+
+            Not all `method` options are available for all distributions.
+            If the selected `method` is not available, a ``NotImplementedError``
+            will be raised.
+
+        Returns
+        -------
+        out : array
+            The log-PMF evaluated at the argument `x`.
+
+        See Also
+        --------
+        pmf
+        logcdf
+
+        Notes
+        -----
+        Suppose a continuous probability distribution has support :math:`[l, r]`.
+        By definition of the support, the log-PMF evaluates to its minimum value
+        of :math:`-\infty` (i.e. :math:`\log(0)`) outside the support; i.e. for
+        :math:`x < l` or :math:`x > r`.
+
+        For distributions with infinite support, it is common for `pmf` to return
+        a value of ``0`` when the argument is theoretically within the support;
+        this can occur because the true value of the PMF is too small to be
+        represented by the chosen dtype. The log-PMF, however, will often be finite
+        (not ``-inf``) over a much larger domain. Consequently, it may be preferred
+        to work with the logarithms of probabilities and probability densities to
+        avoid underflow.
+
+        References
+        ----------
+        .. [1] Probability density function, *Wikipedia*,
+               https://en.wikipedia.org/wiki/Probability_density_function
+
+        Examples
+        --------
+        Instantiate a distribution with the desired parameters:
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> X = stats.Uniform(a=-1.0, b=1.0)
+
+        Evaluate the log-PMF at the desired argument:
+
+        >>> X.logpmf(0.5)
+        -0.6931471805599453
+        >>> np.allclose(X.logpmf(0.5), np.log(X.pmf(0.5)))
+        True
+
+        """
+        raise NotImplementedError()
+
     @abstractmethod
     def cdf(self, x, y, /, *, method):
         r"""Cumulative distribution function

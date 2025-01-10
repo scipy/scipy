@@ -264,6 +264,8 @@ class _SimpleDomain(_Domain):
         defined symbolically.
     contains(item, parameter_values)
         Determines whether the argument is contained within the domain
+    draw(size, rng, proportions, parameter_values)
+        Draws random values based on the domain.
 
     """
     def __init__(self, endpoints=(-inf, inf), inclusive=(False, False)):
@@ -366,44 +368,6 @@ class _SimpleDomain(_Domain):
         in_right = item <= b if right_inclusive else item < b
         return in_left & in_right
 
-
-class _RealDomain(_SimpleDomain):
-    r""" Represents a simply-connected subset of the real line; i.e., an interval
-
-    Completes the implementation of the `_SimpleDomain` class for simple
-    domains on the real line.
-
-    Methods
-    -------
-    define_parameters(*parameters)
-        (Inherited) Records any parameters used to define the endpoints of the
-        domain.
-    get_numerical_endpoints(parameter_values)
-        (Inherited) Gets the numerical values of the domain endpoints, which
-        may have been defined symbolically.
-    contains(item, parameter_values)
-        (Inherited) Determines whether the argument is contained within the
-        domain
-    __str__()
-        Returns a string representation of the domain, e.g. "[a, b)".
-    draw(size, rng, proportions, parameter_values)
-        Draws random values based on the domain. Proportions of values within
-        the domain, on the endpoints of the domain, outside the domain,
-        and having value NaN are specified by `proportions`.
-
-    """
-
-    def __str__(self):
-        a, b = self.endpoints
-        left_inclusive, right_inclusive = self.inclusive
-
-        left = "[" if left_inclusive else "("
-        a = self.symbols.get(a, f"{a}")
-        right = "]" if right_inclusive else ")"
-        b = self.symbols.get(b, f"{b}")
-
-        return f"{left}{a}, {b}{right}"
-
     def draw(self, n, type_, min, max, squeezed_base_shape, rng=None):
         r""" Draw random values from the domain.
 
@@ -459,16 +423,73 @@ class _RealDomain(_SimpleDomain):
         return z
 
 
-class _IntegerDomain(_SimpleDomain):
-    r""" Representation of a domain of consecutive integers.
+class _RealDomain(_SimpleDomain):
+    r""" Represents a simply-connected subset of the real line; i.e., an interval
 
-    Completes the implementation of the `_SimpleDomain` class for domains
-    composed of consecutive integer values.
+    Completes the implementation of the `_SimpleDomain` class for simple
+    domains on the real line.
 
-    To be completed when needed.
+    Methods
+    -------
+    define_parameters(*parameters)
+        (Inherited) Records any parameters used to define the endpoints of the
+        domain.
+    get_numerical_endpoints(parameter_values)
+        (Inherited) Gets the numerical values of the domain endpoints, which
+        may have been defined symbolically.
+    contains(item, parameter_values)
+        (Inherited) Determines whether the argument is contained within the
+        domain
+    __str__()
+        Returns a string representation of the domain, e.g. "[a, b)".
     """
-    def __init__(self):
-        raise NotImplementedError
+
+    def __str__(self):
+        a, b = self.endpoints
+        left_inclusive, right_inclusive = self.inclusive
+
+        left = "[" if left_inclusive else "("
+        a = self.symbols.get(a, f"{a}")
+        right = "]" if right_inclusive else ")"
+        b = self.symbols.get(b, f"{b}")
+
+        return f"{left}{a}, {b}{right}"
+
+
+class _IntegerDomain(_SimpleDomain):
+    r""" Represents an interval of integers
+
+    Completes the implementation of the `_SimpleDomain` class for simple
+    domains on the integers.
+
+    Methods
+    -------
+    define_parameters(*parameters)
+        (Inherited) Records any parameters used to define the endpoints of the
+        domain.
+    get_numerical_endpoints(parameter_values)
+        (Inherited) Gets the numerical values of the domain endpoints, which
+        may have been defined symbolically.
+    contains(item, parameter_values)
+        (Overridden) Determines whether the argument is contained within the
+        domain
+    draw(n, type_, min, max, squeezed_base_shape, rng=None)
+        (Inherited) Draws random values based on the domain.
+    __str__()
+        Returns a string representation of the domain, e.g. "{a, a+1, ..., b-1, b}".
+
+    """
+
+    def contains(self, item, parameter_values=None):
+        super_contains = super().contains(item, parameter_values)
+        integral = (item == np.round(item))
+        return super_contains and integral
+
+    def __str__(self):
+        a, b = self.endpoints
+        a = self.symbols.get(a, f"{a}")
+        b = self.symbols.get(b, f"{b}")
+        return f"{{{a}, {a+1}, ..., {b-1}, {b}}}"
 
 
 class _Parameter(ABC):
@@ -835,6 +856,7 @@ def _set_invalid_nan(f):
     # Wrapper for input / output validation and standardization of distribution
     # functions that accept either the quantile or percentile as an argument:
     # logpdf, pdf
+    # logpmf, pmf
     # logcdf, cdf
     # logccdf, ccdf
     # ilogcdf, icdf
@@ -850,9 +872,10 @@ def _set_invalid_nan(f):
     endpoints = {'icdf': (0, 1), 'iccdf': (0, 1),
                  'ilogcdf': (-np.inf, 0), 'ilogccdf': (-np.inf, 0)}
     replacements = {'logpdf': (-inf, -inf), 'pdf': (0, 0),
+                    'logpmf': (-inf, -inf), 'pmf': (0, 0),
                     '_logcdf1': (-inf, 0), '_logccdf1': (0, -inf),
                     '_cdf1': (0, 1), '_ccdf1': (1, 0)}
-    replace_strict = {'pdf', 'logpdf'}
+    replace_strict = {'pdf', 'logpdf', 'pmf', 'logpmf'}
     replace_exact = {'icdf', 'iccdf', 'ilogcdf', 'ilogccdf'}
     clip = {'_cdf1', '_ccdf1'}
     clip_log = {'_logcdf1', '_logccdf1'}
@@ -1400,7 +1423,7 @@ def _generate_example(dist_family):
     return example
 
 
-class ContinuousDistribution(_ProbabilityDistribution):
+class _UnivariateDistribution(_ProbabilityDistribution):
     r""" Class that represents a continuous statistical distribution.
 
     Parameters
@@ -2323,7 +2346,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # See the note corresponding with the "Distribution Parameters" for more
     # information.
 
-    ## Probability Density Functions
+    ## Probability Density/Mass Functions
 
     @_set_invalid_nan
     def logpdf(self, x, /, *, method=None):
@@ -2360,6 +2383,42 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _pdf_logexp(self, x, **params):
         return np.exp(self._logpdf_dispatch(x, **params))
+
+    @_set_invalid_nan
+    def logpmf(self, x, /, *, method=None):
+        return self._logpmf_dispatch(x, method=method, **self._parameters)
+
+    @_dispatch
+    def _logpmf_dispatch(self, x, *, method=None, **params):
+        if self._overrides('_logpmf_formula'):
+            method = self._logpmf_formula
+        elif _isnull(self.tol):  # ensure that developers override _logpmf
+            method = self._logpmf_logexp
+        return method
+
+    def _logpmf_formula(self, x, **params):
+        raise NotImplementedError(self._not_implemented)
+
+    def _logpmf_logexp(self, x, **params):
+        return np.log(self._pmf_dispatch(x, **params))
+
+    @_set_invalid_nan
+    def pmf(self, x, /, *, method=None):
+        return self._pmf_dispatch(x, method=method, **self._parameters)
+
+    @_dispatch
+    def _pmf_dispatch(self, x, *, method=None, **params):
+        if self._overrides('_pmf_formula'):
+            method = self._pmf_formula
+        else:
+            method = self._pmf_logexp
+        return method
+
+    def _pmf_formula(self, x, **params):
+        raise NotImplementedError(self._not_implemented)
+
+    def _pmf_logexp(self, x, **params):
+        return np.exp(self._logpmf_dispatch(x, **params))
 
     ## Cumulative Distribution Functions
 
@@ -3417,6 +3476,37 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # these methods reasonably efficiently.
 
 
+class ContinuousDistribution(_UnivariateDistribution):
+    def _overrides(self, method_name):
+        if method_name in {'_logpmf_formula', '_pmf_formula'}:
+            return True
+        return super()._overrides(method_name)
+
+    ## Probability Density / Mass Functions
+    def _pmf_formula(self, x, **params):
+        return np.zeros_like(x)
+
+    def _logpmf_formula(self, x, **params):
+        return np.full_like(x, -np.inf)
+
+
+class DiscreteDistribution(_UnivariateDistribution):
+    ## Algorithms
+
+    ## Other
+    def _overrides(self, method_name):
+        if method_name in {'_logpdf_formula', '_pdf_formula'}:
+            return True
+        return super()._overrides(method_name)
+
+    # These should probably check whether pmf = 0
+    def _logpdf_formula(self, x, **params):
+        return np.full_like(x, np.inf)
+
+    def _pdf_formula(self, x, **params):
+        return np.full_like(x, np.inf)
+
+
 # Special case the names of some new-style distributions in `make_distribution`
 _distribution_names = {
     'argus': 'ARGUS',
@@ -4362,6 +4452,8 @@ def order_statistic(X, /, *, r, n):
     return OrderStatisticDistribution(X, r=r, n=n)
 
 
+# Someday, I'd like for Mixture to become a `_UnivariateDistribution`, but that
+# day is not today.
 class Mixture(_ProbabilityDistribution):
     r"""Representation of a mixture distribution.
 
