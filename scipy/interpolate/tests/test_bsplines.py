@@ -2,6 +2,7 @@ import os
 import operator
 import itertools
 import math
+import threading
 
 import numpy as np
 from numpy.testing import suppress_warnings
@@ -658,11 +659,12 @@ class TestBSpline:
 
         expected = b(xx)
 
-        t_mm = np.memmap(
-            str(tmpdir.join('t.dat')), mode='w+', dtype=b.t.dtype, shape=b.t.shape)
+        tid = threading.get_native_id()
+        t_mm = np.memmap(str(tmpdir.join(f't{tid}.dat')), mode='w+',
+                         dtype=b.t.dtype, shape=b.t.shape)
         t_mm[:] = b.t
-        c_mm = np.memmap(
-            str(tmpdir.join('c.dat')), mode='w+', dtype=b.c.dtype, shape=b.c.shape)
+        c_mm = np.memmap(str(tmpdir.join(f'c{tid}.dat')), mode='w+',
+                         dtype=b.c.dtype, shape=b.c.shape)
         c_mm[:] = b.c
         b.t = t_mm
         b.c = c_mm
