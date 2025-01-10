@@ -7,10 +7,8 @@ import pytest
 from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_less, array_namespace
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 

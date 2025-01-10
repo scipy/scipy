@@ -426,6 +426,8 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
         # can only expect about half of machine precision for optimization
         # because math
         tol_override = {'atol': 1e-6}
+    elif fname in {'logcdf'}:  # gh-22276
+        tol_override = {'rtol': 2e-7}
 
     if dist._overrides(f'_{fname}_formula'):
         methods.add('formula')

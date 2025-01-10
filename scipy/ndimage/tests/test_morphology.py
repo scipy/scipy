@@ -10,12 +10,9 @@ from scipy import ndimage
 
 from . import types
 
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              pytest.mark.usefixtures("xfail_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
+pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
 class TestNdimageMorphology:
@@ -645,10 +642,13 @@ class TestNdimageMorphology:
         out = ndimage.distance_transform_edt(data, sampling=[2, 1])
         assert_array_almost_equal(out, ref)
 
+    @xfail_xp_backends(
+        "cupy", reason="Only 2D and 3D distance transforms are supported in CuPy"
+    )
     def test_distance_transform_edt5(self, xp):
         # Ticket #954 regression test
-        out = ndimage.distance_transform_edt(False)
-        assert_array_almost_equal(out, [0.])
+        out = ndimage.distance_transform_edt(xp.asarray(False))
+        assert_array_almost_equal(out, xp.asarray([0.]))
 
     @xfail_xp_backends(
         np_only=True, reason='XXX: does not raise unless indices is a numpy array'
@@ -673,20 +673,28 @@ class TestNdimageMorphology:
                 distances=distances_out
             )
 
+    @skip_xp_backends(np_only=True,
+                      reason="generate_binary_structure always generates numpy objects")
     def test_generate_structure01(self, xp):
         struct = ndimage.generate_binary_structure(0, 1)
         assert struct == 1
 
+    @skip_xp_backends(np_only=True,
+                      reason="generate_binary_structure always generates numpy objects")
     def test_generate_structure02(self, xp):
         struct = ndimage.generate_binary_structure(1, 1)
         assert_array_almost_equal(struct, [1, 1, 1])
 
+    @skip_xp_backends(np_only=True,
+                      reason="generate_binary_structure always generates numpy objects")
     def test_generate_structure03(self, xp):
         struct = ndimage.generate_binary_structure(2, 1)
         assert_array_almost_equal(struct, [[0, 1, 0],
                                            [1, 1, 1],
                                            [0, 1, 0]])
 
+    @skip_xp_backends(np_only=True,
+                      reason="generate_binary_structure always generates numpy objects")
     def test_generate_structure04(self, xp):
         struct = ndimage.generate_binary_structure(2, 2)
         assert_array_almost_equal(struct, [[1, 1, 1],
@@ -2870,6 +2878,9 @@ def test_binary_closing_noninteger_brute_force_passes_when_true(xp):
     )
 
 
+@skip_xp_backends(np_only=True, exceptions=["cupy"],
+                  reason="inplace output= is numpy-specific")
+@xfail_xp_backends("cupy", reason="NotImplementedError: only brute_force iteration")
 @pytest.mark.parametrize(
     'function',
     ['binary_erosion', 'binary_dilation', 'binary_opening', 'binary_closing'],
@@ -2879,6 +2890,7 @@ def test_binary_closing_noninteger_brute_force_passes_when_true(xp):
 def test_binary_input_as_output(function, iterations, brute_force, xp):
     rstate = np.random.RandomState(123)
     data = rstate.randint(low=0, high=2, size=100).astype(bool)
+    data = xp.asarray(data)
     ndi_func = getattr(ndimage, function)
 
     # input data is not modified
@@ -2896,6 +2908,7 @@ def test_binary_input_as_output(function, iterations, brute_force, xp):
 def test_binary_hit_or_miss_input_as_output(xp):
     rstate = np.random.RandomState(123)
     data = rstate.randint(low=0, high=2, size=100).astype(bool)
+    data = xp.asarray(data)
 
     # input data is not modified
     data_orig = data.copy()

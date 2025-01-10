@@ -15,7 +15,6 @@ from scipy._lib._array_api import (
     xp_assert_equal,
 )
 from scipy._lib._array_api import is_cupy, is_numpy, is_torch, array_namespace
-from scipy.conftest import array_api_compatible
 from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
@@ -23,9 +22,7 @@ from . import types, float_types, complex_types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              pytest.mark.usefixtures("xfail_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy']),]
+pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
 def sumsq(a, b, xp=None):
@@ -2006,6 +2003,7 @@ class TestNdimageFilters:
                                      origin=[-1, 0])
         xp_assert_equal(expected, output)
 
+    @skip_xp_backends(np_only=True, reason="test list input")
     def test_rank16(self, xp):
         # test that lists are accepted and interpreted as numpy arrays
         array = [3, 2, 5, 1, 4]
@@ -2271,7 +2269,8 @@ def test_ticket_701(xp):
     xp_assert_equal(res, res2)
 
 
-def test_gh_5430():
+@skip_xp_backends(np_only=True)
+def test_gh_5430(xp):
     # At least one of these raises an error unless gh-5430 is
     # fixed. In py2k an int is implemented using a C long, so
     # which one fails depends on your system. In py3k there is only

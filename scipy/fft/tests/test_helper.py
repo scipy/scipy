@@ -10,13 +10,11 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import sys
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     xp_assert_close, get_xp_devices, xp_device, array_namespace
 )
 from scipy import fft
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 _5_smooth_numbers = [
@@ -26,7 +24,8 @@ _5_smooth_numbers = [
     2**3 * 3**3 * 5**2,
 ]
 
-def test_next_fast_len():
+@skip_xp_backends(np_only=True)
+def test_next_fast_len(xp):
     for n in _5_smooth_numbers:
         assert_equal(next_fast_len(n), n)
 
@@ -56,7 +55,7 @@ def _assert_n_smooth(x, n):
 @skip_xp_backends(np_only=True)
 class TestNextFastLen:
 
-    def test_next_fast_len(self):
+    def test_next_fast_len(self, xp):
         np.random.seed(1234)
 
         def nums():
@@ -71,14 +70,14 @@ class TestNextFastLen:
             m = next_fast_len(n, True)
             _assert_n_smooth(m, 5)
 
-    def test_np_integers(self):
+    def test_np_integers(self, xp):
         ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, np.uint64]
         for ityp in ITYPES:
             x = ityp(12345)
             testN = next_fast_len(x)
             assert_equal(testN, next_fast_len(int(x)))
 
-    def testnext_fast_len_small(self):
+    def testnext_fast_len_small(self, xp):
         hams = {
             1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 8, 14: 15, 15: 15,
             16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000
@@ -89,7 +88,7 @@ class TestNextFastLen:
     @pytest.mark.xfail(sys.maxsize < 2**32,
                        reason="Hamming Numbers too large for 32-bit",
                        raises=ValueError, strict=True)
-    def testnext_fast_len_big(self):
+    def testnext_fast_len_big(self, xp):
         hams = {
             510183360: 510183360, 510183360 + 1: 512000000,
             511000000: 512000000,
@@ -123,14 +122,14 @@ class TestNextFastLen:
         for x, y in hams.items():
             assert_equal(next_fast_len(x, True), y)
 
-    def test_keyword_args(self):
+    def test_keyword_args(self, xp):
         assert next_fast_len(11, real=True) == 12
         assert next_fast_len(target=7, real=False) == 7
 
 @skip_xp_backends(np_only=True)
 class TestPrevFastLen:
 
-    def test_prev_fast_len(self):
+    def test_prev_fast_len(self, xp):
         np.random.seed(1234)
 
         def nums():
@@ -145,7 +144,7 @@ class TestPrevFastLen:
             m = prev_fast_len(n, True)
             _assert_n_smooth(m, 5)
 
-    def test_np_integers(self):
+    def test_np_integers(self, xp):
         ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, 
                     np.uint64]
         for ityp in ITYPES:
@@ -156,7 +155,7 @@ class TestPrevFastLen:
             testN = prev_fast_len(x, real=True)
             assert_equal(testN, prev_fast_len(int(x), real=True))
 
-    def testprev_fast_len_small(self):
+    def testprev_fast_len_small(self, xp):
         hams = {
             1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 6, 8: 8, 14: 12, 15: 15,
             16: 16, 17: 16, 1021: 1000, 1536: 1536, 51200000: 51200000
@@ -176,7 +175,7 @@ class TestPrevFastLen:
     @pytest.mark.xfail(sys.maxsize < 2**32,
                        reason="Hamming Numbers too large for 32-bit",
                        raises=ValueError, strict=True)
-    def testprev_fast_len_big(self):
+    def testprev_fast_len_big(self, xp):
         hams = {
             # 2**6 * 3**13 * 5**1
             510183360: 510183360,
@@ -238,7 +237,7 @@ class TestPrevFastLen:
         for x, y in hams.items():
             assert_equal(prev_fast_len(x, True), y)
 
-    def test_keyword_args(self):
+    def test_keyword_args(self, xp):
         assert prev_fast_len(11, real=True) == 10
         assert prev_fast_len(target=7, real=False) == 7
 

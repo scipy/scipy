@@ -21,10 +21,8 @@ import scipy.ndimage as ndimage
 
 from . import types
 
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
+pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 IS_WINDOWS_AND_NP1 = os.name == 'nt' and np.__version__ < '2'
 
@@ -112,6 +110,7 @@ class Test_measurements_stats:
             xp_assert_equal(centers, np.asarray([0.5, 8.0]))
 
 
+@skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
 class Test_measurements_select:
     """ndimage._measurements._select() is a utility used by other functions."""
 

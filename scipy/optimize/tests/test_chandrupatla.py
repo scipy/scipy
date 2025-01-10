@@ -5,7 +5,6 @@ from copy import deepcopy
 
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import array_namespace, is_cupy, is_numpy, xp_ravel, xp_size
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
@@ -185,8 +184,6 @@ cases = [
 ]
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('jax.numpy',
                               reason='JAX arrays do not support item assignment.')
 @pytest.mark.skip_xp_backends('array_api_strict',
@@ -551,8 +548,6 @@ class TestChandrupatlaMinimize:
         assert f(res.xl) == f(res.xm) == f(res.xr)
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('array_api_strict',
                               reason='Currently uses fancy indexing assignment.')
 @pytest.mark.skip_xp_backends('jax.numpy',

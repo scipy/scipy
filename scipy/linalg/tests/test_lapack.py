@@ -19,7 +19,7 @@ from numpy.random import rand, randint, seed
 
 from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
                           solve, ldl, norm, block_diag, qr, eigh, qz)
-
+from scipy.linalg._basic import _to_banded
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -3479,12 +3479,39 @@ def test_sy_hetrs(mtype, dtype, lower):
     names = f'{mtype}trf', f'{mtype}trf_lwork', f'{mtype}trs'
     trf, trf_lwork, trs = get_lapack_funcs(names, dtype=dtype)
     lwork = trf_lwork(n, lower=lower)
-    ldu, ipiv, info = trf(A, lwork=lwork)
+    ldu, ipiv, info = trf(A, lwork=lwork, lower=lower)
     assert info == 0
-    x, info = trs(a=ldu, ipiv=ipiv, b=b)
+    x, info = trs(a=ldu, ipiv=ipiv, b=b, lower=lower)
     assert info == 0
     eps = np.finfo(dtype).eps
     assert_allclose(A@x, b, atol=100*n*eps)
+
+
+@pytest.mark.parametrize('mtype', ['sy', 'he'])  # matrix type
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('lower', (0, 1))
+def test_sy_he_tri(dtype, lower, mtype):
+    if mtype == 'he' and dtype in REAL_DTYPES:
+        pytest.skip("hetri not for real dtypes.")
+    rng = np.random.default_rng(1723059677121834)
+    n = 20
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A = A + A.T if mtype == 'sy' else A + A.conj().T
+    names = f'{mtype}trf', f'{mtype}tri'
+    trf, tri = get_lapack_funcs(names, dtype=dtype)
+    ldu, ipiv, info = trf(A, lower=lower)
+    assert info == 0
+    A_inv, info = tri(a=ldu, ipiv=ipiv, lower=lower)
+    assert info == 0
+    eps = np.finfo(dtype).eps
+    ref = np.linalg.inv(A)
+    if lower:
+        assert_allclose(np.tril(A_inv), np.tril(ref), atol=100*n*eps)
+    else:
+        assert_allclose(np.triu(A_inv), np.triu(ref), atol=100*n*eps)
 
 
 @pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
@@ -3505,4 +3532,63 @@ def test_lantr(norm, uplo, m, n, diag, dtype):
         A[i, i] = 1
     ref = lange(norm, A)
 
+    assert_allclose(res, ref, rtol=2e-6)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('norm', ['1', 'I', 'O'])
+def test_gbcon(dtype, norm):
+    rng = np.random.default_rng(17273783424)
+
+    # A is of shape n x n with ku/kl super/sub-diagonals
+    n, ku, kl = 10, 2, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    # make the condition numbers more interesting
+    offset = rng.permuted(np.logspace(0, rng.integers(0, 10), n))
+    A += offset
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, ku + 1)] = 0
+    A[np.tril_indices(n, -kl - 1)] = 0
+
+    # construct banded form
+    tmp = _to_banded(kl, ku, A)
+    # add rows required by ?gbtrf
+    LDAB = 2*kl + ku + 1
+    ab = np.zeros((LDAB, n), dtype=dtype)
+    ab[kl:, :] = tmp
+
+    anorm = np.linalg.norm(A, ord=np.inf if norm == 'I' else 1)
+    gbcon, gbtrf = get_lapack_funcs(("gbcon", "gbtrf"), (ab,))
+    lu_band, ipiv, _ = gbtrf(ab, kl, ku)
+    res = gbcon(norm=norm, kl=kl, ku=ku, ab=lu_band, ipiv=ipiv,
+                anorm=anorm)[0]
+
+    gecon, getrf = get_lapack_funcs(('gecon', 'getrf'), (A,))
+    lu = getrf(A)[0]
+    ref = gecon(lu, anorm, norm=norm)[0]
+    # This is an estimate of reciprocal condition number; we just need order of
+    # magnitude.
+    assert_allclose(res, ref, rtol=1)
+
+
+@pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_langb(dtype, norm):
+    rng = np.random.default_rng(17273783424)
+
+    # A is of shape n x n with ku/kl super/sub-diagonals
+    n, ku, kl = 10, 2, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, ku + 1)] = 0
+    A[np.tril_indices(n, -kl - 1)] = 0
+    ab = _to_banded(kl, ku, A)
+
+    langb, lange = get_lapack_funcs(('langb', 'lange'), (A,))
+    ref = lange(norm, A)
+    res = langb(norm, kl, ku, ab)
     assert_allclose(res, ref, rtol=2e-6)

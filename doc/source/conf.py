@@ -210,10 +210,19 @@ html_sidebars = {
 }
 
 html_theme_options = {
-    "github_url": "https://github.com/scipy/scipy",
-    "twitter_url": "https://twitter.com/SciPy_team",
     "header_links_before_dropdown": 6,
-    "icon_links": [],
+    "icon_links": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/scipy/scipy",
+        "icon": "fa-brands fa-github",
+      },
+      {
+        "name": "X",
+        "url": "https://x.com/SciPy_team",
+        "icon": "fa-brands fa-x-twitter",
+      },
+    ],
     "logo": {
         "text": "SciPy",
     },
@@ -410,6 +419,9 @@ myst_update_mathjax = False
 # Strip out cells tagged with "jupyterlite_sphinx_strip" from the
 # interactive renditions of the notebooks
 strip_tagged_cells = True
+
+# Enable overrides for JupyterLite settings at runtime
+jupyterlite_overrides = "overrides.json"
 
 #------------------------------------------------------------------------------
 # Interactive examples with jupyterlite-sphinx
