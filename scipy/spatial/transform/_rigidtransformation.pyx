@@ -210,6 +210,18 @@ cdef class RigidTransformation:
     def from_rotation(cls, rotation):
         """Initialize from a rotation, without a translation.
 
+        4x4 rigid transformation matrices are of the form:
+
+            [R | t]
+            [0 | 1]
+
+        Where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
+        translation vector ``[tx, ty, tz]``. This function returns the
+        transformation corresponding to the rotation ``Rotation.from_matrix(R)``
+        and the translation vector ``t``.
+
+
+
         Parameters
         ----------
         rotation : `Rotation` instance
@@ -283,7 +295,7 @@ cdef class RigidTransformation:
 
         Notes
         -----
-        4x4 matrices are expected to be of the form::
+        4x4 rigid transformation matrices are of the form:
 
             [R | t]
             [0 | 1]
@@ -292,23 +304,34 @@ cdef class RigidTransformation:
         ``[tx, ty, tz]``. As rotation matrices must be proper orthogonal, the
         rotation component is orthonormalized using singular value decomposition
         before initialization.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+        >>> t = T.from_matrix(np.eye(4))
+        >>> t.as_matrix()
+        array([[1., 0., 0., 0.],
+               [0., 1., 0., 0.],
+               [0., 0., 1., 0.],
+               [0., 0., 0., 1.]])
         """
         return cls(matrix, normalize=True, copy=True)
 
     @cython.embedsignature(True)
     @classmethod
     def from_rottrans(cls, rotation, translation):
-        """Initialize from a translation and rotation.
+        """Initialize from a rotation and translation.
 
-        When composing a translation and rotation, the translation is applied
-        after the rotation, such that
-        ``T0 = T.from_rottrans(rotation, translation)``
+        When composing a rotation and translation, the rotation is applied
+        before the translation, such that
+        ``t = T.from_rottrans(rotation, translation)``
         is equivalent to
-        ``T0 = T.from_rotation(rotation) * T.from_translation(translation)``.
+        ``t = T.from_rotation(rotation) * T.from_translation(translation)``.
 
         When applying a transformation to a vector, the result is the same as
         if the transformation was applied to the vector in the following way:
-        ``T0.apply(vector) == translation + rotation.apply(vector)``
+        ``t.apply(vector) == translation + rotation.apply(vector)``
 
         Parameters
         ----------
@@ -316,6 +339,47 @@ cdef class RigidTransformation:
             A single rotation or a stack of rotations.
         translation : array_like, shape (N, 3) or (3,)
             A single translation vector or a stack of translation vectors.
+
+        Returns
+        -------
+        `RigidTransformation`, either a single transformation or a stack of
+        transformations.
+            - If rotation is single and translation is shape (3,), then a single
+              transformation is returned.
+            - Otherwise, a stack of transformations is returned.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+
+        Creating from a rotation and translation:
+
+        >>> r = R.from_euler("ZYX", [90, 30, 0], degrees=True)
+        >>> r.as_matrix()
+        array([[ 0.       , -1.,  0.        ],
+               [ 0.8660254,  0.,  0.5       ],
+               [-0.5      ,  0.,  0.8660254 ]])
+        >>> d = np.array([2, 3, 4])
+        >>> t = T.from_rottrans(r, d)
+        >>> t.rotation.as_matrix()
+        array([[ 0.       , -1.,  0.        ],
+               [ 0.8660254,  0.,  0.5       ],
+               [-0.5      ,  0.,  0.8660254 ]])
+        >>> t.translation
+        array([2., 3., 4.])
+
+        When applying a transformation to a vector, the result is the same as
+        if the transformation was applied to the vector in the following way:
+        ``t.apply(vector) == translation + rotation.apply(vector)``
+
+        >>> r.apply([1, 0, 0])
+        array([0.       , 0.8660254, -0.5     ])
+        >>> d + r.apply([1, 0, 0])
+        array([2.5      , 3.8660254,  3.5     ])
+        >>> t.apply([1, 0, 0])
+        array([2.5      , 3.8660254,  3.5     ])
         """
         return cls.from_translation(translation) * cls.from_rotation(rotation)
 
@@ -427,6 +491,41 @@ cdef class RigidTransformation:
         -------
         transformation : `RigidTransformation` instance
             The identity transformation.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+        >>> t = T.identity()
+        >>> t.as_matrix()
+        array([[1., 0., 0., 0.],
+               [0., 1., 0., 0.],
+               [0., 0., 1., 0.],
+               [0., 0., 0., 1.]])
+
+        The identity transformation can be applied to a vector without effect:
+
+        >>> t.apply([1, 2, 3])
+        array([1., 2., 3.])
+
+        The identity transformation when composed with another transformation
+        has no effect:
+
+        >>> np.allclose((T.identity() * T.random()).as_matrix(),
+        ...             T.random().as_matrix(), atol=1e-12)
+        True
+
+        Multiple identity transformations can be generated at once:
+
+        >>> T.identity(2).as_matrix()
+        array([[[1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]],
+               [[1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]]])
         """
         if num is None:  # single
             return cls(np.eye(4, dtype=float), normalize=False, copy=False)
@@ -458,6 +557,28 @@ cdef class RigidTransformation:
         -------
         transformation : `RigidTransformation` instance
             A single transformation or a stack of transformations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+        >>> rng = np.random.default_rng(seed=123)
+        >>> t = T.random(rng=rng)
+        >>> t.as_matrix()
+        array([[-0.27687894,  0.08111092, -0.95747536,  0.21419513],
+               [ 0.43673235, -0.87694466, -0.20058143,  0.19815685],
+               [-0.85592225, -0.47369724,  0.20738374, -0.95648017],
+               [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+        The translation component will be a random unit vector:
+
+        >>> np.linalg.norm(t.translation)
+        1.0
+
+        Multiple transformations can be generated at once:
+
+        >>> len(T.random(3))
+        3
         """
         rng = check_random_state(rng)
         r = Rotation.random(num, rng=rng)
@@ -480,6 +601,16 @@ cdef class RigidTransformation:
         -------
         transformation : `RigidTransformation` instance
             The concatenated transformation.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> t1 = T.from_translation([1, 0, 0])
+        >>> t2 = T.from_translation([[2, 0, 0], [3, 0, 0]])
+        >>> T.concatenate([t1, t2]).translation
+        array([[1., 0., 0.],
+               [2., 0., 0.],
+               [3., 0., 0.]])
         """
         if isinstance(transformations, RigidTransformation):
             return cls(transformations._matrix, normalize=False, copy=True)
@@ -495,18 +626,46 @@ cdef class RigidTransformation:
     def as_matrix(self):
         """Return a copy of the matrix representation of the transformation.
 
-        4x4 matrices are of the form::
+        4x4 rigid transformation matrices are of the form:
 
             [R | t]
             [0 | 1]
 
-        where ``R`` is a 3x3 rotation matrix and ``t`` is a 3x1 translation vector
-        ``[tx, ty, tz]``.
+        where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
+        translation vector ``[tx, ty, tz]``.
 
         Returns
         -------
         matrix : numpy.ndarray, shape (4, 4) or (N, 4, 4)
             A single transformation matrix or a stack of transformation matrices.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> from scipy.spatial.transform import Rotation as R
+
+        A transformation matrix is a 4x4 matrix formed from a 3x3 rotation
+        matrix and a 3x1 translation vector:
+
+        >>> r = R.from_matrix([[0, 0, 1],
+        ...                    [1, 0, 0],
+        ...                    [0, 1, 0]])
+        >>> t = T.from_translation([2, 3, 4])
+        >>> t.as_matrix()
+        array([[ 0., 0., 1., 2.],
+               [ 1., 0., 0., 3.],
+               [ 0., 1., 0., 4.],
+               [ 0., 0., 0., 1.]])
+
+        >>> T.identity(2).as_matrix()
+        array([[[1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]],
+               [[1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]]])
         """
         if self._single:
             return np.array(self._matrix[0])
@@ -518,12 +677,53 @@ cdef class RigidTransformation:
         """Return the rotation and translation of the transformation, where
         the rotation is applied first, followed by the translation.
 
+        4x4 rigid transformation matrices are of the form:
+
+            [R | t]
+            [0 | 1]
+
+        Where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
+        translation vector ``[tx, ty, tz]``. This function returns the rotation
+        corresponding to the this rotation matrix ``Rotation.from_matrix(R)``
+        and the translation vector ``t``.
+
         Returns
         -------
         rotation : `Rotation` instance
             The rotation of the transformation.
         translation : numpy.ndarray, shape (N, 3) or (3,)
             The translation of the transformation.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+
+        Recover the rotation and translation from a transformation:
+
+        >>> r = R.from_matrix([[0, 0, 1],
+        ...                    [1, 0, 0],
+        ...                    [0, 1, 0]])
+        >>> d = np.array([2, 3, 4])
+        >>> t = T.from_rottrans(r, d)
+        >>> t_r, t_d = t.as_rottrans()
+        >>> t_r.as_matrix()
+        array([[0., 0., 1.],
+               [1., 0., 0.],
+               [0., 1., 0.]])
+        >>> t_d
+        array([2., 3., 4.])
+
+        The transformation applied to a vector is equivalent to the rotation
+        applied to the vector followed by the translation:
+
+        >>> r.apply([1, 0, 0])
+        array([0., 1., 0.])
+        >>> d + r.apply([1, 0, 0])
+        array([2., 4., 4.])
+        >>> t.apply([1, 0, 0])
+        array([2., 4., 4.])
         """
         return self.rotation, self.translation
 
@@ -615,6 +815,17 @@ cdef class RigidTransformation:
         ------
         TypeError
             If the transformation is a single transformation.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> t = T.random(3)
+        >>> len(t)
+        3
+
+        >>> t = T.from_translation([1, 0, 0])
+        >>> len(t)
+        TypeError: Single transformation has no len().
         """
         if self._single:
             raise TypeError("Single transformation has no len().")
@@ -646,6 +857,32 @@ cdef class RigidTransformation:
         ------
         TypeError
             If the transformation is a single transformation.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> d = np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]])  # 3 translations
+        >>> t = T.from_translation(d)
+
+        A single index returns a single transformation:
+
+        >>> t[0].as_matrix()
+        array([[1., 0., 0., 0.],
+               [0., 1., 0., 0.],
+               [0., 0., 1., 0.],
+               [0., 0., 0., 1.]])
+
+        A slice returns a stack of transformations:
+
+        >>> t[1:3].translation
+        array([[1., 0., 0.],
+               [2., 0., 0.]])
+
+        An index array returns a stack of transformations:
+
+        >>> t[[0, 2]].translation
+        array([[0., 0., 0.],
+               [2., 0., 0.]])
         """
         if self._single:
             raise TypeError("Single transformation is not subscriptable.")
@@ -684,7 +921,37 @@ cdef class RigidTransformation:
 
     @cython.embedsignature(True)
     def __mul__(RigidTransformation self, RigidTransformation other):
-        """Compose this transformation with the other."""
+        """Compose this transformation with the other.
+
+        If `p` and `q` are two transformations, then the composition of 'q
+        followed by p' is equivalent to `p * q`. In terms of transformation
+        matrices, the composition can be expressed as
+        ``p.as_matrix() @ q.as_matrix()``.
+
+        In terms of translations and rotations, the composition when applied to
+        a vector is equivalent to
+        ``p.translation + p.rotation.apply(q.translation)
+        + (p.rotation * q.rotation).apply(vector)``.
+
+        Parameters
+        ----------
+        other : `RigidTransformation` instance
+            Object containing the transformations to be composed with this one.
+
+        Returns
+        -------
+        `RigidTransformation` instance
+            The composed transformation. This function supports composition of
+            multiple transformations at a time. The following cases are
+            possible:
+
+            - Either ``p`` or ``q`` contains a single transformation. In this
+              case `composition` contains the result of composing each
+              transformation in the other object with the single transformation.
+            - Both ``p`` and ``q`` contain ``N`` transformations. In this case
+              each transformation ``p[i]`` is composed with the corresponding
+              transformation ``q[i]`` and `output` contains ``N`` transformations.
+        """
         len_self = len(self._matrix)
         len_other = len(other._matrix)
         if not(len_self == 1 or len_other == 1 or len_self == len_other):
@@ -757,10 +1024,50 @@ cdef class RigidTransformation:
         Composition of a transformation with its inverse results in an identity
         transformation.
 
+        A rigid transformation is a composition of a rotation and a translation,
+        where the rotation is applied first, followed by the translation. So
+        the inverse transformation is equivalent to the inverse translation
+        followed by the inverse transformation.
+
         Returns
         -------
         `RigidTransformation` instance
             The inverse of this transformation.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+
+        A transformation composed with its inverse results in an identity
+        transformation:
+
+        >>> t = T.random(1)
+        >>> t.inv() * t == T.identity(1)
+        True
+
+        >>> t.inv().as_matrix()
+        array([[[1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]]])
+
+        The inverse rigid transformation is the same as the inverse translation
+        followed by the inverse rotation:
+
+        >>> r, d = t.as_rottrans()
+        >>> r_inv = r.inv()  # inverse rotation
+        >>> d_inv = -d  # inverse translation
+        >>> t_r_inv = T.from_rotation(r_inv)
+        >>> t_d_inv = T.from_translation(d_inv)
+        >>> np.allclose((t_r_inv * t_d_inv).as_matrix(), t.inv().as_matrix(),
+        ...             atol=1e-12)
+        True
+        >>> (t_r_inv * t_d_inv * t).as_matrix()
+        array([[[1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]]])
         """
         r_inv = self.rotation.inv()
         t_inv = -r_inv.apply(self.translation)
@@ -861,6 +1168,11 @@ cdef class RigidTransformation:
         that when applied to a vector, the vector is first rotated and then
         translated. This property returns the translation part of the
         transformation.
+
+        Returns
+        -------
+        translation : numpy.ndarray, shape (N, 3) or (3,)
+            A single translation vector or a stack of translation vectors.
         """
         if self._single:
             return np.array(self._matrix[0, :3, 3])
