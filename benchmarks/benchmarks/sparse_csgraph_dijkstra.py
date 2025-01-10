@@ -61,13 +61,13 @@ class DijkstraDensity(Benchmark):
             raise NotImplementedError("skipped")
 
         rng = np.random.default_rng(42)
-        G = scipy.sparse.random_array(
+        self.graph = scipy.sparse.random_array(
             shape=(n, n),
             density=density,
             format='csr',
             rng=rng,
-        ) * 100
-        self.graph = G.astype(np.uint32)
+            data_sampler=lambda size: rng.integers(100, size=size, dtype=np.uint32),
+        )
 
 
     def time_test_shortest_path(self, n, density):
