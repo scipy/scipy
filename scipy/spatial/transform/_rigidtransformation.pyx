@@ -2,62 +2,12 @@
 
 import numpy as np
 from scipy._lib._util import check_random_state, _transition_to_rng
-from ._rotation import Rotation
+from ._rotation import Rotation, compose_quat
 
 cimport numpy as np
 cimport cython
-from cython.view cimport array
 
 np.import_array()
-
-# utilities for empty array initialization
-cdef inline double[:] _empty1(int n) noexcept:
-    return array(shape=(n,), itemsize=sizeof(double), format=b"d")
-cdef inline double[:, :] _empty2(int n1, int n2) noexcept :
-    return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
-
-# flat implementations of numpy functions
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef inline double[:] _cross3(const double[:] a, const double[:] b) noexcept:
-    cdef double[:] result = _empty1(3)
-    result[0] = a[1]*b[2] - a[2]*b[1]
-    result[1] = a[2]*b[0] - a[0]*b[2]
-    result[2] = a[0]*b[1] - a[1]*b[0]
-    return result
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef inline void _compose_quat_single( # calculate p * q into r
-    const double[:] p, const double[:] q, double[:] r
-) noexcept:
-    cdef double[:] cross = _cross3(p[:3], q[:3])
-
-    r[0] = p[3]*q[0] + q[3]*p[0] + cross[0]
-    r[1] = p[3]*q[1] + q[3]*p[1] + cross[1]
-    r[2] = p[3]*q[2] + q[3]*p[2] + cross[2]
-    r[3] = p[3]*q[3] - p[0]*q[0] - p[1]*q[1] - p[2]*q[2]
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef inline double[:, :] _compose_quat(
-    const double[:, :] p, const double[:, :] q
-) noexcept:
-    cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
-    cdef double[:, :] product = _empty2(n, 4)
-
-    # dealing with broadcasting
-    if p.shape[0] == 1:
-        for ind in range(n):
-            _compose_quat_single(p[0], q[ind], product[ind])
-    elif q.shape[0] == 1:
-        for ind in range(n):
-            _compose_quat_single(p[ind], q[0], product[ind])
-    else:
-        for ind in range(n):
-            _compose_quat_single(p[ind], q[ind], product[ind])
-
-    return product
 
 cdef class RigidTransformation:
     """Rigid transformation in 3 dimensions.
@@ -880,7 +830,7 @@ cdef class RigidTransformation:
 
         matrix[:, :3, :3] = rotation.as_matrix()
         matrix[:, :3, 3] = 2.0 * np.asarray(
-            _compose_quat(dual_part, rotation.inv().as_quat()))[:, :3]
+            compose_quat(dual_part, rotation.inv().as_quat()))[:, :3]
         matrix[:, 3, :3] = 0.0
         matrix[:, 3, 3] = 1.0
 
@@ -1252,7 +1202,7 @@ cdef class RigidTransformation:
         pure_translation_quats[:, 3] = 0.0
 
         dual_parts = 0.5 * np.asarray(
-            _compose_quat(pure_translation_quats, real_parts))
+            compose_quat(pure_translation_quats, real_parts))
 
         if scalar_first:
             real_parts = np.roll(real_parts, 1, axis=1)
