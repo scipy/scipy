@@ -6,7 +6,7 @@ import math
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _lazywhere, _rng_spawn
+from scipy._lib._util import _lazywhere, _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
@@ -392,6 +392,9 @@ class _SimpleDomain(_Domain):
         """
         rng = np.random.default_rng(rng)
 
+        def ints(*args, **kwargs): return rng.integers(*args, **kwargs, endpoint=True)
+        uniform = rng.uniform if isinstance(self, _RealDomain) else ints
+
         # get copies of min and max with no nans so that uniform doesn't fail
         min_nn, max_nn = min.copy(), max.copy()
         i = np.isnan(min_nn) | np.isnan(max_nn)
@@ -401,7 +404,7 @@ class _SimpleDomain(_Domain):
         shape = (n,) + squeezed_base_shape
 
         if type_ == 'in':
-            z = rng.uniform(min_nn, max_nn, size=shape)
+            z = uniform(min_nn, max_nn, size=shape)
 
         elif type_ == 'on':
             z_on_shape = shape
@@ -412,8 +415,8 @@ class _SimpleDomain(_Domain):
 
         elif type_ == 'out':
             # make this work for infinite bounds
-            z = min_nn - rng.uniform(size=shape)
-            zr = max_nn + rng.uniform(size=shape)
+            z = min_nn - uniform(1, 5, size=shape)
+            zr = max_nn + uniform(1, 5, size=shape)
             i = rng.random(size=n) < 0.5
             z[i] = zr[i]
 
@@ -489,7 +492,9 @@ class _IntegerDomain(_SimpleDomain):
         a, b = self.endpoints
         a = self.symbols.get(a, f"{a}")
         b = self.symbols.get(b, f"{b}")
-        return f"{{{a}, {a+1}, ..., {b-1}, {b}}}"
+        ap1 = f"{a} + 1" if isinstance(a, str) else f"{a + 1}"
+        bm1 = f"{b} - 1" if isinstance(b, str) else f"{b - 1}"
+        return f"{{{a}, {ap1}, ..., {bm1}, {b}}}"
 
 
 class _Parameter(ABC):
@@ -537,7 +542,7 @@ class _Parameter(ABC):
         self.symbol = symbol or name
         self.domain = domain
         if typical is not None and not isinstance(typical, _Domain):
-            typical = _RealDomain(typical)
+            typical = domain.__class__(typical)
         self.typical = typical or domain
 
     def __str__(self):
@@ -839,7 +844,7 @@ class _Parameterization:
         # we can draw values in order a, b, c.
         parameter_values = {}
 
-        if not len(sizes) or not np.iterable(sizes[0]):
+        if sizes is None or not len(sizes) or not np.iterable(sizes[0]):
             sizes = [sizes]*len(self.parameters)
 
         for size, param in zip(sizes, self.parameters.values()):
@@ -879,6 +884,9 @@ def _set_invalid_nan(f):
     replace_exact = {'icdf', 'iccdf', 'ilogcdf', 'ilogccdf'}
     clip = {'_cdf1', '_ccdf1'}
     clip_log = {'_logcdf1', '_logccdf1'}
+    # relevant to discrete distributions only
+    replace_non_integral = {'pmf', 'logpmf'}
+
 
     @functools.wraps(f)
     def filtered(self, x, *args, **kwargs):
@@ -889,6 +897,9 @@ def _set_invalid_nan(f):
         x = np.asarray(x)
         dtype = self._dtype
         shape = self._shape
+        discrete = isinstance(self, DiscreteDistribution)
+        keep_low_endpoint = discrete and method_name in {'_cdf1', '_logcdf1',
+                                                         '_ccdf1', '_logccdf1'}
 
         # Ensure that argument is at least as precise as distribution
         # parameters, which are already at least floats. This will avoid issues
@@ -917,7 +928,7 @@ def _set_invalid_nan(f):
         # and the result will be set to the appropriate value.
         left_inc, right_inc = self._variable.domain.inclusive
         mask_low = (x < low if (method_name in replace_strict and left_inc)
-                    else x <= low)
+                    or keep_low_endpoint else x <= low)
         mask_high = (x > high if (method_name in replace_strict and right_inc)
                      else x >= high)
         mask_invalid = (mask_low | mask_high)
@@ -933,6 +944,13 @@ def _set_invalid_nan(f):
             mask_endpoint = (mask_low_endpoint | mask_high_endpoint)
             any_endpoint = (mask_endpoint if mask_endpoint.shape == ()
                             else np.any(mask_endpoint))
+
+        # Check for non-integral arguments to PMF method
+        any_non_integral = False
+        if method_name in replace_non_integral:
+            mask_non_integral = x != np.floor(x)
+            any_non_integral = (mask_non_integral if mask_non_integral.shape == ()
+                                else np.any(mask_non_integral))
 
         # Set out-of-domain arguments to NaN. The result will be set to the
         # appropriate value later.
@@ -951,12 +969,18 @@ def _set_invalid_nan(f):
 
         if res.shape != shape:  # faster to check first
             res = np.broadcast_to(res, self._shape)
-            res_needs_copy = res_needs_copy or any_invalid or any_endpoint
+            res_needs_copy = (res_needs_copy or any_invalid
+                              or any_endpoint or any_non_integral)
 
         if res_needs_copy:
             res = np.array(res, dtype=dtype, copy=True)
 
-        #  For arguments outside the function domain, replace results
+        # For non-integral arguments to PMF, replace with zero
+        if any_non_integral:
+            zero = -np.inf if method_name == 'logpmf' else 0
+            res[mask_non_integral] = zero
+
+        # For arguments outside the function domain, replace results
         if any_invalid:
             replace_low, replace_high = (
                 replacements.get(method_name, (np.nan, np.nan)))
@@ -977,7 +1001,8 @@ def _set_invalid_nan(f):
                 a[mask_high_endpoint] if method_name.endswith('ccdf')
                 else b[mask_high_endpoint])
 
-            res[mask_low_endpoint] = replace_low_endpoint
+            if not keep_low_endpoint:
+                res[mask_low_endpoint] = replace_low_endpoint
             res[mask_high_endpoint] = replace_high_endpoint
 
         # Clip probabilities to [0, 1]
@@ -2027,7 +2052,10 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         p, xmin, xmax = np.broadcast_arrays(p, xmin, xmax)
         if not p.size:
             # might need to figure out result type based on p
-            return np.empty(p.shape, dtype=self._dtype)
+            res = _RichResult()
+            empty = np.empty(p.shape, dtype=self._dtype)
+            res.xl, res.x, res.xr = empty, empty, empty
+            res.fl, res.fr = empty, empty
 
         def f2(x, _p, **kwargs):  # named `_p` to avoid conflict with shape `p`
             return f(x, **kwargs) - _p

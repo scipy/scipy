@@ -383,7 +383,7 @@ class Binomial(DiscreteDistribution):
 
     _n_param = _RealParameter('n', domain=_n_domain, typical=(10, 20))
     _p_param = _RealParameter('p', domain=_p_domain, typical=(0.25, 0.75))
-    _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(0, 10))
 
     _parameterizations = [_Parameterization(_n_param, _p_param)]
     _variable = _x_param
@@ -395,9 +395,9 @@ class Binomial(DiscreteDistribution):
         return special.binom(n, x) * p**x * (1 - p)**(n - x)
 
 
-# # Distribution classes need only define the summary and beginning of the extended
-# # summary portion of the class documentation. All other documentation, including
-# # examples, is generated automatically.
-# _module = sys.modules[__name__].__dict__
-# for dist_name in __all__:
-#     _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
+# Distribution classes need only define the summary and beginning of the extended
+# summary portion of the class documentation. All other documentation, including
+# examples, is generated automatically.
+_module = sys.modules[__name__].__dict__
+for dist_name in __all__:
+    _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
