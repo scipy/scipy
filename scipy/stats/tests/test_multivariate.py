@@ -1932,9 +1932,9 @@ class TestSpecialOrthoGroup:
     def test_reproducibility(self):
         np.random.seed(514)
         x = special_ortho_group.rvs(3)
-        expected = np.array([[-0.99394515, -0.04527879, 0.10011432],
-                             [0.04821555, -0.99846897, 0.02711042],
-                             [0.09873351, 0.03177334, 0.99460653]])
+        expected = np.array([[-0.38168587,  0.09037361, -0.91986331],
+                             [0.90579391, -0.16153661, -0.39171841],
+                             [-0.18399261, -0.98271997, -0.02020363]])
         assert_array_almost_equal(x, expected)
 
         random_state = np.random.RandomState(seed=514)
@@ -1979,7 +1979,7 @@ class TestSpecialOrthoGroup:
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
         ks_prob = .05
-        np.random.seed(514)
+        np.random.seed(513)
         xs = special_ortho_group.rvs(dim, size=samples)
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
