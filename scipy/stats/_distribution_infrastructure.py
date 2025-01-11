@@ -2014,10 +2014,11 @@ class _UnivariateDistribution(_ProbabilityDistribution):
             res = _tanhsinh(f, a, b, args=args, log=log, rtol=rtol)
             return res.integral
         else:
-            res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol))
-            return res.sum
+            res = np.asarray(nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum)
+            res[a > b] = 0  # nsum should probably return 0 instead of nan
+            return res[()]
 
-    def _solve_bounded(self, f, p, *, bounds=None, params=None):
+    def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
         # Finds the argument of a function that produces the desired output.
         # Much of this should be added to _bracket_root / _chandrupatla.
         xmin, xmax = self._support(**params) if bounds is None else bounds
@@ -2061,8 +2062,10 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         res = _bracket_root(f3, xl0=a, xr0=b, xmin=xmin, xmax=xmax, args=args)
         # For now, we ignore the status, but I want to use the bracket width
         # as an error estimate - see question 5 at the top.
+
         xrtol = None if _isnull(self.tol) else self.tol
-        return _chandrupatla(f3, a=res.xl, b=res.xr, args=args, xrtol=xrtol).x
+        xatol = None if xatol is None else xatol
+        return _chandrupatla(f3, a=res.xl, b=res.xr, args=args, xrtol=xrtol, xatol=xatol)
 
     ## Other
 
@@ -2804,7 +2807,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         return self._ilogccdf_dispatch(_log1mexp(x), **params)
 
     def _ilogcdf_inversion(self, x, **params):
-        return self._solve_bounded(self._logcdf_dispatch, x, params=params)
+        return self._solve_bounded(self._logcdf_dispatch, x, params=params).x
 
     @_set_invalid_nan
     def icdf(self, p, /, *, method=None):
@@ -2839,7 +2842,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         return out[()]
 
     def _icdf_inversion(self, x, **params):
-        return self._solve_bounded(self._cdf_dispatch, x, params=params)
+        return self._solve_bounded(self._cdf_dispatch, x, params=params).x
 
     @_set_invalid_nan
     def ilogccdf(self, logp, /, *, method=None):
@@ -2862,7 +2865,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         return self._ilogcdf_dispatch(_log1mexp(x), **params)
 
     def _ilogccdf_inversion(self, x, **params):
-        return self._solve_bounded(self._logccdf_dispatch, x, params=params)
+        return self._solve_bounded(self._logccdf_dispatch, x, params=params).x
 
     @_set_invalid_nan
     def iccdf(self, p, /, *, method=None):
@@ -2897,7 +2900,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         return out[()]
 
     def _iccdf_inversion(self, x, **params):
-        return self._solve_bounded(self._ccdf_dispatch, x, params=params)
+        return self._solve_bounded(self._ccdf_dispatch, x, params=params).x
 
     ### Sampling Functions
     # The following functions for drawing samples from the distribution are
@@ -3486,7 +3489,6 @@ class ContinuousDistribution(_UnivariateDistribution):
             return True
         return super()._overrides(method_name)
 
-    ## Probability Density / Mass Functions
     def _pmf_formula(self, x, **params):
         return np.zeros_like(x)
 
@@ -3501,9 +3503,6 @@ class ContinuousDistribution(_UnivariateDistribution):
 
 
 class DiscreteDistribution(_UnivariateDistribution):
-    ## Algorithms
-
-    ## Other
     def _overrides(self, method_name):
         if method_name in {'_logpdf_formula', '_pdf_formula'}:
             return True
@@ -3521,6 +3520,50 @@ class DiscreteDistribution(_UnivariateDistribution):
 
     def _logpxf_dispatch(self, x, *, method=None, **params):
         return self._logpmf_dispatch(x, method=method, **params)
+
+    def _ccdf_quadrature(self, x, **params):
+        return super()._ccdf_quadrature(np.floor(x + 1), **params)
+
+    def _logccdf_quadrature(self, x, **params):
+        return super()._logccdf_quadrature(np.floor(x + 1), **params)
+
+    def _icdf_inversion(self, x, **params):
+        res = self._solve_bounded(self._cdf_dispatch, x, params=params, xatol=1)
+        return np.where(res.fl == 0, np.floor(res.xl), np.floor(res.xr))
+
+    def _ilogcdf_inversion(self, x, **params):
+        res = self._solve_bounded(self._logcdf_dispatch, x, params=params, xatol=1)
+        return np.where(res.fl == 0, np.floor(res.xl), np.floor(res.xr))
+
+    def _iccdf_inversion(self, x, **params):
+        res = self._solve_bounded(self._ccdf_dispatch, x, params=params, xatol=0.9)
+        return np.where(res.fr == 0, np.ceil(res.xr), np.ceil(res.xl))
+
+    def _ilogccdf_inversion(self, x, **params):
+        res = self._solve_bounded(self._logccdf_dispatch, x, params=params, xatol=1)
+        return np.where(res.fr == 0, np.ceil(res.xr), np.ceil(res.xl))
+
+    # For initial PR, leave these out
+
+    def _cdf2_dispatch(self, x, y, *, method=None, **params):
+        message = "Two-argument CDF is not available for discrete distributions."
+        raise NotImplementedError(message)
+
+    def _logcdf2_dispatch(self, x, y, *, method=None, **params):
+        message = "Two-argument log-CDF is not available for discrete distributions."
+        raise NotImplementedError(message)
+
+    def _ccdf2_dispatch(self, x, y, *, method=None, **params):
+        message = "Two-argument CCDF is not available for discrete distributions."
+        raise NotImplementedError(message)
+
+    def _logccdf2_dispatch(self, x, y, *, method=None, **params):
+        message = "Two-argument log-CCDF is not available for discrete distributions."
+        raise NotImplementedError(message)
+
+    def _logentropy_dispatch(self, *, method=None, **params):
+        message = "Log-entropy is not available for discrete distributions."
+        raise NotImplementedError(message)
 
 
 # Special case the names of some new-style distributions in `make_distribution`
