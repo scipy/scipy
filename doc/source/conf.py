@@ -4,7 +4,6 @@ from os.path import relpath, dirname
 import re
 import sys
 import warnings
-from datetime import date
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
