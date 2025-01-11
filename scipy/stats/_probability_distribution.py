@@ -365,7 +365,7 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def median(self, *, method):
-        r"""Median (50th percentil)
+        r"""Median (50th percentile)
 
         If a continuous random variable :math:`X` has probability :math:`0.5` of
         taking on a value less than :math:`m`, then :math:`m` is the median.

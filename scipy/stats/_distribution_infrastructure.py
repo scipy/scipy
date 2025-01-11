@@ -486,7 +486,7 @@ class _IntegerDomain(_SimpleDomain):
     def contains(self, item, parameter_values=None):
         super_contains = super().contains(item, parameter_values)
         integral = (item == np.round(item))
-        return super_contains and integral
+        return super_contains & integral
 
     def __str__(self):
         a, b = self.endpoints
@@ -3320,7 +3320,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
     ### Convenience
 
-    def plot(self, x='x', y='pdf', *, t=('cdf', 0.0005, 0.9995), ax=None):
+    def plot(self, x='x', y=None, *, t=None, ax=None):
         r"""Plot a function of the distribution.
 
         Convenience function for quick visualization of the distribution
@@ -3396,14 +3396,24 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         # - when the parameters of the distribution are an array,
         #   use the full range of abscissae for all curves
 
+        discrete = isinstance(self, DiscreteDistribution)
         t_is_quantile = {'x', 'icdf', 'iccdf', 'ilogcdf', 'ilogccdf'}
         t_is_probability = {'cdf', 'ccdf', 'logcdf', 'logccdf'}
         valid_t = t_is_quantile.union(t_is_probability)
-        valid_xy =  valid_t.union({'pdf', 'logpdf'})
+        valid_xy =  valid_t.union({'pdf', 'logpdf', 'pmf', 'logpmf'})
+        y_default = 'pmf' if discrete else 'pdf'
+        y = y_default if y is None else y
 
         ndim = self._ndim
         x_name, y_name = x, y
-        t_name, tlim = t[0], np.asarray(t[1:])
+        t_name = 'cdf' if t is None else t[0]
+
+        a, b = self.support()
+        tliml_default = 0 if np.all(np.isfinite(a)) else 0.0005
+        tliml = tliml_default if t is None else t[1]
+        tlimr_default = 1 if np.all(np.isfinite(b)) else 0.9995
+        tlimr = tlimr_default if t is None else t[2]
+        tlim = np.asarray([tliml, tlimr])
         tlim = tlim[:, np.newaxis] if ndim else tlim
 
         # pdf/logpdf are not valid for `t` because we can't easily invert them
@@ -3419,7 +3429,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
         message = (f'Argument `y` of `{self.__class__.__name__}.plot` "'
                    f'must be one of {valid_xy}')
-        if t_name not in valid_xy:
+        if y_name not in valid_xy:
             raise ValueError(message)
 
         # This could just be a warning
@@ -3452,16 +3462,32 @@ class _UnivariateDistribution(_ProbabilityDistribution):
             raise ValueError(message)
 
         # form quantile grid
-        grid = np.linspace(0, 1, 300)
-        grid = grid[:, np.newaxis] if ndim else grid
-        q = qlim[0] + (qlim[1] - qlim[0]) * grid
+        if discrete and x_name in t_is_quantile:
+            # should probably aggregate for large ranges
+            q = np.arange(np.min(qlim[0]), np.max(qlim[1]) + 1)
+            q = q[:, np.newaxis] if ndim else q
+        else:
+            grid = np.linspace(0, 1, 300)
+            grid = grid[:, np.newaxis] if ndim else grid
+            q = qlim[0] + (qlim[1] - qlim[0]) * grid
+            q = np.round(q) if discrete else q
 
         # compute requested x and y at quantile grid
         x = q if x_name in t_is_quantile else getattr(self, x_name)(q)
         y = q if y_name in t_is_quantile else getattr(self, y_name)(q)
 
         # make plot
-        ax.plot(x, y)
+        x, y = np.broadcast_arrays(x.T, np.atleast_2d(y.T))
+        for xi, yi in zip(x, y):  # plot is vectorized, but bar/step don't seem to be
+            if discrete and x_name in t_is_quantile and y_name == 'pmf':
+                # should this just be a step plot, too?
+                ax.bar(xi, yi, alpha=np.sqrt(1/y.shape[0]))  # alpha heuristic
+            elif discrete and x_name in t_is_quantile:
+                values = yi
+                edges = np.concatenate((xi, [xi[-1]+1]))
+                ax.stairs(values, edges, baseline=None)
+            else:
+                ax.plot(xi, yi)
         ax.set_xlabel(f"${x_name}$")
         ax.set_ylabel(f"${y_name}$")
         ax.set_title(str(self))
