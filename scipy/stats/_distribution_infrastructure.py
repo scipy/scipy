@@ -2040,7 +2040,8 @@ class _UnivariateDistribution(_ProbabilityDistribution):
             return res.integral
         else:
             res = np.asarray(nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum)
-            res[a > b] = 0  # nsum should probably return 0 instead of nan
+            zero = -np.inf if log else 0
+            res[a > b] = zero  # nsum should probably return 0 instead of nan
             return res[()]
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
@@ -3575,6 +3576,12 @@ class DiscreteDistribution(_UnivariateDistribution):
     def _logpxf_dispatch(self, x, *, method=None, **params):
         return self._logpmf_dispatch(x, method=method, **params)
 
+    def _cdf_quadrature(self, x, **params):
+        return super()._cdf_quadrature(np.floor(x), **params)
+
+    def _logcdf_quadrature(self, x, **params):
+        return super()._logcdf_quadrature(np.floor(x), **params)
+
     def _ccdf_quadrature(self, x, **params):
         return super()._ccdf_quadrature(np.floor(x + 1), **params)
 
@@ -3583,19 +3590,19 @@ class DiscreteDistribution(_UnivariateDistribution):
 
     def _icdf_inversion(self, x, **params):
         res = self._solve_bounded(self._cdf_dispatch, x, params=params, xatol=1)
-        return np.where(res.fl == 0, np.floor(res.xl), np.floor(res.xr))
+        return np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
 
     def _ilogcdf_inversion(self, x, **params):
         res = self._solve_bounded(self._logcdf_dispatch, x, params=params, xatol=1)
-        return np.where(res.fl == 0, np.floor(res.xl), np.floor(res.xr))
+        return np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
 
     def _iccdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._ccdf_dispatch, x, params=params, xatol=0.9)
-        return np.where(res.fr == 0, np.ceil(res.xr), np.ceil(res.xl))
+        res = self._solve_bounded(self._ccdf_dispatch, x, params=params, xatol=1)
+        return np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
 
     def _ilogccdf_inversion(self, x, **params):
         res = self._solve_bounded(self._logccdf_dispatch, x, params=params, xatol=1)
-        return np.where(res.fr == 0, np.ceil(res.xr), np.ceil(res.xl))
+        return np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
 
     # For initial PR, leave these out
 
