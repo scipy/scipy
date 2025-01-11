@@ -1355,9 +1355,9 @@ def _generate_example(dist_family):
         instantiation = f"{name}()"
         X = dist
 
-    p = 0.32
-    x = round(X.icdf(p), 2)
-    y = round(X.icdf(2 * p), 2)
+    prob = 0.32
+    x = round(X.icdf(prob), 2)
+    y = round(X.icdf(2 * prob), 2)
 
     example = f"""
     To use the distribution class, it must be instantiated using keyword
@@ -1392,19 +1392,22 @@ def _generate_example(dist_family):
         """
 
     example += f"""
-    To evaluate the probability density function of the underlying distribution
+    To evaluate the probability density/mass function of the underlying distribution
     at argument ``x={x}``:
 
     >>> x = {x}
-    >>> X.pdf(x)
-    {X.pdf(x)}
-
+    >>> X.pdf(x), X.pmf(x)
+    {X.pdf(x), X.pmf(x)}
+    
     The cumulative distribution function, its complement, and the logarithm
     of these functions are evaluated similarly.
 
     >>> np.allclose(np.exp(X.logccdf(x)), 1 - X.cdf(x))
     True
+    """
 
+    if issubclass(dist_family, ContinuousDistribution):
+        example_continuous = f"""
     The inverse of these functions with respect to the argument ``x`` is also
     available.
 
@@ -1420,22 +1423,39 @@ def _generate_example(dist_family):
     >>> y = {y}
     >>> np.allclose(X.ccdf(x, y), 1 - (X.cdf(y) - X.cdf(x)))
     True
+        """
+        example += example_continuous
 
+    example += f"""
     There are methods for computing measures of central tendency,
     dispersion, higher moments, and entropy.
 
     >>> X.mean(), X.median(), X.mode()
     {X.mean(), X.median(), X.mode()}
+
     >>> X.variance(), X.standard_deviation()
     {X.variance(), X.standard_deviation()}
+
     >>> X.skewness(), X.kurtosis()
     {X.skewness(), X.kurtosis()}
+
     >>> np.allclose(X.moment(order=6, kind='standardized'),
     ...             X.moment(order=6, kind='central') / X.variance()**3)
     True
+    """
+
+    if issubclass(dist_family, ContinuousDistribution):
+        example += f"""
     >>> np.allclose(np.exp(X.logentropy()), X.entropy())
     True
+        """
+    else:
+        example += f"""
+        >>> X.entropy()
+        {X.entropy()}
+        """
 
+    example += f"""
     Pseudo-random samples can be drawn from
     the underlying distribution using ``sample``.
 
@@ -3332,14 +3352,18 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         x, y : str, optional
             String indicating the quantities to be used as the abscissa and
             ordinate (horizontal and vertical coordinates), respectively.
-            Defaults are ``'x'`` (the domain of the random variable) and
-            ``'pdf'`` (the probability density function). Valid values are:
-            'x', 'pdf', 'cdf', 'ccdf', 'icdf', 'iccdf', 'logpdf', 'logcdf',
-            'logccdf', 'ilogcdf', 'ilogccdf'.
+            Defaults are ``'x'`` (the domain of the random variable) and either
+            ``'pdf'`` (the probability density function) (continuous) or
+            ``'pdf'`` (the probability density function) (discrete).
+            Valid values are:
+            'x', 'pdf', 'pmf', 'cdf', 'ccdf', 'icdf', 'iccdf', 'logpdf', 'logpmf',
+            'logcdf', 'logccdf', 'ilogcdf', 'ilogccdf'.
         t : 3-tuple of (str, float, float), optional
             Tuple indicating the limits within which the quantities are plotted.
-            Default is ``('cdf', 0.001, 0.999)`` indicating that the central
-            99.9% of the distribution is to be shown. Valid values are:
+            The default is ``('cdf', 0.0005, 0.9995)`` if the domain is infinite,
+            indicating that the central 99.9% of the distribution is to be shown;
+            otherwise, endpoints of the support are used where they are finite.
+            Valid values are:
             'x', 'cdf', 'ccdf', 'icdf', 'iccdf', 'logcdf', 'logccdf',
             'ilogcdf', 'ilogccdf'.
         ax : `matplotlib.axes`, optional

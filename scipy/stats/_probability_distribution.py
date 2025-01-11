@@ -30,8 +30,8 @@ class _ProbabilityDistribution(ABC):
         Notes
         -----
         Suppose a continuous probability distribution has support ``(l, r)``.
-        The following table summarizes the value returned by methods
-        of ``ContinuousDistribution`` for arguments outside the support.
+        The following table summarizes the value returned by several
+        methods when the argument is outside the support.
 
         +----------------+---------------------+---------------------+
         | Method         | Value for ``x < l`` | Value for ``x > r`` |
@@ -49,13 +49,16 @@ class _ProbabilityDistribution(ABC):
         | ``logccdf(x)`` | 0                   | -inf                |
         +----------------+---------------------+---------------------+
 
-        For the ``cdf`` and related methods, the inequality need not be
-        strict; i.e. the tabulated value is returned when the method is
-        evaluated *at* the corresponding boundary.
+        For discrete distributions, the same table is applicable with
+        ``pmf`` and ``logpmf`` substituted for ``pdf`` and ``logpdf``.
+
+        For the ``cdf`` and related methods of continuous distributions, the
+        inequality need not be strict; i.e. the tabulated value is returned
+        when the method is evaluated *at* the corresponding boundary.
 
         The following table summarizes the value returned by the inverse
-        methods of ``ContinuousDistribution`` for arguments at the boundaries
-        of the domain ``0`` to ``1``.
+        methods for arguments ``0`` and ``1``, whether the distribution
+        is continuous or discrete.
 
         +-------------+-----------+-----------+
         | Method      | ``x = 0`` | ``x = 1`` |
@@ -65,7 +68,7 @@ class _ProbabilityDistribution(ABC):
         | ``icdf(x)`` | ``r``     | ``l``     |
         +-------------+-----------+-----------+
 
-        For the inverse log-functions, the same values are returned for
+        For the inverse log-functions, the same values are returned
         for ``x = log(0)`` and ``x = log(1)``. All inverse functions return
         ``nan`` when evaluated at an argument outside the domain ``0`` to ``1``.
 
@@ -173,7 +176,7 @@ class _ProbabilityDistribution(ABC):
 
         In terms of probability density function :math:`f(x)` and support
         :math:`\chi`, the "raw" moment (about the origin) of order :math:`n` of
-        a random variable :math:`X` is:
+        a continuous random variable :math:`X` is:
 
         .. math::
 
@@ -195,6 +198,9 @@ class _ProbabilityDistribution(ABC):
             \tilde{\mu}_n(X) = \frac{\mu_n(X)}
                                     {\sigma^n}
 
+        The definitions for discrete random variables are analogous, with
+        sums over the support replacing the integrals.
+        
         Parameters
         ----------
         order : int
@@ -369,11 +375,15 @@ class _ProbabilityDistribution(ABC):
 
         If a continuous random variable :math:`X` has probability :math:`0.5` of
         taking on a value less than :math:`m`, then :math:`m` is the median.
-        That is, the median is the value :math:`m` for which:
+
+        More generally, a median is a value :math:`m` for which:
 
         .. math::
 
-            P(X ≤ m) = 0.5 = P(X ≥ m)
+            P(X ≤ m) ≤ 0.5 ≥ P(X ≥ m)
+
+        For discrete random variables, the median may not be unique, in which
+        case the smallest value satisfying the definition is reported.
 
         Parameters
         ----------
@@ -740,6 +750,8 @@ class _ProbabilityDistribution(ABC):
         :math:`1`; since the valus is a probability *density*, only its integral
         over the support must equal :math:`1`.
 
+        For discrete distributions, `pdf` returns ``inf`` at supported points.
+
         References
         ----------
         .. [1] Probability density function, *Wikipedia*,
@@ -823,6 +835,8 @@ class _ProbabilityDistribution(ABC):
         to work with the logarithms of probabilities and probability densities to
         avoid underflow.
 
+        For discrete distributions, `pdf` returns ``inf`` at supported points.
+
         References
         ----------
         .. [1] Probability density function, *Wikipedia*,
@@ -849,7 +863,7 @@ class _ProbabilityDistribution(ABC):
     def pmf(self, x, /, *, method=None):
         r"""Probability mass function
 
-        The probability density function ("PMF"), denoted :math:`f(x)`, is the
+        The probability mass function ("PMF"), denoted :math:`f(x)`, is the
         probability that the random variable :math:`X` will assume the value :math:`x`.
 
         .. math::
@@ -886,10 +900,13 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a discrete probability distribution has support :math:`[l, r]`.
+        Suppose a discrete probability distribution has support over the integers
+        :math:`{l, l+1, ..., r-1, r}`.
         By definition of the support, the PMF evaluates to its minimum value
-        of :math:`0` outside the support; i.e. for :math:`x < l` or
-        :math:`x > r`.
+        of :math:`0` for non-integral :math:`x` and for :math:`x` outside the support;
+        i.e. for :math:`x < l` or :math:`x > r`.
+
+        For continuous distributions, `pmf` returns ``0`` at all real arguments.
 
         References
         ----------
@@ -914,14 +931,14 @@ class _ProbabilityDistribution(ABC):
     def logpmf(self, x, /, *, method=None):
         r"""Log of the probability mass function
 
-        The probability density function ("PMF"), denoted :math:`f(x)`, is the
+        The probability mass function ("PMF"), denoted :math:`f(x)`, is the
         probability that the random variable :math:`X` will assume the value :math:`x`.
 
         .. math::
 
             f(x) = \frac{d}{dx} F(x)
 
-        `logpmf` computes the logarithm of the probability density function
+        `logpmf` computes the logarithm of the probability mass function
         ("log-PMF"), :math:`\log(f(x))`, but it may be numerically favorable
         compared to the naive implementation (computing :math:`f(x)` and
         taking the logarithm).
@@ -956,10 +973,11 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
+        Suppose a discrete probability distribution has support over the integers
+        :math:`{l, l+1, ..., r-1, r}`.
         By definition of the support, the log-PMF evaluates to its minimum value
-        of :math:`-\infty` (i.e. :math:`\log(0)`) outside the support; i.e. for
-        :math:`x < l` or :math:`x > r`.
+        of :math:`-\infty` (i.e. :math:`\log(0)`) for non-integral :math:`x` and
+        for :math:`x` outside the support; i.e. for :math:`x < l` or :math:`x > r`.
 
         For distributions with infinite support, it is common for `pmf` to return
         a value of ``0`` when the argument is theoretically within the support;
@@ -1003,20 +1021,22 @@ class _ProbabilityDistribution(ABC):
 
             F(x) = P(X ≤ x)
 
-        A two-argument variant of this function is also defined as the
-        probability the random variable :math:`X` will assume a value between
-        :math:`x` and :math:`y`.
+        A two-argument variant of this function is also defined for continuous
+        random variables as the probability the random variable :math:`X` will
+        assume a value between :math:`x` and :math:`y`.
 
         .. math::
 
             F(x, y) = P(x ≤ X ≤ y)
 
-        `cdf` accepts `x` for :math:`x` and `y` for :math:`y`.
+        `cdf` accepts `x` for :math:`x` and `y` for :math:`y` (for continuous
+        random variables).
 
         Parameters
         ----------
         x, y : array_like
-            The arguments of the CDF. `x` is required; `y` is optional.
+            The arguments of the CDF. `x` is required; `y` is optional for continuous
+            random variables and not accepted for discrete random variables.
         method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'subtraction'}
             The strategy used to evaluate the CDF.
             By default (``None``), the one-argument form of the function
@@ -1065,6 +1085,17 @@ class _ProbabilityDistribution(ABC):
         The CDF evaluates to its minimum value of :math:`0` for :math:`x ≤ l`
         and its maximum value of :math:`1` for :math:`x ≥ r`.
 
+        Suppose a discrete probability distribution has support :math:`[l, r]`.
+        The CDF :math:`F(x)` is related to the probability mass function
+        :math:`f(x)` by:
+
+        .. math::
+
+            F(x) = \sum_{u=l}^{u=\lfloor x \rfloor} f(u)
+
+        The CDF evaluates to its minimum value of :math:`0` for :math:`x < l`
+        and its maximum value of :math:`1` for :math:`x ≥ r`.
+        
         The CDF is also known simply as the "distribution function".
 
         References
@@ -1096,13 +1127,21 @@ class _ProbabilityDistribution(ABC):
     def icdf(self, p, /, *, method):
         r"""Inverse of the cumulative distribution function.
 
-        The inverse of the cumulative distribution function ("inverse CDF"),
-        denoted :math:`F^{-1}(p)`, is the argument :math:`x` for which the
-        cumulative distribution function :math:`F(x)` evaluates to :math:`p`.
+        For monotonic continuous distributions, the inverse of the cumulative
+        distribution function ("inverse CDF"), denoted :math:`F^{-1}(p)`, is the
+        argument :math:`x` for which the cumulative distribution function
+        :math:`F(x)` evaluates to :math:`p`.
 
         .. math::
 
             F^{-1}(p) = x \quad \text{s.t.} \quad F(x) = p
+
+        When a strict "inverse" of the cumulative distribution function does not
+        exist (e.g. discrete random variables), the "inverse CDF" is defined by
+        convention as the smallest value within the support :math:`\chi` for which
+        :math:`F(x)` is at least :math:`p`.
+
+            F^{-1}(p) = \min_\chi \quad \text{s.t.} \quad F(x) ≥ p
 
         `icdf` accepts `p` for :math:`p \in [0, 1]`.
 
@@ -1137,7 +1176,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
+        Suppose a probability distribution has support :math:`[l, r]`. The
         inverse CDF returns its minimum value of :math:`l` at :math:`p = 0`
         and its maximum value of :math:`r` at :math:`p = 1`. Because the CDF
         has range :math:`[0, 1]`, the inverse CDF is only defined on the
@@ -1188,18 +1227,21 @@ class _ProbabilityDistribution(ABC):
 
             G(x) = 1 - F(x) = P(X > x)
 
-        A two-argument variant of this function is:
+        A two-argument variant of this function, available only for continuous
+        random variables, is:
 
         .. math::
 
             G(x, y) = 1 - F(x, y) = P(X < x \text{ or } X > y)
 
-        `ccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
+        `ccdf` accepts `x` for :math:`x` and `y` for :math:`y` (for continuous
+        random variables).
 
         Parameters
         ----------
         x, y : array_like
-            The arguments of the CCDF. `x` is required; `y` is optional.
+            The arguments of the CCDF. `x` is required; `y` is optional for continuous
+            random variables and not accepted for discrete random variables.
         method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'addition'}
             The strategy used to evaluate the CCDF.
             By default (``None``), the infrastructure chooses between the
@@ -1248,6 +1290,18 @@ class _ProbabilityDistribution(ABC):
         The CCDF returns its minimum value of :math:`0` for :math:`x ≥ r`
         and its maximum value of :math:`1` for :math:`x ≤ l`.
 
+        Suppose a discrete probability distribution has support :math:`[l, r]`.
+        The CCDF :math:`G(x)` is related to the probability mass function
+        :math:`f(x)` by:
+
+        .. math::
+
+            G(x) = \int_x^r f(u) du
+            G(x) = \sum_{u=\lfloor x + 1 \rfloor}^{u=r} f(u)
+
+        The CCDF evaluates to its minimum value of :math:`0` for :math:`x ≥ r`
+        and its maximum value of :math:`1` for :math:`x < l`.
+        
         The CCDF is also known as the "survival function".
 
         References
@@ -1291,6 +1345,13 @@ class _ProbabilityDistribution(ABC):
 
             G^{-1}(p) = x \quad \text{s.t.} \quad G(x) = p
 
+        When a strict "inverse" of the complementary cumulative distribution function
+        does not exist (e.g. discrete random variables), the "inverse CCDF" is defined
+        by convention as the smallest value within the support :math:`\chi` for which
+        :math:`G(x)` is no greater than :math:`p`.
+
+            G^{-1}(p) = \min_\chi \quad \text{s.t.} \quad G(x) ≤ p
+
         `iccdf` accepts `p` for :math:`p \in [0, 1]`.
 
         Parameters
@@ -1319,7 +1380,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
+        Suppose a probability distribution has support :math:`[l, r]`. The
         inverse CCDF returns its minimum value of :math:`l` at :math:`p = 1`
         and its maximum value of :math:`r` at :math:`p = 0`. Because the CCDF
         has range :math:`[0, 1]`, the inverse CCDF is only defined on the
@@ -1366,9 +1427,9 @@ class _ProbabilityDistribution(ABC):
 
             F(x) = P(X ≤ x)
 
-        A two-argument variant of this function is also defined as the
-        probability the random variable :math:`X` will assume a value between
-        :math:`x` and :math:`y`.
+        A two-argument variant of this function is also defined for continuous
+        random variables as the probability the random variable :math:`X` will
+        assume a value between :math:`x` and :math:`y`.
 
         .. math::
 
@@ -1379,12 +1440,14 @@ class _ProbabilityDistribution(ABC):
         numerically favorable compared to the naive implementation (computing
         the CDF and taking the logarithm).
 
-        `logcdf` accepts `x` for :math:`x` and `y` for :math:`y`.
+        `logcdf` accepts `x` for :math:`x` and `y` for :math:`y` (for continuous
+        random variables).
 
         Parameters
         ----------
         x, y : array_like
-            The arguments of the log-CDF. `x` is required; `y` is optional.
+            The arguments of the log-CDF. `x` is required; `y` is optional for
+            continuous random variables and not accepted for discrete random variables.
         method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'subtraction'}
             The strategy used to evaluate the log-CDF.
             By default (``None``), the one-argument form of the function
@@ -1420,7 +1483,8 @@ class _ProbabilityDistribution(ABC):
         Suppose a continuous probability distribution has support :math:`[l, r]`.
         The log-CDF evaluates to its minimum value of :math:`\log(0) = -\infty`
         for :math:`x ≤ l` and its maximum value of :math:`\log(1) = 0` for
-        :math:`x ≥ r`.
+        :math:`x ≥ r`. An analogous statement can be made for discrete distributions,
+        but the inequality governing the minimum value is strict.
 
         For distributions with infinite support, it is common for
         `cdf` to return a value of ``0`` when the argument
@@ -1513,7 +1577,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
+        Suppose a probability distribution has support :math:`[l, r]`.
         The inverse log-CDF returns its minimum value of :math:`l` at
         :math:`\log(p) = \log(0) = -\infty` and its maximum value of :math:`r` at
         :math:`\log(p) = \log(1) = 0`. Because the log-CDF has range
@@ -1563,7 +1627,8 @@ class _ProbabilityDistribution(ABC):
 
             G(x) = 1 - F(x) = P(X > x)
 
-        A two-argument variant of this function is:
+        A two-argument variant of this function, defined only for continuous
+        random variables, is:
 
         .. math::
 
@@ -1574,12 +1639,14 @@ class _ProbabilityDistribution(ABC):
         but it may be numerically favorable compared to the naive implementation
         (computing the CDF and taking the logarithm).
 
-        `logccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
+        `logccdf` accepts `x` for :math:`x` and `y` for :math:`y` (for continuous
+        random variables).
 
         Parameters
         ----------
         x, y : array_like
-            The arguments of the log-CCDF. `x` is required; `y` is optional.
+            The arguments of the log-CCDF. `x` is required; `y` is optional for
+            continuous random variables and not accepted for discrete random variables.
         method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'addition'}
             The strategy used to evaluate the log-CCDF.
             By default (``None``), the one-argument form of the function
@@ -1616,7 +1683,8 @@ class _ProbabilityDistribution(ABC):
         Suppose a continuous probability distribution has support :math:`[l, r]`.
         The log-CCDF returns its minimum value of :math:`\log(0)=-\infty` for
         :math:`x ≥ r` and its maximum value of :math:`\log(1) = 0` for
-        :math:`x ≤ l`.
+        :math:`x ≤ l`. An analogous statement can be made for discrete distributions,
+        but the inequality governing the maximum value is strict.
 
         For distributions with infinite support, it is common for
         `ccdf` to return a value of ``0`` when the argument
@@ -1699,7 +1767,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`. The
+        Suppose a probability distribution has support :math:`[l, r]`. The
         inverse log-CCDF returns its minimum value of :math:`l` at
         :math:`\log(p) = \log(1) = 0` and its maximum value of :math:`r` at
         :math:`\log(p) = \log(0) = -\infty`. Because the log-CCDF has range
@@ -1746,12 +1814,15 @@ class _ProbabilityDistribution(ABC):
         r"""Logarithm of the differential entropy
 
         In terms of probability density function :math:`f(x)` and support
-        :math:`\chi`, the differential entropy (or simply "entropy") of a random
-        variable :math:`X` is:
+        :math:`\chi`, the differential entropy (or simply "entropy") of a
+        continuous random variable :math:`X` is:
 
         .. math::
 
             h(X) = - \int_{\chi} f(x) \log f(x) dx
+
+        The definition for a discrete random variable is analogous, with a
+        sum over the support replacing the integral.
 
         `logentropy` computes the logarithm of the differential entropy
         ("log-entropy"), :math:`log(h(X))`, but it may be numerically favorable
@@ -1778,6 +1849,11 @@ class _ProbabilityDistribution(ABC):
         -------
         out : array
             The log-entropy.
+
+        Raises
+        ------
+        NotImplementedError
+            If the random variable is discrete.
 
         See Also
         --------
@@ -1820,7 +1896,7 @@ class _ProbabilityDistribution(ABC):
 
         """
         raise NotImplementedError()
-        
+
     @abstractmethod
     def entropy(self, *, method):
         r"""Differential entropy
@@ -1832,6 +1908,9 @@ class _ProbabilityDistribution(ABC):
         .. math::
 
             h(X) = - \int_{\chi} f(x) \log f(x) dx
+
+        The definition for a discrete random variable is analogous, with a
+        sum over the support replacing the integral.
 
         Parameters
         ----------
