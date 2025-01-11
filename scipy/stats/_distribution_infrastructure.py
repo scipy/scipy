@@ -948,7 +948,7 @@ def _set_invalid_nan(f):
         # Check for non-integral arguments to PMF method
         any_non_integral = False
         if method_name in replace_non_integral:
-            mask_non_integral = x != np.floor(x)
+            mask_non_integral = (x != np.floor(x)) & ~np.isnan(x)
             any_non_integral = (mask_non_integral if mask_non_integral.shape == ()
                                 else np.any(mask_non_integral))
 
@@ -3614,19 +3614,27 @@ class DiscreteDistribution(_UnivariateDistribution):
 
     def _icdf_inversion(self, x, **params):
         res = self._solve_bounded(self._cdf_dispatch, x, params=params, xatol=1)
-        return np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
+        res = np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
+        res[np.isnan(x)] = np.nan
+        return res
 
     def _ilogcdf_inversion(self, x, **params):
         res = self._solve_bounded(self._logcdf_dispatch, x, params=params, xatol=1)
-        return np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
+        res = np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
+        res[np.isnan(x)] = np.nan
+        return res
 
     def _iccdf_inversion(self, x, **params):
         res = self._solve_bounded(self._ccdf_dispatch, x, params=params, xatol=1)
-        return np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
+        res = np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
+        res[np.isnan(x)] = np.nan
+        return res
 
     def _ilogccdf_inversion(self, x, **params):
         res = self._solve_bounded(self._logccdf_dispatch, x, params=params, xatol=1)
-        return np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
+        res = np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
+        res[np.isnan(x)] = np.nan
+        return res
 
     # For initial PR, leave these out
 
