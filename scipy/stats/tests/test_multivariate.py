@@ -1944,7 +1944,7 @@ class TestSpecialOrthoGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, special_ortho_group.rvs, None)
         assert_raises(ValueError, special_ortho_group.rvs, (2, 2))
-        assert_raises(ValueError, special_ortho_group.rvs, 1)
+        assert_raises(ValueError, special_ortho_group.rvs, -1)
         assert_raises(ValueError, special_ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -1997,6 +1997,14 @@ class TestSpecialOrthoGroup:
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+    def test_one_by_one(self):
+        # Test that the distribution is a delta function at the identity matrix
+        # when dim=1
+        assert_allclose(special_ortho_group.rvs(1, size=1000), 1, rtol=1e-13)
+
+    def test_zero_by_zero(self):
+        assert_equal(special_ortho_group.rvs(0, size=4).shape, (4, 0, 0))
+
 
 class TestOrthoGroup:
     def test_reproducibility(self):
@@ -2015,7 +2023,7 @@ class TestOrthoGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, ortho_group.rvs, None)
         assert_raises(ValueError, ortho_group.rvs, (2, 2))
-        assert_raises(ValueError, ortho_group.rvs, 1)
+        assert_raises(ValueError, ortho_group.rvs, -1)
         assert_raises(ValueError, ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -2084,6 +2092,21 @@ class TestOrthoGroup:
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
+
+    def test_one_by_one(self):
+        # Test that the 1x1 distribution gives ±1 with equal probability.
+        dim = 1
+        xs = ortho_group.rvs(dim, size=5000)
+        np.random.seed(514)
+        assert_allclose(np.abs(xs), 1, rtol=1e-13)
+        k = np.sum(xs > 0)
+        n = len(xs)
+        res = stats.binomtest(k, n)
+        low, high = res.proportion_ci(confidence_level=0.95)
+        assert low < 0.5 < high
+
+    def test_zero_by_zero(self):
+        assert_equal(special_ortho_group.rvs(0, size=4).shape, (4, 0, 0))
 
     @pytest.mark.slow
     def test_pairwise_distances(self):
@@ -2290,7 +2313,7 @@ class TestUnitaryGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, unitary_group.rvs, None)
         assert_raises(ValueError, unitary_group.rvs, (2, 2))
-        assert_raises(ValueError, unitary_group.rvs, 1)
+        assert_raises(ValueError, unitary_group.rvs, -1)
         assert_raises(ValueError, unitary_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -2319,17 +2342,20 @@ class TestUnitaryGroup:
         # the complex plane, are uncorrelated.
 
         # Generate samples
-        dim = 5
-        samples = 1000  # Not too many, or the test takes too long
-        np.random.seed(514)  # Note that the test is sensitive to seed too
-        xs = unitary_group.rvs(dim, size=samples)
+        for dim in (1, 5):
+            samples = 1000  # Not too many, or the test takes too long
+            np.random.seed(514)  # Note that the test is sensitive to seed too
+            xs = unitary_group.rvs(dim, size=samples)
 
-        # The angles "x" of the eigenvalues should be uniformly distributed
-        # Overall this seems to be a necessary but weak test of the distribution.
-        eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
-        x = np.arctan2(eigs.imag, eigs.real)
-        res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
-        assert_(res.pvalue > 0.05)
+            # The angles "x" of the eigenvalues should be uniformly distributed
+            # Overall this seems to be a necessary but weak test of the distribution.
+            eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
+            x = np.arctan2(eigs.imag, eigs.real)
+            res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
+            assert_(res.pvalue > 0.05)
+
+    def test_zero_by_zero(self):
+        assert_equal(unitary_group.rvs(0, size=4).shape, (4, 0, 0))
 
 
 class TestMultivariateT:

@@ -3620,9 +3620,9 @@ class special_ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("""Dimension of rotation must be specified,
-                                and must be a scalar greater than 1.""")
+                                and must be a scalar nonnegative integer.""")
 
         return dim
 
@@ -3763,9 +3763,9 @@ class ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
@@ -4118,7 +4118,7 @@ class unitary_group_gen(multi_rv_generic):
     Parameters
     ----------
     dim : scalar
-        Dimension of matrices, must be greater than 1.
+        Dimension of matrices.
     seed : {None, int, np.random.RandomState, np.random.Generator}, optional
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
@@ -4175,9 +4175,9 @@ class unitary_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
