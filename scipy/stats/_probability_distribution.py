@@ -901,12 +901,12 @@ class _ProbabilityDistribution(ABC):
         Instantiate a distribution with the desired parameters:
 
         >>> from scipy import stats
-        >>> X = stats.Binomial(n=10, b=0.5)
+        >>> X = stats.Binomial(n=10, p=0.5)
 
         Evaluate the PMF at the desired argument:
 
         >>> X.pmf(5)
-        0.5
+        np.float64(0.24609375)
 
         """
         raise NotImplementedError()
@@ -978,15 +978,14 @@ class _ProbabilityDistribution(ABC):
         --------
         Instantiate a distribution with the desired parameters:
 
-        >>> import numpy as np
         >>> from scipy import stats
-        >>> X = stats.Uniform(a=-1.0, b=1.0)
+        >>> X = stats.Binomial(n=10, p=0.5)
 
         Evaluate the log-PMF at the desired argument:
 
-        >>> X.logpmf(0.5)
-        -0.6931471805599453
-        >>> np.allclose(X.logpmf(0.5), np.log(X.pmf(0.5)))
+        >>> X.logpmf(5)
+        np.float64(-1.4020427180880297)
+        >>> np.allclose(X.logpmf(5), np.log(X.pmf(5)))
         True
 
         """
