@@ -329,11 +329,21 @@ def test_as_dualquat():
 
     rng = check_random_state(2)
 
-    # pure rotation
+    # only rotation
     for _ in range(10):
         real_part = Rotation.random(rng=rng).as_quat()
         dual_part = np.zeros(4)
         expected = np.hstack((real_part, dual_part))
+        actual = RigidTransformation.from_dualquat(expected).as_dualquat()
+        # because of double cover:
+        if np.sign(expected[0]) != np.sign(actual[0]):
+            actual *= -1.0
+        assert_allclose(actual, expected, atol=1e-12)
+
+    # only translation
+    for _ in range(10):
+        t = rng.normal(size=3)
+        expected = np.hstack(([0, 0, 0, 1], 0.5 * t, [0]))
         actual = RigidTransformation.from_dualquat(expected).as_dualquat()
         # because of double cover:
         if np.sign(expected[0]) != np.sign(actual[0]):
