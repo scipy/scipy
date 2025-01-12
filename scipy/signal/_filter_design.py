@@ -2203,7 +2203,8 @@ def bilinear(b, a, fs=1.0):
     >>> plt.grid(True)
     """
     fs = _validate_fs(fs, allow_none=False)
-    a, b = map(atleast_1d, (a, b))
+    a, b = map(lambda arr: np.trim_zeros(np.atleast_1d(arr), 'f'),
+               (a, b))
     D = len(a) - 1
     N = len(b) - 1
     if np.iscomplexobj(b) or np.iscomplexobj(a):
