@@ -2206,7 +2206,10 @@ def bilinear(b, a, fs=1.0):
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
     N = len(b) - 1
-    artype = float
+    if np.iscomplexobj(b) or np.iscomplexobj(a):
+        artype = np.complex128
+    else:
+        artype = float
     M = max([N, D])
     Np = M
     Dp = M
@@ -2220,7 +2223,7 @@ def bilinear(b, a, fs=1.0):
                     if k + l == j:
                         val += (comb(i, k) * comb(M - i, l) * b[N - i] *
                                 pow(2 * fs, i) * (-1) ** k)
-        bprime[j] = real(val)
+        bprime[j] = val
     for j in range(Dp + 1):
         val = 0.0
         for i in range(D + 1):
@@ -2229,7 +2232,7 @@ def bilinear(b, a, fs=1.0):
                     if k + l == j:
                         val += (comb(i, k) * comb(M - i, l) * a[D - i] *
                                 pow(2 * fs, i) * (-1) ** k)
-        aprime[j] = real(val)
+        aprime[j] = val
 
     return normalize(bprime, aprime)
 
