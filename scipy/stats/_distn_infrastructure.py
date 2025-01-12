@@ -305,7 +305,7 @@ Examples
 Get the support:
 
 %(set_vals_stmt)s
->>> a, b = %(name)s.support(%(shapes)s)
+>>> lb, ub = %(name)s.support(%(shapes)s)
 
 Calculate the first four moments:
 
