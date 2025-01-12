@@ -1,5 +1,7 @@
 import warnings
 
+from itertools import product
+
 from scipy._lib import _pep440
 import numpy as np
 from numpy.testing import (
@@ -1411,6 +1413,24 @@ class TestBilinear:
 
         assert_array_almost_equal_nulp(b_z, b_zref)
         assert_array_almost_equal_nulp(a_z, a_zref)
+
+
+    def test_ignore_leading_zeros(self):
+        # regression for gh-6606
+        # results shouldn't change when leading zeros are added to
+        # input numerator or denominator
+        b = [0.14879732743343033]
+        a = [1, 0.54552236880522209, 0.14879732743343033]
+
+        b_zref = [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
+        a_zref = [1.0, -1.0047722097030667, 0.3560573367396151]
+
+        for lzn, lzd in product(range(4), range(4)):
+            b_z, a_z = bilinear(np.pad(b, (lzn, 0)),
+                                np.pad(a, (lzd, 0)),
+                                0.5)
+            assert_array_almost_equal_nulp(b_z, b_zref)
+            assert_array_almost_equal_nulp(a_z, a_zref)
 
 
     def test_complex(self):
