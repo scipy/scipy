@@ -27,8 +27,9 @@ cdef class RigidTransformation:
     *proper* rigid transformations [1]_ rather than rigid transformations more
     generally.
 
-    Indexing within a transformation is supported since multiple transformations
-    can be stored within a single `RigidTransformation` instance.
+    Indexing within a transformation is supported since multiple
+    transformations can be stored within a single `RigidTransformation`
+    instance.
 
     To create `RigidTransformation` objects use ``from_...`` methods
     (see examples below). ``RigidTransformation(...)`` is not supposed
@@ -82,8 +83,8 @@ cdef class RigidTransformation:
     above formats and converted to any of the others. The underlying object is
     independent of the representation used for initialization.
 
-    A rigid transformation embodies the location and orientation of a coordinate
-    frame in reference to another coordinate frame in 3D space.
+    A rigid transformation embodies the location and orientation of a
+    coordinate frame in reference to another coordinate frame in 3D space.
 
     When we name transformations, we read the subscripts from right to left.
     So ``tAB`` represents a transformation A<-B and can be interpreted as:
@@ -91,6 +92,8 @@ cdef class RigidTransformation:
     - the coordinates of B relative to A
     - the transformation of points from B to A
     - the pose of B described in A's coordinate system
+
+    ::
 
         tAB
          ^^
@@ -111,6 +114,8 @@ cdef class RigidTransformation:
     cancels out and the outside frames A and C are left. Or to put it another
     way, A <- C is the same as A <- B <- C.
 
+    ::
+
                 ----------- B cancels out
                 |    |
                 v    v
@@ -120,6 +125,8 @@ cdef class RigidTransformation:
                ------------ to A, from C are left
 
     The point pB defined in B is transformed to pA defined in A by:
+
+    ::
 
                ------------ B cancels out
                |        |
@@ -172,8 +179,8 @@ cdef class RigidTransformation:
     1) Rotating A by +90 degrees around its x-axis.
     2) Translating the rotated frame +2 units in A's -x direction.
 
-    From A's perspective, B is at [-2, 0, 0] and rotated +90° about the x-axis,
-    which is exactly the transform A<-B.
+    From A's perspective, B is at [-2, 0, 0] and rotated +90deg about the
+    x-axis, which is exactly the transform A<-B.
 
     >>> rAB = R.from_euler('xyz', [90, 0, 0], degrees=True)
     >>> dAB = np.array([-2, 0, 0])
@@ -283,7 +290,28 @@ cdef class RigidTransformation:
     cdef bint _single
 
     def __init__(self, matrix, normalize=True, copy=True):
-        """Initialize from a 4x4 transformation matrix."""
+        """Initialize from a 4x4 transformation matrix.
+
+        Rotations are not meant to be initialized directly. Please use one of
+        the `from_...` methods instead.
+
+        Parameters
+        ----------
+        matrix : array_like, shape (4, 4) or (N, 4, 4)
+            A single transformation matrix or a stack of transformation
+            matrices.
+        normalize : bool, optional
+            If True, orthonormalize the rotation matrix using singular value
+            decomposition.
+        copy : bool, optional
+            If True, copy the input matrix. If False, a reference to the input
+            matrix is used. If normalize is True, the input matrix is always
+            copied regardless of the value of copy.
+
+        Returns
+        -------
+        transformation : `RigidTransformation` instance
+        """
         self._single = False
         matrix = np.asarray(matrix, dtype=float)
 
@@ -350,8 +378,8 @@ cdef class RigidTransformation:
     def from_rotation(cls, rotation):
         """Initialize from a rotation, without a translation.
 
-        When applying this transformation to a vector, the result is the same as
-        if the rotation was applied to the vector.
+        When applying this transformation to a vector, the result is the same
+        as if the rotation was applied to the vector.
         ``t.from_rotation(r).apply(vector) == r.apply(vector)``
 
         Parameters
@@ -417,8 +445,8 @@ cdef class RigidTransformation:
     def from_translation(cls, translation):
         """Initialize from a translation numpy array, without a rotation.
 
-        When applying this transformation to a vector, the result is the same as
-        if the translation and vector were added together.
+        When applying this transformation to a vector, the result is the same
+        as if the translation and vector were added together.
         ``t.from_translation(d).apply(vector) == d + vector``
 
         Parameters
@@ -498,7 +526,8 @@ cdef class RigidTransformation:
         Parameters
         ----------
         matrix : array_like, shape (4, 4) or (N, 4, 4)
-            A single transformation matrix or a stack of transformation matrices.
+            A single transformation matrix or a stack of transformation
+            matrices.
 
         Returns
         -------
@@ -511,10 +540,10 @@ cdef class RigidTransformation:
             [R | t]
             [0 | 1]
 
-        where ``R`` is a 3x3 rotation matrix and ``t`` is a 3x1 translation vector
-        ``[tx, ty, tz]``. As rotation matrices must be proper orthogonal, the
-        rotation component is orthonormalized using singular value decomposition
-        before initialization.
+        where ``R`` is a 3x3 rotation matrix and ``t`` is a 3x1 translation
+        vector ``[tx, ty, tz]``. As rotation matrices must be proper
+        orthogonal, the rotation component is orthonormalized using singular
+        value decomposition before initialization.
 
         Examples
         --------
@@ -593,8 +622,8 @@ cdef class RigidTransformation:
         -------
         `RigidTransformation`, either a single transformation or a stack of
         transformations.
-            - If rotation is single and translation is shape (3,), then a single
-              transformation is returned.
+            - If rotation is single and translation is shape (3,), then a
+              single transformation is returned.
             - Otherwise, a stack of transformations is returned.
 
         Examples
@@ -645,6 +674,11 @@ cdef class RigidTransformation:
             A single exponential coordinate vector or a stack of exponential
             coordinate vectors. The first three components define the
             rotation and the last three components define the translation.
+
+        Returns
+        -------
+        transformation : `RigidTransformation` instance
+            A single transformation or a stack of transformations.
         """
         expcoords = np.asarray(expcoords, dtype=float)
 
@@ -721,6 +755,11 @@ cdef class RigidTransformation:
         ----------
         dualquat : array_like, shape (N, 8) or (8,)
             A single dual quaternion or a stack of dual quaternions.
+
+        Returns
+        -------
+        transformation : `RigidTransformation` instance
+            A single transformation or a stack of transformations.
         """
         raise NotImplementedError("from_dualquat not implemented")
 
@@ -729,8 +768,8 @@ cdef class RigidTransformation:
     def identity(cls, num=None):
         """Initialize an identity transformation.
 
-        Composition with the identity transformation has no effect, and applying
-        the identity transformation to a vector has no effect.
+        Composition with the identity transformation has no effect, and
+        applying the identity transformation to a vector has no effect.
 
         Parameters
         ----------
@@ -774,7 +813,8 @@ cdef class RigidTransformation:
 
         Multiple identity transformations can be generated at once:
 
-        >>> T.identity(2).as_matrix()
+        >>> t = T.identity(2)
+        >>> t.as_matrix()
         array([[[1., 0., 0., 0.],
                 [0., 1., 0., 0.],
                 [0., 0., 1., 0.],
@@ -806,8 +846,8 @@ cdef class RigidTransformation:
         Parameters
         ----------
         num : int, optional
-            Number of random transformations to generate. If None (default), then a
-            single transformation is generated.
+            Number of random transformations to generate. If None (default),
+            then a single transformation is generated.
         rng : `numpy.random.Generator`, optional
             Pseudorandom number generator state. When `rng` is None, a new
             `numpy.random.Generator` is created using entropy from the
@@ -903,7 +943,8 @@ cdef class RigidTransformation:
         Returns
         -------
         matrix : numpy.ndarray, shape (4, 4) or (N, 4, 4)
-            A single transformation matrix or a stack of transformation matrices.
+            A single transformation matrix or a stack of transformation
+            matrices.
 
         Examples
         --------
@@ -1064,7 +1105,8 @@ cdef class RigidTransformation:
         Returns
         -------
         dualquat : numpy.ndarray, shape (N, 8) or (8,)
-            A single dual quaternion vector or a stack of dual quaternion vectors.
+            A single dual quaternion vector or a stack of dual quaternion
+            vectors.
         """
         raise NotImplementedError("as_dualquat not implemented")
 
@@ -1217,10 +1259,12 @@ cdef class RigidTransformation:
 
             - Either ``p`` or ``q`` contains a single transformation. In this
               case `composition` contains the result of composing each
-              transformation in the other object with the single transformation.
+              transformation in the other object with the single
+              transformation.
             - Both ``p`` and ``q`` contain ``N`` transformations. In this case
               each transformation ``p[i]`` is composed with the corresponding
-              transformation ``q[i]`` and `output` contains ``N`` transformations.
+              transformation ``q[i]`` and `output` contains ``N``
+              transformations.
         """
         len_self = len(self._matrix)
         len_other = len(other._matrix)
@@ -1240,7 +1284,8 @@ cdef class RigidTransformation:
         """Compose this transformation with itself `n` times.
 
         If `n` is negative, the inverse of the transformation is composed with
-        itself `n` times. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
+        itself `n` times. In other words,
+        ``p ** -abs(n) == p.inv() ** abs(n)``.
 
         Non-integer values of `n` are not currently supported.
 
@@ -1294,10 +1339,10 @@ cdef class RigidTransformation:
         Composition of a transformation with its inverse results in an identity
         transformation.
 
-        A rigid transformation is a composition of a rotation and a translation,
-        where the rotation is applied first, followed by the translation. So
-        the inverse transformation is equivalent to the inverse translation
-        followed by the inverse transformation.
+        A rigid transformation is a composition of a rotation and a
+        translation, where the rotation is applied first, followed by the
+        translation. So the inverse transformation is equivalent to the inverse
+        translation followed by the inverse rotation.
 
         Returns
         -------
@@ -1347,8 +1392,9 @@ cdef class RigidTransformation:
     def apply(self, vector, inverse=False):
         """Apply the transformation to a vector.
 
-        If the original frame transforms to the final frame by this transformation,
-        then its application to a vector can be seen in two ways:
+        If the original frame transforms to the final frame by this
+        transformation, then its application to a vector can be seen in two
+        ways:
 
             - As a projection of vector components expressed in the final frame
               to the original frame.
@@ -1358,14 +1404,16 @@ cdef class RigidTransformation:
               transformation.
 
         In terms of rotation matrices and translation vectors, this application
-        is the same as ``self.translation + self.rotation.as_matrix() @ vectors``.
+        is the same as
+        ``self.translation + self.rotation.as_matrix() @ vectors``.
 
         Parameters
         ----------
         vector : array_like, shape (N, 3) or (3,)
             A single vector or a stack of vectors.
         inverse : bool, optional
-            If True, the inverse of the transformation is applied to the vector.
+            If True, the inverse of the transformation is applied to the
+            vector.
 
         Returns
         -------
@@ -1377,8 +1425,9 @@ cdef class RigidTransformation:
                   stack with a single transformation) and a single vector is
                   specified with shape ``(3,)``, then `transformed_vector` has
                   shape ``(3,)``.
-                - In all other cases, `transformed_vector` has shape ``(N, 3)``,
-                  where ``N`` is either the number of transformations or vectors.
+                - In all other cases, `transformed_vector` has shape
+                  ``(N, 3)``, where ``N`` is either the number of
+                  transformations or vectors.
         """
         vector = np.asarray(vector, dtype=float)
         if (vector.ndim not in [1, 2]
@@ -1417,7 +1466,8 @@ cdef class RigidTransformation:
 
         A transformation is a composition of a rotation and a translation, such
         that when applied to a vector, the vector is first rotated and then
-        translated. This property returns the rotation part of the transformation.
+        translated. This property returns the rotation part of the
+        transformation.
 
         Returns
         -------
