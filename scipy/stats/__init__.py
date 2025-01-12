@@ -471,6 +471,7 @@ Random Variables
    make_distribution
    Normal
    Uniform
+   Binomial
    Mixture
    order_statistic
    truncate

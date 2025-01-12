@@ -1288,7 +1288,7 @@ def _combine_docs(dist_family, *, include_examples=True):
         fields.remove('Examples')
 
     doc = ClassDoc(dist_family)
-    superdoc = ClassDoc(ContinuousDistribution)
+    superdoc = ClassDoc(_UnivariateDistribution)
     for field in fields:
         if field in {"Methods", "Attributes"}:
             doc[field] = superdoc[field]
@@ -4626,8 +4626,6 @@ def order_statistic(X, /, *, r, n):
     return OrderStatisticDistribution(X, r=r, n=n)
 
 
-# Someday, I'd like for Mixture to become a `_UnivariateDistribution`, but that
-# day is not today.
 class Mixture(_ProbabilityDistribution):
     r"""Representation of a mixture distribution.
 
