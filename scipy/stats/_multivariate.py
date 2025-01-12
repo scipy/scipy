@@ -3647,7 +3647,7 @@ class special_ortho_group_gen(multi_rv_generic):
         q = ortho_group.rvs(dim, size, random_state)
         dets = np.linalg.det(q)
         if dim:
-            q[..., 0, :] *= dets[..., np.newaxis]
+            q[..., 0, :] /= dets[..., np.newaxis]
         return q
 
 special_ortho_group = special_ortho_group_gen()
