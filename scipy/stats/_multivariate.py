@@ -3620,9 +3620,9 @@ class special_ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("""Dimension of rotation must be specified,
-                                and must be a scalar greater than 1.""")
+                                and must be a scalar nonnegative integer.""")
 
         return dim
 
@@ -3644,55 +3644,11 @@ class special_ortho_group_gen(multi_rv_generic):
         """
         random_state = self._get_random_state(random_state)
 
-        size = int(size)
-        size = (size,) if size > 1 else ()
-
-        dim = self._process_parameters(dim)
-
-        # H represents a (dim, dim) matrix, while D represents the diagonal of
-        # a (dim, dim) diagonal matrix. The algorithm that follows is
-        # broadcasted on the leading shape in `size` to vectorize along
-        # samples.
-        H = np.empty(size + (dim, dim))
-        H[..., :, :] = np.eye(dim)
-        D = np.empty(size + (dim,))
-
-        for n in range(dim-1):
-
-            # x is a vector with length dim-n, xrow and xcol are views of it as
-            # a row vector and column vector respectively. It's important they
-            # are views and not copies because we are going to modify x
-            # in-place.
-            x = random_state.normal(size=size + (dim-n,))
-            xrow = x[..., None, :]
-            xcol = x[..., :, None]
-
-            # This is the squared norm of x, without vectorization it would be
-            # dot(x, x), to have proper broadcasting we use matmul and squeeze
-            # out (convert to scalar) the resulting 1x1 matrix
-            norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
-
-            x0 = x[..., 0].copy()
-            D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
-            x[..., 0] += D[..., n]*np.sqrt(norm2)
-
-            # In renormalizing x we have to append an additional axis with
-            # [..., None] to broadcast the scalar against the vector x
-            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
-
-            # Householder transformation, without vectorization the RHS can be
-            # written as outer(H @ x, x) (apart from the slicing)
-            H[..., :, n:] -= np.matmul(H[..., :, n:], xcol) * xrow
-
-        D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
-
-        # Without vectorization this could be written as H = diag(D) @ H,
-        # left-multiplication by a diagonal matrix amounts to multiplying each
-        # row of H by an element of the diagonal, so we add a dummy axis for
-        # the column index
-        H *= D[..., :, None]
-        return H
-
+        q = ortho_group.rvs(dim, size, random_state)
+        dets = np.linalg.det(q)
+        if dim:
+            q[..., 0, :] /= dets[..., np.newaxis]
+        return q
 
 special_ortho_group = special_ortho_group_gen()
 
@@ -3807,9 +3763,9 @@ class ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
@@ -4162,7 +4118,7 @@ class unitary_group_gen(multi_rv_generic):
     Parameters
     ----------
     dim : scalar
-        Dimension of matrices, must be greater than 1.
+        Dimension of matrices.
     seed : {None, int, np.random.RandomState, np.random.Generator}, optional
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
@@ -4219,9 +4175,9 @@ class unitary_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
