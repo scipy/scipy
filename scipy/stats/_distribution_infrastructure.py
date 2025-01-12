@@ -414,9 +414,8 @@ class _SimpleDomain(_Domain):
             z[~i] = max
 
         elif type_ == 'out':
-            # make this work for infinite bounds
-            z = min_nn - uniform(1, 5, size=shape)
-            zr = max_nn + uniform(1, 5, size=shape)
+            z = min_nn - uniform(1, 5, size=shape)   # 1, 5 is arbitary; we just want
+            zr = max_nn + uniform(1, 5, size=shape)  # some numbers outside domain
             i = rng.random(size=n) < 0.5
             z[i] = zr[i]
 
@@ -1355,9 +1354,9 @@ def _generate_example(dist_family):
         instantiation = f"{name}()"
         X = dist
 
-    prob = 0.32
-    x = round(X.icdf(prob), 2)
-    y = round(X.icdf(2 * prob), 2)
+    p = 0.32
+    x = round(X.icdf(p), 2)
+    y = round(X.icdf(2 * p), 2)  # noqa: F841
 
     example = f"""
     To use the distribution class, it must be instantiated using keyword
@@ -1406,8 +1405,10 @@ def _generate_example(dist_family):
     True
     """
 
+    # When two-arg CDF is implemented for DiscreteDistribution, consider removing
+    # the special-casing here.
     if issubclass(dist_family, ContinuousDistribution):
-        example_continuous = f"""
+        example_continuous = """
     The inverse of these functions with respect to the argument ``x`` is also
     available.
 
@@ -1444,8 +1445,9 @@ def _generate_example(dist_family):
     True
     """
 
+    # When logentropy is implemented for DiscreteDistribution, remove special-casing
     if issubclass(dist_family, ContinuousDistribution):
-        example += f"""
+        example += """
     >>> np.allclose(np.exp(X.logentropy()), X.entropy())
     True
         """
@@ -2059,9 +2061,9 @@ class _UnivariateDistribution(_ProbabilityDistribution):
             res = _tanhsinh(f, a, b, args=args, log=log, rtol=rtol)
             return res.integral
         else:
-            res = np.asarray(nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum)
-            zero = -np.inf if log else 0
-            res[a > b] = zero  # nsum should probably return 0 instead of nan
+            res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum
+            res = np.asarray(res)
+            res[a > b] = -np.inf if log else 0  # fix in nsum?
             return res[()]
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
@@ -2114,7 +2116,8 @@ class _UnivariateDistribution(_ProbabilityDistribution):
 
         xrtol = None if _isnull(self.tol) else self.tol
         xatol = None if xatol is None else xatol
-        return _chandrupatla(f3, a=res.xl, b=res.xr, args=args, xrtol=xrtol, xatol=xatol)
+        tolerances = dict(xrtol=xrtol, xatol=xatol)
+        return _chandrupatla(f3, a=res.xl, b=res.xr, args=args, **tolerances)
 
     ## Other
 

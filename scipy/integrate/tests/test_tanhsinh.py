@@ -1069,8 +1069,8 @@ class TestNSum:
                 return 1 / x
 
         res = nsum(f, xp.asarray(0), xp.asarray(10), maxterms=0)
-        assert xp.isnan(res.sum)
-        assert xp.isnan(res.error)
+        assert xp.isinf(res.sum)
+        assert xp.isinf(res.error)
         assert res.status == -2
 
         res = nsum(f, xp.asarray(0), xp.asarray(10), maxterms=1)
