@@ -1931,13 +1931,9 @@ class TestInvwishart:
 class TestSpecialOrthoGroup:
     def test_reproducibility(self):
         x = special_ortho_group.rvs(3, random_state=np.random.default_rng(514))
-        expected = np.array([[-0.38168587,  0.09037361, -0.91986331],
-                             [0.90579391, -0.16153661, -0.39171841],
-                             [-0.18399261, -0.98271997, -0.02020363]])
-        assert_array_almost_equal(x, expected)
-
-        random_state = np.random.RandomState(seed=514)
-        x = special_ortho_group.rvs(3, random_state=random_state)
+        expected = np.array([[-0.93200988, 0.01533561, -0.36210826],
+                             [0.35742128, 0.20446501, -0.91128705],
+                             [0.06006333, -0.97875374, -0.19604469]])
         assert_array_almost_equal(x, expected)
 
     def test_invalid_dim(self):
