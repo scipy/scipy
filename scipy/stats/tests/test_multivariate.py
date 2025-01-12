@@ -1930,8 +1930,7 @@ class TestInvwishart:
 
 class TestSpecialOrthoGroup:
     def test_reproducibility(self):
-        np.random.seed(514)
-        x = special_ortho_group.rvs(3)
+        x = special_ortho_group.rvs(3, random_state=np.random.default_rng(514))
         expected = np.array([[-0.38168587,  0.09037361, -0.91986331],
                              [0.90579391, -0.16153661, -0.39171841],
                              [-0.18399261, -0.98271997, -0.02020363]])
@@ -1979,8 +1978,9 @@ class TestSpecialOrthoGroup:
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
         ks_prob = .05
-        np.random.seed(513)
-        xs = special_ortho_group.rvs(dim, size=samples)
+        xs = special_ortho_group.rvs(
+            dim, size=samples, random_state=np.random.default_rng(513)
+        )
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
@@ -2096,8 +2096,7 @@ class TestOrthoGroup:
     def test_one_by_one(self):
         # Test that the 1x1 distribution gives ±1 with equal probability.
         dim = 1
-        xs = ortho_group.rvs(dim, size=5000)
-        np.random.seed(514)
+        xs = ortho_group.rvs(dim, size=5000, random_state=np.random.default_rng(514))
         assert_allclose(np.abs(xs), 1, rtol=1e-13)
         k = np.sum(xs > 0)
         n = len(xs)
@@ -2344,8 +2343,10 @@ class TestUnitaryGroup:
         # Generate samples
         for dim in (1, 5):
             samples = 1000  # Not too many, or the test takes too long
-            np.random.seed(514)  # Note that the test is sensitive to seed too
-            xs = unitary_group.rvs(dim, size=samples)
+            # Note that the test is sensitive to seed too
+            xs = unitary_group.rvs(
+                dim, size=samples, random_state=np.random.default_rng(514)
+            )
 
             # The angles "x" of the eigenvalues should be uniformly distributed
             # Overall this seems to be a necessary but weak test of the distribution.
