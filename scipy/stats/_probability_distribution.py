@@ -223,7 +223,8 @@ class _ProbabilityDistribution(ABC):
               vice versa (see Notes)
             - ``'normalize'``: normalize a central moment to get a standardized
               or vice versa
-            - ``'quadrature'``: numerically integrate according to the definition
+            - ``'quadrature'``: numerically integrate (or, in the discrete case, sum)
+              according to the definition
 
             Not all `method` options are available for all orders, kinds, and
             distributions. If the selected `method` is not available, a
@@ -438,8 +439,8 @@ class _ProbabilityDistribution(ABC):
 
         Informally, the mode is a value that a random variable has the highest
         probability (density) of assuming. That is, the mode is the element of
-        the support :math:`\chi` that maximizes the probability density
-        function :math:`f(x)`:
+        the support :math:`\chi` that maximizes the probability density (or mass,
+        for discrete random variables) function :math:`f(x)`:
 
         .. math::
 
@@ -453,7 +454,7 @@ class _ProbabilityDistribution(ABC):
             following options, listed in order of precedence.
 
             - ``'formula'``: use a formula for the median
-            - ``'optimization'``: numerically maximize the PDF
+            - ``'optimization'``: numerically maximize the PDF/PMF
 
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a ``NotImplementedError``
@@ -475,7 +476,7 @@ class _ProbabilityDistribution(ABC):
         For some distributions
 
         #. the mode is not unique (e.g. the uniform distribution);
-        #. the PDF has one or more singularities, and it is debateable whether
+        #. the PDF has one or more singularities, and it is debatable whether
            a singularity is considered to be in the domain and called the mode
            (e.g. the gamma distribution with shape parameter less than 1); and/or
         #. the probability density function may have one or more local maxima
@@ -747,10 +748,11 @@ class _ProbabilityDistribution(ABC):
         By definition of the support, the PDF evaluates to its minimum value
         of :math:`0` outside the support; i.e. for :math:`x < l` or
         :math:`x > r`. The maximum of the PDF may be less than or greater than
-        :math:`1`; since the valus is a probability *density*, only its integral
+        :math:`1`; since the value is a probability *density*, only its integral
         over the support must equal :math:`1`.
 
-        For discrete distributions, `pdf` returns ``inf`` at supported points.
+        For discrete distributions, `pdf` returns ``inf`` at supported points
+        and ``0`` elsewhere.
 
         References
         ----------
@@ -835,7 +837,8 @@ class _ProbabilityDistribution(ABC):
         to work with the logarithms of probabilities and probability densities to
         avoid underflow.
 
-        For discrete distributions, `pdf` returns ``inf`` at supported points.
+        For discrete distributions, `logpdf` returns ``inf`` at supported points and
+        ``-inf`` (``log(0)``) elsewhere.
 
         References
         ----------
@@ -996,6 +999,7 @@ class _ProbabilityDistribution(ABC):
         --------
         Instantiate a distribution with the desired parameters:
 
+        >>> import numpy as np
         >>> from scipy import stats
         >>> X = stats.Binomial(n=10, p=0.5)
 
@@ -1045,7 +1049,8 @@ class _ProbabilityDistribution(ABC):
             - ``'formula'``: use a formula for the CDF itself
             - ``'logexp'``: evaluate the log-CDF and exponentiate
             - ``'complement'``: evaluate the CCDF and take the complement
-            - ``'quadrature'``: numerically integrate the PDF
+            - ``'quadrature'``: numerically integrate the PDF (or, in the discrete
+              case, sum the PMF)
 
             In place of ``'complement'``, the two-argument form accepts:
 
@@ -1091,7 +1096,7 @@ class _ProbabilityDistribution(ABC):
 
         .. math::
 
-            F(x) = \sum_{u=l}^{u=\lfloor x \rfloor} f(u)
+            F(x) = \sum_{u=l}^{\lfloor x \rfloor} f(u)
 
         The CDF evaluates to its minimum value of :math:`0` for :math:`x < l`
         and its maximum value of :math:`1` for :math:`x ≥ r`.
@@ -1250,7 +1255,8 @@ class _ProbabilityDistribution(ABC):
             - ``'formula'``: use a formula for the CCDF itself
             - ``'logexp'``: evaluate the log-CCDF and exponentiate
             - ``'complement'``: evaluate the CDF and take the complement
-            - ``'quadrature'``: numerically integrate the PDF
+            - ``'quadrature'``: numerically integrate the PDF (or, in the discrete
+              case, sum the PMF)
 
             The two-argument form chooses between:
 
@@ -1296,8 +1302,7 @@ class _ProbabilityDistribution(ABC):
 
         .. math::
 
-            G(x) = \int_x^r f(u) du
-            G(x) = \sum_{u=\lfloor x + 1 \rfloor}^{u=r} f(u)
+            G(x) = \sum_{u=\lfloor x + 1 \rfloor}^{r} f(u)
 
         The CCDF evaluates to its minimum value of :math:`0` for :math:`x ≥ r`
         and its maximum value of :math:`1` for :math:`x < l`.
@@ -1457,7 +1462,8 @@ class _ProbabilityDistribution(ABC):
             - ``'logexp'``: evaluate the CDF and take the logarithm
             - ``'complement'``: evaluate the log-CCDF and take the
               logarithmic complement (see Notes)
-            - ``'quadrature'``: numerically log-integrate the log-PDF
+            - ``'quadrature'``: numerically log-integrate the log-PDF (or, in the
+              discrete case, log-sum the log-PMF)
 
             In place of ``'complement'``, the two-argument form accepts:
 
@@ -1656,7 +1662,8 @@ class _ProbabilityDistribution(ABC):
             - ``'logexp'``: evaluate the CCDF and take the logarithm
             - ``'complement'``: evaluate the log-CDF and take the
               logarithmic complement (see Notes)
-            - ``'quadrature'``: numerically log-integrate the log-PDF
+            - ``'quadrature'``: numerically log-integrate the log-PDF (or, in the
+              discrete case, log-sum the log-PMF)
 
             The two-argument form chooses between:
 
@@ -1821,8 +1828,8 @@ class _ProbabilityDistribution(ABC):
 
             h(X) = - \int_{\chi} f(x) \log f(x) dx
 
-        The definition for a discrete random variable is analogous, with a
-        sum over the support replacing the integral.
+        The definition for a discrete random variable is analogous, with the PMF
+        replacing the PDF and a sum over the support replacing the integral.
 
         `logentropy` computes the logarithm of the differential entropy
         ("log-entropy"), :math:`log(h(X))`, but it may be numerically favorable
@@ -1838,8 +1845,8 @@ class _ProbabilityDistribution(ABC):
 
             - ``'formula'``: use a formula for the log-entropy itself
             - ``'logexp'``: evaluate the entropy and take the logarithm
-            - ``'quadrature'``: numerically log-integrate the logarithm of the
-              entropy integrand
+            - ``'quadrature'``: numerically log-integrate (or, in the discrete
+              case, log-sum) the logarithm of the entropy integrand (summand)
 
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a ``NotImplementedError``
@@ -1909,8 +1916,8 @@ class _ProbabilityDistribution(ABC):
 
             h(X) = - \int_{\chi} f(x) \log f(x) dx
 
-        The definition for a discrete random variable is analogous, with a
-        sum over the support replacing the integral.
+        The definition for a discrete random variable is analogous, with the
+        PMF replacing the PDF and a sum over the support replacing the integral.
 
         Parameters
         ----------
@@ -1921,7 +1928,9 @@ class _ProbabilityDistribution(ABC):
 
             - ``'formula'``: use a formula for the entropy itself
             - ``'logexp'``: evaluate the log-entropy and exponentiate
-            - ``'quadrature'``: use numerical integration
+            - ``'quadrature'``:  numerically integrate (or, in the discrete
+              case, sum) the entropy integrand (summand)
+
 
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a ``NotImplementedError``

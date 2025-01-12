@@ -1408,7 +1408,7 @@ def _generate_example(dist_family):
     # When two-arg CDF is implemented for DiscreteDistribution, consider removing
     # the special-casing here.
     if issubclass(dist_family, ContinuousDistribution):
-        example_continuous = """
+        example_continuous = f"""
     The inverse of these functions with respect to the argument ``x`` is also
     available.
 
@@ -4199,7 +4199,7 @@ def truncate(X, lb=-np.inf, ub=np.inf):
     Furthermore, `truncate` can be applied to any random variable:
 
     >>> Rayleigh = stats.make_distribution(stats.rayleigh)
-    >>> W = stats.truncate(Rayleigh(), lb=0, ub=3)
+    >>> W = stats.truncate(Rayleigh(), lb=0.5, ub=3)
     >>> W.plot()
     >>> plt.show()
 
