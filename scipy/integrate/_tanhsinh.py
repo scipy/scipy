@@ -1308,7 +1308,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
         tol = special.logsumexp(xp.stack((tol, rtol + lb.integral)), axis=0)
     else:
         tol = tol + rtol*lb.integral
-    i_skip = lb.status < 0  # avoid unnecessary f_evals if integral is divergent
+    i_skip = lb.status == -3  # avoid unnecessary f_evals if integral is divergent
     tol[i_skip] = xp.nan
     status = lb.status
 

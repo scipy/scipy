@@ -2290,7 +2290,10 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         def integrand(x, **params):
             pxf = self._pxf_dispatch(x, **params)
             logpxf = self._logpxf_dispatch(x, **params)
-            return logpxf * pxf
+            temp = np.asarray(pxf)
+            i = (pxf != 0)  # 0 * inf -> nan; should be 0
+            temp[i] = pxf[i]*logpxf[i]
+            return temp
         return -self._quadrature(integrand, params=params)
 
     @_set_invalid_nan_property
@@ -2457,7 +2460,8 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _logpmf_logexp(self, x, **params):
-        return np.log(self._pmf_dispatch(x, **params))
+        with np.errstate(divide='ignore'):
+            return np.log(self._pmf_dispatch(x, **params))
 
     @_set_invalid_nan
     def pmf(self, x, /, *, method=None):
