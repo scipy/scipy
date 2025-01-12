@@ -2328,7 +2328,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
     def _mode_formula(self, **params):
         raise NotImplementedError(self._not_implemented)
 
-    def _mode_optimization(self, **params):
+    def _mode_optimization(self, xatol=None, **params):
         if not self._size:
             return np.empty(self._shape, dtype=self._dtype)
 
@@ -2338,7 +2338,8 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         f, args = _kwargs2args(lambda x, **params: -self._pxf_dispatch(x, **params),
                                args=(), kwargs=params)
         res_b = _bracket_minimum(f, m, xmin=a, xmax=b, args=args)
-        res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr, args=args)
+        res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr,
+                                     args=args, xatol=xatol)
         mode = np.asarray(res.x)
         mode_at_boundary = res_b.status == -1
         mode_at_left = mode_at_boundary & (res_b.fl <= res_b.fm)
@@ -3635,6 +3636,20 @@ class DiscreteDistribution(_UnivariateDistribution):
         res = np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
         res[np.isnan(x)] = np.nan
         return res
+
+    def _mode_optimization(self, **params):
+        # If `x` is the true mode of a unimodal continuous function, we can find
+        # the mode among the integers by rounding in each direction and checking
+        # which is better. I think `xatol` should be able to be 1 if the documented
+        # convergence criterion were implemented, but the actual convergence
+        # criterion is different, and I'm not sure if it controls the total width
+        # of the bracket. `xatol=0.1` might not be safe as-implemented.
+        x = super()._mode_optimization(xatol=0.1, **params)
+        xl, xr = np.floor(x), np.ceil(x)
+        fl, fr = self._pmf_dispatch(xl, **params), self._pmf_dispatch(xr, **params)
+        mode = np.asarray(xl)
+        mode[fr > fl] = xr
+        return mode
 
     # For initial PR, leave these out
 
