@@ -74,6 +74,18 @@ cdef class RigidTransformation:
     identity
     random
 
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
+    .. [2] https://motion.cs.illinois.edu/RoboticSystems/CoordinateTransformations.html
+    .. [3] https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html
+    .. [4] Kevin M. Lynch and Frank C. Park, "Modern Robotics: Mechanics,
+           Planning, and Control" Chapter 3.3, 2017, Cambridge University Press.
+           https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf#page=107.31
+    .. [5] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
+           ugly", June 9, 2014.
+           https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
+
     Notes
     -----
     .. versionadded:: 1.16.0
@@ -85,8 +97,7 @@ cdef class RigidTransformation:
     above formats and converted to any of the others. The underlying object is
     independent of the representation used for initialization.
 
-    Notation Conventions and Composition
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    **Notation Conventions and Composition**
 
     The notation here largely follows the convention defined in [5]_.
     When we name transformations, we read the subscripts from right to left.
@@ -146,8 +157,7 @@ cdef class RigidTransformation:
                 |
                 -------------- A is left
 
-    Visualization
-    ^^^^^^^^^^^^^
+    **Visualization**
 
     >>> from scipy.spatial.transform import RigidTransformation as T
     >>> from scipy.spatial.transform import Rotation as R
@@ -182,8 +192,7 @@ cdef class RigidTransformation:
     ...     ax.text(*t.translation, name, color="k", va="center", ha="center",
     ...             bbox={"fc": "w", "alpha": 0.8, "boxstyle": "circle"})
 
-    Defining Frames
-    ^^^^^^^^^^^^^^^
+    **Defining Frames**
 
     Let's work through an example.
 
@@ -214,8 +223,8 @@ cdef class RigidTransformation:
     Let's plot these frames.
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, t_A, name="t_A")      # A plotted in A
-    >>> plot_transformed_axes(ax, t_A_B, name="t_A_B")  # B plotted in A
+    >>> plot_transformed_axes(ax, t_A, name="tA")     # A plotted in A
+    >>> plot_transformed_axes(ax, t_A_B, name="tAB")  # B plotted in A
     >>> ax.set_title("A, B frames with respect to A")
     >>> ax.set_aspect("equal")
     >>> ax.figure.set_size_inches(6, 5)
@@ -237,22 +246,21 @@ cdef class RigidTransformation:
     transformation directly, but instead compose intermediate transformations
     that let us get from A to C:
 
-    >>> t_A_C = t_C_B * t_B_A  # C <- B <- A
-    >>> t_C_A = t_A_C.inv()
+    >>> t_C_A = t_C_B * t_B_A  # C <- B <- A
+    >>> t_A_C = t_C_A.inv()
 
     Now we can plot these three frames from A's perspective.
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, t_A, name="t_A")      # A plotted in A
-    >>> plot_transformed_axes(ax, t_A_B, name="t_A_B")  # B plotted in A
-    >>> plot_transformed_axes(ax, t_A_C, name="t_A_C")  # C plotted in A
+    >>> plot_transformed_axes(ax, t_A, name="tA")     # A plotted in A
+    >>> plot_transformed_axes(ax, t_A_B, name="tAB")  # B plotted in A
+    >>> plot_transformed_axes(ax, t_A_C, name="tAC")  # C plotted in A
     >>> ax.set_title("A, B, C frames with respect to A")
     >>> ax.set_aspect("equal")
     >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
 
-    Transforming Vectors
-    ^^^^^^^^^^^^^^^^^^^^
+    **Transforming Vectors**
 
     Let's transform a vector from A, to B and C. We define a point in A and
     use the transformations we defined to transform it to coordinates in B and
@@ -280,9 +288,9 @@ cdef class RigidTransformation:
     Plot the frames with respect to A again, but also plot these two points:
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, t_A, name="t_A")      # A plotted in A
-    >>> plot_transformed_axes(ax, t_A_B, name="t_A_B")  # B plotted in A
-    >>> plot_transformed_axes(ax, t_A_C, name="t_A_C")  # C plotted in A
+    >>> plot_transformed_axes(ax, t_A, name="tA")     # A plotted in A
+    >>> plot_transformed_axes(ax, t_A_B, name="tAB")  # B plotted in A
+    >>> plot_transformed_axes(ax, t_A_C, name="tAC")  # C plotted in A
     >>> ax.scatter(p1_A[0], p1_A[1], p1_A[2], color=colors[0])  # +1 x_A
     >>> ax.scatter(p2_A[0], p2_A[1], p2_A[2], color=colors[1])  # +1 y_C
     >>> ax.set_title("A, B, C frames and points with respect to A")
@@ -290,8 +298,7 @@ cdef class RigidTransformation:
     >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
 
-    Switching Base Frames
-    ^^^^^^^^^^^^^^^^^^^^^
+    **Switching Base Frames**
 
     Up to this point, we have been visualizing frames from A's perspective.
     Let's use the transformations we defined to visualize the frames from C's
@@ -306,27 +313,15 @@ cdef class RigidTransformation:
     everything from C's perspective:
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, t_C, name="t_C")      # C plotted in C
-    >>> plot_transformed_axes(ax, t_C_B, name="t_C_B")  # B plotted in C
-    >>> plot_transformed_axes(ax, t_C_A, name="t_C_A")  # A plotted in C
+    >>> plot_transformed_axes(ax, t_C, name="tC")     # C plotted in C
+    >>> plot_transformed_axes(ax, t_C_B, name="tCB")  # B plotted in C
+    >>> plot_transformed_axes(ax, t_C_A, name="tCA")  # A plotted in C
     >>> ax.scatter(p1_C[0], p1_C[1], p1_C[2], color=colors[0])
     >>> ax.scatter(p2_C[0], p2_C[1], p2_C[2], color=colors[1])
     >>> ax.set_title("A, B, C frames and points with respect to C")
     >>> ax.set_aspect("equal")
     >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
-    .. [2] https://motion.cs.illinois.edu/RoboticSystems/CoordinateTransformations.html
-    .. [3] https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html
-    .. [4] Kevin M. Lynch and Frank C. Park, "Modern Robotics: Mechanics,
-    Planning, and Control" Chapter 3.3, 2017, Cambridge University Press.
-    https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf#page=107.31
-    .. [5] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
-    ugly", June 9, 2014.
-    https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
     """
 
     cdef double[:, :, :] _matrix
