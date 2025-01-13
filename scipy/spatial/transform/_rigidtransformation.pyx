@@ -55,7 +55,6 @@ cdef class RigidTransformation:
     -------
     __len__
     __getitem__
-    __setitem__
     __mul__
     __pow__
     from_rotation
@@ -527,8 +526,8 @@ cdef class RigidTransformation:
 
         >>> d = np.array([[2, 3, 4], [1, 0, 0]])
         >>> d + np.array([1, 0, 0])
-        array([[3., 3., 4.],
-               [2., 0., 0.]])
+        array([[3, 3, 4],
+               [2, 0, 0]])
         >>> t = T.from_translation(d)
         >>> t.apply([1, 0, 0])
         array([[3., 3., 4.],

@@ -3,7 +3,6 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, RigidTransformation
-from scipy._lib._util import check_random_state
 
 
 def test_from_rotation():
@@ -230,7 +229,7 @@ def test_as_expcoords():
     actual = RigidTransformation.from_expcoords(expected).as_expcoords()
     assert_allclose(actual, expected, atol=1e-12)
 
-    rng = check_random_state(1)
+    rng = np.random.default_rng(10)
 
     # pure rotation
     for _ in range(10):
@@ -334,7 +333,7 @@ def test_as_dualquat():
     actual = RigidTransformation.identity().as_dualquat(scalar_first=True)
     assert_allclose(actual, expected, atol=1e-12)
 
-    rng = check_random_state(2)
+    rng = np.random.default_rng(10)
 
     # only rotation
     for _ in range(10):
