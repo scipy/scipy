@@ -3266,11 +3266,17 @@ class TestWorkers:
         self.x0 = np.array([1.0, 2.0, 3.0])
 
     def test_smoke(self, workers, method):
+        # checks parallelised optimization output is same as serial
         workers = workers or map
         with MapWrapper(workers) as mf:
-            optimize.minimize(
+            res = optimize.minimize(
                 rosen, self.x0, options={"workers":mf}, method=method
             )
+        res_default = optimize.minimize(
+            rosen, self.x0, method=method
+        )
+        assert_equal(res.x, res_default.x)
+        assert_equal(res.nfev, res_default.nfev)
 
     def test_equal_bounds(self, workers, method):
         workers = workers or map
