@@ -42,6 +42,9 @@ cdef class RigidTransformation:
     (see examples below). ``RigidTransformation(...)`` is not supposed
     to be instantiated directly.
 
+    For rigorous introductions to rigid transformations, see [2]_, [3]_, and
+    [4]_.
+
     Attributes
     ----------
     single
@@ -74,7 +77,12 @@ cdef class RigidTransformation:
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
-    .. [2] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
+    .. [2] https://motion.cs.illinois.edu/RoboticSystems/CoordinateTransformations.html
+    .. [3] https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html
+    .. [4] Kevin M. Lynch and Frank C. Park, "Modern Robotics: Mechanics,
+    Planning, and Control" Chapter 3.3, 2017, Cambridge University Press.
+    https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf#page=107.31
+    .. [5] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
        ugly", June 9, 2014.
        https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
 
@@ -92,15 +100,16 @@ cdef class RigidTransformation:
     Notation Conventions and Composition
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The notation here follows the convention defined in [2]_.
+    The notation here largely follows the convention defined in [5]_.
     When we name transformations, we read the subscripts from right to left.
-    So ``t_A_B`` represents a transformation A<-B and can be interpreted as:
+    So ``t_A_B`` represents a transformation A <- B and can be interpreted as:
 
     - the coordinates of B relative to A
     - the transformation of points from B to A
     - the pose of B described in A's coordinate system
 
-    .. code-block:: none
+    .. parsed-literal::
+        :class: highlight-none
 
         t_A_B
           ^ ^
@@ -112,16 +121,17 @@ cdef class RigidTransformation:
     When composing transformations, the order is important. Transformations
     are not commutative, so in general ``t_A_B * t_B_C`` is not the same as
     ``t_B_C * t_A_B``. Transformations are composed and applied to vectors
-    right-to-left. So ``(t_A_B * t_B_C).apply(pC)`` is the same as
-    ``t_A_B.apply(t_B_C.apply(pC))``.
+    right-to-left. So ``(t_A_B * t_B_C).apply(p_C)`` is the same as
+    ``t_A_B.apply(t_B_C.apply(p_C))``.
 
     When composed, transformations should be ordered such that the
-    multiplication operator is surrounded by a single frame, so that the frame
-    "cancels out" and the outside frames are left. In the example below, B
+    multiplication operator is surrounded by a single frame, so the frame
+    "cancels out" and the outside frames A and C are left. In the example below, B
     cancels out and the outside frames A and C are left. Or to put it another
-    way, A<-C is the same as A<-B<-C.
+    way, A <- C is the same as A <- B <- C.
 
-    .. code-block:: none
+    .. parsed-literal::
+        :class: highlight-none
 
                     ----------- B cancels out
                     |     |
@@ -132,17 +142,18 @@ cdef class RigidTransformation:
                   ------------ to A, from C are left
 
     When we notate vectors, we write the subscript of the frame that the vector
-    is defined in. So ``B_p`` means the point ``p`` defined in frame B. To
+    is defined in. So ``p_B`` means the point ``p`` defined in frame B. To
     transform this point from frame B to coordinates in frame A, we apply the
     transformation ``t_A_B`` to the vector, lining things up such that the
     notated B frames are next to each other and "cancel out".
 
-    .. code-block:: none
+    .. parsed-literal::
+        :class: highlight-none
 
                   ------------ B cancels out
-                  |       |
-                  v       v
-        A_p = t_A_B.apply(B_p)
+                  |         |
+                  v         v
+        p_A = t_A_B.apply(p_B)
                 ^
                 |
                 -------------- A is left
@@ -195,27 +206,27 @@ cdef class RigidTransformation:
 
     We will visualize a new frame B in A's coordinate system. So we need to
     define the transformation that converts coordinates from frame B to frame
-    A (A<-B).
+    A (A <- B).
 
     Physically, let's imagine constructing B from A by:
     1) Rotating A by +90 degrees around its x-axis.
     2) Translating the rotated frame +2 units in A's -x direction.
 
     From A's perspective, B is at [-2, 0, 0] and rotated +90 degrees about the
-    x-axis, which is exactly the transform A<-B.
+    x-axis, which is exactly the transform A <- B.
 
     >>> r_A_B = R.from_euler('xyz', [90, 0, 0], degrees=True)
     >>> d_A_B = np.array([-2, 0, 0])
     >>> t_A_B = T.from_rottrans(r_A_B, d_A_B)
 
-    ``t_B_A`` is the inverse, i.e. the transformation B<-A.
+    ``t_B_A`` is the inverse, i.e. the transformation B <- A.
 
     >>> t_B_A = t_A_B.inv()
 
     Let's plot these frames.
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, t_A, name="t_A")    # A plotted in A
+    >>> plot_transformed_axes(ax, t_A, name="t_A")      # A plotted in A
     >>> plot_transformed_axes(ax, t_A_B, name="t_A_B")  # B plotted in A
     >>> ax.set_title("A, B frames with respect to A")
     >>> ax.set_aspect("equal")
@@ -238,7 +249,7 @@ cdef class RigidTransformation:
     transformation directly, but instead compose intermediate transformations
     that let us get from A to C:
 
-    >>> t_A_C = t_C_B * t_B_A  # C<-B<-A
+    >>> t_A_C = t_C_B * t_B_A  # C <- B <- A
     >>> t_C_A = t_A_C.inv()
 
     Now we can plot these three frames from A's perspective.
@@ -259,23 +270,23 @@ cdef class RigidTransformation:
     use the transformations we defined to transform it to coordinates in B and
     C:
 
-    >>> A_p1 = np.array([1, 0, 0])  # +1 in xA direction
-    >>> B_p1 = t_B_A.apply(A_p1)
-    >>> C_p1 = t_C_A.apply(A_p1)
-    >>> print(A_p1)  # Original point in A
+    >>> p1_A = np.array([1, 0, 0])  # +1 in x_A direction
+    >>> p1_B = t_B_A.apply(p1_A)
+    >>> p1_C = t_C_A.apply(p1_A)
+    >>> print(p1_A)  # Original point 1 in A
     [1 0 0]
-    >>> print(B_p1)  # Point in B
+    >>> print(p1_B)  # Point 1 in B
     [3. 0. 0.]
-    >>> print(C_p1)  # Point in C
+    >>> print(p1_C)  # Point 1 in C
     [ 2.59807621 -1.5       -2.        ]
 
     We can also do the reverse. We define a point in C and transform it to A:
 
-    >>> C_p2 = np.array([0, 1, 0])  # +1 in yC direction
-    >>> A_p2 = t_A_C.apply(C_p2)
-    >>> print(C_p2)  # Original point in C
+    >>> p2_C = np.array([0, 1, 0])  # +1 in y_C direction
+    >>> p2_A = t_A_C.apply(p2_C)
+    >>> print(p2_C)  # Original point 2 in C
     [0 1 0]
-    >>> print(A_p2)  # Point in A
+    >>> print(p2_A)  # Point 2 in A
     [-2.5       -2.         0.8660254]
 
     Plot the frames with respect to A again, but also plot these two points:
@@ -284,8 +295,8 @@ cdef class RigidTransformation:
     >>> plot_transformed_axes(ax, t_A, name="t_A")      # A plotted in A
     >>> plot_transformed_axes(ax, t_A_B, name="t_A_B")  # B plotted in A
     >>> plot_transformed_axes(ax, t_A_C, name="t_A_C")  # C plotted in A
-    >>> ax.scatter(A_p1[0], A_p1[1], A_p1[2], color=colors[0])  # +1 xA
-    >>> ax.scatter(A_p2[0], A_p2[1], A_p2[2], color=colors[1])  # +1 yC
+    >>> ax.scatter(p1_A[0], p1_A[1], p1_A[2], color=colors[0])  # +1 x_A
+    >>> ax.scatter(p2_A[0], p2_A[1], p2_A[2], color=colors[1])  # +1 y_C
     >>> ax.set_title("A, B, C frames and points with respect to A")
     >>> ax.set_aspect("equal")
     >>> ax.figure.set_size_inches(6, 5)
@@ -310,8 +321,8 @@ cdef class RigidTransformation:
     >>> plot_transformed_axes(ax, t_C, name="t_C")      # C plotted in C
     >>> plot_transformed_axes(ax, t_C_B, name="t_C_B")  # B plotted in C
     >>> plot_transformed_axes(ax, t_C_A, name="t_C_A")  # A plotted in C
-    >>> ax.scatter(C_p1[0], C_p1[1], C_p1[2], color=colors[0])
-    >>> ax.scatter(C_p2[0], C_p2[1], C_p2[2], color=colors[1])
+    >>> ax.scatter(p1_C[0], p1_C[1], p1_C[2], color=colors[0])
+    >>> ax.scatter(p2_C[0], p2_C[1], p2_C[2], color=colors[1])
     >>> ax.set_title("A, B, C frames and points with respect to C")
     >>> ax.set_aspect("equal")
     >>> ax.figure.set_size_inches(6, 5)
