@@ -13,19 +13,26 @@ cdef class RigidTransformation:
     """Rigid transformation in 3 dimensions.
 
     This class provides an interface to initialize from and represent rigid
-    transformations (rotation and translation) in 3D space.
+    transformations (rotation and translation) in 3D space. In different
+    fields, this type of transformation may be referred to as "*pose*"
+    (especially in robotics), "*extrinsic parameters*", or the "*model matrix*"
+    (especially in computer graphics), but the core concept is the same: a
+    rotation and translation describing the orientation of one 3D coordinate
+    frame relative to another. Mathematically, these transformations belong to
+    the Special Euclidean group SE(3), which encodes rotation (SO(3)) plus
+    translation.
 
     The following operations on rigid transformations are supported:
 
     - Application on vectors
-    - Transformation Composition
-    - Transformation Inversion
-    - Transformation Indexing
+    - Transformation composition
+    - Transformation inversion
+    - Transformation indexing
 
     Note that reflections are not supported, and coordinate systems must be
     right-handed. Because of this, this class more precisely represents
-    *proper* rigid transformations [1]_ rather than rigid transformations more
-    generally.
+    *proper* rigid transformations in SE(3) rather than rigid transformations
+    in E(3) more generally [1]_.
 
     Indexing within a transformation is supported since multiple
     transformations can be stored within a single `RigidTransformation`
@@ -45,6 +52,7 @@ cdef class RigidTransformation:
     -------
     __len__
     __getitem__
+    __setitem__
     __mul__
     __pow__
     from_rotation
@@ -66,6 +74,9 @@ cdef class RigidTransformation:
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
+    .. [2] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
+       ugly", June 9, 2014.
+       https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
 
     Notes
     -----
@@ -74,67 +85,75 @@ cdef class RigidTransformation:
     Examples
     --------
 
-    >>> from scipy.spatial.transform import RigidTransformation as T
-    >>> from scipy.spatial.transform import Rotation as R
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
-
     A `RigidTransformation` instance can be initialized in any of the
     above formats and converted to any of the others. The underlying object is
     independent of the representation used for initialization.
 
-    A rigid transformation embodies the location and orientation of a
-    coordinate frame in reference to another coordinate frame in 3D space.
+    Notation Conventions and Composition
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    The notation here follows the convention defined in [2]_.
     When we name transformations, we read the subscripts from right to left.
-    So ``tAB`` represents a transformation A<-B and can be interpreted as:
+    So ``t_A_B`` represents a transformation A<-B and can be interpreted as:
 
     - the coordinates of B relative to A
     - the transformation of points from B to A
     - the pose of B described in A's coordinate system
 
-    ::
+    .. code-block:: none
 
-        tAB
-         ^^
-         ||
-         |--- from B
-         |
-         ---- to A
+        t_A_B
+          ^ ^
+          | |
+          | --- from B
+          |
+          ----- to A
 
     When composing transformations, the order is important. Transformations
-    are not commutative, so in general ``tAB * tBC`` is not the same as
-    ``tBC * tAB``. Transformations are composed and applied to vectors
-    right-to-left. So ``(tAB * tBC).apply(pC)`` is the same as
-    ``tAB.apply(tBC.apply(pC))``.
+    are not commutative, so in general ``t_A_B * t_B_C`` is not the same as
+    ``t_B_C * t_A_B``. Transformations are composed and applied to vectors
+    right-to-left. So ``(t_A_B * t_B_C).apply(pC)`` is the same as
+    ``t_A_B.apply(t_B_C.apply(pC))``.
 
     When composed, transformations should be ordered such that the
     multiplication operator is surrounded by a single frame, so that the frame
     "cancels out" and the outside frames are left. In the example below, B
     cancels out and the outside frames A and C are left. Or to put it another
-    way, A <- C is the same as A <- B <- C.
+    way, A<-C is the same as A<-B<-C.
 
-    ::
+    .. code-block:: none
 
-                ----------- B cancels out
-                |    |
-                v    v
-        tAC = tAB * tBC
-               ^      ^
-               |      |
-               ------------ to A, from C are left
+                    ----------- B cancels out
+                    |     |
+                    v     v
+        t_A_C = t_A_B * t_B_C
+                  ^         ^
+                  |         |
+                  ------------ to A, from C are left
 
-    The point pB defined in B is transformed to pA defined in A by:
+    When we notate vectors, we write the subscript of the frame that the vector
+    is defined in. So ``B_p`` means the point ``p`` defined in frame B. To
+    transform this point from frame B to coordinates in frame A, we apply the
+    transformation ``t_A_B`` to the vector, lining things up such that the
+    notated B frames are next to each other and "cancel out".
 
-    ::
+    .. code-block:: none
 
-               ------------ B cancels out
-               |        |
-               v        v
-        pA = tAB.apply(pB)
-              ^
-              |
-              ------------- A is left
+                  ------------ B cancels out
+                  |       |
+                  v       v
+        A_p = t_A_B.apply(B_p)
+                ^
+                |
+                -------------- A is left
+
+    Visualization
+    ^^^^^^^^^^^^^
+
+    >>> from scipy.spatial.transform import RigidTransformation as T
+    >>> from scipy.spatial.transform import Rotation as R
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
 
     The following function can be used to plot transformations with Matplotlib
     by showing how they transform the standard x, y, z coordinate axes:
@@ -164,12 +183,15 @@ cdef class RigidTransformation:
     ...     ax.text(*t.translation, name, color="k", va="center", ha="center",
     ...             bbox={"fc": "w", "alpha": 0.8, "boxstyle": "circle"})
 
+    Defining Frames
+    ^^^^^^^^^^^^^^^
+
     Let's work through an example.
 
     First, define the "world frame" A, also called the "base frame".
     All frames are the identity transformation from their own perspective.
 
-    >>> tA = T.identity()
+    >>> t_A = T.identity()
 
     We will visualize a new frame B in A's coordinate system. So we need to
     define the transformation that converts coordinates from frame B to frame
@@ -179,89 +201,98 @@ cdef class RigidTransformation:
     1) Rotating A by +90 degrees around its x-axis.
     2) Translating the rotated frame +2 units in A's -x direction.
 
-    From A's perspective, B is at [-2, 0, 0] and rotated +90deg about the
+    From A's perspective, B is at [-2, 0, 0] and rotated +90 degrees about the
     x-axis, which is exactly the transform A<-B.
 
-    >>> rAB = R.from_euler('xyz', [90, 0, 0], degrees=True)
-    >>> dAB = np.array([-2, 0, 0])
-    >>> tAB = T.from_rottrans(rAB, dAB)
+    >>> r_A_B = R.from_euler('xyz', [90, 0, 0], degrees=True)
+    >>> d_A_B = np.array([-2, 0, 0])
+    >>> t_A_B = T.from_rottrans(r_A_B, d_A_B)
 
-    "tBA" is the inverse, i.e. the transformation B<-A.
+    ``t_B_A`` is the inverse, i.e. the transformation B<-A.
 
-    >>> tBA = tAB.inv()
+    >>> t_B_A = t_A_B.inv()
 
     Let's plot these frames.
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, tA, name="tA")    # A plotted in A
-    >>> plot_transformed_axes(ax, tAB, name="tAB")  # B plotted in A
+    >>> plot_transformed_axes(ax, t_A, name="t_A")    # A plotted in A
+    >>> plot_transformed_axes(ax, t_A_B, name="t_A_B")  # B plotted in A
     >>> ax.set_title("A, B frames with respect to A")
     >>> ax.set_aspect("equal")
+    >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
 
     Now let's visualize a new frame C in B's coordinate system.
     Let's imagine constructing C from B by:
 
-    1) Translating B by 2 units in its +zB direction.
-    2) Rotating B by 30 degrees around its z-axis.
+    1) Translating B by 2 units in its +z direction.
+    2) Rotating B by +30 degrees around its z-axis.
 
-    >>> dBC = np.array([0, 0, 2])
-    >>> rBC = R.from_euler('xyz', [0, 0, 30], degrees=True)
-    >>> tBC = T.from_rottrans(rBC, dBC)
-    >>> tCB = tBC.inv()
+    >>> d_B_C = np.array([0, 0, 2])
+    >>> r_B_C = R.from_euler('xyz', [0, 0, 30], degrees=True)
+    >>> t_B_C = T.from_rottrans(r_B_C, d_B_C)
+    >>> t_C_B = t_B_C.inv()
 
     In order to plot these frames from a consistent perspective, we need to
     calculate the transformation between A and C. Note that we do not make this
     transformation directly, but instead compose intermediate transformations
     that let us get from A to C:
 
-    >>> tCA = tCB * tBA  # C <- B <- A
-    >>> tAC = tCA.inv()
+    >>> t_A_C = t_C_B * t_B_A  # C<-B<-A
+    >>> t_C_A = t_A_C.inv()
 
     Now we can plot these three frames from A's perspective.
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, tA, name="tA")    # A plotted in A
-    >>> plot_transformed_axes(ax, tAB, name="tAB")  # B plotted in A
-    >>> plot_transformed_axes(ax, tAC, name="tAC")  # C plotted in A
+    >>> plot_transformed_axes(ax, t_A, name="t_A")      # A plotted in A
+    >>> plot_transformed_axes(ax, t_A_B, name="t_A_B")  # B plotted in A
+    >>> plot_transformed_axes(ax, t_A_C, name="t_A_C")  # C plotted in A
     >>> ax.set_title("A, B, C frames with respect to A")
     >>> ax.set_aspect("equal")
+    >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
 
-    Let's transform a point from A to B and C. We define a point in A and
+    Transforming Vectors
+    ^^^^^^^^^^^^^^^^^^^^
+
+    Let's transform a vector from A, to B and C. We define a point in A and
     use the transformations we defined to transform it to coordinates in B and
     C:
 
-    >>> p1_A = np.array([1, 0, 0])  # +1 in xA direction
-    >>> p1_B = tBA.apply(p1_A)
-    >>> p1_C = tCA.apply(p1_A)
-    >>> print(p1_A)  # Original point in A
+    >>> A_p1 = np.array([1, 0, 0])  # +1 in xA direction
+    >>> B_p1 = t_B_A.apply(A_p1)
+    >>> C_p1 = t_C_A.apply(A_p1)
+    >>> print(A_p1)  # Original point in A
     [1 0 0]
-    >>> print(p1_B)  # Point in B
+    >>> print(B_p1)  # Point in B
     [3. 0. 0.]
-    >>> print(p1_C)  # Point in C
+    >>> print(C_p1)  # Point in C
     [ 2.59807621 -1.5       -2.        ]
 
     We can also do the reverse. We define a point in C and transform it to A:
 
-    >>> p2_C = np.array([0, 1, 0])  # +1 in yC direction
-    >>> p2_A = tAC.apply(p2_C)
-    >>> print(p2_C)  # Original point in C
+    >>> C_p2 = np.array([0, 1, 0])  # +1 in yC direction
+    >>> A_p2 = t_A_C.apply(C_p2)
+    >>> print(C_p2)  # Original point in C
     [0 1 0]
-    >>> print(p2_A)  # Point in A
+    >>> print(A_p2)  # Point in A
     [-2.5       -2.         0.8660254]
 
     Plot the frames with respect to A again, but also plot these two points:
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, tA, name="tA")    # A plotted in A
-    >>> plot_transformed_axes(ax, tAB, name="tAB")  # B plotted in A
-    >>> plot_transformed_axes(ax, tAC, name="tAC")  # C plotted in A
-    >>> ax.scatter(p1_A[0], p1_A[1], p1_A[2], color=colors[0])  # +1 xA
-    >>> ax.scatter(p2_A[0], p2_A[1], p2_A[2], color=colors[1])  # +1 yC
+    >>> plot_transformed_axes(ax, t_A, name="t_A")      # A plotted in A
+    >>> plot_transformed_axes(ax, t_A_B, name="t_A_B")  # B plotted in A
+    >>> plot_transformed_axes(ax, t_A_C, name="t_A_C")  # C plotted in A
+    >>> ax.scatter(A_p1[0], A_p1[1], A_p1[2], color=colors[0])  # +1 xA
+    >>> ax.scatter(A_p2[0], A_p2[1], A_p2[2], color=colors[1])  # +1 yC
     >>> ax.set_title("A, B, C frames and points with respect to A")
     >>> ax.set_aspect("equal")
+    >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
+
+    Switching Base Frames
+    ^^^^^^^^^^^^^^^^^^^^^
 
     Up to this point, we have been visualizing frames from A's perspective.
     Let's use the transformations we defined to visualize the frames from C's
@@ -270,19 +301,20 @@ cdef class RigidTransformation:
     Now C is the "base frame" or "world frame". All frames are the identity
     transformation from their own perspective.
 
-    >>> tC = T.identity()
+    >>> t_C = T.identity()
 
-    We've already defined the transformations tCB and tCA, so we can plot
+    We've already defined the transformations t_C_B and t_C_A, so we can plot
     everything from C's perspective:
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    >>> plot_transformed_axes(ax, tC, name="tC")    # C plotted in C
-    >>> plot_transformed_axes(ax, tCB, name="tCB")  # B plotted in C
-    >>> plot_transformed_axes(ax, tCA, name="tCA")  # A plotted in C
-    >>> ax.scatter(p1_C[0], p1_C[1], p1_C[2], color=colors[0])
-    >>> ax.scatter(p2_C[0], p2_C[1], p2_C[2], color=colors[1])
+    >>> plot_transformed_axes(ax, t_C, name="t_C")      # C plotted in C
+    >>> plot_transformed_axes(ax, t_C_B, name="t_C_B")  # B plotted in C
+    >>> plot_transformed_axes(ax, t_C_A, name="t_C_A")  # A plotted in C
+    >>> ax.scatter(C_p1[0], C_p1[1], C_p1[2], color=colors[0])
+    >>> ax.scatter(C_p2[0], C_p2[1], C_p2[2], color=colors[1])
     >>> ax.set_title("A, B, C frames and points with respect to C")
     >>> ax.set_aspect("equal")
+    >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
     """
 
@@ -477,7 +509,12 @@ cdef class RigidTransformation:
         The top 3x1 points in the rightmost column of the transformation matrix
         is the translation vector:
 
-        >>> np.allclose(t.as_matrix()[:, 3, :3], d)
+        >>> t.as_matrix()
+        array([[1., 0., 0., 2.],
+               [0., 1., 0., 3.],
+               [0., 0., 1., 4.],
+               [0., 0., 0., 1.]])
+        >>> np.allclose(t.as_matrix()[:3, 3], d)
         True
 
         Creating multiple transformations from a stack of translation vectors:
@@ -490,6 +527,8 @@ cdef class RigidTransformation:
         >>> t.apply([1, 0, 0])
         array([[3., 3., 4.],
                [2., 0., 0.]])
+        >>> np.allclose(t.as_matrix()[:, :3, 3], d)
+        True
         >>> t.single
         False
         >>> len(t)
@@ -1394,7 +1433,7 @@ cdef class RigidTransformation:
 
         >>> (t ** -2).translation
         array([-2., -4., -6.])
-        >>> np.allclose((t ** -2).as_matrix(), t.inv().as_matrix() ** 2,
+        >>> np.allclose((t ** -2).as_matrix(), (t.inv() ** 2).as_matrix(),
         ...             atol=1e-12)
         True
 
@@ -1578,18 +1617,18 @@ cdef class RigidTransformation:
         >>> r = R.from_euler('z', 60, degrees=True)
         >>> t = T.from_rottrans(r, d)
         >>> d + r.apply([1, 0, 0])
-        array([1.5       2.8660254 3.       ])
+        array([1.5,       2.8660254, 3.       ])
         >>> t.apply([1, 0, 0])
-        array([1.5       2.8660254 3.       ])
+        array([1.5,       2.8660254, 3.       ])
 
         When applying the inverse of a transformation, the result is the
         negative of the translation vector added to the vector, and then
         rotated by the inverse rotation.
 
         >>> r.inv().apply(-d + np.array([1, 0, 0]))
-        array([-1.73205081 -1.         -3.        ])
+        array([-1.73205081, -1.        , -3.        ])
         >>> t.apply([1, 0, 0], inverse=True)
-        array([-1.73205081 -1.         -3.        ])
+        array([-1.73205081, -1.        , -3.        ])
         """
         vector = np.asarray(vector, dtype=float)
         if (vector.ndim not in [1, 2]
