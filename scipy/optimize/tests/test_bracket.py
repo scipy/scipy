@@ -7,7 +7,7 @@ from scipy.optimize.elementwise import bracket_root, bracket_minimum
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
-                                         xp_assert_less, array_namespace)
+                                         xp_assert_less)
 from scipy._lib._array_api import xp_ravel
 
 
@@ -178,8 +178,7 @@ class TestBracketRoot:
             xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
             assert res_attr.shape == shape
 
-        xp_test = array_namespace(xp.asarray(1.))
-        assert res.success.dtype == xp_test.bool
+        assert res.success.dtype == xp.bool
         if shape:
             assert xp.all(res.success[1:-1])
         assert res.status.dtype == xp.int32
@@ -226,13 +225,11 @@ class TestBracketRoot:
     def test_dtype(self, root, xmin, xmax, dtype, xp):
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
-        xp_test = array_namespace(xp.asarray(1.))
-
         xmin = xmin if xmin is None else xp.asarray(xmin, dtype=dtype)
         xmax = xmax if xmax is None else xp.asarray(xmax, dtype=dtype)
         root = xp.asarray(root, dtype=dtype)
         def f(x, root):
-            return xp_test.astype((x - root) ** 3, dtype)
+            return xp.astype((x - root) ** 3, dtype)
 
         bracket = xp.asarray([-0.01, 0.01], dtype=dtype)
         res = _bracket_root(f, *bracket, xmin=xmin, xmax=xmax, args=(root,))
@@ -281,12 +278,10 @@ class TestBracketRoot:
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
-        xp_test = array_namespace(xp.asarray(1.))
-
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            assert xp_test.isdtype(x.dtype, "real floating")
+            assert xp.isdtype(x.dtype, "real floating")
             return x ** 99 - 1
 
         res = _bracket_root(f, xp.asarray(-7.), xp.asarray(5.))
@@ -491,13 +486,12 @@ class TestBracketMinimum:
     @pytest.mark.parametrize("xmax", [5, None])
     def test_dtypes(self, minimum, xmin, xmax, dtype, xp):
         dtype = getattr(xp, dtype)
-        xp_test = array_namespace(xp.asarray(1.))
         xmin = xmin if xmin is None else xp.asarray(xmin, dtype=dtype)
         xmax = xmax if xmax is None else xp.asarray(xmax, dtype=dtype)
         minimum = xp.asarray(minimum, dtype=dtype)
 
         def f(x, minimum):
-            return xp_test.astype((x - minimum)**2, dtype)
+            return xp.astype((x - minimum)**2, dtype)
 
         xl0, xm0, xr0 = [-0.01, 0.0, 0.01]
         result = _bracket_minimum(
@@ -781,8 +775,7 @@ class TestBracketMinimum:
             xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
             assert res_attr.shape == shape
 
-        xp_test = array_namespace(xp.asarray(1.))
-        assert res.success.dtype == xp_test.bool
+        assert res.success.dtype == xp.bool
         if shape:
             assert xp.all(res.success[1:-1])
         assert res.status.dtype == xp.int32
@@ -796,12 +789,11 @@ class TestBracketMinimum:
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases.
-        xp_test = array_namespace(xp.asarray(1.))
 
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            assert xp_test.isdtype(x.dtype, "numeric")
+            assert xp.isdtype(x.dtype, "numeric")
             return x ** 98 - 1
 
         result = _bracket_minimum(f, xp.asarray(-7., dtype=xp.float64), xr0=5)

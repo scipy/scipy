@@ -252,9 +252,6 @@ def _strict_check(actual, desired, xp, *,
             xp = _default_xp_ctxvar.get()
         except LookupError:
             xp = array_namespace(desired)
-        else:
-            # Wrap namespace if needed
-            xp = array_namespace(xp.asarray(0))
  
     if check_namespace:
         _assert_matching_namespace(actual, desired, xp)

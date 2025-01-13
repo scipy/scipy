@@ -5,7 +5,7 @@ import numpy as np
 
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-from scipy._lib._array_api import is_numpy, is_torch, array_namespace
+from scipy._lib._array_api import is_numpy, is_torch
 
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
@@ -376,8 +376,7 @@ class TestDerivative:
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            xp_test = array_namespace(x)  # needs `isdtype`
-            assert xp_test.isdtype(x.dtype, 'real floating')
+            assert xp.isdtype(x.dtype, 'real floating')
             return x ** 99 - 1
 
         if not is_torch(xp):  # torch defaults to float32
@@ -659,10 +658,9 @@ class TestHessian(JacobianHessianTest):
 
     def test_nfev(self, xp):
         z = xp.asarray([0.5, 0.25])
-        xp_test = array_namespace(z)
 
         def f1(z):
-            x, y = xp_test.broadcast_arrays(*z)
+            x, y = xp.broadcast_arrays(*z)
             f1.nfev = f1.nfev + (math.prod(x.shape[2:]) if x.ndim > 2 else 1)
             return xp.sin(x) * y ** 3
         f1.nfev = 0

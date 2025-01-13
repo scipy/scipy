@@ -7,7 +7,6 @@ from numpy.testing import suppress_warnings
 from scipy._lib._array_api import (
     is_jax,
     is_torch,
-    array_namespace,
     xp_assert_equal,
     xp_assert_close,
     assert_array_almost_equal,
@@ -562,8 +561,7 @@ def test_value_indices03(xp):
 
         nnz_kwd = {'as_tuple': True} if is_torch(xp) else {}
 
-        unique_values = array_namespace(a).unique_values
-        trueKeys = unique_values(a)
+        trueKeys = xp.unique_values(a)
         vi = ndimage.value_indices(a)
         assert list(vi.keys()) == list(trueKeys)
         for k in [int(x) for x in trueKeys]:

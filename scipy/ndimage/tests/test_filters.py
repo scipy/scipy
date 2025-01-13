@@ -38,9 +38,8 @@ def _complex_correlate(xp, array, kernel, real_dtype, convolve=False,
     """
     array = xp.asarray(array)
     kernel = xp.asarray(kernel)
-    isdtype = array_namespace(array, kernel).isdtype
-    complex_array = isdtype(array.dtype, 'complex floating')
-    complex_kernel = isdtype(kernel.dtype, 'complex floating')
+    complex_array = xp.isdtype(array.dtype, 'complex floating')
+    complex_kernel = xp.isdtype(kernel.dtype, 'complex floating')
     if array.ndim == 1:
         func = ndimage.convolve1d if convolve else ndimage.correlate1d
     else:
@@ -1432,9 +1431,8 @@ class TestNdimageFilters:
         output = ndimage.gaussian_gradient_magnitude(array, 1.0)
         expected = tmp1 * tmp1 + tmp2 * tmp2
 
-        astype = array_namespace(expected).astype
-        expected_float = astype(expected, xp.float64) if is_int_dtype else expected
-        expected = astype(xp.sqrt(expected_float), dtype)
+        expected_float = xp.astype(expected, xp.float64) if is_int_dtype else expected
+        expected = xp.astype(xp.sqrt(expected_float), dtype)
         xp_assert_close(output, expected, rtol=1e-6, atol=1e-6)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only")
@@ -1454,10 +1452,9 @@ class TestNdimageFilters:
         ndimage.gaussian_gradient_magnitude(array, 1.0, output)
         expected = tmp1 * tmp1 + tmp2 * tmp2
 
-        astype = array_namespace(expected).astype
-        fl_expected = astype(expected, xp.float64) if is_int_dtype else expected
+        fl_expected = xp.astype(expected, xp.float64) if is_int_dtype else expected
 
-        expected = astype(xp.sqrt(fl_expected), dtype)
+        expected = xp.astype(xp.sqrt(fl_expected), dtype)
         xp_assert_close(output, expected, rtol=1e-6, atol=1e-6)
 
     def test_generic_gradient_magnitude01(self, xp):
@@ -1767,8 +1764,7 @@ class TestNdimageFilters:
 
         missing_axis = tuple(set(range(3)) - set(axes % array.ndim))[0]
 
-        expand_dims = array_namespace(footprint).expand_dims
-        footprint_3d = expand_dims(footprint, axis=missing_axis)
+        footprint_3d = xp.expand_dims(footprint, axis=missing_axis)
         expected = filter_func(array, footprint=footprint_3d, **kwargs)
         xp_assert_close(output, expected)
 
@@ -1835,8 +1831,7 @@ class TestNdimageFilters:
                             [5, 8, 3, 7, 1],
                             [5, 6, 9, 3, 5]])
 
-        asarray = array_namespace(array).asarray
-        array_copy = asarray(array, copy=True)
+        array_copy = xp.asarray(array, copy=True)
         expected = [[2, 2, 1, 1, 1],
                     [3, 3, 2, 1, 1],
                     [5, 5, 3, 3, 1]]
