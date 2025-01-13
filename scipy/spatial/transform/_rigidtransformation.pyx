@@ -238,7 +238,7 @@ cdef class RigidTransformation:
     >>> print(p1_A)  # Original point in A
     [1 0 0]
     >>> print(p1_B)  # Point in B
-    [3 0 0]
+    [3. 0. 0.]
     >>> print(p1_C)  # Point in C
     [ 2.59807621 -1.5       -2.        ]
 
@@ -474,10 +474,10 @@ cdef class RigidTransformation:
         >>> t.single
         True
 
-        The rightmost column of the transformation matrix is the translation
-        vector:
+        The top 3x1 points in the rightmost column of the transformation matrix
+        is the translation vector:
 
-        >>> np.allclose(t.as_matrix()[:, 3], d)
+        >>> np.allclose(t.as_matrix()[:, 3, :3], d)
         True
 
         Creating multiple transformations from a stack of translation vectors:
@@ -1313,9 +1313,9 @@ cdef class RigidTransformation:
         >>> t2 = T.from_rottrans(r2, d2)
         >>> t = t1 * t2
         >>> t.apply([1, 0, 0])
-        array([0.6339746 3.3660254 3.       ])
+        array([0.6339746, 3.3660254, 3.       ])
         >>> t1.apply(t2.apply([1, 0, 0]))
-        array([0.6339746 3.3660254 3.       ])
+        array([0.6339746, 3.3660254, 3.       ])
 
         When at least one of the transformations is not single, the result is a
         stack of transformations.
@@ -1376,6 +1376,10 @@ cdef class RigidTransformation:
         Examples
         --------
         >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+
+        A power of 2 returns the transformation composed with itself:
+
         >>> t = T.from_translation([1, 2, 3])
         >>> (t ** 2).translation
         array([2., 4., 6.])
@@ -1549,7 +1553,7 @@ cdef class RigidTransformation:
         >>> d = np.array([1, 2, 3])
         >>> t = T.from_translation(d)
         >>> d + np.array([1, 0, 0])
-        array([2., 2., 3.])
+        array([2, 2, 3])
         >>> t.apply([1, 0, 0])
         array([2., 2., 3.])
 
@@ -1563,7 +1567,7 @@ cdef class RigidTransformation:
         negative of the translation vector added to the vector.
 
         >>> -d + np.array([1, 0, 0])
-        array([0., -2., -3.])
+        array([0, -2, -3])
         >>> t.apply([1, 0, 0], inverse=True)
         array([0., -2., -3.])
 
