@@ -364,7 +364,7 @@ def test_label_output_dtype(xp):
         assert output.dtype == t
 
 
-@skip_xp_backends('dask.array', reason='Dask does not raise')
+@xfail_xp_backends('dask.array', reason='Dask does not raise')
 @xfail_xp_backends('jax.numpy', reason='JAX does not raise')
 def test_label_output_wrong_size(xp):
     data = xp.ones([5])
@@ -1158,11 +1158,9 @@ def test_maximum_position06(xp):
         assert output[1] == (1, 1)
 
 @xfail_xp_backends("dask.array", reason="crash in dask.array searchsorted")
+@xfail_xp_backends("torch", reason="output[1] is wrong on pytorch")
 def test_maximum_position07(xp):
     # Test float labels
-    if is_torch(xp):
-        pytest.xfail("output[1] is wrong on pytorch")
-
     labels = xp.asarray([1.0, 2.5, 0.0, 4.5])
     for type in types:
         dtype = getattr(xp, type)
