@@ -351,7 +351,7 @@ class TestKMean:
     def krand_lock(self):
         return Lock()
 
-    @skip_xp_backends('dask.array', reason="Wrong answer")
+    @xfail_xp_backends('dask.array', reason="Wrong answer")
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
     def test_krandinit(self, xp, krand_lock):
