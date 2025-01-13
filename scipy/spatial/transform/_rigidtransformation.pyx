@@ -815,7 +815,11 @@ cdef class RigidTransformation:
     @cython.embedsignature(True)
     @classmethod
     def from_dualquat(cls, dualquat, *, scalar_first=False):
-        """Initialize from a dual quaternion.
+        """Initialize from a unit dual quaternion.
+
+        Unit dual quaternions encode orientation in a real unit quaternion
+        and translation in a dual quaternion. There is a double cover, i.e.,
+        the unit dual quaternions q and -q represent the same transformation.
 
         Parameters
         ----------
@@ -832,6 +836,24 @@ cdef class RigidTransformation:
         -------
         transformation : `RigidTransformation` instance
             A single transformation or a stack of transformations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+
+        Creating from a single unit dual quaternion:
+
+        >>> t = T.from_dualquat([
+        ...     0.0617101, -0.06483886, 0.31432811, 0.94508498,
+        ...     0.04985168, -0.26119618, 0.1691491, -0.07743254])
+        >>> t.as_matrix()
+        array([[0.79398752, -0.60213598, -0.08376202, 0.24605262],
+               [0.58613113, 0.79477941, -0.15740392, -0.4932833],
+               [0.16135089, 0.07588122, 0.98397557, 0.34262676],
+               [0., 0., 0., 1.]])
+        >>> t.single
+        True
         """
         dualquat = np.asarray(dualquat, dtype=float)
 
@@ -1141,6 +1163,11 @@ cdef class RigidTransformation:
     def as_expcoords(self):
         """Return the exponential coordinates of the transformation.
 
+        This implements the logarithmic map that converts SE(3) to
+        6-dimensional real vectors. The first three components of the vector
+        encode the rotation and the last three components encode the
+        translation.
+
         Returns
         -------
         expcoords : numpy.ndarray, shape (N, 6) or (6,)
@@ -1150,7 +1177,13 @@ cdef class RigidTransformation:
 
         Examples
         --------
-        TODO
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+
+        Get exponential coordinates of the identity matrix:
+
+        >>> T.identity().as_expcoords()
+        array([0., 0., 0., 0., 0., 0.])
         """
         expcoords = np.empty((self._matrix.shape[0], 6), dtype=float)
         rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
@@ -1205,6 +1238,10 @@ cdef class RigidTransformation:
     def as_dualquat(self, *, scalar_first=False):
         """Return the dual quaternion representation of the transformation.
 
+        Unit dual quaternions encode orientation in a real unit quaternion
+        and translation in a dual quaternion. There is a double cover, i.e.,
+        the unit dual quaternions q and -q represent the same transformation.
+
         Parameters
         ----------
         scalar_first : bool, optional
@@ -1218,6 +1255,21 @@ cdef class RigidTransformation:
             A single unit dual quaternion vector or a stack of unit dual
             quaternion vectors. The real part is stored in the first four
             components and the dual part in the last four components.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+
+        Get identity dual quaternion (we use scalar-last by default):
+
+        >>> T.identity().as_dualquat()
+        array([0., 0., 0., 1., 0., 0., 0., 0.])
+
+        When we want to use the scalar-first convention, we use the argument:
+
+        >>> T.identity().as_dualquat(scalar_first=True)
+        array([1., 0., 0., 0., 0., 0., 0., 0.])
         """
         rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
         real_parts = rotations.as_quat()
