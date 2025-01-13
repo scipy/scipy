@@ -679,6 +679,10 @@ cdef class RigidTransformation:
         -------
         transformation : `RigidTransformation` instance
             A single transformation or a stack of transformations.
+
+        Examples
+        --------
+        TODO
         """
         expcoords = np.asarray(expcoords, dtype=float)
 
@@ -1046,6 +1050,10 @@ cdef class RigidTransformation:
             A single exponential coordinate vector or a stack of exponential
             coordinate vectors. The first three components define the
             rotation and the last three components define the translation.
+
+        Examples
+        --------
+        TODO
         """
         expcoords = np.empty((self._matrix.shape[0], 6), dtype=float)
         rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
@@ -1220,6 +1228,20 @@ cdef class RigidTransformation:
         ------
         TypeError
             If the transformation is a single transformation.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> d = [[0, 0, 0], [1, 0, 0], [2, 0, 0]]  # 3 translations
+        >>> t = T.from_translation(d)
+
+        Set a single transformation:
+
+        >>> t[0] = T.from_translation([9, 9, 9])
+        >>> t.translation
+        array([[9., 9., 9.],
+               [1., 0., 0.],
+               [2., 0., 0.]])
         """
         if self._single:
             raise TypeError("Single transformation is not subscriptable.")
@@ -1265,6 +1287,49 @@ cdef class RigidTransformation:
               each transformation ``p[i]`` is composed with the corresponding
               transformation ``q[i]`` and `output` contains ``N``
               transformations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+
+        Compose two transformations:
+
+        >>> t1 = T.from_translation([1, 0, 0])
+        >>> t2 = T.from_translation([0, 1, 0])
+        >>> t = t1 * t2
+        >>> t.translation
+        array([1., 1., 0.])
+        >>> t.single
+        True
+
+        When applied to a vector, the composition of two transformations is
+        applied in right-to-left order.
+
+        >>> r1, d1 = R.from_euler('z', 60, degrees=True), [1, 2, 3]
+        >>> r2, d2 = R.from_euler('x', 30, degrees=True), [0, 1, 0]
+        >>> t1 = T.from_rottrans(r1, d1)
+        >>> t2 = T.from_rottrans(r2, d2)
+        >>> t = t1 * t2
+        >>> t.apply([1, 0, 0])
+        array([0.6339746 3.3660254 3.       ])
+        >>> t1.apply(t2.apply([1, 0, 0]))
+        array([0.6339746 3.3660254 3.       ])
+
+        When at least one of the transformations is not single, the result is a
+        stack of transformations.
+
+        >>> t1 = T.from_translation([1, 0, 0])
+        >>> t2 = T.from_translation([[0, 2, 0], [0, 0, 3]])
+        >>> t = t1 * t2
+        >>> t.translation
+        array([[1., 2., 0.],
+               [1., 0., 3.]])
+        >>> t.single
+        False
+        >>> len(t)
+        2
         """
         len_self = len(self._matrix)
         len_other = len(other._matrix)
@@ -1303,9 +1368,44 @@ cdef class RigidTransformation:
 
         Notes
         -----
-        There are three notable cases: if ``n == 1`` then the original rotation
-        is returned, if ``n == 0`` then the identity rotation is returned, and
-        if ``n == -1`` then ``p.inv()`` is returned.
+        There are three notable cases: if ``n == 1`` then a copy of the original
+        transformation is returned, if ``n == 0`` then the identity
+        transformation is returned, and if ``n == -1`` then the inverse
+        transformation is returned.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> t = T.from_translation([1, 2, 3])
+        >>> (t ** 2).translation
+        array([2., 4., 6.])
+        >>> (t ** 2).as_matrix()
+        array([[1., 0., 0., 2.],
+               [0., 1., 0., 4.],
+               [0., 0., 1., 6.],
+               [0., 0., 0., 1.]])
+
+        A negative power returns the inverse of the transformation raised to
+        the absolute value of `n`:
+
+        >>> (t ** -2).translation
+        array([-2., -4., -6.])
+        >>> np.allclose((t ** -2).as_matrix(), t.inv().as_matrix() ** 2,
+        ...             atol=1e-12)
+        True
+
+        A power of 0 returns the identity transformation:
+
+        >>> (t ** 0).as_matrix()
+        array([[1., 0., 0., 0.],
+               [0., 1., 0., 0.],
+               [0., 0., 1., 0.],
+               [0., 0., 0., 1.]])
+
+        A power of 1 returns a copy of the original transformation:
+
+        >>> (t ** 1).translation
+        array([1., 2., 3.])
         """
         # Exact short-cuts
         if n == 0:
@@ -1357,7 +1457,14 @@ cdef class RigidTransformation:
         A transformation composed with its inverse results in an identity
         transformation:
 
-        >>> t = T.random()
+        >>> rng = np.random.default_rng(seed=123)
+        >>> t = T.random(rng=rng)
+        >>> t.as_matrix()
+        array([[-0.27687894,  0.08111092, -0.95747536,  0.21419513],
+               [ 0.43673235, -0.87694466, -0.20058143,  0.19815685],
+               [-0.85592225, -0.47369724,  0.20738374, -0.95648017],
+               [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
         >>> np.allclose((t.inv() * t).as_matrix(), np.eye(4), atol=1e-12)
         True
 
@@ -1428,6 +1535,57 @@ cdef class RigidTransformation:
                 - In all other cases, `transformed_vector` has shape
                   ``(N, 3)``, where ``N`` is either the number of
                   transformations or vectors.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+
+        Apply a single transformation to a vector. Here the transformation is
+        just a translation, so the result is the vector added to the
+        translation vector.
+
+        >>> d = np.array([1, 2, 3])
+        >>> t = T.from_translation(d)
+        >>> d + np.array([1, 0, 0])
+        array([2., 2., 3.])
+        >>> t.apply([1, 0, 0])
+        array([2., 2., 3.])
+
+        Apply a single transformation to a stack of vectors:
+
+        >>> t.apply([[1, 0, 0], [0, 1, 0]])
+        array([[2., 2., 3.],
+               [1., 3., 3.]])
+
+        Apply the inverse of a transformation to a vector, so the result is the
+        negative of the translation vector added to the vector.
+
+        >>> -d + np.array([1, 0, 0])
+        array([0., -2., -3.])
+        >>> t.apply([1, 0, 0], inverse=True)
+        array([0., -2., -3.])
+
+        For transformations which are not just pure translations, applying it
+        to a vector is the same as applying the rotation component to the
+        vector and then adding the translation component.
+
+        >>> r = R.from_euler('z', 60, degrees=True)
+        >>> t = T.from_rottrans(r, d)
+        >>> d + r.apply([1, 0, 0])
+        array([1.5       2.8660254 3.       ])
+        >>> t.apply([1, 0, 0])
+        array([1.5       2.8660254 3.       ])
+
+        When applying the inverse of a transformation, the result is the
+        negative of the translation vector added to the vector, and then
+        rotated by the inverse rotation.
+
+        >>> r.inv().apply(-d + np.array([1, 0, 0]))
+        array([-1.73205081 -1.         -3.        ])
+        >>> t.apply([1, 0, 0], inverse=True)
+        array([-1.73205081 -1.         -3.        ])
         """
         vector = np.asarray(vector, dtype=float)
         if (vector.ndim not in [1, 2]
