@@ -696,7 +696,7 @@ def test_sum_labels(xp):
         assert xp.all(output_sum == output_labels)
         assert_array_almost_equal(output_labels, xp.asarray([4.0, 0.0, 5.0]))
 
-@skip_xp_backends("dask.array", reason="dask outputs wrong results here")
+@xfail_xp_backends("dask.array", reason="dask outputs wrong results here")
 def test_mean01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -707,7 +707,7 @@ def test_mean01(xp):
         assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
-@skip_xp_backends("dask.array", reason="dask outputs wrong results here")
+@xfail_xp_backends("dask.array", reason="dask outputs wrong results here")
 def test_mean02(xp):
     labels = np.asarray([1, 0], dtype=bool)
     input = np.asarray([[1, 2], [3, 4]], dtype=bool)
@@ -718,7 +718,7 @@ def test_mean02(xp):
     assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
-@skip_xp_backends("dask.array", reason="dask outputs wrong results here")
+@xfail_xp_backends("dask.array", reason="dask outputs wrong results here")
 def test_mean03(xp):
     labels = xp.asarray([1, 2])
     for type in types:
@@ -729,7 +729,7 @@ def test_mean03(xp):
         assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
-@skip_xp_backends("dask.array", reason="dask outputs wrong results here")
+@xfail_xp_backends("dask.array", reason="dask outputs wrong results here")
 def test_mean04(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     with np.errstate(all='ignore'):
@@ -871,7 +871,7 @@ def test_median03(xp):
     assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
-@skip_xp_backends("dask.array", reason="Crash inside dask searchsorted")
+@xfail_xp_backends("dask.array", reason="Crash inside dask searchsorted")
 def test_median_gh12836_bool(xp):
     # test boolean addition fix on example from gh-12836
     a = np.asarray([1, 1], dtype=bool)
@@ -879,7 +879,7 @@ def test_median_gh12836_bool(xp):
     output = ndimage.median(a, labels=xp.ones((2,)), index=xp.asarray([1]))
     assert_array_almost_equal(output, xp.asarray([1.0]))
 
-@skip_xp_backends("dask.array", reason="Crash inside dask searchsorted")
+@xfail_xp_backends("dask.array", reason="Crash inside dask searchsorted")
 def test_median_no_int_overflow(xp):
     # test integer overflow fix on example from gh-12836
     a = xp.asarray([65, 70], dtype=xp.int8)
@@ -1157,7 +1157,7 @@ def test_maximum_position06(xp):
         assert output[0] == (0, 0)
         assert output[1] == (1, 1)
 
-@skip_xp_backends("dask.array", reason="crash in dask.array searchsorted")
+@xfail_xp_backends("dask.array", reason="crash in dask.array searchsorted")
 def test_maximum_position07(xp):
     # Test float labels
     if is_torch(xp):
@@ -1175,7 +1175,7 @@ def test_maximum_position07(xp):
         assert output[1] == (0, 3)
 
 
-@skip_xp_backends("dask.array", reason="dask wrong answer")
+@xfail_xp_backends("dask.array", reason="dask wrong answer")
 def test_extrema01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -1192,7 +1192,7 @@ def test_extrema01(xp):
         assert output1 == (output2, output3, output4, output5)
 
 
-@skip_xp_backends("dask.array", reason="dask wrong answer")
+@xfail_xp_backends("dask.array", reason="dask wrong answer")
 def test_extrema02(xp):
     labels = xp.asarray([1, 2])
     for type in types:
@@ -1317,7 +1317,7 @@ def test_center_of_mass06(xp):
     assert output == expected
 
 
-@skip_xp_backends("dask.array", reason="wrong output shape")
+@xfail_xp_backends("dask.array", reason="wrong output shape")
 def test_center_of_mass07(xp):
     labels = xp.asarray([1, 0])
     expected = (0.5, 0.0)
@@ -1327,7 +1327,7 @@ def test_center_of_mass07(xp):
     assert output == expected
 
 
-@skip_xp_backends("dask.array", reason="wrong output shape")
+@xfail_xp_backends("dask.array", reason="wrong output shape")
 def test_center_of_mass08(xp):
     labels = xp.asarray([1, 2])
     expected = (0.5, 1.0)
