@@ -74,18 +74,6 @@ cdef class RigidTransformation:
     identity
     random
 
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
-    .. [2] https://motion.cs.illinois.edu/RoboticSystems/CoordinateTransformations.html
-    .. [3] https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html
-    .. [4] Kevin M. Lynch and Frank C. Park, "Modern Robotics: Mechanics,
-    Planning, and Control" Chapter 3.3, 2017, Cambridge University Press.
-    https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf#page=107.31
-    .. [5] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
-       ugly", June 9, 2014.
-       https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
-
     Notes
     -----
     .. versionadded:: 1.16.0
@@ -327,6 +315,18 @@ cdef class RigidTransformation:
     >>> ax.set_aspect("equal")
     >>> ax.figure.set_size_inches(6, 5)
     >>> plt.show()
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Rigid_transformation
+    .. [2] https://motion.cs.illinois.edu/RoboticSystems/CoordinateTransformations.html
+    .. [3] https://www.brainvoyager.com/bv/doc/UsersGuide/CoordsAndTransforms/SpatialTransformationMatrices.html
+    .. [4] Kevin M. Lynch and Frank C. Park, "Modern Robotics: Mechanics,
+    Planning, and Control" Chapter 3.3, 2017, Cambridge University Press.
+    https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf#page=107.31
+    .. [5] Paul Furgale, "Representing Robot Pose: The good, the bad, and the
+    ugly", June 9, 2014.
+    https://rpg.ifi.uzh.ch/docs/teaching/2024/FurgaleTutorial.pdf
     """
 
     cdef double[:, :, :] _matrix
