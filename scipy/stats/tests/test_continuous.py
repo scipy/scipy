@@ -1138,7 +1138,14 @@ class TestMakeDistribution:
 
 class TestTransforms:
 
-    # putting this at the top to hopefully avoid merge conflicts
+    def test_ContinuousDistribution_only(self):
+        X = stats.Binomial(n=10, p=0.5)
+        # This is applied at the top level TransformedDistribution,
+        # so testing one subclass is enough
+        message = "Transformations are only supported for continuous RVs."
+        with pytest.raises(NotImplementedError, match=message):
+            stats.exp(X)
+
     def test_truncate(self):
         rng = np.random.default_rng(81345982345826)
         lb = rng.random((3, 1))

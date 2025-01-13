@@ -4009,6 +4009,9 @@ def _shift_scale_inverse_function(func):
 
 class TransformedDistribution(ContinuousDistribution):
     def __init__(self, X, /, *args, **kwargs):
+        if not isinstance(X, ContinuousDistribution):
+            message = "Transformations are only supported for continuous RVs."
+            raise NotImplementedError(message)
         self._copy_parameterization()
         self._variable = X._variable
         self._dist = X
@@ -4305,6 +4308,26 @@ class ShiftedScaledDistribution(TransformedDistribution):
         x = self._transform(x, loc, scale)
         pdf = self._dist._pdf_dispatch(x, *args, **params)
         return pdf / np.abs(scale)
+
+    def _logpmf_dispatch(self, x, *args, loc, scale, sign, **params):
+        x = self._transform(x, loc, scale)
+        logpmf = self._dist._logpmf_dispatch(x, *args, **params)
+        return logpmf - np.log(np.abs(scale))
+
+    def _pmf_dispatch(self, x, *args, loc, scale, sign, **params):
+        x = self._transform(x, loc, scale)
+        pmf = self._dist._pmf_dispatch(x, *args, **params)
+        return pmf / np.abs(scale)
+
+    def _logpxf_dispatch(self, x, *args, loc, scale, sign, **params):
+        x = self._transform(x, loc, scale)
+        logpxf = self._dist._logpxf_dispatch(x, *args, **params)
+        return logpxf - np.log(np.abs(scale))
+
+    def _pxf_dispatch(self, x, *args, loc, scale, sign, **params):
+        x = self._transform(x, loc, scale)
+        pxf = self._dist._pxf_dispatch(x, *args, **params)
+        return pxf / np.abs(scale)
 
     # Sorry about the magic. This is just a draft to show the behavior.
     @_shift_scale_distribution_function
@@ -4875,6 +4898,14 @@ class Mixture(_ProbabilityDistribution):
     def logpdf(self, x, /, *, method=None):
         self._raise_if_method(method)
         return self._logsum('logpdf', x)
+
+    def pmf(self, x, /, *, method=None):
+        self._raise_if_method(method)
+        return self._sum('pmf', x)
+
+    def logpmf(self, x, /, *, method=None):
+        self._raise_if_method(method)
+        return self._logsum('logpmf', x)
 
     def cdf(self, x, y=None, /, *, method=None):
         self._raise_if_method(method)
