@@ -3814,8 +3814,8 @@ def make_distribution(dist):
     if dist in {stats.levy_stable, stats.vonmises}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
-    if not isinstance(dist, stats.rv_continuous):
-        message = "The argument must be an instance of `rv_continuous`."
+    if not isinstance(dist, (stats.rv_continuous, stats.rv_discrete)):
+        message = "Argument must be an instance of `rv_continuous` or `rv_discrete`."
         raise ValueError(message)
 
     parameters = []
@@ -3832,8 +3832,12 @@ def make_distribution(dist):
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
     repr_str = _distribution_names.get(dist.name, dist.name.capitalize())
+    if isinstance(dist, stats.rv_continuous):
+        old_class, new_class = stats.rv_continuous, ContinuousDistribution
+    else:
+        old_class, new_class = stats.rv_discrete, DiscreteDistribution
 
-    class CustomDistribution(ContinuousDistribution):
+    class CustomDistribution(new_class):
         _parameterizations = ([_Parameterization(*parameters)] if parameters
                               else [])
         _variable = _x_param
@@ -3884,6 +3888,8 @@ def make_distribution(dist):
 
     methods = {'_logpdf': '_logpdf_formula',
                '_pdf': '_pdf_formula',
+               '_logpmf': '_logpmf_formula',
+               '_pmf': '_pmf_formula',
                '_logcdf': '_logcdf_formula',
                '_cdf': '_cdf_formula',
                '_logsf': '_logccdf_formula',
@@ -3901,14 +3907,14 @@ def make_distribution(dist):
             continue
         # If method of old distribution overrides generic implementation...
         method = getattr(dist.__class__, old_method, None)
-        super_method = getattr(stats.rv_continuous, old_method, None)
+        super_method = getattr(old_class, old_method, None)
         if method is not super_method:
             # Make it an attribute of the new object with the new name
             setattr(CustomDistribution, new_method, getattr(dist, old_method))
 
     def _overrides(method_name):
         return (getattr(dist.__class__, method_name, None)
-                is not getattr(stats.rv_continuous, method_name, None))
+                is not getattr(old_class, method_name, None))
 
     if _overrides('_get_support'):
         domain = CustomDistribution._variable.domain
@@ -3929,7 +3935,7 @@ def make_distribution(dist):
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [
         f"This class represents `scipy.stats.{dist.name}` as a subclass of "
-        "`ContinuousDistribution`.",
+        f"`{new_class}`.",
         f"The `repr`/`str` of class instances is `{repr_str}`.",
         f"The PDF of the distribution is defined {support_etc}"
     ]
