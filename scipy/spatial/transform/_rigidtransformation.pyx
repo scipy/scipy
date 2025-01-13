@@ -705,7 +705,18 @@ cdef class RigidTransformation:
     @cython.embedsignature(True)
     @classmethod
     def from_expcoords(cls, expcoords):
-        """Initialize from exponential coordinates.
+        r"""Initialize from exponential coordinates of transformation.
+
+        This implements the exponential map that converts 6-dimensional real
+        vectors to SE(3). The first three components of the vector encode
+        the rotation and the last three components encode the translation.
+
+        The exponential coordinates of transformation can be split up into
+        a screw axis :math:`\mathcal{S} \in \mathbb{R}^6` and a scalar
+        :math:`\theta` that defines the magnitude of the displacement. For
+        pure translations, the norm of the last three components defines
+        :math:`\theta` and for all other transformations, the norm of the first
+        three components defines :math:`\theta`.
 
         Parameters
         ----------
@@ -721,7 +732,21 @@ cdef class RigidTransformation:
 
         Examples
         --------
-        TODO
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+
+        Creating from a single 6d vector of exponential coordinates:
+
+        >>> t = T.from_expcoords([
+        ...     -2.01041204, -0.52983629, 0.65773501,
+        ...     0.10386614, 0.05855009, 0.54959179])
+        >>> t.as_matrix()
+        array([[0.76406621, 0.10504613, -0.63652819, -0.10209961],
+               [0.59956454, -0.47987325, 0.64050295, 0.40158789],
+               [-0.2381705, -0.87102639, -0.42963687, 0.19637636],
+               [0., 0., 0., 1.]])
+        >>> t.single
+        True
         """
         expcoords = np.asarray(expcoords, dtype=float)
 
