@@ -1842,7 +1842,7 @@ class TestNdimageFilters:
     @skip_xp_backends("jax.numpy",
         reason="assignment destination is read-only",
     )
-    @skip_xp_backends("dask.array",
+    @xfail_xp_backends("dask.array",
         reason="wrong answer",
     )
     def test_rank06_overlap(self, xp):
