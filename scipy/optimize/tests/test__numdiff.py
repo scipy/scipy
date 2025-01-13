@@ -282,21 +282,21 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     @pytest.mark.fail_slow(5.0)
-    def test_workers(self):
+    def test_workers_evaluations_and_nfev(self):
         # check that nfev consumed by approx_derivative is tracked properly
         # and that parallel evaluation is same as series
         x0 = [0.5, 1.5, 2.0]
         with MapWrapper(2) as mapper:
             md2, mdct2 = approx_derivative(rosen, x0,
-                                         method='2-point', workers=mapper,
-                                         full_output=True)
+                                           method='2-point', workers=mapper,
+                                           full_output=True)
             md3, mdct3 = approx_derivative(rosen, x0,
-                                         workers=mapper, full_output=True)
+                                           workers=mapper, full_output=True)
         # supply a number for workers. This is not normally recommended
         # for upstream workers as setting up processes incurs a large overhead
         md4, mdct4 = approx_derivative(rosen, x0,
-                                     method='cs', workers=2,
-                                     full_output=True)
+                                       method='cs', workers=2,
+                                       full_output=True)
 
         sfr = _ScalarFunctionWrapper(rosen)
         d2, dct2 = approx_derivative(sfr, x0, method='2-point', full_output=True)
