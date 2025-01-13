@@ -350,6 +350,9 @@ All functions
    chetrf_lwork
    zhetrf_lwork
 
+   chetri
+   zhetri
+
    chetrs
    zhetrs
 
@@ -358,6 +361,11 @@ All functions
 
    slamch
    dlamch
+
+   slangb
+   dlangb
+   clangb
+   zlangb
 
    slange
    dlange
@@ -672,6 +680,11 @@ All functions
    dsytrf_lwork
    csytrf_lwork
    zsytrf_lwork
+
+   ssytri
+   dsytri
+   csytri
+   zsytri
 
    ssytrs
    dsytrs

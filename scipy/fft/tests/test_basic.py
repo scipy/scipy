@@ -7,12 +7,10 @@ from numpy.random import random
 from numpy.testing import assert_array_almost_equal, assert_allclose
 from pytest import raises as assert_raises
 import scipy.fft as fft
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     array_namespace, xp_size, xp_assert_close, xp_assert_equal
 )
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
@@ -305,7 +303,7 @@ class TestFFT:
 
     @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("dtype", [np.float16, np.longdouble])
-    def test_dtypes_nonstandard(self, dtype):
+    def test_dtypes_nonstandard(self, dtype, xp):
         x = random(30).astype(dtype)
         out_dtypes = {np.float16: np.complex64, np.longdouble: np.clongdouble}
         x_complex = x.astype(out_dtypes[dtype])
@@ -369,7 +367,7 @@ class TestFFT:
         "fft",
         [fft.fft, fft.fft2, fft.fftn,
          fft.ifft, fft.ifft2, fft.ifftn])
-def test_fft_with_order(dtype, order, fft):
+def test_fft_with_order(dtype, order, fft, xp):
     # Check that FFT/IFFT produces identical results for C, Fortran and
     # non contiguous arrays
     rng = np.random.RandomState(42)
@@ -451,7 +449,7 @@ class TestFFTThreadSafe:
 
 @skip_xp_backends(np_only=True)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
-def test_multiprocess(func):
+def test_multiprocess(func, xp):
     # Test that fft still works after fork (gh-10422)
 
     with multiprocessing.Pool(2) as p:

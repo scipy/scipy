@@ -11,10 +11,8 @@ from scipy._lib._array_api import (
     np_compat,
     is_array_api_strict,
 )
-from scipy.conftest import array_api_compatible
-
 from scipy.integrate import cubature
-
+from scipy.integrate._cubature import _InfiniteLimitsTransform
 from scipy.integrate._rules import (
     Rule, FixedRule,
     NestedFixedRule,
@@ -22,9 +20,6 @@ from scipy.integrate._rules import (
     GenzMalikCubature,
 )
 
-from scipy.integrate._cubature import _InfiniteLimitsTransform
-
-pytestmark = [pytest.mark.usefixtures("skip_xp_backends"),]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 # The integrands ``genz_malik_1980_*`` come from the paper:
@@ -377,7 +372,6 @@ def f_with_problematic_points(x_arr, points, xp):
     return xp.ones(x_arr.shape[0])
 
 
-@array_api_compatible
 class TestCubature:
     """
     Tests related to the interface of `cubature`.
@@ -534,7 +528,6 @@ class TestCubature:
     "gk21",
     "genz-malik",
 ])
-@array_api_compatible
 class TestCubatureProblems:
     """
     Tests that `cubature` gives the correct answer.
@@ -1209,7 +1202,6 @@ class TestCubatureProblems:
         )
 
 
-@array_api_compatible
 class TestRules:
     """
     Tests related to the general Rule interface (currently private).
@@ -1250,7 +1242,6 @@ class TestRules:
                 base_class.estimate(basic_1d_integrand, a, b, args=(xp,))
 
 
-@array_api_compatible
 class TestRulesQuadrature:
     """
     Tests underlying quadrature rules (ndim == 1).
@@ -1323,7 +1314,6 @@ class TestRulesQuadrature:
             quadrature(1, xp=xp)
 
 
-@array_api_compatible
 class TestRulesCubature:
     """
     Tests underlying cubature rules (ndim >= 2).
@@ -1345,7 +1335,6 @@ class TestRulesCubature:
             GenzMalikCubature(1, xp=xp)
 
 
-@array_api_compatible
 @skip_xp_backends(
     "jax.numpy",
     reasons=["transforms make use of indexing assignment"],

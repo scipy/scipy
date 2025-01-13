@@ -35,16 +35,10 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     array_namespace,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy, xp_size,
+    xp_copy, xp_size, xp_default_dtype
 )
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [
-    array_api_compatible,
-    pytest.mark.usefixtures("skip_xp_backends"),
-    pytest.mark.usefixtures("xfail_xp_backends"),
-]
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -1115,7 +1109,7 @@ class TestOAConvolve:
         # Regression test for #1745: crashes with 0-length input.
         xp_assert_equal(
             oaconvolve(xp.asarray(a), xp.asarray(b)),
-            xp.asarray([]),
+            xp.asarray([]), check_dtype=False
         )
 
     def test_zero_rank(self, xp):
@@ -1589,7 +1583,7 @@ class TestResample:
                     xp_assert_close(y_g[::down], y_s)
 
     @pytest.mark.parametrize('dtype', [np.int32, np.float32])
-    def test_gh_15620(self, dtype):
+    def test_gh_15620(self, dtype, xp):
         data = np.array([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
         actual = signal.resample_poly(data,
                                       up=2,
@@ -1631,6 +1625,7 @@ class TestCSpline1DEval:
         assert ynew.dtype == y.dtype
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestOrderFilt:
 
     def test_basic(self, xp):
@@ -3433,7 +3428,7 @@ class TestEnvelope:
         self.assert_close(Zr, np.array(Zr_desired).astype(complex),
                           msg="Residual calculation error")
 
-    def test_envelope_verify_axis_parameter(self):
+    def test_envelope_verify_axis_parameter(self, xp):
         """Test for multi-channel envelope calculations. """
         z = sp_fft.irfft([[1, 0, 2, 2, 0], [7, 0, 4, 4, 0]])
         Ze2_desired = np.array([[4, 2, 0, 0, 0], [16, 8, 0, 0, 0]],
@@ -3515,7 +3510,7 @@ class TestPartialFractionExpansion:
         xp_assert_close(unique, [1.0, 2.0, 3.0])
         xp_assert_close(multiplicity, [3, 2, 1])
 
-    def test_residue_general(self):
+    def test_residue_general(self, xp):
         # Test are taken from issue #4464, note that poles in scipy are
         # in increasing by absolute value order, opposite to MATLAB.
         r, p, k = residue([5, 3, -2, 7], [-4, 0, 8, 3])
@@ -4355,7 +4350,7 @@ class TestDetrend:
         # regression test for https://github.com/scipy/scipy/issues/18675
         rng = np.random.RandomState(12345)
         x = rng.rand(10)
-        x = xp.asarray(x)
+        x = xp.asarray(x, dtype=xp_default_dtype(xp))
         if isinstance(bp, np.ndarray):
             bp = xp.asarray(bp)
         else:
@@ -4367,9 +4362,8 @@ class TestDetrend:
             -1.11128506e-01, -1.69470553e-01,  1.14710683e-01,  6.35468419e-02,
             3.53533144e-01, -3.67877935e-02, -2.00417675e-02, -1.94362049e-01])
 
-        # torch default float if f32
-        dtype_arg = {"check_dtype": False} if is_torch(xp) else {}
-        xp_assert_close(res, res_scipy_191, atol=1e-14, **dtype_arg)
+        atol = 3e-7 if xp_default_dtype(xp) == xp.float32 else 1e-14
+        xp_assert_close(res, res_scipy_191, atol=atol)
 
 
 @skip_xp_backends(np_only=True)

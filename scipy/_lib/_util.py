@@ -7,10 +7,11 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
-from typing import TypeAlias, TypeVar
+from types import ModuleType
+from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy, xp_size
+from scipy._lib._array_api import Array, array_namespace, is_numpy, xp_size
 from scipy._lib._docscrape import FunctionDoc, Parameter
 import scipy._lib.array_api_extra as xpx
 
@@ -924,27 +925,32 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', policies=None, *,
-                  xp_omit_okay=False, xp=None):
+def _contains_nan(
+    a: Array,
+    nan_policy: Literal["propagate", "raise", "omit"] = "propagate",
+    *,
+    xp_omit_okay: bool = False, 
+    xp: ModuleType | None = None,
+) -> Array | bool:
     # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
     # handle non-NumPy arrays, most functions that call `_contains_nan` want
     # it to raise an error if `nan_policy='omit'` and `xp` is not `np`.
     # Some functions support `nan_policy='omit'` natively, so setting this to
     # `True` prevents the error from being raised.
+    policies = {"propagate", "raise", "omit"}
+    if nan_policy not in policies:
+        msg = f"nan_policy must be one of {policies}."
+        raise ValueError(msg)
+
+    if xp_size(a) == 0:
+        return False
+
     if xp is None:
         xp = array_namespace(a)
-    not_numpy = not is_numpy(xp)
-
-    if policies is None:
-        policies = {'propagate', 'raise', 'omit'}
-    if nan_policy not in policies:
-        raise ValueError(f"nan_policy must be one of {set(policies)}.")
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))
-    if xp_size(a) == 0:
-        contains_nan = False
-    elif inexact:
+    if inexact:
         # Faster and less memory-intensive than xp.any(xp.isnan(a))
         contains_nan = xp.isnan(xp.max(a))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
@@ -956,16 +962,19 @@ def _contains_nan(a, nan_policy='propagate', policies=None, *,
                 break
     else:
         # Only `object` and `inexact` arrays can have NaNs
-        contains_nan = False
+        return False
 
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
+    # The implicit call to bool(contains_nan) must happen after testing
+    # nan_policy to prevent lazy and device-bound xps from raising in the
+    # default policy='propagate' case.
+    if nan_policy == 'raise' and contains_nan:
+        msg = "The input contains nan values"
+        raise ValueError(msg)
+    if nan_policy == 'omit' and not xp_omit_okay and not is_numpy(xp) and contains_nan:
+        msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
+        raise ValueError(msg)
 
-    if not xp_omit_okay and not_numpy and contains_nan and nan_policy=='omit':
-        message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
-        raise ValueError(message)
-
-    return contains_nan, nan_policy
+    return contains_nan
 
 
 def _rename_parameter(old_name, new_name, dep_version=None):

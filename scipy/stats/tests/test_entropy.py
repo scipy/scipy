@@ -6,16 +6,12 @@ import numpy as np
 
 from scipy import stats
 from scipy.stats import norm, expon  # type: ignore[attr-defined]
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import array_namespace, is_array_api_strict, is_jax
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
 @pytest.mark.skip_xp_backends("dask.array", reason="boolean index assignment")
-@pytest.mark.usefixtures("skip_xp_backends")
-@array_api_compatible
 class TestEntropy:
-
     def test_entropy_positive(self, xp):
         # See ticket #497
         pk = xp.asarray([0.5, 0.2, 0.3])
@@ -121,8 +117,6 @@ class TestEntropy:
 
 
 @pytest.mark.skip_xp_backends("dask.array", reason="No sorting in Dask")
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.

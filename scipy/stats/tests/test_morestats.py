@@ -25,7 +25,6 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import array_namespace, is_numpy
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
@@ -738,7 +737,6 @@ class TestAnsari:
         assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
-@array_api_compatible
 class TestBartlett:
     def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
@@ -761,9 +759,8 @@ class TestBartlett:
         check_named_results(res, attributes, xp=xp)
 
     @pytest.mark.skip_xp_backends(
-        "jax.numpy", cpu_only=True,
+        "jax.numpy",
         reason='`var` incorrect when `correction > n` (google/jax#21330)')
-    @pytest.mark.usefixtures("skip_xp_backends")
     @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
@@ -1801,7 +1798,6 @@ x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
            12.10, 15.02, 16.83, 16.98, 19.92, 9.47, 11.68, 13.41, 15.35, 19.11]
 
 
-@array_api_compatible
 class TestKstat:
     def test_moments_normal_distribution(self, xp):
         np.random.seed(32149)
@@ -1860,7 +1856,6 @@ class TestKstat:
         xp_assert_close(res, xp.asarray(ref))
 
 
-@array_api_compatible
 class TestKstatVar:
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
@@ -1881,8 +1876,7 @@ class TestKstatVar:
 
     @skip_xp_backends(np_only=True,
                       reason='input validation of `n` does not depend on backend')
-    @pytest.mark.usefixtures("skip_xp_backends")
-    def test_bad_arg(self):
+    def test_bad_arg(self, xp):
         # Raise ValueError is n is not 1 or 2.
         data = [1]
         n = 10
@@ -2001,8 +1995,6 @@ class TestPpccMax:
 
 
 @skip_xp_backends('jax.numpy', reason="JAX arrays do not support item assignment")
-@pytest.mark.usefixtures("skip_xp_backends")
-@array_api_compatible
 class TestBoxcox_llf:
 
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
@@ -2659,7 +2651,6 @@ class TestYeojohnsonNormmax:
         assert np.allclose(lmbda, 1.305, atol=1e-3)
 
 
-@array_api_compatible
 class TestCircFuncs:
     # In gh-5747, the R package `circular` was used to calculate reference
     # values for the circular variance, e.g.:
@@ -3050,7 +3041,6 @@ class TestMedianTest:
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
-@array_api_compatible
 class TestDirectionalStats:
     # Reference implementations are not available
     def test_directional_stats_correctness(self, xp):
@@ -3223,7 +3213,6 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([]), [])
 
 
-@array_api_compatible
 class TestCommonAxis:
     # More thorough testing of `axis` in `test_axis_nan_policy`,
     # but those tests aren't run with array API yet. This class

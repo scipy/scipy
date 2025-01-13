@@ -2,7 +2,6 @@ import pytest
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
-from scipy.conftest import array_api_compatible
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE, is_dask
@@ -51,31 +50,24 @@ def test_rel_entr_generic(dtype):
 
 
 @pytest.mark.fail_slow(5)
-@array_api_compatible
-# @pytest.mark.skip_xp_backends('numpy', reason='skip while debugging')
-# @pytest.mark.usefixtures("skip_xp_backends")
 # `reversed` is for developer convenience: test new function first = less waiting
-@pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))
+@pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
 # numpy warning filter doesn't work for dask
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
-def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
-    f_name, n_args = f_name_n_args
-
+def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
     if (SCIPY_DEVICE != 'cpu'
         and is_torch(xp)
         and f_name in {'stdtr', 'stdtrit', 'betaincc', 'betainc'}
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
-                    f"and cannot delegate to PyTorch.")
-        
+                    "and cannot delegate to PyTorch.")
     if is_dask(xp) and f_name == 'rel_entr':
         pytest.skip("boolean index assignment")
-
-    if is_jax(xp) and f_name in {'stdtrit'}:
-        pytest.skip(f"`{f_name}` generic implementation require array mutation.")
+    if is_jax(xp) and f_name == "stdtrit":
+        pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
 
     shapes = shapes[:n_args]
     f = getattr(special, f_name)
@@ -113,7 +105,6 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
     xp_assert_close(res, ref, atol=10*eps)
 
 
-@array_api_compatible
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311
     # be sure to test at least these cases

@@ -3,7 +3,6 @@ import pytest
 
 import numpy as np
 
-from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 from scipy._lib._array_api import is_numpy, is_torch, array_namespace
@@ -11,9 +10,6 @@ from scipy._lib._array_api import is_numpy, is_torch, array_namespace
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
-
-
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
 jax_skip_reason = 'JAX arrays do not support item assignment.'
@@ -41,7 +37,7 @@ class TestDerivative:
 
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('case', stats._distr_params.distcont)
-    def test_accuracy(self, case):
+    def test_accuracy(self, case, xp):
         distname, params = case
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
@@ -436,7 +432,7 @@ class TestDerivative:
         (lambda x: (x - 1) ** 3, 1),
         (lambda x: np.where(x > 1, (x - 1) ** 5, (x - 1) ** 3), 1)
     ))
-    def test_saddle_gh18811(self, case):
+    def test_saddle_gh18811(self, case, xp):
         # With default settings, `derivative` will not always converge when
         # the true derivative is exactly zero. This tests that specifying a
         # (tight) `atol` alleviates the problem. See discussion in gh-18811.

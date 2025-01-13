@@ -3487,6 +3487,33 @@ def test_sy_hetrs(mtype, dtype, lower):
     assert_allclose(A@x, b, atol=100*n*eps)
 
 
+@pytest.mark.parametrize('mtype', ['sy', 'he'])  # matrix type
+@pytest.mark.parametrize('dtype', DTYPES)
+@pytest.mark.parametrize('lower', (0, 1))
+def test_sy_he_tri(dtype, lower, mtype):
+    if mtype == 'he' and dtype in REAL_DTYPES:
+        pytest.skip("hetri not for real dtypes.")
+    rng = np.random.default_rng(1723059677121834)
+    n = 20
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A = A + A.T if mtype == 'sy' else A + A.conj().T
+    names = f'{mtype}trf', f'{mtype}tri'
+    trf, tri = get_lapack_funcs(names, dtype=dtype)
+    ldu, ipiv, info = trf(A, lower=lower)
+    assert info == 0
+    A_inv, info = tri(a=ldu, ipiv=ipiv, lower=lower)
+    assert info == 0
+    eps = np.finfo(dtype).eps
+    ref = np.linalg.inv(A)
+    if lower:
+        assert_allclose(np.tril(A_inv), np.tril(ref), atol=100*n*eps)
+    else:
+        assert_allclose(np.triu(A_inv), np.triu(ref), atol=100*n*eps)
+
+
 @pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
 @pytest.mark.parametrize('uplo, m, n', [('U', 5, 10), ('U', 10, 10),
                                         ('L', 10, 5), ('L', 10, 10)])
@@ -3544,3 +3571,24 @@ def test_gbcon(dtype, norm):
     # This is an estimate of reciprocal condition number; we just need order of
     # magnitude.
     assert_allclose(res, ref, rtol=1)
+
+
+@pytest.mark.parametrize('norm', list('Mm1OoIiFfEe'))
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_langb(dtype, norm):
+    rng = np.random.default_rng(17273783424)
+
+    # A is of shape n x n with ku/kl super/sub-diagonals
+    n, ku, kl = 10, 2, 2
+    A = rng.random((n, n)) + rng.random((n, n))*1j
+    if np.issubdtype(dtype, np.floating):
+        A = A.real
+    A = A.astype(dtype)
+    A[np.triu_indices(n, ku + 1)] = 0
+    A[np.tril_indices(n, -kl - 1)] = 0
+    ab = _to_banded(kl, ku, A)
+
+    langb, lange = get_lapack_funcs(('langb', 'lange'), (A,))
+    ref = lange(norm, A)
+    res = langb(norm, kl, ku, ab)
+    assert_allclose(res, ref, rtol=2e-6)

@@ -14,12 +14,9 @@ import scipy.ndimage as ndimage
 
 from . import types
 
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              pytest.mark.usefixtures("xfail_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
+pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
 eps = 1e-12
@@ -606,6 +603,7 @@ class TestMapCoordinates:
         assert out.dtype is np.dtype('f')
         assert_array_almost_equal(out, xp.asarray([[1]]))
 
+    @pytest.mark.skip_xp_backends(cpu_only=True)
     @pytest.mark.skipif('win32' in sys.platform or np.intp(0).itemsize < 8,
                         reason='do not run on 32 bit or windows '
                                '(no sparse memory)')
