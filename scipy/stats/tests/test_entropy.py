@@ -272,12 +272,12 @@ class TestDifferentialEntropy:
         'vasicek',
         'van es',
         pytest.param(
-    'ebrahimi',
+            'ebrahimi',
             marks=skip_xp_backends("jax.numpy",
                                    reason="JAX doesn't support item assignment")
         ),
         pytest.param(
-    'correa',
+            'correa',
             marks=skip_xp_backends("array_api_strict",
                                    reason="Needs fancy indexing.")
         )
