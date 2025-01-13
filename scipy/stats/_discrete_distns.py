@@ -1056,7 +1056,7 @@ class planck_gen(rv_discrete):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_):
         return lambda_ > 0

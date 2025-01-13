@@ -13,7 +13,7 @@ from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
 from scipy.stats import qmc
-from scipy.stats._distr_params import distcont
+from scipy.stats._distr_params import distcont, distdiscrete
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
@@ -1031,19 +1031,25 @@ class TestAttributes:
 
 
 class TestMakeDistribution:
-    @pytest.mark.parametrize('i, distdata', enumerate(distcont))
+    @pytest.mark.parametrize('i, distdata', enumerate(distcont + distdiscrete))
     def test_make_distribution(self, i, distdata):
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'powerlognorm',
-                'powernorm', 'recipinvgauss', 'studentized_range', 'vonmises_line'}
+                'powernorm', 'recipinvgauss', 'studentized_range', 'vonmises_line',
+                'betanbinom', 'zipf', 'logser', 'skellam'}  # discrete
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
-        if distname in {  # skip these distributions
-            'levy_stable',  # private methods seem to require >= 1d args
-            'vonmises',  # circular distribution; shouldn't work
+        if distname in {              # skip these distributions
+            'levy_stable',            # private methods seem to require >= 1d args
+            'vonmises',               # circular distribution; shouldn't work
+            'poisson_binom',          # vector shape parameter
+            'hypergeom',              # distribution functions need interpolation
+            'zipfian',                # distribution functions need interpolation
+            'nchypergeom_fisher',     # distribution functions don't accept NaN
+            'nchypergeom_wallenius',  # distribution functions don't accept NaN
         }:
             return
 
@@ -1083,15 +1089,22 @@ class TestMakeDistribution:
             if distname not in skip_kurtosis:
                 assert_allclose(X.kurtosis(convention='excess'), k,
                                 rtol=rtol, atol=atol)
-            assert_allclose(X.logpdf(x), Y.logpdf(x), rtol=rtol)
-            assert_allclose(X.pdf(x), Y.pdf(x), rtol=rtol)
+            if isinstance(dist, stats.rv_continuous):
+                assert_allclose(X.logpdf(x), Y.logpdf(x), rtol=rtol)
+                assert_allclose(X.pdf(x), Y.pdf(x), rtol=rtol)
+            else:
+                assert_allclose(X.logpmf(x), Y.logpmf(x), rtol=rtol)
+                assert_allclose(X.pmf(x), Y.pmf(x), rtol=rtol)
             assert_allclose(X.logcdf(x), Y.logcdf(x), rtol=rtol)
             assert_allclose(X.cdf(x), Y.cdf(x), rtol=rtol)
             if distname not in skip_logccdf:
                 assert_allclose(X.logccdf(x), Y.logsf(x), rtol=rtol)
             assert_allclose(X.ccdf(x), Y.sf(x), rtol=rtol)
-            assert_allclose(X.icdf(p), Y.ppf(p), rtol=rtol)
-            assert_allclose(X.iccdf(p), Y.isf(p), rtol=rtol)
+            if isinstance(dist, stats.rv_continuous):
+                # For discrete distributions, these won't agree at the far left end
+                # of the support, and the new infrastructure is slow there (for now).
+                assert_allclose(X.icdf(p), Y.ppf(p), rtol=rtol)
+                assert_allclose(X.iccdf(p), Y.isf(p), rtol=rtol)
             for order in range(5):
                 if distname not in skip_raw.get(order, {}):
                     assert_allclose(X.moment(order, kind='raw'),

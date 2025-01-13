@@ -1288,7 +1288,7 @@ def _combine_docs(dist_family, *, include_examples=True):
         fields.remove('Examples')
 
     doc = ClassDoc(dist_family)
-    superdoc = ClassDoc(_UnivariateDistribution)
+    superdoc = ClassDoc(UnivariateDistribution)
     for field in fields:
         if field in {"Methods", "Attributes"}:
             doc[field] = superdoc[field]
@@ -1470,7 +1470,7 @@ def _generate_example(dist_family):
     return example
 
 
-class _UnivariateDistribution(_ProbabilityDistribution):
+class UnivariateDistribution(_ProbabilityDistribution):
     r""" Class that represents a continuous statistical distribution.
 
     Parameters
@@ -2135,7 +2135,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
         # For more complete discussion of the considerations, see:
         # https://github.com/scipy/scipy/pull/21050#discussion_r1707798901
         method = getattr(self.__class__, method_name, None)
-        super_method = getattr(_UnivariateDistribution, method_name, None)
+        super_method = getattr(UnivariateDistribution, method_name, None)
         return method is not super_method
 
     ### Distribution properties
@@ -3570,7 +3570,7 @@ class _UnivariateDistribution(_ProbabilityDistribution):
     # these methods reasonably efficiently.
 
 
-class ContinuousDistribution(_UnivariateDistribution):
+class ContinuousDistribution(UnivariateDistribution):
     def _overrides(self, method_name):
         if method_name in {'_logpmf_formula', '_pmf_formula'}:
             return True
@@ -3589,7 +3589,7 @@ class ContinuousDistribution(_UnivariateDistribution):
         return self._logpdf_dispatch(x, method=method, **params)
 
 
-class DiscreteDistribution(_UnivariateDistribution):
+class DiscreteDistribution(UnivariateDistribution):
     def _overrides(self, method_name):
         if method_name in {'_logpdf_formula', '_pdf_formula'}:
             return True
@@ -3683,6 +3683,7 @@ class DiscreteDistribution(_UnivariateDistribution):
 
 # Special case the names of some new-style distributions in `make_distribution`
 _distribution_names = {
+    # Continuous
     'argus': 'ARGUS',
     'betaprime': 'BetaPrime',
     'chi2': 'ChiSquared',
@@ -3755,41 +3756,59 @@ _distribution_names = {
     'weibull_min': 'Weibull',
     'weibull_max': 'ReflectedWeibull',
     'wrapcauchy': 'WrappedCauchyLine',
+    # Discrete
+    'betabinom': 'BetaBinomial',
+    'betanbinom': 'BetaNegativeBinomial',
+    'dlaplace': 'LaplaceDiscrete',
+    'geom': 'Geometric',
+    'hypergeom': 'Hypergeometric',
+    'logser': 'LogarithmicSeries',
+    'nbinom': 'NegativeBinomial',
+    'nchypergeom_fisher': 'NoncentralHypergeometricFisher',
+    'nchypergeom_wallenius': 'NoncentralHypergeometricWallenius',
+    'nhypergeom': 'NegativeHypergeometric',
+    'poisson_binom': 'PoissonBinomial',
+    'randint': 'UniformDiscrete',
+    'yulesimon': 'YuleSimon',
+    'zipf': 'Zeta',
 }
 
 
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 def make_distribution(dist):
-    """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
+    """Generate a `UnivariateDistribution` from an instance of `rv_generic`
 
-    The returned value is a `ContinuousDistribution` subclass. Like any subclass
-    of `ContinuousDistribution`, it must be instantiated (i.e. by passing all shape
-    parameters as keyword arguments) before use. Once instantiated, the resulting
-    object will have the same interface as any other instance of
-    `ContinuousDistribution`; e.g., `scipy.stats.Normal`.
+    The returned value is a `ContinuousDistribution` subclass if the input is an
+    instance of `rv_continuous` or a `DiscreteDistribution` subclass if the input
+    is an instance of `rv_discrete`. Like any subclass of `UnivariateDistribution`,
+    it must be instantiated (i.e. by passing all shape parameters as keyword
+    arguments) before use. Once instantiated, the resulting object will have the
+    same interface as any other instance of `UnivariateDistribution`; e.g.,
+    `scipy.stats.Normal`, `scipy.stats.Binomial`.
 
     .. note::
 
         `make_distribution` does not work perfectly with all instances of
-        `rv_continuous`. Known failures include `levy_stable` and `vonmises`,
-        and some methods of some distributions will not support array shape
-        parameters.
+        `rv_continuous`. Known failures include `levy_stable`, `vonmises`,
+        `hypergeom`, `nchypergeom_fisher`, `nchypergeom_wallenius`,
+        `poisson_binom`, and `zipian`; and some methods of some distributions
+        will not support array shape parameters.
 
     Parameters
     ----------
-    dist : `rv_continuous`
-        Instance of `rv_continuous`.
+    dist : `rv_continuous` or `rv_discrete`
+        Instance of `rv_continuous` or `rv_discrete`
 
     Returns
     -------
-    CustomDistribution : `ContinuousDistribution`
-        A subclass of `ContinuousDistribution` corresponding with `dist`. The
+    CustomDistribution : `UnivariateDistribution`
+        A subclass of `UnivariateDistribution` corresponding with `dist`. The
         initializer requires all shape parameters to be passed as keyword arguments
-        (using the same names as the instance of `rv_continuous`).
+        (using the same names as the instance of `rv_continuous`/`rv_discrete`).
 
     Notes
     -----
-    The documentation of `ContinuousDistribution` is not rendered. See below for
+    The documentation of `UnivariateDistribution` is not rendered. See below for
     an example of how to instantiate the class (i.e. pass all shape parameters of
     `dist` to the initializer as keyword arguments). Documentation of all methods
     is identical to that of `scipy.stats.Normal`. Use ``help`` on the returned
@@ -3811,7 +3830,9 @@ def make_distribution(dist):
     >>> plt.show()
 
     """
-    if dist in {stats.levy_stable, stats.vonmises}:
+    if dist in {stats.levy_stable, stats.vonmises, stats.hypergeom,
+                stats.nchypergeom_fisher, stats.nchypergeom_wallenius,
+                stats.poisson_binom, stats.zipfian}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
     if not isinstance(dist, (stats.rv_continuous, stats.rv_discrete)):
