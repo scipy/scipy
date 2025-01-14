@@ -716,7 +716,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif xp_size(in1) == 0 or xp_size(in2) == 0:  # empty arrays
-        return xp.array([])
+        return xp.asarray([])
 
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=False)
@@ -933,7 +933,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
-        return np.array([])
+        return xp.asarray([])
     elif in1.shape == in2.shape:  # Equivalent to fftconvolve
         return fftconvolve(in1, in2, mode=mode, axes=axes)
 
@@ -2364,11 +2364,9 @@ def lfiltic(b, a, y, x=None):
     y = xp.astype(y, result_type)
     zi = xp.zeros(K, dtype=result_type)
 
-    concat = array_namespace(xp.ones(3)).concat
-
     L = xp_size(y)
     if L < N:
-        y = concat((y, np.zeros(N - L)))
+        y = xp.concat((y, np.zeros(N - L)))
 
     for m in range(M):
         zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)

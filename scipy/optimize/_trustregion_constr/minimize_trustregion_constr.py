@@ -265,7 +265,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Optimization method used.
     constr : list of ndarray
         List of constraint values at the solution.
-    jac : list of {ndarray, sparse matrix}
+    jac : list of {ndarray, sparse array}
         List of the Jacobian matrices of the constraints at the solution.
     v : list of ndarray
         List of the Lagrange multipliers for the constraints at the solution.

@@ -3,14 +3,11 @@ import math
 import pytest
 import numpy as np
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import array_namespace
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_less, xp_assert_equal
 from scipy.stats._continued_fraction import _continued_fraction
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing assignment')
 @pytest.mark.skip_xp_backends('jax.numpy', reason="Don't support mutation")
 class TestContinuedFraction:

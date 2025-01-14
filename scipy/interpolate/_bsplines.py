@@ -1825,8 +1825,9 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         # have observation matrix & rhs, can solve the LSQ problem
         cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
                                      check_finite=check_finite)
-        c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
-                             check_finite=check_finite)
+        m = rhs.shape[0]
+        c = cho_solve_banded((cho_decomp, lower), rhs.reshape(m, -1), overwrite_b=True,
+                             check_finite=check_finite).reshape(rhs.shape)
     elif method == "qr":
         _, _, c = _lsq_solve_qr(x, yy, t, k, w)
 

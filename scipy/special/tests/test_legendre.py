@@ -4,11 +4,19 @@ import numpy as np
 
 import pytest
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose)
+    assert_allclose, suppress_warnings)
 
 from scipy import special
 from scipy.special import (legendre_p, legendre_p_all, assoc_legendre_p,
     assoc_legendre_p_all, sph_legendre_p, sph_legendre_p_all)
+
+# The functions lpn, lpmn, clpmn, appearing below are
+# deprecated in favor of legendre_p_all, assoc_legendre_p_all, and
+# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn)
+# respectively. The deprecated functions listed above are implemented as
+# shims around their respective replacements. The replacements are tested
+# separately, but tests for the deprecated functions remain to verify the
+# correctness of the shims.
 
 # Base polynomials come from Abrahmowitz and Stegan
 class TestLegendre:
@@ -32,8 +40,11 @@ class TestLegendre:
     @pytest.mark.parametrize('zi', [9.766818, 0.2999083, 8.24726, -22.84843,
                                     -0.8792666])
     def test_lpn_against_clpmn(self, n, zr, zi):
-        reslpn = special.lpn(n, zr + zi*1j)
-        resclpmn = special.clpmn(0, n, zr+zi*1j)
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            reslpn = special.lpn(n, zr + zi*1j)
+            resclpmn = special.clpmn(0, n, zr+zi*1j)
+
         assert_allclose(reslpn[0], resclpmn[0][0])
         assert_allclose(reslpn[1], resclpmn[1][0])
 
@@ -73,7 +84,10 @@ class TestLegendreP:
         np.testing.assert_allclose(err, 0, atol=1e-10)
 
     def test_legacy(self):
-        p, pd = special.lpn(2, 0.5)
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            p, pd = special.lpn(2, 0.5)
+
         assert_array_almost_equal(p, [1.00000, 0.50000, -0.12500], 4)
         assert_array_almost_equal(pd, [0.00000, 1.00000, 1.50000], 4)
 
@@ -327,13 +341,16 @@ class TestAssocLegendreP:
         x = 0.5
         p, p_jac = assoc_legendre_p_all(n_max, m_max, x, diff_n=1)
 
-        p_legacy, p_jac_legacy = special.lpmn(m_max, n_max, x)
-        for m in range(m_max + 1):
-            np.testing.assert_allclose(p_legacy[m], p[:, m])
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
 
-        p_legacy, p_jac_legacy = special.lpmn(-m_max, n_max, x)
-        for m in range(m_max + 1):
-            np.testing.assert_allclose(p_legacy[m], p[:, -m])
+            p_legacy, p_jac_legacy = special.lpmn(m_max, n_max, x)
+            for m in range(m_max + 1):
+                np.testing.assert_allclose(p_legacy[m], p[:, m])
+
+            p_legacy, p_jac_legacy = special.lpmn(-m_max, n_max, x)
+            for m in range(m_max + 1):
+                np.testing.assert_allclose(p_legacy[m], p[:, -m])
 
 class TestMultiAssocLegendreP:
     @pytest.mark.parametrize("shape", [(1000,), (4, 9), (3, 5, 7)])
@@ -388,7 +405,7 @@ class TestMultiAssocLegendreP:
             assoc_legendre_p_2_m2(z, branch_cut=branch_cut, norm=norm))
         np.testing.assert_allclose(p[2, -1],
             assoc_legendre_p_2_m1(z, branch_cut=branch_cut, norm=norm))
- 
+
         np.testing.assert_allclose(p[3, 0],
             assoc_legendre_p_3_0(z, branch_cut=branch_cut, norm=norm))
         np.testing.assert_allclose(p[3, 1],
@@ -678,7 +695,11 @@ class TestSphLegendreP:
 class TestLegendreFunctions:
     def test_clpmn(self):
         z = 0.5+0.3j
-        clp = special.clpmn(2, 2, z, 3)
+
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            clp = special.clpmn(2, 2, z, 3)
+
         assert_array_almost_equal(clp,
                    (np.array([[1.0000, z, 0.5*(3*z*z-1)],
                            [0.0000, np.sqrt(z*z-1), 3*z*np.sqrt(z*z-1)],
@@ -693,8 +714,12 @@ class TestLegendreFunctions:
         m = 1
         n = 3
         x = 0.5
-        clp_plus = special.clpmn(m, n, x+1j*eps, 2)[0][m, n]
-        clp_minus = special.clpmn(m, n, x-1j*eps, 2)[0][m, n]
+
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            clp_plus = special.clpmn(m, n, x+1j*eps, 2)[0][m, n]
+            clp_minus = special.clpmn(m, n, x-1j*eps, 2)[0][m, n]
+
         assert_array_almost_equal(np.array([clp_plus, clp_minus]),
                                   np.array([special.lpmv(m, n, x),
                                          special.lpmv(m, n, x)]),
@@ -705,8 +730,12 @@ class TestLegendreFunctions:
         m = 1
         n = 3
         x = 0.5
-        clp_plus = special.clpmn(m, n, x+1j*eps, 3)[0][m, n]
-        clp_minus = special.clpmn(m, n, x-1j*eps, 3)[0][m, n]
+
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            clp_plus = special.clpmn(m, n, x+1j*eps, 3)[0][m, n]
+            clp_minus = special.clpmn(m, n, x-1j*eps, 3)[0][m, n]
+
         assert_array_almost_equal(np.array([clp_plus, clp_minus]),
                                   np.array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
                                          special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)]),
@@ -717,18 +746,23 @@ class TestLegendreFunctions:
         m = 1
         n = 1
         x = 1j
-        for type in [2, 3]:
-            assert_almost_equal(special.clpmn(m, n, x+1j*eps, type)[0][m, n],
-                            special.clpmn(m, n, x-1j*eps, type)[0][m, n], 6)
+
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            for type in [2, 3]:
+                assert_almost_equal(special.clpmn(m, n, x+1j*eps, type)[0][m, n],
+                                special.clpmn(m, n, x-1j*eps, type)[0][m, n], 6)
 
     def test_inf(self):
-        for z in (1, -1):
-            for n in range(4):
-                for m in range(1, n):
-                    lp = special.clpmn(m, n, z)
-                    assert np.isinf(lp[1][1,1:]).all()
-                    lp = special.lpmn(m, n, z)
-                    assert np.isinf(lp[1][1,1:]).all()
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            for z in (1, -1):
+                for n in range(4):
+                    for m in range(1, n):
+                        lp = special.clpmn(m, n, z)
+                        assert np.isinf(lp[1][1,1:]).all()
+                        lp = special.lpmn(m, n, z)
+                        assert np.isinf(lp[1][1,1:]).all()
 
     def test_deriv_clpmn(self):
         # data inside and outside of the unit circle
@@ -736,14 +770,17 @@ class TestLegendreFunctions:
                  1+1j, -1+1j, -1-1j, 1-1j]
         m = 2
         n = 3
-        for type in [2, 3]:
-            for z in zvals:
-                for h in [1e-3, 1e-3j]:
-                    approx_derivative = (special.clpmn(m, n, z+0.5*h, type)[0]
-                                         - special.clpmn(m, n, z-0.5*h, type)[0])/h
-                    assert_allclose(special.clpmn(m, n, z, type)[1],
-                                    approx_derivative,
-                                    rtol=1e-4)
+
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            for type in [2, 3]:
+                for z in zvals:
+                    for h in [1e-3, 1e-3j]:
+                        approx_derivative = (special.clpmn(m, n, z+0.5*h, type)[0]
+                                            - special.clpmn(m, n, z-0.5*h, type)[0])/h
+                        assert_allclose(special.clpmn(m, n, z, type)[1],
+                                        approx_derivative,
+                                        rtol=1e-4)
 
     """
     @pytest.mark.parametrize("m_max", [3])
@@ -834,7 +871,9 @@ class TestLegendreFunctions:
         if z_complex:
             z = 1j * z + 0.5j * z
 
-        P_z, P_d_z = function(n, z)
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            P_z, P_d_z = function(n, z)
         assert P_z.shape == (n + 1, ) + input_shape
         assert P_d_z.shape == (n + 1, ) + input_shape
 
@@ -877,7 +916,10 @@ class TestLegendreFunctions:
         z = rng.uniform(-1, 1, size=input_shape)
         z = 1j * z + 0.5j * z
 
-        P_z, P_d_z = function(m, n, z)
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            P_z, P_d_z = function(m, n, z)
+
         assert P_z.shape == (m + 1, n + 1) + input_shape
         assert P_d_z.shape == (m + 1, n + 1) + input_shape
 

@@ -117,6 +117,14 @@ class Test_RealDomain:
         ref = f"{left_bracket}{a}, {b}{right_bracket}"
         assert str(domain) == ref
 
+    def test_symbols_gh22137(self):
+        # `symbols` was accidentally shared between instances originally
+        # Check that this is no longer the case
+        domain1 = _RealDomain(endpoints=(0, 1))
+        domain2 = _RealDomain(endpoints=(0, 1))
+        assert domain1.symbols is not domain2.symbols
+
+
 def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
@@ -418,6 +426,8 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
         # can only expect about half of machine precision for optimization
         # because math
         tol_override = {'atol': 1e-6}
+    elif fname in {'logcdf'}:  # gh-22276
+        tol_override = {'rtol': 2e-7}
 
     if dist._overrides(f'_{fname}_formula'):
         methods.add('formula')
@@ -1784,12 +1794,18 @@ class TestMixture:
         with pytest.raises(ValueError, match=message):
             Mixture([Normal(), Normal()], weights=[1.5, -0.5])
 
-    def test_basic(self):
+    @pytest.mark.parametrize('shape', [(), (10,)])
+    def test_basic(self, shape):
         rng = np.random.default_rng(582348972387243524)
         X = Mixture((Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)),
                     weights=(0.4, 0.6))
         Y = MixedDist()
-        x = rng.random(10)
+        x = rng.random(shape)
+
+        def assert_allclose(res, ref, **kwargs):
+            if shape == ():
+                assert np.isscalar(res)
+            np.testing.assert_allclose(res, ref, **kwargs)
 
         assert_allclose(X.logentropy(), Y.logentropy())
         assert_allclose(X.entropy(), Y.entropy())

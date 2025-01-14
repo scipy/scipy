@@ -11,7 +11,7 @@ from . import _ufuncs
 from ._ufuncs import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
     gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
-    chdtr, chdtrc, betainc, betaincc, stdtr  # noqa: F401
+    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit  # noqa: F401
 )
 
 array_api_compat_prefix = "scipy._lib.array_api_compat"
@@ -144,12 +144,35 @@ def _stdtr(xp, spx):
     return __stdtr
 
 
+def _stdtrit(xp, spx):
+    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
+    if betainc is None and hasattr(xp, 'special'):
+        betainc = getattr(xp.special, 'betainc', None)
+
+    # If betainc is not defined, the root-finding would be done with `xp`
+    # despite `stdtr` being evaluated with SciPy/NumPy `stdtr`. Save the
+    # conversions: in this case, just evaluate `stdtrit` with SciPy/NumPy.
+    if betainc is None:
+        return None
+
+    from scipy.optimize.elementwise import bracket_root, find_root
+
+    def __stdtrit(df, p):
+        def fun(t, df, p):  return stdtr(df, t) - p
+        res_bracket = bracket_root(fun, xp.zeros_like(p), args=(df, p))
+        res_root = find_root(fun, res_bracket.bracket, args=(df, p))
+        return res_root.x
+
+    return __stdtrit
+
+
 _generic_implementations = {'rel_entr': _rel_entr,
                             'xlogy': _xlogy,
                             'chdtr': _chdtr,
                             'chdtrc': _chdtrc,
                             'betaincc': _betaincc,
                             'stdtr': _stdtr,
+                            'stdtrit': _stdtrit,
                             }
 
 
@@ -190,6 +213,7 @@ array_special_func_map = {
     'betainc': 3,
     'betaincc': 3,
     'stdtr': 2,
+    'stdtrit': 2,
 }
 
 for f_name, n_array_args in array_special_func_map.items():

@@ -6,13 +6,14 @@ from numpy.testing import (assert_, assert_allclose,
                            assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy.sparse import issparse, lil_matrix
+from scipy.sparse import issparse, lil_array
 from scipy.sparse.linalg import aslinearoperator
 
 from scipy.optimize import least_squares, Bounds
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
 from scipy.optimize._lsq.common import EPS, make_strictly_feasible, CL_scaling_vector
 
+from scipy.optimize import OptimizeResult
 
 def fun_trivial(x, a=0):
     return (x - a)**2 + 5.0
@@ -92,7 +93,7 @@ class BroydenTridiagonal:
         self.x0 = make_strictly_feasible(self.x0, self.lb, self.ub)
 
         if mode == 'sparse':
-            self.sparsity = lil_matrix((n, n), dtype=int)
+            self.sparsity = lil_array((n, n), dtype=int)
             i = np.arange(n)
             self.sparsity[i, i] = 1
             i = np.arange(1, n)
@@ -116,7 +117,7 @@ class BroydenTridiagonal:
         return f
 
     def _jac(self, x):
-        J = lil_matrix((self.n, self.n))
+        J = lil_array((self.n, self.n))
         i = np.arange(self.n)
         J[i, i] = 3 - 2 * x
         i = np.arange(1, self.n)
@@ -785,6 +786,73 @@ def test_basic():
     # test that 'method' arg is really optional
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
+
+
+def test_callback():
+    # test that callback function works as expected
+
+    results = []
+    
+    def my_callback_optimresult(intermediate_result: OptimizeResult):
+        results.append(intermediate_result)
+        
+    def my_callback_x(x):
+        r = OptimizeResult()
+        r.nit = 1
+        r.x = x
+        results.append(r)
+        return False
+        
+    def my_callback_optimresult_stop_exception(
+        intermediate_result: OptimizeResult):
+        results.append(intermediate_result)
+        raise StopIteration
+
+    def my_callback_x_stop_exception(x):
+        r = OptimizeResult()
+        r.nit = 1
+        r.x = x
+        results.append(r)
+        raise StopIteration
+
+    # Try for different function signatures and stop methods
+    callbacks_nostop = [my_callback_optimresult, my_callback_x]
+    callbacks_stop = [my_callback_optimresult_stop_exception,
+                      my_callback_x_stop_exception]
+    
+    # Try for all the implemented methods: trf, trf_bounds and dogbox
+    calls = [
+        lambda callback: least_squares(fun_trivial, 5.0, method='trf', 
+                                       callback=callback),
+        lambda callback: least_squares(fun_trivial, 5.0, method='trf', 
+                                       bounds=(-8.0, 8.0), callback=callback),
+        lambda callback: least_squares(fun_trivial, 5.0, method='dogbox', 
+                                       callback=callback)
+    ]
+
+    for mycallback, call in product(callbacks_nostop, calls):
+        results.clear()
+        # Call the different implemented methods
+        res = call(mycallback)
+        # Check that callback was called
+        assert len(results) > 0
+        # Check that results data makes sense
+        assert results[-1].nit > 0
+        # Check that it didn't stop because of the callback
+        assert res.status != -2
+        # final callback x should be same as final result
+        assert_allclose(results[-1].x, res.x)
+
+    for mycallback, call in product(callbacks_stop, calls):
+        results.clear()
+        # Call the different implemented methods
+        res = call(mycallback)
+        # Check that callback was called
+        assert len(results) > 0
+        # Check that only one iteration was run
+        assert results[-1].nit == 1
+        # Check that it stopped because of the callback
+        assert res.status == -2
 
 
 def test_small_tolerances_for_lm():

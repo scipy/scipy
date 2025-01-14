@@ -1,6 +1,6 @@
 """Byrd-Omojokun Trust-Region SQP method."""
 
-from scipy.sparse import eye as speye
+from scipy.sparse import eye_array as speye
 from .projections import projections
 from .qp_subproblem import modified_dogleg, projected_cg, box_intersections
 import numpy as np

@@ -821,7 +821,7 @@ from ._ufuncs import *
 from ._support_alternative_backends import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
     gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
-    chdtr, chdtrc, betainc, betaincc, stdtr)
+    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit)
 
 from . import _basic
 from ._basic import *

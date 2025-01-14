@@ -13,15 +13,13 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.conftest import array_api_compatible
 from scipy.sparse._sputils import matrix
 
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, array_namespace, xp_copy, xp_assert_close, xp_assert_equal
+    SCIPY_ARRAY_API, xp_copy, xp_assert_close, xp_assert_equal
 )
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 TESTDATA_2D = np.array([
@@ -100,8 +98,6 @@ class TestWhiten:
     def whiten_lock(self):
         return Lock()
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_whiten_zero_std(self, xp, whiten_lock):
         desired = xp.asarray([[0., 1.0, 2.86666544],
                               [0., 1.0, 1.32460034],
@@ -334,8 +330,6 @@ class TestKMean:
         data = xp.reshape(data, (20, 20))[:10, :]
         kmeans2(data, 2)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_kmeans2_init(self, xp):
         rng = np.random.default_rng(12345678)
         data = xp.asarray(TESTDATA_2D)
@@ -364,13 +358,12 @@ class TestKMean:
         datas = [xp.reshape(data, (200, 2)),
                  xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
-        xp_test = array_namespace(data)
         with krand_lock:
             for data in datas:
                 rng = np.random.default_rng(1234)
-                init = _krandinit(data, k, rng, xp_test)
-                orig_cov = xpx.cov(data.T, xp=xp_test)
-                init_cov = xpx.cov(init.T, xp=xp_test)
+                init = _krandinit(data, k, rng, xp)
+                orig_cov = xpx.cov(data.T, xp=xp)
+                init_cov = xpx.cov(init.T, xp=xp)
                 xp_assert_close(orig_cov, init_cov, atol=1.1e-2)
 
     def test_kmeans2_empty(self, xp):
@@ -390,8 +383,6 @@ class TestKMean:
         xp_assert_close(res[0], xp.asarray([4.], dtype=xp.float64))
         xp_assert_close(res[1], xp.asarray(2.3999999999999999, dtype=xp.float64)[()])
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
         rng = np.random.default_rng(2358792345678234568)
@@ -401,8 +392,6 @@ class TestKMean:
         xp_assert_close(res, prev_res)
 
     @pytest.mark.thread_unsafe
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
         rng = np.random.default_rng(23587923456834568)
@@ -427,8 +416,6 @@ class TestKMean:
         xp_assert_close(res[0], xp.asarray([-0.4,  8.], dtype=xp.float64))
         xp_assert_close(res[1], xp.asarray(1.0666666666666667, dtype=xp.float64)[()])
 
-    @skip_xp_backends('jax.numpy',
-                      reason='jax arrays do not support item assignment')
     def test_kmeans_and_kmeans2_random_seed(self, xp):
 
         seed_list = [

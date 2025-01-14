@@ -33,8 +33,7 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
-from scipy.conftest import array_api_compatible
-from scipy._lib._array_api_no_0d import xp_assert_equal, array_namespace
+from scipy._lib._array_api_no_0d import xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -2453,7 +2452,6 @@ def test_powell_output():
         assert np.isscalar(res.fun)
 
 
-@array_api_compatible
 class TestRosen:
     def test_rosen(self, xp):
         # integer input should be promoted to the default floating type
@@ -2463,7 +2461,6 @@ class TestRosen:
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_rosen_der(self, xp):
         x = xp.asarray([1, 1, 1, 1])
         xp_assert_equal(optimize.rosen_der(x),
@@ -2471,15 +2468,14 @@ class TestRosen:
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")
     def test_hess_prod(self, xp):
         one = xp.asarray(1.)
-        xp_test = array_namespace(one)
+
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
         x = xp.asarray([3, 4, 5])
         p = xp.asarray([2, 2, 2])
         hp = optimize.rosen_hess_prod(x, p)
-        p = xp_test.astype(p, one.dtype)
+        p = xp.astype(p, one.dtype)
         dothp = optimize.rosen_hess(x) @ p
         xp_assert_equal(hp, dothp)
 
@@ -3236,8 +3232,8 @@ def test_gh12594():
                                          coo_array, csr_array, csc_array])
 def test_sparse_hessian(method, sparse_type):
     # gh-8792 reported an error for minimization with `newton_cg` when `hess`
-    # returns a sparse matrix. Check that results are the same whether `hess`
-    # returns a dense or sparse matrix for optimization methods that accept
+    # returns a sparse array. Check that results are the same whether `hess`
+    # returns a dense or sparse array for optimization methods that accept
     # sparse Hessian matrices.
 
     def sparse_rosen_hess(x):
