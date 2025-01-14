@@ -1306,7 +1306,7 @@ def _combine_docs(dist_family, *, include_examples=True):
 def _generate_domain_support(dist_family):
     n_parameterizations = len(dist_family._parameterizations)
 
-    domain = f"\nfor :math:`x` in {dist_family._variable.domain}.\n"
+    domain = f"\nfor :math:`x \\in {dist_family._variable.domain}`.\n"
 
     if n_parameterizations == 0:
         support = """

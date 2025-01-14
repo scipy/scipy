@@ -1146,6 +1146,8 @@ class _ProbabilityDistribution(ABC):
         convention as the smallest value within the support :math:`\chi` for which
         :math:`F(x)` is at least :math:`p`.
 
+        .. math::
+
             F^{-1}(p) = \min_\chi \quad \text{s.t.} \quad F(x) ≥ p
 
         `icdf` accepts `p` for :math:`p \in [0, 1]`.
@@ -1354,6 +1356,8 @@ class _ProbabilityDistribution(ABC):
         does not exist (e.g. discrete random variables), the "inverse CCDF" is defined
         by convention as the smallest value within the support :math:`\chi` for which
         :math:`G(x)` is no greater than :math:`p`.
+
+        .. math::
 
             G^{-1}(p) = \min_\chi \quad \text{s.t.} \quad G(x) ≤ p
 
@@ -1787,7 +1791,7 @@ class _ProbabilityDistribution(ABC):
         however, the *logarithm* of this resulting probability may be
         represented in floating point arithmetic, in which case this function
         may be used to find the argument of the CCDF for which the *logarithm*
-        of the resulting probability is `y = \log(p)`.
+        of the resulting probability is :math:`y = \log(p)`.
 
         The "logarithmic complement" of a number :math:`z` is mathematically
         equivalent to :math:`\log(1-\exp(z))`, but it is computed to avoid loss
@@ -1832,7 +1836,7 @@ class _ProbabilityDistribution(ABC):
         replacing the PDF and a sum over the support replacing the integral.
 
         `logentropy` computes the logarithm of the differential entropy
-        ("log-entropy"), :math:`log(h(X))`, but it may be numerically favorable
+        ("log-entropy"), :math:`\log(h(X))`, but it may be numerically favorable
         compared to the naive implementation (computing :math:`h(X)` then
         taking the logarithm).
 
