@@ -11,7 +11,7 @@ import pytest
 import numpy as np
 import sys
 from scipy._lib._array_api import (
-    xp_assert_close, get_xp_devices, xp_device, array_namespace
+    xp_assert_close, get_xp_devices, xp_device
 )
 from scipy import fft
 
@@ -532,11 +532,10 @@ class TestFFTFreq:
         xp_assert_close(y, x2, check_dtype=False)
 
     def test_device(self, xp):
-        xp_test = array_namespace(xp.empty(0))
         devices = get_xp_devices(xp)
         for d in devices:
             y = fft.fftfreq(9, xp=xp, device=d)
-            x = xp_test.empty(0, device=d)
+            x = xp.empty(0, device=d)
             assert xp_device(y) == xp_device(x)
 
 
@@ -565,9 +564,8 @@ class TestRFFTFreq:
         xp_assert_close(y, x2, check_dtype=False)
 
     def test_device(self, xp):
-        xp_test = array_namespace(xp.empty(0))
         devices = get_xp_devices(xp)
         for d in devices:
             y = fft.rfftfreq(9, xp=xp, device=d)
-            x = xp_test.empty(0, device=d)
+            x = xp.empty(0, device=d)
             assert xp_device(y) == xp_device(x)

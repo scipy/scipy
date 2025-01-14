@@ -4,9 +4,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy._lib._array_api import (
-    array_namespace, is_array_api_strict, xp_default_dtype
-)
+from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -72,8 +70,7 @@ class TestLogSumExp:
         xp_assert_close(logsumexp(a, axis=-1), ref)
 
         # Test keeping dimensions
-        xp_test = array_namespace(a) # `torch` needs `expand_dims`
-        ref = xp_test.expand_dims(ref, axis=-1)
+        ref = xp.expand_dims(ref, axis=-1)
         xp_assert_close(logsumexp(a, axis=-1, keepdims=True), ref)
 
         # Test multiple axes
@@ -177,8 +174,7 @@ class TestLogSumExp:
     def test_dtypes_a(self, dtype, xp):
         dtype = getattr(xp, dtype)
         a = xp.asarray([1000., 1000.], dtype=dtype)
-        xp_test = array_namespace(a)  # torch needs compatible `isdtype`
-        desired_dtype = (xp.asarray(1.).dtype if xp_test.isdtype(dtype, 'integral')
+        desired_dtype = (xp.asarray(1.).dtype if xp.isdtype(dtype, 'integral')
                          else dtype)  # true for all libraries tested
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
         xp_assert_close(logsumexp(a), desired)
@@ -190,18 +186,17 @@ class TestLogSumExp:
         xp_dtype_b = getattr(xp, dtype_b)
         a = xp.asarray([2, 1], dtype=xp_dtype_a)
         b = xp.asarray([1, -1], dtype=xp_dtype_b)
-        xp_test = array_namespace(a, b)  # torch needs compatible result_type
         if is_array_api_strict(xp):
             # special-case for `TypeError: array_api_strict.float32 and
             # and array_api_strict.int64 cannot be type promoted together`
             xp_float_dtypes = [dtype for dtype in [xp_dtype_a, xp_dtype_b]
-                               if not xp_test.isdtype(dtype, 'integral')]
+                               if not xp.isdtype(dtype, 'integral')]
             if len(xp_float_dtypes) < 2:  # at least one is integral
                 xp_float_dtypes.append(xp.asarray(1.).dtype)
-            desired_dtype = xp_test.result_type(*xp_float_dtypes)
+            desired_dtype = xp.result_type(*xp_float_dtypes)
         else:
-            desired_dtype = xp_test.result_type(xp_dtype_a, xp_dtype_b)
-            if xp_test.isdtype(desired_dtype, 'integral'):
+            desired_dtype = xp.result_type(xp_dtype_a, xp_dtype_b)
+            if xp.isdtype(desired_dtype, 'integral'):
                desired_dtype = xp_default_dtype(xp)
         desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=desired_dtype)
         xp_assert_close(logsumexp(a, b=b), desired)

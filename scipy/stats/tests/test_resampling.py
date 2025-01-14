@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
 from scipy.optimize import root
@@ -860,12 +860,11 @@ class TestMonteCarloHypothesisTest:
         rng = np.random.default_rng(23492340193)
         x = xp.asarray(rng.standard_normal(size=10))
 
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
         def statistic(x, axis):
             batch_size = 1 if x.ndim == 1 else x.shape[0]
             statistic.batch_size = max(batch_size, statistic.batch_size)
             statistic.counter += 1
-            return self.get_statistic(xp_test)(x, axis=axis)
+            return self.get_statistic(xp)(x, axis=axis)
         statistic.counter = 0
         statistic.batch_size = 0
 
@@ -914,8 +913,7 @@ class TestMonteCarloHypothesisTest:
         expected = stats.ttest_1samp(x, popmean=0., axis=axis)
 
         x = xp.asarray(x, dtype=dtype)
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
-        statistic = self.get_statistic(xp_test)
+        statistic = self.get_statistic(xp)
         rvs = self.get_rvs(stats.norm.rvs, rng, dtype=dtype, xp=xp)
 
         res = monte_carlo_test(x, rvs, statistic, vectorized=True,
@@ -935,8 +933,7 @@ class TestMonteCarloHypothesisTest:
         ref = stats.ttest_1samp(x, 0., alternative=alternative)
 
         x = xp.asarray(x)
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
-        statistic = self.get_statistic(xp_test)
+        statistic = self.get_statistic(xp)
         rvs = self.get_rvs(stats.norm.rvs, rng, xp=xp)
 
         res = monte_carlo_test(x, rvs, statistic, alternative=alternative)

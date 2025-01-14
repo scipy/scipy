@@ -33,7 +33,6 @@ from scipy._lib._util import ComplexWarning
 
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
-    array_namespace,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, xp_default_dtype
 )
@@ -2227,8 +2226,7 @@ class _TestCorrelateReal:
         # See gh-5897
         y = correlate(b, a, 'valid')
         if  y_r.dtype != object:
-            flip = array_namespace(y_r).flip
-            _assert_almost_equal(y, flip(y_r[1:4]))
+            _assert_almost_equal(y, xp.flip(y_r[1:4]))
         else:
             _assert_almost_equal(y, y_r[1:4][::-1])
         assert y.dtype == dt
@@ -2478,8 +2476,7 @@ class TestCorrelateComplex:
 
         # See gh-5897
         y = correlate(b, a, 'valid')
-        flip = array_namespace(y_r).flip
-        assert_array_almost_equal(y, xp.conj(flip(y_r)),
+        assert_array_almost_equal(y, xp.conj(xp.flip(y_r)),
                                   decimal=self.decimal(dt, xp))
         assert y.dtype == dt
 
@@ -3170,9 +3167,7 @@ class TestHilbert:
         h = hilbert(a)
         h_abs = xp.abs(h)
 
-        atan2 = array_namespace(h).atan2
-
-        h_angle = atan2(xp.imag(h), xp.real(h)) #  np.angle(h)
+        h_angle = xp.atan2(xp.imag(h), xp.real(h)) #  np.angle(h)
         h_real = xp.real(h)
 
         # The real part should be equal to the original signals:
@@ -4039,8 +4034,7 @@ class TestSOSFilt:
         a = xp.asarray([1.0, 0, 0])
         x = xp.ones(8)
 
-        concat = array_namespace(b, a).concat
-        sos = concat((b, a))
+        sos = xp.concat((b, a))
         sos = xp.reshape(sos, (1, 6))
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
@@ -4110,15 +4104,14 @@ class TestSOSFilt:
         x = xp.asarray(x)
 
         dt = getattr(xp, dt)
-        concat = array_namespace(x).concat
 
         # Stopping filtering and continuing
         y_true, zi = lfilter(b, a, x[:20], zi=xp.zeros(6))
-        y_true = concat((y_true, lfilter(b, a, x[20:], zi=zi)[0]))
+        y_true = xp.concat((y_true, lfilter(b, a, x[20:], zi=zi)[0]))
         xp_assert_close(y_true, lfilter(b, a, x))
 
         y_sos, zi = sosfilt(sos, x[:20], zi=xp.zeros((3, 2)))
-        y_sos = concat((y_sos, sosfilt(sos, x[20:], zi=zi)[0]))
+        y_sos = xp.concat((y_sos, sosfilt(sos, x[20:], zi=zi)[0]))
         xp_assert_close(y_true, y_sos)
 
         # Use a step function
@@ -4186,8 +4179,7 @@ class TestSOSFilt:
         y2, z2 = sosfilt(sos, x[:, 5:, :], axis=axis, zi=z1)
 
         # y should equal yf, and z2 should equal zf.
-        concat = array_namespace(x).concat
-        y = concat((y1, y2), axis=axis)
+        y = xp.concat((y1, y2), axis=axis)
         xp_assert_close(y, yf, rtol=1e-10, atol=1e-13)
         xp_assert_close(z2, zf, rtol=1e-10, atol=1e-13)
 
