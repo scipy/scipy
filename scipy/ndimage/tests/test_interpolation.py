@@ -3,10 +3,10 @@ import sys
 import numpy as np
 from numpy.testing import suppress_warnings
 from scipy._lib._array_api import (
+    _asarray, assert_array_almost_equal,
+    is_jax, np_compat,
     xp_assert_equal, xp_assert_close,
-    assert_array_almost_equal,
 )
-from scipy._lib._array_api import is_jax, _asarray, array_namespace
 
 import pytest
 from pytest import raises as assert_raises
@@ -90,14 +90,13 @@ class TestBoundaries:
         np_data = np.arange(-6, 7, dtype=np.float64)
         data = xp.asarray(np_data)
         x = xp.asarray(np.linspace(-8, 15, num=1000))
-        newaxis = array_namespace(x).newaxis
-        y = ndimage.map_coordinates(data, x[newaxis, ...], order=order, mode=mode)
+        y = ndimage.map_coordinates(data, x[xp.newaxis, ...], order=order, mode=mode)
 
         # compute expected value using explicit padding via np.pad
         npad = 32
         pad_mode = ndimage_to_numpy_mode.get(mode)
         padded = xp.asarray(np.pad(np_data, npad, mode=pad_mode))
-        coords = xp.asarray(npad + x)[newaxis, ...]
+        coords = xp.asarray(npad + x)[xp.newaxis, ...]
         expected = ndimage.map_coordinates(padded, coords, order=order, mode=mode)
 
         atol = 1e-5 if mode == 'grid-constant' else 1e-12
@@ -198,8 +197,7 @@ class TestGeometricTransform:
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
 
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
 
@@ -516,8 +514,7 @@ class TestMapCoordinates:
         expected = xp.asarray([[0, 0, 0, 0],
                                [0, 4, 1, 3],
                                [0, 7, 6, 8]])
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data = data - 1j * data
             expected = expected - 1j * expected
 
@@ -658,8 +655,7 @@ class TestAffineTransform:
         expected = xp.asarray([[0, 1, 1, 1],
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         out = ndimage.affine_transform(data, xp.asarray([[1, 0], [0, 1]]),
@@ -879,9 +875,8 @@ class TestAffineTransform:
         tform_original = xp.eye(2)
         offset_original = -xp.ones((2, 1))
 
-        concat = array_namespace(tform_original, offset_original).concat
-        tform_h1 = concat((tform_original, offset_original), axis=1)  # hstack
-        tform_h2 = concat( (tform_h1, xp.asarray([[0.0, 0, 1]])), axis=0)  # vstack
+        tform_h1 = xp.concat((tform_original, offset_original), axis=1)  # hstack
+        tform_h2 = xp.concat((tform_h1, xp.asarray([[0.0, 0, 1]])), axis=0)  # vstack
 
         offs = [float(x) for x in xp.reshape(offset_original, (-1,))]
 
@@ -903,9 +898,8 @@ class TestAffineTransform:
         data = xp.asarray([[4, 1, 3, 2],
                            [7, 6, 8, 5],
                            [3, 5, 3, 6]])
-        concat = array_namespace(data).concat
-        tform_h1 = concat( (xp.eye(2), -xp.ones((2, 1))) , axis=1)  # vstack
-        tform_h2 = concat((tform_h1, xp.asarray([[5.0, 2, 1]])), axis=0)  # hstack
+        tform_h1 = xp.concat((xp.eye(2), -xp.ones((2, 1))) , axis=1)  # vstack
+        tform_h2 = xp.concat((tform_h1, xp.asarray([[5.0, 2, 1]])), axis=0)  # hstack
 
         assert_raises(ValueError, ndimage.affine_transform, data, tform_h2)
 
@@ -1040,8 +1034,7 @@ class TestShift:
         expected = xp.asarray([[0, 1, 1, 1],
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         out = ndimage.shift(data, [0, 1], order=order)
@@ -1059,8 +1052,7 @@ class TestShift:
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
 
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if np_compat.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         cval = 5.0
@@ -1239,8 +1231,7 @@ class TestZoom:
         data = xp.asarray([[1, 2, 3, 4],
                            [5, 6, 7, 8],
                            [9, 10, 11, 12]], dtype=dtype)
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
@@ -1365,8 +1356,7 @@ class TestRotate:
                                [0, 1, 0],
                                [0, 1, 0],
                                [0, 0, 0]], dtype=dtype)
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         out = ndimage.rotate(data, 90, order=order)
@@ -1420,14 +1410,13 @@ class TestRotate:
         data = xp.asarray([[[0, 0, 0, 0, 0],
                             [0, 1, 1, 0, 0],
                             [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
-        permute_dims = array_namespace(data).permute_dims
-        data = permute_dims(data, (2, 1, 0))
+        data = xp.permute_dims(data, (2, 1, 0))
         expected = xp.asarray([[[0, 0, 0],
                                 [0, 1, 0],
                                 [0, 1, 0],
                                 [0, 0, 0],
                                 [0, 0, 0]]] * 2, dtype=xp.float64)
-        expected = permute_dims(expected, (2, 1, 0))
+        expected = xp.permute_dims(expected, (2, 1, 0))
         out = ndimage.rotate(data, 90, axes=(0, 1), order=order)
         assert_array_almost_equal(out, expected)
 
@@ -1436,13 +1425,11 @@ class TestRotate:
         data = xp.asarray([[[0, 0, 0, 0, 0],
                             [0, 1, 1, 0, 0],
                             [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
-        permute_dims = array_namespace(data).permute_dims
-        data = permute_dims(data, (2, 1, 0))  # == np.transpose
+        data = xp.permute_dims(data, (2, 1, 0))  # == np.transpose
         expected = xp.asarray([[[0, 0, 1, 0, 0],
                                 [0, 0, 1, 0, 0],
                                 [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
-        permute_dims = array_namespace(data).permute_dims
-        expected = permute_dims(expected, (2, 1, 0))
+        expected = xp.permute_dims(expected, (2, 1, 0))
         out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False, order=order)
         assert_array_almost_equal(out, expected)
 

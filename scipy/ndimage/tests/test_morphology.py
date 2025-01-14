@@ -1,6 +1,6 @@
 import numpy as np
 from scipy._lib._array_api import (
-    is_cupy, is_numpy, array_namespace,
+    is_cupy, is_numpy,
     xp_assert_close, xp_assert_equal, assert_array_almost_equal
 )
 import pytest
@@ -2791,8 +2791,7 @@ class TestDilateFix:
         if is_numpy(xp):
             self.dilated3x3 = dilated3x3.view(xp.uint8)
         else:
-            astype = array_namespace(dilated3x3).astype
-            self.dilated3x3 = astype(dilated3x3, xp.uint8)
+            self.dilated3x3 = xp.astype(dilated3x3, xp.uint8)
 
     def test_dilation_square_structure(self, xp):
         self._setup(xp)

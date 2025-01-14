@@ -6,7 +6,6 @@ import numpy as np
 
 from scipy import stats
 from scipy.stats import norm, expon  # type: ignore[attr-defined]
-from scipy._lib._array_api import array_namespace
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
@@ -297,8 +296,7 @@ class TestDifferentialEntropy:
                                          method=method, axis=-1)
         xp_assert_close(xp.sqrt(xp.mean((res - true_entropy)**2)),
                         rmse_expected, atol=0.005)
-        xp_test = array_namespace(res)
-        xp_assert_close(xp_test.std(res, correction=0), std_expected, atol=0.002)
+        xp_assert_close(xp.std(res, correction=0), std_expected, atol=0.002)
 
     @pytest.mark.parametrize('n, method', [
         (8, 'van es'),

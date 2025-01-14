@@ -12,7 +12,8 @@ import pytest
 import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
-from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE, default_xp
+from scipy._lib._array_api import (SCIPY_ARRAY_API, SCIPY_DEVICE,
+                                   array_namespace, default_xp)
 from scipy._lib._lazy_testing import patch_lazy_xp_functions
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
@@ -228,6 +229,10 @@ def xp(request, monkeypatch):
     # if any, and raise pytest.xfail() if the current xp is in the list.
     skip_or_xfail_xp_backends(request, "xfail")
 
+    xp = request.param
+    # Potentially wrap namespace with array_api_compat
+    xp = array_namespace(xp.empty(0))
+
     if SCIPY_ARRAY_API:
         # If request.param==jax.numpy, wrap tested functions in jax.jit
         patch_lazy_xp_functions(
@@ -238,10 +243,10 @@ def xp(request, monkeypatch):
         # xp_assert_* functions, test that the array namespace is xp in both the
         # expected and actual arrays. This is to detect the case where both arrays are
         # erroneously just plain numpy while xp is something else.
-        with default_xp(request.param):
-            yield request.param
+        with default_xp(xp):
+            yield xp
     else:
-        yield request.param
+        yield xp
 
 
 skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
