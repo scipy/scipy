@@ -8141,7 +8141,7 @@ class TestCombinePvalues:
         if variant == "single":
             pvaluess = xp.broadcast_to(xp.asarray(rng.random(n)), (m, n))
             pvaluess = xp.concat([xp.reshape(xp.linspace(0.1, 0.9, m), (-1, 1)),
-                                       pvaluess[:, 1:]], axis=1)
+                                  pvaluess[:, 1:]], axis=1)
         elif variant == "all":
             pvaluess = xp.broadcast_to(xp.linspace(0.1, 0.9, m), (n, m)).T
         elif variant == "random":
