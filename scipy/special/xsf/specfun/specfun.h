@@ -163,12 +163,10 @@ Status aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     int ip, k, nm, nm2;
     T a0, d0, d1, r, su1, su2, x0, x1;
     T *ck = (T *) calloc(200, sizeof(T));
-    if (ck == nullptr) {
-        return Status::NoMemory;
-    }
     T *df = (T *) calloc(200, sizeof(T));
-    if (df == nullptr) {
+    if (ck == nullptr || df == nullptr) {
         free(ck);
+        free(df);
         return Status::NoMemory;
     }
     const T eps = 1e-14;
@@ -179,6 +177,7 @@ Status aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     nm2 = nm/2 - 2;
     if (sdmn(m, n, c, cv, kd, df) == Status::NoMemory) {
         free(ck);
+        free(df);
         return Status::NoMemory;
     }
     sckb(m, n, c, df, ck);
