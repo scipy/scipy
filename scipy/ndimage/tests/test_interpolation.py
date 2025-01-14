@@ -6,7 +6,7 @@ from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close,
     assert_array_almost_equal,
 )
-from scipy._lib._array_api import is_jax, _asarray
+from scipy._lib._array_api import is_jax, _asarray, np_compat
 
 import pytest
 from pytest import raises as assert_raises
@@ -1052,7 +1052,7 @@ class TestShift:
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
 
-        if np.isdtype(data.dtype, 'complex floating'):
+        if np_compat.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         cval = 5.0
