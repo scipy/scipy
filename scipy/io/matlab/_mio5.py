@@ -882,7 +882,8 @@ class MatFile5Writer:
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
             if name[0] == '_':
-                msg = f"Starting field name with a underscore ({name}) is ignored"
+                msg = (f"Starting field name with a "
+                       f"underscore ({name}) is ignored")
                 warnings.warn(msg, MatWriteWarning, stacklevel=2)
                 continue
             is_global = name in self.global_vars
