@@ -2562,8 +2562,6 @@ def test_gaussian_truncate(xp):
     )
     assert num_nonzeros_5 == 51**2
 
-    nnz_kw = {'as_tuple': True} if is_torch(xp) else {}
-
     # Test truncate when sigma is a sequence.
     f = ndimage.gaussian_filter(arr, [0.5, 2.5], truncate=3.5)
     fpos = f > 0
@@ -2582,14 +2580,14 @@ def test_gaussian_truncate(xp):
 
     # Test gaussian_laplace
     y = ndimage.gaussian_laplace(x, sigma=2, truncate=3.5)
-    nonzero_indices = xp.nonzero(y != 0, **nnz_kw)[0]
+    nonzero_indices = xp.nonzero(y != 0)[0]
 
     n = xp.max(nonzero_indices) - xp.min(nonzero_indices) + 1
     assert n == 15
 
     # Test gaussian_gradient_magnitude
     y = ndimage.gaussian_gradient_magnitude(x, sigma=2, truncate=3.5)
-    nonzero_indices = xp.nonzero(y != 0, **nnz_kw)[0]
+    nonzero_indices = xp.nonzero(y != 0)[0]
     n = xp.max(nonzero_indices) - xp.min(nonzero_indices) + 1
     assert n == 15
 

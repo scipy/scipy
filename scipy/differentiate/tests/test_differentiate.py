@@ -5,7 +5,7 @@ import numpy as np
 
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-from scipy._lib._array_api import is_numpy, is_torch
+from scipy._lib._array_api import is_numpy, is_torch, xp_size
 
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
@@ -581,9 +581,8 @@ class TestJacobian(JacobianHessianTest):
             return xp.sin(2*x) * y**2
 
         res = jacobian(df1, z, initial_step=10)
-        if is_numpy(xp):
-            assert len(np.unique(res.nit)) == 4
-            assert len(np.unique(res.nfev)) == 4
+        assert xp_size(xp.unique_values(res.nit)) == 4
+        assert xp_size(xp.unique_values(res.nfev)) == 4
 
         res00 = jacobian(lambda x: df1_0xy(x, z[1]), z[0:1], initial_step=10)
         res01 = jacobian(lambda y: df1_0xy(z[0], y), z[1:2], initial_step=10)
@@ -593,7 +592,10 @@ class TestJacobian(JacobianHessianTest):
         for attr in ['success', 'status', 'df', 'nit', 'nfev']:
             ref_attr = xp.asarray([[getattr(res00, attr), getattr(res01, attr)],
                                    [getattr(res10, attr), getattr(res11, attr)]])
-            ref[attr] = xp.squeeze(ref_attr)
+            ref[attr] = xp.squeeze(
+                ref_attr,
+                axis=tuple(ax for ax, size in enumerate(ref_attr.shape) if size == 1)
+            )            
             rtol = 1.5e-5 if res[attr].dtype == xp.float32 else 1.5e-14
             xp_assert_close(res[attr], ref[attr], rtol=rtol)
 

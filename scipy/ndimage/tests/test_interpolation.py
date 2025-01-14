@@ -1052,7 +1052,7 @@ class TestShift:
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
 
-        if xp.isdtype(data.dtype, 'complex floating'):
+        if np.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         cval = 5.0

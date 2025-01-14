@@ -8,7 +8,7 @@ from numpy.testing import assert_array_almost_equal, assert_allclose
 from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy._lib._array_api import (
-    xp_size, xp_assert_close, xp_assert_equal
+    is_numpy, xp_size, xp_assert_close, xp_assert_equal
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -481,13 +481,17 @@ def test_non_standard_params(func, xp):
     else:
         dtype = xp.complex128
 
-    if xp.__name__ != 'numpy':
-        x = xp.asarray([1, 2, 3], dtype=dtype)
-        # func(x) should not raise an exception
-        func(x)
+    x = xp.asarray([1, 2, 3], dtype=dtype)
+    # func(x) should not raise an exception
+    func(x)
+
+    if is_numpy(xp):
+        func(x, workers=2)
+    else:
         assert_raises(ValueError, func, x, workers=2)
-        # `plan` param is not tested since SciPy does not use it currently
-        # but should be tested if it comes into use
+
+    # `plan` param is not tested since SciPy does not use it currently
+    # but should be tested if it comes into use
 
 
 @pytest.mark.parametrize("dtype", ['float32', 'float64'])

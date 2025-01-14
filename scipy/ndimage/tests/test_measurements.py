@@ -529,11 +529,7 @@ def test_value_indices01(xp):
     true_keys = [1, 2, 4]
     assert list(vi.keys()) == true_keys
 
-    nnz_kwd = {'as_tuple': True} if is_torch(xp) else {}
-
-    truevi = {}
-    for k in true_keys:
-        truevi[k] = xp.nonzero(data == k, **nnz_kwd)
+    truevi = {k: xp.nonzero(data == k) for k in true_keys}
 
     vi = ndimage.value_indices(data, ignore_value=0)
     assert vi.keys() == truevi.keys()
@@ -557,13 +553,11 @@ def test_value_indices03(xp):
         a = xp.asarray((12*[1]+12*[2]+12*[3]), dtype=xp.int32)
         a = xp.reshape(a, shape)
 
-        nnz_kwd = {'as_tuple': True} if is_torch(xp) else {}
-
         trueKeys = xp.unique_values(a)
         vi = ndimage.value_indices(a)
         assert list(vi.keys()) == list(trueKeys)
         for k in [int(x) for x in trueKeys]:
-            trueNdx = xp.nonzero(a == k, **nnz_kwd)
+            trueNdx = xp.nonzero(a == k)
             assert len(vi[k]) == len(trueNdx)
             for vik, true_vik in zip(vi[k], trueNdx):
                 xp_assert_equal(vik, true_vik)
