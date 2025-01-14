@@ -3,17 +3,13 @@ import pytest
 
 import numpy as np
 
-from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-from scipy._lib._array_api import is_numpy, is_torch, array_namespace
+from scipy._lib._array_api import is_numpy, is_torch, xp_size
 
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
-
-
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
 jax_skip_reason = 'JAX arrays do not support item assignment.'
@@ -40,7 +36,7 @@ class TestDerivative:
 
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('case', stats._distr_params.distcont)
-    def test_accuracy(self, case):
+    def test_accuracy(self, case, xp):
         distname, params = case
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
@@ -380,8 +376,7 @@ class TestDerivative:
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            xp_test = array_namespace(x)  # needs `isdtype`
-            assert xp_test.isdtype(x.dtype, 'real floating')
+            assert xp.isdtype(x.dtype, 'real floating')
             return x ** 99 - 1
 
         if not is_torch(xp):  # torch defaults to float32
@@ -435,7 +430,7 @@ class TestDerivative:
         (lambda x: (x - 1) ** 3, 1),
         (lambda x: np.where(x > 1, (x - 1) ** 5, (x - 1) ** 3), 1)
     ))
-    def test_saddle_gh18811(self, case):
+    def test_saddle_gh18811(self, case, xp):
         # With default settings, `derivative` will not always converge when
         # the true derivative is exactly zero. This tests that specifying a
         # (tight) `atol` alleviates the problem. See discussion in gh-18811.
@@ -586,9 +581,10 @@ class TestJacobian(JacobianHessianTest):
             return xp.sin(2*x) * y**2
 
         res = jacobian(df1, z, initial_step=10)
-        if is_numpy(xp):
-            assert len(np.unique(res.nit)) == 4
-            assert len(np.unique(res.nfev)) == 4
+        # FIXME https://github.com/scipy/scipy/pull/22320#discussion_r1914898175
+        if not is_torch(xp):
+            assert xp_size(xp.unique_values(res.nit)) == 4
+            assert xp_size(xp.unique_values(res.nfev)) == 4
 
         res00 = jacobian(lambda x: df1_0xy(x, z[1]), z[0:1], initial_step=10)
         res01 = jacobian(lambda y: df1_0xy(z[0], y), z[1:2], initial_step=10)
@@ -598,7 +594,10 @@ class TestJacobian(JacobianHessianTest):
         for attr in ['success', 'status', 'df', 'nit', 'nfev']:
             ref_attr = xp.asarray([[getattr(res00, attr), getattr(res01, attr)],
                                    [getattr(res10, attr), getattr(res11, attr)]])
-            ref[attr] = xp.squeeze(ref_attr)
+            ref[attr] = xp.squeeze(
+                ref_attr,
+                axis=tuple(ax for ax, size in enumerate(ref_attr.shape) if size == 1)
+            )            
             rtol = 1.5e-5 if res[attr].dtype == xp.float32 else 1.5e-14
             xp_assert_close(res[attr], ref[attr], rtol=rtol)
 
@@ -663,10 +662,9 @@ class TestHessian(JacobianHessianTest):
 
     def test_nfev(self, xp):
         z = xp.asarray([0.5, 0.25])
-        xp_test = array_namespace(z)
 
         def f1(z):
-            x, y = xp_test.broadcast_arrays(*z)
+            x, y = xp.broadcast_arrays(*z)
             f1.nfev = f1.nfev + (math.prod(x.shape[2:]) if x.ndim > 2 else 1)
             return xp.sin(x) * y ** 3
         f1.nfev = 0

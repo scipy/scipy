@@ -267,11 +267,10 @@ class _SimpleDomain(_Domain):
 
     """
     def __init__(self, endpoints=(-inf, inf), inclusive=(False, False)):
+        self.symbols = super().symbols.copy()
         a, b = endpoints
         self.endpoints = np.asarray(a)[()], np.asarray(b)[()]
         self.inclusive = inclusive
-        # self.all_inclusive = (endpoints == (-inf, inf)
-        #                       and inclusive == (True, True))
 
     def define_parameters(self, *parameters):
         r""" Records any parameters used to define the endpoints of the domain.
@@ -3417,85 +3416,6 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # quantities should make us question that choice. It can still accomodate
     # these methods reasonably efficiently.
 
-    def llf(self, sample, /, *, axis=-1):
-        r"""Log-likelihood function
-
-        Given a sample :math:`x`, the log-likelihood function (LLF) is the logarithm
-        of the joint probability density of the observed data. It is typically
-        viewed as a function of the parameters :math:`\theta` of a statistical
-        distribution:
-
-        .. math::
-
-            \mathcal{L}(\theta | x) = \log \left( \prod_i f_\theta(x_i) \right) = \sum_{i} \log(f_\theta(x_i))
-
-        where :math:`f_\theta` is the probability density function with
-        parameters :math:`\theta`.
-
-        As a method of `ContinuousDistribution`, the parameter values are specified
-        during instantiation; `llf` accepts only the sample :math:`x` as `sample`.
-
-        Parameters
-        ----------
-        sample : array_like
-            The given sample for which to calculate the LLF.
-        axis : int or tuple of ints
-            The axis over which the reducing operation (sum of logarithms) is performed.
-
-        Notes
-        -----
-        The LLF is often viewed as a function of the parameters with the sample fixed;
-        see the Notes for an example of a function with this signature.
-
-        References
-        ----------
-        .. [1] Likelihood function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Likelihood_function
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> import matplotlib.pyplot as plt
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=0., sigma=1.)
-
-        Evaluate the LLF with the given sample:
-
-        >>> sample = [1., 2., 3.]
-        >>> X.llf(sample)
-        -9.756815599614018
-        >>> np.allclose(X.llf(sample), np.sum(X.logpdf(sample)))
-        True
-
-        To generate a function that accepts only the parameters and
-        holds the data fixed:
-
-        >>> def llf(mu, sigma):
-        ...     return stats.Normal(mu=mu, sigma=sigma).llf(sample)
-        >>> llf(0., 1.)
-        -9.756815599614018
-
-        """ # noqa: E501
-        return np.sum(self.logpdf(sample), axis=axis)
-
-    # def dllf(self, parameters=None, *, sample, var):
-    #     """Partial derivative of the log likelihood function."""
-    #     parameters = parameters or {}
-    #     self._update_parameters(**parameters)
-    #
-    #     def f(x):
-    #         update = {}
-    #         update[var] = x
-    #         self._update_parameters(**update)
-    #         res = self.llf(sample=sample[:, np.newaxis], axis=0)
-    #         return np.reshape(res, x.shape)
-    #
-    #     return _differentiate(f, self._parameters[var]).df
-    #
-    # fit method removed for initial PR
-
 
 # Special case the names of some new-style distributions in `make_distribution`
 _distribution_names = {
@@ -4586,13 +4506,13 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0, *args)
         for var, weight in zip(self._components, self._weights):
             out += getattr(var, fun)(*args) * weight
-        return out
+        return out[()]
 
     def _logsum(self, fun, *args):
         out = self._full(-np.inf, *args)
         for var, log_weight in zip(self._components, np.log(self._weights)):
             np.logaddexp(out, getattr(var, fun)(*args) + log_weight, out=out)
-        return out
+        return out[()]
 
     def support(self):
         a = self._full(np.inf)
@@ -4668,7 +4588,7 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0)
         for var, weight in zip(self._components, self._weights):
             out += var.moment(order, kind='raw') * weight
-        return out
+        return out[()]
 
     def _moment_central(self, order):
         order = int(order)
@@ -4679,7 +4599,7 @@ class Mixture(_ProbabilityDistribution):
             a, b = var.mean(), self.mean()
             moment = var._moment_transform_center(order, moment_as, a, b)
             out += moment * weight
-        return out
+        return out[()]
 
     def _moment_standardized(self, order):
         return self._moment_central(order) / self.standard_deviation()**order

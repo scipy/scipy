@@ -215,6 +215,35 @@ class TestZpk2Tf:
         xp_assert_equal(a, a_r)
         assert isinstance(a, np.ndarray)
 
+    def test_conj_pair(self):
+        # conjugate pairs give real-coeff num & den
+        z = np.array([1j, -1j, 2j, -2j])
+        # shouldn't need elements of pairs to be adjacent
+        p = np.array([1+1j, 3-100j, 3+100j, 1-1j])
+        k = 23
+
+        # np.poly should do the right thing, but be explicit about
+        # taking real part
+        b = k * np.poly(z).real
+        a = np.poly(p).real
+
+        bp, ap = zpk2tf(z, p, k)
+
+        xp_assert_close(b, bp)
+        xp_assert_close(a, ap)
+
+        assert np.isrealobj(bp)
+        assert np.isrealobj(ap)
+
+    def test_complexk(self):
+        # regression: z, p real, k complex k gave real b, a
+        b, a = np.array([1j, 1j]), np.array([1.0, 2])
+        z, p, k = tf2zpk(b, a)
+        xp_assert_close(k, 1j)
+        bp, ap = zpk2tf(z, p, k)
+        xp_assert_close(b, bp)
+        xp_assert_close(a, ap)
+
 
 class TestSos2Zpk:
 

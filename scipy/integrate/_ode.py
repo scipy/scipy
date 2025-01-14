@@ -826,7 +826,7 @@ class IntegratorBase:
     # XXX: __str__ method for getting visual state of the integrator
 
 
-def _vode_banded_jac_wrapper(jacfunc, ml, jac_params):
+def _banded_jac_wrapper(jacfunc, ml, jac_params):
     """
     Wrap a banded Jacobian function with a function that pads
     the Jacobian with `ml` rows of zeros.
@@ -1007,7 +1007,7 @@ class vode(IntegratorBase):
             # Banded Jacobian. Wrap the user-provided function with one
             # that pads the Jacobian array with the extra `self.ml` rows
             # required by the f2py-generated wrapper.
-            jac = _vode_banded_jac_wrapper(jac, self.ml, jac_params)
+            jac = _banded_jac_wrapper(jac, self.ml, jac_params)
 
         args = ((f, jac, y0, t0, t1) + tuple(self.call_args) +
                 (f_params, jac_params))
@@ -1351,6 +1351,13 @@ class lsoda(IntegratorBase):
         else:
             self.initialized = True
             self.acquire_new_handle()
+
+        if jac is not None and self.ml is not None and self.ml > 0:
+            # Banded Jacobian. Wrap the user-provided function with one
+            # that pads the Jacobian array with the extra `self.ml` rows
+            # required by the f2py-generated wrapper.
+            jac = _banded_jac_wrapper(jac, self.ml, jac_params)
+
         args = [f, y0, t0, t1] + self.call_args[:-1] + \
                [jac, self.call_args[-1], f_params, 0, jac_params]
 

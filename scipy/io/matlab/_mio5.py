@@ -512,7 +512,7 @@ NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 class VarWriter5:
     ''' Generic matlab matrix writing class '''
     mat_tag = np.zeros((), NDT_TAG_FULL)
-    mat_tag['mdtype'] = miMATRIX
+    mat_tag['mdtype'] = miMATRIX  # type: ignore[call-overload]
 
     def __init__(self, file_writer):
         self.file_stream = file_writer.file_stream

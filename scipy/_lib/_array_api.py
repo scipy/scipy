@@ -8,6 +8,9 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
 
+from collections.abc import Generator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from types import ModuleType
 from typing import Any, Literal, TypeAlias
 
@@ -29,7 +32,7 @@ from scipy._lib.array_api_compat import (
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices',
+    'get_xp_devices', 'default_xp',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
@@ -103,11 +106,8 @@ def _compliance_scipy(arrays):
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
     """Check for NaNs or Infs."""
-    msg = "array must not contain infs or NaNs"
-    try:
-        if not xp.all(xp.isfinite(array)):
-            raise ValueError(msg)
-    except TypeError:
+    if not xp.all(xp.isfinite(array)):
+        msg = "array must not contain infs or NaNs"
         raise ValueError(msg)
 
 
@@ -223,12 +223,38 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     return _asarray(x, copy=True, xp=xp)
 
 
+_default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
+
+@contextmanager
+def default_xp(xp: ModuleType) -> Generator[None, None, None]:
+    """In all ``xp_assert_*`` and ``assert_*`` function calls executed within this
+    context manager, test by default that the array namespace is 
+    the provided across all arrays, unless one explicitly passes the ``xp=``
+    parameter or ``check_namespace=False``.
+
+    Without this context manager, the default value for `xp` is the namespace
+    for the desired array (the second parameter of the tests).
+    """
+    token = _default_xp_ctxvar.set(xp)
+    try:
+        yield
+    finally:
+        _default_xp_ctxvar.reset(token)
+
+
 def _strict_check(actual, desired, xp, *,
                   check_namespace=True, check_dtype=True, check_shape=True,
                   check_0d=True):
     __tracebackhide__ = True  # Hide traceback for py.test
+
+    if xp is None:
+        try:
+            xp = _default_xp_ctxvar.get()
+        except LookupError:
+            xp = array_namespace(desired)
+ 
     if check_namespace:
-        _assert_matching_namespace(actual, desired)
+        _assert_matching_namespace(actual, desired, xp)
 
     # only NumPy distinguishes between scalars and arrays; we do if check_0d=True.
     # do this first so we can then cast to array (and thus use the array API) below.
@@ -250,28 +276,32 @@ def _strict_check(actual, desired, xp, *,
         assert actual.shape == desired.shape, _msg
 
     desired = xp.broadcast_to(desired, actual.shape)
-    return actual, desired
+    return actual, desired, xp
 
 
-def _assert_matching_namespace(actual, desired):
+def _assert_matching_namespace(actual, desired, xp):
     __tracebackhide__ = True  # Hide traceback for py.test
-    actual = actual if isinstance(actual, tuple) else (actual,)
-    desired_space = array_namespace(desired)
-    for arr in actual:
-        arr_space = array_namespace(arr)
-        _msg = (f"Namespaces do not match.\n"
-                f"Actual: {arr_space.__name__}\n"
-                f"Desired: {desired_space.__name__}")
-        assert arr_space == desired_space, _msg
+
+    desired_arr_space = array_namespace(desired)
+    _msg = ("Namespace of desired array does not match expectations "
+            "set by the `default_xp` context manager or by the `xp`"
+            "pytest fixture.\n"
+            f"Desired array's space: {desired_arr_space.__name__}\n"
+            f"Expected namespace: {xp.__name__}")
+    assert desired_arr_space == xp, _msg
+
+    actual_arr_space = array_namespace(actual)
+    _msg = ("Namespace of actual and desired arrays do not match.\n"
+            f"Actual: {actual_arr_space.__name__}\n"
+            f"Desired: {xp.__name__}")
+    assert actual_arr_space == xp, _msg
 
 
 def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
                     check_shape=True, check_0d=True, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
-    if xp is None:
-        xp = array_namespace(actual)
 
-    actual, desired = _strict_check(
+    actual, desired, xp = _strict_check(
         actual, desired, xp, check_namespace=check_namespace,
         check_dtype=check_dtype, check_shape=check_shape,
         check_0d=check_0d
@@ -293,10 +323,8 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
                     check_dtype=True, check_shape=True, check_0d=True,
                     err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
-    if xp is None:
-        xp = array_namespace(actual)
 
-    actual, desired = _strict_check(
+    actual, desired, xp = _strict_check(
         actual, desired, xp,
         check_namespace=check_namespace, check_dtype=check_dtype,
         check_shape=check_shape, check_0d=check_0d
@@ -326,10 +354,8 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
 def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
                    check_shape=True, check_0d=True, err_msg='', verbose=True, xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
-    if xp is None:
-        xp = array_namespace(actual)
 
-    actual, desired = _strict_check(
+    actual, desired, xp = _strict_check(
         actual, desired, xp, check_namespace=check_namespace,
         check_dtype=check_dtype, check_shape=check_shape,
         check_0d=check_0d
@@ -587,3 +613,14 @@ def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
         arr = xp.astype(arr, xp.complex128)
 
     return arr
+
+
+def xp_default_dtype(xp):
+    """Query the namespace-dependent default floating-point dtype.
+    """
+    if is_torch(xp):
+        # historically, we allow pytorch to keep its default of float32
+        return xp.get_default_dtype()
+    else:
+        # we default to float64
+        return xp.float64
