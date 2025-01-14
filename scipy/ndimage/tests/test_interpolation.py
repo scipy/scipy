@@ -876,7 +876,7 @@ class TestAffineTransform:
         offset_original = -xp.ones((2, 1))
 
         tform_h1 = xp.concat((tform_original, offset_original), axis=1)  # hstack
-        tform_h2 = xp.concat( (tform_h1, xp.asarray([[0.0, 0, 1]])), axis=0)  # vstack
+        tform_h2 = xp.concat((tform_h1, xp.asarray([[0.0, 0, 1]])), axis=0)  # vstack
 
         offs = [float(x) for x in xp.reshape(offset_original, (-1,))]
 
