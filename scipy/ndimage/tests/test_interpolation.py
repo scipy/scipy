@@ -3,10 +3,10 @@ import sys
 import numpy as np
 from numpy.testing import suppress_warnings
 from scipy._lib._array_api import (
+    _asarray, assert_array_almost_equal,
+    is_jax, np_compat,
     xp_assert_equal, xp_assert_close,
-    assert_array_almost_equal,
 )
-from scipy._lib._array_api import is_jax, _asarray, np_compat
 
 import pytest
 from pytest import raises as assert_raises
