@@ -1391,6 +1391,14 @@ class TestLp2bs:
 
 
 class TestBilinear:
+    """Tests for function `signal.bilinear`. """
+
+    def test_exceptions(self):
+        """Raise all exceptions in `bilinear()`. """
+        with pytest.raises(ValueError, match="Parameter a is not .*"):
+            bilinear(1., np.array([[1, 2, 3]]))
+        with pytest.raises(ValueError, match="Parameter b is not .*"):
+            bilinear(np.ones((2,3)), 1. )
 
     def test_basic(self):
         # reference output values computed with sympy
