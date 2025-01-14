@@ -22,8 +22,8 @@ from scipy.sparse import issparse, eye_array, coo_array, csc_array
 import scipy.io
 from scipy.io.matlab import MatlabOpaque, MatlabFunction, MatlabObject
 import scipy.io.matlab._byteordercodes as boc
-from scipy.io.matlab._miobase import (
-    matdims, MatWriteError, MatReadError, matfile_version)
+from scipy.io.matlab._miobase import (matdims, MatWriteError, MatReadError,
+                                      matfile_version, MatWriteWarning)
 from scipy.io.matlab._mio import mat_reader_factory, loadmat, savemat, whosmat
 from scipy.io.matlab._mio5 import (
     MatFile5Writer, MatFile5Reader, varmats_from_mat, to_writeable,
@@ -713,12 +713,14 @@ def test_to_writeable():
     expected2 = np.array([(2, 1)], dtype=[('b', '|O8'), ('a', '|O8')])
     alternatives = (expected1, expected2)
     assert_any_equal(to_writeable({'a':1,'b':2}), alternatives)
-    # Fields with underscores discarded
-    assert_any_equal(to_writeable({'a':1,'b':2, '_c':3}), alternatives)
+    # Fields with underscores discarded with a warning message.
+    with pytest.warns(MatWriteWarning, match='Starting field name with'):
+        assert_any_equal(to_writeable({'a':1,'b':2, '_c':3}), alternatives)
     # Not-string fields discarded
     assert_any_equal(to_writeable({'a':1,'b':2, 100:3}), alternatives)
     # String fields that are valid Python identifiers discarded
-    assert_any_equal(to_writeable({'a':1,'b':2, '99':3}), alternatives)
+    with pytest.warns(MatWriteWarning, match='Starting field name with'):
+        assert_any_equal(to_writeable({'a':1,'b':2, '99':3}), alternatives)
     # Object with field names is equivalent
 
     class klass:
@@ -759,10 +761,14 @@ def test_to_writeable():
     assert_equal(res.shape, (1,))
     assert_equal(res.dtype.type, np.object_)
     # Only fields with illegal characters, falls back to EmptyStruct
-    assert_(to_writeable({'1':1}) is EmptyStructMarker)
-    assert_(to_writeable({'_a':1}) is EmptyStructMarker)
+    with pytest.warns(MatWriteWarning, match='Starting field name with'):
+        assert_(to_writeable({'1':1}) is EmptyStructMarker)
+
+    with pytest.warns(MatWriteWarning, match='Starting field name with'):
+        assert_(to_writeable({'_a':1}) is EmptyStructMarker)
     # Unless there are valid fields, in which case structured array
-    assert_equal(to_writeable({'1':1, 'f': 2}),
+    with pytest.warns(MatWriteWarning, match='Starting field name with'):
+        assert_equal(to_writeable({'1':1, 'f': 2}),
                  np.array([(2,)], dtype=[('f', '|O8')]))
 
 
@@ -975,7 +981,9 @@ def test_func_read():
     assert isinstance(d['testfunc'], MatlabFunction)
     stream = BytesIO()
     wtr = MatFile5Writer(stream)
-    assert_raises(MatWriteError, wtr.put_variables, d)
+    # This test mat file has `__header__` field.
+    with pytest.warns(MatWriteWarning, match='Starting field name with'):
+        assert_raises(MatWriteError, wtr.put_variables, d)
 
 
 def test_mat_dtype():
@@ -1358,3 +1366,28 @@ def test_large_m4():
 
 def test_gh_19223():
     from scipy.io.matlab import varmats_from_mat  # noqa: F401
+
+
+def test_invalid_field_name_warning():
+    names_vars = (
+        ('_1', mlarr(np.arange(10))),
+        ('mystr', mlarr('a string')))
+    check_mat_write_warning(names_vars)
+
+    names_vars = (
+        ('mymap', {"a": 1, "_b": 2}),)
+    check_mat_write_warning(names_vars)
+
+    names_vars = (('mymap', {"a": 1, "1a": 2}),)
+    check_mat_write_warning(names_vars)
+
+
+def check_mat_write_warning(names_vars):
+    class C:
+        def items(self):
+            return names_vars
+
+    stream = BytesIO()
+    with pytest.warns(MatWriteWarning, match='Starting field name with'):
+        savemat(stream, C())
+

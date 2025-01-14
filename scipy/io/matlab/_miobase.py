@@ -14,7 +14,7 @@ from scipy._lib import doccer
 from . import _byteordercodes as boc
 
 __all__ = [
-    'MatReadError', 'MatReadWarning', 'MatWriteError',
+    'MatReadError', 'MatReadWarning', 'MatWriteError', 'MatWriteWarning',
 ]
 
 class MatReadError(Exception):
@@ -27,6 +27,9 @@ class MatWriteError(Exception):
 
 class MatReadWarning(UserWarning):
     """Warning class for read issues."""
+
+class MatWriteWarning(UserWarning):
+    """Warning class for write issues."""
 
 
 doc_dict = \
