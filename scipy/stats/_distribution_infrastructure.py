@@ -4506,13 +4506,13 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0, *args)
         for var, weight in zip(self._components, self._weights):
             out += getattr(var, fun)(*args) * weight
-        return out
+        return out[()]
 
     def _logsum(self, fun, *args):
         out = self._full(-np.inf, *args)
         for var, log_weight in zip(self._components, np.log(self._weights)):
             np.logaddexp(out, getattr(var, fun)(*args) + log_weight, out=out)
-        return out
+        return out[()]
 
     def support(self):
         a = self._full(np.inf)
@@ -4588,7 +4588,7 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0)
         for var, weight in zip(self._components, self._weights):
             out += var.moment(order, kind='raw') * weight
-        return out
+        return out[()]
 
     def _moment_central(self, order):
         order = int(order)
@@ -4599,7 +4599,7 @@ class Mixture(_ProbabilityDistribution):
             a, b = var.mean(), self.mean()
             moment = var._moment_transform_center(order, moment_as, a, b)
             out += moment * weight
-        return out
+        return out[()]
 
     def _moment_standardized(self, order):
         return self._moment_central(order) / self.standard_deviation()**order
