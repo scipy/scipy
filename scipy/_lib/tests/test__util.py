@@ -615,8 +615,8 @@ class TestLazywhere:
 
         # Ensure arrays are at least 1d to follow sane type promotion rules.
         # This can be removed when minimum supported NumPy is 2.0
-        if xp == np:
-            cond, fillvalue, *arrays = np.atleast_1d(cond, fillvalue, *arrays)
+        if is_numpy(xp):
+            cond, fillvalue, *arrays = xp.atleast_1d(cond, fillvalue, *arrays)
 
         ref1 = xp.where(cond, f(*arrays), fillvalue)
         ref2 = xp.where(cond, f(*arrays), f2(*arrays))
@@ -625,7 +625,7 @@ class TestLazywhere:
             # Python scalar. When it does, test can be run with array_api_strict, too.
             ref3 = xp.where(cond, f(*arrays), float_fillvalue)
 
-        if xp == np:  # because we ensured arrays are at least 1d
+        if is_numpy(xp):  # because we ensured arrays are at least 1d
             ref1 = ref1.reshape(result_shape)
             ref2 = ref2.reshape(result_shape)
             ref3 = ref3.reshape(result_shape)
