@@ -14,7 +14,7 @@ and writing MATLAB files.
    MatReadError - Exception indicating a read issue
    MatReadWarning - Warning class for read issues
    MatWriteError - Exception indicating a write issue
-   MatWriteWarning - Warning class for read issues
+   MatWriteWarning - Warning class for write issues
    mat_struct - Class used when ``struct_as_record=False``
    varmats_from_mat - Pull variables out of mat 5 file as a sequence of mat file objects
 
