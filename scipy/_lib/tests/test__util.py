@@ -351,7 +351,7 @@ class TestContainsNaN:
 
     @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
-    def test_array_api_eager(self, xp, nan_policy):
+    def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
         x0 = rng.random(size=(2, 3, 4))
         x = xp.asarray(x0)
