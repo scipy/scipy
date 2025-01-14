@@ -487,7 +487,8 @@ def to_writeable(source):
                     dtype.append((str(field), object))
                     values.append(value)
                 else:
-                    msg = f"Starting field name with a underscore or a digit ({field}) is ignored"
+                    msg = (f"Starting field name with a underscore "
+                           f"or a digit ({field}) is ignored")
                     warnings.warn(msg, MatWriteWarning, stacklevel=2)
         if dtype:
             return np.array([tuple(values)], dtype)
