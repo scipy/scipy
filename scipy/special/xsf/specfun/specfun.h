@@ -70,6 +70,7 @@
 
 #pragma once
 
+#include <memory>
 #include "../config.h"
 
 namespace xsf {
@@ -162,11 +163,9 @@ Status aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
 
     int ip, k, nm, nm2;
     T a0, d0, d1, r, su1, su2, x0, x1;
-    T *ck = (T *) calloc(200, sizeof(T));
-    T *df = (T *) calloc(200, sizeof(T));
+    auto ck = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto df = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
     if (ck == nullptr || df == nullptr) {
-        free(ck);
-        free(df);
         return Status::NoMemory;
     }
     const T eps = 1e-14;
@@ -175,12 +174,10 @@ Status aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     ip = ((n-m) % 2 == 0 ? 0 : 1);
     nm = 40 + (int)((n-m)/2 + c);
     nm2 = nm/2 - 2;
-    if (sdmn(m, n, c, cv, kd, df) == Status::NoMemory) {
-        free(ck);
-        free(df);
+    if (sdmn(m, n, c, cv, kd, df.get()) == Status::NoMemory) {
         return Status::NoMemory;
     }
-    sckb(m, n, c, df, ck);
+    sckb(m, n, c, df.get(), ck.get());
     x1 = 1.0 - x*x;
     if ((m == 0) && (x1 == 0.0)) {
         a0 = 1.0;
@@ -218,8 +215,6 @@ Status aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     if ((x0 < 0.0) && (ip == 0)) { *s1d = -*s1d; }
     if ((x0 < 0.0) && (ip == 1)) { *s1f = -*s1f; }
     x = x0;
-    free(ck);
-    free(df);
     return Status::OK;
 }
 
@@ -312,13 +307,10 @@ Status cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
     ip = ((n - m) % 2 == 0 ? 0 : 1);
     nm = 25 + (int)(0.5 * (n - m) + c);
 
-    T *u = (T *) calloc(200, sizeof(T));
-    T *v = (T *) calloc(200, sizeof(T));
-    T *w = (T *) calloc(200, sizeof(T));
-    if (u == nullptr || v == nullptr || w == nullptr) {
-        free(u);
-        free(v);
-        free(w);
+    auto u = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto v = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto w = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    if (u.get() == nullptr || v.get() == nullptr || w.get() == nullptr) {
         return Status::NoMemory;
     }
 
@@ -388,7 +380,6 @@ Status cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
     for (k = n2 - 1; k >= 1; k--) {
         bk[k - 1] -= w[k - 1] * bk[k];
     }
-    free(u); free(v); free(w);
     return Status::OK;
 }
 
@@ -2066,10 +2057,6 @@ inline void cyzo(int nt, int kf, int kc, std::complex<double> *zo, std::complex<
 }
 
 
-
-
-
-
 template <typename T>
 T e1xb(T x) {
 
@@ -3029,7 +3016,7 @@ inline Status jdzo(int nt, double *zo, int *n, int *m, int *p) {
     int i, j, k, L, L0, L1, L2, mm, nm;
     double x, x0, x1, x2, xm;
 
-    int* p1 = (int *) calloc(70, sizeof(int));
+    auto p1 = std::unique_ptr<int[]>{new (std::nothrow) int[70]()};
 
     // Compared to specfun.f we use a single array instead of separate
     // three arrays and use pointer arithmetic to access. Their usage
@@ -3038,15 +3025,12 @@ inline Status jdzo(int nt, double *zo, int *n, int *m, int *p) {
     // Note: ZO and ZOC arrays are 0-indexed in specfun.f
 
     // m1, n1, zoc -> 70 + 70 + 71
-    double* mnzoc = (double *) calloc(211, sizeof(double));
+    auto mnzoc = std::unique_ptr<double[]>{new (std::nothrow) double[211]()};
 
     // bj, dj, fj -> 101 + 101 + 101
-    double* bdfj = (double *) calloc(303, sizeof(double));
+    auto bdfj = std::unique_ptr<double[]>{new (std::nothrow) double[303]()};
 
-    if (p1 == nullptr || mnzoc == nullptr || bdfj == nullptr) {
-        free(p1);
-        free(mnzoc);
-        free(bdfj);
+    if (p1.get() == nullptr || mnzoc.get() == nullptr || bdfj.get() == nullptr) {
         return Status::NoMemory;
     }
 
@@ -3144,9 +3128,6 @@ L30:
         /* 45 */
         L0 = L2;
     }
-    free(bdfj);
-    free(mnzoc);
-    free(p1);
     return Status::OK;
 }
 
@@ -3531,17 +3512,13 @@ inline Status kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2)
     T cs, gk0, gk1, gk2, gk3, t, r, dnp, su0, sw, r1, r2, r3, sa0, r4, r5, g0, sb0;
     nm = 25 + (int)(0.5 * (n - m) + c);
     nn = nm + m;
-    T *u =  (T *) malloc((nn + 4) * sizeof(T));
-    T *v =  (T *) malloc((nn + 4) * sizeof(T));
-    T *w =  (T *) malloc((nn + 4) * sizeof(T));
-    T *tp = (T *) malloc((nn + 4) * sizeof(T));
-    T *rk = (T *) malloc((nn + 4) * sizeof(T));
-    if (u == nullptr || v == nullptr || w == nullptr || tp == nullptr || rk == nullptr) {
-        free(u);
-        free(v);
-        free(w);
-        free(tp);
-        free(rk);
+    auto u = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    auto v = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    auto w = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    auto tp = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    auto rk = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    if (u.get() == nullptr || v.get() == nullptr || w.get() == nullptr
+            || tp.get() == nullptr || rk.get() == nullptr) {
         return Status::NoMemory;
     }
 
@@ -3628,7 +3605,6 @@ inline Status kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2)
         *ck1 = sa0 * su0;
 
         if (kd == -1) {
-            free(u); free(v); free(w); free(tp); free(rk);
             return Status::OK;
         }
     }
@@ -3649,7 +3625,6 @@ inline Status kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2)
     sb0 = (ip + 1.0) * pow(c, ip + 1) / (2.0 * ip * (m - 2.0) + 1.0) / (2.0 * m - 1.0);
     *ck2 = pow(-1, ip) * sb0 * r4 * r5 * g0 / r1 * su0;
 
-    free(u); free(v); free(w); free(tp); free(rk);
     return Status::OK;
 }
 
@@ -4436,13 +4411,13 @@ Status mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
         return Status::Other;
     }
 
-    T *fg = (T *) calloc(251, sizeof(T));
-    if (fg == nullptr) {
+    auto fg = std::unique_ptr<T[]>{new (std::nothrow) T[251]()};
+    if (fg.get() == nullptr) {
         *csf = NAN;
         *csd = NAN;
         return Status::NoMemory;
     }
-    fcoef(kd, m, q, a, fg);
+    fcoef(kd, m, q, a, fg.get());
 
     ic = (int)(m / 2) + 1;
     xr = x * rd;
@@ -4477,7 +4452,6 @@ Status mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
             break;
         }
     }
-    free(fg);
     return Status::OK;
 }
 
@@ -4539,27 +4513,24 @@ Status mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
     }
 
     // allocate memory after a possible NAN return
-    T *fg = (T *) calloc(251, sizeof(T));
-    T *bj1 = (T *) calloc(252, sizeof(T));
-    T *dj1 = (T *) calloc(252, sizeof(T));
-    T *bj2 = (T *) calloc(252, sizeof(T));
-    T *dj2 = (T *) calloc(252, sizeof(T));
-    T *by1 = (T *) calloc(252, sizeof(T));
-    T *dy1 = (T *) calloc(252, sizeof(T));
-    T *by2 = (T *) calloc(252, sizeof(T));
-    T *dy2 = (T *) calloc(252, sizeof(T));
+    auto fg = std::unique_ptr<T[]>{new (std::nothrow) T[251]()};
+    auto bj1 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dj1 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto bj2 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dj2 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto by1 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dy1 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto by2 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dy2 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
 
-    if (fg == nullptr || bj1 == nullptr || dj1 == nullptr
-                      || bj2 == nullptr || dj2 == nullptr
-                      || by1 == nullptr || dy1 == nullptr
-                      || by2 == nullptr || dy2 == nullptr) {
-        free(fg);
-        free(bj1); free(dj1); free(bj2); free(dj2);
-        free(by1); free(dy1); free(by2); free(dy2);
+    if (fg.get() == nullptr || bj1.get() == nullptr || dj1.get() == nullptr
+                            || bj2.get() == nullptr || dj2.get() == nullptr
+                            || by1.get() == nullptr || dy1.get() == nullptr
+                            || by2.get() == nullptr || dy2.get() == nullptr) {
         return Status::NoMemory;
     }
 
-    fcoef(kd, m, q, a, fg);
+    fcoef(kd, m, q, a, fg.get());
     ic = (int)(m / 2) + 1;
     if (kd == 4) { ic = m / 2; }
 
@@ -4567,8 +4538,8 @@ Status mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
     c2 = exp(x);
     u1 = sqrt(q) * c1;
     u2 = sqrt(q) * c2;
-    jynb(km+1, u1, &nm, bj1, dj1, by1, dy1);
-    jynb(km+1, u2, &nm, bj2, dj2, by2, dy2);
+    jynb(km+1, u1, &nm, bj1.get(), dj1.get(), by1.get(), dy1.get());
+    jynb(km+1, u2, &nm, bj2.get(), dj2.get(), by2.get(), dy2.get());
     w1 = 0.0;
     w2 = 0.0;
 
@@ -4606,9 +4577,6 @@ Status mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
         }
         *d1r *= sqrt(q) / fg[0];
         if (kc == 1) {
-            free(fg);
-            free(bj1); free(dj1); free(bj2); free(dj2);
-            free(by1); free(dy1); free(by2); free(dy2);
             return Status::OK;
         }
     }
@@ -4644,10 +4612,6 @@ Status mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
         w2 = *d2r;
     }
     *d2r = *d2r * sqrt(q) / fg[0];
-
-    free(fg);
-    free(bj1); free(dj1); free(bj2); free(dj2);
-    free(by1); free(dy1); free(by2); free(dy2);
     return Status::OK;
 }
 
@@ -4713,8 +4677,9 @@ template <typename T>
 Status qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
     int ip, i, l, k;
     T r, s, sk, qs0;
-    T *ap = (T *) malloc(200*sizeof(T));
-    if (ap == nullptr) {
+
+    auto ap = std::unique_ptr<T[]>{new (std::nothrow) T[200]};
+    if (ap.get() == nullptr) {
         return Status::NoMemory;
     }
     ip = ((n - m) == 2 * ((n - m) / 2) ? 0 : 1);
@@ -4742,7 +4707,6 @@ Status qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
     }
     *qs = pow(-1, ip) * (ck1) * (ck1 * qs0) / c;
     *qt = -2.0 / (ck1) * (*qs);
-    free(ap);
     return Status::OK;
 }
 
@@ -4799,13 +4763,10 @@ inline Status rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
     T a0, b0, cx, r, r0, r1, r2, r3, reg, sa0, suc, sud, sum, sw, sw1;
     int ip, j, k, l, lg, nm, nm1, nm2, np;
 
-    T *ck = (T *) calloc(200, sizeof(T));
-    T *dj = (T *) calloc(252, sizeof(T));
-    T *sj = (T *) calloc(252, sizeof(T));
-    if (ck == nullptr || dj == nullptr || sj == nullptr) {
-        free(ck);
-        free(dj);
-        free(sj);
+    auto ck = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto dj = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto sj = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    if (ck.get() == nullptr || dj.get() == nullptr || sj.get() == nullptr) {
         return Status::NoMemory;
     }
     const T eps = 1.0e-14;
@@ -4831,7 +4792,7 @@ inline Status rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
     }
 
     if (x == 0.0) {
-        sckb(m, n, c, df, ck);
+        sckb(m, n, c, df, ck.get());
 
         sum = 0.0;
         sw1 = 0.0;
@@ -4864,15 +4825,12 @@ inline Status rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
             *r1f = 0.0;
             *r1d = sum / (sa0 * suc) * df[0] * reg;
         }
-        free(ck);
-        free(dj);
-        free(sj);
         return Status::OK;
     }
 
     cx = c * x;
     nm2 = 2 * nm + m;
-    sphj(cx, nm2, &nm2, sj, dj);
+    sphj(cx, nm2, &nm2, sj.get(), dj.get());
 
     a0 = pow(1.0 - kd / (x * x), 0.5 * m) / suc;
     *r1f = 0.0;
@@ -4919,9 +4877,6 @@ inline Status rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
         sw = sud;
     }
     *r1d = b0 + a0 * c * sud;
-    free(ck);
-    free(dj);
-    free(sj);
     return Status::OK;
 }
 
@@ -4943,11 +4898,9 @@ inline Status rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *
     T a0, b0, cx, reg, r0, r, suc, sud, sw, eps1, eps2;
     const T eps = 1.0e-14;
 
-    T *sy = (T *) calloc(252, sizeof(T));
-    T *dy = (T *) calloc(252, sizeof(T));
-    if (sy == nullptr || dy == nullptr) {
-        free(sy);
-        free(dy);
+    auto sy = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dy = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    if (sy.get() == nullptr || dy.get() == nullptr) {
         return Status::NoMemory;
     }
 
@@ -4963,7 +4916,7 @@ inline Status rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *
     }
     nm2 = 2 * nm + m;
     cx = c * x;
-    sphy(cx, nm2, &nm2, sy, dy);
+    sphy(cx, nm2, &nm2, sy.get(), dy.get());
     r0 = reg;
 
     for (j = 1; j <= 2 * m + ip; ++j) {
@@ -5015,8 +4968,6 @@ inline Status rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *
         // look at the value of Id to check for convergence; the returned
         // Status value is only checked for the occurrence of Status::NoMemory.
         *Id = 10;
-        free(sy);
-        free(dy);
         return Status::Other;
     }
 
@@ -5044,8 +4995,6 @@ inline Status rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *
     *R2d = b0 + a0 * c * sud;
     id2 = (int)log10(eps2 / fabs(sud) + eps);
     *Id = (id1 > id2) ? id1 : id2;
-    free(sy);
-    free(dy);
     return Status::OK;
 }
 
@@ -5077,35 +5026,24 @@ inline Status rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d
         *r2d = 1.0e+300;
         return Status::OK;
     }
-    T *bk = (T *) calloc(200, sizeof(double));
-    T *ck = (T *) calloc(200, sizeof(double));
-    T *dn = (T *) calloc(200, sizeof(double));
-    if (bk == nullptr || ck == nullptr || dn == nullptr) {
-        free(bk);
-        free(ck);
-        free(dn);
+
+    auto bk = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto ck = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto dn = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    if (bk.get() == nullptr || ck.get() == nullptr || dn.get() == nullptr) {
         return Status::NoMemory;
     }
 
     nm = 25 + (int)((n - m) / 2 + c);
     ip = (n - m) % 2;
-    sckb(m, n, c, df, ck);
-    if (kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2) == Status::NoMemory) {
-        free(bk);
-        free(ck);
-        free(dn);
+    sckb(m, n, c, df, ck.get());
+    if (kmn(m, n, c, cv, kd, df, dn.get(), &ck1, &ck2) == Status::NoMemory) {
         return Status::NoMemory;
     }
-    if (qstar(m, n, c, ck1, ck, &qs, &qt) == Status::NoMemory) {
-        free(bk);
-        free(ck);
-        free(dn);
+    if (qstar(m, n, c, ck1, ck.get(), &qs, &qt) == Status::NoMemory) {
         return Status::NoMemory;
     }
-    if (cbk(m, n, c, cv, qt, ck, bk) == Status::NoMemory) {
-        free(bk);
-        free(ck);
-        free(dn);
+    if (cbk(m, n, c, cv, qt, ck.get(), bk.get()) == Status::NoMemory) {
         return Status::NoMemory;
     }
 
@@ -5129,20 +5067,14 @@ inline Status rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d
             *r2d = -0.5 * pi * qs * r1d;
         }
     } else {
-        gmn(m, n, c, x, bk, &gf, &gd);
+        gmn(m, n, c, x, bk.get(), &gf, &gd);
         if (rmn1(m, n, c, x, kd, df, &r1f, &r1d) == Status::NoMemory) {
-            free(bk);
-            free(ck);
-            free(dn);
             return Status::NoMemory;
         }
         h0 = atan(x) - 0.5 * pi;
         *r2f = qs * r1f * h0 + gf;
         *r2d = qs * (r1d * h0 + r1f / (1.0 + x * x)) + gd;
     }
-    free(bk);
-    free(ck);
-    free(dn);
     return Status::OK;
 }
 
@@ -5167,20 +5099,15 @@ Status rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
            sf, gb, spl, gc, sd, r4, spd1, spd2, su2, ck1, ck2, sum, sdm;
 
     // fortran index start from 0
-    T *pm = (T *) malloc(252*sizeof(T));
-    T *pd = (T *) malloc(252*sizeof(T));
-    T *qm = (T *) malloc(252*sizeof(T));
-    T *qd = (T *) malloc(252*sizeof(T));
+    auto pm = std::unique_ptr<T[]>{new (std::nothrow) T[252]};
+    auto pd = std::unique_ptr<T[]>{new (std::nothrow) T[252]};
+    auto qm = std::unique_ptr<T[]>{new (std::nothrow) T[252]};
+    auto qd = std::unique_ptr<T[]>{new (std::nothrow) T[252]};
     // fortran index start from 1
-    T *dn = (T *) malloc(201*sizeof(T));
+    auto dn = std::unique_ptr<T[]>{new (std::nothrow) T[201]};
 
-    if (pm == nullptr || pd == nullptr || qm == nullptr
-           || qd == nullptr || dn == nullptr) {
-        free(pm);
-        free(pd);
-        free(qm);
-        free(qd);
-        free(dn);
+    if (pm.get() == nullptr || pd.get() == nullptr || qm.get() == nullptr
+           || qd.get() == nullptr || dn.get() == nullptr) {
         return Status::NoMemory;
     }
 
@@ -5191,16 +5118,11 @@ Status rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     nm2 = 2 * nm + m;
     ip = (n - m) % 2;
 
-    if (kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2) == Status::NoMemory) {
-        free(pm);
-        free(pd);
-        free(qm);
-        free(qd);
-        free(dn);
+    if (kmn(m, n, c, cv, kd, df, dn.get(), &ck1, &ck2) == Status::NoMemory) {
         return Status::NoMemory;
     }
-    lpmns(m, nm2, x, pm, pd);
-    lqmns(m, nm2, x, qm, qd);
+    lpmns(m, nm2, x, pm.get(), pd.get());
+    lqmns(m, nm2, x, qm.get(), qd.get());
 
     su0 = 0.0;
     sw = 0.0;
@@ -5290,11 +5212,6 @@ Status rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     sdm = sd0 + sd1 + sd2;
     *r2f = sum / ck2;
     *r2d = sdm / ck2;
-    free(pm);
-    free(pd);
-    free(qm);
-    free(qd);
-    free(dn);
     return Status::OK;
 }
 
@@ -5330,36 +5247,31 @@ inline Status rswfp(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f
     //          of the second kind for a small argument
     // ==============================================================
 
-    T *df = (T *) malloc(200*sizeof(double));
-    if (df == nullptr) {
+    auto df = std::unique_ptr<T[]>{new (std::nothrow) T[200]};
+    if (df.get() == nullptr) {
         return Status::NoMemory;
     }
     int id, kd = 1;
 
-    if (sdmn(m, n, c, cv, kd, df) == Status::NoMemory) {
-        free(df);
+    if (sdmn(m, n, c, cv, kd, df.get()) == Status::NoMemory) {
         return Status::NoMemory;
     }
 
     if (kf != 2) {
-        if (rmn1(m, n, c, x, kd, df, r1f, r1d) == Status::NoMemory) {
-            free(df);
+        if (rmn1(m, n, c, x, kd, df.get(), r1f, r1d) == Status::NoMemory) {
             return Status::NoMemory;
         }
     }
     if (kf > 1) {
-        if (rmn2l(m, n, c, x, kd, df, r2f, r2d, &id) == Status::NoMemory) {
-            free(df);
+        if (rmn2l(m, n, c, x, kd, df.get(), r2f, r2d, &id) == Status::NoMemory) {
             return Status::NoMemory;
         }
         if (id > -8) {
-            if (rmn2sp(m, n, c, x, cv, kd, df, r2f, r2d) == Status::NoMemory) {
-                free(df);
+            if (rmn2sp(m, n, c, x, cv, kd, df.get(), r2f, r2d) == Status::NoMemory) {
                 return Status::NoMemory;
             }
         }
     }
-    free(df);
     return Status::OK;
 }
 
@@ -5395,39 +5307,34 @@ Status rswfo(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2
     //          the second kind for a small argument
     // ==========================================================
 
-    T *df = (T *) malloc(200*sizeof(T));
-    if (df == nullptr) {
+    auto df = std::unique_ptr<T[]>{new (std::nothrow) T[200]};
+    if (df.get() == nullptr) {
         return Status::NoMemory;
     }
     int id, kd = -1;
 
-    if (sdmn(m, n, c, cv, kd, df) == Status::NoMemory) {
-        free(df);
+    if (sdmn(m, n, c, cv, kd, df.get()) == Status::NoMemory) {
         return Status::NoMemory;
     }
 
     if (kf != 2) {
-        if (rmn1(m, n, c, x, kd, df, r1f, r1d) == Status::NoMemory) {
-            free(df);
+        if (rmn1(m, n, c, x, kd, df.get(), r1f, r1d) == Status::NoMemory) {
             return Status::NoMemory;
         }
     }
     if (kf > 1) {
         id = 10;
         if (x > 1e-8) {
-            if (rmn2l(m, n, c, x, kd, df, r2f, r2d, &id) == Status::NoMemory) {
-                free(df);
+            if (rmn2l(m, n, c, x, kd, df.get(), r2f, r2d, &id) == Status::NoMemory) {
                 return Status::NoMemory;
             }
         }
         if (id > -1) {
-            if (rmn2so(m, n, c, x, cv, kd, df, r2f, r2d) == Status::NoMemory) {
-                free(df);
+            if (rmn2so(m, n, c, x, cv, kd, df.get(), r2f, r2d) == Status::NoMemory) {
                 return Status::NoMemory;
             }
         }
     }
-    free(df);
     return Status::OK;
 }
 
@@ -5520,13 +5427,10 @@ Status sdmn(int m, int n, T c, T cv, int kd, T *df) {
         return Status::OK;
     }
 
-    T *a = (T *) calloc(nm + 2, sizeof(double));
-    T *d = (T *) calloc(nm + 2, sizeof(double));
-    T *g = (T *) calloc(nm + 2, sizeof(double));
-    if (a == nullptr || d == nullptr || g == nullptr) {
-        free(a);
-        free(d);
-        free(g);
+    auto a = std::unique_ptr<T[]>{new (std::nothrow) T[nm + 2]()};
+    auto d = std::unique_ptr<T[]>{new (std::nothrow) T[nm + 2]()};
+    auto g = std::unique_ptr<T[]>{new (std::nothrow) T[nm + 2]()};
+    if (a.get() == nullptr || d.get() == nullptr || g.get() == nullptr) {
         return Status::NoMemory;
     }
     cs = c*c*kd;
@@ -5645,9 +5549,6 @@ Status sdmn(int m, int n, T c, T cv, int kd, T *df) {
     for (int k = kb + 1; k <= nm; ++k) {
         df[k - 1] *= s0;
     }
-    free(a);
-    free(d);
-    free(g);
     return Status::OK;
 }
 
@@ -5682,25 +5583,18 @@ Status segv(int m, int n, T c, int kd, T *cv, T *eg) {
     }
 
     // TODO: Following array sizes should be decided dynamically
-    T *a = (T *) calloc(300, sizeof(T));
-    T *b = (T *) calloc(100, sizeof(T));
-    T *cv0 = (T *) calloc(100, sizeof(T));
-    T *d = (T *) calloc(300, sizeof(T));
-    T *e = (T *) calloc(300, sizeof(T));
-    T *f = (T *) calloc(300, sizeof(T));
-    T *g = (T *) calloc(300, sizeof(T));
-    T *h = (T *) calloc(100, sizeof(T));
+    auto a = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto b = std::unique_ptr<T[]>{new (std::nothrow) T[100]()};
+    auto cv0 = std::unique_ptr<T[]>{new (std::nothrow) T[100]()};
+    auto d = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto e = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto f = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto g = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto h = std::unique_ptr<T[]>{new (std::nothrow) T[100]()};
 
-    if (a == nullptr || b == nullptr || cv0 == nullptr || d == nullptr
-            || e == nullptr || f == nullptr || g == nullptr || h == nullptr) {
-        free(a);
-        free(b);
-        free(cv0);
-        free(d);
-        free(e);
-        free(f);
-        free(g);
-        free(h);
+    if (a.get() == nullptr || b.get() == nullptr || cv0.get() == nullptr
+             || d.get() == nullptr || e.get() == nullptr || f.get() == nullptr
+             || g.get() == nullptr || h.get() == nullptr) {
         return Status::NoMemory;
     }
     icm = (n-m+2)/2;
@@ -5778,7 +5672,6 @@ Status segv(int m, int n, T c, int kd, T *cv, T *eg) {
         }
     }
     *cv = eg[n-m];
-    free(a); free(b); free(cv0); free(d); free(e); free(f); free(g); free(h);
     return Status::OK;
 }
 
