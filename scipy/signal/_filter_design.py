@@ -2204,18 +2204,19 @@ def bilinear(b, a, fs=1.0):
                        \cdots + a_P}\ .
 
     This expression can be simplified by multiplying numerator and denominatory by
-    :math:`(z+1)^N`, with :math:`N=\max(P, Q)`, which gives
+    :math:`(z+1)^N`, with :math:`N=\max(P, Q)`. This allows :math:`H_d(z)` to be
+    reformulated as
 
     .. math::
 
-       H_d(z) &= \frac{b_0 \big(\kappa (z-1)\big)^Q     (z+1)^{N-Q} +
-                       b_1 \big(\kappa (z-1)\big)^{Q-1} (z+1)^{N-Q+1} +
-                       \cdots + b_P(z+1)^N}{
-                       a_0 \big(\kappa (z-1)\big)^P     (z+1)^{N-P} +
-                       a_1 \big(\kappa (z-1)\big)^{P-1} (z+1)^{N-P+1} +
-                       \cdots + a_P(z+1)^N}\\
-               &=: \frac{\beta_0 + \beta_1  z^{-1} + \cdots + \beta_N  z^{-N}}{
-                        \alpha_0 + \alpha_1 z^{-1} + \cdots + \alpha_N z^{-N}}\ .
+       & & \frac{b_0 \big(\kappa (z-1)\big)^Q     (z+1)^{N-Q} +
+                b_1 \big(\kappa (z-1)\big)^{Q-1} (z+1)^{N-Q+1} +
+                \cdots + b_P(z+1)^N}{
+                a_0 \big(\kappa (z-1)\big)^P     (z+1)^{N-P} +
+                a_1 \big(\kappa (z-1)\big)^{P-1} (z+1)^{N-P+1} +
+                \cdots + a_P(z+1)^N}\\
+        &=:& \frac{\beta_0 + \beta_1  z^{-1} + \cdots + \beta_N  z^{-N}}{
+                 \alpha_0 + \alpha_1 z^{-1} + \cdots + \alpha_N z^{-N}}\ .
 
 
     This is the equation implemented to perform the bilinear transform. Note that for
