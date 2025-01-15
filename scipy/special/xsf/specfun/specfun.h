@@ -5007,7 +5007,13 @@ inline Status rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *
     *R2f *= a0;
 
     if (np >= nm2) {
-        // XXX FIXME Check this condition! Is it an error?
+        // On page 584 of "Computation of Special functions" by Shanjie Zhang
+        // and Jian-Ming Jin, there is a comment next to this code that says
+        // this condition indicates that convergence is not achieved, so we
+        // return Status::Other in addition to setting *Id = 10.  But the
+        // functions that call rmn2l (namely rswfp and rswfo) will actually
+        // look at the value of Id to check for convergence; the returned
+        // Status value is only checked for the occurrence of Status::NoMemory.
         *Id = 10;
         free(sy);
         free(dy);
