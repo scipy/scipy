@@ -715,12 +715,12 @@ def test_to_writeable():
     assert_any_equal(to_writeable({'a':1,'b':2}), alternatives)
     # Fields with underscores discarded with a warning message.
     with pytest.warns(MatWriteWarning, match='Starting field name with'):
-        assert_any_equal(to_writeable({'a':1,'b':2, '_c':3}), alternatives)
+        assert_any_equal(to_writeable({'a':1, 'b':2, '_c':3}), alternatives)
     # Not-string fields discarded
     assert_any_equal(to_writeable({'a':1,'b':2, 100:3}), alternatives)
     # String fields that are valid Python identifiers discarded
     with pytest.warns(MatWriteWarning, match='Starting field name with'):
-        assert_any_equal(to_writeable({'a':1,'b':2, '99':3}), alternatives)
+        assert_any_equal(to_writeable({'a':1, 'b':2, '99':3}), alternatives)
     # Object with field names is equivalent
 
     class klass:
@@ -1374,8 +1374,7 @@ def test_invalid_field_name_warning():
         ('mystr', mlarr('a string')))
     check_mat_write_warning(names_vars)
 
-    names_vars = (
-        ('mymap', {"a": 1, "_b": 2}),)
+    names_vars = (('mymap', {"a": 1, "_b": 2}),)
     check_mat_write_warning(names_vars)
 
     names_vars = (('mymap', {"a": 1, "1a": 2}),)
