@@ -25,7 +25,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import is_numpy
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -2675,16 +2675,14 @@ class TestCircFuncs:
         M2 = stats.circmean(x, high=360)
         xp_assert_close(M2, M1, rtol=1e-5)
 
-        # plain torch var/std ddof=1, so we need array_api_compat torch
-        xp_test = array_namespace(x)
-        V1 = xp_test.var(x*xp.pi/180, correction=0)
+        V1 = xp.var(x*xp.pi/180, correction=0)
         # for small variations, circvar is approximately half the
         # linear variance
         V1 = V1 / 2.
         V2 = stats.circvar(x, high=360)
         xp_assert_close(V2, V1, rtol=1e-4)
 
-        S1 = xp_test.std(x, correction=0)
+        S1 = xp.std(x, correction=0)
         S2 = stats.circstd(x, high=360)
         xp_assert_close(S2, S1, rtol=1e-4)
 
@@ -3086,9 +3084,7 @@ class TestDirectionalStats:
                                    axis=1)
         dirstats = stats.directional_stats(testdata_vector)
         directional_mean = dirstats.mean_direction
-        xp_test = array_namespace(directional_mean)  # np needs atan2
-        directional_mean_angle = xp_test.atan2(directional_mean[1],
-                                               directional_mean[0])
+        directional_mean_angle = xp.atan2(directional_mean[1], directional_mean[0])
         directional_mean_angle = directional_mean_angle % (2 * xp.pi)
         circmean = stats.circmean(testdata)
         xp_assert_close(directional_mean_angle, circmean)

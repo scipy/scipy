@@ -84,7 +84,7 @@ class TestArrayAPI:
 
         kwarg_names = ["check_namespace", "check_dtype", "check_shape", "check_0d"]
         options = dict(zip(kwarg_names, [True, False, False, False]))
-        if xp == np:
+        if is_numpy(xp):
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(

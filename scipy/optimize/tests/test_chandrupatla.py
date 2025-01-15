@@ -218,7 +218,6 @@ class TestChandrupatlaMinimize:
         loc = xp.linspace(-0.05, 1.05, 12).reshape(shape) if shape else xp.asarray(0.6)
         args = (loc,)
         bracket = xp.asarray(-5.), xp.asarray(0.), xp.asarray(5.)
-        xp_test = array_namespace(loc)  # need xp.stack
 
         @_vectorize(xp)
         def chandrupatla_single(loc_single):
@@ -235,7 +234,7 @@ class TestChandrupatlaMinimize:
         attrs = ['x', 'fun', 'success', 'status', 'nfev', 'nit',
                  'xl', 'xm', 'xr', 'fl', 'fm', 'fr']
         for attr in attrs:
-            ref_attr = xp_test.stack([getattr(ref, attr) for ref in refs])
+            ref_attr = xp.stack([getattr(ref, attr) for ref in refs])
             res_attr = xp_ravel(getattr(res, attr))
             xp_assert_equal(res_attr, ref_attr)
             assert getattr(res, attr).shape == shape
@@ -247,10 +246,10 @@ class TestChandrupatlaMinimize:
         assert xp.max(res.nfev) == f.f_evals
         assert xp.max(res.nit) == f.f_evals - 3
 
-        assert xp_test.isdtype(res.success.dtype, 'bool')
-        assert xp_test.isdtype(res.status.dtype, 'integral')
-        assert xp_test.isdtype(res.nfev.dtype, 'integral')
-        assert xp_test.isdtype(res.nit.dtype, 'integral')
+        assert xp.isdtype(res.success.dtype, 'bool')
+        assert xp.isdtype(res.status.dtype, 'integral')
+        assert xp.isdtype(res.nfev.dtype, 'integral')
+        assert xp.isdtype(res.nit.dtype, 'integral')
 
 
     def test_flags(self, xp):
@@ -424,10 +423,9 @@ class TestChandrupatlaMinimize:
                    xp.asarray(1, dtype=dtype),
                    xp.asarray(5, dtype=dtype))
 
-        xp_test = array_namespace(loc)  # need astype
         def f(x, loc):
             assert x.dtype == dtype
-            return xp_test.astype((x - loc)**2, dtype)
+            return xp.astype((x - loc)**2, dtype)
 
         res = _chandrupatla_minimize(f, *bracket, args=(loc,))
         assert res.x.dtype == dtype
@@ -481,22 +479,19 @@ class TestChandrupatlaMinimize:
 
     def test_bracket_order(self, xp):
         # Confirm that order of points in bracket doesn't
-        xp_test = array_namespace(xp.asarray(1.))  # need `xp.newaxis`
-        loc = xp.linspace(-1, 1, 6)[:, xp_test.newaxis]
+        loc = xp.linspace(-1, 1, 6)[:, xp.newaxis]
         brackets = xp.asarray(list(permutations([-5, 0, 5]))).T
         res = _chandrupatla_minimize(self.f, *brackets, args=(loc,))
         assert xp.all(xp.isclose(res.x, loc) | (res.fun == self.f(loc, loc)))
         ref = res.x[:, 0]  # all columns should be the same
-        xp_test = array_namespace(loc)  # need `xp.broadcast_arrays
-        xp_assert_close(*xp_test.broadcast_arrays(res.x.T, ref), rtol=1e-15)
+        xp_assert_close(*xp.broadcast_arrays(res.x.T, ref), rtol=1e-15)
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
 
         # Test that integers are not passed to `f`
-        xp_test = array_namespace(xp.asarray(1.))  # need `xp.isdtype`
         def f(x):
-            assert xp_test.isdtype(x.dtype, "real floating")
+            assert xp.isdtype(x.dtype, "real floating")
             return (x - 1)**2
 
         bracket = xp.asarray(-7), xp.asarray(0), xp.asarray(8)
@@ -578,7 +573,6 @@ class TestFindRoot:
         p_xp = xp.asarray(p)
         args_xp = (p_xp,)
         dtype = p_xp.dtype
-        xp_test = array_namespace(p_xp)  # need xp.bool
 
         @np.vectorize
         def find_root_single(p):
@@ -602,7 +596,7 @@ class TestFindRoot:
         xp_assert_equal(res.f_x, self.f(res.x, *args_xp))
 
         ref_success = [bool(ref.success) for ref in refs]
-        ref_success = xp.reshape(xp.asarray(ref_success, dtype=xp_test.bool), shape)
+        ref_success = xp.reshape(xp.asarray(ref_success, dtype=xp.bool), shape)
         xp_assert_equal(res.success, ref_success)
 
         ref_status = [ref.status for ref in refs]
@@ -911,9 +905,8 @@ class TestFindRoot:
 
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
-        xp_test = array_namespace(a)  # need isdtype
         def f(x):
-            assert xp_test.isdtype(x.dtype, "real floating")
+            assert xp.isdtype(x.dtype, "real floating")
             # this would overflow if x were an xp integer dtype
             return x ** 31 - 1
 

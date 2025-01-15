@@ -133,17 +133,16 @@ class TestTrimmedStats:
                       reason="cupy/cupy#8391")
     def test_tvar(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
-        xp_test = array_namespace(x)  # need array-api-compat var for `correction`
 
         y = stats.tvar(x, limits=(2, 8), inclusive=(True, True))
         xp_assert_close(y, xp.asarray(4.6666666666666661))
 
         y = stats.tvar(x, limits=None)
-        xp_assert_close(y, xp_test.var(x, correction=1))
+        xp_assert_close(y, xp.var(x, correction=1))
 
         x_2d = xp.reshape(xp.arange(63.), (9, 7))
         y = stats.tvar(x_2d, axis=None)
-        xp_assert_close(y, xp_test.var(x_2d, correction=1))
+        xp_assert_close(y, xp.var(x_2d, correction=1))
 
         y = stats.tvar(x_2d, axis=0)
         xp_assert_close(y, xp.full((7,), 367.5))
@@ -162,13 +161,12 @@ class TestTrimmedStats:
 
     def test_tstd(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
-        xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
         y = stats.tstd(x, (2, 8), (True, True))
         xp_assert_close(y, xp.asarray(2.1602468994692865))
 
         y = stats.tstd(x, limits=None)
-        xp_assert_close(y, xp_test.std(x, correction=1))
+        xp_assert_close(y, xp.std(x, correction=1))
 
     def test_tmin(self, xp):
         x = xp.arange(10)
@@ -252,11 +250,10 @@ class TestTrimmedStats:
 
     def test_tsem(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
-        xp_test = array_namespace(x)  # need array-api-compat std for `correction`
 
         y = stats.tsem(x, limits=(3, 8), inclusive=(False, True))
         y_ref = xp.asarray([4., 5., 6., 7., 8.])
-        xp_assert_close(y, xp_test.std(y_ref, correction=1) / xp_size(y_ref)**0.5)
+        xp_assert_close(y, xp.std(y_ref, correction=1) / xp_size(y_ref)**0.5)
         xp_assert_close(stats.tsem(x, limits=[-1, 10]), stats.tsem(x, limits=None))
 
 
@@ -2864,8 +2861,7 @@ class TestZmapZscore:
         # For these simple cases, calculate the expected result directly
         # by using the formula for the z-score.
         x, y = xp.asarray(x), xp.asarray(y)
-        xp_test = array_namespace(x, y)  # std needs correction
-        expected = (x - xp.mean(y)) / xp_test.std(y, correction=0)
+        expected = (x - xp.mean(y)) / xp.std(y, correction=0)
         z = stats.zmap(x, y)
         xp_assert_close(z, expected)
 
@@ -3009,9 +3005,8 @@ class TestZmapZscore:
 
     def test_zscore_nan_omit_with_ddof(self, xp):
         x = xp.asarray([xp.nan, 1.0, 3.0, 5.0, 7.0, 9.0])
-        xp_test = array_namespace(x)  # numpy needs concat
         z = stats.zscore(x, ddof=1, nan_policy='omit')
-        expected = xp_test.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
+        expected = xp.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
         xp_assert_close(z, expected)
 
     def test_zscore_nan_raise(self, xp):
@@ -3497,9 +3492,7 @@ class TestMoments:
         x = xp.asarray(rng.random(size=size))
         m = [0, 1, 2, 3]
         res = stats.moment(x, m, center=c)
-        xp_test = array_namespace(x)  # no `concat` in np < 2.0; no `newaxis` in torch
-        ref = xp_test.concat([stats.moment(x, i, center=c)[xp_test.newaxis, ...]
-                              for i in m])
+        ref = xp.concat([stats.moment(x, i, center=c)[xp.newaxis, ...] for i in m])
         xp_assert_equal(res, ref)
 
     def test_moment(self, xp):
@@ -3736,10 +3729,9 @@ class TestSkew(SkewKurtosisTest):
             if axis is None:
                 a = xp.reshape(a, (-1,))
                 axis = 0
-            xp_test = array_namespace(a)  # plain torch ddof=1 by default
-            mean = xp_test.mean(a, axis=axis, keepdims=True)
-            mu3 = xp_test.mean((a - mean)**3, axis=axis)
-            std = xp_test.std(a, axis=axis)
+            mean = xp.mean(a, axis=axis, keepdims=True)
+            mu3 = xp.mean((a - mean)**3, axis=axis)
+            std = xp.std(a, axis=axis)
             res = mu3 / std ** 3
             if not bias:
                 n = a.shape[axis]
@@ -3833,10 +3825,9 @@ class TestKurtosis(SkewKurtosisTest):
             if axis is None:
                 a = xp.reshape(a, (-1,))
                 axis = 0
-            xp_test = array_namespace(a)  # plain torch ddof=1 by default
-            mean = xp_test.mean(a, axis=axis, keepdims=True)
-            mu4 = xp_test.mean((a - mean)**4, axis=axis)
-            mu2 = xp_test.var(a, axis=axis, correction=0)
+            mean = xp.mean(a, axis=axis, keepdims=True)
+            mu4 = xp.mean((a - mean)**4, axis=axis)
+            mu2 = xp.var(a, axis=axis, correction=0)
             if bias:
                 res = mu4 / mu2**2 - 3
             else:
@@ -4019,8 +4010,7 @@ class TestStudentTest:
                                 alternative=alternative, axis=axis)
         l, u = res.confidence_interval(confidence_level=alpha)
         popmean = l if alternative == 'greater' else u
-        xp_test = array_namespace(l)  # torch needs `expand_dims`
-        popmean = xp_test.expand_dims(popmean, axis=axis)
+        popmean = xp.expand_dims(popmean, axis=axis)
         res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
         shape = list(data.shape)
         shape.pop(axis)
@@ -4219,8 +4209,7 @@ class TestPowerDivergence:
         if axis is None:
             num_obs = xp_size(f_obs)
         else:
-            xp_test = array_namespace(f_obs)  # torch needs broadcast_arrays
-            arrays = (xp_test.broadcast_arrays(f_obs, f_exp) if f_exp is not None
+            arrays = (xp.broadcast_arrays(f_obs, f_exp) if f_exp is not None
                       else (f_obs,))
             num_obs = arrays[0].shape[axis]
 
@@ -4310,13 +4299,10 @@ class TestPowerDivergence:
         xp_assert_close(stat, expected_chi2)
 
         # Compute the p values separately, passing in scalars for ddof.
-        stat0, p0 = stats.power_divergence(f_obs, f_exp, ddof=ddof[0, 0])
-        stat1, p1 = stats.power_divergence(f_obs, f_exp, ddof=ddof[1, 0])
+        _, p0 = stats.power_divergence(f_obs, f_exp, ddof=ddof[0, 0])
+        _, p1 = stats.power_divergence(f_obs, f_exp, ddof=ddof[1, 0])
 
-        xp_test = array_namespace(f_obs)  # needs `concat`, `newaxis`
-        expected_p = xp_test.concat((p0[xp_test.newaxis, :],
-                                     p1[xp_test.newaxis, :]),
-                                    axis=0)
+        expected_p = xp.concat((p0[xp.newaxis, :], p1[xp.newaxis, :]), axis=0)
         xp_assert_close(p, expected_p)
 
     @pytest.mark.parametrize('case', power_div_empty_cases)
@@ -4376,9 +4362,8 @@ class TestPowerDivergence:
         expected_counts = xp.exp(alpha + beta*i)
 
         # `table4` holds just the second and third columns from Table 4.
-        xp_test = array_namespace(obs)  # NumPy needs concat, torch needs newaxis
-        table4 = xp_test.concat((obs[xp_test.newaxis, :],
-                                 expected_counts[xp_test.newaxis, :])).T
+        table4 = xp.concat((obs[xp.newaxis, :],
+                            expected_counts[xp.newaxis, :])).T
 
         table5 = xp.asarray([
             # lambda, statistic
@@ -6332,10 +6317,9 @@ def test_ttest_1samp_popmean_array(xp):
     res = stats.ttest_1samp(x, popmean=popmean, axis=-2)
     assert res.statistic.shape == (5, 20)
 
-    xp_test = array_namespace(x)  # torch needs expand_dims
     l, u = res.confidence_interval()
-    l = xp_test.expand_dims(l, axis=-2)
-    u = xp_test.expand_dims(u, axis=-2)
+    l = xp.expand_dims(l, axis=-2)
+    u = xp.expand_dims(u, axis=-2)
 
     res = stats.ttest_1samp(x, popmean=l, axis=-2)
     ref = xp.broadcast_to(xp.asarray(0.05, dtype=xp.float64), res.pvalue.shape)
@@ -6362,8 +6346,7 @@ class TestDescribe:
 
     @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_describe_numbers(self, xp):
-        xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
-        x = xp_test.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
+        x = xp.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
         nc = 5
         mmc = (xp.asarray([1., 1., 1., 1.]), xp.asarray([2., 2., 2., 2.]))
         mc = xp.asarray([1.4, 1.4, 1.4, 1.4])
@@ -6443,8 +6426,7 @@ class TestDescribe:
 
     @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_describe_ddof(self, xp):
-        xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
-        x = xp_test.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
+        x = xp.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
         nc = 5
         mmc = (xp.asarray([1., 1., 1., 1.]), xp.asarray([2., 2., 2., 2.]))
         mc = xp.asarray([1.4, 1.4, 1.4, 1.4])
@@ -6462,8 +6444,7 @@ class TestDescribe:
 
     @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_describe_axis_none(self, xp):
-        xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
-        x = xp_test.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
+        x = xp.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
 
         # expected values
         nc = 20
@@ -8197,7 +8178,6 @@ class TestCombinePvalues:
     @pytest.mark.parametrize("variant", ["single", "all", "random"])
     @pytest.mark.parametrize("method", methods)
     def test_monotonicity(self, variant, method, xp):
-        xp_test = array_namespace(xp.asarray(1))
         # Test that result increases monotonically with respect to input.
         m, n = 10, 7
         rng = np.random.default_rng(278448169958891062669391462690811630763)
@@ -8208,12 +8188,12 @@ class TestCombinePvalues:
         # column (all), or independently down each column (random).
         if variant == "single":
             pvaluess = xp.broadcast_to(xp.asarray(rng.random(n)), (m, n))
-            pvaluess = xp_test.concat([xp.reshape(xp.linspace(0.1, 0.9, m), (-1, 1)),
-                                       pvaluess[:, 1:]], axis=1)
+            pvaluess = xp.concat([xp.reshape(xp.linspace(0.1, 0.9, m), (-1, 1)),
+                                  pvaluess[:, 1:]], axis=1)
         elif variant == "all":
             pvaluess = xp.broadcast_to(xp.linspace(0.1, 0.9, m), (n, m)).T
         elif variant == "random":
-            pvaluess = xp_test.sort(xp.asarray(rng.uniform(0, 1, size=(m, n))), axis=0)
+            pvaluess = xp.sort(xp.asarray(rng.uniform(0, 1, size=(m, n))), axis=0)
 
         combined_pvalues = xp.asarray([
             stats.combine_pvalues(pvaluess[i, :], method=method)[1]
@@ -9569,8 +9549,7 @@ class TestXP_Var:
 
         # `nan_policy='omit'` omits NaNs in `x`
         res = _xp_var(x, nan_policy='omit')
-        xp_test = array_namespace(x)  # torch has different default correction
-        ref = xp_test.var(x[~mask])
+        ref = xp.var(x[~mask])
         xp_assert_close(res, ref)
 
         # Check for warning if omitting NaNs causes empty slice

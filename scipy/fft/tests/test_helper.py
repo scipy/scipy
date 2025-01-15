@@ -11,7 +11,7 @@ import pytest
 import numpy as np
 import sys
 from scipy._lib._array_api import (
-    xp_assert_close, get_xp_devices, xp_device, array_namespace
+    xp_assert_close, get_xp_devices, xp_device
 )
 from scipy import fft
 
@@ -518,26 +518,23 @@ class TestFFTFreq:
         x2 = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1], dtype=xp.float64)
 
         # default dtype varies across backends
-
-        wrapped_xp = array_namespace(x)
-        y = 9 * fft.fftfreq(9, xp=wrapped_xp)
+        y = 9 * fft.fftfreq(9, xp=xp)
         xp_assert_close(y, x, check_dtype=False, check_namespace=True)
 
-        y = 9 * xp.pi * fft.fftfreq(9, xp.pi, xp=wrapped_xp)
+        y = 9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp)
         xp_assert_close(y, x, check_dtype=False)
 
-        y = 10 * fft.fftfreq(10, xp=wrapped_xp)
+        y = 10 * fft.fftfreq(10, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
-        y = 10 * xp.pi * fft.fftfreq(10, xp.pi, xp=wrapped_xp)
+        y = 10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
     def test_device(self, xp):
-        xp_test = array_namespace(xp.empty(0))
         devices = get_xp_devices(xp)
         for d in devices:
-            y = fft.fftfreq(9, xp=xp_test, device=d)
-            x = xp_test.empty(0, device=d)
+            y = fft.fftfreq(9, xp=xp, device=d)
+            x = xp.empty(0, device=d)
             assert xp_device(y) == xp_device(x)
 
 
@@ -552,23 +549,21 @@ class TestRFFTFreq:
         x2 = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float64)
 
         # default dtype varies across backends
-        wrapped_xp = array_namespace(x)
-        y = 9 * fft.rfftfreq(9, xp=wrapped_xp)
+        y = 9 * fft.rfftfreq(9, xp=xp)
         xp_assert_close(y, x, check_dtype=False, check_namespace=True)
 
-        y = 9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=wrapped_xp)
+        y = 9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp)
         xp_assert_close(y, x, check_dtype=False)
 
-        y = 10 * fft.rfftfreq(10, xp=wrapped_xp)
+        y = 10 * fft.rfftfreq(10, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
-        y = 10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=wrapped_xp)
+        y = 10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
     def test_device(self, xp):
-        xp_test = array_namespace(xp.empty(0))
         devices = get_xp_devices(xp)
         for d in devices:
-            y = fft.rfftfreq(9, xp=xp_test, device=d)
-            x = xp_test.empty(0, device=d)
+            y = fft.rfftfreq(9, xp=xp, device=d)
+            x = xp.empty(0, device=d)
             assert xp_device(y) == xp_device(x)
