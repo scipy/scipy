@@ -8173,8 +8173,8 @@ class TestCombinePvalues:
 
     methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
 
-    @skip_xp_backends('dask.array', reason='no sorting in Dask',
-                      cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+    @skip_xp_backends('dask.array', reason='no sorting in Dask')
+    @skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize("variant", ["single", "all", "random"])
     @pytest.mark.parametrize("method", methods)
     def test_monotonicity(self, variant, method, xp):
