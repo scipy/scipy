@@ -1025,22 +1025,20 @@ class _ProbabilityDistribution(ABC):
 
             F(x) = P(X ≤ x)
 
-        A two-argument variant of this function is also defined for continuous
-        random variables as the probability the random variable :math:`X` will
-        assume a value between :math:`x` and :math:`y`.
+        A two-argument variant of this function is also defined as the
+        probability the random variable :math:`X` will assume a value between
+        :math:`x` and :math:`y`.
 
         .. math::
 
             F(x, y) = P(x ≤ X ≤ y)
 
-        `cdf` accepts `x` for :math:`x` and `y` for :math:`y` (for continuous
-        random variables).
+        `cdf` accepts `x` for :math:`x` and `y` for :math:`y`.
 
         Parameters
         ----------
         x, y : array_like
-            The arguments of the CDF. `x` is required; `y` is optional for continuous
-            random variables and not accepted for discrete random variables.
+            The arguments of the CDF. `x` is required; `y` is optional.
         method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'subtraction'}
             The strategy used to evaluate the CDF.
             By default (``None``), the one-argument form of the function
@@ -1234,21 +1232,18 @@ class _ProbabilityDistribution(ABC):
 
             G(x) = 1 - F(x) = P(X > x)
 
-        A two-argument variant of this function, available only for continuous
-        random variables, is:
+        A two-argument variant of this function is:
 
         .. math::
 
             G(x, y) = 1 - F(x, y) = P(X < x \text{ or } X > y)
 
-        `ccdf` accepts `x` for :math:`x` and `y` for :math:`y` (for continuous
-        random variables).
+        `ccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
 
         Parameters
         ----------
         x, y : array_like
-            The arguments of the CCDF. `x` is required; `y` is optional for continuous
-            random variables and not accepted for discrete random variables.
+            The arguments of the CCDF. `x` is required; `y` is optional.
         method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'addition'}
             The strategy used to evaluate the CCDF.
             By default (``None``), the infrastructure chooses between the
@@ -1436,9 +1431,9 @@ class _ProbabilityDistribution(ABC):
 
             F(x) = P(X ≤ x)
 
-        A two-argument variant of this function is also defined for continuous
-        random variables as the probability the random variable :math:`X` will
-        assume a value between :math:`x` and :math:`y`.
+        A two-argument variant of this function is also defined as the
+        probability the random variable :math:`X` will assume a value between
+        :math:`x` and :math:`y`.
 
         .. math::
 
@@ -1449,14 +1444,12 @@ class _ProbabilityDistribution(ABC):
         numerically favorable compared to the naive implementation (computing
         the CDF and taking the logarithm).
 
-        `logcdf` accepts `x` for :math:`x` and `y` for :math:`y` (for continuous
-        random variables).
+        `logcdf` accepts `x` for :math:`x` and `y` for :math:`y`.
 
         Parameters
         ----------
         x, y : array_like
-            The arguments of the log-CDF. `x` is required; `y` is optional for
-            continuous random variables and not accepted for discrete random variables.
+            The arguments of the log-CDF. `x` is required; `y` is optional.
         method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'subtraction'}
             The strategy used to evaluate the log-CDF.
             By default (``None``), the one-argument form of the function
@@ -1637,8 +1630,7 @@ class _ProbabilityDistribution(ABC):
 
             G(x) = 1 - F(x) = P(X > x)
 
-        A two-argument variant of this function, defined only for continuous
-        random variables, is:
+         A two-argument variant of this function is:
 
         .. math::
 
@@ -1649,14 +1641,12 @@ class _ProbabilityDistribution(ABC):
         but it may be numerically favorable compared to the naive implementation
         (computing the CDF and taking the logarithm).
 
-        `logccdf` accepts `x` for :math:`x` and `y` for :math:`y` (for continuous
-        random variables).
+        `logccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
 
         Parameters
         ----------
         x, y : array_like
-            The arguments of the log-CCDF. `x` is required; `y` is optional for
-            continuous random variables and not accepted for discrete random variables.
+            The arguments of the log-CCDF. `x` is required; `y` is optional.
         method : {None, 'formula', 'logexp', 'complement', 'quadrature', 'addition'}
             The strategy used to evaluate the log-CCDF.
             By default (``None``), the one-argument form of the function

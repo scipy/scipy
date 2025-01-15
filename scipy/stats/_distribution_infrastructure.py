@@ -3620,6 +3620,38 @@ class DiscreteDistribution(UnivariateDistribution):
     def _logccdf_quadrature(self, x, **params):
         return super()._logccdf_quadrature(np.floor(x + 1), **params)
 
+    def _cdf2_quadrature(self, x, y, **params):
+        return super()._cdf2_quadrature(np.ceil(x), np.floor(y), **params)
+
+    def _logcdf2_quadrature(self, x, y, **params):
+        return super()._logcdf2_quadrature(np.ceil(x), np.floor(y), **params)
+
+    def _cdf2_subtraction(self, x, y, **params):
+        x_, y_ = np.floor(x), np.floor(y)
+        cdf_ymx = super()._cdf2_subtraction(x_, y_, **params)
+        pmf_x = np.where(x_ == x, self._pmf_dispatch(x_, **params), 0)
+        return cdf_ymx + pmf_x
+
+    def _logcdf2_subtraction(self, x, y, **params):
+        x_, y_ = np.floor(x), np.floor(y)
+        logcdf_ymx = super()._logcdf2_subtraction(x_, y_, **params)
+        logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
+        return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
+
+    def _ccdf2_addition(self, x, y, **params):
+        a, _ = self._support(**params)
+        ccdf_y = self._ccdf_dispatch(y, **params)
+        _cdf, args = _kwargs2args(self._cdf_dispatch, kwargs=params)
+        cdf_xm1 = _lazywhere(x - 1 >= a, [x - 1] + args, _cdf, fillvalue=0)
+        return ccdf_y + cdf_xm1
+
+    def _logccdf2_addition(self, x, y, **params):
+        a, _ = self._support(**params)
+        logccdf_y = self._logccdf_dispatch(y, **params)
+        _logcdf, args = _kwargs2args(self._logcdf_dispatch, kwargs=params)
+        logcdf_xm1 = _lazywhere(x - 1 >= a, [x - 1] + args, _logcdf, fillvalue=-np.inf)
+        return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
+
     def _icdf_inversion(self, x, **params):
         res = self._solve_bounded(self._cdf_dispatch, x, params=params, xatol=1)
         res = np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
@@ -3657,24 +3689,6 @@ class DiscreteDistribution(UnivariateDistribution):
         mode = np.asarray(xl)
         mode[fr > fl] = xr
         return mode
-
-    # For initial PR, leave these out
-
-    def _cdf2_dispatch(self, x, y, *, method=None, **params):
-        message = "Two-argument CDF is not available for discrete distributions."
-        raise NotImplementedError(message)
-
-    def _logcdf2_dispatch(self, x, y, *, method=None, **params):
-        message = "Two-argument log-CDF is not available for discrete distributions."
-        raise NotImplementedError(message)
-
-    def _ccdf2_dispatch(self, x, y, *, method=None, **params):
-        message = "Two-argument CCDF is not available for discrete distributions."
-        raise NotImplementedError(message)
-
-    def _logccdf2_dispatch(self, x, y, *, method=None, **params):
-        message = "Two-argument log-CCDF is not available for discrete distributions."
-        raise NotImplementedError(message)
 
     def _logentropy_dispatch(self, *, method=None, **params):
         message = "Log-entropy is not available for discrete distributions."

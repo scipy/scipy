@@ -1181,6 +1181,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     # Branch for direct sum evaluation / integral approximation / invalid input
     i0 = ~valid_abstep                     # invalid
+    i0b = b < a                            # zero
     i1 = (nterms + 1 <= maxterms) & ~i0    # direct sum evaluation
     i2 = xp.isfinite(a) & ~i1 & ~i0        # infinite sum to the right
     i3 = xp.isfinite(b) & ~i2 & ~i1 & ~i0  # infinite sum to the left
@@ -1189,6 +1190,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     if xp.any(i0):
         S[i0], E[i0] = xp.nan, xp.nan
         status[i0] = -1
+
+        S[i0b], E[i0b] = zero, zero
+        status[i0b] = 0
 
     if xp.any(i1):
         args_direct = [arg[i1] for arg in args]
