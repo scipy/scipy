@@ -55,13 +55,13 @@ def geterr():
 
     >>> import scipy.special as sc
     >>> for key, value in sorted(sc.geterr().items()):
-    ...     print("{}: {}".format(key, value))
+    ...     print(f'{key}: {value}')
     ...
     arg: ignore
     domain: ignore
     loss: ignore
-    no_result: ignore
     memory: raise
+    no_result: ignore
     other: ignore
     overflow: ignore
     singular: ignore
