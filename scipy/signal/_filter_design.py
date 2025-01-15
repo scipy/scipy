@@ -2151,7 +2151,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
 
 def bilinear(b, a, fs=1.0):
     r"""Calculate a digital IIR filter from an analog transfer function by utilizing
-    a bilinear transform.
+    the bilinear transform.
 
     Parameters
     ----------
@@ -2162,7 +2162,7 @@ def bilinear(b, a, fs=1.0):
         Coefficients of the denominator polynomial of the analog transfer function in
         form of a complex- or real-valued 1d array.
     fs : float
-        Sample rate, as ordinary frequency (e.g., Hertz). No prewarping is
+        Sample rate, as ordinary frequency (e.g., Hertz). No pre-warping is
         done in this function.
 
     Returns
@@ -2176,13 +2176,14 @@ def bilinear(b, a, fs=1.0):
 
     Notes
     -----
-    The parameters `b` and `a` (being 1d arrays of length :math:`Q+1` and :math:`P+1`)
-    define the analog transfer function
+    The parameters :math:`b = [b_0, \ldots, b_Q]` and :math:`a = [a_0, \ldots, a_P]`
+    are 1d arrays of length :math:`Q+1` and :math:`P+1`. They define the analog
+    transfer function
 
     .. math::
 
-        H_a(s) = \frac{b[0] s^Q + b[1] s^{Q-1} + \cdots + b[Q]}{
-                       a[0] s^P + a[1] s^{P-1} + \cdots + a[P]}\ .
+        H_a(s) = \frac{b_0 s^Q + b_1 s^{Q-1} + \cdots + b_Q}{
+                       a_0 s^P + a_1 s^{P-1} + \cdots + a_P}\ .
 
     The bilinear transform [1]_ is applied by substituting
 
@@ -2190,31 +2191,31 @@ def bilinear(b, a, fs=1.0):
 
         s = \kappa \frac{z-1}{z+1}\ , \qquad \kappa := 2 f_s\ ,
 
-    into :math:`H_a(s)`, with :math:`f_s`  being the sampling interval.
+    into :math:`H_a(s)`, with :math:`f_s`  being the sampling rate.
     This results in the digital transfer function in the :math:`z`-domain
 
     .. math::
 
-        H_d(z) = \frac{b[0] \left(\kappa \frac{z-1}{z+1}\right)^Q +
-                       b[1] \left(\kappa \frac{z-1}{z+1}\right)^{Q-1} +
-                       \cdots + b[Q]}{
-                       a[0] \left(\kappa \frac{z-1}{z+1}\right)^P +
-                       a[1] \left(\kappa \frac{z-1}{z+1}\right)^{P-1} +
-                       \cdots + a[P]}\ .
+        H_d(z) = \frac{b_0 \left(\kappa \frac{z-1}{z+1}\right)^Q +
+                       b_1 \left(\kappa \frac{z-1}{z+1}\right)^{Q-1} +
+                       \cdots + b_Q}{
+                       a_0 \left(\kappa \frac{z-1}{z+1}\right)^P +
+                       a_1 \left(\kappa \frac{z-1}{z+1}\right)^{P-1} +
+                       \cdots + a_P}\ .
 
     This expression can be simplified by multiplying numerator and denominatory by
     :math:`(z+1)^N`, with :math:`N=\max(P, Q)`, which gives
 
     .. math::
 
-        H_d(z) &= \frac{b[0] \big(\kappa (z-1)\big)^Q     (z+1)^{N-Q} +
-                       b[1] \big(\kappa (z-1)\big)^{Q-1} (z+1)^{N-Q+1} +
-                       \cdots + b[Q](z+1)^N}{
-                       a[0] \big(\kappa (z-1)\big)^P     (z+1)^{N-P} +
-                       a[1] \big(\kappa (z-1)\big)^{P-1} (z+1)^{N-P+1} +
-                       \cdots + a[P](z+1)^N}\\
-               &=: \frac{\beta[0] + \beta[1]  z^{-1} + \cdots + \beta[N]  z^{-N}}{
-                        \alpha[0] + \alpha[1] z^{-1} + \cdots + \alpha[N] z^{-N}}\ .
+       H_d(z) &= \frac{b_0 \big(\kappa (z-1)\big)^Q     (z+1)^{N-Q} +
+                       b_1 \big(\kappa (z-1)\big)^{Q-1} (z+1)^{N-Q+1} +
+                       \cdots + b_P(z+1)^N}{
+                       a_0 \big(\kappa (z-1)\big)^P     (z+1)^{N-P} +
+                       a_1 \big(\kappa (z-1)\big)^{P-1} (z+1)^{N-P+1} +
+                       \cdots + a_P(z+1)^N}\\
+               &=: \frac{\beta_0 + \beta_1  z^{-1} + \cdots + \beta_N  z^{-N}}{
+                        \alpha_0 + \alpha_1 z^{-1} + \cdots + \alpha_N z^{-N}}\ .
 
 
     This is the equation implemented to perform the bilinear transform. Note that for
@@ -2232,8 +2233,8 @@ def bilinear(b, a, fs=1.0):
 
     Examples
     --------
-    The following example shows the frequency respons of an analog and a digital
-    bandpass filter:
+    The following example shows the frequency response of an analog bandpass filter and
+    the corresponding digital filter derived by utilitzing the bilinear transform:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2244,11 +2245,11 @@ def bilinear(b, a, fs=1.0):
     >>> bb_s, aa_s = signal.butter(4, om_c, btype='bandpass', analog=True, output='ba')
     >>> bb_z, aa_z = signal.bilinear(bb_s, aa_s, fs)
     ...
-    >>> w_z, H_z = signal.freqz(bb_z, aa_z)
-    >>> w_s, H_s = signal.freqs(bb_s, aa_s, worN=w_z*fs)
+    >>> w_z, H_z = signal.freqz(bb_z, aa_z)  # frequency response of digitial filter
+    >>> w_s, H_s = signal.freqs(bb_s, aa_s, worN=w_z*fs)  # analog filter response
     ...
     >>> f_z, f_s = w_z * fs / (2*np.pi), w_s / (2*np.pi)
-    >>> Hz_dB, Hs_dB = (20*np.log10(np.abs(H_).clip(1e-15)) for H_ in (H_z, H_s))
+    >>> Hz_dB, Hs_dB = (20*np.log10(np.abs(H_).clip(1e-10)) for H_ in (H_z, H_s))
     >>> fg0, ax0 = plt.subplots()
     >>> ax0.set_title("Frequency Response of 4-th order Bandpass Filter")
     >>> ax0.set(xlabel='Frequency $f$ in Hertz', ylabel='Magnitude in dB',
