@@ -197,12 +197,17 @@ def structural_rank(graph):
     -------
     rank : int
         The structural rank of the sparse graph.
-    
+
+    Notes
+    -----
+    Algorithmic complexity is :math:`O(\lvert E \rvert \sqrt{\lvert V \rvert})`,
+    where E is the number of edges and V is the number of vertices.
+
     References
     ----------
-    .. [1] I. S. Duff, "Computing the Structural Index", SIAM J. Alg. Disc. 
+    .. [1] I. S. Duff, "Computing the Structural Index", SIAM J. Alg. Disc.
             Meth., Vol. 7, 594 (1986).
-    
+
     .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
 
     Examples

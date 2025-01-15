@@ -440,6 +440,10 @@ def reconstruct_path(csgraph, predecessors, directed=True):
         The N x N directed compressed-sparse representation of the tree drawn
         from csgraph which is encoded by the predecessor list.
 
+    Notes
+    -----
+    The algorithmic complexity for a graph with N vertices is O(N*logN).
+
     Examples
     --------
     >>> import numpy as np
@@ -563,6 +567,9 @@ def construct_dist_matrix(graph,
     predecessors[i, j] gives the index of the previous node in the path from
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
+
+    The algorithmic complexity is O(V^3) where V is the number of vertices
+    in the input graph.
 
     Examples
     --------
