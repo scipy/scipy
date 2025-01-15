@@ -382,6 +382,8 @@ class TestContainsNaN:
         xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(False))
         xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(False))
         # Lazy arrays don't support "omit" and "raise" policies
+        # TODO test that we're emitting a user-friendly error message.
+        #      Blocked by https://github.com/data-apis/array-api-compat/pull/228
         with pytest.raises(TypeError):
             _contains_nan(x, "omit")
         with pytest.raises(TypeError):
