@@ -6357,8 +6357,8 @@ class TestDescribe:
         assert n == nc
         xp_assert_equal(mm[0], mmc[0])
         xp_assert_equal(mm[1], mmc[1])
-        xp_assert_close(m, mc, rtol=4 * xp_test.finfo(m.dtype).eps)
-        xp_assert_close(v, vc, rtol=4 * xp_test.finfo(m.dtype).eps)
+        xp_assert_close(m, mc, rtol=4 * xp.finfo(m.dtype).eps)
+        xp_assert_close(v, vc, rtol=4 * xp.finfo(m.dtype).eps)
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
@@ -6366,8 +6366,8 @@ class TestDescribe:
         assert n == nc
         xp_assert_equal(mm[0], mmc[0])
         xp_assert_equal(mm[1], mmc[1])
-        xp_assert_close(m, mc, rtol=4 * xp_test.finfo(m.dtype).eps)
-        xp_assert_close(v, vc, rtol=4 * xp_test.finfo(m.dtype).eps)
+        xp_assert_close(m, mc, rtol=4 * xp.finfo(m.dtype).eps)
+        xp_assert_close(v, vc, rtol=4 * xp.finfo(m.dtype).eps)
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
@@ -9471,8 +9471,7 @@ class TestXP_Mean:
 
     @pytest.mark.filterwarnings("ignore:overflow encountered in reduce") # for dask
     def test_dtype(self, xp):
-        xp_test = array_namespace(xp.asarray(1))
-        max = xp_test.finfo(xp.float32).max
+        max = xp.finfo(xp.float32).max
         x_np = np.asarray([max, max], dtype=np.float32)
         x_xp = xp.asarray(x_np)
 
@@ -9577,8 +9576,7 @@ class TestXP_Var:
         xp_assert_equal(res, ref)
 
     def test_dtype(self, xp):
-        xp_test = array_namespace(xp.asarray(1)) # dask.array needs finfo
-        max = xp_test.finfo(xp.float32).max
+        max = xp.finfo(xp.float32).max
         x_np = np.asarray([max, max/2], dtype=np.float32)
         x_xp = xp.asarray(x_np)
 

@@ -1608,8 +1608,7 @@ class TestWatershedIft:
     @skip_xp_backends("cupy", reason="no watershed_ift on CuPy"	)
     def test_watershed_ift09(self, xp):
         # Test large cost. See gh-19575
-        xp_test = array_namespace(xp.empty(0))  # dask.array needs iinfo
-        data = xp.asarray([[xp_test.iinfo(xp.uint16).max, 0],
+        data = xp.asarray([[xp.iinfo(xp.uint16).max, 0],
                            [0, 0]], dtype=xp.uint16)
         markers = xp.asarray([[1, 0],
                               [0, 0]], dtype=xp.int8)

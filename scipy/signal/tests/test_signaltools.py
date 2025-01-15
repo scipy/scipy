@@ -2454,8 +2454,7 @@ class TestCorrelateComplex:
 
         # emulate np.finfo(dt).precision for complex64 and complex128
         # note: unwrapped dask has no finfo
-        xp_compat = array_namespace(xp.asarray(1))
-        prec = {64: 15, 32: 6}[xp_compat.finfo(dt).bits]
+        prec = {64: 15, 32: 6}[xp.finfo(dt).bits]
         return int(2 * prec / 3)
 
     def _setup_rank1(self, dt, mode, xp):

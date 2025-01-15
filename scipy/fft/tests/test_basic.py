@@ -331,9 +331,8 @@ class TestFFT:
 
     @pytest.mark.parametrize("dtype", ["complex64", "complex128"])
     def test_dtypes_complex(self, dtype, xp):
-        xp_test = array_namespace(xp.asarray(1))
         rng = np.random.default_rng(1234)
-        x = xp.asarray(rng.random(30), dtype=getattr(xp_test, dtype))
+        x = xp.asarray(rng.random(30), dtype=getattr(xp, dtype))
 
         res_fft = fft.ifft(fft.fft(x))
         # Check both numerical results and exact dtype matches
