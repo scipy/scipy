@@ -609,6 +609,7 @@ class TestApproxDerivativeSparse:
 
         return A
 
+    @pytest.mark.fail_slow(2.0)
     def test_all(self):
         A = self.structure(self.n)
         order = np.arange(self.n)

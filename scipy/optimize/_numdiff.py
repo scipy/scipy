@@ -486,8 +486,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     >>> np.mean(elapsed)    # may vary
     np.float64(1.442545195999901)
 
-    Create a map-like vectorised version. Note that the first argument to
-    approx_derivative is effectively ignored in the way I've written it.
+    Create a map-like vectorized version. `x` is a generator, so first of all
+    a 2-D array, `xx`, is reconstituted. Here `xx` has shape `(Y, N)` where `Y`
+    is the number of function evaluations to perform and `N` is the dimensionality
+    of the objective function. The underlying objective function is `rosen`, which
+    requires `xx` to have shape `(N, Y)`, so a transpose is required.
 
     >>> def fun(f, x, *args, **kwds):
     ...     xx = np.r_[[xs for xs in x]]
@@ -674,6 +677,8 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
                 x1[i] = x0[i] + h[i]
                 yield x1
 
+        # only f_evals (numerator) needs parallelization, the denominator
+        # (the step size) is fast to calculate.
         f_evals = workers(fun, x_generator2(x0, h))
         dx = [(x0[i] + h[i]) - x0[i] for i in range(n)]
         df = [f_eval - f0 for f_eval in f_evals]

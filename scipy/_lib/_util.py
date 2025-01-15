@@ -670,8 +670,7 @@ class _ScalarFunctionWrapper:
 
     def __call__(self, x):
         # Send a copy because the user may overwrite it.
-        # Overwriting results in undefined behaviour because
-        # fun(self.x) will change self.x, with the two no longer linked.
+        # The user of this class might want `x` to remain unchanged.
         fx = self.f(np.copy(x), *self.args)
         self.nfev += 1
 
