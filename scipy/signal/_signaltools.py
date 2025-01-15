@@ -27,7 +27,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, is_array_api_strict, xp_copy, xp_size
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size
 
 )
 import scipy._lib.array_api_compat.numpy as np_compat
