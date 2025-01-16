@@ -21,6 +21,7 @@ from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
 import scipy._lib.array_api_extra as xpx
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 @pytest.mark.slow
 def test__aligned_zeros():
@@ -586,6 +587,7 @@ class TestLazywhere:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
+    @skip_xp_backends("dask.array", reason="lazywhere doesn't work with dask")
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
     @pytest.mark.thread_unsafe
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):

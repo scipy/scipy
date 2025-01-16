@@ -8,6 +8,8 @@ from scipy._lib._array_api import (
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
@@ -59,6 +61,10 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             xpx.atleast_nd("abc", ndim=0)
 
+    @skip_xp_backends(
+        "dask.array",
+        reason="raw dask.array namespace doesn't ignores copy=True in asarray"
+    )
     def test_copy(self, xp):
         for _xp in [xp, None]:
             x = xp.asarray([1, 2, 3])

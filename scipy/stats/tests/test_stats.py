@@ -73,6 +73,8 @@ ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
 @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
+# TODO: re-check whether this works after lazywhere moved to array-api-extra
+@skip_xp_backends("dask.array", reason="lazywhere doesn't work with dask")
 @skip_xp_backends('array_api_strict',
                   reason=("`array_api_strict.where` `fillvalue` doesn't "
                            "accept Python floats. See data-apis/array-api#807.")
@@ -2849,6 +2851,7 @@ class TestSEM:
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
 
+@skip_xp_backends("dask.array", reason="lazywhere doesn't work for dask.array")
 @skip_xp_backends('jax.numpy', reason="JAX can't do item assignment")
 class TestZmapZscore:
 

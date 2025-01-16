@@ -727,6 +727,11 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
 def _validate_sos(sos):
     """Helper to validate a SOS input"""
+    # manually cast to numpy array
+    # since libs like dask implement __array_function__
+    # (and will return a dask array instead of casting to
+    # ndarray in atleast_2d)
+    sos = np.asarray(sos)
     sos = np.atleast_2d(sos)
     if sos.ndim != 2:
         raise ValueError('sos array must be 2D')

@@ -4015,13 +4015,11 @@ def test_nonnumeric_dtypes(func, xp):
 #      (https://github.com/cupy/cupy/pull/8677)
 #  3. an issue with CuPy's __array__ not numpy-2.0 compatible
 @skip_xp_backends(cpu_only=True)
-@skip_xp_backends("dask.array",
-                  reason="sosfilt doesn't convert dask array to numpy before cython")
 @pytest.mark.parametrize('dt', ['float32', 'float64', 'complex64', 'complex128'])
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
-
+    @pytest.mark.filterwarnings("ignore::FutureWarning") # for dask
     @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank1(self, dt, xp):
         dt = getattr(xp, dt)
@@ -4053,6 +4051,7 @@ class TestSOSFilt:
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning") # for dask
     @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank2(self, dt, xp):
         dt = getattr(xp, dt)
@@ -4080,6 +4079,7 @@ class TestSOSFilt:
         y = sosfilt(sos, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
+    @pytest.mark.filterwarnings("ignore::FutureWarning") # for dask
     @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank3(self, dt, xp):
         dt = getattr(xp, dt)

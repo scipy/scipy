@@ -191,7 +191,7 @@ class TestNdimageFilters:
 
     @xfail_xp_backends('cupy', reason="Differs by a factor of two?")
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="wrong answer")
     def test_correlate01_overlap(self, xp):
         array = xp.reshape(xp.arange(256), (16, 16))
         weights = xp.asarray([2])
@@ -881,7 +881,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(output1, output2)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="wrong result")
     def test_gauss_memory_overlap(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -2647,7 +2647,6 @@ def test_gaussian_radius_invalid(xp):
 
 
 @skip_xp_backends("jax.numpy", reason="output array is read-only")
-@skip_xp_backends("dask.array", reason="output array is read-only.")
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread

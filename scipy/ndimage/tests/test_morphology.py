@@ -15,11 +15,6 @@ xfail_xp_backends = pytest.mark.xfail_xp_backends
 pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
-@xfail_xp_backends('dask.array',
-    reason="Dask.array gets wrong results here. "
-           "Some tests can pass when creating input array from list of ones"
-           "instead of xp.ones, so maybe something is getting corrupted here."
-)
 class TestNdimageMorphology:
 
     @xfail_xp_backends('cupy', reason='CuPy does not have distance_transform_bf.')
