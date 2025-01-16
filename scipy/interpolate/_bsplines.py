@@ -517,7 +517,7 @@ class BSpline:
         is_complex = self.c.dtype.kind == 'c'
         if is_complex:
             cc = self.c.view(float)
-            if self.c.ndim == 1 and self.c.dtype.kind == 'c':
+            if self.c.ndim == 1:
                 cc = cc.reshape(self.c.shape[0], 2)
         else:
             cc = self.c
