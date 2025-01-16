@@ -305,11 +305,15 @@ def detrend_signature(data, axis=1, type='linear', bp=0, *args, **kwds):
 
 
 def filtfilt_signature(b, a, x, *args, **kwds):
-    return array_namespace(b, a, x)
+    return array_namespace(_skip_if_float(b), _skip_if_float(a), x)
 
 
 def lfilter_signature(b, a, x, axis=-1, zi=None):
     return array_namespace(b, a, x, zi)
+
+
+def envelope_signature(z, *args, **kwds):
+    return array_namespace(z)
 
 
 def find_peaks_signature(
@@ -334,7 +338,11 @@ def firls_signature(numtaps, bands, desired, *, weight=None, fs=None):
 
 
 def firwin_signature(numtaps, cutoff, *args, **kwds):
-    return array_namespace(cutoff)
+    if isinstance(cutoff, (int, float)):
+        xp = array_namespace(np.empty(1))   # np_compat
+    else:
+        xp = array_namespace(cutoff)
+    return xp
 
 
 def firwin2_signature(numtaps, freq, gain, *args, **kwds):
