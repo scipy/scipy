@@ -850,6 +850,7 @@ def _swapaxes(x, ax1, ax2, xp):
     return xp.permute_dims(x, shp)
 
 
+# may want to look at moving _swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
     """A simplified version of np.split, with `indices` being an list.
