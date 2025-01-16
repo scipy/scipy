@@ -586,6 +586,10 @@ def test_pow():
         r = RigidTransformation.from_rotation(Rotation.from_quat([[0, 0, 0, 1]]))
         assert (r**n).as_matrix().shape == (1, 4, 4)
 
+    # pow function
+    t = pow(RigidTransformation.identity(), 2)
+    assert_allclose(t.as_matrix(), np.eye(4), atol=atol)
+
 
 def test_inverse():
     atol = 1e-12

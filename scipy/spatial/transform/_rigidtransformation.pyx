@@ -205,6 +205,7 @@ cdef class RigidTransformation:
     A (A <- B).
 
     Physically, let's imagine constructing B from A by:
+
     1) Rotating A by +90 degrees around its x-axis.
     2) Translating the rotated frame +2 units in A's -x direction.
 
@@ -489,7 +490,9 @@ cdef class RigidTransformation:
         """Initialize from a translation numpy array, without a rotation.
 
         When applying this transformation to a vector, the result is the same
-        as if the translation and vector were added together.
+        as if the translation and vector were added together. If `d` is the
+        displacement vector of the translation, then:
+
         ``t.from_translation(d).apply(vector) == d + vector``
 
         Parameters
@@ -586,6 +589,8 @@ cdef class RigidTransformation:
         Notes
         -----
         4x4 rigid transformation matrices are of the form:
+
+        ..
 
             [R | t]
             [0 | 1]
@@ -1068,6 +1073,8 @@ cdef class RigidTransformation:
 
         4x4 rigid transformation matrices are of the form:
 
+        ..
+
             [R | t]
             [0 | 1]
 
@@ -1121,6 +1128,8 @@ cdef class RigidTransformation:
         the rotation is applied first, followed by the translation.
 
         4x4 rigid transformation matrices are of the form:
+
+        ..
 
             [R | t]
             [0 | 1]
@@ -1593,8 +1602,11 @@ cdef class RigidTransformation:
 
         A power of 1 returns a copy of the original transformation:
 
-        >>> (t ** 1).translation
-        array([1., 2., 3.])
+        >>> (t ** 1).as_matrix()
+        array([[1., 0., 0., 1.],
+               [0., 1., 0., 2.],
+               [0., 0., 1., 3.],
+               [0., 0., 0., 1.]])
         """
         # Exact short-cuts
         if n == 0:
@@ -1653,9 +1665,6 @@ cdef class RigidTransformation:
                [ 0.43673235, -0.87694466, -0.20058143,  0.19815685],
                [-0.85592225, -0.47369724,  0.20738374, -0.95648017],
                [ 0.        ,  0.        ,  0.        ,  1.        ]])
-
-        >>> np.allclose((t.inv() * t).as_matrix(), np.eye(4), atol=1e-12)
-        True
 
         >>> (t.inv() * t).as_matrix()
         array([[[1., 0., 0., 0.],
