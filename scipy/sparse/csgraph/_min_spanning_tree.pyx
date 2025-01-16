@@ -59,7 +59,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     Python version.
 
     Algorithmic complexity for a graph with V number of vertices and E number of
-    edges is O(E*logV).
+    edges is ``O(E*logV)``.
 
     Examples
     --------

@@ -59,7 +59,7 @@ def connected_components(csgraph, directed=True, connection='weak',
     Notes
     -----
     The algorithmic complexity is for a graph with E edges and V
-    vertices is O(E + V).
+    vertices is ``O(E + V)``.
 
     References
     ----------
@@ -242,7 +242,7 @@ def depth_first_tree(csgraph, i_start, directed=True):
     Python version.
 
     Algorithmic complexity for a graph with V number of vertices and E number
-    of edges is O(V + E).
+    of edges is ``O(V + E)``.
 
     Examples
     --------
@@ -334,7 +334,7 @@ cpdef breadth_first_order(csgraph, i_start,
     Python version.
 
     Algorithmic complexity for a graph with V number of vertices and E number of
-    edges is O(V + E).
+    edges is ``O(V + E)``.
 
     Examples
     --------

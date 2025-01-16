@@ -568,7 +568,7 @@ def construct_dist_matrix(graph,
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
 
-    The algorithmic complexity is O(V^3) where V is the number of vertices
+    The algorithmic complexity is ``O(V^3)`` where V is the number of vertices
     in the input graph.
 
     Examples
