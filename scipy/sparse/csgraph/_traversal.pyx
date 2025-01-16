@@ -163,7 +163,7 @@ def breadth_first_tree(csgraph, i_start, directed=True):
     Python version.
 
     Algorithmic complexity for a graph with V number of vertices and E number
-    of edges is O(V + E).
+    of edges is ``O(V + E)``.
 
     Examples
     --------
@@ -546,7 +546,7 @@ cpdef depth_first_order(csgraph, i_start,
     Python version.
 
     Algorithmic complexity for a graph with V number of vertices and E number of
-    edges is O(V + E).
+    edges is ``O(V + E)``.
 
     Examples
     --------

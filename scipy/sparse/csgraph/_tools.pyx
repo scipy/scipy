@@ -442,7 +442,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     Notes
     -----
-    The algorithmic complexity for a graph with N vertices is O(N*logN).
+    The algorithmic complexity for a graph with N vertices is ``O(N*logN)``.
 
     Examples
     --------
