@@ -14,12 +14,18 @@ from scipy.conftest import skip_xp_invalid_arg
 
 from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
                                    is_array_api_strict)
+from scipy._lib._lazy_testing import lazy_xp_function
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 import scipy._lib.array_api_extra as xpx
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
+
+
+lazy_xp_function(_contains_nan, static_argnames=("nan_policy", "xp_omit_okay", "xp"))
+# FIXME @jax.jit fails: complex bool mask
+lazy_xp_function(_lazywhere, jax_jit=False, static_argnames=("f", "f2"))
 
 
 @pytest.mark.slow
@@ -343,6 +349,7 @@ class TestContainsNaN:
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)
 
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
@@ -358,8 +365,39 @@ class TestContainsNaN:
         elif nan_policy == 'omit' and not is_numpy(xp):
             with pytest.raises(ValueError, match="nan_policy='omit' is incompatible"):
                 _contains_nan(x, nan_policy)
+            assert _contains_nan(x, nan_policy, xp_omit_okay=True)
         elif nan_policy == 'propagate':
             assert _contains_nan(x, nan_policy)
+
+    @pytest.mark.skip_xp_backends("numpy", reason="lazy backends only")
+    @pytest.mark.skip_xp_backends("cupy", reason="lazy backends only")
+    @pytest.mark.skip_xp_backends("array_api_strict", reason="lazy backends only")
+    @pytest.mark.skip_xp_backends("torch", reason="lazy backends only")
+    def test_array_api_lazy(self, xp):
+        rng = np.random.default_rng(932347235892482)
+        x0 = rng.random(size=(2, 3, 4))
+        x = xp.asarray(x0)
+
+        xp_assert_equal(_contains_nan(x), xp.asarray(False))
+        xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(False))
+        xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(False))
+        # Lazy arrays don't support "omit" and "raise" policies
+        # TODO test that we're emitting a user-friendly error message.
+        #      Blocked by https://github.com/data-apis/array-api-compat/pull/228
+        with pytest.raises(TypeError):
+            _contains_nan(x, "omit")
+        with pytest.raises(TypeError):
+            _contains_nan(x, "raise")
+
+        x = xpx.at(x)[1, 2, 1].set(np.nan)
+
+        xp_assert_equal(_contains_nan(x), xp.asarray(True))
+        xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(True))
+        xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(True))
+        with pytest.raises(TypeError):
+            _contains_nan(x, "omit")
+        with pytest.raises(TypeError):
+            _contains_nan(x, "raise")
 
 
 def test__rng_html_rewrite():
