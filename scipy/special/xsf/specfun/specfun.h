@@ -154,8 +154,8 @@ Status aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     //          Status::OK
     //              Normal return.
     //          Status::NoMemory
-    //              An internal memory allocation failed. The output
-    //              values will be set to nan.
+    //              An internal memory allocation failed.
+    //
     // Routine called:
     //          SDMN for computing expansion coefficients df
     //          SCKB for computing expansion coefficients ck
@@ -292,12 +292,13 @@ inline void bjndd(double x, int n, double *bj, double *dj, double *fj) {
 template <typename T>
 Status cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
 
+    // ==========================================================
     // Return value:
-    //    Status::OK
-    //        Normal return.
-    //    Status::NoMemory
-    //        An internal memory allocation failed. The output
-    //        arrays ck and bk are not touched when this occurs.
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    // ==========================================================
 
     const T eps = 1.0e-14;
 
@@ -3009,6 +3010,12 @@ inline Status jdzo(int nt, double *zo, int *n, int *m, int *p) {
     //                    In the waveguide applications, the zeros
     //                    of Jn(x) correspond to TM modes and
     //                    those of Jn'(x) correspond to TE modes
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routine called:    BJNDD for computing Jn(x), Jn'(x) and
     //                    Jn''(x)
     // =============================================================
@@ -3506,6 +3513,12 @@ inline Status kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2)
     // Purpose: Compute the expansion coefficients of the
     //          prolate and oblate spheroidal functions
     //          and joining factors
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
     // ===================================================
 
     int nm, nn, ip, k, i, l, j;
@@ -4377,8 +4390,10 @@ Status mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
     //              An internal memory allocation failed. The output
     //              values will be set to nan.
     //          Status::Other
-    //              For mtu0, this occurs when km (see the code) is
-    //              too big.  km is a function of q and m.
+    //              An internal check failed. For mtu0, this occurs
+    //              when km (see the code) is too big.  km is a
+    //              function of q and m.  The output values will be
+    //              set to nan.
     //
     // Routines called:
     //      (1) CVA2 for computing the characteristic values
@@ -4479,6 +4494,17 @@ Status mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
     //          D1R --- Derivative of Mcm(1)(x,q) or Msm(1)(x,q)
     //          F2R --- Mcm(2)(x,q) or Msm(2)(x,q)
     //          D2R --- Derivative of Mcm(2)(x,q) or Msm(2)(x,q)
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed. The output
+    //              values will be set to nan.
+    //          Status::Other
+    //              An internal check failed. For mtu12, this occurs
+    //              when km (see the code) is too big.  km is a
+    //              function of q and m.  The output values will be
+    //              set to nan.
     // Routines called:
     //      (1) CVA2 for computing the characteristic values
     //      (2) FCOEF for computing expansion coefficients
@@ -4527,6 +4553,10 @@ Status mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
                             || bj2.get() == nullptr || dj2.get() == nullptr
                             || by1.get() == nullptr || dy1.get() == nullptr
                             || by2.get() == nullptr || dy2.get() == nullptr) {
+        *f1r = NAN;
+        *d1r = NAN;
+        *f2r = NAN;
+        *d2r = NAN;
         return Status::NoMemory;
     }
 
@@ -4675,6 +4705,15 @@ inline double psi_spec(double x) {
 
 template <typename T>
 Status qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
+
+    // ==========================================================
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    // ==========================================================
+
     int ip, i, l, k;
     T r, s, sk, qs0;
 
@@ -4754,6 +4793,13 @@ inline Status rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
     // Purpose: Compute prolate and oblate spheroidal radial
     //          functions of the first kind for given m, n,
     //          c and x
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) SCKB for computing expansion coefficients c2k
     //      (2) SPHJ for computing the spherical Bessel
@@ -4888,6 +4934,16 @@ inline Status rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *
     // Purpose: Compute prolate and oblate spheroidal radial
     //          functions of the second kind for given m, n,
     //          c and a large cx
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //          Status::Other
+    //              An internal convergence check failed.  When
+    //              this happens, *Id is set to 10 on return.
+    //
     // Routine called:
     //          SPHY for computing the spherical Bessel
     //          functions of the second kind
@@ -5005,6 +5061,13 @@ inline Status rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d
     // =============================================================
     // Purpose: Compute oblate radial functions of the second kind
     //          with a small argument, Rmn(-ic,ix) & Rmn'(-ic,ix)
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) SCKB for computing the expansion coefficients c2k
     //      (2) KMN for computing the joining factors
@@ -5085,6 +5148,13 @@ Status rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     // ======================================================
     // Purpose: Compute prolate spheroidal radial function
     //          of the second kind with a small argument
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) LPMNS for computing the associated Legendre
     //          functions of the first kind
@@ -5237,6 +5307,12 @@ inline Status rswfp(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f
     //          R2F --- Radial function of the second kind
     //          R2D --- Derivative of the radial function of
     //                  the second kind
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) SDMN for computing expansion coefficients dk
     //      (2) RMN1 for computing prolate and oblate radial
@@ -5297,6 +5373,12 @@ Status rswfo(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2
     //          R2F --- Radial function of the second kind
     //          R2D --- Derivative of the radial function of
     //                  the second kind
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) SDMN for computing expansion coefficients dk
     //      (2) RMN1 for computing prolate or oblate radial
@@ -5411,6 +5493,11 @@ Status sdmn(int m, int n, T c, T cv, int kd, T *df) {
     //                    DF(1), DF(2), ... correspond to
     //                    d0, d2, ... for even n-m and d1,
     //                    d3, ... for odd n-m
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
     // =====================================================
 
     int nm, ip, k, kb;
@@ -5567,6 +5654,11 @@ Status segv(int m, int n, T c, int kd, T *cv, T *eg) {
     // Output:  CV --- Characteristic value for given m, n and c
     //          EG(L) --- Characteristic value for mode m and n'
     //                    ( L = n' - m + 1 )
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
     // =========================================================
 
 
