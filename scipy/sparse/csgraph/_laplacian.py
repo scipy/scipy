@@ -113,7 +113,7 @@ def laplacian(
     symmetric if the input csgraph was symmetric.
 
     The algorithmic complexity is for a graph with V
-    vertices is O(V^2).
+    vertices is ``O(V^2)``.
 
     References
     ----------
