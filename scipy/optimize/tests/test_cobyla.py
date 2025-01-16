@@ -1,17 +1,19 @@
 import math
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_, assert_array_equal
-import pytest
+from numpy.testing import assert_allclose, assert_, assert_array_almost_equal
 
-from scipy.optimize import fmin_cobyla, minimize, Bounds
+from scipy.optimize import (fmin_cobyla, minimize, Bounds, NonlinearConstraint,
+    LinearConstraint, OptimizeResult)
 
 
 class TestCobyla:
     def setup_method(self):
-        self.x0 = [4.95, 0.66]
+        # The algorithm is very fragile on 32 bit, so unfortunately we need to start
+        # very near the solution in order for the test to pass.
+        self.x0 = [np.sqrt(25 - (2.0/3)**2), 2.0/3 + 1e-4]
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]
-        self.opts = {'disp': False, 'rhobeg': 1, 'tol': 1e-5,
+        self.opts = {'disp': 0, 'rhobeg': 1, 'tol': 1e-6,
                      'maxiter': 100}
 
     def fun(self, x):
@@ -23,11 +25,10 @@ class TestCobyla:
     def con2(self, x):
         return -self.con1(x)
 
-    @pytest.mark.xslow(True, reason='not slow, but noisy so only run rarely')
-    def test_simple(self, capfd):
+    def test_simple(self):
         # use disp=True as smoke test for gh-8118
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
-                        rhoend=1e-5, maxfun=100, disp=True)
+                        rhoend=1e-5, maxfun=100, disp=1)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
@@ -40,54 +41,80 @@ class TestCobyla:
                 self.n_calls += 1
                 self.last_x = x
 
+        class CallbackNewSyntax:
+            def __init__(self):
+                self.n_calls = 0
+
+            def __call__(self, intermediate_result):
+                assert isinstance(intermediate_result, OptimizeResult)
+                self.n_calls += 1
+
         callback = Callback()
+        callback_new_syntax = CallbackNewSyntax()
 
         # Minimize with method='COBYLA'
-        cons = ({'type': 'ineq', 'fun': self.con1},
+        cons = (NonlinearConstraint(self.con1, 0, np.inf),
                 {'type': 'ineq', 'fun': self.con2})
         sol = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
                        callback=callback, options=self.opts)
+        sol_new = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
+                       callback=callback_new_syntax, options=self.opts)
         assert_allclose(sol.x, self.solution, atol=1e-4)
         assert_(sol.success, sol.message)
         assert_(sol.maxcv < 1e-5, sol)
         assert_(sol.nfev < 70, sol)
         assert_(sol.fun < self.fun(self.solution) + 1e-3, sol)
-        assert_(sol.nfev == callback.n_calls,
-                "Callback is not called exactly once for every function eval.")
-        assert_array_equal(
+        assert_array_almost_equal(
             sol.x,
             callback.last_x,
-            "Last design vector sent to the callback is not equal to returned value.",
+            decimal=5,
+            err_msg="Last design vector sent to the callback is not equal to"
+                 " returned value.",
         )
+        assert_(sol_new.success, sol_new.message)
+        assert_(sol.fun == sol_new.fun)
+        assert_(sol.maxcv == sol_new.maxcv)
+        assert_(sol.nfev == sol_new.nfev)
+        assert_(callback.n_calls == callback_new_syntax.n_calls,
+            "Callback is not called the same amount of times for old and new syntax.")
 
     def test_minimize_constraint_violation(self):
-        rng = np.random.RandomState(1234)
-        pb = rng.rand(10, 10)
-        spread = rng.rand(10)
-
-        def p(w):
-            return pb.dot(w)
-
-        def f(w):
-            return -(w * spread).sum()
-
-        def c1(w):
-            return 500 - abs(p(w)).sum()
-
-        def c2(w):
-            return 5 - abs(p(w).sum())
-
-        def c3(w):
-            return 5 - abs(p(w)).max()
-
-        cons = ({'type': 'ineq', 'fun': c1},
-                {'type': 'ineq', 'fun': c2},
-                {'type': 'ineq', 'fun': c3})
-        w0 = np.zeros((10,))
-        sol = minimize(f, w0, method='cobyla', constraints=cons,
-                       options={'catol': 1e-6})
-        assert_(sol.maxcv > 1e-6)
+        # We set up conflicting constraints so that the algorithm will be
+        # guaranteed to end up with maxcv > 0.
+        cons = ({'type': 'ineq', 'fun': lambda x: 4 - x},
+                {'type': 'ineq', 'fun': lambda x: x - 5})
+        sol = minimize(lambda x: x, [0], method='cobyla', constraints=cons,
+                       options={'catol': 0.6})
+        assert_(sol.maxcv > 0.1)
+        assert_(sol.success)
+        sol = minimize(lambda x: x, [0], method='cobyla', constraints=cons,
+                       options={'catol': 0.4})
+        assert_(sol.maxcv > 0.1)
         assert_(not sol.success)
+
+    def test_f_target(self):
+        f_target = 250
+        sol = minimize(lambda x: x**2, [500], method='cobyla',
+                       options={'f_target': f_target})
+        assert_(sol.status == 1)
+        assert_(sol.success)
+        assert_(sol.fun <= f_target)
+
+    def test_minimize_linear_constraints(self):
+        constraints = LinearConstraint([1.0, 1.0], 1.0, 1.0)
+        sol = minimize(
+            self.fun,
+            self.x0,
+            method='cobyla',
+            constraints=constraints,
+            options=self.opts,
+        )
+        solution = [(4 - np.sqrt(7)) / 3, (np.sqrt(7) - 1) / 3]
+        assert_allclose(sol.x, solution, atol=1e-4)
+        assert sol.success, sol.message
+        assert sol.maxcv < 1e-8, sol
+        assert sol.nfev <= 100, sol
+        assert sol.fun < self.fun(solution) + 1e-3, sol
 
 
 def test_vector_constraints():

@@ -17,6 +17,9 @@ endif
 if not fs.exists('cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('prima/README.md')
+  error('Missing the `prima` submodule! Run `git submodule update --init` to fix this.')
+endif
 
 _lib_pxd = [
   fs.copyfile('__init__.py'),
@@ -279,6 +282,50 @@ py3.install_sources(
     'cobyqa/cobyqa/utils/versions.py',
   ],
   subdir: 'scipy/_lib/cobyqa/utils',
+)
+
+py3.install_sources(
+  [
+    'prima/pyprima/src/pyprima/__init__.py',
+  ],
+  subdir: 'scipy/_lib/pyprima'
+)
+
+py3.install_sources(
+  [
+    'prima/pyprima/src/pyprima/common/__init__.py',
+    'prima/pyprima/src/pyprima/common/_bounds.py',
+    'prima/pyprima/src/pyprima/common/_linear_constraints.py',
+    'prima/pyprima/src/pyprima/common/_nonlinear_constraints.py',
+    'prima/pyprima/src/pyprima/common/_project.py',
+    'prima/pyprima/src/pyprima/common/checkbreak.py',
+    'prima/pyprima/src/pyprima/common/consts.py',
+    'prima/pyprima/src/pyprima/common/evaluate.py',
+    'prima/pyprima/src/pyprima/common/history.py',
+    'prima/pyprima/src/pyprima/common/infos.py',
+    'prima/pyprima/src/pyprima/common/linalg.py',
+    'prima/pyprima/src/pyprima/common/message.py',
+    'prima/pyprima/src/pyprima/common/powalg.py',
+    'prima/pyprima/src/pyprima/common/preproc.py',
+    'prima/pyprima/src/pyprima/common/present.py',
+    'prima/pyprima/src/pyprima/common/ratio.py',
+    'prima/pyprima/src/pyprima/common/redrho.py',
+    'prima/pyprima/src/pyprima/common/selectx.py',
+  ],
+  subdir: 'scipy/_lib/pyprima/common'
+)
+
+py3.install_sources(
+  [
+    'prima/pyprima/src/pyprima/cobyla/__init__.py',
+    'prima/pyprima/src/pyprima/cobyla/cobyla.py',
+    'prima/pyprima/src/pyprima/cobyla/cobylb.py',
+    'prima/pyprima/src/pyprima/cobyla/geometry.py',
+    'prima/pyprima/src/pyprima/cobyla/initialize.py',
+    'prima/pyprima/src/pyprima/cobyla/trustregion.py',
+    'prima/pyprima/src/pyprima/cobyla/update.py',
+  ],
+  subdir: 'scipy/_lib/pyprima/cobyla'
 )
 
 subdir('_uarray')
