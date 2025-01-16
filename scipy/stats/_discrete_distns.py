@@ -1450,10 +1450,11 @@ class zipfian_gen(rv_discrete):
         return 1.0 / _gen_harmonic(n, a) * k**-a
 
     def _cdf(self, k, a, n):
+        k = np.floor(k)
         return _gen_harmonic(k, a) / _gen_harmonic(n, a)
 
     def _sf(self, k, a, n):
-        k = k + 1  # # to match SciPy convention
+        k = np.floor(k + 1)  # # to match SciPy convention
         # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
         return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
                 / (k**a*_gen_harmonic(n, a)))

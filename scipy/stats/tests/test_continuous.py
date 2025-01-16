@@ -1047,7 +1047,6 @@ class TestMakeDistribution:
             'vonmises',               # circular distribution; shouldn't work
             'poisson_binom',          # vector shape parameter
             'hypergeom',              # distribution functions need interpolation
-            'zipfian',                # distribution functions need interpolation
             'nchypergeom_fisher',     # distribution functions don't accept NaN
             'nchypergeom_wallenius',  # distribution functions don't accept NaN
         }:
