@@ -133,7 +133,7 @@ void oblate_aswfa_nocv(T m, T n, T c, T x, T &s1f, T &s1d) {
 template <typename T>
 void prolate_aswfa(T m, T n, T c, T cv, T x, T &s1f, T &s1d) {
     if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
-        set_error("prolate_aswfa", SF_ERROR_DOMAIN, NULL);
+        set_error("pro_ang1_cv", SF_ERROR_DOMAIN, NULL);
         s1f = std::numeric_limits<T>::quiet_NaN();
         s1d = std::numeric_limits<T>::quiet_NaN();
     } else {
@@ -141,7 +141,7 @@ void prolate_aswfa(T m, T n, T c, T cv, T x, T &s1f, T &s1d) {
                                                 static_cast<int>(n), c, 1, cv,
                                                 &s1f, &s1d);
         if (status == specfun::Status::NoMemory) {
-            set_error("prolate_aswfa", SF_ERROR_MEMORY, "memory allocation error");
+            set_error("pro_ang1_cv", SF_ERROR_MEMORY, "memory allocation error");
             s1d = std::numeric_limits<T>::quiet_NaN();
             s1f = std::numeric_limits<T>::quiet_NaN();
             return;
@@ -152,7 +152,7 @@ void prolate_aswfa(T m, T n, T c, T cv, T x, T &s1f, T &s1d) {
 template <typename T>
 void oblate_aswfa(T m, T n, T c, T cv, T x, T &s1f, T &s1d) {
     if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
-        set_error("oblate_aswfa", SF_ERROR_DOMAIN, NULL);
+        set_error("obl_ang1_cv", SF_ERROR_DOMAIN, NULL);
         s1f = std::numeric_limits<T>::quiet_NaN();
         s1d = std::numeric_limits<T>::quiet_NaN();
     } else {
@@ -160,7 +160,7 @@ void oblate_aswfa(T m, T n, T c, T cv, T x, T &s1f, T &s1d) {
                                                 static_cast<int>(n), c, -1, cv,
                                                 &s1f, &s1d);
         if (status == specfun::Status::NoMemory) {
-            set_error("oblate_aswfa", SF_ERROR_MEMORY, "memory allocation error");
+            set_error("obl_ang1_cv", SF_ERROR_MEMORY, "memory allocation error");
             s1d = std::numeric_limits<T>::quiet_NaN();
             s1f = std::numeric_limits<T>::quiet_NaN();
             return;

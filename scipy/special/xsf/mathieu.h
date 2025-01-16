@@ -17,7 +17,7 @@ T cem_cva(T m, T q) {
     int int_m, kd = 1;
 
     if ((m < 0) || (m != floor(m))) {
-        set_error("cem_cva", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_a", SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<T>::quiet_NaN();
     }
     int_m = (int) m;
@@ -41,7 +41,7 @@ T sem_cva(T m, T q) {
     int int_m, kd = 4;
 
     if ((m <= 0) || (m != floor(m))) {
-        set_error("cem_cva", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_b", SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<T>::quiet_NaN();
     }
     int_m = (int) m;
