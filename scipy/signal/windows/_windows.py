@@ -2009,8 +2009,6 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     >>> fig.tight_layout()
 
     """
-    if _len_guards(M):
-        return np.ones(M)
     if norm is None:
         norm = 'approximate' if Kmax is None else 2
     known_norms = (2, 'approximate', 'subsample')
@@ -2021,6 +2019,13 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
         Kmax = 1
     else:
         singleton = False
+    if _len_guards(M):
+        if not return_ratios:
+            return np.ones(M)
+        elif singleton:
+            return np.ones(M), 1.
+        else:
+            return np.ones(M), np.ones(1)
     Kmax = operator.index(Kmax)
     if not 0 < Kmax <= M:
         raise ValueError('Kmax must be greater than 0 and less than M')

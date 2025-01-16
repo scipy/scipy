@@ -639,6 +639,16 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, 3, -1, 3)  # NW must be pos
         assert_raises(ValueError, windows.dpss, 3, 0, 3)
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
+        # Single samples
+        w = windows.dpss(1)
+        assert_array_equal(w, [1.])
+        w, ratio = windows.dpss(1, return_ratios=True)
+        assert_array_equal(w, [1.])
+        assert ratio == 1.
+        w, ratio = windows.dpss(1, Kmax=4, return_ratios=True)
+        assert_array_equal(w, [1.])
+        assert isinstance(ratio, np.ndarray)
+        assert_array_equal(ratio, [1.])
 
 
 class TestLanczos:
