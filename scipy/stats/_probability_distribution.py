@@ -1851,11 +1851,6 @@ class _ProbabilityDistribution(ABC):
         out : array
             The log-entropy.
 
-        Raises
-        ------
-        NotImplementedError
-            If the random variable is discrete.
-
         See Also
         --------
         entropy
@@ -1863,9 +1858,9 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        If the entropy of a distribution is negative, then the log-entropy
-        is complex with imaginary part :math:`\pi`. For
-        consistency, the result of this function always has complex dtype,
+        The differential entropy of a continuous distribution can be negative.
+        In this case, the log-entropy is complex with imaginary part :math:`\pi`.
+        For consistency, the result of this function always has complex dtype,
         regardless of the value of the imaginary part.
 
         References

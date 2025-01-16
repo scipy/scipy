@@ -3690,9 +3690,16 @@ class DiscreteDistribution(UnivariateDistribution):
         mode[fr > fl] = xr
         return mode
 
-    def _logentropy_dispatch(self, *, method=None, **params):
-        message = "Log-entropy is not available for discrete distributions."
-        raise NotImplementedError(message)
+    def _logentropy_quadrature(self, **params):
+        def logintegrand(x, **params):
+            logpmf = self._logpmf_dispatch(x, **params)
+            # Entropy summand is -pmf*log(pmf), so log-entropy summand is
+            # logpmf + log(logpmf) + pi*j. But pmf is always between 0 and 1,
+            # so logpmf is always negative, and so log(logpmf) = log(-logpmf) + pi*j.
+            # The two imaginary components "cancel" each other out (which we would
+            # expect because each term of the entropy summand is positive).
+            return logpmf + np.log(-logpmf)
+        return self._quadrature(logintegrand, params=params, log=True)
 
 
 # Special case the names of some new-style distributions in `make_distribution`

@@ -1081,6 +1081,10 @@ class TestMakeDistribution:
             assert_allclose(X.support(), Y.support())
             if distname not in skip_entropy:
                 assert_allclose(X.entropy(), Y.entropy(), rtol=rtol)
+            if isinstance(Y, stats.rv_discrete):
+                # some continuous distributions have trouble with `logentropy` because
+                # it uses complex numbers
+                assert_allclose(np.exp(X.logentropy()), Y.entropy(), rtol=rtol)
             assert_allclose(X.median(), Y.median(), rtol=rtol)
             assert_allclose(X.mean(), m, rtol=rtol, atol=atol)
             assert_allclose(X.variance(), v, rtol=rtol, atol=atol)
