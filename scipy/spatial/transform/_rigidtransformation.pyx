@@ -477,6 +477,12 @@ cdef class RigidTransformation:
             matrix = matrix[0]
         return cls(matrix, normalize=False, copy=False)
 
+    def __repr__(self):
+        m = f"{self.as_matrix()!r}".splitlines()
+        # bump indent (+32 characters)
+        m[1:] = [" " * 32 + m[i] for i in range(1, len(m))]
+        return "RigidTransformation.from_matrix(" + "\n".join(m) + ")"
+
     @cython.embedsignature(True)
     @classmethod
     def from_translation(cls, translation):

@@ -5,6 +5,29 @@ from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, RigidTransformation
 
 
+def test_repr():
+    actual = repr(RigidTransformation.identity())
+    expected = """\
+RigidTransformation.from_matrix(array([[1., 0., 0., 0.],
+                                       [0., 1., 0., 0.],
+                                       [0., 0., 1., 0.],
+                                       [0., 0., 0., 1.]]))"""
+    assert actual == expected
+
+    actual = repr(RigidTransformation.identity(2))
+    expected = """\
+RigidTransformation.from_matrix(array([[[1., 0., 0., 0.],
+                                        [0., 1., 0., 0.],
+                                        [0., 0., 1., 0.],
+                                        [0., 0., 0., 1.]],
+                                
+                                       [[1., 0., 0., 0.],
+                                        [0., 1., 0., 0.],
+                                        [0., 0., 1., 0.],
+                                        [0., 0., 0., 1.]]]))"""
+    assert actual == expected
+
+
 def test_from_rotation():
     atol = 1e-12
 
