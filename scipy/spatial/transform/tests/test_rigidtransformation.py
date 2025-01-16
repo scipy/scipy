@@ -55,19 +55,19 @@ def test_from_rotation():
 
 def test_from_translation():
     # Test single translation
-    trans = np.array([1, 2, 3])
-    t = RigidTransformation.from_translation(trans)
+    d = np.array([1, 2, 3])
+    t = RigidTransformation.from_translation(d)
     expected = np.eye(4)
-    expected[:3, 3] = trans
+    expected[:3, 3] = d
     assert_allclose(t.as_matrix(), expected)
     assert t.single
 
     # Test multiple translations
-    trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = RigidTransformation.from_translation(trans)
-    for i in range(len(trans)):
+    d = np.array([[1, 2, 3], [4, 5, 6]])
+    t = RigidTransformation.from_translation(d)
+    for i in range(len(d)):
         expected = np.eye(4)
-        expected[:3, 3] = trans[i]
+        expected[:3, 3] = d[i]
         assert_allclose(t.as_matrix()[i], expected)
     assert not t.single
 
@@ -119,39 +119,39 @@ def test_from_rottrans():
 
     # Test single rotation and translation
     r = Rotation.from_euler('zyx', [90, 0, 0], degrees=True)
-    trans = np.array([1, 2, 3])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([1, 2, 3])
+    t = RigidTransformation.from_rottrans(r, d)
 
     expected = np.zeros((4, 4))
     expected[:3, :3] = r.as_matrix()
-    expected[:3, 3] = trans
+    expected[:3, 3] = d
     expected[3, 3] = 1
     assert_allclose(t.as_matrix(), expected, atol=atol)
     assert t.single
 
     # Test single rotation and multiple translations
     r = Rotation.from_euler('z', 90, degrees=True)
-    trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([[1, 2, 3], [4, 5, 6]])
+    t = RigidTransformation.from_rottrans(r, d)
     assert not t.single
 
-    for i in range(len(trans)):
+    for i in range(len(d)):
         expected = np.zeros((4, 4))
         expected[:3, :3] = r.as_matrix()
-        expected[:3, 3] = trans[i]
+        expected[:3, 3] = d[i]
         expected[3, 3] = 1
         assert_allclose(t.as_matrix()[i], expected, atol=atol)
 
     # Test multiple rotations and translations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
-    trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([[1, 2, 3], [4, 5, 6]])
+    t = RigidTransformation.from_rottrans(r, d)
     assert not t.single
 
-    for i in range(len(trans)):
+    for i in range(len(d)):
         expected = np.zeros((4, 4))
         expected[:3, :3] = r[i].as_matrix()
-        expected[:3, 3] = trans[i]
+        expected[:3, 3] = d[i]
         expected[3, 3] = 1
         assert_allclose(t.as_matrix()[i], expected, atol=atol)
 
@@ -160,31 +160,31 @@ def test_as_rottrans():
     atol = 1e-12
     n = 10
     r = Rotation.random(n, rng=10)
-    trans = np.array([1, 2, 3] * n).reshape(n, 3)
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([1, 2, 3] * n).reshape(n, 3)
+    t = RigidTransformation.from_rottrans(r, d)
     new_r, new_trans = t.as_rottrans()
     assert all(new_r.approx_equal(r, atol=atol))
-    assert_allclose(new_trans, trans, atol=atol)
+    assert_allclose(new_trans, d, atol=atol)
 
 
 def test_from_expcoords():
     # example from 3.3 of
     # https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf
     angle1 = np.deg2rad(30.0)
-    T1 = RigidTransformation.from_matrix([
+    t1 = RigidTransformation.from_matrix([
         [np.cos(angle1), -np.sin(angle1), 0.0, 1.0],
         [np.sin(angle1), np.cos(angle1), 0.0, 2.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
     angle2 = np.deg2rad(60.0)
-    T2 = RigidTransformation.from_matrix([
+    t2 = RigidTransformation.from_matrix([
         [np.cos(angle2), -np.sin(angle2), 0.0, 2.0],
         [np.sin(angle2), np.cos(angle2), 0.0, 1.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
-    expected = T2 * T1.inv()
+    expected = t2 * t1.inv()
     actual = RigidTransformation.from_expcoords(
         np.deg2rad(30.0) * np.array([0.0, 0.0, 1.0, 3.37, -3.37, 0.0]))
     assert_allclose(actual.as_matrix(), expected.as_matrix(), atol=1e-2)
@@ -392,23 +392,22 @@ def test_as_dualquat():
 def test_from_as_internal_consistency():
     atol = 1e-12
     n = 100
-    t = RigidTransformation.random(n, rng=10)
+    t0 = RigidTransformation.random(n, rng=10)
 
-    T = RigidTransformation.from_rottrans(*t.as_rottrans())
-    assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+    t1 = RigidTransformation.from_rottrans(*t0.as_rottrans())
+    assert_allclose(t0.as_matrix(), t1.as_matrix(), atol=atol)
 
-    T = RigidTransformation.from_rottrans(t.rotation, t.translation)
-    assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+    t1 = RigidTransformation.from_rottrans(t0.rotation, t0.translation)
+    assert_allclose(t0.as_matrix(), t1.as_matrix(), atol=atol)
 
-    T = RigidTransformation.from_expcoords(t.as_expcoords())
-    assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+    t1 = RigidTransformation.from_expcoords(t0.as_expcoords())
+    assert_allclose(t0.as_matrix(), t1.as_matrix(), atol=atol)
 
-    T = RigidTransformation.from_matrix(t.as_matrix())
-    assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+    t1 = RigidTransformation.from_matrix(t0.as_matrix())
+    assert_allclose(t0.as_matrix(), t1.as_matrix(), atol=atol)
 
-    # TODO
-    # T = RigidTransformation.from_dualquat(t.as_dualquat())
-    # assert_allclose(t.as_matrix(), T.as_matrix(), atol=atol)
+    t1 = RigidTransformation.from_dualquat(t0.as_dualquat())
+    assert_allclose(t0.as_matrix(), t1.as_matrix(), atol=atol)
 
 
 def test_identity():
@@ -449,33 +448,33 @@ def test_apply():
 
     ## Single transformation
     r = Rotation.from_euler('z', 90, degrees=True)
-    trans = np.array([2, 3, 4])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([2, 3, 4])
+    t = RigidTransformation.from_rottrans(r, d)
 
     # Single vector, single transformation
     vec = np.array([1, 0, 0])
-    expected = trans + r.apply(vec)
+    expected = d + r.apply(vec)
     res = t.apply(vec)
     assert_allclose(res, expected, atol=atol)
 
     # Multiple vectors, single transformation
     vecs = np.array([[1, 0, 0], [0, 1, 0]])
-    expected = trans + r.apply(vecs)
+    expected = d + r.apply(vecs)
     assert_allclose(t.apply(vecs), expected, atol=atol)
 
     ## Multiple transformations
     r = Rotation.from_euler('z', [90, 0], degrees=True)
-    trans = np.array([[2, 3, 4], [5, 6, 7]])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([[2, 3, 4], [5, 6, 7]])
+    t = RigidTransformation.from_rottrans(r, d)
 
     # Single vector, multiple transformations
     vec = np.array([1, 0, 0])
-    expected = trans + r.apply(vec)
+    expected = d + r.apply(vec)
     assert_allclose(t.apply(vec), expected, atol=atol)
 
     # Multiple vectors, multiple transformations
     vecs = np.array([[1, 0, 0], [0, 1, 0]])
-    expected = trans + r.apply(vecs)
+    expected = d + r.apply(vecs)
     assert_allclose(t.apply(vecs), expected, atol=atol)
 
 
@@ -484,8 +483,8 @@ def test_inverse_apply():
 
     # Test applying inverse transformation
     r = Rotation.from_euler('z', 90, degrees=True)
-    trans = np.array([1, 2, 3])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([1, 2, 3])
+    t = RigidTransformation.from_rottrans(r, d)
 
     # Test single vector
     vec = np.array([1, 0, 0])
@@ -510,10 +509,10 @@ def test_rotation_alone():
 
 def test_translation_alone():
     atol = 1e-12
-    trans = np.array([1, 2, 3])
-    t = RigidTransformation.from_translation(trans)
+    d = np.array([1, 2, 3])
+    t = RigidTransformation.from_translation(d)
     vec = np.array([5, 6, 7])
-    expected = trans + vec
+    expected = d + vec
     assert_allclose(t.apply(vec), expected, atol=atol)
 
 
@@ -522,44 +521,44 @@ def test_composition():
 
     # Test composing single transformations
     r1 = Rotation.from_euler('z', 90, degrees=True)
-    t1 = np.array([1, 0, 0])
-    tf1 = RigidTransformation.from_rottrans(r1, t1)
+    d1 = np.array([1, 0, 0])
+    t1 = RigidTransformation.from_rottrans(r1, d1)
 
     r2 = Rotation.from_euler('x', 90, degrees=True)
-    t2 = np.array([0, 1, 0])
-    tf2 = RigidTransformation.from_rottrans(r2, t2)
+    d2 = np.array([0, 1, 0])
+    t2 = RigidTransformation.from_rottrans(r2, d2)
 
-    composed = tf2 * tf1
+    composed = t2 * t1
     vec = np.array([1, 0, 0])
-    expected = tf2.apply(tf1.apply(vec))
+    expected = t2.apply(t1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
     assert composed.single
 
-    expected = t2 + r2.apply(t1 + r1.apply(vec))
+    expected = d2 + r2.apply(d1 + r1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
 
     # Multiple transformations with single transformation
-    t2 = np.array([[1, 2, 3], [4, 5, 6]])
-    tf2 = RigidTransformation.from_rottrans(r2, t2)
+    d2 = np.array([[1, 2, 3], [4, 5, 6]])
+    t2 = RigidTransformation.from_rottrans(r2, d2)
 
-    composed = tf2 * tf1
-    expected = tf2.apply(tf1.apply(vec))
+    composed = t2 * t1
+    expected = t2.apply(t1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
     assert not composed.single
 
-    expected = t2 + r2.apply(t1 + r1.apply(vec))
+    expected = d2 + r2.apply(d1 + r1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
 
     # Multiple transformations with multiple transformations
-    t1 = np.array([[1, 0, 0], [0, -1, 1]])
-    tf1 = RigidTransformation.from_rottrans(r1, t1)
+    d1 = np.array([[1, 0, 0], [0, -1, 1]])
+    t1 = RigidTransformation.from_rottrans(r1, d1)
 
-    composed = tf2 * tf1
-    expected = tf2.apply(tf1.apply(vec))
+    composed = t2 * t1
+    expected = t2.apply(t1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
     assert not composed.single
 
-    expected = t2 + r2.apply(t1 + r1.apply(vec))
+    expected = d2 + r2.apply(d1 + r1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
 
 
@@ -596,8 +595,8 @@ def test_inverse():
 
     # Test inverse transformation
     r = Rotation.from_euler('z', 90, degrees=True)
-    trans = np.array([1, 2, 3])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([1, 2, 3])
+    t = RigidTransformation.from_rottrans(r, d)
 
     # Test that t * t.inv() equals identity
     t_inv = t.inv()
@@ -612,8 +611,8 @@ def test_inverse():
 
     # Test multiple transformations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
-    trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([[1, 2, 3], [4, 5, 6]])
+    t = RigidTransformation.from_rottrans(r, d)
     t_inv = t.inv()
     composed = t * t_inv
     assert_allclose(composed.as_matrix(), np.array([np.eye(4)] * 2), atol=atol)
@@ -624,12 +623,12 @@ def test_properties():
 
     # Test rotation and translation properties
     r = Rotation.from_euler('z', 90, degrees=True)
-    trans = np.array([1, 2, 3])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([1, 2, 3])
+    t = RigidTransformation.from_rottrans(r, d)
 
     assert_allclose(t.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert t.rotation.approx_equal(r)
-    assert_allclose(t.translation, trans, atol=atol)
+    assert_allclose(t.translation, d, atol=atol)
 
 
 def test_indexing():
@@ -637,17 +636,17 @@ def test_indexing():
 
     # Test indexing for multiple transformations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
-    trans = np.array([[1, 2, 3], [4, 5, 6]])
-    t = RigidTransformation.from_rottrans(r, trans)
+    d = np.array([[1, 2, 3], [4, 5, 6]])
+    t = RigidTransformation.from_rottrans(r, d)
 
     # Test single index
     assert_allclose(t[0].as_matrix()[:3, :3], r[0].as_matrix(), atol=atol)
-    assert_allclose(t[0].as_matrix()[:3, 3], trans[0], atol=atol)
+    assert_allclose(t[0].as_matrix()[:3, 3], d[0], atol=atol)
 
     # Test slice
     t_slice = t[0:2]
     assert_allclose(t_slice.as_matrix()[:, :3, :3], r[0:2].as_matrix(), atol=atol)
-    assert_allclose(t_slice.as_matrix()[:, :3, 3], trans[0:2], atol=atol)
+    assert_allclose(t_slice.as_matrix()[:, :3, 3], d[0:2], atol=atol)
 
 
 def test_concatenate():
