@@ -1424,14 +1424,25 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         solver if either A or M is a general linear operator.
         Alternatively, the user can supply the matrix or operator OPinv,
         which gives ``x = OPinv @ b = [A - sigma * M]^-1 @ b``.
+        Regardless of the selected mode (normal, cayley, or buckling),
+        users should always supply the operator x = OPinv @ b = [A - sigma * M]^-1 @ b,
+        which represents the inverse of the shifted matrix.
+        This ensures consistency in the interface and simplifies user input.
+        The solver will internally handle the necessary transformations for different modes,
+        so the user does not need to adjust the operator depending on the mode.
+        The correct eigenvalue transformation 
+        (e.g., for Cayley or buckling modes) will be applied automatically.
         Note that when sigma is specified, the keyword 'which' refers to
         the shifted eigenvalues ``w'[i]`` where:
 
-            if mode == 'normal', ``w'[i] = 1 / (w[i] - sigma)``.
+            if mode == 'normal':
+                ``w'[i] = 1 / (w[i] - sigma)``.
 
-            if mode == 'cayley', ``w'[i] = (w[i] + sigma) / (w[i] - sigma)``.
+            if mode == 'cayley':
+                  ``w'[i] = (w[i] + sigma) / (w[i] - sigma)``.
 
-            if mode == 'buckling', ``w'[i] = w[i] / (w[i] - sigma)``.
+            if mode == 'buckling':
+                  ``w'[i] = w[i] / (w[i] - sigma)``.
 
         (see further discussion in 'mode' below)
     v0 : ndarray, optional
