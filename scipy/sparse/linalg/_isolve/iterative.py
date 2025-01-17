@@ -22,7 +22,8 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
 
 
 def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use BIConjugate Gradient iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the BIConjugate Gradient method.
 
     Parameters
     ----------
@@ -156,7 +157,8 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
 
 def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
              callback=None):
-    """Use BIConjugate Gradient STABilized iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the BIConjugate Gradient STABilized method.
 
     Parameters
     ----------
@@ -303,7 +305,9 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
 
 def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use Conjugate Gradient iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric,
+    positive-definite `A`.
 
     Parameters
     ----------
@@ -423,7 +427,8 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
 
 def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Conjugate Gradient Squared method.
 
     Parameters
     ----------
@@ -582,7 +587,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
 def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=None,
           callback=None, callback_type=None):
     """
-    Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
+    Solve ``Ax = b`` with the Generalized Minimal RESidual method.
 
     Parameters
     ----------
@@ -843,7 +848,8 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
 
 def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         callback=None):
-    """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Quasi-Minimal Residual method.
 
     Parameters
     ----------
