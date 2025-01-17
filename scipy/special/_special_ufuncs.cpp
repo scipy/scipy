@@ -802,7 +802,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *pro_cv = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::prolate_segv), static_cast<xsf::numpy::ddd_d>(xsf::prolate_segv)},
-        "obl_cv", pro_cv_doc);
+        "pro_cv", pro_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_cv", pro_cv);
 
     PyObject *pro_rad1 = xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_ff>(xsf::prolate_radial1_nocv),
