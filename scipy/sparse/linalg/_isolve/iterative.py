@@ -306,7 +306,8 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
 def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
     """
-    Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric, positive-definite `A`.
+    Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric,
+    positive-definite `A`.
 
     Parameters
     ----------
