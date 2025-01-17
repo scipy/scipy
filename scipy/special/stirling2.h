@@ -11,7 +11,8 @@ using std::isinf;
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <vector>
+#include <memory>
+#include <limits>
 
 #include "xsf/binom.h"
 #include "xsf/lambertw.h"
@@ -42,12 +43,13 @@ double _stirling2_dp(double n, double k){
         return 0.;
     }
     int arraySize = k <= n - k + 1 ? k : n - k + 1;
-    std::vector<double> curr;
-    try{
-        curr = std::vector<double>(arraySize, 1.);
-    } catch(std::bad_alloc &){
-        sf_error("stirling2", SF_ERROR_OTHER, NULL);
-        return NAN;
+    auto curr = std::unique_ptr<double[]>{new (std::nothrow) double[arraySize]()};
+    if (curr == nullptr){
+        sf_error("stirling2", SF_ERROR_MEMORY, NULL);
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    for (int i = 0; i < arraySize; i++){
+        curr[i] = 1.;
     }
     if (k <= n - k + 1) {
         for (int i = 1; i < n - k + 1; i++){
