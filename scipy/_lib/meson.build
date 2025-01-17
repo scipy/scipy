@@ -122,6 +122,7 @@ python_sources = [
   '_elementwise_iterative_method.py',
   '_finite_differences.py',
   '_gcutils.py',
+  '_lazy_testing.py',
   '_pep440.py',
   '_testutils.py',
   '_threadsafety.py',
