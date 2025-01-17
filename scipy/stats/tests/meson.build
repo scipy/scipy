@@ -27,6 +27,7 @@ py3.install_sources([
     'test_multivariate.py',
     'test_odds_ratio.py',
     'test_qmc.py',
+    'test_quantile.py',
     'test_rank.py',
     'test_relative_risk.py',
     'test_resampling.py',
