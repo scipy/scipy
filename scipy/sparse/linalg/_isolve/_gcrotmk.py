@@ -184,7 +184,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
 def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=None,
             m=20, k=None, CU=None, discard_C=False, truncate='oldest'):
     """
-    Solve a matrix equation using flexible GCROT(m,k) algorithm.
+    Solve ``Ax = b`` with the flexible GCROT(m,k) algorithm.
 
     Parameters
     ----------

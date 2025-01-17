@@ -10,7 +10,7 @@ __all__ = ['minres']
 def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
-    Use MINimum RESidual iteration to solve Ax=b
+    Solve ``Ax = b`` with the MINimum RESidual method, for a symmetric `A`.
 
     MINRES minimizes norm(Ax - b) for a real symmetric matrix A.  Unlike
     the Conjugate Gradient method, A can be indefinite or singular.
