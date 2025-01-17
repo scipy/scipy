@@ -9,7 +9,7 @@ __all__ = ['tfqmr']
 def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
           callback=None, show=False):
     """
-    Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
+    Solve ``Ax = b`` with the Transpose-Free Quasi-Minimal Residual method.
 
     Parameters
     ----------
