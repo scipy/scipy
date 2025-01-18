@@ -713,17 +713,17 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
 
     @skip_xp_backends(np_only=True)
-    def test_degenerate_signle_samples()
+    def test_degenerate_signle_samples(self, xp):
         # Single samples
         w = windows.dpss(1, 1.)
-        assert_array_equal(w, [1.])
+        xp_assert_equal(w, [1.])
         w, ratio = windows.dpss(1, 1., return_ratios=True)
-        assert_array_equal(w, [1.])
+        xp_assert_equal(w, [1.])
         assert ratio == 1.
         w, ratio = windows.dpss(1, 1., Kmax=4, return_ratios=True)
-        assert_array_equal(w, [1.])
+        xp_assert_equal(w, [1.])
         assert isinstance(ratio, np.ndarray)
-        assert_array_equal(ratio, [1.])
+        xp_assert_equal(ratio, [1.])
 
         assert_raises(ValueError, windows.dpss, 4, 1.5, -1, xp=xp)  # Bad Kmax
         assert_raises(ValueError, windows.dpss, 4, 1.5, -5, xp=xp)
