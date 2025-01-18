@@ -2121,11 +2121,11 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
         singleton = False
     if _len_guards(M):
         if not return_ratios:
-            return xp.ones(M)
+            return xp.ones(M, dtype=xp.float64)
         elif singleton:
-            return xp.ones(M), 1.
+            return xp.ones(M, dtype=xp.float64), 1.
         else:
-            return xp.ones(M), xp.ones(1)
+            return xp.ones(M, dtype=xp.float64), xp.ones(1, dtype=xp.float64)
     Kmax = operator.index(Kmax)
     if not 0 < Kmax <= M:
         raise ValueError('Kmax must be greater than 0 and less than M')
