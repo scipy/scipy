@@ -41,6 +41,11 @@ double _stirling2_dp(double n, double k){
     }
     int arraySize = k <= n - k + 1 ? k : n - k + 1;
     double *curr = (double *) malloc(arraySize * sizeof(double));
+     if (curr == NULL) {
+        // if Memory allocation fails handling it with error message 
+        fprintf(stderr, "Memory allocation failed\n");
+        return NAN; // Returning NAN if memory allocation fails instead of terminating the program
+    }
     for (int i = 0; i < arraySize; i++){
         curr[i] = 1.;
     }
