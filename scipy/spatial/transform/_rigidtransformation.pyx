@@ -763,6 +763,42 @@ cdef class RigidTransformation:
                [0., 0., 0., 1.]])
         >>> t.single
         True
+
+        A vector of zeros represents no transformation:
+
+        >>> t = T.from_expcoords(np.zeros(6))
+        >>> t.as_matrix()
+        array([[1., 0., 0., 0.],
+               [0., 1., 0., 0.],
+               [0., 0., 1., 0.],
+               [0., 0., 0., 1.]])
+
+        The last three numbers encode translation. If the first three
+        numbers are zero, the last three components can be interpreted as the
+        translation:
+
+        >>> t_trans = T.from_expcoords([0, 0, 0, 4.3, -2, 3.4])
+        >>> t_trans.translation
+        array([4.3, -2., 3.4])
+
+        The first three numbers encode rotation as a rotation vector:
+
+        >>> t_rot = T.from_expcoords([0.5, 0.3, 0.1, 0, 0, 0])
+        >>> t_rot.as_matrix()
+        array([[ 0.95144143, -0.02143004,  0.307083  ,  0.        ],
+               [ 0.16710577,  0.87374771, -0.45677194,  0.        ],
+               [-0.25852442,  0.48590709,  0.83490085,  0.        ],
+               [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+        >>> t_rot.rotation.as_rotvec()
+        array([0.5, 0.3, 0.1])
+
+        Combining translation and rotation preserves the rotation vector,
+        but changes the last three components as they encode translation and
+        rotation:
+
+        >>> (t_trans * t_rot).as_expcoords()
+        array([0.5, 0.3, 0.1, 3.64305882, -1.25879559, 4.46109265])
         """
         expcoords = np.asarray(expcoords, dtype=float)
 
