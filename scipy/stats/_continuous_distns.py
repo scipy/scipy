@@ -8124,8 +8124,7 @@ class nct_gen(rv_continuous):
         return sc.nctdtr(df, nc, x)
 
     def _ppf(self, q, df, nc):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return scu._nct_ppf(q, df, nc)
+        return sc.nctdtrit(df, nc, q)
 
     def _sf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
