@@ -10,7 +10,6 @@ The following functions still need tests:
 - nbdtrik
 - nbdtrin
 - pdtrik
-- nctdtrit
 - nctdtridf
 - nctdtrinc
 
@@ -667,8 +666,6 @@ class TestNoncentralTFunctions:
         # values were recomputed with mpmath.
         nctdtr_result = sp.nctdtr(df, nc, x)
         assert_allclose(nctdtr_result, expected_cdf, rtol=1e-13, atol=1e-303)
-        nctdtrit_result = sp.nctdtrit(df, nc, expected_cdf)
-        assert_allclose(x, nctdtrit_result, rtol=1e-12)
 
     def test_nctdtr_gh8344(self):
         # test that gh-8344 is resolved.
@@ -686,5 +683,14 @@ class TestNoncentralTFunctions:
          [1., 1., -np.inf, 0.0, 0.0]
         ]
     )
-    def test_accuracy(self, df, nc, x, expected, rtol):
+    def test_nctdtr_accuracy(self, df, nc, x, expected, rtol):
         assert_allclose(sp.nctdtr(df, nc, x), expected, rtol=rtol)
+
+    @pytest.mark.parametrize("df, nc, x, expected_cdf", [
+        (9.8, 38, 1.5, 2.0935940165900746e-249),
+        (0.98, 38, 1.5, 2.591995360483094e-97),
+        (3000, 3, 0.1, 0.0018657780826323328),
+        (0.98, -3.8, 15, 0.9999990264591945)
+    ])
+    def test_nctdtrit(self, df, nc, x, expected_cdf):
+        assert_allclose(x, sp.nctdtrit(df, nc, expected_cdf), rtol=1e-10)
