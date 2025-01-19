@@ -59,13 +59,13 @@ cdef class RigidTransformation:
     from_matrix
     from_rotation
     from_translation
-    from_rottrans
-    from_expcoords
-    from_dualquat
+    from_rot_trans
+    from_exp_coords
+    from_dual_quat
     as_matrix
-    as_rottrans
-    as_expcoords
-    as_dualquat
+    as_rot_trans
+    as_exp_coords
+    as_dual_quat
     concatenate
     apply
     inv
@@ -212,7 +212,7 @@ cdef class RigidTransformation:
 
     >>> r_A_B = R.from_euler('xyz', [90, 0, 0], degrees=True)
     >>> d_A_B = np.array([-2, 0, 0])
-    >>> t_A_B = T.from_rottrans(r_A_B, d_A_B)
+    >>> t_A_B = T.from_rot_trans(r_A_B, d_A_B)
 
     Let's plot these frames.
 
@@ -232,7 +232,7 @@ cdef class RigidTransformation:
 
     >>> d_B_C = np.array([0, 0, 2])
     >>> r_B_C = R.from_euler('xyz', [0, 0, 30], degrees=True)
-    >>> t_B_C = T.from_rottrans(r_B_C, d_B_C)
+    >>> t_B_C = T.from_rot_trans(r_B_C, d_B_C)
 
     In order to plot these frames from a consistent perspective, we need to
     calculate the transformation between A and C. Note that we do not make this
@@ -654,12 +654,12 @@ cdef class RigidTransformation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_rottrans(cls, rotation, translation):
+    def from_rot_trans(cls, rotation, translation):
         """Initialize from a rotation and translation.
 
         When composing a rotation and translation, the rotation is applied
         before the translation, such that
-        ``t = T.from_rottrans(rotation, translation)``
+        ``t = T.from_rot_trans(rotation, translation)``
         is equivalent to
         ``t = T.from_translation(translation) * T.from_rotation(rotation)``.
 
@@ -696,7 +696,7 @@ cdef class RigidTransformation:
                [ 0.8660254,  0.,  0.5       ],
                [-0.5      ,  0.,  0.8660254 ]])
         >>> d = np.array([2, 3, 4])
-        >>> t = T.from_rottrans(r, d)
+        >>> t = T.from_rot_trans(r, d)
         >>> t.rotation.as_matrix()
         array([[ 0.       , -1.,  0.        ],
                [ 0.8660254,  0.,  0.5       ],
@@ -721,7 +721,7 @@ cdef class RigidTransformation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_expcoords(cls, expcoords):
+    def from_exp_coords(cls, exp_coords):
         r"""Initialize from exponential coordinates of transformation.
 
         This implements the exponential map that converts 6-dimensional real
@@ -737,7 +737,7 @@ cdef class RigidTransformation:
 
         Parameters
         ----------
-        expcoords : array_like, shape (N, 6) or (6,)
+        exp_coords : array_like, shape (N, 6) or (6,)
             A single exponential coordinate vector or a stack of exponential
             coordinate vectors. The first three components define the
             rotation and the last three components define the translation.
@@ -754,7 +754,7 @@ cdef class RigidTransformation:
 
         Creating from a single 6d vector of exponential coordinates:
 
-        >>> t = T.from_expcoords([
+        >>> t = T.from_exp_coords([
         ...     -2.01041204, -0.52983629, 0.65773501,
         ...     0.10386614, 0.05855009, 0.54959179])
         >>> t.as_matrix()
@@ -767,7 +767,7 @@ cdef class RigidTransformation:
 
         A vector of zeros represents no transformation:
 
-        >>> t = T.from_expcoords(np.zeros(6))
+        >>> t = T.from_exp_coords(np.zeros(6))
         >>> t.as_matrix()
         array([[1., 0., 0., 0.],
                [0., 1., 0., 0.],
@@ -778,13 +778,13 @@ cdef class RigidTransformation:
         numbers are zero, the last three components can be interpreted as the
         translation:
 
-        >>> t_trans = T.from_expcoords([0, 0, 0, 4.3, -2, 3.4])
+        >>> t_trans = T.from_exp_coords([0, 0, 0, 4.3, -2, 3.4])
         >>> t_trans.translation
         array([4.3, -2., 3.4])
 
         The first three numbers encode rotation as a rotation vector:
 
-        >>> t_rot = T.from_expcoords([0.5, 0.3, 0.1, 0, 0, 0])
+        >>> t_rot = T.from_exp_coords([0.5, 0.3, 0.1, 0, 0, 0])
         >>> t_rot.as_matrix()
         array([[ 0.95144143, -0.02143004,  0.307083  ,  0.        ],
                [ 0.16710577,  0.87374771, -0.45677194,  0.        ],
@@ -798,30 +798,30 @@ cdef class RigidTransformation:
         but changes the last three components as they encode translation and
         rotation:
 
-        >>> (t_trans * t_rot).as_expcoords()
+        >>> (t_trans * t_rot).as_exp_coords()
         array([0.5, 0.3, 0.1, 3.64305882, -1.25879559, 4.46109265])
         """
-        expcoords = np.asarray(expcoords, dtype=float)
+        exp_coords = np.asarray(exp_coords, dtype=float)
 
-        if (expcoords.ndim not in [1, 2] or expcoords.shape[0] == 0
-                or expcoords.shape[-1] != 6):
+        if (exp_coords.ndim not in [1, 2] or exp_coords.shape[0] == 0
+                or exp_coords.shape[-1] != 6):
             raise ValueError(
-                "Expected `expcoords` to have shape (6,), or (N, 6), "
-                f"got {expcoords.shape}.")
+                "Expected `exp_coords` to have shape (6,), or (N, 6), "
+                f"got {exp_coords.shape}.")
 
-        single = expcoords.ndim == 1
-        expcoords = np.atleast_2d(expcoords)
+        single = exp_coords.ndim == 1
+        exp_coords = np.atleast_2d(exp_coords)
 
-        rotations = Rotation.from_rotvec(expcoords[:, :3])
+        rotations = Rotation.from_rotvec(exp_coords[:, :3])
 
-        theta = np.linalg.norm(expcoords[:, :3], axis=-1)
+        theta = np.linalg.norm(exp_coords[:, :3], axis=-1)
         ind_only_translation = theta == 0.0
 
-        translations = np.empty((len(expcoords), 3), dtype=float)
+        translations = np.empty((len(exp_coords), 3), dtype=float)
 
         if not np.all(ind_only_translation):
             theta[ind_only_translation] = 1.0
-            screw_axes = expcoords / theta[:, np.newaxis]
+            screw_axes = exp_coords / theta[:, np.newaxis]
 
             tms = theta - np.sin(theta)
             cm1 = np.cos(theta) - 1.0
@@ -850,12 +850,12 @@ cdef class RigidTransformation:
                 - v1 * (o0cm1 - o12tms)
                 - v2 * (o00tms + o11tms - theta))
 
-        translations[ind_only_translation] = expcoords[ind_only_translation, 3:]
+        translations[ind_only_translation] = exp_coords[ind_only_translation, 3:]
 
         # TODO alternatively, we could
         # return cls.from_translation(translations) * cls.from_rotation(rotations)
 
-        matrix = np.empty((len(expcoords), 4, 4), dtype=float)
+        matrix = np.empty((len(exp_coords), 4, 4), dtype=float)
         matrix[:, :3, :3] = rotations.as_matrix()
         matrix[:, :3, 3] = translations
         matrix[:, 3, :3] = 0.0
@@ -867,7 +867,7 @@ cdef class RigidTransformation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_dualquat(cls, dualquat, *, scalar_first=False):
+    def from_dual_quat(cls, dual_quat, *, scalar_first=False):
         """Initialize from a unit dual quaternion.
 
         Unit dual quaternions encode orientation in a real unit quaternion
@@ -876,7 +876,7 @@ cdef class RigidTransformation:
 
         Parameters
         ----------
-        dualquat : array_like, shape (N, 8) or (8,)
+        dual_quat : array_like, shape (N, 8) or (8,)
             A single unit dual quaternion or a stack of unit dual quaternions.
             The real part is stored in the first four components and the dual
             part in the last four components.
@@ -897,7 +897,7 @@ cdef class RigidTransformation:
 
         Creating from a single unit dual quaternion:
 
-        >>> t = T.from_dualquat([
+        >>> t = T.from_dual_quat([
         ...     0.0617101, -0.06483886, 0.31432811, 0.94508498,
         ...     0.04985168, -0.26119618, 0.1691491, -0.07743254])
         >>> t.as_matrix()
@@ -908,24 +908,24 @@ cdef class RigidTransformation:
         >>> t.single
         True
         """
-        dualquat = np.asarray(dualquat, dtype=float)
+        dual_quat = np.asarray(dual_quat, dtype=float)
 
-        if (dualquat.ndim not in [1, 2] or dualquat.shape[0] == 0
-                or dualquat.shape[-1] != 8):
+        if (dual_quat.ndim not in [1, 2] or dual_quat.shape[0] == 0
+                or dual_quat.shape[-1] != 8):
             raise ValueError(
-                "Expected `dualquat` to have shape (8,), or (N, 8), "
-                f"got {dualquat.shape}.")
+                "Expected `dual_quat` to have shape (8,), or (N, 8), "
+                f"got {dual_quat.shape}.")
 
-        single = dualquat.ndim == 1
-        dualquat = np.atleast_2d(dualquat)
+        single = dual_quat.ndim == 1
+        dual_quat = np.atleast_2d(dual_quat)
 
-        real_part = dualquat[:, :4]
-        dual_part = dualquat[:, 4:]
+        real_part = dual_quat[:, :4]
+        dual_part = dual_quat[:, 4:]
         if scalar_first:
             real_part = np.roll(real_part, -1, axis=1)
             dual_part = np.roll(dual_part, -1, axis=1)
 
-        matrix = np.empty((len(dualquat), 4, 4), dtype=float)
+        matrix = np.empty((len(dual_quat), 4, 4), dtype=float)
         rotation = Rotation.from_quat(real_part)
 
         matrix[:, :3, :3] = rotation.as_matrix()
@@ -1065,7 +1065,7 @@ cdef class RigidTransformation:
         rng = check_random_state(rng)
         r = Rotation.random(num, rng=rng)
         t = Rotation.random(num, rng=rng).apply([1, 0, 0])
-        return cls.from_rottrans(r, t)
+        return cls.from_rot_trans(r, t)
 
     @cython.embedsignature(True)
     @classmethod
@@ -1137,7 +1137,7 @@ cdef class RigidTransformation:
         ...                    [1, 0, 0],
         ...                    [0, 1, 0]])
         >>> d = np.array([2, 3, 4])
-        >>> t = T.from_rottrans(r, d)
+        >>> t = T.from_rot_trans(r, d)
         >>> t.as_matrix()
         array([[ 0., 0., 1., 2.],
                [ 1., 0., 0., 3.],
@@ -1160,7 +1160,7 @@ cdef class RigidTransformation:
             return np.array(self._matrix)
 
     @cython.embedsignature(True)
-    def as_rottrans(self):
+    def as_rot_trans(self):
         """Return the rotation and translation of the transformation, where
         the rotation is applied first, followed by the translation.
 
@@ -1195,8 +1195,8 @@ cdef class RigidTransformation:
         ...                    [1, 0, 0],
         ...                    [0, 1, 0]])
         >>> d = np.array([2, 3, 4])
-        >>> t = T.from_rottrans(r, d)
-        >>> t_r, t_d = t.as_rottrans()
+        >>> t = T.from_rot_trans(r, d)
+        >>> t_r, t_d = t.as_rot_trans()
         >>> t_r.as_matrix()
         array([[0., 0., 1.],
                [1., 0., 0.],
@@ -1217,7 +1217,7 @@ cdef class RigidTransformation:
         return self.rotation, self.translation
 
     @cython.embedsignature(True)
-    def as_expcoords(self):
+    def as_exp_coords(self):
         """Return the exponential coordinates of the transformation.
 
         This implements the logarithmic map that converts SE(3) to
@@ -1227,7 +1227,7 @@ cdef class RigidTransformation:
 
         Returns
         -------
-        expcoords : numpy.ndarray, shape (N, 6) or (6,)
+        exp_coords : numpy.ndarray, shape (N, 6) or (6,)
             A single exponential coordinate vector or a stack of exponential
             coordinate vectors. The first three components define the
             rotation and the last three components define the translation.
@@ -1239,22 +1239,22 @@ cdef class RigidTransformation:
 
         Get exponential coordinates of the identity matrix:
 
-        >>> T.identity().as_expcoords()
+        >>> T.identity().as_exp_coords()
         array([0., 0., 0., 0., 0., 0.])
         """
-        expcoords = np.empty((self._matrix.shape[0], 6), dtype=float)
+        exp_coords = np.empty((self._matrix.shape[0], 6), dtype=float)
         rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
-        expcoords[:, :3] = rotations.as_rotvec()
-        thetas = np.linalg.norm(expcoords[:, :3], axis=-1)
+        exp_coords[:, :3] = rotations.as_rotvec()
+        thetas = np.linalg.norm(exp_coords[:, :3], axis=-1)
         nonzero_angle = thetas != 0.0
-        expcoords[nonzero_angle, :3] /= thetas[nonzero_angle, np.newaxis]
+        exp_coords[nonzero_angle, :3] /= thetas[nonzero_angle, np.newaxis]
 
         thetas = np.maximum(thetas, np.finfo(float).tiny)
         ti = 1.0 / thetas
         tan_term = -0.5 / np.tan(thetas / 2.0) + ti
-        o0 = expcoords[:, 0]
-        o1 = expcoords[:, 1]
-        o2 = expcoords[:, 2]
+        o0 = exp_coords[:, 0]
+        o1 = exp_coords[:, 1]
+        o2 = exp_coords[:, 2]
         p0 = self._matrix[:, 0, 3]
         p1 = self._matrix[:, 1, 3]
         p2 = self._matrix[:, 2, 3]
@@ -1264,35 +1264,35 @@ cdef class RigidTransformation:
         o11 = o1 * o1
         o12 = o1 * o2
         o22 = o2 * o2
-        expcoords[:, 3] = (p0 * ((-o11 - o22) * tan_term + ti)
+        exp_coords[:, 3] = (p0 * ((-o11 - o22) * tan_term + ti)
                            + p1 * (o01 * tan_term + 0.5 * o2)
                            + p2 * (o02 * tan_term - 0.5 * o1)
                            )
-        expcoords[:, 4] = (p0 * (o01 * tan_term - 0.5 * o2)
+        exp_coords[:, 4] = (p0 * (o01 * tan_term - 0.5 * o2)
                            + p1 * ((-o00 - o22) * tan_term + ti)
                            + p2 * (0.5 * o0 + o12 * tan_term)
                            )
-        expcoords[:, 5] = (p0 * (o02 * tan_term + 0.5 * o1)
+        exp_coords[:, 5] = (p0 * (o02 * tan_term + 0.5 * o1)
                            + p1 * (-0.5 * o0 + o12 * tan_term)
                            + p2 * ((-o00 - o11) * tan_term + ti)
                            )
 
-        expcoords *= thetas[:, np.newaxis]
+        exp_coords *= thetas[:, np.newaxis]
 
         # pure translations
         traces = np.einsum("nii", self._matrix[:, :3, :3])
         ind_only_translation = np.where(traces >= 3.0 - np.finfo(float).eps)[0]
         for i in ind_only_translation:
-            expcoords[i, :3] = 0.0
-            expcoords[i, 3:] = self._matrix[i, :3, 3]
+            exp_coords[i, :3] = 0.0
+            exp_coords[i, 3:] = self._matrix[i, :3, 3]
 
         if self._single:
-            return expcoords[0]
+            return exp_coords[0]
         else:
-            return expcoords
+            return exp_coords
 
     @cython.embedsignature(True)
-    def as_dualquat(self, *, scalar_first=False):
+    def as_dual_quat(self, *, scalar_first=False):
         """Return the dual quaternion representation of the transformation.
 
         Unit dual quaternions encode orientation in a real unit quaternion
@@ -1308,7 +1308,7 @@ cdef class RigidTransformation:
 
         Returns
         -------
-        dualquat : numpy.ndarray, shape (N, 8) or (8,)
+        dual_quat : numpy.ndarray, shape (N, 8) or (8,)
             A single unit dual quaternion vector or a stack of unit dual
             quaternion vectors. The real part is stored in the first four
             components and the dual part in the last four components.
@@ -1320,12 +1320,12 @@ cdef class RigidTransformation:
 
         Get identity dual quaternion (we use scalar-last by default):
 
-        >>> T.identity().as_dualquat()
+        >>> T.identity().as_dual_quat()
         array([0., 0., 0., 1., 0., 0., 0., 0.])
 
         When we want to use the scalar-first convention, we use the argument:
 
-        >>> T.identity().as_dualquat(scalar_first=True)
+        >>> T.identity().as_dual_quat(scalar_first=True)
         array([1., 0., 0., 0., 0., 0., 0., 0.])
         """
         rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
@@ -1342,12 +1342,12 @@ cdef class RigidTransformation:
             real_parts = np.roll(real_parts, 1, axis=1)
             dual_parts = np.roll(dual_parts, 1, axis=1)
 
-        dualquats = np.hstack((real_parts, dual_parts))
+        dual_quats = np.hstack((real_parts, dual_parts))
 
         if self._single:
-            return dualquats[0]
+            return dual_quats[0]
         else:
-            return dualquats
+            return dual_quats
 
     @cython.embedsignature(True)
     def __len__(self):
@@ -1540,8 +1540,8 @@ cdef class RigidTransformation:
 
         >>> r1, d1 = R.from_euler('z', 60, degrees=True), [1, 2, 3]
         >>> r2, d2 = R.from_euler('x', 30, degrees=True), [0, 1, 0]
-        >>> t1 = T.from_rottrans(r1, d1)
-        >>> t2 = T.from_rottrans(r2, d2)
+        >>> t1 = T.from_rot_trans(r1, d1)
+        >>> t2 = T.from_rot_trans(r2, d2)
         >>> t = t1 * t2
         >>> t.apply([1, 0, 0])
         array([0.6339746, 3.3660254, 3.       ])
@@ -1712,7 +1712,7 @@ cdef class RigidTransformation:
         The inverse rigid transformation is the same as the inverse translation
         followed by the inverse rotation:
 
-        >>> r, d = t.as_rottrans()
+        >>> r, d = t.as_rot_trans()
         >>> r_inv = r.inv()  # inverse rotation
         >>> d_inv = -d  # inverse translation
         >>> t_r_inv = T.from_rotation(r_inv)
@@ -1728,7 +1728,7 @@ cdef class RigidTransformation:
         """
         r_inv = self.rotation.inv()
         t_inv = -r_inv.apply(self.translation)
-        return self.__class__.from_rottrans(r_inv, t_inv)
+        return self.__class__.from_rot_trans(r_inv, t_inv)
 
     @cython.embedsignature(True)
     def apply(self, vector, inverse=False):
@@ -1807,7 +1807,7 @@ cdef class RigidTransformation:
         vector and then adding the translation component.
 
         >>> r = R.from_euler('z', 60, degrees=True)
-        >>> t = T.from_rottrans(r, d)
+        >>> t = T.from_rot_trans(r, d)
         >>> d + r.apply([1, 0, 0])
         array([1.5,       2.8660254, 3.       ])
         >>> t.apply([1, 0, 0])
@@ -1877,7 +1877,7 @@ cdef class RigidTransformation:
 
         >>> r = R.random(3)
         >>> d = np.array([1, 0, 0])
-        >>> t = T.from_rottrans(r, d)
+        >>> t = T.from_rot_trans(r, d)
         >>> np.allclose(t.rotation.as_matrix(), r.as_matrix())
         True
         """
@@ -1911,7 +1911,7 @@ cdef class RigidTransformation:
 
         >>> r = R.random()
         >>> d = np.array([[1, 0, 0], [2, 0, 0], [3, 0, 0]])
-        >>> t = T.from_rottrans(r, d)
+        >>> t = T.from_rot_trans(r, d)
         >>> np.allclose(t.translation, d)
         True
         """
