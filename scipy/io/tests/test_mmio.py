@@ -764,7 +764,8 @@ class TestMMIOCoordinate:
     @pytest.mark.parametrize("precision", [-1, 0, 16])
     def test_invalid_precision(self, precision):
         A = scipy.sparse.dok_array((2, 2))
-        with pytest.raises(ValueError, match='precision must be in'):
+        with pytest.warns(FutureWarning,
+                          match='From SciPy 1.18, an exception will be thrown'):
             mmwrite(self.fn, A, precision=precision)
 
     def test_bad_number_of_coordinate_header_fields(self):

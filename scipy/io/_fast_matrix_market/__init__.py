@@ -389,7 +389,10 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         Either 'real', 'complex', 'pattern', or 'integer'.
     precision : None or int, optional
         Number of digits to display for real or complex values.
-        If not None, this value must be in the range [1, 15].
+    .. warning::
+        From SciPy 1.18, an exception will be thrown if the precision
+        input is outside the range of 1 to 15, because these valuas are
+        invalid.
     symmetry : None or str, optional
         Either 'AUTO', 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
