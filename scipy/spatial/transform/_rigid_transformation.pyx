@@ -374,9 +374,9 @@ cdef class RigidTransformation:
             matrix = matrix.copy()
 
         # Rigid transformations have the following matrix representation:
-        # [R | t]
+        # [R | d]
         # [0 | 1]
-        # where R is a 3x3 orthonormal rotation matrix and t is a 3x1 translation
+        # where R is a 3x3 orthonormal rotation matrix and d is a 3x1 translation
         # vector. The last row is always [0, 0, 0, 1] exactly
 
         # Check the last row
@@ -593,11 +593,11 @@ cdef class RigidTransformation:
 
         ..
 
-            [R | t]
+            [R | d]
             [0 | 1]
 
-        where ``R`` is a 3x3 rotation matrix and ``t`` is a 3x1 translation
-        vector ``[tx, ty, tz]``. As rotation matrices must be proper
+        where ``R`` is a 3x3 rotation matrix and ``d`` is a 3x1 translation
+        vector ``[dx, dy, dz]``. As rotation matrices must be proper
         orthogonal, the rotation component is orthonormalized using singular
         value decomposition before initialization.
 
@@ -1112,11 +1112,11 @@ cdef class RigidTransformation:
 
         ..
 
-            [R | t]
+            [R | d]
             [0 | 1]
 
-        where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
-        translation vector ``[tx, ty, tz]``.
+        where ``R`` is a 3x3 orthonormal rotation matrix and ``d`` is a 3x1
+        translation vector ``[dx, dy, dz]``.
 
         Returns
         -------
@@ -1168,11 +1168,11 @@ cdef class RigidTransformation:
 
         ..
 
-            [R | t]
+            [R | d]
             [0 | 1]
 
-        Where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
-        translation vector ``[tx, ty, tz]``. This function returns the rotation
+        Where ``R`` is a 3x3 orthonormal rotation matrix and ``d`` is a 3x1
+        translation vector ``[dx, dy, dz]``. This function returns the rotation
         corresponding to the this rotation matrix ``Rotation.from_matrix(R)``
         and the translation vector ``t``.
 
