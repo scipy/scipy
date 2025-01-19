@@ -11,6 +11,7 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 import os
+import warnings
 
 import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
@@ -31,7 +32,9 @@ MAX_PRECISION = 15
 
 def _validate_precision(precision):
     if (precision is not None) and not (1 <= precision <= MAX_PRECISION):
-        raise ValueError(f'precision must be in [1, {MAX_PRECISION}]')
+        msg = (f"From SciPy 1.18, an exception will be thrown if the "
+               f"precision input is outside the range of 1 to {MAX_PRECISION-1}")
+        warnings.warn(msg, FutureWarning, stacklevel=2)
 
 # -----------------------------------------------------------------------------
 def asstr(s):
@@ -161,7 +164,10 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Either 'real', 'complex', 'pattern', or 'integer'.
     precision : None or int, optional
         Number of digits to display for real or complex values.
-        If not None, this value must be in the range [1, 15].
+    .. warning::
+        From SciPy 1.18, an exception will be thrown if the precision
+        input is outside the range of 1 to 15, because these valuas are
+        invalid.
     symmetry : None or str, optional
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
