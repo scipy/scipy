@@ -2211,7 +2211,7 @@ def bilinear(b, a, fs=1.0):
 
        & & \frac{b_0 \big(\kappa (z-1)\big)^Q     (z+1)^{N-Q} +
                 b_1 \big(\kappa (z-1)\big)^{Q-1} (z+1)^{N-Q+1} +
-                \cdots + b_P(z+1)^N}{
+                \cdots + b_Q(z+1)^N}{
                 a_0 \big(\kappa (z-1)\big)^P     (z+1)^{N-P} +
                 a_1 \big(\kappa (z-1)\big)^{P-1} (z+1)^{N-P+1} +
                 \cdots + a_P(z+1)^N}\\
@@ -2264,7 +2264,7 @@ def bilinear(b, a, fs=1.0):
 
     The difference in the higher frequencies shown in the plot is caused by an effect
     called "frequency warping". [1]_ describes a method called "pre-warping" to
-    compensate those deviations.
+    reduce those deviations.
     """
     b, a = np.atleast_1d(b), np.atleast_1d(a)  # convert scalars, if needed
     if not a.ndim == 1:
