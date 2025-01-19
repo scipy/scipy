@@ -240,6 +240,49 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+
+    Returns
+    -------
+    res : OptimizeResult
+        The optimization result represented as an ``OptimizeResult`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully,
+        ``message`` which describes the cause of the termination, and ``kkt``
+        which contains the Karush-Kuhn-Tucker (KKT) multipliers for constrained
+        problems as described in the ``Notes`` below. See `OptimizeResult` for a
+        description of other attributes.
+
+    Notes
+    -----
+    The KKT multipliers are returned as a dict in the ``OptimizeResult.kkt``
+    attribute. ``kkt['eq']`` and ``kkt['ineq']`` are lists containing the
+    multipliers for the equality and inequality constraints respectively, in the
+    order that they are found in ``constraints``. ``kkt['bounds']`` is a dict
+    with two keys, ``'lb'`` and ``'ub'``, whose values are ``ndarray``s with
+    shape ``(n,)`` corresponding to lower and upper bounds specified with the
+    ``bounds`` parameter. Entries with zeros indicate that a bound is inactive
+    or was not provided.
+
+    The KKT multipliers provide first-order necessary conditions for optimality
+    in equality and inequality-constrained optimization problems. Note that
+    ``bounds`` are also associated with KKT multipliers since these are
+    equivalent to simple inequality constraints. See [1]_ pp. 321 or [2]_ for an
+    explanation of how to interpret these multipliers.
+
+    Note that if new-style `NonlinearConstraint` or `LinearConstraint` were
+    used, then ``minimize`` converts them first to old-style constraint dicts.
+    It is possible for a single new-style constraint to simultaneously contain
+    both inequality and equality constraints. This means that if there is mixing
+    within a single constraint, then the returned list of multipliers will have
+    a different length than the original new-style constraints.
+
+    References
+    ----------
+    .. [1] Nocedal, J, and S J Wright. 2006. Numerical Optimization. Springer
+       New York.
+    .. [2] Kraft, D. A software package for sequential quadratic programming.
+       1988. Tech. Rep. DFVLR-FB 88-28, DLR German Aerospace Center -- Institute
+       for Flight Mechanics, Koln, Germany.
     """
     _check_unknown_options(unknown_options)
     iter = maxiter - 1
@@ -331,10 +374,14 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
-    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
-              for c in cons['eq']]))
-    mieq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
-               for c in cons['ineq']]))
+    # _meq_cv: a list containing the length of values each constraint function
+    # returns
+    _meq_cv = [len(atleast_1d(c['fun'](x, *c['args']))) for c in cons['eq']]
+    meq = sum(_meq_cv)
+
+    _mieq_cv = [len(atleast_1d(c['fun'](x, *c['args']))) for c in cons['ineq']]
+    mieq = sum(_mieq_cv)
+
     # m = The total number of constraints
     m = meq + mieq
     # la = The number of constraints, or 1 if there are no constraints
@@ -446,8 +493,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
-                print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,
-                                                   fx, linalg.norm(g)))
+                print(
+                    f"{majiter:5} {sf.nfev:5} {fx:16.6E} "
+                    f"{linalg.norm(g):16.6E}"
+                )
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(mode) != 1:
@@ -455,17 +504,61 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         majiter_prev = int(majiter)
 
+    # Obtain KKT multipliers from internals of SLSQP (see slsqp.slsqp_optmz.f)
+    im = 0  # fortran indexing starts at 1 but python starts at 0
+    il = im + m
+    ix = il + (n1*n)//2 + 1
+    ir = ix + n
+
+    _kkt_mult = w[ir:ir + m]
+
+    # Indices for bound constraints (one per variable).
+    # Found with trial and error since documentation is unclear
+    ib = ir + m + 4*n + 2
+    _kkt_bnds = w[ib:ib + n]
+
+    kkt_multiplier = dict()
+
+    # Collect KKT multipliers for equality and inequality constraints
+    w_ind = 0
+    for _t, cv in [("eq", _meq_cv), ("ineq", _mieq_cv)]:
+        kkt = []
+
+        for dim in cv:
+            kkt += [_kkt_mult[w_ind:(w_ind + dim)]]
+            w_ind += dim
+
+        kkt_multiplier[_t] = kkt
+
+    # Get KKT multipliers for lower and upper bounds.
+    kkt = zeros((n, 2))
+
+    if bounds is not None and len(bounds) > 0:
+        pos_kkt_bnds = _kkt_bnds > 0.
+        # Lower bound multipliers are positive
+        active_bnds = ~infbnd[:, 0] & pos_kkt_bnds
+        kkt[active_bnds, 0] = _kkt_bnds[active_bnds]
+        # Upper bound multipliers are originally negative, make positive to be
+        # consistent with sign of multipliers for inequality constraints
+        active_bnds = ~infbnd[:, 1] & ~pos_kkt_bnds
+        kkt[active_bnds, 1] = np.abs(_kkt_bnds[active_bnds])
+
+    kkt_multiplier["bounds"] = {"lb": kkt[:, 0], "ub": kkt[:, 1]}
+
     # Optimization loop complete. Print status if requested
     if iprint >= 1:
-        print(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
+        print(f"{exit_modes[int(mode)]}    (Exit mode {mode})")
         print("            Current function value:", fx)
         print("            Iterations:", majiter)
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
-    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
+    return OptimizeResult(x=x, fun=fx, jac=g[:-1],
+                          nit=int(majiter),
                           nfev=sf.nfev, njev=sf.ngev, status=int(mode),
-                          message=exit_modes[int(mode)], success=(mode == 0))
+                          message=exit_modes[int(mode)],
+                          success=(mode == 0),
+                          kkt=kkt_multiplier)
 
 
 def _eval_constraint(x, cons):
