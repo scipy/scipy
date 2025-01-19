@@ -38,6 +38,19 @@ def _compute_se3_exp_translation_transform(rot_vec):
     return np.identity(3) + k1[:, None, None] * s + k2[:, None, None] * s @ s
 
 
+def _compute_se3_log_translation_transform(rot_vec):
+    angle = np.linalg.norm(rot_vec, axis=1)
+    mask = angle < 1e-3
+
+    k = np.empty(len(rot_vec))
+    k[mask] = 1/12 + angle[mask]**2 / 720 + angle[mask]**4 / 30240
+    k[~mask] = (1 - 0.5 * angle[~mask] / np.tan(0.5 * angle[~mask])) / angle[~mask]**2
+
+    s = _create_skew_matrix(rot_vec)
+
+    return np.identity(3) - 0.5 * s + k[:, None, None] * s @ s
+
+
 
 cdef _quaternion_conjugate(quat):
     conjugate = np.copy(quat)
@@ -1298,47 +1311,11 @@ cdef class RigidTransformation:
         """
         exp_coords = np.empty((self._matrix.shape[0], 6), dtype=float)
         rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
-        exp_coords[:, :3] = rotations.as_rotvec()
-        thetas = np.linalg.norm(exp_coords[:, :3], axis=-1)
-        nonzero_angle = thetas != 0.0
-        exp_coords[nonzero_angle, :3] /= thetas[nonzero_angle, np.newaxis]
-
-        thetas = np.maximum(thetas, np.finfo(float).tiny)
-        ti = 1.0 / thetas
-        tan_term = -0.5 / np.tan(thetas / 2.0) + ti
-        o0 = exp_coords[:, 0]
-        o1 = exp_coords[:, 1]
-        o2 = exp_coords[:, 2]
-        p0 = self._matrix[:, 0, 3]
-        p1 = self._matrix[:, 1, 3]
-        p2 = self._matrix[:, 2, 3]
-        o00 = o0 * o0
-        o01 = o0 * o1
-        o02 = o0 * o2
-        o11 = o1 * o1
-        o12 = o1 * o2
-        o22 = o2 * o2
-        exp_coords[:, 3] = (p0 * ((-o11 - o22) * tan_term + ti)
-                           + p1 * (o01 * tan_term + 0.5 * o2)
-                           + p2 * (o02 * tan_term - 0.5 * o1)
-                           )
-        exp_coords[:, 4] = (p0 * (o01 * tan_term - 0.5 * o2)
-                           + p1 * ((-o00 - o22) * tan_term + ti)
-                           + p2 * (0.5 * o0 + o12 * tan_term)
-                           )
-        exp_coords[:, 5] = (p0 * (o02 * tan_term + 0.5 * o1)
-                           + p1 * (-0.5 * o0 + o12 * tan_term)
-                           + p2 * ((-o00 - o11) * tan_term + ti)
-                           )
-
-        exp_coords *= thetas[:, np.newaxis]
-
-        # pure translations
-        traces = np.einsum("nii", self._matrix[:, :3, :3])
-        ind_only_translation = np.where(traces >= 3.0 - np.finfo(float).eps)[0]
-        for i in ind_only_translation:
-            exp_coords[i, :3] = 0.0
-            exp_coords[i, 3:] = self._matrix[i, :3, 3]
+        rot_vec = rotations.as_rotvec()
+        exp_coords[:, :3] = rot_vec
+        exp_coords[:, 3:] = np.einsum('ijk,ik->ij',
+                                      _compute_se3_log_translation_transform(rot_vec),
+                                      self._matrix[:, :3, 3])
 
         if self._single:
             return exp_coords[0]
