@@ -29,10 +29,9 @@ cdef class RigidTransformation:
     - Transformation inversion
     - Transformation indexing
 
-    Note that reflections are not supported, and coordinate systems must be
-    right-handed. Because of this, this class more precisely represents
-    *proper* rigid transformations in SE(3) rather than rigid transformations
-    in E(3) more generally [1]_.
+    Note that coordinate systems must be right-handed. Because of this, this
+    class more precisely represents *proper* rigid transformations in SE(3)
+    rather than rigid transformations in E(3) more generally [1]_.
 
     Indexing within a transformation is supported since multiple
     transformations can be stored within a single `RigidTransformation`
@@ -91,7 +90,6 @@ cdef class RigidTransformation:
 
     Examples
     --------
-
     A `RigidTransformation` instance can be initialized in any of the
     above formats and converted to any of the others. The underlying object is
     independent of the representation used for initialization.
@@ -102,7 +100,7 @@ cdef class RigidTransformation:
     When we name transformations, we read the subscripts from right to left.
     So ``t_A_B`` represents a transformation A <- B and can be interpreted as:
 
-    - the coordinates of B relative to A
+    - the coordinates and orientation of B relative to A
     - the transformation of points from B to A
     - the pose of B described in A's coordinate system
 
@@ -161,11 +159,11 @@ cdef class RigidTransformation:
     >>> from scipy.spatial.transform import RigidTransformation as T
     >>> from scipy.spatial.transform import Rotation as R
     >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
 
     The following function can be used to plot transformations with Matplotlib
     by showing how they transform the standard x, y, z coordinate axes:
 
+    >>> import matplotlib.pyplot as plt
     >>> colors = ("#FF6666", "#005533", "#1199EE")  # Colorblind-safe RGB
     >>> def plot_transformed_axes(ax, t, name=None, scale=1):
     ...     r = t.rotation
@@ -216,10 +214,6 @@ cdef class RigidTransformation:
     >>> d_A_B = np.array([-2, 0, 0])
     >>> t_A_B = T.from_rottrans(r_A_B, d_A_B)
 
-    ``t_B_A`` is the inverse, i.e. the transformation B <- A.
-
-    >>> t_B_A = t_A_B.inv()
-
     Let's plot these frames.
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -239,15 +233,13 @@ cdef class RigidTransformation:
     >>> d_B_C = np.array([0, 0, 2])
     >>> r_B_C = R.from_euler('xyz', [0, 0, 30], degrees=True)
     >>> t_B_C = T.from_rottrans(r_B_C, d_B_C)
-    >>> t_C_B = t_B_C.inv()
 
     In order to plot these frames from a consistent perspective, we need to
     calculate the transformation between A and C. Note that we do not make this
     transformation directly, but instead compose intermediate transformations
-    that let us get from A to C:
+    that let us get from C to A:
 
-    >>> t_C_A = t_C_B * t_B_A  # C <- B <- A
-    >>> t_A_C = t_C_A.inv()
+    >>> t_A_C = t_A_B * t_B_C  # A <- B <- C
 
     Now we can plot these three frames from A's perspective.
 
@@ -262,9 +254,14 @@ cdef class RigidTransformation:
 
     **Transforming Vectors**
 
-    Let's transform a vector from A, to B and C. We define a point in A and
-    use the transformations we defined to transform it to coordinates in B and
-    C:
+    Let's transform a vector from A, to B and C. To do this, we will first
+    invert the transformations we already have from B and C, to A.
+
+    >>> t_B_A = t_A_B.inv()  # B <- A
+    >>> t_C_A = t_A_C.inv()  # C <- A
+
+    Now we can define a point in A and use the above transformations to get its
+    coordinates in B and C:
 
     >>> p1_A = np.array([1, 0, 0])  # +1 in x_A direction
     >>> p1_B = t_B_A.apply(p1_A)
@@ -309,8 +306,12 @@ cdef class RigidTransformation:
 
     >>> t_C = T.identity()
 
-    We've already defined the transformations t_C_B and t_C_A, so we can plot
-    everything from C's perspective:
+    We've already defined the transformation C <- A, and can obtain C <- B by
+    inverting the existing transformation B <- C.
+
+    >>> t_C_B = t_B_C.inv()  # C <- B
+
+    This lets us plot everything from C's perspective:
 
     >>> fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     >>> plot_transformed_axes(ax, t_C, name="tC")     # C plotted in C
@@ -552,7 +553,7 @@ cdef class RigidTransformation:
 
         if (translation.ndim not in [1, 2]
                 or translation.shape[0] == 0
-                or translation.shape[len(translation.shape) - 1] != 3):
+                or translation.shape[-1] != 3):
             raise ValueError("Expected `translation` to have shape (3,), or (N, 3), "
                              f"got {translation.shape}.")
 
@@ -660,7 +661,7 @@ cdef class RigidTransformation:
         before the translation, such that
         ``t = T.from_rottrans(rotation, translation)``
         is equivalent to
-        ``t = T.from_rotation(rotation) * T.from_translation(translation)``.
+        ``t = T.from_translation(translation) * T.from_rotation(rotation)``.
 
         When applying a transformation to a vector, the result is the same as
         if the transformation was applied to the vector in the following way:
@@ -677,9 +678,9 @@ cdef class RigidTransformation:
         -------
         `RigidTransformation`, either a single transformation or a stack of
         transformations.
-            - If rotation is single and translation is shape (3,), then a
-              single transformation is returned.
-            - Otherwise, a stack of transformations is returned.
+            If rotation is single and translation is shape (3,), then a single
+            transformation is returned.
+            Otherwise, a stack of transformations is returned.
 
         Examples
         --------
