@@ -1408,7 +1408,7 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     if circular:
         if fc is None:
             raise ValueError("Cutoff frequency `fc` must be "
-                            "provided when `circular` is True")
+                             "provided when `circular` is True")
         
         n_r = max(hsize[0], hsize[1]) * 8  # oversample 1d window by factor 8
         
