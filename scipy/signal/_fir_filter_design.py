@@ -14,9 +14,10 @@ from scipy.signal._arraytools import _validate_fs
 
 from . import _sigtools
 
-__all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
-           'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
-
+__all__ = [
+    'kaiser_beta', 'kaiser_atten', 'kaiserord', 'firwin', 'firwin2', 'remez',
+    'remezord', 'firls', 'minimum_phase',
+]
 
 # Some notes on function parameters:
 #
@@ -836,6 +837,309 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     bands = np.asarray(bands).copy()
     return _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
                             maxiter, grid_density)
+
+
+def _remlplen_herrmann(fp, fs, dp, ds):
+    """
+    Determine the length of the low pass filter with passband frequency
+    fp, stopband frequency fs, passband ripple dp, and stopband ripple ds.
+    fp and fs must be normalized with respect to the sampling frequency.
+    Note that the filter order is one less than the filter length.
+
+    Uses approximation algorithm described by Herrmann et al.:
+    """
+
+    dF = fs - fp
+    a = [5.309e-3, 7.114e-2, -4.761e-1, -2.66e-3, -5.941e-1, -4.278e-1]
+    b = [11.01217, 0.51244]
+    Dinf = (
+        np.log10(ds) * (a[0] * np.log10(dp) ** 2 + a[1] * np.log10(dp) + a[2])
+        + a[3] * np.log10(dp) ** 2
+        + a[4] * np.log10(dp)
+        + a[5]
+    )
+    f = b[0] + b[1] * (np.log10(dp) - np.log10(ds))
+    N1 = Dinf / dF - f * dF + 1
+
+    # Return the nearest odd integer from N1.
+    return int(N1 - np.mod(N1, 2) + 1)
+
+
+def _remlplen_kaiser(fp, fs, dp, ds):
+    """
+    Determine the length of the low pass filter with passband frequency
+    fp, stopband frequency fs, passband ripple dp, and stopband ripple ds.
+    fp and fs must be normalized with respect to the sampling frequency.
+    Note that the filter order is one less than the filter length.
+
+    Uses approximation algorithm described by Kaiser:
+    """
+
+    dF = fs - fp
+    N2 = (-20 * np.log10(np.sqrt(dp * ds)) - 13.0) / (14.6 * dF) + 1.0
+
+    # Return the smallest odd integer not less than N2.
+    return int((N2+1) - np.mod((N2+1), 2) + 1)
+
+
+def _remlplen_ichige(fp, fs, dp, ds):
+    """
+    Determine the length of the low pass filter with passband frequency
+    fp, stopband frequency fs, passband ripple dp, and stopband ripple ds.
+    fp and fs must be normalized with respect to the sampling frequency.
+    Note that the filter order is one less than the filter length.
+
+    Uses approximation algorithm described by Ichige et al.
+    """
+    dF = fs - fp
+
+    def v(dF, dp):
+        return 2.325 * ((-np.log10(dp)) ** -0.445) * dF ** (-1.39)
+
+    def arctan_g(fp, dF, d):
+        return (2.0 / np.pi) * np.arctan(
+            v(dF, dp) * (1.0 / fp - 1.0 / (0.5 - dF))
+        )
+
+    def arctan_h(fp, dF, c):
+        return (2.0 / np.pi) * np.arctan(
+            (c / dF) * (1.0 / fp - 1.0 / (0.5 - dF))
+        )
+
+    Nc = ceil(1.0 + (1.101 / dF) * (-np.log10(2.0 * dp)) ** 1.1)
+    Nm = (0.52 / dF) * np.log10(dp / ds) * (-np.log10(dp)) ** 0.17
+    N3 = ceil(
+        Nc
+        * (arctan_g(fp, dF, dp) + arctan_g(0.5 - dF - fp, dF, dp) + 1.0)
+        / 3.0
+    )
+    DN = ceil(
+        Nm
+        * (
+            arctan_h(fp, dF, 1.1)
+            - (arctan_h(0.5 - dF - fp, dF, 0.29) - 1.0) / 2.0
+        )
+    )
+    N4 = N3 + DN
+
+    return int(N4)
+
+
+def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
+    """
+    Filter parameter selection for the Remez exchange algorithm.
+
+    Calculate the parameters required by the Remez exchange algorithm to
+    construct a finite impulse response (FIR) filter that approximately meets
+    the specified design.
+
+    Parameters
+    ----------
+    freqs : array_like
+        A monotonic sequence of non-negative band edges in Hertz. All elements
+        must be less than half the sampling frequency `fs`.
+    amps : array_like
+        A sequence containing the desired amplitudes of the signal to be
+        filtered over the corresponding frequency bands in `freqs`.
+    rips : array_like
+        A sequence specifying the maximum allowable ripples of each band in the
+        frequency response.
+    fs : float, optional
+        The sampling frequency of the signal. Defaults to 1.0
+    alg : {'herrmann', 'kaiser', 'ichige'}, optional
+        Filter length approximation algorithm. Possible algorithms are
+        Herrmann [1]_, Kaiser [2]_, or Ichige [3]_. (Default: 'ichige')
+
+    Returns
+    -------
+    numtaps : int
+        The desired number of taps in the FIR filter.
+    bands : ndarray
+        A monotonic sequence containing the band edges.
+    desired : ndarray
+        A sequence half the size of bands containing the desired gain in each
+        of the specified bands.
+    weight : ndarray
+        A relative weighting to give to each band region.
+
+    Raises
+    ------
+    ValueError:
+        - If any element in `freqs` is negative, greater than 0.5, or the
+          length is not valid.
+        - If the lengths of `amps` and `rips` are not equal or one more
+          than half the length of `freqs`.
+        - If any element in `rips` is negative.
+        - If `alg` is not a valid string option.
+
+    See Also
+    --------
+    remez
+
+    Notes
+    -----
+    This function estimates the filter parameters required for designing a
+    FIR filter using the Remez exchange algorithm (Parks-McClellan). Three
+    estimation methods are available: 'herrmann', 'kaiser', and 'ichige'.
+    Accurate filter length estimation is crucial for minimizing computational
+    cost (in software) and circuit complexity (in hardware), where shorter
+    filters translate to reduced cost, size, and power consumption.
+
+    The 'herrmann' and 'kaiser' methods provide relatively simple formulas for
+    estimating filter order. They suffer from several key drawbacks: the
+    original formulations were derived primarily from data for odd-length
+    filters, neglecting even-length filter designs. Furthermore, when these
+    formulas were developed, designing filters with a large number of taps
+    (e.g., greater than 150) was computationally challenging, leading to
+    decreased accuracy for longer filters, which are now commonly feasible.
+
+    The 'ichige' method, introduced by Ichige et al., offers a more accurate
+    estimation, especially for longer filters. Ichige's work addresses the
+    limitations of the earlier methods by providing a refined formula derived
+    from extensive experimental results.
+
+    .. versionadded:: 1.16.0
+
+    References
+    ----------
+    .. [1] O. Herrmann, L.R. Raviner, and D.S.K. Chan, Practical Design Rules
+           for Optimum Finite Impulse Response Low-Pass Digital Filters, Bell
+           Syst. Tech. Jour., 52(6):769-799, Jul./Aug. 1973.
+    .. [2] J.F. Kaiser, Nonrecursive Digital Filter Design Using I_0-sinh
+           Window function, Proc. IEEE Int. Symp. Circuits and Systems, 20-23,
+           April 1974.
+    .. [3] K. Ichige, M. Iwaki, and R. Ishii, Accurate Estimation of Minimum
+           Filter Length for Optimum FIR Digital Filters, IEEE Transactions on
+           Circuits and Systems, 47(10):1008-1017, October 2000.
+
+    Examples
+    --------
+    In these examples, `remezord` is used to design low-pass, and a band-pass
+    filters.
+
+    `freqz` is used to compute the frequency response of each filter, and
+    the utility function ``plot_response`` defined below is used to plot
+    the response.
+
+    Designing a low-pass filter with the following specifications:
+        * 500 Hz passband cutoff frequency
+        * 600 Hz stopband cutoff frequency
+        * 40 dB attenuation
+        * 3 dB maximum passband ripple
+        * 2 kHz sampling frequency
+
+    >>> from scipy.signal import freqz, remez, remezord
+    >>> rp, rs = 3, 40  # Passband ripple, Stopband ripple
+    >>> fs = 2000  # Sampling frequency
+    >>> freqs = [500, 600]  # Band edges
+    >>> amps = [1, 0]  # Amplitudes
+    >>> rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]  # Max ripples
+    ...
+    >>> # Then, generate the filter parameters with `remezord`:
+    ...
+    >>> numtaps, bands, desired, weight = remezord(freqs, amps, rips, fs=fs)
+    >>> numtaps
+    27
+    >>> bands
+    [0, 0.25, 0.3, 0.5]
+    >>> desired
+    [1., 0.]
+    >>> weight
+    [1., 17.09973573]
+
+    The designed filter exhibits the following frequency response
+    characteristics:
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> def plot_response(w, h, title):
+    ...     "Utility function to plot response functions"
+    ...     fig, ax = plt.subplots()
+    ...     ax.plot(w, 20*np.log10(np.abs(h)))
+    ...     ax.set_ylim(-60, 5)
+    ...     ax.grid(True)
+    ...     ax.set_xlabel('Frequency (Hz)')
+    ...     ax.set_ylabel('Gain (dB)')
+    ...     ax.set_title(title)
+    ...
+    >>> taps = remez(numtaps, bands, desired, weight=weight)
+    >>> w, h = freqz(taps, worN=2000, fs=fs)
+    >>> plot_response(w, h, "Remezord Low-pass Filter")
+    >>> plt.show()
+
+    Designing a band-pass filter with the following specifications:
+        * 2-5 kHz passband frequency
+        * 22 kHz sampling frequency
+        * 1e-1 Max ripples
+
+    >>> fs = 22000  # Sampling frequency
+    >>> freqs = [1800, 2000, 5000, 5200]  # Band edges
+    >>> amps = [0, 1, 0]  # Amplitudes
+    >>> rips = [0.1, 0.1, 0.1]  # Max ripples
+    >>> numtaps, bands, desired, weight = remezord(freqs, amps, rips, fs=fs)
+    >>> taps = remez(numtaps, bands, desired, weight=weight)
+    >>> w, h = freqz(taps, worN=2000, fs=fs)
+    >>> plot_response(w, h, "Remezord Band-pass Filter")
+    >>> plt.show()
+
+    """
+    # Make sure the parameters are floating point numpy arrays:
+    freqs = np.asarray(freqs, "d")
+    amps = np.asarray(amps, "d")
+    rips = np.asarray(rips, "d")
+
+    # Validate inputs shapes/types
+    if len(amps) != len(rips):
+        raise ValueError("Number of amplitudes must equal number of ripples.")
+    if len(freqs) != 2 * (len(amps) - 1):
+        raise ValueError("Number of band edges must equal "
+                         "2*((number of amplitudes)-1)")
+    if alg == "herrmann":
+        remlplen = _remlplen_herrmann
+    elif alg == "kaiser":
+        remlplen = _remlplen_kaiser
+    elif alg == "ichige":
+        remlplen = _remlplen_ichige
+    else:
+        raise ValueError(f"Parameter {alg=} not in ['herrmann' ,'kaiser', 'ichige'].")
+
+    # Scale ripples with respect to band amplitudes:
+    rips /= amps + (amps == 0.0)
+    # Normalize input frequencies with respect to sampling frequency:
+    freqs /= fs
+
+    # Validate inputs values
+    if np.any(freqs > 0.5):
+        raise ValueError("Frequency band edges must not exceed the Nyquist "
+                         "frequency.")
+    if np.any(freqs < 0.0):
+        raise ValueError("Frequency band edges must be nonnegative.")
+    if np.any(rips < 0.0):
+        raise ValueError("Ripples must be nonnegative.")
+
+    # Find the longest filter length needed to implement any of the
+    # low-pass or high-pass filters with the specified edges:
+    f1 = freqs[0:-1:2]
+    f2 = freqs[1::2]
+    L = 0
+    for i in range(len(amps) - 1):
+        L = max(
+            (
+                L,
+                remlplen(f1[i], f2[i], rips[i], rips[i + 1]),
+                remlplen(0.5 - f2[i], 0.5 - f1[i], rips[i + 1], rips[i]),
+            )
+        )
+
+    # Cap the sequence of band edges with the limits of the digital frequency
+    # range:
+    bands = np.hstack((0.0, freqs, 0.5))
+
+    # The filter design weights correspond to the ratios between the maximum
+    # ripple and all of the other ripples:
+    weight = max(rips) / rips
+
+    return L, bands, amps, weight
 
 
 def firls(numtaps, bands, desired, *, weight=None, fs=None):
