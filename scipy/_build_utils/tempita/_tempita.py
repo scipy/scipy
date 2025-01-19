@@ -64,9 +64,10 @@ class TemplateError(Exception):
     def __str__(self):
         msg = ' '.join(self.args)
         if self.position:
-            msg = '{} at line {} column {}'.format(msg, self.position[0], self.position[1])
+            msg = '%s at line %s column %s' % (
+                msg, self.position[0], self.position[1])
         if self.name:
-            msg += ' in {}'.format(self.name)
+            msg += ' in %s' % self.name
         return msg
 
 
@@ -140,7 +141,7 @@ class Template:
                 else:
                     name = '<string>'
                 if lineno:
-                    name += ':{}'.format(lineno)
+                    name += ':%s' % lineno
         self.name = name
         self._parsed = parse(content, name=name, line_offset=line_offset, delimiters=self.delimiters)
         if namespace is None:
@@ -162,7 +163,9 @@ class Template:
     from_filename = classmethod(from_filename)
 
     def __repr__(self):
-        return '<{} {} name={!r}>'.format(self.__class__.__name__, hex(id(self))[2:], self.name)
+        return '<%s %s name=%r>' % (
+            self.__class__.__name__,
+            hex(id(self))[2:], self.name)
 
     def substitute(self, *args, **kw):
         if args:
@@ -174,8 +177,8 @@ class Template:
                     "You can only give one positional argument")
             if not hasattr(args[0], 'items'):
                 raise TypeError(
-                    "If you pass in a single argument, you must pass in a dictionary-like object (with a .items() method); you gave {!r}".format(args[0])
-                )
+                    "If you pass in a single argument, you must pass in a dictionary-like object (with a .items() method); you gave %r"
+                    % (args[0],))
             kw = args[0]
         ns = kw
         ns['__template_name__'] = self.name
@@ -263,7 +266,7 @@ class Template:
         elif name == 'comment':
             return
         else:
-            assert 0, "Unknown code: {!r}".format(name)
+            assert 0, "Unknown code: %r" % name
 
     def _interpret_for(self, vars, expr, content, ns, out, defs):
         __traceback_hide__ = True
@@ -273,8 +276,8 @@ class Template:
             else:
                 if len(vars) != len(item):
                     raise ValueError(
-                        'Need {} items to unpack (got {} items)'.format(len(vars), len(item))
-                    )
+                        'Need %i items to unpack (got %i items)'
+                        % (len(vars), len(item)))
                 for name, value in zip(vars, item):
                     ns[name] = value
             try:
@@ -305,8 +308,7 @@ class Template:
                 value = eval(code, self.default_namespace, ns)
             except SyntaxError as e:
                 raise SyntaxError(
-                    'invalid syntax in expression: {}'.format(code)
-                )
+                    'invalid syntax in expression: %s' % code)
             return value
         except Exception as e:
             if getattr(e, 'args', None):
@@ -350,8 +352,8 @@ class Template:
             if self._unicode and isinstance(value, bytes):
                 if not self.default_encoding:
                     raise UnicodeDecodeError(
-                        'Cannot decode bytes value {!r} into unicode (no default_encoding provided)'.format(value)
-                    )
+                        'Cannot decode bytes value %r into unicode '
+                        '(no default_encoding provided)' % value)
                 try:
                     value = value.decode(self.default_encoding)
                 except UnicodeDecodeError as e:
@@ -360,19 +362,20 @@ class Template:
                         e.object,
                         e.start,
                         e.end,
-                        e.reason + ' in string {!r}'.format(value))
+                        e.reason + ' in string %r' % value)
             elif not self._unicode and isinstance(value, str):
                 if not self.default_encoding:
                     raise UnicodeEncodeError(
-                        f"Cannot encode unicode value {value!r} into bytes (no default_encoding provided)"
-                    )
+                        'Cannot encode unicode value %r into bytes '
+                        '(no default_encoding provided)' % value)
                 value = value.encode(self.default_encoding)
             return value
 
     def _add_line_info(self, msg, pos):
-        msg = "{} at line {} column {}".format(msg, pos[0], pos[1])
+        msg = "%s at line %s column %s" % (
+            msg, pos[0], pos[1])
         if self.name:
-            msg += " in file {}".format(self.name)
+            msg += " in file %s" % self.name
         return msg
 
 
@@ -413,7 +416,10 @@ class bunch(dict):
             return dict.__getitem__(self, key)
 
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__, ' '.join(['{}={!r}'.format(k, v) for k, v in sorted(self.items())]))
+        return '<%s %s>' % (
+            self.__class__.__name__,
+            ' '.join(['%s=%r' % (k, v) for k, v in sorted(self.items())]))
+
 
 class TemplateDef:
     def __init__(self, template, func_name, func_signature,
@@ -427,7 +433,9 @@ class TemplateDef:
         self._bound_self = bound_self
 
     def __repr__(self):
-        return '<tempita function {}({}) at {}:{}>'.format(self._func_name, self._func_signature, self._template.name, self._pos)
+        return '<tempita function %s(%s) at %s:%s>' % (
+            self._func_name, self._func_signature,
+            self._template.name, self._pos)
 
     def __str__(self):
         return self()
@@ -456,7 +464,8 @@ class TemplateDef:
         extra_kw = {}
         for name, value in kw.items():
             if not var_kw and name not in sig_args:
-                raise TypeError('Unexpected argument {}'.format(name))
+                raise TypeError(
+                    'Unexpected argument %s' % name)
             if name in sig_args:
                 values[sig_args] = value
             else:
@@ -473,14 +482,17 @@ class TemplateDef:
                 values[var_args] = tuple(args)
                 break
             else:
-                raise TypeError('Extra position arguments: {}'.format(', '.join([repr(v) for v in args])))
+                raise TypeError(
+                    'Extra position arguments: %s'
+                    % ', '.join([repr(v) for v in args]))
         for name, value_expr in defaults.items():
             if name not in values:
                 values[name] = self._template._eval(
                     value_expr, self._ns, self._pos)
         for name in sig_args:
             if name not in values:
-                raise TypeError('Missing argument: {}'.format(name))
+                raise TypeError(
+                    'Missing argument: %s' % name)
         if var_kw:
             values[var_kw] = extra_kw
         return values
@@ -493,7 +505,8 @@ class TemplateObject:
         self.get = TemplateObjectGetter(self)
 
     def __repr__(self):
-        return '<{} {}>'.format(self.__class__.__name__, self.__name)
+        return '<%s %s>' % (self.__class__.__name__, self.__name)
+
 
 class TemplateObjectGetter:
 
@@ -504,7 +517,8 @@ class TemplateObjectGetter:
         return getattr(self.__template_obj, attr, Empty)
 
     def __repr__(self):
-        return '<{} around {!r}>'.format(self.__class__.__name__, self.__template_obj)
+        return '<%s around %r>' % (self.__class__.__name__, self.__template_obj)
+
 
 class _Empty:
     def __call__(self, *args, **kw):
@@ -563,14 +577,19 @@ def lex(s, name=None, trim_whitespace=True, line_offset=0, delimiters=None):
     last = 0
     last_pos = (line_offset + 1, 1)
 
-    token_re = re.compile(r'{}|{}'.format(re.escape(delimiters[0]), re.escape(delimiters[1])))
+    token_re = re.compile(r'%s|%s' % (re.escape(delimiters[0]),
+                                      re.escape(delimiters[1])))
     for match in token_re.finditer(s):
         expr = match.group(0)
         pos = find_position(s, match.end(), last, last_pos)
         if expr == delimiters[0] and in_expr:
-            raise TemplateError('{} inside expression'.format(delimiters[0]), position=pos, name=name)
+            raise TemplateError('%s inside expression' % delimiters[0],
+                                position=pos,
+                                name=name)
         elif expr == delimiters[1] and not in_expr:
-            raise TemplateError('{} outside expression'.format(delimiters[1]), position=pos, name=name)
+            raise TemplateError('%s outside expression' % delimiters[1],
+                                position=pos,
+                                name=name)
         if expr == delimiters[0]:
             part = s[last:match.start()]
             if part:
@@ -582,7 +601,8 @@ def lex(s, name=None, trim_whitespace=True, line_offset=0, delimiters=None):
         last = match.end()
         last_pos = pos
     if in_expr:
-        raise TemplateError('No {} to finish last expression'.format(delimiters[1]), name=name, position=last_pos)
+        raise TemplateError('No %s to finish last expression' % delimiters[1],
+                            name=name, position=last_pos)
     part = s[last:]
     if part:
         chunks.append(part)
@@ -754,11 +774,17 @@ def parse_expr(tokens, name, context=()):
         return parse_cond(tokens, name, context)
     elif (expr.startswith('elif ')
           or expr == 'else'):
-        raise TemplateError('{} outside of an if block'.format(expr.split()[0]), position=pos, name=name)
+        raise TemplateError(
+            '%s outside of an if block' % expr.split()[0],
+            position=pos, name=name)
     elif expr in ('if', 'elif', 'for'):
-        raise TemplateError('{} with no expression'.format(expr), position=pos, name=name)
+        raise TemplateError(
+            '%s with no expression' % expr,
+            position=pos, name=name)
     elif expr in ('endif', 'endfor', 'enddef'):
-        raise TemplateError('Unexpected {}'.format(expr), position=pos, name=name)
+        raise TemplateError(
+            'Unexpected %s' % expr,
+            position=pos, name=name)
     elif expr.startswith('for '):
         return parse_for(tokens, name, context)
     elif expr.startswith('default '):
@@ -800,7 +826,7 @@ def parse_one_cond(tokens, name, context):
     elif first == 'else':
         part = ('else', pos, None, content)
     else:
-        assert 0, "Unexpected token {!r} at {}".format(first, pos)
+        assert 0, "Unexpected token %r at %s" % (first, pos)
     while 1:
         if not tokens:
             raise TemplateError(
@@ -826,10 +852,14 @@ def parse_for(tokens, name, context):
     first = first[3:].strip()
     match = in_re.search(first)
     if not match:
-        raise TemplateError('Bad for (no "in") in {!r}'.format(first), position=pos, name=name)
+        raise TemplateError(
+            'Bad for (no "in") in %r' % first,
+            position=pos, name=name)
     vars = first[:match.start()]
     if '(' in vars:
-        raise TemplateError('You cannot have () in the variable section of a for loop ({!r})'.format(vars), position=pos, name=name)
+        raise TemplateError(
+            'You cannot have () in the variable section of a for loop (%r)'
+            % vars, position=pos, name=name)
     vars = tuple([
         v.strip() for v in first[:match.start()].split(',')
         if v.strip()])
@@ -852,14 +882,18 @@ def parse_default(tokens, name, context):
     first = first.split(None, 1)[1]
     parts = first.split('=', 1)
     if len(parts) == 1:
-        raise TemplateError("Expression must be {{default var=value}}; no = found in {!r}".format(first), position=pos, name=name)
+        raise TemplateError(
+            "Expression must be {{default var=value}}; no = found in %r" % first,
+            position=pos, name=name)
     var = parts[0].strip()
     if ',' in var:
         raise TemplateError(
             "{{default x, y = ...}} is not supported",
             position=pos, name=name)
     if not var_re.search(var):
-        raise TemplateError("Not a valid variable name for {{default}}: {!r}".format(var), position=pos, name=name)
+        raise TemplateError(
+            "Not a valid variable name for {{default}}: %r"
+            % var, position=pos, name=name)
     expr = parts[1].strip()
     return ('default', pos, var, expr), tokens[1:]
 
@@ -882,7 +916,8 @@ def parse_def(tokens, name, context):
         func_name = first
         sig = ((), None, None, {})
     elif not first.endswith(')'):
-        raise TemplateError("Function definition doesn't end with ): {}".format(first), position=start, name=name)
+        raise TemplateError("Function definition doesn't end with ): %s" % first,
+                            position=start, name=name)
     else:
         first = first[:-1]
         func_name, sig_text = first.split('(', 1)
@@ -926,7 +961,8 @@ def parse_signature(sig_text, name, pos):
             var_arg_type = tok_string
             tok_type, tok_string = get_token()
         if tok_type != tokenize.NAME:
-            raise TemplateError('Invalid signature: ({})'.format(sig_text), position=pos, name=name)
+            raise TemplateError('Invalid signature: (%s)' % sig_text,
+                                position=pos, name=name)
         var_name = tok_string
         tok_type, tok_string = get_token()
         if tok_type == tokenize.ENDMARKER or (tok_type == tokenize.OP and tok_string == ','):
@@ -940,7 +976,8 @@ def parse_signature(sig_text, name, pos):
                 break
             continue
         if var_arg_type is not None:
-            raise TemplateError('Invalid signature: ({})'.format(sig_text), position=pos, name=name)
+            raise TemplateError('Invalid signature: (%s)' % sig_text,
+                                position=pos, name=name)
         if tok_type == tokenize.OP and tok_string == '=':
             nest_type = None
             unnest_type = None
@@ -953,7 +990,8 @@ def parse_signature(sig_text, name, pos):
                     start_pos = s
                 end_pos = e
                 if tok_type == tokenize.ENDMARKER and nest_count:
-                    raise TemplateError('Invalid signature: ({})'.format(sig_text), position=pos, name=name)
+                    raise TemplateError('Invalid signature: (%s)' % sig_text,
+                                        position=pos, name=name)
                 if (not nest_count and
                         (tok_type == tokenize.ENDMARKER or (tok_type == tokenize.OP and tok_string == ','))):
                     default_expr = isolate_expression(sig_text, start_pos, end_pos)
@@ -1029,7 +1067,7 @@ def fill_command(args=None):
         vars.update(os.environ)
     for value in args:
         if '=' not in value:
-            print('Bad argument: {!r}'.format(value))
+            print('Bad argument: %r' % value)
             sys.exit(2)
         name, value = value.split('=', 1)
         if name.startswith('py:'):
