@@ -696,6 +696,12 @@ def test_input_validation():
         matrix[3, :] = [1, 0, 0, 1]
         RigidTransformation.from_matrix(matrix)
 
+    # Test invalid last row for multiple transformations
+    with pytest.raises(ValueError, match="Expected last row.*to be"):
+        matrix = np.array([np.eye(4)] * 2)
+        matrix[1, 3, :] = [1, 0, 0, 1]
+        RigidTransformation.from_matrix(matrix)
+
     # Test non-rotation matrix
     with pytest.raises(ValueError,
                        match="matrix 0 be orthonormal:"):
@@ -705,7 +711,7 @@ def test_input_validation():
 
     # Test left handed rotation matrix
     with pytest.raises(ValueError,
-                       match="Non-positive determinant in rotation component"):
+                       match="Non-positive determinant"):
         matrix = np.eye(4)
         matrix[0, 0] = -1
         RigidTransformation(matrix, normalize=True)

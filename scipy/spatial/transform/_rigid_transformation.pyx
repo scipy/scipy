@@ -379,8 +379,9 @@ cdef class RigidTransformation:
         # where R is a 3x3 orthonormal rotation matrix and d is a 3x1 translation
         # vector. The last row is always [0, 0, 0, 1] exactly
 
-        # Check the last row
-        last_row_ok = np.all(np.isclose(matrix[:, 3, :], [0, 0, 0, 1]), axis=1)
+        # Check the last row. Exact match is required, as this last row should
+        # not accumulate floating point error during composition.
+        last_row_ok = np.all(matrix[:, 3, :] == np.array([0, 0, 0, 1]), axis=1)
 
         # Check the determinant of the rotation matrix
         # (should be positive for right-handed rotations)
@@ -394,14 +395,15 @@ cdef class RigidTransformation:
         for ind in range(num_transformations):
             if not last_row_ok[ind]:
                 raise ValueError(f"Expected last row of transformation matrix {ind} to be "
-                                 f"[0, 0, 0, 1], got {matrix[ind, 3, :]}.")
+                                 f"exactly [0, 0, 0, 1], got {matrix[ind, 3, :]}.")
 
             # Check that the rotation matrix is orthonormal
             if not np.isclose(dets[ind], 1) or not orthonormal_ok[ind]:
                 if normalize:
                     if dets[ind] <= 0:
-                        raise ValueError("Non-positive determinant in rotation component of "
-                                         f"matrix {ind}: {matrix[ind]}.")
+                        raise ValueError("Non-positive determinant (left-handed or null "
+                                         f"coordinate frame) in rotation component of "
+                                         f"transformation matrix {ind}: {matrix[ind]}.")
                     else:
                         # Orthonormalize the rotation matrix
                         U, _, Vt = np.linalg.svd(matrix[ind, :3, :3])
