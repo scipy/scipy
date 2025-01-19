@@ -2162,7 +2162,7 @@ def bilinear(b, a, fs=1.0):
         Coefficients of the denominator polynomial of the analog transfer function in
         form of a complex- or real-valued 1d array.
     fs : float
-        Sample rate, as ordinary frequency (e.g., Hertz). No pre-warping is
+        Sample rate, as ordinary frequency (e.g., hertz). No pre-warping is
         done in this function.
 
     Returns
@@ -2203,7 +2203,7 @@ def bilinear(b, a, fs=1.0):
                        a_1 \left(\kappa \frac{z-1}{z+1}\right)^{P-1} +
                        \cdots + a_P}\ .
 
-    This expression can be simplified by multiplying numerator and denominatory by
+    This expression can be simplified by multiplying numerator and denominator by
     :math:`(z+1)^N`, with :math:`N=\max(P, Q)`. This allows :math:`H_d(z)` to be
     reformulated as
 
