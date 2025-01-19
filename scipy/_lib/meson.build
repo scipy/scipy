@@ -122,6 +122,7 @@ python_sources = [
   '_elementwise_iterative_method.py',
   '_finite_differences.py',
   '_gcutils.py',
+  '_lazy_testing.py',
   '_pep440.py',
   '_testutils.py',
   '_threadsafety.py',
@@ -219,11 +220,22 @@ py3.install_sources(
 
 py3.install_sources(
   [
+    'array_api_extra/src/array_api_extra/_lib/_utils/__init__.py',
+    'array_api_extra/src/array_api_extra/_lib/_utils/_compat.py',
+    'array_api_extra/src/array_api_extra/_lib/_utils/_compat.pyi',    
+    'array_api_extra/src/array_api_extra/_lib/_utils/_helpers.py',
+    'array_api_extra/src/array_api_extra/_lib/_utils/_typing.py',
+
+  ],
+  subdir: 'scipy/_lib/array_api_extra/_lib/_utils',
+)
+
+py3.install_sources(
+  [
     'array_api_extra/src/array_api_extra/_lib/__init__.py',
-    'array_api_extra/src/array_api_extra/_lib/_compat.py',
-    'array_api_extra/src/array_api_extra/_lib/_compat.pyi',    
-    'array_api_extra/src/array_api_extra/_lib/_utils.py',
-    'array_api_extra/src/array_api_extra/_lib/_typing.py',
+    'array_api_extra/src/array_api_extra/_lib/_backends.py',
+    'array_api_extra/src/array_api_extra/_lib/_funcs.py',    
+    'array_api_extra/src/array_api_extra/_lib/_testing.py',
   ],
   subdir: 'scipy/_lib/array_api_extra/_lib',
 )
@@ -231,7 +243,7 @@ py3.install_sources(
 py3.install_sources(
   [
     'array_api_extra/src/array_api_extra/__init__.py',
-    'array_api_extra/src/array_api_extra/_funcs.py',
+    'array_api_extra/src/array_api_extra/_delegation.py',
   ],
   subdir: 'scipy/_lib/array_api_extra',
 )

@@ -502,25 +502,33 @@ class BSpline:
         # [self.t[k], self.t[n]].
         if extrapolate == 'periodic':
             n = self.t.size - self.k - 1
-            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] -
-                                                         self.t[self.k])
+            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] - self.t[self.k])
             extrapolate = False
 
-        out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
 
-        # if self.c is complex, so is `out`; cython code in _bspl.pyx expectes
-        # floats though, so make a view---this expands the last axis, and
+        # if self.c is complex: the C code in _dierckxmodule.cc expects
+        # floats, so make a view---this expands the last axis, and
         # the view is C contiguous if the original is.
         # if c.dtype is complex of shape (n,), c.view(float).shape == (2*n,)
         # if c.dtype is complex of shape (n, m), c.view(float).shape == (n, 2*m)
 
-        cc = self.c.view(float)
-        if self.c.ndim == 1 and self.c.dtype.kind == 'c':
-            cc = cc.reshape(self.c.shape[0], 2)
+        is_complex = self.c.dtype.kind == 'c'
+        if is_complex:
+            cc = self.c.view(float)
+            if self.c.ndim == 1:
+                cc = cc.reshape(self.c.shape[0], 2)
+        else:
+            cc = self.c
 
-        _dierckx.evaluate_spline(self.t, cc.reshape(cc.shape[0], -1),
-                              self.k, x, nu, extrapolate, out.view(float))
+        # flatten the trailing dims
+        cc = cc.reshape(cc.shape[0], -1)
+
+        # heavy lifting: actually perform the evaluations
+        out = _dierckx.evaluate_spline(self.t, cc, self.k, x, nu, extrapolate)
+
+        if is_complex:
+            out = out.view(complex)
 
         out = out.reshape(x_shape + self.c.shape[1:])
         if self.axis != 0:
@@ -681,8 +689,6 @@ class BSpline:
                 integral = _fitpack_impl.splint(a, b, self.tck)
                 return np.asarray(integral * sign)
 
-        out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
-
         # Compute the antiderivative.
         c = self.c
         ct = len(self.t) - len(c)
@@ -702,8 +708,8 @@ class BSpline:
             if n_periods > 0:
                 # Evaluate the difference of antiderivatives.
                 x = np.asarray([ts, te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral = out[1] - out[0]
                 integral *= n_periods
             else:
@@ -718,24 +724,24 @@ class BSpline:
             # over [a, te] and from xs to what is remained.
             if b <= te:
                 x = np.asarray([a, b], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
             else:
                 x = np.asarray([a, te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
 
                 x = np.asarray([ts, ts + b - te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
         else:
             # Evaluate the difference of antiderivatives.
             x = np.asarray([a, b], dtype=np.float64)
-            _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                  ka, x, 0, extrapolate, out)
+            out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                  ka, x, 0, extrapolate)
             integral = out[1] - out[0]
 
         integral *= sign
@@ -1822,8 +1828,9 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
         # have observation matrix & rhs, can solve the LSQ problem
         cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
                                      check_finite=check_finite)
-        c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
-                             check_finite=check_finite)
+        m = rhs.shape[0]
+        c = cho_solve_banded((cho_decomp, lower), rhs.reshape(m, -1), overwrite_b=True,
+                             check_finite=check_finite).reshape(rhs.shape)
     elif method == "qr":
         _, _, c = _lsq_solve_qr(x, yy, t, k, w)
 

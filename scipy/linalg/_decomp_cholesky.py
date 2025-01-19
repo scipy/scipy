@@ -4,6 +4,7 @@ import numpy as np
 from numpy import asarray_chkfinite, asarray, atleast_2d, empty_like
 
 # Local imports
+from scipy._lib._util import _apply_over_batch
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
@@ -45,6 +46,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     return c, lower
 
 
+@_apply_over_batch(('a', 2))
 def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix.
@@ -105,6 +107,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     return c
 
 
+@_apply_over_batch(("a", 2))
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix, to use in cho_solve
@@ -217,7 +220,12 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     True
 
     """
-    (c, lower) = c_and_lower
+    c, lower = c_and_lower
+    return _cho_solve(c, b, lower, overwrite_b=overwrite_b, check_finite=check_finite)
+
+
+@_apply_over_batch(('c', 2), ('b', '1|2'))
+def _cho_solve(c, b, lower, overwrite_b, check_finite):
     if check_finite:
         b1 = asarray_chkfinite(b)
         c = asarray_chkfinite(c)
@@ -245,6 +253,7 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     return x
 
 
+@_apply_over_batch(("ab", 2))
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     """
     Cholesky decompose a banded Hermitian positive-definite matrix
@@ -371,6 +380,12 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
 
     """
     (cb, lower) = cb_and_lower
+    return _cho_solve_banded(cb, b, lower, overwrite_b=overwrite_b,
+                             check_finite=check_finite)
+
+
+@_apply_over_batch(('cb', 2), ('b', '1|2'))
+def _cho_solve_banded(cb, b, lower, overwrite_b, check_finite):
     if check_finite:
         cb = asarray_chkfinite(cb)
         b = asarray_chkfinite(b)

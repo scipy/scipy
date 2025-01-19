@@ -167,9 +167,13 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate the first four moments:
+Get the support:
 
 %(set_vals_stmt)s
+>>> lb, ub = %(name)s.support(%(shapes)s)
+
+Calculate the first four moments:
+
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability density function (``pdf``):
@@ -298,9 +302,13 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate the first four moments:
+Get the support:
 
 %(set_vals_stmt)s
+>>> lb, ub = %(name)s.support(%(shapes)s)
+
+Calculate the first four moments:
+
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability mass function (``pmf``):
@@ -1688,6 +1696,14 @@ class rv_continuous(rv_generic):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
+    Attributes
+    ----------
+    a, b : float, optional
+        Lower/upper bound of the support of the unshifted/unscaled distribution.
+        This value is unaffected by the `loc` and `scale` parameters.
+        To calculate the support of the shifted/scaled distribution,
+        use the `support` method.
 
     Methods
     -------
@@ -3185,6 +3201,14 @@ class rv_discrete(rv_generic):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
+    Attributes
+    ----------
+    a, b : float, optional
+        Lower/upper bound of the support of the unshifted/unscaled distribution.
+        This value is unaffected by the `loc` and `scale` parameters.
+        To calculate the support of the shifted/scaled distribution,
+        use the `support` method.
 
     Methods
     -------

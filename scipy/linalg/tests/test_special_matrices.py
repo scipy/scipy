@@ -172,9 +172,6 @@ class TestBlockDiag:
         a = block_diag([2, 3], 4)
         assert_array_equal(a, [[2, 3, 0], [0, 0, 4]])
 
-    def test_bad_arg(self):
-        assert_raises(ValueError, block_diag, [[[1]]])
-
     def test_no_args(self):
         a = block_diag()
         assert_equal(a.ndim, 2)

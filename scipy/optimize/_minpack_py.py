@@ -799,6 +799,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     'dogbox' methods, the `x_scale` keyword argument can be used to scale
     the parameters.
 
+    `curve_fit` is for local optimization of parameters to minimize the sum of squares
+    of residuals. For global optimization, other choices of objective function, and
+    other advanced features, consider using SciPy's :ref:`tutorial_optimize_global`
+    tools or the `LMFIT <https://lmfit.github.io/lmfit-py/index.html>`_ package.
+
     References
     ----------
     .. [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
@@ -946,14 +951,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     # the x-y data are already checked, and they don't contain nans.
     if not check_finite and nan_policy is not None:
         if nan_policy == "propagate":
-            raise ValueError("`nan_policy='propagate'` is not supported "
-                             "by this function.")
+            msg = "`nan_policy='propagate'` is not supported by this function."
+            raise ValueError(msg)
+        if nan_policy not in ("raise", "omit"):
+            # Override error message raised by _contains_nan
+            msg = "nan_policy must be one of {None, 'raise', 'omit'}"
+            raise ValueError(msg)
 
-        policies = [None, 'raise', 'omit']
-        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
-                                                   policies=policies)
-        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
-                                                   policies=policies)
+        x_contains_nan = _contains_nan(xdata, nan_policy)
+        y_contains_nan = _contains_nan(ydata, nan_policy)
 
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays

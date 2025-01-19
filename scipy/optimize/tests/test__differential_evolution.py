@@ -1070,7 +1070,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
         # now repeat the same solve, using the same overall constraints,
-        # but using a sparse matrix for the LinearConstraint instead of an
+        # but using a sparse array for the LinearConstraint instead of an
         # array
 
         L = LinearConstraint(csr_array(A), -np.inf, b)

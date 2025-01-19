@@ -33,18 +33,11 @@ from scipy._lib._util import ComplexWarning
 
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
-    array_namespace,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy, xp_size,
+    xp_copy, xp_size, xp_default_dtype
 )
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [
-    array_api_compatible,
-    pytest.mark.usefixtures("skip_xp_backends"),
-    pytest.mark.usefixtures("xfail_xp_backends"),
-]
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -80,11 +73,19 @@ class TestConvolve:
         z = convolve(x, y)
         xp_assert_equal(z, xp.asarray([2j, 2 + 6j, 5 + 8j, 5 + 5j]))
 
+    @xfail_xp_backends("jax.numpy", reason="wrong output dtype")
     def test_zero_rank(self, xp):
+        a = xp.asarray(1289)
+        b = xp.asarray(4567)
+        c = convolve(a, b)
+        xp_assert_equal(c, a * b)
+
+    @skip_xp_backends(np_only=True, reason="pure python")
+    def test_zero_rank_python_scalars(self, xp):
         a = 1289
         b = 4567
         c = convolve(a, b)
-        xp_assert_equal(c, a * b)
+        assert c == a * b
 
     def test_broadcastable(self, xp):
         a = xp.reshape(xp.arange(27), (3, 3, 3))
@@ -97,9 +98,10 @@ class TestConvolve:
             y = convolve(a, xp.reshape(b, b_shape), method='fft')
             xp_assert_close(x, y, atol=1e-14)
 
+    @xfail_xp_backends("jax.numpy", reason="wrong output dtype")
     def test_single_element(self, xp):
-        a = np.array([4967])
-        b = np.array([3920])
+        a = xp.asarray([4967])
+        b = xp.asarray([3920])
         c = convolve(a, b)
         xp_assert_equal(c, a * b)
 
@@ -814,11 +816,15 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'valid', axes=1)
         xp_assert_close(out, expected, atol=1.5e-6)
 
-    def test_empty(self, xp):
+    @xfail_xp_backends("cupy", reason="dtypes do not match")
+    @xfail_xp_backends("jax.numpy", reason="assorted error messages")
+    @pytest.mark.parametrize("a,b", [([], []), ([5, 6], []), ([], [7])])
+    def test_empty(self, a, b, xp):
         # Regression test for #1745: crashes with 0-length input.
-        assert fftconvolve([], []).size == 0
-        assert fftconvolve([5, 6], []).size == 0
-        assert fftconvolve([], [7]).size == 0
+        xp_assert_equal(
+            fftconvolve(xp.asarray(a), xp.asarray(b)),
+            xp.asarray([]),
+        )
 
     @skip_xp_backends("jax.numpy", reason="jnp.pad: pad_width with nd=0")
     def test_zero_rank(self, xp):
@@ -958,12 +964,11 @@ def gen_oa_shapes_eq(sizes):
             if a >= b]
 
 
-@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 @skip_xp_backends("jax.numpy", reason="fails all around")
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
-                             gen_oa_shapes_eq(list(range(100)) +
+                             gen_oa_shapes_eq(list(range(1, 100, 1)) +
                                               list(range(100, 1000, 23)))
                              )
     def test_real_manylens(self, shape_a_0, shape_b_0, xp):
@@ -1092,12 +1097,14 @@ class TestOAConvolve:
 
         assert_array_almost_equal(out, expected)
 
-    @skip_xp_backends(np_only=True)
-    def test_empty(self, xp):
+    @xfail_xp_backends("torch", reason="ValueError: Target length must be positive")
+    @pytest.mark.parametrize("a,b", [([], []), ([5, 6], []), ([], [7])])
+    def test_empty(self, a, b, xp):
         # Regression test for #1745: crashes with 0-length input.
-        assert oaconvolve([], []).size == 0
-        assert oaconvolve([5, 6], []).size == 0
-        assert oaconvolve([], [7]).size == 0
+        xp_assert_equal(
+            oaconvolve(xp.asarray(a), xp.asarray(b)),
+            xp.asarray([]), check_dtype=False
+        )
 
     def test_zero_rank(self, xp):
         a = xp.asarray(4967)
@@ -1106,8 +1113,8 @@ class TestOAConvolve:
         xp_assert_equal(out, a * b)
 
     def test_single_element(self, xp):
-        a = np.asarray([4967])
-        b = np.asarray([3920])
+        a = xp.asarray([4967])
+        b = xp.asarray([3920])
         out = oaconvolve(a, b)
         xp_assert_equal(out, a * b)
 
@@ -1570,7 +1577,7 @@ class TestResample:
                     xp_assert_close(y_g[::down], y_s)
 
     @pytest.mark.parametrize('dtype', [np.int32, np.float32])
-    def test_gh_15620(self, dtype):
+    def test_gh_15620(self, dtype, xp):
         data = np.array([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
         actual = signal.resample_poly(data,
                                       up=2,
@@ -1612,11 +1619,13 @@ class TestCSpline1DEval:
         assert ynew.dtype == y.dtype
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestOrderFilt:
 
     def test_basic(self, xp):
-        xp_assert_equal(signal.order_filter([1, 2, 3], [1, 0, 1], 1),
-                           [2, 3, 2])
+        actual = signal.order_filter(xp.asarray([1, 2, 3]), xp.asarray([1, 0, 1]), 1)
+        expect = xp.asarray([2, 3, 2])
+        xp_assert_equal(actual, expect)
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -2216,8 +2225,7 @@ class _TestCorrelateReal:
         # See gh-5897
         y = correlate(b, a, 'valid')
         if  y_r.dtype != object:
-            flip = array_namespace(y_r).flip
-            _assert_almost_equal(y, flip(y_r[1:4]))
+            _assert_almost_equal(y, xp.flip(y_r[1:4]))
         else:
             _assert_almost_equal(y, y_r[1:4][::-1])
         assert y.dtype == dt
@@ -2467,8 +2475,7 @@ class TestCorrelateComplex:
 
         # See gh-5897
         y = correlate(b, a, 'valid')
-        flip = array_namespace(y_r).flip
-        assert_array_almost_equal(y, xp.conj(flip(y_r)),
+        assert_array_almost_equal(y, xp.conj(xp.flip(y_r)),
                                   decimal=self.decimal(dt, xp))
         assert y.dtype == dt
 
@@ -2559,13 +2566,13 @@ class TestCorrelate2d:
             a_xp, b_xp = xp.asarray(a), xp.asarray(b)
             np_corr_result = np.correlate(a, b, mode=mode)
             assert_almost_equal(signal.correlate(a_xp, b_xp, mode=mode),
-                                xp.asarray(np_corr_result), check_namespace=False)
+                                xp.asarray(np_corr_result))
 
             # See gh-5897
             if mode == 'valid':
                 np_corr_result = np.correlate(b, a, mode=mode)
                 assert_almost_equal(signal.correlate(b_xp, a_xp, mode=mode),
-                                    xp.asarray(np_corr_result), check_namespace=False)
+                                    xp.asarray(np_corr_result))
 
     @skip_xp_backends(np_only=True)  # XXX
     def test_consistency_correlate_funcs_2(self, xp):
@@ -3160,9 +3167,7 @@ class TestHilbert:
         h = hilbert(a)
         h_abs = xp.abs(h)
 
-        atan2 = array_namespace(h).atan2
-
-        h_angle = atan2(xp.imag(h), xp.real(h)) #  np.angle(h)
+        h_angle = xp.atan2(xp.imag(h), xp.real(h)) #  np.angle(h)
         h_real = xp.real(h)
 
         # The real part should be equal to the original signals:
@@ -3406,7 +3411,7 @@ class TestEnvelope:
         self.assert_close(Zr, np.array(Zr_desired).astype(complex),
                           msg="Residual calculation error")
 
-    def test_envelope_verify_axis_parameter(self):
+    def test_envelope_verify_axis_parameter(self, xp):
         """Test for multi-channel envelope calculations. """
         z = sp_fft.irfft([[1, 0, 2, 2, 0], [7, 0, 4, 4, 0]])
         Ze2_desired = np.array([[4, 2, 0, 0, 0], [16, 8, 0, 0, 0]],
@@ -3488,7 +3493,7 @@ class TestPartialFractionExpansion:
         xp_assert_close(unique, [1.0, 2.0, 3.0])
         xp_assert_close(multiplicity, [3, 2, 1])
 
-    def test_residue_general(self):
+    def test_residue_general(self, xp):
         # Test are taken from issue #4464, note that poles in scipy are
         # in increasing by absolute value order, opposite to MATLAB.
         r, p, k = residue([5, 3, -2, 7], [-4, 0, 8, 3])
@@ -4029,8 +4034,7 @@ class TestSOSFilt:
         a = xp.asarray([1.0, 0, 0])
         x = xp.ones(8)
 
-        concat = array_namespace(b, a).concat
-        sos = concat((b, a))
+        sos = xp.concat((b, a))
         sos = xp.reshape(sos, (1, 6))
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
@@ -4100,15 +4104,14 @@ class TestSOSFilt:
         x = xp.asarray(x)
 
         dt = getattr(xp, dt)
-        concat = array_namespace(x).concat
 
         # Stopping filtering and continuing
         y_true, zi = lfilter(b, a, x[:20], zi=xp.zeros(6))
-        y_true = concat((y_true, lfilter(b, a, x[20:], zi=zi)[0]))
+        y_true = xp.concat((y_true, lfilter(b, a, x[20:], zi=zi)[0]))
         xp_assert_close(y_true, lfilter(b, a, x))
 
         y_sos, zi = sosfilt(sos, x[:20], zi=xp.zeros((3, 2)))
-        y_sos = concat((y_sos, sosfilt(sos, x[20:], zi=zi)[0]))
+        y_sos = xp.concat((y_sos, sosfilt(sos, x[20:], zi=zi)[0]))
         xp_assert_close(y_true, y_sos)
 
         # Use a step function
@@ -4176,8 +4179,7 @@ class TestSOSFilt:
         y2, z2 = sosfilt(sos, x[:, 5:, :], axis=axis, zi=z1)
 
         # y should equal yf, and z2 should equal zf.
-        concat = array_namespace(x).concat
-        y = concat((y1, y2), axis=axis)
+        y = xp.concat((y1, y2), axis=axis)
         xp_assert_close(y, yf, rtol=1e-10, atol=1e-13)
         xp_assert_close(z2, zf, rtol=1e-10, atol=1e-13)
 
@@ -4323,7 +4325,7 @@ class TestDetrend:
         # regression test for https://github.com/scipy/scipy/issues/18675
         rng = np.random.RandomState(12345)
         x = rng.rand(10)
-        x = xp.asarray(x)
+        x = xp.asarray(x, dtype=xp_default_dtype(xp))
         if isinstance(bp, np.ndarray):
             bp = xp.asarray(bp)
         else:
@@ -4335,9 +4337,8 @@ class TestDetrend:
             -1.11128506e-01, -1.69470553e-01,  1.14710683e-01,  6.35468419e-02,
             3.53533144e-01, -3.67877935e-02, -2.00417675e-02, -1.94362049e-01])
 
-        # torch default float if f32
-        dtype_arg = {"check_dtype": False} if is_torch(xp) else {}
-        xp_assert_close(res, res_scipy_191, atol=1e-14, **dtype_arg)
+        atol = 3e-7 if xp_default_dtype(xp) == xp.float32 else 1e-14
+        xp_assert_close(res, res_scipy_191, atol=atol)
 
 
 @skip_xp_backends(np_only=True)

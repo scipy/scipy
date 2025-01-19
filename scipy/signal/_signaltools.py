@@ -716,7 +716,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif xp_size(in1) == 0 or xp_size(in2) == 0:  # empty arrays
-        return xp.array([])
+        return xp.asarray([])
 
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
                                           sorted_axes=False)
@@ -843,6 +843,35 @@ def _calc_oa_lens(s1, s2):
     return block_size, overlap, in1_step, in2_step
 
 
+def _swapaxes(x, ax1, ax2, xp):
+    """np.swapaxes"""
+    shp = list(range(x.ndim))
+    shp[ax1], shp[ax2] = shp[ax2], shp[ax1]
+    return xp.permute_dims(x, shp)
+
+
+# may want to look at moving _swapaxes and this to array-api-extra,
+# cross-ref https://github.com/data-apis/array-api-extra/issues/97
+def _split(x, indices_or_sections, axis, xp):
+    """A simplified version of np.split, with `indices` being an list.
+    """
+    # https://github.com/numpy/numpy/blob/v2.2.0/numpy/lib/_shape_base_impl.py#L743
+    Ntotal = x.shape[axis]
+
+    # handle array case.
+    Nsections = len(indices_or_sections) + 1
+    div_points = [0] + list(indices_or_sections) + [Ntotal]    
+
+    sub_arys = []
+    sary = _swapaxes(x, axis, 0, xp=xp)
+    for i in range(Nsections):
+        st = div_points[i]
+        end = div_points[i + 1]
+        sub_arys.append(_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
+
+    return sub_arys
+
+
 def oaconvolve(in1, in2, mode="full", axes=None):
     """Convolve two N-dimensional arrays using the overlap-add method.
 
@@ -933,7 +962,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
     elif in1.size == 0 or in2.size == 0:  # empty arrays
-        return np.array([])
+        return xp.asarray([])
     elif in1.shape == in2.shape:  # Equivalent to fftconvolve
         return fftconvolve(in1, in2, mode=mode, axes=axes)
 
@@ -1003,14 +1032,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     # Pad the array to a size that can be reshaped to the desired shape
     # if necessary.
     if not all(curpad == (0, 0) for curpad in pad_size1):
-        # XXX: xp.pad is available on numpy, cupy and jax.numpy; on torch, can reuse
-        # http://github.com/pytorch/pytorch/blob/main/torch/_numpy/_funcs_impl.py#L2045
-        in1 = np.pad(in1, pad_size1, mode='constant', constant_values=0)
-        in1 = xp.asarray(in1)
+        in1 = xpx.pad(in1, pad_size1, mode='constant', constant_values=0, xp=xp)
 
     if not all(curpad == (0, 0) for curpad in pad_size2):
-        in2 = np.pad(in2, pad_size2, mode='constant', constant_values=0)
-        in2 = xp.asarray(in2)
+         in2 = xpx.pad(in2, pad_size2, mode='constant', constant_values=0, xp=xp)
 
     # Reshape the overlap-add parts to input block sizes.
     split_axes = [iax+i for i, iax in enumerate(axes)]
@@ -1037,18 +1062,18 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         if overlap is None:
             continue
 
-        ret, overpart = np.split(ret, [-overlap], ax_fft)
-        overpart = np.split(overpart, [-1], ax_split)[0]
+        ret, overpart = _split(ret, [-overlap], ax_fft, xp=xp)
+        overpart = _split(overpart, [-1], ax_split, xp=xp)[0]
 
-        ret_overpart = np.split(ret, [overlap], ax_fft)[0]
-        ret_overpart = np.split(ret_overpart, [1], ax_split)[1]
+        ret_overpart = _split(ret, [overlap], ax_fft, xp=xp)[0]
+        ret_overpart = _split(ret_overpart, [1], ax_split, xp)[1]
         ret_overpart += overpart
 
     # Reshape back to the correct dimensionality.
     shape_ret = [ret.shape[i] if i not in fft_axes else
                  ret.shape[i]*ret.shape[i-1]
                  for i in range(ret.ndim) if i not in split_axes]
-    ret = ret.reshape(*shape_ret)
+    ret = xp.reshape(ret, shape_ret)
 
     # Slice to the correct size.
     slice_final = tuple([slice(islice) for islice in shape_final])
@@ -2364,11 +2389,9 @@ def lfiltic(b, a, y, x=None):
     y = xp.astype(y, result_type)
     zi = xp.zeros(K, dtype=result_type)
 
-    concat = array_namespace(xp.ones(3)).concat
-
     L = xp_size(y)
     if L < N:
-        y = concat((y, np.zeros(N - L)))
+        y = xp.concat((y, np.zeros(N - L)))
 
     for m in range(M):
         zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)

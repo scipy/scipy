@@ -2096,7 +2096,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                     hcalls += 1
             else:
                 # hess was supplied as a callable or hessian update strategy, so
-                # A is a dense numpy array or sparse matrix
+                # A is a dense numpy array or sparse array
                 Ap = A.dot(psupi)
             # check curvature
             Ap = asarray(Ap).squeeze()  # get rid of matrices...

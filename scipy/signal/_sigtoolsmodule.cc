@@ -907,7 +907,7 @@ static PyObject *_sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
                     type, maxiter, grid_density, &niter);
     if (err < 0) {
         if (err == -1) {
-            sprintf(mystr, "Failure to converge at iteration %d, try reducing transition band width.\n", niter);
+            snprintf(mystr, sizeof(mystr), "Failure to converge at iteration %d, try reducing transition band width.\n", niter);
 	        PyErr_SetString(PyExc_ValueError, mystr);
 	        goto fail;
         }

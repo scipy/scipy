@@ -10,13 +10,6 @@ from scipy.linalg import orthogonal_procrustes
 from scipy.sparse._sputils import matrix
 
 
-def test_orthogonal_procrustes_ndim_too_large():
-    rng = np.random.RandomState(1234)
-    A = rng.randn(3, 4, 5)
-    B = rng.randn(3, 4, 5)
-    assert_raises(ValueError, orthogonal_procrustes, A, B)
-
-
 def test_orthogonal_procrustes_ndim_too_small():
     rng = np.random.RandomState(1234)
     A = rng.randn(3)

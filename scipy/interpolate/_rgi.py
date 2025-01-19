@@ -158,6 +158,11 @@ class RegularGridInterpolator:
     "cubic_legacy" and "quintic_legacy". These methods allow faster construction
     but evaluations will be much slower.
 
+    **Rounding rule at half points with `nearest` method**
+
+    The rounding rule with the `nearest` method at half points is rounding *down*.
+
+
     Examples
     --------
     **Evaluate a function on the points of a 3-D grid**

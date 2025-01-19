@@ -823,3 +823,9 @@ def test_threadpoolctl():
 
     with threadpoolctl.threadpool_limits(limits=2, user_api='scipy'):
         assert_equal(fmm.PARALLELISM, 2)
+
+
+def test_gh21999_file_not_exist():
+    tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
+    wrong_fn = os.path.join(tmpdir, 'not_exist_test_file.mtx')
+    assert_raises(FileNotFoundError, mmread, wrong_fn)

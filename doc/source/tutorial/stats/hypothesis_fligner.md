@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_fligner.ipynb
+.. notebooklite:: hypothesis_fligner.md
    :new_tab: True
 ```
 
 (hypothesis_fligner)=
+
++++
+
 # Fligner-Killeen test for equality of variance
 
 In [^1], the influence of vitamin C on the tooth growth of guinea pigs was

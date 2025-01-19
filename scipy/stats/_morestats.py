@@ -1,5 +1,6 @@
 import math
 import warnings
+import threading
 from collections import namedtuple
 
 import numpy as np
@@ -962,7 +963,7 @@ def boxcox_llf(lmb, data):
     if xp.isdtype(dt, 'integral'):
         data = xp.asarray(data, dtype=xp.float64)
         dt = xp.float64
-    
+
     logdata = xp.log(data)
 
     # Compute the variance of the transformed data.
@@ -2628,7 +2629,9 @@ class _ABW:
 
 
 # Maintain state for faster repeat calls to ansari w/ method='exact'
-_abw_state = _ABW()
+# _ABW() is calculated once per thread and stored as an attribute on
+# this thread-local variable inside ansari().
+_abw_state = threading.local()
 
 
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
@@ -2739,6 +2742,10 @@ def ansari(x, y, alternative='two-sided'):
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
+
+    if not hasattr(_abw_state, 'a'):
+        _abw_state.a = _ABW()
+
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2759,14 +2766,14 @@ def ansari(x, y, alternative='two-sided'):
         warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
         if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
-                                    _abw_state.sf(AB, n, m))
+            pval = 2.0 * np.minimum(_abw_state.a.cdf(AB, n, m),
+                                    _abw_state.a.sf(AB, n, m))
         elif alternative == 'greater':
             # AB statistic is _smaller_ when ratio of scales is larger,
             # so this is the opposite of the usual calculation
-            pval = _abw_state.cdf(AB, n, m)
+            pval = _abw_state.a.cdf(AB, n, m)
         else:
-            pval = _abw_state.sf(AB, n, m)
+            pval = _abw_state.a.sf(AB, n, m)
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -3870,8 +3877,8 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
                              f"All samples must be one-dimensional sequences.")
 
     cdata = np.concatenate(data)
-    contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
-    if contains_nan and nan_policy == 'propagate':
+    contains_nan = _contains_nan(cdata, nan_policy)
+    if nan_policy == 'propagate' and contains_nan:
         return MedianTestResult(np.nan, np.nan, np.nan, None)
 
     if contains_nan:
@@ -4359,7 +4366,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     """
     xp = array_namespace(samples)
     samples = xp.asarray(samples)
-    
+
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {tuple(samples.shape)}")

@@ -87,6 +87,8 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
+   firwin_2d        -- Windowed FIR filter design, with frequency response for 
+                    -- 2D using 1D design.
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
@@ -289,28 +291,15 @@ repeatedly generate the same chirp signal with every call.  In these cases,
 use the classes to create a reusable function instead.
 
 """
+# bring in the public functionality from private namespaces
 
-from . import _sigtools, windows
-from ._waveforms import *
-from ._max_len_seq import max_len_seq
-from ._upfirdn import upfirdn
+# mypy: ignore-errors
 
-from ._spline import (
-    sepfir2d
-)
+from ._support_alternative_backends import *
+from . import _support_alternative_backends
+__all__ = _support_alternative_backends.__all__
+del _support_alternative_backends, _signal_api, _delegators  # noqa: F821
 
-from ._spline_filters import *
-from ._filter_design import *
-from ._fir_filter_design import *
-from ._ltisys import *
-from ._lti_conversion import *
-from ._signaltools import *
-from ._savitzky_golay import savgol_coeffs, savgol_filter
-from ._spectral_py import *
-from ._short_time_fft import *
-from ._peak_finding import *
-from ._czt import *
-from .windows import get_window  # keep this one in signal namespace
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
@@ -318,12 +307,6 @@ from . import (
     spectral, signaltools, waveforms, wavelets, spline
 )
 
-# overwrite supported names/objects star-imported above
-from ._support_alternative_backends import *
-
-__all__ = [
-    s for s in dir() if not s.startswith("_")
-]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

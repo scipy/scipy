@@ -3,7 +3,7 @@ import numpy as np
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
-
+from scipy._lib._util import _apply_over_batch
 # Local imports.
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
@@ -14,6 +14,7 @@ __all__ = ['schur', 'rsf2csf']
 _double_precision = ['i', 'l', 'd']
 
 
+@_apply_over_batch(('a', 2))
 def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
           check_finite=True):
     """
@@ -248,6 +249,7 @@ def _castCopy(type, *arrays):
         return cast_arrays
 
 
+@_apply_over_batch(('T', 2), ('Z', 2))
 def rsf2csf(T, Z, check_finite=True):
     """
     Convert real Schur form to complex Schur form.

@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_shapiro.ipynb
+.. notebooklite:: hypothesis_shapiro.md
    :new_tab: True
 ```
 
 (hypothesis_shapiro)=
+
++++
+
 # Shapiro-Wilk test for normality
 
 Suppose we wish to infer from measurements whether the weights of adult human
