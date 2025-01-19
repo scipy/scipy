@@ -56,9 +56,9 @@ cdef class RigidTransformation:
     __getitem__
     __mul__
     __pow__
+    from_matrix
     from_rotation
     from_translation
-    from_matrix
     from_rottrans
     from_expcoords
     from_dualquat
@@ -412,6 +412,92 @@ cdef class RigidTransformation:
 
         self._matrix = matrix
 
+    def __repr__(self):
+        m = f"{self.as_matrix()!r}".splitlines()
+        # bump indent (+32 characters)
+        m[1:] = [" " * 32 + m[i] for i in range(1, len(m))]
+        return "RigidTransformation.from_matrix(" + "\n".join(m) + ")"
+
+    @cython.embedsignature(True)
+    @classmethod
+    def from_matrix(cls, matrix):
+        """Initialize from a 4x4 transformation matrix.
+
+        Parameters
+        ----------
+        matrix : array_like, shape (4, 4) or (N, 4, 4)
+            A single transformation matrix or a stack of transformation
+            matrices.
+
+        Returns
+        -------
+        transformation : `RigidTransformation` instance
+
+        Notes
+        -----
+        4x4 rigid transformation matrices are of the form:
+
+        ..
+
+            [R | d]
+            [0 | 1]
+
+        where ``R`` is a 3x3 rotation matrix and ``d`` is a 3x1 translation
+        vector ``[dx, dy, dz]``. As rotation matrices must be proper
+        orthogonal, the rotation component is orthonormalized using singular
+        value decomposition before initialization.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import RigidTransformation as T
+        >>> import numpy as np
+
+        Creating a transformation from a single matrix:
+
+        >>> m = np.array([[0, 1, 0, 2],
+        ...               [0, 0, 1, 3],
+        ...               [1, 0, 0, 4],
+        ...               [0, 0, 0, 1]])
+        >>> t = T.from_matrix(m)
+        >>> t.as_matrix()
+        array([[0., 1., 0., 2.],
+               [0., 0., 1., 3.],
+               [1., 0., 0., 4.],
+               [0., 0., 0., 1.]])
+        >>> t.single
+        True
+
+        Creating a transformation from a stack of matrices:
+
+        >>> m = np.array([np.eye(4), np.eye(4)])
+        >>> t = T.from_matrix(m)
+        >>> t.as_matrix()
+        array([[[1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]],
+               [[1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]]])
+        >>> t.single
+        False
+        >>> len(t)
+        2
+
+        Matrices with a rotation component that is not proper orthogonal are
+        orthonormalized using singular value decomposition before
+        initialization:
+
+        >>> t = T.from_matrix(np.diag([2, 2, 2, 1]))
+        >>> t.as_matrix()
+        array([[1., 0., 0., 0.],
+               [0., 1., 0., 0.],
+               [0., 0., 1., 0.],
+               [0., 0., 0., 1.]])
+        """
+        return cls(matrix, normalize=True, copy=True)
+
     @cython.embedsignature(True)
     @classmethod
     def from_rotation(cls, rotation):
@@ -478,12 +564,6 @@ cdef class RigidTransformation:
         if rotation.single:
             matrix = matrix[0]
         return cls(matrix, normalize=False, copy=False)
-
-    def __repr__(self):
-        m = f"{self.as_matrix()!r}".splitlines()
-        # bump indent (+32 characters)
-        m[1:] = [" " * 32 + m[i] for i in range(1, len(m))]
-        return "RigidTransformation.from_matrix(" + "\n".join(m) + ")"
 
     @cython.embedsignature(True)
     @classmethod
@@ -571,86 +651,6 @@ cdef class RigidTransformation:
         if single:
             matrix = matrix[0]
         return cls(matrix, normalize=False, copy=False)
-
-    @cython.embedsignature(True)
-    @classmethod
-    def from_matrix(cls, matrix):
-        """Initialize from a 4x4 transformation matrix.
-
-        Parameters
-        ----------
-        matrix : array_like, shape (4, 4) or (N, 4, 4)
-            A single transformation matrix or a stack of transformation
-            matrices.
-
-        Returns
-        -------
-        transformation : `RigidTransformation` instance
-
-        Notes
-        -----
-        4x4 rigid transformation matrices are of the form:
-
-        ..
-
-            [R | d]
-            [0 | 1]
-
-        where ``R`` is a 3x3 rotation matrix and ``d`` is a 3x1 translation
-        vector ``[dx, dy, dz]``. As rotation matrices must be proper
-        orthogonal, the rotation component is orthonormalized using singular
-        value decomposition before initialization.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import RigidTransformation as T
-        >>> import numpy as np
-
-        Creating a transformation from a single matrix:
-
-        >>> m = np.array([[0, 1, 0, 2],
-        ...               [0, 0, 1, 3],
-        ...               [1, 0, 0, 4],
-        ...               [0, 0, 0, 1]])
-        >>> t = T.from_matrix(m)
-        >>> t.as_matrix()
-        array([[0., 1., 0., 2.],
-               [0., 0., 1., 3.],
-               [1., 0., 0., 4.],
-               [0., 0., 0., 1.]])
-        >>> t.single
-        True
-
-        Creating a transformation from a stack of matrices:
-
-        >>> m = np.array([np.eye(4), np.eye(4)])
-        >>> t = T.from_matrix(m)
-        >>> t.as_matrix()
-        array([[[1., 0., 0., 0.],
-                [0., 1., 0., 0.],
-                [0., 0., 1., 0.],
-                [0., 0., 0., 1.]],
-               [[1., 0., 0., 0.],
-                [0., 1., 0., 0.],
-                [0., 0., 1., 0.],
-                [0., 0., 0., 1.]]])
-        >>> t.single
-        False
-        >>> len(t)
-        2
-
-        Matrices with a rotation component that is not proper orthogonal are
-        orthonormalized using singular value decomposition before
-        initialization:
-
-        >>> t = T.from_matrix(np.diag([2, 2, 2, 1]))
-        >>> t.as_matrix()
-        array([[1., 0., 0., 0.],
-               [0., 1., 0., 0.],
-               [0., 0., 1., 0.],
-               [0., 0., 0., 1.]])
-        """
-        return cls(matrix, normalize=True, copy=True)
 
     @cython.embedsignature(True)
     @classmethod
