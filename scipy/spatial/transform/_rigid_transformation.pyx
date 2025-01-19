@@ -10,6 +10,35 @@ cimport cython
 np.import_array()
 
 
+def _create_skew_matrix(vec):
+    result = np.zeros((len(vec), 3, 3))
+    result[:, 0, 1] = -vec[:, 2]
+    result[:, 0, 2] = vec[:, 1]
+    result[:, 1, 0] = vec[:, 2]
+    result[:, 1, 2] = -vec[:, 0]
+    result[:, 2, 0] = -vec[:, 1]
+    result[:, 2, 1] = vec[:, 0]
+    return result
+
+
+def _compute_se3_exp_translation_transform(rot_vec):
+    angle = np.linalg.norm(rot_vec, axis=1)
+    mask = angle < 1e-3
+
+    k1 = np.empty(len(rot_vec))
+    k1[mask] = 0.5 - angle[mask]**2 / 24 + angle[mask]**4 / 720
+    k1[~mask] = (1.0 - np.cos(angle[~mask])) / angle[~mask]**2
+
+    k2 = np.empty(len(rot_vec))
+    k2[mask] = 1/6 - angle[mask]**2 / 120 + angle[mask]**4 / 5040
+    k2[~mask] = (angle[~mask] - np.sin(angle[~mask])) / angle[~mask]**3
+
+    s = _create_skew_matrix(rot_vec)
+
+    return np.identity(3) + k1[:, None, None] * s + k2[:, None, None] * s @ s
+
+
+
 cdef _quaternion_conjugate(quat):
     conjugate = np.copy(quat)
     conjugate[:, :3] = -conjugate[:, :3]
@@ -862,48 +891,11 @@ cdef class RigidTransformation:
         single = exp_coords.ndim == 1
         exp_coords = np.atleast_2d(exp_coords)
 
-        rotations = Rotation.from_rotvec(exp_coords[:, :3])
+        rot_vec = exp_coords[:, :3]
+        rotations = Rotation.from_rotvec(rot_vec)
 
-        theta = np.linalg.norm(exp_coords[:, :3], axis=-1)
-        ind_only_translation = theta == 0.0
-
-        translations = np.empty((len(exp_coords), 3), dtype=float)
-
-        if not np.all(ind_only_translation):
-            theta[ind_only_translation] = 1.0
-            screw_axes = exp_coords / theta[:, np.newaxis]
-
-            tms = theta - np.sin(theta)
-            cm1 = np.cos(theta) - 1.0
-            o0 = screw_axes[:, 0]
-            o1 = screw_axes[:, 1]
-            o2 = screw_axes[:, 2]
-            v0 = screw_axes[:, 3]
-            v1 = screw_axes[:, 4]
-            v2 = screw_axes[:, 5]
-            o01tms = o0 * o1 * tms
-            o12tms = o1 * o2 * tms
-            o02tms = o0 * o2 * tms
-            o0cm1 = o0 * cm1
-            o1cm1 = o1 * cm1
-            o2cm1 = o2 * cm1
-            o00tms = o0 * o0 * tms
-            o11tms = o1 * o1 * tms
-            o22tms = o2 * o2 * tms
-            translations[..., 0] = (-v0 * (o11tms + o22tms - theta)
-                + v1 * (o01tms + o2cm1)
-                + v2 * (o02tms - o1cm1))
-            translations[..., 1] = (v0 * (o01tms - o2cm1)
-                - v1 * (o00tms + o22tms - theta)
-                + v2 * (o0cm1 + o12tms))
-            translations[..., 2] = (v0 * (o02tms + o1cm1)
-                - v1 * (o0cm1 - o12tms)
-                - v2 * (o00tms + o11tms - theta))
-
-        translations[ind_only_translation] = exp_coords[ind_only_translation, 3:]
-
-        # TODO alternatively, we could
-        # return cls.from_translation(translations) * cls.from_rotation(rotations)
+        V = _compute_se3_exp_translation_transform(rot_vec)
+        translations = np.einsum('ijk,ik->ij', V, exp_coords[:, 3:])
 
         matrix = np.empty((len(exp_coords), 4, 4), dtype=float)
         matrix[:, :3, :3] = rotations.as_matrix()
