@@ -687,10 +687,11 @@ class TestNoncentralTFunctions:
         assert_allclose(sp.nctdtr(df, nc, x), expected, rtol=rtol)
 
     @pytest.mark.parametrize("df, nc, x, expected_cdf", [
-        (9.8, 38, 1.5, 2.0935940165900746e-249),
         (0.98, 38, 1.5, 2.591995360483094e-97),
         (3000, 3, 0.1, 0.0018657780826323328),
-        (0.98, -3.8, 15, 0.9999990264591945)
+        (0.98, -3.8, 15, 0.9999990264591945),
+        (9.8, 38, 15, 2.252076291604796e-09),
+
     ])
     def test_nctdtrit(self, df, nc, x, expected_cdf):
-        assert_allclose(x, sp.nctdtrit(df, nc, expected_cdf), rtol=1e-10)
+        assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)

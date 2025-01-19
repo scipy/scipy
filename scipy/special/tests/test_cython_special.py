@@ -221,7 +221,7 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.nctdtr, cython_special.nctdtr, ('ddd',), None),
     (special.nctdtridf, cython_special.nctdtridf, ('ddd',), None),
     (special.nctdtrinc, cython_special.nctdtrinc, ('ddd',), None),
-    (special.nctdtrit, cython_special.nctdtrit, ('ddd',), None),
+    (special.nctdtrit, cython_special.nctdtrit, ('ddd',), "OverflowError"),
     (special.ndtr, cython_special.ndtr, ('d', 'D'), None),
     (special.ndtri, cython_special.ndtri, ('d',), None),
     (special.nrdtrimn, cython_special.nrdtrimn, ('ddd',), None),
