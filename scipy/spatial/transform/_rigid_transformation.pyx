@@ -907,8 +907,9 @@ cdef class RigidTransformation:
         rot_vec = exp_coords[:, :3]
         rotations = Rotation.from_rotvec(rot_vec)
 
-        V = _compute_se3_exp_translation_transform(rot_vec)
-        translations = np.einsum('ijk,ik->ij', V, exp_coords[:, 3:])
+        translations = np.einsum('ijk,ik->ij',
+                                 _compute_se3_exp_translation_transform(rot_vec),
+                                 exp_coords[:, 3:])
 
         matrix = np.empty((len(exp_coords), 4, 4), dtype=float)
         matrix[:, :3, :3] = rotations.as_matrix()
