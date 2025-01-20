@@ -556,6 +556,9 @@ cdef class RigidTransformation:
         >>> len(tf)
         2
         """
+        if not isinstance(rotation, Rotation):
+            raise ValueError("Expected `rotation` to be a `Rotation` instance, "
+                             f"got {type(rotation)}.")
         rotmat = rotation.as_matrix()
         if rotation.single:
             rotmat = rotmat[None, :, :]

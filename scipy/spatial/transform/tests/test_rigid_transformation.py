@@ -725,6 +725,11 @@ def test_input_validation():
         matrix[0, 0] = -1
         RigidTransformation(matrix, normalize=True)
 
+    # Test non-Rotation input
+    with pytest.raises(ValueError,
+                       match="Expected `rotation` to be a `Rotation` instance"):
+        RigidTransformation.from_rotation(np.eye(3))
+
 
 def test_translation_validation():
     # Test invalid translation shapes
