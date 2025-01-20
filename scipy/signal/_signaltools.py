@@ -5,7 +5,6 @@ from __future__ import annotations  # Provides typing union operator `|` in Pyth
 import operator
 import math
 from math import prod as _prod
-import timeit
 import warnings
 from typing import Literal
 
