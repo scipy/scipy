@@ -461,7 +461,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
                   f"column of the\n  Jacobian is at most {gtol:f} in "
                   "absolute value", None],
               5: ["Number of calls to function has reached "
-                  f"maxfev = {maxfev}", ValueError],
+                  f"maxfev = {maxfev}.", ValueError],
               6: [f"ftol={ftol:f} is too small, no further reduction "
                   "in the sum of squares\n  is possible.",
                   ValueError],
