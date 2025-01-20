@@ -9,6 +9,20 @@ cimport cython
 
 np.import_array()
 
+
+cdef _quaternion_conjugate(quat):
+    conjugate = np.copy(quat)
+    conjugate[:, :3] = -conjugate[:, :3]
+    return conjugate
+
+
+cdef _compose_dual_quaternion(real_part1, dual_part1, real_part2, dual_part2):
+    prod_real = compose_quat(real_part1, real_part2)
+    prod_dual = (np.asarray(compose_quat(real_part1, dual_part2))
+                 + np.asarray(compose_quat(dual_part1, real_part2)))
+    return prod_real, prod_dual
+
+
 cdef class RigidTransformation:
     """Rigid transformation in 3 dimensions.
 
@@ -929,32 +943,34 @@ cdef class RigidTransformation:
 
         # normalize dual quaternions: ensure that the norm of each dual
         # quaternion is 1 and that the real and dual part are orthogonal
-        # 1. compute the dual quaternion product of the input and its
-        #    component-wise quaternion conjugate
+
+        # compute the dual quaternion product of the input and its
         # component-wise quaternion conjugate
-        real_conjugate = np.copy(real_part)
-        real_conjugate[:, :3] *= -1.0
-        dual_conjugate = np.copy(dual_part)
-        dual_conjugate[:, :3] *= -1.0
+        real_conjugate = _quaternion_conjugate(real_part)
+        dual_conjugate = _quaternion_conjugate(dual_part)
         # dual quaternion product
-        prod_real = compose_quat(real_part, real_conjugate)
-        prod_dual = (np.asarray(compose_quat(real_part, dual_conjugate))
-                     + np.asarray(compose_quat(dual_part, real_conjugate)))
+        prod_real, prod_dual = _compose_dual_quaternion(
+            real_part, dual_part, real_conjugate, dual_conjugate)
+
+        # special case: invalid real quaternion
+        prod_real_norm = np.linalg.norm(prod_real, axis=1)
+        invalid_real_mask = prod_real_norm == 0.0
+        real_part[invalid_real_mask, :4] = [0., 0., 0., 1.]
+        prod_real_norm[invalid_real_mask] = 1.0
+
+        # compute normalization factors
+        real_inv_sqrt = 1.0 / prod_real_norm
 
         for i in range(len(dual_quat)):
-            # 2. special case: invalid real quaternion
-            prod_real_norm = np.linalg.norm(prod_real[i])
-            if prod_real_norm == 0.0:
-                real_part[i, :4] = [0, 0, 0, 1]
+            if invalid_real_mask[i]:
                 continue
 
-            # 3. compute normalization factors
-            real_inv_sqrt = 1.0 / prod_real_norm
-            dual_inv_sqrt = -0.5 * prod_dual[i] * real_inv_sqrt ** 3
+            # compute normalization factors
+            dual_inv_sqrt = -0.5 * prod_dual[i] * real_inv_sqrt[i] ** 3
 
-            # 4. normalize dual quaternion
-            real_part[i] = real_inv_sqrt * real_part[i]
-            dual_part[i] = real_inv_sqrt * dual_part[i] + np.asarray(
+            # normalize dual quaternion
+            real_part[i] = real_inv_sqrt[i] * real_part[i]
+            dual_part[i] = real_inv_sqrt[i] * dual_part[i] + np.asarray(
                 compose_quat(dual_inv_sqrt.reshape(-1, 1),
                     real_part[i].reshape(-1, 1)))[0]
 
