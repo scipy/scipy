@@ -921,11 +921,42 @@ cdef class RigidTransformation:
         single = dual_quat.ndim == 1
         dual_quat = np.atleast_2d(dual_quat)
 
-        real_part = dual_quat[:, :4]
-        dual_part = dual_quat[:, 4:]
+        real_part = np.copy(dual_quat[:, :4])  # TODO do we copy each time?
+        dual_part = np.copy(dual_quat[:, 4:])
         if scalar_first:
             real_part = np.roll(real_part, -1, axis=1)
             dual_part = np.roll(dual_part, -1, axis=1)
+
+        # normalize dual quaternions: ensure that the norm of each dual
+        # quaternion is 1 and that the real and dual part are orthogonal
+        # 1. compute the dual quaternion product of the input and its
+        #    component-wise quaternion conjugate
+        # component-wise quaternion conjugate
+        real_conjugate = np.copy(real_part)
+        real_conjugate[:, :3] *= -1.0
+        dual_conjugate = np.copy(dual_part)
+        dual_conjugate[:, :3] *= -1.0
+        # dual quaternion product
+        prod_real = compose_quat(real_part, real_conjugate)
+        prod_dual = (np.asarray(compose_quat(real_part, dual_conjugate))
+                     + np.asarray(compose_quat(dual_part, real_conjugate)))
+
+        for i in range(len(dual_quat)):
+            # 2. special case: invalid real quaternion
+            prod_real_norm = np.linalg.norm(prod_real[i])
+            if prod_real_norm == 0.0:
+                real_part[i, :4] = [0, 0, 0, 1]
+                continue
+
+            # 3. compute normalization factors
+            real_inv_sqrt = 1.0 / prod_real_norm
+            dual_inv_sqrt = -0.5 * prod_dual[i] * real_inv_sqrt ** 3
+
+            # 4. normalize dual quaternion
+            real_part[i] = real_inv_sqrt * real_part[i]
+            dual_part[i] = real_inv_sqrt * dual_part[i] + np.asarray(
+                compose_quat(dual_inv_sqrt.reshape(-1, 1),
+                    real_part[i].reshape(-1, 1)))[0]
 
         matrix = np.empty((len(dual_quat), 4, 4), dtype=float)
         rotation = Rotation.from_quat(real_part)
