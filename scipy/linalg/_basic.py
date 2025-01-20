@@ -526,7 +526,7 @@ def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
         return x, info
     if info > 0:
         raise LinAlgError(f"singular matrix: resolution failed at diagonal {info-1}")
-    raise ValueError(f'illegal value in {info}-th argument of internal trtrs')
+    raise ValueError(f'illegal value in {-info}-th argument of internal trtrs')
 
 
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
