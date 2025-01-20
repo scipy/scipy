@@ -255,22 +255,34 @@ def test_as_exp_coords():
     rng = np.random.default_rng(10)
 
     # pure rotation
-    for _ in range(10):
-        expected = np.hstack((rng.normal(size=3), np.zeros(3)))
-        actual = RigidTransformation.from_exp_coords(expected).as_exp_coords()
-        assert_allclose(actual, expected, atol=1e-12)
+    rot_vec = rng.normal(scale=0.1, size=(1000, 3))
+    tf = RigidTransformation.from_rotation(Rotation.from_rotvec(rot_vec))
+    exp_coords = tf.as_exp_coords()
+    assert_allclose(exp_coords[:, :3], rot_vec, rtol=1e-13)
+    assert_allclose(exp_coords[:, 3:], 0.0, atol=1e-16)
 
     # pure translation
-    for _ in range(10):
-        expected = np.hstack((np.zeros(3), rng.normal(size=3)))
-        actual = RigidTransformation.from_exp_coords(expected).as_exp_coords()
-        assert_allclose(actual, expected, atol=1e-12)
+    translation = rng.normal(scale=100.0, size=(1000, 3))
+    tf = RigidTransformation.from_translation(translation)
+    exp_coords = tf.as_exp_coords()
+    assert_allclose(exp_coords[:, :3], 0.0, atol=1e-16)
+    assert_allclose(exp_coords[:, 3:], translation, rtol=1e-15)
 
-    # rotation and translation
-    for _ in range(10):
-        expected = rng.normal(size=6)
-        actual = RigidTransformation.from_exp_coords(expected).as_exp_coords()
-        assert_allclose(actual, expected, atol=1e-12)
+
+def test_exp_coords_reciprocity():
+    # arbitrary rotations
+    rng = np.random.default_rng(10)
+
+    tf = RigidTransformation.random(1000, rng=rng)
+    tf_back = RigidTransformation.from_exp_coords(tf.as_exp_coords())
+    assert_allclose(tf.as_matrix(), tf_back.as_matrix(), rtol=1e-11)
+
+    # small rotation
+    tf = RigidTransformation.from_rot_trans(
+        Rotation.from_rotvec(rng.normal(scale=1e-10, size=(1000, 3))),
+        rng.normal(scale=100.0, size=(1000, 3)))
+    tf_back = RigidTransformation.from_exp_coords(tf.as_exp_coords())
+    assert_allclose(tf.as_matrix(), tf_back.as_matrix(), rtol=1e-15)
 
 
 def test_from_dual_quat():
