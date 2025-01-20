@@ -615,7 +615,7 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
     if nlower + nupper + 1 != a1.shape[0]:
         raise ValueError(
             f"invalid values for the number of lower and upper diagonals: l+u+1 "
-            f"({nlower + nupper + 1}) does not equal ab.shape[0] ({a1.shape[0]})"
+            f"({nlower + nupper + 1}) does not equal ab.shape[0] ({ab.shape[0]})"
         )
 
     # accommodate empty arrays
