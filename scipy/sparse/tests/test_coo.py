@@ -129,6 +129,14 @@ def test_non_subscriptability():
                        match="'coo_array' object is not subscriptable"):
         coo_2d[0, :]
 
+def test_reshape_overflow():
+    # see gh-22353 : new idx_dtype needs to be int64 instead of int32
+    M, N = (1045507, 523266)
+    coords = (np.array([M - 1], dtype='int32'), np.array([N - 1], dtype='int32'))
+    A = coo_array(([3.3], coords), shape=(M, N))
+    B = A.reshape((M * N, 1))
+    assert B.coords[0][0] == (M * N) - 1
+
 def test_reshape():
     arr1d = coo_array([1, 0, 3])
     assert arr1d.shape == (3,)
