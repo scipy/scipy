@@ -409,5 +409,5 @@ def _cho_solve_banded(cb, b, lower, overwrite_b, check_finite):
     if info > 0:
         raise LinAlgError(f"{info}th leading minor not positive definite")
     if info < 0:
-        raise ValueError(f'illegal value in {info}th argument of internal pbtrs')
+        raise ValueError(f'illegal value in {-info}th argument of internal pbtrs')
     return x
