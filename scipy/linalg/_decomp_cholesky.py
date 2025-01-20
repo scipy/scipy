@@ -41,7 +41,8 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
         )
     if info < 0:
         raise ValueError(
-            f'LAPACK reported an illegal value in {-info}-th argument'
+            f'LAPACK reported an illegal value in {-info}-th argument '
+            f'on entry to "POTRF".'
         )
     return c, lower
 
