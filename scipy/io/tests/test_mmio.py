@@ -762,10 +762,16 @@ class TestMMIOCoordinate:
                 assert_allclose(A.data, [float('%%.%dg' % precision % value)])
 
     @pytest.mark.parametrize("precision", [-1, 0, 16])
-    def test_invalid_precision(self, precision):
+    def test_invalid_precision_range(self, precision):
         A = scipy.sparse.dok_array((2, 2))
         with pytest.warns(FutureWarning,
                           match='From SciPy 1.18.0, an exception will be thrown'):
+            mmwrite(self.fn, A, precision=precision)
+
+    @pytest.mark.parametrize("precision", [1.0, "1", np.array([1])])
+    def test_invalid_precision_type(self, precision):
+        A = scipy.sparse.dok_array((2, 2))
+        with pytest.raises(TypeError, match='Precision value must be an integer'):
             mmwrite(self.fn, A, precision=precision)
 
     def test_bad_number_of_coordinate_header_fields(self):
