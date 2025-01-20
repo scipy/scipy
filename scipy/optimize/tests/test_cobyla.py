@@ -1,10 +1,12 @@
 import math
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_, assert_array_almost_equal
+from numpy.testing import assert_allclose, assert_array_almost_equal
 
-from scipy.optimize import (fmin_cobyla, minimize, Bounds, NonlinearConstraint,
-    LinearConstraint, OptimizeResult)
+from scipy.optimize import (
+    fmin_cobyla, minimize, Bounds, NonlinearConstraint, LinearConstraint,
+    OptimizeResult
+)
 
 
 class TestCobyla:
@@ -60,10 +62,10 @@ class TestCobyla:
         sol_new = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
                        callback=callback_new_syntax, options=self.opts)
         assert_allclose(sol.x, self.solution, atol=1e-4)
-        assert_(sol.success, sol.message)
-        assert_(sol.maxcv < 1e-5, sol)
-        assert_(sol.nfev < 70, sol)
-        assert_(sol.fun < self.fun(self.solution) + 1e-3, sol)
+        assert sol.success, sol.message
+        assert sol.maxcv < 1e-5, sol
+        assert sol.nfev < 70, sol
+        assert sol.fun < self.fun(self.solution) + 1e-3, sol
         assert_array_almost_equal(
             sol.x,
             callback.last_x,
@@ -71,12 +73,12 @@ class TestCobyla:
             err_msg="Last design vector sent to the callback is not equal to"
                  " returned value.",
         )
-        assert_(sol_new.success, sol_new.message)
-        assert_(sol.fun == sol_new.fun)
-        assert_(sol.maxcv == sol_new.maxcv)
-        assert_(sol.nfev == sol_new.nfev)
-        assert_(callback.n_calls == callback_new_syntax.n_calls,
-            "Callback is not called the same amount of times for old and new syntax.")
+        assert sol_new.success, sol_new.message
+        assert sol.fun == sol_new.fun
+        assert sol.maxcv == sol_new.maxcv
+        assert sol.nfev == sol_new.nfev
+        assert callback.n_calls == callback_new_syntax.n_calls, \
+            "Callback is not called the same amount of times for old and new syntax."
 
     def test_minimize_constraint_violation(self):
         # We set up conflicting constraints so that the algorithm will be
@@ -85,20 +87,20 @@ class TestCobyla:
                 {'type': 'ineq', 'fun': lambda x: x - 5})
         sol = minimize(lambda x: x, [0], method='cobyla', constraints=cons,
                        options={'catol': 0.6})
-        assert_(sol.maxcv > 0.1)
-        assert_(sol.success)
+        assert sol.maxcv > 0.1
+        assert sol.success
         sol = minimize(lambda x: x, [0], method='cobyla', constraints=cons,
                        options={'catol': 0.4})
-        assert_(sol.maxcv > 0.1)
-        assert_(not sol.success)
+        assert sol.maxcv > 0.1
+        assert not sol.success
 
     def test_f_target(self):
         f_target = 250
         sol = minimize(lambda x: x**2, [500], method='cobyla',
                        options={'f_target': f_target})
-        assert_(sol.status == 1)
-        assert_(sol.success)
-        assert_(sol.fun <= f_target)
+        assert sol.status == 1
+        assert sol.success
+        assert sol.fun <= f_target
 
     def test_minimize_linear_constraints(self):
         constraints = LinearConstraint([1.0, 1.0], 1.0, 1.0)
@@ -151,7 +153,7 @@ def test_vector_constraints():
     constraints = [{'type': 'ineq', 'fun': cons} for cons in cons_list]
     sol = minimize(fun, x0, constraints=constraints, tol=1e-5)
     assert_allclose(sol.x, xsol, atol=1e-4)
-    assert_(sol.success, sol.message)
+    assert sol.success, sol.message
     assert_allclose(sol.fun, fsol, atol=1e-4)
 
     constraints = {'type': 'ineq', 'fun': fmin}
