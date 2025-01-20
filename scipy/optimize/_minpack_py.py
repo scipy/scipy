@@ -260,7 +260,7 @@ def _root_hybr(func, x0, args=(), jac=None,
     errors = {0: "Improper input parameters were entered.",
               1: "The solution converged.",
               2: "The number of calls to function has "
-                 f"reached maxfev = {maxfev}",
+                 f"reached maxfev = {maxfev}.",
               3: f"xtol={xtol:f} is too small, no further improvement "
                   "in the approximate\n solution is possible.",
               4: "The iteration is not making good progress, as measured "
