@@ -388,7 +388,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
 
     if disp:
-        msg = f"Failed to converge after {itr + 1} iterations, value is {p}"
+        msg = f"Failed to converge after {itr + 1} iterations, value is {p}."
         raise RuntimeError(msg)
 
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR), method)
