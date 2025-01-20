@@ -621,13 +621,22 @@ def test_inverse():
 def test_properties():
     atol = 1e-12
 
-    # Test rotation and translation properties
+    # Test rotation and translation properties for single transformation
     r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([1, 2, 3])
     tf = RigidTransformation.from_rot_trans(r, t)
 
     assert_allclose(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert tf.rotation.approx_equal(r)
+    assert_allclose(tf.translation, t, atol=atol)
+
+    # Test rotation and translation properties for multiple transformations
+    r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
+    t = np.array([[1, 2, 3], [4, 5, 6]])
+    tf = RigidTransformation.from_rot_trans(r, t)
+
+    assert_allclose(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
+    assert all(tf.rotation.approx_equal(r))
     assert_allclose(tf.translation, t, atol=atol)
 
 
