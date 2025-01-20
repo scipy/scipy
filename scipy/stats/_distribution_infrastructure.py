@@ -3496,7 +3496,10 @@ _distribution_names = {
 
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 def make_distribution(dist):
-    """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
+    """Generate a `ContinuousDistribution` from a distribution-like object
+
+    The argument may be an instance of `rv_continuous` or an instance of
+    another class that satisfies the interface described below.
 
     The returned value is a `ContinuousDistribution` subclass. Like any subclass
     of `ContinuousDistribution`, it must be instantiated (i.e. by passing all shape
@@ -3514,7 +3517,43 @@ def make_distribution(dist):
     Parameters
     ----------
     dist : `rv_continuous`
-        Instance of `rv_continuous`.
+        Instance of `rv_continuous` OR an instance of any class with the following
+        attributes:
+
+        __make_distribution_version__ : str
+            A string containing the version number of SciPy in which this interface
+            is defined. The preferred interface may change in future SciPy versions,
+            in which case support for an old interface version may be deprecated
+            and eventually removed.
+        parameters : dict
+            A dictionary describing the parameters of the distribution.
+            Each key is the name of a parameter,
+            and the corresponding value is itself a dictionary with the following items.
+
+            endpoints : tuple
+                A tuple defining the lower and upper endpoints of the domain of the
+                parameter. Allowable values are floats or the name (string) of another
+                parameter.
+
+            inclusive : tuple of bool
+                A tuple specifying whether the endpoints are included within the domain
+                of the parameter.
+
+        support : tuple
+            A tuple defining the lower and upper endpoints of the support of the
+            distribution. Allowable values are floats or the name (string) of a
+            parameter.
+
+        The class **must** also define a ``pdf`` method and **may** define methods
+        ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
+        ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
+        ``ilogcdf``, ``icdf``, ``ilogccdf``, and ``iccdf````.
+        All methods must accept the parameters of the distributions as keyword arguments
+        and any positional-only arguments accepted by the corresponding method of
+        `ContinuousDistribution`. Methods ``moment_raw``, ``moment_central``,
+        ``moment_standardized`` may be defined to accept the ``order`` of the moment
+        by position, acccept all distribution parameters by keyword, and return the raw,
+        central, and standardized moments of the distribution, respectively.
 
     Returns
     -------
@@ -3536,8 +3575,11 @@ def make_distribution(dist):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
-    >>> LogU = stats.make_distribution(stats.loguniform)
-    >>> X = LogU(a=1.0, b=3.0)
+
+    Create a `ContinuousDistribution` from `scipy.stats.loguniform`.
+
+    >>> LogUniform = stats.make_distribution(stats.loguniform)
+    >>> X = LogUniform(a=1.0, b=3.0)
     >>> np.isclose((X + 0.25).median(), stats.loguniform.ppf(0.5, 1, 3, loc=0.25))
     np.True_
     >>> X.plot()
@@ -3546,14 +3588,47 @@ def make_distribution(dist):
     >>> plt.legend(('pdf', 'histogram'))
     >>> plt.show()
 
+    Create a custom distribution.
+
+    >>> class MyLogUniform:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {'log_a': {'endpoints': (0, np.inf),
+    ...                           'inclusive': (False, False)},
+    ...                 'log_b': {'endpoints': ('a', np.inf),
+    ...                           'inclusive': (False, False)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return 'log_a', 'log_b'
+    ...
+    ...     def pdf(self, x, log_a, log_b):
+    ...         return 1 / (x * (log_b - log_a))
+    >>>
+    >>> MyLogUniform = stats.make_distribution(MyLogUniform())
+    >>> Y = MyLogUniform(a=np.log(1.0), b=np.log(3.0))
+    >>> np.isclose(Y.cdf(2.), X.cdf(2.))
+    np.True_
+
     """
     if dist in {stats.levy_stable, stats.vonmises}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
-    if not isinstance(dist, stats.rv_continuous):
-        message = "The argument must be an instance of `rv_continuous`."
+    if isinstance(dist, stats.rv_continuous):
+        return _make_distribution_rv_generic(dist)
+    elif getattr(dist, "__make_distribution_version__", "0.0.0") >= "1.16.0":
+        return _make_distribution_custom(dist)
+    else:
+        message = ("The argument must be an instance of `rv_continuous` or an instance "
+                   "of a class with attribute `__make_distribution_version__ >= 1.16`.")
         raise ValueError(message)
 
+
+def _make_distribution_rv_generic(dist):
     parameters = []
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
@@ -3665,6 +3740,58 @@ def make_distribution(dist):
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [
         f"This class represents `scipy.stats.{dist.name}` as a subclass of "
+        "`ContinuousDistribution`.",
+        f"The `repr`/`str` of class instances is `{repr_str}`.",
+        f"The PDF of the distribution is defined {support_etc}"
+    ]
+    CustomDistribution.__doc__ = ("\n".join(docs))
+
+    return CustomDistribution
+
+
+def _make_distribution_custom(dist):
+    parameters = []
+    support = getattr(dist, 'support')
+
+    for name, info in dist.parameters.items():
+        domain = _RealDomain(endpoints=info['endpoints'],
+                             inclusive=info['inclusive'])
+        param = _RealParameter(name, domain=domain)
+        parameters.append(param)
+
+    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
+    _x_param = _RealParameter('x', domain=_x_support)
+    repr_str = dist.__class__.__name__
+
+    class CustomDistribution(ContinuousDistribution):
+        _parameterizations = ([_Parameterization(*parameters)] if parameters
+                              else [])
+        _variable = _x_param
+
+        def __repr__(self):
+            s = super().__repr__()
+            return s.replace('CustomDistribution', repr_str)
+
+        def __str__(self):
+            s = super().__str__()
+            return s.replace('CustomDistribution', repr_str)
+
+    methods = {'sample', 'logentropy', 'entropy',
+               'median', 'mode', 'logpdf', 'pdf',
+               'logcdf2', 'logcdf', 'cdf2', 'cdf',
+               'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
+               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
+               'moment_raw', 'moment_central', 'moment_standardized'}
+
+    for method in methods:
+        if hasattr(dist, method):
+            # Make it an attribute of the new object with the new name
+            new_method = f"_{method}_formula"
+            setattr(CustomDistribution, new_method, getattr(dist, method))
+
+    support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
+    docs = [
+        f"This class represents `{dist.__class__.__name__}` as a subclass of "
         "`ContinuousDistribution`.",
         f"The `repr`/`str` of class instances is `{repr_str}`.",
         f"The PDF of the distribution is defined {support_etc}"
