@@ -250,7 +250,7 @@ def _cho_solve(c, b, lower, overwrite_b, check_finite):
     potrs, = get_lapack_funcs(('potrs',), (c, b1))
     x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
     if info != 0:
-        raise ValueError(f'illegal value in {info}th argument of internal potrs')
+        raise ValueError(f'illegal value in {-info}th argument of internal potrs')
     return x
 
 
