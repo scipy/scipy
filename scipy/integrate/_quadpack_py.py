@@ -1065,7 +1065,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     The following provides a short description from [1]_ for each
     routine.
 
-    qagse (QAGS)
+    qagse
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation by the epsilon 
         algorithm. The integration is based on 21-point Gauss-Kronrod 
