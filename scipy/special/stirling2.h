@@ -1,18 +1,10 @@
 #ifndef STIRLING_H
 #define STIRLING_H
 
-#if defined(__cplusplus)
 #include <cmath>
-using std::isinf;
-#endif
-
-#include <complex.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <memory>
+#include <complex>
 #include <limits>
+#include <memory>
 
 #include "xsf/binom.h"
 #include "xsf/lambertw.h"
@@ -72,8 +64,7 @@ double _stirling2_dp(double n, double k) {
             }
         }
     }
-    double output = curr[arraySize - 1];
-    return output;
+    return curr[arraySize - 1];
 }
 
 
@@ -87,7 +78,7 @@ double _stirling2_temme(double n, double k) {
   if (k <= 0 || k > n || n < 0) {
       return 0.;
   }
-  double mu = (double)k / (double)n;
+  double mu = static_cast<double>(k) / n;
   double d = exp(-1/mu) / mu;
   std::complex<double> delta = std::complex<double>(-d, 0);
   // note: lambert returns complex value, we only want the real part
@@ -108,8 +99,7 @@ double _stirling2_temme(double n, double k) {
   num += (-6*t0power3 + (8*t0 - 6*x0 - 5)*xt + ((2.*x0+1.)*x0+3.)*x0)*xt;
   double denom = (24*F*(1 + t0) * (1 + t0)*(x0 - t0)*(x0 - t0)*(x0 - t0)*(x0-t0));
   double F1 = num / denom;
-  double val = exp(A) * pow(k,n - k) * xsf::binom(n, k) * (F-F1/k);
-  return val;
+  return exp(A) * pow(k, n - k) * xsf::binom(n, k) * (F - F1/k);
 }
 
 
@@ -121,12 +111,11 @@ double _stirling2_temme(double n, double k) {
  */
 
 double _stirling2_inexact(double n, double k) {
-  if (n<=50) {
-    return _stirling2_dp(n,k);
+  if (n <= 50) {
+    return _stirling2_dp(n, k);
   } else {
     return _stirling2_temme(n, k);
   }
 }
-
 
 #endif
