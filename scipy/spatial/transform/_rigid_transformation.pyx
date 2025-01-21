@@ -254,9 +254,9 @@ cdef class RigidTransformation:
     From A's perspective, B is at [-2, 0, 0] and rotated +90 degrees about the
     x-axis, which is exactly the transform A <- B.
 
-    >>> r_A_B = R.from_euler('xyz', [90, 0, 0], degrees=True)
     >>> t_A_B = np.array([-2, 0, 0])
-    >>> tf_A_B = Tf.from_components(r_A_B, t_A_B)
+    >>> r_A_B = R.from_euler('xyz', [90, 0, 0], degrees=True)
+    >>> tf_A_B = Tf.from_components(t_A_B, r_A_B)
 
     Let's plot these frames.
 
@@ -276,7 +276,7 @@ cdef class RigidTransformation:
 
     >>> t_B_C = np.array([0, 0, 2])
     >>> r_B_C = R.from_euler('xyz', [0, 0, 30], degrees=True)
-    >>> tf_B_C = Tf.from_components(r_B_C, t_B_C)
+    >>> tf_B_C = Tf.from_components(t_B_C, r_B_C)
 
     In order to plot these frames from a consistent perspective, we need to
     calculate the transformation between A and C. Note that we do not make this
@@ -703,13 +703,13 @@ cdef class RigidTransformation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_components(cls, rotation, translation):
-        """Initialize a rigid transformation from rotation and translation
+    def from_components(cls, translation, rotation):
+        """Initialize a rigid transformation from translation and rotation
         components.
 
-        When creating a rigid transformation from a rotation and translation,
-        the rotation is applied before the translation, such that
-        ``tf = Tf.from_components(rotation, translation)``
+        When creating a rigid transformation from a translation and rotation,
+        the translation is applied after the rotation, such that
+        ``tf = Tf.from_components(translation, rotation)``
         is equivalent to
         ``tf = Tf.from_translation(translation) * Tf.from_rotation(rotation)``.
 
@@ -719,10 +719,10 @@ cdef class RigidTransformation:
 
         Parameters
         ----------
-        rotation : `Rotation` instance
-            A single rotation or a stack of rotations.
         translation : array_like, shape (N, 3) or (3,)
             A single translation vector or a stack of translation vectors.
+        rotation : `Rotation` instance
+            A single rotation or a stack of rotations.
 
         Returns
         -------
@@ -740,13 +740,13 @@ cdef class RigidTransformation:
 
         Creating from a single rotation and translation:
 
+        >>> t = np.array([2, 3, 4])
         >>> r = R.from_euler("ZYX", [90, 30, 0], degrees=True)
         >>> r.as_matrix()
         array([[ 0.       , -1.,  0.        ],
                [ 0.8660254,  0.,  0.5       ],
                [-0.5      ,  0.,  0.8660254 ]])
-        >>> t = np.array([2, 3, 4])
-        >>> tf = Tf.from_components(r, t)
+        >>> tf = Tf.from_components(t, r)
         >>> tf.rotation.as_matrix()
         array([[ 0.       , -1.,  0.        ],
                [ 0.8660254,  0.,  0.5       ],
@@ -1121,8 +1121,8 @@ cdef class RigidTransformation:
         """
         rng = check_random_state(rng)
         r = Rotation.random(num, rng=rng)
-        tf = Rotation.random(num, rng=rng).apply([1, 0, 0])
-        return cls.from_components(r, tf)
+        t = Rotation.random(num, rng=rng).apply([1, 0, 0])
+        return cls.from_components(t, r)
 
     @cython.embedsignature(True)
     @classmethod
@@ -1190,11 +1190,11 @@ cdef class RigidTransformation:
         A transformation matrix is a 4x4 matrix formed from a 3x3 rotation
         matrix and a 3x1 translation vector:
 
+        >>> t = np.array([2, 3, 4])
         >>> r = R.from_matrix([[0, 0, 1],
         ...                    [1, 0, 0],
         ...                    [0, 1, 0]])
-        >>> t = np.array([2, 3, 4])
-        >>> tf = Tf.from_components(r, t)
+        >>> tf = Tf.from_components(t, r)
         >>> tf.as_matrix()
         array([[ 0., 0., 1., 2.],
                [ 1., 0., 0., 3.],
@@ -1218,7 +1218,7 @@ cdef class RigidTransformation:
 
     @cython.embedsignature(True)
     def as_components(self):
-        """Return the rotation and translation components of the transformation,
+        """Return the translation and rotation components of the transformation,
         where the rotation is applied first, followed by the translation.
 
         4x4 rigid transformation matrices are of the form:
@@ -1240,10 +1240,10 @@ cdef class RigidTransformation:
 
         Returns
         -------
-        rotation : `Rotation` instance
-            The rotation of the transformation.
         translation : numpy.ndarray, shape (N, 3) or (3,)
             The translation of the transformation.
+        rotation : `Rotation` instance
+            The rotation of the transformation.
 
         Examples
         --------
@@ -1253,18 +1253,18 @@ cdef class RigidTransformation:
 
         Recover the rotation and translation from a transformation:
 
+        >>> t = np.array([2, 3, 4])
         >>> r = R.from_matrix([[0, 0, 1],
         ...                    [1, 0, 0],
         ...                    [0, 1, 0]])
-        >>> t = np.array([2, 3, 4])
-        >>> tf = Tf.from_components(r, t)
-        >>> tf_r, tf_d = tf.as_components()
+        >>> tf = Tf.from_components(t, r)
+        >>> tf_t, tf_r = tf.as_components()
+        >>> tf_t
+        array([2., 3., 4.])
         >>> tf_r.as_matrix()
         array([[0., 0., 1.],
                [1., 0., 0.],
                [0., 1., 0.]])
-        >>> tf_d
-        array([2., 3., 4.])
 
         The transformation applied to a vector is equivalent to the rotation
         applied to the vector followed by the translation:
@@ -1276,7 +1276,7 @@ cdef class RigidTransformation:
         >>> tf.apply([1, 0, 0])
         array([2., 4., 4.])
         """
-        return self.rotation, self.translation
+        return self.translation, self.rotation
 
     @cython.embedsignature(True)
     def as_exp_coords(self):
@@ -1600,10 +1600,10 @@ cdef class RigidTransformation:
         When applied to a vector, the composition of two transformations is
         applied in right-to-left order.
 
-        >>> r1, t1 = R.from_euler('z', 60, degrees=True), [1, 2, 3]
-        >>> r2, t2 = R.from_euler('x', 30, degrees=True), [0, 1, 0]
-        >>> tf1 = Tf.from_components(r1, t1)
-        >>> tf2 = Tf.from_components(r2, t2)
+        >>> t1, r1 = [1, 2, 3], R.from_euler('z', 60, degrees=True)
+        >>> t2, r2 = [0, 1, 0], R.from_euler('x', 30, degrees=True)
+        >>> tf1 = Tf.from_components(t1, r1)
+        >>> tf2 = Tf.from_components(t2, r2)
         >>> tf = tf1 * tf2
         >>> tf.apply([1, 0, 0])
         array([0.6339746, 3.3660254, 3.       ])
@@ -1774,7 +1774,7 @@ cdef class RigidTransformation:
         The inverse rigid transformation is the same as the inverse translation
         followed by the inverse rotation:
 
-        >>> r, t = tf.as_components()
+        >>> t, r = tf.as_components()
         >>> r_inv = r.inv()  # inverse rotation
         >>> t_inv = -t  # inverse translation
         >>> tf_r_inv = Tf.from_rotation(r_inv)
@@ -1790,8 +1790,8 @@ cdef class RigidTransformation:
                 [0., 0., 0., 1.]]])
         """
         r_inv = self.rotation.inv()
-        tf_inv = -r_inv.apply(self.translation)
-        return self.__class__.from_components(r_inv, tf_inv)
+        t_inv = -r_inv.apply(self.translation)
+        return self.__class__.from_components(t_inv, r_inv)
 
     @cython.embedsignature(True)
     def apply(self, vector, inverse=False):
@@ -1870,7 +1870,7 @@ cdef class RigidTransformation:
         vector and then adding the translation component.
 
         >>> r = R.from_euler('z', 60, degrees=True)
-        >>> tf = Tf.from_components(r, t)
+        >>> tf = Tf.from_components(t, r)
         >>> t + r.apply([1, 0, 0])
         array([1.5,       2.8660254, 3.       ])
         >>> tf.apply([1, 0, 0])
@@ -1938,9 +1938,9 @@ cdef class RigidTransformation:
 
         The rotation component is extracted from the transformation:
 
-        >>> r = R.random(3)
         >>> t = np.array([1, 0, 0])
-        >>> tf = Tf.from_components(r, t)
+        >>> r = R.random(3)
+        >>> tf = Tf.from_components(t, r)
         >>> np.allclose(tf.rotation.as_matrix(), r.as_matrix())
         True
         """
@@ -1972,9 +1972,9 @@ cdef class RigidTransformation:
 
         The translation component is extracted from the transformation:
 
-        >>> r = R.random()
         >>> t = np.array([[1, 0, 0], [2, 0, 0], [3, 0, 0]])
-        >>> tf = Tf.from_components(r, t)
+        >>> r = R.random()
+        >>> tf = Tf.from_components(t, r)
         >>> np.allclose(tf.translation, t)
         True
         """

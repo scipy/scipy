@@ -118,9 +118,9 @@ def test_from_components():
     atol = 1e-12
 
     # Test single rotation and translation
-    r = Rotation.from_euler('zyx', [90, 0, 0], degrees=True)
     t = np.array([1, 2, 3])
-    tf = RigidTransformation.from_components(r, t)
+    r = Rotation.from_euler('zyx', [90, 0, 0], degrees=True)
+    tf = RigidTransformation.from_components(t, r)
 
     expected = np.zeros((4, 4))
     expected[:3, :3] = r.as_matrix()
@@ -130,9 +130,9 @@ def test_from_components():
     assert tf.single
 
     # Test single rotation and multiple translations
-    r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_components(r, t)
+    r = Rotation.from_euler('z', 90, degrees=True)
+    tf = RigidTransformation.from_components(t, r)
     assert not tf.single
 
     for i in range(len(t)):
@@ -143,9 +143,9 @@ def test_from_components():
         assert_allclose(tf.as_matrix()[i], expected, atol=atol)
 
     # Test multiple rotations and translations
-    r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_components(r, t)
+    r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
+    tf = RigidTransformation.from_components(t, r)
     assert not tf.single
 
     for i in range(len(t)):
@@ -159,12 +159,12 @@ def test_from_components():
 def test_as_components():
     atol = 1e-12
     n = 10
-    r = Rotation.random(n, rng=10)
     t = np.array([1, 2, 3] * n).reshape(n, 3)
-    tf = RigidTransformation.from_components(r, t)
-    new_r, new_trans = tf.as_components()
+    r = Rotation.random(n, rng=10)
+    tf = RigidTransformation.from_components(t, r)
+    new_t, new_r = tf.as_components()
     assert all(new_r.approx_equal(r, atol=atol))
-    assert_allclose(new_trans, t, atol=atol)
+    assert_allclose(new_t, t, atol=atol)
 
 
 def test_from_exp_coords():
@@ -390,7 +390,7 @@ def test_from_dual_quat():
         np.linalg.norm(dual_quat_norm[:, :4], axis=1), 1.0, atol=1e-12)
 
     # compensation for precision loss in dual quaternion, results in violation
-    # of ortogonality constraint
+    # of orthogonality constraint
     random_dual_quats = RigidTransformation.random(
         num=10, rng=2).as_dual_quat()
     # ensure that random quaternions are not normalized
@@ -460,7 +460,7 @@ def test_from_as_internal_consistency():
     tf1 = RigidTransformation.from_components(*tf0.as_components())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
-    tf1 = RigidTransformation.from_components(tf0.rotation, tf0.translation)
+    tf1 = RigidTransformation.from_components(tf0.translation, tf0.rotation)
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
     tf1 = RigidTransformation.from_exp_coords(tf0.as_exp_coords())
@@ -512,7 +512,7 @@ def test_apply():
     ## Single transformation
     r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([2, 3, 4])
-    tf = RigidTransformation.from_components(r, t)
+    tf = RigidTransformation.from_components(t, r)
 
     # Single vector, single transformation
     vec = np.array([1, 0, 0])
@@ -528,7 +528,7 @@ def test_apply():
     ## Multiple transformations
     r = Rotation.from_euler('z', [90, 0], degrees=True)
     t = np.array([[2, 3, 4], [5, 6, 7]])
-    tf = RigidTransformation.from_components(r, t)
+    tf = RigidTransformation.from_components(t, r)
 
     # Single vector, multiple transformations
     vec = np.array([1, 0, 0])
@@ -545,9 +545,9 @@ def test_inverse_apply():
     atol = 1e-12
 
     # Test applying inverse transformation
-    r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([1, 2, 3])
-    tf = RigidTransformation.from_components(r, t)
+    r = Rotation.from_euler('z', 90, degrees=True)
+    tf = RigidTransformation.from_components(t, r)
 
     # Test single vector
     vec = np.array([1, 0, 0])
@@ -583,13 +583,13 @@ def test_composition():
     atol = 1e-12
 
     # Test composing single transformations
-    r1 = Rotation.from_euler('z', 90, degrees=True)
     t1 = np.array([1, 0, 0])
-    tf1 = RigidTransformation.from_components(r1, t1)
+    r1 = Rotation.from_euler('z', 90, degrees=True)
+    tf1 = RigidTransformation.from_components(t1, r1)
 
-    r2 = Rotation.from_euler('x', 90, degrees=True)
     t2 = np.array([0, 1, 0])
-    tf2 = RigidTransformation.from_components(r2, t2)
+    r2 = Rotation.from_euler('x', 90, degrees=True)
+    tf2 = RigidTransformation.from_components(t2, r2)
 
     composed = tf2 * tf1
     vec = np.array([1, 0, 0])
@@ -602,7 +602,7 @@ def test_composition():
 
     # Multiple transformations with single transformation
     t2 = np.array([[1, 2, 3], [4, 5, 6]])
-    tf2 = RigidTransformation.from_components(r2, t2)
+    tf2 = RigidTransformation.from_components(t2, r2)
 
     composed = tf2 * tf1
     expected = tf2.apply(tf1.apply(vec))
@@ -614,7 +614,7 @@ def test_composition():
 
     # Multiple transformations with multiple transformations
     t1 = np.array([[1, 0, 0], [0, -1, 1]])
-    tf1 = RigidTransformation.from_components(r1, t1)
+    tf1 = RigidTransformation.from_components(t1, r1)
 
     composed = tf2 * tf1
     expected = tf2.apply(tf1.apply(vec))
@@ -659,7 +659,7 @@ def test_inverse():
     # Test inverse transformation
     r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([1, 2, 3])
-    tf = RigidTransformation.from_components(r, t)
+    tf = RigidTransformation.from_components(t, r)
 
     # Test that tf * tf.inv() equals identity
     tf_inv = tf.inv()
@@ -675,7 +675,7 @@ def test_inverse():
     # Test multiple transformations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_components(r, t)
+    tf = RigidTransformation.from_components(t, r)
     tf_inv = tf.inv()
     composed = tf * tf_inv
     assert_allclose(composed.as_matrix(), np.array([np.eye(4)] * 2), atol=atol)
@@ -687,7 +687,7 @@ def test_properties():
     # Test rotation and translation properties for single transformation
     r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([1, 2, 3])
-    tf = RigidTransformation.from_components(r, t)
+    tf = RigidTransformation.from_components(t, r)
 
     assert_allclose(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert tf.rotation.approx_equal(r)
@@ -696,7 +696,7 @@ def test_properties():
     # Test rotation and translation properties for multiple transformations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_components(r, t)
+    tf = RigidTransformation.from_components(t, r)
 
     assert_allclose(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert all(tf.rotation.approx_equal(r))
@@ -709,7 +709,7 @@ def test_indexing():
     # Test indexing for multiple transformations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_components(r, t)
+    tf = RigidTransformation.from_components(t, r)
 
     # Test single index
     assert_allclose(tf[0].as_matrix()[:3, :3], r[0].as_matrix(), atol=atol)
@@ -725,13 +725,13 @@ def test_concatenate():
     atol = 1e-12
 
     # Test concatenation of transformations
-    r1 = Rotation.from_euler('z', 90, degrees=True)
     t1 = np.array([1, 0, 0])
-    tf1 = RigidTransformation.from_components(r1, t1)
+    r1 = Rotation.from_euler('z', 90, degrees=True)
+    tf1 = RigidTransformation.from_components(t1, r1)
 
-    r2 = Rotation.from_euler('x', 90, degrees=True)
     t2 = np.array([0, 1, 0])
-    tf2 = RigidTransformation.from_components(r2, t2)
+    r2 = Rotation.from_euler('x', 90, degrees=True)
+    tf2 = RigidTransformation.from_components(t2, r2)
 
     # Concatenate single transformations
     concatenated1 = RigidTransformation.concatenate([tf1, tf2])
