@@ -284,7 +284,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types. The integration is based on 21-point Gauss-Kronrod 
+        several types. The integration is performed using a 21-point Gauss-Kronrod 
         quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
