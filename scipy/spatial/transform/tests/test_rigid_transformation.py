@@ -255,22 +255,18 @@ def test_as_exp_coords():
     rng = np.random.default_rng(10)
 
     # pure rotation
-    for _ in range(10):
-        expected = np.hstack((rng.normal(size=3), np.zeros(3)))
-        actual = RigidTransformation.from_exp_coords(expected).as_exp_coords()
-        assert_allclose(actual, expected, atol=1e-12)
+    rot_vec = rng.normal(scale=0.1, size=(1000, 3))
+    tf = RigidTransformation.from_rotation(Rotation.from_rotvec(rot_vec))
+    exp_coords = tf.as_exp_coords()
+    assert_allclose(exp_coords[:, :3], rot_vec, rtol=1e-13)
+    assert_allclose(exp_coords[:, 3:], 0.0, atol=1e-16)
 
     # pure translation
-    for _ in range(10):
-        expected = np.hstack((np.zeros(3), rng.normal(size=3)))
-        actual = RigidTransformation.from_exp_coords(expected).as_exp_coords()
-        assert_allclose(actual, expected, atol=1e-12)
-
-    # rotation and translation
-    for _ in range(10):
-        expected = rng.normal(size=6)
-        actual = RigidTransformation.from_exp_coords(expected).as_exp_coords()
-        assert_allclose(actual, expected, atol=1e-12)
+    translation = rng.normal(scale=100.0, size=(1000, 3))
+    tf = RigidTransformation.from_translation(translation)
+    exp_coords = tf.as_exp_coords()
+    assert_allclose(exp_coords[:, :3], 0.0, atol=1e-16)
+    assert_allclose(exp_coords[:, 3:], translation, rtol=1e-15)
 
 
 def test_from_dual_quat():
@@ -454,8 +450,9 @@ def test_as_dual_quat():
 
 def test_from_as_internal_consistency():
     atol = 1e-12
-    n = 100
-    tf0 = RigidTransformation.random(n, rng=10)
+    n = 1000
+    rng = np.random.default_rng(10)
+    tf0 = RigidTransformation.random(n, rng=rng)
 
     tf1 = RigidTransformation.from_components(*tf0.as_components())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
@@ -470,6 +467,13 @@ def test_from_as_internal_consistency():
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
     tf1 = RigidTransformation.from_dual_quat(tf0.as_dual_quat())
+    assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
+
+    # exp_coords small rotation
+    tf0 = RigidTransformation.from_components(
+        rng.normal(scale=1000.0, size=(1000, 3)),
+        Rotation.from_rotvec(rng.normal(scale=1e-10, size=(1000, 3))))
+    tf1 = RigidTransformation.from_exp_coords(tf0.as_exp_coords())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
 
