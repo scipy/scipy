@@ -211,10 +211,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     For the 'cos' and 'sin' weighting, additional inputs and outputs are
     available.
 
-    For finite integration limits, the integration is performed using a 
-    Clenshaw-Curtis method, which uses Chebyshev moments. This method is 
-    particularly suited for handling weighted integrals, such as those 
-    involving singular weight functions or singularities near the integration limits. 
+    For weighted integrals with finite integration limits, the integration is performed using a 
+    Clenshaw-Curtis method, which uses Chebyshev moments.
     For repeated calculations, these moments are saved in the output dictionary:
 
     'momcom'
