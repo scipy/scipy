@@ -875,7 +875,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     are infinite. The following provides a short description from [1]_ for each
     routine.
 
-    qagse (QAGS)
+    qagse
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation by the epsilon 
         algorithm. The integration is based on 21-point Gauss-Kronrod 
