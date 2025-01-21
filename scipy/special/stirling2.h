@@ -47,7 +47,7 @@ double _stirling2_dp(double n, double k) {
         for (int i = 1; i < n - k + 1; i++) {
             for (int j = 1; j < k; j++) {
                 curr[j] = (j + 1) * curr[j] + curr[j - 1];
-                if (isinf(curr[j])) {
+                if (std::isinf(curr[j])) {
                     sf_error("stirling2", SF_ERROR_OVERFLOW, NULL);
                     return INFINITY; // numeric overflow
                 }
@@ -57,7 +57,7 @@ double _stirling2_dp(double n, double k) {
         for (int i = 1; i < k; i++) {
             for (int j = 1; j < n - k + 1; j++) {
                 curr[j] = (i + 1) * curr[j - 1] + curr[j];
-                if (isinf(curr[j])) {
+                if (std::isinf(curr[j])) {
                     sf_error("stirling2", SF_ERROR_OVERFLOW, NULL);
                     return INFINITY; // numeric overflow
                 }
@@ -66,7 +66,6 @@ double _stirling2_dp(double n, double k) {
     }
     return curr[arraySize - 1];
 }
-
 
 
 // second order Temme approximation
@@ -79,15 +78,16 @@ double _stirling2_temme(double n, double k) {
       return 0.;
   }
   double mu = static_cast<double>(k) / n;
-  double d = exp(-1/mu) / mu;
+  double d = std::exp(-1/mu) / mu;
   std::complex<double> delta = std::complex<double>(-d, 0);
   // note: lambert returns complex value, we only want the real part
   // matching k=0, tolerance=1e-8 from _lambertw.py
   std::complex<double> lwv = xsf::lambertw(delta, 0, 1e-8);
   double x0 = lwv.real() + 1/mu;
   double t0 = (1/mu) - 1;
-  double F = sqrt(t0/((1 + t0)*(x0 - t0)));
-  double A = -n * log(x0) + k * log(exp(x0) - 1) - k * t0 + (n - k) * log(t0);
+  double F = std::sqrt(t0/((1 + t0)*(x0 - t0)));
+  double A = -n * std::log(x0) + k * std::log(exp(x0) - 1)
+             - k * t0 + (n - k) * std::log(t0);
   // write F1 as numerator and denominator and apply Horner rule to num
   double xt = x0*t0;
   double t0power3 = t0*t0*t0;
@@ -99,7 +99,7 @@ double _stirling2_temme(double n, double k) {
   num += (-6*t0power3 + (8*t0 - 6*x0 - 5)*xt + ((2.*x0+1.)*x0+3.)*x0)*xt;
   double denom = (24*F*(1 + t0) * (1 + t0)*(x0 - t0)*(x0 - t0)*(x0 - t0)*(x0-t0));
   double F1 = num / denom;
-  return exp(A) * pow(k, n - k) * xsf::binom(n, k) * (F - F1/k);
+  return std::exp(A) * std::pow(k, n - k) * xsf::binom(n, k) * (F - F1/k);
 }
 
 
