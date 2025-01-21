@@ -149,7 +149,7 @@ class TestMMIOArray:
             """
         text = textwrap.dedent(s).encode('ascii')
         with pytest.raises(ValueError, match='not of length 2'):
-            mmread(io.BytesIO(text))
+            scipy.io.mmread(io.BytesIO(text))
 
     def test_gh13634_non_skew_symmetric_int(self):
         self.check_exact(array([[1, 2], [-2, 99]], dtype=np.int32),
@@ -755,11 +755,11 @@ class TestMMIOCoordinate:
                 A[n-1, n-1] = value
                 # write matrix with test precision and read again
                 mmwrite(self.fn, A, precision=precision)
-                A = mmread(self.fn, spmatrix=False)
+                A = scipy.io.mmread(self.fn, spmatrix=False)
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
-                assert_allclose(A.data, [float(f'{value:.{precision}g}')])
+                assert_allclose(A.data, [float('%%.%dg' % precision % value)])
 
     def test_bad_number_of_coordinate_header_fields(self):
         s = """\
@@ -776,7 +776,7 @@ class TestMMIOCoordinate:
             """
         text = textwrap.dedent(s).encode('ascii')
         with pytest.raises(ValueError, match='not of length 3'):
-            mmread(io.BytesIO(text))
+            scipy.io.mmread(io.BytesIO(text))
 
 
 def test_gh11389():
