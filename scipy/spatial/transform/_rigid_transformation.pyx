@@ -54,8 +54,8 @@ def _normalize_dual_quaternion(real_part, dual_part):
         # normalize dual quaternion
         real_part[i] = real_inv_sqrt[i] * real_part[i]
         dual_part[i] = real_inv_sqrt[i] * dual_part[i] + np.asarray(
-            compose_quat(dual_inv_sqrt.reshape(-1, 1),
-                real_part[i].reshape(-1, 1)))[0]
+            compose_quat(dual_inv_sqrt[np.newaxis],
+                         real_part[i, np.newaxis]))[0]
 
     return real_part, dual_part
 
