@@ -282,10 +282,10 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     qagse
         is an integrator based on globally adaptive interval
-        subdivision and extrapolation by the epsilon 
-        algorithm. The integration is based on 21-point Gauss-Kronrod 
-        quadrature within each subinterval, which will eliminate the 
-        effects of integrand singularities of several types.
+        subdivision in connection with extrapolation, which will
+        eliminate the effects of integrand singularities of
+        several types. The integration is based on 21-point Gauss-Kronrod 
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -744,10 +744,10 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     qagse
         is an integrator based on globally adaptive interval
-        subdivision in connection with extrapolation by the epsilon 
-        algorithm. The integration is based on 21-point Gauss-Kronrod 
-        quadrature within each subinterval, which will eliminate the 
-        effects of integrand singularities of several types.
+        subdivision in connection with extrapolation, which will
+        eliminate the effects of integrand singularities of
+        several types. The integration is based on 21-point Gauss-Kronrod 
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -877,10 +877,10 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     qagse
         is an integrator based on globally adaptive interval
-        subdivision in connection with extrapolation by the epsilon 
-        algorithm. The integration is based on 21-point Gauss-Kronrod 
-        quadrature within each subinterval, which will eliminate the 
-        effects of integrand singularities of several types.
+        subdivision in connection with extrapolation, which will
+        eliminate the effects of integrand singularities of
+        several types. The integration is based on 21-point Gauss-Kronrod 
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -1067,10 +1067,10 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
     qagse
         is an integrator based on globally adaptive interval
-        subdivision in connection with extrapolation by the epsilon 
-        algorithm. The integration is based on 21-point Gauss-Kronrod 
-        quadrature within each subinterval, which will eliminate the 
-        effects of integrand singularities of several types.
+        subdivision in connection with extrapolation, which will
+        eliminate the effects of integrand singularities of
+        several types. The integration is based on 21-point Gauss-Kronrod 
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
