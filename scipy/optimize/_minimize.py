@@ -342,10 +342,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
-    approximations to the objective function and each constraint. The
-    method wraps a FORTRAN implementation of the algorithm. The
-    constraints functions 'fun' may return either a single number
-    or an array or list of numbers.
+    approximations to the objective function and each constraint.
 
     Method :ref:`COBYQA <optimize.minimize-cobyqa>` uses the Constrained
     Optimization BY Quadratic Approximations (COBYQA) method [18]_. The
