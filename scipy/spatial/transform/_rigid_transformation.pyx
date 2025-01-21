@@ -23,7 +23,7 @@ cdef _compose_dual_quaternion(real_part1, dual_part1, real_part2, dual_part2):
     return prod_real, prod_dual
 
 
-def _normalize_dual_quaternion(real_part, dual_part):
+cdef _normalize_dual_quaternion(real_part, dual_part):
     """Ensure that the norm is 1 and that real and dual part are orthogonal."""
     real_part = np.copy(real_part)
     dual_part = np.copy(dual_part)
