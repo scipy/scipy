@@ -1422,16 +1422,19 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         unspecified.  This is computed internally via a (sparse) LU
         decomposition for explicit matrices A & M, or via an iterative
         solver if either A or M is a general linear operator.
-        Alternatively, the user can supply the matrix or operator OPinv,
+        Alternatively, the user can supply the matrix or operator `OPinv`,
         which gives ``x = OPinv @ b = [A - sigma * M]^-1 @ b``.
+        Regardless of the selected mode (normal, cayley, or buckling),
+        `OPinv` should always be supplied as ``OPinv = [A - sigma * M]^-1``.
+
         Note that when sigma is specified, the keyword 'which' refers to
         the shifted eigenvalues ``w'[i]`` where:
 
-            if mode == 'normal', ``w'[i] = 1 / (w[i] - sigma)``.
+            if ``mode == 'normal'``: ``w'[i] = 1 / (w[i] - sigma)``.
 
-            if mode == 'cayley', ``w'[i] = (w[i] + sigma) / (w[i] - sigma)``.
+            if ``mode == 'cayley'``:  ``w'[i] = (w[i] + sigma) / (w[i] - sigma)``.
 
-            if mode == 'buckling', ``w'[i] = w[i] / (w[i] - sigma)``.
+            if ``mode == 'buckling'``: ``w'[i] = w[i] / (w[i] - sigma)``.
 
         (see further discussion in 'mode' below)
     v0 : ndarray, optional

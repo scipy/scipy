@@ -40,8 +40,8 @@ expected_types = ['numeric', 'numeric', 'numeric', 'numeric', 'nominal']
 missing = pjoin(data_path, 'missing.arff')
 expect_missing_raw = np.array([[1, 5], [2, 4], [np.nan, np.nan]])
 expect_missing = np.empty(3, [('yop', float), ('yap', float)])
-expect_missing['yop'] = expect_missing_raw[:, 0]  # type: ignore[call-overload]
-expect_missing['yap'] = expect_missing_raw[:, 1]  # type: ignore[call-overload]
+expect_missing['yop'] = expect_missing_raw[:, 0]
+expect_missing['yap'] = expect_missing_raw[:, 1]
 
 
 class TestData:

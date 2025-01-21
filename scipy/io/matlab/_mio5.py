@@ -87,7 +87,7 @@ from ._byteordercodes import native_code, swapped_code
 
 from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       arr_to_chars, arr_dtype_number, MatWriteError,
-                      MatReadError, MatReadWarning)
+                      MatReadError, MatReadWarning, MatWriteWarning)
 
 # Reader object for matlab 5 format variables
 from ._mio5_utils import VarReader5
@@ -482,10 +482,14 @@ def to_writeable(source):
         dtype = []
         values = []
         for field, value in source.items():
-            if (isinstance(field, str) and
-                    field[0] not in '_0123456789'):
-                dtype.append((str(field), object))
-                values.append(value)
+            if isinstance(field, str):
+                if field[0] not in '_0123456789':
+                    dtype.append((str(field), object))
+                    values.append(value)
+                else:
+                    msg = (f"Starting field name with a underscore "
+                           f"or a digit ({field}) is ignored")
+                    warnings.warn(msg, MatWriteWarning, stacklevel=2)
         if dtype:
             return np.array([tuple(values)], dtype)
         else:
@@ -512,7 +516,7 @@ NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 class VarWriter5:
     ''' Generic matlab matrix writing class '''
     mat_tag = np.zeros((), NDT_TAG_FULL)
-    mat_tag['mdtype'] = miMATRIX  # type: ignore[call-overload]
+    mat_tag['mdtype'] = miMATRIX
 
     def __init__(self, file_writer):
         self.file_stream = file_writer.file_stream
@@ -879,6 +883,9 @@ class MatFile5Writer:
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
             if name[0] == '_':
+                msg = (f"Starting field name with a "
+                       f"underscore ({name}) is ignored")
+                warnings.warn(msg, MatWriteWarning, stacklevel=2)
                 continue
             is_global = name in self.global_vars
             if self.do_compression:

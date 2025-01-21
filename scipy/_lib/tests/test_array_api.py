@@ -7,6 +7,11 @@ from scipy._lib._array_api import (
 )
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
+from scipy._lib._lazy_testing import lazy_xp_function
+
+lazy_xp_function(_asarray, static_argnames=(
+                 "dtype", "order", "copy", "xp", "check_finite", "subok"))
+lazy_xp_function(xp_copy, static_argnames=("xp", ))
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 

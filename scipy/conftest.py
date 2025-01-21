@@ -12,10 +12,11 @@ import pytest
 import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
-from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, xp_device
+    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp, xp_device
 )
+from scipy._lib._lazy_testing import patch_lazy_xp_functions
+from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
 
 try:
@@ -217,7 +218,7 @@ if 'cupy' in xp_available_backends:
     pytest.param(v, id=k, marks=pytest.mark.array_api_backends)
     for k, v in xp_available_backends.items()
 ])
-def xp(request):
+def xp(request, monkeypatch):
     """Run the test that uses this fixture on each available array API library.
 
     You can select all and only the tests that use the `xp` fixture by
@@ -240,7 +241,10 @@ def xp(request):
     xp = array_namespace(xp.empty(0))
 
     if SCIPY_ARRAY_API:
-        from scipy._lib._array_api import default_xp
+        # If request.param==jax.numpy, wrap tested functions in jax.jit
+        patch_lazy_xp_functions(
+            xp=request.param, request=request, monkeypatch=monkeypatch
+        )
 
         # Throughout all calls to assert_almost_equal, assert_array_almost_equal, and
         # xp_assert_* functions, test that the array namespace is xp in both the

@@ -331,6 +331,32 @@ Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
 
 
+Testing the JAX JIT compiler
+----------------------------
+The `JAX JIT compiler <https://jax.readthedocs.io/en/latest/jit-compilation.html>`_
+introduces special restrictions to all code wrapped by `@jax.jit`, which are not
+present when running JAX in eager mode. Notably, boolean masks in `__getitem__`
+and `.at` aren't supported, and you can't materialize the arrays by applying
+`bool()`, `float()`, `np.asarray()` etc. to them.
+
+To properly test scipy with JAX, you need to wrap the tested scipy functions
+with `@jax.jit` before they are called by the unit tests.
+To achieve this, you should tag them as follows in your test module::
+
+  from scipy._lib._lazy_testing import lazy_xp_function
+  from scipy.mymodule import toto
+
+  lazy_xp_function(toto)
+
+  def test_toto(xp):
+      a = xp.asarray([1, 2, 3])
+      b = xp.asarray([0, 2, 5])
+      # When xp==jax.numpy, toto is wrapped with @jax.jit
+      xp_assert_close(toto(a, b), a)
+
+See full documentation in `scipy/_lib/_lazy_testing.py`.
+
+
 Additional information
 ----------------------
 
