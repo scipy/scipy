@@ -10,7 +10,8 @@ cimport cython
 np.import_array()
 
 
-def _create_skew_matrix(vec):
+cdef _create_skew_matrix(vec):
+    """Create skew-symmetric (aka cross-product) matrix for stack of vectors."""
     result = np.zeros((len(vec), 3, 3))
     result[:, 0, 1] = -vec[:, 2]
     result[:, 0, 2] = vec[:, 1]
@@ -21,7 +22,11 @@ def _create_skew_matrix(vec):
     return result
 
 
-def _compute_se3_exp_translation_transform(rot_vec):
+cdef _compute_se3_exp_translation_transform(rot_vec):
+    """Compute transform matrix from se3 translation part to SE3 translation.
+    
+    The transform matrix depends on the rotation vector.
+    """
     angle = np.linalg.norm(rot_vec, axis=1)
     mask = angle < 1e-3
 
@@ -38,7 +43,12 @@ def _compute_se3_exp_translation_transform(rot_vec):
     return np.identity(3) + k1[:, None, None] * s + k2[:, None, None] * s @ s
 
 
-def _compute_se3_log_translation_transform(rot_vec):
+cdef _compute_se3_log_translation_transform(rot_vec):
+    """Compute transform matrix from SE3 translation to se3 translation part.
+    
+    It is inverse of `_compute_se3_exp_translation_transform` in a closed analytical
+    form.
+    """
     angle = np.linalg.norm(rot_vec, axis=1)
     mask = angle < 1e-3
 
@@ -49,7 +59,6 @@ def _compute_se3_log_translation_transform(rot_vec):
     s = _create_skew_matrix(rot_vec)
 
     return np.identity(3) - 0.5 * s + k[:, None, None] * s @ s
-
 
 
 cdef _quaternion_conjugate(quat):
