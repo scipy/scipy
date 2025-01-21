@@ -973,7 +973,7 @@ class TestCubatureProblems:
     )
     @skip_xp_backends(
         "dask.array",
-        reasons=["transforms make use of boolean index assignment"],
+        reason="transforms make use of boolean index assignment"
     )
     @pytest.mark.parametrize("problem", [
         (
@@ -1127,7 +1127,7 @@ class TestCubatureProblems:
     )
     @skip_xp_backends(
         "dask.array",
-        reasons=["transforms make use of boolean index assignment"],
+        reason="transforms make use of boolean index assignment"
     )
     @pytest.mark.parametrize("problem", [
         (
@@ -1338,7 +1338,7 @@ class TestRulesCubature:
 )
 @skip_xp_backends(
     "dask.array",
-    reasons=["transforms make use of boolean index assignment"],
+    reason="transforms make use of boolean index assignment"
 )
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [

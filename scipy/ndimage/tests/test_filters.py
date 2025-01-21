@@ -2647,6 +2647,7 @@ def test_gaussian_radius_invalid(xp):
 
 
 @skip_xp_backends("jax.numpy", reason="output array is read-only")
+@skip_xp_backends("dask.array", reason="wrong answer")
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread

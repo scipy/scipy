@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import re
@@ -12,8 +13,8 @@ import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import skip_xp_invalid_arg
 
-from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
-                                   is_array_api_strict)
+from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_jax,
+                                   is_numpy, is_array_api_strict)
 from scipy._lib._lazy_testing import lazy_xp_function
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
@@ -385,9 +386,12 @@ class TestContainsNaN:
         # Lazy arrays don't support "omit" and "raise" policies
         # TODO test that we're emitting a user-friendly error message.
         #      Blocked by https://github.com/data-apis/array-api-compat/pull/228
-        with pytest.raises(TypeError):
+
+        # note: dask doesn't raise here since there are no nans in x
+        error_ctx = pytest.raises(TypeError) if is_jax(xp) else nullcontext()
+        with error_ctx:
             _contains_nan(x, "omit")
-        with pytest.raises(TypeError):
+        with error_ctx:
             _contains_nan(x, "raise")
 
         x = xpx.at(x)[1, 2, 1].set(np.nan)
@@ -395,9 +399,11 @@ class TestContainsNaN:
         xp_assert_equal(_contains_nan(x), xp.asarray(True))
         xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(True))
         xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(True))
-        with pytest.raises(TypeError):
+        # dask raises ValueError (from in the scipy code)
+        # jax raises a tracingerror (subclass of typeerror)
+        with pytest.raises((TypeError, ValueError)):
             _contains_nan(x, "omit")
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, ValueError)):
             _contains_nan(x, "raise")
 
 

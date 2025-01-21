@@ -398,7 +398,7 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
                 for d in xp.empty(0).devices():
                     if 'cpu' not in d.device_kind:
                         skip_or_xfail(reason=reason)
-            elif xp.__name__ == 'dask.array':
+            elif xp.__name__ == 'dask.array' and 'dask.array' not in exceptions:
                 if xp_device(xp.empty(0)) != 'cpu':
                     skip_or_xfail(reason=reason)
 
