@@ -144,7 +144,7 @@ def norm(x, ord=None, axis=None):
             raise ValueError('Duplicate axes given.')
         if ord == 2:
             # Only solver="lobpcg" supports all numpy dtypes
-            _, s, _ = svds(x, k=1, solver="lobpcg", maxiter=50)
+            _, s, _ = svds(x, k=1, solver="lobpcg")
             return s[0]
         elif ord == -2:
             raise NotImplementedError
