@@ -3597,20 +3597,20 @@ def make_distribution(dist):
     ...
     ...     @property
     ...     def parameters(self):
-    ...         return {'log_a': {'endpoints': (0, np.inf),
-    ...                           'inclusive': (False, False)},
-    ...                 'log_b': {'endpoints': ('a', np.inf),
-    ...                           'inclusive': (False, False)}}
+    ...         return {'a': {'endpoints': (0, np.inf),
+    ...                       'inclusive': (False, False)},
+    ...                 'b': {'endpoints': ('a', np.inf),
+    ...                       'inclusive': (False, False)}}
     ...
     ...     @property
     ...     def support(self):
-    ...         return 'log_a', 'log_b'
+    ...         return 'a', 'b'
     ...
-    ...     def pdf(self, x, log_a, log_b):
-    ...         return 1 / (x * (log_b - log_a))
+    ...     def pdf(self, x, a, b):
+    ...         return 1 / (x * (np.log(b)- np.log(a)))
     >>>
     >>> MyLogUniform = stats.make_distribution(MyLogUniform())
-    >>> Y = MyLogUniform(a=np.log(1.0), b=np.log(3.0))
+    >>> Y = MyLogUniform(a=1.0, b=3.0)
     >>> np.isclose(Y.cdf(2.), X.cdf(2.))
     np.True_
 
