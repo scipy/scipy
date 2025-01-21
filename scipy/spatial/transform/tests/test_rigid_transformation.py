@@ -355,8 +355,8 @@ def test_from_dual_quat():
     assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.3
     assert pytest.approx(np.dot(unnormalized_dual_quat[:4],
                                 unnormalized_dual_quat[4:]), abs=8) == 0.0
-    actual = RigidTransformation.from_dual_quat(unnormalized_dual_quat)
-    dual_quat = actual.as_dual_quat()
+    dual_quat = RigidTransformation.from_dual_quat(
+        unnormalized_dual_quat).as_dual_quat()
     assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
     assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
 
@@ -368,9 +368,19 @@ def test_from_dual_quat():
     assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.0
     assert np.dot(unnormalized_dual_quat[:4],
                   unnormalized_dual_quat[4:]) != 0.0
-    actual = RigidTransformation.from_dual_quat(unnormalized_dual_quat)
-    dual_quat = actual.as_dual_quat()
+    dual_quat = RigidTransformation.from_dual_quat(
+        unnormalized_dual_quat).as_dual_quat()
     assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
+    assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
+
+    # invalid real quaternion with norm 0, non-orthogonal dual quaternion
+    unnormalized_dual_quat = np.array(
+        [0.0, 0.0, 0.0, 0.0, -0.16051025, 0.10742978, 0.21277201, 0.20596935])
+    assert np.dot(np.array([0.0, 0.0, 0.0, 1.0]),
+                  unnormalized_dual_quat[4:]) != 0.0
+    dual_quat = RigidTransformation.from_dual_quat(
+        unnormalized_dual_quat).as_dual_quat()
+    assert_allclose(dual_quat[:4], np.array([0, 0, 0, 1]), atol=1e-12)
     assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
 
     # compensation for precision loss in real quaternion
