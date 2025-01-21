@@ -43,19 +43,12 @@ def _normalize_dual_quaternion(real_part, dual_part):
 
     # compute normalization factor
     real_inv_sqrt = 1.0 / prod_real_norm
+    dual_inv_sqrt = -0.5 * prod_dual * real_inv_sqrt[:, np.newaxis] ** 3
 
-    for i in range(len(real_part)):
-        if invalid_real_mask[i]:
-            continue
-
-        # compute normalization factor
-        dual_inv_sqrt = -0.5 * prod_dual[i] * real_inv_sqrt[i] ** 3
-
-        # normalize dual quaternion
-        real_part[i] = real_inv_sqrt[i] * real_part[i]
-        dual_part[i] = real_inv_sqrt[i] * dual_part[i] + np.asarray(
-            compose_quat(dual_inv_sqrt[np.newaxis],
-                         real_part[i, np.newaxis]))[0]
+    # normalize dual quaternion
+    real_part = real_inv_sqrt[:, np.newaxis] * real_part
+    dual_part = real_inv_sqrt[:, np.newaxis] * dual_part + np.asarray(
+        compose_quat(dual_inv_sqrt, real_part))
 
     return real_part, dual_part
 
