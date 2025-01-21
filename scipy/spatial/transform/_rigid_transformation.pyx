@@ -9,6 +9,50 @@ cimport cython
 
 np.import_array()
 
+
+cdef _quaternion_conjugate(quat):
+    conjugate = np.copy(quat)
+    conjugate[:, :3] = -conjugate[:, :3]
+    return conjugate
+
+
+cdef _compose_dual_quaternion(real_part1, dual_part1, real_part2, dual_part2):
+    prod_real = compose_quat(real_part1, real_part2)
+    prod_dual = (np.asarray(compose_quat(real_part1, dual_part2))
+                 + np.asarray(compose_quat(dual_part1, real_part2)))
+    return prod_real, prod_dual
+
+
+cdef _normalize_dual_quaternion(real_part, dual_part):
+    """Ensure that the norm is 1 and that real and dual part are orthogonal."""
+    real_part = np.copy(real_part)
+    dual_part = np.copy(dual_part)
+
+    # compute the dual quaternion product of the input and its
+    # component-wise quaternion conjugate
+    real_conjugate = _quaternion_conjugate(real_part)
+    dual_conjugate = _quaternion_conjugate(dual_part)
+    prod_real, prod_dual = _compose_dual_quaternion(
+        real_part, dual_part, real_conjugate, dual_conjugate)
+
+    # special case: invalid real quaternion
+    prod_real_norm = np.linalg.norm(prod_real, axis=1)
+    invalid_real_mask = prod_real_norm == 0.0
+    real_part[invalid_real_mask, :4] = [0., 0., 0., 1.]
+    prod_real_norm[invalid_real_mask] = 1.0
+
+    # compute normalization factor
+    real_inv_sqrt = 1.0 / prod_real_norm
+    dual_inv_sqrt = -0.5 * prod_dual * real_inv_sqrt[:, np.newaxis] ** 3
+
+    # normalize dual quaternion
+    real_part = real_inv_sqrt[:, np.newaxis] * real_part
+    dual_part = real_inv_sqrt[:, np.newaxis] * dual_part + np.asarray(
+        compose_quat(dual_inv_sqrt, real_part))
+
+    return real_part, dual_part
+
+
 cdef class RigidTransformation:
     """Rigid transformation in 3 dimensions.
 
@@ -880,6 +924,11 @@ cdef class RigidTransformation:
         and translation in a dual quaternion. There is a double cover, i.e.,
         the unit dual quaternions q and -q represent the same transformation.
 
+        Unit dual quaternions must have a real quaternion with unit norm and
+        a dual quaternion that is orthogonal to the real quaternion to satisfy
+        the unit norm constraint. This function will enforce both properties
+        through normalization.
+
         Parameters
         ----------
         dual_quat : array_like, shape (N, 8) or (8,)
@@ -930,6 +979,8 @@ cdef class RigidTransformation:
         if scalar_first:
             real_part = np.roll(real_part, -1, axis=1)
             dual_part = np.roll(dual_part, -1, axis=1)
+
+        real_part, dual_part = _normalize_dual_quaternion(real_part, dual_part)
 
         matrix = np.empty((len(dual_quat), 4, 4), dtype=float)
         rotation = Rotation.from_quat(real_part)

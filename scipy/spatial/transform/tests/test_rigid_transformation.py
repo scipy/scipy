@@ -345,6 +345,69 @@ def test_from_dual_quat():
         scalar_first=True)
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
+    # unnormalized dual quaternions
+
+    # invalid real quaternion with norm 0
+    actual = RigidTransformation.from_dual_quat(np.zeros(8))
+    assert_allclose(actual.as_matrix(), np.eye(4), atol=1e-12)
+
+    # real quaternion with norm != 1
+    unnormalized_dual_quat = np.array(
+        [-0.2547655, 1.23506123, 0.20230088, 0.24247194,  # norm 1.3
+         0.38559628, 0.08184063, 0.1755943, -0.1582222]  # orthogonal
+    )
+    assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.3
+    assert pytest.approx(np.dot(unnormalized_dual_quat[:4],
+                                unnormalized_dual_quat[4:]), abs=8) == 0.0
+    actual = RigidTransformation.from_dual_quat(unnormalized_dual_quat)
+    dual_quat = actual.as_dual_quat()
+    assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
+    assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
+
+    # real and dual quaternion are not orthogonal
+    unnormalized_dual_quat = np.array(
+        [0.20824458, 0.75098079, 0.54542913, -0.30849493,  # unit norm
+         -0.16051025, 0.10742978, 0.21277201, 0.20596935]  # not orthogonal
+    )
+    assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.0
+    assert np.dot(unnormalized_dual_quat[:4],
+                  unnormalized_dual_quat[4:]) != 0.0
+    actual = RigidTransformation.from_dual_quat(unnormalized_dual_quat)
+    dual_quat = actual.as_dual_quat()
+    assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
+    assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
+
+    # compensation for precision loss in real quaternion
+    random_dual_quats = RigidTransformation.random(
+        num=10, rng=1).as_dual_quat()
+    # ensure that random quaternions are not normalized
+    random_dual_quats[:, :4] = random_dual_quats[:, :4].round(2)
+    assert not np.any(np.isclose(
+        np.linalg.norm(random_dual_quats[:, :4], axis=1), 1.0, atol=0.0001))
+    dual_quat_norm = RigidTransformation.from_dual_quat(
+        random_dual_quats).as_dual_quat()
+    assert_allclose(
+        np.linalg.norm(dual_quat_norm[:, :4], axis=1), 1.0, atol=1e-12)
+
+    # compensation for precision loss in dual quaternion, results in violation
+    # of ortogonality constraint
+    random_dual_quats = RigidTransformation.random(
+        num=10, rng=2).as_dual_quat()
+    # ensure that random quaternions are not normalized
+    random_dual_quats[:, 4:] = random_dual_quats[:, 4:].round(2)
+    assert not np.any(np.isclose(
+        np.einsum("ij,ij->i",
+                  random_dual_quats[:, :4],
+                  random_dual_quats[:, 4:]),
+        0.0, atol=0.0001))
+    dual_quat_norm = RigidTransformation.from_dual_quat(
+        random_dual_quats).as_dual_quat()
+    assert_allclose(
+        np.einsum("ij,ij->i", dual_quat_norm[:, :4], dual_quat_norm[:, 4:]),
+        0.0, atol=1e-12)
+    assert_allclose(
+        random_dual_quats[:, :4], dual_quat_norm[:, :4], atol=1e-12)
+
 
 def test_as_dual_quat():
     # identity
