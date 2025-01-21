@@ -107,7 +107,7 @@ def norm(x, ord=None, axis=None):
     The matrix 2-norm or the spectral norm is the largest singular
     value, computed approximately and with limitations.
 
-    >>> b = diags_array([-1, 1], [0, 1], shape=(9, 10))
+    >>> b = diags_array([-1, 1], offsets=[0, 1], shape=(9, 10))
     >>> norm(b, 2)
     1.9753...
     """
@@ -144,7 +144,7 @@ def norm(x, ord=None, axis=None):
             raise ValueError('Duplicate axes given.')
         if ord == 2:
             # Only solver="lobpcg" supports all numpy dtypes
-            _, s, _ = svds(x, k=1, solver="lobpcg")
+            _, s, _ = svds(x, k=1, solver="lobpcg", maxiter=50)
             return s[0]
         elif ord == -2:
             raise NotImplementedError
