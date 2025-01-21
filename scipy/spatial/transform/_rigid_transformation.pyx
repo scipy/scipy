@@ -920,6 +920,11 @@ cdef class RigidTransformation:
         and translation in a dual quaternion. There is a double cover, i.e.,
         the unit dual quaternions q and -q represent the same transformation.
 
+        Unit dual quaternions must have a real quaternion with unit norm and
+        a dual quaternion that is orthogonal to the real quaternion to satisfy
+        the unit norm constraint. This function will enforce both properties
+        through normalization.
+
         Parameters
         ----------
         dual_quat : array_like, shape (N, 8) or (8,)
