@@ -239,7 +239,7 @@ class TestEstimateGradients2DGlobal:
 
             assert dz.shape == (6, 2)
             xp_assert_close(
-                dz, np.array(grad)[None, :] + 0 * dz, rtol=1e-5, atol=1e-5, 
+                dz, np.array(grad)[None, :] + 0*dz, rtol=1e-5, atol=1e-5, 
                 err_msg=f"item {j}"
             )
 
