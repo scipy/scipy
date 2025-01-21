@@ -345,6 +345,25 @@ def test_from_dual_quat():
         scalar_first=True)
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
+    # unnormalized dual quaternions
+
+    # invalid real quaternion with norm 0
+    actual = RigidTransformation.from_dual_quat(np.zeros(8))
+    assert_allclose(actual.as_matrix(), np.eye(4), atol=1e-12)
+
+    # real quaternion with norm != 1
+    unnormalized_dual_quat = np.array(
+        [-0.2547655, 1.23506123, 0.20230088, 0.24247194,  # norm 1.3
+         0.38559628, 0.08184063, 0.1755943, -0.1582222]  # orthogonal
+    )
+    assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.3
+    assert pytest.approx(np.dot(unnormalized_dual_quat[:4],
+                                unnormalized_dual_quat[4:]), abs=8) == 0.0
+    actual = RigidTransformation.from_dual_quat(unnormalized_dual_quat)
+    dual_quat = actual.as_dual_quat()
+    assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
+    assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
+
 
 def test_as_dual_quat():
     # identity
