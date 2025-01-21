@@ -269,22 +269,6 @@ def test_as_exp_coords():
     assert_allclose(exp_coords[:, 3:], translation, rtol=1e-15)
 
 
-def test_exp_coords_reciprocity():
-    # arbitrary rotations
-    rng = np.random.default_rng(10)
-
-    tf = RigidTransformation.random(1000, rng=rng)
-    tf_back = RigidTransformation.from_exp_coords(tf.as_exp_coords())
-    assert_allclose(tf.as_matrix(), tf_back.as_matrix(), rtol=1e-11)
-
-    # small rotation
-    tf = RigidTransformation.from_rot_trans(
-        Rotation.from_rotvec(rng.normal(scale=1e-10, size=(1000, 3))),
-        rng.normal(scale=100.0, size=(1000, 3)))
-    tf_back = RigidTransformation.from_exp_coords(tf.as_exp_coords())
-    assert_allclose(tf.as_matrix(), tf_back.as_matrix(), rtol=1e-15)
-
-
 def test_from_dual_quat():
     # identity
     assert_allclose(
@@ -466,8 +450,9 @@ def test_as_dual_quat():
 
 def test_from_as_internal_consistency():
     atol = 1e-12
-    n = 100
-    tf0 = RigidTransformation.random(n, rng=10)
+    n = 1000
+    rng = np.random.default_rng(10)
+    tf0 = RigidTransformation.random(n, rng=rng)
 
     tf1 = RigidTransformation.from_components(*tf0.as_components())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
@@ -482,6 +467,13 @@ def test_from_as_internal_consistency():
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
     tf1 = RigidTransformation.from_dual_quat(tf0.as_dual_quat())
+    assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
+
+    # exp_coords small rotation
+    tf0 = RigidTransformation.from_components(
+        rng.normal(scale=1000.0, size=(1000, 3)),
+        Rotation.from_rotvec(rng.normal(scale=1e-10, size=(1000, 3))))
+    tf1 = RigidTransformation.from_exp_coords(tf0.as_exp_coords())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
 
