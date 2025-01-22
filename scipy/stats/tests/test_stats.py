@@ -7087,6 +7087,27 @@ class TestGMean:
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5,
                           dtype=np.float64, xp=xp)
 
+    #@skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_marray(self, axis):
+        xp = np  # can't use array-api-compat xp because data-apis/array-api-compat#226
+        try:
+            import marray
+            mxp = marray._get_namespace(xp)
+        except ModuleNotFoundError:
+            pytest.mark.skip('marray not available')
+
+        rng = np.random.default_rng(234583459823456)
+        shape = (7, 8)
+        data = rng.random(shape)
+        mask = rng.random(shape) > 0.75
+
+        res = stats.gmean(mxp.asarray(data, mask=mask), axis=axis)
+
+        data[mask] = np.nan
+        ref = stats.gmean(data, nan_policy='omit', axis=axis)
+        xp_assert_close(res.data, ref)
+
 
 class TestPMean:
 
