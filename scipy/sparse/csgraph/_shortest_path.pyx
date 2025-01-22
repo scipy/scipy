@@ -116,9 +116,11 @@ def shortest_path(csgraph, method='auto',
     dist_matrix : ndarray
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
-    predecessors : ndarray
+    predecessors : ndarray, shape (n_indices, n_nodes,)
         Returned only if return_predecessors == True.
-        The N x N matrix of predecessors, which can be used to reconstruct
+        If indices is None then n_indices = n_nodes and the shape of
+        the matrix becomes (n_nodes, n_nodes)
+        The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
         information on the shortest paths from point i: each entry
         predecessors[i, j] gives the index of the previous node in the
@@ -488,6 +490,8 @@ def dijkstra(csgraph, directed=True, indices=None,
     predecessors : ndarray, shape ([n_indices, ]n_nodes,)
         If min_only=False, this has shape (n_indices, n_nodes),
         otherwise it has shape (n_nodes,).
+        If indices is None and min_only=False then n_indices = n_nodes
+        and the shape of the matrix becomes (n_nodes, n_nodes)
         Returned only if return_predecessors == True.
         The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
@@ -853,9 +857,11 @@ def bellman_ford(csgraph, directed=True, indices=None,
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
 
-    predecessors : ndarray
+    predecessors : ndarray, shape (n_indices, n_nodes,)
         Returned only if return_predecessors == True.
-        The N x N matrix of predecessors, which can be used to reconstruct
+        If indices is None then n_indices = n_nodes and the shape of
+        the matrix becomes (n_nodes, n_nodes)
+        The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
         information on the shortest paths from point i: each entry
         predecessors[i, j] gives the index of the previous node in the
@@ -1094,9 +1100,11 @@ def johnson(csgraph, directed=True, indices=None,
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
 
-    predecessors : ndarray
+    predecessors : ndarray, shape (n_indices, n_nodes,)
         Returned only if return_predecessors == True.
-        The N x N matrix of predecessors, which can be used to reconstruct
+        If indices is None then n_indices = n_nodes and the shape of
+        the matrix becomes (n_nodes, n_nodes)
+        The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
         information on the shortest paths from point i: each entry
         predecessors[i, j] gives the index of the previous node in the
