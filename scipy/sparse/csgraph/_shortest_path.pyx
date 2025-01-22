@@ -488,9 +488,9 @@ def dijkstra(csgraph, directed=True, indices=None,
         a given node the shortest path to that node from any of the nodes
         in indices.
     predecessors : ndarray, shape ([n_indices, ]n_nodes,)
-        If min_only=False, this has shape (n_indices, n_nodes),
-        otherwise it has shape (n_nodes,).
-        If indices is None and min_only=False then ``n_indices = n_nodes``
+        If ``min_only=False``, this has shape ``(n_indices, n_nodes)``,
+        otherwise it has shape ``(n_nodes,)``.
+        If indices is None and ``min_only=False`` then ``n_indices = n_nodes``
         and the shape of the matrix becomes ``(n_nodes, n_nodes)``.
         Returned only if return_predecessors == True.
         The matrix of predecessors, which can be used to reconstruct
