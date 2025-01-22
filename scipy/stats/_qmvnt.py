@@ -38,7 +38,8 @@ from scipy.fft import fft, ifft
 from scipy.special import ndtr as phi, ndtri as phinv
 from scipy.stats._qmc import primes_from_2_to
 
-from ._qmvnt_pythran import _qmvt_inner, _qmvn_inner
+from ._qmvnt_pythran import _qmvt_inner
+from ._qmvnt_cy import _qmvn_inner
 
 
 def _factorize_int(n):
@@ -221,6 +222,10 @@ def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
         3 times the standard error of the batch estimates.
     """
     cho, lo, hi = _permuted_cholesky(covar, low, high)
+    if not cho.flags.c_contiguous:
+        # qmvn_inner expects contiguous buffers
+        cho = cho.copy()
+
     n = cho.shape[0]
     q, n_qmc_samples = _cbc_lattice(n - 1, max(m // n_batches, 1))
     rndm = rng.random(size=(n_batches, n))
