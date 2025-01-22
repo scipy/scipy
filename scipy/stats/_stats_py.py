@@ -10824,7 +10824,8 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     if weights is None:
         return xp.mean(x, axis=axis, keepdims=keepdims)
 
-    norm = xp.sum(weights, axis=axis)
+    # ones_like ensures that the mask of `x` is considered
+    norm = xp.sum(xp.ones_like(x) * weights, axis=axis)
     wsum = xp.sum(x * weights, axis=axis)
     with np.errstate(divide='ignore', invalid='ignore'):
         res = wsum/norm

@@ -9443,6 +9443,40 @@ class TestXP_Mean:
         xp_assert_equal(_xp_mean(x), _xp_mean(y))
         xp_assert_equal(_xp_mean(y, weights=x), _xp_mean(y, weights=y))
 
+    @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
+    @pytest.mark.parametrize('axis', [0, 1])
+    @pytest.mark.parametrize('keepdims', [False, True])
+    def test_marray(self, axis, keepdims, xp):
+        try:
+            import marray
+        except ModuleNotFoundError:
+            pytest.mark.skip('marray not available')
+
+        mxp = marray._get_namespace(xp)
+
+        rng = np.random.default_rng(234583459823456)
+        shape = (7, 8)
+        data = rng.random(shape)
+        mask_x = rng.random(shape) > 0.75
+        weights = rng.random(shape)
+        mask_w = rng.random(shape) > 0.75
+
+        kwargs = dict(axis=axis, keepdims=keepdims)
+
+        res = _xp_mean(mxp.asarray(data, mask=mask_x),
+                       weights=mxp.asarray(weights, mask=mask_w),
+                       **kwargs)
+
+        data = xp.asarray(data)
+        weights = xp.asarray(weights)
+        mask_x = xp.asarray(mask_x)
+        mask_w = xp.asarray(mask_w)
+
+        data[mask_x] = xp.nan
+        weights[mask_w] = xp.nan
+        ref = _xp_mean(data, weights=weights, nan_policy='omit', **kwargs)
+        xp_assert_close(res.data, ref)
+
 
 @skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
 class TestXP_Var:
