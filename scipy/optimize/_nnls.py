@@ -5,7 +5,7 @@ from ._cython_nnls import _nnls
 __all__ = ['nnls']
 
 
-def nnls(A, b, maxiter=None, atol=None):
+def nnls(A, b, maxiter=None, *, atol=_NoValue):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
 
