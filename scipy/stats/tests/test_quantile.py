@@ -10,20 +10,27 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 @_apply_over_batch(('x', 1), ('p', 1))
-def quantile_reference_last_axis(x, p, nan_policy):
+def quantile_reference_last_axis(x, p, nan_policy, method):
     if nan_policy == 'omit':
         x = x[~np.isnan(x)]
     p_mask = np.isnan(p)
     p = p.copy()
     p[p_mask] = 0.5
-    res = np.quantile(x, p)
+    if method == 'harrell-davis':
+        # hdquantiles returns masked element if length along axis is 1 (bug)
+        res = (np.full_like(p, x[0]) if x.size == 1
+               else stats.mstats.hdquantiles(x, p).data)
+        if nan_policy == 'propagate' and np.any(np.isnan(x)):
+            res[:] = np.nan
+    else:
+        res = np.quantile(x, p)
     res[p_mask] = np.nan
     return res
 
 
-def quantile_reference(x, p, *, axis, nan_policy, keepdims):
+def quantile_reference(x, p, *, axis, nan_policy, keepdims, method):
     x, p = np.moveaxis(x, axis, -1), np.moveaxis(p, axis, -1)
-    res = quantile_reference_last_axis(x, p, nan_policy)
+    res = quantile_reference_last_axis(x, p, nan_policy, method)
     res = np.moveaxis(res, -1, axis)
     if not keepdims:
         res = np.squeeze(res, axis=axis)
@@ -97,7 +104,8 @@ class TestQuantile:
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('nan_policy', ['omit', 'propagate'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
-    def test_against_reference(self, axis, keepdims, nan_policy, dtype, xp):
+    @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
+    def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
         rng = np.random.default_rng(23458924568734956)
         shape = (3, 4)
         x = rng.random(size=shape).astype(dtype)
@@ -109,7 +117,8 @@ class TestQuantile:
             p = np.mean(p, axis=axis, keepdims=True)
 
         dtype = getattr(xp, dtype)
-        kwargs = dict(axis=axis, keepdims=keepdims, nan_policy=nan_policy)
+        kwargs = dict(axis=axis, keepdims=keepdims,
+                      nan_policy=nan_policy, method=method)
         res = stats.quantile(xp.asarray(x), xp.asarray(p), **kwargs)
         ref = quantile_reference(x, p, **kwargs)
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
