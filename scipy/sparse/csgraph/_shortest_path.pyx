@@ -1733,7 +1733,7 @@ cdef void _yen(
             if (
                 total_distance != INFINITY
                 and _yen_is_path_in_candidates(candidate_predecessors,
-                                               shortest_paths_predecessors[k-1], 
+                                               shortest_paths_predecessors[k-1],
                                                predecessor_matrix,
                                                spur_node, sink) == 0
             ):
