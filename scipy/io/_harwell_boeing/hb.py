@@ -189,9 +189,10 @@ class HBInfo:
         nnon_zeros = _expect_int(line[42:56])
         nelementals = _expect_int(line[56:70])
         if not nelementals == 0:
-            raise ValueError("Unexpected value %d for nltvl (last entry of line 3)"
-                             % nelementals)
-
+            raise ValueError(
+                f"Unexpected value {nelementals} for nltvl (last entry of line 3)"
+            )
+        
         # Fourth line
         line = fid.readline().strip("\n")
 
@@ -282,18 +283,13 @@ class HBInfo:
         """Gives the header corresponding to this instance as a string."""
         header = [self.title.ljust(72) + self.key.ljust(8)]
 
-        header.append("%14d%14d%14d%14d" %
-                      (self.total_nlines, self.pointer_nlines,
-                       self.indices_nlines, self.values_nlines))
-        header.append("%14s%14d%14d%14d%14d" %
-                      (self.mxtype.fortran_format.ljust(14), self.nrows,
-                       self.ncols, self.nnon_zeros, 0))
+        header.append(f"{self.total_nlines:14d}{self.pointer_nlines:14d}{self.indices_nlines:14d}{self.values_nlines:14d}")
+        header.append(f"{self.mxtype.fortran_format.ljust(14):14s}{self.nrows:14d}{self.ncols:14d}{self.nnon_zeros:14d}{0:14d}")
 
         pffmt = self.pointer_format.fortran_format
         iffmt = self.indices_format.fortran_format
         vffmt = self.values_format.fortran_format
-        header.append("%16s%16s%20s" %
-                      (pffmt.ljust(16), iffmt.ljust(16), vffmt.ljust(20)))
+        header.append(f"{pffmt.ljust(16):16s}{iffmt.ljust(16):16s}{vffmt.ljust(20):20s}")
         return "\n".join(header)
 
 

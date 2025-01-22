@@ -260,7 +260,7 @@ def _root_hybr(func, x0, args=(), jac=None,
     errors = {0: "Improper input parameters were entered.",
               1: "The solution converged.",
               2: "The number of calls to function has "
-                  "reached maxfev = %d." % maxfev,
+                 f"reached maxfev = {maxfev}.",
               3: f"xtol={xtol:f} is too small, no further improvement "
                   "in the approximate\n solution is possible.",
               4: "The iteration is not making good progress, as measured "
@@ -461,7 +461,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
                   f"column of the\n  Jacobian is at most {gtol:f} in "
                   "absolute value", None],
               5: ["Number of calls to function has reached "
-                  "maxfev = %d." % maxfev, ValueError],
+                  f"maxfev = {maxfev}.", ValueError],
               6: [f"ftol={ftol:f} is too small, no further reduction "
                   "in the sum of squares\n  is possible.",
                   ValueError],
@@ -1126,7 +1126,7 @@ def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
         if np.all(np.abs(relerr) < xtol):
             return p
         p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    msg = f"Failed to converge after {maxiter} iterations, value is {p}"
     raise RuntimeError(msg)
 
 
