@@ -71,7 +71,7 @@ def nnls(A, b, maxiter=None, *, atol=_NoValue):
         import warnings
         warnings.warn(
             "The 'atol' parameter is deprecated and will be removed in SciPy 1.18.0. "
-            "It was never used in the implementation.",
+            "It is not used in the implementation.",
             DeprecationWarning,
             stacklevel=2
         )
