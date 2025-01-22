@@ -167,9 +167,13 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate the first four moments:
+Get the support:
 
 %(set_vals_stmt)s
+>>> lb, ub = %(name)s.support(%(shapes)s)
+
+Calculate the first four moments:
+
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability density function (``pdf``):
@@ -298,9 +302,13 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate the first four moments:
+Get the support:
 
 %(set_vals_stmt)s
+>>> lb, ub = %(name)s.support(%(shapes)s)
+
+Calculate the first four moments:
+
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability mass function (``pmf``):
@@ -1608,6 +1616,8 @@ class _ShapeInfo:
                  inclusive=(True, True)):
         self.name = name
         self.integrality = integrality
+        self.endpoints = domain
+        self.inclusive = inclusive
 
         domain = list(domain)
         if np.isfinite(domain[0]) and not inclusive[0]:
@@ -1686,6 +1696,14 @@ class rv_continuous(rv_generic):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
+    Attributes
+    ----------
+    a, b : float, optional
+        Lower/upper bound of the support of the unshifted/unscaled distribution.
+        This value is unaffected by the `loc` and `scale` parameters.
+        To calculate the support of the shifted/scaled distribution,
+        use the `support` method.
 
     Methods
     -------
@@ -2449,7 +2467,7 @@ class rv_continuous(rv_generic):
         args = list(args)
         Nargs = len(args)
         fixedn = []
-        names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
+        names = [f'f{n}' for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = []
         for n, key in enumerate(names):
             if key in kwds:
@@ -3065,34 +3083,47 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     _a, _b = self._get_support(*args)
     b = _b
     a = _a
+
+    step = 10
     if isinf(b):            # Be sure ending point is > q
-        b = int(max(100*q, 10))
+        b = float(max(100*q, 10))
         while 1:
             if b >= _b:
                 qb = 1.0
                 break
             qb = self._cdf(b, *args)
             if (qb < q):
-                b += 10
+                b += step
+                step *= 2
             else:
                 break
     else:
         qb = 1.0
+
+    step = 10
     if isinf(a):    # be sure starting point < q
-        a = int(min(-100*q, -10))
+        a = float(min(-100*q, -10))
         while 1:
             if a <= _a:
                 qb = 0.0
                 break
             qa = self._cdf(a, *args)
             if (qa > q):
-                a -= 10
+                a -= step
+                step *= 2
             else:
                 break
     else:
         qa = self._cdf(a, *args)
 
-    while 1:
+    if np.isinf(a) or np.isinf(b):
+        message = "Arguments that bracket the requested quantile could not be found."
+        raise RuntimeError(message)
+
+    # maximum number of bisections within the normal float64s
+    # maxiter = int(np.log2(finfo.max) - np.log2(finfo.smallest_normal))
+    maxiter = 2046
+    for i in range(maxiter):
         if (qa == q):
             return a
         if (qb == q):
@@ -3170,6 +3201,14 @@ class rv_discrete(rv_generic):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
+    Attributes
+    ----------
+    a, b : float, optional
+        Lower/upper bound of the support of the unshifted/unscaled distribution.
+        This value is unaffected by the `loc` and `scale` parameters.
+        To calculate the support of the shifted/scaled distribution,
+        use the `support` method.
 
     Methods
     -------

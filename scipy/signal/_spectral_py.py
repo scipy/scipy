@@ -56,12 +56,13 @@ def lombscargle(
     x : array_like
         Sample times.
     y : array_like
-        Measurement values. Values are assumed to have a baseline of y = 0. If there is
-        a possibility of a y offset, it is recommended to set `floating_mean` to True.
+        Measurement values. Values are assumed to have a baseline of ``y = 0``. If
+        there is a possibility of a y offset, it is recommended to set `floating_mean`
+        to True.
     freqs : array_like
         Angular frequencies (e.g., having unit rad/s=2π/s for `x` having unit s) for
-        output periodogram. Frequencies are normally >= 0, as any peak at -freq will
-        also exist at +freq.
+        output periodogram. Frequencies are normally >= 0, as any peak at ``-freq`` will
+        also exist at ``+freq``.
     precenter : bool, optional
         Pre-center measurement values by subtracting the mean, if True. This is
         a legacy parameter and unnecessary if `floating_mean` is True.
@@ -116,14 +117,17 @@ def lombscargle(
     ----------
     .. [1] N.R. Lomb "Least-squares frequency analysis of unequally spaced
            data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
+           :doi:`10.1007/bf00648343`
 
     .. [2] J.D. Scargle "Studies in astronomical time series analysis. II -
            Statistical aspects of spectral analysis of unevenly spaced data",
            The Astrophysical Journal, vol 263, pp. 835-853, 1982
+           :doi:`10.1086/160554`
 
     .. [3] M. Zechmeister and M. Kürster, "The generalised Lomb-Scargle periodogram.
            A new formalism for the floating-mean and Keplerian periodograms,"
            Astronomy and Astrophysics, vol. 496, pp. 577-584, 2009
+           :doi:`10.1051/0004-6361:200811296`
 
     .. [4] J.T. VanderPlas, "Understanding the Lomb-Scargle Periodogram,"
            The Astrophysical Journal Supplement Series, vol. 236, no. 1, p. 16,
@@ -238,83 +242,104 @@ def lombscargle(
         )
 
     # weight vector must sum to 1
-    weights = weights / weights.sum()
-
-    # pre-allocate arrays for intermediate and final calculations
-    coswt = np.empty_like(x)
-    sinwt = np.empty_like(x)
-    pgram = np.empty_like(freqs)
-    # store a and b so that phase can be calculated outside loop, if necessary
-    a = np.empty_like(freqs)
-    b = np.empty_like(freqs)
+    weights *= 1.0 / weights.sum()
 
     # if requested, perform precenter
     if precenter:
         y -= y.mean()
 
-    # calculate the single sum that does not depend on the frequency
-    Y_sum = (weights * y).sum()
+    # transform arrays
+    # row vector
+    freqs = freqs.reshape(1, -1)
+    # column vectors
+    x = x.reshape(-1, 1)
+    y = y.reshape(-1, 1)
+    weights = weights.reshape(-1, 1)
 
-    # loop over the frequencies
-    for i in range(freqs.shape[0]):
-        coswt[:] = np.cos(freqs[i] * x)
-        sinwt[:] = np.sin(freqs[i] * x)
+    # store frequent intermediates
+    weights_y = weights * y
+    freqst = freqs * x
+    coswt = np.cos(freqst)
+    sinwt = np.sin(freqst)
 
-        # calculate CC, SS, and CS first
-        # these variable names are of form XX_hat in the paper, but dropping the suffix
-        # to reuse variables later whether floating_mean is True or False
-        CC = (weights * coswt * coswt).sum()
-        SS = 1 - CC  # trig identity: S^2 = 1 - C^2
-        CS = (weights * coswt * sinwt).sum()
+    Y = np.dot(weights.T, y)  # Eq. 7
+    CC = np.dot(weights.T, coswt * coswt)  # Eq. 13
+    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2  Eq.14
+    CS = np.dot(weights.T, coswt * sinwt)  # Eq. 15
 
-        # now, redefine trig arrays to always be multiplied by the weights
-        coswt[:] = weights * coswt
-        sinwt[:] = weights * sinwt
+    if floating_mean:
+        C = np.dot(weights.T, coswt)  # Eq. 8
+        S = np.dot(weights.T, sinwt)  # Eq. 9
+        CC -= C * C  # Eq. 13
+        SS -= S * S  # Eq. 14
+        CS -= C * S  # Eq. 15
 
-        # these are also of the form XX_hat in the paper
-        YC = (y * coswt).sum()
-        YS = (y * sinwt).sum()
+    # calculate tau (phase offset to eliminate CS variable)
+    tau = 0.5 * np.arctan2(2.0 * CS, CC - SS)  # Eq. 19
+    freqst_tau = freqst - tau
 
-        if floating_mean:
-            # calculate best-fit offset for each frequency independently (default)
-            C_sum = coswt.sum()
-            S_sum = sinwt.sum()
-            YC -= Y_sum * C_sum
-            YS -= Y_sum * S_sum
-            CC -= C_sum * C_sum
-            SS -= S_sum * S_sum
-            CS -= C_sum * S_sum
+    # coswt and sinwt are now offset by tau, which eliminates CS
+    coswt_tau = np.cos(freqst_tau)
+    sinwt_tau = np.sin(freqst_tau)
 
-        # determinate of the system of linear equations
-        D = CC * SS - CS * CS
+    YC = np.dot(weights_y.T, coswt_tau)  # Eq. 11
+    YS = np.dot(weights_y.T, sinwt_tau)  # Eq. 12
+    CC = np.dot(weights.T, coswt_tau * coswt_tau)  # Eq. 13, CC range is [0.5, 1.0]
+    SS = 1.0 - CC  # trig identity: S^2 = 1 - C^2    Eq. 14, SS range is [0.0, 0.5]
 
-        # where: y(w) = a*cos(w) + b*sin(w) + c
-        a[i] = (YC * SS - YS * CS) / D
-        b[i] = (YS * CC - YC * CS) / D
-        #  c = Y_sum - a * C_sum - b * S_sum  # offset is not useful to return
+    if floating_mean:
+        C = np.dot(weights.T, coswt_tau)  # Eq. 8
+        S = np.dot(weights.T, sinwt_tau)  # Eq. 9
+        YC -= Y * C  # Eq. 11
+        YS -= Y * S  # Eq. 12
+        CC -= C * C  # Eq. 13, CC range is now [0.0, 1.0]
+        SS -= S * S  # Eq. 14, SS range is now [0.0, 0.5]
 
-        # store final value as power in (y units)^2
-        pgram[i] = 2.0 * (a[i] * YC + b[i] * YS)
+    # to prevent division by zero errors with a and b, as well as correcting for
+    # numerical precision errors that lead to CC or SS being approximately -0.0,
+    # make sure CC and SS are both > 0
+    epsneg = np.finfo(dtype=y.dtype).epsneg
+    CC[CC < epsneg] = epsneg
+    SS[SS < epsneg] = epsneg
 
-    if normalize == "normalize":
+    # calculate a and b
+    # where: y(w) = a*cos(w) + b*sin(w) + c
+    a = YC / CC  # Eq. A.4 and 6, eliminating CS
+    b = YS / SS  # Eq. A.4 and 6, eliminating CS
+    # c = Y - a * C - b * S
+
+    # store final value as power in A^2 (i.e., (y units)^2)
+    pgram = 2.0 * (a * YC + b * YS)
+
+    # squeeze back to a vector
+    pgram = np.squeeze(pgram)
+
+    if normalize == "power":  # (default)
+        # return the legacy power units ((A**2) * N/4)
+
+        pgram *= float(x.shape[0]) / 4.0
+
+    elif normalize == "normalize":
         # return the normalized power (power at current frequency wrt the entire signal)
+        # range will be [0, 1]
 
-        # calculate the final necessary frequency-independent sum
-        YY_hat = (weights * y * y).sum()
+        YY = np.dot(weights_y.T, y)  # Eq. 10
         if floating_mean:
-            pgram /= 2.0 * (YY_hat - Y_sum * Y_sum)  # 2 * YY
-        else:
-            pgram /= 2.0 * YY_hat
-        return pgram
+            YY -= Y * Y  # Eq. 10
 
-    elif normalize == "amplitude":
+        pgram *= 0.5 / np.squeeze(YY)  # Eq. 20
+
+    else:  # normalize == "amplitude":
         # return the complex representation of the best-fit amplitude and phase
 
-        return a + 1j * b
+        # squeeze back to vectors
+        a = np.squeeze(a)
+        b = np.squeeze(b)
+        tau = np.squeeze(tau)
 
-    # otherwise, the default, normalize == "power"
-    # return the legacy power units
-    pgram *= float(x.shape[0]) / 4.0
+        # calculate the complex representation, and correct for tau rotation
+        pgram = (a + 1j * b) * np.exp(1j * tau)
+
     return pgram
 
 

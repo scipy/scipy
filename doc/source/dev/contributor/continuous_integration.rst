@@ -147,7 +147,7 @@ The Action runs:
 * when the commit message contains the text ``[wheel build]``
 * on a scheduled basis once a week
 * when it is started manually.
-* when there is a push to the repository with a github reference starting with ``refs/tags/v`` (and not ending with ``dev0``)
+* when there is a push to the repository with a GitHub reference starting with ``refs/tags/v`` (and not ending with ``dev0``)
 
 The action does not run on forks of the main SciPy repository. The wheels that
 are created are available as artifacts associated with a successful run of the

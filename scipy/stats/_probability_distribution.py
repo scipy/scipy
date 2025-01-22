@@ -123,11 +123,19 @@ class _ProbabilityDistribution(ABC):
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a `NotImplementedError``
             will be raised.
-        rng : `numpy.random.Generator`, optional
-            Pseudorandom number generator state. When `rng` is None, a new
-            `numpy.random.Generator` is created using entropy from the
-            operating system. Types other than `numpy.random.Generator` are
-            passed to `numpy.random.default_rng` to instantiate a `Generator`.
+        rng : `numpy.random.Generator` or `scipy.stats.QMCEngine`, optional
+            Pseudo- or quasi-random number generator state. When `rng` is None,
+            a new `numpy.random.Generator` is created using entropy from the
+            operating system. Types other than `numpy.random.Generator` and
+            `scipy.stats.QMCEngine` are passed to `numpy.random.default_rng`
+            to instantiate a ``Generator``.
+
+            If `rng` is an instance of `scipy.stats.QMCEngine` configured to use
+            scrambling and `shape` is not empty, then each slice along the zeroth
+            axis of the result is a "quasi-independent", low-discrepancy sequence;
+            that is, they are distinct sequences that can be treated as statistically
+            independent for most practical purposes. Separate calls to `sample`
+            produce new quasi-independent, low-discrepancy sequences.
 
         References
         ----------
@@ -407,7 +415,7 @@ class _ProbabilityDistribution(ABC):
         Compute the median:
 
         >>> X.median()
-        5
+        np.float64(5.0)
         >>> X.median() == X.icdf(0.5) == X.iccdf(0.5)
         True
 
@@ -1285,6 +1293,11 @@ class _ProbabilityDistribution(ABC):
         Similarly, the term "logarithmic difference" of :math:`w` and :math:`z`
         is used here to mean :math:`\log(\exp(w)-\exp(z))`.
 
+        If ``y < x``, the CDF is negative, and therefore the log-CCDF
+        is complex with imaginary part :math:`\pi`. For
+        consistency, the result of this function always has complex dtype
+        when `y` is provided, regardless of the value of the imaginary part.
+
         References
         ----------
         .. [1] Cumulative distribution function, *Wikipedia*,
@@ -1477,7 +1490,6 @@ class _ProbabilityDistribution(ABC):
         is used here to mean the :math:`\log(\exp(w)+\exp(z))`, AKA
         :math:`\text{LogSumExp}(w, z)`.
 
-
         References
         ----------
         .. [1] Cumulative distribution function, *Wikipedia*,
@@ -1630,7 +1642,7 @@ class _ProbabilityDistribution(ABC):
         Notes
         -----
         If the entropy of a distribution is negative, then the log-entropy
-        is complex with imaginary part divisible by :math:`\pi`. For
+        is complex with imaginary part :math:`\pi`. For
         consistency, the result of this function always has complex dtype,
         regardless of the value of the imaginary part.
 

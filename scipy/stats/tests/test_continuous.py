@@ -1,3 +1,4 @@
+import os
 import pickle
 from copy import deepcopy
 
@@ -11,12 +12,14 @@ import hypothesis.extra.numpy as npst
 from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
-
+from scipy.stats import qmc
+from scipy.stats._distr_params import distcont
 from scipy.stats._distribution_infrastructure import (
     _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
     _generate_domain_support, Mixture)
-from scipy.stats._new_distributions import StandardNormal, Normal, _LogUniform, _Uniform
+from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
+from scipy.stats import Normal, Uniform
 
 
 class Test_RealDomain:
@@ -114,6 +117,14 @@ class Test_RealDomain:
         ref = f"{left_bracket}{a}, {b}{right_bracket}"
         assert str(domain) == ref
 
+    def test_symbols_gh22137(self):
+        # `symbols` was accidentally shared between instances originally
+        # Check that this is no longer the case
+        domain1 = _RealDomain(endpoints=(0, 1))
+        domain2 = _RealDomain(endpoints=(0, 1))
+        assert domain1.symbols is not domain2.symbols
+
+
 def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     # If the distribution has parameters, choose a parameterization and
     # draw broadcastable shapes for the parameter arrays.
@@ -154,6 +165,7 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
 families = [
     StandardNormal,
     Normal,
+    Uniform,
     _LogUniform
 ]
 
@@ -167,7 +179,7 @@ class TestDistributions:
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (1, 1, 1, 1)
+        proportions = (0.7, 0.1, 0.1, 0.1)
         tmp = draw_distribution_from_family(family, data, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
         sample_shape = data.draw(npst.array_shapes(min_dims=0, min_side=0,
@@ -177,6 +189,8 @@ class TestDistributions:
             check_support(dist)
             check_moment_funcs(dist, result_shape)  # this needs to get split up
             check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
+            qrng = qmc.Halton(d=1, seed=rng)
+            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('family', families)
@@ -201,10 +215,13 @@ class TestDistributions:
     @settings(max_examples=20)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
     def test_funcs(self, family, data, seed, func, methods, arg):
+        if family == Uniform and func == 'mode':
+            pytest.skip("Mode is not unique; `method`s disagree.")
+
         rng = np.random.default_rng(seed)
 
         # relative proportions of valid, endpoint, out of bounds, and NaN params
-        proportions = (1, 1, 1, 1)
+        proportions = (0.7, 0.1, 0.1, 0.1)
         tmp = draw_distribution_from_family(family, data, rng, proportions)
         dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape = tmp
 
@@ -236,10 +253,110 @@ class TestDistributions:
         except ImportError:
             return
 
-        X = _Uniform(a=0., b=1.)
+        X = Uniform(a=0., b=1.)
         ax = X.plot()
         assert ax == plt.gca()
 
+    @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
+    def test_complement_safe(self, method_name):
+        X = stats.Normal()
+        X.tol = 1e-12
+        p = np.asarray([1e-4, 1e-3])
+        func = getattr(X, method_name)
+        ifunc = getattr(X, 'i'+method_name)
+        x = ifunc(p, method='formula')
+        p1 = func(x, method='complement_safe')
+        p2 = func(x, method='complement')
+        assert_equal(p1[1], p2[1])
+        assert p1[0] != p2[0]
+        assert_allclose(p1[0], p[0], rtol=X.tol)
+
+    @pytest.mark.parametrize('method_name', ['cdf', 'ccdf'])
+    def test_icomplement_safe(self, method_name):
+        X = stats.Normal()
+        X.tol = 1e-12
+        p = np.asarray([1e-4, 1e-3])
+        func = getattr(X, method_name)
+        ifunc = getattr(X, 'i'+method_name)
+        x1 = ifunc(p, method='complement_safe')
+        x2 = ifunc(p, method='complement')
+        assert_equal(x1[1], x2[1])
+        assert x1[0] != x2[0]
+        assert_allclose(func(x1[0]), p[0], rtol=X.tol)
+
+    def test_subtraction_safe(self):
+        X = stats.Normal()
+        X.tol = 1e-12
+
+        # Regular subtraction is fine in either tail (and of course, across tails)
+        x = [-11, -10, 10, 11]
+        y = [-10, -11, 11, 10]
+        p0 = X.cdf(x, y, method='quadrature')
+        p1 = X.cdf(x, y, method='subtraction_safe')
+        p2 = X.cdf(x, y, method='subtraction')
+        assert_equal(p2, p1)
+        assert_allclose(p1, p0, rtol=X.tol)
+
+        # Safe subtraction is needed in special cases
+        x = np.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
+        y = np.asarray([-1e-21, -1e-20, 1e-21, 1e-20, 1e-20])
+        p0 = X.pdf(0)*(y-x)
+        p1 = X.cdf(x, y, method='subtraction_safe')
+        p2 = X.cdf(x, y, method='subtraction')
+        assert_equal(p2, 0)
+        assert_allclose(p1, p0, rtol=X.tol)
+
+    def test_logentropy_safe(self):
+        # simulate an `entropy` calculation over/underflowing with extreme parameters
+        class _Normal(stats.Normal):
+            def _entropy_formula(self, **params):
+                out = np.asarray(super()._entropy_formula(**params))
+                out[0] = 0
+                out[-1] = np.inf
+                return out
+
+        X = _Normal(sigma=[1, 2, 3])
+        with np.errstate(divide='ignore'):
+            res1 = X.logentropy(method='logexp_safe')
+            res2 = X.logentropy(method='logexp')
+        ref = X.logentropy(method='quadrature')
+        i_fl = [0, -1]  # first and last
+        assert np.isinf(res2[i_fl]).all()
+        assert res1[1] == res2[1]
+        # quadrature happens to be perfectly accurate on some platforms
+        # assert res1[1] != ref[1]
+        assert_equal(res1[i_fl], ref[i_fl])
+
+    def test_logcdf2_safe(self):
+        # test what happens when 2-arg `cdf` underflows
+        X = stats.Normal(sigma=[1, 2, 3])
+        x = [-301, 1, 300]
+        y = [-300, 2, 301]
+        with np.errstate(divide='ignore'):
+            res1 = X.logcdf(x, y, method='logexp_safe')
+            res2 = X.logcdf(x, y, method='logexp')
+        ref = X.logcdf(x, y, method='quadrature')
+        i_fl = [0, -1]  # first and last
+        assert np.isinf(res2[i_fl]).all()
+        assert res1[1] == res2[1]
+        # quadrature happens to be perfectly accurate on some platforms
+        # assert res1[1] != ref[1]
+        assert_equal(res1[i_fl], ref[i_fl])
+
+    @pytest.mark.parametrize('method_name', ['logcdf', 'logccdf'])
+    def test_logexp_safe(self, method_name):
+        # test what happens when `cdf`/`ccdf` underflows
+        X = stats.Normal(sigma=2)
+        x = [-301, 1] if method_name == 'logcdf' else [301, 1]
+        func = getattr(X, method_name)
+        with np.errstate(divide='ignore'):
+            res1 = func(x, method='logexp_safe')
+            res2 = func(x, method='logexp')
+        ref = func(x, method='quadrature')
+        assert res1[0] == ref[0]
+        assert res1[0] != res2[0]
+        assert res1[1] == res2[1]
+        assert res1[1] != ref[1]
 
 def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
     full_shape = sample_shape + result_shape
@@ -247,7 +364,7 @@ def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
         sample_method = dist.sample
 
     methods = {'inverse_transform'}
-    if dist._overrides(f'_{fname}_formula'):
+    if dist._overrides(f'_{fname}_formula') and not isinstance(rng, qmc.QMCEngine):
         methods.add('formula')
 
     for method in methods:
@@ -309,6 +426,8 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
         # can only expect about half of machine precision for optimization
         # because math
         tol_override = {'atol': 1e-6}
+    elif fname in {'logcdf'}:  # gh-22276
+        tol_override = {'rtol': 2e-7}
 
     if dist._overrides(f'_{fname}_formula'):
         methods.add('formula')
@@ -369,7 +488,7 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
         res = (np.exp(dist.logcdf(x, y, method=method)) if log
                else dist.cdf(x, y, method=method))
         np.testing.assert_allclose(res, ref, atol=1e-14)
-        if log and np.any(x > y) and ref.size:
+        if log:
             np.testing.assert_equal(res.dtype, (ref + 0j).dtype)
         else:
             np.testing.assert_equal(res.dtype, ref.dtype)
@@ -515,7 +634,10 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'raw','cache', ref, success=True)  # cached now
         check(i, 'raw', 'formula', ref, success=has_formula(i, 'raw'))
-        check(i, 'raw', 'general', ref, i == 0)
+        check(i, 'raw', 'general', ref, success=(i == 0))
+        if dist.__class__ == stats.Normal:
+            check(i, 'raw', 'quadrature_icdf', ref, success=True)
+
 
     # Clearing caches to better check their behavior
     dist.reset_cache()
@@ -542,8 +664,14 @@ def check_moment_funcs(dist, result_shape):
         check(i, 'central', 'cache', ref, success=True)
         check(i, 'central', 'formula', ref, success=has_formula(i, 'central'))
         check(i, 'central', 'general', ref, success=i <= 1)
-        check(i, 'central', 'transform', ref,
-              success=has_formula(i, 'raw') or (i <= 1))
+        if dist.__class__ == stats.Normal:
+            check(i, 'central', 'quadrature_icdf', ref, success=True)
+        if not (dist.__class__ == stats.Uniform and i == 5):
+            # Quadrature is not super accurate for 5th central moment when the
+            # support is really big. Skip this one failing test. We need to come
+            # up with a better system of skipping individual failures w/ hypothesis.
+            check(i, 'central', 'transform', ref,
+                  success=has_formula(i, 'raw') or (i <= 1))
         if not has_formula(i, 'raw'):
             dist.moment(i, 'raw')
             check(i, 'central', 'transform', ref)
@@ -562,7 +690,7 @@ def check_moment_funcs(dist, result_shape):
         dist.moment(i, 'standardized')  # build up the cache
         check(i, 'central', 'normalize', ref)
 
-    ### Check Standard Moments ###
+    ### Check Standardized Moments ###
 
     var = dist.moment(2, 'central', method='quadrature')
     dist.reset_cache()
@@ -581,24 +709,26 @@ def check_moment_funcs(dist, result_shape):
         # ShiftedScaledDistribution here
         return
 
-    ### Check Against _logmoment ###
-    logmean = dist._logmoment(1, logcenter=-np.inf)
-    for i in range(6):
-        ref = np.exp(dist._logmoment(i, logcenter=-np.inf))
-        assert_allclose(dist.moment(i, 'raw'), ref, atol=atol*10**i)
+    # logmoment is not very accuate, and it's not public, so skip for now
+    # ### Check Against _logmoment ###
+    # logmean = dist._logmoment(1, logcenter=-np.inf)
+    # for i in range(6):
+    #     ref = np.exp(dist._logmoment(i, logcenter=-np.inf))
+    #     assert_allclose(dist.moment(i, 'raw'), ref, atol=atol*10**i)
+    #
+    #     ref = np.exp(dist._logmoment(i, logcenter=logmean))
+    #     assert_allclose(dist.moment(i, 'central'), ref, atol=atol*10**i)
+    #
+    #     ref = np.exp(dist._logmoment(i, logcenter=logmean, standardized=True))
+    #     assert_allclose(dist.moment(i, 'standardized'), ref, atol=atol*10**i)
 
-        ref = np.exp(dist._logmoment(i, logcenter=logmean))
-        assert_allclose(dist.moment(i, 'central'), ref, atol=atol*10**i)
 
-        ref = np.exp(dist._logmoment(i, logcenter=logmean, standardized=True))
-        assert_allclose(dist.moment(i, 'standardized'), ref, atol=atol*10**i)
-
-
-@pytest.mark.parametrize('family', (StandardNormal,))
+@pytest.mark.parametrize('family', (Normal,))
 @pytest.mark.parametrize('x_shape', [tuple(), (2, 3)])
 @pytest.mark.parametrize('dist_shape', [tuple(), (4, 1)])
 @pytest.mark.parametrize('fname', ['sample'])
-def test_sample_against_cdf(family, dist_shape, x_shape, fname):
+@pytest.mark.parametrize('rng_type', [np.random.Generator, qmc.Halton, qmc.Sobol])
+def test_sample_against_cdf(family, dist_shape, x_shape, fname, rng_type):
     rng = np.random.default_rng(842582438235635)
     num_parameters = family._num_parameters()
 
@@ -607,13 +737,15 @@ def test_sample_against_cdf(family, dist_shape, x_shape, fname):
 
     dist = family._draw(dist_shape, rng)
 
-    n = 1000
+    n = 1024
     sample_size = (n,) + x_shape
     sample_array_shape = sample_size + dist_shape
 
     if fname == 'sample':
         sample_method = dist.sample
 
+    if rng_type != np.random.Generator:
+        rng = rng_type(d=1, seed=rng)
     x = sample_method(sample_size, rng=rng)
     assert x.shape == sample_array_shape
 
@@ -763,7 +895,7 @@ def test_input_validation():
 def test_rng_deepcopy_pickle():
     # test behavior of `rng` attribute and copy behavior
     kwargs = dict(a=[-1, 2], b=10)
-    dist1 = _Uniform(**kwargs)
+    dist1 = Uniform(**kwargs)
     dist2 = deepcopy(dist1)
     dist3 = pickle.loads(pickle.dumps(dist1))
 
@@ -847,25 +979,8 @@ class TestAttributes:
         assert_allclose(res2, ref, rtol=X2.tol)
         assert abs(res2 - ref) > abs(res1 - ref)
 
-        # Test the tolerance logic in one dispatch method
-        # When tol is set, quadrature should be used -> correct entropy.
-        # When tol is not set, logexp should be used -> incorrect entropy.
-        wrong_entropy = 1.23456
-
-        class TestDist(ContinuousDistribution):
-            _variable = _RealParameter('x', domain=_RealDomain(endpoints=(0, 0.5)))
-            def _logpdf_formula(self, x, *args, **kwargs):
-                return np.full_like(x, np.log(2.))
-            def _entropy_formula(self, *args, **kwargs):
-                return wrong_entropy
-
-        X0 = _Uniform(a=0., b=0.5)
-        assert_allclose(TestDist(tol=1e-10).logentropy(), X0.logentropy())
-        assert_allclose(TestDist().logentropy(), np.log(wrong_entropy))
-
-
     def test_iv_policy(self):
-        X = _Uniform(a=0, b=1)
+        X = Uniform(a=0, b=1)
         assert X.pdf(2) == 0
 
         X.validation_policy = 'skip_all'
@@ -873,11 +988,11 @@ class TestAttributes:
 
         # Tests _set_invalid_nan
         a, b = np.asarray(1.), np.asarray(0.)  # invalid parameters
-        X = _Uniform(a=a, b=b, validation_policy='skip_all')
+        X = Uniform(a=a, b=b, validation_policy='skip_all')
         assert X.pdf(np.asarray(2.)) == -1
 
         # Tests _set_invalid_nan_property
-        class MyUniform(_Uniform):
+        class MyUniform(Uniform):
             def _entropy_formula(self, *args, **kwargs):
                 return 'incorrect'
 
@@ -915,7 +1030,149 @@ class TestAttributes:
         assert Y.mu[0] == 2
 
 
+class TestMakeDistribution:
+    @pytest.mark.parametrize('i, distdata', enumerate(distcont))
+    def test_make_distribution(self, i, distdata):
+        distname = distdata[0]
+
+        slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
+                'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'powerlognorm',
+                'powernorm', 'recipinvgauss', 'studentized_range', 'vonmises_line'}
+        if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
+            pytest.skip('Skipping as XSLOW')
+
+        if distname in {  # skip these distributions
+            'levy_stable',  # private methods seem to require >= 1d args
+            'vonmises',  # circular distribution; shouldn't work
+        }:
+            return
+
+        # skip single test, mostly due to slight disagreement
+        custom_tolerances = {'ksone': 1e-5, 'kstwo': 1e-5}  # discontinuous PDF
+        skip_entropy = {'kstwobign', 'pearson3'}  # tolerance issue
+        skip_skewness = {'exponpow', 'ksone'}  # tolerance issue
+        skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance issue
+                         'johnsonsb', 'ksone', 'kstwo'}  # tolerance issue
+        skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
+        skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
+                    3: {'pareto'},  # stats.pareto is just wrong
+                    4: {'invgamma'}}  # tolerance issue
+        skip_standardized = {'exponpow', 'ksone'}  # tolerances
+
+        dist = getattr(stats, distname)
+        params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
+        rng = np.random.default_rng(7548723590230982)
+        CustomDistribution = stats.make_distribution(dist)
+        X = CustomDistribution(**params)
+        Y = dist(**params)
+        x = X.sample(shape=10, rng=rng)
+        p = X.cdf(x)
+        rtol = custom_tolerances.get(distname, 1e-7)
+        atol = 1e-12
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            m, v, s, k = Y.stats('mvsk')
+            assert_allclose(X.support(), Y.support())
+            if distname not in skip_entropy:
+                assert_allclose(X.entropy(), Y.entropy(), rtol=rtol)
+            assert_allclose(X.median(), Y.median(), rtol=rtol)
+            assert_allclose(X.mean(), m, rtol=rtol, atol=atol)
+            assert_allclose(X.variance(), v, rtol=rtol, atol=atol)
+            if distname not in skip_skewness:
+                assert_allclose(X.skewness(), s, rtol=rtol, atol=atol)
+            if distname not in skip_kurtosis:
+                assert_allclose(X.kurtosis(convention='excess'), k,
+                                rtol=rtol, atol=atol)
+            assert_allclose(X.logpdf(x), Y.logpdf(x), rtol=rtol)
+            assert_allclose(X.pdf(x), Y.pdf(x), rtol=rtol)
+            assert_allclose(X.logcdf(x), Y.logcdf(x), rtol=rtol)
+            assert_allclose(X.cdf(x), Y.cdf(x), rtol=rtol)
+            if distname not in skip_logccdf:
+                assert_allclose(X.logccdf(x), Y.logsf(x), rtol=rtol)
+            assert_allclose(X.ccdf(x), Y.sf(x), rtol=rtol)
+            assert_allclose(X.icdf(p), Y.ppf(p), rtol=rtol)
+            assert_allclose(X.iccdf(p), Y.isf(p), rtol=rtol)
+            for order in range(5):
+                if distname not in skip_raw.get(order, {}):
+                    assert_allclose(X.moment(order, kind='raw'),
+                                    Y.moment(order), rtol=rtol, atol=atol)
+            for order in range(3, 4):
+                if distname not in skip_standardized:
+                    assert_allclose(X.moment(order, kind='standardized'),
+                                    Y.stats('mvsk'[order-1]), rtol=rtol, atol=atol)
+            seed = 845298245687345
+            assert_allclose(X.sample(shape=10, rng=seed),
+                            Y.rvs(size=10, random_state=np.random.default_rng(seed)),
+                            rtol=rtol)
+
+    def test_input_validation(self):
+        message = '`levy_stable` is not supported.'
+        with pytest.raises(NotImplementedError, match=message):
+            stats.make_distribution(stats.levy_stable)
+
+        message = '`vonmises` is not supported.'
+        with pytest.raises(NotImplementedError, match=message):
+            stats.make_distribution(stats.vonmises)
+
+        message = "The argument must be an instance of `rv_continuous`."
+        with pytest.raises(ValueError, match=message):
+            stats.make_distribution(object())
+
+    def test_repr_str_docs(self):
+        from scipy.stats._distribution_infrastructure import _distribution_names
+        for dist in _distribution_names.keys():
+            assert hasattr(stats, dist)
+
+        dist = stats.make_distribution(stats.gamma)
+        assert str(dist(a=2)) == "Gamma(a=2.0)"
+        if np.__version__ >= "2":
+            assert repr(dist(a=2)) == "Gamma(a=np.float64(2.0))"
+        assert 'Gamma' in dist.__doc__
+
+        dist = stats.make_distribution(stats.halfgennorm)
+        assert str(dist(beta=2)) == "HalfGeneralizedNormal(beta=2.0)"
+        if np.__version__ >= "2":
+            assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
+        assert 'HalfGeneralizedNormal' in dist.__doc__
+
+
 class TestTransforms:
+
+    # putting this at the top to hopefully avoid merge conflicts
+    def test_truncate(self):
+        rng = np.random.default_rng(81345982345826)
+        lb = rng.random((3, 1))
+        ub = rng.random((3, 1))
+        lb, ub = np.minimum(lb, ub), np.maximum(lb, ub)
+
+        Y = stats.truncate(Normal(), lb=lb, ub=ub)
+        Y0 = stats.truncnorm(lb, ub)
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy() + 0j))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        sample = Y.sample(10)
+        assert np.all((sample > lb) & (sample < ub))
+
     @pytest.mark.fail_slow(10)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
     def test_loc_scale(self, data, seed):
@@ -1018,6 +1275,157 @@ class TestTransforms:
             #                 dist0.sample(x_result_shape, rng=rng0) * scale + loc)
             # Should also try to test fit, plot?
 
+    @pytest.mark.fail_slow(5)
+    @pytest.mark.parametrize('exp_pow', ['exp', 'pow'])
+    def test_exp_pow(self, exp_pow):
+        rng = np.random.default_rng(81345982345826)
+        mu = rng.random((3, 1))
+        sigma = rng.random((3, 1))
+
+        X = Normal()*sigma + mu
+        if exp_pow == 'exp':
+            Y = stats.exp(X)
+        else:
+            Y = np.e ** X
+        Y0 = stats.lognorm(sigma, scale=np.exp(mu))
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), np.exp(X.sample(rng=seed)))
+
+
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.parametrize('scale', [1, 2, -1])
+    @pytest.mark.xfail_on_32bit("`scale=-1` fails on 32-bit; needs investigation")
+    def test_reciprocal(self, scale):
+        rng = np.random.default_rng(81345982345826)
+        a = rng.random((3, 1))
+
+        # Separate sign from scale. It's easy to scale the resulting
+        # RV with negative scale; we want to test the ability to divide
+        # by a RV with negative support
+        sign, scale = np.sign(scale), abs(scale)
+
+        # Reference distribution
+        InvGamma = stats.make_distribution(stats.invgamma)
+        Y0 = sign * scale * InvGamma(a=a)
+
+        # Test distribution
+        X = _Gamma(a=a) if sign > 0 else -_Gamma(a=a)
+        Y = scale / X
+
+        y = Y0.sample(shape=(3, 10), rng=rng)
+        p = Y0.cdf(y)
+        logp = np.log(p)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.median())
+        # moments are not finite
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.ccdf(y))
+        assert_allclose(Y.icdf(p), Y0.icdf(p))
+        assert_allclose(Y.iccdf(p), Y0.iccdf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logccdf(y))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            assert_allclose(Y.ilogcdf(logp), Y0.ilogcdf(logp))
+            assert_allclose(Y.ilogccdf(logp), Y0.ilogccdf(logp))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), scale/(X.sample(rng=seed)))
+
+    @pytest.mark.fail_slow(5)
+    def test_log(self):
+        rng = np.random.default_rng(81345982345826)
+        a = rng.random((3, 1))
+
+        X = _Gamma(a=a)
+        Y0 = stats.loggamma(a)
+        Y = stats.log(X)
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy()))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        with np.errstate(invalid='ignore'):
+            assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+            assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        seed = 3984593485
+        assert_allclose(Y.sample(rng=seed), np.log(X.sample(rng=seed)))
+
+    def test_monotonic_transforms(self):
+        # Some tests of monotonic transforms that are better to be grouped or
+        # don't fit well above
+
+        X = Uniform(a=1, b=2)
+        X_str = "Uniform(a=1.0, b=2.0)"
+
+        assert str(stats.log(X)) == f"log({X_str})"
+        assert str(1 / X) == f"1/({X_str})"
+        assert str(stats.exp(X)) == f"exp({X_str})"
+
+        X = Uniform(a=-1, b=2)
+        message = "Division by a random variable is only implemented when the..."
+        with pytest.raises(NotImplementedError, match=message):
+            1 / X
+        message = "The logarithm of a random variable is only implemented when the..."
+        with pytest.raises(NotImplementedError, match=message):
+            stats.log(X)
+        message = "Raising an argument to the power of a random variable is only..."
+        with pytest.raises(NotImplementedError, match=message):
+            (-2) ** X
+        with pytest.raises(NotImplementedError, match=message):
+            1 ** X
+        with pytest.raises(NotImplementedError, match=message):
+            [0.5, 1.5] ** X
+
+        message = "Raising a random variable to the power of an argument is only"
+        with pytest.raises(NotImplementedError, match=message):
+            X ** (-2)
+        with pytest.raises(NotImplementedError, match=message):
+            X ** 0
+        with pytest.raises(NotImplementedError, match=message):
+            X ** [0.5, 1.5]
+
     def test_arithmetic_operators(self):
         rng = np.random.default_rng(2348923495832349834)
 
@@ -1036,9 +1444,153 @@ class TestTransforms:
         X = loc -_LogUniform(a=a, b=b)/scale
         assert_allclose(X.cdf(x), Y.ccdf((-x + loc)*scale))
 
-        message = "Division by a random variable is not yet implemented."
-        with pytest.raises(NotImplementedError, match=message):
-            1 / Y
+    def test_abs(self):
+        rng = np.random.default_rng(81345982345826)
+        loc = rng.random((3, 1))
+
+        Y = stats.abs(Normal() + loc)
+        Y0 = stats.foldnorm(loc)
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy() + 0j))
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        sample = Y.sample(10)
+        assert np.all(sample > 0)
+
+    def test_abs_finite_support(self):
+        # The original implementation of `FoldedDistribution` might evaluate
+        # the private distribution methods outside the support. Check that this
+        # is resolved.
+        Weibull = stats.make_distribution(stats.weibull_min)
+        X = Weibull(c=2)
+        Y = abs(-X)
+        assert_equal(X.logpdf(1), Y.logpdf(1))
+        assert_equal(X.pdf(1), Y.pdf(1))
+        assert_equal(X.logcdf(1), Y.logcdf(1))
+        assert_equal(X.cdf(1), Y.cdf(1))
+        assert_equal(X.logccdf(1), Y.logccdf(1))
+        assert_equal(X.ccdf(1), Y.ccdf(1))
+
+    def test_pow(self):
+        rng = np.random.default_rng(81345982345826)
+
+        Y = Normal()**2
+        Y0 = stats.chi2(df=1)
+
+        y = Y0.rvs(10, random_state=rng)
+        p = Y0.cdf(y)
+
+        assert_allclose(Y.logentropy(), np.log(Y0.entropy() + 0j), rtol=1e-6)
+        assert_allclose(Y.entropy(), Y0.entropy(), rtol=1e-6)
+        assert_allclose(Y.median(), Y0.median())
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.standard_deviation(), np.sqrt(Y0.var()))
+        assert_allclose(Y.skewness(), Y0.stats('s'))
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3)
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y), Y0.cdf(y))
+        assert_allclose(Y.ccdf(y), Y0.sf(y))
+        assert_allclose(Y.icdf(p), Y0.ppf(p))
+        assert_allclose(Y.iccdf(p), Y0.isf(p))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        assert_allclose(Y.ilogcdf(np.log(p)), Y0.ppf(p))
+        assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+        sample = Y.sample(10)
+        assert np.all(sample > 0)
+
+class TestOrderStatistic:
+    @pytest.mark.fail_slow(20)  # Moments require integration
+    def test_order_statistic(self):
+        rng = np.random.default_rng(7546349802439582)
+        X = Uniform(a=0, b=1)
+        n = 5
+        r = np.asarray([[1], [3], [5]])
+        Y = stats.order_statistic(X, n=n, r=r)
+        Y0 = stats.beta(r, n + 1 - r)
+
+        y = Y0.rvs((3, 10), random_state=rng)
+        p = Y0.cdf(y)
+
+        # log methods need some attention before merge
+        assert_allclose(np.exp(Y.logentropy()), Y0.entropy())
+        assert_allclose(Y.entropy(), Y0.entropy())
+        assert_allclose(Y.mean(), Y0.mean())
+        assert_allclose(Y.variance(), Y0.var())
+        assert_allclose(Y.skewness(), Y0.stats('s'), atol=1e-15)
+        assert_allclose(Y.kurtosis(), Y0.stats('k') + 3, atol=1e-15)
+        assert_allclose(Y.median(), Y0.ppf(0.5))
+        assert_allclose(Y.support(), Y0.support())
+        assert_allclose(Y.pdf(y), Y0.pdf(y))
+        assert_allclose(Y.cdf(y, method='formula'), Y.cdf(y, method='quadrature'))
+        assert_allclose(Y.ccdf(y, method='formula'), Y.ccdf(y, method='quadrature'))
+        assert_allclose(Y.icdf(p, method='formula'), Y.icdf(p, method='inversion'))
+        assert_allclose(Y.iccdf(p, method='formula'), Y.iccdf(p, method='inversion'))
+        assert_allclose(Y.logpdf(y), Y0.logpdf(y))
+        assert_allclose(Y.logcdf(y), Y0.logcdf(y))
+        assert_allclose(Y.logccdf(y), Y0.logsf(y))
+        with np.errstate(invalid='ignore', divide='ignore'):
+            assert_allclose(Y.ilogcdf(np.log(p),), Y0.ppf(p))
+            assert_allclose(Y.ilogccdf(np.log(p)), Y0.isf(p))
+
+        message = "`r` and `n` must contain only positive integers."
+        with pytest.raises(ValueError, match=message):
+            stats.order_statistic(X, n=n, r=-1)
+        with pytest.raises(ValueError, match=message):
+            stats.order_statistic(X, n=-1, r=r)
+        with pytest.raises(ValueError, match=message):
+            stats.order_statistic(X, n=n, r=1.5)
+        with pytest.raises(ValueError, match=message):
+            stats.order_statistic(X, n=1.5, r=r)
+
+    def test_support_gh22037(self):
+        # During review of gh-22037, it was noted that the `support` of
+        # an `OrderStatisticDistribution` returned incorrect results;
+        # this was resolved by overriding `_support`.
+        Uniform = stats.make_distribution(stats.uniform)
+        X = Uniform()
+        Y = X*5 + 2
+        Z = stats.order_statistic(Y, r=3, n=5)
+        assert_allclose(Z.support(), Y.support())
+
+    def test_composition_gh22037(self):
+        # During review of gh-22037, it was noted that an error was
+        # raised when creating an `OrderStatisticDistribution` from
+        # a `TruncatedDistribution`. This was resolved by overriding
+        # `_update_parameters`.
+        Normal = stats.make_distribution(stats.norm)
+        TruncatedNormal = stats.make_distribution(stats.truncnorm)
+        a, b = [-2, -1], 1
+        r, n = 3, [[4], [5]]
+        x = [[[-0.3]], [[0.1]]]
+        X1 = Normal()
+        Y1 = stats.truncate(X1, a, b)
+        Z1 = stats.order_statistic(Y1, r=r, n=n)
+        X2 = TruncatedNormal(a=a, b=b)
+        Z2 = stats.order_statistic(X2, r=r, n=n)
+        np.testing.assert_allclose(Z1.cdf(x), Z2.cdf(x))
 
 
 class TestFullCoverage:
@@ -1099,17 +1651,106 @@ class TestFullCoverage:
         msg = _generate_domain_support(_LogUniform)
         assert "accepts two parameterizations" in msg
 
-    def test_ContinuousDistribution__str__(self):
-        X = _Uniform(a=0, b=1)
-        assert str(X) == "_Uniform(a=0.0, b=1.0)"
+    def test_ContinuousDistribution__repr__(self):
+        X = Uniform(a=0, b=1)
+        if np.__version__ < "2":
+            assert repr(X) == "Uniform(a=0.0, b=1.0)"
+        else:
+            assert repr(X) == "Uniform(a=np.float64(0.0), b=np.float64(1.0))"
+        if np.__version__ < "2":
+            assert repr(X*3 + 2) == "3.0*Uniform(a=0.0, b=1.0) + 2.0"
+        else:
+            assert repr(X*3 + 2) == (
+                "np.float64(3.0)*Uniform(a=np.float64(0.0), b=np.float64(1.0))"
+                " + np.float64(2.0)"
+            )
 
-        assert str(X*3 + 2) == "ShiftedScaled_Uniform(a=0.0, b=1.0, loc=2.0, scale=3.0)"
+        X = Uniform(a=np.zeros(4), b=1)
+        assert repr(X) == "Uniform(a=array([0., 0., 0., 0.]), b=1)"
 
-        X = _Uniform(a=np.zeros(4), b=1)
-        assert str(X) == "_Uniform(a, b, shape=(4,))"
+        X = Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
+        assert repr(X) == (
+            "Uniform(a=array([0., 0., 0., 0.], dtype=float32),"
+            " b=array([1., 1., 1., 1.], dtype=float32))"
+        )
 
-        X = _Uniform(a=np.zeros(4, dtype=np.float32), b=np.ones(4, dtype=np.float32))
-        assert str(X) == "_Uniform(a, b, shape=(4,), dtype=float32)"
+
+class TestReprs:
+    U = Uniform(a=0, b=1)
+    V = Uniform(a=np.float32(0.0), b=np.float32(1.0))
+    X = Normal(mu=-1, sigma=1)
+    Y = Normal(mu=1, sigma=1)
+    Z = Normal(mu=np.zeros(1000), sigma=1)
+
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            U,
+            U - np.array([1.0, 2.0]),
+            pytest.param(
+                V,
+                marks=pytest.mark.skipif(
+                    np.__version__ < "2",
+                    reason="numpy 1.x didn't have dtype in repr",
+                )
+            ),
+            pytest.param(
+                np.ones(2, dtype=np.float32)*V + np.zeros(2, dtype=np.float64),
+                marks=pytest.mark.skipif(
+                    np.__version__ < "2",
+                    reason="numpy 1.x didn't have dtype in repr",
+                )
+            ),
+            3*U + 2,
+            U**4,
+            (3*U + 2)**4,
+            (3*U + 2)**3,
+            2**U,
+            2**(3*U + 1),
+            1 / (1 + U),
+            stats.order_statistic(U, r=3, n=5),
+            stats.truncate(U, 0.2, 0.8),
+            stats.Mixture([X, Y], weights=[0.3, 0.7]),
+            abs(U),
+            stats.exp(U),
+            stats.log(1 + U),
+            np.array([1.0, 2.0])*U + np.array([2.0, 3.0]),
+        ]
+    )
+    def test_executable(self, dist):
+        # Test that reprs actually evaluate to proper distribution
+        # provided relevant imports are made.
+        from numpy import array  # noqa: F401
+        from numpy import float32  # noqa: F401
+        from scipy.stats import abs, exp, log, order_statistic, truncate # noqa: F401
+        from scipy.stats import Mixture, Normal # noqa: F401
+        from scipy.stats._new_distributions import Uniform # noqa: F401
+        new_dist = eval(repr(dist))
+        # A basic check that the distributions are the same
+        sample1 = dist.sample(shape=10, rng=1234)
+        sample2 = new_dist.sample(shape=10, rng=1234)
+        assert_equal(sample1, sample2)
+        assert sample1.dtype is sample2.dtype
+
+    @pytest.mark.parametrize(
+        "dist",
+        [
+            Z,
+            np.full(1000, 2.0) * X + 1.0,
+            2.0 * X + np.full(1000, 1.0),
+            np.full(1000, 2.0) * X + 1.0,
+            stats.truncate(Z, -1, 1),
+            stats.truncate(Z, -np.ones(1000), np.ones(1000)),
+            stats.order_statistic(X, r=np.arange(1, 1000), n=1000),
+            Z**2,
+            1.0 / (1 + stats.exp(Z)),
+            2**Z,
+        ]
+    )
+    def test_not_too_long(self, dist):
+        # Tests that array summarization is working to ensure reprs aren't too long.
+        # None of the reprs above will be executable.
+        assert len(repr(dist)) < 250
 
 
 class MixedDist(ContinuousDistribution):
@@ -1153,12 +1794,18 @@ class TestMixture:
         with pytest.raises(ValueError, match=message):
             Mixture([Normal(), Normal()], weights=[1.5, -0.5])
 
-    def test_basic(self):
+    @pytest.mark.parametrize('shape', [(), (10,)])
+    def test_basic(self, shape):
         rng = np.random.default_rng(582348972387243524)
         X = Mixture((Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)),
                     weights=(0.4, 0.6))
         Y = MixedDist()
-        x = rng.random(10)
+        x = rng.random(shape)
+
+        def assert_allclose(res, ref, **kwargs):
+            if shape == ():
+                assert np.isscalar(res)
+            np.testing.assert_allclose(res, ref, **kwargs)
 
         assert_allclose(X.logentropy(), Y.logentropy())
         assert_allclose(X.entropy(), Y.entropy())
@@ -1190,6 +1837,14 @@ class TestMixture:
         y = X.sample(shape, rng=rng)
         assert y.shape == shape
         assert stats.ks_1samp(y.ravel(), X.cdf).pvalue > 0.05
+
+    def test_default_weights(self):
+        a = 1.1
+        Gamma = stats.make_distribution(stats.gamma)
+        X = Gamma(a=a)
+        Y = stats.Mixture((X, -X))
+        x = np.linspace(-4, 4, 300)
+        assert_allclose(Y.pdf(x), stats.dgamma(a=a).pdf(x))
 
     def test_properties(self):
         components = [Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)]

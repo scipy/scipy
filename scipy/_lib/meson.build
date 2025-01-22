@@ -2,14 +2,14 @@ fs = import('fs')
 if not fs.exists('boost_math/README.md')
   error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('highs/README.md')
-  error('Missing the `highs` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('array_api_extra/README.md')
+  error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('pocketfft/README.md')
   error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
@@ -31,10 +31,12 @@ lib_cython_gen = generator(cython,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _lib_pxd])
 
+ccallback_dep = declare_dependency(include_directories: ['..', 'src'])
+
 py3.extension_module('_ccallback_c',
   lib_cython_gen.process('_ccallback_c.pyx'),
   c_args: [cython_c_args, Wno_discarded_qualifiers],
-  include_directories: 'src',
+  dependencies: ccallback_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib'
@@ -42,7 +44,7 @@ py3.extension_module('_ccallback_c',
 
 py3.extension_module('_test_ccallback',
   'src/_test_ccallback.c',
-  include_directories: 'src',
+  dependencies: ccallback_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/_lib',
@@ -111,6 +113,7 @@ py3.extension_module('messagestream',
 python_sources = [
   '__init__.py',
   '_array_api.py',
+  '_array_api_compat_vendor.py',
   '_array_api_no_0d.py',
   '_bunch.py',
   '_ccallback.py',
@@ -119,6 +122,7 @@ python_sources = [
   '_elementwise_iterative_method.py',
   '_finite_differences.py',
   '_gcutils.py',
+  '_lazy_testing.py',
   '_pep440.py',
   '_testutils.py',
   '_threadsafety.py',
@@ -209,6 +213,39 @@ py3.install_sources(
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/torch',
+)
+
+# `array_api_extra` install to simplify import path;
+# should be updated whenever new files are added to `array_api_extra`
+
+py3.install_sources(
+  [
+    'array_api_extra/src/array_api_extra/_lib/_utils/__init__.py',
+    'array_api_extra/src/array_api_extra/_lib/_utils/_compat.py',
+    'array_api_extra/src/array_api_extra/_lib/_utils/_compat.pyi',    
+    'array_api_extra/src/array_api_extra/_lib/_utils/_helpers.py',
+    'array_api_extra/src/array_api_extra/_lib/_utils/_typing.py',
+
+  ],
+  subdir: 'scipy/_lib/array_api_extra/_lib/_utils',
+)
+
+py3.install_sources(
+  [
+    'array_api_extra/src/array_api_extra/_lib/__init__.py',
+    'array_api_extra/src/array_api_extra/_lib/_backends.py',
+    'array_api_extra/src/array_api_extra/_lib/_funcs.py',    
+    'array_api_extra/src/array_api_extra/_lib/_testing.py',
+  ],
+  subdir: 'scipy/_lib/array_api_extra/_lib',
+)
+
+py3.install_sources(
+  [
+    'array_api_extra/src/array_api_extra/__init__.py',
+    'array_api_extra/src/array_api_extra/_delegation.py',
+  ],
+  subdir: 'scipy/_lib/array_api_extra',
 )
 
 py3.install_sources(

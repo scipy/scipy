@@ -18,7 +18,6 @@
 
 
 # Provides typing union operator ``|`` in Python 3.9:
-from __future__ import annotations
 # Linter does not allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator, Callable
 from functools import cache, lru_cache, partial
@@ -27,7 +26,7 @@ from typing import get_args, Literal
 import numpy as np
 
 import scipy.fft as fft_lib
-from scipy.signal import detrend
+from scipy.signal._signaltools import detrend
 from scipy.signal.windows import get_window
 
 __all__ = ['closest_STFT_dual_window', 'ShortTimeFFT']
@@ -1811,8 +1810,8 @@ class ShortTimeFFT:
 
         The nearest next smaller time sample p (where t[p] is the center
         position of the window of the p-th slice) is p_k = k // `hop`.
-        If `hop` is a divisor of `k` than `k` is returned.
-        If `left` is set than p_k * `hop` is returned else (p_k+1) * `hop`.
+        If `hop` is a divisor of `k` then `k` is returned.
+        If `left` is set then p_k * `hop` is returned else (p_k+1) * `hop`.
 
         This method can be used to slice an input signal into chunks for
         calculating the STFT and iSTFT incrementally.

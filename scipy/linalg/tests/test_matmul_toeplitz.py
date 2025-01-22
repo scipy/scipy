@@ -125,9 +125,11 @@ class TestMatmulToeplitz:
 
     # For toeplitz matrices, matmul_toeplitz() should be equivalent to @.
     def do(self, x, c, r=None, check_finite=False, workers=None):
+        c = np.ravel(c)
         if r is None:
             actual = matmul_toeplitz(c, x, check_finite, workers)
         else:
+            r = np.ravel(r)
             actual = matmul_toeplitz((c, r), x, check_finite)
         desired = toeplitz(c, r) @ x
         assert_allclose(actual, desired,

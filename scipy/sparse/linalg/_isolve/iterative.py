@@ -22,7 +22,8 @@ def _get_atol_rtol(name, b_norm, atol=0., rtol=1e-5):
 
 
 def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use BIConjugate Gradient iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the BIConjugate Gradient method.
 
     Parameters
     ----------
@@ -86,13 +87,13 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('bicg', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     n = len(b)
     dotprod = np.vdot if np.iscomplexobj(x) else np.dot
@@ -113,7 +114,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
 
         z = psolve(r)
         ztilde = rpsolve(rtilde)
@@ -121,7 +122,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         rho_cur = dotprod(rtilde, z)
 
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            return postprocess, -10
+            return x, -10
 
         if iteration > 0:
             beta = rho_cur / rho_prev
@@ -138,7 +139,7 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
         rv = dotprod(ptilde, q)
 
         if rv == 0:
-            return postprocess(x), -11
+            return x, -11
 
         alpha = rho_cur / rv
         x += alpha*p
@@ -151,12 +152,13 @@ def bicg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=No
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter
 
 
 def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
              callback=None):
-    """Use BIConjugate Gradient STABilized iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the BIConjugate Gradient STABilized method.
 
     Parameters
     ----------
@@ -224,13 +226,13 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('bicgstab', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     n = len(b)
 
@@ -255,15 +257,15 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
 
         rho = dotprod(rtilde, r)
         if np.abs(rho) < rhotol:  # rho breakdown
-            return postprocess(x), -10
+            return x, -10
 
         if iteration > 0:
             if np.abs(omega) < omegatol:  # omega breakdown
-                return postprocess(x), -11
+                return x, -11
 
             beta = (rho / rho_prev) * (alpha / omega)
             p -= omega*v
@@ -277,14 +279,14 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         v = matvec(phat)
         rv = dotprod(rtilde, v)
         if rv == 0:
-            return postprocess(x), -11
+            return x, -11
         alpha = rho / rv
         r -= alpha*v
         s[:] = r[:]
 
         if np.linalg.norm(s) < atol:
             x += alpha*phat
-            return postprocess(x), 0
+            return x, 0
 
         shat = psolve(s)
         t = matvec(shat)
@@ -299,11 +301,13 @@ def bicgstab(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter
 
 
 def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use Conjugate Gradient iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Conjugate Gradient method, for a symmetric,
+    positive-definite `A`.
 
     Parameters
     ----------
@@ -372,13 +376,13 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('cg', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     n = len(b)
 
@@ -396,7 +400,7 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
 
         z = psolve(r)
         rho_cur = dotprod(r, z)
@@ -419,11 +423,12 @@ def cg(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter
 
 
 def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=None):
-    """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Conjugate Gradient Squared method.
 
     Parameters
     ----------
@@ -491,13 +496,13 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('cgs', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     n = len(b)
 
@@ -524,11 +529,11 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
     for iteration in range(maxiter):
         rnorm = np.linalg.norm(r)
         if rnorm < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
 
         rho_cur = dotprod(rtilde, r)
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            return postprocess, -10
+            return x, -10
 
         if iteration > 0:
             beta = rho_cur / rho_prev
@@ -553,7 +558,7 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
         rv = dotprod(rtilde, vhat)
 
         if rv == 0:  # Dot product breakdown
-            return postprocess(x), -11
+            return x, -11
 
         alpha = rho_cur / rv
         q[:] = u[:]
@@ -576,13 +581,13 @@ def cgs(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None, callback=Non
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter
 
 
 def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=None,
           callback=None, callback_type=None):
     """
-    Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
+    Solve ``Ax = b`` with the Generalized Minimal RESidual method.
 
     Parameters
     ----------
@@ -689,7 +694,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     if callback is None:
         callback_type = None
 
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
     matvec = A.matvec
     psolve = M.matvec
     n = len(b)
@@ -698,7 +703,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
     atol, _ = _get_atol_rtol('gmres', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     eps = np.finfo(x.dtype.char).eps
 
@@ -737,7 +742,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         if iteration == 0:
             r = b - matvec(x) if x.any() else b.copy()
             if np.linalg.norm(r) < atol:  # Are we done?
-                return postprocess(x), 0
+                return x, 0
 
         v[0, :] = psolve(r)
         tmp = np.linalg.norm(v[0, :])
@@ -818,7 +823,7 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
 
         # Legacy exit
         if callback_type == 'legacy' and inner_iter == maxiter:
-            return postprocess(x), 0 if rnorm <= atol else maxiter
+            return x, 0 if rnorm <= atol else maxiter
 
         if callback_type == 'x':
             callback(x)
@@ -838,12 +843,13 @@ def gmres(A, b, x0=None, *, rtol=1e-5, atol=0., restart=None, maxiter=None, M=No
         ptol = presid * min(ptol_max_factor, atol / rnorm)
 
     info = 0 if (rnorm <= atol) else maxiter
-    return postprocess(x), info
+    return x, info
 
 
 def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         callback=None):
-    """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
+    """
+    Solve ``Ax = b`` with the Quasi-Minimal Residual method.
 
     Parameters
     ----------
@@ -901,13 +907,13 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
     True
     """
     A_ = A
-    A, M, x, b, postprocess = make_system(A, None, x0, b)
+    A, M, x, b = make_system(A, None, x0, b)
     bnrm2 = np.linalg.norm(b)
 
     atol, _ = _get_atol_rtol('qmr', bnrm2, atol, rtol)
 
     if bnrm2 == 0:
-        return postprocess(b), 0
+        return b, 0
 
     if M1 is None and M2 is None:
         if hasattr(A_, 'psolve'):
@@ -964,11 +970,11 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
-            return postprocess(x), 0
+            return x, 0
         if np.abs(rho) < rhotol:  # rho breakdown
-            return postprocess(x), -10
+            return x, -10
         if np.abs(xi) < xitol:  # xi breakdown
-            return postprocess(x), -15
+            return x, -15
 
         v[:] = vtilde[:]
         v *= (1 / rho)
@@ -979,7 +985,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         delta = dotprod(z, y)
 
         if np.abs(delta) < deltatol:  # delta breakdown
-            return postprocess(x), -13
+            return x, -13
 
         ytilde = M2.matvec(y)
         ztilde = M1.rmatvec(z)
@@ -996,11 +1002,11 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         ptilde = A.matvec(p)
         epsilon = dotprod(q, ptilde)
         if np.abs(epsilon) < epsilontol:  # epsilon breakdown
-            return postprocess(x), -14
+            return x, -14
 
         beta = epsilon / delta
         if np.abs(beta) < betatol:  # beta breakdown
-            return postprocess(x), -11
+            return x, -11
 
         vtilde[:] = ptilde[:]
         vtilde -= beta*v
@@ -1019,7 +1025,7 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
         gamma = 1 / np.sqrt(1 + theta**2)
 
         if np.abs(gamma) < gammatol:  # gamma breakdown
-            return postprocess(x), -12
+            return x, -12
 
         eta *= -(rho_prev / beta) * (gamma / gamma_prev)**2
 
@@ -1042,4 +1048,4 @@ def qmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M1=None, M2=None,
 
     else:  # for loop exhausted
         # Return incomplete progress
-        return postprocess(x), maxiter
+        return x, maxiter

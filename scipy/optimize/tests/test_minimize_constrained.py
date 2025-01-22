@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_array
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_less, assert_,
                            suppress_warnings)
@@ -430,7 +430,7 @@ class Elec:
                 Jx = 2 * np.diag(x_coord)
                 Jy = 2 * np.diag(y_coord)
                 Jz = 2 * np.diag(z_coord)
-                return csc_matrix(np.hstack((Jx, Jy, Jz)))
+                return csc_array(np.hstack((Jx, Jy, Jz)))
         else:
             jac = self.constr_jac
 
@@ -465,6 +465,7 @@ class TestTrustRegionConstr:
                         Elec(n_electrons=2, constr_jac='3-point',
                              constr_hess=SR1())]
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('prob', list_of_problems)
     @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))
     @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
@@ -778,7 +779,7 @@ def test_issue_18882():
             method="trust-constr",
             constraints=NonlinearConstraint(lsf, 0, 0),
         )
-    assert (not res.success) and (res.constr_violation > 1e-8)  
+    assert (not res.success) and (res.constr_violation > 1e-8)
 
 class TestBoundedNelderMead:
 

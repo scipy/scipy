@@ -31,7 +31,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
 from scipy.stats import _covariance, Covariance
 from scipy import stats
 
-from scipy.integrate._tanhsinh import _tanhsinh
+from scipy.integrate import tanhsinh
 from scipy.integrate import romb, qmc_quad, dblquad, tplquad
 from scipy.special import multigammaln
 
@@ -1930,21 +1930,16 @@ class TestInvwishart:
 
 class TestSpecialOrthoGroup:
     def test_reproducibility(self):
-        np.random.seed(514)
-        x = special_ortho_group.rvs(3)
-        expected = np.array([[-0.99394515, -0.04527879, 0.10011432],
-                             [0.04821555, -0.99846897, 0.02711042],
-                             [0.09873351, 0.03177334, 0.99460653]])
-        assert_array_almost_equal(x, expected)
-
-        random_state = np.random.RandomState(seed=514)
-        x = special_ortho_group.rvs(3, random_state=random_state)
+        x = special_ortho_group.rvs(3, random_state=np.random.default_rng(514))
+        expected = np.array([[-0.93200988, 0.01533561, -0.36210826],
+                             [0.35742128, 0.20446501, -0.91128705],
+                             [0.06006333, -0.97875374, -0.19604469]])
         assert_array_almost_equal(x, expected)
 
     def test_invalid_dim(self):
         assert_raises(ValueError, special_ortho_group.rvs, None)
         assert_raises(ValueError, special_ortho_group.rvs, (2, 2))
-        assert_raises(ValueError, special_ortho_group.rvs, 1)
+        assert_raises(ValueError, special_ortho_group.rvs, -1)
         assert_raises(ValueError, special_ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -1979,8 +1974,9 @@ class TestSpecialOrthoGroup:
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
         ks_prob = .05
-        np.random.seed(514)
-        xs = special_ortho_group.rvs(dim, size=samples)
+        xs = special_ortho_group.rvs(
+            dim, size=samples, random_state=np.random.default_rng(513)
+        )
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
@@ -1996,6 +1992,14 @@ class TestSpecialOrthoGroup:
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
+
+    def test_one_by_one(self):
+        # Test that the distribution is a delta function at the identity matrix
+        # when dim=1
+        assert_allclose(special_ortho_group.rvs(1, size=1000), 1, rtol=1e-13)
+
+    def test_zero_by_zero(self):
+        assert_equal(special_ortho_group.rvs(0, size=4).shape, (4, 0, 0))
 
 
 class TestOrthoGroup:
@@ -2015,7 +2019,7 @@ class TestOrthoGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, ortho_group.rvs, None)
         assert_raises(ValueError, ortho_group.rvs, (2, 2))
-        assert_raises(ValueError, ortho_group.rvs, 1)
+        assert_raises(ValueError, ortho_group.rvs, -1)
         assert_raises(ValueError, ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -2084,6 +2088,20 @@ class TestOrthoGroup:
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
+
+    def test_one_by_one(self):
+        # Test that the 1x1 distribution gives ±1 with equal probability.
+        dim = 1
+        xs = ortho_group.rvs(dim, size=5000, random_state=np.random.default_rng(514))
+        assert_allclose(np.abs(xs), 1, rtol=1e-13)
+        k = np.sum(xs > 0)
+        n = len(xs)
+        res = stats.binomtest(k, n)
+        low, high = res.proportion_ci(confidence_level=0.95)
+        assert low < 0.5 < high
+
+    def test_zero_by_zero(self):
+        assert_equal(special_ortho_group.rvs(0, size=4).shape, (4, 0, 0))
 
     @pytest.mark.slow
     def test_pairwise_distances(self):
@@ -2290,7 +2308,7 @@ class TestUnitaryGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, unitary_group.rvs, None)
         assert_raises(ValueError, unitary_group.rvs, (2, 2))
-        assert_raises(ValueError, unitary_group.rvs, 1)
+        assert_raises(ValueError, unitary_group.rvs, -1)
         assert_raises(ValueError, unitary_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -2319,17 +2337,22 @@ class TestUnitaryGroup:
         # the complex plane, are uncorrelated.
 
         # Generate samples
-        dim = 5
-        samples = 1000  # Not too many, or the test takes too long
-        np.random.seed(514)  # Note that the test is sensitive to seed too
-        xs = unitary_group.rvs(dim, size=samples)
+        for dim in (1, 5):
+            samples = 1000  # Not too many, or the test takes too long
+            # Note that the test is sensitive to seed too
+            xs = unitary_group.rvs(
+                dim, size=samples, random_state=np.random.default_rng(514)
+            )
 
-        # The angles "x" of the eigenvalues should be uniformly distributed
-        # Overall this seems to be a necessary but weak test of the distribution.
-        eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
-        x = np.arctan2(eigs.imag, eigs.real)
-        res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
-        assert_(res.pvalue > 0.05)
+            # The angles "x" of the eigenvalues should be uniformly distributed
+            # Overall this seems to be a necessary but weak test of the distribution.
+            eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
+            x = np.arctan2(eigs.imag, eigs.real)
+            res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
+            assert_(res.pvalue > 0.05)
+
+    def test_zero_by_zero(self):
+        assert_equal(unitary_group.rvs(0, size=4).shape, (4, 0, 0))
 
 
 class TestMultivariateT:
@@ -3870,7 +3893,7 @@ class TestNormalInverseGamma:
 
         # Test PDF
         x = np.linspace(-5, 5, 11)
-        res = _tanhsinh(lambda s2, x: norm_inv_gamma.pdf(x, s2), 0, np.inf, args=(x,))
+        res = tanhsinh(lambda s2, x: norm_inv_gamma.pdf(x, s2), 0, np.inf, args=(x,))
         ref = t.pdf(x)
         assert_allclose(res.integral, ref)
 
@@ -3891,8 +3914,8 @@ class TestNormalInverseGamma:
 
         # Test PDF
         s2 = np.linspace(0.1, 10, 10)
-        res = _tanhsinh(lambda x, s2: norm_inv_gamma.pdf(x, s2),
-                        -np.inf, np.inf, args=(s2,))
+        res = tanhsinh(lambda x, s2: norm_inv_gamma.pdf(x, s2),
+                       -np.inf, np.inf, args=(s2,))
         ref = inv_gamma.pdf(s2)
         assert_allclose(res.integral, ref)
 

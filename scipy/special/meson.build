@@ -1,4 +1,3 @@
-
 # TODO: 64-bit BLAS and LAPACK
 
 _ufuncs_pxi_pxd_sources = [
@@ -8,7 +7,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_convex_analysis.pxd'),
-  fs.copyfile('_cunity.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_ellipk.pxd'),
@@ -19,7 +17,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
-  fs.copyfile('_xlogy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
@@ -55,10 +52,8 @@ ufuncs_sources = [
 ]
 
 ufuncs_cxx_sources = [
-  '_faddeeva.cxx',
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
-  'Faddeeva.cc',
   'sf_error.cc',
   'wright.cc'
 ]
@@ -129,6 +124,7 @@ cython_special = custom_target('cython_special',
 )
 
 cython_special_pxd = fs.copyfile('cython_special.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,
@@ -357,6 +353,7 @@ py3.install_sources(xsf_cephes_sources, subdir: 'scipy/special/xsf/cephes')
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',

@@ -109,19 +109,10 @@ upload:
 # Basic Sphinx generation rules for different formats
 #------------------------------------------------------------------------------
 
-html: version-check convert-notebooks html-build
+html: version-check html-build
 html-build:
 	mkdir -p build/html build/doctrees
 	$(SPHINXBUILD) -WT --keep-going $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html $(FILES)
-
-convert-notebooks:
-	mkdir -p source/_contents
-	for file in source/tutorial/stats/*.md; do \
-		basename=$$(basename $$file .md); \
-		output_name="source/_contents/$${basename}.ipynb"; \
-		$(PYTHON) -m jupytext --output "$$output_name"  $$file; \
-	done
-
 
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees

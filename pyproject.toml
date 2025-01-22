@@ -33,7 +33,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.15.0.dev0"
+version = "1.16.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -83,7 +83,7 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
-    "array-api-strict>=2.0",
+    "array-api-strict>=2.0,<2.1.1",
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
@@ -99,7 +99,7 @@ doc = [
     "jupytext",
     "myst-nb",
     "pooch",
-    "jupyterlite-sphinx>=0.16.5",
+    "jupyterlite-sphinx>=0.17.1",
     "jupyterlite-pyodide-kernel",
 ]
 dev = [
@@ -124,6 +124,8 @@ tracker = "https://github.com/scipy/scipy/issues"
 [tool.doit]
 dodoFile = "dev.py"
 
+[tool.meson-python.args]
+install = ['--skip-subprojects']
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"

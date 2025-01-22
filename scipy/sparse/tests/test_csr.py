@@ -203,7 +203,7 @@ def test_broadcast_to():
     assert_array_equal(res_c.toarray(), np.broadcast_to(b, (2,4)))
     assert_array_equal(res_d.toarray(), np.broadcast_to(b, (1,)))
     assert_array_equal(res_e.toarray(), np.broadcast_to(e, (4,0)))
-    
+
     with pytest.raises(ValueError, match="cannot be broadcast"):
         csr_matrix([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
 

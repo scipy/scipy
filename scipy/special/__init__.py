@@ -23,8 +23,9 @@ Error handling
 
 Errors are handled by returning NaNs or other appropriate values.
 Some of the special function routines can emit warnings or raise
-exceptions when an error occurs. By default this is disabled; to
-query and control the current error handling state the following
+exceptions when an error occurs. By default this is disabled, except
+for memory allocation errors, which result in an exception being raised.
+To query and control the current error handling state the following
 functions are provided.
 
 .. autosummary::
@@ -820,7 +821,7 @@ from ._ufuncs import *
 from ._support_alternative_backends import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
     gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
-    chdtr, chdtrc, betainc, betaincc, stdtr)
+    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit)
 
 from . import _basic
 from ._basic import *

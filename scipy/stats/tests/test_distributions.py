@@ -66,7 +66,7 @@ def test_distributions_submodule():
     continuous = [dist[0] for dist in distcont]    # continuous dist names
     discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
     other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
-             'entropy', 'trapz']
+             'entropy']
     expected = continuous + discrete + other
 
     # need to remove, e.g.,
@@ -4422,7 +4422,7 @@ class TestSkewNorm:
         bounds = {'a': (-5, 5), 'loc': (-10, 10), 'scale': (1e-16, 10)}
 
         def optimizer(fun, bounds):
-            return differential_evolution(fun, bounds, seed=rng)
+            return differential_evolution(fun, bounds, rng=rng)
 
         fit_result = stats.fit(stats.skewnorm, x, bounds, optimizer=optimizer)
         np.testing.assert_allclose(params, fit_result.params, rtol=1e-4)
@@ -7921,24 +7921,6 @@ class TestTrapezoid:
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
 
-    def test_trapz(self):
-        # Basic test for alias
-        x = np.linspace(0, 1, 10)
-        with pytest.deprecated_call(match="`trapz.pdf` is deprecated"):
-            result = stats.trapz.pdf(x, 0, 1)
-        assert_almost_equal(result, stats.uniform.pdf(x))
-
-    @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
-                                        'sf', 'logsf', 'ppf', 'isf'])
-    def test_trapz_deprecation(self, method):
-        c, d = 0.2, 0.8
-        expected = getattr(stats.trapezoid, method)(1, c, d)
-        with pytest.deprecated_call(
-            match=f"`trapz.{method}` is deprecated",
-        ):
-            result = getattr(stats.trapz, method)(1, c, d)
-        assert result == expected
-
 
 class TestTriang:
     def test_edge_cases(self):
@@ -10303,6 +10285,24 @@ class TestIrwinHall:
         # W|A returns 1 for CDF @ x=9.9
         ref = 36287999999999999/36288000000000000
         assert_array_max_ulp(self.ih10.sf(1/10), ref, maxulp=10)
+
+
+class TestDParetoLognorm:
+    def test_against_R(self):
+        # Test against R implementation in `distributionsrd`
+        # library(distributionsrd)
+        # options(digits=16)
+        # x = 1.1
+        # b = 2
+        # a = 1.5
+        # m = 3
+        # s = 1.2
+        # ddoubleparetolognormal(x, b, a, m, s)
+        # pdoubleparetolognormal(x, b, a, m, s)
+        x, m, s, a, b = 1.1, 3, 1.2, 1.5, 2
+        dist = stats.dpareto_lognorm(m, s, a, b)
+        np.testing.assert_allclose(dist.pdf(x), 0.02490187219085912)
+        np.testing.assert_allclose(dist.cdf(x), 0.01664024173822796)
 
 
 # Cases are (distribution name, log10 of smallest probability mass to test,

@@ -1,3 +1,5 @@
+import sys
+
 from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
 
@@ -27,8 +29,12 @@ def fetch_data(dataset_name, data_fetcher=data_fetcher):
         raise ImportError("Missing optional dependency 'pooch' required "
                           "for scipy.datasets module. Please use pip or "
                           "conda to install 'pooch'.")
+    # https://github.com/scipy/scipy/issues/21879
+    downloader = pooch.HTTPDownloader(
+        headers={"User-Agent": f"SciPy {sys.modules['scipy'].__version__}"}
+    )
     # The "fetch" method returns the full path to the downloaded data file.
-    return data_fetcher.fetch(dataset_name)
+    return data_fetcher.fetch(dataset_name, downloader=downloader)
 
 
 def ascent():
@@ -114,7 +120,7 @@ def electrocardiogram():
     >>> from scipy.datasets import electrocardiogram
     >>> ecg = electrocardiogram()
     >>> ecg
-    array([-0.245, -0.215, -0.185, ..., -0.405, -0.395, -0.385])
+    array([-0.245, -0.215, -0.185, ..., -0.405, -0.395, -0.385], shape=(108000,))
     >>> ecg.shape, ecg.mean(), ecg.std()
     ((108000,), -0.16510875, 0.5992473991177294)
 

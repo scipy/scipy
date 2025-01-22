@@ -6,53 +6,397 @@
 Smoothing splines
 =================
 
+Spline smoothing in 1D
+======================
+
 For the interpolation problem, the task is to construct a curve which passes
 through a given set of data points. This may be not appropriate if the data is
-noisy: we then want to construct a smooth curve, ``g(x)``, which *approximates*
-the input data without passing through each point exactly.
-To this end, `scipy.interpolate` allows constructing *smoothing splines*, based
-on the Fortran library FITPACK by P. Dierckx.
+noisy: we then want to construct a smooth curve, :math:`g(x)`, which *approximates*
+input data without passing through each point exactly.
 
-Specifically, given the data arrays ``x`` and ``y`` and the array of
-non-negative *weights*, ``w``, we look for a spline function ``g(x)`` which
-satisfies
+To this end, `scipy.interpolate` allows constructing *smoothing splines* which
+balance how close the resulting curve, :math:`g(x)`, is to the data, and 
+the smoothness of :math:`g(x)`. Mathematically, the task is to solve
+a penalized least-squares problem, where the penalty controls the smoothness of
+:math:`g(x)`.
+
+We provide two approaches to constructing smoothing splines, which differ in
+(1) the form of the penalty term, and (2) the basis in which the smoothing
+curve is constructed. Below we consider these two approaches.
+
+The former variant is performed by the `make_smoothing_spline` function,
+which is a clean-room reimplementation of the classic ``gcvspl`` Fortran package
+by H. Woltring.
+The latter variant is implemented by the `make_splrep` function, which is a
+reimplementation of the Fortran FITPACK library by P. Dierckx. :ref:`A legacy interface 
+to the FITPACK library <tutorial-fitpack-legacy>` is also available.
+
+
+"Classic" smoothing splines and generalized cross-validation (GCV) criterion
+----------------------------------------------------------------------------
+
+Given the data arrays ``x`` and ``y`` and the array of
+non-negative *weights*, ``w``, we look for a cubic spline function ``g(x)``
+which minimizes
 
 .. math::
 
-    \sum_j \left[ w_j (g(x_j) - y_j)\right]^2 \leqslant s
+        \sum\limits_{j=1}^n w_j \left\lvert y_j - g(x_j) \right\rvert^2 +
+        \lambda\int\limits_{x_1}^{x_n} \left( g^{(2)}(u) \right)^2 d u
 
-where ``s`` is the input parameter which controls the interplay between the
-smoothness of the resulting curve ``g(x)`` and the quality of the approximation
-of the data (i.e., the differences between :math:`g(x_j)` and :math:`y_j`).
+where :math:`\lambda \geqslant 0` is a non-negative penalty parameter, and :math:`g^{(2)}(x)`
+is the second derivative of :math:`g(x)`. The summation in the first term runs
+over the data points, :math:`(x_j, y_j)`, and the integral in the second term is
+over the whole interval :math:`x \in [x_1, x_n]`.
+
+Here the first term penalizes the deviation of the spline function from the data,
+and the second term penalizes large values of the second derivative---which is
+taken as the criterion for the smoothness of a curve.
+
+The target function, :math:`g(x)`, is taken to be a natural cubic spline *with
+knots at the data points*, :math:`x_j`, and the minimization is carried over
+the spline coefficients at a given value of :math:`\lambda`.
+
+Clearly, :math:`\lambda = 0` corresponds to the interpolation problem---the result
+is a *natural interpolating spline*; in the opposite limit, :math:`\lambda \gg 1`,
+the result :math:`g(x)` approaches a straight line (since the minimization
+effectively zeros out the second derivative of :math:`g(x)`).
+
+The smoothing function strongly depends on :math:`\lambda`,
+and multiple strategies are possible for selecting an "optimal" value of the
+penalty. One popular strategy is the so-called *generalized cross-validation* (GCV):
+conceptually, this is equivalent to comparing the spline functions constructed on
+reduced sets of data where we leave out one data point. Direct application of
+this leave-one-out cross-validation procedure is very costly, and we use a
+more efficient GCV algorithm.
+
+To construct the smoothing spline given data and the penalty parameter,
+we use the function `make_smoothing_spline`. Its interface is similar to the
+constructor of interpolating splines, `make_interp_spline`: it accepts data arrays
+and returns a callable `BSpline` instance. 
+
+Additionally, it accepts an optional ``lam`` keyword argument to specify the penalty
+parameter :math:`\lambda`. If omitted or set to ``None``, :math:`\lambda` is computed
+via the GCV procedure.
+
+To illustrate the effect of the penalty parameter, consider a toy example of a
+sine curve with some noise:
+
+.. plot::
+
+   >>> import numpy as np
+   >>> from scipy.interpolate import make_smoothing_spline
+
+   Generate some noisy data:
+
+   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/16)
+   >>> rng = np.random.default_rng()
+   >>> y =  np.sin(x) + 0.4*rng.standard_normal(size=len(x))
+
+   Construct and plot smoothing splines for a series of values of the penalty
+   parameter:
+
+   >>> import matplotlib.pyplot as plt
+   >>> xnew = np.arange(0, 9/4, 1/50) * np.pi
+   >>> for lam in [0, 0.02, 10, None]:
+   ...     spl = make_smoothing_spline(x, y, lam=lam)
+   ...     plt.plot(xnew, spl(xnew), '-.', label=fr'$\lambda=${lam}')
+   >>> plt.plot(x, y, 'o')
+   >>> plt.legend()
+   >>> plt.show()
+
+We clearly see that ``lam=0`` constructs the interpolating spline; large values
+of ``lam`` flatten out the resulting curve towards a straight line; and the GCV
+result, ``lam=None``, is close to the underlying sine curve.
+
+
+.. _tutorial_make_splrep:
+
+Smoothing splines with automatic knot selection
+-----------------------------------------------
+
+As an addition to `make_smoothing_spline`, SciPy provides an alternative, in the
+form of `make_splrep` and `make_splprep` routines. The former constructs spline
+functions and the latter is for parametric spline curves in :math:`d > 1` dimensions.
+
+While having a similar API (receive the data arrays, return a `BSpline` instance),
+these differ from `make_smoothing_spline` in several ways:
+
+- the functional form of the penalty term is different: these routines use
+  *jumps* of the :math:`k`-th derivative instead of the integral of the
+  :math:`(k-1)`-th derivative;
+- instead of the penalty parameter :math:`\lambda`, a smoothness parameter :math:`s`
+  is used;
+- these routines automatically construct the knot vector; depending on inputs,
+  resulting splines may have much fewer knots than data points.
+- by default boundary conditions differ: while `make_smoothing_spline` constructs
+  natural cubic splines, these routines use the not-a-knot boundary conditions by default. 
+
+Let us consider the algorithm in more detail. First, **the smoothing criterion**.
+Given a cubic spline function, :math:`g(x)`, defined by the knots, :math:`t_j`, and coefficients,
+:math:`c_j`, consider the jumps of the third derivative at internal knots,
+
+.. math::
+
+    D_j = g^{(3)}(t_j + 0) - g^{(3)}(t_j - 0) .
+
+(For degree-:math:`k` splines, we would have used jumps of the :math:`k`-th derivative.)
+
+If all :math:`D_j = 0`, then :math:`g(x)` is a single polynomial on the whole
+domain spanned by the knots. We thus consider :math:`g(x)` to be a piecewise
+:math:`C^2`-differentiable spline function and use as the smoothing criterion
+the sum of jumps,
+
+.. math::
+
+    \sum_j \left| D_j \right|^2 \to \mathrm{min} ,
+
+where the minimization performed is over the spline coefficients, and, potentially,
+the spline knots.
+
+To make sure :math:`g(x)` approximates the input data, :math:`x_j` and :math:`y_j`,
+we introduce the *smoothness parameter* :math:`s \geqslant 0` and add a constraint
+that
+
+.. math::
+
+       \sum_{j=1}^m \left[w_j \times \left(g(x_j) - y_j\right) \right]^2 \leqslant s .
+
+In this formulation, the smoothness parameter :math:`s` is a user input, much like
+the penalty parameter :math:`\lambda` is for the classic smoothing splines.
 
 Note that the limit ``s = 0`` corresponds to the interpolation problem where
 :math:`g(x_j) = y_j`. Increasing ``s`` leads to smoother fits, and in the limit
 of a very large ``s``, :math:`g(x)` degenerates into a single best-fit polynomial.
 
-Finding a good value of the ``s`` parameter is a trial-and-error process. If
+For a fixed knot vector and a given value of :math:`s`, the minimization problem is linear.
+If we also minimize with respect to the knots, the problem becomes non-linear.
+We thus need to specify an iterative minimization process to **construct the knot vector**
+along with the spline coefficients.
+
+We therefore use the following procedure:
+
+- we start with a spline with no internal knots, and check the smoothness condition
+  for the user-provided value of :math:`s`. If it is satisfied, we are done. Otherwise,
+
+- iterate, where on each iteration we
+
+  * add new knots by splitting the interval with the maximum deviation
+    between the spline function :math:`g(x_j)` and the data :math:`y_j`.
+
+  * construct the next approximation for :math:`g(x)` and check the smoothness
+    criterion.
+
+The iterations stop if either the smoothness condition is satisfied, or the
+maximum allowed number of knots is reached. The latter can be either specified
+by a user, or is taken as the default value ``len(x) + k + 1`` which corresponds
+to the interpolation of the data array ``x`` with splines of degree ``k``.
+
+Rephrasing and glossing over details, the procedure is to iterate over the
+knot vectors generated by `generate_knots`, applying `make_lsq_spline` on each
+step. In pseudocode::
+
+    for t in generate_knots(x, y, s=s):
+        g = make_lsq_spline(x, y, t=t)     # construct
+        if ((y - g(x))**2).sum() < s:      # check smoothness
+            break
+
+.. note::
+
+    For ``s=0``, we take a short-cut and construct the interpolating spline
+    with the not-a-knot boundary condition instead of iterating.
+
+The iterative procedure of constructing a knot vector is available through the
+generator function `generate_knots`. To illustrate:
+
+>>> import numpy as np
+>>> from scipy.interpolate import generate_knots
+>>> x = np.arange(7)
+>>> y = x**4
+>>> list(generate_knots(x, y, s=1))   # default is cubic splines, k=3
+[array([0., 0., 0., 0., 6., 6., 6., 6.]),
+ array([0., 0., 0., 0., 3., 6., 6., 6., 6.]),
+ array([0., 0., 0., 0., 3., 5., 6., 6., 6., 6.]),
+ array([0., 0., 0., 0., 2., 3., 4., 6., 6., 6., 6.])]
+
+For ``s=0``, the generator cuts short:
+
+>>> list(generate_knots(x, y, s=0))
+[array([0, 0, 0, 0, 2, 3, 4, 6, 6, 6, 6])]
+
+.. note::
+
+    In general, knots are placed at data sites. The exception is even-order
+    splines, where the knots can be placed away from data. This happens when
+    ``s=0`` (interpolation), or when ``s`` is small enough so that the maximum number
+    of knots is reached, and the routine switches to the ``s=0`` knot vector
+    (sometimes known as Greville abscissae).
+
+>>> list(generate_knots(x, y, s=1, k=2))   # k=2, quadratic spline
+[array([0., 0., 0., 6., 6., 6.]),
+ array([0., 0., 0., 3., 6., 6., 6.]),
+ array([0., 0., 0., 3., 5., 6., 6., 6.]),
+ array([0., 0., 0., 2., 3., 5., 6., 6., 6.]),
+ array([0. , 0. , 0. , 1.5, 2.5, 3.5, 4.5, 6. , 6. , 6. ])]   # Greville sites
+
+.. note::
+
+    The heuristics for constructing the knot vector follows the algorithm used
+    by the FITPACK Fortran library. The algorithm is the same, and small differences
+    are possible due to floating-point rounding.
+
+We now illustrate `make_splrep` results, using the same toy dataset as in the previous section
+
+.. plot::
+
+   >>> import numpy as np
+   >>> from scipy.interpolate import make_splrep
+
+   Generate some noisy data
+
+   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/16)
+   >>> rng = np.random.default_rng()
+   >>> y =  np.sin(x) + 0.4*rng.standard_normal(size=len(x))
+
+   Construct and plot smoothing splines for a series of values of the ``s``
+   parameter:
+
+   >>> import matplotlib.pyplot as plt
+   >>> xnew = np.arange(0, 9/4, 1/50) * np.pi
+
+   >>> plt.plot(xnew, np.sin(xnew), '-.', label='sin(x)')
+   >>> plt.plot(xnew, make_splrep(x, y, s=0)(xnew), '-', label='s=0')
+   >>> plt.plot(xnew, make_splrep(x, y, s=len(x))(xnew), '-', label=f's={len(x)}')
+   >>> plt.plot(x, y, 'o')
+   >>> plt.legend()
+   >>> plt.show()
+
+We see that the :math:`s=0` curve follows the (random) fluctuations of the data points,
+while the :math:`s > 0` curve is close to the underlying sine function. Also note
+that the extrapolated values vary wildly depending on the value of :math:`s`.
+
+Finding a good value of :math:`s` is a trial-and-error process. If
 the weights correspond to the inverse of standard deviations of the input data,
-the "good" value of ``s`` is expected to be somewhere between :math:`m - \sqrt{2m}`
+a "good" value of :math:`s` is expected to be somewhere between :math:`m - \sqrt{2m}`
 and :math:`m + \sqrt{2m}`, where :math:`m` is the number of data points.
 If all weights equal unity, a reasonable choice might be around :math:`s \sim m\,\sigma^2`,
 where :math:`\sigma` is an estimate for the standard deviation of the data. 
 
-Internally, the FITPACK library works by adding internal knots to the spline
-fit ``g(x)``, so that **the resulting knots do not necessarily coincide with the input data**.
+.. note::
+
+    The number of knots a very strongly dependent on ``s``. It is possible that
+    small variations of ``s`` lead to drastic changes in the knot number.
+
+.. note::
+
+    Both `make_smoothing_spline` and `make_splrep` allow for weighted fits,
+    where the user provides an array of weights, ``w``. Note that the definition
+    differs somewhat: `make_smoothing_spline` squares the weights to be consistent
+    with ``gcvspl``, while `make_splrep` does not---to be consistent with ``FITPACK``.
 
 
-Spline smoothing in 1-D
-=======================
 
-`scipy.interpolate` provides two interfaces for the FITPACK library, a functional
-interface and an object-oriented interface. While equivalent, these interfaces
+Smoothing spline curves in :math:`d>1`
+--------------------------------------
+
+So far we considered constructing smoothing spline functions, :math:`g(x)` given
+data arrays ``x`` and ``y``. We now consider a related problem of constructing
+a smoothing spline *curve*, where we consider the data as points on a plane,
+:math:`\mathbf{p}_j = (x_j, y_j)`, and we want to construct a parametric function
+:math:`\mathbf{g}(\mathbf{p}) = (g_x(u), g_y(u))`, where the values of the
+parameter :math:`u_j` correspond to :math:`x_j` and :math:`y_j`.
+
+Note that this problem readily generalizes to higher dimensions, :math:`d > 2`:
+we simply have :math:`d` data arrays and construct a parametric function with
+:math:`d` components.
+
+Also note that the choice of parametrization cannot be automated, and different
+parameterizations can lead to very different curves for the same data,
+even for :ref:`interpolating curves<tutorial-interpolate_parametric>`.
+
+Once a specific form of parametrization is chosen, the problem of constructing a
+smoothing curve is conceptually very similar to constructing a smoothing spline
+function. In a nutshell, 
+
+- spline knots are added from the values of the parameter :math:`u`, and
+
+- both the cost function to minimize and the constraint
+  we considered for :ref:`spline functions <tutorial_make_splrep>` simply
+  get an extra summation over the :math:`d` components.
+
+The "parametric" generalization of the `make_splrep` function is `make_splprep`,
+and its docstring spells out the precise mathematical formulation of the minimization
+problem it solves.
+
+The main user-visible difference of the parametric case is the user interface:
+
+- instead of two data arrays, ``x`` and ``y``, `make_splprep` receives a single
+  two-dimensional array, where the second dimension has size :math:`d` and each
+  data array is stored along the first dimension (alternatively, you can supply
+  a list of 1D arrays).
+
+- the return value is pair: a `BSpline` instance and the array of parameter
+  values, ``u``, which corresponds to the input data arrays.
+
+By default, `make_splprep` constructs and returns the cord length parametrization
+of input data (see the :ref:`Parametric spline curves <tutorial-interpolate_parametric>`
+section for details). Alternatively, you can provide your own array of
+parameter values, ``u``.
+
+To illustrate the API, consider a toy problem: we have some data sampled from
+a folium of Descartes *plus* some noise.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> from scipy.interpolate import make_splprep
+   >>> th = np.linspace(-0.2, np.pi/2 + 0.2, 21)
+   >>> r = 3 * np.sin(th) * np.cos(th) / (np.sin(th)**3 + np.cos(th)**3)
+   >>> x, y = r * np.cos(th), r * np.sin(th)
+
+   Add some noise and construct the interpolators
+
+   >>> rng = np.random.default_rng()
+   >>> xn = x + 0.1*rng.uniform(-1, 1, size=len(x))
+   >>> yn = y + 0.1*rng.uniform(-1, 1, size=len(x))
+   >>> spl, u = make_splprep([xn, yn], s=0)   # note the [xn, yn] argument
+   >>> spl_n, u_n = make_splprep([xn, yn], s=0.1)
+
+   And plot the results (the result of ``spl(u)`` is a 2D array, so we unpack it
+   into a pair of ``x`` and ``y`` arrays for plotting).
+
+   >>> import matplotlib.pyplot as plt
+   >>> plt.plot(xn, yn, 'o')
+   >>> plt.plot(*spl(u), '--')
+   >>> plt.plot(*spl_n(u_n), '-')
+   >>> plt.show()
+
+
+.. _tutorial-fitpack-legacy:
+
+Legacy routines for spline smoothing in 1-D
+-------------------------------------------
+
+In addition to smoothing splines constructors we discussed in the previous sections,
+`scipy.interpolate` provides direct interfaces for routines from the venerable FITPACK
+Fortran library authored by P. Dierckx.
+
+.. note::
+
+    These interfaces should be considered *legacy*---while we do not
+    plan to deprecate or remove them, we recommend that new code uses more modern
+    alternatives, `make_smoothing_spline`, `make_splrep` or `make_splprep`, instead.
+
+For historical reasons, `scipy.interpolate` provides two equivalent interfaces
+for FITPACK, a interface and an object-oriented interface. While equivalent, these interfaces
 have different defaults. Below we discuss them in turn, starting from the
-functional interface --- which we recommend for use in new code.
+functional interface.
 
 
 .. _tutorial-interpolate_splXXX:
 
 Procedural (`splrep`)
----------------------
+"""""""""""""""""""""
 
 Spline interpolation requires two essential steps: (1) a spline
 representation of the curve is computed, and (2) the spline is
@@ -149,7 +493,7 @@ providing the value of ``s`` explicitly.
 
 
 Manipulating spline objects: procedural (``splXXX``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Once the spline representation of the data has been determined,
 functions are available for evaluating the spline
@@ -272,7 +616,7 @@ Thus to wrap its output to a `BSpline`, we need to transpose the coefficients
 
 
 Object-oriented (:class:`UnivariateSpline`)
--------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The spline-fitting capabilities described above are also available via
 an objected-oriented interface.  The 1-D splines are
@@ -418,8 +762,8 @@ There are two interfaces for the underlying FITPACK library, a procedural
 one and an object-oriented interface.
 
 
-Procedural interface (`bisplrep`)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Procedural interface (`bisplrep`)**
+
 
 For (smooth) spline fitting to a 2-D surface, the function
 :func:`bisplrep` is available. This function takes as required inputs
@@ -507,8 +851,8 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 ..   :caption: Example of a 2-D spline interpolation.
 
 
-Object-oriented interface (`SmoothBivariateSpline`)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Object-oriented interface (`SmoothBivariateSpline`)**
+
 
 The object-oriented interface for bivariate spline smoothing of scattered data,
 `SmoothBivariateSpline` class, implements a subset of the functionality of the

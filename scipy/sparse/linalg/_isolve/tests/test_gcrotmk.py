@@ -2,6 +2,7 @@
 """Tests for the linalg._isolve.gcrotmk module
 """
 
+import threading
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            suppress_warnings)
 
@@ -22,28 +23,38 @@ Am = csr_array(array([[-2,1,0,0,0,9],
                        [0,3,0,1,-2,1],
                        [1,0,0,0,1,-2]]))
 b = array([1,2,3,4,5,6])
-count = [0]
-niter = [0]
+count = threading.local()  # [0]
+niter = threading.local()  # [0]
 
 
 def matvec(v):
-    count[0] += 1
+    if not hasattr(count, 'c'):
+        count.c = [0]
+    count.c[0] += 1
     return Am@v
 
 
 def cb(v):
-    niter[0] += 1
+    if not hasattr(niter, 'n'):
+        niter.n = [0]
+    niter.n[0] += 1
 
 
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 
 def do_solve(**kw):
-    count[0] = 0
+    if not hasattr(niter, 'n'):
+        niter.n = [0]
+
+    if not hasattr(count, 'c'):
+        count.c = [0]
+
+    count.c[0] = 0
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, ".*called without specifying.*")
         x0, flag = gcrotmk(A, b, x0=zeros(A.shape[0]), rtol=1e-14, **kw)
-    count_0 = count[0]
+    count_0 = count.c[0]
     assert_(allclose(A@x0, b, rtol=1e-12, atol=1e-12), norm(A@x0-b))
     return x0, count_0
 
@@ -55,18 +66,18 @@ class TestGCROTMK:
         M = LinearOperator(matvec=pc.solve, shape=A.shape, dtype=A.dtype)
 
         x0, count_0 = do_solve()
-        niter[0] = 0
+        niter.n[0] = 0
         x1, count_1 = do_solve(M=M, callback=cb)
 
         assert_equal(count_1, 3)
         assert count_1 < count_0/2
         assert allclose(x1, x0, rtol=1e-14)
-        assert niter[0] < 3
+        assert niter.n[0] < 3
 
     def test_arnoldi(self):
         rng = np.random.default_rng(1)
 
-        A = eye_array(2000) + random_array((2000, 2000), density=5e-4, random_state=rng)
+        A = eye_array(2000) + random_array((2000, 2000), density=5e-4, rng=rng)
         b = rng.random(2000)
 
         # The inner arnoldi should be equivalent to gmres

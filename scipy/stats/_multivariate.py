@@ -2,6 +2,7 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
+import threading
 import numpy as np
 import scipy.linalg
 from scipy._lib import doccer
@@ -38,6 +39,7 @@ __all__ = ['multivariate_normal',
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
 _LOG_PI = np.log(np.pi)
+MVN_LOCK = threading.Lock()
 
 
 _doc_random_state = """\
@@ -470,8 +472,7 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = cov.reshape(1, 1)
 
         if mean.ndim != 1 or mean.shape[0] != dim:
-            raise ValueError("Array 'mean' must be a vector of length %d." %
-                             dim)
+            raise ValueError(f"Array 'mean' must be a vector of length {dim}.")
         if cov.ndim == 0:
             cov = cov * np.eye(dim)
         elif cov.ndim == 1:
@@ -482,13 +483,12 @@ class multivariate_normal_gen(multi_rv_generic):
                 msg = ("Array 'cov' must be square if it is two dimensional,"
                        f" but cov.shape = {str(cov.shape)}.")
             else:
-                msg = ("Dimension mismatch: array 'cov' is of shape %s,"
-                       " but 'mean' is a vector of length %d.")
-                msg = msg % (str(cov.shape), len(mean))
+                msg = (f"Dimension mismatch: array 'cov' is of shape {cov.shape}, "
+                       f"but 'mean' is a vector of length {len(mean)}.")
             raise ValueError(msg)
         elif cov.ndim > 2:
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                             " but cov.ndim = %d" % cov.ndim)
+            raise ValueError(f"Array 'cov' must be at most two-dimensional, "
+                             f"but cov.ndim = {cov.ndim}")
 
         return dim, mean, cov
 
@@ -638,8 +638,9 @@ class multivariate_normal_gen(multi_rv_generic):
 
         # mvnun expects 1-d arguments, so process points sequentially
         def func1d(limits):
-            return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
-                              maxpts, abseps, releps)[0]
+            with MVN_LOCK:
+                return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
+                                maxpts, abseps, releps)[0]
 
         out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
@@ -2011,8 +2012,8 @@ class wishart_gen(multi_rv_generic):
             raise ValueError("Array 'scale' must be square if it is two dimensional,"
                              f" but scale.scale = {str(scale.shape)}.")
         elif scale.ndim > 2:
-            raise ValueError("Array 'scale' must be at most two-dimensional,"
-                             " but scale.ndim = %d" % scale.ndim)
+            raise ValueError(f"Array 'scale' must be at most two-dimensional, "
+                             f"but scale.ndim = {scale.ndim}")
 
         dim = scale.shape[0]
 
@@ -2052,9 +2053,9 @@ class wishart_gen(multi_rv_generic):
                     "Quantiles must be square in the first two dimensions "
                     f"if they are three dimensional, but x.shape = {str(x.shape)}.")
         elif x.ndim > 3:
-            raise ValueError("Quantiles must be at most two-dimensional with"
-                             " an additional dimension for multiple"
-                             "components, but x.ndim = %d" % x.ndim)
+            raise ValueError(f"Quantiles must be at most two-dimensional with an "
+                             f"additional dimension for multiple components, "
+                             f"but x.ndim = {x.ndim}")
 
         # Now we have 3-dim array; should have shape [dim, dim, *]
         if not x.shape[0:2] == (dim, dim):
@@ -3291,9 +3292,9 @@ class multinomial_gen(multi_rv_generic):
             raise ValueError("x must be an array.")
 
         if xx.size != 0 and not xx.shape[-1] == p.shape[-1]:
-            raise ValueError("Size of each quantile should be size of p: "
-                             "received %d, but expected %d." %
-                             (xx.shape[-1], p.shape[-1]))
+            raise ValueError(f"Size of each quantile should be size of p: "
+                             f"received {xx.shape[-1]}, but expected "
+                             f"{p.shape[-1]}.")
 
         # true for x out of the domain
         cond = np.any(xx != x, axis=-1)
@@ -3617,9 +3618,9 @@ class special_ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("""Dimension of rotation must be specified,
-                                and must be a scalar greater than 1.""")
+                                and must be a scalar nonnegative integer.""")
 
         return dim
 
@@ -3641,55 +3642,11 @@ class special_ortho_group_gen(multi_rv_generic):
         """
         random_state = self._get_random_state(random_state)
 
-        size = int(size)
-        size = (size,) if size > 1 else ()
-
-        dim = self._process_parameters(dim)
-
-        # H represents a (dim, dim) matrix, while D represents the diagonal of
-        # a (dim, dim) diagonal matrix. The algorithm that follows is
-        # broadcasted on the leading shape in `size` to vectorize along
-        # samples.
-        H = np.empty(size + (dim, dim))
-        H[..., :, :] = np.eye(dim)
-        D = np.empty(size + (dim,))
-
-        for n in range(dim-1):
-
-            # x is a vector with length dim-n, xrow and xcol are views of it as
-            # a row vector and column vector respectively. It's important they
-            # are views and not copies because we are going to modify x
-            # in-place.
-            x = random_state.normal(size=size + (dim-n,))
-            xrow = x[..., None, :]
-            xcol = x[..., :, None]
-
-            # This is the squared norm of x, without vectorization it would be
-            # dot(x, x), to have proper broadcasting we use matmul and squeeze
-            # out (convert to scalar) the resulting 1x1 matrix
-            norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
-
-            x0 = x[..., 0].copy()
-            D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
-            x[..., 0] += D[..., n]*np.sqrt(norm2)
-
-            # In renormalizing x we have to append an additional axis with
-            # [..., None] to broadcast the scalar against the vector x
-            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
-
-            # Householder transformation, without vectorization the RHS can be
-            # written as outer(H @ x, x) (apart from the slicing)
-            H[..., :, n:] -= np.matmul(H[..., :, n:], xcol) * xrow
-
-        D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
-
-        # Without vectorization this could be written as H = diag(D) @ H,
-        # left-multiplication by a diagonal matrix amounts to multiplying each
-        # row of H by an element of the diagonal, so we add a dummy axis for
-        # the column index
-        H *= D[..., :, None]
-        return H
-
+        q = ortho_group.rvs(dim, size, random_state)
+        dets = np.linalg.det(q)
+        if dim:
+            q[..., 0, :] /= dets[..., np.newaxis]
+        return q
 
 special_ortho_group = special_ortho_group_gen()
 
@@ -3804,9 +3761,9 @@ class ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
@@ -4159,7 +4116,7 @@ class unitary_group_gen(multi_rv_generic):
     Parameters
     ----------
     dim : scalar
-        Dimension of matrices, must be greater than 1.
+        Dimension of matrices.
     seed : {None, int, np.random.RandomState, np.random.Generator}, optional
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
@@ -4216,9 +4173,9 @@ class unitary_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
@@ -4763,8 +4720,7 @@ class multivariate_t_gen(multi_rv_generic):
             shape = shape.reshape(1, 1)
 
         if loc.ndim != 1 or loc.shape[0] != dim:
-            raise ValueError("Array 'loc' must be a vector of length %d." %
-                             dim)
+            raise ValueError(f"Array 'loc' must be a vector of length {dim}.")
         if shape.ndim == 0:
             shape = shape * np.eye(dim)
         elif shape.ndim == 1:
@@ -4780,8 +4736,8 @@ class multivariate_t_gen(multi_rv_generic):
                 msg = msg % (str(shape.shape), len(loc))
             raise ValueError(msg)
         elif shape.ndim > 2:
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                             " but cov.ndim = %d" % shape.ndim)
+            raise ValueError(f"Array 'cov' must be at most two-dimensional, "
+                             f"but cov.ndim = {shape.ndim}")
 
         # Process degrees of freedom.
         if df is None:

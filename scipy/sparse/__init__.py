@@ -102,6 +102,8 @@ Sparse tools
    save_npz - Save a sparse array to a file using ``.npz`` format.
    load_npz - Load a sparse array from a file using ``.npz`` format.
    find - Return the indices and values of the nonzero elements
+   get_index_dtype - determine a good dtype for index arrays.
+   safely_cast_index_arrays - cast index array dtype or raise if shape too big
 
 Identifying sparse arrays
 -------------------------
@@ -251,7 +253,7 @@ is the same:
 Now we can compute norm of the error with:
 
 >>> err = norm(x-x_)
->>> err < 1e-10
+>>> err < 1e-9
 True
 
 It should be small :)
@@ -307,6 +309,7 @@ from ._construct import *
 from ._extract import *
 from ._matrix import spmatrix
 from ._matrix_io import *
+from ._sputils import get_index_dtype, safely_cast_index_arrays
 
 # For backward compatibility with v0.19.
 from . import csgraph

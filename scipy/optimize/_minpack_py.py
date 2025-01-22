@@ -260,7 +260,7 @@ def _root_hybr(func, x0, args=(), jac=None,
     errors = {0: "Improper input parameters were entered.",
               1: "The solution converged.",
               2: "The number of calls to function has "
-                  "reached maxfev = %d." % maxfev,
+                 f"reached maxfev = {maxfev}.",
               3: f"xtol={xtol:f} is too small, no further improvement "
                   "in the approximate\n solution is possible.",
               4: "The iteration is not making good progress, as measured "
@@ -461,7 +461,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
                   f"column of the\n  Jacobian is at most {gtol:f} in "
                   "absolute value", None],
               5: ["Number of calls to function has reached "
-                  "maxfev = %d." % maxfev, ValueError],
+                  f"maxfev = {maxfev}.", ValueError],
               6: [f"ftol={ftol:f} is too small, no further reduction "
                   "in the sum of squares\n  is possible.",
                   ValueError],
@@ -799,6 +799,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     'dogbox' methods, the `x_scale` keyword argument can be used to scale
     the parameters.
 
+    `curve_fit` is for local optimization of parameters to minimize the sum of squares
+    of residuals. For global optimization, other choices of objective function, and
+    other advanced features, consider using SciPy's :ref:`tutorial_optimize_global`
+    tools or the `LMFIT <https://lmfit.github.io/lmfit-py/index.html>`_ package.
+
     References
     ----------
     .. [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
@@ -946,14 +951,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     # the x-y data are already checked, and they don't contain nans.
     if not check_finite and nan_policy is not None:
         if nan_policy == "propagate":
-            raise ValueError("`nan_policy='propagate'` is not supported "
-                             "by this function.")
+            msg = "`nan_policy='propagate'` is not supported by this function."
+            raise ValueError(msg)
+        if nan_policy not in ("raise", "omit"):
+            # Override error message raised by _contains_nan
+            msg = "nan_policy must be one of {None, 'raise', 'omit'}"
+            raise ValueError(msg)
 
-        policies = [None, 'raise', 'omit']
-        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
-                                                   policies=policies)
-        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
-                                                   policies=policies)
+        x_contains_nan = _contains_nan(xdata, nan_policy)
+        y_contains_nan = _contains_nan(ydata, nan_policy)
 
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays
@@ -964,12 +970,21 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             xdata = xdata[..., ~has_nan]
             ydata = ydata[~has_nan]
 
+            # Also omit the corresponding entries from sigma
+            if sigma is not None:
+                sigma = np.asarray(sigma)
+                if sigma.ndim == 1:
+                    sigma = sigma[~has_nan]
+                elif sigma.ndim == 2:
+                    sigma = sigma[~has_nan, :]
+                    sigma = sigma[:, ~has_nan]
+
     # Determine type of sigma
     if sigma is not None:
         sigma = np.asarray(sigma)
 
         # if 1-D or a scalar, sigma are errors, define transform = 1/sigma
-        if sigma.size == 1 or sigma.shape == (ydata.size, ):
+        if sigma.size == 1 or sigma.shape == (ydata.size,):
             transform = 1.0 / sigma
         # if 2-D, sigma is the covariance matrix,
         # define transform = L such that L L^T = C
@@ -1111,7 +1126,7 @@ def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
         if np.all(np.abs(relerr) < xtol):
             return p
         p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    msg = f"Failed to converge after {maxiter} iterations, value is {p}"
     raise RuntimeError(msg)
 
 

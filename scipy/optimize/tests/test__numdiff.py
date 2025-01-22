@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
 from pytest import raises as assert_raises
 
-from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
+from scipy.sparse import csr_array, csc_array, lil_array
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
@@ -22,7 +22,7 @@ def test_group_columns():
         [0, 0, 0, 0, 1, 1],
         [0, 0, 0, 0, 0, 0]
     ]
-    for transform in [np.asarray, csr_matrix, csc_matrix, lil_matrix]:
+    for transform in [np.asarray, csr_array, csc_array, lil_array]:
         A = transform(structure)
         order = np.arange(6)
         groups_true = np.array([0, 1, 2, 0, 1, 2])
@@ -581,7 +581,7 @@ class TestApproxDerivativeSparse:
                 [-np.inf, self.lb], [np.inf, self.ub]):
             J = approx_derivative(self.fun, self.x0, method=method,
                                   bounds=(l, u), sparsity=(A, groups))
-            assert_(isinstance(J, csr_matrix))
+            assert_(isinstance(J, csr_array))
             assert_allclose(J.toarray(), self.J_true, rtol=1e-6)
 
             rel_step = np.full_like(self.x0, 1e-8)
@@ -607,7 +607,7 @@ class TestApproxDerivativeSparse:
 
     def test_check_derivative(self):
         def jac(x):
-            return csr_matrix(self.jac(x))
+            return csr_array(self.jac(x))
 
         accuracy = check_derivative(self.fun, jac, self.x0,
                                     bounds=(self.lb, self.ub))
