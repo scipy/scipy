@@ -170,6 +170,60 @@ def shortest_path(csgraph, method='auto',
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
+    >>> graph = [
+    ... [0, 0, 7, 0],
+    ... [0, 0, 8, 5],
+    ... [7, 8, 0, 0],
+    ... [0, 5, 0, 0]
+    ... ]
+    >>> graph = csr_array(graph)
+    >>> print(graph)
+    <Compressed Sparse Row sparse array of dtype 'int64'
+    	with 6 stored elements and shape (4, 4)>
+    	Coords	Values
+    	(0, 2)	7
+    	(1, 2)	8
+    	(1, 3)	5
+    	(2, 0)	7
+    	(2, 1)	8
+    	(3, 1)	5
+
+    >>> sources = [0, 2]
+    >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=sources, return_predecessors=True)
+    >>> dist_matrix
+    array([[ 0., 15.,  7., 20.],
+           [ 7.,  8.,  0., 13.]])
+    >>> predecessors
+    array([[-9999,     2,     0,     1],
+           [    2,     2, -9999,     1]], dtype=int32)
+
+    >>> shortest_paths = {}
+    >>> for idx in range(len(sources)):
+    ...     for node in range(4):
+    ...         curr_node = node
+    ...         path = []
+    ...         while curr_node != -9999:
+    ...             path = [curr_node] + path
+    ...             curr_node = int(predecessors[idx][curr_node])
+    ...         shortest_paths[(sources[idx], node)] = path
+    ...
+
+    >>> shortest_paths[(0, 3)]
+    [0, 2, 1, 3]
+    >>> path03 = shortest_paths[(0, 3)]
+    >>> sum([graph[path03[0], path03[1]], graph[path03[1], path03[2]], graph[path03[2], path03[3]]])
+    np.int64(20)
+    >>> dist_matrix[0][3]
+    np.float64(20.0)
+
+    >>> shortest_paths[(2, 3)]
+    [2, 1, 3]
+    >>> path23 = shortest_paths[(2, 3)]
+    >>> sum([graph[path23[0], path23[1]], graph[path23[1], path23[2]]])
+    np.int64(13)
+    >>> dist_matrix[1][3]
+    np.float64(13.0)
+
     """
     csgraph = convert_pydata_sparse_to_scipy(csgraph, accept_fv=[0, np.inf, np.nan])
 
