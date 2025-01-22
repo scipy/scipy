@@ -215,7 +215,7 @@ with a ``.ipynb`` file.
 Interactive examples in docstrings
 ----------------------------------
 
-Examples within docstrings can be made interactive using the [``jupyterlite-sphinx`` extension](https://jupyterlite-sphinx.readthedocs.io/en/latest/).
+Examples within docstrings can be made interactive using the `jupyterlite-sphinx extension <https://jupyterlite-sphinx.readthedocs.io/en/latest/>`__.
 The buttons for converting examples sections into embedded interactive
 notebooks are hidden by default on clean docs builds. To enable interactive
 examples after building the documentation locally, edit the
@@ -235,7 +235,7 @@ for all url paths matching the JavaScript Regex patterns in the
 ``ignore_patterns`` list. ``[".*"]`` includes a pattern which matches all url
 paths. Removing this pattern from the list will enable interactivity for all
 examples. See the documentation for the ``jupyterlite-sphinx``
-`TryExamples directive <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_
+`TryExamples directive <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`__
 for more information.
 
 .. _docs-guidelines:
