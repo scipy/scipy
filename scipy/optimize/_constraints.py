@@ -559,7 +559,7 @@ def old_constraint_to_new(ic, con):
     try:
         ctype = con['type'].lower()
     except KeyError as e:
-        raise KeyError('Constraint %d has no type defined.' % ic) from e
+        raise KeyError(f'Constraint {ic} has no type defined.') from e
     except TypeError as e:
         raise TypeError(
             'Constraints must be a sequence of dictionaries.'
@@ -570,7 +570,7 @@ def old_constraint_to_new(ic, con):
         if ctype not in ['eq', 'ineq']:
             raise ValueError(f"Unknown constraint type '{con['type']}'.")
     if 'fun' not in con:
-        raise ValueError('Constraint %d has no function defined.' % ic)
+        raise ValueError(f'Constraint {ic} has no function defined.')
 
     lb = 0
     if ctype == 'eq':
