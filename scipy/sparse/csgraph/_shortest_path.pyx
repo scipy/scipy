@@ -200,11 +200,11 @@ def shortest_path(csgraph, method='auto',
     >>> shortest_paths = {}
     >>> for idx in range(len(sources)):
     ...     for node in range(4):
-    ...         curr_node = node
+    ...         curr_node = node # start from the destination node
     ...         path = []
-    ...         while curr_node != -9999:
-    ...             path = [curr_node] + path
-    ...             curr_node = int(predecessors[idx][curr_node])
+    ...         while curr_node != -9999: # no previous node available, exit the loop
+    ...             path = [curr_node] + path # prefix the previous node obtained from the last iteration
+    ...             curr_node = int(predecessors[idx][curr_node]) # set current node to previous node
     ...         shortest_paths[(sources[idx], node)] = path
     ...
 
