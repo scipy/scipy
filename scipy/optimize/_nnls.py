@@ -5,7 +5,7 @@ from ._cython_nnls import _nnls
 __all__ = ['nnls']
 
 
-def nnls(A, b, maxiter=None, atol=None):
+def nnls(A, b, maxiter=None):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
 
@@ -22,8 +22,6 @@ def nnls(A, b, maxiter=None, atol=None):
         Right-hand side vector.
     maxiter: int, optional
         Maximum number of iterations, optional. Default value is ``3 * n``.
-    atol: float, optional
-        Deprecated and unused parameter. Will be removed in SciPy 1.16.[X].
 
     Returns
     -------
@@ -65,14 +63,6 @@ def nnls(A, b, maxiter=None, atol=None):
     (array([0., 0.]), 1.7320508075688772)
 
     """
-
-    if atol is not None:
-        import warnings
-        warnings.warn(
-            "The 'atol' parameter is deprecated and will be removed in SciPy 1.16.[X].",
-            DeprecationWarning,
-            stacklevel=2
-        )
 
     A = np.asarray_chkfinite(A, dtype=np.float64, order='C')
     b = np.asarray_chkfinite(b, dtype=np.float64)
