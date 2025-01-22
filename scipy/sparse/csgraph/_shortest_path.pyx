@@ -118,7 +118,7 @@ def shortest_path(csgraph, method='auto',
         gives the shortest distance from point i to point j along the graph.
     predecessors : ndarray, shape (n_indices, n_nodes,)
         Returned only if return_predecessors == True.
-        If indices is None then ``n_indices = n_nodes`` and the shape of
+        If `indices` is None then ``n_indices = n_nodes`` and the shape of
         the matrix becomes ``(n_nodes, n_nodes)``.
         The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
@@ -490,7 +490,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     predecessors : ndarray, shape ([n_indices, ]n_nodes,)
         If ``min_only=False``, this has shape ``(n_indices, n_nodes)``,
         otherwise it has shape ``(n_nodes,)``.
-        If indices is None and ``min_only=False`` then ``n_indices = n_nodes``
+        If `indices` is None and ``min_only=False`` then ``n_indices = n_nodes``
         and the shape of the matrix becomes ``(n_nodes, n_nodes)``.
         Returned only if return_predecessors == True.
         The matrix of predecessors, which can be used to reconstruct
@@ -858,8 +858,8 @@ def bellman_ford(csgraph, directed=True, indices=None,
         gives the shortest distance from point i to point j along the graph.
 
     predecessors : ndarray, shape (n_indices, n_nodes,)
-        Returned only if return_predecessors == True.
-        If indices is None then ``n_indices = n_nodes`` and the shape of
+        Returned only if ``return_predecessors=True``.
+        If `indices` is None then ``n_indices = n_nodes`` and the shape of
         the matrix becomes ``(n_nodes, n_nodes)``.
         The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
@@ -1102,7 +1102,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     predecessors : ndarray, shape (n_indices, n_nodes,)
         Returned only if return_predecessors == True.
-        If indices is None then ``n_indices = n_nodes`` and the shape of
+        If `indices` is None then ``n_indices = n_nodes`` and the shape of
         the matrix becomes ``(n_nodes, n_nodes)``.
         The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
