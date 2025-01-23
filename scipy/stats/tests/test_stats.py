@@ -7091,21 +7091,23 @@ class TestGMean:
     @pytest.mark.parametrize('axis', [0, 1])
     def test_marray(self, axis):
         xp = np  # can't use array-api-compat xp because data-apis/array-api-compat#226
-        try:
-            import marray
-            mxp = marray._get_namespace(xp)
-        except ModuleNotFoundError:
-            pytest.mark.skip('marray not available')
+        marray = pytest.importorskip('marray')
+        mxp = marray._get_namespace(xp)
 
         rng = np.random.default_rng(234583459823456)
         shape = (7, 8)
         data = rng.random(shape)
-        mask = rng.random(shape) > 0.75
+        mask_data = rng.random(shape) > 0.75
+        weights = rng.random(shape)
+        mask_weights = rng.random(shape) > 0.75
 
-        res = stats.gmean(mxp.asarray(data, mask=mask), axis=axis)
+        res = stats.gmean(mxp.asarray(data, mask=mask_data),
+                          weights=mxp.asarray(weights, mask=mask_weights),
+                          axis=axis)
 
-        data[mask] = np.nan
-        ref = stats.gmean(data, nan_policy='omit', axis=axis)
+        data[mask_data] = np.nan
+        weights[mask_weights] = np.nan
+        ref = stats.gmean(data, weights=weights, nan_policy='omit', axis=axis)
         xp_assert_close(res.data, ref)
 
 
@@ -9468,30 +9470,21 @@ class TestXP_Mean:
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
     def test_marray(self, axis, keepdims, xp):
-        try:
-            import marray
-        except ModuleNotFoundError:
-            pytest.mark.skip('marray not available')
-
+        marray = pytest.importorskip('marray')
         mxp = marray._get_namespace(xp)
 
         rng = np.random.default_rng(234583459823456)
         shape = (7, 8)
-        data = rng.random(shape)
-        mask_x = rng.random(shape) > 0.75
-        weights = rng.random(shape)
-        mask_w = rng.random(shape) > 0.75
+        data = xp.asarray(rng.random(shape))
+        mask_x = xp.asarray(rng.random(shape) > 0.75)
+        weights = xp.asarray(rng.random(shape))
+        mask_w = xp.asarray(rng.random(shape) > 0.75)
 
         kwargs = dict(axis=axis, keepdims=keepdims)
 
         res = _xp_mean(mxp.asarray(data, mask=mask_x),
                        weights=mxp.asarray(weights, mask=mask_w),
                        **kwargs)
-
-        data = xp.asarray(data)
-        weights = xp.asarray(weights)
-        mask_x = xp.asarray(mask_x)
-        mask_w = xp.asarray(mask_w)
 
         data[mask_x] = xp.nan
         weights[mask_w] = xp.nan
