@@ -32,7 +32,7 @@ MAX_PRECISION = 15
 
 def _validate_precision(precision):
     if precision is not None:
-        if not isinstance(precision, int):
+        if not isinstance(precision, (int, np.integer)):
             raise TypeError("Precision value must be an integer")
         elif not (1 <= precision <= MAX_PRECISION):
             msg = (f"From SciPy 1.18.0, an exception will be thrown if the "
