@@ -132,6 +132,12 @@ def shortest_path(csgraph, method='auto',
     NegativeCycleError:
         if there are negative cycles in the graph
 
+    See Also
+    --------
+    :ref:`word-ladders-example` : An illustratation of the ``shortest_path`` API with a meaninful example.
+                                  It also reconstructs the shortest path by using predecessors matrix returned
+                                  by this function.
+
     Notes
     -----
     As currently implemented, Dijkstra's algorithm and Johnson's algorithm
