@@ -703,6 +703,18 @@ def test_dot_with_inconsistent_shapes():
         arr_a.dot(arr_b)
 
 
+def test_matmul_dot_not_implemented():
+    arr_a = coo_array([[1, 2], [3, 4]])
+    with pytest.raises(TypeError, match="argument not supported type"):
+        arr_a.dot(None)
+    with pytest.raises(TypeError, match="arg not supported type"):
+        arr_a.tensordot(None)
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        arr_a @ None
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        None @ arr_a
+
+
 dot_shapes = [
     ((3,3), (3,3)), ((4,6), (6,7)), ((1,4), (4,1)), # matrix multiplication 2-D
     ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
