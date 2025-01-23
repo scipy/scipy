@@ -4,7 +4,6 @@ Test functions for multivariate normal distributions.
 """
 import pickle
 from dataclasses import dataclass
-from typing import Optional
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
@@ -37,6 +36,7 @@ from scipy import stats
 from scipy.integrate import tanhsinh, cubature, quad
 from scipy.integrate import romb, qmc_quad, dblquad, tplquad
 from scipy.special import multigammaln
+import scipy.special as special
 
 from .common_tests import check_random_state_property
 from .data._mvt import _qsimvtv
@@ -303,11 +303,13 @@ class MVNProblem:
     integral reduces to a simpler univariate integral that can be numerically integrated
     easily.
 
-    The ``generate_*()`` classmethods provide a few options for creating variations of this problem.
+    The ``generate_*()`` classmethods provide a few options for creating variations
+    of this problem.
 
     References
     ----------
-    .. [1] Tong, Y.L. "The Multivariate Normal Distribution". Springer-Verlag. p192. 1990.
+    .. [1] Tong, Y.L. "The Multivariate Normal Distribution".
+           Springer-Verlag. p192. 1990.
     """
     ndim : int
     low : np.ndarray
@@ -317,9 +319,9 @@ class MVNProblem:
     target_val : float
     target_err : float
 
-    #: The `generator_halves()` case has an analytically-known true value that we'll record here.
-    #: It remain None for most cases, though.
-    true_val : Optional[float]=None
+    #: The `generator_halves()` case has an analytically-known true value that we'll
+    #:  record here. It remain None for most cases, though.
+    true_val : float | None = None
 
     def __init__(self, ndim, low, high, lambdas):
         super().__init__()
@@ -394,10 +396,11 @@ class MVNProblem:
             b=+9.0,
         )
         d.update(kwds)
-        self.target_val, self.target_err = integrate.quad(self.univariate_func, **d)
+        self.target_val, self.target_err = quad(self.univariate_func, **d)
 
     def _univariate_term(self, t):
-        """The parameter-specific term of the univariate integrand, for separate plotting.
+        """The parameter-specific term of the univariate integrand,
+        for separate plotting.
         """
         denom = np.sqrt(1 - self.lambdas**2)
         return np.prod(
@@ -410,7 +413,7 @@ class MVNProblem:
         """Univariate integrand.
         """
         t = np.atleast_1d(t)
-        return norm_pdf(t) * self._univariate_term(t)
+        return np.squeeze(norm_pdf(t) * self._univariate_term(t))
 
     def plot_integrand(self):
         """Plot the univariate integrand and its component terms for understanding.
@@ -426,7 +429,8 @@ class MVNProblem:
 
 @dataclass
 class SingularMVNProblem:
-    """Instantiate a multivariate normal integration problem with a special singular covariance structure.
+    """Instantiate a multivariate normal integration problem with a special singular
+    covariance structure.
     
     When covariance matrix is a correlation matrix where the off-diagonal entries
     ``covar[i, j] == -lambdas[i]*lambdas[j]`` for ``i != j``, and
@@ -439,8 +443,8 @@ class SingularMVNProblem:
     References
     ----------
     .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
-           singular multivariate normal distribution." Journal of Statistical Computation
-           and Simulation, 51(2-4), 121–135. doi:10.1080/00949659508811627 
+           singular multivariate normal distribution." Journal of Statistical
+           Computation and Simulation, 51(2-4), 121–135. doi:10.1080/00949659508811627 
     """
     ndim : int
     low : np.ndarray
@@ -1033,6 +1037,67 @@ class TestMultivariateNormal:
         expected_signs = np.array([1, -1, -1, 1])
         cdf = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
         assert_allclose(cdf, cdf[0]*expected_signs)
+
+    @pytest.mark.slow
+    def test_cdf_vs_cubature(self):
+        ndim = 3
+        rng = np.random.default_rng(123)
+        a = rng.uniform(size=(ndim, ndim))
+        cov = a.T @ a
+        dist = multivariate_normal(np.zeros(ndim), cov=cov)
+
+        npts = 7
+        x = rng.uniform(low=-3, high=3, size=(npts, ndim))
+        cdf = dist.cdf(x)
+        cdf_i = [
+            cubature(dist.pdf, [-np.inf]*ndim, x[j, ...]).estimate for j in range(npts)
+        ]
+        assert_allclose(cdf, cdf_i, atol=5e-7)
+
+    def test_cdf_known(self):
+        # https://github.com/scipy/scipy/pull/17410#issuecomment-1312628547
+        for ndim in range(2, 15):
+            cov = np.full((ndim, ndim), 0.5)
+            np.fill_diagonal(cov, 1.)
+            dist = multivariate_normal([0]*ndim, cov=cov)
+            assert_allclose(
+                dist.cdf([0]*ndim),
+                1. / (1. + ndim),
+                atol=1e-5
+            )
+
+    @pytest.mark.parametrize("ndim", range(2, 11))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e2])
+    def test_cdf_vs_univariate(self, seed, ndim):
+        rng = np.random.default_rng(seed)
+        case = MVNProblem.generate_semigeneral(ndim=ndim, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar)
+        cdf_val = dist.cdf(case.high) #, rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=2e-5)
+
+    @pytest.mark.parametrize("ndim", range(2, 11))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e2])
+    def test_cdf_vs_univariate_2(self, seed, ndim):
+        rng = np.random.default_rng(seed)
+        case = MVNProblem.generate_constant(ndim=ndim, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar)
+        cdf_val = dist.cdf(case.high) # , rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=1e-5)
+
+    @pytest.mark.parametrize("ndim", range(2, 11))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e2])
+    def test_cdf_vs_univariate_singular(self, seed, ndim):
+        rng = np.random.default_rng(seed)
+        case = SingularMVNProblem.generate_semiinfinite(ndim=ndim) #, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar, allow_singular=True)
+        cdf_val = dist.cdf(case.high) #, rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=1e-5)
 
     def test_mean_cov(self):
         # test the interaction between a Covariance object and mean
