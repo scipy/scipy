@@ -1,9 +1,16 @@
 import numpy as np
 from ._cython_nnls import _nnls
+from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 
 
 __all__ = ['nnls']
 
+_nnls_dep_message = ("The 'atol' parameter is deprecated and will be removed in "
+                     "SciPy 1.18.0. It is not used in the implementation.")
+
+@_deprecate_positional_args(version='1.18.0',
+                           deprecated_args={'atol'},
+                           custom_message=_nnls_dep_message)
 
 def nnls(A, b, maxiter=None, *, atol=_NoValue):
     """
@@ -23,7 +30,7 @@ def nnls(A, b, maxiter=None, *, atol=_NoValue):
     maxiter: int, optional
         Maximum number of iterations, optional. Default value is ``3 * n``.
     atol : float, optional
-        .. deprecated:: 1.16.0
+        .. deprecated:: 1.18.0
             This parameter is deprecated and will be removed in SciPy 1.18.0.
             It is not used in the implementation.
 
@@ -67,15 +74,6 @@ def nnls(A, b, maxiter=None, *, atol=_NoValue):
     (array([0., 0.]), 1.7320508075688772)
 
     """
-
-    if atol is not _NoValue:
-        import warnings
-        warnings.warn(
-            "The 'atol' parameter is deprecated and will be removed in SciPy 1.18.0. "
-            "It is not used in the implementation.",
-            DeprecationWarning,
-            stacklevel=2
-        )
 
     A = np.asarray_chkfinite(A, dtype=np.float64, order='C')
     b = np.asarray_chkfinite(b, dtype=np.float64)

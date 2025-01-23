@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.optimize import nnls
-
+import pytest
 
 class TestNNLS:
     def setup_method(self):
@@ -427,3 +427,12 @@ class TestNNLS:
         assert_allclose(sol, np.array([0.0, 0.0, 76.3611306173957, 0.0, 0.0]),
                         atol=5e-14)
         assert np.abs(np.linalg.norm(A@sol - b) - res) < 5e-14
+
+    def test_atol_deprecation_warning(self):
+        """Test that using atol parameter triggers deprecation warning"""
+        a = np.array([[1, 0], [1, 0], [0, 1]])
+        b = np.array([2, 1, 1])
+        
+        message = "The 'atol' parameter is deprecated and will be removed in SciPy 1.18.0"
+        with pytest.warns(DeprecationWarning, match=message):
+            nnls(a, b, atol=1e-8)
