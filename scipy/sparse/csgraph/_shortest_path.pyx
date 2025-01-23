@@ -180,6 +180,8 @@ def shortest_path(csgraph, method='auto',
     array([[-9999,     2,     0,     1],
            [    2,     2, -9999,     1]], dtype=int32)
 
+    Reconstructing shortest paths from sources to all the nodes of the graph.
+
     >>> shortest_paths = {}
     >>> for idx in range(len(sources)):
     ...     for node in range(4):
@@ -191,6 +193,10 @@ def shortest_path(csgraph, method='auto',
     ...         shortest_paths[(sources[idx], node)] = path
     ...
 
+    Computing the length of the shortest path from node 0 to node 3
+    of the graph. It can be observed that computed length and the
+    ``dist_matrix`` value are exactly same.
+
     >>> shortest_paths[(0, 3)]
     [0, 2, 1, 3]
     >>> path03 = shortest_paths[(0, 3)]
@@ -198,6 +204,12 @@ def shortest_path(csgraph, method='auto',
     np.int64(20)
     >>> dist_matrix[0][3]
     np.float64(20.0)
+
+    Another example of computing shortest path length from node 2 to node 3.
+    Here, ``dist_matrix[1][3]`` is used to get the length of the path returned by
+    ``shortest_path``. This is because node 2 is the second source, so the
+    lengths of the path from it to other nodes in the graph will be at index 1
+    in ``dist_matrix``.
 
     >>> shortest_paths[(2, 3)]
     [2, 1, 3]
