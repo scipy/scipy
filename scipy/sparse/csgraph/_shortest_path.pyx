@@ -154,29 +154,6 @@ def shortest_path(csgraph, method='auto',
     >>> from scipy.sparse.csgraph import shortest_path
 
     >>> graph = [
-    ... [0, 1, 2, 0],
-    ... [0, 0, 0, 1],
-    ... [2, 0, 0, 3],
-    ... [0, 0, 0, 0]
-    ... ]
-    >>> graph = csr_array(graph)
-    >>> print(graph)
-    <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
-    	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
-
-    >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
-    >>> dist_matrix
-    array([0., 1., 2., 2.])
-    >>> predecessors
-    array([-9999,     0,     0,     1], dtype=int32)
-
-    >>> graph = [
     ... [0, 0, 7, 0],
     ... [0, 0, 8, 5],
     ... [7, 8, 0, 0],
