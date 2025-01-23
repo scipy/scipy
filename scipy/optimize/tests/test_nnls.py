@@ -21,7 +21,7 @@ class TestNNLS:
         x = np.abs(self.rng.uniform(low=-2, high=2, size=[10]))
         x[::2] = 0
         b = a @ x
-        xact, rnorm = nnls(a, b, atol=500*np.linalg.norm(a, 1)*np.spacing(1.))
+        xact, rnorm = nnls(a, b)
         assert_allclose(xact, x, rtol=0., atol=1e-10)
         assert rnorm < 1e-12
 
@@ -32,7 +32,7 @@ class TestNNLS:
         x = np.abs(self.rng.uniform(low=-2, high=2, size=[120]))
         x[::2] = 0
         b = a @ x
-        xact, rnorm = nnls(a, b, atol=500*np.linalg.norm(a, 1)*np.spacing(1.))
+        xact, rnorm = nnls(a, b)
         assert_allclose(xact, x, rtol=0., atol=1e-10)
         assert rnorm < 1e-12
 
@@ -153,7 +153,7 @@ class TestNNLS:
         k[nz] = 0
         W = np.diag(w)
 
-        dact, _ = nnls(W @ A, W @ k, atol=1e-7)
+        dact, _ = nnls(W @ A, W @ k)
 
         p = np.cumsum(dact)
         assert np.all(dact >= 0)
@@ -433,6 +433,7 @@ class TestNNLS:
         a = np.array([[1, 0], [1, 0], [0, 1]])
         b = np.array([2, 1, 1])
         
-        message = "The 'atol' parameter is deprecated and will be removed in SciPy 1.18.0"
+        message = ("The 'atol' parameter is deprecated and will be removed in "
+                  "SciPy 1.18.0")
         with pytest.warns(DeprecationWarning, match=message):
             nnls(a, b, atol=1e-8)
