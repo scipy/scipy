@@ -12,7 +12,6 @@ _nnls_dep_message = ("The 'atol' parameter is deprecated and will be removed in 
                             deprecated_args={'atol'},
                             custom_message=_nnls_dep_message)
 def nnls(A, b, *, maxiter=None, atol=_NoValue):
-    """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
 
     This problem, often called as NonNegative Least Squares, is a convex
