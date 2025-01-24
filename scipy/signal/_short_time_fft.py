@@ -73,7 +73,8 @@ def _calc_dual_canonical_window(win: np.ndarray, hop: int) -> np.ndarray:
     return win / DD
 
 
-def closest_STFT_dual_window(win: np.ndarray, hop: int, desired_dual: np.ndarray, *,
+def closest_STFT_dual_window(win: np.ndarray, hop: int,
+                             desired_dual: np.ndarray | None = None, *,
                              scaled: bool = True) \
         -> tuple[np.ndarray, float | complex]:
     r"""Calculate the STFT dual window of a given window closest to a desired dual
@@ -93,8 +94,10 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int, desired_dual: np.ndarray
             The window must be a real- or complex-valued 1d array.
         hop : int
             The increment in samples by which the window is shifted in each step.
-        desired_dual: np.ndarray
+        desired_dual: np.ndarray | None
             The desired dual window must be a 1d array of the same length as `win`.
+            If set to ``None`` (default), then `desired_dual` is assumed to be the
+            rectangular window, i.e., ``np.ones_like(win)``.
         scaled : bool
             If set (default), the closest scaled version instead of closest dual window
             is calculated.
@@ -157,7 +160,7 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int, desired_dual: np.ndarray
 
         We can also determine for which hop intervals the COLA condition is fulfilled:
 
-        >>> hops, deviations, alphas = np.arange(1, 16), [], []
+        >>> hops, deviations, alphas = np.arange(1, 16, dtype=int), [], []
         >>> for h_ in hops:
         ...     w_cola, alpha = closest_STFT_dual_window(w_rect, h_, win, scaled=True)
         ...     deviations.append(np.linalg.norm(w_cola - win*alpha))
@@ -188,6 +191,8 @@ def closest_STFT_dual_window(win: np.ndarray, hop: int, desired_dual: np.ndarray
                                            dual are equal.
 
     """
+    if desired_dual is None:  # default is rectangular window
+        desired_dual = np.ones_like(win)
     if not (win.ndim == 1 and win.shape == desired_dual.shape):
         raise ValueError("Parameters `win` and `desired_dual` are not 1d arrays of " +
                          f"equal length ({win.shape=}, {desired_dual.shape=})!")
@@ -481,7 +486,7 @@ class ShortTimeFFT:
         >>> fg1, ax1 = plt.subplots()
         >>> ax1.set_title(r"Dual Window: Gaussian with $\sigma_t=1$")
         >>> ax1.set(xlabel=f"Time $t$ in seconds ({N} samples, $T={T}$ s)",
-        ...        xlim=(t[0], t[-1]), ylim=(0, 1.1*max(d_win)))
+        ...        xlim=(t[0], t[-1]), ylim=(0, 1.1*np.max(d_win)))
         >>> ax1.plot(t, d_win, 'C0-')
 
         The following plot with the overlap of 41, 11 and 2 samples show how
@@ -612,20 +617,43 @@ class ShortTimeFFT:
         An instance is created were window and dual window are equal as well as being
         closest to the parameter `desired_win` in the least-squares sense, i.e.,
         minimizing ``abs(win-desired_win)**2``. Hence, `win` has the same length as
-        `desired_win`.
-
-        Then a scaling according to the ``scale_to`` parameter is applied
-        to the windows and its dual: If not ``None`` (default) the window function is
-        scaled, so each STFT column represents either a 'magnitude' or a power spectral
-        density ('psd') spectrum, Alternatively, the STFT can be scaled to a`unitary`
-        mapping, i.e., dividing the window by ``np.sqrt(mfft)`` and multiplying the
-        dual window by the same amount.
+        `desired_win`. Then a scaling factor is applied accoring to the `scale_to`
+        parameter.
 
         All other parameters have the identical meaning as in the initializer.
 
         To be able to calculate a valid window, `desired_win` needs to have a valid
         dual STFT window for the given `hop` interval.
         If this is not the case, a ``ValueError`` is raised.
+
+        Parameters
+        ----------
+        desired_win : np.ndarray
+            A real-valued or complex-valued 1d array containing the sample of the
+            desired window.
+        hop : int
+            The increment in samples, by which the window is shifted in each step.
+        fs : float
+            Sampling frequency of input signal and window. Its relation to the
+            sampling interval `T` is ``T = 1 / fs``.
+        fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
+            Mode of FFT to be used (default 'onesided').
+            See property `fft_mode` for details.
+        mfft: int | None
+            Length of the FFT used, if a zero padded FFT is desired.
+            If ``None`` (default), the length of the window `win` is used.
+        scale_to : 'magnitude' | 'psd' | 'unitary' | None
+            If not ``None`` (default) the window function is scaled, so each STFT
+            column represents either a 'magnitude' or a power spectral density ('psd')
+            spectrum, Alternatively, the STFT can be scaled to a`unitary` mapping,
+            i.e., dividing the window by ``np.sqrt(mfft)`` and multiplying the dual
+            window by the same amount.
+        phase_shift : int | None
+            If set, add a linear phase `phase_shift` / `mfft` * `f` to each
+            frequency `f`. The default value of 0 ensures that there is no phase shift
+            on the zeroth slice (in which t=0 is centered). See property
+            `phase_shift` for more details.
+
 
         Notes
         -----
@@ -647,6 +675,12 @@ class ShortTimeFFT:
         with :math:`S_{x,y}` being the STFT of :math:`x,y`. Hence, the energy
         :math:`E_x=T\sum_k |x[k]|^2` of a signal is also preserved. This is also
         illustrated in the example below.
+
+        Thie reason of distinguishing between no scaling (i.e., parameter `scale_to` is
+        ``None``) and unitary scaling (i.e., ``scale_to = 'unitary'``) is due to the
+        utilized FFT function not being unitary (i.e., using the default value
+        ``'backward'`` for the `~scipy.fft.fft` parameter `norm`).
+
 
         See Also
         --------
@@ -680,12 +714,8 @@ class ShortTimeFFT:
         -4.163336342344337e-16+0j  # may vary
         >>> np.sum(Sx11)  # == np.sum(x1**2)
         19.999999999999996  # may vary
-
-
-        Note that ``fftmode='twosided'`` is used, since we need sum over the complete
-        time frequency plane.
-        Let's plot the window and its magnitude spectrum:
-
+        ...
+        ... # Do the plotting:
         >>> fg1, (ax11, ax12) = plt.subplots(1, 2, tight_layout=True, figsize=(8, 4))
         >>> s_fac = np.sqrt(SFT.mfft)
         >>> _ = fg1.suptitle(f"Scaled Unitary Window of {m} Sample Gaussian with " +
@@ -703,10 +733,10 @@ class ShortTimeFFT:
         ...     ax_.legend()
         >>> plt.show()
 
-        If the paramater ``scale_to=None`` would have been passed to
-        `from_win_equals_dual()`, then the resulting window would be
-        ``SFT.win * np.sqrt(SFT.mfft) = 6``, i.e., the same window which is
-        plotted below.
+        Note that ``fftmode='twosided'`` is used, since we need sum over the complete
+        time frequency plane. Due to passing ``scale_to='unitary'`` the window
+        ``SFT.win`` is scaled by ``1/np.sqrt(SFT.mfft)``. Hence, ``SFT.win`` needs to
+        be scaled by `s_fac` in the plot above.
         """
         if not (desired_win.ndim == 1 and desired_win.size > 0):
             raise ValueError(f"Parameter desired_win is not 1d, but "
@@ -1072,33 +1102,33 @@ class ShortTimeFFT:
 
         Parameters
         ----------
-        x
+        x : np.ndarray
             The input signal as real or complex valued array. For complex values, the
             property `fft_mode` must be set to 'twosided' or 'centered'.
-        p0
+        p0 : int | None
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
             slice.
-        p1
+        p1 : int | None
             The end of the array. If ``None`` then `p_max(n)` is used.
-        k_offset
+        k_offset : int
             Index of first sample (t = 0) in `x`.
-        padding
+        padding : 'zeros' | 'edge' | 'even' | 'odd'
             Kind of values which are added, when the sliding window sticks out
             on either the lower or upper end of the input `x`. Zeros are added
             if the default 'zeros' is set. For 'edge' either the first or the
             last value of `x` is used. 'even' pads by reflecting the
             signal on the first or last sample and 'odd' additionally
             multiplies it with -1.
-        axis
+        axis : int
             The axis of `x` over which to compute the STFT.
             If not given, the last axis is used.
 
         Returns
         -------
-        S
+        S : np.ndarray
             A complex array is returned with the dimension always being larger
-            by one than of `x`. The last axis always represent the time slices
+            by one than of `x`. The last axis always represents the time slices
             of the STFT. `axis` defines the frequency axis (default second to
             last). E.g., for a one-dimensional `x`, a complex 2d array is
             returned, with axis 0 representing frequency and axis 1 the time
@@ -1125,17 +1155,51 @@ class ShortTimeFFT:
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
             -> np.ndarray:
-        """Short-time Fourier transform with a trend being subtracted from each
-        segment beforehand.
+        """Calculate short-time Fourier transform with a trend being subtracted from
+        each segment beforehand.
 
-        If `detr` is set to 'constant', the mean is subtracted, if set to
-        "linear", the linear trend is removed. This is achieved by calling
-        :func:`scipy.signal.detrend`. If `detr` is a function, `detr` is
-        applied to each segment.
-        All other parameters have the same meaning as in `~ShortTimeFFT.stft`.
+        When the parameter `detr` is ``None``, this method's behavior is identical to
+        the `~ShortTimeFFT.stft` method. Note that due to the detrending, the original
+        signal cannot be reconstructed by the `~ShortTimeFFT.istft`.
 
-        Note that due to the detrending, the original signal cannot be
-        reconstructed by the `~ShortTimeFFT.istft`.
+        Parameters
+        ----------
+        x : np.ndarray
+            The input signal as real or complex valued array. For complex values, the
+            property `fft_mode` must be set to 'twosided' or 'centered'.
+        detr : 'linear' |  'constant' |  Callable[[np.ndarray], np.ndarray] | None
+            If 'constant', the mean is subtracted, if set to "linear", the linear
+            trend is removed from each segment. This is achieved by calling
+            `~scipy.signal.detrend`. If `detr` is a function with one parameter, `detr`
+            is applied to each segment.
+        p0 : int | None
+            The first element of the range of slices to calculate. If ``None``
+            then it is set to :attr:`p_min`, which is the smallest possible
+            slice.
+        p1 : int | None
+            The end of the array. If ``None`` then `p_max(n)` is used.
+        k_offset : int
+            Index of first sample (t = 0) in `x`.
+        padding : 'zeros' | 'edge' | 'even' | 'odd'
+            Kind of values which are added, when the sliding window sticks out
+            on either the lower or upper end of the input `x`. Zeros are added
+            if the default 'zeros' is set. For 'edge' either the first or the
+            last value of `x` is used. 'even' pads by reflecting the
+            signal on the first or last sample and 'odd' additionally
+            multiplies it with -1.
+        axis: int
+            The axis of `x` over which to compute the STFT.
+            If not given, the last axis is used.
+
+        Returns
+        -------
+        S : np.ndarray
+            A complex array is returned with the dimension always being larger
+            by one than of `x`. The last axis always represents the time slices
+            of the STFT. `axis` defines the frequency axis (default second to
+            last). E.g., for a one-dimensional `x`, a complex 2d array is
+            returned, with axis 0 representing frequency and axis 1 the time
+            slices.
 
         See Also
         --------
@@ -1188,11 +1252,55 @@ class ShortTimeFFT:
         For two STFTs ``Sx[q,p], Sy[q,p]``, the cross-spectrogram is defined
         as ``Sx[q,p] * np.conj(Sy[q,p])`` and is complex-valued.
         This is a convenience function for calling `~ShortTimeFFT.stft` /
-        `stft_detrend`, hence all parameters are discussed there. If `y` is not
-        ``None`` it needs to have the same shape as `x`.
+        `stft_detrend`, hence all parameters are discussed there.
 
+        Parameters
+        ----------
+        x : np.ndarray
+            The input signal as real or complex valued array. For complex values, the
+            property `fft_mode` must be set to 'twosided' or 'centered'.
+        y : np.ndarray
+            The second input signal of the same shape as `x`. If ``None``, it is
+            assumed to be `x`. For complex values, the property `fft_mode` must be
+            set to 'twosided' or 'centered'.
+        detr : 'linear' |  'constant' |  Callable[[np.ndarray], np.ndarray] | None
+            If 'constant', the mean is subtracted, if set to "linear", the linear
+            trend is removed from each segment. This is achieved by calling
+            `~scipy.signal.detrend`. If `detr` is a function with one parameter, `detr`
+            is applied to each segment. For ``None`` (default), no trends are removed.
+        p0 : int | None
+            The first element of the range of slices to calculate. If ``None``
+            then it is set to :attr:`p_min`, which is the smallest possible
+            slice.
+        p1 : int | None
+            The end of the array. If ``None`` then `p_max(n)` is used.
+        k_offset : int
+            Index of first sample (t = 0) in `x`.
+        padding : 'zeros' | 'edge' | 'even' | 'odd'
+            Kind of values which are added, when the sliding window sticks out
+            on either the lower or upper end of the input `x`. Zeros are added
+            if the default 'zeros' is set. For 'edge' either the first or the
+            last value of `x` is used. 'even' pads by reflecting the
+            signal on the first or last sample and 'odd' additionally
+            multiplies it with -1.
+        axis : int
+            The axis of `x` over which to compute the STFT.
+            If not given, the last axis is used.
+
+        Returns
+        -------
+        S_xy : np.ndarray
+            A real-valued array with non-negative values is returned, if ``x is y`` or
+            `y` is ``None``. The dimension is always by one larger than of `x`. The
+            last axis always represents the time slices of the spectrogram. `axis`
+            defines the frequency axis (default second to last). E.g., for a
+            one-dimensional `x`, a complex 2d array is returned, with axis 0
+            representing frequency and axis 1 the time slices.
+
+        Notes
+        -----
         The cross-spectrogram may be interpreted as the time-frequency analogon of the
-        cross-spectral density (consult `csd`). The absolute square `abs(Sxy)**2` of a
+        cross-spectral density (consult `csd`). The absolute square `|Sxy|²` of a
         cross-spectrogram `Sxy` divided by the spectrograms `Sxx` and `Syy` can be
         interpreted as a coherence spectrogram ``Cxy := abs(Sxy)**2 / (Sxx*Syy)``,
         which is the time-frequency analogon to `~coherence`.
@@ -1203,35 +1311,32 @@ class ShortTimeFFT:
 
         Examples
         --------
-        The following example shows the spectrogram of a square wave with
-        varying frequency :math:`f_i(t)` (marked by a green dashed line in the
-        plot) sampled with 20 Hz:
+        The following example shows the spectrogram of a square wave with varying
+        frequency :math:`f_i(t)` (marked by a green dashed line in the plot) sampled
+        with 20 Hz. The utilized Gaussian window is 50 samples or 2.5 s long. For the
+        `ShortTimeFFT`, the parameter ``mfft=800`` (oversampling factor 16) and the
+        `hop` interval of 2 in was chosen to produce a sufficient number of points.
+
+        The plot's colormap is logarithmically scaled as the power spectral
+        density is in dB. The time extent of the signal `x` is marked by
+        vertical dashed lines, and the shaded areas mark the presence of border
+        effects.
 
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
-        >>> from scipy.signal import square, ShortTimeFFT, windows
+        >>> from scipy.signal import square, ShortTimeFFT
         >>> from scipy.signal.windows import gaussian
         ...
         >>> T_x, N = 1 / 20, 1000  # 20 Hz sampling rate for 50 s signal
         >>> t_x = np.arange(N) * T_x  # time indexes for signal
         >>> f_i = 5e-3*(t_x - t_x[N // 3])**2 + 1  # varying frequency
         >>> x = square(2*np.pi*np.cumsum(f_i)*T_x)  # the signal
-
-        The utilized Gaussian window is 50 samples or 2.5 s long. The
-        parameter ``mfft=800`` (oversampling factor 16) and the `hop` interval
-        of 2 in `ShortTimeFFT` was chosen to produce a sufficient number of
-        points:
-
+        ...
         >>> g_std = 12  # standard deviation for Gaussian window in samples
         >>> win = gaussian(50, std=g_std, sym=True)  # symmetric Gaussian wind.
         >>> SFT = ShortTimeFFT(win, hop=2, fs=1/T_x, mfft=800, scale_to='psd')
         >>> Sx2 = SFT.spectrogram(x)  # calculate absolute square of STFT
-
-        The plot's colormap is logarithmically scaled as the power spectral
-        density is in dB. The time extent of the signal `x` is marked by
-        vertical dashed lines, and the shaded areas mark the presence of border
-        effects:
-
+        ...
         >>> fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
         >>> t_lo, t_hi = SFT.extent(N)[:2]  # time range of plot
         >>> ax1.set_title(rf"Spectrogram ({SFT.m_num*SFT.T:g}$\,s$ Gaussian " +

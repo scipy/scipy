@@ -998,7 +998,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
 def check_COLA(window, nperseg, noverlap, tol=1e-10):
     r"""Check whether the Constant OverLap Add (COLA) constraint is met
-    (leagcy function).
+    (legacy function).
 
     .. legacy:: function
 
@@ -1008,11 +1008,13 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
         example shows:
 
         >>> import numpy as np
-        >>> from scipy.signal import closest_STFT_dual_window, windows
+        >>> from scipy.signal import check_COLA, closest_STFT_dual_window, windows
         ...
         >>> w, w_rect, hop = windows.hann(12, sym=False), np.ones(12), 6
         >>> dual_win, alpha = closest_STFT_dual_window(w, hop, w_rect, scaled=True)
         >>> np.allclose(dual_win/alpha, w_rect, atol=1e-10, rtol=0)
+        True
+        >>> check_COLA(w, len(w), len(w) - hop)  # equivalent legacy function call
         True
 
 

@@ -1762,8 +1762,8 @@ the identical dual window
 .. math::
    :label: eq_STFT_CanonDualWin
 
-    w_d[m] = w[m] \inv{\sum_{\eta\in\IZ} \big|w[m + \eta\, h]\big|^2}
-           =\ w[m] \inv{\sum_{l=0}^{M-1} \big|w[l]\big|^2 \delta_{l+m,\eta h}}\ ,
+    w_d[m] &= w[m] \inv{\sum_{\eta\in\IZ} \big|w[m + \eta\, h]\big|^2}\\
+           &=\ w[m] \inv{\sum_{l=0}^{M-1} \big|w[l]\big|^2 \delta_{l+m,\eta h}}\ ,
              \quad \eta\in \IZ\ .
 
 Since :math:`w[m] = 0` holds for :math:`m \not\in\{0, \ldots, M-1\}`, it is

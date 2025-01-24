@@ -85,14 +85,22 @@ def test_closest_STFT_dual_window_exceptions():
 @pytest.mark.parametrize('m', (16, 17))
 @pytest.mark.parametrize('win_name', ('hann', 'hamming'))
 def test_closest_STFT_dual_window_roundtrip(win_name, m, hop, sym_win, scaled):
-    """Do roundtrip, i.e, compare dual of dual windows. """
+    """Do roundtrip, i.e., compare dual of dual windows.
+
+    The  default for parameter `desired_dual` is also verified.
+    """
     win = get_window(win_name, m, not sym_win)
-    d1, s1 = closest_STFT_dual_window(win, hop, np.ones(m), scaled=scaled)
-    d2, s2 = closest_STFT_dual_window(d1, hop, win * s1, scaled=True)
+    d1, s1 = closest_STFT_dual_window(win, hop, np.ones_like(win), scaled=scaled)
+    d2, s2 = closest_STFT_dual_window(win, hop, scaled=scaled)  # equals d1, s1
+    d3, s3 = closest_STFT_dual_window(d1, hop, win * s1, scaled=True)  # roundtrip
+
+    # Validate default for parameter `desired_dual` works (hard coded => assert ok):
+    xp_assert_equal(d2, d1, err_msg="Default for parameter `desired_dual` is not ok!")
+    assert s2 == s1, "Default for parameter `desired_dual` is not ok!"
 
     res = np.finfo(win.dtype).resolution * 5
-    xp_assert_close(s1*s2, 1., atol=res, err_msg="Invalid Scale factors")
-    xp_assert_close(d2, win, atol=res, err_msg="Roundtrip failed!")
+    xp_assert_close(s1*s3, 1., atol=res, err_msg="Invalid Scale factors")
+    xp_assert_close(d3, win, atol=res, err_msg="Roundtrip failed!")
 
     if scaled:  # check that scaling factor is correct:
         d3, _ = closest_STFT_dual_window(win, hop, np.ones(m) * s1, scaled=False)
@@ -172,7 +180,8 @@ def test_closest_STFT_dual_window_cola(win_name, nperseg, noverlap, scale_fac):
     d_u, u = closest_STFT_dual_window(win * scale_fac, nperseg - noverlap,
                                       desired_dual, scaled=False)
 
-    assert u == 1, "Scaling factor not 1 for parameter `scaled=True`!"
+    # this should be hard-coded not computed, so no need for allclose
+    assert u == 1., "Scaling factor not 1 for parameter `scaled=True`!"
     xp_assert_close(d_u, desired_dual, atol=res*10, rtol=rel_tol_d,
                     err_msg="Calculated incorrect unscaled window!")
 
@@ -297,6 +306,7 @@ def test_exceptions_fft_mode_complex_win(m: FFT_MODE_TYPE):
 def test_invalid_fft_mode_RuntimeError():
     """Ensure exception gets raised when property `fft_mode` is invalid. """
     SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1)
+    # noinspection PyTypeChecker
     SFT._fft_mode = 'invalid_typ'
 
     with pytest.raises(RuntimeError):
@@ -695,6 +705,25 @@ def test_minimal_length_signal(m_num):
     with pytest.raises(ValueError, match=rf"S.shape\[t_axis\]={Sx.shape[1]-1}"
                        f" needs to have at least {Sx.shape[1]} slices"):
         SFT.istft(Sx[:, :-1], k1=n)
+
+
+def test_compare_stft_detrend():
+    """Test the detrending in `ShortTimeFFT.stft_detrend()`. """
+    SFT = ShortTimeFFT(np.ones(4), 4, fs=1)
+    x0 = np.zeros(4) # signal without trend
+    x1 = x0 + 3  # signal with constant trend
+    x2 = x0 + np.arange(len(x0))  # signal with linear trend
+
+    kw = dict(k_offset=2, p1=1)  # we want only one slice
+    Sx0 = SFT.stft(x0, **kw)  # no trend
+    Sx1 = SFT.stft_detrend(x1, detr='constant', **kw)
+    Sx2 = SFT.stft_detrend(x2, detr='linear', **kw)
+    Sx3 = SFT.stft_detrend(x1, detr=lambda x: x - np.mean(x), **kw)
+
+    atol = np.finfo(Sx0.dtype).resolution * 2  # needed to compare with array of zeros
+    xp_assert_close(Sx1, Sx0, atol=atol, err_msg="Constant detrending failed!")
+    xp_assert_close(Sx0, Sx2, atol=atol, err_msg="Linear detrending failed!")
+    xp_assert_close(Sx0, Sx3, atol=atol, err_msg="Detrending using a function failed!")
 
 
 def test_tutorial_stft_sliding_win():
