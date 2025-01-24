@@ -1148,7 +1148,7 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
 
     n = _length_nonmasked(a, axis)
     with np.errstate(invalid='ignore'):
-        precision_loss = xp.any(xp.asarray((rel_diff < eps)) & xp.asarray(n > 1))
+        precision_loss = xp.any(xp.asarray(rel_diff < eps) & xp.asarray(n > 1))
 
     if precision_loss and precision_warning:
         message = ("Precision loss occurred in moment calculation due to "
@@ -1226,7 +1226,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
 
 
 def _length_nonmasked(x, axis, keepdims=False):
-    if hasattr(x, 'mask'):
+    if hasattr(x, 'mask') and not isinstance(x, np.ndarray):
         if np.iterable(axis):
             message = '`axis` must be an integer or None for use with `MArray`.'
             raise NotImplementedError(message)
@@ -1540,6 +1540,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     if xp_size(a) == 0:
         raise ValueError("The input must not be empty.")
 
+    # use xp.astype when data-apis/array-api-compat#226 is resolved
     n = xp.asarray(_length_nonmasked(a, axis), dtype=xp.int64)
     n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))

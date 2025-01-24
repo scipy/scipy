@@ -10,9 +10,7 @@ skip_backend = pytest.mark.skip_xp_backends
 def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=84912165484321):
     marray = pytest.importorskip('marray')
     xpm = marray._get_namespace(xp)
-
-    entropy = np.random.SeedSequence(seed).entropy
-    rng = np.random.default_rng(entropy)
+    rng = np.random.default_rng(seed)
 
     datas, masks = [], []
     for i in range(n_arrays):
