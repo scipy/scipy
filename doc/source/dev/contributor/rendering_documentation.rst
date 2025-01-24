@@ -170,32 +170,31 @@ When converting a notebook to a MyST Markdown file, you may need to adjust some
 of the content to match the MyST Markdown syntax.
 
 - **External links:** MyST Markdown uses the standard Markdown syntax for links.
-  For example, ``[link text](https://www.example.com)``. If you have a link in a
-  notebook cell, you can convert it to the MyST Markdown format by enclosing the
-  link text in square brackets and the URL in parentheses.
+  For example, ``[link text](https://www.example.com)``.
 - **Internal links:** For internal cross-references such as links to SciPy
   classes or functions, as well as intersphinx links, you can use the following
   syntax: ``{role}`link text <reference>```, where ``role`` can be ``ref``,
-  ``class``, ``func`` or any other role you would use with rST. For example, to
+  ``class``, ``func`` or any other role you would use with reST. For example, to
   link to the ``scipy.stats.bartlett`` function, use
   ``{func}`scipy.stats.bartlett```.
 - **Formatting:** MyST Markdown supports standard Markdown formatting, such as
   bold text, italic text, and code blocks. For example, to make text bold, you
   can use double asterisks: ``**bold text**``. To make text monospace/formatted
-  as code, you can use *single_ backticks: ```code```.
-- **Images:** If your notebook contains images, you can include them in the MyST
-  Markdown file by using the following syntax:
+  as code, you can use *single* backticks: ```code```.
+- **Images:** If your notebook contains static images, you can include them in
+  the MyST Markdown file by using the following syntax:
   ``![alt text](path/to/image.png)``. Images are usually stored in the same
   folder as the MyST Markdown file, but you can also use relative paths to
-  reference images in other folders. Note that outputs to executed cells should
+  reference images in other folders. Note that outputs of executed cells should
   not be included in version control, as they will be automatically generated
-  when the SciPy documentation is built.
+  when the notebook is executed during the SciPy documentation build.
 - **Linking to the MyST markdown pages:** MyST markdown supports adding link
-  anchors, which can be used to link to specific pages from other documents.
-  To add an anchor to a page, add ``(anchor_name)=`` to the top of the document.
-  From other markdown pages, you can link to this anchor using the following
-  syntax: ``{ref}`anchor_name```. From other rST pages, you can link to this
-  anchor using the following syntax: ``:ref:`anchor_name```.
+  anchors, which can be used to link to specific pages or document sections from
+  other documents. To add an anchor to a page, add ``(anchor_name)=`` to the
+  desired place in the document to be referenced. From other markdown pages, you
+  can link to this anchor using the following syntax: ``{ref}`anchor_name```.
+  From other reST pages, you can link to this anchor using the following syntax:
+  ``:ref:`anchor_name```.
 
 Making the notebook interactive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,10 +246,10 @@ Examples within docstrings can be made interactive using the `jupyterlite-sphinx
 which implements the ``.. try_examples::`` directive. When used in the
 "Examples" section of a docstring, this directive will create a button that
 allows users to open the example in an interactive JupyterLite window, or in a
-new tab as a Jupyter notebook.
+new tab as a Jupyter notebook. For SciPy, this directive is automatically added
+to all docstrings with an "Examples" section.
 
-For SciPy, this directive does not need to be added manually. Instead, it is
-automatically added to all docstrings with an "Examples" section. To hide the
+To hide the
 buttons that turn docstring examples into embedded notebooks, after building
 the html documentation, edit the ``try_examples.json`` runtime configuration
 file after ``scipy/doc/build/html/`` and add the url paths of the files to be
