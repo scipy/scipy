@@ -769,10 +769,10 @@ class TestMMIOCoordinate:
                           match='From SciPy 1.18.0, an exception will be thrown'):
             mmwrite(self.fn, A, precision=precision)
 
-    @pytest.mark.parametrize("precision", [1.0, "1", np.array([1])])
+    @pytest.mark.parametrize("precision", [1.0, "1", [], np.array([1])])
     def test_invalid_precision_type(self, precision):
         A = scipy.sparse.dok_array((2, 2))
-        with pytest.raises(TypeError, match='Precision value must be an integer'):
+        with pytest.raises(TypeError, match='integer'):
             mmwrite(self.fn, A, precision=precision)
 
     def test_bad_number_of_coordinate_header_fields(self):
