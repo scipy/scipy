@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 from scipy.stats._stats_py import _xp_mean, _xp_var
 skip_backend = pytest.mark.skip_xp_backends
 
@@ -101,3 +101,13 @@ def test_describe(axis, kwargs):
     xp_assert_close(res.variance.data, ref.variance.data)
     xp_assert_close(res.skewness.data, ref.skewness.data)
     xp_assert_close(res.kurtosis.data, ref.kurtosis.data)
+
+
+@pytest.mark.parametrize('fun', [stats.zscore, stats.gzscore, stats.zmap])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_zscore(fun, axis):
+    mxp, marrays, narrays = get_arrays(2) if fun == stats.zmap else get_arrays(1)
+    res = fun(*marrays, axis=axis)
+    ref = fun(*narrays, nan_policy='omit', axis=axis)
+    xp_assert_close(res.data[~res.mask], ref[~np.isnan(ref)])
+    xp_assert_equal(res.mask, marrays[0].mask)
