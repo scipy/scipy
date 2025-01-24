@@ -1221,9 +1221,17 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     xp = array_namespace(x) if xp is None else xp
     var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
-        n = x.shape[axis] if axis is not None else xp_size(x)
+        n = _shape_nonmasked(x, axis)
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
+
+
+def _shape_nonmasked(x, axis, keepdims=False):
+    if hasattr(x, 'mask'):
+        mxp = array_namespace(x)
+        n = mxp.astype(mxp.count(x, axis=axis, keepdims=keepdims), x.dtype)
+        return n[()] if n.ndim == 0 else n
+    return x.shape[axis] if axis is not None else xp_size(x)
 
 
 @_axis_nan_policy_factory(
@@ -1307,7 +1315,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
-    n = a.shape[axis]
+    n = _shape_nonmasked(a, axis)
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
@@ -1417,7 +1425,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = a.shape[axis]
+    n = _shape_nonmasked(a, axis)
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean, xp=xp)
@@ -1529,7 +1537,8 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     if xp_size(a) == 0:
         raise ValueError("The input must not be empty.")
 
-    n = a.shape[axis]
+    n = xp.asarray(_shape_nonmasked(a, axis), dtype=xp.int64)
+    n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
     m = xp.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof, xp=xp)

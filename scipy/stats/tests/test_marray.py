@@ -1,0 +1,88 @@
+import pytest
+import numpy as np
+from scipy import stats
+
+from scipy._lib._array_api import xp_assert_close
+from scipy.stats._stats_py import _xp_mean
+skip_backend = pytest.mark.skip_xp_backends
+
+
+def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=84912165484321):
+    marray = pytest.importorskip('marray')
+    xpm = marray._get_namespace(xp)
+
+    entropy = np.random.SeedSequence(seed).entropy
+    rng = np.random.default_rng(entropy)
+
+    datas, masks = [], []
+    for i in range(n_arrays):
+        data = rng.random(size=shape)
+        if dtype.startswith('complex'):
+            data = 10*data * 10j*rng.standard_normal(size=shape)
+        data = data.astype(dtype)
+        datas.append(data)
+        mask = rng.random(size=shape) > 0.75
+        masks.append(mask)
+
+    marrays = []
+    nan_arrays = []
+    for array, mask in zip(datas, masks):
+        marrays.append(xpm.asarray(array, mask=mask))
+        nan_array = array.copy()
+        nan_array[mask] = xp.nan
+        nan_arrays.append(nan_array)
+
+    return xpm, marrays, nan_arrays
+
+
+@pytest.mark.parametrize('fun, kwargs', [(stats.gmean, {}),
+                                         (stats.hmean, {}),
+                                         (stats.pmean, {'p': 2})])
+@pytest.mark.parametrize('axis', [0, 1])
+def test_xmean(fun, kwargs, axis):
+    mxp, marrays, narrays = get_arrays(2)
+    res = fun(marrays[0], weights=marrays[1], axis=axis, **kwargs)
+    ref = fun(narrays[0], weights=narrays[1], nan_policy='omit', axis=axis, **kwargs)
+    xp_assert_close(res.data[()], ref)
+
+
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('axis', [0, 1, None])
+@pytest.mark.parametrize('keepdims', [False, True])
+def test_xp_mean(axis, keepdims, xp):
+    mxp, marrays, narrays = get_arrays(2, xp=xp)
+    kwargs = dict(axis=axis, keepdims=keepdims)
+    res = _xp_mean(marrays[0], weights=marrays[1], **kwargs)
+    ref = _xp_mean(narrays[0], weights=narrays[1], nan_policy='omit', **kwargs)
+    xp_assert_close(res.data, xp.asarray(ref))
+
+
+@pytest.mark.parametrize('fun, kwargs',
+    [(stats.moment, {'order': 2}),
+     (stats.skew, {}),
+     (stats.skew, {'bias': False}),
+     (stats.kurtosis, {}),
+     (stats.kurtosis, {'bias': False}),
+     ])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_several(fun, kwargs, axis):
+    mxp, marrays, narrays = get_arrays(1)
+    kwargs.update(dict(axis=axis))
+    res = fun(marrays[0], **kwargs)
+    ref = fun(narrays[0], nan_policy='omit', **kwargs)
+    xp_assert_close(res.data[()], ref)
+
+
+@pytest.mark.parametrize('axis', [0, 1])
+@pytest.mark.parametrize('kwargs', [{}])
+def test_describe(axis, kwargs):
+    mxp, marrays, narrays = get_arrays(1)
+    kwargs.update(dict(axis=axis))
+    res = stats.describe(marrays[0], **kwargs)
+    ref = stats.describe(narrays[0], nan_policy='omit', **kwargs)
+    xp_assert_close(res.nobs.data, ref.nobs)
+    xp_assert_close(res.minmax[0].data, ref.minmax[0].data)
+    xp_assert_close(res.minmax[1].data, ref.minmax[1].data)
+    xp_assert_close(res.variance.data, ref.variance.data)
+    xp_assert_close(res.skewness.data, ref.skewness.data)
+    xp_assert_close(res.kurtosis.data, ref.kurtosis.data)
