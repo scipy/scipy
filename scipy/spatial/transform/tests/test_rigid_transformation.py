@@ -777,13 +777,13 @@ def test_input_validation():
         RigidTransformation.from_matrix(np.zeros((1, 1, 4, 4)))
 
     # Test invalid last row
-    with pytest.raises(ValueError, match="Expected last row.*to be"):
+    with pytest.raises(ValueError, match="last row of transformation matrix 0"):
         matrix = np.eye(4)
         matrix[3, :] = [1, 0, 0, 1]
         RigidTransformation.from_matrix(matrix)
 
     # Test invalid last row for multiple transformations
-    with pytest.raises(ValueError, match="Expected last row.*to be"):
+    with pytest.raises(ValueError, match="last row of transformation matrix 1"):
         matrix = np.array([np.eye(4)] * 2)
         matrix[1, 3, :] = [1, 0, 0, 1]
         RigidTransformation.from_matrix(matrix)

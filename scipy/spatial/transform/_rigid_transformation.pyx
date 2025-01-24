@@ -477,32 +477,32 @@ cdef class RigidTransformation:
         # Check the last row. Exact match is required, as this last row should
         # not accumulate floating point error during composition.
         last_row_ok = np.all(matrix[:, 3, :] == np.array([0, 0, 0, 1]), axis=1)
+        if np.any(~last_row_ok):
+            ind = np.where(~last_row_ok)[0][0]
+            raise ValueError(f"Expected last row of transformation matrix {ind} to be "
+                             f"exactly [0, 0, 0, 1], got {matrix[ind, 3, :]}.")
 
-        # Check the determinant of the rotation matrix
+        # Calculate the determinant of the rotation matrix
         # (should be positive for right-handed rotations)
         dets = np.linalg.det(matrix[:, :3, :3])
+        if np.any(dets <= 0):
+            ind = np.where(dets <= 0)[0][0]
+            raise ValueError("Non-positive determinant (left-handed or null "
+                             f"coordinate frame) in rotation component of "
+                             f"transformation matrix {ind}: {matrix[ind]}.")
 
         # Gramian orthonormality check
         # (should be the identity matrix for orthonormal matrices)
         grams = matrix[:, :3, :3] @ np.swapaxes(matrix[:, :3, :3], 1, 2)
-        orthonormal_ok = np.all(np.isclose(grams, np.eye(3)), axis=(1, 2))
+        orthonormal_ok = np.all(np.isclose(grams, np.eye(3), atol=1e-12), axis=(1, 2))
 
         for ind in range(num_transformations):
-            if not last_row_ok[ind]:
-                raise ValueError(f"Expected last row of transformation matrix {ind} to be "
-                                 f"exactly [0, 0, 0, 1], got {matrix[ind, 3, :]}.")
-
             # Check that the rotation matrix is orthonormal
-            if not np.isclose(dets[ind], 1) or not orthonormal_ok[ind]:
+            if not np.isclose(dets[ind], 1, atol=1e-12) or not orthonormal_ok[ind]:
                 if normalize:
-                    if dets[ind] <= 0:
-                        raise ValueError("Non-positive determinant (left-handed or null "
-                                         f"coordinate frame) in rotation component of "
-                                         f"transformation matrix {ind}: {matrix[ind]}.")
-                    else:
-                        # Orthonormalize the rotation matrix
-                        U, _, Vt = np.linalg.svd(matrix[ind, :3, :3])
-                        matrix[ind, :3, :3] = U @ Vt
+                    # Orthonormalize the rotation matrix
+                    U, _, Vt = np.linalg.svd(matrix[ind, :3, :3])
+                    matrix[ind, :3, :3] = U @ Vt
                 else:
                     raise ValueError("Expected rotation component of transformation "
                                      f"matrix {ind} be orthonormal: {matrix[ind]}.")
@@ -1148,8 +1148,9 @@ cdef class RigidTransformation:
 
         Parameters
         ----------
-        transformations : sequence of `RigidTransformation` objects, or
-            a single `RigidTransformation` object.
+        transformations : sequence of `RigidTransformation`
+            If a single `RigidTransformation` instance is passed in, a copy of
+            it is returned.
 
         Returns
         -------
