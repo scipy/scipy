@@ -744,7 +744,7 @@ class TestMMIOCoordinate:
                 result = mmread(fname, spmatrix=False).toarray()
                 assert_array_almost_equal(result, expected)
 
-    @pytest.mark.parametrize("precision_type", [int, np.int32, np.int64])
+    @pytest.mark.parametrize("precision_type", [int, np.int32, np.int64, np.array])
     def test_precision(self, precision_type):
         test_values = [pi] + [10**(i) for i in range(0, -10, -1)]
         test_precisions = range(1, 15)
