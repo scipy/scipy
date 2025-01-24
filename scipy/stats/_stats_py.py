@@ -966,7 +966,8 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         # by the axis_nan_policy decorator shortly.
         sd = _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)**0.5
 
-    n_obs = xp.sum(~xp.isnan(a), axis=axis, dtype=sd.dtype)
+    nan_nan = xp.astype(~xp.isnan(a), a.dtype)
+    n_obs = xp.sum(nan_nan, axis=axis, dtype=sd.dtype)
     return sd / n_obs**0.5
 
 

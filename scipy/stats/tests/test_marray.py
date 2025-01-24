@@ -33,15 +33,16 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=849121654
     return xpm, marrays, nan_arrays
 
 
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('fun, kwargs', [(stats.gmean, {}),
                                          (stats.hmean, {}),
                                          (stats.pmean, {'p': 2})])
 @pytest.mark.parametrize('axis', [0, 1])
-def test_xmean(fun, kwargs, axis):
-    mxp, marrays, narrays = get_arrays(2)
+def test_xmean(fun, kwargs, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, xp=xp)
     res = fun(marrays[0], weights=marrays[1], axis=axis, **kwargs)
     ref = fun(narrays[0], weights=narrays[1], nan_policy='omit', axis=axis, **kwargs)
-    xp_assert_close(res.data[()], ref)
+    xp_assert_close(res.data, xp.asarray(ref))
 
 
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
@@ -55,6 +56,8 @@ def test_xp_mean(axis, keepdims, xp):
     xp_assert_close(res.data, xp.asarray(ref))
 
 
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.parametrize('fun, kwargs',
     [(stats.moment, {'order': 2}),
      (stats.skew, {}),
@@ -80,34 +83,39 @@ def test_xp_mean(axis, keepdims, xp):
      (stats.tsem, {'limits': (0.1, 0.9)}),
      ])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_several(fun, kwargs, axis):
-    mxp, marrays, narrays = get_arrays(1)
-    kwargs.update(dict(axis=axis))
+def test_several(fun, kwargs, axis, xp):
+    mxp, marrays, narrays = get_arrays(1, xp=xp)
+    kwargs = dict(axis=axis) | kwargs
     res = fun(marrays[0], **kwargs)
     ref = fun(narrays[0], nan_policy='omit', **kwargs)
-    xp_assert_close(res.data[()], ref)
+    xp_assert_close(res.data, xp.asarray(ref))
 
 
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.parametrize('axis', [0, 1])
 @pytest.mark.parametrize('kwargs', [{}])
-def test_describe(axis, kwargs):
-    mxp, marrays, narrays = get_arrays(1)
+def test_describe(axis, kwargs, xp):
+    mxp, marrays, narrays = get_arrays(1, xp=xp)
     kwargs.update(dict(axis=axis))
     res = stats.describe(marrays[0], **kwargs)
     ref = stats.describe(narrays[0], nan_policy='omit', **kwargs)
-    xp_assert_close(res.nobs.data, ref.nobs)
-    xp_assert_close(res.minmax[0].data, ref.minmax[0].data)
-    xp_assert_close(res.minmax[1].data, ref.minmax[1].data)
-    xp_assert_close(res.variance.data, ref.variance.data)
-    xp_assert_close(res.skewness.data, ref.skewness.data)
-    xp_assert_close(res.kurtosis.data, ref.kurtosis.data)
+    xp_assert_close(res.nobs.data, xp.asarray(ref.nobs))
+    xp_assert_close(res.minmax[0].data, xp.asarray(ref.minmax[0].data))
+    xp_assert_close(res.minmax[1].data, xp.asarray(ref.minmax[1].data))
+    xp_assert_close(res.variance.data, xp.asarray(ref.variance.data))
+    xp_assert_close(res.skewness.data, xp.asarray(ref.skewness.data))
+    xp_assert_close(res.kurtosis.data, xp.asarray(ref.kurtosis.data))
 
 
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.parametrize('fun', [stats.zscore, stats.gzscore, stats.zmap])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_zscore(fun, axis):
-    mxp, marrays, narrays = get_arrays(2) if fun == stats.zmap else get_arrays(1)
+def test_zscore(fun, axis, xp):
+    mxp, marrays, narrays = (get_arrays(2, xp=xp) if fun == stats.zmap
+                             else get_arrays(1, xp=xp))
     res = fun(*marrays, axis=axis)
-    ref = fun(*narrays, nan_policy='omit', axis=axis)
-    xp_assert_close(res.data[~res.mask], ref[~np.isnan(ref)])
+    ref = xp.asarray(fun(*narrays, nan_policy='omit', axis=axis))
+    xp_assert_close(res.data[~res.mask], ref[~xp.isnan(ref)])
     xp_assert_equal(res.mask, marrays[0].mask)
