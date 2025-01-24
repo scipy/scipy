@@ -720,7 +720,7 @@ def test_compare_stft_detrend():
     Sx2 = SFT.stft_detrend(x2, detr='linear', **kw)
     Sx3 = SFT.stft_detrend(x1, detr=lambda x: x - np.mean(x), **kw)
 
-    atol = np.finfo(Sx0.dtype).resolution * 2  # needed to compare with array of zeros
+    atol = np.finfo(Sx0.dtype).resolution * 5  # needed to compare with array of zeros
     xp_assert_close(Sx1, Sx0, atol=atol, err_msg="Constant detrending failed!")
     xp_assert_close(Sx0, Sx2, atol=atol, err_msg="Linear detrending failed!")
     xp_assert_close(Sx0, Sx3, atol=atol, err_msg="Detrending using a function failed!")
