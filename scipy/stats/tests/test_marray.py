@@ -3,7 +3,7 @@ import numpy as np
 from scipy import stats
 
 from scipy._lib._array_api import xp_assert_close
-from scipy.stats._stats_py import _xp_mean
+from scipy.stats._stats_py import _xp_mean, _xp_var
 skip_backend = pytest.mark.skip_xp_backends
 
 
@@ -63,6 +63,23 @@ def test_xp_mean(axis, keepdims, xp):
      (stats.skew, {'bias': False}),
      (stats.kurtosis, {}),
      (stats.kurtosis, {'bias': False}),
+     (stats.sem, {}),
+     (stats.kstat, {'n': 1}),
+     (stats.kstat, {'n': 2}),
+     (stats.kstat, {'n': 3}),
+     (stats.kstat, {'n': 4}),
+     (stats.kstatvar, {'n': 1}),
+     (stats.kstatvar, {'n': 2}),
+     (stats.circmean, {}),
+     (stats.circvar, {}),
+     (stats.circstd, {}),
+     (_xp_var, {}),
+     (stats.tmean, {'limits': (0.1, 0.9)}),
+     (stats.tvar, {'limits': (0.1, 0.9)}),
+     (stats.tmin, {'lowerlimit': 0.5}),
+     (stats.tmax, {'upperlimit': 0.5}),
+     (stats.tstd, {'limits': (0.1, 0.9)}),
+     (stats.tsem, {'limits': (0.1, 0.9)}),
      ])
 @pytest.mark.parametrize('axis', [0, 1, None])
 def test_several(fun, kwargs, axis):
