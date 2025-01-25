@@ -1394,6 +1394,29 @@ class _spbase:
 class sparray:
     """A namespace class to separate sparray from spmatrix"""
 
+    @classmethod
+    def __class_getitem__(cls, arg, /):
+        """
+        Return a parametrized wrapper around the `~scipy.sparse.sparray` type.
+
+        .. versionadded:: 1.16.0
+
+        Returns
+        -------
+        alias : types.GenericAlias
+            A parametrized `~scipy.sparse.sparray` type.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.sparse import coo_array
+
+        >>> coo_array[np.int8, tuple[int]]
+        scipy.sparse._coo.coo_array[numpy.int8, tuple[int]]
+        """
+        from types import GenericAlias
+        return GenericAlias(cls, arg)
+
 
 sparray.__doc__ = _spbase.__doc__
 
