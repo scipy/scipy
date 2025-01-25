@@ -103,6 +103,23 @@ else
 endif
 
 
+if use_pythran
+  py3.extension_module('_qmvnt_pythran',
+    pythran_gen.process('_qmvnt_pythran.py'),
+    cpp_args: cpp_args_pythran,
+    dependencies: [pythran_dep, np_dep],
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/stats'
+  )
+else
+  py3.install_source(
+    ['_qmvnt_pythran.py'],
+    subdir: 'scipy/stats'
+  )
+endif
+
+
 py3.install_sources([
     '__init__.py',
     '_axis_nan_policy.py',
