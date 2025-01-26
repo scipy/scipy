@@ -9,8 +9,8 @@ from pytest import raises as assert_raises
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
 from scipy._lib._array_api import (
-     xp_assert_close, xp_assert_equal, array_namespace, is_dask,
-     is_torch, is_jax, is_cupy, assert_array_almost_equal, SCIPY_DEVICE,
+     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
+     assert_array_almost_equal, SCIPY_DEVICE,
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -852,16 +852,12 @@ class TestGetWindow:
                         get_window('sinc', 6, xp=xp))
 
 
+@skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")
 def test_windowfunc_basics(xp):
     for window_name, params in window_funcs:
         window = getattr(windows, window_name)
         if is_jax(xp) and window_name in ['taylor', 'chebwin']:
             pytest.skip(reason=f'{window_name = }: item assignment')
-        if is_dask(xp):
-            # https://github.com/dask/dask/issues/2620
-            pytest.skip(
-                reason="dask doesn't support FFT along axis containing multiple chunks"
-            )
         if window_name in ['dpss']:
             if is_cupy(xp):
                 pytest.skip(reason='dpss window is not implemented for cupy')

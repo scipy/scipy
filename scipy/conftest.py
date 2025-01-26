@@ -399,9 +399,10 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
                     if 'cpu' not in d.device_kind:
                         skip_or_xfail(reason=reason)
             elif xp.__name__ == 'dask.array' and 'dask.array' not in exceptions:
-                if xp_device(xp.empty(0)) != 'cpu':
-                    skip_or_xfail(reason=reason)
-
+                # dask has no device. 'cpu' is a hack introduced by array-api-compat.
+                # Force to revisit this when in the future
+                # dask adds proper device support
+                assert xp_device(xp.empty(0)) == 'cpu'
 
 # Following the approach of NumPy's conftest.py...
 # Use a known and persistent tmpdir for hypothesis' caches, which

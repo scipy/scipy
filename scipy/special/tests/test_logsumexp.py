@@ -64,7 +64,6 @@ class TestLogSumExp:
         nan = xp.asarray([xp.nan])
         xp_assert_equal(logsumexp(inf), inf[0])
         xp_assert_equal(logsumexp(-inf), -inf[0])
-
         xp_assert_equal(logsumexp(nan), nan[0])
         xp_assert_equal(logsumexp(xp.asarray([-xp.inf, -xp.inf])), -inf[0])
 
@@ -110,7 +109,8 @@ class TestLogSumExp:
         xp_assert_close(r, xp.asarray(1.))
         xp_assert_equal(s, xp.asarray(-1.))
 
-    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_logsumexp_sign_zero(self, xp):
         a = xp.asarray([1, 1])
         b = xp.asarray([1, -1])
@@ -215,7 +215,9 @@ class TestLogSumExp:
         ref = xp.logaddexp(a[0], a[1])
         xp_assert_close(res, ref)
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning:dask")
+    @pytest.mark.filterwarnings(
+        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
+    )
     @pytest.mark.parametrize('dtype', ['complex64', 'complex128'])
     def test_gh21610(self, xp, dtype):
         # gh-21610 noted that `logsumexp` could return imaginary components

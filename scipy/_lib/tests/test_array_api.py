@@ -66,10 +66,6 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             xpx.atleast_nd("abc", ndim=0)
 
-    @skip_xp_backends(
-        "dask.array",
-        reason="raw dask.array namespace doesn't ignores copy=True in asarray"
-    )
     def test_copy(self, xp):
         for _xp in [xp, None]:
             x = xp.asarray([1, 2, 3])

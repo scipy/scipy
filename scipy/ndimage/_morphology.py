@@ -36,7 +36,7 @@ from . import _ni_support
 from . import _nd_image
 from . import _filters
 
-from scipy._lib._array_api import is_dask, array_namespace
+from scipy._lib.array_api_compat import is_dask_array
 
 __all__ = ['iterate_structure', 'generate_binary_structure', 'binary_erosion',
            'binary_dilation', 'binary_opening', 'binary_closing',
@@ -222,7 +222,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
     except TypeError as e:
         raise TypeError('iterations parameter should be an integer') from e
 
-    if is_dask(array_namespace(input)):
+    if is_dask_array(input):
         # Note: If you create an dask array with ones
         # it does a stride trick where it makes an array
         # (with stride 0) using a scalar
@@ -1800,6 +1800,7 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
         Output
 
     """
+    input = np.asarray(input)
     tmp1 = grey_dilation(input, size, footprint, structure, None, mode,
                          cval, origin, axes=axes)
     if isinstance(output, np.ndarray):
@@ -1812,7 +1813,6 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
         tmp2 = grey_erosion(input, size, footprint, structure, None, mode,
                             cval, origin, axes=axes)
         np.add(tmp1, tmp2, tmp2)
-        input = np.asarray(input)
         np.subtract(tmp2, input, tmp2)
         np.subtract(tmp2, input, tmp2)
         return tmp2

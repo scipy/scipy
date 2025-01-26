@@ -291,7 +291,6 @@ class TestConvolve:
             convolve(a, b)
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning:dask")
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestConvolve2d:
 
@@ -477,8 +476,12 @@ class TestConvolve2d:
         a = xp.arange(5)
         b = xp.asarray([3.2, 1.4, 3])
         for mode in ['full', 'valid', 'same']:
-            xp_assert_close(xp.asarray(np.convolve(a, b, mode=mode)),
-                            signal.convolve(a, b, mode=mode))
+            # cast to numpy when calling np.convolve
+            # to prevent NEP18 dispatching e.g. from dask
+            xp_assert_close(
+                xp.asarray(np.convolve(np.asarray(a), np.asarray(b), mode=mode)),
+                signal.convolve(a, b, mode=mode)
+            )
             xp_assert_close(
                 xp.squeeze(
                     signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode),
@@ -508,7 +511,6 @@ class TestConvolve2d:
         assert fails[0].size == 0
 
 
-@pytest.mark.filterwarnings("ignore::FutureWarning:dask")
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestFFTConvolve:
 
@@ -845,7 +847,9 @@ class TestFFTConvolve:
         np.random.seed(1234)
         a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
         b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
+        # cast to numpy before np.convolve
+        # to prevent NEP 18 dispatching for e.g. dask
+        expected = xp.asarray(np.convolve(np.asarray(a), np.asarray(b), 'full'))
 
         if axes == '':
             out = fftconvolve(a, b, 'full')
@@ -860,7 +864,9 @@ class TestFFTConvolve:
         np.random.seed(1234)
         a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
         b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
+        # cast to numpy before np.convolve
+        # to prevent NEP 18 dispatching for e.g. dask
+        expected = xp.asarray(np.convolve(np.asarray(a), np.asarray(b), 'full'))
 
         a = xp.asarray(np.tile(a, [2, 1]))
         b = xp.asarray(np.tile(b, [2, 1]))
@@ -913,7 +919,9 @@ class TestFFTConvolve:
     def test_many_sizes(self, n, xp):
         a = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
         b = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
+        # cast to numpy before np.convolve
+        # to prevent NEP 18 dispatching for e.g. dask
+        expected = xp.asarray(np.convolve(np.asarray(a), np.asarray(b), 'full'))
 
         out = fftconvolve(a, b, 'full')
         xp_assert_close(out, expected, atol=1e-10)
@@ -965,10 +973,7 @@ def gen_oa_shapes_eq(sizes):
 
 
 @skip_xp_backends("jax.numpy", reason="fails all around")
-@skip_xp_backends("dask.array",
-    reason="Gets converted to numpy at some point for some reason. "
-           "Probably also suffers from boolean indexing issues"
-)
+@xfail_xp_backends("dask.array", reason="wrong answer")
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
@@ -2452,7 +2457,6 @@ class TestCorrelateComplex:
             dt = np.cdouble
 
         # emulate np.finfo(dt).precision for complex64 and complex128
-        # note: unwrapped dask has no finfo
         prec = {64: 15, 32: 6}[xp.finfo(dt).bits]
         return int(2 * prec / 3)
 
@@ -4018,7 +4022,6 @@ def test_nonnumeric_dtypes(func, xp):
 class TestSOSFilt:
 
     # The test_rank* tests are pulled from _TestLinearFilter
-    @pytest.mark.filterwarnings("ignore::FutureWarning") # for dask
     @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank1(self, dt, xp):
         dt = getattr(xp, dt)
@@ -4050,7 +4053,6 @@ class TestSOSFilt:
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning") # for dask
     @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank2(self, dt, xp):
         dt = getattr(xp, dt)
@@ -4078,7 +4080,6 @@ class TestSOSFilt:
         y = sosfilt(sos, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning") # for dask
     @skip_xp_backends('jax.numpy', reason='buffer array is read-only')
     def test_rank3(self, dt, xp):
         dt = getattr(xp, dt)
@@ -4334,7 +4335,6 @@ class TestDetrend:
         with assert_raises(ValueError):
             detrend(data, type="linear", bp=3)
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning:dask")
     @pytest.mark.parametrize('bp', [np.array([0, 2]), [0, 2]])
     def test_detrend_array_bp(self, bp, xp):
         # regression test for https://github.com/scipy/scipy/issues/18675
