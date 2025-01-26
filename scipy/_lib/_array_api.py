@@ -29,6 +29,7 @@ from scipy._lib.array_api_compat import (
     is_jax_namespace as is_jax,
     is_array_api_strict_namespace as is_array_api_strict
 )
+from scipy._lib._sparse import issparse
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
@@ -70,7 +71,6 @@ def _compliance_scipy(arrays):
     for i in range(len(arrays)):
         array = arrays[i]
 
-        from scipy.sparse import issparse
         # this comes from `_util._asarray_validated`
         if issparse(array):
             msg = ('Sparse arrays/matrices are not supported by this function. '

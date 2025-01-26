@@ -5,6 +5,7 @@ import numpy as np
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis, getdtype)
+from scipy._lib._sparse import SparseBase, issparse
 
 from ._matrix import spmatrix
 
@@ -1391,6 +1392,13 @@ class _spbase:
                                (check_contents and not isinstance(self, sparray)))
 
 
+# `_spbase`` is a "virtual subclass" of `SparseBase`.
+# This allows other submodules to check for sparse subclasses
+# via `scipy._lib._sparse.issparse`, without introducing
+# an import dependency on `scipy.sparse`.
+SparseBase.register(_spbase)
+
+
 class sparray:
     """A namespace class to separate sparray from spmatrix"""
 
@@ -1419,40 +1427,6 @@ class sparray:
 
 
 sparray.__doc__ = _spbase.__doc__
-
-
-def issparse(x):
-    """Is `x` of a sparse array or sparse matrix type?
-
-    Parameters
-    ----------
-    x
-        object to check for being a sparse array or sparse matrix
-
-    Returns
-    -------
-    bool
-        True if `x` is a sparse array or a sparse matrix, False otherwise
-
-    Notes
-    -----
-    Use `isinstance(x, sp.sparse.sparray)` to check between an array or matrix.
-    Use `a.format` to check the sparse format, e.g. `a.format == 'csr'`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse import csr_array, csr_matrix, issparse
-    >>> issparse(csr_matrix([[5]]))
-    True
-    >>> issparse(csr_array([[5]]))
-    True
-    >>> issparse(np.array([[5]]))
-    False
-    >>> issparse(5)
-    False
-    """
-    return isinstance(x, _spbase)
 
 
 def isspmatrix(x):
