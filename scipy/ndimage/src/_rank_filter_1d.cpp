@@ -158,6 +158,10 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
   int offset;
   Mediator *m = MediatorNew(win_len, rank);
   T *data = new T[win_len];
+  for (int i = 0; i < win_len; ++i) {
+    data[i] = 0;
+  }
+
 
   switch (mode) {
   case REFLECT:
