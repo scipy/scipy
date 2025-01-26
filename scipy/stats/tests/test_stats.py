@@ -9354,7 +9354,7 @@ class TestXP_Mean:
     def test_non_broadcastable(self, xp):
         # non-broadcastable x and weights
         x, w = xp.arange(10.), xp.zeros(5)
-        message = "shape mismatch: objects cannot be broadcast to a single shape."
+        message = "Array shapes are incompatible for broadcasting."
         with pytest.raises(ValueError, match=message):
             _xp_mean(x, weights=w)
 

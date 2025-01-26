@@ -61,7 +61,7 @@ from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
-from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
+from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate, _broadcast_shapes,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
