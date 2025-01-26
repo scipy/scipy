@@ -948,11 +948,14 @@ def _contains_nan(
     if xp is None:
         xp = array_namespace(a)
 
-    inexact = (xp.isdtype(a.dtype, "real floating")
-               or xp.isdtype(a.dtype, "complex floating"))
-    if inexact:
-        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+    if xp.isdtype(a.dtype, "real floating"):
+        # Faster and less memory-intensive than xp.any(xp.isnan(a)), and unlike other
+        # reductions, `max`/`min` won't return NaN unless there is a NaN in the data.
         contains_nan = xp.isnan(xp.max(a))
+    elif xp.isdtype(a.dtype, "complex floating"):
+        # Typically `real` and `imag` produce views; otherwise, `xp.any(xp.isnan(a))`
+        # would be more efficient.
+        contains_nan = xp.isnan(xp.max(xp.real(a))) | xp.isnan(xp.max(xp.imag(a)))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():

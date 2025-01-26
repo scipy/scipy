@@ -75,10 +75,12 @@ from scipy._lib._array_api import (
     _asarray,
     array_namespace,
     is_numpy,
+    is_array_api_strict,
     xp_size,
     xp_moveaxis_to_end,
     xp_sign,
     xp_vector_norm,
+    xp_broadcast_promote,
 )
 from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
@@ -10772,21 +10774,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                          or (weights is not None and xp_size(weights) == 0)):
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
-    # handle non-broadcastable inputs
-    if weights is not None and x.shape != weights.shape:
-        try:
-            x, weights = _broadcast_arrays((x, weights), xp=xp)
-        except (ValueError, RuntimeError) as e:
-            message = "Array shapes are incompatible for broadcasting."
-            raise ValueError(message) from e
-
-    # convert integers to the default float of the array library
-    if not xp.isdtype(x.dtype, 'real floating'):
-        dtype = xp.asarray(1.).dtype
-        x = xp.asarray(x, dtype=dtype)
-    if weights is not None and not xp.isdtype(weights.dtype, 'real floating'):
-        dtype = xp.asarray(1.).dtype
-        weights = xp.asarray(weights, dtype=dtype)
+    x, weights = xp_broadcast_promote(x, weights, force_floating=True)
 
     # handle the special case of zero-sized arrays
     message = (too_small_1d_not_omit if (x.ndim == 1 or axis is None)
@@ -10822,7 +10810,10 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
 
     # Perform the mean calculation itself
     if weights is None:
-        return xp.mean(x, axis=axis, keepdims=keepdims)
+        if is_array_api_strict(xp) and xp.isdtype(x.dtype, 'complex floating'):
+            weights = xp.ones_like(x)
+        else:
+            return xp.mean(x, axis=axis, keepdims=keepdims)
 
     norm = xp.sum(weights, axis=axis)
     wsum = xp.sum(x * weights, axis=axis)
@@ -10863,7 +10854,9 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     mean = _xp_mean(x, keepdims=True, **kwargs)
     x = _asarray(x, dtype=mean.dtype, subok=True)
     x_mean = _demean(x, mean, axis, xp=xp)
-    var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
+    x_mean_conj = (xp.conj(x_mean) if xp.isdtype(x_mean.dtype, 'complex floating')
+                   else x_mean)  # crossref data-apis/array-api#824
+    var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
         if axis is None:
