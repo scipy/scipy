@@ -143,9 +143,6 @@ def _cbc_lattice(n_dim, n_qmc_samples):
     return q, n_qmc_samples
 
 
-# Note: this function is not currently used or tested by any SciPy code. It is
-# included in this file to facilitate the development of a parameter for users
-# to set the desired CDF accuracy, but must be reviewed and tested before use.
 def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     """Automatically rerun the integration to get the required error bound.
 
@@ -178,7 +175,7 @@ def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     n = len(covar)
     n_samples = 0
     if n == 1:
-        prob = phi(high) - phi(low)
+        prob = phi(high / covar**0.5) - phi(low / covar**0.5)
         # More or less
         est_error = 1e-15
     else:
@@ -196,9 +193,6 @@ def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     return prob, est_error, n_samples
 
 
-# Note: this function is not currently used or tested by any SciPy code. It is
-# included in this file to facilitate the resolution of gh-8367, gh-16142, and
-# possibly gh-14286, but must be reviewed and tested before use.
 def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
     """Multivariate normal integration over box bounds.
 

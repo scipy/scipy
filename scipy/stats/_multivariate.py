@@ -14,7 +14,7 @@ from scipy.linalg.blas import drot, get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
 from . import _covariance, _rcont
-from ._qmvnt import _qmvt, _qmvn
+from ._qmvnt import _qmvt, _qmvn, _qauto
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
 
@@ -640,10 +640,13 @@ class multivariate_normal_gen(multi_rv_generic):
         n = x.shape[-1]
         limits = np.concatenate((a, b), axis=-1)
 
-        # XXX: of cov.ndim == 2 and limits.ndim == 1, can avoid apply_along_axis
-        # mvnun expects 1-d arguments, so process points sequentially
+        # qmvn expects 1-d arguments, so process points sequentially
+        # XXX: if cov.ndim == 2 and limits.ndim == 1, can avoid apply_along_axis
         def func1d(limits):
-            return _qmvn(maxpts, cov, limits[:n], limits[n:], rng)[0]
+            # res0 = _qmvn(maxpts, cov, limits[:n], limits[n:], rng)[0]
+            res = _qauto(_qmvn, cov, limits[:n], limits[n:],
+                         rng, error=abseps, limit=maxpts, n_batches=10)
+            return np.squeeze(res[0])
 
         out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)

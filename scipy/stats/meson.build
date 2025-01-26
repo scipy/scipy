@@ -113,7 +113,7 @@ if use_pythran
     subdir: 'scipy/stats'
   )
 else
-  py3.install_source(
+  py3.install_sources(
     ['_qmvnt_pythran.py'],
     subdir: 'scipy/stats'
   )
