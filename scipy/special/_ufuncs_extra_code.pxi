@@ -1,4 +1,6 @@
 cimport scipy.special._ufuncs_cxx
+import scipy.special._special_ufuncs
+import scipy.special._gufuncs
 import numpy as np
 
 
@@ -160,8 +162,13 @@ def seterr(**kwargs):
     for error, action in kwargs.items():
         action = _sf_error_action_map[action]
         code = _sf_error_code_map[error]
+        # Error handling state must be set for all relevant
+        # extension modules in synchrony, since each carries
+        # a separate copy of this state.
         _set_action(code, action)
         scipy.special._ufuncs_cxx._set_action(code, action)
+        scipy.special._special_ufuncs._set_action(code, action)
+        scipy.special._gufuncs._set_action(code, action)
 
     return olderr
 
