@@ -79,8 +79,8 @@ class TestCephes:
         assert_func_equal(cephes.binom, rknown.ravel(), nk, rtol=1e-13)
 
         # Test branches in implementation
-        np.random.seed(1234)
-        n = np.r_[np.arange(-7, 30), 1000*np.random.rand(30) - 500]
+        rng = np.random.RandomState(1234)
+        n = np.r_[np.arange(-7, 30), 1000*rng.rand(30) - 500]
         k = np.arange(0, 102)
         nk = np.array(np.broadcast_arrays(n[:,None], k[None,:])
                       ).reshape(2, -1).T
@@ -1965,10 +1965,10 @@ class TestErf:
         assert_array_almost_equal(erz,erzr,4)
 
     def _check_variant_func(self, func, other_func, rtol, atol=0):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 10000
-        x = np.random.pareto(0.02, n) * (2*np.random.randint(0, 2, n) - 1)
-        y = np.random.pareto(0.02, n) * (2*np.random.randint(0, 2, n) - 1)
+        x = rng.pareto(0.02, n) * (2*rng.randint(0, 2, n) - 1)
+        y = rng.pareto(0.02, n) * (2*rng.randint(0, 2, n) - 1)
         z = x + 1j*y
 
         with np.errstate(all='ignore'):
@@ -4456,6 +4456,7 @@ def test_rel_entr_gh_20710_near_zero():
 
 
 def test_rel_entr_gh_20710_overflow():
+    special.seterr(all='ignore')
     inputs = np.array([
         # x, y
         # Overflow
