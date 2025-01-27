@@ -1213,8 +1213,8 @@ def _logexpxmexpy(x, y):
 
 
 def _guess_bracket(xmin, xmax):
-    a = np.asarray(-np.ones_like(xmin))
-    b = np.asarray(np.ones_like(xmax))
+    a = -np.ones_like(xmin)
+    b = np.ones_like(xmax)
 
     i = np.isfinite(xmin) & np.isfinite(xmax)
     a[i] = xmin[i]
