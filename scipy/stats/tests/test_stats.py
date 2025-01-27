@@ -3120,6 +3120,7 @@ class TestZmapZscore:
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
+    @pytest.mark.skip_xp_backends('array_api_strict', reason='needs array-api#850')
     def test_complex_gh22404(self, xp):
         res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
         ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
@@ -9557,6 +9558,7 @@ class TestXP_Var:
         y = xp.arange(10.)
         xp_assert_equal(_xp_var(x), _xp_var(y))
 
+    @pytest.mark.skip_xp_backends('array_api_strict', reason='needs array-api#850')
     def test_complex_gh22404(self, xp):
         rng = np.random.default_rng(90359458245906)
         x, y = rng.random((2, 20))

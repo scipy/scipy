@@ -75,7 +75,6 @@ from scipy._lib._array_api import (
     _asarray,
     array_namespace,
     is_numpy,
-    is_array_api_strict,
     xp_size,
     xp_moveaxis_to_end,
     xp_sign,
@@ -10810,10 +10809,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
 
     # Perform the mean calculation itself
     if weights is None:
-        if is_array_api_strict(xp) and xp.isdtype(x.dtype, 'complex floating'):
-            weights = xp.ones_like(x)
-        else:
-            return xp.mean(x, axis=axis, keepdims=keepdims)
+        return xp.mean(x, axis=axis, keepdims=keepdims)
 
     norm = xp.sum(weights, axis=axis)
     wsum = xp.sum(x * weights, axis=axis)
