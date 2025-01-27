@@ -221,12 +221,12 @@ swap_cf_z(SCIPY_Z* restrict a, SCIPY_Z* restrict b, const Py_ssize_t r, const Py
  * For complex arrays, being Schur is equivalent to being upper triangular.
  */
 int
-isschurf(const float* restrict data, const size_t n)
+isschurf(const float* restrict data, const Py_ssize_t n)
 {
     float prev_a, prev_b;
     int isSchur = 1;
     int expect_zero = 0;
-    for (size_t j = 0; j < n; j++) {
+    for (Py_ssize_t j = 0; j < n; j++) {
         if (data[j*n + j+1] == 0.0f) {
             // Subdiagonal is zero
             if (expect_zero) {
@@ -258,7 +258,7 @@ isschurf(const float* restrict data, const size_t n)
         // Check the remaining entries in the col for zero.
         if (j < n - 2)
         {
-            for (size_t i = j+2; i < n; i++) {
+            for (Py_ssize_t i = j+2; i < n; i++) {
                 if (data[j*n + i] != 0.0f) {
                     // Nonzero value below the subdiagonal
                     return 0;
@@ -272,12 +272,12 @@ isschurf(const float* restrict data, const size_t n)
 
 
 int
-isschur(const double* restrict data, const size_t n)
+isschur(const double* restrict data, const Py_ssize_t n)
 {
     double prev_a, prev_b;
     int isSchur = 1;
     int expect_zero = 0;
-    for (size_t j = 0; j < n; j++) {
+    for (Py_ssize_t j = 0; j < n; j++) {
         if (data[j*n + j+1] == 0.0) {
             if (expect_zero) {
                 if ((prev_a == data[j*n + j]) && (prev_b*data[j*n + j-1] < 0.0))
@@ -300,7 +300,7 @@ isschur(const double* restrict data, const size_t n)
         }
         if (j < n - 2)
         {
-            for (size_t i = j+2; i < n; i++) {
+            for (Py_ssize_t i = j+2; i < n; i++) {
                 if (data[j*n + i] != 0.0) {
                     return 0;
                 }
