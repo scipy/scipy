@@ -1599,6 +1599,7 @@ cdef class cKDTree:
 
         # set raw pointers
         self._python_tree = None
+        self._tree_lock = threading.Lock()
         self._pre_init()
 
         # copy the tree data
