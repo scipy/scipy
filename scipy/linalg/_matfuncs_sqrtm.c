@@ -8,7 +8,7 @@ static inline void zebra_pattern_s(float* restrict data, const Py_ssize_t n) {fo
 static inline void zebra_pattern_d(double* restrict data, const Py_ssize_t n) {for (Py_ssize_t i=n-1; i>=0; i--) { data[2*i] = data[i]; data[2*i + 1] = 0.0; }}
 
 void
-matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* view_as_complex, int* isIllconditioned, int* isSingular, int* sq_info)
+matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex)
 {
     float aa, bb, cc, dd, cs, sn;
     // Setting indicators to False.
@@ -296,7 +296,7 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
 
 
 void
-matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* view_as_complex, int* isIllconditioned, int* isSingular, int* sq_info)
+matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex)
 {
     double aa, bb, cc, dd, cs, sn;
     *view_as_complex = 0;
@@ -481,6 +481,212 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
         } else {
             swap_cf_d(data, &ret_data[idx*n*n], n, n, n);
         }
+    }
+    free(buffer);
+    return;
+}
+
+
+void
+matrix_squareroot_c(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused)
+{
+
+    *isIllconditioned = 0;
+    *isSingular = 0;
+
+    SCIPY_C* restrict Am_data = (SCIPY_C*)PyArray_DATA(ap_Am);
+    SCIPY_C* restrict ret_data = (SCIPY_C*)PyArray_DATA(ap_ret);
+    int ndim = PyArray_NDIM(ap_Am);
+    npy_intp* shape = PyArray_SHAPE(ap_Am);
+    npy_intp n = shape[ndim - 1];
+    npy_intp* restrict strides = PyArray_STRIDES(ap_Am);
+
+    npy_intp outer_size = 1;
+    if (ndim > 2)
+    {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+    int info = 0, sdim = 0, lwork = -1, intn = (int)n;
+    SCIPY_C tmp_float = CPLX_C(0.0f, 0.0f), cone = CPLX_C(1.0f, 0.0f), czero = CPLX_C(0.0f, 0.0f);
+    cgees_("V", "N", NULL, &intn, NULL, &intn, &sdim, NULL, NULL, &intn, &tmp_float, &lwork, NULL, NULL, &info);
+    if (info != 0) { *sq_info = -100; }
+
+    lwork = (int)crealf(tmp_float);
+    size_t buffer_size = 2*n*n + 2*n + lwork;
+    SCIPY_C* buffer = malloc(buffer_size*sizeof(SCIPY_C));
+    if (buffer == NULL) { *sq_info = -101; return; }
+
+
+    SCIPY_C* restrict data = &buffer[0];
+    SCIPY_C* restrict vs = &buffer[n*n];
+    SCIPY_C* restrict w = &buffer[2*n*n];
+    float* restrict rwork = &((float*)buffer)[2*n*n + n];
+    SCIPY_C* restrict work = &buffer[2*n*n + 2*n];
+
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        npy_intp offset = 0;
+        npy_intp temp_idx = idx;
+        for (int i = ndim - 3; i >= 0; i--) {
+            offset += (temp_idx % shape[i]) * strides[i];
+            temp_idx /= shape[i];
+        }
+        SCIPY_C* restrict slice_ptr = (SCIPY_C*)(Am_data + (offset/sizeof(SCIPY_C)));
+        for (Py_ssize_t i = 0; i < n; i++) {
+            for (Py_ssize_t j = 0; j < n; j++) {
+                vs[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_C)) + (j*strides[ndim - 1]/sizeof(SCIPY_C)));
+            }
+        }
+
+        swap_cf_c(vs, data, n, n, n);
+
+        // Check if array is upper triangular
+        int isSchur = 1;
+        for (Py_ssize_t i = 1; i < n; i++)
+        {
+            for (Py_ssize_t j = 0; j < i; j++)
+            {
+                if ((crealf(data[i*n + j]) != 0.0f) || (cimagf(data[i*n + j]) != 0.0f))
+                {
+                    isSchur = 0;
+                    break;
+                }
+            }
+            if (!isSchur) { break; }
+        }
+
+        if (!isSchur)
+        {
+            cgees_("V", "N", NULL, &intn, data, &intn, &sdim, w, vs, &intn, work, &lwork, rwork, NULL, &info);
+            if (info != 0)
+            {
+                free(buffer);
+                *sq_info = -102;
+                return;
+            }
+        } else {
+            for (Py_ssize_t col = 0; col < n; col++)
+            {
+                w[col] = data[col*n + col];
+            }
+        }
+
+        for (Py_ssize_t i = 0; i < n; i++)
+        {
+            if ((cimagf(w[i]) == 0.0f) && (crealf(w[i]) == 0.0f)) { *isSingular = 1; }
+        }
+
+        info = sqrtm_recursion_c(data, n, n);
+        if (!isSchur)
+        {
+            cgemm_("N", "N", &intn, &intn, &intn, &cone, vs, &intn, data, &intn, &czero, &ret_data[idx*n*n], &intn);
+            cgemm_("N", "C", &intn, &intn, &intn, &cone, &ret_data[idx*n*n], &intn, vs, &intn, &czero, data, &intn);
+        }
+
+        if (info != 0) { *isIllconditioned = 1; }
+        swap_cf_c(data, &ret_data[idx*n*n], n, n, n);
+    }
+    free(buffer);
+    return;
+}
+
+
+void
+matrix_squareroot_z(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused)
+{
+
+    *isIllconditioned = 0;
+    *isSingular = 0;
+
+    SCIPY_Z* restrict Am_data = (SCIPY_Z*)PyArray_DATA(ap_Am);
+    SCIPY_Z* restrict ret_data = (SCIPY_Z*)PyArray_DATA(ap_ret);
+    int ndim = PyArray_NDIM(ap_Am);
+    npy_intp* shape = PyArray_SHAPE(ap_Am);
+    npy_intp n = shape[ndim - 1];
+    npy_intp* restrict strides = PyArray_STRIDES(ap_Am);
+
+    npy_intp outer_size = 1;
+    if (ndim > 2)
+    {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+    int info = 0, sdim = 0, lwork = -1, intn = (int)n;
+    SCIPY_Z tmp_float = CPLX_Z(0.0f, 0.0f), cone = CPLX_Z(1.0f, 0.0f), czero = CPLX_Z(0.0f, 0.0f);
+    zgees_("V", "N", NULL, &intn, NULL, &intn, &sdim, NULL, NULL, &intn, &tmp_float, &lwork, NULL, NULL, &info);
+    if (info != 0) { *sq_info = -100; }
+
+    lwork = (int)creal(tmp_float);
+    size_t buffer_size = 2*n*n + 2*n + lwork;
+    SCIPY_Z* buffer = malloc(buffer_size*sizeof(SCIPY_Z));
+    if (buffer == NULL) { *sq_info = -101; return; }
+
+
+    SCIPY_Z* restrict data = &buffer[0];
+    SCIPY_Z* restrict vs = &buffer[n*n];
+    SCIPY_Z* restrict w = &buffer[2*n*n];
+    double* restrict rwork = &((double*)buffer)[2*n*n + n];
+    SCIPY_Z* restrict work = &buffer[2*n*n + 2*n];
+
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        npy_intp offset = 0;
+        npy_intp temp_idx = idx;
+        for (int i = ndim - 3; i >= 0; i--) {
+            offset += (temp_idx % shape[i]) * strides[i];
+            temp_idx /= shape[i];
+        }
+        SCIPY_Z* restrict slice_ptr = (SCIPY_Z*)(Am_data + (offset/sizeof(SCIPY_Z)));
+        for (Py_ssize_t i = 0; i < n; i++) {
+            for (Py_ssize_t j = 0; j < n; j++) {
+                vs[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_Z)) + (j*strides[ndim - 1]/sizeof(SCIPY_Z)));
+            }
+        }
+
+        swap_cf_z(vs, data, n, n, n);
+
+        // Check if array is upper triangular
+        int isSchur = 1;
+        for (Py_ssize_t i = 1; i < n; i++)
+        {
+            for (Py_ssize_t j = 0; j < i; j++)
+            {
+                if ((creal(data[i*n + j]) != 0.0f) || (cimag(data[i*n + j]) != 0.0f))
+                {
+                    isSchur = 0;
+                    break;
+                }
+            }
+            if (!isSchur) { break; }
+        }
+
+        if (!isSchur)
+        {
+            zgees_("V", "N", NULL, &intn, data, &intn, &sdim, w, vs, &intn, work, &lwork, rwork, NULL, &info);
+            if (info != 0)
+            {
+                free(buffer);
+                *sq_info = -102;
+                return;
+            }
+        } else {
+            for (Py_ssize_t col = 0; col < n; col++)
+            {
+                w[col] = data[col*n + col];
+            }
+        }
+
+        for (Py_ssize_t i = 0; i < n; i++)
+        {
+            if ((cimag(w[i]) == 0.0f) && (creal(w[i]) == 0.0f)) { *isSingular = 1; }
+        }
+
+        info = sqrtm_recursion_z(data, n, n);
+        if (!isSchur)
+        {
+            zgemm_("N", "N", &intn, &intn, &intn, &cone, vs, &intn, data, &intn, &czero, &ret_data[idx*n*n], &intn);
+            zgemm_("N", "C", &intn, &intn, &intn, &cone, &ret_data[idx*n*n], &intn, vs, &intn, &czero, data, &intn);
+        }
+
+        if (info != 0) { *isIllconditioned = 1; }
+        swap_cf_z(data, &ret_data[idx*n*n], n, n, n);
     }
     free(buffer);
     return;
