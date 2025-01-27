@@ -783,6 +783,8 @@ cdef class cKDTree:
          [13 19]]
 
         """
+        with self._tree_lock:
+            pass
 
         cdef:
             np.intp_t n
@@ -931,6 +933,9 @@ cdef class cKDTree:
 
         """
 
+        with self._tree_lock:
+            pass
+
         cdef:
             object[::1] vout
             np.intp_t[::1] vlen
@@ -1053,6 +1058,8 @@ cdef class cKDTree:
         >>> plt.show()
 
         """
+        with self._tree_lock:
+            pass
 
         cdef:
             vector[vector[np.intp_t]] vvres
@@ -1143,6 +1150,8 @@ cdef class cKDTree:
         >>> plt.show()
 
         """
+        with self._tree_lock:
+            pass
 
         cdef ordered_pairs results
 
@@ -1349,6 +1358,9 @@ cdef class cKDTree:
         1
 
         """
+        with self._tree_lock:
+            pass
+
         cdef:
             int r_ndim
             np.intp_t n_queries, i
