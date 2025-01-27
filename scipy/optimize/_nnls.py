@@ -43,17 +43,14 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
 
     Notes
     -----
-    The code is based on [2]_ which is an improved version of the classical
-    algorithm of [1]_. It utilizes an active set method and solves the KKT
-    (Karush-Kuhn-Tucker) conditions for the non-negative least squares problem.
+    The code is based on the classical algorithm of [1]_. It utilizes an active
+    set method and solves the KKK (Karush-Kuhn-Tucker) conditions for the
+    non-negative least squares problem.
 
     References
     ----------
     .. [1] : Lawson C., Hanson R.J., "Solving Least Squares Problems", SIAM,
        1995, :doi:`10.1137/1.9781611971217`
-    .. [2] : Bro, Rasmus and de Jong, Sijmen, "A Fast Non-Negativity-
-       Constrained Least Squares Algorithm", Journal Of Chemometrics, 1997,
-       :doi:`10.1002/(SICI)1099-128X(199709/10)11:5<393::AID-CEM483>3.0.CO;2-L`
 
      Examples
     --------
