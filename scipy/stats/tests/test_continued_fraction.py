@@ -103,7 +103,6 @@ class TestContinuedFraction:
         ref = xp.tan(x)
         xp_assert_close(res.f, ref)
 
-    @pytest.mark.skip_xp_backends('torch', reasons=['pytorch/pytorch#136063'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
     def test_log(self, shape, dtype, xp):
