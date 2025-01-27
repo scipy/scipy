@@ -5,8 +5,6 @@ from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 
 __all__ = ['nnls']
 
-_nnls_dep_message = ("The 'atol' parameter is deprecated and will be removed in "
-                     "SciPy 1.18.0. It is not used in the implementation.")
 
 @_deprecate_positional_args(version='1.18.0',
                             deprecated_args={'atol'})

@@ -433,7 +433,5 @@ class TestNNLS:
         a = np.array([[1, 0], [1, 0], [0, 1]])
         b = np.array([2, 1, 1])
         
-        message = ("The 'atol' parameter is deprecated and will be removed in "
-                  "SciPy 1.18.0")
-        with pytest.warns(DeprecationWarning, match=message):
+        with pytest.warns(DeprecationWarning, match="{'atol'}"):
             nnls(a, b, atol=1e-8)
