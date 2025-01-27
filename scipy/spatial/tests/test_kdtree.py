@@ -447,6 +447,7 @@ def test_query_ball_point_multithreading(kdtree_type):
             assert_array_equal(l1[i], l3[i])
 
 
+@pytest.mark.thread_unsafe
 def test_concurrent_access(kdtree_type):
     rng = np.random.default_rng(0)
     n = 10000
@@ -468,6 +469,7 @@ def test_concurrent_access(kdtree_type):
         worker.join()
 
 
+@pytest.mark.thread_unsafe
 def test_tree_concurrent_access(kdtree_type):
     barrier = threading.Barrier(10)
     rng = np.random.default_rng(0)
@@ -940,6 +942,8 @@ def test_kdtree_copy_data(kdtree_type):
     T2 = T.query(q, k=5)[-1]
     assert_array_equal(T1, T2)
 
+
+@pytest.mark.thread_unsafe
 def test_ckdtree_parallel(kdtree_type, monkeypatch):
     # check if parallel=True also generates correct query results
     np.random.seed(0)
