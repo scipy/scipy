@@ -21,13 +21,13 @@ def _qmvn_inner(double[::1] q, double[:, ::1] rndm, int n_qmc_samples, int n_bat
     cdef:
         npy_intp  n = cho.shape[0]
         npy_intp i, j, k
-        double prob, error_var, r, qq, z_k, res_k, scrtch, lo_i, hi_i, ct, c_k, d_k, s_k, ci
+        double prob, error_var, r, qq, z_k, res_k, scrtch, lo_i, hi_i, ct, s_k, ci
 
         double[::1] c, d, dc, pv, n_qmc_zeros
         double[:, ::1] y
 
     ct = cho[0, 0]
-    ci = phi[double](lo[0] / ct)
+    ci = phi(lo[0] / ct)
     dci = phi(hi[0] / ct) - phi(lo[0] / ct)
     prob = 0.0
     error_var = 0.0

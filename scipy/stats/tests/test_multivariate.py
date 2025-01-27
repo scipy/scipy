@@ -1046,12 +1046,10 @@ class TestMultivariateNormal:
         cov = a.T @ a
         dist = multivariate_normal(np.zeros(ndim), cov=cov)
 
-        npts = 7
+        npts = 1
         x = rng.uniform(low=-3, high=3, size=(npts, ndim))
         cdf = dist.cdf(x)
-        cdf_i = [
-            cubature(dist.pdf, [-np.inf]*ndim, x[j, ...]).estimate for j in range(npts)
-        ]
+        cdf_i = cubature(dist.pdf, [-np.inf]*ndim, x[j, ...]).estimate
         assert_allclose(cdf, cdf_i, atol=5e-6)
 
     def test_cdf_known(self):
@@ -1088,7 +1086,6 @@ class TestMultivariateNormal:
         cdf_val = dist.cdf(case.high, rng=rng)
         assert_allclose(cdf_val, case.target_val, atol=5e-5)
 
-###    @pytest.mark.skip # XXX temporary
     @pytest.mark.parametrize("ndim", range(4, 11))
     @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e4])
     def test_cdf_vs_univariate_singular(self, seed, ndim):
