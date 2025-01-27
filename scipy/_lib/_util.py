@@ -13,6 +13,7 @@ from typing import Literal, TypeAlias, TypeVar
 import numpy as np
 from scipy._lib._array_api import Array, array_namespace, is_numpy, xp_size
 from scipy._lib._docscrape import FunctionDoc, Parameter
+from scipy._lib._sparse import issparse
 import scipy._lib.array_api_extra as xpx
 
 
@@ -526,8 +527,7 @@ def _asarray_validated(a, check_finite=True,
 
     """
     if not sparse_ok:
-        import scipy.sparse
-        if scipy.sparse.issparse(a):
+        if issparse(a):
             msg = ('Sparse arrays/matrices are not supported by this function. '
                    'Perhaps one of the `scipy.sparse.linalg` functions '
                    'would work instead.')

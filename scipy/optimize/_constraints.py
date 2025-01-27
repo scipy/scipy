@@ -1,11 +1,15 @@
 """Constraints definition for minimize."""
-import numpy as np
-from ._hessian_update_strategy import BFGS
-from ._differentiable_functions import (
-    VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-from ._optimize import OptimizeWarning
 from warnings import warn, catch_warnings, simplefilter, filterwarnings
-from scipy.sparse import issparse
+
+import numpy as np
+
+from ._differentiable_functions import (
+    VectorFunction, LinearVectorFunction, IdentityVectorFunction
+)
+from ._hessian_update_strategy import BFGS
+from ._optimize import OptimizeWarning
+
+from scipy._lib._sparse import issparse
 
 
 def _arr_to_scalar(x):
