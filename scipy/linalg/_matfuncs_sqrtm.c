@@ -551,9 +551,9 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ret_data, int*
 
         // Check if array is upper triangular
         int isSchur = 1;
-        for (Py_ssize_t i = 1; i < n; i++)
+        for (Py_ssize_t i = 0; i < n - 1; i++)
         {
-            for (Py_ssize_t j = 0; j < i; j++)
+            for (Py_ssize_t j = i + 1; j < n; j++)
             {
                 if ((crealf(data[i*n + j]) != 0.0f) || (cimagf(data[i*n + j]) != 0.0f))
                 {
@@ -653,9 +653,9 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ret_data, int*
 
         // Check if array is upper triangular
         int isSchur = 1;
-        for (Py_ssize_t i = 1; i < n; i++)
+        for (Py_ssize_t i = 0; i < n - 1; i++)
         {
-            for (Py_ssize_t j = 0; j < i; j++)
+            for (Py_ssize_t j = i + 1; j < n; j++)
             {
                 if ((creal(data[i*n + j]) != 0.0f) || (cimag(data[i*n + j]) != 0.0f))
                 {
