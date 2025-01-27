@@ -1863,3 +1863,17 @@ class TestMixture:
         assert X.components[0] == components[0]
         X.weights[0] = weights[1]
         assert X.weights[0] == weights[0]
+
+    def test_inverse(self):
+        # Originally, inverse relied on the mean to start the bracket search.
+        # This didn't work for distributions with non-finite mean. Check that
+        # this is resolved.
+        rng = np.random.default_rng(24358934657854237863456)
+        Cauchy = stats.make_distribution(stats.cauchy)
+        X0 = Cauchy()
+        X = stats.Mixture([X0, X0])
+        p = rng.random(size=10)
+        np.testing.assert_allclose(X.icdf(p), X0.icdf(p))
+        np.testing.assert_allclose(X.iccdf(p), X0.iccdf(p))
+        np.testing.assert_allclose(X.ilogcdf(p), X0.ilogcdf(p))
+        np.testing.assert_allclose(X.ilogccdf(p), X0.ilogccdf(p))
