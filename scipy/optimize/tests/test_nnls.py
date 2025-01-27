@@ -4,6 +4,7 @@ from pytest import raises as assert_raises
 from scipy.optimize import nnls
 import pytest
 
+
 class TestNNLS:
     def setup_method(self):
         self.rng = np.random.default_rng(1685225766635251)
