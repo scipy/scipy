@@ -212,10 +212,10 @@ class TestCopheneticDistance:
              [9.0, 10.0, 1.0, 2.0],
              [11.0, 18.0, 1.0, 3.0],
              [13.0, 15.0, 2.0, 6.0],
-             [17.0, 20.0, 2.0, 32.26562500000164],
+             [17.0, 20.0, 2.0, 32.0],
              [19.0, 21.0, 2.0, 12.0]]
         with pytest.raises(ValueError, match="excessive observations"):
-            cophenet(arr)
+            cophenet(xp.asarray(arr))
 
 
 class TestMLabLinkageConversion:
