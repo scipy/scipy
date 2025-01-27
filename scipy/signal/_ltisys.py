@@ -3192,7 +3192,7 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     >>> butter = signal.dlti(*signal.butter(3, 0.5))
     >>> t, y = signal.dimpulse(butter, n=25)
-    >>> plt.step(t, np.squeeze(y))
+    >>> plt.step(t, np.squeeze(y), where='post')
     >>> plt.grid()
     >>> plt.xlabel('n [samples]')
     >>> plt.ylabel('Amplitude')
@@ -3279,7 +3279,7 @@ def dstep(system, x0=None, t=None, n=None):
 
     >>> butter = signal.dlti(*signal.butter(3, 0.5))
     >>> t, y = signal.dstep(butter, n=25)
-    >>> plt.step(t, np.squeeze(y))
+    >>> plt.step(t, np.squeeze(y), where='post')
     >>> plt.grid()
     >>> plt.xlabel('n [samples]')
     >>> plt.ylabel('Amplitude')
