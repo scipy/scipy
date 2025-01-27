@@ -1,14 +1,14 @@
 #include "_matfuncs_sqrtm.h"
 
-static int sqrtm_recursion_s(float* T, int bign, int n);
-static int sqrtm_recursion_d(double* T, int bign, int n);
-static int sqrtm_recursion_c(SCIPY_C* T, int bign, int n);
-static int sqrtm_recursion_z(SCIPY_Z* T, int bign, int n);
+static int sqrtm_recursion_s(float* T, npy_intp bign, npy_intp n);
+static int sqrtm_recursion_d(double* T, npy_intp bign, npy_intp n);
+static int sqrtm_recursion_c(SCIPY_C* T, npy_intp bign, npy_intp n);
+static int sqrtm_recursion_z(SCIPY_Z* T, npy_intp bign, npy_intp n);
 static inline void zebra_pattern_s(float* restrict data, const Py_ssize_t n) {for (Py_ssize_t i=n-1; i>=0; i--) { data[2*i] = data[i]; data[2*i + 1] = 0.0f; }}
 static inline void zebra_pattern_d(double* restrict data, const Py_ssize_t n) {for (Py_ssize_t i=n-1; i>=0; i--) { data[2*i] = data[i]; data[2*i + 1] = 0.0; }}
 
 void
-matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex)
+matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex)
 {
     float aa, bb, cc, dd, cs, sn;
     // Setting indicators to False.
@@ -25,7 +25,6 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
     // Input Array Attributes
     // --------------------------------------------------------------------
     float* restrict Am_data = (float*)PyArray_DATA(ap_Am);
-    float* restrict ret_data = (float*)PyArray_DATA(ap_ret);
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp n = shape[ndim - 1];                // Slice size
@@ -256,8 +255,9 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
             {
                 // Apply the Schur decomposition, use the return array, current
                 // slice as scratch space for the matrix multiplication.
-                sgemm_("N", "N", &intn, &intn, &intn, &one, vs, &intn, data, &intn, &zero, &ret_data[idx*n*n], &intn);
-                sgemm_("N", "T", &intn, &intn, &intn, &one, &ret_data[idx*n*n], &intn, vs, &intn, &zero, data, &intn);
+                int new_address = (upcasted_to_complex? 2*idx*n*n : idx*n*n);
+                sgemm_("N", "N", &intn, &intn, &intn, &one, vs, &intn, data, &intn, &zero, &ret_data[new_address], &intn);
+                sgemm_("N", "T", &intn, &intn, &intn, &one, &ret_data[new_address], &intn, vs, &intn, &zero, data, &intn);
             }
         }
 
@@ -274,8 +274,8 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
                 // avoid doing this multiple times.
                 *view_as_complex = 1;
 
-                // Introduce zebra pattern until current slice (idx+1)*n*n by going
-                // backwards.
+                // Introduce zebra pattern until end of current slice, (idx+1)*n*n
+                // by going backwards.
                 zebra_pattern_s(ret_data, n*n*(idx + 1));
                 // Avoid doing this multiple times
                 upcasted_to_complex = 1;
@@ -283,8 +283,18 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
             // Copy the complex result to the return array in C layout
             swap_cf_c(complex_data, &((SCIPY_C*)ret_data)[idx*n*n], n, n, n);
         } else {
-            // Copy the real result to the return array in C layout
-            swap_cf_s(data, &ret_data[idx*n*n], n, n, n);
+
+            // Copy the real result to the return array in C layout somewhere
+            // depending on whether the return array was upcasted to complex
+            // previously.
+            swap_cf_s(data, &ret_data[(upcasted_to_complex? 2*idx*n*n : idx*n*n)], n, n, n);
+
+            // If the return array was upcasted to complex previously, we
+            // need to add the zebra pattern for the current real slice which
+            // is now living at idx*(2*n*n).
+            if (upcasted_to_complex) {
+                zebra_pattern_s(&ret_data[idx*2*n*n], n*n);
+            }
         }
     }
     /*====================================================================
@@ -296,7 +306,7 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
 
 
 void
-matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex)
+matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex)
 {
     double aa, bb, cc, dd, cs, sn;
     *view_as_complex = 0;
@@ -306,7 +316,6 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
     int upcasted_to_complex = 0;
 
     double* restrict Am_data = (double*)PyArray_DATA(ap_Am);
-    double* restrict ret_data = (double*)PyArray_DATA(ap_ret);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp* shape = PyArray_SHAPE(ap_Am);
     npy_intp n = shape[ndim - 1];
@@ -463,8 +472,9 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
             info = sqrtm_recursion_d(data, n, n);
             if (!isSchur)
             {
-                dgemm_("N", "N", &intn, &intn, &intn, &one, vs, &intn, data, &intn, &zero, &ret_data[idx*n*n], &intn);
-                dgemm_("N", "T", &intn, &intn, &intn, &one, &ret_data[idx*n*n], &intn, vs, &intn, &zero, data, &intn);
+                int new_address = (upcasted_to_complex? 2*idx*n*n : idx*n*n);
+                dgemm_("N", "N", &intn, &intn, &intn, &one, vs, &intn, data, &intn, &zero, &ret_data[new_address], &intn);
+                dgemm_("N", "T", &intn, &intn, &intn, &one, &ret_data[new_address], &intn, vs, &intn, &zero, data, &intn);
             }
         }
 
@@ -479,7 +489,8 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
             }
             swap_cf_z(complex_data, &((SCIPY_Z*)ret_data)[idx*n*n], n, n, n);
         } else {
-            swap_cf_d(data, &ret_data[idx*n*n], n, n, n);
+            swap_cf_d(data, &ret_data[(upcasted_to_complex? 2*idx*n*n : idx*n*n)], n, n, n);
+            if (upcasted_to_complex) { zebra_pattern_d(&ret_data[2*idx*n*n], n*n); }
         }
     }
     free(buffer);
@@ -488,14 +499,13 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
 
 
 void
-matrix_squareroot_c(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused)
+matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ret_data, int* isIllconditioned, int* isSingular, int* sq_info, int* unused)
 {
 
     *isIllconditioned = 0;
     *isSingular = 0;
 
     SCIPY_C* restrict Am_data = (SCIPY_C*)PyArray_DATA(ap_Am);
-    SCIPY_C* restrict ret_data = (SCIPY_C*)PyArray_DATA(ap_ret);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp* shape = PyArray_SHAPE(ap_Am);
     npy_intp n = shape[ndim - 1];
@@ -591,14 +601,13 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
 
 
 void
-matrix_squareroot_z(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused)
+matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ret_data, int* isIllconditioned, int* isSingular, int* sq_info, int* unused)
 {
 
     *isIllconditioned = 0;
     *isSingular = 0;
 
     SCIPY_Z* restrict Am_data = (SCIPY_Z*)PyArray_DATA(ap_Am);
-    SCIPY_Z* restrict ret_data = (SCIPY_Z*)PyArray_DATA(ap_ret);
     int ndim = PyArray_NDIM(ap_Am);
     npy_intp* shape = PyArray_SHAPE(ap_Am);
     npy_intp n = shape[ndim - 1];
@@ -713,9 +722,9 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int
  *
  */
 int
-sqrtm_recursion_s(float* T, int bign, int n)
+sqrtm_recursion_s(float* T, npy_intp bign, npy_intp n)
 {
-    int i, i1 = 0, i2 = 0, info = 0, j, halfn, otherhalfn, int1 = 1;
+    int i, i1 = 0, i2 = 0, info = 0, j, halfn, otherhalfn, int1 = 1, intbign = (int)bign;
     float scale = 0.0, a, b, c, d, alpha, theta, mu;
     if (n == 1)
     {
@@ -754,10 +763,10 @@ sqrtm_recursion_s(float* T, int bign, int n)
         }
     } else {
         // Recursion
-        halfn = n / 2;
+        halfn = (int)(n / 2);
         // Don't split the 2x2 block, check if the entry under separation is zero
         if (T[(halfn-1)*bign + halfn] != 0.0) { halfn++; }
-        otherhalfn = n - halfn;
+        otherhalfn = (int)(n - halfn);
 
         // Top left block
         i1 = sqrtm_recursion_s(T, bign, halfn);
@@ -765,7 +774,7 @@ sqrtm_recursion_s(float* T, int bign, int n)
         i2 = sqrtm_recursion_s(&T[halfn*(bign + 1)], bign, otherhalfn);
 
         // Solve the Sylvester equation for the top right block
-        strsyl_("N", "N", &int1, &halfn, &otherhalfn, T, &bign, &T[halfn*(bign + 1)], &bign, &T[halfn*bign], &bign, &scale, &info);
+        strsyl_("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
         if (scale != 1.0)
         {
             for (i = 0; i < otherhalfn; i++)
@@ -788,9 +797,9 @@ sqrtm_recursion_s(float* T, int bign, int n)
 
 
 int
-sqrtm_recursion_d(double* T, int bign, int n)
+sqrtm_recursion_d(double* T, npy_intp bign, npy_intp n)
 {
-    int i, i1 = 0, i2 = 0, info = 0, j, halfn, otherhalfn, int1 = 1;
+    int i, i1 = 0, i2 = 0, info = 0, j, halfn, otherhalfn, int1 = 1, intbign = (int)bign;
     double scale = 0.0, a, b, c, d, alpha, theta, mu;
     if (n == 1)
     {
@@ -829,10 +838,10 @@ sqrtm_recursion_d(double* T, int bign, int n)
         }
     } else {
         // Recursion
-        halfn = n / 2;
+        halfn = (int)(n / 2);
         // Don't split the 2x2 block, check if the entry under separation is zero
         if (T[(halfn-1)*bign + halfn] != 0.0) { halfn++; }
-        otherhalfn = n - halfn;
+        otherhalfn = (int)(n - halfn);
 
         // Top left block
         i1 = sqrtm_recursion_d(T, bign, halfn);
@@ -840,7 +849,7 @@ sqrtm_recursion_d(double* T, int bign, int n)
         i2 = sqrtm_recursion_d(&T[halfn*(bign + 1)], bign, otherhalfn);
 
         // Solve the Sylvester equation for the top right block
-        dtrsyl_("N", "N", &int1, &halfn, &otherhalfn, T, &bign, &T[halfn*(bign + 1)], &bign, &T[halfn*bign], &bign, &scale, &info);
+        dtrsyl_("N", "N", &int1, &halfn, &otherhalfn, T, &intbign, &T[halfn*(intbign + 1)], &intbign, &T[halfn*intbign], &intbign, &scale, &info);
 
         if (scale != 1.0)
         {
@@ -864,9 +873,9 @@ sqrtm_recursion_d(double* T, int bign, int n)
 
 
 int
-sqrtm_recursion_c(SCIPY_C* T, int bign, int n)
+sqrtm_recursion_c(SCIPY_C* T, npy_intp bign, npy_intp n)
 {
-    int i, i1 = 0, i2 = 0, info = 0, j, halfn, otherhalfn, int1 = 1;
+    int i, i1 = 0, i2 = 0, info = 0, j, halfn, otherhalfn, int1 = 1, intbign = (int)bign;
     float scale = 0.0;
     if (n == 1)
     {
@@ -892,15 +901,15 @@ sqrtm_recursion_c(SCIPY_C* T, int bign, int n)
 #endif
         return 0;
     } else {
-        halfn = n / 2;
-        otherhalfn = n - halfn;
+        halfn = (int)(n / 2);
+        otherhalfn = (int)(n - halfn);
         SCIPY_C* T11 = T;
         SCIPY_C* T22 = &T[halfn*(bign + 1)];
         SCIPY_C* T12 = &T[halfn*bign];
         i1 = sqrtm_recursion_c(T11, bign, halfn);
         i2 = sqrtm_recursion_c(T22, bign, otherhalfn);
 
-        ctrsyl_("N", "N", &int1, &halfn, &otherhalfn, T11, &bign, T22, &bign, T12, &bign, &scale, &info);
+        ctrsyl_("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
         if (scale != 1.0)
         {
             for (i = 0; i < otherhalfn; i++)
@@ -908,9 +917,9 @@ sqrtm_recursion_c(SCIPY_C* T, int bign, int n)
                 for (j = 0; j < halfn; j++)
                 {
 #if defined(_MSC_VER)
-                    T[(halfn + i)*n + j] = _FCmulcr(T[(halfn + i)*n + j], scale);
+                    T[(halfn + i)*bign + j] = _FCmulcr(T[(halfn + i)*bign + j], scale);
 #else
-                    T[(halfn + i)*n + j] *= scale;
+                    T[(halfn + i)*bign + j] *= scale;
 #endif
                 }
             }
@@ -927,9 +936,9 @@ sqrtm_recursion_c(SCIPY_C* T, int bign, int n)
 
 
 int
-sqrtm_recursion_z(SCIPY_Z* T, int bign, int n)
+sqrtm_recursion_z(SCIPY_Z* T, npy_intp bign, npy_intp n)
 {
-    int i, i1 = 0, i2 = 0, info = 0, j, halfn, otherhalfn, int1 = 1;
+    int i, i1 = 0, i2 = 0, info = 0, j, halfn, otherhalfn, int1 = 1, intbign = (int)bign;
     double scale = 0.0;
     if (n == 1)
     {
@@ -955,14 +964,14 @@ sqrtm_recursion_z(SCIPY_Z* T, int bign, int n)
 #endif
         return 0;
     } else {
-        halfn = n / 2;
-        otherhalfn = n - halfn;
+        halfn = (int)(n / 2);
+        otherhalfn = (int)(n - halfn);
         SCIPY_Z* T11 = T;
         SCIPY_Z* T22 = &T[halfn*(bign + 1)];
         SCIPY_Z* T12 = &T[halfn*bign];
         i1 = sqrtm_recursion_z(T11, bign, halfn);
         i2 = sqrtm_recursion_z(T22, bign, otherhalfn);
-        ztrsyl_("N", "N", &int1, &halfn, &otherhalfn, T11, &bign, T22, &bign, T12, &bign, &scale, &info);
+        ztrsyl_("N", "N", &int1, &halfn, &otherhalfn, T11, &intbign, T22, &intbign, T12, &intbign, &scale, &info);
         if (scale != 1.0)
         {
             for (i = 0; i < otherhalfn; i++)
@@ -970,9 +979,9 @@ sqrtm_recursion_z(SCIPY_Z* T, int bign, int n)
                 for (j = 0; j < halfn; j++)
                 {
 #if defined(_MSC_VER)
-                    T[(halfn + i)*n + j] = _Cmulcr(T[(halfn + i)*n + j], scale);
+                    T[(halfn + i)*bign + j] = _Cmulcr(T[(halfn + i)*bign + j], scale);
 #else
-                    T[(halfn + i)*n + j] *= scale;
+                    T[(halfn + i)*bign + j] *= scale;
 #endif
                 }
             }
