@@ -1,9 +1,9 @@
-from abc import ABCMeta
+from abc import ABC
 
-__all__ = ["SparseBase", "issparse"]
+__all__ = ["SparseABC", "issparse"]
 
 
-class SparseBase(metaclass=ABCMeta):
+class SparseABC(ABC):
     pass
 
 
@@ -38,4 +38,4 @@ def issparse(x):
     >>> issparse(5)
     False
     """
-    return isinstance(x, SparseBase)
+    return isinstance(x, SparseABC)

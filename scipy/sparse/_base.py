@@ -5,7 +5,7 @@ import numpy as np
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis, getdtype)
-from scipy._lib._sparse import SparseBase, issparse
+from scipy._lib._sparse import SparseABC, issparse
 
 from ._matrix import spmatrix
 
@@ -59,7 +59,11 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class _spbase:
+# `_spbase` is a subclass of `SparseABC`.
+# This allows other submodules to check for instances of sparse subclasses
+# via `scipy._lib._sparse.issparse`, without introducing
+# an import dependency on `scipy.sparse`.
+class _spbase(SparseABC):
     """ This class provides a base class for all sparse arrays.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
@@ -1390,13 +1394,6 @@ class _spbase:
         return get_index_dtype(arrays,
                                maxval,
                                (check_contents and not isinstance(self, sparray)))
-
-
-# `_spbase`` is a "virtual subclass" of `SparseBase`.
-# This allows other submodules to check for sparse subclasses
-# via `scipy._lib._sparse.issparse`, without introducing
-# an import dependency on `scipy.sparse`.
-SparseBase.register(_spbase)
 
 
 class sparray:
