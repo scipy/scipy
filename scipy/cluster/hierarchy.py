@@ -2158,7 +2158,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     has been generated.
 
     The fourth column of `Z` represents the number of original observations
-    in a cluster, so a valid `Z[i, 3]` value may not exceed the number of
+    in a cluster, so a valid ``Z[i, 3]`` value may not exceed the number of
     original observations.
 
     Parameters
