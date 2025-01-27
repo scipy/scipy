@@ -2157,6 +2157,10 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     I.e., a cluster cannot join another cluster unless the cluster being joined
     has been generated.
 
+    The fourth column of `Z` represents the number of original observations
+    in a cluster, so a valid ``Z[i, 3]`` value may not exceed the number of
+    original observations.
+
     Parameters
     ----------
     Z : array_like
@@ -2244,6 +2248,9 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                 raise ValueError(f'Linkage {name_str}contains negative distances.')
             if xp.any(Z[:, 3] < 0):
                 raise ValueError(f'Linkage {name_str}contains negative counts.')
+            if xp.any(Z[:, 3] > (Z.shape[0] + 1)):
+                raise ValueError('Linkage matrix contains excessive observations'
+                                 'in a cluster')
         if _check_hierarchy_uses_cluster_before_formed(Z):
             raise ValueError(f'Linkage {name_str}uses non-singleton cluster before'
                              ' it is formed.')
