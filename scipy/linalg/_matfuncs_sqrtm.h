@@ -3,10 +3,10 @@
 
 #include "_common_array_utils.h"
 
-void matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex);
-void matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex);
-void matrix_squareroot_c(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused         );
-void matrix_squareroot_z(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused         );
+void matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex);
+void matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex);
+void matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused         );
+void matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused         );
 
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
@@ -30,8 +30,9 @@ are 0. It is expected to have this case caught by the caller.
 */
 static PyObject*
 recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
-    int isComplex = 0, isIllconditioned = 0, isSingular = 0, info;
+    int isComplex = 0, isIllconditioned = 0, isSingular = 0, info = 0;
     PyArrayObject *ap_Am=NULL;
+    void* mem_ret = NULL;
     // Get the input array
     if (!PyArg_ParseTuple(args, ("O!"), &PyArray_Type, (PyObject **)&ap_Am))
     {
@@ -52,59 +53,94 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
     int ndim = PyArray_NDIM(ap_Am);              // Number of dimensions
     npy_intp* shape = PyArray_SHAPE(ap_Am);      // Array shape
     npy_intp n = shape[ndim - 1];                // Slice size
+    int input_type = PyArray_TYPE(ap_Am);        // Data type enum value
     // Compare last two dimensions for squareness
     if (n != shape[ndim - 2])
     {
         PYERR(sqrtm_error, "Last two dimensions of the input must be the same.");
     }
 
-    npy_intp ret_dims[1] = {1};
-    for (int i = 0; i < ndim; i++) { ret_dims[0] *= shape[i]; }
-
     // Create the output array with the same shape as the input with twice the
     // number of entries to accomodate for potential complex-valued data from
     // real data which will be cast to complex e.g., "ret.asview(complex128)"
     // Example, (3, 3) -> (18), (4, 5, 5) -> (4, 50)
-    if ((PyArray_TYPE(ap_Am) == NPY_FLOAT32) || (PyArray_TYPE(ap_Am) == NPY_FLOAT64))
+    npy_intp ret_dims = 1;
+    for (int i = 0; i < ndim; i++) { ret_dims *= shape[i]; }
+    if ((input_type == NPY_FLOAT32) || (input_type == NPY_FLOAT64))
     {
-        ret_dims[0] *= 2;
+        ret_dims *= 2;
     }
 
-    // Create the return array
-    PyArrayObject* ap_ret = (PyArrayObject*)PyArray_ZEROS(1, ret_dims, PyArray_TYPE(ap_Am), 0);
-
-    switch (PyArray_TYPE(ap_Am))
+    if (PyArray_TYPE(ap_Am) == NPY_FLOAT32)
     {
-        case (NPY_FLOAT32):
-        {
-            matrix_squareroot_s(ap_Am, ap_ret, &isIllconditioned, &isSingular, &info, &isComplex);
-            break;
-        }
-        case (NPY_FLOAT64):
-        {
-            matrix_squareroot_d(ap_Am, ap_ret, &isIllconditioned, &isSingular, &info, &isComplex);
-            break;
-        }
-        case (NPY_COMPLEX64):
-        {
-            matrix_squareroot_c(ap_Am, ap_ret, &isIllconditioned, &isSingular, &info, &isComplex);
-            isComplex = 1;
-            break;
-        }
-        case (NPY_COMPLEX128):
-        {
-            matrix_squareroot_z(ap_Am, ap_ret, &isIllconditioned, &isSingular, &info, &isComplex);
-            isComplex = 1;
-            break;
-        }
-        default:
-        {
-            PYERR(sqrtm_error, "Unsupported data type.");
-        }
+        mem_ret = malloc(ret_dims*sizeof(float));
+        matrix_squareroot_s(ap_Am, (float*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+
+    } else if (PyArray_TYPE(ap_Am) == NPY_FLOAT64) {
+
+        mem_ret = malloc(ret_dims*sizeof(double));
+        matrix_squareroot_d(ap_Am, (double*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+
+    } else if (PyArray_TYPE(ap_Am) == NPY_COMPLEX64) {
+
+        mem_ret = malloc(ret_dims*sizeof(SCIPY_C));
+        matrix_squareroot_c(ap_Am, (SCIPY_C*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+        isComplex = 1;
+
+    } else if (PyArray_TYPE(ap_Am) == NPY_COMPLEX128) {
+
+        mem_ret = malloc(ret_dims*sizeof(SCIPY_Z));
+        matrix_squareroot_z(ap_Am, (SCIPY_Z*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+        isComplex = 1;
+
+    } else {
+        PYERR(sqrtm_error, "Unsupported data type.");
     }
 
-    // Return the result
-    return Py_BuildValue("Niiii",PyArray_Return(ap_ret), isComplex, isIllconditioned, isSingular, info);
+    if (info < 0)
+    {
+        // Internal failure memory or LAPACK error, fail and return the error code in info
+        free(mem_ret);
+        Py_INCREF(Py_None);
+        return Py_BuildValue("Niii", Py_None, isIllconditioned, isSingular, info);
+    }
+
+    if (!isComplex)
+    {
+        void* mem_ret_half = realloc(mem_ret, n*n*ret_dims/2);
+        if (!mem_ret_half) { PYERR(sqrtm_error, "Memory reallocation failed."); }
+        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(
+            ndim,
+            shape,
+            (input_type == NPY_FLOAT32 ? NPY_FLOAT32 : NPY_FLOAT64),
+            mem_ret_half
+        );
+        // Return the result
+        return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
+
+    } else if ((PyArray_TYPE(ap_Am) == NPY_FLOAT32) || (PyArray_TYPE(ap_Am) == NPY_FLOAT64)) {
+        // Input was real, result is complex, then view the result as complex
+        int new_type = (PyArray_TYPE(ap_Am) == NPY_FLOAT32 ? NPY_COMPLEX64 : NPY_COMPLEX128);
+        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(
+            ndim,
+            shape,
+            new_type,
+            mem_ret
+        );
+        return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
+
+    } else {
+        // Input was complex, result is complex, only reshape
+        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(
+            ndim,
+            shape,
+            PyArray_TYPE(ap_Am),
+            mem_ret
+        );
+        // Return the result
+        return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
+    }
+
 }
 
 static struct PyMethodDef sqrtm_module_methods[] = {
