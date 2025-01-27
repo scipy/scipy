@@ -3,8 +3,10 @@
 
 #include "_common_array_utils.h"
 
-void matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* view_as_complex, int* isIllconditioned, int* isSingular, int* sq_info);
-void matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* view_as_complex, int* isIllconditioned, int* isSingular, int* sq_info);
+void matrix_squareroot_s(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex);
+void matrix_squareroot_d(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* view_as_complex);
+void matrix_squareroot_c(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused         );
+void matrix_squareroot_z(const PyArrayObject* ap_Am, const PyArrayObject* ap_ret, int* isIllconditioned, int* isSingular, int* sq_info, int* unused         );
 
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
@@ -75,24 +77,26 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
     {
         case (NPY_FLOAT32):
         {
-            matrix_squareroot_s(ap_Am, ap_ret, &isComplex, &isIllconditioned, &isSingular, &info);
+            matrix_squareroot_s(ap_Am, ap_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+            break;
         }
-        break;
         case (NPY_FLOAT64):
         {
-            matrix_squareroot_d(ap_Am, ap_ret, &isComplex, &isIllconditioned, &isSingular, &info);
+            matrix_squareroot_d(ap_Am, ap_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+            break;
         }
-        break;
-/*
         case (NPY_COMPLEX64):
         {
-            matrix_squareroot_c(ap_Am, ap_ret, &isComplex, &isIllconditioned, &isSingular);
+            matrix_squareroot_c(ap_Am, ap_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+            isComplex = 1;
+            break;
         }
         case (NPY_COMPLEX128):
         {
-            matrix_squareroot_z(ap_Am, ap_ret, &isComplex, &isIllconditioned, &isSingular);
+            matrix_squareroot_z(ap_Am, ap_ret, &isIllconditioned, &isSingular, &info, &isComplex);
+            isComplex = 1;
+            break;
         }
-*/
         default:
         {
             PYERR(sqrtm_error, "Unsupported data type.");
