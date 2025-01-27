@@ -1,4 +1,5 @@
 cimport scipy.special._ufuncs_cxx
+cimport scipy.special._ellip_harm_2
 import scipy.special._special_ufuncs
 import scipy.special._gufuncs
 import numpy as np
@@ -169,6 +170,7 @@ def seterr(**kwargs):
         scipy.special._ufuncs_cxx._set_action(code, action)
         scipy.special._special_ufuncs._set_action(code, action)
         scipy.special._gufuncs._set_action(code, action)
+        scipy.special._ellip_harm_2._set_action(code, action)
 
     return olderr
 
