@@ -9,8 +9,7 @@ _nnls_dep_message = ("The 'atol' parameter is deprecated and will be removed in 
                      "SciPy 1.18.0. It is not used in the implementation.")
 
 @_deprecate_positional_args(version='1.18.0',
-                            deprecated_args={'atol'},
-                            custom_message=_nnls_dep_message)
+                            deprecated_args={'atol'})
 def nnls(A, b, *, maxiter=None, atol=_NoValue):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
