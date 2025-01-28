@@ -304,6 +304,7 @@ subroutine <prefix2>stemr(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz
     integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
     integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
     integer intent(hide) :: tryrac = 1
+    integer depend(n),optional,intent(in),check(lwork>=(compute_v?18*n:12*n)) :: lwork = max((compute_v?18*n:12*n),1)
     <ftype2> dimension(lwork),depend(lwork),intent(hide) :: work
     integer depend(n),optional,intent(in),check(liwork>=(compute_v?10*n:8*n)) :: liwork = (compute_v?10*n:8*n)
     integer dimension(liwork),depend(liwork),intent(hide) :: iwork
