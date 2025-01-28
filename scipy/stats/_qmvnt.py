@@ -38,8 +38,7 @@ from scipy.fft import fft, ifft
 from scipy.special import ndtr as phi, ndtri as phinv
 from scipy.stats._qmc import primes_from_2_to
 
-from ._qmvnt_pythran import _qmvt_inner
-from ._qmvnt_cy import _qmvn_inner
+from ._qmvnt_cy import _qmvn_inner, _qmvt_inner
 
 
 def _factorize_int(n):
