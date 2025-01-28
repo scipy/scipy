@@ -1789,7 +1789,7 @@ cdef class RigidTransformation:
                 [0., 0., 1., 0.],
                 [0., 0., 0., 1.]]])
         """
-        r_inv = np.linalg.inv(self._matrix[:, :3, :3])
+        r_inv = np.swapaxes(self._matrix[:, :3, :3], 1, 2)  # Transpose to invert
         # This einsum performs element-wise matrix multiplication
         t_inv = -np.einsum('ijk,ik->ij', r_inv, self._matrix[:, :3, 3])
 
