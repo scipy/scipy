@@ -151,12 +151,12 @@ def array_namespace(*arrays: Array) -> ModuleType:
         # here we could wrap the namespace if needed
         return np_compat
 
-    arrays = list(_compliance_scipy(arrays))
+    api_arrays = list(_compliance_scipy(arrays))
     # In case of a mix of array API compliant arrays and scalars, return
     # the array API namespace. If there are only ArrayLikes (e.g. lists),
     # return NumPy (wrapped by array-api-compat).
-    if arrays:
-        return array_api_compat.array_namespace(*arrays)
+    if api_arrays:
+        return array_api_compat.array_namespace(*api_arrays)
     return np_compat
 
 
