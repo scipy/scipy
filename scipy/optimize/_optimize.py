@@ -939,8 +939,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         if disp:
             print(msg)
             print(f"         Current function value: {fval:f}")
-            print("         Iterations: %d" % iterations)
-            print("         Function evaluations: %d" % fcalls[0])
+            print(f"         Iterations: {iterations:d}")
+            print(f"         Function evaluations: {fcalls[0]:d}")
 
     result = OptimizeResult(fun=fval, nit=iterations, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
@@ -1489,9 +1489,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if disp:
         _print_success_message_or_warn(warnflag, msg)
         print(f"         Current function value: {fval:f}")
-        print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % sf.nfev)
-        print("         Gradient evaluations: %d" % sf.ngev)
+        print(f"         Iterations: {k:d}")
+        print(f"         Function evaluations: {sf.nfev:d}")
+        print(f"         Gradient evaluations: {sf.ngev:d}")
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,
@@ -1833,9 +1833,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     if disp:
         _print_success_message_or_warn(warnflag, msg)
         print(f"         Current function value: {fval:f}")
-        print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % sf.nfev)
-        print("         Gradient evaluations: %d" % sf.ngev)
+        print(f"         Iterations: {k:d}")
+        print(f"         Function evaluations: {sf.nfev:d}")
+        print(f"         Gradient evaluations: {sf.ngev:d}")
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,
@@ -2036,10 +2036,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if disp:
             _print_success_message_or_warn(warnflag, msg)
             print(f"         Current function value: {old_fval:f}")
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % sf.nfev)
-            print("         Gradient evaluations: %d" % sf.ngev)
-            print("         Hessian evaluations: %d" % hcalls)
+            print(f"         Iterations: {k:d}")
+            print(f"         Function evaluations: {sf.nfev:d}")
+            print(f"         Gradient evaluations: {sf.ngev:d}")
+            print(f"         Hessian evaluations: {hcalls:d}")
         fval = old_fval
         result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
                                 njev=sf.ngev, nhev=hcalls, status=warnflag,
@@ -3604,8 +3604,8 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     if disp:
         _print_success_message_or_warn(warnflag, msg, RuntimeWarning)
         print(f"         Current function value: {fval:f}")
-        print("         Iterations: %d" % iter)
-        print("         Function evaluations: %d" % fcalls[0])
+        print(f"         Iterations: {iter:d}")
+        print(f"         Function evaluations: {fcalls[0]:d}")
     result = OptimizeResult(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
                             message=msg, x=x)

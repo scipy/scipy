@@ -124,6 +124,7 @@ python_sources = [
   '_gcutils.py',
   '_lazy_testing.py',
   '_pep440.py',
+  '_sparse.py',
   '_testutils.py',
   '_threadsafety.py',
   '_tmpdirs.py',

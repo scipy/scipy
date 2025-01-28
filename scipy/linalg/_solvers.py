@@ -108,8 +108,7 @@ def solve_sylvester(a, b, q):
     y = scale*y
 
     if info < 0:
-        raise LinAlgError("Illegal value encountered in "
-                          "the %d term" % (-info,))
+        raise LinAlgError(f"Illegal value encountered in the {-info} term")
 
     return np.dot(np.dot(u, y), v.conj().transpose())
 

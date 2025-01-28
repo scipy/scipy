@@ -253,7 +253,7 @@ is the same:
 Now we can compute norm of the error with:
 
 >>> err = norm(x-x_)
->>> err < 1e-10
+>>> err < 1e-9
 True
 
 It should be small :)

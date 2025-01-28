@@ -969,7 +969,7 @@ class TestCubatureProblems:
 
     @skip_xp_backends(
         "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
+        reason="transforms make use of indexing assignment",
     )
     @skip_xp_backends(
         "dask.array",
@@ -1123,7 +1123,7 @@ class TestCubatureProblems:
 
     @skip_xp_backends(
         "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
+        reason="transforms make use of indexing assignment",
     )
     @skip_xp_backends(
         "dask.array",
@@ -1334,7 +1334,7 @@ class TestRulesCubature:
 
 @skip_xp_backends(
     "jax.numpy",
-    reasons=["transforms make use of indexing assignment"],
+    reason="transforms make use of indexing assignment",
 )
 @skip_xp_backends(
     "dask.array",

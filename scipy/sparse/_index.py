@@ -315,12 +315,12 @@ class IndexMixin:
         # Check bounds
         max_indx = x.max()
         if max_indx >= length:
-            raise IndexError('index (%d) out of range' % max_indx)
+            raise IndexError(f'index ({max_indx}) out of range')
 
         min_indx = x.min()
         if min_indx < 0:
             if min_indx < -length:
-                raise IndexError('index (%d) out of range' % min_indx)
+                raise IndexError(f'index ({min_indx}) out of range')
             if x is idx or not x.flags.owndata:
                 x = x.copy()
             x[x < 0] += length
@@ -332,7 +332,7 @@ class IndexMixin:
         M, N = self.shape
         i = int(i)
         if i < -M or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         if i < 0:
             i += M
         return self._get_intXslice(i, slice(None))
@@ -343,7 +343,7 @@ class IndexMixin:
         M, N = self.shape
         i = int(i)
         if i < -N or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         if i < 0:
             i += N
         return self._get_sliceXint(slice(None), i)

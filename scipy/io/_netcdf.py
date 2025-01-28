@@ -682,8 +682,8 @@ class netcdf_file:
                     actual_size = reduce(mul, (1,) + shape[1:]) * size
                     padding = -actual_size % 4
                     if padding:
-                        dtypes['names'].append('_padding_%d' % var)
-                        dtypes['formats'].append('(%d,)>b' % padding)
+                        dtypes['names'].append(f'_padding_{var}')
+                        dtypes['formats'].append(f'({padding},)>b')
 
                 # Data will be set later.
                 data = None

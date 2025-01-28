@@ -1439,7 +1439,6 @@ class TestResample:
         y = signal.resample(x, ny)
         xp_assert_close(y, np.asarray([1] * ny, dtype=y.dtype))
 
-    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_mutable_window(self, padtype, xp):
         # Test that a mutable window is not modified
@@ -2841,8 +2840,9 @@ def filtfilt_gust_opt(b, a, x):
                   full_output=True, disp=False)
     opt, fopt, niter, funcalls, warnflag = result
     if warnflag > 0:
-        raise RuntimeError("minimization failed in filtfilt_gust_opt: "
-                           "warnflag=%d" % warnflag)
+        raise RuntimeError(
+            f"minimization failed in filtfilt_gust_opt: warnflag={warnflag}"
+        )
     z0f = opt[:m]
     z0b = opt[m:]
 

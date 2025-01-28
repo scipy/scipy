@@ -1451,19 +1451,19 @@ def to_tree(Z, rd=False):
         fi = int_floor(row[0], xp)
         fj = int_floor(row[1], xp)
         if fi > i + n:
-            raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 0') % fi)
+            raise ValueError('Corrupt matrix Z. Index to derivative cluster '
+                              f'is used before it is formed. See row {fi}, '
+                              'column 0')
         if fj > i + n:
-            raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 1') % fj)
+            raise ValueError('Corrupt matrix Z. Index to derivative cluster '
+                              f'is used before it is formed. See row {fj}, '
+                              'column 1')
 
         nd = ClusterNode(i + n, d[fi], d[fj], row[2])
         #                ^ id   ^ left ^ right ^ dist
         if row[3] != nd.count:
-            raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '
-                              'incorrect.') % i)
+            raise ValueError(f'Corrupt matrix Z. The count Z[{i},3] is '
+                              'incorrect.')
         d[n + i] = nd
 
     if rd:
@@ -2157,6 +2157,10 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     I.e., a cluster cannot join another cluster unless the cluster being joined
     has been generated.
 
+    The fourth column of `Z` represents the number of original observations
+    in a cluster, so a valid ``Z[i, 3]`` value may not exceed the number of
+    original observations.
+
     Parameters
     ----------
     Z : array_like
@@ -2244,6 +2248,9 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                 raise ValueError(f'Linkage {name_str}contains negative distances.')
             if xp.any(Z[:, 3] < 0):
                 raise ValueError(f'Linkage {name_str}contains negative counts.')
+            if xp.any(Z[:, 3] > (Z.shape[0] + 1)):
+                raise ValueError('Linkage matrix contains excessive observations'
+                                 'in a cluster')
         if _check_hierarchy_uses_cluster_before_formed(Z):
             raise ValueError(f'Linkage {name_str}uses non-singleton cluster before'
                              ' it is formed.')
@@ -4165,7 +4172,7 @@ def leaders(Z, T):
     T = np.asarray(T, dtype=np.int32)
     s = _hierarchy.leaders(Z, T, L, M, n_clusters, n_obs)
     if s >= 0:
-        raise ValueError(('T is not a valid assignment vector. Error found '
-                          'when examining linkage node %d (< 2n-1).') % s)
+        raise ValueError('T is not a valid assignment vector. Error found '
+                          f'when examining linkage node {s} (< 2n-1).')
     L, M = xp.asarray(L), xp.asarray(M)
     return (L, M)

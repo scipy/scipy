@@ -554,6 +554,7 @@ cdef class Rotation:
     - Rotation Vectors
     - Modified Rodrigues Parameters
     - Euler Angles
+    - Davenport Angles (Generalized Euler Angles)
 
     The following operations on rotations are supported:
 

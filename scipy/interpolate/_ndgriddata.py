@@ -328,5 +328,6 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
                                         rescale=rescale)
         return ip(xi)
     else:
-        raise ValueError("Unknown interpolation method %r for "
-                         "%d dimensional data" % (method, ndim))
+        raise ValueError(
+            f"Unknown interpolation method {method!r} for {ndim} dimensional data"
+        )

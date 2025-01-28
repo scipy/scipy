@@ -501,8 +501,7 @@ def test_invpascal():
         # precision when n is greater than 18.  Instead we'll cast both to
         # object arrays, and then multiply.
         e = ip.astype(object).dot(p.astype(object))
-        assert_array_equal(e, eye(n), err_msg="n=%d  kind=%r exact=%r" %
-                                              (n, kind, exact))
+        assert_array_equal(e, eye(n), err_msg=f"n={n}  kind={kind!r} exact={exact!r}")
 
     kinds = ['symmetric', 'lower', 'upper']
 

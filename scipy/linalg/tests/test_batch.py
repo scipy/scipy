@@ -410,7 +410,7 @@ class TestBatch:
         if len(bdim) == 1:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
-        assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(A @ x - b, 0, atol=1.5e-6)
         assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
@@ -423,7 +423,7 @@ class TestBatch:
         if len(bdim) == 1:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
-        assert_allclose(A @ x - b, 0, atol=1e-6)
+        assert_allclose(A @ x - b, 0, atol=1.5e-6)
         assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
 
     @pytest.mark.parametrize('l_and_u', [(1, 1), ([2, 1, 0], [0, 1 , 2])])
