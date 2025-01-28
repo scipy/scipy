@@ -59,7 +59,8 @@ ArrayLike: TypeAlias = Array | npt.ArrayLike
 
 
 def _compliance_scipy(arrays: Iterable[ArrayLike]) -> Iterator[Array]:
-    """Raise exceptions on known-bad subclasses and discard ArrayLike objects.
+    """Raise exceptions on known-bad subclasses. Discard 0-dimensional ArrayLikes
+    and convert 1+-dimensional ArrayLikes to numpy.
 
     The following subclasses are not supported and raise and error:
     - `numpy.ma.MaskedArray`
@@ -106,8 +107,11 @@ def _compliance_scipy(arrays: Iterable[ArrayLike]) -> Iterator[Array]:
                     f"only boolean and numerical dtypes are supported."
                 )
                 raise TypeError(message)
-            # Discard array. If there are no actual arrays in the input, the namespace
-            # will default to NumPy.
+            # Ignore 0-dimensional arrays, coherently with array-api-compat.
+            # Raise if there are 1+-dimensional array-likes mixed with non-numpy
+            # Array API objects.
+            if array.ndim:
+                yield array
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
@@ -147,12 +151,12 @@ def array_namespace(*arrays: Array) -> ModuleType:
         # here we could wrap the namespace if needed
         return np_compat
 
-    api_arrays = list(_compliance_scipy(arrays))
+    arrays = list(_compliance_scipy(arrays))
     # In case of a mix of array API compliant arrays and scalars, return
     # the array API namespace. If there are only ArrayLikes (e.g. lists),
     # return NumPy (wrapped by array-api-compat).
-    if api_arrays:
-        return array_api_compat.array_namespace(*api_arrays)
+    if arrays:
+        return array_api_compat.array_namespace(*arrays)
     return np_compat
 
 

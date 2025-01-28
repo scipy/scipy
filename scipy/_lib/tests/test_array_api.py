@@ -59,22 +59,35 @@ class TestArrayAPI:
         assert array_namespace((0, 1, 2)) is xp
         assert array_namespace(1, 2, 3) is xp
         assert array_namespace(1) is xp
+        assert array_namespace(np.int64(1)) is xp
         assert array_namespace([0, 1, 2], 3) is xp
         assert array_namespace() is xp
         assert array_namespace(None) is xp
         assert array_namespace(1, None) is xp
         assert array_namespace(None, 1) is xp
 
+        # This only works when xp is numpy!
+        assert array_namespace(np.asarray([1, 2]), [3, 4]) is xp
+        assert array_namespace(np.int64(1), [3, 4]) is xp
+
     def test_array_and_array_likes_mix(self, xp):
         """Test that if there is at least one Array API object among
-        the parameters of array_namespace, the output is its namespace
+        the parameters of array_namespace, and all other parameters
+        are scalars, the output is its namespace.
+
+        If there are non-scalar Array-Likes, raise as in array-api-compat.
         """
         x = xp.asarray(1)
         assert array_namespace(x) is xp
         assert array_namespace(x, 1) is xp
         assert array_namespace(1, x) is xp
-        assert array_namespace(x, [1, 2]) is xp
         assert array_namespace(None, x) is xp
+
+        if not is_numpy(xp):
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                array_namespace(x, [1, 2])
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                array_namespace(x, np.int64(1))
 
     def test_array_api_extra_hook(self):
         """Test that the `array_namespace` function used by
