@@ -112,6 +112,12 @@ class TestBatch:
     @pytest.mark.parametrize('dtype', floating)
     def test_matmat(self, fun, dtype, rng):  # matrix in, matrix out
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+
+        # sqrtm can return complex output for real input resulting in i/o type
+        # mismatch. Nudge the eigenvalues to positive side to avoid this.
+        if fun == linalg.sqrtm:
+            A = A + 3*np.eye(4, dtype=dtype)
+
         self.batch_test(fun, A)
 
     @pytest.mark.parametrize('dtype', floating)

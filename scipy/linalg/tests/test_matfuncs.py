@@ -5,7 +5,7 @@
 
 """
 import functools
-
+import warnings
 import numpy as np
 from numpy import array, identity, dot, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
@@ -20,7 +20,7 @@ from scipy.linalg import _matfuncs_inv_ssq
 from scipy.linalg._matfuncs import pick_pade_structure
 from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
 import scipy.linalg._expm_frechet
-
+from scipy.linalg import LinAlgWarning
 from scipy.optimize import minimize
 
 
@@ -130,12 +130,12 @@ class TestLogM:
                 err_msg = f'M:{M} eivals:{W}'
 
                 # Check sqrtm round trip because it is used within logm.
-                M_sqrtm, info = sqrtm(M, disp=False)
+                M_sqrtm = sqrtm(M)
                 M_sqrtm_round_trip = M_sqrtm.dot(M_sqrtm)
                 assert_allclose(M_sqrtm_round_trip, M)
 
                 # Check logm round trip.
-                M_logm, info = logm(M, disp=False)
+                M_logm = logm(M)
                 M_logm_round_trip = expm(M_logm)
                 assert_allclose(M_logm_round_trip, M, err_msg=err_msg)
 
@@ -270,7 +270,7 @@ class TestSqrtM:
             M_unscaled = rng.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
-                M_sqrtm, info = sqrtm(M, disp=False)
+                M_sqrtm = sqrtm(M)
                 M_sqrtm_round_trip = M_sqrtm.dot(M_sqrtm)
                 assert_allclose(M_sqrtm_round_trip, M)
 
@@ -280,7 +280,7 @@ class TestSqrtM:
             M_unscaled = rng.randn(n, n) + 1j * rng.randn(n, n)
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
-                M_sqrtm, info = sqrtm(M, disp=False)
+                M_sqrtm = sqrtm(M)
                 M_sqrtm_round_trip = M_sqrtm.dot(M_sqrtm)
                 assert_allclose(M_sqrtm_round_trip, M)
 
@@ -387,6 +387,11 @@ class TestSqrtM:
             A_sqrtm, info = sqrtm(A, disp=False)
             assert_(np.isnan(A_sqrtm).all())
 
+    # Future edit: This squareroot is not possible to find algorithmically
+    # with the current methods. Now sqrtm docstring has another example of
+    # such matrix whose squareroot is not a polynomial in it. Hence no need
+    # to test it here.
+    """
     def test_weird_matrix(self):
         # The square root of matrix B exists.
         for dt in int, float:
@@ -398,18 +403,12 @@ class TestSqrtM:
                 [0, 1, 0],
                 [0, 0, 0],
                 [0, 0, 0]], dtype=dt)
-            assert_array_equal(B, A.dot(A))
+            assert_array_equal(B, A @ A)
 
             # But scipy sqrtm is not clever enough to find it.
             B_sqrtm, info = sqrtm(B, disp=False)
             assert_(np.isnan(B_sqrtm).all())
-
-    def test_disp(self):
-        np.random.seed(1234)
-
-        A = np.random.rand(3, 3)
-        B = sqrtm(A, disp=True)
-        assert_allclose(B.dot(B), A)
+    """
 
     def test_opposite_sign_complex_eigenvalues(self):
         M = [[2j, 4], [0, -2j]]
@@ -426,20 +425,26 @@ class TestSqrtM:
                       [0, 0, 0, 0],
                       [0, 0, 0, 0],
                       [sqrt(0.5), 0, 0, sqrt(0.5)]])
-        assert_allclose(np.dot(R, R), M, atol=1e-14)
-        assert_allclose(sqrtm(M), R, atol=1e-14)
+        assert_allclose(R @ R, M, atol=1e-14)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', LinAlgWarning)
+            assert_allclose(sqrtm(M), R, atol=1e-14)
 
     def test_gh5336(self):
         M = np.diag([2, 1, 0])
         R = np.diag([sqrt(2), 1, 0])
-        assert_allclose(np.dot(R, R), M, atol=1e-14)
-        assert_allclose(sqrtm(M), R, atol=1e-14)
+        assert_allclose(R @ R, M, atol=1e-14)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', LinAlgWarning)
+            assert_allclose(sqrtm(M), R, atol=1e-14)
 
     def test_gh7839(self):
         M = np.zeros((2, 2))
         R = np.zeros((2, 2))
-        assert_allclose(np.dot(R, R), M, atol=1e-14)
-        assert_allclose(sqrtm(M), R, atol=1e-14)
+        # Catch and silence LinAlgWarning
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', LinAlgWarning)
+            assert_allclose(sqrtm(M), R, atol=1e-14)
 
     @pytest.mark.xfail(reason="failing on macOS after gh-20212")
     def test_gh17918(self):
@@ -449,23 +454,23 @@ class TestSqrtM:
         assert np.isrealobj(sqrtm(M))
 
     def test_data_size_preservation_uint_in_float_out(self):
-        M = np.zeros((10, 10), dtype=np.uint8)
+        M = np.eye(10, dtype=np.uint8)
         assert sqrtm(M).dtype == np.float64
-        M = np.zeros((10, 10), dtype=np.uint16)
+        M = np.eye(10, dtype=np.uint16)
         assert sqrtm(M).dtype == np.float64
-        M = np.zeros((10, 10), dtype=np.uint32)
+        M = np.eye(10, dtype=np.uint32)
         assert sqrtm(M).dtype == np.float64
-        M = np.zeros((10, 10), dtype=np.uint64)
+        M = np.eye(10, dtype=np.uint64)
         assert sqrtm(M).dtype == np.float64
 
     def test_data_size_preservation_int_in_float_out(self):
-        M = np.zeros((10, 10), dtype=np.int8)
+        M = np.eye(10, dtype=np.int8)
         assert sqrtm(M).dtype == np.float64
-        M = np.zeros((10, 10), dtype=np.int16)
+        M = np.eye(10, dtype=np.int16)
         assert sqrtm(M).dtype == np.float64
-        M = np.zeros((10, 10), dtype=np.int32)
+        M = np.eye(10, dtype=np.int32)
         assert sqrtm(M).dtype == np.float64
-        M = np.zeros((10, 10), dtype=np.int64)
+        M = np.eye(10, dtype=np.int64)
         assert sqrtm(M).dtype == np.float64
 
     def test_data_size_preservation_int_in_comp_out(self):
@@ -479,14 +484,14 @@ class TestSqrtM:
         assert sqrtm(M).dtype == np.complex128
 
     def test_data_size_preservation_float_in_float_out(self):
-        M = np.zeros((10, 10), dtype=np.float16)
+        M = np.eye(10, dtype=np.float16)
         assert sqrtm(M).dtype == np.float32
-        M = np.zeros((10, 10), dtype=np.float32)
+        M = np.eye(10, dtype=np.float32)
         assert sqrtm(M).dtype == np.float32
-        M = np.zeros((10, 10), dtype=np.float64)
+        M = np.eye(10, dtype=np.float64)
         assert sqrtm(M).dtype == np.float64
         if hasattr(np, 'float128'):
-            M = np.zeros((10, 10), dtype=np.float128)
+            M = np.eye(10, dtype=np.float128)
             assert sqrtm(M).dtype == np.float64
 
     def test_data_size_preservation_float_in_comp_out(self):
@@ -596,7 +601,7 @@ class TestFractionalMatrixPower:
 
         # Test remainder matrix power.
         A_funm_sqrt, info = funm(A, np.sqrt, disp=False)
-        A_sqrtm, info = sqrtm(A, disp=False)
+        A_sqrtm = sqrtm(A)
         A_rem_power = _matfuncs_inv_ssq._remainder_matrix_power(A, 0.5)
         A_power = fractional_matrix_power(A, 0.5)
         assert_allclose(A_rem_power, A_power, rtol=1e-11)
