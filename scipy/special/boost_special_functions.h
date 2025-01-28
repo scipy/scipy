@@ -76,10 +76,36 @@ Real ibeta_wrap(Real a, Real b, Real x)
     if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
-    if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
+
+    if ((a < 0) || (b < 0) || (x < 0) || (x > 1)) {
         sf_error("betainc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
+
+    if ((a == 0) && (b == 0)) {
+	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
+	 * to a Bernoulli(p) distribution, where p depends on the path in
+	 * which (a, b) approaches (0+, 0+).
+	 * e.g. if a = t*b then the limiting distribution will be
+	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
+	 */
+        return NAN;
+    }
+
+    if (a == 0) {
+	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
+	 * at x = 0. Determinate for x in (0, 1] but indeterminate at x = 0.
+	 */
+	return x > 0 ? 1 : NAN;
+    }
+
+    if (b == 0) {
+	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
+	 * at x = 0. Determinate for x in [0, 1) but indeterminate at x = 1.
+	 */
+	return x < 1 ? 0 : NAN;
+    }
+
     try {
         y = boost::math::ibeta(a, b, x, SpecialPolicy());
     } catch (const std::domain_error& e) {
@@ -120,10 +146,36 @@ Real ibetac_wrap(Real a, Real b, Real x)
     if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
-    if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
+
+    if ((a < 0) || (b < 0) || (x < 0) || (x > 1)) {
         sf_error("betaincc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
+
+    if ((a == 0) && (b == 0)) {
+	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
+	 * to a Bernoulli(p) distribution, where p depends on the path in
+	 * which (a, b) approaches (0+, 0+).
+	 * e.g. if a = t*b then the limiting distribution will be
+	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
+	 */
+        return NAN;
+    }
+
+    if (a == 0) {
+	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
+	 * at x = 0. Determinate for x in (0, 1] but indeterminate at x = 0.
+	 */
+	return x > 0 ? 0 : NAN;
+    }
+
+    if (b == 0) {
+	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
+	 * at x = 0. Determinate for x in [0, 1) but indeterminate at x = 1.
+	 */
+	return x < 1 ? 1 : NAN;
+    }
+
     try {
         y = boost::math::ibetac(a, b, x);
     } catch (const std::domain_error& e) {
