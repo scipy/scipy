@@ -1046,10 +1046,9 @@ class TestMultivariateNormal:
         cov = a.T @ a
         dist = multivariate_normal(np.zeros(ndim), cov=cov)
 
-        npts = 1
-        x = rng.uniform(low=-3, high=3, size=(npts, ndim))
+        x = rng.uniform(low=-3, high=3, size=(ndim,))
         cdf = dist.cdf(x)
-        cdf_i = cubature(dist.pdf, [-np.inf]*ndim, x[j, ...]).estimate
+        cdf_i = cubature(dist.pdf, [-np.inf]*ndim, x).estimate
         assert_allclose(cdf, cdf_i, atol=5e-6)
 
     def test_cdf_known(self):
@@ -1095,8 +1094,11 @@ class TestMultivariateNormal:
         case = SingularMVNProblem.generate_semiinfinite(ndim=ndim, rng=rng)
         assert (case.low == -np.inf).all()
 
-        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar, allow_singular=True)
-        cdf_val = dist.cdf(case.high, rng=rng)
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar, allow_singular=True,
+                                   # default maxpts is too slow, limit it here
+                                   maxpts=10_000*case.covar.shape[0]
+        )
+        cdf_val = dist.cdf(case.high, rng=rng,)
         assert_allclose(cdf_val, case.target_val, atol=1e-3)
 
     def test_mean_cov(self):

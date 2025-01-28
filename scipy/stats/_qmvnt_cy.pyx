@@ -19,7 +19,7 @@ import cython
 def _qmvn_inner(double[::1] q, double[:, ::1] rndm, int n_qmc_samples, int n_batches, double[:, ::1] cho, double[::1] lo, double[::1] hi):
 
     cdef:
-        npy_intp  n = cho.shape[0]
+        npy_intp n = cho.shape[0]
         npy_intp i, j, k
         double prob, error_var, r, qq, z_k, res_k, scrtch, lo_i, hi_i, ct, s_k, ci
 

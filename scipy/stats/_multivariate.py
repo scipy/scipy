@@ -393,14 +393,14 @@ class multivariate_normal_gen(multi_rv_generic):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
 
-    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
+    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None, **kwds):
         """Create a frozen multivariate normal distribution.
 
         See `multivariate_normal_frozen` for more information.
         """
         return multivariate_normal_frozen(mean, cov,
                                           allow_singular=allow_singular,
-                                          seed=seed)
+                                          seed=seed, **kwds)
 
     def _process_parameters(self, mean, cov, allow_singular=True):
         """
@@ -691,7 +691,7 @@ class multivariate_normal_gen(multi_rv_generic):
         cov = cov_object.covariance
         x = self._process_quantiles(x, dim)
         if not maxpts:
-            maxpts = 10000 * dim
+            maxpts = 1000000 * dim
 
         rng = self._get_random_state(rng)
         cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit, rng)
@@ -741,7 +741,7 @@ class multivariate_normal_gen(multi_rv_generic):
         cov = cov_object.covariance
         x = self._process_quantiles(x, dim)
         if not maxpts:
-            maxpts = 10000 * dim
+            maxpts = 1000000 * dim
         rng = self._get_random_state(rng)
         out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit, rng)
         return out
@@ -921,7 +921,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             self._dist._process_parameters(mean, cov, allow_singular))
         self.allow_singular = allow_singular or self.cov_object._allow_singular
         if not maxpts:
-            maxpts = 10000 * self.dim
+            maxpts = 1000000 * self.dim
         self.maxpts = maxpts
         self.abseps = abseps
         self.releps = releps
