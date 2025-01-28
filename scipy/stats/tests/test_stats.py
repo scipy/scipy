@@ -40,8 +40,8 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (array_namespace, xp_copy, is_numpy, is_torch,
-                                   xp_size, SCIPY_ARRAY_API, xp_default_dtype)
+from scipy._lib._array_api import (array_namespace, xp_copy, is_lazy_array, is_numpy,
+                                   is_torch, xp_default_dtype, xp_size, SCIPY_ARRAY_API)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -6409,9 +6409,12 @@ class TestDescribe:
         x = xp.arange(10.)
         x = xp.where(x==9, xp.asarray(xp.nan), x)
 
-        message = 'The input contains nan values'
-        with pytest.raises(ValueError, match=message):
-            stats.describe(x, nan_policy='raise')
+        if is_lazy_array(x):
+            with pytest.raises(TypeError, match='not supported for lazy arrays'):
+                stats.describe(x, nan_policy='raise')
+        else:
+            with pytest.raises(ValueError, match='The input contains nan values'):
+                stats.describe(x, nan_policy='raise')
 
         n, mm, m, v, sk, kurt = stats.describe(x, nan_policy='propagate')
         ref = xp.asarray(xp.nan)[()]
@@ -6425,6 +6428,9 @@ class TestDescribe:
 
         if is_numpy(xp):
             self.describe_nan_policy_omit_test()
+        elif is_lazy_array(x):
+            with pytest.raises(TypeError, match='not supported for lazy arrays'):
+                stats.describe(x, nan_policy='omit')
         else:
             message = "nan_policy='omit' is incompatible with non-NumPy arrays."
             with pytest.raises(ValueError, match=message):
@@ -9450,9 +9456,12 @@ class TestXP_Mean:
         x = xp.where(mask, xp.asarray(xp.nan), x)
 
         # nan_policy='raise' raises an error
-        message = 'The input contains nan values'
-        with pytest.raises(ValueError, match=message):
-            _xp_mean(x, nan_policy='raise')
+        if is_lazy_array(x):
+            with pytest.raises(TypeError, match='not supported for lazy arrays'):
+                _xp_mean(x, nan_policy='raise')
+        else:
+            with pytest.raises(ValueError, match='The input contains nan values'):
+                _xp_mean(x, nan_policy='raise')
 
         # `nan_policy='propagate'` is the default, and the result is NaN
         res1 = _xp_mean(x)
