@@ -1,7 +1,6 @@
 # cython: cpow=True
 
 import numpy as np
-from scipy._lib._util import check_random_state, _transition_to_rng
 from ._rotation import Rotation, compose_quat
 
 cimport numpy as np
@@ -201,7 +200,6 @@ cdef class RigidTransformation:
     apply
     inv
     identity
-    random
 
     References
     ----------
@@ -1053,6 +1051,7 @@ cdef class RigidTransformation:
         Examples
         --------
         >>> from scipy.spatial.transform import RigidTransformation as Tf
+        >>> from scipy.spatial.transform import Rotation as R
         >>> import numpy as np
 
         Creating a single identity transformation:
@@ -1074,7 +1073,10 @@ cdef class RigidTransformation:
         The identity transformation when composed with another transformation
         has no effect:
 
-        >>> tf = Tf.random()
+        >>> rng = np.random.default_rng(123)
+        >>> t = rng.random(3)
+        >>> r = R.random(rng=rng)
+        >>> tf = Tf.from_components(t, r)
         >>> np.allclose((Tf.identity() * tf).as_matrix(),
         ...             tf.as_matrix(), atol=1e-12)
         True
@@ -1102,62 +1104,6 @@ cdef class RigidTransformation:
             return cls(np.eye(4, dtype=float)[None, :, :].repeat(num, axis=0),
                        normalize=False, copy=False)
 
-    @cython.embedsignature(True)
-    @classmethod
-    @_transition_to_rng('random_state', position_num=2)
-    def random(cls, num=None, rng=None):
-        """Initialize a random transformation.
-
-        This results in a random rotation combined with a random translation
-        vector, randomly sampled from the unit sphere.
-
-        Parameters
-        ----------
-        num : int, optional
-            Number of random transformations to generate. If None (default),
-            then a single transformation is generated.
-        rng : `numpy.random.Generator`, optional
-            Pseudorandom number generator state. When `rng` is None, a new
-            `numpy.random.Generator` is created using entropy from the
-            operating system. Types other than `numpy.random.Generator` are
-            passed to `numpy.random.default_rng` to instantiate a `Generator`.
-
-        Returns
-        -------
-        transformation : `RigidTransformation` instance
-            A single transformation or a stack of transformations.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import RigidTransformation as Tf
-        >>> import numpy as np
-        >>> rng = np.random.default_rng(seed=123)
-        >>> tf = Tf.random(rng=rng)
-        >>> tf.as_matrix()
-        array([[-0.27687894,  0.08111092, -0.95747536,  0.21419513],
-               [ 0.43673235, -0.87694466, -0.20058143,  0.19815685],
-               [-0.85592225, -0.47369724,  0.20738374, -0.95648017],
-               [ 0.        ,  0.        ,  0.        ,  1.        ]])
-        >>> tf.single
-        True
-
-        The translation component will be a random unit vector:
-
-        >>> np.linalg.norm(tf.translation)
-        1.0
-
-        Multiple transformations can be generated at once:
-
-        >>> tf = Tf.random(3)
-        >>> tf.single
-        False
-        >>> len(tf)
-        3
-        """
-        rng = check_random_state(rng)
-        r = Rotation.random(num, rng=rng)
-        t = Rotation.random(num, rng=rng).apply([1, 0, 0])
-        return cls.from_components(t, r)
 
     @cython.embedsignature(True)
     @classmethod
@@ -1430,7 +1376,7 @@ cdef class RigidTransformation:
         Examples
         --------
         >>> from scipy.spatial.transform import RigidTransformation as Tf
-        >>> tf = Tf.random(3)
+        >>> tf = Tf.identity(3)
         >>> len(tf)
         3
 
@@ -1752,17 +1698,20 @@ cdef class RigidTransformation:
         Examples
         --------
         >>> from scipy.spatial.transform import RigidTransformation as Tf
+        >>> from scipy.spatial.transform import Rotation as R
         >>> import numpy as np
 
         A transformation composed with its inverse results in an identity
         transformation:
 
         >>> rng = np.random.default_rng(seed=123)
-        >>> tf = Tf.random(rng=rng)
+        >>> t = rng.random(3)
+        >>> r = R.random(rng=rng)
+        >>> tf = Tf.from_components(t, r)
         >>> tf.as_matrix()
-        array([[-0.27687894,  0.08111092, -0.95747536,  0.21419513],
-               [ 0.43673235, -0.87694466, -0.20058143,  0.19815685],
-               [-0.85592225, -0.47369724,  0.20738374, -0.95648017],
+        array([[-0.45431291,  0.67276178, -0.58394466,  0.68235186],
+               [-0.23272031,  0.54310598,  0.80676958,  0.05382102],
+               [ 0.85990758,  0.50242162, -0.09017473,  0.22035987],
                [ 0.        ,  0.        ,  0.        ,  1.        ]])
 
         >>> (tf.inv() * tf).as_matrix()

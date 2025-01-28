@@ -159,8 +159,9 @@ def test_from_components():
 def test_as_components():
     atol = 1e-12
     n = 10
-    t = np.array([1, 2, 3] * n).reshape(n, 3)
-    r = Rotation.random(n, rng=10)
+    rng = np.random.default_rng(123)
+    t = rng.normal(size=(n, 3))
+    r = Rotation.random(n, rng=rng)
     tf = RigidTransformation.from_components(t, r)
     new_t, new_r = tf.as_components()
     assert all(new_r.approx_equal(r, atol=atol))
@@ -384,8 +385,11 @@ def test_from_dual_quat():
     assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
 
     # compensation for precision loss in real quaternion
-    random_dual_quats = RigidTransformation.random(
-        num=10, rng=1).as_dual_quat()
+    rng = np.random.default_rng(1000)
+    t = rng.normal(size=(3,))
+    r = Rotation.random(10, rng=rng)
+    random_dual_quats = RigidTransformation.from_components(t, r).as_dual_quat()
+
     # ensure that random quaternions are not normalized
     random_dual_quats[:, :4] = random_dual_quats[:, :4].round(2)
     assert not np.any(np.isclose(
@@ -397,8 +401,10 @@ def test_from_dual_quat():
 
     # compensation for precision loss in dual quaternion, results in violation
     # of orthogonality constraint
-    random_dual_quats = RigidTransformation.random(
-        num=10, rng=2).as_dual_quat()
+    t = rng.normal(size=(10, 3))
+    r = Rotation.random(10, rng=rng)
+    random_dual_quats = RigidTransformation.from_components(t, r).as_dual_quat()
+
     # ensure that random quaternions are not normalized
     random_dual_quats[:, 4:] = random_dual_quats[:, 4:].round(2)
     assert not np.any(np.isclose(
@@ -450,7 +456,9 @@ def test_as_dual_quat():
 
     # rotation and translation
     for _ in range(10):
-        expected = RigidTransformation.random(rng=rng).as_dual_quat()
+        t = rng.normal(size=3)
+        r = Rotation.random(rng=rng)
+        expected = RigidTransformation.from_components(t, r).as_dual_quat()
         actual = RigidTransformation.from_dual_quat(expected).as_dual_quat()
         # because of double cover:
         if np.sign(expected[0]) != np.sign(actual[0]):
@@ -462,7 +470,9 @@ def test_from_as_internal_consistency():
     atol = 1e-12
     n = 1000
     rng = np.random.default_rng(10)
-    tf0 = RigidTransformation.random(n, rng=rng)
+    t = rng.normal(size=(n, 3))
+    r = Rotation.random(n, rng=rng)
+    tf0 = RigidTransformation.from_components(t, r)
 
     tf1 = RigidTransformation.from_components(*tf0.as_components())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
@@ -497,27 +507,6 @@ def test_identity():
     # Test multiple identities
     tf = RigidTransformation.identity(5)
     assert_allclose(tf.as_matrix(), np.array([np.eye(4)] * 5), atol=atol)
-
-
-def test_random():
-    atol = 1e-6
-    n = 5
-    tf = RigidTransformation.random(n, rng=0)
-    assert len(tf) == n
-
-    # Test repeatability
-    expected = np.array([[-0.88199 , -0.36879 ,  0.293406, -0.885639],
-                         [ 0.22258 , -0.874756, -0.430418, -0.334283],
-                         [ 0.415393, -0.314318,  0.853612, -0.322334],
-                         [ 0.      ,  0.      ,  0.      ,  1.      ]])
-    assert_allclose(tf[0].as_matrix(), expected, atol=atol)
-
-    # Test that the transformations are valid
-    atol = 1e-12
-    for m in tf.as_matrix():
-        assert_allclose(np.linalg.det(m[:3, :3]), 1, atol=atol)
-        assert_allclose(np.linalg.norm(m[:3, 3]), 1, atol=atol)
-        assert_allclose(m[3], [0, 0, 0, 1], atol=atol)
 
 
 def test_apply():
@@ -642,7 +631,10 @@ def test_composition():
 def test_pow():
     atol = 1e-12
     num = 10
-    p = RigidTransformation.random(num, rng=0)
+    rng = np.random.default_rng(100)
+    t = rng.normal(size=(num, 3))
+    r = Rotation.random(num, rng=rng)
+    p = RigidTransformation.from_components(t, r)
     p_inv = p.inv()
 
     # Test the short-cuts and other integers
@@ -681,7 +673,10 @@ def test_inverse():
     assert_allclose(composed.as_matrix(), np.eye(4), atol=atol)
 
     n = 10
-    tf = RigidTransformation.random(n, rng=1)
+    rng = np.random.default_rng(1000)
+    t = rng.normal(size=(n, 3))
+    r = Rotation.random(n, rng=rng)
+    tf = RigidTransformation.from_components(t, r)
     tf_inv = tf.inv()
     composed = tf * tf_inv
     assert_allclose(composed.as_matrix(), np.array([np.eye(4)] * n), atol=atol)
