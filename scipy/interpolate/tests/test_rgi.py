@@ -3,7 +3,7 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import assert_warns
+from numpy.testing import assert_warns, assert_
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_array_almost_equal
 )
@@ -791,6 +791,28 @@ class TestInterpN:
         # no extrapolation for splinef2d
         assert_raises(ValueError, interpn, (x, y), z, xi, method="splinef2d",
                       bounds_error=False, fill_value=None)
+
+    def _sample_large_2d_data(self, nx, ny):
+        rng = np.random.default_rng(1)
+        x = np.arange(nx)
+        y = np.arange(ny)
+        z = rng.integers(0, 100, (nx, ny))
+
+        return x, y, z.astype(np.float64)
+
+    @pytest.mark.parametrize('shape', [(350, 850), (2000, 170)])
+    @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
+                                        (1, 7e-3, 1e-4),
+                                        (3, 2e-2, 1e-4)])
+    def test_spline_large_2d(self, shape, s_tols):
+        nx, ny = shape
+        s, atol, rtol = s_tols
+        x, y, z = self._sample_large_2d_data(nx, ny)
+
+        spl = RectBivariateSpline(x, y, z, s=s)
+        z_spl = spl(x, y)
+        assert_(not np.isnan(z_spl).any())
+        xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
     def _sample_4d_data(self):
         points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
