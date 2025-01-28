@@ -50,11 +50,31 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             array_namespace('abc')
 
-    def test_array_likes(self):
-        # should be no exceptions
-        array_namespace([0, 1, 2])
-        array_namespace(1, 2, 3)
-        array_namespace(1)
+    @pytest.mark.skip_xp_backends(np_only=True, reason="Array-likes")
+    def test_array_likes(self, xp):
+        """Test that if all parameters of array_namespace are Array-likes,
+        the output is array_api_compat.numpy
+        """
+        assert array_namespace([0, 1, 2]) is xp
+        assert array_namespace((0, 1, 2)) is xp
+        assert array_namespace(1, 2, 3) is xp
+        assert array_namespace(1) is xp
+        assert array_namespace([0, 1, 2], 3) is xp
+        assert array_namespace() is xp
+        assert array_namespace(None) is xp
+        assert array_namespace(1, None) is xp
+        assert array_namespace(None, 1) is xp
+
+    def test_array_and_array_likes_mix(self, xp):
+        """Test that if there is at least one Array API object among
+        the parameters of array_namespace, the output is its namespace
+        """
+        x = xp.asarray(1)
+        assert array_namespace(x) is xp
+        assert array_namespace(x, 1) is xp
+        assert array_namespace(1, x) is xp
+        assert array_namespace(x, [1, 2]) is xp
+        assert array_namespace(None, x) is xp
 
     def test_array_api_extra_hook(self):
         """Test that the `array_namespace` function used by

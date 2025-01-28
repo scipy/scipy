@@ -8,7 +8,7 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
 
-from collections.abc import Generator
+from collections.abc import Generator, Iterable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
@@ -58,8 +58,8 @@ Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
 ArrayLike: TypeAlias = Array | npt.ArrayLike
 
 
-def _compliance_scipy(arrays):
-    """Raise exceptions on known-bad subclasses.
+def _compliance_scipy(arrays: Iterable[ArrayLike]) -> Iterator[Array]:
+    """Raise exceptions on known-bad subclasses and discard ArrayLike objects.
 
     The following subclasses are not supported and raise and error:
     - `numpy.ma.MaskedArray`
@@ -68,8 +68,9 @@ def _compliance_scipy(arrays):
     - Any array-like which is neither array API compatible nor coercible by NumPy
     - Any array-like which is coerced by NumPy to an unsupported dtype
     """
-    for i in range(len(arrays)):
-        array = arrays[i]
+    for array in arrays:
+        if array is None:
+            continue
 
         # this comes from `_util._asarray_validated`
         if issparse(array):
@@ -80,14 +81,19 @@ def _compliance_scipy(arrays):
 
         if isinstance(array, np.ma.MaskedArray):
             raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
-        elif isinstance(array, np.matrix):
+
+        if isinstance(array, np.matrix):
             raise TypeError("Inputs of type `numpy.matrix` are not supported.")
+
         if isinstance(array, np.ndarray | np.generic):
             dtype = array.dtype
             if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
                 raise TypeError(f"An argument has dtype `{dtype!r}`; "
                                 f"only boolean and numerical dtypes are supported.")
-        elif not is_array_api_obj(array):
+
+        if is_array_api_obj(array):
+            yield array
+        else:
             try:
                 array = np.asanyarray(array)
             except TypeError:
@@ -100,8 +106,8 @@ def _compliance_scipy(arrays):
                     f"only boolean and numerical dtypes are supported."
                 )
                 raise TypeError(message)
-            arrays[i] = array
-    return arrays
+            # Discard array. If there are no actual arrays in the input, the namespace
+            # will default to NumPy.
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
@@ -141,11 +147,13 @@ def array_namespace(*arrays: Array) -> ModuleType:
         # here we could wrap the namespace if needed
         return np_compat
 
-    _arrays = [array for array in arrays if array is not None]
-
-    _arrays = _compliance_scipy(_arrays)
-
-    return array_api_compat.array_namespace(*_arrays)
+    api_arrays = list(_compliance_scipy(arrays))
+    # In case of a mix of array API compliant arrays and scalars, return
+    # the array API namespace. If there are only ArrayLikes (e.g. lists),
+    # return NumPy (wrapped by array-api-compat).
+    if api_arrays:
+        return array_api_compat.array_namespace(*api_arrays)
+    return np_compat
 
 
 def _asarray(
