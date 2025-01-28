@@ -740,6 +740,7 @@ sqrtm_recursion_s(float* T, npy_intp bign, npy_intp n)
         {
             // Triangular 2x2 block
             if ((a == 0.0) && (d == 0.0) && (b == 0.0)) { return 0; }
+            if ((a == 0.0) && (d == 0.0)) { T[bign] = INFINITY; return 0; }
             T[0] = sqrtf(a);
             T[bign + 1] = sqrtf(d);
             T[bign] = T[bign] / (T[0] + T[bign + 1]);
@@ -815,6 +816,7 @@ sqrtm_recursion_d(double* T, npy_intp bign, npy_intp n)
         {
             // Triangular 2x2 block
             if ((a == 0.0) && (d == 0.0) && (b == 0.0)) { return 0; }
+            if ((a == 0.0) && (d == 0.0)) { T[bign] = INFINITY; return 0; }
             T[0] = sqrt(a);
             T[bign + 1] = sqrt(d);
             T[bign] = T[bign] / (T[0] + T[bign + 1]);
