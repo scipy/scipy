@@ -38,7 +38,7 @@ def _validate_precision(precision):
         if not (1 <= precision <= MAX_PRECISION):
             msg = (f"From SciPy 1.18.0, an exception will be thrown if the "
                    f"precision input is outside the range of 1 "
-                   f"to {MAX_PRECISION-1}")
+                   f"to {MAX_PRECISION}")
             warnings.warn(msg, FutureWarning, stacklevel=3)
 
 # -----------------------------------------------------------------------------
