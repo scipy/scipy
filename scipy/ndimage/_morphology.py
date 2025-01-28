@@ -36,8 +36,6 @@ from . import _ni_support
 from . import _nd_image
 from . import _filters
 
-from scipy._lib.array_api_compat import is_dask_array
-
 __all__ = ['iterate_structure', 'generate_binary_structure', 'binary_erosion',
            'binary_dilation', 'binary_opening', 'binary_closing',
            'binary_hit_or_miss', 'binary_propagation', 'binary_fill_holes',
@@ -222,14 +220,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
     except TypeError as e:
         raise TypeError('iterations parameter should be an integer') from e
 
-    if is_dask_array(input):
-        # Note: If you create an dask array with ones
-        # it does a stride trick where it makes an array
-        # (with stride 0) using a scalar
-        # this messes up the C ndimage iteration code
-        input = np.asarray(input, order="C")
-    else:
-        input = np.asarray(input)
+    input = np.asarray(input, order="C")
     ndim = input.ndim
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')

@@ -13,8 +13,6 @@ lazy_xp_function(_asarray, static_argnames=(
                  "dtype", "order", "copy", "xp", "check_finite", "subok"))
 lazy_xp_function(xp_copy, static_argnames=("xp", ))
 
-skip_xp_backends = pytest.mark.skip_xp_backends
-
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")

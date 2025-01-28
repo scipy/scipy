@@ -117,7 +117,7 @@ class TestEntropy:
             stats.entropy(x, base=-2)
 
 
-@pytest.mark.skip_xp_backends("dask.array", reason="No sorting in Dask")
+@pytest.mark.skip_xp_backends("dask.array", reason="boolean index assignment")
 class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.

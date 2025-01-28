@@ -473,13 +473,14 @@ class TestConvolve2d:
     )
     def test_consistency_convolve_funcs(self, xp):
         # Compare np.convolve, signal.convolve, signal.convolve2d
-        a = xp.arange(5)
-        b = xp.asarray([3.2, 1.4, 3])
+        a_np = np.arange(5)
+        b_np = np.asarray([3.2, 1.4, 3])
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
+
         for mode in ['full', 'valid', 'same']:
-            # cast to numpy when calling np.convolve
-            # to prevent NEP18 dispatching e.g. from dask
             xp_assert_close(
-                xp.asarray(np.convolve(np.asarray(a), np.asarray(b), mode=mode)),
+                xp.asarray(np.convolve(a_np, b_np, mode=mode)),
                 signal.convolve(a, b, mode=mode)
             )
             xp_assert_close(
@@ -845,11 +846,11 @@ class TestFFTConvolve:
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_random_data(self, axes, xp):
         np.random.seed(1234)
-        a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
-        b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
-        # cast to numpy before np.convolve
-        # to prevent NEP 18 dispatching for e.g. dask
-        expected = xp.asarray(np.convolve(np.asarray(a), np.asarray(b), 'full'))
+        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
+        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        expected = xp.asarray(np.convolve(a_np, b_np, 'full'))
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         if axes == '':
             out = fftconvolve(a, b, 'full')
@@ -862,15 +863,15 @@ class TestFFTConvolve:
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_random_data_axes(self, axes, xp):
         np.random.seed(1234)
-        a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
-        b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
-        # cast to numpy before np.convolve
-        # to prevent NEP 18 dispatching for e.g. dask
-        expected = xp.asarray(np.convolve(np.asarray(a), np.asarray(b), 'full'))
-
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
+        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
+        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        expected = np.convolve(a_np, b_np, 'full')
+        a_np = np.tile(a_np, [2, 1])
+        b_np = np.tile(b_np, [2, 1])
         expected = xp.asarray(np.tile(expected, [2, 1]))
+
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -917,11 +918,11 @@ class TestFFTConvolve:
         list(range(1000, 1500)) +
         np.random.RandomState(1234).randint(1001, 10000, 5).tolist())
     def test_many_sizes(self, n, xp):
-        a = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
-        b = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
-        # cast to numpy before np.convolve
-        # to prevent NEP 18 dispatching for e.g. dask
-        expected = xp.asarray(np.convolve(np.asarray(a), np.asarray(b), 'full'))
+        a_np = np.random.rand(n) + 1j * np.random.rand(n)
+        b_np = np.random.rand(n) + 1j * np.random.rand(n)
+        expected = xp.asarray(np.convolve(a_np, b_np, 'full'))
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         out = fftconvolve(a, b, 'full')
         xp_assert_close(out, expected, atol=1e-10)
@@ -4226,7 +4227,6 @@ class TestSOSFilt:
         sos[:, 3] = 1.
         with pytest.raises(ValueError, match='Invalid zi shape'):
             sosfilt(sos, x, zi=zi, axis=1)
-
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
     def test_sosfilt_zi(self, dt, xp):

@@ -1,4 +1,3 @@
-from contextlib import nullcontext
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import re
@@ -13,8 +12,8 @@ import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import skip_xp_invalid_arg
 
-from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_jax,
-                                   is_numpy, is_array_api_strict)
+from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
+                                   is_array_api_strict)
 from scipy._lib._lazy_testing import lazy_xp_function
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
@@ -23,7 +22,6 @@ from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
 import scipy._lib.array_api_extra as xpx
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 lazy_xp_function(_contains_nan, static_argnames=("nan_policy", "xp_omit_okay", "xp"))
 # FIXME @jax.jit fails: complex bool mask
@@ -351,6 +349,9 @@ class TestContainsNaN:
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)
 
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="lazy backends tested separately"
+    )
     @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
@@ -384,14 +385,10 @@ class TestContainsNaN:
         xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(False))
         xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(False))
         # Lazy arrays don't support "omit" and "raise" policies
-        # TODO test that we're emitting a user-friendly error message.
-        #      Blocked by https://github.com/data-apis/array-api-compat/pull/228
-
-        # note: dask doesn't raise here since there are no nans in x
-        error_ctx = pytest.raises(TypeError) if is_jax(xp) else nullcontext()
-        with error_ctx:
+        match = "not supported for lazy arrays"
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "omit")
-        with error_ctx:
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "raise")
 
         x = xpx.at(x)[1, 2, 1].set(np.nan)
@@ -399,11 +396,9 @@ class TestContainsNaN:
         xp_assert_equal(_contains_nan(x), xp.asarray(True))
         xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(True))
         xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(True))
-        # dask raises ValueError (from in the scipy code)
-        # jax raises a tracingerror (subclass of typeerror)
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "omit")
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "raise")
 
 
@@ -631,7 +626,9 @@ class TestLazywhere:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
-    @skip_xp_backends("dask.array", reason="lazywhere doesn't work with dask")
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="lazywhere doesn't work with dask"
+    )
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
     @pytest.mark.thread_unsafe
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
