@@ -3592,3 +3592,25 @@ def test_langb(dtype, norm):
     ref = lange(norm, A)
     res = langb(norm, kl, ku, ab)
     assert_allclose(res, ref, rtol=2e-6)
+
+
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('compute_v', (0, 1))
+def test_stevd(dtype, compute_v):
+    rng = np.random.default_rng(266474747488348746)
+    n = 10
+    d = rng.random(n, dtype=dtype)
+    e = rng.random(n - 1, dtype=dtype)
+    A = np.diag(e, -1) + np.diag(d) + np.diag(e, 1)
+    ref = np.linalg.eigvalsh(A)
+
+    stevd, stevd_lwork = get_lapack_funcs(('stevd', 'stevd_lwork'))
+    lwork, liwork, info = stevd_lwork(d, e)
+    assert info == 0
+    U, V, info = stevd(d, e, lwork=lwork, liwork=liwork,
+                       compute_v=compute_v)
+    assert_allclose(np.sort(U), np.sort(ref))
+    if compute_v:
+        eps = np.finfo(dtype).eps
+        assert_allclose(V @ np.diag(U) @ V.T, A, atol=eps**0.8)
+

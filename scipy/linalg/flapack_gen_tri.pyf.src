@@ -373,9 +373,9 @@ subroutine <prefix2>stevd_lwork(d,e,compute_v,n,z,ldz,work,lwork,iwork,liwork,in
 
     integer optional,intent(in):: compute_v = 1
     integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
-    <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
+    <ftype2> dimension(n),intent(in,copy) :: d
     <ftype2> depend(n),dimension(MAX(n-1,1)),intent(in,copy) :: e
-    <ftype2> dimension(ldz,(compute_v?n:1)),intent(out),depend(n,ldz) :: z
+    <ftype2> dimension(ldz,(compute_v?n:1)),depend(n,ldz), intent(hide) :: z
     integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
     <ftype2> intent(out) :: work
     integer intent(hide) :: lwork = -1
