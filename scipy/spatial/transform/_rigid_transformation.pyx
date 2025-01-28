@@ -104,6 +104,42 @@ cdef _normalize_dual_quaternion(real_part, dual_part):
     return real_part, dual_part
 
 
+def _create_transformation_matrix(translations, rotation_matrices, single):
+    """Create a matrix from translations and rotation matrices.
+
+    Parameters
+    ----------
+    translations : array_like, shape (N, 3) or (3,)
+        A stack of translation vectors.
+    rotation_matrices : array_like, shape (N, 3, 3) or (3, 3)
+        A stack of rotation matrices.
+    single : bool
+        Whether the output should be a single matrix or a stack of matrices.
+
+    Returns
+    -------
+    matrix : numpy.ndarray, shape (N, 4, 4)
+        A stack of transformation matrices.
+    """
+    if translations.ndim == 1:
+        translations = translations[np.newaxis, ...]
+    if rotation_matrices.ndim == 2:
+        rotation_matrices = rotation_matrices[np.newaxis, ...]
+    if not len(rotation_matrices) == len(translations):
+        raise ValueError("The number of rotation matrices and translations must "
+                         "be the same.")
+
+    matrix = np.empty((len(translations), 4, 4), dtype=float)
+    matrix[:, :3, :3] = rotation_matrices
+    matrix[:, :3, 3] = translations
+    matrix[:, 3, :3] = 0.0
+    matrix[:, 3, 3] = 1.0
+    if single:
+        return matrix[0]
+    else:
+        return matrix
+
+
 cdef class RigidTransformation:
     """Rigid transformation in 3 dimensions.
 
@@ -777,8 +813,7 @@ cdef class RigidTransformation:
 
         Returns
         -------
-        `RigidTransformation`, either a single transformation or a stack of
-        transformations.
+        `RigidTransformation`
             If rotation is single and translation is shape (3,), then a single
             transformation is returned.
             Otherwise, a stack of transformations is returned.
@@ -919,14 +954,8 @@ cdef class RigidTransformation:
         translations = np.einsum('ijk,ik->ij',
                                  _compute_se3_exp_translation_transform(rot_vec),
                                  exp_coords[:, 3:])
-
-        matrix = np.empty((len(exp_coords), 4, 4), dtype=float)
-        matrix[:, :3, :3] = rotations.as_matrix()
-        matrix[:, :3, 3] = translations
-        matrix[:, 3, :3] = 0.0
-        matrix[:, 3, 3] = 1.0
-        if single:
-            matrix = matrix[0]
+        matrix = _create_transformation_matrix(translations, rotations.as_matrix(),
+                                               single)
 
         return cls(matrix, normalize=False, copy=False)
 
@@ -997,17 +1026,11 @@ cdef class RigidTransformation:
 
         real_part, dual_part = _normalize_dual_quaternion(real_part, dual_part)
 
-        matrix = np.empty((len(dual_quat), 4, 4), dtype=float)
         rotation = Rotation.from_quat(real_part)
-
-        matrix[:, :3, :3] = rotation.as_matrix()
-        matrix[:, :3, 3] = 2.0 * np.asarray(
+        translation = 2.0 * np.asarray(
             compose_quat(dual_part, rotation.inv().as_quat()))[:, :3]
-        matrix[:, 3, :3] = 0.0
-        matrix[:, 3, 3] = 1.0
-
-        if single:
-            matrix = matrix[0]
+        matrix = _create_transformation_matrix(translation, rotation.as_matrix(),
+                                               single)
 
         return cls(matrix, normalize=False, copy=False)
 
@@ -1769,9 +1792,12 @@ cdef class RigidTransformation:
                 [0., 0., 1., 0.],
                 [0., 0., 0., 1.]]])
         """
-        r_inv = self.rotation.inv()
-        t_inv = -r_inv.apply(self.translation)
-        return self.__class__.from_components(t_inv, r_inv)
+        r_inv = np.linalg.inv(self._matrix[:, :3, :3])
+        # This einsum performs element-wise matrix multiplication
+        t_inv = -np.einsum('ijk,ik->ij', r_inv, self._matrix[:, :3, 3])
+
+        matrix = _create_transformation_matrix(t_inv, r_inv, self._single)
+        return self.__class__(matrix, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     def apply(self, vector, inverse=False):
