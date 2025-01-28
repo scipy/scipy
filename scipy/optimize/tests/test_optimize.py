@@ -2460,14 +2460,14 @@ class TestRosen:
                         xp.asarray(0.))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     def test_rosen_der(self, xp):
         x = xp.asarray([1, 1, 1, 1])
         xp_assert_equal(optimize.rosen_der(x),
                         xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     def test_hess_prod(self, xp):
         one = xp.asarray(1.)
 

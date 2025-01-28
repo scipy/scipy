@@ -965,7 +965,7 @@ class TestCubatureProblems:
 
     @skip_xp_backends(
         "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
+        reason="transforms make use of indexing assignment",
     )
     @pytest.mark.parametrize("problem", [
         (
@@ -1115,7 +1115,7 @@ class TestCubatureProblems:
 
     @skip_xp_backends(
         "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
+        reason="transforms make use of indexing assignment",
     )
     @pytest.mark.parametrize("problem", [
         (
@@ -1322,7 +1322,7 @@ class TestRulesCubature:
 
 @skip_xp_backends(
     "jax.numpy",
-    reasons=["transforms make use of indexing assignment"],
+    reason="transforms make use of indexing assignment",
 )
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
