@@ -499,8 +499,6 @@ cdef class RigidTransformation:
             matrix = matrix[None, :, :]
             self._single = True
 
-        cdef Py_ssize_t num_transformations = matrix.shape[0]
-
         if normalize or copy:
             matrix = matrix.copy()
 
@@ -531,17 +529,16 @@ cdef class RigidTransformation:
         # (should be the identity matrix for orthonormal matrices)
         grams = matrix[:, :3, :3] @ np.swapaxes(matrix[:, :3, :3], 1, 2)
         orthonormal_ok = np.all(np.isclose(grams, np.eye(3), atol=1e-12), axis=(1, 2))
+        idxs = np.where(~orthonormal_ok | ~np.isclose(dets, 1, atol=1e-12))[0]
 
-        for ind in range(num_transformations):
-            # Check that the rotation matrix is orthonormal
-            if not np.isclose(dets[ind], 1, atol=1e-12) or not orthonormal_ok[ind]:
-                if normalize:
-                    # Orthonormalize the rotation matrix
-                    U, _, Vt = np.linalg.svd(matrix[ind, :3, :3])
-                    matrix[ind, :3, :3] = U @ Vt
-                else:
-                    raise ValueError("Expected rotation component of transformation "
-                                     f"matrix {ind} be orthonormal: {matrix[ind]}.")
+        # Orthonormalize the rotation matrices where necessary
+        if normalize and len(idxs) > 0:
+            # Exact solution to the orthogonal Procrustes problem using SVD
+            U, _, Vt = np.linalg.svd(matrix[idxs, :3, :3])
+            matrix[idxs, :3, :3] = U @ Vt
+        elif len(idxs) > 0:
+            raise ValueError("Expected rotation component of transformation "
+                             f"matrix {idxs[0]} be orthonormal: {matrix[idxs[0]]}.")
 
         self._matrix = matrix
 
