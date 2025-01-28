@@ -94,7 +94,7 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
         isComplex = 1;
 
     } else {
-        PYERR(sqrtm_error, "Unsupported data type.");
+        PYERR(sqrtm_error, "Unsupported input data type to sqrtm C function.");
     }
 
     if (info < 0)
@@ -107,44 +107,34 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
 
     if (!isComplex)
     {
-        void* mem_ret_half = realloc(mem_ret, n*n*ret_dims/2);
+        // Input and output is real, truncate the extra space at the end
+        void* mem_ret_half = realloc(mem_ret, n*n*ret_dims);
+        // Quite unlikely but still allowed to fail
         if (!mem_ret_half) { PYERR(sqrtm_error, "Memory reallocation failed."); }
-        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(
-            ndim,
-            shape,
-            (input_type == NPY_FLOAT32 ? NPY_FLOAT32 : NPY_FLOAT64),
-            mem_ret_half
-        );
-        // Return the result
+        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, input_type, mem_ret_half);
         return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
 
-    } else if ((PyArray_TYPE(ap_Am) == NPY_FLOAT32) || (PyArray_TYPE(ap_Am) == NPY_FLOAT64)) {
+    } else if ((input_type == NPY_FLOAT32) || (input_type == NPY_FLOAT64)) {
+
         // Input was real, result is complex, then view the result as complex
         int new_type = (PyArray_TYPE(ap_Am) == NPY_FLOAT32 ? NPY_COMPLEX64 : NPY_COMPLEX128);
-        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(
-            ndim,
-            shape,
-            new_type,
-            mem_ret
-        );
+        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, new_type, mem_ret);
         return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
 
     } else {
+
         // Input was complex, result is complex, only reshape
-        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(
-            ndim,
-            shape,
-            PyArray_TYPE(ap_Am),
-            mem_ret
-        );
+        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, PyArray_TYPE(ap_Am), mem_ret);
         // Return the result
         return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
     }
-
 }
 
+static char doc_sqrtm[] = ("Compute the matrix square root by recursion.\n\n    "
+                           "sqrtmA, isIllConditioned, isSingular, info = recursive_schur_sqrtm(A)\n\n");
+
 static struct PyMethodDef sqrtm_module_methods[] = {
-  {"recursive_schur_sqrtm", recursive_schur_sqrtm, METH_VARARGS, "Compute the matrix square root by recursion."},
+  {"recursive_schur_sqrtm", recursive_schur_sqrtm, METH_VARARGS, doc_sqrtm},
   {NULL, NULL, 0, NULL}
 };
 
@@ -191,9 +181,5 @@ PyInit__matfuncs_schur_sqrtm(void)
 
     return module;
 }
-
-
-#undef SQRTM_C
-#undef SQRTM_Z
 
 #endif // _MATFUNCS_SQRTM_H
