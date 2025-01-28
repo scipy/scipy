@@ -1006,12 +1006,12 @@ cdef class Rotation:
     def from_matrix(cls, matrix):
         """Initialize from rotation matrix.
 
-        Rotations in 3 dimensions can be represented with 3 x 3 proper
-        orthogonal matrices [1]_. If the input is not proper orthogonal,
-        an approximation is created by orthonormalizing the input matrix
-        using the method described in [2]_, and then converting the
-        orthonormal rotation matrices to quaternions using the algorithm
-        described in [3]_. Matrices must be right-handed.
+        Rotations in 3 dimensions can be represented with 3 x 3 orthogonal
+        matrices [1]_. If the input is not orthogonal, an approximation is
+        created by orthogonalizing the input matrix using the method described
+        in [2]_, and then converting the orthogonal rotation matrices to
+        quaternions using the algorithm described in [3]_. Matrices must be
+        right-handed.
 
         Parameters
         ----------
@@ -1130,20 +1130,25 @@ cdef class Rotation:
                              f"coordinate frame) in rotation matrix {ind}: "
                              f"{matrix[ind]}.")
 
-        # Gramian orthonormality check
-        # (should be the identity matrix for orthonormal matrices)
-        grams = matrix @ np.swapaxes(matrix, 1, 2)
-        orthonormal_ok = np.all(np.isclose(grams, np.eye(3), atol=1e-12), axis=(1, 2))
-        idxs = np.where(~orthonormal_ok | ~np.isclose(dets, 1, atol=1e-12))[0]
+        # Gramian orthogonality check
+        # (should be the identity matrix for orthogonal matrices)
+        # Note that we have already ruled out left-handed cases above
+        gramians = matrix @ np.transpose(matrix, (0, 2, 1))
+        is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
+                                axis=(1, 2))
+        indices_to_orthogonalize = np.where(~is_orthogonal)[0]
 
-        # Orthonormalize the rotation matrices where necessary
-        if len(idxs) > 0:
-            # Exact solution to the orthogonal Procrustes problem using SVD
-            U, _, Vt = np.linalg.svd(matrix[idxs, :, :])
-            matrix[idxs, :, :] = U @ Vt
+        # Orthogonalize the rotation matrices where necessary
+        if len(indices_to_orthogonalize) > 0:
+            # Exact solution to the orthogonal Procrustes problem using singular
+            # value decomposition
+            U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
+            matrix[indices_to_orthogonalize, :, :] = U @ Vt
 
-        # Convert the orthonormal rotation matrices to quaternions using the
-        # algorithm described in [3]_.
+        # Convert the orthogonal rotation matrices to quaternions using the
+        # algorithm described in [3]_. This will also apply another
+        # orthogonalization step to correct for any small errors in the matrices
+        # that skipped the SVD step above.
         cdef double[:, :, :] cmatrix
         cmatrix = matrix
         cdef Py_ssize_t num_rotations = cmatrix.shape[0]
