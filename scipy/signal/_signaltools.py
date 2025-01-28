@@ -4354,8 +4354,16 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     ----------
     b : scalar or 1-D ndarray
         Numerator coefficients of the filter.
+
+        ..versionchanged:: 1.15.0
+          Complex-valued `b` is correctly handled.
+
     a : scalar or 1-D ndarray
         Denominator coefficients of the filter.
+
+        ..versionchanged:: 1.15.0
+          Complex-valued `a` is correctly handled.
+
     x : ndarray
         Data to be filtered.
     axis : int, optional
@@ -4415,18 +4423,18 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     # an arbitrary initial state to the output, assuming the input is
     # zero.
     # In Gustafsson's paper, the forward and backward filters are not
-    # necessarily the same, so he has both O_f and O_b.  We use the same
-    # filter in both directions, so we only need O. The same comment
-    # applies to S below.
-    Obs = np.zeros((m, order))
+    # necessarily the same, so he has both O_f and O_b.  We use the
+    # conjugate of the forward filter when going backwards, so we only
+    # need O and its conjugate. The same comment applies to S below.
+    Obs = np.zeros((m, order), dtype=np.promote_types(b.dtype, a.dtype))
     zi = np.zeros(order)
     zi[0] = 1
     Obs[:, 0] = lfilter(b, a, np.zeros(m), zi=zi)[0]
     for k in range(1, order):
         Obs[k:, k] = Obs[:-k, 0]
 
-    # Obsr is O^R (Gustafsson's notation for row-reversed O)
-    Obsr = Obs[::-1]
+    # Obsr is O^R conjugate (Gustafsson's notation for row-reversed O)
+    Obsr = Obs[::-1].conj()
 
     # Create S.  S is the matrix that applies the filter to the reversed
     # propagated initial conditions.  That is,
@@ -4438,8 +4446,8 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     # Equations (5) & (6) of [1]
     S = lfilter(b, a, Obs[::-1], axis=0)
 
-    # Sr is S^R (row-reversed S)
-    Sr = S[::-1]
+    # Sr is S^R conjugate (row-reversed S)
+    Sr = S[::-1].conj()
 
     # M is [(S^R - O), (O^R - S)]
     if m == n:
@@ -4454,9 +4462,9 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     # These have large transients because the filters use zero initial
     # conditions.
     y_f = lfilter(b, a, x)
-    y_fb = lfilter(b, a, y_f[..., ::-1])[..., ::-1]
+    y_fb = lfilter(b.conj(), a.conj(), y_f[..., ::-1])[..., ::-1]
 
-    y_b = lfilter(b, a, x[..., ::-1])[..., ::-1]
+    y_b = lfilter(b.conj(), a.conj(), x[..., ::-1])[..., ::-1]
     y_bf = lfilter(b, a, y_b)
 
     delta_y_bf_fb = y_bf - y_fb
@@ -4537,9 +4545,17 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     ----------
     b : (N,) array_like
         The numerator coefficient vector of the filter.
+
+        .. versionchanged:: 1.16.0
+           Change in behaviour for complex `b`, see ``Notes``.
+
     a : (N,) array_like
         The denominator coefficient vector of the filter.  If ``a[0]``
         is not 1, then both `a` and `b` are normalized by ``a[0]``.
+
+        .. versionchanged:: 1.16.0
+           Change in behaviour for complex `a`, see ``Notes``.
+
     x : array_like
         The array of data to be filtered.
     axis : int, optional
@@ -4592,6 +4608,13 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     filter.
 
     The option to use Gustaffson's method was added in scipy version 0.16.0.
+
+    .. versionchanged:: 1.16.0
+
+       `b` and `a` are complex-conjugated when applying the backward
+       filter.  This conjugation reflects the filter's frequency
+       spectrum through zero, corresponding to the effect on the
+       signal's frequency spectrum when it is reversed in time.
 
     References
     ----------
@@ -4687,7 +4710,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     if method == "gust":
         y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
-        return xp.asarray(y)
+        if not is_torch(xp):
+            return xp.asarray(y)
+        else:
+            # torch doesn't allow negative strides
+            # https://github.com/pytorch/pytorch/issues/59786
+            return xp.asarray(y.copy())
 
     # method == "pad"
     edge, ext = _validate_pad(padtype, padlen, x, axis,
@@ -4710,7 +4738,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     # Backward filter.
     # Create y0 so zi*y0 broadcasts appropriately.
     y0 = axis_slice(y, start=-1, axis=axis)
-    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), axis=axis, zi=zi * y0)
+    (y, zf) = lfilter(b.conj(), a.conj(), axis_reverse(y, axis=axis),
+                      axis=axis, zi=zi.conj() * y0)
 
     # Reverse y.
     y = axis_reverse(y, axis=axis)
@@ -4719,7 +4748,12 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
 
-    return xp.asarray(y)
+    if not is_torch(xp):
+        return xp.asarray(y)
+    else:
+        # torch doesn't allow negative strides
+        # https://github.com/pytorch/pytorch/issues/59786
+        return xp.asarray(y.copy())
 
 
 def _validate_pad(padtype, padlen, x, axis, ntaps):

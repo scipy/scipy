@@ -1,5 +1,6 @@
 import sys
 import math
+import cmath
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
@@ -2770,6 +2771,57 @@ class TestFiltFilt:
         y = filtfilt(b, a, x, method="gust")
         expected = (b/a)**2 * x
         xp_assert_close(y, expected)
+
+
+    def test_complex_coeff(self, xp):
+        # gh-17877: complex coefficient filters
+        if self.filtfilt_kind != 'tf':
+            pytest.skip('complex coefficents only for tf')
+
+        # centre frequency for filter [/time]
+        fcentre = 50
+        # filter passband width [/time]
+        fwidth = 5
+        # sample rate [/time]
+        fs = 1.0e3
+
+        z, p, k = signal.butter(2, 2*xp.pi*fwidth/2, output='zpk', fs=fs)
+
+        z = xp.asarray(z, dtype=xp.complex128)
+        p = xp.asarray(p, dtype=xp.complex128)
+
+        # rotate filter zeros and poles to be centred about fcentre
+        z *= cmath.exp(2j * xp.pi * fcentre/fs)
+        p *= cmath.exp(2j * xp.pi * fcentre/fs)
+
+        b, a = signal.zpk2tf(z, p, k)
+
+        # XXX - while zpk is numpy only
+        b = xp.asarray(b)
+        a = xp.asarray(a)
+
+        # time [time]
+        t = xp.asarray(xp.arange(500), dtype=xp.complex128) / fs
+
+        # filter input
+        u = 2 * xp.cos(2*xp.pi*fcentre*t)
+
+        # first-order transient iterations to 0.5% settling level.
+        # filter isn't first-order, use 0.5% to allow for headroom
+        # for 1% assertion later
+        ntrans = int(math.log(5e-3) / math.log(max(abs(p))))
+
+        assert 2*ntrans < t.shape[0]
+
+        # 2*cos(x) = xp.exp(2j*x) + xp.exp(-2j*x); filter above should
+        # remove xp.exp(-2j*x)
+        yref = xp.exp(2j*xp.pi*fcentre*t)
+
+        y = self.filtfilt((z,p,k), u, xp=xp)
+        assert xp.all(xp.abs(y-yref)[ntrans:-ntrans] < 1e-2)
+
+        ygust = self.filtfilt((z,p,k), u, method='gust', xp=xp)
+        assert xp.all(xp.abs(ygust-yref)[ntrans:-ntrans] < 1e-2)
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
