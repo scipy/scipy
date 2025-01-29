@@ -107,20 +107,19 @@ __all__ = [
 
 import math
 import warnings
-import numpy as np
 import dataclasses
-
 from collections.abc import Callable
 from functools import partial
+
+import numpy as np
+
+from scipy._lib._array_api import _asarray
 from scipy._lib._util import _asarray_validated, _transition_to_rng
+from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
-
-from . import _distance_wrap
-from . import _hausdorff
-from ..linalg import norm
-from ..special import rel_entr
-
-from . import _distance_pybind
+from scipy.linalg import norm
+from scipy.special import rel_entr
+from . import _hausdorff, _distance_pybind, _distance_wrap
 
 
 def _copy_array_if_base_present(a):
@@ -2293,14 +2292,21 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
-    X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
-                           check_finite=False)
-
-    s = X.shape
-    if len(s) != 2:
+    X = _asarray(X)
+    if X.ndim != 2:
         raise ValueError('A 2-dimensional array must be passed.')
 
-    m, n = s
+    n = X.shape[0]
+    return xpx.lazy_apply(_np_pdist, X,
+                          # See src/distance_pybind.cpp::pdist
+                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
+                          as_numpy=True, metric=metric, out=out, **kwargs)
+
+def _np_pdist(X, metric='euclidean', out=None, **kwargs):
+
+    X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
+                           check_finite=False)
+    m, n = X.shape
 
     if callable(metric):
         mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
@@ -2620,7 +2626,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     throw : bool, optional
         Throws an exception if the variable passed is not a valid
         condensed distance matrix.
-    name : bool, optional
+    name : str, optional
         Used when referencing the offending variable in the
         warning or exception message.
 
@@ -2648,8 +2654,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     False
 
     """
-    y = np.asarray(y, order='c')
-    valid = True
+    y = _asarray(y)
     try:
         if len(y.shape) != 1:
             if name:
@@ -2674,8 +2679,8 @@ def is_valid_y(y, warning=False, throw=False, name=None):
             raise
         if warning:
             warnings.warn(str(e), stacklevel=2)
-        valid = False
-    return valid
+        return False
+    return True
 
 
 def num_obs_dm(d):
@@ -2733,7 +2738,7 @@ def num_obs_y(Y):
     >>> num_obs_y(Y)
     4
     """
-    Y = np.asarray(Y, order='c')
+    Y = _asarray(Y)
     is_valid_y(Y, throw=True, name='Y')
     k = Y.shape[0]
     if k == 0:
