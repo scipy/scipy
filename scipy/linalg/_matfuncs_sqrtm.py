@@ -6,9 +6,12 @@ This module exists to avoid cyclic imports.
 """
 __all__ = ['sqrtm']
 
+import warnings
+
 import numpy as np
 
 from scipy._lib._util import _asarray_validated, _apply_over_batch
+from scipy._lib.deprecation import _NoValue
 
 # Local imports
 from ._misc import norm
@@ -116,7 +119,7 @@ def _sqrtm_triu(T, blocksize=64):
 
 
 @_apply_over_batch(('A', 2))
-def sqrtm(A, disp=True, blocksize=64):
+def sqrtm(A, disp=_NoValue, blocksize=64):
     """
     Matrix square root.
 
@@ -127,6 +130,10 @@ def sqrtm(A, disp=True, blocksize=64):
     disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+        .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0.
+
     blocksize : integer, optional
         If the blocksize is not degenerate with respect to the
         size of the input array, then use a blocked algorithm. (Default: 64)
@@ -163,6 +170,13 @@ def sqrtm(A, disp=True, blocksize=64):
            [ 1.,  4.]])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated "
+                      "and will be removed in SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
+
     A = _asarray_validated(A, check_finite=True, as_inexact=True)
     if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
