@@ -814,6 +814,16 @@ class TestInterpN:
         assert_(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
+    def test_spline_large_2d_maxit(self):
+        nx, ny = 1000, 1700
+        s, atol, rtol = 2, 2e-2, 1e-12
+        x, y, z = self._sample_large_2d_data(nx, ny)
+
+        spl = RectBivariateSpline(x, y, z, s=s, maxit=25)
+        z_spl = spl(x, y)
+        assert_(not np.isnan(z_spl).any())
+        xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
+
     def _sample_4d_data(self):
         points = [(0., .5, 1.)] * 2 + [(0., 5., 10.)] * 2
         values = np.asarray([0., .5, 1.])
