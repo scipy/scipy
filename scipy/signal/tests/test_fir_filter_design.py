@@ -8,7 +8,7 @@ import pytest
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
-    array_namespace, xp_default_dtype
+    array_namespace, xp_default_dtype, np_compat
 )
 from scipy.fft import fft, fft2
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
@@ -150,10 +150,9 @@ class TestFirWinMore:
         kwargs = dict(cutoff=0.5, window=('kaiser', beta), scale=False)
         taps = firwin(ntaps, **kwargs)
 
-        ns = array_namespace(np.empty(0))
         # Check the symmetry of taps.
         assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=ns
+            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=np_compat
         )
 
         # Check the gain at a few samples where
@@ -170,7 +169,7 @@ class TestFirWinMore:
         )
 
         taps_str = firwin(ntaps, pass_zero='lowpass', **kwargs)
-        xp_assert_close(taps, taps_str, xp=ns)
+        xp_assert_close(taps, taps_str, xp=np_compat)
 
     def test_highpass(self, xp):
         width = 0.04
@@ -182,11 +181,9 @@ class TestFirWinMore:
         kwargs = dict(cutoff=0.5, window=('kaiser', beta), scale=False)
         taps = firwin(ntaps, pass_zero=False, **kwargs)
 
-        ns = array_namespace(np.empty(0))
-
         # Check the symmetry of taps.
         assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=ns
+            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=np_compat
         )
 
         # Check the gain at a few samples where
@@ -199,7 +196,7 @@ class TestFirWinMore:
                                   xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5)
 
         taps_str = firwin(ntaps, pass_zero='highpass', **kwargs)
-        xp_assert_close(taps, taps_str, xp=ns)
+        xp_assert_close(taps, taps_str, xp=np_compat)
 
     def test_bandpass(self, xp):
         width = 0.04
@@ -207,11 +204,9 @@ class TestFirWinMore:
         kwargs = dict(cutoff=[0.3, 0.7], window=('kaiser', beta), scale=False)
         taps = firwin(ntaps, pass_zero=False, **kwargs)
 
-        ns = array_namespace(np.empty(0))
-
         # Check the symmetry of taps.
         assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=ns
+            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=np_compat
         )
 
         # Check the gain at a few samples where
@@ -225,7 +220,7 @@ class TestFirWinMore:
                 xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), decimal=5)
 
         taps_str = firwin(ntaps, pass_zero='bandpass', **kwargs)
-        xp_assert_close(taps, taps_str, xp=ns)
+        xp_assert_close(taps, taps_str, xp=np_compat)
 
     def test_bandstop_multi(self, xp):
         width = 0.04
@@ -234,11 +229,9 @@ class TestFirWinMore:
                       scale=False)
         taps = firwin(ntaps, **kwargs)
 
-        ns = array_namespace(np.empty(0))
-
         # Check the symmetry of taps.
         assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=ns
+            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=np_compat
         )
 
         # Check the gain at a few samples where
@@ -256,7 +249,7 @@ class TestFirWinMore:
         )
 
         taps_str = firwin(ntaps, pass_zero='bandstop', **kwargs)
-        xp_assert_close(taps, taps_str, xp=ns)
+        xp_assert_close(taps, taps_str, xp=np_compat)
 
     def test_fs_nyq(self, xp):
         """Test the fs and nyq keywords."""
@@ -267,11 +260,9 @@ class TestFirWinMore:
         taps = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
                         pass_zero=False, scale=False, fs=2*nyquist)
 
-        ns = array_namespace(np.empty(0))
-
         # Check the symmetry of taps.
         assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2 - 1:-1], xp=ns
+            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2 - 1:-1], xp=np_compat
         )
 
         # Check the gain at a few samples where
