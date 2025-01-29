@@ -82,6 +82,12 @@ Real ibeta_wrap(Real a, Real b, Real x)
         return NAN;
     }
 
+    /* In limiting cases, SciPy treats `betainc` as a two parameter family
+     * of functions of a single variable `x`, rather than as a function of
+     * three variables `a`, `b`, `x`. The limit ``(a, b) -> (a0, b0)`` of
+     * ``betainc(a, b, x)`` is treated as the pointwise limit in `x`.
+     */
+
     if ((a == 0) && (b == 0)) {
 	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
 	 * to a Bernoulli(p) distribution, where p depends on the path in
@@ -94,16 +100,16 @@ Real ibeta_wrap(Real a, Real b, Real x)
 
     if (a == 0) {
 	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
-	 * at x = 0. Determinate for x in (0, 1] but indeterminate at x = 0.
+	 * at x = 0.
 	 */
-	return x > 0 ? 1 : NAN;
+	return x > 0 ? 1 : 0;
     }
 
     if (b == 0) {
 	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
-	 * at x = 0. Determinate for x in [0, 1) but indeterminate at x = 1.
+	 * at x = 1.
 	 */
-	return x < 1 ? 0 : NAN;
+	return x < 1 ? 0 : 1;
     }
 
     try {
@@ -152,6 +158,12 @@ Real ibetac_wrap(Real a, Real b, Real x)
         return NAN;
     }
 
+    /* In limiting cases, SciPy treats `betaincc` as a two parameter family
+     * of functions of a single variable `x`, rather than as a function of
+     * three variables `a`, `b`, `x`. The limit ``(a, b) -> (a0, b0)`` of
+     * ``betainc(a, b, x)`` is treated as the pointwise limit in `x`.
+     */
+
     if ((a == 0) && (b == 0)) {
 	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
 	 * to a Bernoulli(p) distribution, where p depends on the path in
@@ -164,16 +176,16 @@ Real ibetac_wrap(Real a, Real b, Real x)
 
     if (a == 0) {
 	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
-	 * at x = 0. Determinate for x in (0, 1] but indeterminate at x = 0.
+	 * at x = 0.
 	 */
-	return x > 0 ? 0 : NAN;
+	return x > 0 ? 0 : 1;
     }
 
     if (b == 0) {
 	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
-	 * at x = 0. Determinate for x in [0, 1) but indeterminate at x = 1.
+	 * at x = 1.
 	 */
-	return x < 1 ? 1 : NAN;
+	return x < 1 ? 1 : 0;
     }
 
     try {
