@@ -136,6 +136,7 @@ from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import array_namespace, _asarray, xp_copy, is_jax
 from scipy._lib._disjoint_set import DisjointSet
+import scipy._lib.array_api_extra as xpx
 
 
 _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
@@ -2256,7 +2257,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         ):
             raise ValueError(f'Linkage {name_str}uses non-singleton cluster before'
                              ' it is formed.')
-        if xp.unique_values(Z[:, :2]).shape[0] < n * 2:
+        if xpx.nunique(Z[:, :2]) < n * 2:
             raise ValueError(f'Linkage {name_str}uses the same cluster more than once.')
     except Exception as e:
         if throw:
@@ -4132,7 +4133,7 @@ def leaders(Z, T):
     if T.shape[0] != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
 
-    n_clusters = int(np.asarray(xp.unique_values(T)).shape[0])
+    n_clusters = int(xpx.nunique(T))
     n_obs = int(Z.shape[0] + 1)
     L = np.zeros(n_clusters, dtype=np.int32)
     M = np.zeros(n_clusters, dtype=np.int32)
