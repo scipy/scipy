@@ -108,7 +108,8 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
     if (!isComplex)
     {
         // Input and output is real, truncate the extra space at the end
-        void* mem_ret_half = realloc(mem_ret, n*n*ret_dims);
+        npy_intp new_size = (ret_dims/2)*(input_type == NPY_FLOAT32 ? sizeof(float) : sizeof(double));
+        void* mem_ret_half = realloc(mem_ret, new_size);
         // Quite unlikely but still allowed to fail
         if (!mem_ret_half) { PYERR(sqrtm_error, "Memory reallocation failed."); }
         PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, input_type, mem_ret_half);
