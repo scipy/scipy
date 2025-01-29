@@ -419,7 +419,7 @@ vector differential equation:
 
 given initial conditions :math:`\mathbf{y}\left(0\right)=\mathbf{y}_{0}`, where
 :math:`\mathbf{y}` is a length :math:`N` vector and :math:`\mathbf{f}`
-is a mapping from :math:`\mathcal{R}^{N}` to :math:`\mathcal{R}^{N}.`
+is a mapping from :math:`\mathbb{R}^{N}` to :math:`\mathbb{R}^{N}.`
 A higher-order ordinary differential equation can always be reduced to
 a differential equation of this type by introducing intermediate
 derivatives into the :math:`\mathbf{y}` vector.
