@@ -15,8 +15,8 @@ from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp, xp_device
 )
-from scipy._lib._lazy_testing import patch_lazy_xp_functions
 from scipy._lib._testutils import FPUModeChangeWarning
+from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
 from scipy._lib import _pep440
 
 try:
