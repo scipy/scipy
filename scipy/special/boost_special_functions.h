@@ -162,7 +162,7 @@ Real ibetac_wrap(Real a, Real b, Real x)
     /* In limiting cases, SciPy treats `betaincc` as a two parameter family
      * of functions of a single variable `x`, rather than as a function of
      * three variables `a`, `b`, `x`. The limit ``(a, b) -> (a0, b0)`` of
-     * ``betainc(a, b, x)`` is treated as the pointwise limit in `x`.
+     * ``betaincc(a, b, x)`` is treated as the pointwise limit in `x`.
      */
 
     if (((a == 0) && (b == 0)) || (std::isinf(a) && std::isinf(b))) {

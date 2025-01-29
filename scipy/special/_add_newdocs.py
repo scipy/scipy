@@ -804,7 +804,7 @@ add_newdoc(
         \lim_{(a, b) \rightarrow (a_0, b_0)} \mathrm{betainc}(a, b, x)
 
     is treated as a pointwise limit in ``x``. Thus for example,
-    ``betainc(0, b, 0)`` equals ``0`` for ``b > 0``, although it should be
+    ``betainc(0, b, 0)`` equals ``0`` for ``b > 0``, although it would be
     indeterminate when considering the simultaneous limit ``(a, x) -> (0+, 0+)``.
 
     This function wraps the ``ibeta`` routine from the
@@ -898,9 +898,9 @@ add_newdoc(
     -----
     .. versionadded:: 1.11.0
 
-    Like ``betainc``, ``betaincc(a, b, x)`` is treated as a two parameter
+    Like `betainc`, ``betaincc(a, b, x)`` is treated as a two parameter
     family of functions of a single variable `x`, rather than as a function of
-    three variables. See the ``betainc`` docstring for more info on how this
+    three variables. See the `betainc` docstring for more info on how this
     impacts limiting cases.
 
     This function wraps the ``ibetac`` routine from the
