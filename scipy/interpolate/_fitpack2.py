@@ -1157,7 +1157,8 @@ Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
 the maximal number of iterations maxit (set to 20 by the program)
 allowed for finding a smoothing spline with fp=s has been reached:
 s too small.
-Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
+Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.
+Try increasing maxit by passing it as a keyword argument.""",
                     4: """
 No more knots can be added because the number of b-spline coefficients
 (nx-kx-1)*(ny-ky-1) already exceeds the number of data points m:
@@ -1574,6 +1575,9 @@ class RectBivariateSpline(BivariateSpline):
         Positive smoothing factor defined for estimation condition:
         ``sum((z[i]-f(x[i], y[i]))**2, axis=0) <= s`` where f is a spline
         function. Default is ``s=0``, which is for interpolation.
+    maxit : int, optional
+        The maximal number of iterations maxit allowed for finding a
+        smoothing spline with fp=s. Default is ``maxit=20``.
 
     See Also
     --------
