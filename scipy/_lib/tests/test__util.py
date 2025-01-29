@@ -14,12 +14,12 @@ from scipy.conftest import skip_xp_invalid_arg
 
 from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
                                    is_array_api_strict)
-from scipy._lib._lazy_testing import lazy_xp_function
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 import scipy._lib.array_api_extra as xpx
+from scipy._lib.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 
