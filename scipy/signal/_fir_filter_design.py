@@ -13,7 +13,7 @@ from scipy.signal._arraytools import _validate_fs
 
 from . import _sigtools
 
-from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
+from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype, np_compat
 import scipy._lib.array_api_extra as xpx
 
 
@@ -375,7 +375,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     """
     if isinstance(cutoff, (int, float)):
-        xp = array_namespace(np.empty(1))   # np_compat
+        xp = np_compat
     else:
         xp = array_namespace(cutoff)
 
