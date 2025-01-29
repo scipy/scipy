@@ -29,7 +29,6 @@ are arrays.
 """
 import numpy as np
 from scipy._lib._array_api import array_namespace
-from scipy.ndimage._ni_support import _skip_if_int
 
 
 def _skip_if_lti(arg):
@@ -56,9 +55,6 @@ def _skip_if_str_or_tuple(window):
 def _skip_if_poly1d(arg):
     return None if isinstance(arg, np.poly1d) else arg
 
-
-def _skip_if_float(arg):
-    return None if isinstance(arg, float) else arg
 
 ###################
 
@@ -301,11 +297,11 @@ def deconvolve_signature(signal, divisor):
 
 
 def detrend_signature(data, axis=1, type='linear', bp=0, *args, **kwds):
-    return array_namespace(data, _skip_if_int(bp))
+    return array_namespace(data, bp)
 
 
 def filtfilt_signature(b, a, x, *args, **kwds):
-    return array_namespace(_skip_if_float(b), _skip_if_float(a), x)
+    return array_namespace(b, a, x)
 
 
 def lfilter_signature(b, a, x, axis=-1, zi=None):
@@ -350,19 +346,19 @@ def firwin2_signature(numtaps, freq, gain, *args, **kwds):
 
 
 def freqs_zpk_signature(z, p, k, worN, *args, **kwds):
-    return array_namespace(z, p, _skip_if_int(worN))
+    return array_namespace(z, p, worN)
 
 freqz_zpk_signature = freqs_zpk_signature
 
 
 def freqs_signature(b, a, worN=200, *args, **kwds):
-    return array_namespace(b, a, _skip_if_int(worN))
+    return array_namespace(b, a, worN)
 
 freqz_signature = freqs_signature
 
 
 def freqz_sos_signature(sos, worN=512, *args, **kwds):
-    return array_namespace(sos, _skip_if_int(worN))
+    return array_namespace(sos, worN)
 
 sosfreqz_signature = freqz_sos_signature
 
@@ -373,7 +369,7 @@ def gausspulse_signature(t, *args, **kwds):
 
 
 def group_delay_signature(system, w=512, whole=False, fs=6.283185307179586):
-    return array_namespace(_skip_if_str_or_tuple(system), _skip_if_int(w))
+    return array_namespace(_skip_if_str_or_tuple(system), w)
 
 
 def hilbert_signature(x, N=None, axis=-1):
@@ -530,7 +526,7 @@ def symiirorder1_signature(signal, c0, z1, precision=-1.0):
 
 
 def symiirorder2_signature(input, r, omega, precision=-1.0):
-    return array_namespace(input, _skip_if_float(r), _skip_if_float(omega))
+    return array_namespace(input, r, omega)
 
 
 def cspline1d_signature(signal, *args, **kwds):
