@@ -11,7 +11,8 @@ from types import ModuleType
 from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import Array, array_namespace, is_numpy, xp_size
+from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
+                                   is_numpy, xp_size)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 import scipy._lib.array_api_extra as xpx
@@ -970,12 +971,20 @@ def _contains_nan(
     # The implicit call to bool(contains_nan) must happen after testing
     # nan_policy to prevent lazy and device-bound xps from raising in the
     # default policy='propagate' case.
-    if nan_policy == 'raise' and contains_nan:
-        msg = "The input contains nan values"
-        raise ValueError(msg)
-    if nan_policy == 'omit' and not xp_omit_okay and not is_numpy(xp) and contains_nan:
-        msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
-        raise ValueError(msg)
+    if nan_policy == 'raise':
+        if is_lazy_array(a):
+            msg = "nan_policy='raise' is not supported for lazy arrays."
+            raise TypeError(msg)
+        if contains_nan:
+            msg = "The input contains nan values"
+            raise ValueError(msg)
+    elif nan_policy == 'omit' and not xp_omit_okay and not is_numpy(xp):
+        if is_lazy_array(a):
+            msg = "nan_policy='omit' is not supported for lazy arrays."
+            raise TypeError(msg)
+        if contains_nan:
+            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
+            raise ValueError(msg)
 
     return contains_nan
 

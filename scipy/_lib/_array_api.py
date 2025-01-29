@@ -20,6 +20,7 @@ import numpy.typing as npt
 from scipy._lib import array_api_compat
 from scipy._lib.array_api_compat import (
     is_array_api_obj,
+    is_lazy_array,
     size as xp_size,
     numpy as np_compat,
     device as xp_device,
@@ -27,13 +28,14 @@ from scipy._lib.array_api_compat import (
     is_cupy_namespace as is_cupy,
     is_torch_namespace as is_torch,
     is_jax_namespace as is_jax,
+    is_dask_namespace as is_dask,
     is_array_api_strict_namespace as is_array_api_strict
 )
 from scipy._lib._sparse import issparse
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices', 'default_xp',
+    'get_xp_devices', 'default_xp', 'is_lazy_array',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
@@ -284,6 +286,9 @@ def _strict_check(actual, desired, xp, *,
         assert actual.dtype == desired.dtype, _msg
 
     if check_shape:
+        if is_dask(xp):
+            actual.compute_chunk_sizes()
+            desired.compute_chunk_sizes()
         _msg = f"Shapes do not match.\nActual: {actual.shape}\nDesired: {desired.shape}"
         assert actual.shape == desired.shape, _msg
 

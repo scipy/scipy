@@ -20,6 +20,7 @@ from scipy._lib._array_api import (
     SCIPY_ARRAY_API, xp_copy, xp_assert_close, xp_assert_equal
 )
 
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 TESTDATA_2D = np.array([
@@ -351,6 +352,7 @@ class TestKMean:
     def krand_lock(self):
         return Lock()
 
+    @xfail_xp_backends('dask.array', reason="Wrong answer")
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
     def test_krandinit(self, xp, krand_lock):

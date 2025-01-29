@@ -761,6 +761,7 @@ class TestBartlett:
     @pytest.mark.skip_xp_backends(
         "jax.numpy",
         reason='`var` incorrect when `correction > n` (google/jax#21330)')
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         args = [xp.asarray(arg) for arg in args]
@@ -1813,6 +1814,7 @@ class TestKstat:
         m3 = stats.moment(data, order=3)
         xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
         if is_numpy(xp):
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
@@ -1855,6 +1857,7 @@ class TestKstat:
 
 
 class TestKstatVar:
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
         x = xp.asarray([])
         if is_numpy(xp):

@@ -1795,6 +1795,7 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
         Output
 
     """
+    input = np.asarray(input)
     tmp1 = grey_dilation(input, size, footprint, structure, None, mode,
                          cval, origin, axes=axes)
     if isinstance(output, np.ndarray):

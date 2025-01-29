@@ -184,6 +184,7 @@ cases = [
 ]
 
 
+@pytest.mark.skip_xp_backends('dask.array', reason='no take_along_axis')
 @pytest.mark.skip_xp_backends('jax.numpy',
                               reason='JAX arrays do not support item assignment.')
 @pytest.mark.skip_xp_backends('array_api_strict',
@@ -543,6 +544,7 @@ class TestChandrupatlaMinimize:
         assert f(res.xl) == f(res.xm) == f(res.xr)
 
 
+@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
 @pytest.mark.skip_xp_backends('array_api_strict',
                               reason='Currently uses fancy indexing assignment.')
 @pytest.mark.skip_xp_backends('jax.numpy',
