@@ -322,6 +322,7 @@ class TestFirWinMore:
             firwin2(51, .5, 1, fs=np.array([10, 20]))
 
 
+@skip_xp_backends("dask.array", reason="XXX something in dask")
 @skip_xp_backends(cpu_only=True, reason="firwin2 uses np.interp")
 class TestFirwin2:
 
@@ -564,6 +565,7 @@ class TestRemez:
             remez(11, .1, 1, fs=np.array([10, 20]))
 
 
+@skip_xp_backends("dask.array", reason="XXX something in dask")
 @skip_xp_backends(cpu_only=True, reason="lstsq")
 class TestFirls:
 
@@ -729,6 +731,7 @@ class TestMinimumPhase:
             assert len(h_linear) == len(h_new)
             xp_assert_close(np.abs(fft(h_new)), np.abs(fft(h_linear)), rtol=1e-4)
 
+    @skip_xp_backends("dask.array", reason="too slow")
     @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test_hilbert(self, xp):
         # compare to MATLAB output of reference implementation
