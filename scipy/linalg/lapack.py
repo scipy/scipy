@@ -586,9 +586,6 @@ All functions
    sstevd
    dstevd
 
-   sstevd_lwork
-   dstevd_lwork
-
    ssycon
    dsycon
    csycon
