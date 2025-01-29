@@ -3923,12 +3923,6 @@ def _angle(z, xp):
     return a
 
 
-def _skip_if_float(arg):
-    # XXX: remove when https://github.com/data-apis/array-api-compat/pull/147
-    # is available
-    return None if isinstance(arg, (int, float)) else arg
-
-
 def _mean(x, *args, xp, **kwds):
     # https://github.com/data-apis/array-api/pull/850
     if xp.isdtype(x.dtype, 'complex floating'):
@@ -3988,10 +3982,7 @@ def vectorstrength(events, period):
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
     '''
-    if isinstance(events, (int, float)) and isinstance(period, (int, float)):
-        xp = np_compat
-    else:
-        xp = array_namespace(_skip_if_float(events), _skip_if_float(period))
+    xp = array_namespace(events, period)
 
     events = xp.asarray(events)
     period = xp.asarray(period)
