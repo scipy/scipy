@@ -4567,10 +4567,6 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     return y_opt, x0, x1
 
 
-def _skip_if_float(arg):
-    return None if isinstance(arg, float) else arg
-
-
 def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
              irlen=None):
     """
@@ -4729,7 +4725,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     2.875334415008979e-10
 
     """
-    xp = array_namespace(_skip_if_float(b), _skip_if_float(a), x)
+    xp = array_namespace(b, a, x)
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
