@@ -102,6 +102,7 @@ class TestLogM:
         logm(m)
         #XXX: what would be the correct result?
 
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     def test_al_mohy_higham_2012_experiment_1_logm(self):
         # The logm completes the round trip successfully.
         # Note that the expm leg of the round trip is badly conditioned.
