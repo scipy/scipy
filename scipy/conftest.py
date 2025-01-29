@@ -199,7 +199,10 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
                     for backend in SCIPY_ARRAY_API_
                 }
             except KeyError:
-                msg = f"'--array-api-backend' must be in {xp_available_backends.keys()}"
+                msg = (
+                    f"'--array-api-backend' must be in {list(xp_available_backends)}; "
+                    f"got {SCIPY_ARRAY_API_}"
+                )
                 raise ValueError(msg)
 
 
