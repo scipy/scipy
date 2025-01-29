@@ -5,17 +5,19 @@
 
 """
 import functools
-import warnings
-import numpy as np
-from numpy import array, identity, dot, sqrt
-from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
-                           assert_array_less, assert_array_equal, assert_warns)
 import pytest
+
+import numpy as np
+from numpy import array, identity, sqrt
+from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
+                           assert_array_less, assert_array_equal, assert_warns,
+                           suppress_warnings)
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
                           expm, expm_frechet, expm_cond, norm, khatri_rao,
                           cosm, sinm, tanm, coshm, sinhm, tanhm)
+
 from scipy.linalg import _matfuncs_inv_ssq
 from scipy.linalg._matfuncs import pick_pade_structure
 from scipy.linalg._matfuncs_inv_ssq import LogmExactlySingularWarning
@@ -136,8 +138,9 @@ class TestLogM:
                 assert_allclose(M_sqrtm_round_trip, M)
 
                 # Check logm round trip.
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', RuntimeWarning)
+                with suppress_warnings() as sup:
+                    sup.filter(category=RuntimeWarning)
+
                     M_logm = logm(M)
                     M_logm_round_trip = expm(M_logm)
                     assert_allclose(M_logm_round_trip, M, err_msg=err_msg)
@@ -268,10 +271,12 @@ class TestLogM:
 
 
 class TestSqrtM:
+    def setup_method(self):
+        self.rng = np.random.default_rng(1738151906092735)
+
     def test_round_trip_random_float(self):
-        rng = np.random.RandomState(1234)
         for n in range(1, 6):
-            M_unscaled = rng.randn(n, n)
+            M_unscaled = self.rng.standard_normal((n, n))
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_sqrtm = sqrtm(M)
@@ -279,9 +284,9 @@ class TestSqrtM:
                 assert_allclose(M_sqrtm_round_trip, M)
 
     def test_round_trip_random_complex(self):
-        rng = np.random.RandomState(1234)
         for n in range(1, 6):
-            M_unscaled = rng.randn(n, n) + 1j * rng.randn(n, n)
+            M_unscaled = (self.rng.standard_normal((n, n)) +
+                          1j * self.rng.standard_normal((n, n)))
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_sqrtm = sqrtm(M)
@@ -322,8 +327,8 @@ class TestSqrtM:
             assert_(not any(w.imag or w.real < 0 for w in W))
 
             # Last test matrix is singular so suppress the warning
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', LinAlgWarning)
+            with suppress_warnings() as sup:
+                sup.filter(category=LinAlgWarning)
 
                 # check float type preservation
                 A = np.array(matrix_as_list, dtype=float)
@@ -378,8 +383,9 @@ class TestSqrtM:
                 [0, 0, 3, 0],
                 [0, 0, 0, 3],
                 [0, 0, 0, 0]], dtype=dt)
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', LinAlgWarning)
+            with suppress_warnings() as sup:
+                sup.filter(category=LinAlgWarning)
+
                 A_sqrtm = sqrtm(A)
                 assert_allclose(np.tril(A_sqrtm), np.zeros((4, 4)))
                 assert np.isnan(A_sqrtm).any()
@@ -424,24 +430,26 @@ class TestSqrtM:
                       [0, 0, 0, 0],
                       [sqrt(0.5), 0, 0, sqrt(0.5)]])
         assert_allclose(R @ R, M, atol=1e-14)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', LinAlgWarning)
+        with suppress_warnings() as sup:
+            sup.filter(category=LinAlgWarning)
+
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
     def test_gh5336(self):
         M = np.diag([2, 1, 0])
         R = np.diag([sqrt(2), 1, 0])
         assert_allclose(R @ R, M, atol=1e-14)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', LinAlgWarning)
+        with suppress_warnings() as sup:
+            sup.filter(category=LinAlgWarning)
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
     def test_gh7839(self):
         M = np.zeros((2, 2))
         R = np.zeros((2, 2))
         # Catch and silence LinAlgWarning
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', LinAlgWarning)
+        with suppress_warnings() as sup:
+            sup.filter(category=LinAlgWarning)
+
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
     @pytest.mark.xfail(reason="failing on macOS after gh-20212")
