@@ -61,10 +61,10 @@ linux_aarch64_test_task:
     # apt-get update
     # DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata
 
-    apt-get install -y python3.10 python3.10-venv
-    # python3.10 -m ensurepip --default-pip --user
+    apt-get install -y python3.11 python3.11-venv
+    # python3.11 -m ensurepip --default-pip --user
 
-    ln -s $(which python3.10) python
+    ln -s $(which python3.11) python
     export PATH=/usr/lib/ccache:$PWD:$PATH
     echo "PATH=$PATH" >> $CIRRUS_ENV
     echo "CCACHE_DIR=$PWD/.ccache" >> $CIRRUS_ENV

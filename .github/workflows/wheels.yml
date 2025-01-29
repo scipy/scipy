@@ -86,7 +86,7 @@ jobs:
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]
         - [windows-2019, win, AMD64, "", ""]
-        python: [["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
+        python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -241,7 +241,7 @@ jobs:
           # Note that this step is *after* specific pythons have been used to
           # build and test the wheel
           auto-update-conda: true
-          python-version: "3.10"
+          python-version: "3.11"
           miniforge-version: latest
 
       - name: Upload wheels
