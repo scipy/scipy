@@ -453,7 +453,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     m = xp.arange(0, numtaps) - alpha
     h = 0
     for left, right in bands:
-        h += right * xp.sinc(right * m)
+        h += right * xpx.sinc(right * m, xp=xp)
         h -= left * xp.sinc(left * m)
 
     # Get and apply the window function.
@@ -859,8 +859,8 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
         weight = [1] * len(desired)
 
     bands = np.asarray(bands).copy()
-    result =  _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
-                               maxiter, grid_density)
+    result = _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
+                              maxiter, grid_density)
     return xp.asarray(result)
 
 
@@ -1264,7 +1264,7 @@ def minimum_phase(h,
     h = xp.asarray(h)
     if xp.isdtype(h.dtype, "complex floating"):
         raise ValueError('Complex filters not supported')
-    if h.ndim != 1 or xp_size(h) <= 2:
+    if h.ndim != 1 or h.shape[0] <= 2:
         raise ValueError('h must be 1-D and at least 2 samples long')
     n_half = h.shape[0] // 2
 
