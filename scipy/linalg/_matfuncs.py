@@ -496,6 +496,8 @@ def sqrtm(A, *, disp=_NoValue, blocksize=_NoValue):
         a = a.astype(np.float32)
     elif a.dtype.char in 'G':
         a = a.astype(np.complex128)
+    elif a.dtype.char in 'g':
+        a = a.astype(np.float64)
 
     if a.dtype.char not in 'fdFD':
         raise TypeError("scipy.linalg.sqrtm is not supported for the data type"
