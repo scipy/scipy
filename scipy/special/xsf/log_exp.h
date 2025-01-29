@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "config.h"
+#include "error.h"
 
 namespace xsf {
 
@@ -64,5 +65,26 @@ T log_expit(T x) {
 
     return -std::log1p(std::exp(-x));
 };
+
+
+/* Compute log(1 - exp(x)). */
+template <typename T>
+T log1mexp(T x) {
+    if (x > 1) {
+	return std::numeric_limits<T>::quiet_NaN();
+	set_error("_log1mexp", SF_ERROR_DOMAIN, NULL);
+    }
+    if (x == 1) {
+	return -std::numeric_limits<T>::infinity();
+    }
+    if (std::isinf(x)) {
+	// Positive infinity case has already been eliminated.
+	return 0.0;
+    }
+    if (x < -1) {
+	return std::log1p(-std::exp(x));
+    }
+    return std::log(-std::expm1(x));
+}
 
 } // namespace xsf
