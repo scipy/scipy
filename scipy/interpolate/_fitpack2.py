@@ -1606,7 +1606,7 @@ class RectBivariateSpline(BivariateSpline):
 
     """
 
-    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
+    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0, maxit=20):
         x, y, bbox = ravel(x), ravel(y), ravel(bbox)
         z = np.asarray(z)
         if not np.all(diff(x) > 0.0):
@@ -1628,7 +1628,7 @@ class RectBivariateSpline(BivariateSpline):
         xb, xe, yb, ye = bbox
         with FITPACK_LOCK:
             nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
-                                                            ye, kx, ky, s)
+                                                            ye, kx, ky, s, maxit)
 
         if ier not in [0, -1, -2]:
             msg = _surfit_messages.get(ier, f'ier={ier}')
