@@ -221,6 +221,10 @@ def _binary_erosion(input, structure, iterations, mask, output,
         raise TypeError('iterations parameter should be an integer') from e
 
     input = np.asarray(input)
+    # The Cython code can't cope with broadcasted inputs
+    if not input.flags.c_contiguous and not input.flags.f_contiguous:
+        input = np.ascontiguousarray(input)
+
     ndim = input.ndim
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')

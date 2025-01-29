@@ -782,6 +782,15 @@ class TestNdimageMorphology:
         assert_array_almost_equal(out, xp.asarray([0, 1, 0]))
 
     @pytest.mark.parametrize('dtype', types)
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8912")
+    def test_binary_erosion05_broadcasted(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        data = xp.ones((1, ), dtype=dtype)
+        data = xp.broadcast_to(data, (3, ))
+        out = ndimage.binary_erosion(data)
+        assert_array_almost_equal(out, xp.asarray([0, 1, 0]))
+
+    @pytest.mark.parametrize('dtype', types)
     def test_binary_erosion06(self, dtype, xp):
         dtype = getattr(xp, dtype)
         data = xp.ones([3], dtype=dtype)
@@ -1498,6 +1507,14 @@ class TestNdimageMorphology:
     def test_binary_dilation05(self, dtype, xp):
         dtype = getattr(xp, dtype)
         data = xp.ones([3], dtype=dtype)
+        out = ndimage.binary_dilation(data)
+        assert_array_almost_equal(out, xp.asarray([1, 1, 1]))
+
+    @pytest.mark.parametrize('dtype', types)
+    def test_binary_dilation05_broadcasted(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        data = xp.ones((1, ), dtype=dtype)
+        data = xp.broadcast_to(data, (3,))
         out = ndimage.binary_dilation(data)
         assert_array_almost_equal(out, xp.asarray([1, 1, 1]))
 
