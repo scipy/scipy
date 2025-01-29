@@ -417,7 +417,7 @@ vector differential equation:
 
     \frac{d\mathbf{y}}{dt}=\mathbf{f}\left(\mathbf{y},t\right),
 
-given initial conditions :math:`\mathbf{y}\left(0\right)=y_{0}`, where
+given initial conditions :math:`\mathbf{y}\left(0\right)=\mathbf{y}_{0}`, where
 :math:`\mathbf{y}` is a length :math:`N` vector and :math:`\mathbf{f}`
 is a mapping from :math:`\mathcal{R}^{N}` to :math:`\mathcal{R}^{N}.`
 A higher-order ordinary differential equation can always be reduced to
