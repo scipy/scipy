@@ -27,7 +27,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_device,
 
 )
 from scipy._lib.array_api_compat import is_array_api_obj
@@ -3638,16 +3638,16 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if window is not None:
         if callable(window):
             # older numpies do not have the .device attribute
-            device_arg = {'device': x.device if hasattr(x, 'device') else None}
-            W = window(sp_fft.fftfreq(Nx, xp=xp, **device_arg))
+#            device_arg = {'device': x.device if hasattr(x, 'device') else None}
+            W = window(sp_fft.fftfreq(Nx, xp=xp, device=xp_device(x)))
         elif hasattr(window, 'shape'):   # must be an array object
             if window.shape != (Nx,):
                 raise ValueError('window must have the same length as data')
             W = window
         else:
             # older numpies do not have the .device attribute
-            device_arg = {'device': x.device if hasattr(x, 'device') else None}
-            W = sp_fft.ifftshift(get_window(window, Nx, xp=xp, **device_arg))
+#            device_arg = {'device': x.device if hasattr(x, 'device') else None}
+            W = sp_fft.ifftshift(get_window(window, Nx, xp=xp, device=xp_device(x)))
 
         newshape_W = [1] * x.ndim
         newshape_W[axis] = X.shape[axis]

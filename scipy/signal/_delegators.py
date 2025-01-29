@@ -28,7 +28,7 @@ are arrays.
 
 """
 import numpy as np
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, np_compat
 
 
 def _skip_if_lti(arg):
@@ -335,7 +335,7 @@ def firls_signature(numtaps, bands, desired, *, weight=None, fs=None):
 
 def firwin_signature(numtaps, cutoff, *args, **kwds):
     if isinstance(cutoff, (int, float)):
-        xp = array_namespace(np.empty(1))   # np_compat
+        xp = np_compat
     else:
         xp = array_namespace(cutoff)
     return xp
