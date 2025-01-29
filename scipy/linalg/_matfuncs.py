@@ -9,7 +9,7 @@ from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 
 from scipy._lib._util import _apply_over_batch
-from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
+from scipy._lib.deprecation import _NoValue
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth, LinAlgWarning
@@ -395,10 +395,8 @@ def _exp_sinch(x):
     lexp_diff[mask_z] = np.exp(x[:-1][mask_z])
     return lexp_diff
 
-# Don't forget to decrement the stacklevel as the deprecation decorators are removed
-@_deprecate_positional_args(version='1.20.0', deprecated_args={'disp'})
-@_deprecate_positional_args(version='1.18.0', deprecated_args={'blocksize'})
-def sqrtm(A, *, disp=_NoValue, blocksize=_NoValue):
+
+def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     """
     Compute, if exists, the matrix square root.
 
@@ -443,8 +441,8 @@ def sqrtm(A, *, disp=_NoValue, blocksize=_NoValue):
     that, there exist matrices that have square roots that are not polynomials
     in ``A``. For a classical example from [2]_, the matrix satisfies
 
-        [ a, a**2 + 1]**2     [-1,  0]
-        [-1,       -a]     =  [ 0, -1]
+            [ a, a**2 + 1]**2     [-1,  0]
+            [-1,       -a]     =  [ 0, -1]
 
     for any scalar ``a`` but is not a polynomial in ``-I``.
 
@@ -514,7 +512,7 @@ def sqrtm(A, *, disp=_NoValue, blocksize=_NoValue):
         else:
             msg = ("Matrix is ill-conditioned. The result might be inaccurate"
                    " or the array might not have a square root.")
-        warnings.warn(msg, LinAlgWarning, stacklevel=4)
+        warnings.warn(msg, LinAlgWarning, stacklevel=2)
 
     if disp is False:
         try:
