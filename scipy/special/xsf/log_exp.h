@@ -71,10 +71,11 @@ T log_expit(T x) {
 template <typename T>
 T log1mexp(T x) {
     if (x > 1) {
-	return std::numeric_limits<T>::quiet_NaN();
 	set_error("_log1mexp", SF_ERROR_DOMAIN, NULL);
+	return std::numeric_limits<T>::quiet_NaN();
     }
     if (x == 1) {
+	set_error("_log1mexp", SF_ERROR_SINGULAR, NULL);
 	return -std::numeric_limits<T>::infinity();
     }
     if (std::isinf(x)) {
