@@ -162,7 +162,8 @@ def logm(A, disp=_NoValue):
         instead of returning estimated error. (Default: True)
         .. deprecated:: 1.16.0
             The `disp` argument is deprecated and will be
-            removed in SciPy 1.18.0.
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(expm(logm(A)) - A, 1) / norm(A, 1)``.
 
     Returns
     -------
@@ -758,7 +759,8 @@ def signm(A, disp=_NoValue):
         instead of returning estimated error. (Default: True)
         .. deprecated:: 1.16.0
             The `disp` argument is deprecated and will be
-            removed in SciPy 1.18.0.
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(signm @ signm - signm, 1)``.
 
 
     Returns

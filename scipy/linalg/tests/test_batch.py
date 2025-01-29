@@ -138,7 +138,7 @@ class TestBatch:
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 3*np.eye(4)  # avoid complex output for real input
-        res1 = self.batch_test(linalg.logm, A)
+        self.batch_test(linalg.logm, A)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_pinv(self, dtype, rng):

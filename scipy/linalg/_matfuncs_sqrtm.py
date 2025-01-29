@@ -132,7 +132,8 @@ def sqrtm(A, disp=_NoValue, blocksize=64):
         instead of returning estimated error. (Default: True)
         .. deprecated:: 1.16.0
             The `disp` argument is deprecated and will be
-            removed in SciPy 1.18.0.
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(X @ X - A, 'fro')**2 / norm(A, 'fro')``
 
     blocksize : integer, optional
         If the blocksize is not degenerate with respect to the

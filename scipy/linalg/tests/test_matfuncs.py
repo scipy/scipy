@@ -89,7 +89,7 @@ class TestSignM:
 
 
 class TestLogM:
-    @pytest.mark.filterwarnings("ignore:RuntimeWarning")
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     def test_nils(self):
         a = array([[-2., 25., 0., 0., 0., 0., 0.],
                    [0., -3., 10., 3., 3., 3., 0.],
@@ -110,7 +110,7 @@ class TestLogM:
         A_round_trip = expm(A_logm)
         assert_allclose(A_round_trip, A, rtol=5e-5, atol=1e-14)
 
-    @pytest.mark.filterwarnings("ignore:api v1")
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
         # The raw funm with np.log does not complete the round trip.
         # Note that the expm leg of the round trip is badly conditioned.
@@ -119,7 +119,7 @@ class TestLogM:
         A_round_trip = expm(A_funm_log)
         assert_(not np.allclose(A_round_trip, A, rtol=1e-5, atol=1e-14))
 
-    @pytest.mark.filterwarnings("ignore:api v1")
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     def test_round_trip_random_float(self):
         np.random.seed(1234)
         for n in range(1, 6):
