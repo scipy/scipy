@@ -1356,5 +1356,40 @@ def test_large_m4():
     with pytest.raises(ValueError, match=match):
         loadmat(truncated_mat)
 
+
 def test_gh_19223():
     from scipy.io.matlab import varmats_from_mat  # noqa: F401
+
+
+def test_invalid_field_name_warning():
+    names_vars = (
+        ('_1', mlarr(np.arange(10))),
+        ('mystr', mlarr('a string')))
+    check_mat_write_warning(names_vars)
+
+    names_vars = (('mymap', {"a": 1, "_b": 2}),)
+    check_mat_write_warning(names_vars)
+
+    names_vars = (('mymap', {"a": 1, "1a": 2}),)
+    check_mat_write_warning(names_vars)
+
+
+def check_mat_write_warning(names_vars):
+    class C:
+        def items(self):
+            return names_vars
+
+    stream = BytesIO()
+    with pytest.warns(MatWriteWarning, match='Starting field name with'):
+        savemat(stream, C())
+
+
+def test_corrupt_files():
+    # Test we can detect truncated or corrupt (all zero) files.
+    for n in (2, 4, 10, 19):
+        with pytest.raises(MatReadError,
+                           match="Mat file appears to be truncated"):
+            loadmat(BytesIO(b'\x00' * n))
+    with pytest.raises(MatReadError,
+                       match="Mat file appears to be corrupt"):
+        loadmat(BytesIO(b'\x00' * 20))
