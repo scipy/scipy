@@ -4316,6 +4316,26 @@ def test_ch2_inf():
     assert_equal(special.chdtr(0.7,np.inf), 1.0)
 
 
+@pytest.mark.parametrize("x", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2_v_nan(x):
+    assert np.isnan(special.chdtr(np.nan, x))
+
+
+@pytest.mark.parametrize("v", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2_x_nan(v):
+    assert np.isnan(special.chdtr(v, np.nan))
+
+
+@pytest.mark.parametrize("x", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2c_v_nan(x):
+    assert np.isnan(special.chdtrc(np.nan, x))
+
+
+@pytest.mark.parametrize("v", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2c_x_nan(v):
+    assert np.isnan(special.chdtrc(v, np.nan))
+
+
 def test_chi2c_smalldf():
     assert_almost_equal(special.chdtrc(0.6,3), 1-0.957890536704110)
 
