@@ -78,10 +78,6 @@ T log1mexp(T x) {
 	set_error("_log1mexp", SF_ERROR_SINGULAR, NULL);
 	return -std::numeric_limits<T>::infinity();
     }
-    if (std::isinf(x)) {
-	// Positive infinity case has already been eliminated.
-	return 0.0;
-    }
     if (x < -1) {
 	return std::log1p(-std::exp(x));
     }
