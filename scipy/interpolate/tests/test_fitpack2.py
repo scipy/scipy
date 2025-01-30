@@ -1140,6 +1140,7 @@ class TestRectBivariateSpline:
 
         return x, y, z.astype(np.float64)
 
+    @pytest.mark.slow()
     @pytest.mark.parametrize('shape', [(350, 850), (2000, 170)])
     @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
                                         (1, 7e-3, 1e-4),
@@ -1155,6 +1156,7 @@ class TestRectBivariateSpline:
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
+    @pytest.mark.slow()
     @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system "
                                                      "due to large input data")
     def test_spline_large_2d_maxit(self):
