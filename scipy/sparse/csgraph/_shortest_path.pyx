@@ -344,8 +344,7 @@ def floyd_warshall(csgraph, directed=True,
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    The algorithmic complexity is for a graph with V
-    vertices is ``O(V^3)``.
+    The algorithmic complexity is for a graph with ``V`` vertices is ``O(V^3)``.
 
     Examples
     --------
@@ -579,8 +578,8 @@ def dijkstra(csgraph, directed=True, indices=None,
     Python version.
 
     The algorithmic complexity is approximately ``O(I * (E + N) * log(N))``,
-    where N is the number of vertices, E is the number of edges
-    in the graph, and I = len(indices) if indices is passed. Otherwise, I = N.
+    where ``N`` is the number of vertices, ``E`` is the number of edges
+    in the graph, and ``I = len(indices)`` if indices is passed. Otherwise, ``I = N``.
 
     Examples
     --------
@@ -1188,7 +1187,7 @@ def johnson(csgraph, directed=True, indices=None,
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    The algorithmic complexity for a graph with V vertices and E edges is,
+    The algorithmic complexity for a graph with ``V`` vertices and ``E`` edges is,
     ``O(V^2 * log V + V * E)``.
 
     Examples
@@ -1482,8 +1481,8 @@ def yen(
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    The algorithmic complexity for a graph with V number of vertices and E
-    number of edges is ``O(K*V*(E + V*logV))``.
+    The algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(K*V*(E + V*logV))``.
 
     References
     ----------

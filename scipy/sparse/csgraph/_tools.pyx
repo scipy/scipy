@@ -442,7 +442,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     Notes
     -----
-    The algorithmic complexity for a graph with N vertices is ``O(N*logN)``.
+    The algorithmic complexity for a graph with ``N`` vertices is ``O(N*logN)``.
 
     Examples
     --------
@@ -568,8 +568,8 @@ def construct_dist_matrix(graph,
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
 
-    The algorithmic complexity is ``O(V^3)`` where V is the number of vertices
-    in the input graph.
+    The algorithmic complexity is ``O(V^3)`` where ``V`` is the number
+    of vertices in the input graph.
 
     Examples
     --------

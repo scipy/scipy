@@ -359,7 +359,7 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    The time complexity of this algorithm is ``O(V^3)``, where V is the number of
+    The time complexity of this algorithm is ``O(V^3)``, where ``V`` is the number of
     vertices in the input graph.
 
     References

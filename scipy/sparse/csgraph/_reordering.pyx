@@ -201,7 +201,8 @@ def structural_rank(graph):
     Notes
     -----
     Algorithmic complexity is :math:`O(E \sqrt{V})`,
-    where E is the number of edges and V is the number of vertices.
+    where ``E`` is the number of edges and ``V``
+    is the number of vertices.
 
     References
     ----------

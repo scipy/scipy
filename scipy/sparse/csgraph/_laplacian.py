@@ -112,7 +112,7 @@ def laplacian(
     The normalization is symmetric, making the normalized Laplacian also
     symmetric if the input csgraph was symmetric.
 
-    The algorithmic complexity is for a graph with V
+    The algorithmic complexity is for a graph with ``V``
     vertices is ``O(V^2)``.
 
     References

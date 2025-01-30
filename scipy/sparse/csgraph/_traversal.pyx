@@ -162,8 +162,8 @@ def breadth_first_tree(csgraph, i_start, directed=True):
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    Algorithmic complexity for a graph with V number of vertices and E number
-    of edges is ``O(V + E)``.
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(V + E)``.
 
     Examples
     --------
@@ -241,8 +241,8 @@ def depth_first_tree(csgraph, i_start, directed=True):
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    Algorithmic complexity for a graph with V number of vertices and E number
-    of edges is ``O(V + E)``.
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(V + E)``.
 
     Examples
     --------
@@ -333,8 +333,8 @@ cpdef breadth_first_order(csgraph, i_start,
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    Algorithmic complexity for a graph with V number of vertices and E number of
-    edges is ``O(V + E)``.
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(V + E)``.
 
     Examples
     --------
@@ -545,8 +545,8 @@ cpdef depth_first_order(csgraph, i_start,
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    Algorithmic complexity for a graph with V number of vertices and E number of
-    edges is ``O(V + E)``.
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(V + E)``.
 
     Examples
     --------

@@ -58,8 +58,8 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    Algorithmic complexity for a graph with V number of vertices and E number of
-    edges is ``O(E*logV)``.
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(E*logV)``.
 
     Examples
     --------
