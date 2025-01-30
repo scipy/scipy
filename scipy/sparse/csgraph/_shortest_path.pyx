@@ -81,9 +81,11 @@ def shortest_path(csgraph, method='auto',
            'BF'   -- Bellman-Ford algorithm.
                      This algorithm can be used when weights are negative.
                      If a negative cycle is encountered, an error will be raised.
-                     Computational cost is approximately ``O[N(N^2 k)]``, where
-                     ``k`` is the average number of connected edges per node.
-                     The input csgraph will be converted to a csr representation.
+                     Computational cost of the algorithm is ``O(I * N^2 * k)``,
+                     where ``k`` is the average number of connected edges per node
+                     and ``I = len(indices)``. If ``I = N``, then the time complexity
+                     will be ``O[N(N^2 k)]``. The input csgraph will be converted
+                     to a csr representation.
 
            'J'    -- Johnson's algorithm.
                      Like the Bellman-Ford algorithm, Johnson's algorithm is
@@ -938,9 +940,10 @@ def bellman_ford(csgraph, directed=True, indices=None,
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
-    Computational cost is approximately ``O(V * E)``, where
-    V is the number of vertices and E is the number of edges
-    in the graph.
+    Computational cost of the algorithm is ``O(I * N^2 * k)``, where
+    ``N`` is the number of vertices in the graph, ``k`` is the average number
+    of connected edges per node and ``I = len(indices)``. If ``I = N``, then
+    the time complexity will be ``O[N(N^2 k)]``.
 
     Examples
     --------
