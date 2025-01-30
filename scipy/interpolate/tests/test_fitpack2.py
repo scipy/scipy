@@ -1,5 +1,6 @@
 # Created by Pearu Peterson, June 2003
 import itertools
+import sys
 import numpy as np
 from numpy.testing import suppress_warnings
 import pytest
@@ -1154,6 +1155,8 @@ class TestRectBivariateSpline:
         assert(not np.isnan(z_spl).any())
         xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system "
+                                                     "due to large input data")
     def test_spline_large_2d_maxit(self):
         # Reference - for https://github.com/scipy/scipy/issues/17787
         nx, ny = 1000, 1700

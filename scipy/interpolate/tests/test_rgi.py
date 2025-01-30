@@ -3,7 +3,7 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import assert_warns, assert_
+from numpy.testing import assert_warns
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_array_almost_equal
 )
