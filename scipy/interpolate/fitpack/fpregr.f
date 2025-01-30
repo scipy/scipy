@@ -21,6 +21,8 @@ c  ..local scalars
 c  ..function references..
       real*8 abs,fprati
       integer max0,min0
+      logical onlyxknots
+      onlyxknots = .false.
 c  ..subroutine references..
 c    fpgrre,fpknot
 c  ..
@@ -88,6 +90,10 @@ c  test whether the required storage space exceeds the available one.
       if(ny.gt.nyest .or. nx.gt.nxest) go to 420
 c  find the position of the interior knots in case of interpolation.
 c  the knots in the x-direction.
+      if(onlyxknots) then
+        onlyxknots = .false.
+        goto 120
+      end if
   10  mk1 = mx-kx1
       if(mk1.eq.0) go to 60
       k3 = kx/2
@@ -267,7 +273,10 @@ c  add a new knot in the x-direction
           call fpknot(x,mx,tx,nx,fpintx,nrdatx,nrintx,nxest,1)
 c  test whether we cannot further increase the number of knots in the
 c  x-direction.
-          if(nx.eq.nmaxx) go to 10
+          if(nx.eq.nmaxx) then
+            onlyxknots = .true.
+            go to 10
+          end if
           if(nx.eq.nxe) go to 250
  220    continue
         go to 250
