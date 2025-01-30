@@ -3919,8 +3919,6 @@ class TestVectorstrength:
         assert math.isclose(strength, targ_strength)
         assert math.isclose(phase, 2 * math.pi * targ_phase)
 
-#        assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
-#        assert_almost_equal(xp.asarray(phase), xp.asarray(2 * xp.pi * targ_phase))
 
     @xfail_xp_backends("torch", reason="phase modulo 2*pi")
     def test_partial_2dperiod(self, xp):
@@ -3945,7 +3943,6 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-#        assert_almost_equal(xp.asarray(strength), xp.asarray(targ_strength))
         assert math.isclose(strength, targ_strength, abs_tol=1.5e-7)
 
     def test_opposite_2dperiod(self, xp):
