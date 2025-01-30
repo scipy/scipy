@@ -148,7 +148,7 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -202,12 +202,12 @@ jobs:
   #################################################################################
   python_debug:
     # also uses the vcs->sdist->wheel route.
-    name: Python-debug & ATLAS & sdist+wheel, fast, py3.11/npMin, pip+pytest
+    name: Python-debug & ATLAS & sdist+wheel, fast, py3.12/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04  # provides python3.11-dbg
+    runs-on: ubuntu-24.04  # provides python3.12-dbg
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -413,7 +413,7 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -422,7 +422,10 @@ jobs:
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          sudo apt install -y python3.12-dev python3.11-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
+          sudo apt install software-properties-common
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt update -y
+          sudo apt install -y python3.11-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
 
       - name: Setup Python build deps
         run: |
