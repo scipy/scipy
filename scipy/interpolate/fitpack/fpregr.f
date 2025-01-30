@@ -90,10 +90,6 @@ c  test whether the required storage space exceeds the available one.
       if(ny.gt.nyest .or. nx.gt.nxest) go to 420
 c  find the position of the interior knots in case of interpolation.
 c  the knots in the x-direction.
-      if(onlyxknots) then
-        onlyxknots = .false.
-        goto 120
-      end if
   10  mk1 = mx-kx1
       if(mk1.eq.0) go to 60
       k3 = kx/2
@@ -111,6 +107,10 @@ c  the knots in the x-direction.
         i = i+1
         j = j+1
   50  continue
+      if(onlyxknots) then
+        onlyxknots = .false.
+        goto 120
+      end if
 c  the knots in the y-direction.
   60  mk1 = my-ky1
       if(mk1.eq.0) go to 120
@@ -376,4 +376,3 @@ c  error codes and messages.
       fp = 0.
  440  return
       end
-
