@@ -9,6 +9,7 @@ from numpy import inf
 from scipy._lib._util import _lazywhere, _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
+from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
@@ -1150,47 +1151,6 @@ def _kwargs2args(f, args=None, kwargs=None):
     args = list(args) + list(kwargs.values())
 
     return wrapped, args
-
-
-def _log1mexp(x):
-    r"""Compute the log of the complement of the exponential.
-
-    This function is equivalent to::
-
-        log1mexp(x) = np.log(1-np.exp(x))
-
-    but avoids loss of precision when ``np.exp(x)`` is nearly 0 or 1.
-
-    Parameters
-    ----------
-    x : array_like
-        Input array.
-
-    Returns
-    -------
-    y : ndarray
-        An array of the same shape as `x`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.stats._distribution_infrastructure import _log1mexp
-    >>> x = 1e-300  # log of a number very close to 1
-    >>> _log1mexp(x)  # log of the complement of a number very close to 1
-    -690.7755278982137
-    >>> # np.log1p(-np.exp(x))  # -inf; emits warning
-
-    """
-    def f1(x):
-        # good for exp(x) close to 0
-        return np.log1p(-np.exp(x))
-
-    def f2(x):
-        # good for exp(x) close to 1
-        with np.errstate(divide='ignore'):
-            return np.real(np.log(-special.expm1(x + 0j)))
-
-    return _lazywhere(x < -1, (x,), f=f1, f2=f2)[()]
 
 
 def _logexpxmexpy(x, y):
