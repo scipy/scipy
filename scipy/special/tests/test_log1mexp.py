@@ -1,6 +1,7 @@
+import numpy as np
 import pytest
 
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 from scipy.special._ufuncs import _log1mexp
 
@@ -67,3 +68,18 @@ from scipy.special._ufuncs import _log1mexp
 def test_log1mexp(x, expected):
     observed = _log1mexp(x)
     assert_allclose(observed, expected, rtol=1e-15)
+
+
+@pytest.mark.parametrize("x", [1.1, 1e10, np.inf])
+def test_log1mexp_out_of_domain(x):
+    observed = _log1mexp(x)
+    assert np.isnan(observed)
+
+
+@pytest.mark.parametrize(
+    "x,expected",
+    [(-np.inf, -0.0), (0.0, -np.inf), (-0.0, -np.inf), (np.nan, np.nan)]
+)
+def test_log1mexp_extreme(x, expected):
+    observed = _log1mexp(x)
+    assert_equal(expected, observed)
