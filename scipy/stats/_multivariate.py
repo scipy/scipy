@@ -13,8 +13,8 @@ from scipy._lib._util import check_random_state, _lazywhere
 from scipy.linalg.blas import drot, get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
-from . import _mvn, _covariance, _rcont
-from ._qmvnt import _qmvt
+from . import _covariance, _rcont
+from ._qmvnt import _qmvt, _qmvn, _qauto
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
 
@@ -393,14 +393,14 @@ class multivariate_normal_gen(multi_rv_generic):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
 
-    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
+    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None, **kwds):
         """Create a frozen multivariate normal distribution.
 
         See `multivariate_normal_frozen` for more information.
         """
         return multivariate_normal_frozen(mean, cov,
                                           allow_singular=allow_singular,
-                                          seed=seed)
+                                          seed=seed, **kwds)
 
     def _process_parameters(self, mean, cov, allow_singular=True):
         """
@@ -592,7 +592,7 @@ class multivariate_normal_gen(multi_rv_generic):
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
-    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit):
+    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit, rng):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -612,6 +612,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Notes
         -----
@@ -629,6 +632,7 @@ class multivariate_normal_gen(multi_rv_generic):
         # ensuring that lower bounds are indeed lower when passed, then
         # set signs of resulting CDF manually.
         b, a = np.broadcast_arrays(x, lower)
+        b, a = b - mean, a - mean  # _qmvn only accepts zero mean
         i_swap = b < a
         signs = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
         a, b = a.copy(), b.copy()
@@ -636,17 +640,19 @@ class multivariate_normal_gen(multi_rv_generic):
         n = x.shape[-1]
         limits = np.concatenate((a, b), axis=-1)
 
-        # mvnun expects 1-d arguments, so process points sequentially
+        # qmvn expects 1-d arguments, so process points sequentially
+        # XXX: if cov.ndim == 2 and limits.ndim == 1, can avoid apply_along_axis
         def func1d(limits):
-            with MVN_LOCK:
-                return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
-                                maxpts, abseps, releps)[0]
+            # res0 = _qmvn(maxpts, cov, limits[:n], limits[n:], rng)[0]
+            res = _qauto(_qmvn, cov, limits[:n], limits[n:],
+                         rng, error=abseps, limit=maxpts, n_batches=10)
+            return np.squeeze(res[0])
 
         out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-               abseps=1e-5, releps=1e-5, *, lower_limit=None):
+               abseps=1e-5, releps=1e-5, *, lower_limit=None, rng=None):
         """Log of the multivariate normal cumulative distribution function.
 
         Parameters
@@ -664,6 +670,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator, optional
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Returns
         -------
@@ -683,7 +692,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         if not maxpts:
             maxpts = 1000000 * dim
-        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+
+        rng = self._get_random_state(rng)
+        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit, rng)
         # the log of a negative real is complex, and cdf can be negative
         # if lower limit is greater than upper limit
         cdf = cdf + 0j if np.any(cdf < 0) else cdf
@@ -691,7 +702,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return out
 
     def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-            abseps=1e-5, releps=1e-5, *, lower_limit=None):
+            abseps=1e-5, releps=1e-5, *, lower_limit=None, rng=None):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -709,6 +720,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator, optional
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Returns
         -------
@@ -728,7 +742,8 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+        rng = self._get_random_state(rng)
+        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit, rng)
         return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
@@ -926,19 +941,20 @@ class multivariate_normal_frozen(multi_rv_frozen):
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
-    def logcdf(self, x, *, lower_limit=None):
-        cdf = self.cdf(x, lower_limit=lower_limit)
+    def logcdf(self, x, *, lower_limit=None, rng=None):
+        cdf = self.cdf(x, lower_limit=lower_limit, rng=rng)
         # the log of a negative real is complex, and cdf can be negative
         # if lower limit is greater than upper limit
         cdf = cdf + 0j if np.any(cdf < 0) else cdf
         out = np.log(cdf)
         return out
 
-    def cdf(self, x, *, lower_limit=None):
+    def cdf(self, x, *, lower_limit=None, rng=None):
         x = self._dist._process_quantiles(x, self.dim)
+        rng = self._dist._get_random_state(rng)
         out = self._dist._cdf(x, self.mean, self.cov_object.covariance,
                               self.maxpts, self.abseps, self.releps,
-                              lower_limit)
+                              lower_limit, rng)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
