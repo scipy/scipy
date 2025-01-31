@@ -62,7 +62,10 @@ cdef _compute_se3_log_translation_transform(rot_vec):
 
 cdef _quaternion_conjugate(quat):
     conjugate = np.copy(quat)
-    conjugate[:, :3] = -conjugate[:, :3]
+    # we exploit the double cover property of unit rotation quaternions with
+    conjugate[:, 3] = -conjugate[:, 3]
+    # instead of using the mathematically correct conjugate implementation
+    # conjugate[:, :3] = -conjugate[:, :3]
     return conjugate
 
 
