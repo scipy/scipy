@@ -62,7 +62,10 @@ cdef _compute_se3_log_translation_transform(rot_vec):
 
 cdef _quaternion_conjugate(quat):
     conjugate = np.copy(quat)
-    conjugate[:, :3] = -conjugate[:, :3]
+    # we exploit the double cover property of unit rotation quaternions with
+    conjugate[:, 3] = -conjugate[:, 3]
+    # instead of using the mathematically correct conjugate implementation
+    # conjugate[:, :3] = -conjugate[:, :3]
     return conjugate
 
 
@@ -841,15 +844,7 @@ cdef class RigidTransformation:
         r"""Initialize from exponential coordinates of transformation.
 
         This implements the exponential map that converts 6-dimensional real
-        vectors to SE(3). The first three components of the vector encode
-        the rotation and the last three components encode the translation.
-
-        The exponential coordinates of transformation can be split up into
-        a screw axis :math:`\mathcal{S} \in \mathbb{R}^6` and a scalar
-        :math:`\theta` that defines the magnitude of the displacement. For
-        pure translations, the norm of the last three components defines
-        :math:`\theta` and for all other transformations, the norm of the first
-        three components defines :math:`\theta`.
+        vectors to SE(3).
 
         Parameters
         ----------
@@ -1250,9 +1245,7 @@ cdef class RigidTransformation:
         """Return the exponential coordinates of the transformation.
 
         This implements the logarithmic map that converts SE(3) to
-        6-dimensional real vectors. The first three components of the vector
-        encode the rotation and the last three components encode the
-        translation.
+        6-dimensional real vectors.
 
         Returns
         -------
