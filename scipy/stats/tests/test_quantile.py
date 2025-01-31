@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from matplotlib.pyplot import axis
 
 from scipy import stats
 from scipy._lib._array_api import xp_default_dtype
