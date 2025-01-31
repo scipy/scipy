@@ -583,6 +583,9 @@ All functions
    sstev
    dstev
 
+   sstevd
+   dstevd
+
    ssycon
    dsycon
    csycon
