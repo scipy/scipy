@@ -251,9 +251,9 @@ cdef class RigidTransformation:
 
     When composed, transformations should be ordered such that the
     multiplication operator is surrounded by a single frame, so the frame
-    "cancels out" and the outside frames A and C are left. In the example
-    below, B cancels out and the outside frames A and C are left. Or to put
-    it another way, A <- C is the same as A <- B <- C.
+    "cancels out" and the outside frames are left. In the example below, B
+    cancels out and the outside frames A and C are left. Or to put it another
+    way, A <- C is the same as A <- B <- C.
 
     .. parsed-literal::
         :class: highlight-none
@@ -334,7 +334,7 @@ cdef class RigidTransformation:
     Physically, let's imagine constructing B from A by:
 
     1) Rotating A by +90 degrees around its x-axis.
-    2) Translating the rotated frame +2 units in A's -x direction.
+    2) Translating the rotated frame 2 units in A's -x direction.
 
     From A's perspective, B is at [-2, 0, 0] and rotated +90 degrees about the
     x-axis, which is exactly the transform A <- B.
@@ -1491,6 +1491,19 @@ cdef class RigidTransformation:
         ``p.translation + p.rotation.apply(q.translation)
         + (p.rotation * q.rotation).apply(v)``.
 
+        This function supports composition of multiple transformations at a
+        time. The following cases are possible:
+
+            - Either ``p`` or ``q`` contains a single transformation. In this
+              case the result contains the result of composing each
+              transformation in the other object with the single
+              transformation. If both are single transformations, the result is
+              a single transformation.
+            - Both ``p`` and ``q`` contain ``N`` transformations. In this case
+              each transformation ``p[i]`` is composed with the corresponding
+              transformation ``q[i]`` and the result contains ``N``
+              transformations.
+
         Parameters
         ----------
         other : `RigidTransformation` instance
@@ -1499,18 +1512,7 @@ cdef class RigidTransformation:
         Returns
         -------
         `RigidTransformation` instance
-            The composed transformation. This function supports composition of
-            multiple transformations at a time. The following cases are
-            possible:
-
-            - Either ``p`` or ``q`` contains a single transformation. In this
-              case `composition` contains the result of composing each
-              transformation in the other object with the single
-              transformation.
-            - Both ``p`` and ``q`` contain ``N`` transformations. In this case
-              each transformation ``p[i]`` is composed with the corresponding
-              transformation ``q[i]`` and `output` contains ``N``
-              transformations.
+            The composed transformation.
 
         Examples
         --------
