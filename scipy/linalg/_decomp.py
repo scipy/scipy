@@ -1172,9 +1172,9 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
         and ``|a|`` is the 1-norm of the matrix ``a``.
     lapack_driver : str
         LAPACK function to use, can be 'auto', 'stemr', 'stebz',  'sterf',
-        or 'stev'. When 'auto' (default), it will use 'stemr' if ``select='a'``
-        and 'stebz' otherwise. 'sterf' and 'stev' can only be used when
-        ``select='a'``.
+        'stev', or 'stevd'. When 'auto' (default), it will use 'stemr' if
+        ``select='a'`` and 'stebz' otherwise. 'sterf' and 'stev' can only
+        be used when ``select='a'``.
 
     Returns
     -------
@@ -1257,7 +1257,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         and ``|a|`` is the 1-norm of the matrix ``a``.
     lapack_driver : str
         LAPACK function to use, can be 'auto', 'stemr', 'stebz', 'sterf',
-        or 'stev'. When 'auto' (default), it will use 'stemr' if ``select='a'``
+        'stev', or 'stevd'. When 'auto' (default), it will use 'stemr' if ``select='a'``
         and 'stebz' otherwise. When 'stebz' is used to find the eigenvalues and
         ``eigvals_only=False``, then a second LAPACK call (to ``?STEIN``) is
         used to find the corresponding eigenvectors. 'sterf' can only be
@@ -1315,7 +1315,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         select, select_range, 0, d.size)
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be str')
-    drivers = ('auto', 'stemr', 'sterf', 'stebz', 'stev')
+    drivers = ('auto', 'stemr', 'sterf', 'stebz', 'stev', 'stevd')
     if lapack_driver not in drivers:
         raise ValueError(f'lapack_driver must be one of {drivers}, '
                          f'got {lapack_driver}')
@@ -1349,6 +1349,11 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
     elif lapack_driver == 'stev':
         if select != 0:
             raise ValueError('stev can only be used when select == "a"')
+        w, v, info = func(d, e, compute_v=compute_v)
+        m = len(w)
+    elif lapack_driver == 'stevd':
+        if select != 0:
+            raise ValueError('stevd can only be used when select == "a"')
         w, v, info = func(d, e, compute_v=compute_v)
         m = len(w)
     elif lapack_driver == 'stebz':
