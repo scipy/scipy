@@ -33,6 +33,7 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=849121654
     return xpm, marrays, nan_arrays
 
 
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('fun, kwargs', [(stats.gmean, {}),
                                          (stats.hmean, {}),
@@ -45,6 +46,7 @@ def test_xmean(fun, kwargs, axis, xp):
     xp_assert_close(res.data, xp.asarray(ref))
 
 
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('keepdims', [False, True])
@@ -56,6 +58,7 @@ def test_xp_mean(axis, keepdims, xp):
     xp_assert_close(res.data, xp.asarray(ref))
 
 
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.parametrize('fun, kwargs',
@@ -91,6 +94,7 @@ def test_several(fun, kwargs, axis, xp):
     xp_assert_close(res.data, xp.asarray(ref))
 
 
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.parametrize('axis', [0, 1])
@@ -108,6 +112,7 @@ def test_describe(axis, kwargs, xp):
     xp_assert_close(res.kurtosis.data, xp.asarray(ref.kurtosis.data))
 
 
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @skip_backend('torch', reason="array-api-compat#242")
 @pytest.mark.parametrize('fun', [stats.zscore, stats.gzscore, stats.zmap])
