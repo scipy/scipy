@@ -522,6 +522,15 @@ cdef class RigidTransformation:
         if normalize:
             matrix[:, :3, :3] = Rotation.from_matrix(matrix[:, :3, :3]).as_matrix()
         else:
+            # Check for right-handedness
+            dets = np.linalg.det(matrix[:, :3, :3])
+            if np.any(dets < 0):
+                idx = np.where(dets < 0)[0][0]
+                raise ValueError("Non-positive determinant (left-handed or null "
+                                 f"coordinate frame) in rotation component of "
+                                 f"transformation matrix {idx}: "
+                                 f"{matrix[idx, :3, :3]}.")
+
             # Gramian orthogonality check
             gramians = matrix[:, :3, :3] @ matrix[:, :3, :3].transpose(0, 2, 1)
             is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),

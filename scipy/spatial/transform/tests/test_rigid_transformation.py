@@ -756,20 +756,11 @@ def test_concatenate():
 
 def test_input_validation():
     # Test invalid matrix shapes
-    with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
-        RigidTransformation.from_matrix(np.eye(3))
-
-    with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
-        RigidTransformation.from_matrix(np.zeros((4, 3)))
-
-    with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
-        RigidTransformation.from_matrix([])
-
-    with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
-        RigidTransformation.from_matrix(np.zeros((0, 4, 4)))
-
-    with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
-        RigidTransformation.from_matrix(np.zeros((1, 1, 4, 4)))
+    inputs = [np.eye(3), np.zeros((4, 3)), [],
+              np.zeros((0, 4, 4)), np.zeros((1, 1, 4, 4))]
+    for input in inputs:
+        with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
+            RigidTransformation.from_matrix(input)
 
     # Test invalid last row
     with pytest.raises(ValueError, match="last row of transformation matrix 0"):
@@ -791,11 +782,12 @@ def test_input_validation():
         RigidTransformation(matrix, normalize=False)
 
     # Test left handed rotation matrix
-    with pytest.raises(ValueError,
-                       match="Non-positive determinant"):
-        matrix = np.eye(4)
-        matrix[0, 0] = -1
-        RigidTransformation(matrix, normalize=True)
+    matrix = np.eye(4)
+    matrix[0, 0] = -1
+    for normalize in [True, False]:
+        with pytest.raises(ValueError,
+                           match="Non-positive determinant"):
+            RigidTransformation(matrix, normalize=normalize)
 
     # Test non-Rotation input
     with pytest.raises(ValueError,
