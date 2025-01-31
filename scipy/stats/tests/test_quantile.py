@@ -30,6 +30,7 @@ def quantile_reference(x, p, *, axis, nan_policy, keepdims):
     return res
 
 
+@skip_xp_backends('dask.array', reason="No take_along_axis yet.")
 @skip_xp_backends('array_api_strict', reason="No take_along_axis yet.")
 @skip_xp_backends('jax.numpy', reason="No mutation.")
 class TestQuantile:
