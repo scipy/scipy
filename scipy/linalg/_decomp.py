@@ -1392,8 +1392,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
 def _check_info(info, driver, positive='did not converge (LAPACK info=%d)'):
     """Check info return value."""
     if info < 0:
-        raise ValueError('illegal value in argument %d of internal %s'
-                         % (-info, driver))
+        raise ValueError(f'illegal value in argument {-info} of internal {driver}')
     if info > 0 and positive:
         raise LinAlgError(("%s " + positive) % (driver, info,))
 

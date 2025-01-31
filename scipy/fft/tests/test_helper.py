@@ -550,7 +550,7 @@ class TestRFFTFreq:
         x2 = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float64)
 
         # default dtype varies across backends
-        
+
         y = 9 * fft.rfftfreq(9, xp=xp)
         xp_assert_close(y, x, check_dtype=False, check_namespace=True)
 

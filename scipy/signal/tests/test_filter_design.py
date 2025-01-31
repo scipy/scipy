@@ -1,5 +1,7 @@
 import warnings
 
+from itertools import product
+
 from scipy._lib import _pep440
 import numpy as np
 from numpy.testing import (
@@ -1389,22 +1391,84 @@ class TestLp2bs:
 
 
 class TestBilinear:
+    """Tests for function `signal.bilinear`. """
+
+    def test_exceptions(self):
+        """Raise all exceptions in `bilinear()`. """
+        with pytest.raises(ValueError, match="Parameter a is not .*"):
+            bilinear(1., np.array([[1, 2, 3]]))
+        with pytest.raises(ValueError, match="Parameter b is not .*"):
+            bilinear(np.ones((2,3)), 1. )
 
     def test_basic(self):
+        # reference output values computed with sympy
         b = [0.14879732743343033]
         a = [1, 0.54552236880522209, 0.14879732743343033]
+        b_zref = [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
+        a_zref = [1.0, -1.0047722097030667, 0.3560573367396151]
+
         b_z, a_z = bilinear(b, a, 0.5)
-        assert_array_almost_equal(b_z, [0.087821, 0.17564, 0.087821],
-                                  decimal=5)
-        assert_array_almost_equal(a_z, [1, -1.0048, 0.35606], decimal=4)
+
+        assert_array_almost_equal_nulp(b_z, b_zref)
+        assert_array_almost_equal_nulp(a_z, a_zref)
 
         b = [1, 0, 0.17407467530697837]
         a = [1, 0.18460575326152251, 0.17407467530697837]
+        b_zref = [0.8641286432189045, -1.2157757001964216, 0.8641286432189045]
+        a_zref = [1.0, -1.2157757001964216, 0.7282572864378091]
+
         b_z, a_z = bilinear(b, a, 0.5)
-        assert_array_almost_equal(b_z, [0.86413, -1.2158, 0.86413],
-                                  decimal=4)
-        assert_array_almost_equal(a_z, [1, -1.2158, 0.72826],
-                                  decimal=4)
+
+        assert_array_almost_equal_nulp(b_z, b_zref)
+        assert_array_almost_equal_nulp(a_z, a_zref)
+
+
+    def test_ignore_leading_zeros(self):
+        # regression for gh-6606
+        # results shouldn't change when leading zeros are added to
+        # input numerator or denominator
+        b = [0.14879732743343033]
+        a = [1, 0.54552236880522209, 0.14879732743343033]
+
+        b_zref = [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
+        a_zref = [1.0, -1.0047722097030667, 0.3560573367396151]
+
+        for lzn, lzd in product(range(4), range(4)):
+            b_z, a_z = bilinear(np.pad(b, (lzn, 0)),
+                                np.pad(a, (lzd, 0)),
+                                0.5)
+            assert_array_almost_equal_nulp(b_z, b_zref)
+            assert_array_almost_equal_nulp(a_z, a_zref)
+
+
+    def test_complex(self):
+        # reference output values computed with sympy
+        # this is an elliptical filter, 5Hz width, centered at +50Hz:
+        #     z, p, k = signal.ellip(2, 0.5, 20, 2*np.pi*5/2, output='zpk', analog=True)
+        #     z = z.astype(complex) + 2j * np.pi * 50
+        #     p = p.astype(complex) + 2j * np.pi * 50
+        #     b, a = signal.zpk2tf(z, p, k)
+        b = [(0.09999999999999991+0j),
+             -62.831853071795805j,
+             (-9505.857007071314+0j)]
+        a = [(1+0j),
+             (21.09511000343942-628.3185307179587j),
+             (-98310.74322875646-6627.2242613473845j)]
+        # sample frequency
+        fs = 1000
+        b_zref = [(0.09905575106715676-0.00013441423112828688j),
+                  (-0.18834281923181084-0.06032810039049478j),
+                  (0.08054306669414343+0.05766172295523972j)]
+        a_zref = [(1+0j),
+                  (-1.8839476369292854-0.606808151331815j),
+                  (0.7954687330018285+0.5717459398142481j)]
+
+        b_z, a_z = bilinear(b, a, fs)
+
+        # the 3 ulp difference determined from testing
+        assert_array_almost_equal_nulp(b_z, b_zref, 3)
+        assert_array_almost_equal_nulp(a_z, a_zref, 3)
+
 
     def test_fs_validation(self):
         b = [0.14879732743343033]

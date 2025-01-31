@@ -224,6 +224,14 @@ table of releases in ``index.rst``.  Push that commit, then do ``make upload
 USERNAME=yourusername``. This is only for proper releases,
 not release candidates.
 
+.. note::
+
+  The version switcher on the deployed docs will not consider the new release
+  as the stable release until the changes to ``version_switcher.json`` have
+  been merged into the ``main`` branch
+  (see `gh-22305 <https://github.com/scipy/scipy/pull/22305>`__). Hence forward
+  porting the release notes and version switcher changes to ``main`` should
+  ideally be done at the same time as deploying the docs for the new release.
 
 Wrapping up
 -----------

@@ -116,9 +116,11 @@ def shortest_path(csgraph, method='auto',
     dist_matrix : ndarray
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
-    predecessors : ndarray
+    predecessors : ndarray, shape (n_indices, n_nodes,)
         Returned only if return_predecessors == True.
-        The N x N matrix of predecessors, which can be used to reconstruct
+        If `indices` is None then ``n_indices = n_nodes`` and the shape of
+        the matrix becomes ``(n_nodes, n_nodes)``.
+        The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
         information on the shortest paths from point i: each entry
         predecessors[i, j] gives the index of the previous node in the
@@ -129,6 +131,12 @@ def shortest_path(csgraph, method='auto',
     ------
     NegativeCycleError:
         if there are negative cycles in the graph
+
+    See Also
+    --------
+    :ref:`word-ladders-example` : An illustratation of the ``shortest_path`` API with a meaninful example.
+                                  It also reconstructs the shortest path by using predecessors matrix returned
+                                  by this function.
 
     Notes
     -----
@@ -146,27 +154,70 @@ def shortest_path(csgraph, method='auto',
     >>> from scipy.sparse.csgraph import shortest_path
 
     >>> graph = [
-    ... [0, 1, 2, 0],
-    ... [0, 0, 0, 1],
-    ... [2, 0, 0, 3],
-    ... [0, 0, 0, 0]
+    ... [0, 0, 7, 0],
+    ... [0, 0, 8, 5],
+    ... [7, 8, 0, 0],
+    ... [0, 5, 0, 0]
     ... ]
     >>> graph = csr_array(graph)
     >>> print(graph)
     <Compressed Sparse Row sparse array of dtype 'int64'
-    	with 5 stored elements and shape (4, 4)>
+    	with 6 stored elements and shape (4, 4)>
     	Coords	Values
-    	(0, 1)	1
-    	(0, 2)	2
-    	(1, 3)	1
-    	(2, 0)	2
-    	(2, 3)	3
+    	(0, 2)	7
+    	(1, 2)	8
+    	(1, 3)	5
+    	(2, 0)	7
+    	(2, 1)	8
+    	(3, 1)	5
 
-    >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
+    >>> sources = [0, 2]
+    >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=sources, return_predecessors=True)
     >>> dist_matrix
-    array([0., 1., 2., 2.])
+    array([[ 0., 15.,  7., 20.],
+           [ 7.,  8.,  0., 13.]])
     >>> predecessors
-    array([-9999,     0,     0,     1], dtype=int32)
+    array([[-9999,     2,     0,     1],
+           [    2,     2, -9999,     1]], dtype=int32)
+
+    Reconstructing shortest paths from sources to all the nodes of the graph.
+
+    >>> shortest_paths = {}
+    >>> for idx in range(len(sources)):
+    ...     for node in range(4):
+    ...         curr_node = node # start from the destination node
+    ...         path = []
+    ...         while curr_node != -9999: # no previous node available, exit the loop
+    ...             path = [curr_node] + path # prefix the previous node obtained from the last iteration
+    ...             curr_node = int(predecessors[idx][curr_node]) # set current node to previous node
+    ...         shortest_paths[(sources[idx], node)] = path
+    ...
+
+    Computing the length of the shortest path from node 0 to node 3
+    of the graph. It can be observed that computed length and the
+    ``dist_matrix`` value are exactly same.
+
+    >>> shortest_paths[(0, 3)]
+    [0, 2, 1, 3]
+    >>> path03 = shortest_paths[(0, 3)]
+    >>> sum([graph[path03[0], path03[1]], graph[path03[1], path03[2]], graph[path03[2], path03[3]]])
+    np.int64(20)
+    >>> dist_matrix[0][3]
+    np.float64(20.0)
+
+    Another example of computing shortest path length from node 2 to node 3.
+    Here, ``dist_matrix[1][3]`` is used to get the length of the path returned by
+    ``shortest_path``. This is because node 2 is the second source, so the
+    lengths of the path from it to other nodes in the graph will be at index 1
+    in ``dist_matrix``.
+
+    >>> shortest_paths[(2, 3)]
+    [2, 1, 3]
+    >>> path23 = shortest_paths[(2, 3)]
+    >>> sum([graph[path23[0], path23[1]], graph[path23[1], path23[2]]])
+    np.int64(13)
+    >>> dist_matrix[1][3]
+    np.float64(13.0)
 
     """
     csgraph = convert_pydata_sparse_to_scipy(csgraph, accept_fv=[0, np.inf, np.nan])
@@ -486,8 +537,10 @@ def dijkstra(csgraph, directed=True, indices=None,
         a given node the shortest path to that node from any of the nodes
         in indices.
     predecessors : ndarray, shape ([n_indices, ]n_nodes,)
-        If min_only=False, this has shape (n_indices, n_nodes),
-        otherwise it has shape (n_nodes,).
+        If ``min_only=False``, this has shape ``(n_indices, n_nodes)``,
+        otherwise it has shape ``(n_nodes,)``.
+        If `indices` is None and ``min_only=False`` then ``n_indices = n_nodes``
+        and the shape of the matrix becomes ``(n_nodes, n_nodes)``.
         Returned only if return_predecessors == True.
         The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
@@ -853,9 +906,11 @@ def bellman_ford(csgraph, directed=True, indices=None,
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
 
-    predecessors : ndarray
-        Returned only if return_predecessors == True.
-        The N x N matrix of predecessors, which can be used to reconstruct
+    predecessors : ndarray, shape (n_indices, n_nodes,)
+        Returned only if ``return_predecessors=True``.
+        If `indices` is None then ``n_indices = n_nodes`` and the shape of
+        the matrix becomes ``(n_nodes, n_nodes)``.
+        The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
         information on the shortest paths from point i: each entry
         predecessors[i, j] gives the index of the previous node in the
@@ -1094,9 +1149,11 @@ def johnson(csgraph, directed=True, indices=None,
         The N x N matrix of distances between graph nodes. dist_matrix[i,j]
         gives the shortest distance from point i to point j along the graph.
 
-    predecessors : ndarray
+    predecessors : ndarray, shape (n_indices, n_nodes,)
         Returned only if return_predecessors == True.
-        The N x N matrix of predecessors, which can be used to reconstruct
+        If `indices` is None then ``n_indices = n_nodes`` and the shape of
+        the matrix becomes ``(n_nodes, n_nodes)``.
+        The matrix of predecessors, which can be used to reconstruct
         the shortest paths.  Row i of the predecessor matrix contains
         information on the shortest paths from point i: each entry
         predecessors[i, j] gives the index of the previous node in the
@@ -1671,7 +1728,7 @@ cdef void _yen(
             if (
                 total_distance != INFINITY
                 and _yen_is_path_in_candidates(candidate_predecessors,
-                                               shortest_paths_predecessors[k-1], 
+                                               shortest_paths_predecessors[k-1],
                                                predecessor_matrix,
                                                spur_node, sink) == 0
             ):

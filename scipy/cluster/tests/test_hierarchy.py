@@ -198,6 +198,25 @@ class TestCopheneticDistance:
         xp_assert_close(c, expectedc, atol=1e-10)
         xp_assert_close(M, expectedM, atol=1e-10)
 
+    def test_gh_22183(self, xp):
+        # check for lack of segfault
+        # (out of bounds memory access)
+        # and correct interception of
+        # invalid linkage matrix
+        arr=[[0.0, 1.0, 1.0, 2.0],
+             [2.0, 12.0, 1.0, 3.0],
+             [3.0, 4.0, 1.0, 2.0],
+             [5.0, 14.0, 1.0, 3.0],
+             [6.0, 7.0, 1.0, 2.0],
+             [8.0, 16.0, 1.0, 3.0],
+             [9.0, 10.0, 1.0, 2.0],
+             [11.0, 18.0, 1.0, 3.0],
+             [13.0, 15.0, 2.0, 6.0],
+             [17.0, 20.0, 2.0, 32.0],
+             [19.0, 21.0, 2.0, 12.0]]
+        with pytest.raises(ValueError, match="excessive observations"):
+            cophenet(xp.asarray(arr))
+
 
 class TestMLabLinkageConversion:
 
@@ -950,6 +969,9 @@ class TestDendrogram:
          reason='MPL 3.9.2 & torch DeprecationWarning from __array_wrap__'
                 ' and NumPy 2.0'
     )
+    @skip_xp_backends('dask.array',
+         reason='dask.array has bad interaction with matplotlib'
+    )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_plot(self, xp):
         for orientation in ['top', 'bottom', 'left', 'right']:
@@ -1021,6 +1043,9 @@ class TestDendrogram:
           reason='MPL 3.9.2 & torch DeprecationWarning from __array_wrap__'
                  ' and NumPy 2.0'
      )
+    @skip_xp_backends('dask.array',
+         reason='dask.array has bad interaction with matplotlib'
+    )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_truncate_mode(self, xp):
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
