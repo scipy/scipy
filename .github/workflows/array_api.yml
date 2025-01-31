@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - maintenance/**
-  pull_requestarray_api.yml:
+  pull_request:
     branches:
       - main
       - maintenance/**
