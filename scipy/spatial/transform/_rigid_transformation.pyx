@@ -470,7 +470,8 @@ cdef class RigidTransformation:
             matrices.
         normalize : bool, optional
             If True, orthonormalize the rotation matrix using singular value
-            decomposition.
+            decomposition. If False, the rotation matrix is not checked for
+            orthogonality or right-handedness.
         copy : bool, optional
             If True, copy the input matrix. If False, a reference to the input
             matrix is used. If normalize is True, the input matrix is always
@@ -521,24 +522,6 @@ cdef class RigidTransformation:
         # matrices, which is a computationally expensive operation.
         if normalize:
             matrix[:, :3, :3] = Rotation.from_matrix(matrix[:, :3, :3]).as_matrix()
-        else:
-            # Check for right-handedness
-            dets = np.linalg.det(matrix[:, :3, :3])
-            if np.any(dets < 0):
-                idx = np.where(dets < 0)[0][0]
-                raise ValueError("Non-positive determinant (left-handed or null "
-                                 f"coordinate frame) in rotation component of "
-                                 f"transformation matrix {idx}: "
-                                 f"{matrix[idx, :3, :3]}.")
-
-            # Gramian orthogonality check
-            gramians = matrix[:, :3, :3] @ matrix[:, :3, :3].transpose(0, 2, 1)
-            is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
-                                   axis=(1, 2))
-            if np.any(~is_orthogonal):
-                idx = np.where(~is_orthogonal)[0][0]
-                raise ValueError("Rotation component of transformation matrix "
-                                 f"{idx} is not orthogonal: {matrix[idx, :3, :3]}")
 
         self._matrix = matrix
 

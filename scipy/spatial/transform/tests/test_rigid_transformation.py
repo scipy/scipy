@@ -774,20 +774,11 @@ def test_input_validation():
         matrix[1, 3, :] = [1, 0, 0, 1]
         RigidTransformation.from_matrix(matrix)
 
-    # Test non-rotation matrix
-    with pytest.raises(ValueError,
-                       match="matrix 0 is not orthogonal:"):
-        matrix = np.eye(4)
-        matrix[:3, :3] *= 2
-        RigidTransformation(matrix, normalize=False)
-
     # Test left handed rotation matrix
-    matrix = np.eye(4)
-    matrix[0, 0] = -1
-    for normalize in [True, False]:
-        with pytest.raises(ValueError,
-                           match="Non-positive determinant"):
-            RigidTransformation(matrix, normalize=normalize)
+    with pytest.raises(ValueError, match="Non-positive determinant"):
+        matrix = np.eye(4)
+        matrix[0, 0] = -1
+        RigidTransformation(matrix, normalize=True)
 
     # Test non-Rotation input
     with pytest.raises(ValueError,
