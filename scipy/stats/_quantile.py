@@ -78,8 +78,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
             n = xp.astype(n_int, dtype)
             # NaNs are produced only if slice is empty after removing NaNs
             nan_out = xp.any(n == 0, axis=-1)
-            # I don't think n == 0 causes problems later, but if so,
-            # we can consider making n[nan_out] = y.shape[-1]. Result is still NaN.
+            n[nan_out] = y.shape[-1]  # avoids pytorch/pytorch#146211
 
         if xp.any(nan_out):
             y = xp.asarray(y, copy=True)  # ensure writable
