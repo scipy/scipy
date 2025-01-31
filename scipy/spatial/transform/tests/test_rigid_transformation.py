@@ -785,7 +785,7 @@ def test_input_validation():
 
     # Test non-rotation matrix
     with pytest.raises(ValueError,
-                       match="matrix 0 be orthonormal:"):
+                       match="matrix 0 is not orthogonal:"):
         matrix = np.eye(4)
         matrix[:3, :3] *= 2
         RigidTransformation(matrix, normalize=False)

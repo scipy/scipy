@@ -514,29 +514,22 @@ cdef class RigidTransformation:
             raise ValueError(f"Expected last row of transformation matrix {ind} to be "
                              f"exactly [0, 0, 0, 1], got {matrix[ind, 3, :]}.")
 
-        # Calculate the determinant of the rotation matrix
-        # (should be positive for right-handed rotations)
-        dets = np.linalg.det(matrix[:, :3, :3])
-        if np.any(dets <= 0):
-            ind = np.where(dets <= 0)[0][0]
-            raise ValueError("Non-positive determinant (left-handed or null "
-                             f"coordinate frame) in rotation component of "
-                             f"transformation matrix {ind}: {matrix[ind]}.")
-
-        # Gramian orthonormality check
-        # (should be the identity matrix for orthonormal matrices)
-        grams = matrix[:, :3, :3] @ np.swapaxes(matrix[:, :3, :3], 1, 2)
-        orthonormal_ok = np.all(np.isclose(grams, np.eye(3), atol=1e-12), axis=(1, 2))
-        idxs = np.where(~orthonormal_ok | ~np.isclose(dets, 1, atol=1e-12))[0]
-
-        # Orthonormalize the rotation matrices where necessary
-        if normalize and len(idxs) > 0:
-            # Exact solution to the orthogonal Procrustes problem using SVD
-            U, _, Vt = np.linalg.svd(matrix[idxs, :3, :3])
-            matrix[idxs, :3, :3] = U @ Vt
-        elif len(idxs) > 0:
-            raise ValueError("Expected rotation component of transformation "
-                             f"matrix {idxs[0]} be orthonormal: {matrix[idxs[0]]}.")
+        # The Rotation.from_matrix() method orthogonalizes the rotation
+        # component of the transformation matrix. While this does have some
+        # overhead in converting a rotation matrix to a quaternion and back, it
+        # allows for skipping singular value decomposition for near-orthogonal
+        # matrices, which is a computationally expensive operation.
+        if normalize:
+            matrix[:, :3, :3] = Rotation.from_matrix(matrix[:, :3, :3]).as_matrix()
+        else:
+            # Gramian orthogonality check
+            gramians = matrix[:, :3, :3] @ matrix[:, :3, :3].transpose(0, 2, 1)
+            is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
+                                   axis=(1, 2))
+            if np.any(~is_orthogonal):
+                idx = np.where(~is_orthogonal)[0][0]
+                raise ValueError("Rotation component of transformation matrix "
+                                 f"{idx} is not orthogonal: {matrix[idx, :3, :3]}")
 
         self._matrix = matrix
 
