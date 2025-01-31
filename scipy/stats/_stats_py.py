@@ -39,11 +39,11 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
+from scipy._lib._array_api import is_lazy_array
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
 from scipy._lib.deprecation import _deprecate_positional_args
-
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -61,7 +61,7 @@ from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
-from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
+from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate, _broadcast_shapes,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
@@ -79,6 +79,7 @@ from scipy._lib._array_api import (
     xp_moveaxis_to_end,
     xp_sign,
     xp_vector_norm,
+    xp_broadcast_promote,
 )
 from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
@@ -1330,12 +1331,10 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
         zero = m2 <= (eps * mean_reduced)**2
         vals = xp.where(zero, xp.asarray(xp.nan), m3 / m2**1.5)
     if not bias:
-        can_correct = xp.asarray(~zero & (n > 2))
-        if xp.any(can_correct):
-            m2 = m2[can_correct]
-            m3 = m3[can_correct]
+        can_correct = ~zero & (n > 2)
+        if is_lazy_array(can_correct) or xp.any(can_correct):
             nval = ((n - 1.0) * n)**0.5 / (n - 2.0) * m3 / m2**1.5
-            vals[can_correct] = nval
+            vals = xp.where(can_correct, nval, vals)
 
     return vals[()] if vals.ndim == 0 else vals
 
@@ -1440,12 +1439,10 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
         vals = xp.where(zero, NaN, m4 / m2**2.0)
 
     if not bias:
-        can_correct = xp.asarray(~zero & (n > 3))
-        if xp.any(can_correct):
-            m2 = m2[can_correct]
-            m4 = m4[can_correct]
+        can_correct = ~zero & (n > 3)
+        if is_lazy_array(can_correct) or xp.any(can_correct):
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
-            vals[can_correct] = nval + 3.0
+            vals = xp.where(can_correct, nval + 3.0, vals)
 
     vals = vals - 3 if fisher else vals
     return vals[()] if vals.ndim == 0 else vals
@@ -10786,21 +10783,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                          or (weights is not None and xp_size(weights) == 0)):
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
-    # handle non-broadcastable inputs
-    if weights is not None and x.shape != weights.shape:
-        try:
-            x, weights = _broadcast_arrays((x, weights), xp=xp)
-        except (ValueError, RuntimeError) as e:
-            message = "Array shapes are incompatible for broadcasting."
-            raise ValueError(message) from e
-
-    # convert integers to the default float of the array library
-    if not xp.isdtype(x.dtype, 'real floating'):
-        dtype = xp.asarray(1.).dtype
-        x = xp.asarray(x, dtype=dtype)
-    if weights is not None and not xp.isdtype(weights.dtype, 'real floating'):
-        dtype = xp.asarray(1.).dtype
-        weights = xp.asarray(weights, dtype=dtype)
+    x, weights = xp_broadcast_promote(x, weights, force_floating=True)
 
     # handle the special case of zero-sized arrays
     message = (too_small_1d_not_omit if (x.ndim == 1 or axis is None)
@@ -10878,7 +10861,9 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     mean = _xp_mean(x, keepdims=True, **kwargs)
     x = _asarray(x, dtype=mean.dtype, subok=True)
     x_mean = _demean(x, mean, axis, xp=xp)
-    var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
+    x_mean_conj = (xp.conj(x_mean) if xp.isdtype(x_mean.dtype, 'complex floating')
+                   else x_mean)  # crossref data-apis/array-api#824
+    var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
         n = _length_nonmasked(x, axis)

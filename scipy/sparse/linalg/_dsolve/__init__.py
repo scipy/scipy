@@ -62,8 +62,8 @@ from . import linsolve
 
 __all__ = [
     'MatrixRankWarning', 'SuperLU', 'factorized',
-    'spilu', 'splu', 'spsolve',
-    'spsolve_triangular', 'use_solver'
+    'spilu', 'splu', 'spsolve', 'is_sptriangular',
+    'spsolve_triangular', 'use_solver', 'spbandwidth',
 ]
 
 from scipy._lib._testutils import PytestTester

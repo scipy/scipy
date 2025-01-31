@@ -6,9 +6,10 @@ import math
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _lazywhere, _rng_spawn
+from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
+from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
@@ -1152,47 +1153,6 @@ def _kwargs2args(f, args=None, kwargs=None):
     return wrapped, args
 
 
-def _log1mexp(x):
-    r"""Compute the log of the complement of the exponential.
-
-    This function is equivalent to::
-
-        log1mexp(x) = np.log(1-np.exp(x))
-
-    but avoids loss of precision when ``np.exp(x)`` is nearly 0 or 1.
-
-    Parameters
-    ----------
-    x : array_like
-        Input array.
-
-    Returns
-    -------
-    y : ndarray
-        An array of the same shape as `x`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.stats._distribution_infrastructure import _log1mexp
-    >>> x = 1e-300  # log of a number very close to 1
-    >>> _log1mexp(x)  # log of the complement of a number very close to 1
-    -690.7755278982137
-    >>> # np.log1p(-np.exp(x))  # -inf; emits warning
-
-    """
-    def f1(x):
-        # good for exp(x) close to 0
-        return np.log1p(-np.exp(x))
-
-    def f2(x):
-        # good for exp(x) close to 1
-        with np.errstate(divide='ignore'):
-            return np.real(np.log(-special.expm1(x + 0j)))
-
-    return _lazywhere(x < -1, (x,), f=f1, f2=f2)[()]
-
-
 def _logexpxmexpy(x, y):
     """ Compute the log of the difference of the exponentials of two arguments.
 
@@ -1210,6 +1170,25 @@ def _logexpxmexpy(x, y):
     i = (x == y)
     res[i] = -np.inf
     return res
+
+
+def _guess_bracket(xmin, xmax):
+    a = np.full_like(xmin, -1.0)
+    b = np.ones_like(xmax)
+
+    i = np.isfinite(xmin) & np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmax[i]
+
+    i = np.isfinite(xmin) & ~np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmin[i] + 1
+
+    i = np.isfinite(xmax) & ~np.isfinite(xmin)
+    a[i] = xmax[i] - 1
+    b[i] = xmax[i]
+
+    return a, b
 
 
 def _log_real_standardize(x):
@@ -2011,27 +1990,13 @@ class ContinuousDistribution(_ProbabilityDistribution):
         shape = xmin.shape
         xmin, xmax = np.atleast_1d(xmin, xmax)
 
-        a = -np.ones_like(xmin)
-        b = np.ones_like(xmax)
-
-        i = np.isfinite(xmin) & np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmax[i]
-
-        i = np.isfinite(xmin) & ~np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmin[i] + 1
-
-        i = np.isfinite(xmax) & ~np.isfinite(xmin)
-        a[i] = xmax[i] - 1
-        b[i] = xmax[i]
-
+        xl0, xr0 = _guess_bracket(xmin, xmax)
         xmin = xmin.reshape(shape)
         xmax = xmax.reshape(shape)
-        a = a.reshape(shape)
-        b = b.reshape(shape)
+        xl0 = xl0.reshape(shape)
+        xr0 = xr0.reshape(shape)
 
-        res = _bracket_root(f3, xl0=a, xr0=b, xmin=xmin, xmax=xmax, args=args)
+        res = _bracket_root(f3, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
         # For now, we ignore the status, but I want to use the bracket width
         # as an error estimate - see question 5 at the top.
         xrtol = None if _isnull(self.tol) else self.tol
@@ -4636,7 +4601,8 @@ class Mixture(_ProbabilityDistribution):
         xmin, xmax = self.support()
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
-        res = _bracket_root(f, xl0=self.mean(), xmin=xmin, xmax=xmax, args=(p,))
+        xl0, xr0 = _guess_bracket(xmin, xmax)
+        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
         return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
 
     def icdf(self, p, /, *, method=None):

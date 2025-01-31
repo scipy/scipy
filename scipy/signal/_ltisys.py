@@ -2317,11 +2317,13 @@ def _valid_inputs(A, B, poles, method, rtol, maxiter):
     if A.shape[0] != A.shape[1]:
         raise ValueError("A must be square")
     if len(poles) > A.shape[0]:
-        raise ValueError("maximum number of poles is %d but you asked for %d" %
-                         (A.shape[0], len(poles)))
+        raise ValueError(
+            f"maximum number of poles is {A.shape[0]} but you asked for {len(poles)}"
+        )
     if len(poles) < A.shape[0]:
-        raise ValueError("number of poles is %d but you should provide %d" %
-                         (len(poles), A.shape[0]))
+        raise ValueError(
+            f"number of poles is {len(poles)} but you should provide {A.shape[0]}"
+        )
     r = np.linalg.matrix_rank(B)
     for p in poles:
         if sum(p == poles) > r:
@@ -3190,7 +3192,7 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     >>> butter = signal.dlti(*signal.butter(3, 0.5))
     >>> t, y = signal.dimpulse(butter, n=25)
-    >>> plt.step(t, np.squeeze(y))
+    >>> plt.step(t, np.squeeze(y), where='post')
     >>> plt.grid()
     >>> plt.xlabel('n [samples]')
     >>> plt.ylabel('Amplitude')
@@ -3277,7 +3279,7 @@ def dstep(system, x0=None, t=None, n=None):
 
     >>> butter = signal.dlti(*signal.butter(3, 0.5))
     >>> t, y = signal.dstep(butter, n=25)
-    >>> plt.step(t, np.squeeze(y))
+    >>> plt.step(t, np.squeeze(y), where='post')
     >>> plt.grid()
     >>> plt.xlabel('n [samples]')
     >>> plt.ylabel('Amplitude')

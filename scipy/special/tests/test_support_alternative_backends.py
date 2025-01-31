@@ -4,7 +4,7 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE
+from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE, is_dask
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -52,6 +52,7 @@ def test_rel_entr_generic(dtype):
 @pytest.mark.fail_slow(5)
 # `reversed` is for developer convenience: test new function first = less waiting
 @pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
@@ -62,6 +63,8 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
                     "and cannot delegate to PyTorch.")
+    if is_dask(xp) and f_name == 'rel_entr':
+        pytest.skip("boolean index assignment")
     if is_jax(xp) and f_name == "stdtrit":
         pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
 

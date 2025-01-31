@@ -103,6 +103,16 @@ else
 endif
 
 
+py3.extension_module('_qmvnt_cy',
+  cython_gen_cpp.process('_qmvnt_cy.pyx'),
+  cpp_args: cython_cpp_args,
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/stats'
+)
+
+
 py3.install_sources([
     '__init__.py',
     '_axis_nan_policy.py',

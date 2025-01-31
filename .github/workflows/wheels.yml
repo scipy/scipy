@@ -81,6 +81,8 @@ jobs:
         # so easier to separate out here.
         - [ubuntu-22.04, manylinux, x86_64, "", ""]
         - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
+        - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
         - [macos-13, macosx, x86_64, openblas, "10.13"]
         - [macos-13, macosx, x86_64, accelerate, "14.0"]
         - [macos-14, macosx, arm64, openblas, "12.3"]
@@ -233,7 +235,7 @@ jobs:
             ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
             ${{ matrix.buildplat[4] }}
 
-      - uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d # v3.1.0
+      - uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830  # v3.1.1
         with:
           # for installation of anaconda-client, required for upload to
           # anaconda.org
@@ -243,6 +245,7 @@ jobs:
           auto-update-conda: true
           python-version: "3.10"
           miniforge-version: latest
+          conda-remove-defaults: "true"
 
       - name: Upload wheels
         if: success()

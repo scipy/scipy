@@ -27,7 +27,6 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
 from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
     get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
-from scipy.stats._distribution_infrastructure import _log1mexp
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
@@ -1945,7 +1944,7 @@ class dpareto_lognorm_gen(rv_continuous):
         return out[()]
 
     def _logsf(self, x, u, s, a, b):
-        return _log1mexp(self._logcdf(x, u, s, a, b))
+        return scu._log1mexp(self._logcdf(x, u, s, a, b))
 
     # Infrastructure doesn't seem to do this, so...
 
