@@ -45,6 +45,9 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
 
     dtype = xp.result_type(p, x)
 
+    # If data has length zero along `axis`, the result will be an array of NaNs just
+    # as if the data had length 1 along axis and were filled with NaNs. This is treated
+    # naturally below whether `nan_policy` is `'propagate'` or `'omit'`.
     if x.shape[axis] == 0:
         shape = list(x.shape)
         shape[axis] = 1
@@ -61,22 +64,26 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     y = xp.moveaxis(y, axis, -1)
     p = xp.moveaxis(p, axis, -1)
 
+    n = xp.astype(xp.asarray(y.shape[-1]), dtype)
     if contains_nans:
         nans = xp.isnan(y)
-        non_nan = xp.astype(~nans, xp.uint64)
-        n_int = xp.sum(non_nan, axis=-1, keepdims=True)
-        n = xp.astype(n_int, dtype)
 
-        nan_out = xp.any(n == 0, axis=-1)
+        # Note that if length along `axis` were 0 to begin with,
+        # it is now length 1 and filled with NaNs.
         if nan_policy == 'propagate':
-            nan_out |= xp.any(nans, axis=-1)
+            nan_out = xp.any(nans, axis=-1)
+        else:  # 'omit'
+            non_nan = xp.astype(~nans, xp.uint64)
+            n_int = xp.sum(non_nan, axis=-1, keepdims=True)
+            n = xp.astype(n_int, dtype)
+            # NaNs are produced only if slice is empty after removing NaNs
+            nan_out = xp.any(n == 0, axis=-1)
+            # I don't think n == 0 causes problems later, but if so,
+            # we can consider making n[nan_out] = y.shape[-1]. Result is still NaN.
 
         if xp.any(nan_out):
             y = xp.asarray(y, copy=True)  # ensure writable
             y[nan_out] = np.nan
-            n[nan_out] = y.shape[-1]
-    else:
-        n = xp.astype(xp.asarray(y.shape[-1]), dtype)
 
     p_mask = (p > 1) | (p < 0) | xp.isnan(p)
     if xp.any(p_mask):
@@ -102,9 +109,6 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         The method to use for estimating the quantile.
         The available options, numbered as they appear in [1]_, are:
 
-        1. 'inverted_cdf'
-        2. 'averaged_inverted_cdf'
-        3. 'closest_observation'
         4. 'interpolated_inverted_cdf'
         5. 'hazen'
         6. 'weibull'
@@ -116,7 +120,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     axis : int or None, default: 0
         Axis along which the quantiles are computed.
         ``None`` ravels both `x` and `p` before performing the calculation,
-         without checking whether the original shapes were compatible.
+        without checking whether the original shapes were compatible.
     nan_policy : str, default: 'propagate'
         Defines how to handle NaNs in the input data `x`.
 
@@ -190,18 +194,6 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     range of non-negative indices. The ``- 1`` in the formulas for ``j`` and
     ``g`` accounts for Python's 0-based indexing.
 
-    The table above includes only the estimators from H&F that are continuous
-    functions of probability `p` (estimators 4-9). NumPy also provides the
-    three discontinuous estimators from H&F (estimators 1-3), where ``j`` is
-    defined as above, ``m`` is defined as follows, and ``g`` is a function
-    of the real-valued ``index = p*n + m - 1`` and ``j``.
-
-    1. ``inverted_cdf``: ``m = 0`` and ``g = int(index - j > 0)``
-    2. ``averaged_inverted_cdf``: ``m = 0`` and
-       ``g = (1 + int(index - j > 0)) / 2``
-    3. ``closest_observation``: ``m = -1/2`` and
-       ``g = 1 - int((index == j) & (j%2 == 1))``
-
     Examples
     --------
     >>> import numpy as np
@@ -265,4 +257,4 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     if not keepdims:
         res = xp.squeeze(res, axis=axis)
 
-    return res[()]
+    return res[()] if res.ndim == 0 else res

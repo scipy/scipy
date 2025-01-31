@@ -1,6 +1,9 @@
 import pytest
 import numpy as np
+from matplotlib.pyplot import axis
+
 from scipy import stats
+from scipy._lib._array_api import xp_default_dtype
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 
@@ -72,7 +75,6 @@ class TestQuantile:
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
-
     @pytest.mark.parametrize('method',
                              ['hazen', 'interpolated_inverted_cdf', 'linear',
                               'median_unbiased', 'normal_unbiased', 'weibull'])
@@ -89,7 +91,6 @@ class TestQuantile:
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method, axis=axis)
 
         xp_assert_close(res, xp.asarray(ref))
-
 
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
@@ -112,6 +113,9 @@ class TestQuantile:
         ref = quantile_reference(x, p, **kwargs)
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
+    def test_integer_input_output_dtype(self, xp):
+        res = stats.quantile(xp.arange(10, dtype=xp.int64), 0.5)
+        assert res.dtype == xp_default_dtype(xp)
 
     @pytest.mark.parametrize('x, p, ref, kwargs',
         [([], 0.5, np.nan, {}),
@@ -126,3 +130,15 @@ class TestQuantile:
         x, p, ref = xp.asarray(x), xp.asarray(p), xp.asarray(ref)
         res = stats.quantile(x, p, **kwargs)
         xp_assert_equal(res, ref)
+
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    @pytest.mark.parametrize('keepdims', [False, True])
+    def test_size_0(self, axis, keepdims, xp):
+        shape = [3, 4, 0]
+        out_shape = shape.copy()
+        if keepdims:
+            out_shape[axis] = 1
+        else:
+            out_shape.pop(axis)
+        res = stats.quantile(xp.zeros(tuple(shape)), 0.5, axis=axis, keepdims=keepdims)
+        assert res.shape == tuple(out_shape)
